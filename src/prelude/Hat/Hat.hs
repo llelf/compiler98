@@ -8,11 +8,14 @@ module Hat
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
 --  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
 --  ,rap14,rap15
-  ,pap0,pap1,pap2,pap3,pap4,pap5,pap6,pap7,pap8,pap9,pap10,pap11,pap12
-  ,pap13,pap14
+--  ,pap0,pap1,pap2,pap3,pap4,pap5,pap6,pap7,pap8,pap9,pap10,pap11,pap12
+--  ,pap13,pap14
   ,lazySat,lazySatLonely,eagerSat
   ,fun1,fun2,fun3,fun4,fun5,fun6,fun7,fun8,fun9,fun10,fun11,fun12,fun13
   ,fun14,fun15
+  ,ulazySat
+  ,uap1,uap2,uap3,uap4
+  ,ufun1,ufun2,ufun3
   ,indir
   ,fromConInteger,fromConRational
   ,conInt,conChar,conInteger,conFloat,conDouble,conRational
@@ -31,10 +34,12 @@ module Hat
   ,mkNTContainer,mkNTRational
   ,openTrace,closeTrace,outputTrace,fatal
   ,Pos,noPos
+  ,unsafeIOTrace 
   ) where
 
 import Ratio (numerator,denominator)
 import IOExtras (unsafePerformIO,IORef,newIORef,readIORef,writeIORef)
+import Char (ord,chr,intToDigit)
 
 import FFI (Ptr(..),unsafePerformIO,CString,withCString)	-- PORTABLE
 --import PackedString (PackedString,packString) -- NONPORTABLE
@@ -87,9 +92,18 @@ mkR x t = t `Prelude.seq` R x t
 
 
 newtype SR     = SR Int
-newtype Trace  = Trace Int -- a hidden trace is negative, otherwise positive
+newtype Trace  = Trace Int -- a hidden trace has a set bit
 newtype NmType = NmType Int
 newtype ModuleTraceInfo = MTI Int
+
+-- for debugging
+unsafeIOTrace :: String -> Trace -> ()
+unsafeIOTrace t (Trace i) = 
+  unsafePerformIO (putStr (t ++ " -> " ++ showHex i ++ "\n"))
+
+showHex :: Int -> String
+showHex = ("0x"++) . map (intToDigit . (`mod` 16)) . reverse . takeWhile (>0) 
+          . iterate (`div` 16)
 
 -- ----------------------------------------------------------------------------
 -- combinators for n-ary application in a non-projective context.
@@ -1394,42 +1408,42 @@ data Status = Hidden Trace  -- neither value nor trace yet demanded
 
 -- combinators for n-ary application
 
-uap1 :: Trace -> R (Fun a r) -> R a -> R r
-uap1 h (R (Fun rf) tf) a = ulazySat
+uap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
+uap1 sr h (R (Fun rf) tf) a = ulazySat
   (case rf h a of
      R rv tv -> R rv (if hidden tv 
-                        then mkTAp1 h tf (trace a) mkNoSourceRef
+                        then mkTAp1 h tf (trace a) sr
                         else tv))
   h
 
-uap2 :: Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
-uap2 h f a b = ulazySat
-  (case uap1 h f a of
+uap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
+uap2 sr h f a b = ulazySat
+  (case uap1 sr h f a of
      R (Fun rf) tf -> case rf h b of
                         R rv tv -> R rv
                           (if hidden tv
-                            then mkTAp1 h tf (trace b) mkNoSourceRef
+                            then mkTAp1 h tf (trace b) sr
                             else tv))
   h
 
-uap3 :: Trace -> R (Fun a (Fun b (Fun c r))) -> R a -> R b -> R c -> R r
-uap3 h f a b c = ulazySat
-  (case uap2 h f a b of
+uap3 :: SR -> Trace -> R (Fun a (Fun b (Fun c r))) -> R a -> R b -> R c -> R r
+uap3 sr h f a b c = ulazySat
+  (case uap2 sr h f a b of
      R (Fun rf) tf -> case rf h c of
                         R rv tv -> R rv
                           (if hidden tv
-                            then mkTAp1 h tf (trace c) mkNoSourceRef
+                            then mkTAp1 h tf (trace c) sr
                             else tv))
   h
 
-uap4 :: Trace -> R (Fun a (Fun b (Fun c (Fun d r)))) 
+uap4 :: SR -> Trace -> R (Fun a (Fun b (Fun c (Fun d r)))) 
      -> R a -> R b -> R c -> R d -> R r
-uap4 h f a b c d = ulazySat
-  (case uap3 h f a b c of
+uap4 sr h f a b c d = ulazySat
+  (case uap3 sr h f a b c of
      R (Fun rf) tf -> case rf h d of
                         R rv tv -> R rv
                           (if hidden tv
-                             then mkTAp1 h tf (trace d) mkNoSourceRef
+                             then mkTAp1 h tf (trace d) sr
                              else tv))
   h
 
@@ -1739,7 +1753,7 @@ foreign import "hidden"
 
 foreign import "primTHidden"
  mkTHidden :: Trace	-- trace
-	-> Trace	-- result
+	   -> Trace	-- result
 
 foreign import "primTSatA"
  mkTSatA :: Trace	-- trace of unevaluated expr

@@ -819,7 +819,7 @@ primTHidden (FileOffset t1)
     FileOffset fo;
 
     if (hidden(t1)) 
-      return fo;
+      return t1;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTHidden 0x%x -> 0x%x\n",t1,fo);)
     fputc(((Trace<<5) | THidden),HatFile);
