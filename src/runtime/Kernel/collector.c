@@ -719,7 +719,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 
   clearCaf();
 
-#if TRACE
+#if 0 /*TRACE*/
   {
     NodePtr t = hp;
     while (t<(NodePtr)sp)
