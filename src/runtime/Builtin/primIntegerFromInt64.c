@@ -30,13 +30,13 @@ NodePtr primIntegerFromInt64 (HsInt64 i)
     if (i<0) {
       result[0] = CONSTRW(2,1);
       INIT_PROFINFO(result,&nodeProfInfo)
-      result[1+EXTRA] = (int)((-i)&0x00000000ffffffff);
-      result[2+EXTRA] = (int)(((-i)&0xffffffff00000000)>>32);
+      result[1+EXTRA] = (int)((-i)&0x00000000ffffffffLL);
+      result[2+EXTRA] = (int)(((-i)&0xffffffff00000000LL)>>32);
     } else {
       result[0] = CONSTRW(2,0);
       INIT_PROFINFO(result,&nodeProfInfo)
-      result[1+EXTRA] = (int)(i&0x00000000ffffffff);
-      result[2+EXTRA] = (int)((i&0xffffffff00000000)>>32);
+      result[1+EXTRA] = (int)(i&0x00000000ffffffffLL);
+      result[2+EXTRA] = (int)((i&0xffffffff00000000LL)>>32);
     }
   }
   return (result);

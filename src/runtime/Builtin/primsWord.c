@@ -70,22 +70,22 @@ extern void*	primIntegerFromWord64	(HsWord64 d);
 #define TO_INT(d)	primIntegerFromWord64(d)
 HsWord8   primWord8FromInteger  (void* d)	{
     HsWord64 i = (HsWord64)FR_INT(d);
-    if ((i < HS_WORD8_MIN) || (i > HS_WORD8_MAX))
+    if ((i < 0) || (i > HS_WORD8_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word8 value\n");
     return (HsWord8)i; }
 HsWord16  primWord16FromInteger (void* d)	{
     HsWord64 i = (HsWord64)FR_INT(d);
-    if ((i < HS_WORD16_MIN) || (i > HS_WORD16_MAX))
+    if ((i < 0) || (i > HS_WORD16_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word16 value\n");
     return (HsWord16)i; }
 HsWord32  primWord32FromInteger (void* d)	{
     HsWord64 i = (HsWord64)FR_INT(d);
-    if ((i < HS_WORD32_MIN) || (i > HS_WORD32_MAX))
+    if ((i < 0) || (i > HS_WORD32_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word32 value\n");
     return (HsWord32)i; }
 HsWord64  primWord64FromInteger (void* d)	{
     HsWord64 i = (HsWord64)FR_INT(d);
-    if ((i < HS_WORD64_MIN) || (i > HS_WORD64_MAX))
+    if ((i < 0) || (i > HS_WORD64_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word64 value\n");
     return (HsWord64)i; }
 void*     primWord8ToInteger  (HsWord8 d)	{ return TO_INT((HsInt64)d); }
@@ -108,15 +108,15 @@ int     primFromEnumWord64       (HsWord64 d)     {
         fprintf (stderr,"Warning: fromEnum truncates Word64 value\n");
     return (int)d; }
 HsWord8  primToEnumWord8    (int d)               {
-    if ((d < HS_WORD8_MIN) || (d > HS_WORD8_MAX))
+    if ((d < 0) || (d > HS_WORD8_MAX))
         fprintf (stderr,"Warning: toEnum truncates Int value to fit Word8\n");
     return (HsWord8)d; }
 HsWord16 primToEnumWord16   (int d)               {
-    if ((d < HS_WORD16_MIN) || (d > HS_WORD16_MAX))
+    if ((d < 0) || (d > HS_WORD16_MAX))
         fprintf (stderr,"Warning: toEnum truncates Int value to fit Word16\n");
     return (HsWord16)d; }
 HsWord32 primToEnumWord32   (int d)               {
-    if ((d < HS_WORD32_MIN) || (d > HS_WORD32_MAX))
+    if ((d < 0) || (d > HS_WORD32_MAX))
         fprintf (stderr,"Warning: toEnum truncates Int value to fit Word32\n");
     return (HsWord32)d; }
 HsWord64 primToEnumWord64   (int d)               { return (HsWord64)d; }
