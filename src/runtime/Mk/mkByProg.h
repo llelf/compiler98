@@ -1,3 +1,19 @@
+/* Current biggest tuple size is 12 */
+struct ForeignTuple {
+  void *pos1;
+  void *pos2;
+  void *pos3;
+  void *pos4;
+  void *pos5;
+  void *pos6;
+  void *pos7;
+  void *pos8;
+  void *pos9;
+  void *pos10;
+  void *pos11;
+  void *pos12;
+};
+
 extern NodePtr mkTuple2(NodePtr a1,NodePtr a2);
 #define sizeTuple2 (1+EXTRA+2)
 #define Tuple2 0 
