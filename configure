@@ -68,7 +68,8 @@ do
     -man) MAN=no ;;
     +docs) DOCS=yes ;;
     -docs) DOCS=no ;;
-    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-15` ;;
+    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-` ;;
+    --buildopts=*)  BUILDOPTS=`echo "$1" | cut -c13-` ;;
     --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
     --prefix=*)     INSTALLDIR=`echo "$1" | cut -c10-` ;;
     --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
@@ -91,6 +92,7 @@ do
  #echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
   echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
   echo "  --buildwith=comp     Build nhc98 with given compiler [detected]"
+  echo "  --buildopts=flags    Give extra flags needed by your build compiler [none]"
  #echo
  #echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
  #echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
@@ -256,10 +258,10 @@ if [ -d src ]
 then
   if [ "$BUILDWITH" = "" ]
   then
-    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-`
     echo "I am guessing that you want to build nhc98 with $BUILDWITH"
   else
-    echo "You said you want to build nhc98 with $BUILDWITH"
+    echo "You are going to build nhc98 with $BUILDWITH"
   fi
   GHCSYM=`grep "^ghcsym=" script/hmake.config | cut -c8-10`
   case $BUILDWITH in
@@ -270,6 +272,9 @@ then
   if [ "$RTSFLAG" = "yes" ]
   then echo "  so nhc98comp uses RTS delimiters."
   else echo "  so nhc98comp does not use RTS delimiters."
+  fi
+  if [ "$BUILDOPTS" != "" ]
+  then echo "You gave the following extra build options: $BUILDOPTS"
   fi
   # echo $RTSMESSAGE
 
@@ -392,6 +397,7 @@ then
     echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
     ( echo "ENDIAN=$ENDIAN";
       echo "BUILDWITH=$BUILDWITH";
+      echo "BUILDOPTS=$BUILDOPTS";
       case $RTSFLAG in
         no)  echo "USINGRTS=0" ;;
         yes) echo "USINGRTS=1" ;;
@@ -617,6 +623,8 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   echo "DOCDIR=$DOCDIR" ;
   if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
   if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
+  echo "BUILDWITH=$BUILDWITH" ;
+  echo "BUILDOPTS=\"$BUILDOPTS\"" ;
   echo "BUILDDIR=$BUILDDIR" ;
  #echo "BUILDLIBDIR=$BUILDLIBDIR" ;
  #echo "BUILDINCDIR=$BUILDINCDIR" ;
