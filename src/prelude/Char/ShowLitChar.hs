@@ -7,6 +7,12 @@ import Ord
 showLitChar 		   :: Char -> ShowS
 showLitChar c | c > '\DEL' && c < '\xa0' =  showChar '\\' .
                                             protectEsc isDigit (shows (ord c))
+showLitChar c | c > '\xff' && fromEnum c <= 0xffff
+                                         =  showChar '\\' .
+                                            protectEsc isDigit (shows (ord c))
+showLitChar c | fromEnum c > 0xffff      =  error ("character "++
+                                                   show (fromEnum c)++
+                                                   " out of range")
 showLitChar '\DEL'	   =  showString "\\DEL"
 showLitChar '\\'	   =  showString "\\\\"
 showLitChar c | c >= ' '   =  showChar c
