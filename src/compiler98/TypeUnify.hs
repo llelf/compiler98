@@ -222,7 +222,5 @@ extend phi tvn t@(NTvar tvn') =
   else Right (addSubst phi tvn  t)
 extend phi tvn t | tvn `elem` freeNT t =
        Left (phi,"(type-variable occurrence check fails)")
-extend phi tvn t@(NTcons c _) =
-   
-   Right (addSubst phi tvn t)
+extend phi tvn t@(NTcons c _) = Right (addSubst phi tvn t)
 extend phi tvn t = Right (addSubst phi tvn t)
