@@ -191,10 +191,11 @@ public class TraceFrame extends Frame {
     }
   }
 
-  void connectToTrace(String filename) {
+  void connectToTrace(String filename,String startnode) {
     doDisconnect();
     try {
-      Runtime.getRuntime().exec("hat-connect "+filename);
+      if (startnode!="") {startnode=" -remote "+startnode;}
+      Runtime.getRuntime().exec("hat-connect "+filename+startnode);
       Thread.sleep(100);
       doConnect();
     } catch (IOException ex) {
@@ -220,7 +221,7 @@ public class TraceFrame extends Frame {
 	    new FileDialog(me, "Connect to trace", FileDialog.LOAD);
 	  fd.setVisible(true);
 	  if (fd.getFile() != null) {
-	    connectToTrace(fd.getDirectory()+fd.getFile());
+	    connectToTrace(fd.getDirectory()+fd.getFile(),"");
 	  }
 	} else if (target == disconnectItem) {
 	  doDisconnect();	

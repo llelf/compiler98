@@ -65,7 +65,13 @@ public class OutputPanel extends Panel {
     dbgPanel.ui.resetColors();
     status.setText("Connected to trace");
     String t = serverConnection.nextToken();
-    if (t.equals("Error")) {
+    if ((t.equals("Error"))||(t.equals("Remote"))) {
+
+      // modification: still show program's output, even if an error occurred!
+      EDTParser parser = new EDTParser(serverConnection, dbgPanel.nodeTable);
+      output = parser.parseOutput();
+      // end of modification (also see hat-connect.c)
+
       dbgPanel.connected();
     } else {
       EDTParser parser = new EDTParser(serverConnection, dbgPanel.nodeTable);

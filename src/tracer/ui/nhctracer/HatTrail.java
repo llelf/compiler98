@@ -22,8 +22,13 @@ public class HatTrail {
     case 0:
       break;
     case 1:
-      traceFrame.connectToTrace(argv[0]);
+      traceFrame.connectToTrace(argv[0],"");
       break;
+    case 3:
+	if (argv[1].equals("-remote")) {
+	    traceFrame.connectToTrace(argv[0],argv[2]);
+	    break;
+	} // else proceed as default
     default:
       usage();
     }

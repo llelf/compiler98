@@ -64,7 +64,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     trace = null;
   }
 
-void disableListeners() {
+  void disableListeners() {
     canvas.removeMouseMotionListener(mmhandler);
     canvas.removeMouseListener(mhandler);
   }
