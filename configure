@@ -504,7 +504,7 @@ then
         no)  echo "USINGRTS=0" ;;
         yes) echo "USINGRTS=1" ;;
       esac;
-      echo "VERSIONNUM=\"$VERSIONNUM\"";
+      echo "VERSIONNUM=$VERSIONNUM";
       echo "INSTALLVER=\"$NHC98VERSION\"";
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
