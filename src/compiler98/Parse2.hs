@@ -152,6 +152,8 @@ parseContexts =
         `orelse`
     (:[]) `parseAp` parseContext `chk` impl
         `orelse`
+    parse [] `chk` tuple0 `chk` impl
+        `orelse`
     parse []
 
 parseContext = 
