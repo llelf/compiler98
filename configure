@@ -566,6 +566,11 @@ else	# [ "$INSTALL" = "yes" ]
            cp $file $DESTDIR$INCDIR
       fi
     done
+    case $BUILDWITH in
+      ghc) echo "Installing hat auxiliary files as a ghc package:";
+           script/confhat;;
+    esac
+    fi
     echo
   else
     echo 'Not (re-)installing interface and include files'
@@ -618,7 +623,7 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hat-trans"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|^HATINCDIR=$|HATINCDIR=`if test -f $BUILDDIR/ghcincdir; then cat $BUILDDIR; fi;`|" \
+    sed -e "s|^HATINCDIR=$|HATINCDIR=`if test -f lib/hat/ghcincdir; then cat $lib/hat/ghcincdir; fi;`|" \
 			>$DESTDIR$BINDIR/hat-trans
     for hattool in $HATTOOLS
     do  echo "	"$hattool
