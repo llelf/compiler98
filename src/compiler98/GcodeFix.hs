@@ -30,7 +30,7 @@ data Thread = Thread
 type GcodeFixMonad a = State Down Thread a Thread
 
 
-gcodeFixInit :: IntState -> Flags -> (IntState,(Tree a,(Tree ([Char],Int),[(Int,Gcode)])))
+gcodeFixInit :: IntState -> Flags -> (IntState,(AssocTree a b,(AssocTree [Char] Int,[(Int,Gcode)])))
 
 gcodeFixInit state flags =
   case uniqueIS state of
