@@ -150,7 +150,7 @@ main' args = do
   beginPhase "parse"
   parsedPrg	-- :: Module TokenId
             <- catchError (parseit parseProg lexdata)
-                          (sSourceFile flags) showErr
+                          ("In file: "++sSourceFile flags) showErr
   pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedPrg) 
 
 
@@ -196,7 +196,7 @@ main' args = do
 		--      , HideDeclIds
 		--      )
 		--    ]
-            <- catchError info (sSourceFile flags) id
+            <- catchError info ("In file: "++sSourceFile flags) id
   pF (sNeed flags) "Need (after reading source module)"  
             (show (treeMapList (:) need)) 
 
@@ -483,6 +483,7 @@ main' args = do
                                    ++ sObjectFile flags ++ ":" 
                                    ++ show ioerror ++ "\n")  
                                  exit) 
+  --hSetBuffering handle LineBuffering
   (eslabs	-- :: EmitState
    ,escode)	-- :: EmitState
        <- if (sAnsiC flags) 
