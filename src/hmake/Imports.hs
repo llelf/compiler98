@@ -190,17 +190,17 @@ parseComparison sym1 st =
         ((n,_):_) -> n :: Integer
 
 parseOp st =
-  do  skip (char '>')
-      return (>)
-  +++
   do  skip (string ">=")
       return (>=)
   +++
-  do  skip (char '<')
-      return (<)
+  do  skip (char '>')
+      return (>)
   +++
   do  skip (string "<=")
       return (<=)
+  +++
+  do  skip (char '<')
+      return (<)
   +++
   do  skip (string "==")
       return (==)
