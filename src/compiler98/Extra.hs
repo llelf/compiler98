@@ -125,7 +125,10 @@ assocDef ((k,v):kvs) d a = if a == k then v
 -- that is, line and column number
 -- currently only includes start position, not end position
 
-newtype Pos = P Int
+data Pos = P !Int !Int
+-- line * 10000 + column of start, line * 10000 + column of end
+-- both lines and column start at 1
+-- allow lines and coluns 0 to mark nonexisting position
 
 type Line = Int
 type Column = Int
@@ -133,33 +136,51 @@ type Column = Int
 -- used in STGcode to get encoded start position
 -- STGcode should be changed so that this function can disappear
 pos2Int :: Pos -> Int 
-pos2Int (P p) = p
+pos2Int (P s _) = s
 
-toPos :: Line -> Column -> Pos
-toPos l c =  P (l*10000 + c)
+toPos :: Line -> Column -> Line -> Column -> Pos
+toPos l1 c1 l2 c2 =  P (l1*10000 + c1) (l2*10000 + c2) 
+
+-- create a virtual position out of a real one
+insertPos :: Pos -> Pos
+insertPos (P s e) = P s 0
 
 noPos :: Pos
-noPos = P 0
+noPos = P 0 0
 
-fromPos :: Pos -> (Line,Column)
-fromPos (P p) =
- let l = p `div`   10000
-     c = p - l*10000
- in (l,c)
+mergePos :: Pos -> Pos -> Pos
+-- combines start of first pos with end of second pos
+-- assumes that first pos really earlier 
+-- but positions may or may not overlap
+-- nonexisting positions are ignored
+mergePos (P s1 e1) (P s2 e2) =
+  if e1 == 0 then P s2 e2
+  else if e2 == 0 then P s1 e1
+  else if s1 <= s2 && e1 <= e2 
+    then P s1 e2 
+    else error ("mergePos " ++ strPos (P s1 e1) ++ " " ++ strPos (P s2 e2)) 
+
+fromPos :: Pos -> (Line,Column,Line,Column)
+fromPos (P s e) =
+ let l1 = s `div` 10000
+     c1 = s - l1*10000
+     l2 = e `div` 10000
+     c2 = e - l2*10000
+ in (l1,c1,l2,c2)
 
 strPos :: Pos -> String
 strPos p = case fromPos p of
-             (0,0) -> "nopos"
-	     (l,c) -> show l ++ ':':show c
+             (0,0,0,0) -> "nopos"
+	     (l,c,_,_) -> show l ++ ':':show c
 
 instance Show Pos where
   show p = strPos p
 
 instance Eq Pos where
-  P p1 == P p2 = p1 == p2
+  P s1 e1 == P s2 e2 = (s1 == s2) && (e1 == e2)
 
-instance Ord Pos where  -- for ordering error messages
-  P p1 <= P p2 = p1 <= p2
+instance Ord Pos where  -- for ordering error messages of parser
+  P s1 e1 > P s2 e2 = s1 > s2 || (s1 == s2 && e1 > e2)
 
 --------------------
 

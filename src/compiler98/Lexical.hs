@@ -5,7 +5,7 @@ Lexical analysis of a file.
 module Lexical(lexical,lexicalCont,Lex
                 ,LexState,PosToken,PosTokenPre,Pos) where
 
-import Extra(Pos,toPos,strPos)
+import Extra(Pos,toPos,strPos,insertPos)
 import Lex
 import LexPre
 import SysDeps(PackedString,packString,unpackPS)
@@ -17,21 +17,22 @@ type LexState = [Int]  -- stack of indentations of {} blocks
 -- 0 : no active indentation (explicit layout)
 
 lexical :: Bool -> [Char] -> [Char] -> [PosToken]
-               -- filename  file content
--- lexPre basically does the lexing, but afterwards handles
+ -- with H'98 underscore -> filename -> file content -> tokens
+-- lexPre basically does the lexing, but afterwards iLex handles
 -- indentation for the layout rule
 lexical u file l = iLex [0] 0 (beginning (lexPre u file' l))
   where
     file' = packString file
     -- handle pragmas and start and missing "module" header
+    beginning :: [PosTokenPre] -> [PosTokenPre]
     beginning toks =
        case toks of
            lp@((f,r,c,L_module):_)    ->  lp
            lp@((f,r,c,L_AVARID t):_) | t==tinterface ->  lp
            (lp@(f,r,c,L_LANNOT):rest) ->  lp: discard_pragma rest
-           lp                         ->  ((file',1,0,L_module)
-                                          :(file',1,0,L_ACONID tMain)
-                                          :(file',1,0,L_where)
+           lp                         ->  ((file',toPos 1 0 0 0,0,L_module)
+                                          :(file',toPos 1 0 0 0,0,L_ACONID tMain)
+                                          :(file',toPos 1 0 0 0,0,L_where)
                                           :lp)
     discard_pragma (lp@(f,r,c,L_RANNOT):rest) = lp: beginning rest
     discard_pragma (lp@(f,r,c,_):rest)        = lp: discard_pragma rest
@@ -50,34 +51,33 @@ lexicalCont (p,t, []  ,r) =
 
 iLex :: LexState -> Int -> [PosTokenPre] -> [PosToken]
 iLex s i [] = []
-iLex s i ((f,r,c,t):pt) = 
+iLex s i ((f,p,c,t):pt) = 
   seq p $
   if c > i then
     piLex f s i p t pt
   else if c == i && i /= 0 && t /= L_in then
-    (p,L_SEMI',s,pt) : piLex f s i p t pt
+    seq p' $ (p',L_SEMI',s,pt) : piLex f s i p t pt
   else if c == 0 && i == 0 then
     piLex f s i p t pt
   else
-    (p,L_RCURL',s,pt) : iLex s' i' ((f,r,c,t):pt)
+    seq p' $ (p',L_RCURL',s,pt) : iLex s' i' ((f,p,c,t):pt)
   where
-    (_:s'@(i':_)) = s
-    p = toPos r c
+  (_:s'@(i':_)) = s
+  p' = insertPos p
 
-piLex :: PackedString -> LexState -> Int -> Pos -> Lex -> [PosTokenPre] -> [PosToken]
-piLex file s i p tok tr@((f,r,c,t'):pt)
+piLex :: PackedString -> LexState -> Int -> Pos -> Lex -> [PosTokenPre] 
+      -> [PosToken]
+piLex file s i p tok tr@((f,p',c,t'):pt)
       | tok `elem` [L_let, L_where, L_of, L_do] =
           (p,tok,s,tr)
-          : if t' == L_LCURL then
-                let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
-                : iLex (0:s) 0 pt 
+          : if t' == L_LCURL 
+              then seq p' $ (p',L_LCURL, s,pt) : iLex (0:s) 0 pt 
             else
-                (p, L_LCURL',s,tr)
+                let p'' = insertPos p' in seq p'' $ (p'', L_LCURL',s,tr)
                 : if c > i then
-                    let p' = toPos r c in seq p' $ piLex f (c:s) c p' t' pt
+                    seq p' $ piLex f (c:s) c p' t' pt
                   else
-                    (p, L_RCURL',s,tr)
-                    : iLex s i tr
+                    (p, L_RCURL',s,tr) : iLex s i tr
 piLex file s i p L_LCURL  pt =
           (p,L_LCURL,s,pt)
           : iLex (0:s) 0 pt

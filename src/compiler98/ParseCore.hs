@@ -20,6 +20,10 @@ infixr 4 `orelse`
 #endif
 
 --- Define types
+-- parameters:
+-- i = input to be parsed
+-- a = resulting syntax tree
+-- c = other return value
 type ParseError = (Pos,String,[String])
 type ParseResult a i   = Either ParseError (a,i,ParseError) 
 type ParseBad    a i   =           ParseError -> ParseResult a i 
