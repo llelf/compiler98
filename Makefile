@@ -365,29 +365,30 @@ lib/hood.jar: $(HOODUI)
 hat-trans: hat-trans-$(BUILDCOMP)
 hat-lib:   hat-lib-$(BUILDCOMP)
 hat-tools: hat-tools-$(BUILDCOMP)
-hat-$(BUILDCOMP): hat-trans-$(BUILDCOMP) hat-lib-$(BUILDCOMP) \
-			hat-tools-$(BUILDCOMP)
+$(TARGDIR)/$(MACHINE)/hat-$(BUILDCOMP): hat-trans-$(BUILDCOMP) \
+			hat-lib-$(BUILDCOMP) hat-tools-$(BUILDCOMP)
+	touch $@
 
-$(TARGDIR)/$(MACHINE)/hat-trans-ghc: $(HATTRANS)
-	cd src/compiler98;	$(MAKE) HC=ghc hat-trans
-	touch $(TARGDIR)/$(MACHINE)/hat-trans-ghc
-$(TARGDIR)/$(MACHINE)/hat-trans-nhc: $(HATTRANS)
-	cd src/compiler98;	$(MAKE) HC=nhc98 hat-trans
-	touch $(TARGDIR)/$(MACHINE)/hat-trans-nhc
+$(TARGDIR)/$(MACHINE)/hat-trans-ghc: src/hat/trans/*.hs src/compiler98/*.hs
+	cd src/hat/trans;	$(MAKE) HC=ghc all
+	touch $@
+$(TARGDIR)/$(MACHINE)/hat-trans-nhc: src/hat/trans/*.hs src/compiler98/*.hs
+	cd src/hat/trans;	$(MAKE) HC=nhc98 all
+	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-ghc: $(HATLIB)
 	cd src/hat/lib;		$(MAKE) HC=ghc all install-ghc
-	touch $(TARGDIR)/$(MACHINE)/hat-lib-ghc
+	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-nhc: $(HATLIB)
 	cd src/hat/lib;		$(MAKE) HC=nhc98 all install-nhc98
-	touch $(TARGDIR)/$(MACHINE)/hat-lib-nhc
+	touch $@
 $(TARGDIR)/$(MACHINE)/hat-tools-ghc: $(HATUI)
 	cd src/hat/tools;      $(MAKE) HC=ghc install
 	#cd src/hat/oldtools;   $(MAKE) install
-	touch $(TARGDIR)/$(MACHINE)/hat-tools-ghc
+	touch $@
 $(TARGDIR)/$(MACHINE)/hat-tools-nhc: $(HATUI)
 	cd src/hat/tools;      $(MAKE) HC=nhc98 install
 	#cd src/hat/oldtools;   $(MAKE) install
-	touch $(TARGDIR)/$(MACHINE)/hat-tools-nhc
+	touch $@
 
 
 ##### scripts for packaging various distribution formats
@@ -522,9 +523,9 @@ HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
 		script/hat-graph
 HATMISC = Makefile.inc Makefile.hat hat-configure \
 	  src/Makefile.inc src/hat/Makefile* include/art.h
-HATTRANS = src/compiler98/Makefile* \
-	 $(shell cd src/compiler98; hmake -g HatTrans.hs | cut -d':' -f1 \
-		| sed -e 's/$$/.hs/' | sed -e 's|^|src/compiler98/|' )
+HATTRANS = src/hat/trans/Makefile* \
+	 $(shell hmake -M HatTrans.hs -Isrc/hat/trans -Isrc/compiler98 \
+		| cut -d':' -f1 | sed -e 's/\.o$$/.hs/' | sed -e '/^. /d' )
 HATMAN  = man/hat-*
 HATDOCS = docs/hat/*
 
@@ -541,7 +542,7 @@ hatDist:
 	cd hat-$(HATVERSION); tar xf ../hat-$(HATVERSION).tar
 	cd hat-$(HATVERSION); mv hat-configure configure
 	cd hat-$(HATVERSION); mv Makefile.hat Makefile
-	cd hat-$(HATVERSION)/src/compiler98; mv Makefile.hat Makefile
+	#cd hat-$(HATVERSION)/src/compiler98; mv Makefile.hat Makefile
 	tar cf hat-$(HATVERSION).tar hat-$(HATVERSION)
 	rm -r hat-$(HATVERSION)
 	gzip hat-$(HATVERSION).tar
