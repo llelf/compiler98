@@ -8,7 +8,27 @@
 <hr>
 
 <p>
+The <b>nhc98</b> compiler contains an implementation of the
+<em>primitive foreign function interface</em> that is also available
+in <em>STG-Hugs</em> and <em>ghc</em>.  The specification of the
+low-level FFI is at
 
+<a href="http://www.haskell.org/ghc/docs/latest/set/ffi.html">
+<tt>http://www.haskell.org/ghc/docs/latest/set/ffi.html</tt></a>
+
+<p>
+We also supply a version of Sven Panne's proposed FFI library which
+adds a layer of useful functions on top of the basic mechanism.  His
+specification is at
+
+<a href="http://www.pms.informatik.uni-muenchen.de/mitarbeiter/panne/haskell_libs/ffi.html">
+<tt>http://www.pms.informatik.uni-muenchen.de/mitarbeiter/panne/haskell_libs/ffi.html</tt></a>
+
+You can use this library in <b>nhc98</b> by adding <tt>import FFI</tt> to
+your programs.
+
+<p>
+<br>
 
 <hr>
 <p>
@@ -17,7 +37,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.12.22<br>
+This page last modified: 2000.07.20<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
