@@ -5,12 +5,7 @@ module EmitState where
 
 import Char (isLower)
 import GcodeLow (foreignfun)
-import List (nub)
-#if defined(__HASKELL98__)
-import List (isPrefixOf)
-#else
-import IsPrefixOf
-#endif
+import List (nub,isPrefixOf)
 import Tree234
 
 --  , {-type-} EmitState
