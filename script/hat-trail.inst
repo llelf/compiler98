@@ -1,0 +1,17 @@
+#!/bin/sh -e
+# Starts up java browser for Hat traces
+
+NHC98BINDIR=${NHC98BINDIR-ScriptDir}
+NHC98LIBDIR=${NHC98LIBDIR-ExecutableDir}
+MACHINE=`${NHC98BINDIR}/harch`
+
+if [ ! -d $NHC98LIBDIR/$MACHINE ]
+then
+  echo "Warning: nhc98 may not be installed/configured for $MACHINE."
+  echo "  This might restrict your ability to use hat-trail."
+fi
+
+CLASSPATH=$NHC98LIBDIR/hat-trail.jar
+export CLASSPATH
+echo "hat-trail: starting java browser ..."
+java nhctracer.HatTrail 6710 "$@" &
