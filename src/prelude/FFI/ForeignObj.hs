@@ -10,8 +10,10 @@ module FFI
   , touchForeignObj		-- :: ForeignObj -> IO ()
   ) where
 
-import FFIBuiltin (ForeignObj,Addr)
+import Addr     (Addr)
 import IOExtras (unsafePerformIO)
+
+data ForeignObj;	-- primitive type known to compiler internals
 
 -- Note that the type of makeForeignObj expects the finalizer to already
 -- have been applied to the Addr, and here we also need to wrap it inside

@@ -6,8 +6,9 @@ module FFI
   , intToAddr	-- :: Int -> Addr
   ) where
 
-import FFIBuiltin (Addr)
 import Numeric (showHex)
+
+data Addr;	-- primitive type known to the compiler internals
 
 foreign import cast addrToInt :: Addr -> Int
 foreign import cast intToAddr :: Int  -> Addr

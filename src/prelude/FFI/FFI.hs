@@ -16,7 +16,7 @@ module FFI
    -------------------------------------------------------------------
    -- `Ptr a' is a C pointer value.
    -------------------------------------------------------------------
-  , Ptr(..)		-- abstract, instance of: Eq, Ord, Enum, Show
+  , Ptr			-- abstract, instance of: Eq, Ord, Enum, Show
   , nullPtr		-- :: Ptr a
   , castPtr		-- :: Ptr a -> Ptr b
   , plusPtr		-- :: Ptr a -> Int -> Ptr b
@@ -29,6 +29,7 @@ module FFI
   , FunPtr              -- abstract, instance of: Eq, Ord, Enum, Show
   , nullFunPtr          -- :: FunPtr a
   , castFunPtr          -- :: FunPtr a -> FunPtr b
+  , freeHaskellFunPtr   -- :: FunPtr a -> IO ()
   , castFunPtrToPtr     -- :: FunPtr a -> Ptr b
   , castPtrToFunPtr     -- :: Ptr a -> FunPtr b
 
@@ -63,11 +64,11 @@ module FFI
    -- `ForeignPtr a' is a C pointer value with an associated finaliser.
    -------------------------------------------------------------------
   , ForeignPtr                -- abstract, instance of: Eq
-  , newForeignPtr             -- :: Ptr a -> IO () -> IO (ForeignPtr a)
--- , addForeignPtrFinalizer   -- :: ForeignPtr a -> IO () -> IO ()
-  , touchForeignPtr           -- :: ForeignPtr a -> IO ()
+  , newForeignPtr             -- :: Ptr a -> FunPtr (...) -> IO (ForeignPtr a)
+  , addForeignPtrFinalizer   -- :: ForeignPtr a -> FunPtr (...) -> IO ()
   , withForeignPtr            -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
   , foreignPtrToPtr           -- :: ForeignPtr a -> Ptr a
+  , touchForeignPtr           -- :: ForeignPtr a -> IO ()
   , castForeignPtr            -- :: ForeignPtr a -> ForeignPtr b
 
    -------------------------------------------------------------------
@@ -76,13 +77,10 @@ module FFI
 #if !defined(TRACING)
   , StablePtr             -- abstract
   , newStablePtr          -- :: a -> IO (StablePtr a)
-  , makeStablePtr         -- :: a -> IO (StablePtr a)	-- OBSOLETE
   , deRefStablePtr        -- :: StablePtr a -> IO a
   , freeStablePtr         -- :: StablePtr a -> IO ()
-  , stablePtrToAddr       -- :: StablePtr a -> Addr	-- OBSOLETE
-  , addrToStablePtr       -- :: Addr -> StablePtr a	-- OBSOLETE
-  , castStablePtrToPtr  -- :: StablePtr a -> Ptr ()
-  , castPtrToStablePtr  -- :: Ptr () -> StablePtr a
+  , castStablePtrToPtr    -- :: StablePtr a -> Ptr ()
+  , castPtrToStablePtr    -- :: Ptr () -> StablePtr a
 #endif
 
    -------------------------------------------------------------------

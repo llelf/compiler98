@@ -9,12 +9,12 @@ module FFI
 
 {- Note explicit braces and semicolons here - layout is corrupted by cpp. -}
 
-{import FFIBuiltin (Int8, Int16, Int32, Int64)
-;import Numeric    (readSigned,readDec,showSigned,showInt)
+{import Numeric (readSigned,readDec,showSigned,showInt)
 ;import Ix
 
 
 #define INT_TYPE(T,LB,UB)	\
+; DEFINE(T)			\
 ; FOREIGNS(T)			\
 ; INSTANCE_EQ(T)		\
 ; INSTANCE_ORD(T)		\
@@ -26,6 +26,9 @@ module FFI
 ; INSTANCE_ENUM(T)		\
 ; INSTANCE_READ(T)		\
 ; INSTANCE_SHOW(T)
+
+#define DEFINE(T)	\
+; data T
 
 #define FOREIGNS(T)	\
 ; foreign import ccall primEq##T		:: T -> T  -> Bool	\

@@ -77,8 +77,8 @@ instance Num T where { \
 instance Storable T where { \
    sizeOf    (T x)       = sizeOf x ; \
    alignment (T x)       = alignment x ; \
-   peekElemOff (Ptr a) i       = liftM T (peekElemOff (Ptr a) i) ; \
-   pokeElemOff (Ptr a) i (T x) = pokeElemOff (Ptr a) i x }
+   peekElemOff p i       = liftM T (peekElemOff (castPtr p) i) ; \
+   pokeElemOff p i (T x) = pokeElemOff (castPtr p) i x }
 
 #define INSTANCE_BOUNDED(T) \
 instance Bounded T where { \
