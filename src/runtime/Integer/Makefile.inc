@@ -1,5 +1,6 @@
 ifeq "" "${MKDIR}"
-MKDIR:=$(shell pwd)
+#MKDIR:=$(shell pwd)
+MKDIR:=$(PWD)
 else
 MKDIR:=$(patsubst %/$(notdir ${MKDIR}),%, ${MKDIR})
 endif
