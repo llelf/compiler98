@@ -1,0 +1,30 @@
+module GreenCard
+  ( IO(..)
+  , PackedString
+  , toCString
+  , fromCString
+  , ForeignObj
+  , StablePtr(..)
+  ) where
+
+import PreludeBuiltin (ForeignObj)
+import DIO (IO(..))
+import PackedString (PackedString)
+import CString (toCString, fromCString)
+
+data StablePtr a = StablePtr a
+
+%dis int x          = declare "int" x in (%%Int x)
+%dis char x         = declare "char" x in (%%Char x)
+%dis bool x         = declare "int" x in (%%Bool x)
+%dis float x        = declare "float" x in (%%Float x)
+%dis double x       = declare "double" x in (%%Double x)
+%dis string x       = <toCString/fromCString> (packedString x)
+%dis packedString x = declare "char*" x in (%%PackedString x)
+%dis foreign f x    = declare "void*" x in (%%Foreign "%f" x)
+%dis stableptr x    = declare "HaskellRef" x in (%%StablePtr x)
+%dis stable x       = declare "HaskellRef" x in (%%StablePtr x)
+%dis word x         = declare "unsigned int" x in (%%Word x)
+
+%dis filePath x     = string x
+

@@ -1,0 +1,65 @@
+<html><head><title>nhc98 compliance with Haskell 98</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=530>
+
+<center><h1>nhc98 compliance with Haskell 98</h1></center>
+
+<hr>
+
+<p>
+<b>nhc98</b> supersedes
+<a href="http://www.cs.york.ac.uk/fp/nhc13/"><b>nhc13</b></a>,
+but as yet is not fully compliant with the Haskell 98 standard.  Here
+is a complete list of the known deficiencies in <em>nhc98</em>.
+
+<ul>
+<li> Some of the new Library functions remain unimplemented.  (Runtime
+     warnings are provided for all unimplemented functions.)  The main
+     functions missing are in Directory, Random, Time, CPUTime, and a
+     few from IO.
+
+<li> The simple context restriction has not yet been removed.
+
+<li> The declaration style <tt> funlhs -> ( funlhs ) {apat} </tt>
+     is not implemented.
+
+<li> The monomorphism restriction is not implemented.
+
+<li> The Unicode character set is not supported.
+
+</ul>
+
+<p>
+In addition, the following Haskell'98 behaviours are normally turned off.
+Use the <tt>-98</tt> flag to turn them all on, or use the equivalent
+separate flags.
+
+<ul>
+<li> <tt>(n+k)</tt> patterns are normally switched off.  Use <em>-nkpat</em>
+     to switch them on.
+
+<li> Underscore is not normally treated as a lower-case letter.  In
+     fact, it is usually transparent: the name <tt>_f</tt> is a varid,
+     but the name <tt>_F</tt> is a conid because it begins with an
+     uppercase letter (i.e. after the underscore).  Use <em>-underscore</em>
+     to treat underscores as strictly lower-case.
+
+
+</ul>
+
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+1999.06.25<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+

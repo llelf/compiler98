@@ -1,0 +1,178 @@
+<html><head><title>Configuring nhc98</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center>
+  <h1>Configuring nhc98</h1>
+</center>
+<hr>
+
+<p>
+The automatic configuration and installation utility, called
+<em>nhc98config</em>, should always be used to prepare for building or
+installing <b>nhc98</b>.  You can choose your own configuration options,
+but the default behaviour is to prepare to build the components of
+<b>nhc98</b> under the
+<tt>targets</tt> directory, and to install those components under
+<tt>/usr/local</tt>, in the subdirectories <tt>bin</tt> (for scripts),
+<tt>lib/nhc98</tt> (for executables and libraries),
+<tt>include/nhc98</tt> (for interface and include files), and
+<tt>man/man1</tt> for man pages.
+
+<p>
+The endian-ness of your machine is detected automatically during
+configuration.  Your machine/operating-system is detected and used
+during building and installation to ensure that object files and
+executables from different architectures do not interfere with each
+other.
+
+<p>
+<em>nhc98config</em> has many options to override the default build and
+installation behaviours.  The options fall into three categories, but
+they may appear in any order on the command-line.  The first group of
+options controls what task <em>nhc98config</em> will do.  You can only
+choose one of these - if you choose more than one, only the final one
+will take effect.  The other two groups of options are cached and
+re-used in later invocations of <em>nhc98config</em>, but you can always
+override them on the current commandline.
+
+<dl>
+<dt><b>-h</b></dt>
+<dt><b>--help</b></dt>
+  <dd>Give a brief explanation of all the options.  Do not save any
+      configuration settings.</dd>
+
+<dt><b>-v</b></dt>
+<dt><b>--version</b></dt>
+  <dd>Report package version.  Do not save any configuration settings.</dd>
+
+<dt><b>--config</b></dt>
+  <dd>Set and report configuration options only.  Do not prepare for building
+      at this stage, and do not install anything.  This option is very useful 
+      for testing how configuration settings operate and examining whether you
+      have got the settings correct before proceeding.<dd>
+
+<dt><b>--build</b></dt>
+  <dd>Prepare for building and later installation, but do not install
+      files yet.  This is the default behaviour if no other option from
+      the first group is chosen.  Various files and directories are created
+      in the build tree: object and lib directories for this machine;
+      some temporary scripts for the compiler.</dd>
+
+<dt><b>--install</b></dt>
+  <dd>Install selected components now (scripts, executables, libraries,
+      interface files, man pages, html documents etc.).  This option
+      should be used when installing from a binary package, or after
+      building from sources.  It copies the selected components to their
+      final directory locations (you must have permission to write into
+      those directories).  Don't forget, if you have previously
+      run <em>nhc98config</em> with any options set, the previous
+      settings will be cached and used for this install - but you can
+      override them now on the commandline if you wish.</dd>
+
+</dl>
+
+
+<p>
+The second and third group of options control the configuration process
+and are entirely orthogonal to each other.  The second group configures
+some general settings.
+
+<dl>
+
+<dt><b>-H</b><em>num</em></dt>
+<dt><b>--heap=</b><em>num</em></dt>
+  <dd>Set the default heapsize for programs compiled by <b>nhc98</b>.
+      (Users can still control heapsize from the commandline, this option
+      just configures the default.)  <em>num</em> may be expressed as a
+      simple integer, or with suffixes <em>K</em> or <em>M</em>, and may be
+      followed by units <em>B</em> (bytes) or <em>W</em> (words).  Suffixes
+      are case-insensitive, e.g. <tt>-H4mb</tt>.  The default setting is for
+      400Kb of heap.  You can use this option even when installing from
+      a binary package.</dd>
+
+<dt><b>[+/-]rts</b></dt>
+  <dd>When compiling programs with <b>nhc98</b>, options intended for
+      the runtime system of the compiler (such as compilation heapsize)
+      must be enclosed within +RTS -RTS delimiters.  However, depending
+      on how it is built, the underlying compiler proper,
+      <em>nhc98comp</em>, may use a different syntax for these options.
+      Hence, we configure the <b>nhc98</b> script to know which syntax
+      to use when calling <em>nhc98comp</em>.  The default configuration
+      is <tt>+rts</tt>, for <em>nhc98comp</em> built with itself or
+      with <em>ghc</em>.  The alternative <tt>-rts</tt> is for
+      <em>nhc98comp</em> built with <em>hbc</em> (this is usually
+      required for pre-built binary packages).</dd>
+
+<dt><b>--builddir=</b><em>dir</em></dt>
+  <dd>Use the given base directory for intermediate object files instead of
+      the default <tt>./targets</tt>.</dd>
+
+<dt><b>--installdir=</b><em>rootdir</em></dt>
+  <dd>Use the given directory as the installation root instead of the
+      default <tt>/usr/local</tt>.</dd>
+
+<dt><b>--bindir=</b><em>dir</em></dt>
+  <dd>Use the given directory for installing scripts instead of the
+      default directory, <tt>bin</tt> under the installation
+      root.</dd>
+
+<dt><b>--libdir=</b><em>dir</em></dt>
+  <dd>Use the given directory for installing executables and libraries
+      instead of the default directory, <tt>lib/nhc98</tt> under the
+      installation root.</dd>
+
+<dt><b>--incdir=</b><em>dir</em></dt>
+  <dd>Use the given directory for installing interface and include files
+      instead of the default directory, <tt>include/nhc98</tt> under the
+      installation root.</dd>
+
+<dt><b>--mandir=</b><em>dir</em></dt>
+  <dd>Use the given directory for installing manual pages
+      instead of the default directory, <tt>man/man1</tt> under the
+      installation root.</dd>
+
+<dt><b>--docdir=</b><em>dir</em></dt>
+  <dd>Use the given directory for installing the html documentation
+      instead of the default directory, <tt>/usr/doc/nhc98</tt>.</dd>
+
+</dl>
+
+
+<p>
+Finally, the third group of options allows you to select which
+components of the package you wish to install.  They can be useful when
+installing the same software for many architectures on a heterogeneous
+network, if you don't want to continually re-install shared components
+such as man pages.  As another example, you may want to update just the
+scripts from a new beta release, without re-installing the executables.
+
+<dl>
+<dt><b>[+/-]lib</b></dt>
+  <dd>Do (or don't) install the executables and library files (default is +).</dd>
+<dt><b>[+/-]inc</b></dt>
+  <dd>Do (or don't) install the include and interface files (default is +).</dd>
+<dt><b>[+/-]bin</b></dt>
+  <dd>Do (or don't) install the scripts (default is +).</dd>
+<dt><b>[+/-]man</b></dt>
+  <dd>Do (or don't) install the man pages (default is +).</dd>
+<dt><b>[+/-]docs</b></dt>
+  <dd>Do (or don't) install the html documents (default is -).</dd>
+</dl>
+
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+1999.09.16<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+
