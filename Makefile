@@ -20,6 +20,7 @@ PRELUDEA = \
 	src/prelude/BinArray/Makefile* src/prelude/BinArray/*.hs \
 	src/prelude/BinArray/*.gc src/prelude/BinArray/cLowUnboxedArray.[ch] \
 	src/prelude/CPUTime/Makefile* src/prelude/CPUTime/*.hs \
+	src/prelude/CPUTime/*.gc \
 	src/prelude/Char/Makefile* src/prelude/Char/*.hs \
 	src/prelude/Complex/Makefile* src/prelude/Complex/*.hs \
 	src/prelude/Debug/Makefile* src/prelude/Debug/*.hs \
