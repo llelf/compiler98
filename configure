@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.11 (CVS development version)"
-HMAKEVERSION="2.03 (2001-10-02)" export HMAKEVERSION
+HMAKEVERSION="3.00 (2002-01-08)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
@@ -51,7 +51,6 @@ esac
 #RTSFLAG=yes
 HEAP=100000
 BUILDWITH=
-GHCSYM=
 
 BUILDLIBDIR=$PWD/lib
 BUILDINCDIR=$PWD/include
@@ -102,8 +101,8 @@ do
     --incdir=*)  INCDIR=`echo "$1" | cut -c10-` ;;
     --mandir=*)  MANDIR=`echo "$1" | cut -c10-` ;;
     --docdir=*)  DOCDIR=`echo "$1" | cut -c10-` ;;
-    --hbcdir=*)  HBCDIR=`echo "$1" | cut -c10-` ;;
-    --ghcdir=*)  GHCDIR=`echo "$1" | cut -c10-` ;;
+#   --hbcdir=*)  HBCDIR=`echo "$1" | cut -c10-` ;;
+#   --ghcdir=*)  GHCDIR=`echo "$1" | cut -c10-` ;;
     --install)   INSTALL=yes ;;
     --config)    INSTALL=no ;;
     --help|-h)
@@ -177,26 +176,15 @@ case $OS in
   *)      LIBCOMPAT=  ;;
 esac
 
-# Configure hmake
+# Detect Haskell compilers and choose one for building with.
+# (Also generates a little script for configuring hmake later.)
 if [ -d src ]	# Delay this step if it is a binary (src-less) distribution.
 then
   echo "--------"
-  echo Configuring hmake... '[' $HMAKEVERSION ']'
-  if [ -f targets/$MACHINE/hmake.config ]
-  then
-    echo "  hmake has already been configured once.  (Remove file"
-    echo "    targets/$MACHINE/hmake.config"
-    echo "    and run `basename $0` again if you want to re-do that step.)"
-  # echo "  hbc/LML directory:    $HBCDIR"
-  # echo "  ghc directory:        $GHCDIR"
-  # echo
-  else
-    script/confhc $BUILDWITH
-  fi
+  script/confhc $BUILDWITH
   echo "--------"
 fi
 
-echo
 echo "                   Configuration report for nhc98."
 
 if [ "$INSTALL" = "no" ]
@@ -242,17 +230,20 @@ then
     echo
     echo "Now we check/create your build directories:"
     echo "Config directory:      targets/$MACHINE"
-    echo -n "Build directory root:  $BUILDDIR"
+    echo "Build directory root:"
+    echo -n "    $BUILDDIR"
     if [ ! -d $BUILDDIR ]
     then mkdir -p $BUILDDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "Object files build in: $BUILDDIR/$MACHINE"
+    echo "Object files build in:"
+    echo -n "    $BUILDDIR/$MACHINE"
     if [ ! -d $BUILDDIR/$MACHINE ]
     then mkdir -p $BUILDDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
+    echo "Executables and libs:"
+    echo -n "    $BUILDLIBDIR/$MACHINE"
     if [ ! -d $BUILDLIBDIR/$MACHINE ]
     then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
@@ -282,26 +273,20 @@ if [ -d src ]
 then
   if [ "$BUILDWITH" = "" ]
   then
-    BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
+    BUILDWITH=`cat targets/$MACHINE/buildwith`
     echo "I am guessing you will build nhc98 with:    $BUILDWITH"
   else
     echo "You are going to build nhc98 with:          $BUILDWITH"
   fi
-  GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   case $BUILDWITH in
     hbc|xtc)  RTSFLAG=no;;
     ghc|nhc*) RTSFLAG=yes;;
     gcc)      RTSFLAG=yes;;
   esac
   echo "nhc98comp uses RTS delimiters?              $RTSFLAG"
-# if [ "$RTSFLAG" = "yes" ]
-# then echo "  so nhc98comp uses RTS delimiters."
-# else echo "  so nhc98comp does not use RTS delimiters."
-# fi
   if [ "$BUILDOPTS" != "" ]
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
-  # echo $RTSMESSAGE
 
   echo -n "This machine's endian-ness is:              "
   if [ "$ENDIAN" = "" ]
@@ -412,17 +397,9 @@ else	# do the following only in binary distributions
     echo "ERROR: This nhc98 distribution apparently has no sources and no executables!"
     exit 1
   fi
-  # hmake config deferred from earlier because of BUILDWITH variable
-  echo Configuring hmake... '[' $HMAKEVERSION ']'
+  # compiler detection deferred from earlier because of BUILDWITH variable
   echo "--------"
-  if [ -f targets/$MACHINE/hmake.config ]
-  then
-    echo "  hmake has already been configured once.  (Remove file"
-    echo "    targets/$MACHINE/hmake.config"
-    echo "    and run `basename $0` again if you want to re-do that step.)"
-  else
-    script/confhc $BUILDWITH
-  fi
+  script/confhc $BUILDWITH
   echo "--------"
 fi
 
@@ -488,7 +465,8 @@ if [ "$INSTALL" = "no" ]
 then
   if [ -d src ]		# Don't overwrite config if doing binary distribution!
   then
-    echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
+    echo "Adding Makefile config script to"
+    echo "    $BUILDLIBDIR/$MACHINE..."
     ( echo "ENDIAN=$ENDIAN";
       echo "BUILDWITH=$BUILDWITH";
       echo "BUILDOPTS=\"$BUILDOPTS\"";
@@ -504,20 +482,11 @@ then
       echo "CURSES=\"$CURSES\"";
       echo "EXE=$EXE";
       echo "CC=$CCC";
-      echo "GHCSYM=$GHCSYM";
+      echo "GHCSYM=`cat targets/$MACHINE/ghcsym`";
     ) >$BUILDLIBDIR/$MACHINE/config
 
-    echo "Updating hmake config script in $BUILDLIBDIR/$MACHINE/hmake.config..."
-    if [ "$BUILDWITH" = "gcc" ]
-    then
-      sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
-      sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-      sed -e "s|^nhc98incdir=|nhc98incdir=$BUILDINCDIR \#|" >$BUILDLIBDIR/$MACHINE/hmake.config
-    else
-      sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$BUILDLIBDIR/$MACHINE/hmake.config
-    fi
-
-    echo "Adding build scripts to $BUILDBINDIR...    "
+    echo "Adding build scripts to"
+    echo "    $BUILDBINDIR...    "
     echo -n "    nhc98 "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
@@ -526,7 +495,12 @@ then
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
     echo -n "hmake "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
+    sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
+    echo -n "hmake-config "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
     echo -n "hi "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
@@ -538,6 +512,11 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trail.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail
+    echo -n "hat-trans "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trans
+    echo; echo -n "    "
     for hattool in $HATTOOLS
     do  echo -n $hattool" "
         rm -f $BUILDBINDIR/$hattool
@@ -546,8 +525,29 @@ then
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hat-trail
+    chmod +x $BUILDBINDIR/hmake-config $BUILDBINDIR/hat-trans
+
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
+    echo "Updating targets/$MACHINE/hmake3.config..."
+    echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
+	add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
+    echo -n "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc default " \
+					>>targets/$MACHINE/hmake3.config
+    case $BUILDWITH in
+      ghc|hbc) echo "$BUILDWITH" >>targets/$MACHINE/hmake3.config ;;
+      *)       echo "$BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config ;;
+    esac
+    echo "Updating src/hmake/Local.hs..."
+    echo "module Local where globalConfigFileDir=\"$HLIBDIR\"" >Local.hs
+    if [ -f src/hmake/Local.hs ]
+    then
+      if diff Local.hs src/hmake/Local.hs >/dev/null
+      then rm Local.hs
+      else mv Local.hs src/hmake/Local.hs
+      fi
+    else mv Local.hs src/hmake/Local.hs
+    fi
   fi
 
 else	# [ "$INSTALL" = "yes" ]
@@ -555,50 +555,6 @@ else	# [ "$INSTALL" = "yes" ]
   echo "Installation directories are now created/checked."
   echo "Install directory root is:"
   echo "    $DESTDIR$INSTALLDIR"
-
-  if [ "$LIB" = "yes" ]
-  then
-    echo "Executables and object lib files go into:"
-    echo -n "    $DESTDIR$LIBDIR/$MACHINE"
-    if [ ! -d $DESTDIR$LIBDIR/$MACHINE ]
-    then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
-    else echo ' (exists)'
-    fi
-    if [ $DESTDIR$LIBDIR != $DESTDIR$HLIBDIR ]
-    then
-      echo -n "    $DESTDIR$HLIBDIR/$MACHINE"
-      if [ ! -d $DESTDIR$HLIBDIR/$MACHINE ]
-      then mkdir -p $DESTDIR$HLIBDIR/$MACHINE;  echo ' (created)'
-      else echo ' (exists)'
-      fi
-    fi
-    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
-      ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
-    # for file in $BUILDLIBDIR/$MACHINE/*
-    # do
-    #   if [ -f $file ]
-    #   then echo "	`basename $file`"
-    #        cp -p $file $DESTDIR$LIBDIR/$MACHINE
-    #   fi
-    # done
-    if [ $DESTDIR$HLIBDIR != $DESTDIR$LIBDIR ]
-    then ( cd $DESTDIR$LIBDIR/$MACHINE;
-           mv MkProg$EXE Older$EXE HInteractive$EXE $DESTDIR$HLIBDIR/$MACHINE )
-    fi
-    echo "	hmake.config"
-    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
-    sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
-    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
-    cp $DESTDIR$HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR/$MACHINE	# patch local config also
-    echo "	hat-trail.jar"
-    cp $BUILDLIBDIR/hat-trail.jar $DESTDIR$LIBDIR
-    echo "	hood.jar"
-    cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
-    echo
-  else
-    echo 'Not (re-)installing executables and library files'
-  fi
 
   if [ "$INC" = "yes" ]
   then
@@ -638,12 +594,12 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/nhc98
     echo "	hmake"
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
+    sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
-    echo "	hmake.config"
-    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
-    sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
-    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
+    echo "	hmake-config"
+    sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo "	hi"
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
@@ -663,6 +619,10 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail
+    echo "	hat-trans"
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trans
     for hattool in $HATTOOLS
     do  echo "	"$hattool
         rm -f $DESTDIR$BINDIR/$hattool;
@@ -672,9 +632,53 @@ else	# [ "$INSTALL" = "yes" ]
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
+    chmod +x $DESTDIR$BINDIR/hmake-config $DESTDIR$BINDIR/hat-trans
     chmod +x $DESTDIR$BINDIR/hat-trail $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
+  fi
+
+  if [ "$LIB" = "yes" ]
+  then
+    echo "Executables and object lib files go into:"
+    echo -n "    $DESTDIR$LIBDIR/$MACHINE"
+    if [ ! -d $DESTDIR$LIBDIR/$MACHINE ]
+    then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    if [ $DESTDIR$LIBDIR != $DESTDIR$HLIBDIR ]
+    then
+      echo -n "    $DESTDIR$HLIBDIR/$MACHINE"
+      if [ ! -d $DESTDIR$HLIBDIR/$MACHINE ]
+      then mkdir -p $DESTDIR$HLIBDIR/$MACHINE;  echo ' (created)'
+      else echo ' (exists)'
+      fi
+    fi
+    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
+      ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
+    if [ $DESTDIR$HLIBDIR != $DESTDIR$LIBDIR ]
+    then ( cd $DESTDIR$LIBDIR/$MACHINE;
+           mv MkProg$EXE Older$EXE hmakerc  $DESTDIR$HLIBDIR/$MACHINE;
+           mv HInteractive$EXE MkConfig$EXE $DESTDIR$HLIBDIR/$MACHINE )
+    fi
+    # can only change hmake's config if new compiler is in its final location
+    if [ -z "$DESTDIR" ]
+    then
+      echo "	Adjusting... hmakerc"
+      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc add $BINDIR/nhc98
+      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc default $BINDIR/nhc98
+      if [ -d src ]	# remove temporary build version of nhc98 from config
+      then $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc \
+						delete $BUILDBINDIR/nhc98
+      fi
+    fi
+    echo "	hat-trail.jar"
+    cp $BUILDLIBDIR/hat-trail.jar $DESTDIR$LIBDIR
+    echo "	hood.jar"
+    cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
+    echo
+  else
+    echo 'Not (re-)installing executables and library files'
   fi
 
   if [ "$MAN" = "yes" ]
@@ -717,8 +721,8 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   if [ "$MANDIR" != "$INSTALLDIR/man/man1" ]; then echo "MANDIR=$MANDIR" ; fi;
   if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
   echo "DOCDIR=$DOCDIR" ;
-  if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
-  if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
+# if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
+# if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
   echo "BUILDWITH=$BUILDWITH" ;
   echo "BUILDOPTS=\"$BUILDOPTS\"" ;
   echo "BUILDDIR=$BUILDDIR" ;

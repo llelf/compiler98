@@ -13,7 +13,7 @@ VERSION = 1.11
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HVERSION = 2.03
+HVERSION = 3.00
 # HVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
@@ -21,38 +21,37 @@ HVERSION = 2.03
 ### End of configurable variables
 
 ifeq "" "${MKDIR}"
-#MKDIR:=$(PWD)
-MKDIR:=$(shell pwd)
+MKDIR:=$(PWD)
+#MKDIR:=$(shell pwd)
 endif
 
 TOPDIR= $(MKDIR)
 LOCAL = $(TOPDIR)/script/
 export LOCAL
 
-ifeq "" "${BUILDBASEDIR}"
-BUILDBASEDIR:=/tmp
-endif
-
 MACHINE := $(shell $(LOCAL)harch)
 export MACHINE
-HC = $(LOCAL)nhc98
-export HC
 
 OBJ=obj${CFG}
 SCRIPTDIR=${LOCAL}
-BUILDDIR=${BUILDBASEDIR}/${MACHINE}
 INCDIR=${TOPDIR}/include
 SRCDIR=${TOPDIR}/src
-#TRACEDIR=${SRCDIR}/tracer
-#RUNTIMEDIR=${SRCDIR}/runtime
-#PRELUDEDIR=${SRCDIR}/prelude
 LIBDIR=${TOPDIR}/lib
 DST=${LIBDIR}/${MACHINE}
 
 ### This is a very important step: get the local configuration
 include ${DST}/config
-
 ###
+
+ifeq "" "${BUILDBASEDIR}"
+BUILDBASEDIR:=/tmp
+endif
+BUILDDIR=${BUILDBASEDIR}/${MACHINE}
+
+HC = $(LOCAL)nhc98
+export HC
+HMAKE = $(LOCAL)hmake -f ${DST}/hmakerc
+export HMAKE
 
 BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
 CPP = $(CC) -E -x c

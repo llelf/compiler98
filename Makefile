@@ -23,6 +23,7 @@ PRELUDEA = \
 	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
+	src/prelude/Hat/Makefile* src/prelude/Hat/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
 	src/prelude/Ix/Makefile* src/prelude/Ix/*.hs
@@ -61,6 +62,7 @@ PRELUDEC = \
 	src/prelude/Directory/*.hc     src/prelude/Directory/*.c \
 	src/prelude/GreenCard/*.hc     src/prelude/GreenCard/*.c \
 	src/prelude/Haskell/*.hc       src/prelude/Haskell/*.c \
+	src/prelude/Hat/*.hc           src/prelude/Hat/*.c \
 	src/prelude/IO/*.hc            src/prelude/IO/*.c \
 	src/prelude/IOExtras/*.hc      src/prelude/IOExtras/*.c \
 	src/prelude/Ix/*.hc            src/prelude/Ix/*.c \
@@ -91,11 +93,11 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-         script/hmakeconfig.inst script/hi.inst script/hat-trail.inst \
+	 script/hmake-config.inst script/hi.inst script/hat-trail.inst \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
 	 script/echo.c script/hood.inst script/tprofprel \
-	 lib/hat-trail.jar lib/hood.jar \
+	 lib/hat-trail.jar lib/hood.jar script/hat-trans.inst \
 	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
 	 hmake.spec nhc98.spec
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
@@ -131,7 +133,7 @@ HATUI	= src/tracer/hat/Makefile* src/tracer/hat/*.[ch] \
 	  src/tracer/hat/*.hs src/tracer/hat/*.gc
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/*.gc
+INCLUDE = include/*.hi include/*.h include/*.gc include/*.hx
 DOC = docs/*
 MAN = man/*.1
 HATTOOLS= lib/$(MACHINE)/hat-stack lib/$(MACHINE)/hat-connect \
@@ -183,7 +185,7 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer lib/hood.jar
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer hoodui
 
 heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
 timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
@@ -247,16 +249,16 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=nhc98 install
-	cd src/interpreter;    $(MAKE) HC=nhc98 install
+	cd src/hmake;          $(MAKE) HC=nhc98 install config
+	#cd src/interpreter;    $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=hbc install
-	cd src/interpreter;    $(MAKE) HC=hbc install
+	cd src/hmake;          $(MAKE) HC=hbc install config
+	#cd src/interpreter;    $(MAKE) HC=hbc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=ghc install
-	cd src/interpreter;    $(MAKE) HC=ghc install
+	cd src/hmake;          $(MAKE) HC=ghc install config
+	#cd src/interpreter;    $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 
@@ -351,8 +353,8 @@ $(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.hc
 	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.hc
 	touch $(TARGDIR)/$(MACHINE)/pragma-$(CC)
 $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
-	cd src/hmake;          $(MAKE) fromC
-	cd src/interpreter;    $(MAKE) fromC
+	cd src/hmake;          $(MAKE) fromC config
+	#cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
 
 
@@ -385,7 +387,6 @@ srcDist: $(TARGDIR)/tracepreludeC $(TARGDIR)/timepreludeC \
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
 	tar rf nhc98src-$(VERSION).tar $(COMPILERC)
-	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
 	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
 	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
@@ -402,6 +403,7 @@ srcDist: $(TARGDIR)/tracepreludeC $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(MAN)
 	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
 	tar rf nhc98src-$(VERSION).tar $(DOC)
+	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
 	mkdir nhc98-$(VERSION)
 	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
 	tar cf nhc98src-$(VERSION).tar nhc98-$(VERSION)
@@ -433,7 +435,7 @@ $(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
 	touch $(TARGDIR)/pragmaC
 $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
-	cd src/interpreter;  $(MAKE) cfiles
+	#cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 
 
@@ -444,7 +446,7 @@ HBASIC  = src/hmake/README src/hmake/INSTALL
 HMFILE  = src/hmake/Makefile.toplevel
 HAUX1   = Makefile.inc COPYRIGHT
 HAUX2   = src/Makefile*
-HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
+HSCRIPT = script/hmake.inst script/hmake-config.inst \
 	  script/harch script/hi.inst script/confhc \
 	  script/echo.c script/fixghc
 HMAN    = man/hmake.1 docs/hmake
@@ -518,7 +520,7 @@ realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
 	cd src/compiler98; $(MAKE) realclean
 	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
-	cd $(TARGDIR)/$(MACHINE);  rm -f hmake.config config.cache
+	cd $(TARGDIR)/$(MACHINE);  rm -f hmakerc hmake3.config config.cache
 	rm -rf src/prelude/$(MACHINE)
 	rm -rf $(LIBDIR)/$(MACHINE)
 	rm -f  script/hmake-PRAGMA.o script/hmake-PRAGMA.hi
