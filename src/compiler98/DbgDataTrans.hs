@@ -313,6 +313,10 @@ dExp e = unitS e
 
 
 dRemoveDo :: a -> [Stmt Id] -> DbgDataTransMonad (Exp Id)
+{-
+This is basically a copy of Remove1_3.removeDo.
+It is just in a different monad. 
+-}
 
 dRemoveDo p [StmtExp exp] = dExp exp
 dRemoveDo p (StmtExp exp:r) =
@@ -344,12 +348,15 @@ dRemoveDo p (StmtBind pat exp:r) =
       lookupId Con tTrue >>>= \ true ->
       newVar pos >>>= \ x ->
       let eTrue = ExpCon pos true
+          eFail = ExpApplication pos [ExpVar pos zero
+                                     ,ExpLit pos (LitString Boxed 
+                                     "pattern-match failure in do expression")]
       in unitS (ExpApplication pos 
                   [ExpVar pos gtgteq
 		  ,exp'
 		  ,ExpLambda pos [x] (ExpCase pos x 
                     [Alt pat (Unguarded exp2) (DeclsParse [])
-		    ,Alt (PatWildcard pos) (Unguarded (ExpVar pos zero)) 
+		    ,Alt (PatWildcard pos) (Unguarded eFail) 
                        (DeclsParse [])
 		    ])
                   ])
