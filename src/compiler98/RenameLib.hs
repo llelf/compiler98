@@ -1,5 +1,4 @@
 {- ---------------------------------------------------------------------------
-
 -}
 module RenameLib(module RenameLib
 	,AssocTree(..)
@@ -48,25 +47,19 @@ data RenameState =
 --- in PreImp and used here and in Fixity
 
 {- Used several times: -}
-
 type RenameToken = (PackedString -> Int -> TokenId -> TokenId
                    ,TokenId -> TokenId
                    ,TokenId -> IdKind -> IE
                    ,TokenId -> (InfixClass TokenId,Int)
                    ) 
-
 type RenameToken2 = (PackedString -> Int -> TokenId -> TokenId
                    ,TokenId -> TokenId
                    ,TokenId -> IdKind -> IE
                    ) 
-
-type RenameMonad a = State RenameToken RenameState a RenameState
-
-type RenameRMonad a b = State a RenameState b RenameState
-
-type RenameMonadEmpty = State0 RenameToken RenameState RenameState
-
-type RenameRMonadEmpty a = State0 a RenameState RenameState
+type RenameMonad  a      = State  RenameToken RenameState a RenameState
+type RenameRMonad a b    = State  a           RenameState b RenameState
+type RenameMonadEmpty    = State0 RenameToken RenameState RenameState
+type RenameRMonadEmpty a = State0 a           RenameState RenameState
 
 {-
 Destruct rename state to obtain all its elements we are interested in.
@@ -81,8 +74,8 @@ keepRS :: RenameState
           ,Maybe [Int]          -- user defined defaults for Num classes
           ,[String])            -- errors
 
-keepRS (RenameState flags unique rps rts rt st derived defaults errors 
-  needCheck) =
+keepRS (RenameState flags unique rps rts rt st derived
+                    defaults errors needCheck) =
   case checkTypes st needCheck of
     Right st ->
       (unique,getInts (lookupAll (rt:rts)),rps,st,derived,defaults,errors)
@@ -257,9 +250,15 @@ is2rs flags mrps qualFun expFun overlap
   (ImportState visible unique orps rps needI irt st insts fixity errors) =
 --case treeMapList undef irt of
 --  [] ->
---    case foldls reorderFun (treeMap ( \ (k,Right (v:_)) -> (k,v)) irt,addAT initAT ignore unique minfo) (listAT st) of
+--    case foldls reorderFun (treeMap ( \ (k,Right (v:_)) -> (k,v)) irt
+--                           ,addAT initAT ignore unique minfo)
+--                           (listAT st) of
 --      (rt,ts) ->
---          Right (qualFun,expFun True True,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] Nothing errors [],irt)
+--          Right (qualFun
+--                ,expFun True True
+--                ,RenameState flags (unique+1) (unique,pmrps) [] rt ts []
+--                   Nothing errors []
+--                ,irt)
 --  xs -> Left (map err1 xs)
   case deAlias qualFun overlap irt of
     ([],qf) ->
@@ -273,7 +272,7 @@ is2rs flags mrps qualFun expFun overlap
                      Nothing errors []
                   ,irt)
     (xs,_) -> Left xs
-  where
+ where
   deRight (k,Right (v:_)) = (k,v)
   deRight (k,Left _)      = (k,error ("Tripped over aliased identifier"))
   pmrps = if (isPrelude . reverse . unpackPS) mrps then rpsPrelude else mrps
@@ -298,9 +297,15 @@ is2rs flags mrps qualFun expFun overlap
 --	else
 --	  Right (key,x:xs) : err
 --
---  err1 (Left ((tid,Method),poss)) = "The identifier " ++ show tid ++ " instantiated at " ++ mix "," (map strPos poss) ++ " does not belong to this class."
---  err1 (Left ((tid,kind),poss)) = show kind ++ ' ':show tid ++ " used at " ++ mix "," (map strPos poss) ++ " is not defined."
---  err1 (Right ((tid,kind),xs)) = show kind ++ ' ':show tid ++ " defined " ++ show (length xs) ++ " times."
+--  err1 (Left ((tid,Method),poss)) =
+--      "The identifier " ++ show tid ++ " instantiated at " ++
+--       mix "," (map strPos poss) ++ " does not belong to this class."
+--  err1 (Left ((tid,kind),poss)) =
+--      show kind ++ ' ':show tid ++ " used at " ++
+--      mix "," (map strPos poss) ++ " is not defined."
+--  err1 (Right ((tid,kind),xs)) =
+--      show kind ++ ' ':show tid ++
+--      " defined " ++ show (length xs) ++ " times."
 
 
 --fixFixityRS ::
@@ -308,9 +313,12 @@ is2rs flags mrps qualFun expFun overlap
 --    [(InfixClass TokenId, Int, [FixId TokenId])] ->
 --    (TokenId -> (InfixClass TokenId, Int), RenameState)
 --
---fixFixityRS (RenameState flags unique  irps@(_,rps) rts rt st derived defaults errors needCheck) fixdecls =
+--fixFixityRS (RenameState flags unique irps@(_,rps) rts rt st
+--        derived defaults errors needCheck) fixdecls =
 -- case foldr (fixOne rps) (initAT,[]) fixdecls of
---  (fixAT,err) -> (fixFun fixAT,RenameState flags unique  irps rts rt st derived defaults (err++errors) needCheck)
+--  (fixAT,err) -> (fixFun fixAT
+--                 ,RenameState flags unique irps rts rt st
+--                      derived defaults (err++errors) needCheck)
 
 -- Changed in H98 to:
 fixFixityRS ::
@@ -320,50 +328,49 @@ fixFixityRS ::
     (TokenId -> (InfixClass TokenId, Int), RenameState)
 
 fixFixityRS oldfix rs [] = (oldfix,rs)
-fixFixityRS oldfix (RenameState flags unique  irps@(_,rps) rts rt st derived defaults errors needCheck) fixdecls =
+fixFixityRS oldfix (RenameState flags unique irps@(_,rps) rts rt st
+        derived defaults errors needCheck) fixdecls =
  case foldr (fixOne rps) (initAT,[]) fixdecls of
-  (fixAT,err) -> (fixFun fixAT oldfix,RenameState flags unique  irps rts rt st derived defaults (err++errors) needCheck)
+  (fixAT,err) -> (fixFun fixAT oldfix
+                 ,RenameState flags unique irps rts rt st
+                      derived defaults (err++errors) needCheck)
 
 --------------------  End duplication
 
 
 getSymbolTableRS :: RenameState -> Tree (Id,Info)
-
-getSymbolTableRS 
-  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+getSymbolTableRS (RenameState flags unique rps rts rt st
+                              derived defaults errors needCheck) =
   st
 
 
 getErrorsRS :: RenameState -> (RenameState,[String])
-
-getErrorsRS 
-  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
-  (RenameState flags unique rps rts rt st derived defaults [] needCheck,errors)
+getErrorsRS (RenameState flags unique rps rts rt st
+                         derived defaults errors needCheck) =
+  (RenameState flags unique rps rts rt st derived defaults [] needCheck
+  ,errors)
 
 
 pushScope :: a -> RenameState -> RenameState
-
-pushScope _ 
-  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
-  RenameState flags unique rps (rt:rts) initAT st derived defaults errors 
-    needCheck
+pushScope _ (RenameState flags unique rps rts rt st
+                         derived defaults errors needCheck) =
+  RenameState flags unique rps (rt:rts) initAT st derived
+              defaults errors needCheck
 
 
 popScope :: a -> (b,RenameState) -> (b,RenameState)
-
-popScope _ 
-  (res,RenameState flags unique rps (rt:rts) _ st derived defaults errors 
-         needCheck) =
+popScope _ (res, RenameState flags unique rps (rt:rts) _ st
+                             derived defaults errors needCheck) =
   (res
   ,RenameState flags unique rps rts rt st derived defaults errors needCheck)
 
 
 renameError :: String -> a -> RenameMonad a
-
-renameError err r fix 
-  (RenameState flags unique rps rst rt st derived defaults errors needCheck) =
-  (r,RenameState flags unique rps rst rt st derived defaults (err:errors) 
-       needCheck)
+renameError err r fix (RenameState flags unique rps rst rt st
+                                   derived defaults errors needCheck) =
+  (r
+  ,RenameState flags unique rps rst rt st derived
+               defaults (err:errors) needCheck)
 
 
 {-
@@ -371,7 +378,6 @@ Looks up identifier (given as token,kind) in list of trees.
 Returns first entry found.
 -}
 lookupAll :: [AssocTree (TokenId,IdKind) Id] -> (TokenId,IdKind) -> Maybe Id
-
 lookupAll [] key = Nothing
 lookupAll (t:ts) key =
   case lookupAT t key of
@@ -385,10 +391,9 @@ If no entry exists, new id is created but appropriate error message added to
 rename state.
 -}
 uniqueTid :: Pos -> IdKind -> TokenId -> RenameMonad Id
-
 uniqueTid pos kind tid down 
-  renameState@(RenameState flags unique rps rts rt st derived defaults 
-    errors needCheck) =
+          renameState@(RenameState flags unique rps rts rt st derived defaults 
+                                   errors needCheck) =
   let key =  (sQual down tid,kind)
   in case lookupAll (rt:rts) key of 
        Just u -> (u,renameState)
@@ -402,10 +407,9 @@ uniqueTid pos kind tid down
 
 
 fixTid :: IdKind -> TokenId -> RenameMonad (InfixClass TokenId,Id)
-
 fixTid kind tid down 
-  renameState@(RenameState flags unique rps rts rt st derived defaults 
-    errors needCheck) =
+       renameState@(RenameState flags unique rps rts rt st derived defaults 
+                                errors needCheck) =
   let key =  (sQual down tid,kind)  --- !!! check if real name !!!
   in case lookupAll (rt:rts) key of
        Just u ->
@@ -427,10 +431,9 @@ Adds error to renameState, if identifier is already an active name,
 that is, redefinition occurred.
 -}
 bindTid :: Pos -> IdKind -> TokenId -> a -> RenameState -> RenameState
-
 bindTid pos kind tid _ 
-  renameState@(RenameState flags unique irps@(_,rps) rts rt st derived 
-               defaults errors needCheck) =
+        renameState@(RenameState flags unique irps@(_,rps) rts rt st derived 
+                                 defaults errors needCheck) =
   let key =  (tid,kind)
       redefinedGlobal [rt] = lookupAT rt (forceM rps tid,kind)
       redefinedGlobal _ = Nothing
@@ -448,56 +451,62 @@ bindTid pos kind tid _
 	   Nothing ->
 	     (RenameState flags (unique+1) irps rts
 			  (addAT rt sndOf key unique)
-			  st derived defaults
-			  errors
-			  needCheck)
+			  st derived defaults errors needCheck)
 	   Just u -> 
              (if sRedefine flags 
                 then id 
                 else
-		  strace ("Warning " ++ show tid 
+		  strace ("Warning: " ++ show tid 
                           ++ " is both imported and defined")) $
-		 (RenameState flags unique irps rts
-			      (addAT rt sndOf key u) 
-                              -- ^ This catches redefinition within same scope
-			      (updateAT st u clearI) derived defaults
-			      errors
-			      needCheck)
+ 		  (RenameState flags unique irps rts
+			       (addAT rt sndOf key u) -- catch same scope redef
+			       (updateAT st u clearI) derived defaults
+			       errors needCheck)
 
 
 bindNK :: Pos -> RenameMonad TokenId
-
-bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
+bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st
+                                      derived defaults errors needCheck) =
   let tid = visible (show unique)
       key = (tid,Var)
   in if sNplusK flags then
        case lookupAll (rt:rts) key of
-         Nothing-> (tid, RenameState flags (unique+1) irps rts
-					(addAT rt sndOf key unique)
-                                        st
-					-- (addAT st (\a b->b) unique (InfoUsed unique [(Var,tid,rps,pos)]))
-					-- (addAT st (\a b->b) unique (InfoName unique tid 0 tid))
-					-- (addAT st (\a b->b) unique (InfoVar unique tid (InfixDef,9) IEall (NewType [] [] [] [NTany 0]) (Just 0)))
-                                        derived defaults
-                                        errors
-					needCheck)
-         Just u -> (tid, RenameState flags (unique+1) irps rts
-					(addAT rt sndOf key unique)
-					st derived defaults
-                                        (("Binding (n+k) pattern to new unique identifier at "++strPos pos): errors)
-					needCheck)
-     else (tid, RenameState flags (unique+1) irps rts
-					(addAT rt sndOf key unique)
-					st derived defaults
-                                        (("(n+k) patterns are disabled - pattern at "++strPos pos): errors)
-					needCheck)
+         Nothing-> (tid
+                   ,RenameState flags (unique+1) irps rts
+				(addAT rt sndOf key unique)
+                                st
+				-- (addAT st (\a b->b) unique
+				--     (InfoUsed unique [(Var,tid,rps,pos)]))
+				-- (addAT st (\a b->b) unique
+				--     (InfoName unique tid 0 tid))
+				-- (addAT st (\a b->b) unique
+				--     (InfoVar unique tid (InfixDef,9) IEall
+				--              (NewType [] [] [] [NTany 0])
+				--              (Just 0)))
+                                derived defaults errors needCheck)
+         Just u -> (tid
+                   ,RenameState flags (unique+1) irps rts
+				(addAT rt sndOf key unique)
+				st derived defaults
+                                (("Binding (n+k) pattern to new unique "++
+                                  "identifier at "++strPos pos): errors)
+				needCheck)
+     else (tid
+          ,RenameState flags (unique+1) irps rts
+		       (addAT rt sndOf key unique)
+		       st derived defaults
+                       (("(n+k) patterns are disabled - pattern at "++
+                         strPos pos): errors)
+		       needCheck)
 
-checkPuns pos down renameState@(RenameState flags unique irps rts rt st derived defaults errors needCheck) =
+checkPuns pos down renameState@(RenameState flags unique irps rts rt st
+                                   derived defaults errors needCheck) =
   if sPuns flags then
     renameState
   else
     RenameState flags unique irps rts rt st derived defaults
-                (("Named field puns are not Haskell'98 - used at "++strPos pos):errors)
+                (("Named field puns are not Haskell'98 - used at "++
+                  strPos pos):errors)
                 needCheck
 
 
@@ -506,10 +515,8 @@ Checks if given identifier (kind, token) is already known as active name.
 It is used to check if a field have already been included in the bindings
 -}
 checkTid :: Pos -> IdKind -> TokenId -> RenameRMonad a Bool
-
-checkTid pos kind tid _ 
-  renameState@(RenameState flags unique rps rts rt st derived defaults 
-               errors needCheck) =
+checkTid pos kind tid _ renameState@(RenameState flags unique rps rts rt st
+                                        derived defaults errors needCheck) =
   let key =  (tid,kind)
   in  case lookupAT rt key of 
         Just u -> (True,renameState)
@@ -560,22 +567,20 @@ Adds list of default types to RenameState.
 Checks for illegal types and redefinition, 
 extending error messages appropriately.
 -}
-
 defineDefault :: [Type Id] -> a -> RenameState -> RenameState
-
-defineDefault types down  
-  (RenameState flags unique rps rts rt st derived Nothing errors needCheck) =
-    case partition ( \ nt -> case nt of TypeCons _ _ [] -> True; _ -> False) 
-           types of
+defineDefault types down (RenameState flags unique rps rts rt st
+                                      derived Nothing errors needCheck) =
+    case partition (\nt-> case nt of TypeCons _ _ [] -> True; _ -> False) 
+                   types of
       (cs,[]) -> 
         RenameState flags unique rps rts rt st derived 
-          (Just (map ( \ (TypeCons _ con _) -> con) types)) errors needCheck
+          (Just (map (\(TypeCons _ con _)-> con) types)) errors needCheck
       (_,es) ->  
         RenameState flags unique rps rts rt st derived Nothing
 	  (("Illegal type in default at " ++ strPos (getPos es)):errors) 
-          needCheck     
-defineDefault types down  
-  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+          needCheck
+defineDefault types down (RenameState flags unique rps rts rt st
+                                      derived defaults errors needCheck) =
     RenameState flags unique rps rts rt st derived defaults 
       (("Redefinition of defaults at " ++ strPos (getPos types)) :errors) 
       needCheck
@@ -583,22 +588,20 @@ defineDefault types down
 {-
 Add a type synonym to symboltable. (It must be already in renaming table.)
 -}
-
 defineType :: TokenId      {- type synonym -}
            -> NewType      {- the type it is defined to denote -}
            -> RenameMonad Id  -- id of the type synonym
 
-defineType tid nt down 
-  (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
-  errors needCheck) =
+defineType tid nt down (RenameState flags unique irps@(_,rps) rts rt st
+                                    derived defaults errors needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TSyn)
   in case lookupAT rt key of
        Just u -> (u, RenameState flags unique irps rts rt
-		     (addAT st combInfo u {-(realtid,TSyn)-} 
-                        (InfoData u realtid (sExp down tid TSyn) nt 
-                           (DataTypeSynonym False 0)))
-		     derived defaults errors (u:needCheck))
+		         (addAT st combInfo u {-(realtid,TSyn)-} 
+                            (InfoData u realtid (sExp down tid TSyn) nt 
+                               (DataTypeSynonym False 0)))
+		         derived defaults errors (u:needCheck))
 
 
 {- 
@@ -606,7 +609,6 @@ Add a class to symboltable.
 (It must be already in renaming table.)
 Also checks for duplicate predicates in context (=> extend error messages)
 -}
-
 defineClass :: Pos
             -> TokenId 
             -> NewType  {- pseudo type built from class and type variable
@@ -616,9 +618,9 @@ defineClass :: Pos
             -> RenameState 
             -> RenameState
 
-defineClass pos tid nt mds down 
-  (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
-     needCheck) =
+defineClass pos tid nt mds down (RenameState flags unique irps@(_,rps)
+                                             rts rt st derived defaults errors 
+                                             needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TClass)
       (ms,ds) = unzip mds
@@ -636,10 +638,9 @@ defineClass pos tid nt mds down
 
 
 defineDataPrim :: TokenId -> NewType -> Int -> RenameMonad Id 
-
-defineDataPrim tid nt size down 
-  (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
-     needCheck) =
+defineDataPrim tid nt size down (RenameState flags unique irps@(_,rps)
+                                             rts rt st derived defaults errors 
+                                             needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TCon)
   in case lookupAT rt key of
@@ -660,9 +661,8 @@ defineData :: Maybe Bool {- Nothing: newtype, Just False: data unboxed,
            -> [Id]       {- data constructors -} 
            -> RenameMonad Id
 
-defineData d tid nt cs down 
-  (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
-     needCheck)  =
+defineData d tid nt cs down (RenameState flags unique irps@(_,rps) rts rt st
+                                     derived defaults errors needCheck)  =
   let realtid = ensureM rps tid
       key = (tid,TCon)
   in case lookupAT rt key of
@@ -689,9 +689,9 @@ defineMethod :: Pos {- position of type declaration -}
              -> Id {- class to which method belongs -} 
              -> RenameMonad Id
 
-defineMethod  pos tid nt arity classId down 
-  (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
-     errors needCheck) =
+defineMethod  pos tid nt arity classId down
+             (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
+                          errors needCheck) =
   let realtid = ensureM rps tid
       key = (tid,Method)
   in case lookupAT rt key of
@@ -718,16 +718,22 @@ defineMethod  pos tid nt arity classId down
 
 
 
-defineConstr  tid nt fields bt  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
+defineConstr tid nt fields bt down (RenameState flags unique irps@(_,rps)
+                                                rts rt st derived defaults
+                                                errors needCheck) = 
   let realtid = ensureM rps tid
       key = (tid,Con)
   in case lookupAT rt key of
        Just u -> (u,RenameState flags unique irps rts rt
-			 (addAT st combInfo u {-(realtid,Con)-} (InfoConstr  u realtid  (sFix down realtid) nt fields bt))
+			 (addAT st combInfo u {-(realtid,Con)-}
+                             (InfoConstr  u realtid
+                                (sFix down realtid) nt fields bt))
 			 derived defaults errors needCheck)
 
 defineField typtid bt c ((Nothing,_),_) down up = (Nothing,up)
-defineField typtid bt c ((Just (p,tid,_),_),i) down up@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
+defineField typtid bt c ((Just (p,tid,_),_),i) down
+                        up@(RenameState flags unique irps@(_,rps) rts rt st
+                                    derived defaults errors needCheck) = 
   let realtid = ensureM rps tid
       key = (tid,Field)
   in
@@ -737,10 +743,15 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down up@(RenameState flags unique
 	  Just (InfoField u' realtid' cis' bt' iSel') ->
 	    if bt == bt'
 	    then (Nothing,RenameState flags unique irps rts rt
-			 (addAT st fstOf u' {-(realtid,Field)-} (InfoField u' realtid' ((c,i):cis') bt' iSel'))
-			 derived defaults errors needCheck)
+			     (addAT st fstOf u' {-(realtid,Field)-}
+                                 (InfoField u' realtid'
+                                     ((c,i):cis') bt' iSel'))
+			     derived defaults errors needCheck)
 	    else (Nothing,RenameState flags unique irps rts rt st
-			 derived defaults (("Field " ++ show tid ++ " at " ++ strPos p ++ " is already defined"):errors) needCheck)
+			      derived defaults
+                              (("Field " ++ show tid ++ " at " ++ strPos p ++
+                                " is already defined"):errors)
+                              needCheck)
 	  Just u -> (Nothing,up)
 	  Nothing ->
 	    case lookupAT rt (tid,Var) of
@@ -749,69 +760,83 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down up@(RenameState flags unique
 		  Just u ->
 		      (Just (p,u,selu)
 		      ,RenameState flags unique irps rts rt
-			  	   (addAT (addAT st combInfo u {-(realtid,Field)-} (InfoField u realtid [(c,i)] bt selu))
-				    combInfo selu (InfoVar selu realtid (sFix down realtid) (case sExp down typtid TCon of
-												IEall -> IEsel
-												e -> IEnone) NoType (Just 1)))
+			  	   (addAT (addAT st combInfo u
+                                            {-(realtid,Field)-}
+                                            (InfoField u realtid
+                                                [(c,i)] bt selu))
+				          combInfo selu
+                                          (InfoVar selu realtid
+                                            (sFix down realtid)
+                                               (case sExp down typtid TCon of
+						 IEall -> IEsel
+						 e -> IEnone) NoType (Just 1)))
 				   derived defaults errors needCheck)
 
 
 {- creates token for instance methods for tuple type? -} 
 localTid :: PackedString -> Int -> TokenId -> TokenId
-
 localTid rps u tid = mkQual3 (Visible rps) (t_Tuple u) tid
 
 
 {- if token is not qualified make it qualified with given module name -}
 globalTid :: PackedString -> Id -> TokenId -> TokenId
-
 globalTid rps u tid = ensureM rps tid
 
 
 defineVar :: TokenId -> RenameMonad Id
-
-defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
+defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st
+                                 derived defaults errors needCheck) = 
   let key = (tid,Var)
   in case lookupAT rt key of
        Just u ->
 	 let realtid = sLG down rps u tid
 	 in  (u,RenameState flags unique irps rts rt
 			(addAT st combInfo u {-(realtid,Var)-}
-				 (InfoVar u realtid  (sFix down (ensureM rps tid)) (sExp down tid Var) NoType Nothing))
-				 derived defaults errors needCheck)
+			    (InfoVar u realtid
+                                (sFix down (ensureM rps tid))
+                                (sExp down tid Var) NoType Nothing))
+			derived defaults errors needCheck)
 
 
 defineDefaultMethod :: TokenId -> RenameMonad Id
-
-defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
+defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps)
+                                           rts rt st derived defaults
+                                           errors needCheck) = 
   let realtid = mkQualD rps tid
       skey = (tid,Method)
   in case lookupAT rt skey of
-	Nothing -> error ("***defineDefaultMethod(1) " ++ show skey ++ "\n" ++ show rt)
+	Nothing -> error ("***defineDefaultMethod(1) " ++
+                           show skey ++ "\n" ++ show rt)
         Just u ->
          case lookupAT st u of 
-	   Nothing -> error ("***defineDefaultMethod(1) " ++ show skey ++ " " ++ show u ++ "\n" ++ show rt)
+	   Nothing -> error ("***defineDefaultMethod(1) " ++
+                              show skey ++ " " ++ show u ++ "\n" ++ show rt)
            Just (InfoMethod _ _ fix nt annot iClass) ->
 	     (unique,RenameState flags (unique+1) irps rts rt
-			 (addAT st combInfo  unique {-(realtid,MethodDefault)-} (InfoDMethod unique realtid nt annot iClass))
+			 (addAT st combInfo  unique
+                                {-(realtid,MethodDefault)-}
+                                (InfoDMethod unique realtid nt annot iClass))
 			 derived defaults errors needCheck)
 
 
 defineInstMethod :: TokenId -> RenameMonad Id
-
-defineInstMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
+defineInstMethod tid  down (RenameState flags unique irps@(_,rps)
+                                        rts rt st derived defaults
+                                        errors needCheck) = 
   let realtid = mkQual2 (t_Tuple unique) (ensureM rps tid)
                 -- this is obscure! why a tuple with the size of unique?
       key = (tid,MethodInstance)
   in (unique,RenameState flags (unique+1) irps rts rt
-		 (addAT st combInfo  unique {-(realtid,MethodInstance)-} (InfoIMethod unique realtid NoType Nothing (0::Int)))
+		 (addAT st combInfo  unique {-(realtid,MethodInstance)-}
+                        (InfoIMethod unique realtid NoType Nothing (0::Int)))
 		 derived defaults errors needCheck)
 
 
 defineDerived :: Int -> [(Pos,Int)] -> a -> RenameState -> RenameState
-
-defineDerived con posis down (RenameState flags unique rps rts rt st derived defaults errors needCheck) = 
-  RenameState flags unique rps rts rt st ((con,posis):derived) defaults errors needCheck
+defineDerived con posis down (RenameState flags unique rps rts rt st
+                                   derived defaults errors needCheck) = 
+  RenameState flags unique rps rts rt st ((con,posis):derived)
+              defaults errors needCheck
 
 strAT st i = (show . tidI . dropJust . lookupAT st) i
 
