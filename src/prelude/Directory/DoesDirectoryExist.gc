@@ -1,7 +1,7 @@
 module Directory (doesDirectoryExist) where
 
 import GreenCard
-import PatchIOError
+import FFI
 
 %-#include <sys/types.h>
 %-#include <sys/stat.h>
@@ -9,18 +9,15 @@ import PatchIOError
 %-#define TRUE   1
 %-#define FALSE  0
 
-%fun primDoesDirExist :: FilePath -> IO (Int,Bool)
+%fun doesDirectoryExist :: FilePath -> IO Bool
 %call (filePath fp)
 %code
 %  struct stat st;
-%  err = stat(fp,&st);
+%  int err = stat(fp,&st);
 %  if ((err==0) && S_ISDIR(st.st_mode)) b=TRUE;
 %  else {
 %    err=0;	/* MUST reset err flag! */
 %    b=FALSE;
 %  }
-%result (int err, bool b)
-
-doesDirectoryExist :: FilePath -> IO Bool
-doesDirectoryExist fp = patchIOErrorFVal "doesDirectoryExist" fp primDoesDirExist
+%result (bool b)
 

@@ -48,3 +48,10 @@ lazyDirContents d =
         (\e-> do -- patchIOError "closeDir" (closedir d)
                  return [])
   
+
+{-------
+newtype DirEntry = DirEntry ()
+foreign import opendir  :: CString -> IO Addr
+foreign import closedir :: Addr -> IO Int
+foreign import readdir  :: Dir -> IO Ptr
+-}

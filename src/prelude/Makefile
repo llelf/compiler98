@@ -136,10 +136,10 @@ else	#### tracing
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeList PreludeIO PreludeText PreludeDebug Prelude \
 	Maybe List Monad System IO PackedString \
-	Ix Array Complex FFI IOExtras
-NOTYET=	NonStd Directory \
+	Ix Array Complex GreenCard Directory FFI IOExtras
+NOTYET=	NonStd \
 	Locale Time CPUTime Random Haskell \
-	Binary Bit GreenCard BinArray Observe
+	Binary Bit BinArray Observe
 
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
 SUBDIRSINSTALL=$(patsubst %,%.install,${SUBDIRS})

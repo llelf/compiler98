@@ -7,14 +7,24 @@ EXTRA_C_FLAGS	=
 
 SRCS	= \
 	RenameFile.hs \
-	PatchIOError.gc DoesFileExist.gc DoesDirectoryExist.gc \
-	GetModificationTime.gc RemoveFile.gc \
-	CreateDirectory.gc RemoveDirectory.gc RenameDirectory.gc \
-	SetCurrentDirectory.gc GetCurrentDirectory.gc \
+	PatchIOError.hs DoesFileExist.gc DoesDirectoryExist.gc \
+	GetModificationTime.gc RemoveFile.hs \
+	CreateDirectory.hs RemoveDirectory.hs RenameDirectory.hs \
+	SetCurrentDirectory.hs GetCurrentDirectory.hs \
 	GetDirectoryContents.gc \
 	DPermissions.gc SetPermissions.gc GetPermissions.gc
 
-SRCS_T	=
+SRCS_T	= \
+	RenameFile.hs \
+	PatchIOError.hs DoesFileExist.gc DoesDirectoryExist.gc \
+	RemoveFile.hs \
+	CreateDirectory.hs RemoveDirectory.hs RenameDirectory.hs \
+	SetCurrentDirectory.hs GetCurrentDirectory.hs \
+	DPermissions.gc SetPermissions.gc
+
+NOTYET = \
+	GetDirectoryContents.gc \
+	GetModificationTime.gc GetPermissions.gc
 
 
 # Here are the main rules.

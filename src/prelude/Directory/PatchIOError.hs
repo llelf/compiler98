@@ -4,22 +4,12 @@ module Directory
   , patchIOErrorF
   , patchIOErrorFVal) where
 
-import GreenCard
-import DErrNo
-import DIOError
-
-%-#include <sys/stat.h>
-%-#include <unistd.h>
-%-#include <errno.h>
-
-%fun readErrNo :: () -> IO ErrNo
-%call ()
-%code
-%result (<fromEnum/toEnum> (int "errno"))
+import FFI
 
 returnEither :: String -> Maybe String -> Int -> a -> IO a
 returnEither cmd file err val =
-  if err == -1 then readErrNo () >>= ioError . IOError cmd file Nothing
+  if err == -1 then do errno <- getErrNo
+                       throwIOError cmd file Nothing errno
                else return val
 
 patchIOError :: String -> IO Int -> IO ()

@@ -1,13 +1,16 @@
 module Directory
   ( Permissions(..)
   , createDirectory, removeDirectory, removeFile
-  , renameDirectory, renameFile, getDirectoryContents
+  , renameDirectory, renameFile
+  , doesFileExist, doesDirectoryExist
   , getCurrentDirectory, setCurrentDirectory
-  , doesFileExist, doesDirectoryExist, getModificationTime
-  , getPermissions, setPermissions
+#if !defined(TRACING)
+  , getDirectoryContents
+  , getModificationTime
+  , getPermissions
+#endif
+  , setPermissions
   ) where
-
-import Warning
 
 import CreateDirectory
 import RemoveDirectory
@@ -19,10 +22,14 @@ import SetCurrentDirectory
 
 import DoesFileExist
 import DoesDirectoryExist
-import GetModificationTime
+#if !defined(TRACING)
 import GetDirectoryContents
+import GetModificationTime
+#endif
 
 import DPermissions
-import GetPermissions
 import SetPermissions
+#if !defined(TRACING)
+import GetPermissions
+#endif
 
