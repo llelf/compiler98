@@ -34,7 +34,6 @@ import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
 
 {-
 prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
-
 prettyPrintTraceId flags pp =
   pretty (sShowWidth flags) . 
   pp PPInfo{withPositions = False
@@ -75,7 +74,6 @@ prettyPrintSimple width pp =
 
 
 prettyPrintTokenId :: Flags -> (PPInfo TokenId -> a -> Doc) -> a -> String
-
 prettyPrintTokenId flags pp =
   pretty (sShowWidth flags) . 
   pp PPInfo{withPositions = False
@@ -95,7 +93,6 @@ prettyPrintTokenId flags pp =
 
 
 prettyPrintId :: Flags -> IntState -> (PPInfo Id -> a -> Doc) -> a -> String
-
 prettyPrintId flags state pp =
   pretty (sShowWidth flags) . 
   pp PPInfo{withPositions = False 
@@ -110,7 +107,6 @@ prettyPrintId flags state pp =
 
 
 simplePrintId :: IntState -> (PPInfo Id -> a -> Doc) -> a -> String
-
 simplePrintId state pp =
   simple . 
   pp PPInfo{withPositions = False 
@@ -127,7 +123,6 @@ simplePrintId state pp =
 -- modules:
 
 strISunqualified :: IntState -> Id -> String
-
 strISunqualified state id = 
   case lookupIS state id of
     Just info -> reverse . unpackPS . extractV . tidI $ info
@@ -135,7 +130,6 @@ strISunqualified state id =
 
 
 isFunctionArrowId :: IntState -> Id -> Bool
-
 isFunctionArrowId state id = 
   case lookupIS state id of
     Just info -> tidI info == t_Arrow
@@ -143,7 +137,6 @@ isFunctionArrowId state id =
 
 
 isListId :: IntState -> Id -> Bool
-
 isListId state id = 
   case lookupIS state id of
     Just info -> tidI info == t_List 
@@ -151,7 +144,6 @@ isListId state id =
 
 
 maybeTupleId :: IntState -> Id -> Maybe Int
- 
 maybeTupleId state id = 
   case lookupIS state id of
     Just info -> case tidI info of
@@ -268,21 +260,18 @@ ppEntity info (EntityConClsSome pos id ids) =
 
 
 ppImpDecls :: PPInfo a -> [ImpDecl a] -> Doc
-
 ppImpDecls info [] = nil
 ppImpDecls info decls = 
   line <> (sep line . map (ppImpDecl info) $ decls) <> line
 
 
 ppFixDecls :: PPInfo a -> [FixDecl a] -> Doc
-
 ppFixDecls info [] = nil
 ppFixDecls info decls = 
   line <> (sep line . map (ppFixDecl info) $ decls) <> line
 
 
 ppInfixClass :: PPInfo a -> InfixClass a -> Doc
-
 ppInfixClass info InfixDef = text "infixl{-def-} "
 ppInfixClass info InfixL   = text "infixl "
 ppInfixClass info InfixR   = text "infixr "
@@ -292,7 +281,6 @@ ppInfixClass info (InfixPre id) =
 
 
 ppFixDecl :: PPInfo a -> FixDecl a -> Doc
-
 ppFixDecl info (infixclass, precedenceLevel, fixIds) =
   groupNestS info $
     ppInfixClass info infixclass <> text (show precedenceLevel) <> 
@@ -300,7 +288,6 @@ ppFixDecl info (infixclass, precedenceLevel, fixIds) =
 
 
 ppImpSpec :: PPInfo a -> ImpSpec a -> Doc
-
 ppImpSpec info (NoHiding entities) =
   fSpace <> (parens . sep fComma . map (ppEntity info) $ entities)
 ppImpSpec info (Hiding []) = nil
@@ -310,7 +297,6 @@ ppImpSpec info (Hiding entities) =
 
 
 ppImpDecl :: PPInfo a -> ImpDecl a -> Doc
-
 ppImpDecl info (Import (pos,id) impspec) =
   groupNestS info $ 
     text "import " <> ppId info id <> fSpace <> ppImpSpec info impspec
@@ -330,7 +316,6 @@ ppImpDecl info (Importas (pos1,id1) (pos2,id2) impspec) =
 
 
 ppTopDecls :: PPInfo a -> Decls a -> Doc
-
 ppTopDecls info (DeclsParse decls) = 
   line <> sep (line <> line) (map (ppDecl info) decls) <> line
 ppTopDecls info (DeclsScc decls) = 
@@ -338,7 +323,6 @@ ppTopDecls info (DeclsScc decls) =
 
 
 ppDecls :: PPInfo a -> Decls a -> Doc
-
 ppDecls info (DeclsParse decls) = 
   group $ sep dSemiSpace (map (ppDecl info) decls)
 ppDecls info (DeclsScc decls) = 
@@ -346,7 +330,6 @@ ppDecls info (DeclsScc decls) =
 
 
 ppDeclsDepend :: PPInfo a -> DeclsDepend a -> Doc
-
 ppDeclsDepend info (DeclsNoRec decl)  =
   text "-- not recursive" <> line <> 
   ppDecl info decl
@@ -356,12 +339,10 @@ ppDeclsDepend info (DeclsRec decls) =
 
 
 ppType :: PPInfo a -> Type a -> Doc
-
 ppType info = ppTypePrec info False
 
 
 ppTypePrec :: PPInfo a -> Bool {- with parens? -} -> Type a -> Doc
-
 ppTypePrec info withPar (TypeCons pos t []) = ppId info t
 ppTypePrec info withPar (TypeCons pos t ts) = 
   if isFunctionArrow info t 
@@ -394,38 +375,32 @@ ppTypePrec info withPar (TypeStrict pos typ) =
 
 
 ppTypeWithContext :: PPInfo a -> [Context a] -> Type a -> Doc
-
 ppTypeWithContext info ctxs ty =
   group (ppContexts info ctxs <> ppType info ty)
 
 
 ppSimple :: PPInfo a -> Simple a -> Doc
-
 ppSimple info (Simple pos id ids) = 
   sep fSpace (ppId info id : map (ppId info . snd) ids) 
 
 
 ppTypeSimple :: PPInfo a -> Simple a -> Doc
-
 ppTypeSimple info (Simple pos id ids) = 
   sep fSpace (ppId info id : map (ppTyVar info . snd) ids) 
 
 
 ppContexts :: PPInfo a -> [Context a] -> Doc
-
 ppContexts info []  = nil
 ppContexts info cxs = 
   parensFComma2 info (map (ppContext info) cxs) <> text " =>" <> fSpace
 
 
 ppContext :: PPInfo a -> Context a -> Doc
-
 ppContext info (Context pos c (_,v)) =
   ppId info c <> space <> ppTyVar info v
 
 
 ppDerivings :: PPInfo a -> [(Pos, a)] -> Doc
-
 ppDerivings info [] = nil
 ppDerivings info ds  = 
   groupNestS info $
@@ -434,7 +409,6 @@ ppDerivings info ds  =
 
 
 ppConstr :: PPInfo a -> Constr a -> Doc
-
 ppConstr info (Constr pos c cs) =
   groupNestS info $
     ppIdAsVar info c <> fSpace <> ppFieldsType info cs
@@ -459,7 +433,6 @@ ppFieldsType info args =
 
 
 ppFieldType :: PPInfo a -> (Maybe [(Pos, a)], Type a) -> Doc
-
 ppFieldType info (Nothing,typ) = ppTypePrec info True typ
 ppFieldType info (Just posidents,typ) = 
   group $
@@ -469,11 +442,9 @@ ppFieldType info (Just posidents,typ) =
 
 
 ppDecl :: PPInfo a -> Decl a -> Doc
-
 ppDecl info (DeclType s t) =
   groupNestS info $
     text "type " <> ppTypeSimple info s <> text " =" <> dSpace <> ppType info t
-
 ppDecl info (DeclTypeRenamed pos tyconid) =
   groupNestS info $
     text "type" <> fSpace <> 
@@ -485,12 +456,10 @@ ppDecl info (DeclTypeRenamed pos tyconid) =
   NewType univQuantTyVars _ _ [nt] = newType
   al = mkAL univQuantTyVars
   state = intState info
-
 ppDecl info (DeclDataPrim pos conid size) =
   groupNestS info $
     text "data primitive" <> fSpace <>  ppPos info pos <> 
     fSpace <> ppId info conid <> text " =" <> dSpace <> text (show size)
-
 ppDecl info (DeclData dk ctxs s cs ds) =
   groupNestS info $
     text sort <> fSpace <> 
@@ -501,7 +470,6 @@ ppDecl info (DeclData dk ctxs s cs ds) =
            Nothing -> "newtype"
            Just False -> "data"
            Just True -> "data unboxed"
-
 ppDecl info (DeclConstrs pos did cs) =
   groupNestS info $
     text "-- data/dataprim [(field,selector)] =" <> dSpace <>
@@ -511,74 +479,59 @@ ppDecl info (DeclConstrs pos did cs) =
         map (\(ps,field,sel) -> 
                 parens (ppIdAsVar info field <> space <> ppIdAsVar info sel)) 
                        cs))
-
 ppDecl info (DeclClass pos ctxs cls arg decls) =
   nestS info $
     text "class" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info cls <> space <> 
       ppTyVar info arg)
     <> ppWhere info decls
-
 ppDecl info (DeclInstance pos ctxs tycls insts valdefs) =
   nestS info $
     text "instance" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info tycls <> space <>
       ppTypePrec info True insts)
     <> ppWhere info valdefs 
-
 ppDecl info (DeclDefault ts) =
   groupNestS info $
     text "default" <> dSpace <> (parens . sep fComma . map (ppType info) $ ts)
-
 ppDecl info (DeclPrimitive pos ident arity t) =
   groupNestS info $
     ppIdAsVar info ident <> fSpace <> text "primitive" <> fSpace 
     <> text (show arity) <> text " ::" <> fSpace <> ppType info t
-
 ppDecl info (DeclForeignImp pos callConv str ident arity cast t _) =
   groupNestS info $
     text "foreign import" <> fSpace <> text (show callConv) <> 
     fSpace <> string str <> fSpace <>
     text (show cast) <> fSpace <> ppIdAsVar info ident <> text " ::" <> 
     dSpace <> ppType info t
-
 ppDecl info (DeclForeignExp pos callConv str ident t) =
   groupNestS info $
     text "foreign export" <> fSpace <> text (show callConv) <> fSpace <> 
     ppIdAsVar info ident <> text " ::" <> dSpace <> ppType info t
-
 ppDecl info (DeclVarsType ids ctxs t) =
   groupNestS info $
     group (sep fComma (map (ppIdAsVar info . snd) ids)) <> text " ::" <>
     dSpace <> ppTypeWithContext info ctxs t
-
 ppDecl info (DeclPat alt) = group $ ppAlt info "=" alt
-
 ppDecl info (DeclFun pos fun funs) =
   group $
     ppPos info pos <>
     (sep line . map (ppFun info fun) $ funs) 
-
 ppDecl info (DeclIgnore s) =
   text ("{- Ignoring " ++ s ++ " -}")
-
 ppDecl info (DeclError s) =
   text ("ERROR:  " ++ s)
-
 ppDecl info (DeclAnnot decl annots) =
   groupNestS info $ ppDecl info decl <> line <> ppAnnots info annots
-
 ppDecl info (DeclFixity f) =
   ppFixDecl info f
 
 
 ppAnnots :: PPInfo a -> [Annot a] -> Doc
-
 ppAnnots info = sep line . map (ppAnnot info) 
 
 
 ppAnnot :: PPInfo a -> Annot a -> Doc
-
 ppAnnot info (AnnotArity (pos,ident) int) =
   text "{-# ARITY " <> ppIdAsVar info ident <> text " = " <> 
   text (show int) <> text "#-}"
@@ -596,19 +549,16 @@ ppAnnot info (AnnotUnknown) =
 
 
 ppWhere :: PPInfo a -> Decls a -> Doc
-
 ppWhere info decls 
   | noDecls decls = nil
   | otherwise = line <> text "where" <> line <> ppTopDecls info decls
 
 
 ppClassCodes :: PPInfo a -> [ClassCode b a] -> Doc
-
 ppClassCodes info decls = sep line (map (ppClassCode info) decls)
 
 
 ppClassCode :: PPInfo a -> ClassCode b a -> Doc
-
 ppClassCode info (CodeClass pos cls) =
   groupNestS info $ text "code class" <> dSpace <> ppId info cls
 ppClassCode info (CodeInstance pos cls typ arg ecs methods) =
@@ -619,7 +569,6 @@ ppClassCode info (CodeInstance pos cls typ arg ecs methods) =
 
 
 ppConstrs :: PPInfo a -> [Constr a] -> Doc
-
 ppConstrs info [] = dSpace <> text "{- no constructors -}"
 ppConstrs info cs = 
   text " =" <> fSpace <> 
@@ -627,7 +576,6 @@ ppConstrs info cs =
 
 
 ppFun :: PPInfo a -> a -> Fun a -> Doc
-
 ppFun info id (Fun pats rhs w) =
   groupNestS info $
     (group 
@@ -638,12 +586,10 @@ ppFun info id (Fun pats rhs w) =
 
 
 ppStmts :: PPInfo a -> [Stmt a] -> Doc
-
 ppStmts info stmts = sep line (map (ppStmt info) stmts)
 
 
 ppStmt :: PPInfo a -> Stmt a -> Doc
-
 ppStmt info (StmtExp exp) = ppExp info exp
 ppStmt info (StmtBind pat exp) = 
   groupNestS info $
@@ -653,30 +599,25 @@ ppStmt info (StmtLet ds) =
 
 
 ppPat :: PPInfo a -> Exp a -> Doc
-
 ppPat = ppExp
 
 
 ppPos :: PPInfo a -> Pos -> Doc 
- 
 ppPos info pos = 
   if withPositions info then (braces . text . show $ pos) <> space else nil
 
 
 parenExp :: PPInfo a -> Pos -> Bool -> Doc -> Doc
-
 parenExp info pos withPar doc =
   groupNestS info $ 
     ppPos info pos <> if withPar then parens doc else doc
 
 
 ppExp :: PPInfo a -> Exp a -> Doc
-
 ppExp info = ppExpPrec info False
 
 
 ppExpPrec :: PPInfo a -> Bool -> Exp a -> Doc
-
 ppExpPrec info withPar (ExpLambda pos pats e) =
   parenExp info pos withPar $
     text "\\ " <> sep fSpace (map (ppLambdaPat info) pats) <>
@@ -784,7 +725,6 @@ ppLambdaPat info pat                      = ppExpPrec info False pat
 
 
 ppField :: PPInfo a -> Field a -> Doc
-
 ppField info (FieldExp pos var exp) =
   groupNestS info $
     ppPos info pos <> ppIdAsVar info var <> dSpace <> text "= " <>  
@@ -794,7 +734,6 @@ ppField info (FieldPun pos var) =
 
 
 ppQual :: PPInfo a -> Qual a -> Doc
-
 ppQual info (QualExp e) = ppExp info e
 ppQual info (QualPatExp pat e) =
   groupNestS info $
@@ -805,7 +744,6 @@ ppQual info (QualLet ds) =
 
 
 ppAlt :: PPInfo a -> String -> Alt a -> Doc
-
 ppAlt info delimiter (Alt pat rhs w) =
   groupNestS info $
     group (ppPat info pat <> ppRhs info delimiter rhs) <>
@@ -813,7 +751,6 @@ ppAlt info delimiter (Alt pat rhs w) =
 
 
 ppRhs :: PPInfo a -> String -> Rhs a -> Doc
-
 ppRhs info delimiter (Unguarded exp) =
   space <> text delimiter <> dSpace <> ppExp info exp
 ppRhs info delimiter (Guarded [gd]) =
@@ -823,7 +760,6 @@ ppRhs info delimiter (Guarded gds) =
    
 
 ppGdPat :: PPInfo a -> String -> (Exp a, Exp a) -> Doc
-
 ppGdPat info deli (e1,e2) =
   groupNestS info $
     text "| " <> ppExp info e1 <> space <> text deli <> dSpace <>
@@ -833,7 +769,6 @@ ppGdPat info deli (e1,e2) =
 {- various formatting functions for identifiers ---------------------------- -}
 
 ppId :: PPInfo a -> a -> Doc
-
 ppId info id = text (id2str info id)
 
 
@@ -841,7 +776,6 @@ ppId info id = text (id2str info id)
 If the identifier is an operator, then surround it by paranthesis.
 -}
 ppIdAsVar :: PPInfo a -> a -> Doc
-
 ppIdAsVar info id
   | isOperator name = text ('(' : name ++ ")")
   | otherwise       = text name
@@ -853,7 +787,6 @@ if the identifier is a variable or constructor, then surround it by
 backquotes.
 -}
 ppIdAsOperator :: PPInfo a -> a -> Doc
-
 ppIdAsOperator info id 
   | isOperator name = text name
   | otherwise       = text ('`' : name ++ "`")
@@ -867,7 +800,6 @@ entry. So it has to be handled specially.
 -}
 
 ppTyVar :: PPInfo a -> a -> Doc
-
 ppTyVar info = text . tyVar2str info
 
 
