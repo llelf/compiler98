@@ -1,3 +1,5 @@
+#ifndef _MKBYPROG_H_
+#define _MKBYPROG_H_
 /* Current biggest tuple size is 12 */
 struct ForeignTuple {
   void *pos1;
@@ -204,3 +206,5 @@ extern Node C0_System_46ExitSuccess[];
 extern NodePtr nhc_mkExitFailure(NodePtr a1);
 #define nhc_sizeExitFailure (1+EXTRA+1)
 #define ExitFailure 1
+
+#endif
