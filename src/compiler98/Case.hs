@@ -328,18 +328,17 @@ matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 -- match (traced) numeric literal in an unresolved context
 matchAltIf v ces (pat@(ExpApplication pos
                          [ap1, sr, t			-- ap_1 sr t
-                         ,(ExpApplication _
-                             [ExpVar _ _, dict, _, _])	-- fromInteger/Rational
-                         ,(ExpApplication _
-                                 [ExpVar _ con, _, _,	-- (construct an
-                                  ExpLit _ lit])	--   (R lit _))
+                         ,ExpApplication _
+                            [ExpVar _ _, dict, _, _]	-- fromInteger/Rational
+                         ,ExpApplication _ _		-- (construct (R lit))
+                      -- ,ExpApplication _
+                      --    [ExpVar _ con, _, _,	-- (construct an
+                      --     ExpLit _ lit]		--   (R lit _))
                          ]), fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
   caseTidFun >>>= \ tidFun ->
---strace ("Warning: numeric literal pattern in an overloaded context at "++
---        strPos pos++"\n"++
---        "    Compiled code _will_ give wrong result.\n"++
---        "    To fix, resolve to Int or Integer with a type signature.\n") $
+--strace ("numeric literal pattern in an overloaded context at "++
+--        strPos pos++"\n") $
   unitS (PosExpIf pos) =>>>
 	caseExp (ExpApplication pos
                    [ExpVar pos (tidFun (t_rPatBool,Var))

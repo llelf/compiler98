@@ -136,6 +136,7 @@ tokenDbg = [(TCon, tTrace),
 	    (Con, tCons), 
 	    (Con, tNil),
             (Var, tRatioCon),		-- defined in TokenId, not here.
+	    (TClass, tIntegral),	-- likewise.
 --	    ,(Modid, tDbgPrelude)
 --	    ,(Modid, tDbgPreludeCore)
 	    (Var, t_dbginteract), 

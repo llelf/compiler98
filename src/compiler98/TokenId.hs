@@ -178,6 +178,7 @@ t_error  	= qualImpRev  "error"
 t_undef         = qualImpRev  "undefined"
 tfromInteger    = qualImpRev  "fromInteger"
 tNum            = qualImpRev  "Num"
+tIntegral       = qualImpRev  "Integral"
 tInt            = qualImpRev  "Int"
 tIntHash        = qualImpRev  "Int#"
 
