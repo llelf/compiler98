@@ -290,6 +290,9 @@ in the second declaration list.
 -}
 dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
+dSuspectDecl parent (DeclPat (Alt v@(ExpVar pos id) rhs decls)) =
+  -- may occur because of the next equation
+  dSuspectDecl parent (DeclFun pos id [Fun [] rhs decls])
 dSuspectDecl parent (DeclPat (Alt (PatAs pos id p) rhs decls)) =
   dSuspectDecl parent (DeclFun pos id [Fun [] rhs decls]) >>>= \(dc1,dc2) ->
   dSuspectDecl parent 

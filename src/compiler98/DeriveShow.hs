@@ -1,17 +1,20 @@
 module DeriveShow (deriveShow) where
 
-import List
-import Maybe
-import Extra
-import Syntax
+import List(intersperse,partition)
+import Maybe(isNothing,fromJust)
+import Syntax(Exp(ExpVar,ExpCon,ExpLit,ExpApplication,PatWildcard),Fun(Fun)
+             ,Rhs(Unguarded),Alt(Alt),Decl(DeclFun,DeclInstance,DeclPat)
+             ,Decls(DeclsParse),Boxed(Boxed),Lit(LitChar,LitString,LitInt))
 import MkSyntax(mkInt)
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
-import TokenId(TokenId,tTrue,tShow,tshowParen,tshowChar,tshowString,tshowsType,tshowsPrec,t_lessthan,t_dot,dropM,isTidOp,visImpRev)
+import DeriveLib(syntaxType,syntaxCtxs)
+import TokenId(TokenId,tTrue,tShow,tshowParen,tshowChar,tshowString
+              ,tshowsType,tshowsPrec,t_lessthan,t_dot,dropM,isTidOp,visImpRev)
 import Nice(showsOp,showsVar)
+import Id(Id)
 
 deriveShow tidFun cls typ tvs ctxs pos =
  getUnique >>>= \d ->
@@ -156,6 +159,10 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
               (DeclsParse []))
 
 
+mkShowFunTs :: Exp Id -> Exp Id -> Exp Id -> Exp Id -> Exp Id -> Exp Id 
+            -> Pos -> Info -> [Info] 
+            -> a -> IntState -> ([Fun Id],IntState)
+
 mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot pos typInfo constrInfos =
   getUnique >>>= \ v ->
   let expA = ExpVar pos v
@@ -185,6 +192,11 @@ mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot 
 	            (DeclsParse (concat ds))
 	          ]      
 
+
+getType :: Show a 
+        => Pos -> Exp Id -> Exp Id -> b -> Exp Id -> [Info] -> (Id,a,Exp Id) 
+        -> c -> d -> (([Decl Id],Exp Id),d)
+
 getType pos expA expShowsType expTrue expShowString [] (f,i,iexp) =
   unitS ([],ExpApplication pos [expShowString,ExpLit pos (LitString Boxed ('?':'v':show i++"?"))])
 getType pos expA expShowsType expTrue expShowString (info:infos) (f,i,iexp) =
@@ -196,6 +208,8 @@ getType pos expA expShowsType expTrue expShowString (info:infos) (f,i,iexp) =
     Nothing -> 
       getType pos expA expShowsType expTrue expShowString infos (f,i,iexp)
 
+
+patConstr :: Pos -> Info -> Id -> Exp Id -> a -> b -> (Maybe (Exp Id),b)
 
 patConstr pos info f iexp =
   case ntI info of
