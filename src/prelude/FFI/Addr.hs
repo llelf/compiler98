@@ -7,8 +7,7 @@ module FFI
   ) where
 
 import FFIBuiltin (Addr)
---import ShowsIntBase
-import Numeric (showIntBase)
+import Numeric (showHex)
 
 foreign cast addrToInt :: Addr -> Int
 foreign cast intToAddr :: Int  -> Addr
@@ -19,7 +18,7 @@ instance Eq   Addr where
 instance Ord  Addr where
   compare x y   =  compare (addrToInt x) (addrToInt y)
 instance Show Addr where
-  showsPrec p a = showString "0x" . showIntBase 16 (addrToInt a)
+  showsPrec p a = showString "0x" . showHex (addrToInt a)
 instance Enum Addr where
   toEnum   = intToAddr
   fromEnum = addrToInt

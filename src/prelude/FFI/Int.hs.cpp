@@ -10,7 +10,7 @@ module FFI
 {- Note explicit braces and semicolons here - layout is corrupted by cpp. -}
 
 {import FFIBuiltin (Int8, Int16, Int32, Int64)
-;import Numeric    (readSigned,readDec,showSigned,showIntBase)
+;import Numeric    (readSigned,readDec,showSigned,showInt)
 ;import Ix
 
 
@@ -111,7 +111,7 @@ module FFI
 
 #define INSTANCE_SHOW(T)		\
 ; instance Show T where			\
-    { showsPrec p = showSigned (showIntBase 10) p	\
+    { showsPrec p = showSigned showInt p	\
     }
 
 

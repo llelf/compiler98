@@ -10,7 +10,7 @@ module FFI
 {- Note explicit braces and semicolons here - layout is corrupted by cpp. -}
 
 {import FFIBuiltin (Word8, Word16, Word32, Word64)
-;import Numeric    (readSigned,readDec,showSigned,showIntBase)
+;import Numeric    (readSigned,readDec,showSigned,showHex)
 ;import Ix
 
 
@@ -111,7 +111,7 @@ module FFI
 
 #define INSTANCE_SHOW(T)		\
 ; instance Show T where			\
-    { showsPrec p x = showString "0x" . showSigned (showIntBase 16) p x	\
+    { showsPrec p x = showString "0x" . showSigned showHex p x	\
     }
 
 
