@@ -10,8 +10,9 @@
 <p>
 The <b>nhc98</b> compiler contains an implementation of the
 <em>standard foreign function interface</em> that is also available
-in <em>Hugs</em> and <em>ghc</em>.  Version 1.16 implements the latest
-standard syntax for foreign function declarations, as specified at:
+in <em>Hugs</em> and <em>ghc</em>.  The most recent released version
+of <b>nhc98</b> implements the latest standard syntax for foreign
+function declarations, as specified at:
 
 <a href="http://www.cse.unsw.edu.au/~chak/haskell/ffi/">
 <tt>http://www.cse.unsw.edu.au/~chak/haskell/ffi/</tt></a>
@@ -34,33 +35,37 @@ namespace instead of the official flat namespace.
 <p>
 <ul>
 <li> Supported calling conventions are: <tt>ccall</tt>, <tt>noproto</tt>,
-     and <tt>cast</tt>.
+     and <tt>cast</tt>.  (The latter two are non-standard, see below.)
      Unsupported calling conventions are: <tt>stdcall</tt>, <tt>jvm</tt>,
      <tt>dotnet</tt>, <tt>cplusplus</tt>.
-<li> In a <tt>foreign import</tt> specification, the specification of a
-     C header file or library in the "external entity" string
-     is currently ignored.  <b>nhc98</b> does not use header files for
-     checking prototypes, and it does not yet support dynamic library linking.
-<li> <tt>foreign import "wrapper"</tt> and <tt>foreign import "dynamic"</tt>
-     are not yet supported.
-<li> The annotation <tt>unsafe</tt> is ignored and treated as if it were
-     <tt>safe</tt>; it is purely a speed optimisation for <em>ghc</em>.
-<li> The annotation <tt>threadsafe</tt> has no special meaning in
-     <b>nhc98</b>, since it does not implement the concurrent threads
-      extension.
+<li> <tt>foreign import "wrapper"</tt> is not yet supported.
+<li> The annotation <tt>unsafe</tt> has no special meaning in <b>nhc98</b>;
+     it is purely a speed optimisation for <em>ghc</em>.
+<li> A <tt>foreign export</tt> specification is treated as the actual
+     type signature for the exported function.  You are not allowed a
+     second (possibly more general) type signature.
+<li> Hence, you cannot <tt>foreign export</tt> any function that
+     requires a class dictionary.
+</ul>
+
+<h3>Extensions</h3>
+<p>
+<ul>
 <li> Two non-standard calling conventions are provided.
      <tt>cast</tt> indicates that an arity-1 foreign import is only being
      used for its C type-cast, and hence eliminates some runtime overheads.
      For example,
-     <pre>  foreign import cast floatToDouble :: Float -&gt; Double </pre>.
+     <pre>  foreign import cast floatToDouble :: Float -&gt; Double </pre>
      The calling convention <tt>noproto</tt> is essentially the same as
      <tt>ccall</tt> but tells the compiler not to generate a C function
      prototype for the external function.  For example,
      <pre>  foreign import sin noproto :: Float -&gt; Float </pre>
      eliminates the normal generation of
      <pre>  extern float sin (float); </pre>
-     for occasions when such a declaration might conflict with a #include'd
-     declaration.
+     for occasions when such a declaration might conflict with an external
+     declaration.  (Note, if you mention a header file in the foreign entity
+     description, this has the same effect as noproto - i.e. the header file
+     declaration is used in preference to generating a prototype.)
 <li> The set of primitive types allowed across the FFI is slightly
      larger in <b>nhc98</b> than the standard allowed set:  we
      allow <tt>PackedString</tt> to be passed - these are genuine
@@ -75,13 +80,18 @@ namespace instead of the official flat namespace.
      pointer.  This feature should only be used by serious implementers,
      because any foreign code manipulating non-primitive data must use
      <b>nhc98</b>'s internal heap format.
-<li> A <tt>foreign export</tt> specification is treated as the actual
-     type signature for the exported function.  You are not allowed a
-     second (possibly more general) type signature.
-<li> Hence, you cannot <tt>foreign export</tt> any function that
-     requires a class dictionary.
 </ul>
 
+<h3>Recent Changes</h3>
+<p>
+<ul>
+<li> In a <tt>foreign import</tt> specification, the specification of a
+     C header file or library in the "external entity" string was
+     previously ignored.  <b>nhc98</b> now generates <tt>#include</tt>
+     for these header files.  Where a header file is specified, the
+     compiler does not generate its own prototype for the foreign function,
+     as if the 'noproto' calling convention had been used.
+<li> <tt>foreign import "dynamic"</tt> is now fully supported.
 <p>
 <br>
 
@@ -92,7 +102,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 20 January 2003<br>
+This page last modified: 16th June 2003<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
