@@ -682,7 +682,7 @@ tprof () {
     TPHI=`dirname $1`"/"$TPO.$HISUFFIX
     if test -e $TPHI
     then
-      TPLAB=`head -1 $TPHI | cut -d' ' -f2`
+      TPLAB=`head -1 $TPHI | cut -d' ' -f2 | sed "s/_/_95/g;s/'/_39/g"`
       TPL=$TPL" "$TPLAB
       LDFILES=$LDFILES" "$TMP/tpl$TPO.o" "$1
       echo "int TMIP_$TPLAB[] = {0};" | cat > $TMP/tpl$TPO.c
