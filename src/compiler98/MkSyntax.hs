@@ -17,13 +17,11 @@ import SyntaxPos(HasPos(getPos))
 
 
 mkParType :: Pos -> [Type TokenId] -> Type TokenId
-
 mkParType p [t] = t
 mkParType p ts  = TypeCons p (t_Tuple (length ts)) ts
 
 
 mkAppInst :: (Pos,a) -> [(Pos,a)] -> Type a
-
 mkAppInst (p,c) ts = TypeCons p c (map (uncurry TypeVar) ts)
 
 
@@ -39,7 +37,6 @@ mkInstList p id = TypeCons p t_List [TypeVar p id]
 
 
 mkDeclPat :: (Pos,a) -> Exp a -> Exp a -> Rhs a -> Decls a -> Decl a
-
 mkDeclPat (pv,var) op e@(ExpInfixList pos es) gdexps w =
 	DeclPat (Alt (ExpInfixList pos [ExpVar pv var,op,e]) gdexps w)
 mkDeclPat (pv,var) op e gdexps w =
@@ -47,7 +44,6 @@ mkDeclPat (pv,var) op e gdexps w =
 
 
 mkDeclFun :: (Pos,a) -> [Pat a] -> Rhs a -> Decls a -> Decl a
-
 --mkDeclFun (pv,var) [] gdexps w =
 --	DeclPat (Alt (ExpVar pv var) gdexps w)
 mkDeclFun (pv,var) pats gdexps w =
@@ -55,7 +51,6 @@ mkDeclFun (pv,var) pats gdexps w =
 
 
 mkDeclPatFun :: Alt a -> Decl a
-
 mkDeclPatFun  (Alt (ExpVar pos fun) gdexps w) =
         DeclFun pos fun [Fun [] gdexps w]
 --        DeclPat (Alt (ExpVar pos fun) gdexps w)
