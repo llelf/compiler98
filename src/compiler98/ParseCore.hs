@@ -1,4 +1,4 @@
-module ParseCore(Pos(..),ParseError(..),ParseResult(..),ParseBad(..),ParseGood(..),Parser(..)
+module ParseCore(Pos,ParseError,ParseResult,ParseBad,ParseGood,Parser
                ,initError,initBad,initGood      -- Start values for parseError,parseBad, parseGood
 	       ,parseit				-- entry for parsing
                ,parse,ap,chk,orelse,into        -- The core

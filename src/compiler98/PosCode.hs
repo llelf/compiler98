@@ -1,4 +1,4 @@
-module PosCode(module Prim, module PosCode, Pos(..)) where
+module PosCode(module Prim, module PosCode, Pos) where
 
 import Extra(Pos(..),noPos)
 import Prim

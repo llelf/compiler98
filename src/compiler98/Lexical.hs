@@ -1,5 +1,5 @@
-module Lexical(lexical,lexicalCont,Lex{-,PackedString-}
-                ,LexState(..),PosToken(..),PosTokenPre(..),Pos(..)) where
+module Lexical(lexical,lexicalCont,Lex
+                ,LexState,PosToken,PosTokenPre,Pos) where
 
 import Extra(Pos(..),toPos,strPos)
 import Lex

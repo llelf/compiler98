@@ -1,6 +1,6 @@
 module Gcode
 	( GALT(..),Gcode(..),showCLabel,strGcode,strGcodeRel
-	, IntState, Prim(..), PrimOp(..),Pos(..)) where
+	, IntState, Prim(..), PrimOp(..),Pos) where
 
 import Prim(Prim(..),PrimOp(..),strPrim)
 import IntState(tidIS,strIS,IntState)

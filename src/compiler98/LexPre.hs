@@ -1,4 +1,4 @@
-module LexPre(lexPre,PosTokenPre(..)) where
+module LexPre(lexPre,PosTokenPre) where
 
 import Char
 

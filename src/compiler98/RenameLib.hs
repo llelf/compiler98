@@ -1,7 +1,7 @@
 {- ---------------------------------------------------------------------------
 -}
 module RenameLib(module RenameLib
-	,AssocTree(..)
+	,AssocTree
 	,Tree ,ImportState,NT,NewType,IE,Either,Info
 	,Maybe,Flags(..)) where
 

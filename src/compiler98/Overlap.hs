@@ -1,5 +1,5 @@
 module Overlap
-  ( Overlap(..)
+  ( Overlap
   , Resolution
   , addOverlap
   , deAlias

@@ -2,7 +2,7 @@
 Handling of type substitutions.
 They substitute NTs for Ids.
 -}
-module TypeSubst(Substitute(..),idSubst,AssocTree(..),Tree,substEnv,substCtxs,stripSubst,addSubst,applySubst,list2Subst,strace,substNT) where 
+module TypeSubst(Substitute(..),idSubst,AssocTree,Tree,substEnv,substCtxs,stripSubst,addSubst,applySubst,list2Subst,strace,substNT) where 
 
 import NT(NT(..),NewType(..),freeNT)
 import Extra(fstOf,dropJust,strace)

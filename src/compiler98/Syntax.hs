@@ -1,4 +1,4 @@
-module Syntax(module Syntax, Pos(..){-,PackedString-},TokenId) where
+module Syntax(module Syntax, Pos, TokenId) where
 
 import Extra(Pos(..),strChr,strStr)
 import SysDeps(PackedString)

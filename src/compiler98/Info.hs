@@ -1,8 +1,8 @@
 {- ---------------------------------------------------------------------------
 Central data structures of the symbol table
 -}
-module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos(..)
-           ,AssocTree(..),Tree{-,PackedString-}) where
+module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos
+           ,AssocTree,Tree) where
 
 import IdKind(IdKind)
 import TokenId(TokenId)

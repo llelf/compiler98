@@ -1,6 +1,6 @@
 module ParseLib(-- defined in ParseCore
-                Pos(..), ParseError(..), ParseResult(..)
-               ,ParseBad(..), ParseGood(..), Parser(..)
+                Pos, ParseError, ParseResult
+               ,ParseBad, ParseGood, Parser
                ,initError,initBad,initGood      -- Start values for parseError,
 						-- parseBad, parseGood
 	       ,parseit
