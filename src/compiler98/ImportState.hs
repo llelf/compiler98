@@ -35,6 +35,9 @@ data  ImportState =
 	(TokenId -> (InfixClass TokenId,Int))		
         -- fixity information (name -> fixity)
 	[String]		 -- errors
+#if !defined(__HASKELL98__)
+    deriving (Eval)
+#endif
 
 
 {- initial import state -}
