@@ -18,7 +18,6 @@ SRCS_T	= \
 	PrimIntegerFromInt.hs PrimIntFromIntegerC.hs 
 
 SRCS_NT	= _Driver.hs PrimIntFromInteger.hs 
-OBJS_NT	= $(patsubst %.hs, ${OBJDIR}/%.o, ${SRCS_NT})
 
 
 # Here are the main rules.
@@ -26,9 +25,6 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-extra: ${OBJS_NT}
-$(OBJS_NT): ${OBJDIR}/%.o: %.hs
-	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 
 
 
