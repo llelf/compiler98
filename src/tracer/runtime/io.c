@@ -54,12 +54,14 @@ C_HEADER(_tprim_chPutChar)
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
+    IND_REMOVE(np);
     a = derefForeignObj((ForeignObj *)GET_INT_VALUE(np));
     np = C_GETARG1(3);
     IND_REMOVE(np);
     ch = GET_POINTER_ARG1(np, 1);
     IND_REMOVE(ch);
     c = GET_CHAR_VALUE(ch);
+    /*fprintf(stderr,"_tprim_chPutChar: '%c' 0x%x\n",c,a);*/
     putc(c, a->fp);		/* real output */
     putc(c, HatOutput);		/* copy of output */
     fwrite(&outputContext, sizeof(FileOffset), 1, HatBridge);
