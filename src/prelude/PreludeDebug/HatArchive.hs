@@ -658,4 +658,3 @@ foreign import primNTContainer	:: NmType
 foreign import primSR0	:: SR
 foreign import primSR3	:: CStructure -> SR
 
-foreign import primShowTrace :: Trace -> Trace
