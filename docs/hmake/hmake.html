@@ -166,6 +166,8 @@ Some improvements over previous compilation management tools are:
     other symbols with <em><b>-D</b>sym[=val]</em> on the commandline.
 <li>It automatically inserts the <em><b>-cpp</b></em> compiler option, but
     only for those modules which actually require it.
+<li>Various other Haskell-specific preprocessors (e.g. happy, hsc2hs)
+    are known and called automatically when it is appropriate.
 <li>If you specify <em>.o</em> or <em>.a</em> files on the commandline, it
     simply links against them, rather than searching for source dependencies
     for them.
@@ -183,7 +185,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-01-15<br>
+Information last updated: 2002-01-21<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

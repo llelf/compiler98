@@ -17,13 +17,15 @@ The basic option summary is:
 <pre>
     Usage: hmake-config [cfgfile] [add|delete|default] compiler
 </pre>
-The specification of a <em>cfgfile</em> is optional - if
-it is not given, the file <tt>$HOME/.hmakerc/$MACHINE</tt>
-is assumed.  If the config file does not yet exist, it
-is created by copying the system-wide configuration from
-<tt>/usr/local/lib/$MACHINE/hmakerc</tt>.  (Note: <tt>$MACHINE</tt>
-is the machine architecture as reported by <tt>`harch`</tt>, not
-the actual machine name.)
+The specification of a <em>cfgfile</em> is optional - if it is
+not given, the file <tt>$HOME/.hmakerc/$MACHINE</tt> is assumed.
+(If you use a non-standard location for the hmakerc file, you will
+also need to tell <em>hmake</em> where it is on every invocation.)
+If the config file does not yet exist, it is created by copying
+the system-wide configuration from your machine's installation of
+<em>hmake</em>.  (Usually in <tt>/usr/local/lib/$MACHINE/hmakerc</tt>,
+where <tt>$MACHINE</tt> is the machine architecture as reported by
+<tt>`harch`</tt>, not the actual machine name.)
 
 <p>
 One of the actions <em>add</em>, <em>delete</em>, or <em>default</em>
@@ -87,7 +89,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-01-15<br>
+Information last updated: 2002-01-21<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
