@@ -248,6 +248,12 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
   where
     genProto :: Style -> String -> ShowS
     genProto Ordinary cname =
+      case res of
+        FunPtr t ->
+          word "extern" . space . cResType (last t)
+          . parens (star . word cname . parens (listsep comma (map cTypename args)))
+          . parens (listsep comma (map cTypename (init t))) . semi
+        _ ->
           word "extern" . space . cResType res . space . word cname
           . parens (listsep comma (map cTypename args)) . semi
     genProto FunAddress cname =
