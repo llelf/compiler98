@@ -16,7 +16,7 @@ Group:           Development/Languages/Haskell
 URL:             http://haskell.org/nhc98/
 Source:          ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-%{nversion}.tar.gz
 Packager:        Sven Panne <sven.panne@aedion.de>
-BuildRoot:       %{_tmppath}/nname-%{nversion}-build
+BuildRoot:       %{_tmppath}/%{nname}-%{nversion}-build
 Prefix:          %{_prefix}
 Requires:        %{hname}
 BuildRequires:   ghc happy java
