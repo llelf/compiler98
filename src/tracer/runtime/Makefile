@@ -63,7 +63,7 @@ ${OBJDIR}/numeric.o: numeric.c getconstr.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c numeric.c -o $@
 ${OBJDIR}/browsercomms.o: browsercomms.c ui.h
 	$(CC) ${DCFG} ${OPT} -DPRELSRCDIR=${PRELSRCDIR} -I${INCDIR} ${ENDIAN} -c browsercomms.c -o $@
-${OBJDIR}/io.o: io.c ui.h
+${OBJDIR}/io.o: io.c ui.h getconstr.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c io.c -o $@
 ${OBJDIR}/trust.o: trust.c ui.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c trust.c -o $@
