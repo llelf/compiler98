@@ -1,12 +1,13 @@
 module Prelude where
 
-import Char (isAlpha)
+import Char (isLower)
 import TReadS
 
 _readField :: (Read a) => String -> String -> (String -> [(a->b,String)]) -> ReadS b
 
 _readField prefix name fun
-    | isAlpha (head name) =				-- ordinary fieldname
+    | (let h = head name in
+       isLower h || h=='_') =				-- ordinary fieldname
         \ r ->  [(c a,s) | (c,r) <- fun r,
 		           (tok,r) <- lex r,
                            tok == prefix,

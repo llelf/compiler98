@@ -26,13 +26,14 @@ lex ('"':s)		= [('"':str, t)      | (str,t) <- lexString s]
 
 lex (c:s) | isSingle c	= [([c],s)]
 	  | isSym c	= [(c:sym,t)	     | (sym,t) <- [span isSym s]]
-	  | isAlpha c	= [(c:nam,t)	     | (nam,t) <- [span isIdChar s]]
+	  | isIdInit c	= [(c:nam,t)	     | (nam,t) <- [span isIdChar s]]
 	  | isDigit c	= [(c:ds++fe,t)	     | (ds,s)  <- [span isDigit s],
 					       (fe,t)  <- lexFracExp s	   ]
 	  | otherwise	= []	-- bad character
 		where
-		isSingle c  =  c `elem` ",;()[]{}_`"
+		isSingle c  =  c `elem` ",;()[]{}`"
 		isSym c	    =  c `elem` "!@#$%&*+./<=>?\\^|:-~"
+		isIdInit c  =  isAlpha c || c == '_'
 		isIdChar c  =  isAlphaNum c || c `elem` "_'"
 
 		lexFracExp ('.':c:s) | isDigit c
