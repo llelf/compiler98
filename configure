@@ -408,7 +408,10 @@ int main (void) { test(); }
      cp src/prelude/DErrNo.p.c  src/prelude/$MACHINE/NHC
      cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE/NHC
   fi
-  $CCC -o errnogen script/errnogen.c && ./errnogen >DErrNo.hs && rm -f ./errnogen
+  $CCC -o config-errno script/config-errno.c && \
+	./config-errno >targets/$MACHINE/Errno.hs && rm -f ./config-errno
+  $CCC -o errnogen script/errnogen.c && \
+	./errnogen >DErrNo.hs && rm -f ./errnogen
   if diff DErrNo.hs src/prelude/$MACHINE/NHC/DErrNo.hs >/dev/null
   then
     rm -f DErrNo.hs
@@ -417,6 +420,10 @@ int main (void) { test(); }
     mv DErrNo.hs src/prelude/$MACHINE/NHC/DErrNo.hs
     echo '              updated DErrNo.hs'
   fi
+
+  # Generate target-specific stuff for libraries.
+  echo "os   = \"`echo $MACHINE | cut -d'-' -f2`\"" >targets/$MACHINE/OSInfo.hs
+  echo "arch = \"`echo $MACHINE | cut -d'-' -f1`\"" >>targets/$MACHINE/OSInfo.hs
 
 else	# do the following only in binary distributions
   if [ -f lib/$MACHINE/config ]
