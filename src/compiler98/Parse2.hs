@@ -197,6 +197,8 @@ parseStrict p =
 parseDeriving =
     lit L_deriving `revChk` lpar `revChk` manySep comma conid `chk` rpar
         `orelse`
+    parse [] `chk` lit L_deriving `chk` tuple0
+        `orelse`
     (:[]) `parseChk` lit L_deriving `apCut` conid
         `orelse`
     parse []
