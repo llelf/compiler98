@@ -1214,11 +1214,16 @@ startDbg(NodePtr nodeptr, int exitok)
 void
 sigquit_handler()
 {
-    fprintf(stderr, "%d reductions (%d TT, %d TS, %d ST, %d SS)\n", 
-	    reductions, redTT, redTS, redST, redSS);
-    signal(SIGQUIT, sigquit_handler);
+  fflush(HatFile);
+  fflush(HatOutput);
+  fflush(HatBridge);
+  fclose(HatFile);
+  fclose(HatOutput);
+  fclose(HatBridge);
+  exit(1);
 }
 
+#if 0
 void
 ctrl_C_handler()
 {
@@ -1231,6 +1236,7 @@ ctrl_C_handler()
 	signal(SIGINT, ctrl_C_handler);
     }
 }
+#endif
 
 C_HEADER(cInitializeDebugger)
 {
@@ -1239,7 +1245,7 @@ C_HEADER(cInitializeDebugger)
 
   /*add_user_gc(otMark, otFlip);*/
     signal(SIGQUIT, sigquit_handler);
-    signal(SIGINT, ctrl_C_handler);
+    signal(SIGINT, sigquit_handler);
 
     trace_enter = getenv("TRACE_ENTER") != NULL;
 
