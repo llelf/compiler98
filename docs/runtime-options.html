@@ -30,12 +30,13 @@ return value of the <tt>System.getArgs</tt> library call.
 	<td>set the profiling interval to <em>size</em></td>
 </tr></table>
 <p>
-Memory sizes can be given in bytes or words, and may use symbols for
-Mega- and kilo-.  Both upper and lower case are acceptable.  For example,
-2mw (2 Megawords), 4KB (4 kilobytes).  If no units are specified, the
-default is bytes.  Profiling intervals may be given in Mega-, kilo-, or
-milli- seconds.  For example, 1Ms (1 Megasecond), 2ms (2 milliseconds).
-If no units are specified, the default is seconds.<br><br>
+Memory sizes can be given in bytes or words, and may use symbols
+for Mega- and kilo-.  Both upper and lower case are acceptable.
+For example, 2mw (2 Megawords), 4KB (4 kilobytes).  If no units are
+specified, the default is bytes.  A profiling interval may be given as
+the number of heap allocations, or in Mega-, kilo-, or milli- seconds.
+For example, 1Ms (1 Megasecond), 2ms (2 milliseconds), 1M (1 megabyte).
+If no units are specified, the default is allocations.<br><br>
 
 </td><td width=250 valign=top>
 
