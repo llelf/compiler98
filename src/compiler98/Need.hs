@@ -43,7 +43,7 @@ needProg :: Flags
             )
 
 needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
-  let qualFun = qualRename impdecls
+  let qualFun = qualRename modidl impdecls
   in case needit (needModule (sDbgTrans flags || sDbgPrelude flags) n) 
                  qualFun (initNeed (modidl == tMain)) of
        (need,overlap) -> ( need

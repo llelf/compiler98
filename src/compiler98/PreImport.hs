@@ -107,14 +107,16 @@ mustQualify (Both nq q)  tid = (tid `inScope` q) && not (tid `inScope` nq)
 
 ----
 
-qualRename :: [ImpDecl TokenId] -> TokenId -> [TokenId]
+qualRename :: TokenId -> [ImpDecl TokenId] -> TokenId -> [TokenId]
 
-qualRename impdecls = qualRename' qTree 
+qualRename modid impdecls = qualRename' qTree 
  where
-  qualRename' t q@(Qualified t1 t2) =
-    case lookupAT t t1 of
-	Nothing -> [q]
-	Just ts -> map (\t'-> Qualified t' t2) ts
+  qualRename' t q@(Qualified t1 t2)
+    | (Visible t1)==modid = [Visible t2]
+    | otherwise =
+        case lookupAT t t1 of
+	    Nothing -> [q]
+	    Just ts -> map (\t'-> Qualified t' t2) ts
   qualRename' t v = [v]
 
   qTree = foldr qualR initAT impdecls
