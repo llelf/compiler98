@@ -4,6 +4,8 @@
 #	(also ensures that hi's config is identical to hmake)
 MACHINE=${MACHINE-"`ScriptDir/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
+INSTALLVER="InstallVer"
+export MACHINE INSTALLVER
 
 if [ ! -d $HMAKEDIR/$MACHINE ]
 then
@@ -13,21 +15,5 @@ then
   exit 1
 fi
 
-# Some important configuration:
-# First try user's home directory, then machine-specific config, then
-# installation-wide config.  At least one of these must exist!
-if [ -f $HOME/.hmakerc ]
-then . $HOME/.hmakerc
-else
-  if [ -f $HMAKEDIR/$MACHINE/hmake.config ]
-  then . $HMAKEDIR/$MACHINE/hmake.config
-  else
-    if [ -f $HMAKEDIR/hmake.config ]
-    then . $HMAKEDIR/hmake.config
-    else echo "hmake: Important configuration file is missing!"; exit 1
-    fi
-  fi
-fi
-
 # Now let's get started.
-exec ExecutableDir/$MACHINE/HInteractive $@
+exec $HMAKEDIR/$MACHINE/HInteractive $@
