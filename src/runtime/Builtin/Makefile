@@ -15,14 +15,16 @@ SRCS = \
 	cHGetBuffering.c cHSetBuffering.c \
 	cHGetFileName.c \
 	primEqHandlePosn.c \
-	cGetProgName.c cGetEnv.c cGetArgs.c cProfile.c cExitWith.c cSystem.c \
-	cEval.c \
+	cGetProgName.c cGetEnv.c cGetArgs.c cProfile.c cExitWith.c \
 	cOpenSocket.c \
 	primVector.c primIndex.c \
-        cBits.c  cDoesFileExist.c cFFI.c cIOExtras.c cHPutStr.c \
+        cBits.c  cFFI.c cIOExtras.c cHPutStr.c \
 	primsFloat.c primsDouble.c primsInt.c primsWord.c \
 	primIntegerFromInt64.c  primIntegerToInt64.c \
 	primIntegerFromWord64.c primIntegerToWord64.c
+
+OLD = \
+	cDoesFileExist.c cEval.c cSystem.c
 
 LINKS = haskell2c.h twopass.h HsFFI.h
 

@@ -1,8 +1,9 @@
 #include <string.h>
 #include "haskell2c.h"
 
-/* cGetArgs :: [PackedString] */
+#if 0
 
+/* cGetArgs :: [PackedString] */
 C_HEADER(cGetArgs)
 {
   int totalsize = 0;
@@ -53,6 +54,7 @@ C_HEADER(cGetArgs)
   *tmp = mkNil();
   C_RETURN(res);
 }	
+#endif
 
 char *
 cGetArg (void)

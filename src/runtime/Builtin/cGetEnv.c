@@ -3,8 +3,9 @@
 #include "haskell2c.h"
 #include <errno.h>
 
-/* cGetEnv :: CString -> Either Int PackedString */
+#if 0
 
+/* cGetEnv :: CString -> Either Int PackedString */
 C_HEADER(cGetEnv)
 {
   NodePtr nodeptr;
@@ -35,6 +36,7 @@ C_HEADER(cGetEnv)
 #endif
   C_RETURN(nodeptr);
 }	
+#endif
 
 char *
 primGetEnv (char* sym)

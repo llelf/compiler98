@@ -1,8 +1,9 @@
 #include <string.h>
 #include "haskell2c.h"
 
-/* cGetProgName :: PackedString */
+#if 0
 
+/* cGetProgName :: PackedString */
 C_HEADER(cGetProgName)
 {
   int totalsize = 0;
@@ -27,6 +28,7 @@ C_HEADER(cGetProgName)
 #endif
   C_RETURN(res);
 }	
+#endif
 
 char *
 primGetProgName (void)
