@@ -5,7 +5,95 @@
 <center><h1>nhc98 release history</h1></center>
 
 <hr>
+<h3>nhc98 1.06 (2001-06-08) features</h3>
+<ul>
+<li> New:       Updated the Prelude/Libraries to match the newly revised
+                Haskell'98 Report.
+<li> Update:    Default build target is now basic + tracer (was just basic).
+<li> Update:    Building with gcc now builds everything with gcc, including
+                profiling and tracing.  This is much faster.
+<li> Bugfix:    A bad interaction between Java and Cygwin to do with Unix 
+                vs. Windows pathnames.  (Visible only in Hat-trail and Hood.)
+<li> Bugfix:    An 'hi' built with just a C compiler seg-faulted, due to
+                mismatched .c file versions in the 1.04 source package.
+<li> Bugfix:    Recognise an existing ghc-5 installation.
+<li> Bugfix:    Missing include <errno.h> for Cygwin.
+<li> Bugfix:    Minor filename recognition error in hat-stack and hat-connect.
+<li> Bugfix:    Filename extension for time profiling changed to .z.o to
+                avoid Windows conflicts between .T.o and .t.o.  The compiler
+                flags -T and -t are unchanged, -z is a new synonym for -t.
+</ul>
 
+
+<hr>
+<h3>nhc98 1.04 (2001-05-21) features</h3>
+<ul>
+<li> New:       Support for extended module namespaces of the form
+                Long.Hierarchical.Module.Name is now provided in both
+                nhc98 and hmake.
+<li> Update:    Improved printing of I/O error messages.
+<li> Update:    Improved (more accurate) time profiling now provided.
+<li> Bugfix:    An identifier hidden on import and redefined in the
+                current module, then exported, but also imported
+                qualified and used qualified in the current module,
+                led to an incorrect interface file being generated.
+<li> Bugfix:    hmake issued an unnecessary -cpp flag on some literate files.
+<li> Bugfix:    Type of IO.hSetPosn :: Handle -> HandlePosn -> IO ()
+                was incorrect
+<li> Bugfix:    Compile-time error in <tt>src/tracer/runtime/ident.c</tt>
+                on RedHat 7 and other systems using the new ISO C standard
+                for <tt>fpos_t</tt>.
+<li> Bugfix:    A file opened in ReadMode or WriteMode was actually
+                opened in ReadWriteMode, so if the file had strict
+                permissions the correct opening command would fail.
+                Conversely, opening in ReadWriteMode actually gave
+                ReadMode instead, and file updates silently failed.
+<li> Bugfix:    Operator sections suffered from priority inversion,
+                for example (^2*3) was incorrectly parsed as (^(2*3)),
+                even though ^ binds more tightly than *.
+<li> Bugfix:    The library function Directory.createDirectory gave
+                strange permissions to the new directory.  (Mode was
+                in hex, but should have been octal!)
+
+</ul>
+The following updates and bugfixes are specifically for <em>Hat</em>,
+the redex-trail-based tracing and debugging system.
+<ul>
+<li> New architecture:  Traced programs now build their trails in files,
+                not in the heap.  This has four consequences:  (1)
+                you no longer need to give your program large amounts
+                of extra memory to trace it;  but (2) you may need to have
+                large amounts of free disk space, particularly to trace
+                long-running programs; (3) for the moment, traced
+                programs now run even slower (we are working to improve
+                this); and (4) trails are now first-class objects,
+                so new tools can manipulate them to provide several
+                different views of the computation.
+<li> New tools: Storing trails in files means we can now provide more
+                tools to examine them.  The original graphical browser is
+                now renamed <b>hat-trail</b>, and can fully explore the
+                redex trails in file.
+                <b>hat-stack</b> gives a virtual stack back-trace
+                from a trail file (no need to re-run the program).
+                <b>hat-observe</b> gives you HOOD-like
+                observation of the input and output from functions.
+                <b>hat-detect</b> does algorithmic debugging in the style
+                of Freja; it discovers and identifies the location of
+                a bug after asking you some simple questions.
+                <b>hat-check</b> verifies the integrity of the trail
+                file, prints a textual dump, and gives statistics about
+                its contents.
+<li> Update:    Fuller Standard Library support for tracing: added
+                Directory, System, CPUTime, Random.
+                (Still missing: Time, Locale.)
+<li> Update:    More Haskell'98 language features are accepted:
+                named fields can now be traced, although the hat
+                tools don't yet show them in source form.  Pattern
+                bindings are also handled better.
+</ul>
+
+
+<hr>
 <h3>nhc98 release 1.02 (2001-02-14) features</h3>
 <ul>
 <li> Improvement: Fixed a space-leak in the compiler.  Compilation now
@@ -62,8 +150,6 @@ the redex-trail-based tracing and debugging system.
 
 
 <hr>
-
-
 <h3>full nhc98 release 1.00 (2000-09-15) features</h3>
 <ul>
 <li> Update:  Many changes to the nhc98 tracer (listed separately below)
@@ -108,6 +194,7 @@ the redex-trail-based tracing and debugging system.
 </ul>
 
 
+<hr>
 <h3>nhc98 pre-release 19 (2000-06-05) features</h3>
 <ul>
 <li> Big Change: Until recently, the normal/profiling and tracing

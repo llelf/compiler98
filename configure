@@ -7,7 +7,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.05 (CVS development version 2001-05-xx)"
+CONFIGVERSION="v1.06 (2001-06-08)"
 HMAKEVERSION="2.02 (2001-02-08)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
@@ -48,7 +48,7 @@ esac
 
 #RTSMESSAGE='(default)'
 #RTSFLAG=yes
-HEAP=100000
+HEAP=100100
 BUILDWITH=
 GHCSYM=
 
@@ -402,7 +402,7 @@ main(int argc, char **argv)
   int i = 0;
   char *s;
   if (argc!=2) {
-    puts("100000");
+    puts("100100");
     exit(1);
   }
   s = argv[1];

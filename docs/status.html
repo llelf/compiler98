@@ -7,21 +7,24 @@
 <hr>
 
 <p>
-The latest stable release is 1.04.  The CVS development tree is at
-version 1.05.  Bugfixes and important changes to the system are
+The latest stable release is 1.06.  The CVS development tree is at
+version 1.07.  Bugfixes and important changes to the system are
 described here for the two most recent released versions.
 
 <p>
 
 <hr>
-<h3>nhc98 1.05 (CVS development version) features</h3>
+<h3>nhc98 1.06 (2001-06-08) features</h3>
 <ul>
 <li> New:	Updated the Prelude/Libraries to match the newly revised
 		Haskell'98 Report.
 <li> Update:	Default build target is now basic + tracer (was just basic).
 <li> Update:	Building with gcc now builds everything with gcc, including
 		profiling and tracing.  This is much faster.
-<li> Bugfix:	An 'hi' built with just a C compiler segfaulted.
+<li> Bugfix:	A bad interaction between Java and Cygwin to do with Unix
+		vs. Windows pathnames.  (Visible only in Hat-trail and Hood.)
+<li> Bugfix:	An 'hi' built with just a C compiler seg-faulted, due to
+                mismatched .c file versions in the 1.04 source package.
 <li> Bugfix:	Recognise an existing ghc-5 installation.
 <li> Bugfix:	Missing include <errno.h> for Cygwin.
 <li> Bugfix:	Minor filename recognition error in hat-stack and hat-connect.
@@ -97,62 +100,6 @@ the redex-trail-based tracing and debugging system.
 		tools don't yet show them in source form.  Pattern
 		bindings are also handled better.
 </ul>
-
-<hr>
-<h3>nhc98 release 1.02 (2001-02-14) features</h3>
-<ul>
-<li> Improvement: Fixed a space-leak in the compiler.  Compilation now
-              requires approximately half the previous maximum heap,
-              and as a result, compile time is 5-10% faster.
-<li> Update:  'hi' now uses GNU's readline library if available.
-<li> Update:  Improved error reporting in hmake.
-<li> Update:  Improved the raw speed of both output and input for compiled
-              programs, by between 3x and 10x, depending on usage.
-<li> Bugfix:  Auto-configuration of hmake.  It occasionally failed to find
-              an already-installed version of nhc98.  Also, on Solaris
-              (and other System V based OSes), auto-detection of
-              hbc and/or ghc sometimes failed due to incompatibility
-              of the 'which' command.  Finally, the 'hmake' script
-              itself failed on Cygwin due to the 'which' command
-              being missing altogether.
-<li> Bugfix:  'atan2' in class RealFloat - revert to a default
-              declaration that does not use 'isNegativeZero', because
-              we don't implement the latter.
-<li> Bugfix:  Foreign functions declared of IO return type (especially
-              zero-arity CAFs) using the primitive FFI could suffer from
-              unexpected sharing of results.
-<li> Bugfix:  Failure to build BinArray library on FreeBSD (htonl/ntohl errors).
-<li> Bugfix:  Incorrect definitions of inRange and rangeSize in Ix library.
-<li> Bugfix:  Local infix declarations in `where' blocks were ignored.
-<li> Bugfix:  Some non-trivial `newtype' decls produced spurious errors.
-<li> Bugfix:  Printing of characters in the range 0x0100 to 0xffff now works.
-<li> Bugfix:  @-pattern-bindings are now fixed.  As a result, Happy-generated
-              parsers should now compile correctly.
-<li> Bugfix:  We now accept {-# pragmas #-} in any position, and understand
-              LINE pragmas.
-</ul>
-The following updates and bugfixes are specifically for <em>Hat</em>,
-the redex-trail-based tracing and debugging system.
-<ul>
-<li> New Feature:  When a traced program is interrupted or terminates with
-                   an error, you get a virtual stack trace of the
-                   computation "for free", without having to start up
-                   a browser.
-<li> Update:  Foreign imports (via the new common primitive FFI) with an
-              I/O result type are now also traced (previously only pure
-              foreign functions were traced).
-<li> Update:  Interface and object files for tracing now have distinct
-              file suffixes: .T.hi and .T.o.  This improves matters
-              enormously when switching between normal and tracing versions
-              of a program.  It also fixes some dependency bugs when
-              building the tracing version of the compiler.  Both the
-              compiler and hmake have knowledge of the new suffixes.
-<li> Bugfix:  The 'rtb' script failed because of missing shell quotes.
-<li> Added standard libraries:  IO, Array.
-        (Still missing: Directory, System, Time, Locale, CPUTime, Random.)
-<li> Added extension libraries:  FFI, IOExtras.
-</ul>
-
 
 
 <h3><a href=history98.html>Previous release history (nhc98)</a></h3>
