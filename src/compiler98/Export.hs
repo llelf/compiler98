@@ -11,7 +11,7 @@ import Scc
 import AssocTree
 import Extra
 import TokenId
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import MergeSort(unique)
 import Syntax(InfixClass(..))
 import Nice

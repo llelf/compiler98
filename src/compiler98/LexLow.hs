@@ -7,7 +7,7 @@ import Char
 
 import HbcOnly(makeDouble)
 import Lex
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import TokenId(TokenId,visible,qualify,t_List)
 import Extra(isNhcOp)
 

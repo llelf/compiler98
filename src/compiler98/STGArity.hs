@@ -7,7 +7,7 @@ import IntState
 import TokenId
 import PosCode
 import SyntaxPos
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 
 stgArity state code = 
   case mapS arityBinding code () (state,[],()) of

@@ -31,7 +31,7 @@ module ParseLib(-- defined in ParseCore
 
 import Lex
 import Lexical(PosToken(..),lexicalCont,PosTokenPre(..),LexState(..))
-import PackedString(PackedString)
+import SysDeps(PackedString)
 import ParseCore
 
 infixl 5 `parseAp`

@@ -7,7 +7,7 @@ module Import (Flags,ImportState,PackedString,TokenId,IdKind,HideDeclIds
 import AssocTree(AssocTree)
 import IO
 import Memo
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Flags
 import OsOnly(fixImportNames,isPrelude)
 import Extra

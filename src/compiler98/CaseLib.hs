@@ -2,7 +2,7 @@ module CaseLib where
 
 import Extra(Pos(..),noPos,strPos,pair,sndOf,dropJust)
 import Syntax
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import SyntaxPos
 import PosCode
 import State

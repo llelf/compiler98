@@ -5,7 +5,7 @@ import IntState(strIS,tidIS,IntState,uniqueIS,lookupIS,globalIS,arityIS,miIS)
 import Memo
 import AssocTree
 import TokenId (TokenId(..))
-import PackedString (PackedString)
+import SysDeps (PackedString)
 import State
 import Info
 import Extra

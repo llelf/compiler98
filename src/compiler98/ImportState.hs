@@ -8,7 +8,7 @@ module ImportState
 	,TokenId,Decl,InfixClass,IdKind
         ,NewType,Pos(..)) where
 
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import NT
 import IdKind
 import Syntax(InfixClass,Decl)

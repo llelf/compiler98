@@ -1,7 +1,7 @@
 module Syntax(module Syntax, Pos(..){-,PackedString-},TokenId) where
 
 import Extra(Pos(..),strChr,strStr)
-import PackedString(PackedString)
+import SysDeps(PackedString)
 import TokenId(TokenId)
 import Id(Id)
 import Ratio

@@ -9,7 +9,7 @@ import TypeSubst
 import TypeUtil
 import TypeData
 import TokenId(TokenId(..))
-import PackedString(PackedString)
+import SysDeps(PackedString)
 import Info
 import IntState
 import Id(Id)

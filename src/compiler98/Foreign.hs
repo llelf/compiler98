@@ -6,7 +6,7 @@ module Foreign
 
 import Maybe (fromJust,isNothing)
 import List (isPrefixOf,isSuffixOf,intersperse)
-import PackedString (unpackPS)
+import SysDeps (unpackPS)
 import Syntax
 import Info
 import NT

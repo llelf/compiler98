@@ -87,7 +87,7 @@ import GcodeLow(gcodeHeader,gcodeDump)
 import GcodeLowC(gcodeCHeader,gcodeGather)
 import GcodeSpec(gcodeZCon)
 import Depend(depend)
-import PackedString(PackedString, unpackPS)
+import SysDeps(PackedString, unpackPS)
 
 import Foreign(Foreign,strForeign)
 import ReportImports(reportFnImports)

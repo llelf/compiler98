@@ -13,7 +13,7 @@ import ParseLib
 import ParseLex
 import SyntaxPos
 import TokenId(t_Arrow,t_Tuple,TokenId(..))
-import PackedString (PackedString,packString,unpackPS)
+import SysDeps (PackedString,packString,unpackPS)
 import List (intersperse)
 
 parseExports =

@@ -7,7 +7,7 @@ import List(partition,sortBy,nub,intersect,(\\))
 import TokenId(TokenId(..),tPrelude,tNHCInternal
 		,t_Arrow,ensureM,forceM,dropM
 		,rpsPrelude,rpsBinary,t_List,isTidCon)
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Syntax
 import IdKind
 import AssocTree

@@ -20,7 +20,7 @@ import IExtract(tvPosTids,tvTids,freeType,fixOne,fixFun)
 import State
 import IdKind
 import PreImp(sExp,sQual,sLG,sFix)
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Info
 import SyntaxPos
 import TokenInt

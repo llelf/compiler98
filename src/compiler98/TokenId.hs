@@ -6,7 +6,7 @@ module TokenId(module TokenId) where
 
 import Char(isUpper)
 import Extra(mix,isNhcOp,Pos(..),strPos)
-import PackedString(PackedString, unpackPS, packString)
+import SysDeps(PackedString, unpackPS, packString)
 
 
 visible rtoken = Visible (packString rtoken)

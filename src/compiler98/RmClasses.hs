@@ -14,7 +14,7 @@ import Extra(dropJust)
 import State
 import Bind(identDecl)
 import TokenId(qualify)
-import PackedString(unpackPS)
+import SysDeps(unpackPS)
 import Id(Id)
 
 

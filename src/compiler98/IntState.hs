@@ -9,7 +9,7 @@ import NT
 import IdKind
 import TokenId(TokenId,mkQual3,mkQualD,dropM)
 import Extra
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Info
 import MergeSort(group)
 import Reduce(Reduce)

@@ -8,7 +8,7 @@ import List(sort)
 import Ratio
 import Extra
 import Syntax
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import SyntaxPos
 import PosCode
 import State

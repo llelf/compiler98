@@ -4,7 +4,7 @@ precedence.
 -}
 module Fixity(fixInfixList) where
 
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos

@@ -30,7 +30,7 @@ import IntState
 import ImportState(methodsI,uniqueI,tidI)
 import AssocTree
 import TokenInt
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import SyntaxPos
 import SyntaxUtil(infixFun,isTypeVar)
 import Id(Id)

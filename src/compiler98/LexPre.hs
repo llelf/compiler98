@@ -7,7 +7,7 @@ import Error(errorLC)
 import Lex
 import LexLow
 import LexStr	-- includes: tab,lexChr
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import TokenId(TokenId,t_List,t_Arrow,t_Pair,t_Tuple)
 
 #if defined(__HASKELL98__)

@@ -25,7 +25,7 @@ import Extract   (type2NT)
 import TypeSubst (substNT)
 import Extra     (snub,dropJust)
 import IExtract  (freeType)
-import PackedString  (packString,unpackPS)
+import SysDeps  (packString,unpackPS)
 
 type FFIMonad a = State In Out a Out
 type In  = ((TokenId,IdKind) -> Id)      -- lookup fn

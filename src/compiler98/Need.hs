@@ -21,7 +21,7 @@ import SyntaxUtil(infixFun)
 
 import Overlap(Overlap)
 import Info(IE)
-import PackedString(PackedString,unpackPS)
+import SysDeps(PackedString,unpackPS)
 import ImportState(ImportState)
 
 

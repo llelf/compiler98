@@ -12,7 +12,7 @@ import IntState
 import TokenId
 import PosCode
 import SyntaxPos
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import IdKind
 import Id(Id)
 

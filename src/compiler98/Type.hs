@@ -19,7 +19,7 @@ import MergeSort(group,unique)
 import TypeSubst
 import TypeCtx
 import TypeData
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Info
 import IntState
 import TypeUtil(ntIS)

@@ -3,7 +3,7 @@ module TypeUtil (cvi2typedict, ntIS, unboxedIS)  where
 import NT
 import TypeSubst
 import TypeData
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import Info
 import IntState
 import Extra(assocDef,snub)

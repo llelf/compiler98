@@ -2,7 +2,7 @@ module ReportImports where
 
 import AssocTree(listAT)
 import List(nub,groupBy,intersperse,sortBy)
-import PackedString(unpackPS)
+import SysDeps(unpackPS)
 import TokenId (extractM,extractV)
 import Info
 import IntState

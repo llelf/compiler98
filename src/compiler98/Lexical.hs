@@ -4,7 +4,7 @@ module Lexical(lexical,lexicalCont,Lex{-,PackedString-}
 import Extra(Pos(..),toPos,strPos)
 import Lex
 import LexPre
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import TokenId
 
 type PosToken = (Pos,Lex, LexState, [PosTokenPre])

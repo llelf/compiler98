@@ -19,7 +19,7 @@ import Extra
 import NeedLib
 import AssocTree
 import Memo
-import PackedString(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS)
 import NT
 import Syntax
 import OsOnly(isPrelude)
