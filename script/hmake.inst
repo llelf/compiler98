@@ -84,8 +84,10 @@ hmrtflags=""	# hmake run-time flags
 importflags=""  # -I, -i and -P flags (directories for Haskell imports)
 bigIflags=""	# -I flags for cpp includes
 cppflags=""	# -D (and -U ?) flags for cpp
+PROF=0
 TPROF=0
 TRACE=0
+CFILES=0
 
 
 # Also assume compiler/linker flags from the environment
@@ -179,12 +181,25 @@ do
         hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o";
         TRACE=1 ;;
     -p) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=p.o" ;;
+        PROF=1;
+        if [ $CFILES -eq 1 ]
+        then hmflags=$hmflags" -o-suffix=p.c";
+        else hmflags=$hmflags" -o-suffix=p.o";
+        fi ;;
     -t|-z) hcflags=$hcflags" $1";
-           hmflags=$hmflags" -o-suffix=z.o";
-           TPROF=1 ;;
+           TPROF=1;
+           if [ $CFILES -eq 1 ]
+           then hmflags=$hmflags" -o-suffix=z.c";
+           else hmflags=$hmflags" -o-suffix=z.o";
+           fi ;;
     -C) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=hc" ;;
+        CFILES=1;
+        if [ $PROF -eq 1 ]
+        then hmflags=$hmflags" -o-suffix=p.c";
+        elif [ $TPROF -eq 1 ]
+        then hmflags=$hmflags" -o-suffix=z.c";
+        else hmflags=$hmflags" -o-suffix=hc";
+        fi ;;
     -trusted) HATFLAGS=$HATFLAGS" $1" ;;
     -prelude) HATFLAGS=$HATFLAGS" $1";
               hcflags=$hcflags" $1" ;;
