@@ -2,7 +2,7 @@ include Makefile.inc
 
 # PATH := $(JAVADIR)/bin:$(PATH)
 
-ARCHIVE = rtb.jar
+ARCHIVE = hat-track.jar
 
 .SUFFIXES: .java
 
