@@ -270,7 +270,7 @@ then
   GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   case $BUILDWITH in
     hbc|xtc)  RTSFLAG=no;;
-    ghc|nhc)  RTSFLAG=yes;;
+    ghc|nhc*) RTSFLAG=yes;;
     gcc)      RTSFLAG=yes;;
   esac
   if [ "$RTSFLAG" = "yes" ]
