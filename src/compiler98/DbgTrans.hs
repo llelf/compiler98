@@ -4,11 +4,10 @@ for producing traces for debugging.
 -}
 module DbgTrans(debugTrans, dbgAddImport) where
 
-import Extra(Pos, noPos, pair, fromPos, strPos, dropJust)
+import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var))
 import TokenId
 import DbgId
---import Info
 import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
                ,uniqueIS,uniqueISs,IE(IEnone),ntI,updateIS
                ,Info(InfoVar,InfoClass,InfoMethod,InfoDMethod,InfoIMethod))
@@ -16,19 +15,10 @@ import Syntax
 import SyntaxPos
 import StrSyntax
 import NT
---import Flags
---import Bind
---import RenameLib
 import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace(trace)
-#endif
-#if defined(__GLASGOW_HASKELL__)
-import IOExts(trace)
-#endif
 
 -- newNameVar, nameArity, hsFromInt, addInt
 

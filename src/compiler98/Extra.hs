@@ -1,4 +1,4 @@
-module Extra(module Extra, module HbcOnly, module Maybe) where
+module Extra(module Extra, module HbcOnly, module Maybe, trace) where
 
 import HbcOnly
 import Char

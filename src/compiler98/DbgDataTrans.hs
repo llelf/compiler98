@@ -4,30 +4,21 @@
 module DbgDataTrans(dbgDataTrans) where
 
 import Tree234
-import Extra
+import Extra(trace,noPos,pair,snub,mixSpace,assocDef)
 import IdKind
 import TokenId
 import DbgId
 import IntState
 import Syntax
-import SyntaxPos
+import SyntaxPos(Pos,HasPos(getPos))
 import StrSyntax(StrId,strType,strContexts,strVarsType,strSimple)
 import Flags(Flags(sDbgTrans,sTraceFns))
---import Bind
---import RenameLib
 import State
 import NT
 import Nice(niceCtxs, niceNT, mkAL)
 import AssocTree
-import Char 
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined(__GLASGOW_HASKELL__) || defined(__HUGS__)
-import IOExts(trace)
-#endif
 
 data Inherited = Inherited 
                    ((TokenId, IdKind) -> Id) -- lookupPrel?

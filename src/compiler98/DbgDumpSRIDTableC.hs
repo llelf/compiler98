@@ -5,17 +5,11 @@ import IO
 import System
 import PackedString(PackedString, unpackPS, packString)
 import IntState
-import Extra(strStr, dropJust)
+import Extra(strStr,dropJust,trace)
 import Flags
 import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
 import EmitState
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#endif
 
 #if defined(__HASKELL98__)
 #define isAlphanum isAlphaNum

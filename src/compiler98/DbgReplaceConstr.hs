@@ -4,7 +4,7 @@ This file is not used at all!!!
 module DbgDataTrans(dbgDataTrans) where
 
 import Tree234
-import Extra
+import Extra(trace)
 import IdKind
 import TokenId
 import DbgId
@@ -21,12 +21,6 @@ import Nice(niceCtxs, niceNT, mkAL)
 import AssocTree
 import Char 
 import PackedString(PackedString, unpackPS, packString)
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#endif
 
 data Inherited = Inherited ((TokenId, IdKind) -> Int) [(Int, Int)] Int (Tree (Int, Int)) Bool
 data Threaded = Threaded IntState [(Int,[(Pos,Int)])]

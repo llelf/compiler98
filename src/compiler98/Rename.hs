@@ -195,9 +195,10 @@ sepFixDecls = concatMap (\decl-> case decl of
 
 
 renameDecls (DeclsParse decls) (_,qualFun,expFun,fixity2) state3 =
-    let (fixity3,state4) = fixFixityRS fixity2 state3 (sepFixDecls decls) in
-    (unitS DeclsParse =>>> 
-    mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
+    let (fixity3,state4) = fixFixityRS fixity2 state3 (sepFixDecls decls) 
+    in
+      (unitS DeclsParse =>>> mapS renameDecl decls) 
+        (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
 
 
 renameDecl :: Decl TokenId 

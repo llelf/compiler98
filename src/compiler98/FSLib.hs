@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+
+-}
 module FSLib(module FSLib, AssocTree(..), Tree, TokenId) where
 
 import Syntax
@@ -6,15 +9,17 @@ import Info
 import State
 import AssocTree
 import Extra(Pos(..),noPos,sndOf,dropJust)
-import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon, t_List, tRatio, tRatioCon, tident)
+import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,tRatio,tRatioCon
+              ,tident)
 import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS,updateIS)
 import NT(NewType(..),NT)
+import Id(Id)
 
 startfs fs x state tidFun =
-      let down = ((ExpCon noPos (tidFun (t_List,Con))		-- expList  nil
-		  ,ExpCon noPos (tidFun (t_Colon,Con))		--	    cons
+      let down = ((ExpCon noPos (tidFun (t_List,Con))	   -- expList  nil
+		  ,ExpCon noPos (tidFun (t_Colon,Con))	   --	    cons
 		  )
-		  ,ExpVar noPos (tidFun (tident,Var))		-- expId
+		  ,ExpVar noPos (tidFun (tident,Var))	   -- expId
 		  ,tidFun
 		  )
 
@@ -37,7 +42,8 @@ fsTidFun down@(expList,expId,tidFun) up =
   (tidFun,up)
 
 fsRealData con down up@(state,t2i) =
-  ((isRealData . dropJust . lookupIS state . belongstoI . dropJust . lookupIS state) con,up)
+  ((isRealData . dropJust . lookupIS state . belongstoI 
+    . dropJust . lookupIS state) con,up)
 
 fsExpAppl pos [x] = unitS x
 fsExpAppl pos xs = unitS (ExpApplication pos xs)
@@ -59,8 +65,19 @@ fsClsTypSel pos cls typ sel down  up@(state,t2i) =
 --                    info = InfoMethod  u tid (InfixDef,9) NoType (Just arity) cls
 		 in (ExpVar pos u,(addIS u info state,addAT t2i sndOf tid u))
 
+
+fsExp2 :: Pos -> Id -> Id -> a 
+       -> (IntState,Tree (TokenId,Int)) 
+       -> (Exp Int,(IntState,Tree (TokenId,Int)))
+
 fsExp2 pos cls i = 
   unitS (ExpVar pos) =>>> fsExp2i pos cls i
+
+
+fsExp2i :: Pos -> Id -> Id -> a 
+        -> (IntState,Tree (TokenId,Id)) 
+        -> (Id,(IntState,Tree (TokenId,Id)))
+
 
 fsExp2i pos cls i down  up@(state,t2i) = 
   case lookupIS state cls of
@@ -80,3 +97,4 @@ fsExp2i pos cls i down  up@(state,t2i) =
 		    let arity = (length . snd . dropJust . lookupAT (instancesI clsInfo)) i   -- snd instead of fst !!!
 		    in seq arity (u,(addIS u (InfoVar  u tid (InfixDef,9) IEall NoType (Just arity)) state,addAT t2i sndOf tid u))
 
+{- End Module FSLib ---------------------------------------------------------}

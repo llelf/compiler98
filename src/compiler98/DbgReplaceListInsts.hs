@@ -1,14 +1,11 @@
+{- ---------------------------------------------------------------------------
+This file is not used at all!!!
+-}
 module DbgReplaceListInsts(dbgReplaceListInsts) where
 
 import Syntax
 import TokenId
 import DbgId
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#endif
 
 dbgReplaceListInsts (Module pos id exports impdecs fixdecs (DeclsParse decls)) = 
     Module pos id exports impdecs fixdecs (DeclsParse (map replaceListInsts decls))

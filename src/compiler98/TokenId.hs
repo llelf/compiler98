@@ -3,15 +3,18 @@ module TokenId(module TokenId {-,PackedString-}) where
 import Extra(mix,isNhcOp,Pos(..),strPos)
 import PackedString(PackedString, unpackPS, packString)
 
-visible   rtoken = Visible (packString rtoken)
+visible rtoken = Visible (packString rtoken)
 qualify rmodule rtoken = Qualified (packString rmodule) (packString rtoken)
 
 data TokenId =
      TupleId   Int
    | Visible   PackedString
    | Qualified PackedString PackedString
-   | Qualified2 TokenId TokenId		
+     -- token for qualified name: module name, variable name
+   | Qualified2 TokenId TokenId	
+     -- token with: class token, type token for a dictionary?
    | Qualified3 TokenId TokenId TokenId
+     -- token for method in instance: class token, type token, variable token
    deriving (Eq,Ord)
 
 instance Show TokenId where
@@ -19,12 +22,16 @@ instance Show TokenId where
 			    then showString "()"
 	                    else showString "Prelude." . shows s
   showsPrec d (Visible n) = showString (reverse (unpackPS n))
-  showsPrec d (Qualified m n ) = showString (reverse (unpackPS m)) . showChar '.' . showString (reverse (unpackPS  n))
+  showsPrec d (Qualified m n ) = 
+    showString (reverse (unpackPS m)) . showChar '.' . 
+    showString (reverse (unpackPS  n))
   showsPrec d (Qualified2 t1 t2) = shows t1 . showChar '.' . shows t2
-  showsPrec d (Qualified3 t1 t2 t3) = shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
+  showsPrec d (Qualified3 t1 t2 t3) = 
+    shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
 
 isTidOp (TupleId s) = False
-isTidOp tid = (isNhcOp . head . dropWhile (=='_') . reverse . unpackPS . extractV) tid
+isTidOp tid = 
+  (isNhcOp . head . dropWhile (=='_') . reverse . unpackPS . extractV) tid
 
 --notPrelude (Qualified tid n) = tid /= rpsDPrelude && tid /= rpsPrelude
 notPrelude (Qualified tid n) = tid /= rpsPrelude
@@ -32,43 +39,88 @@ notPrelude (Qualified2 t1 t2) = notPrelude t1 && notPrelude t2
 notPrelude (Qualified3 t1 t2 t3) = notPrelude t1 && notPrelude t2 
 notPrelude (TupleId _) = False
 
+
+{- construct Qualified2 token from given two tokens -}
+mkQual2 :: TokenId -> TokenId -> TokenId
+
 mkQual2 cls cls_typ = Qualified2 cls cls_typ
+
+
+{- construct Qualified3 token from given three tokens -}
+mkQual3 :: TokenId -> TokenId -> TokenId -> TokenId
+
 mkQual3 cls typ met = Qualified3 cls typ (dropM met)
+
+
+{- -}
+mkQualD :: PackedString -> TokenId -> TokenId
 
 mkQualD rps v@(Visible n) = Qualified3 (Visible rps) t_underscore v
 mkQualD rps   (Qualified m v) = Qualified3 (Visible m) t_underscore (Visible v)
 
+
+{- if token is not qualified make it qualified with given module name -}
+ensureM :: PackedString -> TokenId -> TokenId
+
 ensureM tid (Visible n) = Qualified tid n
 ensureM tid q = q
+
+
+{- make token into qualified token with given module name -}
+forceM :: PackedString -> TokenId -> TokenId
 
 forceM m (Qualified _ n) = Qualified m n
 forceM m (Visible n)     = Qualified m n
 forceM m tid = tid
+
+
+{- drop all qualification (module names) from token -}
+dropM :: TokenId -> TokenId
 
 dropM (Qualified tid n) = Visible n
 dropM (Qualified2 t1 t2) = t2
 dropM (Qualified3 t1 t2 t3) = t3
 dropM v = v
 
+{- get module name from token, correct for Visible? -}
+extractM :: TokenId -> PackedString
+
 extractM (Qualified tid n) = tid
 extractM (Qualified2 t1 t2) = extractM t1
 extractM (Qualified3 t1 t2 t3) = extractM t1
 extractM v = rpsPrelude
+
+
+{- get identifier name from token, without qualification -}
+extractV :: TokenId -> PackedString
 
 extractV (Visible v) = v
 extractV (Qualified m v) =  v
 extractV (Qualified2 t1 t2) = extractV t2
 extractV (Qualified3 t1 t2 t3) = extractV t3
 
+
+{- extend token by adding position to the identifier name -}
+tidPos :: TokenId -> Pos -> TokenId
+
 tidPos (TupleId s) pos = if s == 0 
 		         then visImpRev ("():" ++ (strPos pos))
 	                 else visImpRev (shows s (':' : strPos pos))
-tidPos (Visible n)           pos = Visible (packString (reverse (strPos pos) ++ ':' : unpackPS n))
-tidPos (Qualified m n )      pos = Qualified m (packString (reverse (strPos pos) ++ ':' : unpackPS n))
-tidPos (Qualified2 t1 t2)    pos = Qualified2 t1 (tidPos t2 pos)
-tidPos (Qualified3 t1 t2 t3) pos = Qualified3 t1 t2 (tidPos t3 pos)
+tidPos (Visible n)           pos = 
+  Visible (packString (reverse (strPos pos) ++ ':' : unpackPS n))
+tidPos (Qualified m n )      pos = 
+  Qualified m (packString (reverse (strPos pos) ++ ':' : unpackPS n))
+tidPos (Qualified2 t1 t2)    pos =
+  Qualified2 t1 (tidPos t2 pos)
+tidPos (Qualified3 t1 t2 t3) pos = 
+  Qualified3 t1 t2 (tidPos t3 pos)
 
-add2M str (Qualified m v) =  Qualified (packString (reverse str ++ unpackPS m)) v
+
+{- append given string to module name of qualified token -}
+add2M :: String -> TokenId -> TokenId
+
+add2M str (Qualified m v) =  
+  Qualified (packString (reverse str ++ unpackPS m)) v
 
 visImpRev = Visible . packString . reverse
 qualImpRev = Qualified rpsPrelude . packString . reverse
@@ -89,6 +141,10 @@ rpsPS           = (packString . reverse ) "PackedString"
 isUnit (TupleId 0) = True
 isUnit _ = False
 
+
+{- make token for tuple of given size -}
+t_Tuple :: Int -> TokenId
+
 t_Tuple  size   = TupleId size
 
 
@@ -101,7 +157,8 @@ t_Assign	= visImpRev ":="
 tprefix	 	= visImpRev "prefix"
 tas	 	= visImpRev "as"
 tforall	 	= visImpRev "forall"
-tdot	 	= visImpRev "."        -- an unqualified dot, used in types, e.g., "forall a . [a]"
+tdot	 	= visImpRev "."        
+  -- an unqualified dot, used in types, e.g., "forall a . [a]"
 tunboxed	= visImpRev "unboxed"
 tprimitive	= visImpRev "primitive"
 tMain           = visImpRev  "Main"

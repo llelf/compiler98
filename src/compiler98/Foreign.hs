@@ -13,13 +13,8 @@ import Info
 import NT
 import TokenId
 import AssocTree
-import Extra (mix)
+import Extra (mix,trace)
 import GcodeLow (fun,foreignfun,fixStr)
-#if defined(__GLASGOW_HASKELL__) || defined(__HUGS__)
-import IOExts (trace)
-#else
-import NonStdTrace
-#endif
 
 
 data ImpExp  = Imported | Exported

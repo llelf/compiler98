@@ -20,7 +20,7 @@ import PosCode
 
 import OsOnly
 import Extra(Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine,
-             pair,fst3,thd3)
+             pair,fst3,thd3,trace)
 import State(State0(..))
 import ImportState(ImportState,Info,IE,initIS,getErrorsIS,getSymbolTableIS
                   ,getRenameTableIS)
@@ -98,13 +98,6 @@ import PackedString(PackedString, unpackPS)
 
 import Foreign (Foreign,strForeign)
 import ReportImports
-
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#endif
 
 
 --import NonStdProfile
