@@ -10,9 +10,12 @@ module Prelude
   ) where
 
 import PackedString (PackedString)
-import HatBuiltin (CStructure,NmType,SR,FileTrace)
+import HatBuiltin (CStructure)
 -- import Ratio (Ratio(..))	-- remove Rationals for now
 
+newtype NmType    = NmType    Int
+newtype FileTrace = FileTrace Int
+newtype SR        = SR        Int
 
 data E a = E a			-- E to protect a closure from evaluation
 
@@ -493,9 +496,9 @@ mkNTRational x	= primNTRational 0 0	-- dummy (constructor :% not available)
 mkNTFloat	= primNTFloat
 mkNTDouble	= primNTDouble
 mkNTId' x	= undefined x		-- dummy for compile time only
-mkNTId x	= primNTId x		-- dummy for compile time only
+mkNTId x	= primNTId x		--   replaced by this one at runtime
 mkNTConstr' x	= undefined x		-- dummy for compile time only
-mkNTConstr x	= primNTConstr x	-- dummy for compile time only
+mkNTConstr x	= primNTConstr x	--   replaced by this one at runtime
 mkNTTuple	= primNTTuple
 mkNTFun		= primNTFun
 mkNTCase	= primNTCase
