@@ -541,9 +541,14 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
+    echo -n "hsc2hs "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hsc2hs.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hsc2hs
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hmake-config
+    chmod +x $BUILDBINDIR/hsc2hs
 
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
