@@ -21,15 +21,31 @@ unsigned filesize=0, outputsize=0;
 char* progname, *dir;
 
 char*
-basename (char* path)
+rmext (char* word, char* ext)
+{
+  if (ext==(char*)0) return word;
+  else {
+    char *e = ext;
+    char *i = strdup(word);
+    char *c = i;
+    while (*c) c++;
+    while (*e) e++;
+    while ((*--c==*--e) && e!=ext) ;
+    if (e==ext) *c='\0'; else *++c='\0';
+    return i;
+  }
+}
+
+char*
+basename (char* path, char* ext)
 {
   char *c = path;
   while (*c) c++;
   while (*c!='/' && c!=path) c--;
-  if (c==path) return path;
+  if (c==path) return rmext(path,ext);
   else {
     c++;
-    return strdup(c);
+    return rmext(strdup(c),ext);
   }
 }
 
@@ -72,9 +88,9 @@ initialise (int argc, char **argv)
     arg=argv[1];
   }
   dir = dirname(arg);
-  arg = basename(arg);
+  arg = basename(arg,".hat");
   chdir(dir);
-  progname   = basename(argv[0]);
+  progname   = basename(argv[0],0);
 			/* for error messages - /not/ the prog being debugged */
   filesize   = sizeFile(arg,".hat");
   outputsize = sizeFile(arg,".hat.output");

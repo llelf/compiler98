@@ -24,6 +24,9 @@ typedef struct {
   int   defncolumn;
 } Ident;
 
+char*		basename	(char* path, char* ext); /* ext can be NULL */
+char*		dirname		(char* path);
+
 void		initialise	(int argc, char **argv);
 FILE*		openFile	(char* base, char* ext);
 int		sizeFile	(char* base, char* ext);
