@@ -34,8 +34,8 @@ extern int dumpStack;
 extern timer gcTime;
 extern timer totalTime;
 extern timer runTime;
-Int hpTotal;
-Int hpMoved;
+int64_t hpTotal;
+int64_t hpMoved;
 Int hpMaxSurvive;
 int nogc;
 
@@ -72,7 +72,8 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
   hpBase = hpLowLimit = hpStart;
 
   cafptr = 0;
-  hpMaxSurvive = hpMoved = hpTotal = nogc = 0;
+  hpMoved = hpTotal = 0;
+  hpMaxSurvive = nogc = 0;
 
 
   if(IND_TAG) {
@@ -106,8 +107,8 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 void finishGc(NodePtr hp,int verbose)
 {
   if(verbose) {
-    fprintf(stderr,"\n\nUsed  %ld words of heap.\n",hp-hpBase+hpTotal);
-    fprintf(stderr,"Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
+    fprintf(stderr,"\n\nUsed  %lld words of heap.\n",(int64_t)(hp-hpBase)+hpTotal);
+    fprintf(stderr,"Moved %lld words of heap in %d gcs.\n",hpMoved,nogc);
     fprintf(stderr,"%d words to next gc.\n",hpLimit-hp);
     fprintf(stderr,"Max live after gc: %ld words.\n",hpMaxSurvive);
   }
@@ -565,7 +566,7 @@ again:
   prevLow = hpLowLimit;
   prevHigh = hpLimit;
 
-  hpTotal += hp - hpBase;
+  hpTotal += (int64_t)(hp - hpBase);
 
   clearForeignObjs();
 
@@ -652,7 +653,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 
   hp = moveHeap(hp);
 
-  hpMoved += hp - &hpLowLimit[GCEXTRA];
+  hpMoved += (int64_t)(hp - &hpLowLimit[GCEXTRA]);
 
   if(hpMaxSurvive < hp-&hpLowLimit[GCEXTRA])
     hpMaxSurvive =  hp-&hpLowLimit[GCEXTRA];
@@ -663,12 +664,12 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
     fprintf(stderr,"The program ran out of heap memory.");
     fprintf(stderr,"  (Current heapsize is %d bytes.)\n",hpSize*sizeof(int));
     fprintf(stderr,"You can set a bigger size with e.g. +RTS -H4M -RTS");
-    fprintf(stderr," (4M = four megabytes).");
+    fprintf(stderr," (4M = four megabytes).\n");
     fprintf(stderr,"GC stats:\n  ");
     fprintf(stderr,"  Only %d words after gc, need %ld words.\n"
                                                          ,(NodePtr)sp-hp,size);
-    fprintf(stderr,"  Used  %ld words of heap.",hp-hpBase+hpTotal);
-    fprintf(stderr,"  Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
+    fprintf(stderr,"  Used  %lld words of heap.",(int64_t)(hp-hpBase)+hpTotal);
+    fprintf(stderr,"  Moved %lld words of heap in %d gcs.\n",hpMoved,nogc);
     fprintf(stderr,"  %d words to next gc.",(NodePtr)sp-hp);
     fprintf(stderr,"  Max live after gc: %ld words.\n",hpMaxSurvive);
 #if TRACE

@@ -1,6 +1,11 @@
 
 #ifndef _MARK_H
 
+#include <inttypes.h>
+#ifndef int64_t
+#define int64_t	long int
+#endif			/* default down to 32 bits if 64 not available */
+
 /* #define QADDR 1 */
 #define GCEXTRA 2+EXTRA
 
@@ -32,8 +37,8 @@ extern UInt qAddr;
 extern int bellGc;
 extern timer gcTime;
 extern timer totalTime;
-extern Int hpTotal;
-extern Int hpMoved;
+extern int64_t hpTotal;
+extern int64_t hpMoved;
 extern Int hpMaxSurvive;
 extern int nogc;
 
