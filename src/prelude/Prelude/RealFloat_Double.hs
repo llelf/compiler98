@@ -3,8 +3,6 @@ module Prelude(RealFloat(..)) where
 import PrimDecodeDouble
 import PrimEncodeDouble
 import CRealFloat
-#if defined(TRACING)
-#endif
 
 
 -- WARNING 64bit IEEE float
@@ -21,9 +19,14 @@ instance  RealFloat Double  where
     encodeFloat x y = primEncodeDoubleC x y
 #endif
 
-    isNaN x 	     = error "isNaN not implemented" -- TODO
-    isInfinite x     = error "isInfinite not implemented" -- TODO
-    isDenormalized x = error "isDenormalized not implemented" -- TODO
-    isNegativeZero x = error "isNegativeZero not implemented" -- TODO
+    isNaN x 	     = isnan x /= 0
+    isInfinite x     = isinf x /= 0
+
+    -- TODO
+    isDenormalized x = False
+    isNegativeZero x = False
     isIEEE x         = False
 
+
+foreign import "isinf" isinf :: Double -> Int
+foreign import "isnan" isnan :: Double -> Int
