@@ -24,19 +24,31 @@ case $1 in
 	;;
   Japi) echo Graphics Graphics/UI Graphics/UI/Japi
 	;;
+  monads)
+	echo Monad
+	echo Unstable Unstable/Control Unstable/Control/Monad
+	echo Unstable/Control/Monad/Private Unstable/Control/Monad/ST
+	;;
+  mtl)	echo Control Control/Monad
+	;;
   network)
 	echo Network
 	;;
   OpenGL)
 	echo Graphics Graphics/Rendering Graphics/Rendering/OpenGL
-	echo Graphics/Rendering/OpenGL/GL Graphics/Rendering/OpenGL/GL/PixelRectangles
-	echo Graphics/Rendering/OpenGL/GL/Texturing Graphics/Rendering/OpenGL/GLU
+	echo Graphics/Rendering/OpenGL/GL
+	echo Graphics/Rendering/OpenGL/GL/PixelRectangles
+	echo Graphics/Rendering/OpenGL/GL/Texturing
+	echo Graphics/Rendering/OpenGL/GLU
 	;;
   parsec)
 	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
 	;;
   QuickCheck)
 	echo Test Test/QuickCheck Debug Debug/QuickCheck
+	;;
+  readline)
+	echo System System/Console
 	;;
   *)
 	;;
