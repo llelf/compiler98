@@ -66,6 +66,10 @@
   <dd><a href="bugs/nhc98test21.hs">Example program</a>.</dd>
 <dt><em>Nhc does not handle data types with arguments of kind *->* correctly</em></dt>
   <dd><a href="bugs/nhc98test22.hs">Example program</a>.</dd>
+<dt><em>Import bugs</em></dt>
+  <dd>An `import M' should bring both qualified and unqualified names into
+      scope.  Currently, only unqualified names are available.  A workaround
+      is to use an additional explicit `import qualified M'.
 </dl>
 
 
@@ -192,7 +196,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.04.30<br>
+2001.08.08<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -125,10 +125,23 @@ ix86-Linux for Debian:
 </center>
 
 <p>
-<b>Known to compile for at least: </b>
-   ix86-Linux, ix86-NetBSD, ix86-FreeBSD, ix86-CYGWIN-NT4, ix86-Cygwin_95,
-   ppc-Linux, sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4,
-   power3-AIX.
+<center>
+<b>Known to compile for at least the following machine/OS combinations:</b><br>
+<table border=1 cellspacing=0 cellpadding=2 bgcolor="#dddddd"><tr>
+<td>ix86</td><td>Linux, NetBSD, FreeBSD, CYGWIN_NT4, CYGWIN_95</td>
+</tr><tr>
+<td>ppc</td><td>Linux</td>
+</tr><tr>
+<td>sparc</td><td>solaris2, SunOS4</td>
+</tr><tr>
+<td>mips</td><td>IRIX5, Ultrix-4.5</td>
+</tr><tr>
+<td>power3</td><td>AIX</td>
+</tr><tr>
+<td>pmax</td><td>NetBSD</td>
+</tr></table>
+</center>
+
 <p>
 
 <p>
@@ -165,6 +178,15 @@ be comprehensive, but if you have any problems, please mail
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
                     <th>date</th> <th>fixes what problem?</th></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-fields">
+      fields</a></td>
+  <td>nhc98 v1.06</td>
+  <td>2001-08-17</td>
+  <td>An imported named field, used both as a pattern and a selector
+      in the same equation, gave rise to an "Unbound Identifier" error.
+      </td></tr>
 
 <tr bgcolor=#ddffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-ncurses">
@@ -299,7 +321,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.06.15<br>
+This page last modified: 2001.08.17<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
