@@ -115,6 +115,9 @@ C_HEADER(primUpdateVector)
   C_RETURN(mkUnit());
 }	
 
+
+#define SAFETY 100
+
 /* primNewVectorC :: Int -> a -> IO (Vector a) */
 NodePtr primNewVectorC (int size, NodePtr box)
 {
@@ -125,6 +128,7 @@ NodePtr primNewVectorC (int size, NodePtr box)
 
   val = GET_POINTER_ARG1(box,1);
 
+  C_CHECK(size+SAFETY);
   res = C_ALLOC(1+EXTRA+size);
   res[0] = CONSTRP(size,0);
   INIT_PROFINFO(res,&nodeProfInfo)
@@ -147,6 +151,7 @@ NodePtr primCopyVectorC (NodePtr arg)
   size = CONINFO_LARGESIZES(GET_CONINFO(arg));
   /*fprintf(stderr,"copyVector: size=%d\n",size);*/
 
+  C_CHECK(size+SAFETY);
   res = C_ALLOC(1+EXTRA+size);
   res[0] = CONSTRP(size,0);
   INIT_PROFINFO(res,&nodeProfInfoCopy)
@@ -199,4 +204,4 @@ void primSetVectorC (int idx, NodePtr box, NodePtr arg)
   }
 
   return;
-}		
+}
