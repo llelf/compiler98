@@ -1,4 +1,4 @@
-module Addr
+module FFI
   ( Addr	-- abstract, instance of: Eq, Ord, Enum, Show
   , nullAddr	-- :: Addr
   , plusAddr	-- :: Addr -> Int -> Addr

@@ -1,4 +1,4 @@
-module StablePtr
+module FFI
   ( StablePtr		-- abstract
   , makeStablePtr	-- :: a -> IO (StablePtr a)
   , deRefStablePtr	-- :: StablePtr a -> IO a

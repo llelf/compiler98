@@ -1,4 +1,4 @@
-module Ptr
+module FFI
   ( Ptr		-- abstract, instance of: Eq, Ord, Enum, Show
   , nullPtr	-- :: Ptr a
   , plusPtr	-- :: Ptr a -> Int -> Ptr b

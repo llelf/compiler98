@@ -1,4 +1,4 @@
-module Numeric where
+module FFI where
 
 import Char (intToDigit)
 

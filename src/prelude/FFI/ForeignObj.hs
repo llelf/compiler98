@@ -1,6 +1,10 @@
-module ForeignObj
+module FFI
   ( ForeignObj			-- abstract, instance of: Eq
   , makeForeignObj		-- :: Addr -> IO () -> IO ForeignObj
+  , newForeignObj		-- :: Addr -> IO () -> IO ForeignObj
+#if !defined(TRACING)
+  , freeForeignObj		-- :: ForeignObj -> IO ()
+#endif
   , foreignObjToAddr		-- :: ForeignObj -> Addr
   , withForeignObj		-- :: ForeignObj -> (Addr -> IO a) -> IO a
   , touchForeignObj		-- :: ForeignObj -> IO ()
@@ -41,6 +45,21 @@ foreign cast foreignObjToAddr	:: ForeignObj -> Addr
 -- But it is impossible to do the opposite!
 --foreign cast addrToForeignObj	:: Addr       -> ForeignObj	-- WRONG!
 
+#if !defined(TRACING)
+-- Just occasionally, we really want to finalise a ForeignObj early.
+-- This is slightly dangerous, because the ForeignObj could remain live
+-- indefinitely following its finalisation, allowing nasty people to
+-- continue using it (and seg-faulting as a result!)
+freeForeignObj :: ForeignObj -> IO ()
+freeForeignObj fo = _mkIOok1 reallyFreeForeignObj fo
+
+-- The true freeing operation must be implemented outside the FFI, because
+-- a ForeignObj passed via the FFI is just the Addr it contains, not the
+-- whole value including the finaliser.  Note that this operation calls the
+-- finaliser for the Addr, then additionally releases the ForeignObj storage
+-- itself for possible re-use.
+reallyFreeForeignObj primitive 1 :: ForeignObj -> ()
+#endif
 
 -- New operation suggested by Marcin Kowalcsycz.
 -- It is a safer way to use the older, less safe, `foreignObjToAddr'.

@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.5 2000/10/26 17:19:27 malcolm Exp $
+   $Id: FFI.hs,v 1.6 2000/11/22 16:22:25 malcolm Exp $
 -}
 
 module FFI
@@ -43,11 +43,14 @@ module FFI
 -- ,writeForeignFinalizer -- :: ForeignObj ->  Addr        -> IO ()
   , foreignObjToAddr      -- :: ForeignObj -> Addr
 -- ,addrToForeignObj      -- :: Addr       -> IO ForeignObj 
+#if !defined(TRACING)
+   ,freeForeignObj        -- :: ForeignObj -> IO ()
+#endif
    ,withForeignObj        -- :: ForeignObj -> (Addr -> IO a) -> IO a
    ,touchForeignObj       -- :: ForeignObj -> IO ()
 
-#if !defined(TRACING)
    -------------------------------------------------------------------
+#if !defined(TRACING)
   , StablePtr             -- abstract
   , makeStablePtr         -- :: a -> IO (StablePtr a)
   , deRefStablePtr        -- :: StablePtr a -> IO a
