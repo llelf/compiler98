@@ -81,3 +81,10 @@ C_HEADER(primIntRsh) {
     C_RETURN(nhc_mkInt(i>>s));
 }
 
+unsigned int nhc_primIntAnd (unsigned int a, unsigned int b) { return (a&b); }
+unsigned int nhc_primIntOr  (unsigned int a, unsigned int b) { return (a|b); }
+unsigned int nhc_primIntXor (unsigned int a, unsigned int b) { return (a^b); }
+unsigned int nhc_primIntLsh (unsigned int a, unsigned int b) { return (a<<b); }
+unsigned int nhc_primIntRsh (unsigned int a, unsigned int b) { return (a>>b); }
+unsigned int nhc_primIntCompl (unsigned int a)               { return (~a); }
+
