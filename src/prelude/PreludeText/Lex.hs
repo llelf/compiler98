@@ -37,7 +37,8 @@ lex (c:s) | isSingle c	= [([c],s)]
 		isSym c	    =  c `elem` "!@#$%&*+./<=>?\\^|:-~"
 		isIdChar c  =  isAlphaNum c || c `elem` "_'"
 
-		lexFracExp ('.':s) = [('.':ds++e,u) | (ds,t) <- lexDigits s,
+		lexFracExp ('.':c:s) | isDigit c
+                                   = [('.':ds++e,u) | (ds,t) <- lexDigits (c:s),
 						      (e,u)  <- lexExp t    ]
 		lexFracExp s	   = [("",s)]
 
