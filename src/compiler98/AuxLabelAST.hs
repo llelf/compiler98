@@ -163,7 +163,7 @@ instance Relabel Decl where
 	    Just (e1,pos,fun,e2) ->
 		 relabel env (DeclFun pos fun [Fun [e1,e2] rhs decls])
 	    Nothing -> DeclPat (relabel env alt)
-  relabel env (DeclPat alt) =
+  relabel env (DeclPat alt@(Alt pat rhs decls)) =
 	DeclPat (relabel env alt)
   relabel env (DeclFun p f funs) =
 	DeclFun p (letVar env f) (map (relabel env) funs)
@@ -236,12 +236,12 @@ instance Relabel Qual where
 
 instance Relabel Fun where
   relabel env (Fun pats rhs ds@(DeclsParse decls)) =
-	let newEnv = foldr addPat (extendEnv vi im env decls) pats in
+	let newEnv = foldr (addPat vi) (extendEnv vi im env decls) pats in
 	Fun (map (relabel newEnv) pats) (relabel newEnv rhs) (relabel newEnv ds)
 
 instance Relabel Alt where
   relabel env (Alt pat rhs ds@(DeclsParse decls)) =
-	let newEnv = addPat pat (extendEnv vi im env decls) in
+	let newEnv = addPat vi pat (extendEnv vi im env decls) in
 	Alt (relabel newEnv pat) (relabel newEnv rhs) (relabel newEnv ds)
 
 instance Relabel Exp where
@@ -250,7 +250,7 @@ instance Relabel Exp where
   relabel env (ExpFatbar e1 e2) = ExpFatbar (relabel env e1) (relabel env e2)
   relabel env (ExpFail)         = ExpFail
   relabel env (ExpLambda p pats exp) =
-	let newEnv = foldr addPat env pats in
+	let newEnv = foldr (addPat vi) env pats in
 	ExpLambda p (map (relabel newEnv) pats) (relabel newEnv exp)
   relabel env (ExpLet p ds@(DeclsParse decls) exp) =
 	let newEnv = extendEnv vi im env decls in
@@ -260,7 +260,7 @@ instance Relabel Exp where
     where doStmts env [] = []
 	  doStmts env (s@(StmtExp _):ss) = relabel env s: doStmts env ss
 	  doStmts env (s@(StmtBind pat _):ss) =
-		let newEnv = addPat pat env in
+		let newEnv = addPat vi pat env in
 		relabel newEnv s: doStmts newEnv ss
 	  doStmts env (s@(StmtLet (DeclsParse decls)):ss) =
 		let newEnv = extendEnv vi im env decls in
@@ -298,32 +298,4 @@ instance Relabel Exp where
 -- position/id pairs from the TokenId type to TraceId type.
 relabelPosIds :: [(Pos,TokenId)] -> [(Pos,TraceId)]
 relabelPosIds = map (\(p,i)->(p,just i))
-
-
--- `addPat' extends the environment with a lambda-bound variable
--- (e.g. pattern)
---
-addPat :: Pat TokenId -> AuxTree -> AuxTree
-addPat (ExpRecord (ExpCon p id) fields) env = foldr addField env fields
-addPat (ExpRecord (ExpVar p id) fields) env = foldr addField
-						(extendEnvPat id env) fields
-addPat (ExpApplication p exps) env = foldr addPat env exps
-addPat (ExpVar p id) env           = extendEnvPat id env
-addPat (ExpCon p id) env           = env
-addPat (ExpInfixList p exps) env   = foldr addPat env exps
-addPat (ExpVarOp p id) env         = extendEnvPat id env
-addPat (ExpConOp p id) env         = env
-addPat (ExpList p exps) env        = foldr addPat env exps
-addPat (PatAs p id pat) env        = addPat pat (extendEnvPat id env)
-addPat (PatIrrefutable p pat) env  = addPat pat env
-addPat (PatNplusK p id1 id2 exp1 exp2 exp3) env = env	-- not correct
-addPat _ env = env
-
-addField (FieldExp p id exp) env = addPat exp env
-addField (FieldPun p id) env     = extendEnvPat id env
-
-extendEnvPat id env =
-    addAT env lambdaBound (Var (show id)) (emptyAux {letBound=False})
-  where
-    lambdaBound aux1 aux2 = aux2 { letBound=False }
 

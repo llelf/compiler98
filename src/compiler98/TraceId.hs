@@ -43,7 +43,10 @@ arity (_,Just aux) = let a = args aux in if a==(-1) then Nothing else Just a
 
 isLambdaBound :: TraceId -> Bool
 isLambdaBound (_,Nothing)  = error "TraceId.isLambdaBound: no aux information"
-isLambdaBound (_,Just aux) = not (letBound aux)
+isLambdaBound (_,Just aux) = not (letBound aux) || args aux == 0
+ -- The reason for including a test for arity==0 here is that a CAF defn
+ -- is technically a pattern-binding rather than a function binding.
+ -- It makes the transformation easier if we treat a CAF as lambda-bound.
 
 fixPriority :: TraceId -> Int
 fixPriority (_,Nothing) = 3	-- default fixity and priority

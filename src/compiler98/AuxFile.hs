@@ -65,6 +65,7 @@ data AuxiliaryInfo = Has
 	deriving (Show,Read)
 data Fixity = L | R | Pre String | Def | None deriving (Show,Read)
 emptyAux = Has { args=(-1), fixity=Def, priority=9, letBound=True }
+patternAux = Has { args=(-1), fixity=Def, priority=9, letBound=False }
 
 -- Identifier is used to distinguish varids from conids, and relate
 -- conids back to the type they belong to.  It also relates methods
@@ -259,22 +260,25 @@ unspecYes = \_->True
 unspecNo  = \_->False
 
 
--- Add varid/varop identifier, with arity.
 auxInfo :: Visibility -> IdentMap -> Decl TokenId -> AuxTree -> AuxTree
+-- Add varid/varop identifier, with arity.
 auxInfo visible toIdent (DeclFun _ f clauses) t
     | visible key  = addAT t replaceArity key (emptyAux {args = a})
     where a   = let (Fun pats rhs local) = head clauses in length pats
           key = Var (show f)
 -- Add varop identifier declared in infix equation, with arity.
-auxInfo visible toIdent (DeclPat (Alt (ExpInfixList _ es) rhs local)) t
+auxInfo visible toIdent (DeclPat (Alt pat@(ExpInfixList _ es) rhs local)) t
     | len >= 3  =
 	let (_:defn:_) = es in
 	case defn of
 	  ExpVarOp _ f
 	    | visible key -> addAT t replaceArity key (emptyAux {args=len-1})
 						where key = Var (show f)
-	  _ -> t
+	  _ -> addPat visible pat t
     where len = length es
+-- Add varid identifiers declared in a pattern binding.
+auxInfo visible toIdent (DeclPat (Alt pat rhs local)) t =
+    addPat visible pat t
 -- Add varid identifier declared as a primitive, with arity.
 auxInfo visible toIdent (DeclPrimitive _ f a _) t
     | visible key  = addAT t replaceArity key (emptyAux {args = a})
@@ -379,4 +383,34 @@ missing (Just exports) defined definedTypes toIdent =
 
     typNotDefined typ = if typ `elem` definedTypes then []
 			else [Con (show typ) ".."]
+
+
+-- `addPat' extends the environment with a lambda-bound variable
+-- (e.g. pattern).  Visibility is only important in the exported aux file.
+--
+addPat :: Visibility -> Pat TokenId -> AuxTree -> AuxTree
+addPat v (ExpRecord (ExpCon p id) fields) env = foldr (addField v) env fields
+addPat v (ExpRecord (ExpVar p id) fields) env = foldr (addField v)
+                                                  (extendEnvPat v id env) fields
+addPat v (ExpApplication p exps) env = foldr (addPat v) env exps
+addPat v (ExpVar p id) env           = extendEnvPat v id env
+addPat v (ExpCon p id) env           = env
+addPat v (ExpInfixList p exps) env   = foldr (addPat v) env exps
+addPat v (ExpVarOp p id) env         = extendEnvPat v id env
+addPat v (ExpConOp p id) env         = env
+addPat v (ExpList p exps) env        = foldr (addPat v) env exps
+addPat v (PatAs p id pat) env        = addPat v pat (extendEnvPat v id env)
+addPat v (PatIrrefutable p pat) env  = addPat v pat env
+addPat v (PatNplusK p id1 id2 exp1 exp2 exp3) env = env   -- not correct
+addPat _   _ env = env
+
+addField v (FieldExp p id exp) env = addPat v exp env
+addField v (FieldPun p id) env     = extendEnvPat v id env
+
+extendEnvPat visible id env
+  | visible key = addAT env lambdaBound key patternAux
+  | otherwise   = env
+  where
+    key = Var (show id)
+    lambdaBound aux1 aux2 = aux2 { letBound=False }
 
