@@ -2,7 +2,7 @@ include Makefile.inc
 
 PATH := $(JAVADIR)/bin:$(PATH)
 
-ARCHIVE = nhctracer.jar
+ARCHIVE = rtb.jar
 
 .SUFFIXES: .java
 
