@@ -20,22 +20,33 @@ its interface file has not changed, then other modules which import
 it do not need to be recompiled.
 
 <p>
-<em>Hmake</em> is compiler-independent, although it is based on
-some earlier compiler-specific tools (<em>hbcmake</em>,
-<em>lmlmake</em>, <em>nhc13make</em>).  The installation process
-automatically detects which Haskell compilers you have, and
-sets up <em>hmake</em> to use any of them.
+<em>Hmake</em> is compiler-independent.  The installation process
+automatically detects which Haskell compilers you have, and sets
+up <em>hmake</em> to use any of them.  You can separately add or
+remove compilers to the configuration at any time after installation,
+and change which compiler is used as the default.  You can easily
+switch between different versions of a compiler (e.g. ghc 4.08 + 5.02).
+See <a href="hmake-config.html">hmake-config</a>.
+
+<p>
+<em>Hmake</em> is aware of pre-processors.  Not only is the C
+preprocessor commonly used for selective imports, but tools such
+as happy, hsc2hs, c2hs, greencard, are also often used to generate
+Haskell modules.  If <em>hmake</em> finds a module with the
+appropriate filename extension (.y, .ly, .hsc, .chs, .gc), it
+automatically runs the preprocessor before the compiler.
 
 
 <h3>Usage</h3>
 <p>
 The basic option summary is:
 <pre>
-    Usage: hmake [compiler] [hmake-opts] [compiler-opts] target ...
+    Usage: hmake [-f cfgfile] [compiler] [hmake-opts] [compiler-opts] target ...
 </pre>
 You can have more than one target: all of them are built.  A target
-can be a module (with .hs, .lhs, .gc, or .hi extension), in which case
-the module and everything it depends on is compiled, but not linked.
+can be a module (with .lhs, .hs, .hi, or pre-processor extension),
+in which case the module and everything it depends on is compiled,
+but not linked.
 
 <p>
 Alternatively, a target can be a program name (no .hs extension),
@@ -50,16 +61,20 @@ However, <em>hmake</em> understands and strips the following options.
 <center>
 <table border=1 width=400><tr>
 <td><b>-HC=</b><em>comp</em><br>
+    <b>-hc=</b><em>comp</em><br>
     <b>-nhc98</b><br>
     <b>-hbc</b><br>
     <b>-ghc</b><br></td>
-	<td>specify which compiler you want to use [default is the compiler you built hmake with].</td>
+	<td>Specify which compiler you want to use.  If no compiler is
+            specified, the default compiler is used.  (See
+            <a href="hmake-config.html">hmake-config</a> to set the
+            default.)</td>
 </tr><tr>
 <td><b>-q</b></td>
 	<td>Quiet - don't echo compilation commands.</td>
 </tr><tr>
 <td><b>-n</b></td>
-	<td>Noexec - echo compilation commands but don't execute them.</td>
+	<td>Noexec - echo the compilation commands but don't execute them.</td>
 </tr><tr>
 <td><b>-g</b></td>
 	<td>Graph - show module dependency graph (implies -n).</td>
@@ -69,6 +84,13 @@ However, <em>hmake</em> understands and strips the following options.
 </tr><tr>
 <td><b>-Md</b></td>
 	<td>as for -M, but treats <b>-d</b> <em>objdir</em> specially.</td>
+</tr><tr>
+<td><b>-f</b> <em>cfgfile</em></td>
+	<td>Use <em>cfgfile</em> as the hmake configuration file.  This
+            file contains information about the Haskell compilers that
+            are available.
+            (See <a href="hmake-config.html">hmake-config</a> for more
+            information.)</td>
 </tr><tr>
 <td><b>-clean</b></td>
 	<td>remove all .o files relevant to the given project
@@ -107,7 +129,7 @@ underlying mechanism is appropriate for the particular compiler).
 <td><b>-[Hh]</b><em>size</em></td>
 	<td>Compiler's heap size.</td>
 </tr><tr>
-<td><b>-[ASV]</b><em>size</em></td>
+<td><b>-[KVA]</b><em>size</em></td>
 	<td>Compiler's stack size.</td>
 </tr><tr>
 <td><b>-B</b></td>
@@ -161,7 +183,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-12-19<br>
+Information last updated: 2002-01-15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

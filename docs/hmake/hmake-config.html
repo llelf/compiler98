@@ -1,0 +1,97 @@
+<html><head><title>hmake-config</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The <em>hmake-config</em> utility</h1></center>
+
+<hr>
+<p>
+<em>Hmake-config</em> is a small utility for managing your hmake
+configuration.  It updates an <em>hmakerc</em> file by adding or
+deleting knowledge about a particular Haskell compiler, or changing
+the default compiler.
+
+<h3>Usage</h3>
+<p>
+The basic option summary is:
+<pre>
+    Usage: hmake-config [cfgfile] [add|delete|default] compiler
+</pre>
+The specification of a <em>cfgfile</em> is optional - if
+it is not given, the file <tt>$HOME/.hmakerc/$MACHINE</tt>
+is assumed.  If the config file does not yet exist, it
+is created by copying the system-wide configuration from
+<tt>/usr/local/lib/$MACHINE/hmakerc</tt>.  (Note: <tt>$MACHINE</tt>
+is the machine architecture as reported by <tt>`harch`</tt>, not
+the actual machine name.)
+
+<p>
+One of the actions <em>add</em>, <em>delete</em>, or <em>default</em>
+is applied to the <em>compiler</em> given on the commandline.  (If no
+action is given, <em>add</em> is assumed.)  The <em>compiler</em>
+can be specified either as a simple name which resolves to an
+executable command name via the normal <tt>$PATH</tt> mechanism, or as an
+absolute pathname to the compiler.
+
+<center>
+<table border=1 width=400><tr>
+<td><b>add</b><br></td>
+	<td>The specified compiler is probed for various pieces of
+            information, including its version, and the paths to
+            directories holding interface files for standard libraries.
+            If everything is OK, that compiler's configuration is added
+            to the hmakerc file, or if it was already known, the
+            configuration is updated.</td>
+</tr><tr>
+<td><b>delete</b></td>
+	<td>All configuration information for the specified compiler is
+            removed from the hmakerc file.</td>
+</tr><tr>
+<td><b>default</b></td>
+	<td>Provided the specified compiler is already known in the
+            hmakerc file, it is made the default compiler.  If it is not
+            known, the default remains unchanged and an error is reported.
+            </td>
+</tr></table>
+</center>
+
+<h3>Notes</h3>
+<p>
+The hmakerc file manipulated by <em>hmake-config</em> is written in
+plain text, as a structured Haskell value.  You are free to read it,
+and edit it by hand if you wish.  Be aware however that a later use
+of <em>hmake-config</em> with the action <em>add</em> may override
+any changes you make.
+
+<p>
+To support users who may have access to heterogeneous machines on a
+network with a shared filespace, there is a separate <em>hmakerc</em>
+file for each machine architecture they use.  This is very important
+to avoid conflicts between versions of compilers.
+
+<p>
+It is difficult to detect the exact directories in which
+<em>hbc</em> expects to find interface files for standard libraries.
+Thus <em>hmake-config</em> relies on the environment variables
+<tt>HBCDIR</tt> or <tt>LMLDIR</tt> for the correct location.
+
+<p>
+I'd welcome any bug reports, or ideas for other options or behaviours
+you would find useful.
+
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 2002-01-15<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+

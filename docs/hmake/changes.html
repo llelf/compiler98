@@ -10,6 +10,30 @@
 <table>
 <tr>
 
+<td valign=top><b>3.00</b></td>
+  <td valign=top>
+	<ul>
+        <li> The mechanism by which <em>hmake</em> knows about installed
+             Haskell compilers has been completely revamped.  It is now
+             possible to have more than one compiler of the same type
+             (e.g. ghc-4.08 and ghc-5.02) installed simultaneously.
+        <li> A new configuration utility <em>hmake-config</em>
+	     is provided.  This allows an individual user to have a
+	     personalised set-up telling hmake about new compilers,
+	     removing old compilers, and changing the default compiler.
+        <li> <em>hmake</em> now knows about many more preprocessors for
+             Haskell - happy, hsc2hs, c2hs, greencard.  If it finds the
+             appropriate file extension (.ly, .hsc, .chs, .gc) it now
+             calls the preprocessor before the compiler.
+        <li> The new <em>-hat</em> flag is for the Hat tracing system, if
+             you have it installed.  With this option, hmake calls the
+             tracing transformation tool <em>hat-trans</em> between
+             any preprocessor and the compiler.  The resulting program
+             generates a trace file suitable for viewing with the
+             hat browsers.
+	</ul>
+</td></tr><tr>
+
 <td valign=top><b>2.03</b></td>
   <td valign=top>
 	<ul>
@@ -198,7 +222,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2001-10-02<br>
+Information last updated: 2002-01-15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

@@ -31,7 +31,7 @@ Download the hmake (including <em>hi</em>) sources from
 hmake.  The standard configuration and build process for the compiler
 should have done everything for you.  However, if you installed ghc,
 hbc, etc, after nhc98, you will probably need to update the config file
-for hmake.  See below.)
+for hmake.  See <a href="hmake-config.html">hmake-config.html</a>.)
 
 <h3>Configure, compile, and install</h3>
 <p>
@@ -50,8 +50,8 @@ Use
 to discover what options you can change at configuration time.  The
 configuration process actually does quite a good job of detecting what
 Haskell compilers you have, where they live, and anything special they
-might need.  However, should you need to change anything by hand,
-see the notes below about the <em>hmake.config</em> file.
+might need.  However, should you need to change anything later by hand,
+use the <a href="hmake-config.html"><em>hmake-config</em></a> utility.
 
 <h3>Notes</h3>
 <p>
@@ -62,21 +62,24 @@ install one copy of the `hmake' script, which uses `harch' to select the
 correct executables for any particular machine.
 
 <p>
-The hmake.config file can appear in any of several places:
+The system-wide hmakerc configuration file lives in:
 <pre>
-    $HOME/.hmakerc
-    /usr/local/lib/hmake/$MACHINE/hmake.config
-    /usr/local/lib/hmake/hmake.config
+    /usr/local/lib/hmake/$MACHINE/hmakerc
 </pre>
-These are searched for in order - the first found overrides the others.
-Hence, individual users can add their own Haskell systems, and
-particular machine architectures can offer variations from the standard
-system-wide config.
+(Of course, you don't have to use the root location /usr/local for
+your installation.  Just use --prefix= at configuration time to
+reflect your preference.)
 
 <p>
-Of course, you don't have to use the locations /usr/local/bin and
-/usr/local/lib for your installation.  Just use --prefix= at configuration
-time to reflect your preference.
+A personal hmakerc configuration file can live in:
+<pre>
+    $HOME/.hmakerc/$MACHINE
+</pre>
+Normally, a user will simply use the system-wide hmakerc.  If they
+use <em>hmake-config</em> to make any customisations, a personal
+hmakerc file will be created for them.  (Only the person who installs
+hmake can change the system-wide hmakerc).
+
 
 <h3>Bug Reports</h3>
 <p>
@@ -85,7 +88,7 @@ Please send bug reports, bug fixes, and suggestions for improvements to
 
 <h3>Version and Change Log</h3>
 <p>
-Current version is hmake-2.03, (2001-10-02).  See
+Current version is hmake-3.00, (2002-01-08).  See
 <a href="changes.html">changes.html</a> for the history of versions,
 bugfixes, and other updates.
 
@@ -95,9 +98,9 @@ The core of the hmake tool is
 (c) copyright to Thomas Hallgren, 1991-1997.
 (Code is incorporated from the earlier tools hbcmake and nhc13make.)
 Many additions and modifications to hmake are
-(c) copyright to Malcolm Wallace, 1998-2000.
+(c) copyright to Malcolm Wallace, 1998-2002.
 Hmake interactive (hi) is
-(c) copyright to Malcolm Wallace, May 2000.
+(c) copyright to Malcolm Wallace, 2000-2002.
 
 <p>
 You may re-distribute or modify this software, but you must retain this
@@ -110,7 +113,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2001-10-02<br>
+Information last updated: 2002-01-15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
