@@ -72,8 +72,10 @@ NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str);
 char   *profName(UInt *p);
 extern void prGraph(NodePtr nodeptr,Int flags,Int d);
 
-extern Node C0_Prelude_46SR[];
-#define mkSR() ((NodePtr)C0_Prelude_46SR)
+/* extern Node C0_Prelude_46SR[]; */
+/* #define mkSR() ((NodePtr)C0_Prelude_46SR) */
+extern Node noSR[];
+#define mkSR() ((NodePtr)noSR)
 
 #define TagAp		0
 #define TagNm		1
