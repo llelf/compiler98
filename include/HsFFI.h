@@ -1,7 +1,9 @@
 #ifndef _HSFFI_H
 #define _HSFFI_H
 
-#include <inttypes.h>
+#if !defined(INT64_MIN)
+#include "stdint.h"
+#endif
 
 #define HsChar		char
 #define HsInt		int
@@ -19,13 +21,8 @@
 #define HsWord16	uint16_t
 #define HsWord32	uint32_t
 
-#if defined(INT64_MIN)
 #define HsInt64		int64_t
 #define HsWord64	uint64_t
-#else
-#define HsInt64		long long
-#define HsWord64	unsigned long long
-#endif
 
 #define HS_CHAR_MIN	0
 #define HS_CHAR_MAX	0xff
