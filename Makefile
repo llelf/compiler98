@@ -128,13 +128,13 @@ RUNTIME = \
 	src/runtime/Integer/Makefile* \
 	src/runtime/Integer/*.c \
 	src/runtime/Integer/*.h \
-	src/runtime/Integer/stmpstddfh \
 	src/runtime/Kernel/Makefile* \
 	src/runtime/Kernel/*.c \
 	src/runtime/Kernel/*.h \
 	src/runtime/Mk/Makefile* \
 	src/runtime/Mk/*.c
-#	src/runtime/Builtin/*.h
+#	src/runtime/Integer/stmpstddfh \
+#	src/runtime/Builtin/*.h \
 #	src/runtime/Mk/*.h
 
 RUNTIMET = \
@@ -164,9 +164,8 @@ basic: basic-${BUILDWITH}
 all:   all-${BUILDWITH}
 help:
 	@echo "Common targets include:        basic all install clean realclean config"
-	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc"
-	@echo "                               all-hbc   all-ghc   all-nhc"
-	@echo "                               fromC"
+	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
+	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "  (other subtargets: runtime prelude profile timeprof hp2graph"
 	@echo "                     compiler_b compiler_g compiler_n"
 	@echo "                     tracer_b tracer_g tracer_n "
@@ -181,10 +180,11 @@ install:
 basic-nhc: runtime hmake_n greencard_n compiler_n prelude
 basic-hbc: runtime hmake_b greencard_b compiler_b prelude
 basic-ghc: runtime hmake_g greencard_g compiler_g prelude
+basic-gcc: runtime cprelude ccompiler cgreencard chmake
 all-nhc: basic-nhc profile hp2graph tracer_n   #timeprof
 all-hbc: basic-hbc profile hp2graph tracer_b   #timeprof
 all-ghc: basic-ghc profile hp2graph tracer_g   #timeprof
-fromC: runtime cprelude ccompiler cgreencard hp2graph chmake
+all-gcc: basic-gcc profile hp2graph #tracer??  #timeprof
 
 profile: profruntime profprelude
 timeprof: timeruntime timeprelude
@@ -196,7 +196,7 @@ tracer_g: tracecompiler_g traceruntime traceprelude $(TARGDIR)/traceui
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
-	cd src/runtime;        $(MAKE) install nhc98heap
+	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
 	cd src/tracer/runtime; $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
 

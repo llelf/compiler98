@@ -311,6 +311,14 @@ bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derive
                                         (("(n+k) patterns are disabled - pattern at "++strPos pos): errors)
 					needCheck)
 
+checkPuns pos down renameState@(RenameState flags unique irps rts rt st derived defaults errors needCheck) =
+  if sPuns flags then
+    renameState
+  else
+    RenameState flags unique irps rts rt st derived defaults
+                (("Named field puns are not Haskell'98 - used at "++strPos pos):errors)
+                needCheck
+
 
 -- checkTid is used to check if a field have already been included in the bindings
 checkTid pos kind tid _ renameState@(RenameState flags unique rps rts rt st derived defaults errors needCheck) =

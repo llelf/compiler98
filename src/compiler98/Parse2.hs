@@ -12,7 +12,9 @@ import SyntaxPos
 import TokenId(t_Arrow,t_Tuple)
 
 parseExports =
-    id `parseChk` lpar `apCut` someSep comma parseExport `chk` rpar
+    id `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar
+        `orelse`
+    parse [] `chk` lit (L_ACONID (TupleId 0))
         `orelse`
     parse []
 

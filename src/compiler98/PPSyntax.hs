@@ -192,8 +192,8 @@ ppExp d p (PatNplusK pos n n' k _ _) =
 
 ppField d p (FieldExp pos var exp) =
 	pp (ppPos d pos ++ " " ++ (pStd p) var ++ " <- ") `cl` ppExp d p exp
---ppField d p (FieldPun pos var) =		-- H98 removes
---	pp (ppPos d pos ++ " " ++ pStd p var)	-- H98 removes
+ppField d p (FieldPun pos var) =
+	pp (ppPos d pos ++ " " ++ pStd p var)
 
 ppQual d p (QualPatExp pat e) =
         ppPat d p pat `cl` pp " <- " `cl` ppExp d p e

@@ -242,11 +242,11 @@ needStmts (StmtBind pat exp:r) = needTid (getPos pat) Var t_gtgteq >>> needExp e
 needStmts (StmtLet decls :r) =  pushNeed  >>> bindDecls decls  >>> needDecls decls >>> needStmts r >>> popNeed
 
 needField (FieldExp pos var exp) = needTid pos Field var >>> needExp exp
---needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var -- H98 removes
-needField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
-      show var ++
-      "\nPunning of named fields has been removed from the Haskell language."++
-      "\nUse "++show var++"="++show var++" instead.")
+needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var
+--needField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
+--      show var ++
+--      "\nPunning of named fields has been removed from the Haskell language."++
+--      "\nUse "++show var++"="++show var++" instead.")
 
 needExp (ExpScc            str exp) =  needExp exp
 needExp (ExpLambda         pos pats exp) =
@@ -331,11 +331,11 @@ bindClass (DeclVarsType posidents ctxs typ) = mapR (bindTid Method . snd) poside
 bindClass _ = unitR
 
 bindField (FieldExp pos var pat) = needTid pos Field var >>> bindTid Var var >>> bindPat pat
---bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var -- H98 removes
-bindField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
-      show var ++
-      "\nPunning of named fields has been removed from the Haskell language."++
-      "\nUse "++show var++"="++show var++" instead.")
+bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
+--bindField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
+--      show var ++
+--      "\nPunning of named fields has been removed from the Haskell language."++
+--      "\nUse "++show var++"="++show var++" instead.")
 
 --- Above only in expressions
 bindPat (ExpApplication   pos exps) = mapR bindPat exps

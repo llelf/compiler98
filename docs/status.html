@@ -133,7 +133,7 @@ by anonymous FTP from
 
 <p>
 <b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, sparc-solaris2,
-mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN32-NT4.
+mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN-NT4.
 <p>
 <b>Important note:</b> pre-releases are usually distributed in Haskell source
 form only.  C sources and binary packages normally follow a full release.
@@ -183,9 +183,9 @@ comprehensive, but if you have any problems, please mail
              now has a scripting facility to record your tracing activity
              for later replay.
 <li> Update: The removal of named field punning in Haskell'98 has
-             turned out to be unpopular.  We plan to support punning
-             again as a default language extension (turned off in -98 mode),
-             but for the moment we have improved the error messages.
+             turned out to be unpopular.  nhc98 now supports punning
+             again as a compile-time option (default on, except in
+             -98 compatibility mode).
 <li> Update: The old 'nhc98config' is now simplified and called 'configure'.
              This means that "./configure; make; make install" should now
              work as expected.

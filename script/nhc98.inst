@@ -103,7 +103,7 @@ do
     -t)     TPROF=t
             COMPFLAGS=$COMPFLAGS" -tprof"
             ;;
-    -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore";;
+    -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
     +rts  ) USINGRTS=1;;
     -rts  ) USINGRTS=0;;
     +RTS  ) shift

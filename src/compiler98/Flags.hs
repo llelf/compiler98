@@ -9,7 +9,7 @@ type FlagFiles =
 
 type FlagBools = 
 	((Bool, Bool, Bool, Bool, Int,  Bool, Bool)
-	,(Bool, Bool, Bool, Bool, Bool, (),   ()  )
+	,(Bool, Bool, Bool, Bool, Bool, Bool, ()  )
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
@@ -48,7 +48,7 @@ getFlags xs = (
   ,fElem False "tprof" xs		-- generate for time profiling PH
   ,fElem False "nkpat" xs		-- Enable (n+k) patterns
   ,fElem False "underscore" xs		-- Enable H'98 underscore-is-lower-case
-  ,()
+  ,fElem True  "puns" xs		-- Enable pre-98 named-field puns
   ,()
   ),
   (fElem False "lex" xs               	-- show lexical input
@@ -149,7 +149,7 @@ s64bit     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = b
 sTprof     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = c
 sNplusK    (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = d
 sUnderscore(_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = e
---FREE     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = f
+sPuns      (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = f
 --FREE     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = g
 
 --- debugging flags

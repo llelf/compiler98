@@ -1,8 +1,8 @@
 include Makefile.inc
 
 OBJDIR = $(BUILDDIR)/$(OBJ)/hmake
-MKPROG = $(DST)/MkProg
-OLDER  = $(DST)/Older
+MKPROG = $(DST)/MkProg$(EXE)
+OLDER  = $(DST)/Older$(EXE)
 TARGETS = $(MKPROG) $(OLDER)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs \

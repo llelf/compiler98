@@ -42,7 +42,7 @@ $(OBJDIR)/cre-conv-tab: cre-conv-tab.c longlong.h asmlong.h
 gmp-mparam.h: $(OBJDIR)/cre-mparam
 	$(OBJDIR)/cre-mparam > tmp-$@
 	mv tmp-$@ $@
-$(OBJDIR)/cre-mparam: cre-mparam.c stmpstddfh gmp.h haskell2c.h 
+$(OBJDIR)/cre-mparam: cre-mparam.c gmp.h haskell2c.h 
 	$(CC) $(CFLAGS) `if [ x$(firstword $^) = x ];	\
 			       then echo cre-mparam.c;		\
 			       else echo $(firstword $^); fi` -o $@

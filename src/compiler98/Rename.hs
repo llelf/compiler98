@@ -327,7 +327,7 @@ transFieldType al (Just posidents,typ) =
   mapS ( \ (p,v) -> uniqueTid p Field v >>>= \ i -> unitS (Just (p,v,i),typ))  posidents
 
 renameField (FieldExp pos tid exp) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> renameExp exp
---renameField (FieldPun pos tid) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid) -- H98 removes
+renameField (FieldPun pos tid) = checkPuns pos >>> unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid)
 
 renameExp (ExpScc            str exp) = unitS (ExpScc str) =>>> renameExp exp
 renameExp (ExpLambda         pos pats exp) =
