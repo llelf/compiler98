@@ -1,6 +1,0 @@
-# Script started at Mon Oct 19 14:17:36 GMT+00:00 1998
-metaconnect "localhost" 6710
-nodeselect {-2, 1, 1}
-nodetrail
-metamessage "Kalle is \"best\""
-# Script finished at Mon Oct 19 14:18:25 GMT+00:00 1998

@@ -1,8 +1,0 @@
-# Script started at Mon Oct 19 14:09:59 GMT+00:00 1998
-metaconnect "localhost" 6710
-nodeselect {-2, 1, 1}
-nodetrail
-metamessage "Kalle"
-metamessage "Detta är\nett test"
-metadisconnect
-# Script finished at Mon Oct 19 14:10:49 GMT+00:00 1998

@@ -1,5 +1,0 @@
-setenv JAVA_HOME /usr/local/jdk1.1.3
-setenv SWING_HOME /usr/local/swing-1.0.1
-setenv SWING_JARS ${SWING_HOME}/swing.jar:${SWING_HOME}/windows.jar:${SWING_HOME}/motif.jar:${SWING_HOME}/jlf.jar:${SWING_HOME}/mac.jar
-addfpath $JAVA_HOME/bin
-setenv CLASSPATH $JAVA_HOME/lib/classes.zip:{$SWING_JARS}:.:sparud.zip
