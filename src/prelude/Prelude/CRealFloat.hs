@@ -10,7 +10,7 @@ class  (RealFrac a, Floating a) => RealFloat a  where
     exponent		:: a -> Int
     significand		:: a -> a
     scaleFloat		:: Int -> a -> a
-    isNaN, isInfinite, isDenormalized, isNegativeZero
+    isNaN, isInfinite, isDenormalized, isNegativeZero, isIEEE
 			:: a -> Bool
     atan2               :: a -> a -> a
 

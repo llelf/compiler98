@@ -24,4 +24,5 @@ instance  RealFloat Float  where
     isInfinite x     = error "isInfinite not implemented" -- TODO
     isDenormalized x = error "isDenormalized not implemented" -- TODO
     isNegativeZero x = error "isNegativeZero not implemented" -- TODO
+    isIEEE           = False
 
