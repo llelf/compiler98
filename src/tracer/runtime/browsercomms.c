@@ -296,7 +296,7 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 	break;
     case NTTrusted:
     case NTId:
-	*pmodule = strdup((char *)GET_POINTER_ARG1(t, 1));
+	*pmodule = strdup(((ModInfo *)GET_POINTER_ARG1(t, 1))->modname);
 	*pname =  strdup((char *)GET_POINTER_ARG1(t, 3)); /*&t[1+EXTRA+2]);*/
 	*pdefpos = GET_VALUE_ARG1(t, 2);
 	*ppri = GET_VALUE_ARG1(t, 4);
@@ -1158,6 +1158,7 @@ startDbg(NodePtr nodeptr, int exitok)
     signal(SIGINT, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
 
+#if 0
     if (0) {
         showDbgInfo(modInfo);
 	showDbgInfo(&NMOD_Prelude);
@@ -1169,7 +1170,6 @@ startDbg(NodePtr nodeptr, int exitok)
     if (traceQuit) {
 	fprintf(stderr, "%d reductions (%d TT, %d TS, %d ST, %d SS)\n", 
 		reductions, redTT, redTS, redST, redSS);
-#if 0
     } else { 
 	paths[0] = getcwd(NULL, 160);
 	paths[1] = getenv("TRACE_SOURCEPATH");
@@ -1207,8 +1207,8 @@ startDbg(NodePtr nodeptr, int exitok)
 	/*IND_REMOVE(nodeptr);*/
 	loop(sock, nodeptr);
 	fclose(sock);
-#endif
     }
+#endif
 }
 
 void
