@@ -106,7 +106,9 @@ readConfig file = unsafePerformIO (safeReadConfig file)
 --   ensuring it parses correctly.
 safeReadConfig :: FilePath -> IO HmakeConfig
 safeReadConfig file = do
-    f <- readFile file
+    f <- catch (readFile file)
+               (\e-> error ("Config file "++file++" does not exist.\n"
+                            ++"  Try running 'hmake-config new' first."))
     config <- saferead file f
     return config
   where
