@@ -50,6 +50,16 @@ typedef struct {
     int trust;
 } *CNmType;
 
+typedef struct {
+    int constr;
+#ifdef PROFILE
+    int profInfo[EXTRA];
+#endif
+    FileOffset ptr;
+    int trust;
+    int hidden;
+} *CTrace;
+
 FileOffset	primModInfo	(ModInfo *m);
 
 FileOffset	primTRoot	(void);
@@ -189,8 +199,13 @@ CNmType		primNTIf	(void);
 CNmType		primNTGuard	(void);
 CNmType		primNTContainer	(void);
 
-int		primTrustedFun	(CNmType nm);
+int		primTrustedNm	(CNmType nm);
 int		primSameTrace	(FileOffset t1, FileOffset t2);
+
+FileOffset	primTracePtr	(CTrace t);
+int		primTrustedFun	(CTrace t);
+int		primHidden	(CTrace t);
+CTrace		mkTrace		(FileOffset p, int tr, int hid);
 
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);
