@@ -440,11 +440,11 @@ ppConstr :: PPInfo a -> Constr a -> Doc
 
 ppConstr info (Constr pos c cs) =
   groupNestS info $
-    sep fSpace (ppIdAsVar info c : map (ppFieldType info) cs)
+    ppIdAsVar info c <> fSpace <> ppFieldsType info cs
 ppConstr info (ConstrCtx forall ctxs pos c cs) =
   groupNestS info $
     ppForall <> ppContexts info ctxs <> 
-    sep fSpace (ppIdAsVar info c : map (ppFieldType info) cs)
+    ppIdAsVar info c <> fSpace <> ppFieldsType info cs
   where
   ppForall | null forall = nil
            | otherwise   = groupNestS info (text "forall" <> fSpace <> 
@@ -453,14 +453,22 @@ ppConstr info (ConstrCtx forall ctxs pos c cs) =
                            fSpace
 
 
+ppFieldsType :: PPInfo a -> [(Maybe [(Pos,a)],Type a)] -> Doc
+ppFieldsType info args@((Just _,_):_) = 
+  groupNestS info
+    (braces . sep fComma . map (ppFieldType info) $ args)
+ppFieldsType info args =
+  group (sep fSpace . map (ppFieldType info) $ args)
+
+
 ppFieldType :: PPInfo a -> (Maybe [(Pos, a)], Type a) -> Doc
 
 ppFieldType info (Nothing,typ) = ppTypePrec info True typ
 ppFieldType info (Just posidents,typ) = 
-  groupNestS info $
-    text "{" <> (sep fComma . map (ppIdAsVar info . snd) $ posidents) <> 
+  group $
+    (sep fComma . map (ppIdAsVar info . snd) $ posidents) <> 
     dSpace <> 
-    text ":: " <> ppType info typ <> text "}"
+    text ":: " <> ppType info typ
 
 
 ppDecl :: PPInfo a -> Decl a -> Doc
@@ -772,7 +780,7 @@ ppField :: PPInfo a -> Field a -> Doc
 
 ppField info (FieldExp pos var exp) =
   groupNestS info $
-    ppPos info pos <> ppIdAsVar info var <> dSpace <> text "<- " <>  
+    ppPos info pos <> ppIdAsVar info var <> dSpace <> text "= " <>  
     ppExp info exp
 ppField info (FieldPun pos var) =
   ppPos info pos <> ppIdAsVar info var

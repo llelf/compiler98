@@ -193,6 +193,8 @@ data Constr id = Constr
                    [(Maybe [(Pos,id)],Type id)]
                    -- argumentlist with field labels if any
                    -- (many field labels with same type possible)
+                   -- the type admits impossible arguments:
+                   -- either all arguments have field names or none
                | ConstrCtx  
                    [(Pos,id)]     -- type variabes from forall
                    [Context id]   -- context of data constructor

@@ -1155,10 +1155,12 @@ tPats :: [Pat TraceId] -> ([Pat TokenId],[Exp TraceId],[Decl TraceId])
 tPats = mapCombine3 tPat
 
 tPat :: Pat TraceId -> (Pat TokenId,[Exp TraceId],[Decl TraceId])
-tPat (ExpRecord pat fields) = 
-  (ExpRecord pat' fields',patExps++fieldsExps,patDecls++fieldsDecls)
+tPat (ExpRecord (ExpCon pos id) fields) = 
+  (wrapExp pos (ExpRecord (ExpCon pos (nameTransCon id)) fields') 
+    (PatWildcard pos)
+  ,fieldsExps
+  ,fieldsDecls)
   where
-  (pat',patExps,patDecls) = tPat pat
   (fields',fieldsExps,fieldsDecls) = mapCombine3 tField fields
   tField (FieldExp pos id pat) = 
     (FieldExp pos (nameTransField id) pat',patExps,patDecls)
