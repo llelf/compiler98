@@ -126,22 +126,25 @@ primEnter sr nm t e = let v  = enter nm t e
                       in v `myseq` vn
 
 
--- t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> a
+t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> Trace -> a
 
 t_guard sr (R gv gt) e cont t = 
   if trustedFun t 
     then if gv then e t else cont t
     else let t' = mkTAp2 t (mkTNm t mkNTGuard sr) gt t sr
 	 in  t' `myseq` if gv then e t' else cont t'
+         -- no SAT necessary, because the unevaluated form never
+         -- has to be shown (the result wrapped expression is only
+         -- created when it also has to be evaluated)
 
 
--- tif :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> a
+tif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 tif sr (R iv it) e1 e2 t = 
   if trustedFun t 
     then if iv then e1 t else e2 t
     else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
-         in  t' `myseq` if iv then e1 t' else e2 t'
+         in  lazySat (if iv then e1 t' else e2 t') t'
 
 
 {- used by _Driver -}
@@ -207,37 +210,58 @@ ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
 
 
 ap1 sr t (R rf tf) a@(R _ at) = 
-  let t' = if trustedFun tf `tand` trustedFun t
+  let t1 = if trustedFun tf `tand` trustedFun t
              then (if hidden t then t else mkTHidden t)
              else mkTAp1 t tf at sr
-  in  t' `myseq` rf t' a
+  in  t1 `myseq` rf t1 a
 
 ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  let t' = if trustedFun tf `tand` trustedFun t
+  let t1 = if trustedFun tf `tand` trustedFun t
              then (if hidden t then t else mkTHidden t)
              else mkTAp2 t tf at bt sr
-  in  case (rf t' a) of
-        (R rf tf) -> if t' `sameAs` tf 
-                       then rf t' b
-                       else let t'' = mkTAp1 t' tf bt sr
-                            in  t'' `myseq` rf t'' b
+  in  case (rf t1 a) of
+        (R rf tf) -> if t1 `sameAs` tf 
+                       then rf t1 b
+                       else let t2 = mkTAp1 t1 tf bt sr
+                            in  t2 `myseq` rf t2 b
 
 ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  let t' = if trustedFun tf `tand` trustedFun t
+  let t1 = if trustedFun tf `tand` trustedFun t
              then (if hidden t then t else mkTHidden t)
              else mkTAp3 t tf at bt ct sr
-  in  case (rf t' a) of
+  in  case (rf t1 a) of
         (R rf tf) -> 
-          let t'' = if t' `sameAs` tf 
-                      then t' 
-                      else mkTAp2 t' tf bt ct sr
-          in case (rf t'' b) of
+          let t2 = if t1 `sameAs` tf 
+                      then t1 
+                      else mkTAp2 t1 tf bt ct sr
+          in case (rf t2 b) of
                (R rf tf) ->
-                 if t'' `sameAs` tf 
-                   then rf t'' c
-                   else let t''' = mkTAp1 t'' tf ct sr
-                        in  t''' `myseq` rf t''' c
+                 if t2 `sameAs` tf 
+                   then rf t2 c
+                   else let t3 = mkTAp1 t2 tf ct sr
+                        in  t3 `myseq` rf t3 c
 
+ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+  let t1 = if trustedFun tf `tand` trustedFun t
+             then (if hidden t then t else mkTHidden t)
+             else mkTAp4 t tf at bt ct dt sr
+  in  case (rf t1 a) of
+        (R rf tf) -> 
+          let t2 = if t1 `sameAs` tf 
+                      then t1 
+                      else mkTAp3 t1 tf bt ct dt sr
+          in case (rf t2 b) of
+               (R rf tf) ->
+                 let t3 = if t2 `sameAs` tf
+                            then t2
+                            else mkTAp2 t2 tf ct dt sr
+                 in case (rf t3 c) of
+                      (R rf tf) ->
+                        if t3 `sameAs` tf 
+                          then rf t3 d
+                          else let t4 = mkTAp1 t3 tf dt sr
+                               in  t4 `myseq` rf t4 d
+      
 {-
 ap1 sr t (R rf tf) a@(R _ at) = 
   let t' = if trusted t tf
@@ -256,13 +280,14 @@ ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
              then hide t
              else mkTAp3 t tf at bt ct sr
   in  pap2 sr t' (rf t' a) b c
--}
+
 
 ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp4 t tf at bt ct dt sr
   in  pap3 sr t' (rf t' a) b c d
+-}
 
 ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   let t' = if trusted t tf 
@@ -342,38 +367,59 @@ rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 rap1 sr t (R rf tf) a@(R _ at) = 
   if trustedFun tf `tand` trustedFun t
     then rf t a
-    else let t' = mkTAp1 t tf at sr
-	 in  t' `myseq` rf t' a
+    else let t1 = mkTAp1 t tf at sr
+	 in  t1 `myseq` rf t1 a
 
 
 rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
 
 rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  let t' = if trustedFun tf `tand` trustedFun t 
+  let t1 = if trustedFun tf `tand` trustedFun t 
              then t
              else  mkTAp2 t tf at bt sr
-  in case (rf t' a) of
+  in case (rf t1 a) of
        (R rf tf) ->
-         if t' `sameAs` tf 
-           then rf t' b
-           else let t'' = mkTAp1 t' tf bt sr
-                in  t'' `myseq` rf t'' b
+         if t1 `sameAs` tf 
+           then rf t1 b
+           else let t2 = mkTAp1 t1 tf bt sr
+                in  t2 `myseq` rf t2 b
 
 rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  let t' = if trustedFun tf `tand` trustedFun t
+  let t1 = if trustedFun tf `tand` trustedFun t
              then t
              else mkTAp3 t tf at bt ct sr
-  in  case (rf t' a) of
+  in  case (rf t1 a) of
         (R rf tf) ->
-          let t'' =  if t' `sameAs` tf 
-                       then t'
-                       else mkTAp2 t' tf bt ct sr
-          in case (rf t'' b) of
+          let t2 =  if t1 `sameAs` tf 
+                      then t1
+                      else mkTAp2 t1 tf bt ct sr
+          in case (rf t2 b) of
                (R rf tf) ->
-                 if t'' `sameAs` tf 
-                   then rf t'' c
-                   else let t''' = mkTAp1 t'' tf ct sr
-                        in  t''' `myseq` rf t''' c
+                 if t2 `sameAs` tf 
+                   then rf t2 c
+                   else let t3 = mkTAp1 t2 tf ct sr
+                        in  t3 `myseq` rf t3 c
+
+rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+  let t1 = if trustedFun tf `tand` trustedFun t
+             then t
+             else mkTAp4 t tf at bt ct dt sr
+  in  case (rf t1 a) of
+        (R rf tf) ->
+          let t2 =  if t1 `sameAs` tf 
+                      then t1
+                      else mkTAp3 t1 tf bt ct dt sr
+          in case (rf t2 b) of
+               (R rf tf) ->
+                 let t3 =  if t2 `sameAs` tf 
+                             then t2
+                             else mkTAp2 t1 tf ct dt sr
+                 in case (rf t3 c) of
+                      (R rf tf) ->
+                        if t3 `sameAs` tf 
+                          then rf t3 d
+                          else let t4 = mkTAp1 t3 tf dt sr
+                               in  t4 `myseq` rf t4 d
 
 {- original:
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
@@ -398,13 +444,14 @@ rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
     then pap2 sr t (rf t a) b c
     else let t' = mkTAp3 t tf at bt ct sr
  	 in  pap2 sr t' (rf t' a) b c
--}
 
 rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   if trusted t tf 
     then pap3 sr t (rf t a) b c d
     else let t' = mkTAp4 t tf at bt ct dt sr
 	  in pap3 sr t' (rf t' a) b c d
+
+-}
 
 rap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   if trusted t tf 
@@ -626,19 +673,40 @@ fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace
      -> R (Trace -> R a -> R r)
 
 fun1 nm rf sr t = 
-  mkR (\t a -> lazySat (enter nm t (rf t a)) t)
+  mkR (\t a -> let sat = mkTSatA t
+               in mkR (mkTSatB sat `myseq` 
+                        case (enter nm t (rf t a)) of 
+                          R v vt ->
+                            v `myseq` 
+                            mkTSatC sat vt `myseq` 
+                            v) 
+                  sat)
       (mkTNm t nm sr)
 
 fun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> lazySat (enter nm t (rf t a b)) t)
+      R (\t b -> let sat = mkTSatA t
+                 in mkR (mkTSatB sat `myseq` 
+                          case (enter nm t (rf t a b)) of 
+                            R v vt ->
+                              v `myseq` 
+                              mkTSatC sat vt `myseq` 
+                              v) 
+                    sat)
         t)
       (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> lazySat (enter nm t (rf t a b c)) t)
+        R (\t c -> let sat = mkTSatA t
+                   in mkR (mkTSatB sat `myseq` 
+                            case (enter nm t (rf t a b c)) of 
+                              R v vt ->
+                                v `myseq` 
+                                mkTSatC sat vt `myseq` 
+                                v) 
+                      sat)
           t)
         t)
       (mkTNm t nm sr)
@@ -647,7 +715,14 @@ fun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> lazySat (enter nm t (rf t a b c d)) t)
+          R (\t d -> let sat = mkTSatA t
+                   in mkR (mkTSatB sat `myseq` 
+                            case (enter nm t (rf t a b c d)) of 
+                              R v vt ->
+                                v `myseq` 
+                                mkTSatC sat vt `myseq` 
+                                v) 
+                      sat)
             t)
           t)
         t)
@@ -930,7 +1005,14 @@ prim0 nm rf sr t =
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
-  mkR (\t (R a at) -> lazySat (primEnter sr nm t (rf a)) t)
+  mkR (\t (R a at) -> let sat = mkTSatA t
+                      in mkR (mkTSatB sat `myseq` 
+                               case (primEnter sr nm t (rf a)) of 
+                                 R v vt ->
+                                   v `myseq` 
+                                   mkTSatC sat vt `myseq` 
+                                   v) 
+                           sat)
     (mkTNm t nm sr)
 
 
@@ -939,14 +1021,28 @@ prim2 :: NmCoerce r =>
 
 prim2 nm rf sr t = 
   mkR (\t (R a at)->
-    R (\t (R b bt)-> lazySat (primEnter sr nm t (rf a b)) t)
+    R (\t (R b bt)-> let sat = mkTSatA t
+                     in  mkR (mkTSatB sat `myseq` 
+                               case (primEnter sr nm t (rf a b)) of 
+                                 R v vt ->
+                                   v `myseq` 
+                                   mkTSatC sat vt `myseq` 
+                                   v) 
+                           sat)
       t)
     (mkTNm t nm sr)
 
 prim3 nm rf sr t = 
   mkR (\t (R a at)->
     R (\t (R b bt)->
-      R (\t (R c ct)-> lazySat (primEnter sr nm t (rf a b c)) t)
+      R (\t (R c ct)-> let sat = mkTSatA t
+                       in  mkR (mkTSatB sat `myseq` 
+                                 case (primEnter sr nm t (rf a b c)) of 
+                                   R v vt ->
+                                     v `myseq` 
+                                     mkTSatC sat vt `myseq` 
+                                     v) 
+                              sat)
         t)
       t)
     (mkTNm t nm sr)
@@ -955,7 +1051,14 @@ prim4 nm rf sr t =
   mkR (\t (R a at)->
     R (\t (R b bt)->
       R (\t (R c ct)->
-        R (\t (R d dt)-> lazySat (primEnter sr nm t (rf a b c d)) t)
+        R (\t (R d dt)-> let sat = mkTSatA t
+                         in  mkR (mkTSatB sat `myseq` 
+                                   case (primEnter sr nm t (rf a b c d)) of 
+                                     R v vt ->
+                                       v `myseq` 
+                                       mkTSatC sat vt `myseq` 
+                                       v) 
+                               sat)
           t)
         t)
       t)

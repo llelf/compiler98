@@ -348,9 +348,9 @@ dRemoveDo p (StmtBind pat exp:r) =
                   [ExpVar pos gtgteq
 		  ,exp'
 		  ,ExpLambda pos [x] (ExpCase pos x 
-                    [Alt pat (Unguarded exp2) (DeclsScc [])
+                    [Alt pat (Unguarded exp2) (DeclsParse [])
 		    ,Alt (PatWildcard pos) (Unguarded (ExpVar pos zero)) 
-                       (DeclsScc [])
+                       (DeclsParse [])
 		    ])
                   ])
 
