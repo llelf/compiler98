@@ -343,7 +343,9 @@ compareExpr (LIdent s1:r1) (LConstr s2:r2)  | s1 == s2 = (compareExpr r1 r2)
 compareExpr (LSATB:r1) (LSATB:r2) = compareExpr r1 r2
 compareExpr (r1) (LSATA:r2) = 
   let r = (dropArgument r1) in
-   if (isNothing r) then False else compareExpr (fromJust r) r2
+--   if (1==trace ((show r1)++" = "++(show r))) then
+     if (isNothing r) then False else compareExpr (fromJust r) r2
+--    else False
 compareExpr (LHidden:r1) (LHidden:r2) = compareExpr r1 r2
 compareExpr (LCase:r1) (LCase:r2) = compareExpr r1 r2
 compareExpr (LLambda:r1) (LLambda:r2) = False
@@ -393,8 +395,8 @@ dropArgument l = dropArgument' l 0 0 -- drop one argument
   dropArgument' all@(LRHS:_) i dropped =
       if (i>0)||(dropped==0) then Nothing else (Just all)
   dropArgument' all@(LLastArg:r) i dropped = 
-      if (i>0) then dropArgument' r (i-1) 1 else
-        if (dropped==0) then Nothing else (Just all)
+      if (i>1) then dropArgument' r (i-1) 1 else
+        if (dropped==0) then Nothing else (Just r)
   dropArgument' (LAppl:r) i _ = dropArgument' r (i+1) 1-- skip application within argument!
   dropArgument' (_:r) i _ | i==0 = (Just r)
 			  | otherwise = dropArgument' r i 1

@@ -1324,7 +1324,7 @@ HatFile hatOpenFile(char* name) {
     stat(name, &(hatHandle[(int) handle].statBuf));
     hatHandle[handle].filesize = hatHandle[handle].statBuf.st_size;
     hatHandle[handle].pprogress = hatHandle[handle].statBuf.st_size/1000;
-    if (hatHandle[handle].pprogress==0) hatHandle[handle].statBuf.st_size=1;
+    if (hatHandle[handle].pprogress==0) hatHandle[handle].pprogress=1;
     hatHandle[handle].filename = name;
     hatHandle[handle].buf_n = 0; // set buffer pointers appropriately. buf_n=0 buffer currently empty
     hatHandle[handle].boff = 0;  // at position 0 in buffer

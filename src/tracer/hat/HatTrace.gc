@@ -97,7 +97,6 @@ module HatTrace (
  printCExpression,    -- print expression, using C's pretty printer
  printCReduction,     -- print reduction (lhs = rhs) using C's pretty printer
  printCReductionList  -- print list of reductions using C's pretty printer
-
 )
 where
 
@@ -984,3 +983,11 @@ instance HatRep HatNode where
   hatValueString   = c_hatCString . _fromHatNode
   hatNodeType      = _hatNodeType
 
+%fun trace :: String -> Int
+%call (string s)
+%code char c;
+%     fprintf(stderr,"%s\n",s);
+%     c=getchar();
+%     while ((c!=EOF)&&(c!='\n')) c=getchar();
+%     i=1;
+%result (int i)

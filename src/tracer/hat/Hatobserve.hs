@@ -56,7 +56,7 @@ checkIdentifiers (ident1:file:[]) = Just (ident1,"",file)
 checkIdentifiers (file:[]) = Just ("","",file)
 checkIdentifiers _ = Nothing
 
-main = 
+main =
     do
     arguments <- getArgs
     if ((length arguments)==3)&&((head (tail arguments))=="-remote") then
@@ -215,7 +215,7 @@ uniqueFilter observed filterFun = uniqueFilter' observed filterFun []
 	(b,tries) = if (filterFun linexpr) then (insertTrie trie linexpr) else
 		    (False,trie);
         r = uniqueFilter' observed filterFun tries in
-    if b then (obs:r) else r
+         if b then (obs:r) else r
 
 last2 :: [a] -> ([a],[a])
 last2 [] = ([],[])
@@ -503,6 +503,7 @@ doCommand cmd s hatfile@(_,hattrace)
          (interactive hatfile state)
         else
         do
+	 -- putStrLn ("pattern: "++(show pattern))
          putStrLn ("searching for: "++fun
                    ++(if ident2/="" then " in "++ident2 else ""))
 
