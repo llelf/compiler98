@@ -239,6 +239,7 @@ visibleIn (Just exports) noneSpecified modid
 				|| met `elem` explicitVars
     idFilter c@(Field typ f)    =  f   `elem` explicitSubordinates
 				|| typ `elem` implicitSubordinates
+				|| f   `elem` explicitVars
 
 
 -- The following comment is no longer true - I have added a Maybe
