@@ -134,12 +134,12 @@ dTopDecls trusted root (DeclsParse ds) =
 
 dTopDecl :: Bool -> Exp Id -> Decl Int -> DbgTransMonad [Decl Int]
 
-dTopDecl trusted root (DeclClass pos ctx id1 id2 (DeclsParse decls)) =
+dTopDecl trusted root (DeclClass pos ctx id1 id2 fundeps (DeclsParse decls)) =
   mapS ((if trusted then dTrustDecl else dSuspectDecl) True root) decls 
     >>>= \decls' ->
   lookupName id1 >>>= \(Just (InfoClass i tid ie nt ms ds at)) ->
   mapS0 fixMethodArity (zip ms ds) >>>
-  unitS (DeclClass pos ctx id1 id2 (DeclsParse (concatMap fst decls'))
+  unitS (DeclClass pos ctx id1 id2 fundeps (DeclsParse (concatMap fst decls'))
         :concatMap snd decls')
   where 
   fixMethodArity (m, d) =

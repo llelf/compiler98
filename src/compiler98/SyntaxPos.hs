@@ -19,7 +19,7 @@ instance HasPos (Decl a) where
     getPos (DeclDataPrim pos _ _)       = pos
     getPos (DeclData _ _ simple _ _)    = getPosSimple simple
     getPos (DeclConstrs pos _ _)        = pos
-    getPos (DeclClass pos _ _ _ _)      = pos
+    getPos (DeclClass pos _ _ _ _ _)    = pos
     getPos (DeclInstance pos _ _ _ _)   = pos
     getPos (DeclDefault [])             = noPos
     getPos (DeclDefault (t:_))          = getPosType t

@@ -37,7 +37,7 @@ rmClasses tidFun state (DeclsParse topdecls) =
 
 rmClass :: Decl Id -> RmClassMonad ([ClassCode a Id],[Decl Id])
 
-rmClass (DeclClass pos ctx cls arg (DeclsParse decls)) =
+rmClass (DeclClass pos ctx cls arg fundeps (DeclsParse decls)) =
   mapS fixArity decls >>>= \ decls ->
   unitS ([CodeClass pos cls] ,decls)
 rmClass (DeclInstance pos ctx cls [TypeCons _ typ _] (DeclsParse decls)) =

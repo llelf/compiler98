@@ -64,6 +64,7 @@ parseTopDecl =
       (\ simpl -> DeclData (Just False) [] simpl [] []) `parseAp` parseSimple ),
   (L_class, \pos -> 
     mkDeclClass `parseAp` parseContexts `ap` aconid `ap` some avarid `ap` 
+      parseFunDeps `ap`
       (id `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl
        `orelse` 
        parse (DeclsParse [])
@@ -93,6 +94,21 @@ parseSig :: Parser (Sig TokenId) [PosToken] a
 parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  
   parseStrict parseType
 
+parseFunDeps :: Parser [FunDep TokenId] [PosToken] a
+parseFunDeps =
+  pipe `revChk` someSep comma parseFunDep
+    `orelse`
+  parse []
+
+parseFunDep :: Parser (FunDep TokenId) [PosToken] a
+parseFunDep =
+    (:->:) `parseAp` parseTyVars `chk` rarrow `ap` parseTyVars
+  where
+    parseTyVars :: Parser [TokenId] [PosToken] a
+    parseTyVars =
+        map snd `parseAp` (lpar `revChk` someSep comma avarid `chk` rpar)
+          `orelse`
+        ((:[]) . snd) `parseAp` varid
 
 parseForeign :: Parser (Decl TokenId) [PosToken] a
 parseForeign =

@@ -479,11 +479,11 @@ ppDecl info (DeclConstrs pos did cs) =
         map (\(ps,field,sel) -> 
                 parens (ppIdAsVar info field <> space <> ppIdAsVar info sel)) 
                        cs))
-ppDecl info (DeclClass pos ctxs cls args decls) =
+ppDecl info (DeclClass pos ctxs cls args fundeps decls) =
   nestS info $
     text "class" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info cls <> space <> 
-      sep fSpace (map (ppTyVar info) args))
+      sep fSpace (map (ppTyVar info) args) <> ppFunDeps info fundeps)
     <> ppWhere info decls
 ppDecl info (DeclInstance pos ctxs tycls insts valdefs) =
   nestS info $
@@ -546,6 +546,15 @@ ppAnnot info (AnnotNeed posidents) =
     group $ text "{" <> sep fSpace (map (ppIdAsVar info) xs) <> text "}"
 ppAnnot info (AnnotUnknown) =
   text "{-# ??? #-}"
+
+ppFunDeps :: PPInfo a -> [FunDep a] -> Doc
+ppFunDeps info [] = text ""
+ppFunDeps info xs = text " | " <> sep (text ", ") (map (ppFunDep info) xs)
+
+ppFunDep :: PPInfo a -> FunDep a -> Doc
+ppFunDep info (as :->: bs) = ppTyVars as <> text "->" <> ppTyVars bs
+  where
+    ppTyVars = parensFComma2 info . map (ppId info)
 
 
 ppWhere :: PPInfo a -> Decls a -> Doc

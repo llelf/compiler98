@@ -73,7 +73,7 @@ extractDecl (DeclInstance pos ctxs cls [instanceType@(TypeCons poscon con _)]
                       ++ " according to class declaration.")
   ) >>>
   extractDecls instmethods    -- error if we find any type signatures
-extractDecl (DeclClass pos tctxs tClass tTVars (DeclsParse decls)) = 
+extractDecl (DeclClass pos tctxs tClass tTVars fundeps (DeclsParse decls)) = 
   mapR extractDecl' decls
 extractDecl (DeclPrimitive pos ident arity typ) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]

@@ -98,38 +98,38 @@ data DeclsDepend id =
      | DeclsRec   [Decl id]
 
 data Decl id =
-       -- for type synonym: type   simple  = type
+       -- | for type synonym: type   simple  = type
        DeclType (Simple id) (Type id)
-       -- renamer replaces DeclType by this.
-       -- the type is in the symbol table, referenced by Id
+       -- | renamer replaces DeclType by this.
+       --   the type is in the symbol table, referenced by Id
      | DeclTypeRenamed Pos Id   -- intentionally not "id"
 
-       -- {Nothing = newtype, Just False = data, Just True = data unboxed}
-       -- context => simple = constrs 
-       -- deriving (tycls)
+       -- | {Nothing = newtype, Just False = data, Just True = data unboxed}
+       --   context => simple = constrs 
+       --   deriving (tycls)
      | DeclData (Maybe Bool) [Context id] (Simple id) [Constr id] [(Pos,id)]
-       -- data primitive conid size
+       -- | data primitive conid size
      | DeclDataPrim Pos id Int
-       -- Introduced by Rename to mark that we might need 
-       -- to generate selector funktions
+       -- | Introduced by Rename to mark that we might need 
+       --   to generate selector functions
        --       position data/dataprim [(field,selector)]
      | DeclConstrs Pos id [(Pos,id,id)] 
-       -- class context => class where { signatures/valdefs; }
-       -- position, context, class, type variables, declarations in class
-     | DeclClass Pos [Context id] id [id] (Decls id)
-       -- instance context => tycls inst where { valdefs }
+       -- | class context => class where { signatures/valdefs; }
+       --   position, context, class, type variables, fundeps, method decls
+     | DeclClass Pos [Context id] id [id] [FunDep id] (Decls id)
+       -- | instance context => tycls inst where { valdefs }
      | DeclInstance Pos [Context id] id [Instance id] (Decls id)
-       -- default (type,..)
+       -- | default (type,..)
      | DeclDefault [Type id]
-       -- var primitive arity :: type
+       -- | var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
-       -- foreign import [callconv] [extfun] [unsafe|cast|noproto] var :: type
-       -- (final id parts are wrapper-fn for Trace and IO respectively)
+       -- | foreign import [callconv] [extfun] [unsafe|cast|noproto] var :: type
+       --   (final id parts are wrapper-fn for Trace and IO respectively)
        --               callconv extfun intfun arity [u|c|n] ty wrapperId
      | DeclForeignImp Pos CallConv String id Int Safety (Type id) id
-       -- foreign export  callconv  [extfun]  var :: type
+       -- | foreign export  callconv  [extfun]  var :: type
      | DeclForeignExp Pos CallConv String id (Type id)
-       -- vars :: context => type
+       -- | vars :: context => type
      | DeclVarsType [(Pos,id)] [Context id] (Type id)
      | DeclPat (Alt id)
      | DeclFun Pos id [Fun id] -- "var = ..." is a DeclFun, not a DeclPat
@@ -140,7 +140,7 @@ data Decl id =
      | DeclError String
      | DeclAnnot (Decl id) [Annot id]
 --   | DeclPragma String String
-     -- infix[rl] int id,..,id
+     -- | infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
 
 -- for foreign imports/exports
@@ -159,6 +159,9 @@ data ClassCode ctx id = -- introduced by RmClasses
    CodeClass Pos id  -- class id
  | CodeInstance Pos id id [id] [ctx] [id]  
    -- class id, typ id, args, ctxs, method ids
+
+-- | We parse MPTC with functional dependencies, only for hat-trans.
+data FunDep id = [id] :->: [id]
 
 
 data Annot id = AnnotArity (Pos,id) Int

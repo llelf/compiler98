@@ -112,8 +112,8 @@ mkParLhs pos app args = ExpApplication pos (app:args)
 --             DeclClass pos ctx cls arg (combineGroups csigns valdefs)
 
 -- changed in H98 to:
-mkDeclClass ctx (pos,cls) posargs cdecls =
-    DeclClass pos ctx cls (map snd posargs) cdecls
+mkDeclClass ctx (pos,cls) posargs fundeps cdecls =
+    DeclClass pos ctx cls (map snd posargs) fundeps cdecls
 
 
 mkExp_Colon :: Pos -> Exp TokenId

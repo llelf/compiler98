@@ -251,7 +251,7 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
 	else
          unitS) (DeclConstrs pos d (concat fields))
 
-renameDecl (DeclClass pos ctxs tid [tvar] decls') =
+renameDecl (DeclClass pos ctxs tid [tvar] [] decls') =
   let al = tvTids [tvar]
       (DeclsParse decls) = groupFun decls'
   in transTypes al (map snd al) ctxs 
@@ -259,13 +259,13 @@ renameDecl (DeclClass pos ctxs tid [tvar] decls') =
      transContext al (Context pos tid [(pos,tvar)]) >>>= \ctx@(c,t) -> 
      fixClassMethods tid tvar ctx decls >>>= \declmds ->
      defineClass pos tid nt (map snd declmds) >>> 
-     unitS (DeclClass pos [] c [t] (DeclsParse (map fst declmds)))
-renameDecl (DeclClass pos ctxs tid (tvar:_) decls') =
+     unitS (DeclClass pos [] c [t] [] (DeclsParse (map fst declmds)))
+renameDecl (DeclClass pos ctxs tid (tvar:_) _ decls') =
   let al = tvTids [tvar]
   in transContext al (Context pos tid [(pos,tvar)]) >>>= \ctx@(c,t) -> 
      renameError ("Multi-parameter type-classes (used at "++strPos pos
                   ++") are not supported.")
-                 (DeclClass pos [] c [t] (DeclsParse []))
+                 (DeclClass pos [] c [t] [] (DeclsParse []))
 
 renameDecl (DeclInstance pos ctxs tid [instanceType@(TypeCons _ tcon _)]
                          instmethods') =

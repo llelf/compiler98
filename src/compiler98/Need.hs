@@ -163,7 +163,7 @@ needDecl (DeclData b ctxs simple constrs posidents) =
 
 
 --        class context => class where { csign; valdef }
-needDecl (DeclClass pos tctxs tClass tTVars (DeclsParse decls)) =
+needDecl (DeclClass pos tctxs tClass tTVars fundeps (DeclsParse decls)) =
      pushNeed
   >>> mapR (bindTid TVar) tTVars
   >>> mapR needCtx tctxs
@@ -406,7 +406,7 @@ bindDecl (DeclType (Simple pos tid posidents) typ) =  unitR
 bindDecl (DeclDataPrim pos tid size) = unitR -- bindTid TCon tid
 bindDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = unitR 
   -- ^ bindTid TCon tid >>> mapR bindConstr constrs
-bindDecl (DeclClass pos tctxs tClass tTVars (DeclsParse decls)) = 
+bindDecl (DeclClass pos tctxs tClass tTVars fundeps (DeclsParse decls)) = 
   bindTid TClass tClass >>> mapR bindClass decls
 bindDecl (DeclInstance pos ctxs tClass inst (DeclsParse decls)) = unitR
 bindDecl (DeclDefault types) = unitR
