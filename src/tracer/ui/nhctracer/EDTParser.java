@@ -180,6 +180,8 @@ public class EDTParser {
 		}
 		expect(')');
 		return result;
+	    case 'P':
+		return new Pruned(parent, tree, index);
 	    case '_': // The root node
 		System.err.println("ParseEDT: hmm, Root...");
 		System.exit(-1);
