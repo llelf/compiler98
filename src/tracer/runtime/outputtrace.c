@@ -18,15 +18,8 @@
 #include "mark.h"
 #include "outputtrace.h"
 
-/* Whenever we see a node, it is given a reference number and placed in 
- * a table, the node cache, using ncInsert(NodePtr np, int hist).
- * If hist is true, it means that trace information for the node has been
- * (or is being) sent to the interface. Nodes are looked up in the cache 
- * using ncFind(NodePtr np). If it returns zero, the node is not in the 
- * cache. If it returns a positive number, it is the reference number of 
- * the node in the cache, and the node has its trace sent to the interface.
- * If the number is negative, the node is in the cache, but its trace has 
- * not been sent to the interface.
+/* The OutputTrace is an array of (character,trace) pairs, recording
+ * all the output behaviour of the Haskell program.
  */
 
 #define OT_ALLOCSIZE 1024
