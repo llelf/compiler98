@@ -1,6 +1,8 @@
 module Prelude(Num(..)) where
 
+
 #if !defined(TRACING)
+
 import PrimIntFromInteger
 
 instance Num Int where
@@ -16,6 +18,8 @@ instance Num Int where
 
 #else
 
+import PrimIntFromIntegerC
+
 instance Num Int where
  a + b    = _prim _tprim_IntPlus a b
  a - b    = _prim _tprim_IntMinus a b
@@ -25,7 +29,9 @@ instance Num Int where
  abs    a = _prim _tprim_IntAbs a
  signum a = _prim _tprim_IntSignum a
 
- fromInteger i = _prim _tprim_IntFromInteger i
+ fromInteger i = primIntFromIntegerC i
+
+-- fromInteger i = _prim _tprim_IntFromInteger i
 
 _tprim_IntPlus primitive 3 :: Trace -> R Int -> R Int -> R Int
 _tprim_IntMinus primitive 3 :: Trace -> R Int -> R Int -> R Int

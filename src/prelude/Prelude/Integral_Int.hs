@@ -1,8 +1,8 @@
 module Prelude(Integral(..)) where
 
-#if !defined(TRACING)
 import PrimIntegerFromInt
 
+#if !defined(TRACING)
 instance Integral Int  where
     n `quot`    d   	= n `quot` d			-- MAGIC 
     n `rem`     d   	= n `rem`  d			-- MAGIC
@@ -11,13 +11,12 @@ instance Integral Int  where
     toInteger n 	= primIntegerFromInt n
 
 #else
-
 instance Integral Int  where
     n `quot`    d   	= _prim _tprim_IntQuot n d
     n `rem`     d   	= _prim _tprim_IntRem n d
     n `quotRem` d 	= (n `quot` d, n `rem` d)
 
---    toInteger n 	= primIntegerFromInt n
+    toInteger n 	= primIntegerFromInt n
 
 _tprim_IntQuot primitive 3 :: Trace -> R Int -> R Int -> R Int
 _tprim_IntRem primitive 3 :: Trace -> R Int -> R Int -> R Int

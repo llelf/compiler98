@@ -1,7 +1,5 @@
 module Prelude(Num(..)) where
 
-#if !defined(TRACING)
-
 import PrimIntegerAdd
 import PrimIntegerSub
 import PrimIntegerMul
@@ -20,8 +18,9 @@ instance Num Integer where
 		GT ->  1
  fromInteger a = a -- id a
 
-#else
 
+#if 0
+-- earlier tracing version of Integer code
 instance Num Integer where
  a + b    = _prim _tprim_IntegerPlus a b
  a - b    = _prim _tprim_IntegerMinus a b

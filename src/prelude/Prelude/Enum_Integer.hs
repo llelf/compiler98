@@ -1,8 +1,8 @@
 module Prelude(Enum(..)) where
 
 instance Enum Integer where
-  toEnum = toInteger
-  fromEnum = fromInteger
+  toEnum x = toInteger x
+  fromEnum x = fromInteger x
 
-  enumFrom = numericEnumFrom
-  enumFromThen = numericEnumFromThen
+  enumFrom x = numericEnumFrom x
+  enumFromThen x y = numericEnumFromThen x y

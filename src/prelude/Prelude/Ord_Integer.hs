@@ -1,7 +1,5 @@
 module Prelude(Ord(..)) where
 
-#if !defined(TRACING)
-
 import PrimIntegerLt
 import PrimIntegerLe
 import PrimIntegerGe
@@ -13,8 +11,9 @@ instance Ord Integer where
   a >= b = primIntegerGe a b 
   a >  b = primIntegerGt a b 
 
-#else
 
+#if 0
+-- earlier version for tracing
 instance Ord Integer where
   a <  b = _prim _tprim_IntegerLt a b -- primIntegerLt a b 
   a <= b = _prim _tprim_IntegerLe a b -- primIntegerLe a b

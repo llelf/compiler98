@@ -1,12 +1,11 @@
 module Prelude(Eq(..)) where
 
-#if !defined(TRACING)
 import PrimIntegerEq
 import PrimIntegerNe
-#endif
 
 instance Eq Integer where
-#if !defined(TRACING)
+#if 1
+-- #if !defined(TRACING)
   a == b = primIntegerEq a b 
   a /= b = primIntegerNe a b 
 #else
@@ -16,3 +15,4 @@ instance Eq Integer where
 _tprim_EqInteger primitive 3 :: Trace -> R Integer -> R Integer -> R Bool
 _tprim_NEqInteger primitive 3 :: Trace -> R Integer -> R Integer -> R Bool
 #endif
+

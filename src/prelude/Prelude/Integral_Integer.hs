@@ -1,20 +1,21 @@
 module Prelude(Integral(..)) where
 
-#if !defined(TRACING)
 import PrimIntegerQuotRem
 
 instance Integral Integer  where
-    n `quot` d 	  = fst (primIntegerQuotRem n d)
-    n `rem`  d    = snd (primIntegerQuotRem n d) 
+    n `quot` d 	  = primIntegerQuot n d
+    n `rem`  d    = primIntegerRem n d
     n `div`  d    = fst (divMod n d) 
     n `mod`  d 	  = snd (divMod n d) 
 
-    n `quotRem` d = primIntegerQuotRem n d 
+    n `quotRem` d = primIntegerQuotRem n d
 
     toInteger n   = n 
 
-#else
 
+
+#if 0
+-- earlier version for tracing
 instance Integral Integer  where
     n `quot` d 	  = fst (_prim_IntegerQuotRem n d)
     n `rem`  d    = snd (_prim_IntegerQuotRem n d) 
