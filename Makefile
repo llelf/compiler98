@@ -393,7 +393,7 @@ $(TARGDIR)/greencardC: $(GREENCARD)
 	cd src/greencard;  $(MAKE) cfiles
 	touch $(TARGDIR)/greencardC
 $(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
-	script/nhc98 -C script/hmake-PRAGMA.hs
+	script/nhc98 -cpp -C script/hmake-PRAGMA.hs
 	touch $(TARGDIR)/pragmaC
 $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
