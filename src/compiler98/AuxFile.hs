@@ -394,3 +394,4 @@ addPat patSort visible pat (env,identMap) = (refutableVars,(newEnv,identMap))
   isNewTypeDataCon id = case lookupAT identMap id of
     Just (Con Newtype _ _) -> True
     Just (Con Data _ _) -> False
+    _ -> error ("Data constructor not in scope: " ++ show id)

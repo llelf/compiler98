@@ -618,7 +618,7 @@ tDecl scope traced parent (DeclFun pos id [Fun [] rhs localDecls]) =
   tCaf scope traced parent pos id rhs localDecls
     -- a caf has many dynamic parents and hence uses the static parent
 tDecl _ _ parent (DeclFun pos id (Fun [] _ _ : _)) =
-  error "tDecl: variable multiple defined"
+  error ("Variable multiple defined: " ++ show (tokenId id))
 tDecl scope traced parent (DeclFun pos id funs) = 
   tFuns scope traced pos id funs  -- a function does not use the static parent
 tDecl _ _ _ (DeclFixity _) = ([],[],emptyModuleConsts) 
@@ -1489,7 +1489,7 @@ tPat (PatIrrefutable pos pat) =
            ExpApplication pos' [r,PatIrrefutable pos p',t']
          x -> x
       ,[],[])
-    else error "Numeric literal inside ~ is currently not implemented."
+    else error "Numeric pattern inside ~ is currently not implemented."
   where
   (pat',patExps,patDecls) = tPat pat 
 tPat (PatNplusK pos id _ k _ _) = 

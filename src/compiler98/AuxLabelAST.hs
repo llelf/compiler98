@@ -89,9 +89,10 @@ lookEnv env id =
            -- this is a horrible hack to by-pass qualified names.
            Qualified _ x -> case useEnvironment env (Visible x) of
                               Just info -> id `plus` info
-                              _ -> error ("AuxLabelAST.lookEnv: "++show id
-                                          ++" not in environment")
-           _ -> error ("AuxLabelAST.lookEnv: "++show id++" not in environment")
+                              _ -> stop
+           _ -> stop
+  where
+  stop = error ("Variable or constructor not in scope: " ++ show id)
 
 
 -- The class `Relabel' walks the abstract syntax tree, relabelling all
