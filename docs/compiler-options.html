@@ -192,60 +192,60 @@ value is "on", an option can be turned off by prefixing the flag with
 <b>Options to change the usual compilation behaviour.</b>
 
 <table width=250><tr>
-<td valign=top><em>-redefine</em></td>
+<td valign=top><em><b>-redefine</b></em></td>
   <td>Don't complain if redefining an imported identifier</td>
 </tr><tr>
-<td valign=top><em>-part</em></td>
+<td valign=top><em><b>-part</b></em></td>
   <td>Compiling part of a lib, so don't complain if module name differs from
       file name and don't create profiling information for this module</td>
 </tr><tr>
-<td valign=top><em>-lib</em></td>
+<td valign=top><em><b>-lib</b></em></td>
   <td>Compiling a lib, don't complain if importing modules with names
       that differ from their filenames</td>
 </tr><tr>
-<td valign=top><em>-unix</em></td>
+<td valign=top><em><b>-unix</b></em></td>
   <td>Use unix filenames (default=on) (off=RiscOS filenames)</td>
 </tr><tr>
-<td valign=top><em>-unlit</em></td>
+<td valign=top><em><b>-unlit</b></em></td>
   <td>Unliterate the source code</td>
 </tr><tr>
-<td valign=top><em>-nkpat</em></td>
+<td valign=top><em><b>-nkpat</b></em></td>
   <td>Allow (n+k) patterns (default=off except in -98 compatibility mode)</td>
 </tr><tr>
-<td valign=top><em>-underscore</em></td>
+<td valign=top><em><b>-underscore</b></em></td>
   <td>Treat underscores strictly as lowercase (default=off except in -98 compatibility mode)</td>
 </tr><tr>
-<td valign=top><em>-puns</em></td>
+<td valign=top><em><b>-puns</b></em></td>
   <td>Allow named field punning (default=on except in -98 compatibility mode)</td>
 </tr><tr>
-<td valign=top><em>-ansiC</em></td>
+<td valign=top><em><b>-ansiC</b></em></td>
   <td>Generate bytecode file as ANSI C (default=on) </td>
 </tr><tr>
-<td valign=top><em>-showtype</em></td>
+<td valign=top><em><b>-showtype</b></em></td>
   <td>Report type of main expression, but do not generate code</td>
 </tr><tr>
-<td valign=top><em>-profile</em></td>
+<td valign=top><em><b>-profile</b></em></td>
   <td>number of occurrences = amount of heap profiling information per node</td>
 </tr><tr>
-<td valign=top><em>-tprof</em></td>
+<td valign=top><em><b>-tprof</b></em></td>
   <td>compile for time profiling</td>
 </tr><tr>
-<td valign=top><em>-zap</em></td>
+<td valign=top><em><b>-zap</b></em></td>
   <td>Generate code to zap unused arguments/stack positions (default=on)</td>
 </tr><tr>
-<td valign=top><em>-prelude</em></td>
+<td valign=top><em><b>-prelude</b></em></td>
   <td>Keep prelude definitions in interface file</td>
 </tr><tr>
-<td valign=top><em>-keepcase</em></td>
+<td valign=top><em><b>-keepcase</b></em></td>
   <td>Don't lift case, we fix those later</td>
 </tr><tr>
-<td valign=top><em>-dbgtrans</em></td>
+<td valign=top><em><b>-dbgtrans</b></em></td>
   <td>perform tracing translation (for runtime tracer)</td>
 </tr><tr>
-<td valign=top><em>-dbgprelude</em></td>
+<td valign=top><em><b>-dbgprelude</b></em></td>
   <td>use the tracing prelude</td>
 </tr><tr>
-<td valign=top><em>-trusted</em></td>
+<td valign=top><em><b>-trusted</b></em></td>
   <td>make this a "trusted" module (tracer)</td>
 </tr></table>
 
@@ -254,143 +254,155 @@ value is "on", an option can be turned off by prefixing the flag with
 <b>Options to examine the internal progress of the compiler, stage by stage.</b>
 
 <table width=250><tr>
-<td valign=top><em>-lex</em></td>
+<td valign=top><em>-<b>showwidth=</b>w</em></td>
+  <td>set width in characters of output of an intermediate syntax tree to <em>w</em>
+  (default=80)</td>
+</tr><tr>
+<td valign=top><em>-<b>showindent=</b>i</em></td>
+  <td>set indentation in characters for nesting of output of an intermediate syntax tree to <em>i</em>
+  (default=2)</td>
+</tr><tr>
+<td valign=top><em>-<b>showqualified</b></em></td>
+  <td>use qualified names in output of intermediate syntax tree
+  (default=on)</td>
+</tr><tr>
+<td valign=top><em><b>-lex</b></em></td>
   <td>show lexical input</td>
 </tr><tr>
-<td valign=top><em>-parse</em></td>
+<td valign=top><em><b>-parse</b></em></td>
   <td>show syntax tree after parser</td>
 </tr><tr>
-<td valign=top><em>-need</em></td>
+<td valign=top><em><b>-need</b></em></td>
   <td>show need table before import</td>
 </tr><tr>
-<td valign=top><em>-import</em></td>
+<td valign=top><em><b>-import</b></em></td>
   <td>print names of explicitly imported files</td>
 </tr><tr>
-<td valign=top><em>-report-imports</em></td>
+<td valign=top><em><b>-report-imports</b></em></td>
   <td>display imports actually used</td>
 </tr><tr>
-<td valign=top><em>-depend</em></td>
+<td valign=top><em><b>-depend</b></em></td>
   <td>print imported identifiers that are used (not even alpha-tested yet)</td>
 </tr><tr>
-<td valign=top><em>-ilex</em></td>
+<td valign=top><em><b>-ilex</b></em></td>
   <td>show lexical input for interface files</td>
 </tr><tr>
-<td valign=top><em>-iparse</em></td>
+<td valign=top><em><b>-iparse</b></em></td>
   <td>show syntax tree  after  parser for interface files</td>
 </tr><tr>
-<td valign=top><em>-ineed</em></td>
+<td valign=top><em><b>-ineed</b></em></td>
   <td>show need   table after  import</td>
 </tr><tr>
-<td valign=top><em>-irename</em></td>
+<td valign=top><em><b>-irename</b></em></td>
   <td>show rename table after  import</td>
 </tr><tr>
-<td valign=top><em>-ibound</em></td>
+<td valign=top><em><b>-ibound</b></em></td>
   <td>show symbol table after  import</td>
 </tr><tr>
-<td valign=top><em>-iineed</em></td>
+<td valign=top><em><b>-iineed</b></em></td>
   <td>show need   table between all import files</td>
 </tr><tr>
-<td valign=top><em>-iibound</em></td>
+<td valign=top><em><b>-iibound</b></em></td>
   <td>show symbol table between all import files</td>
 </tr><tr>
-<td valign=top><em>-rename</em></td>
+<td valign=top><em><b>-rename</b></em></td>
   <td>show syntax tree  after   rename</td>
 </tr><tr>
-<td valign=top><em>-rbound</em></td>
+<td valign=top><em><b>-rbound</b></em></td>
   <td>show symbol table after   rename</td>
 </tr><tr>
-<td valign=top><em>-derive</em></td>
+<td valign=top><em><b>-derive</b></em></td>
   <td>show syntax tree  after   derive</td>
 </tr><tr>
-<td valign=top><em>-dbound</em></td>
+<td valign=top><em><b>-dbound</b></em></td>
   <td>show symbol table after   derive</td>
 </tr><tr>
-<td valign=top><em>-ebound</em></td>
+<td valign=top><em><b>-ebound</b></em></td>
   <td>show symbol table after extract</td>
 </tr><tr>
-<td valign=top><em>-tracedata</em></td>
+<td valign=top><em><b>-tracedata</b></em></td>
   <td>show syntax tree after tracing translation (datatypes)</td>
 </tr><tr>
-<td valign=top><em>-tracefns</em></td>
+<td valign=top><em><b>-tracefns</b></em></td>
   <td>show syntax tree after tracing translation (function defns)</td>
 </tr><tr>
-<td valign=top><em>-remove</em></td>
+<td valign=top><em><b>-remove</b></em></td>
   <td>show syntax tree after fields are removed (translated into selectors)</td>
 </tr><tr>
-<td valign=top><em>-scc</em></td>
+<td valign=top><em><b>-scc</b></em></td>
   <td>show syntax tree  after splitting into strongly connected groups</td>
 </tr><tr>
-<td valign=top><em>-type</em></td>
+<td valign=top><em><b>-type</b></em></td>
   <td>show syntax tree  after type check</td>
 </tr><tr>
-<td valign=top><em>-tbound</em></td>
+<td valign=top><em><b>-tbound</b></em></td>
   <td>show symbol table after type check</td>
 </tr><tr>
-<td valign=top><em>-fixsyntax</em></td>
+<td valign=top><em><b>-fixsyntax</b></em></td>
   <td>show syntax tree  after removing newtype constructors and fixing
       Class.Type.method</td>
 </tr><tr>
-<td valign=top><em>-fsbound</em></td>
+<td valign=top><em><b>-fsbound</b></em></td>
   <td>show symbol table after adding Class.Type.method info</td>
 </tr><tr>
-<td valign=top><em>-stg</em></td>
+<td valign=top><em><b>-stg</b></em></td>
   <td>show stg tree after translation from syntax tree</td>
 </tr><tr>
-<td valign=top><em>-case</em></td>
+<td valign=top><em><b>-case</b></em></td>
   <td>show stg tree after simplification of patterns</td>
 </tr><tr>
-<td valign=top><em>-cbound</em></td>
+<td valign=top><em><b>-cbound</b></em></td>
   <td>show symbol table after simplification of pattern</td>
 </tr><tr>
-<td valign=top><em>-prim</em></td>
+<td valign=top><em><b>-prim</b></em></td>
   <td>show stg tree after inserting primitive functions</td>
 </tr><tr>
-<td valign=top><em>-pbound</em></td>
+<td valign=top><em><b>-pbound</b></em></td>
   <td>show symbol table after inserting primitive functions</td>
 </tr><tr>
-<td valign=top><em>-free</em></td>
+<td valign=top><em><b>-free</b></em></td>
   <td>show stg tree with explicit free variables</td>
 </tr><tr>
-<td valign=top><em>-lift</em></td>
+<td valign=top><em><b>-lift</b></em></td>
   <td>show syntax tree  after lambda lifting</td>
 </tr><tr>
-<td valign=top><em>-lbound</em></td>
+<td valign=top><em><b>-lbound</b></em></td>
   <td>show symbol table after lambda lifting</td>
 </tr><tr>
-<td valign=top><em>-arity</em></td>
+<td valign=top><em><b>-arity</b></em></td>
   <td>show stg tree  after arity grouping</td>
 </tr><tr>
-<td valign=top><em>-atom</em></td>
+<td valign=top><em><b>-atom</b></em></td>
   <td>show stg tree after only atoms in applications</td>
 </tr><tr>
-<td valign=top><em>-abound</em></td>
+<td valign=top><em><b>-abound</b></em></td>
   <td>show symbol table after only atoms in applications</td>
 </tr><tr>
-<td valign=top><em>-bcbefore</em></td>
+<td valign=top><em><b>-bcbefore</b></em></td>
   <td>show stg tree  before converting to byte code</td>
 </tr><tr>
-<td valign=top><em>-stgcode</em></td>
+<td valign=top><em><b>-stgcode</b></em></td>
   <td>show STG byte code</td>
 </tr><tr>
-<td valign=top><em>-gcode</em></td>
+<td valign=top><em><b>-gcode</b></em></td>
   <td>show G code</td>
 </tr><tr>
-<td valign=top><em>-gcodefix</em></td>
+<td valign=top><em><b>-gcodefix</b></em></td>
   <td>show G code after large constant fixed</td>
 </tr><tr>
-<td valign=top><em>-gcodeopt1</em></td>
+<td valign=top><em><b>-gcodeopt1</b></em></td>
   <td>show G code optimisation</td>
 </tr><tr>
-<td valign=top><em>-gcodemem</em></td>
+<td valign=top><em><b>-gcodemem</b></em></td>
   <td>show G code NEEDHEAP</td>
 </tr><tr>
-<td valign=top><em>-gcodeopt2</em></td>
+<td valign=top><em><b>-gcodeopt2</b></em></td>
   <td>show G code optimisation</td>
 </tr><tr>
-<td valign=top><em>-gcoderel</em></td>
+<td valign=top><em><b>-gcoderel</b></em></td>
   <td>show G code after offsets</td>
 </tr><tr>
-<td valign=top><em>-funnames</em></td>
+<td valign=top><em><b>-funnames</b></em></td>
   <td>insert position and name of functions in the code</td>
 
 </tr></table>
@@ -407,7 +419,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.09.11<br>
+2000.11.23<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

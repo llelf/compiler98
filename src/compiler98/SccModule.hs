@@ -63,11 +63,11 @@ map_sDecl (DeclFixity f: r)   = map_sDecl r
 map_sDecl (DeclVarsType _ _ _: r) = map_sDecl r
 map_sDecl (DeclDataPrim _ _ _: r) = map_sDecl r
 map_sDecl (DeclData _ _ _ _ _: r) = map_sDecl r
-map_sDecl (DeclPat (Alt pat gdexps decls): r) =
+map_sDecl (DeclPat (Alt pat rhs decls): r) =
         let (decls',use) = sDecls decls
-            (gdexps',useGdexps) = sGdExps gdexps
-        in (DeclPat (Alt pat gdexps' decls')
-           ,(defPat pat,use `unionSet` useGdexps)): map_sDecl r
+            (rhs',useRhs) = sRhs rhs
+        in (DeclPat (Alt pat rhs' decls')
+           ,(defPat pat,use `unionSet` useRhs)): map_sDecl r
 map_sDecl (DeclFun pos fun funs: r) =
         let (ds,use) = unzip (map_sFun funs)
         in (DeclFun pos fun ds
@@ -89,10 +89,10 @@ map_sDecl (DeclError s:_) = error "map_sDecl: DeclError"
 map_sDecl (x: r) = error ("map_sDecl (_ at " ++ strPos (getPos x) ++ ":r)\n")
 
 map_sFun [] = []
-map_sFun (Fun pats gdexps decls:r) =
+map_sFun (Fun pats rhs decls:r) =
         let (decls',use) = sDecls decls
-            (gdexps',useGdexps) = sGdExps gdexps
-        in (Fun pats gdexps' decls',(use `unionSet` useGdexps) `removeSet` defPats pats): map_sFun r
+            (rhs',useRhs) = sRhs rhs
+        in (Fun pats rhs' decls',(use `unionSet` useRhs) `removeSet` defPats pats): map_sFun r
 
 defDecls (DeclsParse decls) = foldr (++) [] (map defDecl decls)
 
@@ -114,7 +114,10 @@ defDecl e = error ("defDecl: _" ++ strPos (getPos e))
 defPat p = snd (sPat p)
 defPats p = snd (sPats p)
 
-sGdExps gdexps = sMap sGdExp gdexps
+
+sRhs (Unguarded exp) = sUnit Unguarded `sAdd` sExp exp
+sRhs (Guarded gdexps) = sUnit Guarded `sAdd` sMap sGdExp gdexps
+
 
 sGdExp (e1,e2) =
         sUnit pair `sAdd` sExp e1 `sAdd` sExp e2
@@ -155,11 +158,13 @@ sExp (PatWildcard pos)	      = sUnit (PatWildcard pos)
 sExp (PatIrrefutable pos e)   = sUnit (PatIrrefutable pos) `sAdd` sPat e
 sExp (PatNplusK pos n n' k le nk)= sUnit (PatNplusK pos) `sAdd` sId n `sAdd` sId n' `sAdd` sExp k `sAdd` sExp le `sAdd` sExp nk
 
+
 sAlts alts = sMap sAlt alts
 
-sAlt (Alt pat gdexps decls) =
+
+sAlt (Alt pat rhs decls) =
         let (decls',use) = sDecls decls
-            (gdexps',useGdexps) = sGdExps gdexps
-        in (Alt pat gdexps' decls',(use `unionSet` useGdexps) `removeSet` defPat pat)
+            (rhs',useRhs) = sRhs rhs
+        in (Alt pat rhs' decls',(use `unionSet` useRhs) `removeSet` defPat pat)
 
 

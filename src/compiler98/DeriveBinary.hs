@@ -27,7 +27,6 @@ deriveBinary tidFun cls typ tvs ctxs pos =
      expFGet = ExpVar pos iFGet
      expSize = ExpVar pos iSize
 
-     expTrue   = ExpCon pos (tidFun (tTrue,Con))
      expPair   = ExpCon pos (tidFun (t_Tuple 2,Con))
      expCons   = ExpCon pos (tidFun (t_Colon,Con))
      expNil    = ExpCon pos (tidFun (t_List,Con))
@@ -48,10 +47,10 @@ deriveBinary tidFun cls typ tvs ctxs pos =
     addInstMethod tBinary (tidI typInfo) t_get (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iGet >>>= \ funG ->
     addInstMethod tBinary (tidI typInfo) t_getF (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iFGet >>>= \ funF ->
     addInstMethod tBinary (tidI typInfo) t_sizeOf (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iSize >>>= \ funS ->
-    mapS (mkPutFun expTrue expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos) (zip [0..] constrInfos) >>>= \ funPs ->
-    mkGetFuns expTrue expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos typInfo constrInfos >>>= \ funGs ->
-    mkFGetFuns expTrue expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos >>>= \ funFs ->
-    mapS (mkSizeFun sizeC expTrue expSize expPlus pos) constrInfos >>>= \ funSs ->
+    mapS (mkPutFun expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos) (zip [0..] constrInfos) >>>= \ funPs ->
+    mkGetFuns expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos typInfo constrInfos >>>= \ funGs ->
+    mkFGetFuns expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos >>>= \ funFs ->
+    mapS (mkSizeFun sizeC expSize expPlus pos) constrInfos >>>= \ funSs ->
     unitS $
       DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
         DeclsParse [DeclFun pos funP funPs
@@ -61,7 +60,7 @@ deriveBinary tidFun cls typ tvs ctxs pos =
 
 
 
-mkPutFun expTrue expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos (numC,constrInfo) =
+mkPutFun expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos (numC,constrInfo) =
   getUnique >>>= \bh->
   let 
     --conTid = dropM (tidI constrInfo)
@@ -70,27 +69,31 @@ mkPutFun expTrue expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos (numC,c
       expPutCon = ExpApplication pos [expPutBits, expBH, mkInt pos sizeC, mkInt pos numC]
   in case ntI constrInfo of
      NewType _ _ _ [nt] -> -- This constructor has no arguments
-       unitS (Fun [expBH,con] [(expTrue,expPutCon)] (DeclsParse []))
+       unitS (Fun [expBH,con] (Unguarded expPutCon) (DeclsParse []))
      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
        mapS ( \ _ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \(fstarg:args) ->
        getUnique >>>= \ h ->
        let expH = ExpVar pos h
            expPutArg arg = ExpApplication pos [expPut,expBH,arg]
-       in unitS (
-          Fun [expBH,ExpApplication pos (con:fstarg:args)]
- 	      [(expTrue, ExpApplication pos
-                             [expGtGtEq, expPutCon,
-                              ExpLambda pos [expH]
-                                  (ExpApplication pos [expGtGt,
-                                                       (foldl (\z arg -> ExpApplication pos [expGtGt,z,expPutArg arg])
-                                                              (expPutArg fstarg)
-                                                              args),
-                                                       ExpApplication pos [expReturn,expH]])])]
+       in unitS 
+            (Fun [expBH,ExpApplication pos (con:fstarg:args)]
+ 	      (Unguarded 
+                (ExpApplication pos
+                  [expGtGtEq
+                  ,expPutCon
+                  ,ExpLambda pos [expH]
+                    (ExpApplication pos 
+                      [expGtGt
+                      ,(foldl (\z arg -> 
+                         ExpApplication pos [expGtGt,z,expPutArg arg])
+                         (expPutArg fstarg)
+                         args)
+                      ,ExpApplication pos [expReturn,expH]])]))
               (DeclsParse []))
 
 
 -- this code is modified from *showType*, not from *readsPrec*.
-mkGetFuns expTrue expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos typInfo constrInfos =
+mkGetFuns expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos typInfo constrInfos =
   getUnique >>>= \ i ->
   getUnique >>>= \ bh ->
   let expI      = ExpVar pos i
@@ -98,15 +101,15 @@ mkGetFuns expTrue expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos
       expGetCon = ExpApplication pos [expGetBits, expBH, mkInt pos sizeC]
   in
    --mkListExp pos expCons expNil expGtGtEq expGet expBH expReturn constrInfos >>>= \listExp->
-     mkAltList pos expTrue (mkGetExp pos expGtGtEq expGet expBH expReturn) constrInfos >>>= \altList->
+     mkAltList pos (mkGetExp pos expGtGtEq expGet expBH expReturn) constrInfos >>>= \altList->
      unitS [Fun [expBH]
-	        [(expTrue, ExpApplication pos
-                             [expGtGtEq,
-                              expGetCon,
-                              ExpLambda pos [expI]
-                                 (ExpCase pos expI altList)
-                             ])]
-	        (DeclsParse [])]
+	     (Unguarded 
+               (ExpApplication pos
+                 [expGtGtEq
+                 ,expGetCon
+                 ,ExpLambda pos [expI] (ExpCase pos expI altList)
+                 ]))
+	     (DeclsParse [])]
 
 mkGetExp pos expGtGtEq expGet expBH expReturn expCon args constrInfo =
   foldr (\ arg z -> ExpApplication pos [expGtGtEq, (ExpApplication pos [expGet,expBH]), ExpLambda pos [arg] z])
@@ -115,7 +118,7 @@ mkGetExp pos expGtGtEq expGet expBH expReturn expCon args constrInfo =
         args
 
 
-mkAltList pos expTrue mkExpFun constrInfos =
+mkAltList pos mkExpFun constrInfos =
   mapS (\(n,constrInfo) ->
          let expCon = ExpCon pos (uniqueI constrInfo)
              expN   = mkInt pos n
@@ -124,15 +127,15 @@ mkAltList pos expTrue mkExpFun constrInfos =
            NewType _ _ _ (_:nts) ->
              mapS ( \ _ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \args ->
              unitS (Alt expN
-                        [(expTrue, mkExpFun expCon args constrInfo)]
-                        (DeclsParse []))
+                     (Unguarded (mkExpFun expCon args constrInfo))
+                     (DeclsParse []))
        )
        (zip [0..] constrInfos)
 
 
 
 -- this code is modified from *showType*, not from *readsPrec*.
-mkFGetFuns expTrue expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos =
+mkFGetFuns expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos =
   getUnique >>>= \ bh ->
   getUnique >>>= \ p ->
   getUnique >>>= \ p' ->
@@ -144,14 +147,17 @@ mkFGetFuns expTrue expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos 
       expInit   = ExpApplication pos [expGetBitsF, expBH, mkInt pos sizeC, expP]
       expFGetBH = ExpApplication pos [expFGet, expBH]
   in
-     mkAltList pos expTrue (mkGetFExp pos expLtLt expFGetBH expPair expP') constrInfos >>>= \altList->
+     mkAltList pos (mkGetFExp pos expLtLt expFGetBH expPair expP') constrInfos >>>= \altList->
      unitS [Fun [expBH,expP]
-	        [(expTrue, ExpLet pos (DeclsParse [DeclPat (Alt (ExpApplication pos [expPair,expN,expP'])
-                                                                [(expTrue,expInit)]
-                                                                (DeclsParse []))])
-                                      (ExpCase pos expN altList)
-                )]
-	        (DeclsParse [])]
+	     (Unguarded 
+               (ExpLet pos 
+                 (DeclsParse 
+                   [DeclPat 
+                     (Alt (ExpApplication pos [expPair,expN,expP'])
+                        (Unguarded expInit) (DeclsParse []))])
+                 (ExpCase pos expN altList)
+               ))
+	      (DeclsParse [])]
 
 mkGetFExp pos expLtLt expFGetBH expPair expP' expCon args constrInfo =
     foldl (\ acc arg -> ExpApplication pos [expLtLt, acc, expFGetBH])
@@ -159,7 +165,7 @@ mkGetFExp pos expLtLt expFGetBH expPair expP' expCon args constrInfo =
           args
 
 
-mkSizeFun sizeC expTrue expSize expPlus pos constrInfo =
+mkSizeFun sizeC expSize expPlus pos constrInfo =
   let
       con           = ExpCon pos (uniqueI constrInfo)
       expCsize      = mkInt pos sizeC
@@ -168,7 +174,10 @@ mkSizeFun sizeC expTrue expSize expPlus pos constrInfo =
      NewType _ _ _ (_:nts) ->
        mapS ( \_ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \args ->
        unitS (
-          Fun [ExpApplication pos (con:args)]
- 	      [(expTrue, foldl (\z arg-> ExpApplication pos [expPlus,expSizeOf arg,z]) expCsize args)]
-              (DeclsParse []))
+         Fun [ExpApplication pos (con:args)]
+ 	   (Unguarded 
+             (foldl (\z arg-> 
+               ExpApplication pos [expPlus,expSizeOf arg,z]) 
+               expCsize args))
+           (DeclsParse []))
 

@@ -16,8 +16,7 @@ deriveIx tidFun cls typ tvs ctxs pos =
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
   if all noArgs constrInfos   -- enumeration
   then 
-    let expTrue = ExpCon pos (tidFun (tTrue,Con))
-        nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+    let nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
         tidTyp = tidI typInfo
 	msg = ExpLit pos (LitString Boxed (show (dropM tidTyp)))
     in addInstMethod tIx tidTyp trange nt (tidFun (trange,Method)) >>>= \ funRange ->
@@ -29,16 +28,27 @@ deriveIx tidFun cls typ tvs ctxs pos =
        (unitS (ExpVar pos) =>>> getUnique) >>>= \expD ->
        (unitS (ExpVar pos) =>>> getUnique) >>>= \expE ->
        unitS $
-	  DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
-	      DeclsParse [DeclFun pos funRange
-			   [Fun [expA]
-				[(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_enumRange,Var)),expA])] (DeclsParse [])]
-			 ,DeclFun pos funIndex
-			   [Fun [expB,expC]
-				[(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_enumIndex,Var)),msg,expB,expC])] (DeclsParse [])]
-			 ,DeclFun pos funInRange
-			   [Fun [expD,expE]
-				[(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_enumInRange,Var)),expD,expE])] (DeclsParse [])]
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	   DeclsParse 
+             [DeclFun pos funRange
+	       [Fun [expA]
+		 (Unguarded 
+                   (ExpApplication pos 
+                     [ExpVar pos (tidFun (t_enumRange,Var)),expA]))
+                 (DeclsParse [])]
+	     ,DeclFun pos funIndex
+	       [Fun [expB,expC]
+		 (Unguarded 
+                   (ExpApplication pos 
+                     [ExpVar pos (tidFun (t_enumIndex,Var)),msg,expB,expC]))
+                 (DeclsParse [])]
+	     ,DeclFun pos funInRange
+	       [Fun [expD,expE]
+		 (Unguarded 
+                   (ExpApplication pos 
+                     [ExpVar pos (tidFun (t_enumInRange,Var)),expD,expE]))
+                 (DeclsParse [])
+             ]
 			 ]
   else if  length constrInfos > 1 then
     deriveError ("Deriving of Ix is only allowed for enumeration or tuple types, and "
@@ -48,7 +58,6 @@ deriveIx tidFun cls typ tvs ctxs pos =
         conI = uniqueI constrInfo
 	arity = arityI constrInfo
 
-        expTrue = ExpCon pos (tidFun (tTrue,Con))
         expPair = ExpCon pos (tidFun (t_Tuple 2,Con))
         expConstr = ExpCon pos conI
         exp_tupleRange = ExpVar pos (tidFun (t_tupleRange,Var))
@@ -72,34 +81,53 @@ deriveIx tidFun cls typ tvs ctxs pos =
        newArgs pos arity >>>= \ indexI@(headI:tailI) ->
 
        unitS $
-	  DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
-	      DeclsParse [DeclFun pos funRange
-			   [Fun [ExpApplication pos [expPair
-						    ,ExpApplication pos (expConstr:rangeL)
-						    ,ExpApplication pos (expConstr:rangeU)]]
-				[(expTrue,foldr ( \ (l,u) z -> ExpApplication pos [exp_tupleRange,l,u,z] )
-						(ExpList pos [expConstr])
-						(reverse (zip rangeL rangeU)))] (DeclsParse [])]
-
-			 ,DeclFun pos funIndex
-			   [Fun [ExpApplication pos [expPair
-						    ,ExpApplication pos (expConstr:indexL)
-						    ,ExpApplication pos (expConstr:indexU)]
-			        ,ExpApplication pos (expConstr:indexI)]
-				[(expTrue,foldr ( \ (l,u,i) z -> ExpApplication pos [exp_tupleIndex,l,u,i,z] )
-						(ExpApplication pos [ExpVar pos (tidFun (tindex,Var)),
-									ExpApplication pos [expPair,headL,headU],headI])
-						(reverse (zip3 tailL tailU tailI)))] (DeclsParse [])]
-
-			 ,DeclFun pos funInRange
-			   [Fun [ExpApplication pos [expPair
-						    ,ExpApplication pos (expConstr:inRangeL)
-						    ,ExpApplication pos (expConstr:inRangeU)]
-			        ,ExpApplication pos (expConstr:inRangeI)]
-				[(expTrue,foldr1 ( \ a b -> ExpApplication pos [expAnd,a,b])
-					         (map ( \ (l,u,i) -> ExpApplication pos [expInRange,ExpApplication pos [expPair,l,u],i])
-						      (zip3 inRangeL inRangeU inRangeI)))] (DeclsParse [])]
-			 ]
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	   DeclsParse 
+             [DeclFun pos funRange
+	       [Fun 
+                 [ExpApplication pos 
+                    [expPair
+		    ,ExpApplication pos (expConstr:rangeL)
+		    ,ExpApplication pos (expConstr:rangeU)]
+                 ]
+		 (Unguarded 
+                   (foldr ( \ (l,u) z -> 
+                     ExpApplication pos [exp_tupleRange,l,u,z])
+		     (ExpList pos [expConstr])
+		     (reverse (zip rangeL rangeU)))) 
+                 (DeclsParse [])]
+	     ,DeclFun pos funIndex
+	       [Fun 
+                 [ExpApplication pos 
+                   [expPair
+		   ,ExpApplication pos (expConstr:indexL)
+		   ,ExpApplication pos (expConstr:indexU)]
+		 ,ExpApplication pos (expConstr:indexI)
+                 ]
+		 (Unguarded 
+                   (foldr (\ (l,u,i) z -> 
+                     ExpApplication pos [exp_tupleIndex,l,u,i,z])
+		     (ExpApplication pos 
+                       [ExpVar pos (tidFun (tindex,Var))
+                       ,ExpApplication pos [expPair,headL,headU],headI])
+		     (reverse (zip3 tailL tailU tailI)))) 
+                 (DeclsParse [])]
+	     ,DeclFun pos funInRange
+	       [Fun 
+                 [ExpApplication pos 
+                   [expPair
+		   ,ExpApplication pos (expConstr:inRangeL)
+		   ,ExpApplication pos (expConstr:inRangeU)]
+		 ,ExpApplication pos (expConstr:inRangeI)
+                 ]
+		 (Unguarded 
+                   (foldr1 (\ a b -> ExpApplication pos [expAnd,a,b])
+		     (map (\ (l,u,i) -> 
+                       ExpApplication pos 
+                         [expInRange,ExpApplication pos [expPair,l,u],i])
+		     (zip3 inRangeL inRangeU inRangeI))))
+                 (DeclsParse [])]
+             ]
 
 
 

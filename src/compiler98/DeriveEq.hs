@@ -26,22 +26,30 @@ deriveEq tidFun cls typ tvs ctxs pos =
 	unitS $
 	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
 	    DeclsParse [DeclFun pos fun
-				[Fun [expX,expY]
-				     [(expTrue,ExpApplication pos [expEqual,ExpApplication pos [exp_fromEnum,expX],ExpApplication pos [exp_fromEnum,expY]])]
-				     (DeclsParse [])]]
+			 [Fun [expX,expY]
+			   (Unguarded
+                             (ExpApplication pos 
+                                [expEqual
+                                ,ExpApplication pos [exp_fromEnum,expX]
+                                ,ExpApplication pos [exp_fromEnum,expY]]))
+			   (DeclsParse [])]]
   else mapS (mkEqFun expTrue tidFun pos) constrInfos >>>= \ funs ->
        getUnique >>>= \x ->
        getUnique >>>= \y ->
        unitS $
 	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
-	    DeclsParse [DeclFun pos fun (funs++[Fun [ExpVar pos x,ExpVar pos y] [(expTrue,ExpCon pos (tidFun (tFalse,Con)))] (DeclsParse [])])]
+	   DeclsParse [DeclFun pos fun (funs ++ 
+             [Fun [ExpVar pos x,ExpVar pos y] 
+               (Unguarded (ExpCon pos (tidFun (tFalse,Con))))
+               (DeclsParse [])])]
        
 
 mkEqFun expTrue tidFun pos constrInfo =
  let con = ExpCon pos (uniqueI constrInfo)
  in case ntI constrInfo of
      NewType _ _ _ [nt] -> -- This constructor has no arguments
-       unitS (Fun [ExpApplication pos [con],ExpApplication pos [con]] [(expTrue,expTrue)] (DeclsParse []))
+       unitS (Fun [ExpApplication pos [con],ExpApplication pos [con]] 
+         (Unguarded expTrue) (DeclsParse []))
      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
       mapS ( \ _ ->
 	     getUnique >>>= \ x ->
@@ -54,6 +62,8 @@ mkEqFun expTrue tidFun pos constrInfo =
       in  
         unitS (
 	    Fun [ExpApplication pos (con:lvs),ExpApplication pos (con:rvs)]
-	    [(expTrue,foldr1 ( \ l v -> ExpApplication pos [expAnd,l,v]) (map ( \ (v,r) -> ExpApplication pos [expEqual,v,r] ) vars))]
+	    (Unguarded
+              (foldr1 ( \ l v -> ExpApplication pos [expAnd,l,v]) 
+                (map ( \ (v,r) -> ExpApplication pos [expEqual,v,r] ) vars)))
 	    (DeclsParse [])
         )

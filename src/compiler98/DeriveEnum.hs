@@ -34,18 +34,33 @@ deriveEnum tidFun cls typ tvs ctxs pos =
     (unitS (ExpVar pos) =>>> getUnique) >>>= \expG ->
     (unitS (ExpVar pos) =>>> getUnique) >>>= \expH ->
     unitS $
-       DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
-	   DeclsParse [DeclFun pos funFromEnum
-			[Fun [expA]
-			     [(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_fromEnum,Var)),expA])] (DeclsParse [])]
-		      ,DeclFun pos funToEnum
-			[Fun [expB]
-			     [(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_toEnum,Var)),expB])] (DeclsParse [])]
-		      ,DeclFun pos funFrom
-			[Fun [expC]
-			     [(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_enumFromTo,Var)),expC,expLast])] (DeclsParse [])]
-		      ,DeclFun pos funFromThen
-			[Fun [expD,expE]
-			     [(expTrue,ExpApplication pos [ExpVar pos (tidFun (t_enumFromThenTo,Var)),expD,expE,expLast])] (DeclsParse [])]
+      DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	DeclsParse 
+          [DeclFun pos funFromEnum
+	    [Fun [expA]
+	      (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos (tidFun (t_fromEnum,Var)),expA])) 
+              (DeclsParse [])]
+	  ,DeclFun pos funToEnum
+	    [Fun [expB]
+	      (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos (tidFun (t_toEnum,Var)),expB]))
+              (DeclsParse [])]
+	  ,DeclFun pos funFrom
+	    [Fun [expC]
+	      (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos (tidFun (t_enumFromTo,Var)),expC,expLast]))
+                (DeclsParse [])]
+	  ,DeclFun pos funFromThen
+	     [Fun [expD,expE]
+	       (Unguarded 
+                 (ExpApplication pos 
+                   [ExpVar pos (tidFun (t_enumFromThenTo,Var))
+                   ,expD,expE,expLast]))
+               (DeclsParse [])
+          ]
 		      ]
 

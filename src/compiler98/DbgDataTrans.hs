@@ -134,7 +134,7 @@ dTopDecl d@(DeclConstrs pos id constrids) =
 		          dNewType nt >>>= \nt' ->
 			  wrapRNewType nt' >>>= \nt'' ->
 			  showNT nt'' >>>= \ntstr ->
-		          dTrace ("InfoConstr: " ++ show tid ++ 
+		          dTrace ("\nInfoConstr: " ++ show tid ++ 
                                   " has new type " ++ ntstr) $
 			  updateConstrType constr nt''
 		      _ -> error ("info = " ++ show info)     
@@ -215,9 +215,9 @@ dDecl d@(DeclVarsType vars ctx ty) =
                 dTrace ("\nSignature:\n" ++ svt1 ++ "\nchanged to:\n" ++ svt2) $
 	          unitS (DeclVarsType [(pos, id)] ctx' ty'''')
       in  mapS checkForCAF vars
-dDecl (DeclPat (Alt pat gdes decls)) = 
+dDecl (DeclPat (Alt pat rhs decls)) = 
   unitS ((:[]) . DeclPat) =>>> 
-  (unitS (Alt pat) =>>> mapS dGdEs gdes =>>> dDecls decls)
+  (unitS (Alt pat) =>>> dRhs rhs =>>> dDecls decls)
 dDecl d@(DeclFun pos id fundefs) = 
   unitS ((:[]) . DeclFun pos id) =>>> mapS dFunClause fundefs
 dDecl d@(DeclIgnore _) = unitS [d]
@@ -253,8 +253,13 @@ dDecl x = error "Hmmm. No match in dbgDataTrans.dDecl"
 
 
 dFunClause :: Fun Id -> DbgDataTransMonad (Fun Id)
-dFunClause (Fun ps gdses decls) = 
-    unitS (Fun ps) =>>> mapS dGdEs gdses =>>> dDecls decls
+dFunClause (Fun ps rhs decls) = 
+    unitS (Fun ps) =>>> dRhs rhs =>>> dDecls decls
+
+
+dRhs :: Rhs Id -> DbgDataTransMonad (Rhs Id)
+dRhs (Unguarded exp) = unitS Unguarded =>>> dExp exp
+dRhs (Guarded gdExps) = unitS Guarded =>>> mapS dGdEs gdExps
 
 
 dGdEs :: (Exp Id,Exp Id) -> DbgDataTransMonad (Exp Id,Exp Id)
@@ -343,8 +348,8 @@ dRemoveDo p (StmtBind pat exp:r) =
                   [ExpVar pos gtgteq
 		  ,exp'
 		  ,ExpLambda pos [x] (ExpCase pos x 
-                    [Alt pat [(eTrue,exp2)] (DeclsScc [])
-		    ,Alt (PatWildcard pos) [(eTrue,ExpVar pos zero)] 
+                    [Alt pat (Unguarded exp2) (DeclsScc [])
+		    ,Alt (PatWildcard pos) (Unguarded (ExpVar pos zero)) 
                        (DeclsScc [])
 		    ])
                   ])
@@ -374,8 +379,8 @@ nofail state _ = False
 
 dAlt :: Alt Id -> DbgDataTransMonad (Alt Id)
 
-dAlt (Alt pat gdexps decls) = 
-    unitS (Alt pat) =>>> mapS dGdEs gdexps =>>> dDecls decls
+dAlt (Alt pat rhs decls) = 
+    unitS (Alt pat) =>>> dRhs rhs =>>> dDecls decls
 
 {- ---------------------------------------------------------------------------
 Type translating functions

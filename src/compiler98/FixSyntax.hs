@@ -83,20 +83,27 @@ fsDecl d@(DeclForeignExp pos _ fun t) =
   unitS d
 fsDecl (DeclFun pos fun funs) =
   unitS (DeclFun pos fun) =>>> mapS fsFun funs
-fsDecl (DeclPat (Alt pat gdexps decls)) =
+fsDecl (DeclPat (Alt pat rhs decls)) =
   fsExp pat >>>= \ pat ->
-  mapS fsGdExp gdexps >>>= \ gdexps ->
+  fsRhs rhs >>>= \ rhs ->
   fsDecls decls >>>= \ decls ->
-  unitS (DeclPat (Alt pat gdexps decls))  
+  unitS (DeclPat (Alt pat rhs decls))  
 
 
 fsFun :: Fun Id -> FSMonad (Fun Id) 
 
-fsFun  (Fun pats gdexps decls) =
+fsFun  (Fun pats rhs decls) =
   mapS fsExp pats >>>= \ pats ->
-  mapS fsGdExp gdexps >>>= \ gdexps ->
+  fsRhs rhs >>>= \ rhs ->
   fsDecls decls >>>= \ decls ->
-  unitS (Fun pats gdexps decls)
+  unitS (Fun pats rhs decls)
+
+
+fsRhs :: Rhs Id -> FSMonad (Rhs Id)
+
+fsRhs (Unguarded e) = fsExp e >>>= \e -> unitS (Unguarded e)
+fsRhs (Guarded gdexps) = 
+  mapS fsGdExp gdexps >>>= \gdexps -> unitS (Guarded gdexps)
 
 
 fsGdExp :: (Exp Id,Exp Id) -> FSMonad (Exp Id,Exp Id)
@@ -467,10 +474,10 @@ fsExp e                 = unitS e
 
 fsAlt :: Alt Id -> FSMonad (Alt Id)
 
-fsAlt (Alt pat gdexps decls)  =
+fsAlt (Alt pat rhs decls)  =
   fsExp pat >>>= \ pat ->
   fsDecls decls >>>= \ decls ->
-  mapS fsGdExp gdexps >>>= \ gdexps ->
-  unitS (Alt pat gdexps decls)
+  fsRhs rhs >>>= \ rhs ->
+  unitS (Alt pat rhs decls)
 
 {- End FixSyntax ------------------------------------------------------------}

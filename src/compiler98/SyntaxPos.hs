@@ -44,6 +44,9 @@ instance HasPos (Alt a) where
 instance HasPos (Fun a) where
     getPos e = getPosFun e
 
+instance HasPos (Rhs a) where
+    getPos r = getPosRhs r
+
 instance HasPos (Exp a) where
     getPos e = getPosExp e
 
@@ -75,9 +78,12 @@ getPosSimple (Simple pos _ _) = pos
 
 getPosAlt (Alt pat _ _) = getPosExp pat
 
-getPosFun (Fun [] ((g,e):_) _) = getPosExp e
+getPosFun (Fun [] rhs _) = getPosRhs rhs
 getPosFun (Fun (a:args) _ _)   = getPosExp a
 getPosFun _ = noPos
+
+getPosRhs (Unguarded e) = getPosExp e
+getPosRhs (Guarded ((g,e):_)) = getPosExp g
 
 getPosType (TypeApp  t1 t2) = getPosType t1
 getPosType (TypeCons  pos _ _) = pos

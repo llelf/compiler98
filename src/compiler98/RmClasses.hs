@@ -13,12 +13,12 @@ import Syntax
 import Extra(dropJust)
 import State
 import Bind(identDecl)
-import TokenId(tTrue,qualify)
+import TokenId(qualify)
 import PackedString(unpackPS)
 import Id(Id)
 
 
-type RmClassMonad a = (String,Id -> Exp Id) -> IntState -> (a,IntState)
+type RmClassMonad a = String -> IntState -> (a,IntState)
 type RmClassMonad2 a b = a -> IntState -> (b,IntState)
 
 
@@ -29,8 +29,7 @@ rmClasses :: ((TokenId,IdKind) -> Id) -> IntState -> Decls Id
              ,IntState)
 
 rmClasses tidFun state (DeclsParse topdecls) =
-  case mapS rmClass topdecls (unpackPS (mrpsIS state)
-                             ,\pos -> ExpCon pos (tidFun (tTrue,Con))) state of
+  case mapS rmClass topdecls (unpackPS (mrpsIS state)) state of
     (codedecls,state) ->
       case unzip codedecls of
 	(code,decls) -> (concat code,DeclsParse (concat decls),state)
@@ -49,8 +48,7 @@ rmClass decl = unitS ([],[decl])
 
 fixArity :: Decl Id -> RmClassMonad (Decl Id)
 
-fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_)) 
-  (rstr,true) state = 
+fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_)) rstr state = 
   let wantArity = (arityVI . dropJust . lookupIS state) fun -- don't count ctx
       hasArity = length args
   in if wantArity == hasArity then
@@ -62,16 +60,17 @@ fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_))
         let allArgs = map (ExpVar pos.snd) newargsi
         in case splitAt wantArity allArgs of
          (wantArgs,extraArgs) ->
-           (DeclFun pos fun [Fun wantArgs 
-                           [(true pos
-                            ,ExpLambda pos extraArgs
-                                       (ExpApplication pos
-                                                       (ExpVar pos newfuni
-                                                        :allArgs)))]
-                           (DeclsParse [DeclFun pos newfuni funs])]
+           (DeclFun pos fun 
+             [Fun wantArgs 
+               (Unguarded 
+                 (ExpLambda pos extraArgs
+                   (ExpApplication pos (ExpVar pos newfuni : allArgs))))
+               (DeclsParse [DeclFun pos newfuni funs])]
            ,updVarArity pos newfuni hasArity
-            (addNewLetBound newfuni
-                            (qualify rstr (reverse (strIS state fun ++'\'':show newfuni))) () state))
+             (addNewLetBound newfuni
+               (qualify rstr (reverse (strIS state fun ++'\'':show newfuni))) 
+                 () state)
+           )
 
   else  -- want more
     case mapS (toFew pos (wantArity-hasArity)) funs () state of
@@ -86,10 +85,16 @@ fixArity decl _ state = (decl,state)
 
 toFew :: Pos -> Int -> Fun Id -> RmClassMonad2 a (Fun Id)
 
-toFew pos add (Fun args gdexps decls) _ state =
+toFew pos add (Fun args rhs decls) _ state =
     case uniqueISs state [1 .. add] of
       (newi,state) ->
         let eargs = map (ExpVar pos . snd) newi
-	in  (Fun (args++eargs) (map ( \ (g,e) -> (g,ExpApplication pos (e:eargs))) gdexps) decls,state)
+	in  (Fun (args++eargs) (extendRhs pos eargs rhs) decls,state)
+
+
+extendRhs :: Pos -> [Exp Id] -> Rhs Id -> Rhs Id
+extendRhs pos args (Unguarded exp) = Unguarded $ ExpApplication pos (exp : args)
+extendRhs pos args (Guarded gdexps) = 
+  Guarded $ map (\(g,e) -> (g,ExpApplication pos (e:args))) gdexps
   
 {- End RmClasses ------------------------------------------------------------}

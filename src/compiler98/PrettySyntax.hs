@@ -563,10 +563,11 @@ ppConstrs info cs =
 
 ppFun :: PPInfo a -> a -> Fun a -> Doc
 
-ppFun info id (Fun pats gds w) =
+ppFun info id (Fun pats rhs w) =
   nestS info $
-    (group $ sep fSpace $ ppId info id : map (ppExpPrec info True) pats) <>
-    group (dSpace <> sep line (map (ppGdPat info "=") gds)) <> 
+    (group 
+      (group $ sep fSpace $ ppId info id : map (ppExpPrec info True) pats) <>
+      ppRhs info "=" rhs) <>
     ppWhere info w
 
 
@@ -733,15 +734,21 @@ ppQual info (QualLet ds) =
 
 ppAlt :: PPInfo a -> String -> Alt a -> Doc
 
-ppAlt info delimiter (Alt pat [gd] w) =
+ppAlt info delimiter (Alt pat rhs w) =
   nestS info $
-    group (ppPat info pat <> dSpace <> ppGdPat info delimiter gd) <>
-    ppWhere info w
-ppAlt info delimiter (Alt pat gds w) =
-  nestS info $
-    group (ppPat info pat <> encase line (map (ppGdPat info delimiter) gds)) <>
+    group (ppPat info pat <> ppRhs info delimiter rhs) <>
     ppWhere info w
 
+
+ppRhs :: PPInfo a -> String -> Rhs a -> Doc
+
+ppRhs info delimiter (Unguarded exp) =
+  space <> text delimiter <> dSpace <> ppExp info exp
+ppRhs info delimiter (Guarded [gd]) =
+  dSpace <> ppGdPat info delimiter gd
+ppRhs info delimiter (Guarded gds) =
+  encase line (map (ppGdPat info delimiter) gds)
+   
 
 ppGdPat :: PPInfo a -> String -> (Exp a, Exp a) -> Doc
 

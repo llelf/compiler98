@@ -10,7 +10,7 @@ import Syntax
 import MkSyntax	( mkAppExp, mkAppInst, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
-	, mkExpListComp, mkGdExp, mkIf, mkInfixList
+	, mkExpListComp, mkIf, mkInfixList
 	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
 	, mkTypeList, mkPatNplusK
 	)
@@ -287,10 +287,17 @@ parseQual =
 parseAlt del =
     Alt `parseAp` parsePat `ap` parseRhs del `apCut` parseWhere
 
+
+parseRhs :: Parser Pos [PosToken] a -> Parser (Rhs TokenId) [PosToken] a
+
 parseRhs del =
-    mkGdExp `parseChk` del `apCut` parseExp
+    Unguarded `parseChk` del `apCut` parseExp
         `orelse`
-    some (parseGdExp del)
+    Guarded `parseAp` some (parseGdExp del)
+
+
+parseGdExp :: Parser Pos [PosToken] a  
+           -> Parser (Exp TokenId, Exp TokenId) [PosToken] a
 
 parseGdExp del =
     pair `parseChk` pipe `apCut` parseExp `chk` del `apCut` parseExp

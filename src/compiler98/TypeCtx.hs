@@ -174,7 +174,7 @@ findDefault insts (d:ds) =
 -- oneDefault:: (Int,[(Int,Int)]) -> (Pos,Exp Int,[Int]) -> IntState -> ([Decl Int],IntState)
 oneDefault (tvar,cis) (pos,trueExp,defaults) state =
   case  findDefault (map (instancesI . dropJust . lookupIS state .  fst) cis) defaults of
-    Just con ->(map ( \ (cls,i) -> (DeclFun noPos i [Fun [] [(trueExp,mkRealCon pos state cls con)] (DeclsScc [])])) cis,state)
+    Just con ->(map ( \ (cls,i) -> (DeclFun noPos i [Fun [] (Unguarded (mkRealCon pos state cls con)) (DeclsScc [])])) cis,state)
     Nothing -> ([],addError state ("No default for " ++ concatMap ((' ':).strIS state . fst) cis ++ " at " ++ strPos pos ++ "." 
 											++ "(" ++ show tvar ++ "," ++ show cis++")"))
 

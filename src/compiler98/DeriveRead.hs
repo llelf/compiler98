@@ -29,10 +29,10 @@ deriveRead tidFun cls typ tvs ctxs pos =
   unitS $
     DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
       DeclsParse [DeclFun pos fun 
-			[Fun [expD,expR]
-			     [(expTrue,foldr (\ e1 e2 -> ExpApplication pos [expAppend, e1, e2])
-					     e
-					     es)] (DeclsParse [])]
+	[Fun [expD,expR]
+	  (Unguarded 
+            (foldr (\ e1 e2 -> ExpApplication pos [expAppend, e1, e2]) e es)) 
+          (DeclsParse [])]
 		]
 
 

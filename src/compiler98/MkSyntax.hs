@@ -5,7 +5,7 @@ module MkSyntax
 	( mkAppExp, mkAppInst, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
-	, mkExpListComp, mkGdExp, mkIf, mkInfixList
+	, mkExpListComp, mkIf, mkInfixList
 	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
 	, mkTypeList, mkPatNplusK
 	) where
@@ -38,7 +38,7 @@ mkParInst p ts  = TypeCons p (t_Tuple (length ts)) (map (uncurry TypeVar) ts)
 mkInstList p id = TypeCons p t_List [TypeVar p id]
 
 
-mkDeclPat :: (Pos,a) -> Exp a -> Exp a -> [(Exp a,Exp a)] -> Decls a -> Decl a
+mkDeclPat :: (Pos,a) -> Exp a -> Exp a -> Rhs a -> Decls a -> Decl a
 
 mkDeclPat (pv,var) op (ExpInfixList pos es) gdexps w =
 	DeclPat (Alt (ExpInfixList pos (ExpVar pv var:op:es)) gdexps w)
@@ -46,7 +46,7 @@ mkDeclPat (pv,var) op e gdexps w =
 	DeclPat (Alt (ExpInfixList pv [ExpVar pv var,op,e]) gdexps w)
 
 
-mkDeclFun :: (Pos,a) -> [Pat a] -> [(Exp a,Exp a)] -> Decls a -> Decl a
+mkDeclFun :: (Pos,a) -> [Pat a] -> Rhs a -> Decls a -> Decl a
 
 --mkDeclFun (pv,var) [] gdexps w =
 --	DeclPat (Alt (ExpVar pv var) gdexps w)
@@ -98,7 +98,6 @@ mkAppExp [] = error "mkAppExp"
 mkAppExp [e] = e
 mkAppExp es@(e:_)  = ExpApplication (getPos e) es
 
-mkGdExp e = [(mkExpTrue,e)]
 
 mkParExp pos [ExpConOp pos' id] = ExpCon pos' id
 mkParExp pos [ExpVarOp pos' id] = ExpVar pos' id
@@ -152,10 +151,10 @@ mkExpListComp pos qs e = ExpApplication noPos [trans pos qs e,ExpList noPos []]
             [mkExp_x noPos,mkExp_y pos]
             (ExpCase noPos (mkExp_x pos)
               [Alt pat
-                   [(mkExpTrue,ExpApplication pos [trans pos qs e,mkExp_y pos])]
+                   (Unguarded (ExpApplication pos [trans pos qs e,mkExp_y pos]))
                    (DeclsParse [])
               ,Alt (PatWildcard pos)
-                   [(mkExpTrue,mkExp_y pos)]
+                   (Unguarded (mkExp_y pos))
                    (DeclsParse [])
               ]
             )

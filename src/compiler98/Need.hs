@@ -185,19 +185,19 @@ needDecl (DeclVarsType posidents ctxs typ) =
   >>> mapR needCtx ctxs
   >>> needType typ
 
-needDecl (DeclPat (Alt pat@(ExpInfixList pos pats) gdexps decls)) =
+needDecl (DeclPat (Alt pat@(ExpInfixList pos pats) rhs decls)) =
       pushNeed
   >>> bindPat pat   -- Also generate need for constructors
   >>> needExp pat
   >>> bindDecls decls
-  >>> mapR needGdExp gdexps
+  >>> needRhs rhs
   >>> needDecls decls
   >>> popNeed
 
-needDecl (DeclPat (Alt  pat gdexps decls)) =
+needDecl (DeclPat (Alt pat rhs decls)) =
      needExp pat
   >>> bindDecls decls
-  >>> mapR needGdExp gdexps
+  >>> needRhs rhs
   >>> needDecls decls
 
 needDecl (DeclFun pos hs funs) =
@@ -237,10 +237,10 @@ needDeriving (pos,tid)
 needClassInst (DeclVarsType posidents ctxs typ) =
      mapR needCtx ctxs
   >>> needType typ
-needClassInst (DeclPat (Alt (ExpVar pos fun) gdexps decls)) =
+needClassInst (DeclPat (Alt (ExpVar pos fun) rhs decls)) =
       needTid pos Method fun
-  >>> needFun (Fun [] gdexps decls)
-needClassInst (DeclPat (Alt (ExpInfixList pos es) gdexps decls)) =
+  >>> needFun (Fun [] rhs decls)
+needClassInst (DeclPat (Alt (ExpInfixList pos es) rhs decls)) =
   case infixFun es of
     Just (pat1,pos',fun',pat2) ->
 	 needTid pos Method fun'
@@ -248,7 +248,7 @@ needClassInst (DeclPat (Alt (ExpInfixList pos es) gdexps decls)) =
       >>> bindPat pat1 >>> bindPat pat2
       >>> bindDecls decls  
       >>> needExp pat1 >>> needExp pat2
-      >>> mapR needGdExp gdexps
+      >>> needRhs rhs
       >>> needDecls decls
       >>> popNeed
     Nothing ->
@@ -261,24 +261,29 @@ needClassInst (DeclFun pos fun funs) =
 needClassInst (DeclAnnot decl annots) =
      needClassInst decl
 
-needFun (Fun  pats guardedExps decls) =
+needFun (Fun pats rhs decls) =
      pushNeed
   >>> mapR bindPat pats  -- Also generate need for constructors
   >>> bindDecls decls
-  >>> mapR needGdExp guardedExps
+  >>> needRhs rhs
   >>> needDecls decls
   >>> popNeed
+
+
+
+needRhs (Unguarded exp) = needExp exp
+needRhs (Guarded gdexps) = mapR needGdExp gdexps
 
 
 needGdExp (guard,exp) = needExp guard >>> needExp exp
 
 
-needAlt (Alt  pat guardedExps decls) =
+needAlt (Alt pat rhs decls) =
      pushNeed
   >>> bindPat pat  -- Also generate need for constructors
   >>> bindDecls decls
   >>> needExp pat
-  >>> mapR needGdExp guardedExps
+  >>> needRhs rhs
   >>> needDecls decls
   >>> popNeed
 

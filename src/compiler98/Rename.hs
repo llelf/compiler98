@@ -413,16 +413,15 @@ mkDMethod (pos,tid,i) =
   (DeclFun pos tid [Fun [] (mkNoDefault pos tid) (DeclsParse [])],i)
 
 
-mkNoDefault :: Pos -> TokenId -> [(Exp TokenId,Exp TokenId)]
+mkNoDefault :: Pos -> TokenId -> Rhs TokenId
 
 mkNoDefault pos tid = 
-  [(ExpCon pos tTrue
-   ,ExpApplication pos 
+  Unguarded $
+    ExpApplication pos 
      [ExpVar pos t_error
      ,ExpLit pos (LitString Boxed ("No default for " ++ show tid))
      ]
-   )
-  ]
+
 
 
 ---- =========================
@@ -433,7 +432,7 @@ renamePosIdents kind posidents =
 renamePosIdent kind (pos,tid) =
     unitS (pair pos) =>>> uniqueTid pos kind tid
 
-renameFun (Fun  pats guardedExps decls') =
+renameFun (Fun pats rhs decls') =
  let decls = groupFun decls'
  in pushScope >>>
     	mapS0 (bindPat Var) pats >>>
@@ -441,15 +440,21 @@ renameFun (Fun  pats guardedExps decls') =
 	renameDecls decls >>>= \newdecls ->	-- do first, to get infix right
     unitS Fun =>>>
 	mapS renameExp pats =>>>
-	mapS renameGuardedExp guardedExps =>>>
+	renameRhs rhs =>>>
         unitS newdecls >>>
     popScope
+
+
+renameRhs (Unguarded exp) = unitS Unguarded =>>> renameExp exp
+renameRhs (Guarded gdExps) = 
+  unitS Guarded =>>> mapS renameGuardedExp gdExps
 
 
 renameGuardedExp (guard,exp) =
     unitS pair =>>> renameExp guard =>>> renameExp exp
 
-renameDeclAlt (Alt  pat guardedExps decls') =
+
+renameDeclAlt (Alt  pat rhs decls') =
   let decls = groupFun decls'
   in mapS (defineVar . snd) (identPat pat) >>>= \ _ -> -- don't need the identifiers here
      pushScope >>>
@@ -457,11 +462,11 @@ renameDeclAlt (Alt  pat guardedExps decls') =
 	renameDecls decls >>>= \newdecls->	-- do first, to get infix right
      unitS Alt =>>>
 	renameExp pat =>>>
-	mapS renameGuardedExp guardedExps =>>>
+	renameRhs rhs =>>>
 	unitS newdecls >>>
      popScope
 
-renameCaseAlt (Alt  pat guardedExps decls') =
+renameCaseAlt (Alt  pat rhs decls') =
   let decls = groupFun decls'
   in pushScope >>>
 	bindPat Var pat >>>
@@ -469,7 +474,7 @@ renameCaseAlt (Alt  pat guardedExps decls') =
 	renameDecls decls >>>= \newdecls->	-- do first, to get infix right
     unitS Alt =>>>
 	renameExp pat =>>>
-	mapS renameGuardedExp guardedExps =>>>
+	renameRhs rhs =>>>
 	unitS newdecls >>>
     popScope
 
@@ -697,7 +702,7 @@ instanceError cstr (Left (pos,rps):xs) =
 mkIMethod pos tidcls tidtyp iTrue nt (rpsid,(minfo,d)) =
   let uniqueM = uniqueI minfo
   in addInstMethod tidcls tidtyp (tidI minfo) nt uniqueM >>>= \ mi ->
-     unitS (DeclFun pos mi [Fun [] [(ExpCon pos iTrue,ExpVar pos d)] (DeclsParse [])])
+     unitS (DeclFun pos mi [Fun [] (Unguarded (ExpVar pos d)) (DeclsParse [])])
 
 getI (DeclFun pos i funs) = (pos,i)
 

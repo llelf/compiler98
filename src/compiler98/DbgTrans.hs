@@ -150,7 +150,7 @@ dDecls (DeclsParse ds) =
 dDecl d@(DeclTypeRenamed _ _) = unitS [d]
 dDecl d@(DeclDefault tys) = unitS [d]
 dDecl d@(DeclVarsType vars ctx ty) = unitS [d] 
-dDecl (DeclPat (Alt pat [(g, e)] decls)) =
+dDecl (DeclPat (Alt pat (Unguarded e) decls)) =
     addNewName 0 True "_pv" NoType >>>= \patid ->
     --trace ("patid = " ++ show patid) $
     setArity 0 patid >>>
@@ -167,12 +167,11 @@ dDecl (DeclPat (Alt pat [(g, e)] decls)) =
     getD >>>= \redex ->
     newVar noPos >>>= \fp ->
     mkFailExpr (fst (fst (head bvsnvs))) {-Wrong!-}{-("pattern")-} >>>= \fe ->
-    noGuard >>>= \ng ->
     let evars = map snd bvsnvs in 
     makeTuple noPos evars >>>= \etup ->
-    let pcase = ExpCase noPos e' [Alt pat'' [(g, etup)] (DeclsParse [])
-	                         ,Alt fp    [(ng, fe)]  (DeclsParse [])]
-	pfun = DeclFun noPos patid [Fun [] [(g, pcase)] decls']
+    let pcase = ExpCase noPos e' [Alt pat'' (Unguarded etup) (DeclsParse [])
+	                         ,Alt fp    (Unguarded fe)  (DeclsParse [])]
+	pfun = DeclFun noPos patid [Fun [] (Unguarded pcase) decls']
 {-
 	vpat p pv i sr = ExpApplication p [ExpVar p pvid, 
 	                                   ExpApplication p 
@@ -180,16 +179,18 @@ dDecl (DeclPat (Alt pat [(g, e)] decls)) =
 					     ,ExpLit p (LitInt Boxed i)],
 					   vcase p pv{-, sr, redex-}]
         vcase p pv = ExpCase p (ExpVar p patid) 
-                       [Alt etup [(g, pv)] (DeclsParse [])]
+                       [Alt etup (Unguarded pv) (DeclsParse [])]
         vfun ((p, i), pv) sr = DeclFun p i 
-                                 [Fun [] [(g, vpat p pv i sr)] (DeclsParse [])]
+                                 [Fun [] (Unguarded (vpat p pv i sr)) 
+                                 (DeclsParse [])]
 -}
 	vpat p pv i sr = vcase p pv
         vcase p pv = ExpCase p (ExpVar p patid) 
-                       [Alt etup [(g, pv)] (DeclsParse [])]
+                       [Alt etup (Unguarded pv) (DeclsParse [])]
         vfun ((p, i), pv) sr = DeclFun p i 
                                  [Fun [PatWildcard p, PatWildcard p] 
-                                      [(g, vpat p pv i sr)] (DeclsParse [])]
+                                      (Unguarded (vpat p pv i sr)) 
+                                      (DeclsParse [])]
     in unitS (pfun : zipWith vfun bvsnvs srs)
 dDecl d@(DeclPat _) =
     error ("dDecl: pattern binding with guards")
@@ -230,6 +231,8 @@ dDecl d@(DeclForeignImp pos cname id' arity cast typ id) =
 dDecl d@(DeclForeignExp pos cname id typ) =
 	error ("Can't trace foreign exports yet. "++strPos pos)
 
+
+
 dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoD: " ++show info) $
     if False {-not (doTransform tid)-} then
@@ -240,14 +243,18 @@ dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs =
         dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
     else
         case fundefs of
-            [Fun [] [(g, ExpApplication p1 [ExpVar p2 te, emsg])] (DeclsParse [])] ->
+            -- does this recognise compiler-produced undefined methods?
+            [Fun [] (Unguarded (ExpApplication p1 [ExpVar p2 te, emsg])) 
+              (DeclsParse [])] ->
 	        lookupId Var t_error >>>= \errorid ->
 		if te == errorid then
 		    setArity 2 id >>>
 	            lookupId Var t_fatal >>>= \fatal ->
 		    newVars pos 2 >>>= \[sr, redex] ->
 		    unitS [DeclFun pos id [Fun [sr, redex]  
-		                          [(g, ExpApplication p1 [ExpVar p2 fatal, redex])]
+		                          (Unguarded
+                                            (ExpApplication p1 
+                                              [ExpVar p2 fatal, redex]))
 					  (DeclsParse [])]]
 		 else
 		     dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
@@ -261,12 +268,14 @@ dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs =
 --        dCaf pos id funName fundefs
 --    else 
         case fundefs of
-           [Fun [] [(g, ExpVar p1 d)] (DeclsParse [])] ->
+           [Fun [] (Unguarded (ExpVar p1 d)) (DeclsParse [])] ->
                -- This must(?) be a wrapper to the method of the superclass
                setArity 2 id >>>
 	       newVars pos 2 >>>= \[sr, redex] ->
 	       unitS [DeclFun pos id [Fun [sr, redex]
-	                              [(g, ExpApplication p1 [ExpVar p1 d, sr, redex])]
+	                              (Unguarded 
+                                        (ExpApplication p1 
+                                          [ExpVar p1 d, sr, redex]))
 				      (DeclsParse [])]]
 	   _ -> dFun pos id funName (getArity fundefs) fundefs NoType--(unwrapNT False nt)
 
@@ -294,10 +303,10 @@ dCaf pos id cafName fundefs nt =
     addNewName 0 True cafName nt >>>= \nid ->
     getD >>>= \redex ->                  -- Use the surrounding redex
     setD (ExpVar pos t') >=>
-    mapS dCafClause fundefs >>>= \[Fun [] [(_, e)] (DeclsParse decls)] ->
+    mapS dCafClause fundefs >>>= \[Fun [] (Unguarded e) (DeclsParse decls)] ->
+    -- assumption that Caf has no guards is wrong in general!!
     newVar pos >>>= \v ->
     newVar pos >>>= \ot ->
-    noGuard >>>= \ng ->
     let -- tre = ExpVar pos tr 
 	nte = {-ExpIf pos tre redex-} 
               (ExpApplication pos 
@@ -314,18 +323,18 @@ dCaf pos id cafName fundefs nt =
 
   unitS [DeclFun pos id 
            [Fun [PatWildcard pos, PatWildcard pos] 
-                [(ng, ExpVar pos nid)] (DeclsParse [])
+                (Unguarded (ExpVar pos nid)) (DeclsParse [])
            ]
         -- id _ _ = nid
         ,DeclFun pos nid 
            [Fun [] 
-             [(ng, ExpCase pos e 
+             (Unguarded (ExpCase pos e 
                      [Alt (PatIrrefutable pos (ExpApplication pos [r, v, ot]))
-		  	  [(ng, ce)] (DeclsParse [])
+		  	  (Unguarded ce) (DeclsParse [])
                      ]
-             )]
+             ))
 	     (DeclsParse
-	        (DeclFun pos t' [Fun [] [(ng, nte)] (DeclsParse [])] 
+	        (DeclFun pos t' [Fun [] (Unguarded nte) (DeclsParse [])] 
 --                :DeclFun pos tr [Fun [] [(ng
 --                                         ,ExpApplication pos [trust, redex])]
 --		                   (DeclsParse [])
@@ -369,18 +378,17 @@ dFun pos id funName arity fundefs nt =
   ) >>>= \(fundefs', newdecls) ->
 --) >>>= \(fundefs') ->
   mkFailExpr pos >>>= \fpexp ->
-  noGuard >>>= \ng ->
-  let fpclause = Fun (newredex:fp) [(ng, fpexp)] (DeclsParse [])
+  let fpclause = Fun (newredex:fp) (Unguarded fpexp) (DeclsParse [])
   in getIntState >>>= \intState ->
      unitS ([DeclFun pos id [Fun [sr, redex]
-       [(ng 
-        ,ExpApplication pos 
+       (Unguarded 
+        (ExpApplication pos 
 	   [fun
 	   ,ExpApplication pos 
 	      [ntid, ExpLit pos (LitInt Boxed id)]
 		     --eStr pos (stripPrelude funName),
 	   ,ExpVar pos wrappedfun, sr, redex]
-       )]
+       ))
        (DeclsParse (prependTypeSigIfExists intState pos wrappedfun
                    [DeclFun pos wrappedfun (fundefs'++[fpclause])]))]
       ] ++ newdecls)
@@ -405,21 +413,20 @@ failure across guards.
 --            -> DbgTransMonad ([Fun Int],[Decl Int])
 
 dFunClauses funName true otherwise [] = unitS ([], [])
--- No guards (i.e. guard==True) is the easiest case.
+-- No guards is the easiest case.
 --     f pat1 pat2 ... = e  where decls
 -- ==>
 --     f t pat1' pat2' ... = e' where decls'
 dFunClauses funName true otherwise 
-  (Fun pats [(gd@(ExpCon p cid), e)] decls:fcs)
-    | true == cid = 
+  (Fun pats (Unguarded e) decls : fcs) =
        getD >>>= \t ->
        dPats pats >>>= \pats' ->
        dExp False e >>>= \e' ->
        dDecls decls >>>= \decls' ->
        dFunClauses funName true otherwise fcs >>>= \(mfs, nfs) ->
-       unitS (Fun (t:pats') [(gd, e')] decls':mfs, nfs)
--- For the final clause containing > 1 guard:
-dFunClauses funName true otherwise [Fun pats ges decls] =
+       unitS (Fun (t:pats') (Unguarded e') decls' : mfs, nfs)
+-- For the final clause containing guards:
+dFunClauses funName true otherwise [Fun pats (Guarded ges) decls] =
     normalFail >=>
     if canFail true otherwise ges then
        mapS namePat pats >>>= \namedpats ->
@@ -431,19 +438,21 @@ dFunClauses funName true otherwise [Fun pats ges decls] =
        dDecls decls >>>= \decls' ->
        getFail >>>= \fail ->
        let failclause = 
-            Fun (t:patnames) [(ExpCon noPos true, addAppTrace fail t)] 
+            Fun (t:patnames) (Unguarded (addAppTrace fail t)) 
 	        (DeclsParse []) in
-       unitS ([Fun (t:pats'') [(ExpCon noPos true, ExpApplication noPos [expr, t])] decls', failclause], [])
+       unitS ([Fun (t:pats'') 
+                (Unguarded (ExpApplication noPos [expr, t])) decls'
+              , failclause], [])
     else
        getD >>>= \t ->
        dPats pats >>>= \pats' ->
        dGuardedExprs ges >>>= \e ->
        dDecls decls >>>= \decls' ->
-       let fs = [Fun (t:pats') [(ExpCon noPos true, 
-	                         ExpApplication noPos [e, t])] decls'] in
+       let fs = [Fun (t:pats') (Unguarded 
+                                 (ExpApplication noPos [e, t])) decls'] in
        unitS (fs, [])
 -- For non-final clauses containing > 1 guard:
-dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
+dFunClauses funName true otherwise (Fun pats (Guarded ges) decls : fcs) =
     if canFail true otherwise ges then
        mapS namePat pats >>>= \namedpats ->
        let (patnames, pats') = unzip namedpats in
@@ -455,9 +464,13 @@ dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
        setD t >=>
        dGuardedExprs ges >>>= \expr ->
        dDecls decls >>>= \decls' ->
-       let failclause = Fun (t:patnames) [(ExpCon noPos true, addAppTrace fail t)] (DeclsParse []) in
+       let failclause = Fun (t:patnames) 
+                          (Unguarded (addAppTrace fail t)) (DeclsParse []) in
        dFunClauses funName true otherwise fcs >>>= \(mfs, nfs) ->
-       unitS ([Fun (t:pats'') [(ExpCon noPos true, ExpApplication noPos [expr, t])] decls', failclause], DeclFun noPos f mfs:nfs)
+       unitS ([Fun (t:pats'') 
+                (Unguarded (ExpApplication noPos [expr, t])) decls'
+              , failclause]
+             , DeclFun noPos f mfs:nfs)
     else
        normalFail >=>
        getD >>>= \t ->
@@ -465,7 +478,8 @@ dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
        dGuardedExprs ges >>>= \e ->
        dDecls decls >>>= \decls' ->
        dFunClauses funName true otherwise fcs >>>= \(mfs, nfs) ->
-       let fs = Fun (t:pats') [(ExpCon noPos true, ExpApplication noPos [e, t])] decls' in
+       let fs = Fun (t:pats') 
+                  (Unguarded (ExpApplication noPos [e, t])) decls' in
        unitS (fs:mfs, nfs)
 
 {-
@@ -479,13 +493,12 @@ dPrim pos id id' arity =
     setArity 2 id >>>
     newVar pos >>>= \redex ->
     newVar pos >>>= \sr ->
-    noGuard >>>= \ng ->
     unitS (Fun [sr, redex]
-               [( ng
-                , ExpApplication pos 
+               (Unguarded
+                 (ExpApplication pos 
                     [ primn
                     , ExpApplication pos [ntid, ExpLit pos (LitInt Boxed id)]
-                    , ExpVar pos id', sr, redex])]
+                    , ExpVar pos id', sr, redex]))
                (DeclsParse []))
 
 
@@ -539,7 +552,8 @@ canFail true otherwise (_:gdes) = canFail true otherwise gdes
 
 checkPrimitive :: [Fun Id] -> DbgTransMonad (Maybe [Fun Id])
 
-checkPrimitive [Fun ps [(gd, ExpApplication pos (ExpVar p id:f:es))] decls] =
+checkPrimitive 
+  [Fun ps (Unguarded (ExpApplication pos (ExpVar p id:f:es))) decls] =
     lookupId Var t_prim >>>= \primid ->
     if id == primid then
         getD >>>= \redex ->
@@ -548,7 +562,7 @@ checkPrimitive [Fun ps [(gd, ExpApplication pos (ExpVar p id:f:es))] decls] =
 	let expr = foldr (\n e -> ExpApplication pos [rseq, n, e]) 
 	                 (ExpApplication pos (f:redex:es))
 			 es
-        in unitS (Just [Fun (redex:ps) [(gd, expr)] decls])
+        in unitS (Just [Fun (redex:ps) (Unguarded expr) decls])
     else
         unitS Nothing
 checkPrimitive _ = unitS Nothing
@@ -564,15 +578,21 @@ mkFailExpr pos =
 
 dCafClause :: Fun Id -> DbgTransMonad (Fun Id)
 
-dCafClause (Fun ps gdses decls) = 
-    unitS Fun =>>> dPats ps =>>> mapS dGdEs gdses =>>> dDecls decls 
+dCafClause (Fun ps rhs decls) = 
+    unitS Fun =>>> dPats ps =>>> dRhs rhs =>>> dDecls decls 
     -- ps should be empty
 
-dFunClause (Fun ps gdses decls) = 
+dFunClause (Fun ps rhs decls) = 
     unitS Fun =>>> 
     (unitS (:) =>>> getD =>>> dPats ps) =>>> 
-    mapS dGdEs gdses =>>> 
+    dRhs rhs =>>> 
     dDecls decls
+
+
+dRhs :: Rhs Id -> DbgTransMonad (Rhs Id)
+
+dRhs (Unguarded exp) = unitS Unguarded =>>> dExp False exp
+dRhs (Guarded gdExps) = unitS Guarded =>>> mapS dGdEs gdExps
 
 
 dGdEs :: (Exp Id,Exp Id) -> DbgTransMonad (Exp Id,Exp Id)
@@ -606,7 +626,6 @@ dExp cr (ExpLambda pos pats e) =
     lookupVar pos (t_fun (length pats)) >>>= \fun ->
     lookupCon pos tLambda >>>= \lambda ->
     --getModStr >>>= \modstr ->
-    noGuard >>>= \ng ->
     dPats pats >>>= \pats' ->
     newVar pos >>>= \fpat ->
     mkFailExpr pos {-Wrong!-} >>>= \fpexp ->
@@ -614,8 +633,8 @@ dExp cr (ExpLambda pos pats e) =
     makeTuple pos npats >>>= \npatstup ->
     makeTuple pos pats' >>>= \patstup ->
     let lamexp = ExpLambda pos (redex:npats) (ExpCase pos npatstup alts)
-	alts = [Alt patstup [(ng, e')] (DeclsParse []),
-	        Alt fpat [(ng, fpexp)] (DeclsParse [])] 
+	alts = [Alt patstup (Unguarded e') (DeclsParse []),
+	        Alt fpat (Unguarded fpexp) (DeclsParse [])] 
     in unitS (ExpApplication pos [fun, lambda, lamexp, sr, oldredex])
 dExp cr (ExpLet pos decls e)        = unitS (ExpLet pos) =>>> dDecls decls =>>> dExp False e
 dExp cr (ExpCase pos e alts)        =  -- Use this if no case-tracing!!! unitS (ExpCase pos) =>>> dExp e =>>> dAlts pos alts
@@ -823,11 +842,10 @@ dAlts pos alts =
     mapS dAlt alts >>>= \alts' ->
     newVar pos >>>= \pat ->
     mkFailExpr pos {-Wrong-} >>>= \fpexp ->
-    noGuard >>>= \ng ->
-    unitS (alts' ++ [Alt pat [(ng, fpexp)] (DeclsParse [])])
+    unitS (alts' ++ [Alt pat (Unguarded fpexp) (DeclsParse [])])
     
-dAlt (Alt pat gdexps decls) =
-    unitS Alt =>>> dPat pat =>>> mapS dGdEs gdexps =>>> dDecls decls
+dAlt (Alt pat rhs decls) =
+    unitS Alt =>>> dPat pat =>>> dRhs rhs =>>> dDecls decls
 
 
 dPats :: [Pat Id] -> DbgTransMonad [Pat Id] 
@@ -950,8 +968,6 @@ makeTuple pos es =
     lookupId Con (t_Tuple (length es)) >>>= \tup ->
     unitS (ExpApplication pos (ExpCon pos tup : es))
 
-noGuard =
-    unitS (ExpCon noPos) =>>> lookupId Con tTrue
 
 lookupId kind ident = 
   \(Inherited _ _ lookupPrel) s -> (lookupPrel (ident, kind), s)

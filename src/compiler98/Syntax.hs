@@ -144,9 +144,12 @@ data Annot id = AnnotArity (Pos,id) Int
               | AnnotUnknown
 
 --                 lhs pats, guarded exprs,   local defs
-data Fun id = Fun  [Pat id] [(Exp id,Exp id)] (Decls id)
+data Fun id = Fun  [Pat id] (Rhs id) (Decls id)
 
-data Alt id = Alt  (Pat id) [(Exp id,Exp id)] (Decls id)
+data Alt id = Alt  (Pat id) (Rhs id) (Decls id)
+
+data Rhs id = Unguarded (Exp id)
+            | Guarded [(Exp id,Exp id)]  -- the list has at least one element
 
 data Type id =
        TypeCons         Pos id [Type id]

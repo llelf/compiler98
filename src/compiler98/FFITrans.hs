@@ -153,10 +153,10 @@ examineType pos t lookup state =
 
 makeIWrapper :: Pos -> Id -> Int -> FFIMonad (Fun Id)
 makeIWrapper pos ffn arity lookup state =
-    ( Fun [] [(ExpCon pos (lookup (tTrue,Con))
-              ,ExpApplication pos [ExpVar pos (lookup (t_mkIOok arity,Var))
+    ( Fun [] (Unguarded
+              (ExpApplication pos [ExpVar pos (lookup (t_mkIOok arity,Var))
                                   ,ExpVar pos ffn]
-              )]
+              ))
              (DeclsParse [])
     , state )
 
@@ -165,11 +165,11 @@ makeEWrapper pos hfn arity lookup state =
     let (vs, state1) = uniqueISs state [1..arity]
         args = map (ExpVar pos . snd) vs
     in
-    ( Fun args [(ExpCon pos (lookup (tTrue,Con))
-                ,ExpApplication pos
+    ( Fun args (Unguarded
+                (ExpApplication pos
                     [ExpVar pos (lookup (tunsafePerformIO,Var))
                     ,ExpApplication pos (ExpVar pos hfn:args)]
-                )]
+                ))
                (DeclsParse [])
     , state1 )
 

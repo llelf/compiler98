@@ -9,7 +9,7 @@ module Remove1_3(removeDecls,removeDo,removeExpRecord) where
 import Syntax
 import State
 import IntState
-import TokenId(TokenId,t_gtgt,t_gtgteq,t_zero,tTrue)
+import TokenId(TokenId,t_gtgt,t_gtgteq,t_zero)
 import TypeLib(getState,newIdent,getIdent,typeError)
 import SyntaxPos
 import TypeData(TypeMonad)
@@ -26,7 +26,8 @@ Create selectors for record fields.
 Done before strongly connected components analysis.
 -}
 
-type SelectorMonad a = Exp Id -> ([Id],IntState) -> (a,([Id],IntState))
+type SelectorMonad a = State () ([Id],IntState) a ([Id],IntState)
+-- () -> ([Id],IntState) -> (a,([Id],IntState))
 
 {-
 Replace DeclConstrs in the declarations by definitions for selectors.
@@ -38,7 +39,7 @@ removeDecls :: Decls Id -> ((TokenId,IdKind) -> Id) -> IntState
                ,IntState)
 
 removeDecls (DeclsParse decls) tidFun state =
-  case mapS removeDecl decls (ExpCon noPos (tidFun (tTrue,Con))) ([],state) of
+  case mapS removeDecl decls () ([],state) of
     (decls,(zcons,state)) -> (DeclsParse (concat decls),zcons,state)
 
 
@@ -74,7 +75,6 @@ mkFun :: Pos
       -> SelectorMonad (Fun Id)
 
 mkFun pos (c,i) =
-  r13True >>>= \ true ->
   r13Info c >>>= \ conInfo ->
   r13Unique >>>= \ v ->
   let wildcard = PatWildcard pos
@@ -83,7 +83,7 @@ mkFun pos (c,i) =
                -- arityI safe for constructors :-)
   in
     unitS (Fun [ExpApplication pos (ExpCon pos c : onePos var i vars)] 
-             [(true,var)] (DeclsParse []))
+             (Unguarded var) (DeclsParse []))
 
 
 {-
@@ -93,13 +93,6 @@ onePos :: a -> Int -> [a] -> [a]
 
 onePos v 1 (x:xs) = v:xs
 onePos v n (x:xs) = x: onePos v (n-1 ::Int) xs
-
-
-{-
-Get expression for True
--}
-r13True :: SelectorMonad (Exp Id)
-r13True    true thread = (true,thread)
 
 
 r13Info :: Id -> SelectorMonad Info
@@ -155,17 +148,19 @@ removeDo (StmtBind pat exp:r) =
       unitS (ExpApplication pos [ExpVar pos gtgteq, exp, ExpLambda pos [pat] exp2])
     else
       getIdent (t_zero,Var) >>>= \ zero ->	-- In H98, this is `fail'
-      getIdent (tTrue,Con) >>>= \ true ->
       newIdent >>>= \ x ->
       let eX = ExpVar pos x
-	  eTrue = ExpCon pos true
           eFail = ExpApplication pos [ExpVar pos zero
                                      ,ExpLit pos (LitString Boxed "pattern-match failure in do expression")]
-      in unitS (ExpApplication pos [ExpVar pos gtgteq
-				   ,exp 
-				   ,ExpLambda pos [eX] (ExpCase pos eX [Alt pat               [(eTrue,exp2)]  (DeclsScc [])
-								       ,Alt (PatWildcard pos) [(eTrue,eFail)] (DeclsScc [])
-								       ])])
+      in unitS 
+           (ExpApplication pos 
+             [ExpVar pos gtgteq
+	     ,exp 
+	     ,ExpLambda pos [eX] 
+               (ExpCase pos eX 
+                 [Alt pat (Unguarded exp2) (DeclsScc [])
+		 ,Alt (PatWildcard pos) (Unguarded eFail) (DeclsScc [])
+		 ])])
 
 
 {-
@@ -217,12 +212,11 @@ fixArg given (def,i) =
 
 {- construct alternative for record updating for one data constructor -}
 fixAlt :: Pos 
-       -> Exp Id  -- expression "True" 
        -> [Exp Id]   -- arguments for offsets
        -> (Id,[Int]) -- (data constructor, offsets)
        -> TypeMonad (Alt Id)
 
-fixAlt pos true exps (con,offsets) =
+fixAlt pos exps (con,offsets) =
   getState >>>= \ state ->
   let nargs = [1 .. arityIS state con]
   in 
@@ -230,9 +224,10 @@ fixAlt pos true exps (con,offsets) =
     let vars = map (ExpVar noPos) new 
         econ = ExpCon pos con
     in unitS
-      (Alt (ExpApplication pos (econ:vars))
-	   [(true,ExpApplication pos (econ:map  (fixArg (zip offsets exps))
-						(zip vars nargs)))]
+         (Alt (ExpApplication pos (econ:vars))
+	   (Unguarded 
+             (ExpApplication pos 
+               (econ : map (fixArg (zip offsets exps)) (zip vars nargs))))
 	   (DeclsScc []))
 
 
@@ -281,8 +276,7 @@ removeExpRecord exp fields =
                  constrsI  . dropJust . lookupIS state) t of
 	  ([],_) -> typeError (errField3 state fields)
 	  (rps,_) ->
-	    getIdent (tTrue,Con) >>>= \ true ->
-	    mapS (fixAlt pos (ExpCon pos true) exps) 
+	    mapS (fixAlt pos exps) 
               (map dropRight rps) >>>= \ alts ->
 	    unitS (ExpCase (getPos exp) exp alts)
       else typeError (errField2 state fields)

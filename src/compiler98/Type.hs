@@ -93,7 +93,8 @@ typeScc :: [Decl Id]
 typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
               up@(TypeState state phi inCtxs ectxsi) = 
   let -- ctxs should only get up but the monad can not handle that!
-      trueExp :: Exp Int
+      trueExp :: Exp Id  -- this expression has become superfluous,
+                         -- but it is a lot of work to remove it from the code
       trueExp = ExpCon noPos (tidFun (tTrue,Con))
 
       nextTvar :: Int
@@ -186,7 +187,7 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
       declsDict :: [Decl Int]
       declsDict = map (\(_,i) ->
 			 case lookup i ctxsDict of
-			   Just exp -> DeclFun noPos i [Fun [] [(trueExp,exp)]
+			   Just exp -> DeclFun noPos i [Fun [] (Unguarded exp)
                                                             (DeclsScc [])]
                       ) globalCtxsi 
 
@@ -439,13 +440,13 @@ typeDecl d@(DeclForeignImp pos str fun arity cast typ _) =
   unitS d
 typeDecl d@(DeclForeignExp pos str fun typ) =
   unitS d
-typeDecl (DeclPat (Alt pat gdexps decls)) =
+typeDecl (DeclPat (Alt pat rhs decls)) =
   typePat pat        >>>= \(pat,patT,eTVar) ->
   typeDeclScc decls    >>>= \decls ->
-  typeGdExps gdexps  >>>= \(gdexps,gdexpsT) ->
-  typeUnify (msgPat pat) patT gdexpsT >>>= \_ ->
+  typeRhs rhs >>>= \(rhs,rhsT) ->
+  typeUnify (msgPat pat) patT rhsT >>>= \_ ->
 --  checkExist [] eTVar >>> 
-  unitS (DeclPat (Alt pat gdexps decls))
+  unitS (DeclPat (Alt pat rhs decls))
 typeDecl (DeclFun pos fun funs) =
   typeIdentDef id pos fun >>>= \ (_,funT) -> 
   typeNewTVar >>>= \retT ->
@@ -464,7 +465,7 @@ typeDecl (DeclFun pos fun funs) =
 typeFun :: Id -> Id -> NT -> NT -> Fun Id 
         -> State TypeDown TypeState (Fun Id) TypeState
 
-typeFun fun arrow funT retT (Fun args13 gdexps decls) =
+typeFun fun arrow funT retT (Fun args13 rhs decls) =
   mapS fixPat13 args13   >>>= \ args ->
   envPats args       >>>= \ argsE ->
   getEnv	     >>>= \ oldEnv ->
@@ -472,7 +473,7 @@ typeFun fun arrow funT retT (Fun args13 gdexps decls) =
   mapS typePat args  >>>= \args ->
   case unzip3 args of
     (args,argsT,eTVar) -> 
-       typeUnify (msgFun gdexps) funT (funType arrow (argsT++[retT])) >>>= \_ ->
+       typeUnify (msgFun rhs) funT (funType arrow (argsT++[retT])) >>>= \_ ->
        {-
        (\down up@(TypeState state _ _ _) -> 
          trace ("\n\ntypeFun: " ++ show (length argsT) ++ "  " ++ 
@@ -482,10 +483,10 @@ typeFun fun arrow funT retT (Fun args13 gdexps decls) =
                (True,up)) >>>= \True ->
        -}
        typeDeclScc decls    >>>= \decls ->
-       typeGdExps gdexps  >>>= \(gdexps,gdexpsT) ->
-       typeUnify (msgFun gdexps) retT gdexpsT >>>= \_ ->
+       typeRhs rhs >>>= \(rhs,rhsT) ->
+       typeUnify (msgFun rhs) retT rhsT >>>= \_ ->
        checkExist oldEnv (concat eTVar) >>> 
-       unitS (Fun args gdexps decls) -- ,funType arrow (argsT++[gdexpsT])))
+       unitS (Fun args rhs decls) -- ,funType arrow (argsT++[gdexpsT])))
 
 
 
@@ -530,23 +531,26 @@ typeGdExp (g,e) =
   typeExp e >>>= \(e,eT) ->
   unitS ((g,e),eT)
 
-typeGdExps gdexps =
+
+typeRhs (Unguarded e) = typeExp e >>>= \(e,eT) -> unitS (Unguarded e,eT)
+typeRhs (Guarded gdexps) =
   mapS typeGdExp gdexps >>>= \ gdexps ->
   case unzip gdexps of
    (gdexps,gdexpsT) -> 
      typeUnifyMany (msgGdExps gdexps) gdexpsT >>>= \ t ->
-     unitS (gdexps,t)
+     unitS (Guarded gdexps,t)
 
-typeAlt (Alt pat13 gdexps decls) =
+
+typeAlt (Alt pat13 rhs decls) =
   fixPat13 pat13	    >>>= \pat ->
   envPat pat                >>>= \patE -> 
   getEnv	     >>>= \ oldEnv ->
   extendEnv patE            >=>
   typePat pat               >>>= \ (pat,patT,eTVar) ->
   typeDeclScc decls           >>>= \decls ->
-  typeGdExps gdexps         >>>= \(gdexps,gdexpsT) ->
+  typeRhs rhs >>>= \(rhs,rhsT) ->
   checkExist oldEnv eTVar >>> 
-  unitS (Alt pat gdexps decls,(patT,gdexpsT))
+  unitS (Alt pat rhs decls,(patT,rhsT))
 
 
 typeExp :: Exp Id -> TypeDown -> TypeState -> ((Exp Id,NT),TypeState)

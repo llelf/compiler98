@@ -14,7 +14,8 @@ type2NT transforms type from syntax tree into interal type.
 -}
 module Extract(IntState,Decls,extract,type2NT) where
 
-import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Exp(..),Stmt(..),Alt(..))
+import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Rhs(..),Exp(..),Stmt(..)
+             ,Alt(..))
 import IntState(IntState,lookupIS,depthI,strIS,addError,superclassesI
                ,instancesI,updVarArity,updVarNT)
 import NT(NT(..),NewType(..))
@@ -25,11 +26,12 @@ import Extra(snub,strPos,mixSpace,isJust,dropJust,mixCommaAnd,isNothing)
 import Bind(identPat)
 import SyntaxPos(Pos,HasPos(getPos))
 import AssocTree(Tree,lookupAT)
+import Id(Id)
 
 
 {- transform type from syntax tree into internal type -}
 
-type2NT :: Type Int -> NT 
+type2NT :: Type Id -> NT 
 
 type2NT (TypeApp t1 t2) = NTapp (type2NT t1) (type2NT t2)
 type2NT (TypeCons _ ci ts) = NTcons ci (map type2NT ts)
@@ -39,16 +41,16 @@ type2NT (TypeVar _ v) = NTvar v
 {-
 
 -}
-extract :: Decls Int -> IntState -> IntState
+extract :: Decls Id -> IntState -> IntState
 extract = extractDecls 
 
 
-extractDecls :: Decls Int -> IntState -> IntState
+extractDecls :: Decls Id -> IntState -> IntState
 extractDecls (DeclsParse decls)   =
     mapR extractDecl decls
 
 
-extractDecl :: Decl Int -> Reduce IntState IntState
+extractDecl :: Decl Id -> Reduce IntState IntState
 
 extractDecl (DeclInstance pos ctxs cls instanceType@(TypeCons poscon con _) 
   instmethods) =
@@ -94,7 +96,7 @@ extractDecl' is used in class declarations
 as we don't want to use top level signatures there
 why are the declared types not added to the symbol table? (OC)
 -}
-extractDecl' :: Decl Int -> Reduce IntState IntState
+extractDecl' :: Decl Id -> Reduce IntState IntState
 
 extractDecl' (DeclPat alt) =   extractDeclAlt alt
 extractDecl' (DeclFun pos fun funs) =  
@@ -108,7 +110,7 @@ Adds arity of defined variable to symbol table of internal state
 Assumes that variable is already in symbol table.
 Adds error message, if equations of definition suggest different arities.
 -}
-updFunArity :: Pos -> Int -> [Fun a] -> Reduce IntState IntState
+updFunArity :: Pos -> Id -> [Fun a] -> Reduce IntState IntState
 
 updFunArity pos fun funs =
   case map fA funs of
@@ -124,31 +126,32 @@ updFunArity pos fun funs =
   fPA (Fun args gdexps decls) = (getPos args,length args)
 
 
-extractFun :: Fun Int -> Reduce IntState IntState
-extractFun (Fun  pats guardedExps decls) =
-  mapR extractGuardedExp guardedExps >>>
-  extractDecls decls
+extractFun :: Fun Id -> Reduce IntState IntState
+extractFun (Fun pats rhs decls) = extractRhs rhs >>> extractDecls decls
 
 
-extractGuardedExp :: (Exp Int,Exp Int) -> Reduce IntState IntState
+extractRhs :: Rhs Id -> Reduce IntState IntState
+extractRhs (Unguarded exp) = extractExp exp
+extractRhs (Guarded gdExps) = mapR extractGuardedExp gdExps
+
+
+extractGuardedExp :: (Exp Id,Exp Id) -> Reduce IntState IntState
 extractGuardedExp (guard,exp) =
   extractExp guard >>> extractExp exp
 
 
-extractDeclAlt :: Alt Int -> IntState -> IntState
-extractDeclAlt (Alt  pat guardedExps decls) =
+extractDeclAlt :: Alt Id -> IntState -> IntState
+extractDeclAlt (Alt  pat rhs decls) =
   mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
-  mapR extractGuardedExp guardedExps >>>
+  extractRhs rhs >>>
   extractDecls decls
 
 
-extractAlt :: Alt Int -> IntState -> IntState
-extractAlt (Alt  pat guardedExps decls) =
-  mapR extractGuardedExp guardedExps >>>
-  extractDecls decls
+extractAlt :: Alt Id -> IntState -> IntState
+extractAlt (Alt pat rhs decls) = extractRhs rhs >>> extractDecls decls
 
 
-extractExp :: Exp Int -> Reduce IntState IntState
+extractExp :: Exp Id -> Reduce IntState IntState
 
 extractExp (ExpScc            str exp)            = extractExp exp
 extractExp (ExpLambda         pos pats exp)       = extractExp exp
@@ -166,7 +169,7 @@ extractExp (ExpList          pos exps)  = mapR extractExp exps
 extractExp e                            = unitR
 
 
-extractStmt :: Stmt Int -> Reduce IntState IntState
+extractStmt :: Stmt Id -> Reduce IntState IntState
 
 extractStmt (StmtExp  exp) = extractExp exp
 extractStmt (StmtBind pat exp) = 
