@@ -27,12 +27,11 @@ getImports :: FilePath -- ^ The path to the module
            -> [String] -- ^ Definitions, from which to build a symbol table (for cpp)
            -> String   -- ^ The input file to be parsed for imports
            -> [String] -- ^ A list of imported modules
-getImports fp defines inp =
-  (leximports fp . lines . cppIfdef fp defines [] False False) inp
+getImports fp defines = leximports fp . cppIfdef fp defines [] False False
 
 
--- | /leximports/ takes a cpp-ed list of lines and returns the list of imports
-leximports :: FilePath -> [String] -> [String]
+-- | /leximports/ takes a cpp-ed input and returns the list of imports
+leximports :: FilePath -> String -> [String]
 leximports fp =
   let
     nestcomment n ('{':'-':cs) | n>=0 = nestcomment (n+1) cs
@@ -83,6 +82,6 @@ leximports fp =
            takeUntil "(-{;" two
       else takeUntil "(-{;" one
 
-  in (getmodnames . lines . nestcomment 0 . unlines)
+  in (getmodnames . lines . nestcomment 0)
 
 ----
