@@ -7,7 +7,7 @@ ifeq "nhc98" "$(HC)"
   HFLAGS = $(shell echo $(BUILDOPTS)) +CTS -H4Mb -CTS
 endif
 ifeq "ghc" "$(HC)"
-  HFLAGS = $(shell echo $(BUILDOPTS)) +CTS $(shell $(LOCAL)fixghc $(GHCSYM) -syslib exts) -CTS
+  HFLAGS = $(shell echo $(BUILDOPTS)) $(shell $(LOCAL)fixghc $(GHCSYM) -package lang)
 endif
 
 

@@ -35,7 +35,7 @@ realclean: clean
 
 $(TARGET): $(OBJDIR) $(SRCS)
 	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)") \
-		-i../hmake
+		-i../hmake $(HFLAGS)
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 
