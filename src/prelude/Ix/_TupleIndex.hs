@@ -1,6 +1,6 @@
-module Prelude where
+module Ix where
 
-import Ix
+import CIx
 
 _tupleIndex :: (Ix a) => a -> a -> a -> Int -> Int
 _tupleIndex l u i z = index (l,u) i + rangeSize (l,u) * z

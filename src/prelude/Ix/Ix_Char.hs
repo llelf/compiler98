@@ -1,5 +1,7 @@
 module Ix(Ix(..)) where
 
+import CIx
+
 instance Ix Char where
   range (c,c') 	= [c .. c']
   index b@(c,c') ci

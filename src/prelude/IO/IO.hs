@@ -26,7 +26,7 @@ module IO (
 #endif
   ) where
 
-import Ix
+--import Ix
 import DHandle(Handle)
 import Eq_Handle
 import Show_Handle

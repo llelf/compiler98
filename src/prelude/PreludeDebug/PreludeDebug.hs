@@ -70,6 +70,10 @@ instance NmCoerce Double where
 instance NmCoerce Bool where
     toNm t False sr = mkR False (mkTNm t mkNTDummy sr)
     toNm t True  sr = mkR True  (mkTNm t mkNTDummy sr)
+instance NmCoerce Ordering where
+    toNm t LT sr = mkR LT (mkTNm t mkNTDummy sr)
+    toNm t EQ sr = mkR EQ (mkTNm t mkNTDummy sr)
+    toNm t GT sr = mkR GT (mkTNm t mkNTDummy sr)
 instance NmCoerce () where
     toNm t v sr = mkR v (mkTNm t mkNTDummy sr)
 instance NmCoerce Addr where

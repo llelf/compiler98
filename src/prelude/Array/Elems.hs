@@ -1,5 +1,6 @@
 module Array where
 
+import Ix
 import DArray
 import Indices
 import AIndex

@@ -1,8 +1,8 @@
 include Makefile.inc
 
 THISLIB	= Array
-SEARCH	= -P../List -P../Ix
-EXTRA_H_FLAGS	= -prelude	# to ensure all Ix instances are re-exported
+SEARCH	= -P../List #-P../Ix
+EXTRA_H_FLAGS	= #-prelude	# to ensure all Ix instances are re-exported
 EXTRA_C_FLAGS	=
 
 SRCS	= \

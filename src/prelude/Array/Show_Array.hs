@@ -1,5 +1,6 @@
 module Array(Show(..)) where
 
+import Ix
 import DArray
 import Assocs
 import Bounds

@@ -1,5 +1,6 @@
 module Array(Read(..)) where
 
+import Ix
 import DArray
 import ArrayFun
 

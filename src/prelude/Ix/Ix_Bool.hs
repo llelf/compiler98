@@ -1,5 +1,7 @@
 module Ix(Ix(..)) where
 
+import CIx
+
 instance Ix Bool where
   range (c,c') 	= [c .. c']
 

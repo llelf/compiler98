@@ -1,7 +1,7 @@
 module Array where
 
-import DArray
 import Ix
+import DArray
 import IOExtras
 
 infixl 9  !

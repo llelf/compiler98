@@ -11,6 +11,7 @@ module FFI
 
 {import FFIBuiltin (Int8, Int16, Int32, Int64)
 ;import Numeric    (readSigned,readDec,showSigned,showIntBase)
+;import Ix
 
 
 #define INT_TYPE(T,LB,UB)	\

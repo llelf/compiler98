@@ -30,8 +30,8 @@ module Prelude (
     ,module _FromEnum
     ,module _ToEnum
 #if !defined(TRACING)
-    ,module _TupleIndex
-    ,module _TupleRange
+--  ,module _TupleIndex
+--  ,module _TupleRange
 #endif
     ,module _Apply1
     ,module _Apply2
@@ -48,7 +48,7 @@ module Prelude (
     ,Fractional(..)
     ,Functor(..)
     ,Integral(..)
-    ,Ix(..)
+--  ,Ix(..)
     ,Monad(..)
     ,Num(..)
     ,Ord(..)
@@ -149,7 +149,7 @@ import Ratio(Rational,(%))		-- needed for literal Rationals
 import IOExtras (unsafePerformIO)	-- needed for primitive FFI
 
 #if !defined(TRACING)
-import Ix  -- to get all Ix instances
+--import Ix  -- to get all Ix instances
 #endif
 
 -- Shouldn't be visible, but they are:-(
@@ -169,8 +169,8 @@ import _FromEnum
 import _NplusK
 import _ToEnum
 #if !defined(TRACING)
-import _TupleIndex
-import _TupleRange
+--import _TupleIndex
+--import _TupleRange
 #endif
 import _Apply1
 import _Apply2
@@ -194,7 +194,7 @@ import CFloating
 import CFractional
 import CFunctor
 import CIntegral
-import CIx
+--import CIx
 import CMonad
 import CNum
 import COrd

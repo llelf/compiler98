@@ -1,4 +1,6 @@
-module Prelude where
+module Ix where
+
+import CIx
 
 _tupleRange::(Ix a) => (a -> (a -> ([(a -> b)] -> [b])))
 _tupleRange l u xs =

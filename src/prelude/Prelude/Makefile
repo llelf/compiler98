@@ -1,9 +1,9 @@
 include Makefile.inc
 
 THISLIB = Prelude
-SEARCH	= -P$(LOW) -P../PreludeList -P../Ratio
-EXTRA_H_FLAGS	= -prelude -P../PreludeText -P../PreludeIO -P../Ix  \
-		  -P$(LOW) -P../PreludeDebug
+SEARCH	= -P$(LOW) -P../Ratio -P../PreludeList -P../PreludeText \
+	  -P../PreludeIO -P../PreludeDebug
+EXTRA_H_FLAGS	= -prelude
 EXTRA_C_FLAGS	=
 
 COMMON_SRCS = \
@@ -11,7 +11,7 @@ COMMON_SRCS = \
 	CBounded.hs     Bounded_2.hs    Bounded_3.hs        Bounded_Bool.hs \
 	Bounded_Char.hs Bounded_Int.hs  Bounded_Ordering.hs Bounded_Unit.hs \
 	CEnum.hs        CEq.hs          CFloating.hs        CFractional.hs \
-        CFunctor.hs     CIntegral.hs    CIx.hs              CMonad.hs \
+        CFunctor.hs     CIntegral.hs                        CMonad.hs \
         CNum.hs         COrd.hs         CReal.hs            CRealFloat.hs \
         CRealFrac.hs    Compose.hs      Const.hs            Curry.hs \
 	D2.hs 		D3.hs           D4.hs               D5.hs \
@@ -55,9 +55,11 @@ COMMON_SRCS = \
 # The following are used for the normal Prelude
 SRCS = ${COMMON_SRCS} \
         _Apply1.hs      _Apply2.hs      _Apply3.hs          _Apply4.hs \
-        _EqInteger.hs   _TupleIndex.hs  _TupleRange.hs  \
+        _EqInteger.hs \
 	_Zap_Arg.hs     _Zap_Stack.hs       \
 	_Id.hs
+
+#  _TupleIndex.hs  _TupleRange.hs  \
 
 # The following are used for the tracing Prelude
 SRCS_T	= ${COMMON_SRCS}

@@ -2,6 +2,7 @@ module Array where
 
 #if 0
 
+import Ix
 import DArray
 import ArrayFun
 import Indices
@@ -18,8 +19,8 @@ a // us               =  array (bounds a)
 
 #else
 
-import DArray
 import Ix
+import DArray
 import LowVector
 import _E
 
