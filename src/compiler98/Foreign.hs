@@ -5,7 +5,7 @@ module Foreign
   ) where
 
 import Maybe (fromJust,isNothing)
-import List (find,isPrefixOf,isSuffixOf)
+import List (find,isPrefixOf,isSuffixOf,intersperse)
 import PackedString (PackedString,unpackPS)
 import Syntax
 import Info
@@ -55,7 +55,7 @@ data Arg = Int8  | Int16  | Int32  | Int64
          | Float | Double | Char   | Bool | Int
          | Ptr   | FunPtr [Arg] | StablePtr | ForeignPtr
          | Addr  | ForeignObj | Integer | PackedString
-         | Unknown String | Unit
+         | Unknown String | Unit | HaskellFun [Arg]
 
 instance Show Arg where
   showsPrec p Int8         = showString "FFI.Int8"
@@ -73,6 +73,7 @@ instance Show Arg where
   showsPrec p Bool         = showString "Prelude.Bool"
   showsPrec p Ptr	   = showString "FFI.Ptr"
   showsPrec p (FunPtr t)   = showString "FFI.FunPtr"
+      . parens (showString (concat (intersperse " -> " (map show t))))
   showsPrec p StablePtr    = showString "FFI.StablePtr"
   showsPrec p ForeignPtr   = showString "FFI.ForeignPtr"
   showsPrec p Addr         = showString "FFI.Addr"		-- deprecated
@@ -80,6 +81,8 @@ instance Show Arg where
   showsPrec p Integer      = showString "Prelude.Integer"	-- non-standard
   showsPrec p PackedString = showString "PackedString.PackedString" -- non-std
   showsPrec p Unit         = showString "Prelude.()"
+  showsPrec p (HaskellFun as)  =
+      parens (showString (concat (intersperse " -> " (map show as))))
   showsPrec p (Unknown s)  = showString s
 
 -- Note: as of 2000-10-18, the result can never have an IO type - pure only.
@@ -103,7 +106,7 @@ toForeign symboltable memo callconv ie cname arity var =
     hname = tidI info
     hnameStr = (reverse . (\w->if head w=='#' then tail w else w)
                . unpackPS . extractV) hname
-    (args,res) = searchType symboltable memo info
+    (args,res) = searchType style symboltable memo info
     (cfunc,style,include) = case callconv of Cast -> (hnameStr,CCast,Nothing)
                                              _    -> parseEntity cname hnameStr
     proto = (callconv/=Noproto) && (isNothing include)
@@ -136,8 +139,8 @@ parseEntity entity hname =
         error ("Couldn't parse entity string in foreign import: "++entity)
     
 
-searchType :: AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
-searchType st (arrow,io) info =
+searchType :: Style -> AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
+searchType style st (arrow,io) info =
   let
     toList (NTcons c nts) | c==arrow  = let [a,b] = nts in a: toList b
     toList (NTcons c nts) | c==io     = let [a]   = nts in [a] -- within FunPtr
@@ -147,9 +150,10 @@ searchType st (arrow,io) info =
     toTid (NTcons c nts)  =
       case lookupAT st c of
         Just i | isRealData i ->
-                     case toArg (tidI i) of
-                       FunPtr _ -> FunPtr (map toTid (toList (head nts)))
-                       t        -> t
+                   case toArg (tidI i) of
+                     FunPtr _ -> FunPtr (map toTid (toList (head nts)))
+                     HaskellFun _ -> HaskellFun (map toTid (toList (head nts)))
+                     t        -> t
                | otherwise -> toTid (getNT (isRenamingFor st i))
     toTid (NTapp t1 t2)   = toTid t1
     toTid (NTstrict t)    = toTid t
@@ -179,6 +183,8 @@ searchType st (arrow,io) info =
             | t==tWord64     = Word64
             | t==tPackedString  = PackedString	-- non-standard
             | t==tInteger    = Integer		-- non-standard
+            | style==Wrapper
+              && t==t_Arrow  = HaskellFun []	-- foreign export "wrapper"
             | otherwise      =
                     warning ("foreign import/export has non-primitive type: "
                              ++show t++"\n") (Unknown (show t))
@@ -251,7 +257,8 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
       case res of
         FunPtr t ->
           word "extern" . space . cResType (last t)
-          . parens (star . word cname . parens (listsep comma (map cTypename args)))
+          . parens (star . word cname
+                   . parens (listsep comma (map cTypename args)))
           . parens (listsep comma (map cTypename (init t))) . semi
         _ ->
           word "extern" . space . cResType res . space . word cname
