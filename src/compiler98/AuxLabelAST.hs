@@ -58,15 +58,21 @@ vi = \_-> True
 -- is decided by the caller, but for `lookEnv', it is decided by the
 -- environment.
 
+-- The following hack is needed, because identMap only knows about global
+-- identifiers and because variables, field labels and methods share the
+-- same name space.
 useEnvironment :: Environment -> TokenId -> Maybe AuxiliaryInfo
 useEnvironment (env,identMap) id =
   let v = useIdentMap identMap id in
   case v of
-    -- a field may be shadowed by a normal variable
+    -- a field or method may be shadowed by a normal variable
     -- hence have to search for such a variable first
     Field _ name -> case lookupAT env (Var name) of
                       Just info -> Just info
                       Nothing -> lookupAT env v
+    Method _ name -> case lookupAT env (Var name) of
+                       Just info -> Just info
+                       Nothing -> lookupAT env v
     _ -> lookupAT env v
 
 letVar :: Environment -> TokenId -> TraceId
