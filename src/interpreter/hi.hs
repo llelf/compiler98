@@ -7,18 +7,19 @@ import Directory
 import List
 import Maybe
 
-import Config
+import HmakeConfig
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
 
 main = do
   options <- getArgs
-  putStr banner
-  putStrLn (replicate 45 ' '++ "... Using compiler "++show defaultCompiler++" ...\n")
+  let opts = options ++ defaultOptions defaultCompiler
+  putStrLn banner
+  putStrLn (replicate 43 ' '++ "... Using compiler "++show defaultCompiler++" ...\n")
   hSetBuffering stdout NoBuffering
-  load options defaultCompiler "Prelude"
-  toplevel options defaultCompiler ["Prelude"]
+  load opts defaultCompiler "Prelude"
+  toplevel opts defaultCompiler ["Prelude"]
 
 done = return ()
 
@@ -46,10 +47,12 @@ evaluate expr options compiler modules = do
     "module Main where\n\n" ++
     concatMap (\m-> "import "++m++"\n") modules ++
     "\n" ++ nonstdCoerce compiler ++
-    "\nmain = let expr = (" ++ expr ++ ")" ++
-    "\n       in case showsType expr \"\" of" ++
-    "\n           ('(':'I':'O':_) -> coerce expr" ++
-    "\n           _               -> print expr" ++
+    "\n" ++ nonstdShow compiler ++
+    "\nmain = let expr  = (" ++ expr ++ ")" ++
+    "\n           shown = show expr" ++
+    "\n       in case shown of" ++
+    "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
+    "\n           _                   -> putStrLn shown" ++
     "\n")
   hClose f
   compile options compiler tmpfile (run tmpfile [])
@@ -64,7 +67,7 @@ compile options compiler file continue = do
     _           -> putStrLn "...failed]"
  where
   delete []     = ""
-  delete (_:xs) = " " ++ delete xs
+  delete (_:xs) = "\BS \BS" ++ delete xs
 
 run file args = system (file++" "++unwords args) >> done
 
@@ -115,14 +118,17 @@ commands ws options compiler modules =
           toplevel newopts compiler modules)
   command "hc"
       (if null target then putStrLn ("Current compiler: "++show compiler)
-       else let comp = toComp (head target) in
-            if compilerKnown comp then do
+       else let newcomp = toComp (head target)
+                newopts = (options \\ defaultOptions compiler)
+                                   ++ defaultOptions newcomp
+            in
+            if compilerKnown newcomp then do
                makeclean ".o" modules
                makeclean ".hi" modules
-               loadAll options comp modules
-               toplevel options comp modules	-- explicit return
+               loadAll newopts newcomp modules
+               toplevel newopts newcomp modules	-- explicit return
             else do
-               putStrLn ("Compiler "++show comp++" not known/configured")
+               putStrLn ("Compiler "++head target++" not known/configured")
                putStrLn ("Current compiler: "++show compiler)
       )
   command "?" (putStrLn help)
@@ -177,7 +183,7 @@ makeclean ext modules = mapM_ (clean ext) modules
 fromOpt prefix opt =
   if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
 
-banner = "\
+banner = "\ 
 \__   __           ____  __             _____________________________________
 ||   ||  ______  ____|| || _  ____     hmake interactive:
 ||___|| || || || ||  || ||/  ||__||       Copyright (c) 1st-2nd May 2000
@@ -186,7 +192,7 @@ banner = "\
 ||   || Version: "++hmakeversion++"    -------------------------------------"
 
 
-help = "\
+help = "\ 
 \Commands (can be abbreviated to first letter):
   <expr>		evaluate expression
   :quit			quit
