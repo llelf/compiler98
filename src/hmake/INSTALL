@@ -1,0 +1,23 @@
+The short version is:
+
+  $ ./configure   [ --prefix=/my/installation ]
+  $ make
+  $ make install
+
+which builds the hmake compilation-tool and places it in /usr/local,
+[or in /my/installation if you used the --prefix= option].
+If you want slightly more control, try
+
+  $ make help
+
+which will give you a list of other build targets.  During
+configuration, we try to detect all your existing installed Haskell
+compilers, tell hmake where they live, and choose one with which to
+build hmake.  You can override the chosen build-compiler and many
+other configuration settings from the commandline.
+
+  $ configure  --help
+
+gives a summary of all your configuration options.
+
+

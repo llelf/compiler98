@@ -1,0 +1,61 @@
+# Default definitions filled in by config script, included from Makefile.inc
+include Makefile.inc
+
+HVERSION = 1.6
+# HVERSION is the version number for hmake.
+
+HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
+	src/hmake/HISTORY src/hmake/Summary*
+
+TARGDIR= targets
+TARGETS= hmake_n hmake_b hmake_g chmake
+
+
+##### compiler build + install scripts
+
+all:   all-${BUILDWITH}
+help:
+	@echo "Common targets include:        all install clean realclean config"
+	@echo "For a specific build-compiler: all-hbc  all-ghc  all-nhc  all-gcc"
+	@echo "  (other subtargets: hmake_b hmake_g hmake_n chmake)"
+
+config:
+	./configure --config
+install:
+	./configure --install
+
+all-nhc: hmake_n
+all-hbc: hmake_b
+all-ghc: hmake_g
+all-gcc: chmake
+
+
+$(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
+
+
+$(TARGDIR)/$(MACHINE)/hmake_n: $(HMAKE)
+	cd src/hmake;          $(MAKE) HC=nhc98 install
+	touch $(TARGDIR)/$(MACHINE)/hmake_n
+$(TARGDIR)/$(MACHINE)/hmake_b: $(HMAKE)
+	cd src/hmake;          $(MAKE) HC=hbc install
+	touch $(TARGDIR)/$(MACHINE)/hmake_b
+$(TARGDIR)/$(MACHINE)/hmake_g: $(HMAKE)
+	cd src/hmake;          $(MAKE) HC=ghc install
+	touch $(TARGDIR)/$(MACHINE)/hmake_g
+$(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
+	cd src/hmake;          $(MAKE) fromC
+	touch $(TARGDIR)/$(MACHINE)/chmake
+
+
+
+##### cleanup
+
+clean:
+	cd src/hmake;           $(MAKE) clean
+
+realclean: clean
+	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
+	cd $(TARGDIR);  rm -f hmakeC
+	rm -f $(LIBDIR)/$(MACHINE)/*
+	rm -f $(TARGDIR)/$(MACHINE)/config.cache
+	rm -f script/hmake
