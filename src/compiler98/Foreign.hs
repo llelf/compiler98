@@ -76,12 +76,6 @@ toForeign symboltable memo fspec ie cname arity var =
              else error ("foreign function: arity does not match: "++
                          "is "++show arity++
                          ", expected "++show (length args)++"\n")
--- Crazy idea:
---  (arity',args') = if arity==0 && ioResult' res then (1,[Unit])
---                   else (arity,args)
--- to try to get round the CAF problem for f :: IO () which only gets
--- evaluated once at runtime.  But this doesn't solve it, because we
--- really need to transform all *uses* of f as well.  Eeek!
 
 searchType :: AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
 searchType st (arrow,io) info =
@@ -193,7 +187,7 @@ strForeign f@(Foreign Imported cast proto cname hname arity args res) =
     word "static SInfo" . space . word profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
                   strquote (shows hname) . comma .
-                  strquote (word modname . dot . shows res) .
+                  strquote (word modname . dot . shows res) .	-- not accurate
       closecurly . semi .
     word "#endif" . nl .
     word "C_HEADER" . parens (foreignname hname) . space .
@@ -416,8 +410,8 @@ hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
 hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 {- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
-hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return ForeignObj type.\n") $
-                          word "mkForeign((void*)" . s . showString ",NULL,gcNone)"
+hConvert ForeignObj   s = trace ("Warning: foreign import/export should not return ForeignObj type.\n") $
+                          word "mkCInt" . parens (word "(int)" . s)
 hConvert Unit         s = word "mkUnit()"
 hConvert Unknown      s = s	-- for passing Haskell heap values untouched
 
