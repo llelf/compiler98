@@ -8,44 +8,71 @@
 
 <h3>System Requirements</h3>
 <p>
-In order to use <b>nhc98</b> under Windows 95/98 or NT, you first need to
-install the Cygnus <em>gcc</em> C compiler and tools.  Essentially, it
-should be as simple as downloading <em>cygwin/full.exe</em> from your
-favorite Gnu-mirroring FTP site, and running it (it is a self-extracting
-archive).  We last tested with release <em>b19</em>, but others have
-reported success with <em>b20.1</em>.  (In Northern Europe, a
-good mirror of the Gnu tools is
-<a href="ftp://sunsite.org.uk/Mirrors/sourceware.cygnus.com/pub/cygwin/cygwin-b20/">
+In order to use <b>nhc98</b> under Windows 95/98 or NT, you first
+need to install the Cygwin DLL, the <em>gcc</em> C compiler, and GNU tools.
+
+<p>
+For old Cygwin versions (<em>b19</em>, <em>b20</em>, and <em>b20.1</em>),
+this involved downloading <em>cygwin/full.exe</em>
+from your favorite Gnu-mirroring FTP site, and running it as a
+self-extracting archive.  The newer Cygwin release version <em>1.0</em>
+was available on CD-ROM only.  The very newest releases <em>1.1.x</em>
+are once again available for download.  From <em>1.1.0</em> onwards, you
+should download the small utility called <em>setup.exe</em> from a
+Cygwin mirror FTP site and follow its instructions to install the
+rest of the toolset.
+
+<p>
+Along with <em>gcc</em>, you should also get the <em>bash</em> shell
+and lots of other Unix tools, such as <em>tar</em>, <em>gunzip</em>,
+and <em>make</em>, which are needed to unpack and build the
+<b>nhc98</b> distribution.  (It is safest to simply collect the
+entire set of packages.)
+
+<p>
+We last tested with Cygwin release <em>1.1.4</em>, together with
+<em>gcc 2.95.2-4</em> and <em>make 3.79.1</em>.
+
+<p>
+<b>Full information on Cygwin is available from
+<a href="http://sources.redhat.com/cygwin/">
+<tt>http://sources.redhat.com/cygwin/</tt></a></b>
+
+<p>
+In Northern Europe, a good mirror of the Cygwin toolset is
+<a href="ftp://sunsite.org.uk/Mirrors/sourceware.cygnus.com/pub/cygwin/">
 SunSite</a>.)
 
-<p>
-Some people have reported difficulty getting recent pre-releases of
-nhc98 to build with Cygwin.  The make fails very quickly, saying
-that there is "no rule to make target .../src/runtime/Kernel".
-We aren't yet exactly sure of the cause.  Here is one suggestion -
-make sure that the environment variable MAKE_MODE is set to UNIX.
-Another suggestion is that Gnu-Make's $(patsubst ...) can't handle
-spaces in directory pathnames - so please make sure you don't have any!
-If either of these fix the problem, please let me know so that I can
-count this as a dead bug rather than an annoyingly still-alive bug.
-
 
 <p>
-Along with <em>gcc</em>, you also get the <em>bash</em> shell and lots
-of other Unix tools, such as <em>tar</em>, <em>gunzip</em>, and
-<em>make</em>, which are needed to unpack and build the <b>nhc98</b>
-distribution.  For full information on the Gnu Cygnus toolset, see
-<a href="http://sourceware.cygnus.com/cygwin/">
-<tt>http://www.cygnus.com/misc/gnu-win32/</tt></a>
+Some people have reported difficulty getting recent releases of nhc98
+to build with older versions of Cygwin.  The make fails very quickly,
+saying that there is "no rule to make target .../src/runtime/Kernel".
+This could be due to one of several causes.
+<ul>
+<li> Ensure that the environment variable MAKE_MODE is set to UNIX.
+<li> Gnu-make's $(patsubst ...) can't handle spaces in directory pathnames
+     - so please ensure you don't have any!
+<li> Untarring the source package sometimes mistakenly creates
+     directory names in upper-case instead of lower-case.  (Ensure you
+     untar in Windows itself, rather than onto a Windows partition
+     from Linux, for example.)
+<li> Some distributions of Gnu-make do not handle globbing in static
+     pattern rules as they should.  (make 3.75 in Cygwin b20 is broken,
+     although the same version works correctly on other platforms.)
+     Upgrade (or downgrade) to a different (working) version of make.
+</ul>
+
 
 
 <br><br>
 <h3>And now...</h3>
 <p>
-Once you have installed <em>gcc</em> and tools, the standard
-<a href="install.html">installation instructions</a> apply.
-You have the option of installing the binary or source
-distribution packages.
+Once you have installed <em>gcc</em> and tools, the standard <a
+href="install.html">installation instructions</a> apply.  You have
+the option of installing the binary or source distribution packages.
+(A prior installation of Cygwin is required even for the binary
+distribution.)
 
 <br><br>
 <hr>
@@ -55,7 +82,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.09.28<br>
+2000.11.10<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

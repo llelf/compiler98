@@ -17,8 +17,8 @@ install procedure:
 
 <h3>System Requirements</h3>
 <p>
-Users of Windows 95/98 or NT, please see these <a href="windows.html">special
-instructions</a> first.
+Users of Windows 95/98/NT/2k/Me, please see these
+<a href="windows.html">special instructions</a> first.
 
 <p>
 If you want to use the trace browser, you will need to have Java on
@@ -33,13 +33,13 @@ For the binary release, we assume you have a good C compiler (usually
 For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <b>nhc98</b> without another Haskell compiler, you need 8Mb of memory
-(although you could probably manage with less), and about 17Mb of disk
+(although you could probably manage with less), and about 27Mb of disk
 space (40Mb if you build for profiling and tracing as well).  If you
 already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
 then building <b>nhc98</b> will require at least 32Mb of memory, and
 50Mb of free disk space.  If you don't have <em>hbc</em> or <em>ghc</em>
 for your machine, then don't worry, <b>nhc98</b> will build quite
-happily using just a C compiler.  (The build is much faster, but the
+happily using just a C compiler.  (The basic build is much faster, but the
 resulting compiler will be slower.)  You even can build <em>nhc98</em>
 using an earlier version of <em>nhc98</em> if you really want, but
 we don't do that by default because the build time tends to be slow.
@@ -133,17 +133,30 @@ help</tt> for a list of useful individual targets.
 <p>
 The time taken to build nhc98 depends on your machine, which compiler
 you are using, and whether you have asked for just the basic system or
-the full system.  On a newish 500Mhz Pentium II, a basic build with
-<em>gcc</em> takes three minutes, whereas a full build with <em>ghc</em>
-takes 57 minutes.  On an older 150Mhz Pentium laptop, a basic build
-with <em>gcc</em> takes ten minutes, and a full build with <em>ghc</em>
-takes 4-5 hours.  This illustrates the extremes.
+the full system.  Here are some sample build times in minutes, all on
+Pentium class machines:
 
-<P>
-As a guide, <em>ghc</em> tends to be much slower than <em>hbc</em>
-in the early stages of the build, but rather faster once the
-<em>nhc98comp</em> compiler has been built - this evens out so that a
-full build eventually takes roughly the same time with either compiler.
+<center>
+<table><tr>
+    <th></th>
+    <th colspan=2>500Mhz/Linux</th>
+    <th colspan=2>150MHz/Linux</th>
+    <th colspan=2>150MHz/Win95</th>
+</tr><tr>
+    <th>build compiler</th>
+    <th>basic</th><th>all</th>
+    <th>basic</th><th>all</th>
+    <th>basic</th><th>all</th>
+</tr><tr>
+    <td>gcc</td><td>4</td><td>150</td><td>14</td><td>450</td><td>45</td><td>1200</td>
+</tr><tr>
+    <td>ghc</td><td>21</td><td>57</td><td>99</td><td></td><td></td><td></td>
+</tr><tr>
+    <td>hbc</td><td>22</td><td>65</td><td></td><td></td><td></td><td></td>
+</tr><tr>
+    <td>nhc98</td><td>50</td><td>180</td><td></td><td></td><td></td><td></td>
+</tr></table>
+</center>
 
 <p>
 Finally, when you have built all the components you require,
@@ -187,7 +200,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.09.11<br>
+This page last modified: 2000.11.10<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
