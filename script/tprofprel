@@ -7,7 +7,7 @@ case $# in
   1) exit 1;;
 esac
 
-BUILTIN='Builtin' #Runtime Module 
+BUILTIN='Builtin' #Runtime Module added to beginning
 MODNAMES=''
 nummods=0
 
@@ -65,9 +65,9 @@ then
   for mod in ${MODNAMES};
   do
     echo '  if (TM_'${mod}'==0)'
-    echo '    tprofInitTree(&TMIP_'${mod}',strdup("ccc'${mod}'"),&TM_'${mod}');'
+    echo '    tprofInitTree(&TMIP_'${mod}',strdup("---'${mod}'"),&TM_'${mod}');'
     echo '  else'
-    echo '    tprofInitTree(&TMIP_'${mod}',strdup("nnn'${mod}'"),&TM_'${mod}');'
+    echo '    tprofInitTree(&TMIP_'${mod}',strdup("+++'${mod}'"),&TM_'${mod}');'
   done
   echo '  return '${nummods}';'
   echo '}'
@@ -76,7 +76,7 @@ fi
 #Prelude functions
 if test "'$USRPREL'" != "'0'" 
 then
-  MODNAMES=${MODNAMES}' '${BUILTIN}
+  MODNAMES=${BUILTIN}' '${MODNAMES}
   let nummods=nummods+1
   if test "'$USRPREL'" == "'1'" 
   then
@@ -145,14 +145,14 @@ then
     fi
     if test "'${mod}'" != "'_95Driver'"
     then
-      echo '    tprofInitTree(&TMIP_'${USRPREL}${mod}',strdup("c'${NUMSTR}${mod}'"),&TM_'${mod}');'
+      echo '    tprofInitTree(&TMIP_'${USRPREL}${mod}',strdup("-'${NUMSTR}${mod}'"),&TM_'${mod}');'
       echo '  else'
-      echo '    tprofInitTree(&TMIP_'${USRPREL}${mod}',strdup("n'${NUMSTR}${mod}'"),&TM_'${mod}');'
+      echo '    tprofInitTree(&TMIP_'${USRPREL}${mod}',strdup("+'${NUMSTR}${mod}'"),&TM_'${mod}');'
       let num=num+1
     else
-      echo '    tprofInitTree(&TMIP_'${USRPREL}'Driver,strdup("c'00_Driver'"),&TM_'${mod}');'
+      echo '    tprofInitTree(&TMIP_'${USRPREL}'Driver,strdup("-'00_Driver'"),&TM_'${mod}');'
       echo '  else'
-      echo '    tprofInitTree(&TMIP_'${USRPREL}'Driver,strdup("n'00_Driver'"),&TM_'${mod}');'
+      echo '    tprofInitTree(&TMIP_'${USRPREL}'Driver,strdup("+'00_Driver'"),&TM_'${mod}');'
     fi
   done
   echo '  return '${nummods}';'

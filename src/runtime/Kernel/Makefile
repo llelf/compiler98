@@ -53,8 +53,9 @@ ${ARCHIVE}: ${AOBJS}
 else
 
 ${ARCHIVE}: ${AOBJS} ${TPLOBJS}
-	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${TPLOBJS} ${AOBJS})
-
+	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ \
+	$(patsubst ${OBJDIR}/%,%,${TPLOBJS} ${AOBJS})
+	rm -f ${TPLOBJS}
 
 ${TPLOBJS}:
 	echo "int TMIP_$(patsubst ${OBJDIR}/tpl%.o,%,$@)[] = {0};" \
