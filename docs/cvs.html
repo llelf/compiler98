@@ -11,11 +11,17 @@
 This page tells you how to get CVS access to the latest, most current,
 <em>nhc98</em> sources.
 
+<p>
+Note that we only store non-regenerable files in CVS, so if you don't
+already have a working Haskell compiler, you won't be able to build
+from C sources using CVS.
+
+
 <h3>Remote Read-only CVS Access</h3>
 
 <p>
 Read-only access is available to anyone - there's no need to ask us
-first. To get read-only access to our repository:
+first.  To get read-only access to our repository:
 
 <ul>
 <li> You need to have <em>ssh</em> (secure shell) installed
@@ -64,6 +70,27 @@ Here is an example <tt>.cvsrc</tt> file:
         diff -c
 </pre>
 
+<h3>Using the checked-out CVS tree</h3>
+
+<p>
+The first thing to do after checking out a fresh tree is <tt>make
+config</tt> - this builds a couple of utilities needed by the
+configuration script.  You should only need to do this step once.
+
+<p>
+Then you should run <tt>./configure</tt>, setting whatever options you
+wish to use.  It is always safe to re-run the <tt>./configure</tt>
+script at any time - it will never leave your configuration in an
+inconsistent state.  The machine/OS combination is always detected
+first so you can't re-use the wrong machine configuration by mistake,
+and although previous options for a particular machine are cached, they
+are always reported, and can be always overridden on the command line.
+
+<p>
+Finally, do a <tt>make</tt> with whatever targets you are interested
+in: <tt>make help</tt> will give you a list of the common ones.
+For instance, <tt>make basic</tt> gives you the standard compiler, and
+<tt>make all</tt> gives you profiling and tracing variants in addition.
 
 
 <hr>
@@ -73,7 +100,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.03.21<br>
+This page last modified: 2000.03.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

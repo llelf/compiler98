@@ -221,11 +221,15 @@ comprehensive, but if you have any problems, please mail
 
 <br><br><hr>
 
-<h3>nhc98 pre-release 18 (2000-xx-xx) features</h3>
+<h3>nhc98 pre-release 18 (2000-03-xx) features</h3>
 <ul>
 <li> Bugfix: More patches needed for building with ghc-4.06.
-<li> Bugfix: A couple of the new FFI implementations of Directory functions
-             threw IOErrors when they shouldn't.
+<li> Bugfix: The new implementations of two Directory functions
+             (doesFileExist and doesDirectoryExist) threw IOErrors
+             when they shouldn't.
+<li> Addition: We've improved the error messages given by the Directory IO
+               functions to include more information about what caused
+               the error.
 </ul>
 
 <h3>nhc98 pre-release 17 (2000-03-14) features</h3>
@@ -253,7 +257,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.03.17<br>
+This page last modified: 2000.03.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

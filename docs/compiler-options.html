@@ -140,16 +140,6 @@ driver script at compile-time.
   <td>undefine <em>sym</em> when pre-processing, and when compiling the
        C-section of a <em>GreenCard</em> file</td>
 </tr><tr>
-<td valign=top><em><b>+rts</b></em></td>
-  <td>runtime system options specified between <em>+RTS ... -RTS</em>
-      delimiters should be passed on to the compiler proper using the
-      nhc98 syntax (i.e. when nhc98comp was compiled by nhc98)</td>
-</tr><tr>
-<td valign=top><em><b>-rts</b></em></td>
-  <td>runtime system options specified between <em>+RTS ... -RTS</em>
-      delimiters should be passed on to the compiler proper using the
-      hbc syntax (i.e. when nhc98comp was compiled by hbc)</td>
-</tr><tr>
 <td valign=top><em><b>+RTS</b></em></td>
   <td>the following options (up to <em><b>-RTS</b></em>) should be passed only
       to the compiler's runtime system
@@ -158,6 +148,20 @@ driver script at compile-time.
 <td valign=top><em><b>+CTS</b></em></td>
   <td>the following options (up to <em><b>-CTS</b></em>) should be passed only
       to the compiler proper (as detailed below)</td>
+</tr><tr>
+<td valign=top><em><b>+rts</b></em></td>
+  <td>runtime system options specified between <em>+RTS ... -RTS</em>
+      delimiters should be passed on to the compiler proper using the
+      nhc98/ghc syntax (i.e. when nhc98comp was compiled by nhc98 or ghc).
+      You are unlikely to need this option, because a default setting of
+      <em>+rts</em> or <em>-rts</em> is determined at config time</td>
+</tr><tr>
+<td valign=top><em><b>-rts</b></em></td>
+  <td>runtime system options specified between <em>+RTS ... -RTS</em>
+      delimiters should be passed on to the compiler proper using the
+      hbc syntax (i.e. when nhc98comp was compiled by hbc).
+      You are unlikely to need this option, because a default setting of
+      <em>+rts</em> or <em>-rts</em> is determined at config time</td>
 </tr></table>
 
 </table>
@@ -397,7 +401,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.11.23<br>
+2000.04.04<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
