@@ -94,7 +94,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
-	 script/hsc2hs.inst script/template-hsc2hs.h \
+	 script/hsc2hs.inst script/template-hsc.h \
 	 hmake.spec nhc98.spec script/pkgdirlist lib/hood.jar 
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
