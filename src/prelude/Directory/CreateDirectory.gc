@@ -9,7 +9,7 @@ import PatchIOError
 %fun mkdir :: FilePath -> IO Int
 %call (filePath fp)
 %code
-%  mode_t m = 0x755;
+%  mode_t m = 0755;
 %  err = mkdir(fp,m);
 %result (int err)
 
