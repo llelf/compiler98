@@ -9,6 +9,7 @@ module HatExpressionTree (
 		   HatRational,HatFloat,HatDouble,HatString,HatIf,HatGuard,HatContainer,
 		   HatContainer,HatNone),
  toHatExpressionTree,
+ HatLimit,
  toHatLimit,
  fromHatLimit,
  prettyPrint,

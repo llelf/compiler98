@@ -76,11 +76,11 @@ $(OBJDIR)/hatlib.a:  $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/dete
 	ar -rc $(OBJDIR)/hatlib.a $(THOROBJS)
 
 # Thorsten's haskell libraries and tools
-$(DEST)/hat-observe: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs $(OBJDIR)/hatlib.a
+$(DEST)/hat-observe: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
 	hmake -nhc98 -K10M +CTS -H20M -CTS Hatobserve $(OBJDIR)/hatlib.a -d$(DEST) $(shell echo $(LIBCOMPAT))
 	mv $(DEST)/Hatobserve $(DEST)/hat-observe
 
-$(DEST)/hat-detect: Hatdetect.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs $(OBJDIR)/hatlib.a
+$(DEST)/hat-detect: Hatdetect.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
 	hmake -nhc98 -K10M +CTS -H20M -CTS Hatdetect $(OBJDIR)/hatlib.a -d$(DEST) $(shell echo $(LIBCOMPAT))
 	mv $(DEST)/Hatdetect $(DEST)/hat-detect
 

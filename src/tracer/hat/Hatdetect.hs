@@ -1,6 +1,7 @@
 import HatTrace
 import HatTrie
 import HatExpressionTree
+import PrettyExp(showExpression,showReduction)
 import Maybe
 import System
 import Char(isDigit,digitToInt,toUpper)
@@ -61,7 +62,7 @@ main = do
 	       let hattrace = (fromJust maybehattrace);
 		   startReduction = (getStartReduction hattrace arguments) in
 		 do
-	          putStrLn "\nWelcome to Hatdetect (25/08/01)"
+	          putStrLn "\nWelcome to hat-detect (20/09/01)"
                   (b,e,newstate) <- interactive (file,hattrace) ([startReduction],[],
 								 [],[],
 								 1,50,False,True,False)
@@ -85,6 +86,7 @@ showRed verboseMode precision node =
 	        ""
 	in
 	  s1++s2
+
 
 -- add new node to the list of recent nodes. List holds node, linear representaion of it,
 -- and the value of the users answer (Yes=True, No=False)
@@ -130,9 +132,13 @@ interactive hatfile state@((node:children),recentNodes,trusted,postponed,questnu
      do
        putStrLn ""
        if (reconsider) then putStrLn "reconsider: " else return ()
-       putStr ((show (questnumber))++"> ")
-       putStr (showRed verboseMode precision node)
-       if (reconsider) then putStr "  (Y/?Y/N): " else putStr "  (Y/?Y/?N/N): "
+--       putStr (show questnumber++"> "++
+--         (showRed verboseMode precision node))
+       putStr 
+         (showReduction verboseMode precision node 
+           (show questnumber++"> ")
+           (if reconsider then "(Y/?Y/N): " else "(Y/?Y/?N/N): "))
+--       if (reconsider) then putStr "  (Y/?Y/N): " else putStr "  (Y/?Y/?N/N): "
        hFlush stdout
        s <- getLine
        let w = words s;
@@ -183,7 +189,7 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
     | (cmd=="T")||(cmd=="TRUST") =
 	let trustFun = (hatLeftmost child) in
           do
-	    putStrLn ("   Ok, \""++(showIdent trustFun)++
+	    putStrLn (showExpression trustFun "   Ok, \"" ++
 		      "\" will be trusted from now on.")
             (b,q,newstate) <- (interactive hatfile
 			       (children,
@@ -257,9 +263,11 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 			       (hatSourceRef lmo) in
 	             do
                      putStrLn "\nErroneous reduction: "
-		     putStrLn (showRed verboseMode precision child)
-		     putStrLn ("\nBug found within the body of function: \""++
-			       (showIdent lmo)++"\"")
+		     putStrLn (showReduction verboseMode precision child "" "")
+		     putStrLn 
+                       (showExpression lmo
+                         "\nBug found within the body of function: \""
+                        ++ "\"")
 		     putStrLn ("line "++(show (row src))++", column "++
 			       (show (column src))++
 			       " in module \""++(moduleName src)++

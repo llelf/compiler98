@@ -1,6 +1,7 @@
 import HatTrace
 import HatTrie
 import HatExpressionTree
+import PrettyExp(showReduction)
 import Maybe
 import System
 import Char(isDigit,digitToInt,toUpper)
@@ -111,7 +112,10 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
  		       putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
 			         "identifier \""++ident1++"\".\n(Check spelling!)")
                       else
-                       printCReductionList 100 (fromFound observed)
+                       do
+                         showObservationList 20 1 100 (fromFound observed)
+                         return ()
+--                       printCReductionList 100 (fromFound observed)
                   return ()
 
  
@@ -130,11 +134,12 @@ observableIdents hattrace =
 	    filter (\x -> ((hatNodeType x)==HatIdentNode)) f -- return all identifiers
 	 else []
 
-showObservation :: Int -> Int -> HatNode -> IO()
+showObservation :: Int -> Int -> HatNode -> IO ()
 showObservation precision i node =
- do
-   putStr ("#"++(show i)++": ")
-   printCReduction precision node
+  putStr $ showReduction False precision node ("#"++(show i)++": ") ""
+-- do
+--   putStr ("#"++(show i)++": ")
+--   printCReduction precision node
 
 showObservationList :: Int -> Int -> Int -> [HatNode] -> IO Int
 showObservationList _ _  _ [] = return 0
