@@ -30,19 +30,17 @@ showdep (f,(((ths,thi,tobj),p,s,cpp),i)) =
   f ++ ": " ++ mix i ++ "\n"
   where mix = foldr (\a b-> a++' ':b) ""
 
-showmake opts goaldir (f,(((ths,thi,tobj),p,s,cpp),i)) =
-  dotO f ++ ": " ++ s ++ " " ++ mix i
-  where mix = foldr (\a b-> dotO a ++ ' ':b) "\n"
-        dotO f = fixFile opts goaldir f (oSuffix opts)
+-- showmake opts goaldir (f,(((ths,thi,tobj),p,s,cpp),i)) =
+--   dotO f ++ ": " ++ s ++ " " ++ mix i
+--   where mix = foldr (\a b-> dotO a ++ ' ':b) "\n"
+--         dotO f = fixFile opts goaldir f (oSuffix opts)
 
--- #### The following replacement is intended for when the graph
--- #### contains paths for all the imports.
---showmake opts goaldir (f,(((ths,thi,tobj),p,s,cpp),i)) =
---  dotO p f ++ ": " ++ s ++ " " ++ mix i
---  where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
---        dotO p f =
---          if (dflag opts) then fixFile opts goaldir f (oSuffix opts)
---                          else fixFile opts p       f (oSuffix opts)
+showmake opts goaldir ((f,p,s),i) =
+  dotO p f ++ ": " ++ s ++ " " ++ mix i
+  where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
+        dotO p f =
+          if (dflag opts) then fixFile opts goaldir f (oSuffix opts)
+                          else fixFile opts p       f (oSuffix opts)
 
 
 dependency opts done [] =
