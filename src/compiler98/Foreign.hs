@@ -87,7 +87,7 @@ searchType st (arrow,io) info =
         (toIOResult . toTid . head) nts
       else case lookupAT st c of
         Just i | isRealData i -> let nm = tidI i in
-                                 if isTupleId nm then
+                                 if isTupleId nm && nm/=(t_Tuple 0) then
                                      (Pure . map dropPure . map toTid) nts
                                  else Pure [toArg nm]
                | otherwise    -> toTid (getNT (isRenamingFor st i))
@@ -105,7 +105,7 @@ searchType st (arrow,io) info =
             | t==tForeign    = ForeignObj
             | t==tStablePtr  = StablePtr
             | t==tAddr       = Addr
-            | t==(t_Tuple 0) = Unit	-- possibly unwise? no void args in C
+            | t==(t_Tuple 0) = Unit	-- no void args, but need void results
             | t==tInt8       = Int8
             | t==tInt16      = Int16
             | t==tInt32      = Int32
