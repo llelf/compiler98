@@ -2,9 +2,9 @@ The majority of the source code of the nhc98 Haskell compiler is
 (c) copyright to Niklas Rojemo, 1991-1998.
 
 Many parts of the nhc98 compiler, libraries, and system were
-contributed by Malcolm Wallace, Jan Sparud, David Wakeling, Colin
-Runciman, Phil Hassall, and Olaf Chitil, and are (c) copyright to them,
-their respective institutions, or funding bodies, 1996-2001.
+contributed or modified by Malcolm Wallace, Jan Sparud, David Wakeling,
+Colin Runciman, Phil Hassall, and Olaf Chitil, and are (c) copyright
+to them, their respective institutions, or funding bodies, 1996-2002.
 
 The core of the hmake tool is
 (c) copyright to Thomas Hallgren, 1991-1997.
@@ -18,13 +18,8 @@ The hmake interactive tool is
 The hp2graph tool is
 (c) copyright to David Wakeling and Niklas Rojemo, 1991-1996.
 
-The hat-trail (redex trail browser) tool is
-(c) copyright to Jan Sparud, 1996-1998,
-with modifications 
-(c) copyright to Colin Runciman, 2000-2001.
-
-The hat-stack tool is
-(c) copyright to Malcolm Wallace, 2001.
+The hat-trans tool is
+(c) copyright to Olaf Chitil, 2002.
 
 The hat-observe tool is
 (c) copyright to Thorsten Brehm, 2001.
@@ -32,13 +27,31 @@ The hat-observe tool is
 The hat-detect tool is
 (c) copyright to Thorsten Brehm, 2001.
 
+The hat-trail tool is
+(c) copyright to Malcolm Wallace, 2002.
+
+The hat-stack tool is
+(c) copyright to Malcolm Wallace, 2001.
+
 The hat-check tool is
 (c) copyright to Colin Runciman, 2001.
+
+The hat-trail-in-java (redex trail browser) tool is
+(c) copyright to Jan Sparud, 1996-1998,
+with modifications 
+(c) copyright to Colin Runciman, 2000-2001.
 
 The HOOD Observe library and graphical browser are
 (c) copyright to Andy Gill, 2000.
 The HOOD graphical browser incorporates open source Java components
 (c) copyright MicroStar Inc, 1999.  (Please read their separate license.)
+
+The Random library is copied direct from Hugs, which has a separate
+BSD-style license.  That implementation of Random is
+(c) copyright Lennart Augustsson, with modifications by Sigbjorn Finne.
+Some parts of the implementation of the Time library were also
+contributed by Lennart.
+
 
 The development of nhc98 (and its predecessor nhc13) has been supported
 by NUTEK (Sweden), Canon Research Europe Ltd., EPSRC (UK), and the
