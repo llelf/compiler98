@@ -4,13 +4,16 @@ module TraceId
   , mkLambdaBound      	-- :: TokenId -> TraceId
   , plus		-- :: TokenId -> AuxiliaryInfo -> TraceId
                         -- modifiers
-  , dropModule          -- :: TraceId -> Traceid
+  , dropModule          -- :: TraceId -> TraceId
+  , modLambdaBound      -- :: TraceId -> TraceId
+  , modLetBound         -- :: TraceId -> TraceId
 			-- selectors:
   , tokenId		-- :: TraceId -> TokenId
   , arity		-- :: TraceId -> Maybe Int
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
   , getUnqualified      -- :: TraceId -> String
+  , hasInfo             -- :: TraceId -> Bool
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
   , tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus
   , tTokenTrue,tTokenFalse -- :: TraceId
@@ -18,53 +21,58 @@ module TraceId
 
 import TokenId (TokenId,extractV,dropM,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
                ,t_andand,t_equalequal,t_greaterequal,tminus,tTrue,tFalse)
-import AuxFile (AuxiliaryInfo(..),Fixity(..),emptyAux)
+import AuxTypes (AuxiliaryInfo(..),Fixity(..),emptyAux)
+import Maybe (isJust)
 import PackedString (unpackPS)
 
-{-
-data TraceId = Keep	{ tokenId :: TokenId }
-             | New	{ tokenId :: TokenId
-			, arity   :: Maybe Int
-			, isLambdaBound :: Bool
-			}
--}
 
-type TraceId = (TokenId, Maybe AuxiliaryInfo)
+data TraceId = TI TokenId (Maybe AuxiliaryInfo)
+
+instance Eq TraceId where
+  TI t1 _ == TI t2 _ = t1 == t2
+
 
 -- construction functions
 
 mkLambdaBound :: TokenId -> TraceId
 mkLambdaBound t = 
-  (t, Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
+  TI t (Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
 
 plus :: TokenId -> AuxiliaryInfo -> TraceId
-t `plus` aux = (t, Just aux)
+t `plus` aux = TI t (Just aux)
 
 -- modification functions
 
 -- drop qualifier
 dropModule :: TraceId -> TraceId
-dropModule (tokenId,aux) = (dropM tokenId,aux)
+dropModule (TI tokenId aux) = TI (dropM tokenId) aux
+
+modLambdaBound :: TraceId -> TraceId
+modLambdaBound (TI token (Just aux)) = TI token (Just aux{letBound=False})
+modLambdaBound (TI token Nothing) = mkLambdaBound token
+
+modLetBound :: TraceId -> TraceId
+modLetBound (TI token (Just aux)) = TI token (Just aux{letBound=True,args=0})
+modLetBound (TI token Nothing) = error "modLetBound"
 
 -- selection functions
 
 tokenId :: TraceId -> TokenId
-tokenId (t,_) = t
+tokenId (TI t _) = t
 
 arity :: TraceId -> Maybe Int
-arity (_,Nothing)  = Nothing
-arity (_,Just aux) = let a = args aux in if a==(-1) then Nothing else Just a
+arity (TI _ Nothing)  = Nothing
+arity (TI _ (Just aux)) = 
+  let a = args aux in if a==(-1) then Nothing else Just a
 
 isLambdaBound :: TraceId -> Bool
-isLambdaBound (_,Nothing)  = error "TraceId.isLambdaBound: no aux information"
-isLambdaBound (_,Just aux) = not (letBound aux) || args aux == 0
- -- The reason for including a test for arity==0 here is that a CAF defn
- -- is technically a pattern-binding rather than a function binding.
- -- It makes the transformation easier if we treat a CAF as lambda-bound.
+isLambdaBound (TI _ Nothing) = 
+  error "TraceId.isLambdaBound: no aux information"
+isLambdaBound (TI _ (Just aux)) = not (letBound aux)
 
 fixPriority :: TraceId -> Int
-fixPriority (_,Nothing) = 3	-- default fixity and priority
-fixPriority (_,Just info) = encode (fixity info) (priority info)
+fixPriority (TI _ Nothing) = 3	-- default fixity and priority
+fixPriority (TI _ (Just info)) = encode (fixity info) (priority info)
   where
     encode Def     _ = 3
     encode L       n = 2 + (n*4)
@@ -74,6 +82,9 @@ fixPriority (_,Just info) = encode (fixity info) (priority info)
 
 getUnqualified :: TraceId -> String
 getUnqualified = reverse . unpackPS . extractV . tokenId
+
+hasInfo :: TraceId -> Bool
+hasInfo (TI _ aux) = isJust aux
 
 -- TraceId versions of some hardcoded tokens 
 

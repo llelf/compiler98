@@ -14,7 +14,7 @@ import SyntaxPos
 import TokenId(TokenId(..), t_x, t_y, t_flip, t_minus, tnegate, visImport)
 import AssocTree
 import PreImp
-import AuxFile
+import AuxTypes
 
 
 {-

@@ -3,15 +3,19 @@ module AuxLabelAST
   ) where
 
 
+import List (nubBy)
 import Char (isUpper)
-import AuxFile
-import AuxFixity
+import AuxTypes(Environment,mkIdentMap,useIdentMap,letBound)
+import AuxFile(Visibility,PatSort(Refutable,Irrefutable)
+              ,extendEnv,getImports,addPat,foldrPat)
+import AuxFixity(fixInfixList)
 import TraceId
-import Flags
+import Flags(Flags)
 import Syntax
 import SyntaxUtil (infixFun)
 import TokenId (TokenId(..))
 import AssocTree
+import Extra (Pos,noPos)
 
 
 -- `auxLabelSyntaxTree' relabels the entire abstract syntax tree,
@@ -22,14 +26,16 @@ import AssocTree
 
 auxLabelSyntaxTree :: Flags -> Module TokenId -> IO (Module TraceId)
 auxLabelSyntaxTree flags
-	mod@(Module _ _ _ imports fixdecls (DeclsParse decls)) =
+	mod@(Module p modId exports imports fixdecls (DeclsParse decls)) =
   do
     let (identMap,_) = mkIdentMap decls
-    let localenv = extendEnv vi (initAT,identMap)
-                             (map DeclFixity fixdecls ++ decls)
+    let (irrefutableIds,localenv) = 
+          extendEnv vi (initAT,identMap) (map DeclFixity fixdecls ++ decls)
     totalenv <- getImports (\_->vi) localenv flags imports
 --  let env = reorderAT stripType totalenv
-    return (relabel totalenv mod)
+    let Module p modId exports imports fixdecls decls = relabel totalenv mod
+    return $ Module p modId exports imports fixdecls 
+               (addVars totalenv irrefutableIds decls)
 --where
 --  stripType env (Con _ con, aux)    = addAT env const (Con "" con) aux
 --  stripType env (Method _ met, aux) = addAT env const (Var met) aux
@@ -238,13 +244,26 @@ instance Relabel Qual where
 
 instance Relabel Fun where
   relabel env (Fun pats rhs ds@(DeclsParse decls)) =
-	let newEnv = foldr (addPat vi) (extendEnv vi env decls) pats in
-	Fun (map (relabel newEnv) pats) (relabel newEnv rhs) (relabel newEnv ds)
+    let (irrefutableDeclIds,declEnv) = extendEnv vi env decls
+        (irrefutableIds,newEnv) = 
+          foldrPat (addPat Refutable vi) declEnv pats 
+    in
+      Fun (map (relabel newEnv) pats) (relabel newEnv rhs) 
+        (addVars newEnv 
+          (nubBy (\x y -> show x == show y) -- for shadowing of scopes
+            (irrefutableDeclIds++irrefutableIds)) 
+          (relabel newEnv ds))
 
 instance Relabel Alt where
   relabel env (Alt pat rhs ds@(DeclsParse decls)) =
-	let newEnv = addPat vi pat (extendEnv vi env decls) in
-	Alt (relabel newEnv pat) (relabel newEnv rhs) (relabel newEnv ds)
+    let (irrefutableDeclIds,declEnv) = extendEnv vi env decls
+        (irrefutableIds,newEnv) = 
+          addPat Refutable vi pat declEnv
+    in
+      Alt (relabel newEnv pat) (relabel newEnv rhs) 
+        (addVars newEnv (nubBy (\x y -> show x == show y) -- for scope 
+          (irrefutableDeclIds++irrefutableIds)) 
+        (relabel newEnv ds))
 
 instance Relabel Exp where
   relabel env (ExpScc str exp)  = ExpScc str (relabel env exp)
@@ -252,21 +271,32 @@ instance Relabel Exp where
   relabel env (ExpFatbar e1 e2) = ExpFatbar (relabel env e1) (relabel env e2)
   relabel env (ExpFail)         = ExpFail
   relabel env (ExpLambda p pats exp) =
-	let newEnv = foldr (addPat vi) env pats in
-	ExpLambda p (map (relabel newEnv) pats) (relabel newEnv exp)
+	let (irrefutableIds,newEnv) = 
+              foldrPat (addPat Refutable vi) env pats in
+	ExpLambda p (map (relabel newEnv) pats) 
+          ((if null irrefutableIds 
+             then id else ExpLet p (addVars newEnv irrefutableIds noDecls))
+            (relabel newEnv exp))
   relabel env (ExpLet p ds@(DeclsParse decls) exp) =
-	let newEnv = extendEnv vi env decls in
-	ExpLet p (relabel newEnv ds) (relabel newEnv exp)
+	let (irrefutableIds,newEnv) = extendEnv vi env decls in
+	ExpLet p (addVars newEnv irrefutableIds (relabel newEnv ds)) 
+          (relabel newEnv exp)
   relabel env (ExpDo p stmts) =
 	ExpDo p (doStmts env stmts)
     where doStmts env [] = []
 	  doStmts env (s@(StmtExp _):ss) = relabel env s: doStmts env ss
 	  doStmts env (s@(StmtBind pat _):ss) =
-		let newEnv = addPat vi pat env in
-		relabel newEnv s: doStmts newEnv ss
+		let (irrefutableIds,newEnv) = addPat Refutable vi pat env in
+		relabel newEnv s : 
+                (if null irrefutableIds 
+                   then id 
+                   else (StmtLet (addVars newEnv irrefutableIds noDecls):))
+                  (doStmts newEnv ss)
 	  doStmts env (s@(StmtLet (DeclsParse decls)):ss) =
-		let newEnv = extendEnv vi env decls in
-		relabel newEnv s: doStmts newEnv ss
+		let (irrefutableIds,newEnv) = extendEnv vi env decls 
+                    StmtLet reDecls = relabel newEnv s
+                in (StmtLet (addVars newEnv irrefutableIds reDecls) 
+                   : doStmts newEnv ss)
   relabel env (ExpCase p exp alts) =
 	ExpCase p (relabel env exp) (map (relabel env) alts)
   relabel env (ExpIf p cond thn els) =
@@ -277,7 +307,7 @@ instance Relabel Exp where
 	ExpRecord (relabel env exp) (map (relabel env) fields)
   relabel env (ExpApplication p exps) =
 	ExpApplication p (map (relabel env) exps)
-  relabel env (ExpVar p id)   = ExpVar p (lookEnv env id)
+  relabel env (ExpVar p id) = ExpVar p (lookEnv env id)
   relabel env (ExpCon p id)   = ExpCon p (lookEnv env id)
   relabel env (ExpVarOp p id) = ExpVarOp p (lookEnv env id)
   relabel env (ExpConOp p id) = ExpConOp p (lookEnv env id)
@@ -304,3 +334,14 @@ relabelPosIds = map (\(p,i)->(p,mkLambdaBound i))
 -- of a list of position/id pairs from the TokenId type to TraceId type.
 relabelRealPosIds :: Environment -> [(Pos,TokenId)] -> [(Pos,TraceId)]
 relabelRealPosIds env = map (\(p,i)->(p,lookEnv env i))
+
+
+addVars :: Environment -> [TokenId] -> Decls TraceId -> Decls TraceId
+addVars env irrefutableIds (DeclsParse ds) =
+  DeclsParse (map mkDef irrefutableIds ++ ds)
+  where
+  mkDef id = DeclFun noPos traceId
+               [Fun [] 
+                 (Unguarded (ExpVar noPos (modLambdaBound traceId))) noDecls]
+    where  
+    traceId = lookEnv env id

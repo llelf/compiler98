@@ -28,8 +28,8 @@ import PackedString (unpackPS)
 import Char(isAlphaNum)
 import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
-import TraceId
-import AuxFile (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
+import TraceId(TraceId,hasInfo,arity,isLambdaBound,tokenId)
+import AuxTypes (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
 
 
 prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
@@ -39,7 +39,7 @@ prettyPrintTraceId flags pp =
   pp PPInfo{withPositions = False
            ,indent = sShowIndent flags
            ,id2str = id2strTraceId
-           ,tyVar2str = show
+           ,tyVar2str = id2strTraceId -- show
            ,isFunctionArrow = (\tr-> tokenId tr == t_Arrow)
            ,isList = (\tr-> tokenId tr == t_List)
            ,maybeTuple = maybeTupleTraceId}
@@ -48,11 +48,10 @@ prettyPrintTraceId flags pp =
                       then show (tokenId t)
                       else (reverse . unpackPS . extractV) (tokenId t)
                     ) ++
-                    ( case t of
-                        (_,Nothing) -> ""
-                        _           -> "{-"++ show (arity t) ++"/"++
-			        ( if isLambdaBound t then "lam-}" else "let-}" )
-                    )
+                    ( if hasInfo t 
+                        then "{-"++ show (arity t) ++"/"++
+			     ( if isLambdaBound t then "lam-}" else "let-}" )
+                        else "")
   maybeTupleTraceId t = case tokenId t of
                           TupleId n -> Just n
                           _         -> Nothing
@@ -556,7 +555,7 @@ ppDecl info (DeclPat alt) = group $ ppAlt info "=" alt
 ppDecl info (DeclFun pos fun funs) =
   group $
     ppPos info pos <>
-    (sep line . map (ppFun info fun) $ funs)
+    (sep line . map (ppFun info fun) $ funs) 
 
 ppDecl info (DeclIgnore s) =
   text ("{- Ignoring " ++ s ++ " -}")
