@@ -2,6 +2,6 @@ module Time where
 
 data TimeDiff = TimeDiff {
     tdYear, tdMonth, tdDay, tdHour, tdMin, tdSec :: Int,
-    tdPicoSec                                    :: Integer
+    tdPicosec                                    :: Integer
     } deriving (Eq, Ord, Read, Show)
 
