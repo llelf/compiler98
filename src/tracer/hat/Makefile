@@ -1,6 +1,7 @@
 include Makefile.inc
 
-OBJDIR = ${BUILDDIR}/${OBJ}/hat
+OBJDIR	= ${BUILDDIR}/${OBJ}/hat
+DEST	= $(LIBDIR)/$(MACHINE)
 
 MALCLIBS = nodecache.c minisocklib.c utils.c browsercomms.c
 THORLIBS = nodelist.c menu.c hatfileops.c FunTable.c Expressions.c hashtable.c observe.c
@@ -9,11 +10,11 @@ MALCOBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(MALCLIBS))
 THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 
 
-PROGS = hat-stack hat-connect hat-check hat-observe hat-detect hat-checki
+PROGNAMES = hat-stack hat-connect hat-check hat-observe hat-detect hat-checki
+PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
 all: $(OBJDIR) $(PROGS)
 install: $(OBJDIR) $(PROGS)
-	$(INSTALL) $(PROGS) $(LIBDIR)/$(MACHINE)
 objdir: $(OBJDIR)
 objs: $(MALCOBJS) $(THORLIBS) $(patsubst %, %.o, $(PROGS))
 clean:
@@ -31,16 +32,17 @@ $(MALCOBJS) : $(OBJDIR)/%.o : %.c
 $(OBJDIR)/nodecache.o: nodecache.h
 $(OBJDIR)/utils.o: utils.h 
 $(OBJDIR)/browsercomms.o: browsercomms.h
-hat-connect: hat-connect.c browsercomms.h $(MALCOBJS)
+$(DEST)/hat-connect: hat-connect.c browsercomms.h $(MALCOBJS)
 	$(CC) $(OPT) -I$(INCDIR) -DPRELSRCDIR=$(PRELSRCDIR) hat-connect.c \
-		-o hat-connect $(MALCOBJS)
-hat-stack: hat-stack.c utils.h $(MALCOBJS)
-	$(CC) $(OPT) -I$(INCDIR) -o hat-stack hat-stack.c $(OBJDIR)/utils.o
+		-o $(DEST)/hat-connect $(MALCOBJS)
+$(DEST)/hat-stack: hat-stack.c utils.h $(MALCOBJS)
+	$(CC) $(OPT) -I$(INCDIR) hat-stack.c $(OBJDIR)/utils.o \
+		-o $(DEST)/hat-stack
 
 
 # Colin's libraries and tools
-hat-check: hat-check.c
-	$(CC) -o hat-check hat-check.c
+$(DEST)/hat-check: hat-check.c
+	$(CC) hat-check.c -o $(DEST)/hat-check
 
 
 # Thorsten's libraries and tools
@@ -58,11 +60,14 @@ $(OBJDIR)/hashtable.o: hashtable.h
 $(OBJDIR)/observe.o :  $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
 $(OBJDIR)/menu.o : menu.h $(OBJDIR)/Expressions.o
 $(OBJDIR)/nodelist.o : nodelist.h FunTable.h hatfileops.h Expressions.h
-hat-detect: hat-detect.c $(OBJDIR)/hatfileops.o $(OBJDIR)/observe.o
-	$(CC) $(LINKFLAGS) hat-detect.c -o hat-detect $(THOROBJS)
-hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
-	$(CC) $(LINKFLAGS) hat-observe.c -o hat-observe $(THOROBJS) $(ncurses)
-hat-checki: hat-checki.c $(OBJDIR)/hatfileops.o
-	$(CC) $(LINKFLAGS) hat-checki.c -o hat-checki $(THOROBJS) $(ncurses)
+$(DEST)/hat-detect: hat-detect.c $(OBJDIR)/hatfileops.o $(OBJDIR)/observe.o
+	$(CC) $(LINKFLAGS) hat-detect.c $(THOROBJS) \
+		-o $(DEST)/hat-detect
+$(DEST)/hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
+	$(CC) $(LINKFLAGS) hat-observe.c $(THOROBJS) $(ncurses) \
+		-o $(DEST)/hat-observe
+$(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatfileops.o
+	$(CC) $(LINKFLAGS) hat-checki.c $(THOROBJS) $(ncurses) \
+		-o $(DEST)/hat-checki
 
 
