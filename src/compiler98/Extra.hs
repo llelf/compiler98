@@ -6,12 +6,7 @@ import List
 import Maybe
 import IO (hPutStr,stderr)
 import Error (exit)
-#if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
-#endif
-#if defined (__GLASGOW_HASKELL__) || defined(__HUGS__)
-import IOExts (trace)
-#endif
+import SysDeps (trace)
 
 mapListSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapListSnd f = map (mapSnd f)
