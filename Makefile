@@ -2,7 +2,7 @@
 include Makefile.inc
 .SUFFIXES: 		# To remove default rules like .cpp -> C++
 
-VERSION = 1.06
+VERSION = 1.07
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
