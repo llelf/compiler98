@@ -41,9 +41,9 @@ CFILES_TRICKY	= $(patsubst %.hs, %.c, ${SRCS_TRICKY})
 extra:  ${OBJS_TRICKY}
 cfiles: ${CFILES_TRICKY}
 ${OBJS_TRICKY}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c  $(PART_FLAGS) $(LIB_FLAGS) -o $@ $<
+	$(HC) -c  $(LIB_FLAGS) -o $@ $<
 ${CFILES_TRICKY}: %.c : %.hs
-	$(HC) -C  $(PART_FLAGS) $(LIB_FLAGS) $<
+	$(HC) -C  $(LIB_FLAGS) $<
 
 cleanExtraC:
 	rm -f ${CFILES_TRICKY}
