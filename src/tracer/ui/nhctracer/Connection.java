@@ -20,12 +20,17 @@ public class Connection {
     error = null;
     this.host = host;
     this.port = port;
-    try {
-      server = new Socket(host, port);
-    }
-    catch (IOException e) { 
-      error = "Cannot connect to the server. Please try later.";
-      return;
+    for (int i = 0; i <= 20; i++) {
+      try {
+	server = new Socket(host, port);
+	break;
+      } catch (IOException e) { 
+	if (i==20) {
+	  error = "Cannot connect to trace.";
+	  return;
+	}
+      }
+      try { Thread.sleep(100); } catch (InterruptedException ex) {}
     }
     try { 
       in = new BufferedReader(new InputStreamReader(server.getInputStream()));
@@ -35,7 +40,7 @@ public class Connection {
       try { 
 	server.close(); 
       } catch (IOException e2) {}
-      error = "Cannot open input/output streams to the server. Please try later.";
+      error = "Cannot connect to trace";
       return;
     }
     // Attempt to read a token.

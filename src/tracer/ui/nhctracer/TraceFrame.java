@@ -2,7 +2,6 @@ package nhctracer;
 
 import java.awt.*;
 import java.awt.event.*;
-import java.applet.*;
 import java.io.*;
 import java.util.*;
 import java.net.*;
@@ -10,21 +9,21 @@ import java.net.*;
 public class TraceFrame extends Frame {
   MenuBar menuBar;
   
-  Menu fileMenu, optionMenu;  // viewMenu, demoMenu, helpMenu;
+  Menu fileMenu, optionMenu;  // viewMenu, helpMenu;
   
   // File menu items
-  MenuItem /* newWindowItem, */ serverItem, createScriptItem, endScriptItem;
-  MenuItem runScriptItem, msgScriptItem, /* loadDemoItem, printItem, */ exitItem;
+  MenuItem
+    connectToTraceItem, disconnectItem,
+    createScriptItem, endScriptItem, runScriptItem, msgScriptItem,
+    exitItem;
   
   // Options menu items
   MenuItem fontItem;
 
-  // Help menu items
-  // MenuItem aboutItem;
-  
+  // Help menu items  
   int port;
   String host;
-  String appTitle = "Hat 1.0";
+  String appTitle = "Hat 1.04 Trail Browser";
 
   MainPanel mainPanel;
 
@@ -35,8 +34,6 @@ public class TraceFrame extends Frame {
   TraceFrame me;
   PrintWriter script;
   ActionHandler handler;
-  // DemoHandler demoHandler;
-  Hashtable demoTable;
   boolean listenersEnabled = true;
 
   public TraceFrame(String host,
@@ -56,15 +53,16 @@ public class TraceFrame extends Frame {
     // editMenu = new Menu("Edit"); menuBar.add(editMenu);
     optionMenu = new Menu("Options"); menuBar.add(optionMenu);
     // viewMenu = new Menu("View"); menuBar.add(viewMenu);
-    // demoMenu = new Menu("Demo");
     // helpMenu = new Menu("Help"); //menuBar.add(helpMenu);
 	
     handler = new ActionHandler();
-    // demoHandler = new DemoHandler();
-    // newWindowItem = createMenuItem("New window", fileMenu, handler, true, null);
-    serverItem =
-      createMenuItem("Change server/port", fileMenu, handler, true,
-                     null);
+    // serverItem =
+    //   createMenuItem("Change server/port", fileMenu, handler, true,
+    //                  null);
+    connectToTraceItem =
+      createMenuItem("Connect to trace", fileMenu, handler, true, null);
+    disconnectItem =
+      createMenuItem("Disconnect", fileMenu, handler, true, null);
     createScriptItem =
       createMenuItem("Create script", fileMenu, handler, true,
                      new MenuShortcut(KeyEvent.VK_S));
@@ -77,7 +75,6 @@ public class TraceFrame extends Frame {
     msgScriptItem =
       createMenuItem("Add script message", fileMenu, handler, true,
                      new MenuShortcut(KeyEvent.VK_M));
-    // loadDemoItem = createMenuItem("Load demo programs", fileMenu, handler, true, null);
     // printItem = createMenuItem("Print", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_P));
     exitItem = createMenuItem("Exit", fileMenu, handler, true, null);
 
@@ -90,23 +87,21 @@ public class TraceFrame extends Frame {
     // optionMenu.add(createCheckboxMenuItem(Options.arrow, true));
     // optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
     
-    // aboutItem = createMenuItem("About", helpMenu, handler, true, null);
-
     // menuBar.setHelpMenu(helpMenu);
 	
     setTitle(appTitle);
 
     mainPanel = new MainPanel(this);
 
-    connect = new Button("Connect");
-    connect.addActionListener(handler);
-    disconnect = new Button("Disconnect");
-    disconnect.addActionListener(handler);
+    // connect = new Button("Connect");
+    // connect.addActionListener(handler);
+    // disconnect = new Button("Disconnect");
+    // disconnect.addActionListener(handler);
 
     Panel pb = new Panel();
     pb.setLayout(new FlowLayout());
-    pb.add(connect);
-    pb.add(disconnect);
+    // pb.add(connect);
+    // pb.add(disconnect);
 
     setLayout(new BorderLayout());
 
@@ -190,43 +185,50 @@ public class TraceFrame extends Frame {
     }
   }
 
-  /*
-  class DemoHandler implements ActionListener {
-    public void actionPerformed(ActionEvent evt) {
-      Object url = demoTable.get(evt.getActionCommand());
-      if (url == null) {
-	mainPanel.status.setText("Bad url in demo.");
-      } else {
-	runScript((String)url);
-      }
+  void connectToTrace(String filename) {
+    doDisconnect();
+    try {
+      Runtime.getRuntime().exec("hat-connect "+filename);
+      Thread.sleep(100);
+      doConnect();
+    } catch (IOException ex) {
+      enableListeners();
+      new ModalMessage(me, "Cannot open/read "+filename);
+    } catch (InterruptedException ex) {
+      enableListeners();
     }
   }
-  */
+  
+  class TraceFilter implements FilenameFilter {
+    public boolean accept(File dir, String name) {
+      return name.endsWith(".hat");
+    }
+  }
 
   class ActionHandler implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
       Object target = evt.getSource();
       if (target instanceof MenuItem) {
-	if (target == exitItem) {
-	  if (serverConnection != null) {
-	    mainPanel.outputPanel.disconnected();
-	    serverConnection = null;
-	    mainPanel.viewer.reset();
+	if (target == connectToTraceItem) {
+	  FileDialog fd =
+	    new FileDialog(me, "Connect to trace", FileDialog.LOAD);
+	  fd.setVisible(true);
+	  if (fd.getFile() != null) {
+	    connectToTrace(fd.getDirectory()+fd.getFile());
 	  }
-	  System.exit(0);
+	} else if (target == disconnectItem) {
+	  doDisconnect();	
+	/*
 	} else if (target == serverItem) {
 	  ServerDialog sd = new ServerDialog(me, host, port);
 	  if (sd.server != null) {
 	    host = sd.server;
 	    port = sd.port;
 	  }
-	} /* else if (target == newWindowItem) {
-	  TraceFrame traceFrame = 
-	    new TraceFrame(host, port);
-	  traceFrame.setSize(600, 700);
-	  traceFrame.setVisible(true);
-	} */ else if (target == createScriptItem) {
-	  FileDialog fd = new FileDialog(me, "Create script file", FileDialog.SAVE);
+	 */
+	} else if (target == createScriptItem) {
+	  FileDialog fd =
+	    new FileDialog(me, "Create script file", FileDialog.SAVE);
 	  fd.setFilenameFilter(new ScriptFilter());
 	  fd.setVisible(true);
 	  if (fd.getFile() != null) {
@@ -265,129 +267,46 @@ public class TraceFrame extends Frame {
 	      script.println(new Events.MetaMessage(sm.message));
 	    }
 	  }
+	} else if (target == exitItem) {
+	  stop();
+	  System.exit(0);
 	} else if (target == fontItem) {
 	  if (fontDialog == null)
 	    fontDialog = new FontDialog(me, mainPanel.dbgPanel.ui);
 	  else
 	    fontDialog.show();
 	}
-       /* else if (target == loadDemoItem) {
-	  mainPanel.status.setText("Loading demo programs from the demo server, please wait...");
-	  try {
-	    String serverURL = System.getProperty("nhctracer.demoserver");
-	    if (serverURL == null)
-	      serverURL = "http://www.cs.york.ac.uk/fp/ART/demo/demo.dat";
-	    URL u = new URL(serverURL);
-	    URLConnection uc = u.openConnection();
-	    uc.setDoInput(true);
-	    uc.connect();
-	    BufferedReader file = new BufferedReader (new InputStreamReader(uc.getInputStream()));
-	    demoTable = new Hashtable();
-	    String line;
-	    Stack menus = new Stack();
-	    Menu curMenu = demoMenu;
-	    while ((line = file.readLine()) != null) {
-	      if (line.equals("push")) {
-	        menus.push(curMenu);		
-		curMenu = new Menu(file.readLine());
-		((Menu)menus.peek()).add(curMenu);
-	      } else if (line.equals("pop")) {
-		curMenu = (Menu)menus.pop();
-	      } else {
-		MenuItem mi = new MenuItem(line);
-		mi.addActionListener(demoHandler);
-		String url = file.readLine();
-		demoTable.put(line, url);
-		curMenu.add(mi);
-	      }
-	    }
-	    menuBar.add(demoMenu);
-	    loadDemoItem.setEnabled(false);
-	    mainPanel.status.setText("Demo programs loaded, see the Demo menu.");
-	  } catch (Exception e) {
-	    mainPanel.status.setText("Error loading demo programs.");
-	    new ModalMessage(me, "Cannot load demo programs (" + e + ")");
-	  }
-	} else if (target == aboutItem) {
-	  AboutDialog about = new AboutDialog(me, appTitle, appAuthor, appVersion);
-	}
-	*/
-      } else if (target == connect) {
-	if (serverConnection == null) {
-	  mainPanel.status.setText("Connecting to server. Please wait.");
-	  serverConnection = new Connection(host, port);
-	  if (serverConnection.error == null) {
-	    if (script != null)
-	      script.println(new Events.MetaConnect(host, port));
-	    mainPanel.outputPanel.connected(serverConnection);      
-	  } else {
-	    mainPanel.status.setText(serverConnection.error);
-	    serverConnection = null;
-	  }
-	} else {
-	  mainPanel.status.setText("Already connected");
-	}
-      } else if (target == disconnect) {
-	if (serverConnection == null) {
-	  mainPanel.status.setText("Not connected");
-	} else {
-	  if (script != null)
-	    script.println(new Events.MetaDisconnect());
-	  mainPanel.outputPanel.disconnected();      
-	  serverConnection = null;
-	  mainPanel.viewer.reset();
-	}
+      // } else if (target == connect) {
+      //   doConnect();
+      // } else if (target == disconnect) {
+      //   doDisconnect();
       }
     }
   }
 
+  void doConnect() {
+    if (serverConnection == null) {
+      serverConnection = new Connection(host, port);
+      if (serverConnection.error == null) {
+	if (script != null)
+	  script.println(new Events.MetaConnect(host, port));
+	mainPanel.outputPanel.connected(serverConnection);      
+      } else {
+	mainPanel.status.setText(serverConnection.error);
+	serverConnection = null;
+      }
+    }
+  }
+  
+  void doDisconnect() {
+    if (script != null)
+      script.println(new Events.MetaDisconnect());
+    stop();
+  }
+  
   public void destroy() {
     dispose();
     System.exit(0);
   }
 }
 
-/*
-class AboutDialog extends Dialog implements ActionListener {
-  public AboutDialog(Frame parent, String title, String author, String version) {
-    super(parent, title, true);
-
-    int i;
-    int width, height;
-
-    setLayout(new BorderLayout());
-
-    Panel titlePanel = new Panel();
-    Panel buttonPanel = new Panel();
-
-    FontMetrics m = getFontMetrics(getFont());
-
-    width = m.stringWidth(title);
-    if((i=m.stringWidth(author)) > width) width = i;
-    if((i=m.stringWidth(version)) > width) width = i;
-	
-    height = m.getHeight();
-
-    setSize((width*3)/2, height*10);
-
-    titlePanel.setLayout(new GridLayout(3, 1));
-    titlePanel.add(new Label(title, Label.CENTER));
-    titlePanel.add(new Label(author,Label.CENTER));
-    titlePanel.add(new Label(version,Label.CENTER));
-
-    buttonPanel.setLayout(new BorderLayout());
-    Button ok = new Button("OK");
-    buttonPanel.add(ok, BorderLayout.CENTER);
-    ok.addActionListener(this);
-
-    add(titlePanel, BorderLayout.CENTER);
-    add(buttonPanel, BorderLayout.CENTER);
-
-    setVisible(true);
-  }
-
-  public void actionPerformed(ActionEvent evt) {
-    dispose();
-  }  
-}
-*/

@@ -63,7 +63,7 @@ public class OutputPanel extends Panel {
     output = null;
     dbgPanel.serverConnection = serverConnection;
     dbgPanel.ui.resetColors();
-    status.setText("Connected to server");
+    status.setText("Connected to trace");
     String t = serverConnection.nextToken();
     if (t.equals("Error")) {
       dbgPanel.connected();
