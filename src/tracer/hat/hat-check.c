@@ -389,37 +389,37 @@ nodes() {
       switch (trk) {
       case APP:
         { int arity = readarity();
-	  if (amode) printf("Application %d\t\t",arity);
+	  if (amode) printf(" Application %d \t",arity);
 	  for (; arity-- > -2;)
 	    dopointer(TR, readpointer(), TR, offset);
 	}
 	dopointer(SR, readpointer(), TR, offset);
 	break;
       case NAM:
-        if (amode) printf(" Name\t\t\t");
+        if (amode) printf(" Name          \t");
         dopointer(TR, readpointer(), TR, offset);
 	dopointer(NT, readpointer(), TR, offset);
 	dopointer(SR, readpointer(), TR, offset);
 	break;
       case IND:
-        if (amode) printf(" Indirection\t\t");
+        if (amode) printf(" Indirection   \t");
 	dopointer(TR, readpointer(), TR, offset);
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case HIDDEN:
-        if (amode) printf(" Hidden\t\t\t");
+        if (amode) printf(" Hidden        \t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATA:
-        if (amode) printf(" SAT(A) \t\t");
+        if (amode) printf(" SAT(A)        \t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATB:
-        if (amode) printf(" SAT(B) \t\t");
+        if (amode) printf(" SAT(B)        \t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATC:
-        if (amode) printf(" SAT(C) \t\t");
+        if (amode) printf(" SAT(C)        \t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       }
