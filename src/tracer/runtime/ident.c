@@ -59,7 +59,7 @@ dumpModInfo (FILE *dumpfile, ModInfo *modinfo)
 void
 dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
 {
-    fpos_t mypos, idpos;
+    FileOffset mypos, idpos;
     int i=0;
 
     if (modinfo->fileoffset) {
@@ -70,7 +70,7 @@ dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
     }
 
     /* dump this module info */
-    fgetpos(dumpfile,&mypos);
+    mypos = ftell(dumpfile);
     mypos = htonl(mypos);	/* ensure network byte-ordering */
     fprintf(dumpfile,"%c%s%c%s%c", (modinfo->trusted ? 0x21 : 0x20)
                     ,modinfo->modname, 0x0, modinfo->srcfile, 0x0);
@@ -80,7 +80,7 @@ dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
     {
         IdEntry *id = modinfo->idtable;
         while (id->constr != 0) {
-            fgetpos(dumpfile,&idpos);
+            idpos = ftell(dumpfile);
             idpos = htonl(idpos);	/* ensure network byte-ordering */
             fputc(0x46,dumpfile);
             fwrite(id->name, sizeof(char), 1+strlen(id->name), dumpfile);
@@ -89,7 +89,7 @@ dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
             } else {
               fprintf(stderr,"IDENTRY: %s (module %s not dumped)\n"
                             ,id->name,id->srcmod->modname);
-              fwrite(&mypos, sizeof(fpos_t), 1, dumpfile);
+              fwrite(&mypos, sizeof(FileOffset), 1, dumpfile);
             }
             fputc((char)id->pri,dumpfile);
             i = htonl(id->srcpos);
