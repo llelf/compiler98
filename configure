@@ -5,7 +5,7 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 12x (date 9911xx)"
+CONFIGVERSION="v1.0 pre-release 12x (date 9912xx)"
 HMAKEVERSION="v1.5 (date 991005)"
 
 if uname >/dev/null 2>&1
@@ -380,14 +380,14 @@ then
     echo -n "nhc98 "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
-    sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
     echo -n "hmake "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
-    sed -e "s|ArchDir |$BUILDBINDIR/|"   >$BUILDBINDIR/hmake
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
     echo -n "greencard "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
-    sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+    sed -e "s|ScriptDir |$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard
@@ -505,21 +505,22 @@ else	# [ "$INSTALL" = "yes" ]
     echo -n "    nhc98 "
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
-    sed -e "s|ArchDir ||" |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98
     echo -n "hmake "
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
-    sed -e "s|ArchDir ||"  >$BINDIR/hmake
+    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
     echo -n "nhc98tracer "
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98tracer.inst |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98tracer
     echo -n "greencard "
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
-    sed -e "s|ArchDir ||" |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/greencard
     echo -n "hp2graph "
     rm -f $BINDIR/hp2graph; ln $BINDIR/greencard $BINDIR/hp2graph

@@ -1,8 +1,9 @@
 #!/bin/sh -e
 # Starts up the tracer user-interface
 
+NHC98BINDIR=${NHC98BINDIR-ScriptDir}
 NHC98LIBDIR=${NHC98LIBDIR-ExecutableDir}
-MACHINE=`harch`
+MACHINE=`${NHC98BINDIR}/harch`
 
 if [ ! -d $NHC98LIBDIR/$MACHINE ]
 then

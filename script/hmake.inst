@@ -4,7 +4,8 @@
 # hacked by Niklas Röjemo, rojemo@cs.chalmers.se
 # Current Author: Malcolm Wallace, 1998-1999, Malcolm.Wallace@cs.york.ac.uk 
 
-MACHINE=${MACHINE-"`ArchDir harch`"}
+SCRIPTDIR=${SCRIPTDIR-ScriptDir}
+MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
 
 MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}

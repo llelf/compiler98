@@ -1,6 +1,7 @@
 #!/bin/sh
 #	simple redirection script to find the correct executable
 #	for this machine architecture
+NHC98BINDIR=${NHC98BINDIR-ScriptDir}
 NHC98LIBDIR=${NHC98LIBDIR-ExecutableDir}
-MACHINE=${MACHINE-"`ArchDir harch`"}
+MACHINE=${MACHINE-"`$NHC98BINDIR/harch`"}
 exec $NHC98LIBDIR/$MACHINE/`basename $0` $@

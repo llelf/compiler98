@@ -3,15 +3,17 @@
 #       nhc98 script for any architecture
 #       uses byte code back-end
 #
+# NHC98BINDIR is where to find driver scripts,
 # NHC98LIBDIR is where to find executable programs and libraries,
 # NHC98INCDIR is where to find the hi files for the standard prelude,
 # MACHINE is used to choose which architecture's binaries and
-#               libraries to use
+#               libraries to use.
 
 
+NHC98BINDIR=${NHC98BINDIR-ScriptDir}
 NHC98LIBDIR=${NHC98LIBDIR-ExecutableDir}
 NHC98INCDIR=${NHC98INCDIR-IncludeDir}
-MACHINE=${MACHINE-"`ArchDir harch`"}
+MACHINE=${MACHINE-"`$NHC98BINDIR/harch`"}
 
 if [ ! -d $NHC98LIBDIR/$MACHINE ]
 then
