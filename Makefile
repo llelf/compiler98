@@ -226,7 +226,7 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
 $(PRAGMA): script/hmake-PRAGMA.hs
-	$(BUILDWITH) $(BUILDOPTS) -o $@ $<
+	$(BUILDWITH) $(shell echo $(BUILDOPTS)) -o $@ $<
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
