@@ -25,6 +25,9 @@ module NHC.Internal
   , _mkIOok10
   , _mkIOok11
   , _mkIOok12
+  , _mkIOok13
+  , _mkIOok14
+  , _mkIOok15
   , unsafePerformIO
 
   -- Rational stuff
@@ -81,6 +84,13 @@ _mkIOok11 :: (l->k->j->i->h->g->f->e->d->c->b->a)
           -> (l->k->j->i->h->g->f->e->d->c->b->IO a)
 _mkIOok12 :: (m->l->k->j->i->h->g->f->e->d->c->b->a)
           -> (m->l->k->j->i->h->g->f->e->d->c->b->IO a)
+_mkIOok13 :: (n->m->l->k->j->i->h->g->f->e->d->c->b->a)
+          -> (n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
+_mkIOok14 :: (o->n->m->l->k->j->i->h->g->f->e->d->c->b->a)
+          -> (o->n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
+_mkIOok15 :: (p->o->n->m->l->k->j->i->h->g->f->e->d->c->b->a)
+          -> (p->o->n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
+
 
 _mkIOok0  fn = IO (\_->Right $! fn ())
 _mkIOok1  fn = \a-> IO (\_->Right $! fn a)
@@ -98,6 +108,12 @@ _mkIOok11 fn = \a b c d e f g h i j k->
                IO (\_->Right $! fn a b c d e f g h i j k)
 _mkIOok12 fn = \a b c d e f g h i j k l->
                IO (\_->Right $! fn a b c d e f g h i j k l)
+_mkIOok13 fn = \a b c d e f g h i j k l m->
+               IO (\_->Right $! fn a b c d e f g h i j k l m)
+_mkIOok14 fn = \a b c d e f g h i j k l m n->
+               IO (\_->Right $! fn a b c d e f g h i j k l m n)
+_mkIOok15 fn = \a b c d e f g h i j k l m n o->
+               IO (\_->Right $! fn a b c d e f g h i j k l m n o)
 
 -- unsafePerformIO relies on the internal representation of the IO monad.
 unsafePerformIO :: IO a -> a
