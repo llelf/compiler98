@@ -1,6 +1,7 @@
 module DeriveRead(deriveRead) where
 
 import Maybe
+import Extra
 import Syntax
 import MkSyntax(mkInt)
 import IntState

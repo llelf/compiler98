@@ -2,6 +2,7 @@ module DeriveShow (deriveShow) where
 
 import List
 import Maybe
+import Extra
 import Syntax
 import MkSyntax(mkInt)
 import IntState
