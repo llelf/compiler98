@@ -1,30 +1,39 @@
 include Makefile.inc
 
 OBJDIR = ${BUILDDIR}/obj/interpreter
-TARGET = ${DST}/hi$(EXE)
+TARGET = ${DST}/HInteractive$(EXE)
 
-SRCS   = hi.hs HmakeConfig.hs SimpleLineEditor.hs
+SRCS   = HInteractive.hs HmakeConfig.hs SimpleLineEditor.hs \
+	 Unlit.hs LexModule.hs
+
+#CFILES = $(patsubst %.hs, *.c, $(SRCS))
 
 
 ifeq "${HC}" "ghc"
-HFLAGS = -fglasgow-exts -syslib lang -syslib posix
+HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts -syslib exts -syslib posix)
 export HFLAGS
 endif
 ifeq "${HC}" "hbc"
 endif
+ifeq "${HC}" "nhc98"
+HFLAGS = -p
+export HFLAGS
+endif
 
 all: $(TARGET)
 install: $(TARGET)
-cfiles:
-	$(LOCAL)hmake -nhc98 -C hi.hs
+cfiles: $(SRCS)
+	$(LOCAL)hmake -clean HInteractive.hs
+	$(LOCAL)hmake -nhc98 -C HInteractive.hs
+	touch cfiles
 clean:
-	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/hi$(EXE)
+	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
 	-rm -f *.c $(TARGET)
 
 $(TARGET): $(OBJDIR) $(SRCS)
-	$(LOCAL)hmake -$(HC) hi -d$(OBJDIR) $(shell echo $(BUILDOPTS))
-	mv $(OBJDIR)/hi$(EXE) $(TARGET)
+	$(LOCAL)hmake -$(HC) HInteractive -d$(OBJDIR) $(shell echo $(BUILDOPTS))
+	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 
 $(OBJDIR):

@@ -1,12 +1,13 @@
+-- Known Haskell compilers and their locations are all automatically
+-- generated into an hmake.config file which is added to the shell
+-- environment before calling this program, therefore we just need to
+-- read the appropriate environment variables.
+
 -- This module controls the configuration parameters for hmake-interactive
 -- by (1) allowing environment variables to override default settings
 --    (2) taking care of the small differences between Haskell compilers
-module HmakeConfig where
 
--- Known Haskell compilers and their locations are all automatically
--- generated into LocalConfig.
---import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
---                    hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
+module HmakeConfig where
 
 #ifdef __HBC__
 import UnsafePerformIO
@@ -25,8 +26,14 @@ withDefault name def = unsafePerformIO $
              if null val then return def else return val)
          (\e-> return def)
 
--- Definitions previously imported from LocalConfig
-hmakeversion = "INSTALLVER" `withDefault` "1.8 or better"
+-- Ensure that a string has a fixed length by truncating or padding with space
+fixlength n s | len > n   = take n s
+              | otherwise = s ++ replicate (n-len) ' '
+  where len = length s
+
+
+-- Definitions imported from the environment
+hmakeVersion = fixlength 18 ("INSTALLVER" `withDefault` "1.8 or better")
 builtby      = "BUILTBY"    `withDefault` "unknown"
 ghcKnown     = case "ghcknown" `withDefault` "no" of
                  "yes" -> True
@@ -42,7 +49,8 @@ hbcdir       = "HBCDIR" `withDefault` "unknown"
 nhc98dir     = "NHC98INCDIR" `withDefault` "unknown"
 ghcver       = read ("ghcsym" `withDefault` "0") `asTypeOf` 0
 ghclang      = read ("GHC" `withDefault` "0") `asTypeOf` 0
-defaultHc    = "COMP" `withDefault` "nhc98"
+
+defaultCompiler = toComp ("HC" `withDefault` ("COMP" `withDefault` "nhc98"))
 
 
 -- What compilers are possible choices?
@@ -70,12 +78,15 @@ preludePaths c  = case c of
     Hbc   -> hbcincpath
     Ghc   -> ghcincpath
     _     -> []
+nonstdCoerceImport c  = case c of
+    Nhc98 -> "import NonStdUnsafeCoerce"
+    Hbc   -> ""
+    Ghc   -> "import PrelGHC(unsafeCoerce#)"
+    _     -> ""
 nonstdCoerce c  = case c of
-    Nhc98 -> "import NonStdUnsafeCoerce\n\ 
-              \coerce=unsafeCoerce"
-    Hbc   -> "coerce = id	-- wrong"
-    Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
-             \coerce :: a -> b\ncoerce = unsafeCoerce#"
+    Nhc98 -> "\ncoerce=unsafeCoerce\n"
+    Hbc   -> "\ncoerce = id	-- wrong\n"
+    Ghc   -> "\ncoerce :: a -> b\ncoerce = unsafeCoerce#\n"
     _     -> ""
 nonstdShow c  = case c of
     Nhc98 -> ""
@@ -96,39 +107,17 @@ defaultOptions c = case c of
     _     -> []
 
 
--- Ensure that a string has a fixed length by truncating or padding with space
-fixlength n s | len > n   = take n s
-              | otherwise = s ++ replicate (n-len) ' '
-  where len = length s
-
-hmakeVersion = fixlength 18 hmakeversion
-
-
--- This defines the default compiler hmake will call if none is specified
--- on the commandline.  (First look in the HC variable from the environment,
--- and if it is empty, then select the compiler we used to build hmake.
--- Actually defaultHc, set in LocalConfig, can be either the config variable
--- "builtby" or simply "nhc98".)
-defaultCompiler = toComp ("HC" `withDefault` defaultHc)
-
-
 -- hbc, set up for either Haskell 1.3 or Haskell 98
 --     LMLDIR/HBCDIR is the base directory of your hbc installation
 --     hbcincpath is a list of directories containing .hi files
-
 hbcincpath =
   let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
   in [root++"/hlib1.3", root++"/hbc_library1.3"]
 
 
-
-
 -- nhc98
 --     nhc98incdir is a single directory containing standard .hi files
-
 nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
-
-
 
 
 -- GHC, set up for various versions of the Haskell language
@@ -169,21 +158,3 @@ ghcincpath =
       ,ghcincdir++"/win32"
       ,ghcincdir++"/posix"]
 
-
-
-{-
--- From here on down, definitions are added by the config script.
--- Change these if you like, but be warned that re-running the
--- autoconfiguring step will erase your changes.
-hmakeversion
-builtby
-ghcKnown
-hbcKnown
-nhcKnown
-hbcdir
-nhc98dir
-ghcdir
-ghcver
-ghclang
-defaultHc
--}
