@@ -459,12 +459,14 @@ renameFun (Fun pats rhs decls') =
  let decls = groupFun decls'
  in pushScope >>>
     	mapS0 (bindPat Var) pats >>>
+        pushScope >>>
     	bindDecls decls >>>
 	renameDecls decls >>>= \newdecls ->	-- do first, to get infix right
     unitS Fun =>>>
 	mapS renameExp pats =>>>
 	renameRhs rhs =>>>
         unitS newdecls >>>
+        popScope >>>
     popScope
 
 
