@@ -149,42 +149,40 @@ sample build times:
 <center>
 <table border=1><tr>
     <td></td>
-    <td colspan=4>ix86 machine:</td>
+    <td colspan=6>ix86 machine:</td>
     <td colspan=2>powerpc machine:</td>
 </tr><tr>
     <th></th>
-    <th colspan=2>500MHz</th>
-    <th colspan=2>2.4GHz</th>
-    <th colspan=2>1.3GHz</th>
+    <th colspan=2>Linux<br>500MHz</th>
+    <th colspan=2>Linux<br>2.4GHz</th>
+    <th colspan=2>Cygwin<br>2.4GHz</th>
+    <th colspan=2>MacOS X<br>1.3GHz</th>
 </tr><tr>
     <th>build<br>compiler</th>
     <th>basic</th><th>all</th>
     <th>basic</th><th>all</th>
     <th>basic</th><th>all</th>
+    <th>basic</th><th>all</th>
 </tr><tr>
-    <td>gcc/Linux</td><td align=right>9m</td><td align=right>26m</td>
-                      <td align=right>4m</td><td align=right>12m</td>
-                      <td>9m</td><td>-</td>
+    <td>gcc</td><td align="right">9m</td><td align="right">26m</td>
+                <td align="right">4m</td><td align="right">12m</td>
+                <td align="right">22m</td><td align="right">-</td>
+                <td align="right">9m</td><td align="right">-</td>
 </tr><tr>
-    <td>ghc/Linux</td><td align=right>31m</td><td align=right>1h11</td>
-                      <td align=right>10m</td><td align=right>26m</td>
-                      <td>23m</td><td>-</td>
+    <td>ghc</td><td align="right">31m</td><td align="right">1h11</td>
+                <td align="right">10m</td><td align="right">26m</td>
+                <td align="right">37m</td><td align="right">118m</td>
+                <td align="right">23m</td><td align="right">-</td>
 </tr><tr>
-    <td>gcc/Cygwin</td><td align=right>-</td><td align=right>-</td>
-                      <td align=right>22m</td><td align=right>-</td>
-                      <td>-</td><td>-</td>
+    <td>hbc</td><td align="right">-</td><td align="right">-</td>
+                <td align="right">12m</td><td align="right">27m</td>
+                <td align="right">-</td><td align="right">-</td>
+                <td align="right">-</td><td align="right">-</td>
 </tr><tr>
-    <td>ghc/Cygwin</td><td align=right>-</td><td align=right>-</td>
-                      <td align=right>37m</td><td align=right>-</td>
-                      <td>-</td><td>-</td>
-</tr><tr>
-    <td>hbc/Linux</td><td align=right>-</td><td align=right>-</td>
-                      <td align=right>12m</td><td align=right>27m</td>
-                      <td>-</td><td>-</td>
-</tr><tr>
-    <td>nhc98/Linux</td><td align=right>50m</td><td align=right>3h33</td>
-                        <td align=right>23m</td><td align=right>1h15</td>
-                      <td>-</td><td>-</td>
+    <td>nhc98</td><td align="right">50m</td><td align="right">3h33</td>
+                  <td align="right">23m</td><td align="right">1h15</td>
+                  <td align="right">-</td><td align="right">-</td>
+                  <td align="right">-</td><td align="right">-</td>
 </tr></table>
 </center>
 
