@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.13 (CVS development version)"
-HMAKEVERSION="3.02 (2002-03-14)" export HMAKEVERSION
+HMAKEVERSION="3.03 (2002-03-25)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
@@ -320,6 +320,12 @@ main() {
   else echo "Executables need .exe suffix?               yes (detected)"
   fi
 
+  TRUE=/bin/true
+  if [ ! -x $TRUE ]
+  then TRUE=/usr/bin/true
+       echo "Found /usr/bin/true not /bin/true"
+  fi
+
   echo -n "Testing for the curses library:             "
   if [ "$CURSES" = "" ]
   then
@@ -483,6 +489,7 @@ then
       echo "EXE=$EXE";
       echo "CC=$CCC";
       echo "GHCSYM=`cat targets/$MACHINE/ghcsym`";
+      echo "TRUE=$TRUE";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Adding build scripts to"
