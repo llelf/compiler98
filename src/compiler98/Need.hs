@@ -440,7 +440,7 @@ bindClass _ = unitR
 bindField :: Field TokenId -> NeedLib -> NeedLib
 
 bindField (FieldExp pos var pat) = 
-  needTid pos Field var >>> bindTid Var var >>> bindPat pat
+  needTid pos Field var >>> needTid pos Var var >>> bindPat pat
 bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
 --bindField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
 --      show var ++
