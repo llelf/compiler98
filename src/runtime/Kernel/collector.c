@@ -72,7 +72,7 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
   hpBase = hpLowLimit = hpStart;
 
   cafptr = 0;
-  hpMoved = hpTotal = 0;
+  hpMoved = hpTotal = (int64_t)0;
   hpMaxSurvive = nogc = 0;
 
 

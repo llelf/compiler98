@@ -2,7 +2,7 @@
 #ifndef _MARK_H
 
 #include <inttypes.h>
-#ifndef int64_t
+#ifndef INT64_MIN
 #define int64_t	long int
 #endif			/* default down to 32 bits if 64 not available */
 
