@@ -8,8 +8,9 @@ import MkSyntax(mkDeclClass)
 import ParseLib
 import ParseLex
 import Parse2
-import TokenId(tNEED)
+import TokenId(tNEED,TokenId(..))
 import PreImp
+import List (intersperse)
 
 data ParseI st tid declneed rest =
 	  ParseEof  st
@@ -43,9 +44,10 @@ parseNeedAnnot =
         `orelse`
      parse Nothing
 
+
 parseInterface1 =
     ( \ (pos,modid) imports fixdecls rest -> (modid,imports,fixdecls,rest))
-                `parseChk` lit L_interface `apCut` aconid
+                `parseChk` lit L_interface `apCut` bigModId
                 `chkCut` lit L_where `chkCut` lcurl
                          `apCut` parseImpDecls
 			 `apCut` parseFixDecls
@@ -59,14 +61,14 @@ parseEof = Nothing `parseChk` optSemi `chk` rcurl
 parseInterface3 st hideFun =
   ParseEof st `parseChk` parseEof
     `orelse`
-  ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` aconid `apCut` parseRest
+  ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` bigModId `apCut` parseRest
     `orelse`
   (\st need rest -> ParseNeed st need rest) `parseAp` parseITopDecls st hideFun `apCut` parseNeedAnnot `apCut` parseRest
 
 parseInterface4 st hideFun =
   parseITopDecls st hideFun `into` \ st -> ParseEof st `parseChk` parseEof
 						`orelse`
-					   ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` aconid `apCut` parseRest
+					   ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` bigModId `apCut` parseRest
 
 parseITopDecls st hideFuns =
      optSemi `revChk` iterateSemi0 st semi (\st -> parseITopDecl st hideFuns)
@@ -122,7 +124,7 @@ parseUntilNeed st good bad input err =
    untilNeed [] = error "Internal error in parseUntilNeed"
    untilNeed ((pos,L_EOF,_,_):input) = good (ParseEof st) input err
    untilNeed ((_,L_interface,_,_):input) =
-     (ParseNext st `parseAp` optBang `ap` aconid `apCut` parseRest) good bad input err
+     (ParseNext st `parseAp` optBang `ap` bigModId `apCut` parseRest) good bad input err
    untilNeed ((_,L_LANNOT,_,_):(_,L_ACONID x,_,_):input) | x == tNEED =
      ((ParseNeed st . Just) `parseAp` parseNeedList `chk` rannot `apCut` parseRest) good bad input err
    untilNeed (_:input) = untilNeed input

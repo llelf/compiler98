@@ -36,13 +36,16 @@ lexId u r c xs =
     LEX_CONID mod ('.':'[':']':xs) -> (r,c+length mod+3,L_ACONID t_List,xs)
 	 -- !!! Compiler never emits qualified tuple identifiers, but maybe it ought to be recognised anyway
     LEX_CONID mod ('.':xs) | isLexId' xs ->
-      let c' = c+length mod+1 
-      in case lexOne u xs of
-     	  LEX_CONOP  op xs -> (r,c'+length op,L_ACONOP (qualify mod op), xs)
-    	  LEX_VAROP  op xs -> (r,c'+length op,L_AVAROP (qualify mod op), xs)
-    	  LEX_VARID var xs -> (r,c'+length var,L_AVARID (qualify mod var), xs)
-    	  LEX_CONID con ('#':xs) -> (r,c'+1+length con,L_ACONID (qualify mod ('#':con)), xs)
-    	  LEX_CONID con xs -> (r,c'+length con,L_ACONID (qualify mod con), xs)
+      let loop mod c' xs = case lexOne u xs of
+	    LEX_CONOP  op xs -> (r,c'+length op,L_ACONOP (qualify mod op), xs)
+	    LEX_VAROP  op xs -> (r,c'+length op,L_AVAROP (qualify mod op), xs)
+	    LEX_VARID var xs -> (r,c'+length var,L_AVARID (qualify mod var), xs)
+	    LEX_CONID con ('#':xs) -> (r,c'+1+length con,
+                                           L_ACONID (qualify mod ('#':con)), xs)
+	    LEX_CONID con ('.':xs) | isLexId' xs ->
+                                       loop (con++'.':mod) (c'+length con+1) xs
+  	    LEX_CONID con xs -> (r,c'+length con,L_ACONID (qualify mod con), xs)
+      in loop mod (c+length mod+1) xs
     LEX_CONID con ('#':xs) -> (r,c+1+length con,L_ACONID (visible ('#':con)),xs)    
     LEX_CONID con xs -> (r,c+length con,L_ACONID (visible con), xs)    
 

@@ -1,4 +1,4 @@
-module FileName where
+module FileName (fixFileName, fixFile) where
 
 import Argv
 
@@ -9,5 +9,7 @@ fixFile opts p file suf =
   then (case (p,last p) of
           ("",_)  -> ""
           (_,'/') -> p
-          (_,_)   -> p++"/") ++ file ++ '.':suf
+          (_,_)   -> p++"/") ++ toPath file ++ '.':suf
   else p ++ suf ++ '.':file
+
+toPath = map (\c-> if (c=='.') then '/' else c)

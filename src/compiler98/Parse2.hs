@@ -1,6 +1,9 @@
-module Parse2(parseConstr, parseContexts, parseDeriving, parseFixDecls
-             ,parseFixDecl,parseImpDecls, parseInst, parseSimple, parseType
-	     ,parseExports,parseStrict,   parsePragma) where
+module Parse2
+  ( parseConstr,  parseContexts, parseDeriving, parseFixDecls
+  , parseFixDecl, parseImpDecls, parseInst,     parseSimple, parseType
+  , parseExports, parseStrict,   parsePragma
+  , bigModId
+  ) where
 
 import Extra(pair,triple,noPos,Pos(..))
 import Lex
@@ -10,6 +13,8 @@ import ParseLib
 import ParseLex
 import SyntaxPos
 import TokenId(t_Arrow,t_Tuple,TokenId(..))
+import PackedString (PackedString,packString,unpackPS)
+import List (intersperse)
 
 parseExports =
     id `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar
@@ -19,7 +24,7 @@ parseExports =
     parse []
 
 parseExport =
-    (uncurry ExportModid) `parseChk` lit L_module `apCut` aconid	-- 1.3
+    (uncurry ExportModid) `parseChk` lit L_module `apCut` bigModId	-- 1.3
         `orelse`
  -- (uncurry ExportModid) `parseAp` aconid `chk` dotdot			-- 1.2
  --     `orelse`
@@ -29,19 +34,28 @@ parseImpDecls =
     manysSep semi parseImpDecl
 
 parseImpDecl =
-    Importas `parseChk` lit L_import `ap` nestedImport `chk` k_as
-                    `ap` aconid `ap` parseImpSpec           -- added in H98
+    Importas `parseChk` lit L_import `ap` bigModId
+                    `chk` k_as `ap` aconid `ap` parseImpSpec   -- added in H98
 	`orelse`
-    Import `parseChk` lit L_import `ap` nestedImport `ap` parseImpSpec
+    importas `parseChk` lit L_import `ap` aconid `ap` parseImpSpec
 	`orelse`
-    ImportQas `parseChk` lit L_import `chk` lit L_qualified
-                    `ap` nestedImport `chk` k_as `ap` aconid `ap` parseImpSpec
+    ImportQas `parseChk` lit L_import `chk` lit L_qualified `ap` bigModId
+                    `chk` k_as `ap` aconid `ap` parseImpSpec
 	`orelse`
-    ImportQ `parseChk` lit L_import `chk` lit L_qualified
-                    `ap` nestedImport `ap` parseImpSpec     -- impSpec is FAKE
+    importQas `parseChk` lit L_import `chk` lit L_qualified
+                    `ap` aconid `ap` parseImpSpec     -- impSpec is FAKE
+  where
+    importas  m@(p,Visible _)     s = Import m s
+    importas  m@(p,Qualified a b) s = Importas (deQualify m) (p,Visible b) s
+    importQas m@(p,Visible _)     s = ImportQ m s
+    importQas m@(p,Qualified a b) s = ImportQas (deQualify m) (p,Visible b) s
 
-nestedImport =			-- Extension to H'98, added by MW, 29Sep2000.
-    last `parseAp` someSep k_dot aconid
+bigModId = deQualify `parseAp` aconid
+
+deQualify m@(pos,Visible _)     = m
+deQualify   (pos,Qualified a b) = (pos, (Visible . packString . concat)
+                                                  [unpackPS b,".",unpackPS a])
+
 
 parseImpSpec =
     (NoHiding []) `parseChk` k_unit                  -- fix for import Module()

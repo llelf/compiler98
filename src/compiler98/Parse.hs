@@ -31,7 +31,7 @@ parseProg = many parsePragma `revChk` (parseModule `chkCut` eof)
 
 parseModule :: Parser (Module TokenId) [PosToken] a
 parseModule =
-    (uncurry Module) `parseChk` lit L_module `apCut` aconid `ap` parseExports
+    (uncurry Module) `parseChk` lit L_module `apCut` bigModId `ap` parseExports
                  `chk` lit L_where `chk` lcurl
                          `apCut` parseImpDecls
                          `apCut` parseFixDecls

@@ -44,11 +44,12 @@ ifeq "hbc" "${HC}"
 HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "${HC}"
-HMAKEFLAGS := -H8M +CTS -H8M -CTS
+HMAKEFLAGS := -H8M +CTS -H12M -CTS
 endif
 ifeq "ghc" "${HC}"
+IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
-HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)  $(EXTRALINK)
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)  $(IMPROVE) $(EXTRALINK)
 $(TARGET): $(EXTRALINK)
 endif
 

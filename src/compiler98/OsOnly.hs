@@ -47,8 +47,10 @@ fixFile isUnix file suf =
   in
 -}
     if isUnix
-      then file ++ '.':suf
+      then toUnixPath file ++ '.':suf
       else suf ++ '.':maxTen file
+
+toUnixPath = map (\c-> if (c=='.') then '/' else c)
 
 maxTen file = let tolong =  length file - 10
               in if tolong <= 0 then file
