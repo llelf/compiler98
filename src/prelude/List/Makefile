@@ -56,6 +56,7 @@ ${OBJDIR}/Find.$O: Find.hs ${OBJDIR}/../Maybe/ListToMaybe.$O
 ${OBJDIR}/FindIndex.$O: FindIndex.hs  ${OBJDIR}/FindIndices.$O ${OBJDIR}/../Maybe/ListToMaybe.$O
 ${OBJDIR}/GenericReplicate.$O: GenericReplicate.hs ${OBJDIR}/GenericTake.$O
 ${OBJDIR}/Union.$O: Union.hs ${OBJDIR}/Difference.$O
+${OBJDIR}/UnionBy.$O: UnionBy.hs ${OBJDIR}/DeleteFirstsBy.$O ${OBJDIR}/NubBy.$O
 ${OBJDIR}/../Maybe/ListToMaybe.$O:
 	cd ../Maybe; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/Maybe/ListToMaybe.$O
 
