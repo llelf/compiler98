@@ -17,26 +17,71 @@ import PreImp
 import AuxFile
 
 
-lookupFix :: AuxTree -> (String->Identifier) -> TokenId -> (Fixity,Int)
-lookupFix env kind op =
-    case lookupAT env (kind (show op)) of
-	Just info -> (fixity info, priority info)
-	Nothing   -> error ("No auxinfo for operator "++show op)
+{-
+-- Main function of the module.
+-}
+fixInfixList :: AuxTree -> [Exp TokenId] -> Exp TokenId
+
+fixInfixList env [] = error "I: fixInfix []"
+fixInfixList env ees@(ExpVarOp pos op:es) =
+  let fix = lookupFix env Var op
+  in case fix of
+	(Pre a,l) -> reorder env ees
+	_ -> let exp' = reorder env es
+                 exp  = invertCheck pos op fix env exp'
+--           in ExpLambda pos [varx,vary] 
+--                  (ExpApplication pos [ExpVar pos op,vary,varx])
+--  where
+--  varx = ExpVar pos t_x
+--  vary = ExpVar pos t_y
+             in (ExpApplication pos 
+                     [ExpVar pos t_flip, ExpVar pos op, exp])
+             -- desugaring with flip better than lambda for reading a trace
+fixInfixList env ees@(ExpConOp pos op:es) =
+  let fix = lookupFix env (Con "") op
+  in case fix of
+	(Pre a,l) -> reorder env ees
+	_ -> let exp' = reorder env es
+                 exp  = invertCheck pos op fix env exp'
+--           in ExpLambda pos [varx,vary] 
+--                  (ExpApplication pos [ExpVar pos op,vary,varx])
+--  where
+--  varx = ExpVar pos t_x
+--  vary = ExpVar pos t_y
+             in (ExpApplication pos 
+                     [ExpVar pos t_flip, ExpCon pos op, exp]) 
+             -- desugaring with flip better than lambda for reading a trace
+fixInfixList env ees =
+  case last ees of
+    ExpConOp pos op -> let fix  = lookupFix env (Con "") op
+			   exp' = reorder env (init ees)
+                           exp  = invertCheck pos op fix env exp'
+                       in (ExpApplication pos [ExpCon pos op,exp])
+    ExpVarOp pos op -> let fix  = lookupFix env Var op
+			   exp' = reorder env (init ees)
+                           exp  = invertCheck pos op fix env exp'
+                       in (ExpApplication pos [ExpVar pos op,exp])
+    _ -> reorder env ees
 
 
--- Just == Bind
--- Nothing == Stack
 
-
+-- the primary function that re-orders an infix list into a single expression
 reorder :: AuxTree -> [Exp TokenId] -> Exp TokenId
 reorder env es = getExp env [] [] es
 
 
-getExp :: AuxTree
-	-> [((Fixity,Int),(Exp TokenId,Int))]
-	-> [Exp TokenId]
-	-> [Exp TokenId]
-	-> Exp TokenId
+-- getExp and getOp together `parse' the list of expressions into a
+-- single tree-shaped expression.  We expect the list to take the form
+-- [exp,op,exp,op,exp,op...] i.e. exps and ops alternate.  Of course,
+-- there are exceptions: where the whole expr is a left or right section
+-- of an operator; and where a prefix operator starts the show.
+
+getExp :: AuxTree			-- environment (contains fixity info)
+	-> [((Fixity,Int),(Exp TokenId,Int))] -- stack of operators already seen
+	-> [Exp TokenId]		-- stack of outstanding non-op exprs
+	-> [Exp TokenId]		-- input list of exprs
+	-> Exp TokenId			-- re-combined output
+
 getExp env ops exps (e:es) =
   case e of
     ExpConOp pos o ->
@@ -54,11 +99,12 @@ getExp env ops (e:es) [] =
    error ("Problem with infix section at "++strPos (getPos e))
 
 
-getOp :: AuxTree
-	-> [((Fixity,Int),(Exp TokenId,Int))]
-	-> [Exp TokenId]
-	-> [Exp TokenId]
-	-> Exp TokenId
+getOp :: AuxTree			-- environment (contains fixity info)
+	-> [((Fixity,Int),(Exp TokenId,Int))]	-- stack of operators
+	-> [Exp TokenId]		-- stack of outstanding non-op exprs
+	-> [Exp TokenId]		-- input list of exprs
+	-> Exp TokenId			-- recombined output
+
 getOp env ops exps [] = finish ops exps
 getOp env ops exps ees@(ExpConOp pos op:es) =
   case harder pos ops (Con "") op env of
@@ -72,28 +118,27 @@ getOp env ops exps ees@(ExpVarOp pos op:es) =
                      in getExp env (fop:ops) exps es
 getOp env ops exps (e:es) =
    error ("Need infix operator at " ++ strPos (getPos e))
- 
 
-finish :: Num a =>
-	 [((Fixity,c),(Exp TokenId,a))] -> [Exp TokenId] -> Exp TokenId
-finish [] []  = error "finish empty" 
-finish [] [e] = e
-finish [] _   = error "finish multiple expression"
-finish (o:ops) es = finish ops (rebuild o es)
 
-        
 stackInfix :: AuxTree -> Exp TokenId -> ((Fixity,Int),(Exp TokenId,Int))
 stackInfix env op@(ExpVar _ o) = (lookupFix env Var o     , (op,2::Int))
 stackInfix env op@(ExpCon _ o) = (lookupFix env (Con "") o, (op,2::Int))
 
 stackPrefix fix op = (fix,(op,1::Int))
+ 
 
+-- harder decides whether a new operator has lower precedence than
+-- the top of the operator stack.  If so, we can pop the stack and
+-- rebuild the accumulated expression so far before continuing.
+-- If however it has higher precedence, then we must push the new
+-- operator onto the stack and keep going.  If it has equal precedence,
+-- then left/right associativity must be taken into account.
 
-harder :: Pos
-	-> [((Fixity,Int),(b,c))]
-	-> (String->Identifier)
-	-> TokenId
-	-> AuxTree
+harder :: Pos				-- position
+	-> [((Fixity,Int),(b,c))]	-- stack of operators
+	-> (String->Identifier)		-- helper for lookup in environment
+	-> TokenId			-- operator name
+	-> AuxTree			-- environment holding fixity info
 	-> Maybe (((Fixity,Int),(b,c)),[((Fixity,Int),(b,c))])
 harder pos [] kind op' env = Nothing
 harder pos (ipop@((inf,pri),(_,_)):ops) kind op' env =
@@ -110,17 +155,39 @@ harder pos (ipop@((inf,pri),(_,_)):ops) kind op' env =
   else Nothing
 
 
-stripExp :: Exp a -> a
-stripExp (ExpVar _ o) = o
-stripExp (ExpCon _ o) = o
 
-rebuild :: Num a =>
-	 ((Fixity,c),(Exp TokenId,a)) -> [Exp TokenId] -> [Exp TokenId]
-rebuild (_,(op,2)) (e1:e2:es) = ExpApplication (getPos op) [op,e2,e1]:es
+-- finish transforms the two stacks (operators + exprs) into the final
+-- recombined expression.
+finish :: [((Fixity,c),(Exp TokenId,Int))]	-- stack of operators
+          -> [Exp TokenId]			-- stack of non-op exprs
+          -> Exp TokenId			-- output expr
+finish [] []  = error "AuxFixity.finish: empty" 
+finish [] [e] = e
+finish [] _   = error "AuxFixity.finish: multiple expression"
+finish (o:ops) es = finish ops (rebuild o es)
+
+
+-- rebuild the expression stack, by combining the top two items with
+-- the given operator.  Precondition: the operator must have higher
+-- precedence than any operators between the exprs lower in the stack.
+
+rebuild :: ((Fixity,c),(Exp TokenId,Int))	-- operator
+           -> [Exp TokenId]			-- stack of expressions
+           -> [Exp TokenId]			-- juggled the stack
+rebuild (_,(op,2)) (e1:e2:es) =
+        ExpApplication (getPos op) [op,e2,e1]:es
 rebuild ((Pre fun,_) ,(op,_)) (e1:es) =
         ExpApplication (getPos op) [ExpVar (getPos op) (visImport fun),e1]:es
 rebuild (_,(op,n)) es =
         error ("Not enough arguments at " ++ strPos (getPos op))
+
+
+-- discover fixity information from the .hx file info.
+lookupFix :: AuxTree -> (String->Identifier) -> TokenId -> (Fixity,Int)
+lookupFix env kind op =
+    case lookupAT env (kind (show op)) of
+	Just info -> (fixity info, priority info)
+	Nothing   -> error ("No auxinfo for operator "++show op)
 
 
 leftFixity :: Fixity -> Bool
@@ -128,54 +195,6 @@ leftFixity L       = True
 leftFixity Def     = True
 leftFixity (Pre _) = True
 leftFixity _       = False     		--- !!! Cheating Infix is InfixR  (??)
-
-
-
-{-
--- Main function of the module.
--}
-fixInfixList :: AuxTree -> [Exp TokenId] -> Exp TokenId
-
-fixInfixList env [] = error "I: fixInfix []"
-fixInfixList env ees@(ExpVarOp pos op:es) =
-  let fix = lookupFix env Var op
-  in case fix of
-	(Pre a,l) -> reorder env ees
-	_ -> let exp' = reorder env es
-                 exp  = invertCheck pos op fix env exp'
---             in ExpLambda pos [varx,vary] 
---                  (ExpApplication pos [ExpVar pos op,vary,varx])
---  where
---  varx = ExpVar pos t_x
---  vary = ExpVar pos t_y
-               in (ExpApplication pos 
-                    [ExpVar pos t_flip, ExpVar pos op, exp])
-             -- desugaring with flip better than lambda for reading a trace
-fixInfixList env ees@(ExpConOp pos op:es) =
-  let fix = lookupFix env (Con "") op
-  in case fix of
-	(Pre a,l) -> reorder env ees
-	_ -> let exp' = reorder env es
-                 exp  = invertCheck pos op fix env exp'
---             in ExpLambda pos [varx,vary] 
---                  (ExpApplication pos [ExpVar pos op,vary,varx])
---  where
---  varx = ExpVar pos t_x
---  vary = ExpVar pos t_y
-             in (ExpApplication pos 
-                  [ExpVar pos t_flip, ExpCon pos op, exp]) 
-             -- desugaring with flip better than lambda for reading a trace
-fixInfixList env ees =
-  case last ees of
-    ExpConOp pos op -> let fix  = lookupFix env (Con "") op
-			   exp' = reorder env (init ees)
-                           exp  = invertCheck pos op fix env exp'
-                       in (ExpApplication pos [ExpCon pos op,exp])
-    ExpVarOp pos op -> let fix  = lookupFix env Var op
-			   exp' = reorder env (init ees)
-                           exp  = invertCheck pos op fix env exp'
-                       in (ExpApplication pos [ExpVar pos op,exp])
-    _ -> reorder env ees
 
 
 -- 'invertCheck' checks for priority inversion in an operator section.
