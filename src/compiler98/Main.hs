@@ -37,8 +37,8 @@ import Flags
             (Flags,processArgs,pF
             ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
             ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,sRBound,sRename,sDbg,sDBound,sDerive,sEBound
-            ,sDbg2,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
+            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive,sEBound
+            ,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
@@ -318,7 +318,7 @@ nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun tidFunSafe
   intState {- importState derived -} impdecls decls = do
   let (decls'{-, derived'-}, intState', constrs) = 
         dbgDataTrans flags intState (error "repTree") tidFun {-derived-} decls 
-  pF (sDbg flags) "Abstract syntax tree after debug type transformation"
+  pF (sTraceData flags) "Abstract syntax tree after tracing type transformation"
      (ppDecls False intState' decls' 0) 
 
   nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe 
@@ -385,6 +385,8 @@ nhcDbgTrans flags modidl mrps expFun userDefault tidFun
                     impdecls decls constrs 
              else (decls, state, Nothing))
       (state,errors) -> do
+        pF (sEBound flags) "Symbol table after extract:"  
+           (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
         pF (True) "Error after extract:" (mixLine errors) 
         exit
 
@@ -406,7 +408,8 @@ nhcRemove :: Flags
 nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe 
   (decls, state, sridt) =
   profile "remove" $ do
-  pF (sDbg2 flags) "DbgTrans" (ppDecls False state decls 0) 
+  pF (sTraceFns flags) "Tracing Transformation on function definitions"
+                       (ppDecls False state decls 0) 
   nhcScc flags modidl mrps expFun userDefault tidFun tidFunSafe sridt 
     (removeDecls decls tidFun state)
 
