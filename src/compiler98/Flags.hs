@@ -155,9 +155,9 @@ processArgs xs = flags
      [sourcefile,typefile,cfile] -> (sourcefile,sourcefile,typefile,cfile)
      [realfile,sourcefile,typefile,cfile] -> (realfile,sourcefile
                                              ,typefile,cfile)
-     _ -> error ("\nusage: nhc98comp file.hs
-       nhc98comp sourcefile interfacefile C-file\
-       nhc98comp sourcefile sourcename interface C-file\n")  
+     _ -> error ("\nusage: nhc98comp file.hs\n\ 
+\       nhc98comp sourcefile interfacefile C-file\n\ 
+\       nhc98comp sourcefile sourcename interface C-file\n")  
 
  flags = FF
   { sRealFile=realfile

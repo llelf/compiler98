@@ -190,7 +190,8 @@ gAtom (PosInt pos i) = incDepth >>> unitS [PUSH_INT i]
 gAtom (PosChar pos i) = incDepth >>> unitS [PUSH_CHAR i]
 gAtom (PosFloat pos f) = incDepth >>> unitS [PUSH_FLOAT f]
 gAtom (PosDouble pos d) = incDepth >>> unitS [PUSH_DOUBLE d]
-#ifdef DBGTRANS
+#if 0
+-- #ifdef DBGTRANS
 gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INT (fromInteger i)]
 #else
 gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INTEGER i]

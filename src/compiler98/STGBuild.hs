@@ -128,7 +128,8 @@ buildExp pu (PosInt pos i) = oneHeap True pu (HEAP_INT i)
 buildExp pu (PosChar pos i) = oneHeap True pu (HEAP_CHAR i)
 buildExp pu (PosFloat pos f) = oneHeap True pu (HEAP_FLOAT f )
 buildExp pu (PosDouble pos d) = oneHeap True pu (HEAP_DOUBLE d)
-#ifdef DBGTRANS
+#if 0 	
+-- #ifdef DBGTRANS
 buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INT (fromInteger i))
 #else
 buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INTEGER i)
