@@ -9,7 +9,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <sys/un.h>
+/*#include <sys/un.h>*/
 #include <netinet/in.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -508,7 +508,7 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 	break;
     case NTContainer:
 	*pmodule = strdup("Unknown");
-	*pname = strdup("<vector>");
+	*pname = strdup("?");
 	break;
     case NTCString:
 	*pmodule = strdup("Unknown");
