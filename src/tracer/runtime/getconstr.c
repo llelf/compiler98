@@ -530,9 +530,13 @@ C_HEADER(cContains)
 
 void _tprim_error()
 {
-    char s[] = "x";
+    char s[256]; int i=0;
     NodePtr nodeptr, t;
+    CNmType* nt;
+    CTrace* tr;
+    FileOffset fo;
     extern int terminated;
+    extern int exit_code;
 
     fprintf(stderr, "Error: ");
     nodeptr = C_GETARG1(1);
@@ -547,17 +551,28 @@ void _tprim_error()
         IND_REMOVE(c);
 	c = GET_POINTER_ARG1(c,1);
 	IND_REMOVE(c);
-	s[0] = GET_CHAR_VALUE(c);
-	fprintf(stderr, s);
+	s[i++] = GET_CHAR_VALUE(c);
 	t = GET_POINTER_ARG1(t,2);
         IND_REMOVE(t);
 	t = GET_POINTER_ARG1(t,1);
 	IND_REMOVE(t);
     }
-    fprintf(stderr, "\n");
+    s[i] = '\0';
+    fprintf(stderr, "%s\n",s);
     terminated = TRUE;
-    startDbg(nodeptr, FALSE);
-    exit(0);
+    updateSatBs();
+    updateSatCs();
+    nt = primNTCString(s);
+    fo = nt->ptr;
+    fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
+    fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+    tr = (CTrace*)nodeptr;
+    fo = tr->ptr;
+    fseek(HatFile,8,SEEK_SET);
+    fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+    exit_code = 3;
+    haskellEnd();
+    exit(3);
 }
 
 extern int cTrusted(NodePtr t, NodePtr tf);
