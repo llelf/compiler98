@@ -142,7 +142,7 @@ filepointer printNode(filepointer offset) {
   char b,showAble=0;
   filepointer next;
   b = getNodeType(handle,offset);
-  printf("%i ",b);
+  //printf("%i ",b);
   switch (lhi3(b)) {
   case TR:
     printf("TR 0x%x: ", offset);

@@ -447,9 +447,10 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	  filepointer satc = hatResult(handle,currentOffset);  // find SATC for the application!	  
 	  addToHashTable(htable,currentOffset);
 	  if (isSAT(handle,satc)) {
+	    char nt;
 	    if ((hatFollowSATCs(handle,satc)!=currentOffset)&&
-		(getNodeType(handle,satc)!=SATA)) { // rhs evaluated!
-	      if (getParent() != currentOffset) {
+		((nt=getNodeType(handle,satc))!=HatSATA)) { // rhs evaluated!
+	      if ((getParent() != currentOffset)||(nt==HatSATB)) {
 		if (((recursiveMode==0)||(isDescendantOf(handle,
 							 apptrace,identifierNode)==0))&&
 		    ((topIdentifierNode==0)||
