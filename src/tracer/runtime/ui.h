@@ -29,7 +29,7 @@
 #include "nodecache.h"
 #include "outputtrace.h"
 
-#define DEFAULT_DEPTH 5
+#define DEFAULT_DEPTH 7
 #define DBGPORT 6710
 #define DBGMAXTRIES 32
 

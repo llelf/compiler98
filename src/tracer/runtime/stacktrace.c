@@ -42,7 +42,7 @@ stackExpr(NodePtr t, int level, NodePtr *sr)
     int *pind;
 
     if (level-- == 0) {
-            fprintf(stderr, "<>");
+            fprintf(stderr, "%c",176);		/* a small diamond shape */
             return;
     }
     /* fprintf(stderr,"í"); */
@@ -58,14 +58,18 @@ stackExpr(NodePtr t, int level, NodePtr *sr)
             IND_REMOVE(ts);
             tag = CONINFO_NUMBER(*ts);
             /* fprintf(stderr,"ä"); */
-            fprintf(stderr,"(");
-            while (CONINFO_PSIZE(*ts) == 2) {
-               if (first++ > 1)
-                       fprintf(stderr, " ");
-               stackExpr (GET_POINTER_ARG1(ts, 1), level, sr);
-               ts = shortCircuitSelectors(GET_POINTER_ARG1(ts, 2));
+            if (level>1) {
+              fprintf(stderr,"(");
+              while (CONINFO_PSIZE(*ts) == 2) {
+                 if (first++ > 1)
+                         fprintf(stderr, " ");
+                 stackExpr (GET_POINTER_ARG1(ts, 1), level, sr);
+                 ts = shortCircuitSelectors(GET_POINTER_ARG1(ts, 2));
+              }
+              fprintf(stderr,")");
+            } else {
+              fprintf(stderr, "%c",176);	/* a small diamond shape */
             }
-            fprintf(stderr,")");
             *sr = GET_POINTER_ARG1(t, 3);
             break; }
     case TagNm: {
