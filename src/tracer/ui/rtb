@@ -1,0 +1,9 @@
+#!/bin/sh -e
+# Starts up the tracer user-interface
+
+CLASSPATH=/usr/colin/art/rtb/rtb.jar
+export CLASSPATH
+PATH=${JAVADIR}/bin:$PATH
+export PATH
+echo Starting tracer user interface, please wait...
+java -Dtracer.tracefont=Helvetica:18 -Dtracer.outputfont=Courier:18 -Dtracer.sourcefont=Courier:14 nhctracer.NhcTracer 6710 $* &
