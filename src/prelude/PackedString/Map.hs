@@ -1,6 +1,7 @@
 module PackedString where
 
-import Prelude hiding(map)
+import Prelude hiding (map)
+import qualified Prelude (map)
 import DPackedString
 import PackString
 import UnpackPS

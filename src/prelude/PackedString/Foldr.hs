@@ -1,6 +1,7 @@
 module PackedString where
 
-import Prelude hiding(foldr)
+import Prelude hiding (foldr)
+import qualified Prelude (foldr)
 import DPackedString
 import UnpackPS
 

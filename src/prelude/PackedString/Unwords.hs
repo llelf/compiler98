@@ -1,6 +1,7 @@
 module PackedString where
 
-import Prelude hiding(unwords)
+import Prelude hiding (unwords)
+import qualified Prelude (unwords)
 import DPackedString
 import PackString
 import UnpackPS
