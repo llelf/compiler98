@@ -232,6 +232,14 @@ APFUN(10,9)
 
 #endif
 
+#include <setjmp.h>
+#ifdef __CYGWIN32__
+extern jmp_buf exit_mutator;
+#else
+extern sigjmp_buf exit_mutator;
+#endif
+extern int exit_code;
+
 C_HEADER(_tprim_cExitWith)
 {
     NodePtr t, c;
@@ -246,11 +254,13 @@ C_HEADER(_tprim_cExitWith)
     IND_REMOVE(c);
     switch (CONINFO_NUMBER(*c)) {
     case TagExitSuccess:
+	exit_code = 0;
 	fprintf(stderr, "\nProgram exited normally.\n");
 	break;
     case TagExitFailure:
 	c = shortCircuitSelectors(GET_POINTER_ARG1(c,1));
-	fprintf(stderr, "Program exited with error code %d\n", GET_INT_VALUE(c));
+	exit_code = GET_INT_VALUE(c);
+	fprintf(stderr, "Program exited with error code %d\n", exit_code);
 	break;
     default:
 	fprintf(stderr, "exitWith: Strange error code:\n");
@@ -260,7 +270,13 @@ C_HEADER(_tprim_cExitWith)
     }
     terminated = TRUE;
     startDbg(t, TRUE);
-    haskellEnd();
+#ifdef __CYGWIN32__
+    longjmp(exit_mutator, 1);
+#else
+    siglongjmp(exit_mutator,1);
+#endif
+
+    haskellEnd();	/* dead code now ? */
     exit(0);
 }
 
