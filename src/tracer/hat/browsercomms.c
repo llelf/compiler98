@@ -146,10 +146,10 @@ followTrace(FileOffset fo, FileOffset *pbot, int *pind)
             arg1=readFO();	/* fst of indirection */
             arg2=readFO();	/* snd of indirection */
 	    if (*pind == 0) {
-		ref = abs(ncFind(fo));	/* why not arg1? */
+		ref = abs(ncFind(fo));
 		if (ref == 0)
 		    ref = ncInsert(fo, FALSE);
-		*pind = ref;
+		*pind = ref;  /* pind points to indirection */
 	    }
 	    fo = arg2;
 	    break;

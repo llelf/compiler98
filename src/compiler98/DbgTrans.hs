@@ -261,23 +261,26 @@ dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
   mkFailExpr pos parent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
+  let wrapetup = ExpApplication noPos [r,etup,tresult] in
   zipWithS makeNTId bvspos bvsids >>>= \ntIds ->
   zipWithS (makeNm pos parent) ntIds srs >>>= \nms ->
   lookupVar pos t_lazySat >>>= \lazySat ->
+  lookupVar pos t_indir >>>= \indir ->
   addNewName 0 True "nt" NoType >>>= \t' ->
   let
     pcase = ExpCase noPos rhs' 
-                  [Alt pat'' (Unguarded etup) (DeclsParse [])
+                  [Alt pat'' (Unguarded wrapetup) (DeclsParse [])
 	          ,Alt (PatWildcard noPos)   (Unguarded fe)  (DeclsParse [])]
     pfun = DeclFun noPos patid [Fun [] (Unguarded pcase) decls']
-    vpat p pv i sr = vcase p pv
     vcase p pv = ExpCase p (ExpVar p patid) 
-                       [Alt etup (Unguarded pv) (DeclsParse [])]
+                       [Alt wrapetup 
+                         (Unguarded (ExpApplication noPos [indir,tresult,pv]))
+                         (DeclsParse [])]
     vfun ((p, i), pv) sr nte = 
           DeclFun p i 
             [Fun [PatWildcard p, PatWildcard p] 
                (Unguarded (ExpApplication pos 
-                            [lazySat, (vpat p pv i sr), ExpVar p t'] )) 
+                            [lazySat, (vcase p pv), ExpVar p t'] )) 
                (DeclsParse 
                  [DeclFun p t' [Fun [] (Unguarded nte) (DeclsParse [])]])
             ]
