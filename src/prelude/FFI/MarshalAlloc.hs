@@ -76,7 +76,7 @@ free  = _free
 
 -- foreign finalizer that performs the free operation
 --
-foreign import ccall "&free" finalizerFree :: FinalizerPtr a
+foreign import ccall "stdlib.h &free" finalizerFree :: FinalizerPtr a
 
 
 ---------------------------------------------------------------------------
@@ -89,9 +89,9 @@ failWhenNULL nm f = do
         (throwIOError (nm++" out of memory") Nothing Nothing (fromEnum ENOMEM))
    return addr
 
--- Hmmm, Int is a little bit strange here, C uses size_t
-foreign import ccall unsafe "malloc"  _malloc  :: CSize -> IO (Ptr a)
-foreign import ccall unsafe "realloc" _realloc :: Ptr a -> CSize -> IO (Ptr b)
-foreign import ccall unsafe "free"    _free    :: Ptr a -> IO ()
+foreign import ccall unsafe "stdlib.h malloc"  _malloc  :: CSize -> IO (Ptr a)
+foreign import ccall unsafe "stdlib.h realloc" _realloc :: Ptr a -> CSize
+								 -> IO (Ptr b)
+foreign import ccall unsafe "stdlib.h free"    _free    :: Ptr a -> IO ()
 
 

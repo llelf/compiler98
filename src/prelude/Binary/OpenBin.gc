@@ -9,7 +9,7 @@ import BinLocation ({-type-}BinLocation(..), fromBinLocation)
 
 %-#include "cLowBinary.h"
 %-#include <fcntl.h>
-%-#include "localmalloc.h"
+%-#include <stdlib.h>
 
 %fun openBin :: BinLocation -> IO BinHandle
 %call (binLocation f fp m)

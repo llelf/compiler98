@@ -1,5 +1,5 @@
 #include "cLowUnboxedArray.h"
-#include "localmalloc.h"
+#include <stdlib.h>
 
 void finaliseUBA (UBA uba) {
   free(uba->block);
