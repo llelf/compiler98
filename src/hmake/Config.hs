@@ -4,7 +4,7 @@ import Compiler
 import System (getEnv)
 import Directory (doesFileExist)
 #if defined(__NHC__)
-import IOExtras (unsafePerformIO)
+import NHC.IOExtras (unsafePerformIO)
 #elif defined(__GLASGOW_HASKELL__)
 import IOExts (unsafePerformIO)
 #elif defined(__HBC__)

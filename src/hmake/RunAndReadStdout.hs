@@ -19,7 +19,7 @@ getProcessID = return 3154      -- arbitrary number
 #endif
 #endif
 #ifdef __NHC__
-import IOExtras (unsafePerformIO)
+import NHC.IOExtras (unsafePerformIO)
 foreign import ccall "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
