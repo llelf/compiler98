@@ -48,7 +48,8 @@ mkDeclFun :: (Pos,a) -> [Pat a] -> Rhs a -> Decls a -> Decl a
 --mkDeclFun (pv,var) [] gdexps w =
 --	DeclPat (Alt (ExpVar pv var) gdexps w)
 mkDeclFun (pv,var) pats gdexps w =
-        DeclFun (mergePoss [pv,getPos gdexps,getPos w]) var [Fun pats gdexps w]
+  DeclFun (mergePoss [pv `min` getPos pats,getPos gdexps,getPos w]) 
+    var [Fun pats gdexps w]
 
 
 mkDeclPatFun :: Alt a -> Decl a

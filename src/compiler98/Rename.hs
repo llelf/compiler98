@@ -106,7 +106,7 @@ groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
     case infixFun es of
       Nothing -> d: groupFun' r
       Just (e1,pos',fun',e2) -> 
-        groupFun' (DeclFun (mergePoss [pos',getPos gdexps,getPos w]) fun' 
+        groupFun' (DeclFun (mergePoss [pos,getPos gdexps,getPos w]) fun' 
                      [Fun [e1,e2] gdexps w]:r)
   groupFun' (d:r) = d: groupFun' r
 
@@ -121,7 +121,7 @@ groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
     case infixFun es of
       Nothing -> (acc,dr)
       Just (e1,pos',fun',e2) -> 
-        groupFun'' fun acc  (DeclFun (mergePoss [pos',getPos gdexps,getPos w]) 
+        groupFun'' fun acc  (DeclFun (mergePoss [pos,getPos gdexps,getPos w]) 
                                fun' [Fun [e1,e2] gdexps w]:r)
   groupFun'' fun acc r = (acc,r)
 

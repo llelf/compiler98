@@ -94,7 +94,9 @@ instance HasPos (Simple a) where
 
 instance HasPos (Type a) where
     getPos (TypeApp  t1 t2) = mergePos (getPos t1) (getPos t2)
-    getPos (TypeCons  pos _ _) = pos -- position of constructor, not whole type
+    -- pos is position of constructor, not whole type, which shall be returned
+    getPos (TypeCons pos _ (t:ts)) = mergePos (min pos (getPos t)) (getPos ts)
+    getPos (TypeCons pos _ ts) = mergePos pos (getPos ts)
     getPos (TypeVar   pos _)   = pos
     getPos (TypeStrict  pos _)   = pos
 

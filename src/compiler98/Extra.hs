@@ -186,8 +186,22 @@ instance Show Pos where
 instance Eq Pos where
   P s1 e1 == P s2 e2 = (s1 == s2) && (e1 == e2)
 
-instance Ord Pos where  -- for ordering error messages of parser
-  P s1 e1 > P s2 e2 = s1 > s2 || (s1 == s2 && e1 > e2)
+instance Ord Pos where  
+  -- for ordering error messages of parser
+  -- and determining minimum of two positions
+  -- nonexisting positions are avoided
+  P s1 e1 > P s2 e2 = 
+    s1 > s2 || (s1 == s2 && e1 > e2)
+  min (P s1 e1) (P s2 e2) =
+    if e1 == 0 
+      then if e2 == 0 
+             then if s1 <= s2 then P s1 e1 else P s2 e2
+             else P s2 e2
+      else if e2 == 0
+             then P s1 e1
+             else if (s1 < s2) || (s1 == s2 && e1 <= e2)
+                    then P s1 e1
+                    else P s2 e2 
 
 --------------------
 
