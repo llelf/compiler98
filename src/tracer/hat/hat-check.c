@@ -11,6 +11,9 @@
  *   -v extended to check for inappropriate zero pointers
  *   -n option added to request textual dump of single node
  *   when both -a & -r set show reachability of each node in text lines
+ * 8 May 2001
+ *   allow (but ignore) bits to mark SATs with no APP
+ *   accept progname with or without .hat
  */
 
 /* #include <unistd.h> */
@@ -126,7 +129,7 @@ main (int argc, char *argv[])
   }
   if (i > argc-1) badusage();
   strcpy(filename, argv[i]);
-  strcat(filename, ".hat");
+  if (!strends(".hat", filename)) strcat(filename, ".hat");
   stat(filename, &statbuf);
   filesize = statbuf.st_size;
   f = open(filename, (rmode ? 2 : 0));
@@ -166,6 +169,10 @@ main (int argc, char *argv[])
   }
 }
 
+strends(char *e, char *s) {
+  int d = strlen(s) - strlen(e);
+  return d>=0 && strcmp(s+d, e)==0;
+}
 
 badusage() {
   fprintf(stderr,"usage: hat-check [-a] [-n <hexnode>][-r] [-s] [-v] prog-name\n");

@@ -189,7 +189,7 @@ storeRef (FileOffset fo)
     int ref = ncFind(fo);
     if (ref==0)
       return ncInsert(fo, FALSE);
-    else if (ref<0)
+    else /* if (ref<0) --- a redundant test?? CR/OC */
       return abs(ref);
   }
 }
