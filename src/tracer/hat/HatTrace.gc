@@ -436,6 +436,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %     switch(newnode) {
 %       case HatProjection:case HatSATA:case HatSATB:case HatSATC:
 %         newnode=getProjValue();
+%         break;
 %       default:newnode=0;
 %     }
 %result (int newnode)
