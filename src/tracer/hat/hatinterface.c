@@ -330,12 +330,11 @@ filepointer hatSeqFirst(HatFile h) {
   return foff + boff;
 }
 
-int isSAT(filepointer fileoffset) {
+BOOL isSAT(HatFile handle,filepointer fileoffset) {
   char c;
-  filepointer old = hatNodeNumber(currentHandle);
+  filepointer old = hatNodeNumber(handle);
   
-  hatSeekNode(currentHandle,fileoffset);
-  c = seenextbyte();
+  c = getNodeType(handle,fileoffset);
   hatSeekNode(currentHandle,old);
 
   return ((c==TRSATC)||(c==TRSATB)||(c==TRSATA));
@@ -503,7 +502,7 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
     case TRAPP: // Application
       p = getParent();
       satc = hatSeqNext(handle,fileoffset);
-      if (isSAT(satc)) { // success! found the SATC!
+      if (isSAT(handle,satc)) { // success! found the SATC!
  	return satc;
       }
       else fileoffset = p; // follow parent!
@@ -511,13 +510,13 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
     case TRNAM:   // for finding CAFs. SATc should be behind the TRNAM
       p=getParent();
       satc = hatSeqNext(handle,fileoffset);
-      if (isSAT(satc)) return satc;
+      if (isSAT(handle,satc)) return satc;
       fileoffset=p;
       break;
     default: {
 	filepointer newfileoffset=hatFollowTrace(handle,fileoffset);
 	if (newfileoffset == fileoffset) {
-	  if (isSAT(newfileoffset)) return fileoffset;
+	  if (isSAT(handle,newfileoffset)) return fileoffset;
 	  else return 0;
 	} else
 	  fileoffset = newfileoffset;
@@ -861,7 +860,7 @@ filepointer hatMainCAF(HatFile h) {
       if (getParent()==0) { // is parent 0?
 	srcref = getSrcRef();
 	satc = hatSeqNext(h,currentOffset);
-	if ((srcref!=0)&&(isSAT(satc))) {  // SATC behind TRNAM?
+	if ((srcref!=0)&&(isSAT(h,satc))) {  // SATC behind TRNAM?
 	  // found a CAF!
 	  if (isTrusted(h,srcref)) printf("isTrusted\n");
 	  if (isTopLevel(h,currentOffset)==0) printf("not top-level!\n");

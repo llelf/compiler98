@@ -90,7 +90,7 @@ BOOL          isDescendantOf(HatFile handle,
 			     filepointer nodenumber,filepointer parent);
 BOOL          isCAF(HatFile handle,filepointer nodenumber);
 BOOL          isTopLevel(HatFile handle,filepointer srcref);
-
+BOOL          isSAT(HatFile handle,filepointer fileoffset);
 
 /*********************************************************************/
 /* Routines for convenience: following traces                        */

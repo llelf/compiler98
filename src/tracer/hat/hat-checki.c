@@ -305,8 +305,7 @@ filepointer printNode(unsigned long offset) {
     appstr = prettyPrintExpr(exp,1);
     
     satc = getResult(handle,hatFollowSATs(handle,offset));
-    hatSeekNode(satc);
-    if ((isSAT(satc))&&(satc!=offset)) {
+    if ((isSAT(handle,satc))&&(satc!=offset)) {
       printf("corresponding SAT at: 0x%x\n\n",satc);
       printf("reduction: %s = ",appstr);
       freeStr(appstr);

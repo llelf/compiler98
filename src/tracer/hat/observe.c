@@ -109,7 +109,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	p = getAppFun();         // fileoffset of Function-trace
 	if (isInHashTable(htable,p)) {
 	  filepointer satc = getResult(handle,currentOffset);  // find SATC for the application!	  
-	  if (isSAT(satc)) {
+	  if (isSAT(handle,satc)) {
 	    if (hatFollowSATs(handle,satc)==currentOffset) {
 	      addToHashTable(htable,currentOffset); // remember partial application
 	      addToHashTable(htable,satc);
@@ -135,7 +135,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	//printf("found name reference for identifier at: %u\n",p);
 	addToHashTable(htable,currentOffset);
 	satc = hatSeqNext(handle,currentOffset);
-	if (isSAT(satc)) {  // SATC behind TRNAM?
+	if (isSAT(handle,satc)) {  // SATC behind TRNAM?
 	  // found a CAF!
 	  if (hatFollowSATs(handle,satc)==currentOffset) { // save this satc for future reference
 	    addToHashTable(htable,satc);
