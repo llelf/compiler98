@@ -348,7 +348,7 @@ readNmTypeAt (FileOffset fo)
   id->defncolumn = 0;
 
   freadAt(fo,&c,sizeof(char),1,HatFile);
-  if ((c<0x40) || (c>0x50)) {
+  if ((c<0x40) || (c>0x50) && (c!=0x56)) {
     fprintf(stderr,"%s: expected a NmType descriptor at position 0x%x\n"
                   ,progname,fo);
     exit(1);

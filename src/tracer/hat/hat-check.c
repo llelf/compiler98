@@ -808,7 +808,7 @@ markfrom(unsigned long root, char *buf) {
 	break;
       case NT: {
 	int ntk = lo5(*buf);
-	if (ntk > CONTAINER) {
+	if ((ntk>CONTAINER) && (ntk!=TOPIDENTIFIER)) {
           fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
 	          ntk, root);
           exit(1);
