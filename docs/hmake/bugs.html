@@ -1,0 +1,44 @@
+<html><head><title>hmake bugs</title></head>
+<body bgcolor=white text=black>
+<table><tr><td width=500>
+
+<center>
+<h1>Known bugs in <em>hmake</em></h1>
+</center>
+<hr>
+
+<ul>
+<li> If several <em>import</em> statements occur on the same line of
+     a source file (separated by semicolons), then hmake will only
+     recognise the first import on the line as a dependency.
+
+<li> A Happy grammar (.y or .ly file) with a non-terminal
+     name <em>import</em> confuses hmake, which reports that
+     a <em>module ::</em> cannot be found.
+
+<li> Conflicting compiler options (e.g. both -fsomething and
+     -fno-something for ghc) may (rarely) be re-ordered by hmake,
+     such that the compiler treats the conflict in the opposite way to
+     your intention.  The exact circumstances in which any re-ordering
+     happens are not currently pinned down.
+
+</ul>
+
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.haskell.org/hmake/">
+<tt>http://www.haskell.org/hmake/</tt></a><br>
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 2003-03-05<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+
+</body></html>

@@ -10,6 +10,21 @@
 <table>
 <tr>
 
+<td valign=top><b>3.07</b></td>
+  <td valign=top>
+	<ul>
+        <li> Hmake should now build cleanly with GHC under Cygwin.
+        <li> Better handling of config files.  Your personal config file
+             is now used as an override for the system-wide config file,
+             rather than being used instead of it.  Hence, any global
+             config updates are now automatically propagated to all users.
+        <li> The new command <tt>hmake-config new</tt> is now needed to
+             begin a fresh personal config file.
+        <li> <tt>hmake-config list</tt> can now take a specific compiler
+             argument to show detailed info for that compiler.
+	</ul>
+</td></tr><tr>
+
 <td valign=top><b>3.06</b></td>
   <td valign=top>
 	<ul>
@@ -280,6 +295,7 @@
              "<tt>import A{-comment-}</tt>".
 	<li> Change GHCINCDIR to GHCINCPATH to allow multiple directories
              for prelude .hi files.
+	</ul>
 </td></tr><tr>
 
 <td valign=top><b>1.1</b></td>
@@ -294,12 +310,12 @@
 <p>
 The latest updates to this software are available on the WWW from
 <a href="http://www.haskell.org/hmake/">
-<tt>http://www.haskell.org/hmake/</tt></a>
-(<a href="http://www.cs.york.ac.uk/fp/hmake/">
-<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>)
+<tt>http://www.haskell.org/hmake/</tt></a><br>
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-08-06<br>
+Information last updated: 2003-03-06<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

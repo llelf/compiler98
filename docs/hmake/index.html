@@ -15,6 +15,9 @@
 <a href="#news">Recent news</a><br>
 <a href="#download">Downloads</a><br>
 <a href="#install">Build and install</a><br>
+<a href="bugs.html">Known bugs</a><br>
+</td></tr>
+<tr><td colspan=2 align=center>
 <a href="#who">Contacts</a><br>
 </td></tr></table>
 <hr>
@@ -37,8 +40,9 @@
 <hr>
 <h3><a name="news">Recent News</a></h3>
 <p>
-The current version is hmake-3.06 (date 2002-08-09).
+The current version is hmake-3.07 (date 2003-03-06).
 <ul>
+<li> Hmake should now once again build cleanly with GHC under Cygwin.
 <li> Better handling of package libraries.  Previously, the package
      import directories were detected at installation time, so the
      addition of a new package required <em>hmake-config</em> to be
@@ -60,25 +64,36 @@ The current version is hmake-3.06 (date 2002-08-09).
 See <a href="changes.html">changes.html</a> for the full history of
 versions, bugfixes, and other updates.
 
+<p>
+Currently known bugs are listed in <a href="bugs.html">bugs.html</a>.
+
 
 <hr>
 <h3><a name="download">Download</a></h3>
 <p>
 Download the full <em>hmake</em> sources from<br>
-  <a href="http://www.haskell.org/hmake/hmake-3.06.tar.gz">
-  <tt>http://www.haskell.org/hmake/hmake-3.06.tar.gz</tt></a>
+  <a href="http://www.haskell.org/hmake/hmake-3.07.tar.gz">
+  <tt>http://www.haskell.org/hmake/hmake-3.07.tar.gz</tt></a>
 
 <p>
 Mirror at:<br>
   <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
   <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a><br>
-  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.06.tar.gz">
-  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.06.tar.gz</tt></a>
+  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.07.tar.gz">
+  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.07.tar.gz</tt></a>
 
 <p>
 RPMs for RedHat are available from
   <a href="http://haskell.org/~petersen/rpms/i386/">
   <tt>http://haskell.org/~petersen/rpms/i386/</tt></a>
+
+<p>
+If you're running the unstable version of Debian GNU/Linux system, you
+can download and install hmake with a command like <tt>apt-get install
+hmake</tt>, or download the package file from:
+  <a href="http://ftp.debian.org/debian/pool/main/h/hmake/">
+  <tt>http://ftp.debian.org/debian/pool/main/h/hmake/</tt></a>
+(The package is not yet available for the stable version of Debian.)
 
 <p>
 (Note: If you have the <em>nhc98</em> compiler, then you already
@@ -149,15 +164,15 @@ Please send bug reports, bug fixes, and suggestions for improvements to
 <p>
 <b>Copyright</b>
 <p>
-The core of the hmake tool is
-&copy; copyright to Thomas Hallgren, 1991-1997.<br>
-(Code is incorporated from the earlier tools hbcmake and nhc13make.)<br>
-Many additions and modifications to hmake are
-&copy; copyright to Malcolm Wallace, 1998-2002.<br>
+hmake is based on code from <em>hbcmake</em> and <em>nhc13make</em>,
+which are both<br>
+&copy; copyright to Thomas Hallgren, 1991-1997,<br>
+with additions and modifications
+&copy; copyright to Malcolm Wallace, 1998-2003.<br>
 Hmake interactive (hi) is
 &copy; copyright to Malcolm Wallace, 2000-2002.<br>
 Hmake-config is
-&copy; copyright to Malcolm Wallace, 2002.<br>
+&copy; copyright to Malcolm Wallace, 2002-2003.<br>
 
 <p>
 You may re-distribute or modify this software, but you must retain this
@@ -167,12 +182,12 @@ copyright notice.
 <p>
 The latest updates to this software are available on the WWW from
 <a href="http://www.haskell.org/hmake/">
-<tt>http://www.haskell.org/hmake/</tt></a>
-(<a href="http://www.cs.york.ac.uk/fp/hmake/">
-<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>)
+<tt>http://www.haskell.org/hmake/</tt></a> (main site)<br>
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a> (mirror)
 
 <p>
-Information last updated: 2002-08-09<br>
+Information last updated: 2003-03-06<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
