@@ -26,6 +26,7 @@ case $baselocation in
       replace  src/cpphs	cpphs
       replace  src/cpphs/tests	cpphs/tests
       replace  src/cpphs/docs	cpphs/docs
+      replace  src/hsc2hs	fptools/ghc/utils/hsc2hs
     fi
     LIBRARIES=`cd src; find libraries -type d ! -name CVS`
     for lib in $LIBRARIES
