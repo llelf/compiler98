@@ -57,7 +57,7 @@ NHC98FUDGETS=${NHC98FUDGETS-$NHC98INCDIR/Fudgets}
 COMP=${NHC98COMP-"$NHC98LIBDIR/$MACHINE/nhc98comp"}
 PRAGMA=$NHC98LIBDIR/$MACHINE/hmake-PRAGMA
 COMPFILES=""
-COMPFLAGS="-P$NHC98INCDIR/base"
+COMPFLAGS="-P$NHC98INCDIR/packages/base"
 RUNFLAGS=""
 EXTRALIB=""
 CINCDIRS=""
@@ -196,9 +196,9 @@ processArgs () {
                 COMPFLAGS=$COMPFLAGS" "$1;;
     -package)   shift; package=$1;
                 PACKAGES=$PACKAGES" $package"
-                if [ -d $NHC98INCDIR/$package ]
+                if [ -d $NHC98INCDIR/packages/$package ]
                 then
-                  COMPFLAGS=$COMPFLAGS" -P$NHC98INCDIR/$package"
+                  COMPFLAGS=$COMPFLAGS" -P$NHC98INCDIR/packages/$package"
                 else
                   echo >&2 "Warning: -package $package interfaces not found."
                 fi

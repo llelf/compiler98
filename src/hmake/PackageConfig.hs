@@ -11,7 +11,8 @@
 --
 --  * For ghc, we need to consult ghc-pkg for package import directories.
 --
---  * nhc98 always stores package imports under its default incdir.
+--  * nhc98 <= 1.16 stores package imports under its default incdir.
+--          >= 1.17 stores package imports under $incdir/packages.
 -----------------------------------------------------------------------------
 
 module PackageConfig
@@ -75,24 +76,28 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
     ghcPkg ghc ver =
         if '-' `elem` basename ghc then "ghc-pkg-"++ver else "ghc-pkg"
 
--- nhc98 always stores package imports under its default incdir.
+-- nhc98 <= 1.16 stores package imports under its default incdir.
+--       >= 1.17 stores package imports under $incdir/packages.
 packageDirs config@(CompilerConfig{ compilerStyle=Nhc98
                                   , includePaths=[incdir] }) packages =
+  let (pkgdir,base) | compilerVersion config <= "v1.16" = (incdir, [])
+                    | otherwise     = (incdir++"/packages", [pkgdir++"/base"])
+  in
   unsafePerformIO $ do
-    ok <- doesDirectoryExist incdir
+    ok <- doesDirectoryExist pkgdir
     if ok
       then do
         (good,bad) <- foldM (\(g,b) d->
-                             do let dir = incdir++"/"++d
+                             do let dir = pkgdir++"/"++d
                                 ok <- doesDirectoryExist dir
                                 return (if ok then (dir:g, b) else (g, d:b)))
-                            ([],[]) packages
+                            (base,[]) packages
         when (not (null bad))
              (hPutStrLn stderr ("\nWarning: package(s) "
                                ++concat (intersperse ", " bad)
-                               ++" not available in "++incdir))
+                               ++" not available in "++pkgdir))
         return good
-      else ioError (userError ("Can't find nhc98 packages at "++incdir))
+      else ioError (userError ("Can't find nhc98 packages at "++pkgdir))
 
 -- No other compiler supports packages.
 packageDirs config packages = []
