@@ -12,15 +12,17 @@ In order to use <b>nhc98</b> under Windows 95/98/ME or NT/2000/XP, you first
 need to install the Cygwin DLL, the <em>gcc</em> C compiler, and GNU tools.
 
 <p>
-For old Cygwin versions (<em>b19</em>, <em>b20</em>, and <em>b20.1</em>),
-this involved downloading <em>cygwin/full.exe</em>
-from your favorite Gnu-mirroring FTP site, and running it as a
-self-extracting archive.  The newer Cygwin release version <em>1.0</em>
-was available on CD-ROM only.  The very newest releases <em>1.1.x</em>
-are once again available for download.  From <em>1.1.0</em> onwards, you
-should download the small utility called <em>setup.exe</em> from a
-Cygwin mirror FTP site and follow its instructions to install the
-rest of the toolset.
+For recent releases of Cygwin (from <em>1.1.0</em> onwards), you should
+download the small utility called <em>setup.exe</em> from a Cygwin
+mirror FTP site and follow its instructions to install the toolset.
+This is an interactive process where you can choose which components
+to collect and install.
+
+<p>
+(The older Cygwin release <em>1.0</em> was available on CD-ROM only,
+and for even older Cygwin versions (<em>b19</em>, <em>b20</em>, and
+<em>b20.1</em>), you needed to download and run the self-extracting
+archive <em>cygwin/full.exe</em>.)
 
 <p>
 Along with <em>gcc</em>, you should also get the <em>bash</em> shell
@@ -51,6 +53,27 @@ SunSite</a>.)
 
 
 <p>
+If you have a recent version of GHC (5.00 upwards) already installed
+on your Windows system, then there is a specific pitfall to beware of.
+<ul>
+<li> GHC no longer relies on the Cygwin environment, but is a fully
+     native Windows compiler.  This is a good thing in general,
+     but it does mean that if you try to use GHC under Cygwin, for
+     instance to build nhc98, you may occasionally bump into problems.
+     These are largely due to a mismatch between the Windows view of
+     the filesystem and the Cygwin view of it.
+<li> The build system for nhc98 uses an absolute pathname as the
+     destination of a compile command.  This is one of the areas
+     where Cygwin and GHC can conflict if you are not careful.  The
+     important thing to remember is that the location in which you
+     unpack the nhc98 distribution must have the same absolute
+     filepath in both Cygwin and Windows.  For instance, a Cygwin
+     mount that maps <tt>C:\tmp</tt> to <tt>/tmp</tt> will work fine,
+     whereas a mount that maps <tt>C:\cygwin\tmp</tt> to <tt>/tmp</tt>
+     will probably not work.
+</ul>
+
+<p>
 Some people have reported difficulty getting recent releases of nhc98
 to build with older versions of Cygwin.  The make fails very quickly,
 saying that there is "no rule to make target .../src/runtime/Kernel".
@@ -70,7 +93,6 @@ This could be due to one of several causes.
 </ul>
 
 
-
 <br><br>
 <h3>And now...</h3>
 <p>
@@ -88,7 +110,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.03.30<br>
+2002.04.05<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

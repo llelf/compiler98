@@ -22,12 +22,8 @@ Users of Windows 95/98/SE/Me/NT/2k/XP, please see these
 <a href="windows.html">special Windows instructions</a> first.
 
 <p>
-If you want to use the graphical trace browsing tools
-<em>hat-trail-in-java</em> or <em>hood</em>, you will need
-to have Java on your PATH.  Various versions of Java produce
-prettier or uglier displays, and some don't even work at all.
-The <em>hat-trail-in-java</em> tool is now essentially obsolete in
-any case, so don't worry too much about it.
+If you want to use the graphical debugging tool <em>hood</em>, you
+will need to have Java on your PATH.
 
 <p>
 For the binary release, we assume you have a good C compiler (usually
@@ -38,7 +34,7 @@ For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <em>nhc98</em> without another Haskell compiler, you need 8Mb of memory
 (although you could probably manage with less), and about 50Mb of disk
-space (100Mb if you build for profiling and tracing as well).  If you
+space (70Mb if you build for profiling as well).  If you
 already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
 then building <em>nhc98</em> will require at least 32Mb of memory,
 and 100Mb of free disk space.  If you don't have <em>hbc</em> or
@@ -102,11 +98,11 @@ to <em>configure</em>.  There are various other
 
 <h3>Building and installing from sources</h3>
 <p>
-All object files are created in a separate directory tree from the
-sources.  This means it is possible to build concurrently for different
-machines from the same shared source tree.  You can also build the heap
-profiling, time profiling, and tracing versions of the prelude and
-runtime system concurrently if you wish.
+All object files are created in a separate directory tree from
+the sources.  This means it is possible to build concurrently for
+different machines from the same shared source tree.  You can also
+build the heap profiling and time profiling versions of the prelude
+and runtime system concurrently if you wish.
 
 <p>
 The current distribution of the compiler will build for any machine with
@@ -129,16 +125,14 @@ can build <em>nhc98</em> using an earlier version of <em>nhc98</em> if
 you want using the configure options, but it is not selected by default.)
 
 <p>
-Decide what profiling and tracing features you want to use -
+Decide what profiling features you want to use -
 <em>make help</em> gives a list of useful individual targets,
-such as <em>basic</em>, <em>heapprofile</em>, <em>timeprofile</em>
-and <em>tracer</em>.
+such as <em>basic</em>, <em>heapprofile</em>, and <em>timeprofile</em>.
 
 <p>
 Then run <em>make</em> with your chosen targets, or <em>make all</em>
 to build all the possible facilities.  (A simple <em>make</em>
-without targets builds the basic compiler and tools and
-support for tracing, but no form of profiling by default.)
+without targets builds everything.)
 
 <p>
 The time taken to build nhc98 depends on your machine, which compiler
@@ -151,15 +145,15 @@ some extra components.  Here are some sample build times in minutes:
     <th colspan=3>i686 (500Mhz) Linux</th>
 </tr><tr>
     <th>build<br>compiler</th>
-    <th>basic only</th><th>default<br>(basic+tracer)</th><th>all</th>
+    <th>basic only</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td align=right>5</td><td align=right>18</td><td align=right>27</td>
+    <td>gcc</td><td align=right>5</td><td align=right>20</td>
 </tr><tr>
-    <td>ghc</td><td align=right>21</td><td align=right>80</td><td align=right>100</td>
+    <td>ghc</td><td align=right>21</td><td align=right>58</td>
 </tr><tr>
-    <td>hbc</td><td align=right>23</td><td align=right>100</td><td align=right>130</td>
+    <td>hbc</td><td align=right>23</td><td align=right>70</td>
 </tr><tr>
-    <td>nhc98</td><td align=right>50</td><td align=right>400</td><td align=right>510</td>
+    <td>nhc98</td><td align=right>50</td><td align=right>188</td>
 </tr></table>
 </center>
 
@@ -190,11 +184,8 @@ If you have built <em>nhc98</em> for a machine not currently listed on the
 it as a binary package for others to download, it is very easy to do.
 After building and installing, type `<em>make binDist</em>' <u>before</u>
 you tidy up with `<em>make clean</em>'.  Then upload the resulting tarfile
-by ftp to
-<pre>
-    ftp://ftp.cs.york.ac.uk/pub/haskell/incoming/
-</pre>
-and send an email to let us know it's there.
+to somewhere we can access it, send an email to let us know about it, and
+we will copy it to our central download site.
 
 <h3>Keeping up-to-date</h3>
 <p>
@@ -208,7 +199,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2002.03.08<br>
+This page last modified: 2002.06.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

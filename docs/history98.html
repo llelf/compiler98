@@ -5,6 +5,65 @@
 <center><h1>nhc98 release history</h1></center>
 
 <hr>
+<h3>nhc98 1.14 (2002-06-14) features</h3>
+<ul>
+<li> Major change: The Hat tracing system is now entirely separate from
+                the nhc98 compiler.  Hat can now be used with either ghc
+                or nhc98 - you should download and build the Hat system
+                <em>after</em> building nhc98.
+<li> Performance: Various patches for improved time/space usage of the
+                compiler itself, contributed by Thomas Nordin.
+<li> Bugfix:    Various small fixes for OS environments like OpenBSD,
+                ix86-Solaris, etc.
+</ul>
+
+
+<hr>
+<h3>nhc98 1.12 (2002-03-14) features</h3>
+<ul>
+<li> New:       The old hat-trail tool written in Java is now obsolete,
+                replaced by a brand new version written in Haskell.
+<li> New:       There are numerous improvements to the Hat tools, and
+                their command syntax is now simplified and much more
+                uniform.
+<li> New:       All possible tunnels between hat-trail, hat-observe, and
+                hat-detect are now available.
+<li> New:       The first version of the portable Hat transformation is
+                now available.  In other words, Hat can now compile simple
+                programs with ghc instead of nhc98.
+<li> Bugfix:    The Time library now has implementations of addToClockTime
+                and diffClockTimes, and tdPicoSec is renamed to tdPicosec.
+<li> Bugfix:    The Numeric library now has implementations of floatToDigits,
+                formatRealFloat, fromRat, and show[EFG]Float.
+<li> Bugfix:    Numerous small problems with building on MacOS X have
+                been ironed out.
+<li> Bugfix:    The IO library did not re-export the PreludeIO definitions.
+<li> Bugfix:    An infix pattern decl of the form
+                a `Foo` (b `Bar` c) = 3 `Foo` (4 `Bar` 5)
+                could not be compiled because the parser lost the explicit
+                bracketing on the LHS.
+<li> Bugfix:    Allow an empty import/export decl with a single stray comma.
+<li> Bugfix:    Fix block-buffered file handles, so that they produce output
+                exactly when the buffer is full.
+<li> Bugfix:    Do not treat `qualified', `hiding', or `interface' as keywords
+                of the language - they are significant only in certain
+                positions.
+<li> Bugfix:    Increase garbage collection counters to 64-bits for correct
+                reports in long-running computations.
+<li> Bugfix:    Accept `instance ClassName (Prelude.-&gt;)' in source and
+                interface files.
+<li> Bugfix:    Work around a rare buffer problem in hp2graph.
+<li> Bugfix:    Where an entire module is re-exported, but one of its
+                variables is hidden on import, the hidden variable should
+                not be re-exported.
+<li> Bugfix:    Fix link message "undefined reference to
+                `FN_Ix_46_95_46Unknown_46variable'" when using library Array.
+<li> Bugfix:    Update configuration script (again) to detect ghc-5.02
+                correctly.
+</ul>
+
+
+<hr>
 <h3>nhc98 1.10 (2001-10-19) features</h3>
 <ul>
 <li> Bugfix:    The qualified import/export namespace is now managed much
@@ -442,7 +501,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.10.26<br>
+This page last modified: 2002.06.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

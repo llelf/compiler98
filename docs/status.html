@@ -7,15 +7,26 @@
 <hr>
 
 <p>
-The latest stable release is 1.12.  The CVS development tree is now
-at version 1.13.  Bugfixes and important changes to the system are
+The latest stable release is 1.14.  The CVS development tree is now
+at version 1.15.  Bugfixes and important changes to the system are
 described here for the two most recent released versions.
 
 <p>
 
 <hr>
-<h3>nhc98 1.13 (CVS development version) features</h3>
+<h3>nhc98 1.14 (2002-06-14) features</h3>
 <ul>
+<li> New:	The Hat tracing system is now entirely separate from
+		the nhc98 compiler.  Hat can now be used with either ghc
+		or nhc98 - you should download and build the Hat system
+		<em>after</em> building nhc98.
+<li> New:	The compiler now supports a simplified version of ghc's
+		package mechanism.  No documentation yet, but Hat relies
+		on it.
+<li> Performance: Various patches for improved time/space usage of the
+		compiler itself, contributed by Thomas Nordin.
+<li> Bugfix:	Various small fixes for OS environments like OpenBSD,
+		ix86-Solaris, etc.
 </ul>
 
 <hr>
@@ -62,47 +73,6 @@ described here for the two most recent released versions.
 		correctly.
 </ul>
 
-<hr>
-<h3>nhc98 1.10 (2001-10-19) features</h3>
-<ul>
-<li> Bugfix:	The qualified import/export namespace is now managed much
-		better by the compiler, in accordance with latest revision
-		of the Haskell'98 Report.
-<li> Bugfix:	In the Hat tools, there is a more accurate distinction between
-		top-level identifiers and local identifiers.
-<li> Bugfix:	Numerous small bugfixes in hat-observe and hat-detect,
-		including better pretty-printing of infix expressions and
-		strings.
-</ul>
-
-<hr>
-<h3>nhc98 1.08 (2001-09-25) features</h3>
-<ul>
-<li> New:	Tunnels from hat-observe to hat-detect and hat-trail,
-		enabling the user to jump directly to something of interest.
-<li> New:	Prototype version of the portable source-to-source
-		transformation is in progress.
-<li> New:	More updates of the the Prelude/Libraries to match the
-		recent revisions of the Haskell'98 Report.
-<li> Bugfix:	Numerous small bugfixes in hat-observe, hat-detect, and
-		hat-trail.
-<li> Bugfix:	You can now have multiple copies of hat-trail running
-		simultaneously.
-<li> Bugfix:	A module with an explicit null export list previously
-		exported everything - now it correctly exports nothing.
-<li> Bugfix:	In multiple equations with identical (n+k) patterns, only
-		the first equation was ever matched, the rest were
-		previously ignored.
-<li> Bugfix:	A negative literal integer in a pattern caused a compiler
-		error if the (-) function was not also used in an expression.
-<li> Bugfix:	An imported named field, used both as a pattern and a
-		selector in the same equation, gave rise to an
-		"Unbound Identifier" error.
-<li> Bugfix:	Fixes random crashes in primitive implementation of putStr.
-<li> Bugfix:	Link options for ncurses (in src/tracer/hat) were in the
-		wrong order.
-</ul>
-
 
 <h3><a href=history98.html>Previous release history (nhc98)</a></h3>
 <h3><a href=history.html>Release history of nhc13</a></h3>
@@ -116,8 +86,7 @@ described here for the two most recent released versions.
 The basic, stable, components include the compiler itself, the Standard
 Prelude and Libraries, heap profiling facilities, and the tools hmake,
 greencard, and hp2graph.  Relatively recent additions to the system
-are the tracing transformation, trace browsing tools (hat tools),
-time profiler, and common FFI.
+are the time profiler and common FFI.
 
 <p>
 <center>
@@ -142,27 +111,23 @@ time profiler, and common FFI.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>2002-03-12</td>
-  <td>2002-03-05</td>
+  <td>2002-06-07</td>
   <td>1997</td>
   <td>1996</td>
   <td>2001-06-01</td>
-  <td>2002-02-05</td>
+  <td>2002-06-07</td>
 </tr>
 </table>
 
 <table border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>component</th>
-  <td>tracing transformation</td>
-  <td>hat tools</td>
   <td>time profiling</td>
   <td>common FFI</td>
   <td><em>hi</em></td>
   <td>HOOD</td>
 </tr><tr>
   <th bgcolor=#eeeeee>quality</th>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ffffdd>beta</td>
   <td bgcolor=#ffffdd>beta</td>
   <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
@@ -170,8 +135,6 @@ time profiler, and common FFI.
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2002-03-12</td>
-  <td>2002-03-12</td>
   <td>2001-05-18</td>
   <td>2001-03-01</td>
   <td>2000-11-10</td>
@@ -187,7 +150,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2002.03.13<br>
+This page last modified: 2002.06.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
