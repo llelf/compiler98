@@ -564,7 +564,7 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
 
     if(LISTEDBYENTERS) {
       if(Sums.total_g_enters) {
-        fprintf(fp, "GreenCard\t %10d calls", Sums.total_g_enters);
+        fprintf(fp, "foreign lang\t %10d calls", Sums.total_g_enters);
         if(enter_percentages) 
           fprintf(fp, "   %5.1f%% calls", 
                   100*((float) Sums.total_g_enters)/Sums.total_enters);
@@ -575,7 +575,7 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
                   (int)(tpefactor*(Sums.total_g_ticks)/(Sums.total_g_enters)));
         fprintf(fp, "\n\n");
       }
-      fprintf(fp, "GarbageCollect\t %10d calls", 
+      fprintf(fp, "garbage collect\t %10d calls", 
               Sums.collect_garbage_enters);
       if(enter_percentages)
         fprintf(fp, "   %5.1f%% calls", 
@@ -591,7 +591,7 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
     }
     else {
       if(Sums.total_g_enters) {
-        fprintf(fp, "GreenCard\t %5.1f%% time\t%10d calls", 
+        fprintf(fp, "foreign lang\t %5.1f%% time\t%10d calls", 
                 100*((float) Sums.total_g_ticks)/Sums.nonZeroTotalTicks, 
                 Sums.total_g_enters);
         if(enter_percentages) 
@@ -602,7 +602,7 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
                   (int)(tpefactor*(Sums.total_g_ticks)/(Sums.total_g_enters)));
         fprintf(fp, "\n\n");
       }
-      fprintf(fp, "GarbageCollect\t %5.1f%% time\t%10d calls", 
+      fprintf(fp, "garbage collect\t %5.1f%% time\t%10d calls", 
               100*((float) Sums.collect_garbage_ticks)/Sums.nonZeroTotalTicks, 
               Sums.collect_garbage_enters);
       if(enter_percentages)
