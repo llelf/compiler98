@@ -85,8 +85,8 @@ else
 fi
 NEWHEAP=$HEAP
 
-case $CC in	# versions of gcc >= 3.3 require extra evil in the evil mangler!
-  *gcc*) if $CC --version | head -1 | grep "3.3" >/dev/null
+case $CCC in	# versions of gcc >= 3.3 require extra evil in the evil mangler!
+  *gcc*) if $CCC --version | head -1 | grep "3.3" >/dev/null
          then MOREEVIL=yes
          else MOREEVIL=no
          fi ;;
