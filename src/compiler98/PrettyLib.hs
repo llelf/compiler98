@@ -24,29 +24,6 @@ module PrettyLib (nil,(<>),text,line,delimiter,fdelimiter,group,nest,groupNest
                  ,parens,brackets,braces,string
                  ,pretty,simple) where
 
-{- For debugging with Hood:
-import Observe
-
-instance Observable Doc where
-  observer NIL = send "NIL" (return NIL)
-  observer (doc1 :<> doc2) = send "(:<>)" (return (:<>) << doc1 << doc2)
-  observer (TEXT s) = send "TEXT" (return TEXT << s)
-  observer (LINE s) = send "LINE" (return LINE << s)
-  observer (GROUP s) = send "GROUP" (return GROUP << s)
-  observer (NEST i doc) = send "NEST" (return NEST << i << doc)
-
-instance Observable Token where
-  observer (Text s l) = send "Text" (return Text << s << l)
-  observer (Line s l i) = send "Line" (return Line << s << l << i)
-  observer Open = send "Open" (return Open)
-  observer Close = send "Close" (return Close)
-
-instance Observable a => Observable (Q1 a) where
-  observer (Q1 lenf f lenr r) = send "Q1" (return Q1 << lenf << f << lenr << r)
-
-instance Observable a => Observable (Q2 a) where
-  observer (Q2 f r) = send "Q2" (return Q2 << f << r)
--}
 
 {- Exported definitions ================================================== -}
 -- Core pretty printer combinators ------------------------------------------
@@ -284,6 +261,7 @@ layout width tokens = snd $ go width 1 empty1 0 tokens
     where
     (groupFits', string) = 
       checkGroupsMaxEnd (r-l) (p+l) groupsMaxEnd fitDepth tokens 
+
 
   checkGroupsMaxEnd :: Int -> Int -> Q1 Int -> Int -> [Token] 
                     -> (Q2 Bool, String)

@@ -17,7 +17,8 @@ import PackedString (PackedString,packString,unpackPS)
 import List (intersperse)
 
 parseExports =
-    Just `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar
+    Just `parseChk` lpar `apCut` manySep comma parseExport `chk` 
+      optional comma `chk` rpar
         `orelse`
     parse Nothing `chk` lit (L_ACONID (TupleId 0))
         `orelse`
@@ -60,10 +61,11 @@ deQualify   (pos,Qualified a b) = (pos, (Visible . packString . concat)
 parseImpSpec =
     (NoHiding []) `parseChk` k_unit                  -- fix for import Module()
         `orelse`
-    NoHiding `parseChk` lpar `apCut` manySep comma parseEntity `chk` rpar
+    NoHiding `parseChk` lpar `apCut` manySep comma parseEntity `chk` 
+      optional comma `chk` rpar
         `orelse`
     Hiding `parseChk` lit L_hiding `chk` lpar `apCut`
-                                         manySep comma parseEntity `chk` rpar
+      manySep comma parseEntity `chk` optional comma `chk` rpar
         `orelse`
     parse (Hiding [])
 
