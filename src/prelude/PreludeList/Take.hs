@@ -7,8 +7,8 @@ take		      :: Int -> [a] -> [a]
 --take _ _            = error "PreludeList.take: negative argument"
 
 take n xs
-    | n<=0  = error "PreludeList.take: negative argument"  -- []
-    | n>0   = take' n xs
+    | n<0  = error "PreludeList.take: negative argument"  -- []
+    | n>=0 = take' n xs
   where take' 0 xs     = []
         take' n []     = []
         take' n (x:xs) = x : take' (n-1) xs

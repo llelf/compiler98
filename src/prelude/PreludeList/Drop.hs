@@ -8,8 +8,8 @@ drop			:: Int -> [a] -> [a]
 --drop _ _          = error "PreludeList.drop: negative argument"
 
 drop n xs 
-    | n<=0 = error "PreludeList.drop: negative argument"  -- xs
-    | n>0  = drop' n xs
+    | n<0  = error "PreludeList.drop: negative argument"  -- xs
+    | n>=0 = drop' n xs
   where drop' 0 xs     = xs
         drop' n []     = []
         drop' n (x:xs) = drop' (n-1) xs

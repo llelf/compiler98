@@ -125,13 +125,18 @@ done
 
 if [ "$modules" = "" ]
 then
-  echo 'Usage: hmake [options] modules'
+  echo 'Usage: hmake [compiler] [options] (module|program)* [object...]'
+  echo '       compiler     choose -ghc, -hbc, or -nhc98'
   echo '       --version    show version information and quit'
   echo '       -q           quiet (do not echo commands)'
   echo '       -n           noexec (echo but do not execute commands)'
   echo '       -g           show graph of dependencies (implies noexec)'
   echo '       -M           show Makefile format dependencies'
   echo '       -dobjdir     use objdir for object files'
+  echo '       -*           other options are passed through to the compiler'
+  echo '       module       modules (.hs, .lhs, .gc) are compiled'
+  echo '       program      programs are compiled and linked'
+  echo '       object       objects (.o, .a) are linked into a program only'
   exit 1
 fi
 

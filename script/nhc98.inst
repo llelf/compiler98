@@ -483,6 +483,12 @@ do
     if test -r $LIBDIR/lib$CFG.a
     then
       LDLIBS=$LIBDIR/lib$CFG.a" "$LDLIBS
+    else
+      if test -r $NHC98LIBDIR/$MACHINE/$LIBDIR/lib$CFG.a
+      then
+        LDLIBS=$NHC98LIBDIR/$MACHINE/$LIBDIR/lib$CFG.a" "$LDLIBS
+      else
+      fi
     fi
   fi
 done

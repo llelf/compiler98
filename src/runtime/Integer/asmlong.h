@@ -74,12 +74,14 @@
 
 #if defined (__hppa)
 #define add_ssaaaa(sh, sl, ah, al, bh, bl) \
-  __asm__ ("add %4,%5,%1\naddc %2,%3,%0"				\
+  __asm__ ("add %4,%5,%1
+        addc %2,%3,%0"				\
 	: "=r" ((unsigned long int)(sh)), "=&r" ((unsigned long int)(sl))\
 	: "%r" ((unsigned long int)(ah)), "r" ((unsigned long int)(bh)),\
 	  "%r" ((unsigned long int)(al)), "r" ((unsigned long int)(bl)))
 #define sub_ddmmss(sh, sl, ah, al, bh, bl) \
-  __asm__ ("sub %5,%4,%1\nsubb %3,%2,%0"				\
+  __asm__ ("sub %5,%4,%1
+        subb %3,%2,%0"				\
 	: "=r" ((unsigned long int)(sh)), "=&r" ((unsigned long int)(sl))\
 	: "r" ((unsigned long int)(ah)), "r" ((unsigned long int)(bh)),	\
 	  "r" ((unsigned long int)(al)), "r" ((unsigned long int)(bl)))

@@ -19,8 +19,15 @@ not changed, then other modules which import it do not need to be recompiled.
 <p>
 The basic option summary is:
 <pre>
-    Usage: hmake [-nhc98|-hbc|-ghc] [-q] [-n] [-g] [-M] [opts] target ...
+    Usage: hmake [-nhc98|-hbc|-ghc] [-q|-n|-g] [-M] [compiler opts] target ...
 </pre>
+You can have more than one target: all of them are built.  A target can
+be a module (with .hs, .lhs, or .gc extension), in which case the module
+and everything it depends on is compiled, but not linked.
+Alternatively, a target can be a program name (no .hs extension), in
+which case the appropriate modules are linked as well as compiled.  An
+object or archive filename (.o, .a extension) cannot be a target, but if
+you add it to the commandline, it will be added into the final link.
 
 
 
@@ -33,7 +40,7 @@ However, <em>hmake</em> understands and strips the following options.
 <td><b>-nhc98</b><br>
     <b>-hbc</b><br>
     <b>-ghc</b></td>
-	<td>specify which compiler you want to use [default is the compiler you built it with].</td>
+	<td>specify which compiler you want to use [default is the compiler you built hmake with].</td>
 </tr><tr>
 <td><b>-q</b></td>
 	<td>Quiet - don't echo compilation commands.</td>
@@ -131,7 +138,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-01-12<br>
+Information last updated: 2000-02-18<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
