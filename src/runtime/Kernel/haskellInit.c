@@ -37,6 +37,7 @@ int bellGc;
 int gcStatics;
 int dumpStack;
 timer gcTime,totalTime,runTime;
+extern int hpSize, spSize;
 
 int traceStat = 0;
 int traceShow = 0;
