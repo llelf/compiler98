@@ -103,8 +103,12 @@ mkEnumToThenFrom pos eTo eThen eFrom =
 
 mkAppExp [] = error "mkAppExp"
 mkAppExp [e] = e
-mkAppExp es@(e:es') = 
-  ExpApplication (mergePos (getPos e) (getPos (last es'))) es
+mkAppExp es@[e1,e2] = 
+  ExpApplication (mergePos (getPos e1) (getPos e2)) es
+mkAppExp es@(e1:e2:es') =
+  ExpApplication (mergePos (min (getPos e1) (getPos e2)) (getPos (last es'))) 
+    es
+  -- operator of infix expression is in front and first argument next
 
 -- passes positions of left and right parenthesis
 mkParExp posl [ExpConOp pos' id] posr = ExpCon pos' id
