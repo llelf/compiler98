@@ -553,9 +553,17 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 	break;
     case NTCString:
 	*pmodule = strdup("Unknown");
-	np = GET_POINTER_ARG1(t, 1);
-	*pname = malloc(len+3);
-	sprintf(*pname, "'%s'", (char *)&np[1+EXTRA]);
+/*	{ Coninfo ci;
+          np = GET_POINTER_ARG1(t, 1);
+          ci = GET_CONINFO(np);
+          len = CONINFO_LARGESIZEU(ci)*sizeof(Node) - CONINFO_LARGEEXTRA(ci);
+	  *pname = malloc(3+len);
+	  sprintf(*pname, "'%s'", (char *)&np[1+EXTRA]);
+        }
+*/
+        np = GET_POINTER_ARG1(t, 1);
+	sprintf(&str[0],"<%d>",GET_INT_VALUE(np));
+	*pname = strdup(str);
 	break;
     case NTTuple:
 	*pmodule = strdup("Prelude");
@@ -585,8 +593,8 @@ void dumpSR(FILE *sock, NodePtr t)
 {
     static char str[128];
     int rowcol, row, col;
-    IND_REMOVE(t);
-    if((GET_TAG(t) == CON_TAG)) {
+    if (t) IND_REMOVE(t);
+    if (t && (GET_TAG(t)==CON_TAG)) {
 	Coninfo cinfo = GET_CONINFO(t);
 	if (CONINFO_NUMBER(cinfo) == 2) { /* SR3 */
 	    rowcol = (int)t[1+EXTRA];
