@@ -68,44 +68,44 @@ HsInt64 primRemInt64	(HsInt64 d1, HsInt64 d2){ return (d1%d2); }
 
 
 /* Integer conversions */
-/* Note that Int64 is incorrectly downcast to Int32 here. */
-extern int   primIntFromIntegerC (void* d);
-extern void* primIntegerFromIntC (int   d);
-#define FR_INT(i)	primIntFromIntegerC(d)
-#define TO_INT(i)	primIntegerFromIntC(d)
+
+extern HsInt64	primInt64FromInteger (void* d);
+extern void*	primIntegerFromInt64 (HsInt64 d);
+#define FR_INT(i)	primInt64FromInteger(d)
+#define TO_INT(i)	primIntegerFromInt64(d)
 HsInt8	primInt8FromInteger  (void* d)		{
-    int i = FR_INT(d);
+    HsInt64 i = FR_INT(d);
     if ((i < HS_INT8_MIN) || (i > HS_INT8_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int8 value\n");
     return (HsInt8)i; }
 HsInt16	primInt16FromInteger (void* d)		{
-    int i = FR_INT(d);
+    HsInt64 i = FR_INT(d);
     if ((i < HS_INT16_MIN) || (i > HS_INT16_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int16 value\n");
     return (HsInt16)i; }
 HsInt32	primInt32FromInteger (void* d)		{
-    int i = FR_INT(d);
+    HsInt64 i = FR_INT(d);
     if ((i < HS_INT32_MIN) || (i > HS_INT32_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int32 value\n");
     return (HsInt32)i; }
-HsInt64	primInt64FromInteger (void* d)		{ return (HsInt64)FR_INT(d); }
-void*	primInt8ToInteger  (HsInt8 d)		{ return TO_INT((int)d); }
-void*	primInt16ToInteger (HsInt16 d)		{ return TO_INT((int)d); }
-void*	primInt32ToInteger (HsInt32 d)		{ return TO_INT((int)d); }
-void*	primInt64ToInteger (HsInt64 d)		{ return TO_INT((int)d); }
+void*	primInt8ToInteger  (HsInt8 d)		{ return TO_INT((HsInt64)d); }
+void*	primInt16ToInteger (HsInt16 d)		{ return TO_INT((HsInt64)d); }
+void*	primInt32ToInteger (HsInt32 d)		{ return TO_INT((HsInt64)d); }
+void*	primInt64ToInteger (HsInt64 d)		{ return TO_INT(d); }
 
 
 
 /* Enum conversions */
+
 int	primFromEnumInt8	(HsInt8 d)	{ return (int)d; }
 int	primFromEnumInt16	(HsInt16 d)	{ return (int)d; }
 int	primFromEnumInt32	(HsInt32 d)	{
     if ((d < HS_INT_MIN) || (d > HS_INT_MAX))
-	fprintf (stderr,"Warning: fromEnum truncates Int32 value\n");
+	fprintf (stderr,"Warning: fromEnum truncates Int32 value to fit Int\n");
     return (int)d; }
 int	primFromEnumInt64	(HsInt64 d)	{
     if ((d < HS_INT_MIN) || (d > HS_INT_MAX))
-	fprintf (stderr,"Warning: fromEnum truncates Int64 value\n");
+	fprintf (stderr,"Warning: fromEnum truncates Int64 value to fit Int\n");
     return (int)d; }
 HsInt8	primToEnumInt8	  (int d)		{
     if ((d < HS_INT8_MIN) || (d > HS_INT8_MAX))

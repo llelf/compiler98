@@ -63,35 +63,40 @@ HsWord64 primRemWord64  (HsWord64 d1, HsWord64 d2)	{ return (d1%d2); }
 
 
 /* Integer conversions */
-/* Note that Word64 is incorrectly downcast to Word32 here */
-extern int   primIntFromIntegerC (void* d);
-extern void* primIntegerFromIntC (int   d);
-#define FR_INT(d)     primIntFromIntegerC(d)
-#define TO_INT(d)       primIntegerFromIntC(d)
+
+extern HsInt64	primInt64FromInteger (void* d);
+extern void*	primIntegerFromInt64 (HsInt64 d);
+#define FR_INT(d)	primInt64FromInteger(d)
+#define TO_INT(d)	primIntegerFromInt64(d)
 HsWord8   primWord8FromInteger  (void* d)	{
-    int i = FR_INT(d);
+    HsWord64 i = (HsWord64)FR_INT(d);
     if ((i < HS_WORD8_MIN) || (i > HS_WORD8_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word8 value\n");
     return (HsWord8)i; }
 HsWord16  primWord16FromInteger (void* d)	{
-    int i = FR_INT(d);
+    HsWord64 i = (HsWord64)FR_INT(d);
     if ((i < HS_WORD16_MIN) || (i > HS_WORD16_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word16 value\n");
     return (HsWord16)i; }
 HsWord32  primWord32FromInteger (void* d)	{
-    int i = FR_INT(d);
+    HsWord64 i = (HsWord64)FR_INT(d);
     if ((i < HS_WORD32_MIN) || (i > HS_WORD32_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word32 value\n");
     return (HsWord32)i; }
-HsWord64  primWord64FromInteger (void* d)	{ return (HsWord64)FR_INT(d); }
-void*     primWord8ToInteger  (HsWord8 d)	{ return TO_INT((int)d); }
-void*     primWord16ToInteger (HsWord16 d)	{ return TO_INT((int)d); }
-void*     primWord32ToInteger (HsWord32 d)	{ return TO_INT((int)d); }
-void*     primWord64ToInteger (HsWord64 d)	{ return TO_INT((int)d); }
+HsWord64  primWord64FromInteger (void* d)	{
+    HsWord64 i = (HsWord64)FR_INT(d);
+    if ((i < HS_WORD64_MIN) || (i > HS_WORD64_MAX))
+        fprintf (stderr,"Warning: fromInteger truncates to fit Word64 value\n");
+    return (HsWord64)i; }
+void*     primWord8ToInteger  (HsWord8 d)	{ return TO_INT((HsInt64)d); }
+void*     primWord16ToInteger (HsWord16 d)	{ return TO_INT((HsInt64)d); }
+void*     primWord32ToInteger (HsWord32 d)	{ return TO_INT((HsInt64)d); }
+void*     primWord64ToInteger (HsWord64 d)	{ return TO_INT((HsInt64)d); }
 
 
 
 /* Enum conversions */
+
 int     primFromEnumWord8        (HsWord8 d)      { return (int)d; }
 int     primFromEnumWord16       (HsWord16 d)     { return (int)d; }
 int     primFromEnumWord32       (HsWord32 d)     {
