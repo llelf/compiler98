@@ -42,10 +42,10 @@ your programs.
 <li> Extra annotations are provided.  <tt>cast</tt> indicates that an
      arity-1 foreign import is only being used for its type-cast, and
      hence eliminates some runtime overheads:
-     <pre>  foreign import floatToDouble cast :: Float -> Double </pre>
+     <pre>  foreign import floatToDouble cast :: Float -&gt; Double </pre>
      and <tt>noproto</tt> tells the compiler not to generate a C function
      prototype for the external function:
-     <pre>  foreign import sin noproto :: Float -> Float </pre>
+     <pre>  foreign import sin noproto :: Float -&gt; Float </pre>
      eliminates the normal generation of
      <pre>  extern float sin (float); </pre>
      for occasions when such a declaration might conflict with a #include'd
@@ -70,6 +70,7 @@ your programs.
 <li> <tt>foreign label</tt> is not yet supported.
 <li> Explicitly sized types such as <tt>Int8</tt> exist, but they are not
      fully supported with instances of <tt>Num</tt>, <tt>Eq</tt>, etc.
+     <font color=red>Fixed in nhc98-1.14</font>
 </ul>
 
 <p>
@@ -82,7 +83,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.11.28<br>
+This page last modified: 17 June 2002<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
