@@ -8,16 +8,26 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="1.9 (000623)" export HMAKEVERSION
+HMAKEVERSION="2.00 (000915)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
 else OS=unknown
 fi
 
+# Note for people building binary packages of hmake:
+# The variable INSTALLDIR, default /usr/local, changed with --prefix=
+# gives the final destination of everything.  The configure script
+# hard-wires this path into scripts when you give the --install flag.
+# However, if you set the environment variable DESTDIR, the installation
+# process will still hardwire your INSTALLDIR into scripts, but actually
+# install the files in $DESTDIR$INSTALLDIR.  In this way, you can build
+# a complete installation tree in a temporary directory, then tar it up
+# as a package with all the scripts pointing to the correct final location.
+INSTALLDIR=/usr/local
+
 USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
-INSTALLDIR=/usr/local
 PWD=`pwd`
 case $PWD in	# path mangling required for CYGWIN
   file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
@@ -182,7 +192,7 @@ then
     echo "Man pages:            (none)"
   fi
 
-  if [ -d src ]		# Don't bother with these if doing a binary distribution
+  if [ -d src ]	  # Don't bother with these if unpacking a binary distribution
   then
     echo
     echo "Now we check/create your build directories:"
@@ -270,7 +280,7 @@ echo
 
 if [ "$INSTALL" = "no" ]
 then
-  if [ -d src ]		# Don't overwrite config if doing binary distribution!
+  if [ -d src ]	  # Don't overwrite config if unpacking binary distribution!
   then
     echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
     ( echo "BUILDWITH=$BUILDWITH";
@@ -296,22 +306,22 @@ else	# [ "$INSTALL" = "yes" ]
 
   echo "Installation directories are now created/checked."
   echo "Install directory root is:"
-  echo "    $INSTALLDIR"
+  echo "    $DESTDIR$INSTALLDIR"
 
   if [ "$LIB" = "yes" ]
   then
     echo "Executables and object lib files go into:"
-    echo -n "    $LIBDIR/$MACHINE"
-    if [ ! -d $LIBDIR/$MACHINE ]
-    then mkdir -p $LIBDIR/$MACHINE;  echo ' (created)'
+    echo -n "    $DESTDIR$LIBDIR/$MACHINE"
+    if [ ! -d $DESTDIR$LIBDIR/$MACHINE ]
+    then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
     echo -n "    "
-    #cp -p $BUILDLIBDIR/$MACHINE/ tar cf - . ) | ( cd $LIBDIR/$MACHINE; tar xvf - )
+    #cp -p $BUILDLIBDIR/$MACHINE/ tar cf - . ) | ( cd $DESTDIR$LIBDIR/$MACHINE; tar xvf - )
     for file in $BUILDLIBDIR/$MACHINE/*
     do
       echo -n "`basename $file` "
-      if [ -f $file ]; then cp -p $file $LIBDIR/$MACHINE; fi
+      if [ -f $file ]; then cp -p $file $DESTDIR$LIBDIR/$MACHINE; fi
     done
     #echo -n "hmake.config "
     #sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config \
@@ -324,23 +334,23 @@ else	# [ "$INSTALL" = "yes" ]
   if [ "$BIN" = "yes" ]
   then 
     echo "Scripts go into:"
-    echo -n "    $BINDIR"
-    if [ ! -d $BINDIR ]
-    then mkdir -p $BINDIR;  echo ' (created)'
+    echo -n "    $DESTDIR$BINDIR"
+    if [ ! -d $DESTDIR$BINDIR ]
+    then mkdir -p $DESTDIR$BINDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
     echo -n "hmake "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
-    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
+    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
     echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$LIBDIR/$MACHINE/hmake.config
+    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$DESTDIR$LIBDIR/$MACHINE/hmake.config
     echo -n "hi "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hi.inst |\
-    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hi
+    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo -n "harch "
-    cp script/harch $BINDIR
+    cp script/harch $DESTDIR$BINDIR
     echo
-    chmod +x $BINDIR/hmake $BINDIR/harch $BINDIR/hi
+    chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/harch $DESTDIR$BINDIR/hi
   else
     echo 'Not (re-)installing scripts'
   fi
@@ -348,16 +358,16 @@ else	# [ "$INSTALL" = "yes" ]
   if [ "$MAN" = "yes" ]
   then
     echo "Man pages go into:"
-    echo -n "    $MANDIR"
-    if [ ! -d $MANDIR ]
-    then mkdir -p $MANDIR;  echo ' (created)'
+    echo -n "    $DESTDIR$MANDIR"
+    if [ ! -d $DESTDIR$MANDIR ]
+    then mkdir -p $DESTDIR$MANDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
     echo -n "    "
     for file in man/*
     do
       echo -n "`basename $file` "
-      cp $file $MANDIR
+      cp $file $DESTDIR$MANDIR
     done
     echo
   else

@@ -1,12 +1,12 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre19+
+VERSION = 1.00
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x or + means this version has not been released yet.)
 
-HVERSION = 1.9
+HVERSION = 2.00
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
