@@ -15,7 +15,7 @@ BUILTBY=
 case $BUILTBY in
   ghc|nhc*) USINGRTS=rts;;
   hbc|xtc) USINGRTS=minus;;
-  gcc)     USINGRTS=minus; BUILTBY=nhc98 ;;
+  gcc)     USINGRTS=rts; BUILTBY=nhc98 ;;
 esac
 
 # Add or remove Haskell compilers to this list.  It defines the
