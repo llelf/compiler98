@@ -165,6 +165,10 @@ configure Ghc ghcpath = do
     else do
       dir <- runAndReadStdout ("grep '^libdir=' "++fullpath++" | head -1 | "
                                ++ "sed 's/^libdir=.\\(.*\\)./\\1/'")
+      dir <- if null dir then
+                 runAndReadStdout ("grep '^TOPDIROPT=' "++fullpath
+                                   ++" | sed 's/^TOPDIROPT=.-B\\(.*\\).;/\\1/'")
+             else return dir
       let incdir1 = dir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
