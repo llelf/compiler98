@@ -31,6 +31,7 @@ then
                case $1 in
                  lang) echon " -syslib exts";;
                  text) echon " -syslib misc";;
+                 base) ;;
                  *)    echon " -syslib $1" ;;
                esac ;;
       *) echon " $1" ;;
@@ -50,6 +51,7 @@ then
                case $1 in
                  exts) echon " -syslib lang";;
                  misc) ;;
+                 base) ;;
                  *)    echon " -syslib $1" ;;
                esac ;;
       *) echon " $1" ;;
@@ -60,7 +62,33 @@ then
   exit 0
 fi
 
-if [ $ghcversion -ge 408 ]
+if [ $ghcversion -ge 408 -a $ghcversion -lt 504 ]
+then
+  while test "'$1'" != "''" 
+  do
+    case $1 in
+      -syslib) shift
+               case $1 in
+                 exts) echon " -package lang";;
+                 misc) ;;
+                 base) ;;
+                 *)    echon " -package $1" ;;
+               esac ;;
+      -package) shift
+               case $1 in
+                 base) ;;
+                 haskell98) ;;
+                 *)    echon " -package $1" ;;
+               esac ;;
+      *) echon " $1" ;;
+    esac
+    shift
+  done
+  echo
+  exit 0
+fi
+
+if [ $ghcversion -ge 504 ]
 then
   while test "'$1'" != "''" 
   do
