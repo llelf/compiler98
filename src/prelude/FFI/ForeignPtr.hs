@@ -1,10 +1,15 @@
 module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
-    , FinalizerPtr		-- type synonym for FunPtr (Ptr a -> IO ())
+    , FinalizerPtr		-- synonym: FunPtr (           Ptr a -> IO ())
+    , FinalizerEnvPtr		-- synonym: FunPtr (Ptr env -> Ptr a -> IO ())
     , newForeignPtr		-- :: FinalizerPtr a ->
    				--		  Ptr a	-> IO (ForeignPtr a)
+    , newForeignPtrEnv		-- :: FinalizerEnvPtr a -> Ptr env ->
+   				--		  Ptr a	-> IO (ForeignPtr a)
     , newForeignPtr_		-- ::             Ptr a -> IO (ForeignPtr a)
-    , addForeignPtrFinalizer	-- :: FinalizerPtr a -> ForeignPtr a  -> IO ()
+    , addForeignPtrFinalizer	-- :: FinalizerPtr a    -> ForeignPtr a -> IO ()
+    , addForeignPtrFinalizerEnv	-- :: FinalizerEnvPtr a -> Ptr env
+				--			-> ForeignPtr a -> IO ()
     , withForeignPtr		-- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
     , touchForeignPtr		-- :: ForeignPtr a -> IO ()
     , unsafeForeignPtrToPtr	-- :: ForeignPtr a -> Ptr a
@@ -60,7 +65,8 @@ instance Show (ForeignPtr a) where
   showsPrec p f = showsPrec p (unsafeForeignPtrToPtr f)
 
 
-type FinalizerPtr a = FunPtr (Ptr a -> IO ())
+type FinalizerPtr a        = FunPtr            (Ptr a -> IO ())
+type FinalizerEnvPtr env a = FunPtr (Ptr env -> Ptr a -> IO ())
 
 -- Note that `newForeignPtr' is not a strictly legal FFI function.
 -- It is not usually possible to return a ForeignPtr as the result of
@@ -75,9 +81,18 @@ foreign import ccall "primForeignPtrC"
 newForeignPtr_ :: Ptr a -> IO (ForeignPtr a)
 newForeignPtr_ p = newForeignPtr nullFunPtr p
 
+-- newForeignPtrEnv creates a ForeignPtr with an environment finaliser.
+newForeignPtrEnv :: FinalizerEnvPtr env a -> Ptr env
+                    -> Ptr a -> IO (ForeignPtr a)
+newForeignPtrEnv f p env = error "Foreign.newForeignPtrEnv not supported"
+
 -- addForeignPtrFinalizer is not implemented in nhc98.
 addForeignPtrFinalizer :: FinalizerPtr a -> ForeignPtr a -> IO ()
 addForeignPtrFinalizer free p = return ()
+
+addForeignPtrFinalizerEnv :: FinalizerEnvPtr a -> Ptr env
+                             -> ForeignPtr a -> IO ()
+addForeignPtrFinalizerEnv free env p = return ()
 
 
 -- `withForeignPtr' is a safer way to use `unsafeForeignPtrToPtr'.
