@@ -2,7 +2,11 @@ include Makefile.inc
 
 THISLIB	= FFI
 SEARCH	= -P../IOExtras -P$(LOW)
+ifeq "$(BUILDWITH)" "hbc"
+EXTRA_H_FLAGS	= +RTS -A16M -RTS
+else
 EXTRA_H_FLAGS	=
+endif
 EXTRA_C_FLAGS	=
 
 SRCS	= \
