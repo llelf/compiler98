@@ -44,15 +44,13 @@ gBindingTop (fun,PosPrimitive pos fn) =
 gBindingTop (fun,PosForeign pos fn str c ie) =
     setFun fun >>>
     gArity fun >>>= \ (Just arity) ->
-    makeForeign str arity fn c ie >>>= \ioresult ->
+    makeForeign str arity fn c ie >>>
     case ie of
       Imported ->
         unitS
           (STARTFUN pos fun:
            concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
-           [ PRIMITIVE , DATA_FLABEL fn ] ++
-           ( if ioresult then [ EVAL, MKIORETURN, RETURN_EVAL ]
-             else [RETURN_EVAL] ))
+           [ PRIMITIVE , DATA_FLABEL fn, RETURN_EVAL ])
       Exported ->
         unitS []
 

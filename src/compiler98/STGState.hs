@@ -171,13 +171,13 @@ gWhereAbs i down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) 
 
 makeForeign s a v c ie down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   let (IntState _ _ st _) = state
-      (newfs,io) = case fs of
+      newfs = case fs of
           (fs,Nothing)     -> let mm = foreignMemo st
                                   tf = toForeign st mm c ie s a v in
-                              ((tf:fs, Just mm), ioResult tf)
+                              (tf:fs, Just mm)
           (fs,m@(Just mm)) -> let tf = toForeign st mm c ie s a v in
-                              ((tf:fs, m), ioResult tf)
-  in (io,Thread prof fun maxDepth fds state env lateenv d h dhs newfs)
+                              (tf:fs, m)
+  in Thread prof fun maxDepth fds state env lateenv d h dhs newfs
 
 
 lateWhere v down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
