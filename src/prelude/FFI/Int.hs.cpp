@@ -11,9 +11,10 @@ module NHC.FFI
 
 {import Numeric (readSigned,readDec,showSigned,showInt)
 ;import Ix
+;import Data.Bits
 
 
-#define INT_TYPE(T,LB,UB)	\
+#define INT_TYPE(T,BS,LB,UB)	\
 ; DEFINE(T)			\
 ; FOREIGNS(T)			\
 ; INSTANCE_EQ(T)		\
@@ -25,7 +26,8 @@ module NHC.FFI
 ; INSTANCE_IX(T)		\
 ; INSTANCE_ENUM(T)		\
 ; INSTANCE_READ(T)		\
-; INSTANCE_SHOW(T)
+; INSTANCE_SHOW(T)		\
+; INSTANCE_BITS(T,BS)
 
 #define DEFINE(T)	\
 ; data T
@@ -46,7 +48,13 @@ module NHC.FFI
 ; foreign import ccall primToEnum##T		:: Int     -> T		\
 ; foreign import ccall primFromEnum##T		:: T       -> Int	\
 ; foreign import ccall prim##T##FromInteger	:: Integer -> T		\
-; foreign import ccall prim##T##ToInteger	:: T       -> Integer
+; foreign import ccall prim##T##ToInteger	:: T       -> Integer	\
+;foreign import ccall "nhc_primIntAnd"   primAnd##T :: T -> T   -> T	\
+;foreign import ccall "nhc_primIntOr"    primOr##T  :: T -> T   -> T	\
+;foreign import ccall "nhc_primIntXor"   primXor##T :: T -> T   -> T	\
+;foreign import ccall "nhc_primIntLsh"   primLsh##T :: T -> Int -> T	\
+;foreign import ccall "nhc_primIntRsh"   primRsh##T :: T -> Int -> T	\
+;foreign import ccall "nhc_primIntCompl" primNot##T :: T        -> T
 
 
 #define INSTANCE_EQ(T)	\
@@ -117,10 +125,22 @@ module NHC.FFI
     { showsPrec p = showSigned showInt p	\
     }
 
+#define INSTANCE_BITS(T,BS)		\
+; instance Bits T where			\
+    { (.&.)      = primAnd##T		\
+    ; (.|.)      = primOr##T		\
+    ; xor        = primXor##T		\
+    ; complement = primNot##T		\
+    ; shiftL     = primLsh##T		\
+    ; shiftR     = primRsh##T		\
+    ; bitSize  _ = BS			\
+    ; isSigned _ = True			\
+    }
 
-INT_TYPE(Int8,(-128),127)
-INT_TYPE(Int16,(-32768),32767)
-INT_TYPE(Int32,(-2147483648),2147483647)
-INT_TYPE(Int64,(-9223372036854775808),9223372036854775807)
+
+INT_TYPE(Int8,8,(-128),127)
+INT_TYPE(Int16,16,(-32768),32767)
+INT_TYPE(Int32,32,(-2147483648),2147483647)
+INT_TYPE(Int64,64,(-9223372036854775808),9223372036854775807)
 
 }
