@@ -135,14 +135,17 @@ RUNTIMET = \
 	src/tracer/runtime/*.[ch]
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 TRACEUI = src/tracer/ui/*
+HATUI	= src/tracer/hat/Makefile* src/tracer/hat/*.[ch]
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
+HATTOOLS= lib/$(MACHINE)/hat-stack lib/$(MACHINE)/hat-connect \
+	lib/$(MACHINE)/hat-check
 
 TARGDIR= targets
-TARGETS= runtime bootprelude prelude greencard hp2graph \
+TARGETS= runtime bootprelude prelude greencard hp2graph hat \
 	 profruntime profprelude \
 	 timeruntime timeprelude \
 	 timetraceruntime timetraceprelude \
@@ -153,7 +156,7 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 	 ccompiler cprelude cgreencard cpragma chmake \
 	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
 
-.PHONY: basic all tracer compiler help config install
+.PHONY: basic all tracer compiler help config install hat
 
 
 ##### compiler build + install scripts
@@ -275,7 +278,7 @@ $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
-$(TARGDIR)/traceui: lib/rtb.jar
+$(TARGDIR)/traceui: lib/rtb.jar $(HATTOOLS)
 	touch $(TARGDIR)/traceui
 
 
@@ -292,11 +295,15 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 
 $(TARGDIR)/hood: lib/hood.jar
 	touch $(TARGDIR)/hood
+$(TARGDIR)/$(MACHINE)/hat: $(HATTOOLS)
+	touch $(TARGDIR)/$(MACHINE)/hat
 
 lib/rtb.jar: $(TRACEUI)
 	cd src/tracer/ui;      $(MAKE) CFG=T install
 lib/hood.jar: $(HOODUI)
 	cd src/tracer/hoodui;  $(MAKE) install
+$(HATTOOLS): $(HATUI)
+	cd src/tracer/hat;     $(MAKE) install
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=t install
@@ -386,6 +393,7 @@ srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDI
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
 	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
 	tar rf nhc98src-$(VERSION).tar $(HOODUI)
+	tar rf nhc98src-$(VERSION).tar $(HATUI)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
 	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)

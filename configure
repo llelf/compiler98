@@ -488,8 +488,13 @@ then
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
     echo -n "greencard "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
-    sed -e "s|ScriptDir |$BUILDBINDIR|" |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
+    echo -n "hat-stack hat-connect hat-check"
+    rm -f $BUILDBINDIR/hat-check $BUILDBINDIR/hat-stack $BUILDBINDIR/hat-connect
+    ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/hat-stack
+    ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/hat-connect
+    ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/hat-check
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi
@@ -606,6 +611,15 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
+    echo "	hat-stack"
+    rm -f $DESTDIR$BINDIR/hat-stack;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hat-stack
+    echo "	hat-connect"
+    rm -f $DESTDIR$BINDIR/hat-connect;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hat-connect
+    echo "	hat-check"
+    rm -f $DESTDIR$BINDIR/hat-check;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hat-check
     echo "	harch"
     cp script/harch $DESTDIR$BINDIR
     echo
