@@ -67,7 +67,7 @@ ppGreenCard = PreProcessor
 	}
 ppHsc2hs = PreProcessor
 	{ ppExecutableName = "hsc2hs"
-	, ppDefaultOptions = \_-> []
+	, ppDefaultOptions = \d-> map ("-I"++) (pathSrc d)
 	, ppOutputFileOption = \_-> ""
 	, ppSuitable = \hc-> hc `elem` [Ghc,Nhc98]
 	}
