@@ -401,7 +401,7 @@ void haskellInit (int argc, char **argv)
     fwrite(&p,sizeof(unsigned),1,HatFile);
   /*dumpNewModInfo(HatFile,MODULE_Main); */
   /*dumpNewModInfo(HatFile,&NMOD_Prelude); */
-    fflush(HatFile);
+  /*fflush(HatFile);*/
 
     strcpy(filename,argv[0]);		/* the .output file is a copy of */
     strcat(filename,".hat.output");	/* stdout */
