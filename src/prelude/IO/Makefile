@@ -24,6 +24,7 @@ SRCS_T	= \
         HPutStr.hs        \
 	HClose.hs         \
 	HPutStrLn.hs	\
+	NotDoneYet.hs	\
 	Try.hs           Bracket.hs	Bracket_.hs
 
 
