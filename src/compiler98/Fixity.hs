@@ -27,10 +27,14 @@ getExp ops exps (e:es) =
       fixTid Con o >>>= \ fix ->
         case fix of
 	  (InfixPre a,l) -> getExp (stackPrefix fix (ExpCon pos o):ops) exps es
+          _ -> error ("Mistake in an infix constructor application ("
+                     ++show o++") at "++strPos (getPos e))
     ExpVarOp pos o ->
       fixTid Var o >>>= \ fix ->
         case fix of
 	  (InfixPre a,l) -> getExp (stackPrefix fix (ExpVar pos o):ops) exps es
+          _ -> error ("Mistake in an infix operator chain involving ("
+                     ++show o++") at "++strPos (getPos e))
     _ ->
       getOp ops (e:exps) es
 getExp ops [] [] =
@@ -50,7 +54,7 @@ getOp ops exps ees@(ExpVarOp pos op:es) =
     Just  (o,ops) -> getOp   ops          (rebuild o exps) ees
     Nothing       -> stackInfix (ExpVar pos op) >>>= \ fop -> getExp  (fop:ops) exps es
 getOp ops exps (e:es) =
-   error ("Need infix operator at " ++ strPos (getPos e))
+   error ("Expected an infix operator at " ++ strPos (getPos e))
  
 
 finish [] []   = error "finish empty" 
