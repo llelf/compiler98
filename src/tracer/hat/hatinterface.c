@@ -1346,13 +1346,19 @@ int hatTestHeader(HatFile h) {
   char *version;
   hatSeekNode(h,0);
   version = readstring();
-  if (strcmp(version,"Hat v01")!=0) {
-    fprintf(stderr,"ERROR: File is not a hat file or version is not supported.\nAborted.\n\n");
+  if (strncmp(version,"Hat",3)) {
+    fprintf(stderr,"(error): file does not appear to be a Hat archive.\n");
+    fprintf(stderr,"    Quitting.\n");
     return 0;
-  } else {
-    skipbytes(8);
-    return 1;
   }
+  if (strncmp(version+3,VERSION,4)) {
+    fprintf(stderr,"(warning): file appears to be a Hat archive in format %s\n"
+                  ,version+3);
+    fprintf(stderr,"   but this tool deals with format version %s\n",VERSION);
+    fprintf(stderr,"   I'm continuing, but there may be unexpected errors.\n");
+  }
+  skipbytes(8);
+  return 1;
 }
 
 /* open file for reading, save in internal file descriptor */

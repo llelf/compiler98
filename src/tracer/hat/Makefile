@@ -26,11 +26,12 @@ realclean: clean
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
+VERSIONING = -DVERSION="\"$(VERSION)\""
 
 # Malcolm's libraries and tools
 browsercomms.h: nodecache.h utils.h
 $(MALCOBJS) : $(OBJDIR)/%.o : %.c
-	$(CC) $(OPT) -I$(INCDIR) -c $< -o $@
+	$(CC) $(OPT) -I$(INCDIR) $(VERSIONING) -c $< -o $@
 $(OBJDIR)/nodecache.o: nodecache.h
 $(OBJDIR)/utils.o: utils.h 
 $(OBJDIR)/browsercomms.o: browsercomms.h
@@ -47,11 +48,11 @@ $(DEST)/hat-port: hat-port.c $(OBJDIR)/minisocklib.o
 
 # Colin's libraries and tools
 $(DEST)/hat-check: hat-check.c
-	$(CC) hat-check.c -o $(DEST)/hat-check $(shell echo $(LIBCOMPAT))
+	$(CC) hat-check.c -o $(DEST)/hat-check $(VERSIONING) $(shell echo $(LIBCOMPAT))
 
 
 # Thorsten's libraries and tools
-THORFLAGS = -g
+THORFLAGS = -g $(VERSIONING)
 LINKFLAGS = -g $(shell echo $(CURSES))
 
 $(THOROBJS) : $(OBJDIR)/%.o : %.c

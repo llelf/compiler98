@@ -14,6 +14,7 @@
 #define HIDE(x)
 #endif
 
+
 FILE *HatFile, *OutputFile, *BridgeFile;
 FileOffset errorRoot, errorMsg,remoteStartNode=0;
 int ignoreErrors=False;
@@ -117,13 +118,19 @@ initialise (int argc, char **argv, int *browserport)
 
   err = fread(header,sizeof(char),8,HatFile);
   if (err!=8) {
-    fprintf(stderr,"%s: file %s/%s is too short\n",progname,dir,arg);
+    fprintf(stderr,"%s (error): file %s/%s is too short\n",progname,dir,arg);
     exit(1);
   }
-  if (strncmp(header,"Hat v01",7)) {
-    fprintf(stderr,"%s: file %s in directory %s\n",progname,arg,dir);
-    fprintf(stderr,"   does not appear to be a Hat archive in format v01\n");
+  if (strncmp(header,"Hat",3)) {
+    fprintf(stderr,"%s (error): file %s in directory %s\n",progname,arg,dir);
+    fprintf(stderr,"   does not appear to be a Hat archive.  Quitting.\n");
     exit(1);
+  }
+  if (strncmp(header+3,VERSION,4)) {
+    fprintf(stderr,"%s (warning): file %s in directory %s\n",progname,arg,dir);
+    fprintf(stderr,"   appears to be a Hat archive in format %s\n",header+3);
+    fprintf(stderr,"   but this tool deals with format version %s\n",VERSION);
+    fprintf(stderr,"   I'm continuing, but there may be unexpected errors.\n");
   }
   errorRoot = readFO();
   errorMsg  = readFO();

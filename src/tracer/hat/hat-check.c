@@ -138,6 +138,30 @@ main (int argc, char *argv[])
     fprintf(stderr, "cannot open trace file %s\n",filename);
     exit(1);
   }
+
+  /* version checking added by MW */
+  { int err;
+    char *header = (char*)malloc(10*sizeof(char));
+    err = read(f,header,8);
+    if (err!=8) {
+      fprintf(stderr,"hat-check (error): file %s is too short\n",filename);
+      exit(1);
+    }
+    if (strncmp(header,"Hat",3)) {
+      fprintf(stderr,"hat-check (error): file %s\n",filename);
+      fprintf(stderr,"   does not appear to be a Hat archive.  Quitting.\n");
+      exit(1);
+    }
+    if (strncmp(header+3,VERSION,4)) {
+      fprintf(stderr,"hat-check (warning): file %s\n",filename);
+      fprintf(stderr,"   appears to be a Hat archive in format %s\n",header+3);
+      fprintf(stderr,"   but this tool deals with format version %s\n",VERSION);
+      fprintf(stderr,"   I'm continuing, but there may be unexpected errors.\n");
+    }
+    lseek(f,0,SEEK_SET);	/* reset to beginning of file */
+    free(header);
+  }
+
   if (nmode) {
     if (nextoffset >= filesize) {
       fprintf(stderr, "-n 0x%x is beyond end of trace file\n", nextoffset);
