@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="3.04 (2002-05-17)" export HMAKEVERSION
+HMAKEVERSION="3.05 (2002-06-06)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
