@@ -18,6 +18,18 @@ module List
   ,unzip4 ,unzip5 ,unzip6 ,unzip7
   ,zip4 ,zip5 ,zip6 ,zip7
   ,zipWith4 ,zipWith5 ,zipWith6 ,zipWith7
+
+  -- ... and what the Prelude exports
+  ,[] ((:), [])
+  ,map, (++), concat, filter
+  ,head, last, tail, init, null, length, (!!)
+  ,foldl, foldl1, scanl, scanl1, foldr, foldr1, scanr, scanr1
+  ,iterate, repeat, replicate, cycle
+  ,take, drop, splitAt, takeWhile, dropWhile, span, break
+  ,lines, words, unlines, unwords, reverse, and, or
+  ,any, all, elem, notElem, lookup
+  ,sum, product, maximum, minimum, concatMap
+  ,zip, zip3, zipWith, zipWith3, unzip, unzip3
   ) where
 
 
