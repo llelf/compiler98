@@ -402,7 +402,7 @@ void run(NodePtr toplevel)
 #endif /*0*/
 #if 1
       if(GET_TAG(nodeptr)&VAP_TAG && !CINFO_NEED(cinfo)) {   /* Probably not needed */
-        /* Actually, this sometimes happens due to MKIORESULT. */
+        /* Actually, this sometimes happens due to MKIORETURN. */
         /*fprintf(stderr,"VAP in Apply?\n");*/
         vap = nodeptr;
         goto build_apply;
