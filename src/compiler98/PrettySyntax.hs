@@ -5,7 +5,7 @@ a structured document for pretty printing.
 
 module PrettySyntax
   ( PPInfo(..)
-  , prettyPrintSimple
+--  , prettyPrintSimple
   , prettyPrintTokenId, prettyPrintId, simplePrintId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
@@ -25,7 +25,7 @@ import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
 
 
-
+{-
 prettyPrintSimple :: Int -> (PPInfo TokenId -> a -> Doc) -> a -> String
 prettyPrintSimple width pp =
   pretty width . 
@@ -33,6 +33,7 @@ prettyPrintSimple width pp =
            ,indent = 4
            ,id2str = show
            ,tyVar2str = show
+           ,intState = error "prettyPrintTokenId: no intState"
            ,isFunctionArrow = (== t_Arrow)
            ,isList = (== t_List)
            ,maybeTuple = maybeTupleTokenId}
@@ -40,7 +41,7 @@ prettyPrintSimple width pp =
   maybeTupleTokenId t = case t of
                           TupleId n -> Just n
                           _         -> Nothing
-
+-}
 
 prettyPrintTokenId :: Flags -> (PPInfo TokenId -> a -> Doc) -> a -> String
 prettyPrintTokenId flags pp =
@@ -49,6 +50,7 @@ prettyPrintTokenId flags pp =
            ,indent = sShowIndent flags
            ,id2str = id2strTokenId
            ,tyVar2str = show
+           ,intState = error "prettyPrintTokenId: no intState"
            ,isFunctionArrow = (== t_Arrow)
            ,isList = (== t_List)
            ,maybeTuple = maybeTupleTokenId}
