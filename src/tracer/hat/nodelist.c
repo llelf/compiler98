@@ -171,6 +171,6 @@ void showPretty(HatFile handle,NodeList *nl,int verboseMode,unsigned int precisi
       }
     }
   fflush(stderr);
-  showFunTable(results);
+  showFunTable(results,precision);
   freeFunTable(results);
 }

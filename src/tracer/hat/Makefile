@@ -11,7 +11,7 @@ MALCOBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(MALCLIBS))
 THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 
 
-PROGNAMES = hat-stack hat-connect hat-check hat-detect hat-checki Hatobserve
+PROGNAMES = hat-stack hat-connect hat-observe hat-check hat-detect hat-checki Hatobserve
 PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
 all: $(OBJDIR) $(PROGS)
@@ -54,7 +54,7 @@ $(THOROBJS) : $(OBJDIR)/%.o : %.c
 	$(CC) -c $(THORFLAGS) -o $@ $<
 $(OBJDIR)/hatinterface.o: hatinterface.h hatfile.h $(OBJDIR)/nodelist.o
 $(OBJDIR)/FunTable.o: FunTable.h $(OBJDIR)/Expressions.o $(OBJDIR)/menu.o $(OBJDIR)/hatinterface.o
-$(OBJDIR)/Expressions.o: Expressions.h hatfile.h $(OBJDIR)/hatinterface.o
+$(OBJDIR)/Expressions.o: Expressions.h hatfile.h $(OBJDIR)/nodelist.o $(OBJDIR)/hashtable.o $(OBJDIR)/hatinterface.o
 $(OBJDIR)/hashtable.o: hashtable.h
 $(OBJDIR)/observe.o : $(OBJDIR)/hatinterface.o $(OBJDIR)/hashtable.o
 $(OBJDIR)/menu.o : menu.h $(OBJDIR)/Expressions.o
@@ -71,15 +71,15 @@ $(OBJDIR)/hatlib.a:  $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/dete
 	ar -rc $(OBJDIR)/hatlib.a $(THOROBJS)
 
 # Thorsten's haskell libraries and tools
-$(DEST)/Hatobserve: Hatobserve.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/HatTrie.o $(OBJDIR)/hatlib.a
+$(DEST)/Hatobserve: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpression.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/HatTrie.o $(OBJDIR)/hatlib.a
 	hmake -nhc98 -K10M +CTS -H20M -CTS Hatobserve $(OBJDIR)/hatlib.a -d$(DEST)
 
-$(OBJDIR)/HatTrie.o: HatTrie.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/hatlib.a
-	hmake -nhc98 +RTS -K10M -RTS HatTrie.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
+#$(OBJDIR)/HatTrie.o: HatTrie.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/hatlib.a
+#	hmake -nhc98 +RTS -K10M -RTS HatTrie.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
 
-$(OBJDIR)/HatTrace.o: HatTrace.gc $(OBJDIR)/hatlib.a
-	hmake -nhc98  +RTS -K4M -RTS HatTrace.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
+#$(OBJDIR)/HatTrace.o: HatTrace.gc $(OBJDIR)/hatlib.a
+#	hmake -nhc98  +RTS -K4M -RTS HatTrace.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
 
-$(OBJDIR)/HatExpression.o: HatExpression.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/hatlib.a
-	hmake -nhc98 +RTS -K4M -RTS HatExpression.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
+#$(OBJDIR)/HatExpression.o: HatExpression.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/hatlib.a
+#	hmake -nhc98 +RTS -K4M -RTS HatExpression.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
 

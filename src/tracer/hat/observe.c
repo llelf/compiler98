@@ -226,10 +226,10 @@ ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,
   
   if ((topIdent!=NULL)&&(strcmp(topIdent,"")==0)) topIdent=NULL;
   findNodes(handle,ident,topIdent,&identifierNode,&topIdentifierNode,showProgress);
-  if ((topIdentifierNode==0)&&(topIdent!=NULL))
-    ((_ObserveQuery*) query)->currentOffset=hatFileSize(handle);
   query = newObserveQuery(handle,identifierNode,topIdentifierNode,
 			  recursiveMode,showProgress);
+  if ((topIdentifierNode==0)&&(topIdent!=NULL))
+    ((_ObserveQuery*) query)->currentOffset=hatFileSize(handle);
   return query;  
 }
 

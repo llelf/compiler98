@@ -634,6 +634,20 @@ int isCAF(HatFile handle,filepointer fileoffset) {
   }
 }
 
+BOOL _internalIsLHSModule(HatFile handle,filepointer modinfo) {
+  if (modinfo==0) return 0;
+  if (getNodeType(handle,modinfo)==HatModule) {
+    char *s2,*s=getModuleSrcName();
+    if (s==NULL) return 0;
+    while ((*s!=0)&&(*s!='.')) s++; // strrchr DOES NOT WORK! A bug!?
+    if (*s=='.') {                  // so we do our own comparison...
+      s++;
+      if (strcmp(s,"lhs")==0) return 1;
+    } else return 0;
+  }
+  return 0;
+}
+
 int isTopLevel(HatFile handle,filepointer srcref) {
   char nodeType,i;
   filepointer old = hatNodeNumber(handle);
@@ -641,7 +655,8 @@ int isTopLevel(HatFile handle,filepointer srcref) {
     nodeType=getNodeType(handle,srcref);
     switch(nodeType) {
     case SRCREF:
-      i=(getPosnColumn()==1);
+      i=getPosnColumn();
+      i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
       hatSeekNode(handle,old);
       return i;
     case TRSATA:
@@ -656,7 +671,8 @@ int isTopLevel(HatFile handle,filepointer srcref) {
       srcref=getNameType(); // follow nmType
       break;
     case NTIDENTIFIER:
-      i=(getPosnColumn()==1);
+      i=getPosnColumn();
+      i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
       hatSeekNode(handle,old);
       return i;
     case TRAPP:
@@ -801,7 +817,7 @@ filepointer hatMainCAF(HatFile h) {
 	if ((srcref!=0)&&(isSAT(h,satc))) {  // SATC behind TRNAM?
 	  // found a CAF!
 	  if (isTrusted(h,srcref)) printf("isTrusted\n");
-	  if (isTopLevel(h,currentOffset)==0) printf("not top-level!\n");
+	  if (isTopLevel(h,currentOffset)==0) printf("main is not top-level!\n");
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
 	    filepointer lmo = hatLMO(h,currentOffset);

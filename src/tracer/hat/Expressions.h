@@ -16,6 +16,8 @@ typedef struct apnode {
   int   arity;
   ExprPtr fun;
   ExprPtr *args; // Array of all arguments
+  char* cycle;   // string with cycle ID (or NULL): do NOT free this string
+  //                referenced string is freed by MESSAGE node
 } AppNode;
 
 /* node for an identifier */
@@ -70,7 +72,7 @@ ExprNode*  buildExpr(HatFile handle,
 		     unsigned int precision);            // in memory
 
 /* return pretty print of the expression */
-char*      prettyPrintExpr(ExprNode* exp,int verboseMode);
+char*      prettyPrintExpr(ExprNode* exp,unsigned int precision,int verboseMode);
 
 /* compares two expressions.
    result: 0 if same,

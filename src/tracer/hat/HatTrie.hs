@@ -542,6 +542,7 @@ typesTrie (TContainer t)= t
 typesTrie (TFirstArg t) = t
 typesTrie (TLastArg t)  = t
 typesTrie (TRHS t)      = t
+typesTrie (TNone t)     = t
 typesTrie _             = []
 
 typesConstr :: TrieElement -> (Trie -> TrieElement)

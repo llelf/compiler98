@@ -69,57 +69,60 @@ hatExpressionType (HatGuard _) = HatGuardNode
 hatExpressionType (HatContainer _) = HatContainerNode
 hatExpressionType (HatNone _) = HatUnknownNode
 
-lazyExpression :: HatNode -> HatExpression
+lazyExpression :: Int -> HatNode -> HatExpression
 
 
-lazyExpression node = lazyExpression' (hatNodeType node)
- where lazyExpression' :: HatNodeType -> HatExpression
-       lazyExpression' HatApplNode = 
-	   let parent = (hatParent node) in 
+lazyExpression precision node = lazyExpression' precision (hatNodeType node)
+ where lazyExpression' :: Int -> HatNodeType -> HatExpression
+       lazyExpression' 0 _ = (HatNone node)
+       lazyExpression' precision HatApplNode = 
+	   let parent = (hatParent node);
+	       newprec = (precision-1) in 
 	       (HatApplication node 
 		(if (isNothing(parent)) then (HatNone node) else
-		 (lazyExpression (fromJust parent)))
-                (lazyExpression (fromJust (hatApplFun node)))
-                (map lazyExpression (hatApplArgs node))
+		 (lazyExpression newprec (fromJust parent)))
+                (lazyExpression newprec (fromJust (hatApplFun node)))
+                (map (lazyExpression newprec) (hatApplArgs node))
 		(let r = (hatResult node) in 
 		 if (isNothing r) then (HatNone node) else
-		 lazyExpression (fromJust r)))
-       lazyExpression' HatConstrNode = HatConstructor node (fromJust (hatName node)) (hatApplInfix node)
-       lazyExpression' HatIdentNode = HatIdentifier node (fromJust (hatName node)) (hatApplInfix node)
-       lazyExpression' HatConstantNode =  
-	   let parent = (hatParent node) in
+		 lazyExpression newprec (fromJust r)))
+       lazyExpression' _ HatConstrNode = HatConstructor node (fromJust (hatName node)) (hatApplInfix node)
+       lazyExpression' _ HatIdentNode = HatIdentifier node (fromJust (hatName node)) (hatApplInfix node)
+       lazyExpression' prec HatConstantNode =  
+	   let parent = (hatParent node);
+	       newprec = prec-1 in
 	       (HatConstant node
 		(if (isNothing(parent)) then (HatNone node) else
-		 (lazyExpression (fromJust parent)))
-		(lazyExpression (fromJust (hatApplFun node)))
+		 (lazyExpression newprec (fromJust parent)))
+		(lazyExpression newprec (fromJust (hatApplFun node)))
 		(let r = (hatResult node) in 
 		 if (isNothing r) then (HatNone node) else
-		 lazyExpression (fromJust r)))
-       lazyExpression' HatSAT_ANode = HatSAT_A node (lazyExpression 
+		 lazyExpression newprec (fromJust r)))
+       lazyExpression' prec HatSAT_ANode = HatSAT_A node (lazyExpression (prec-1)
 						(fromJust (hatParent node)))
-       lazyExpression' HatSAT_BNode = HatSAT_B node (lazyExpression 
+       lazyExpression' prec HatSAT_BNode = HatSAT_B node (lazyExpression (prec-1)
 						(fromJust (hatParent node)))
-       lazyExpression' HatSAT_CNode = (lazyExpression 
+       lazyExpression' prec HatSAT_CNode = (lazyExpression (prec-1)
 						(fromJust (hatParent node)))
-       lazyExpression' HatHiddenNode = HatHidden node (lazyExpression 
+       lazyExpression' prec HatHiddenNode = HatHidden node (lazyExpression (prec-1)
 						(fromJust (hatParent node)))
-       lazyExpression' HatProjNode =  HatProj node (lazyExpression 
+       lazyExpression' prec HatProjNode =  HatProj node (lazyExpression (prec-1)
 					       (fromJust (hatParent node)))
-				              (lazyExpression 
+				              (lazyExpression (prec-1) 
 					       (fromJust (hatProjRef node)))
-       lazyExpression' HatCaseNode = HatCase node
-       lazyExpression' HatLambdaNode = HatLambda node
-       lazyExpression' HatIntNode = HatInt node (hatInt (hatValue node))
-       lazyExpression' HatCharNode = HatChar node (hatChar (hatValue node))
-       lazyExpression' HatIntegerNode = HatInteger node (hatInteger (hatValue node))
-       lazyExpression' HatRationalNode = HatRational node (hatRational (hatValue node))
-       lazyExpression' HatFloatNode = HatFloat  node (hatFloat (hatValue node))
-       lazyExpression' HatDoubleNode = HatDouble node (hatDouble (hatValue node))
-       lazyExpression' HatCStringNode = HatString node (hatCString (hatValue node))
-       lazyExpression' HatIfNode = HatIf node
-       lazyExpression' HatGuardNode = HatGuard node
-       lazyExpression' HatContainerNode = HatContainer node
-       lazyExpression' HatUnknownNode = HatNone node
+       lazyExpression' _ HatCaseNode = HatCase node
+       lazyExpression' _ HatLambdaNode = HatLambda node
+       lazyExpression' _ HatIntNode = HatInt node (hatInt (hatValue node))
+       lazyExpression' _ HatCharNode = HatChar node (hatChar (hatValue node))
+       lazyExpression' _ HatIntegerNode = HatInteger node (hatInteger (hatValue node))
+       lazyExpression' _ HatRationalNode = HatRational node (hatRational (hatValue node))
+       lazyExpression' _ HatFloatNode = HatFloat  node (hatFloat (hatValue node))
+       lazyExpression' _ HatDoubleNode = HatDouble node (hatDouble (hatValue node))
+       lazyExpression' _ HatCStringNode = HatString node (hatCString (hatValue node))
+       lazyExpression' _ HatIfNode = HatIf node
+       lazyExpression' _ HatGuardNode = HatGuard node
+       lazyExpression' _ HatContainerNode = HatContainer node
+       lazyExpression' _ HatUnknownNode = HatNone node
 
 hatInt (HatIntValue i) = i
 hatChar (HatCharValue c) = c

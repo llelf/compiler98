@@ -153,6 +153,8 @@ hatResult expr@(hattrace,nodenumber) = tomightbe (hattrace,_hatResult expr)
 %     switch(getNodeType((int) hattrace,nodenumber)) {
 %      case NTCONSTRUCTOR:case NTIDENTIFIER:
 %        s = getName();
+%        if (s==NULL) s=newStr("");else
+%         if (*s==0) s=newStr(" ");     // empty name!
 %        break;
 %      default:s=newStr("");
 %     }
@@ -301,8 +303,8 @@ hatApplArgs expr@(hattrace,h) = gethatArgs 0 (hatApplArity expr)
 %fun old_hatExpressionStr :: HatNode -> Int -> Int -> String
 %call (foreign g hattrace,int nodenumber) (int verbose) (int precision)
 %code ExprNode* exp;
-%     exp = buildExpr((int) hattrace,nodenumber,verbose,precision);
-%     prettystring = prettyPrintExpr(exp,1);
+%     exp = buildExpr((int) hattrace,nodenumber,verbose,precision<100?100:2*precision);
+%     prettystring = prettyPrintExpr(exp,precision,1);
 %     freeExpr(exp);
 %result (string prettystring)
 
@@ -435,9 +437,9 @@ observe :: HatTrace -> String -> String -> Int -> ObserveResult
 observe hattrace ident topIdent recursive =
   let x = (getObserveInt hattrace ident topIdent recursive);
       s = (getObserveIntStatus x) in
-   if ((s==2)&&(topIdent/=[])) then TopIdentNotFound else
+   if ((s==2)&&((null topIdent)==False)) then TopIdentNotFound else
     if (s==1) then IdentNotFound else
-     Found (foreignObserveToList hattrace x)
+     (Found (foreignObserveToList hattrace x))
 
 isIdentNotFound :: ObserveResult -> Bool
 isIdentNotFound IdentNotFound = True
@@ -455,29 +457,29 @@ fromFound :: ObserveResult -> [HatNode]
 fromFound (Found r) = r
 fromFound _ = []
 
-old_showExpression :: Maybe HatNode -> IO ()
-old_showExpression hatNode =
+old_showExpression :: Int -> Maybe HatNode -> IO ()
+old_showExpression precision hatNode =
     if (isNothing(hatNode)) then putStr "Nothing" else
-      putStr (old_hatExpressionStr (fromJust hatNode) 0 100)
+      putStr (old_hatExpressionStr (fromJust hatNode) 0 precision)
 
-old_showReduction :: Maybe HatNode -> IO ()
-old_showReduction maybeHatNode =
-  old_showExpression maybeHatNode >>
+old_showReduction :: Int -> Maybe HatNode -> IO ()
+old_showReduction precision maybeHatNode =
+  old_showExpression precision maybeHatNode >>
   if (isJust maybeHatNode) then
     let res = (hatResult (fromJust maybeHatNode)) in
     if (isJust res) then
        putStr " = " >>
-       (old_showExpression res) >>
+       (old_showExpression precision res) >>
        putStrLn ""
      else putStrLn ""
   else
    return ()
 
-old_showReductionList :: [HatNode] -> IO ()
-old_showReductionList [] = return ()
-old_showReductionList (e:list) = 
-    old_showReduction (Just e) >>
-    old_showReductionList list
+old_showReductionList :: Int-> [HatNode] -> IO ()
+old_showReductionList _ [] = return ()
+old_showReductionList precision (e:list) = 
+    old_showReduction precision (Just e) >>
+    old_showReductionList precision list
 
 
 

@@ -72,7 +72,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
 int main (int argc, char *argv[])
 { int verbosemode=0,uniquemode=1,recursivemode=0;
   int c = 1,err=0,paramerr=0,handle;
-  unsigned int precision = 30;
+  unsigned int precision = 100;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
   ObserveQuery query;
   while (c<argc) {
@@ -148,7 +148,7 @@ int main (int argc, char *argv[])
 	fprintf(stderr,"Show all %i applications? ",c);
 	if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
       }
-      showFunTable(results);
+      showFunTable(results,precision);
     }
     freeFunTable(results);
   } else {

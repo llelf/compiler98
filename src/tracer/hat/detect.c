@@ -225,8 +225,12 @@ void getChildrenFor(HatFile handle,
 	  unsigned long lmo = hatLMO(handle,current);
 	  if (lmo!=0) {
 	    if (isTopLevel(handle,current)&&(isTrusted(handle,srcref)==0)&&
-		(!isInList(nl,current))) 
-	      insertInList(nl,current);
+		(!isInList(nl,current))) {
+	      filepointer sat2,satc = getResult(handle,current);
+	      if ((satc!=0)&&((sat2=hatFollowSATs(handle,satc))!=current)) {
+		insertInList(nl,current);
+	      }
+	    }
 	  }
 	}
 	//removeFromHashTable(hash,orig_current);

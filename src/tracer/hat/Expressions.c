@@ -11,6 +11,7 @@
 #include "hatfile.h"
 #include "Expressions.h"
 #include "hatgeneral.h"
+#include "hashtable.h"
 
 AppNode* newAppNode(int arity) {
   AppNode* a = (AppNode*) calloc(1,sizeof(AppNode));
@@ -131,10 +132,40 @@ int getExprInfixPrio(ExprNode* e) {
 
 
 #define CUT_MESSAGE "<CUT>"
+#define CYCLE_MESSAGE "<CYCLE>"
+
+#define MAXCYCLES 255
+
+char* cycleID(int i) {
+  int j=0;
+  char s[5];
+  do {
+    s[j++] = 'a'+(i % 26); // allow characters a-z (0-25)
+    i = i/26;
+  } while ((i!=0)&&(j<5));
+  s[j]=0; // set strings sentinel
+  return newStr(s);
+}
+
+char* addCycle(filepointer* cycles,filepointer newoffset) {
+  int i=0;
+  while ((i<MAXCYCLES)&&(cycles[i]!=0)&&(cycles[i]!=newoffset)) i++;
+  if (cycles[i]==0) cycles[i]=newoffset;
+  return cycleID(i);
+}
+
+char* isCycle(filepointer* cycles,filepointer offset) {
+  int i=0;
+  while ((i<MAXCYCLES)&&(cycles[i]!=0)&&(cycles[i]!=offset)) i++;
+  if (cycles[i]==offset) {
+    return cycleID(i);
+  }
+  else return NULL;
+}
 
 /* building expression at given offset from hat file */
-ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
-		       unsigned int precision) {
+ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
+		       unsigned int precision,HashTable* hash,filepointer *cycles) {
 //#define DebugbuildExpr
   char b;
   unsigned long p;
@@ -162,7 +193,15 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	int i=0,arity;
 	AppNode* apn;
 	ExprNode* fun;
-	unsigned long functionOffset;
+	filepointer functionOffset;
+
+	if (isInHashTable(hash,fileoffset)) { // detected a cycle?
+	  exp = newExprNode(MESSAGE);
+	  exp->v.message = addCycle(cycles,fileoffset); // get id for this cycle
+	  return exp; // cycle detected!
+	}
+	addToHashTable(hash,fileoffset);
+
 	arity=getAppArity();
 	apn=newAppNode(arity);
 
@@ -178,17 +217,19 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	  // abuse pointers for storing the fileoffsets temporarily
 	}
 	// build function
-	setAppNodeFun(apn,fun=buildExprRek(handle,functionOffset,verbose,precision-1));
+	setAppNodeFun(apn,fun=buildExprRek(handle,functionOffset,verbose,precision-1,
+					   hash,cycles));
 	/* special workaround for IO(_) follows: show operation behind HIDDEN node,
 	   to give atleast some information about the kind of IO performed */
 	if ((fun)&&(fun->type==MESSAGE)&&(strcmp(fun->v.message,CUT_MESSAGE)==0)) {
+	  removeFromHashTable(hash,fileoffset);
 	  return fun; // function was cut off -> whole application is cut off!
 	} else
 	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
 	  IdentNode* id = fun->v.identval;
 	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
-	    unsigned long hidden = hatFollowSATs(handle,
-						 (filepointer) getAppNodeArg(apn,0));
+	    filepointer hidden = hatFollowSATs(handle,
+					       (filepointer) getAppNodeArg(apn,0));
 	    if (getNodeType(handle,hidden)==TRHIDDEN) {
 	      setAppNodeArg(apn,0,(ExprNode*) (getParent()));
 	    }
@@ -203,8 +244,10 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	  // exchange arguments containing fileoffsets against the built expressions
 	  setAppNodeArg(apn,i-1,buildExprRek(handle,
 					     (unsigned long) getAppNodeArg(apn,i-1),
-					     verbose,precision-1));
+					     verbose,precision-1,hash,cycles));
 	}
+	apn->cycle = isCycle(cycles,fileoffset);
+	removeFromHashTable(hash,fileoffset);
 	return exp;
 	}
     case HatIdentifier:
@@ -267,15 +310,18 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	exp = newExprNode(MESSAGE);
 	exp->v.message = newStr("\253HIDDEN\273");
 	return exp;
-      } else return NULL;
+      } else {
+	return NULL;
+      }
     case HatSATA: // unevaluated expression
       if (verbose) {
 	p = getParent();
 	exp = newExprNode(b);
-	exp->v.expr = buildExprRek(handle,p,verbose,precision);
+	exp->v.expr = buildExprRek(handle,p,verbose,precision,hash,cycles);
 	return exp;
-      } else
+      } else {
 	return NULL;
+      }
     case HatSATB:
       exp = newExprNode(b);
       exp->v.intval = getParent();
@@ -290,9 +336,13 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 }
 
 /* build expression at given offset in file */
-ExprNode* buildExpr(HatFile handle,unsigned long fileoffset,int verbose,
+ExprNode* buildExpr(HatFile handle,filepointer fileoffset,int verbose,
 		    unsigned int precision) {
-  return buildExprRek(handle,fileoffset,verbose,precision);
+  HashTable* hash = newHashTable(8000);
+  filepointer *cycles = calloc(MAXCYCLES,sizeof(filepointer));
+  return buildExprRek(handle,fileoffset,verbose,precision,hash,cycles);
+  freeHashTable(hash);
+  free(cycles);
 }
 
 /*********************************************************************/
@@ -325,6 +375,8 @@ char* getStringExpr(ExprNode* exp) {
 // #define DebugStringExpr  // enable this switch to get debug info
   char *s1,*s2;
   ExprNode* first;
+
+  if (exp==NULL) return NULL;
 #ifdef DebugStringExpr
   printf("inside getStringExpr\n");
   printf("if: %i\n",exp->type);
@@ -334,9 +386,9 @@ char* getStringExpr(ExprNode* exp) {
       &&(strcmp(exp->v.appval->fun->v.identval->name,":")==0)) {
     // ok, so far, it's a list...
 #ifdef DebugStringExpr
-  printf("APP:  %i\n",exp->v.appval->fun->type);
-  printf("name: %s\n",exp->v.appval->fun->v.identval->name);
-  printf("getting AppNodeArg\n");
+    printf("APP:  %i\n",exp->v.appval->fun->type);
+    printf("name: %s\n",exp->v.appval->fun->v.identval->name);
+    printf("getting AppNodeArg\n");
 #endif
     first = getAppNodeArg(exp->v.appval,0);
 #ifdef DebugStringExpr
@@ -364,17 +416,25 @@ char* getStringExpr(ExprNode* exp) {
 #endif
       return newStr("");
     }
-    else return NULL;
+    else
+      if ((exp->type==MESSAGE)&&(strcmp(exp->v.message,CUT_MESSAGE)==0)) {
+	return newStr("..."); // avoid showing strings as lists,
+	//                       just because they were cut off
+      }
+      else {
+	return NULL;
+      }
 }
 
 char minibuf[256];
 
 /* pretty printing routine, called recursively */
-char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
+char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfixprio) {
   //#define DebugPrintExpr  // enable switch to get debug info
   char* s1;
   char* s2;
   if (exp==NULL) return newStr("_");
+  if (precision==0) return newStr("<CUT>");
 #ifdef DebugPrintExpr
   printf("exp->type %i\n",exp->type);
 #endif
@@ -424,7 +484,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 	    char last=' ';
 	    int len=0;
 	    // note: functionDepth is not increased in this recursion!
-	    s1=printRekExpr(apn->fun,verbose,0);
+	    s1=printRekExpr(apn->fun,verbose,precision-1,0);
 	    infixprio = getExprInfixPrio(apn->fun);
 	    len = strlen(s1);
 	    if ((s1!=NULL)&&(len>0)) last = s1[len-1];
@@ -454,7 +514,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 	iprio = infixprio;
 	if ((infix==0)||((infix==1)&&(i==1))) iprio = infixprio+1; // right associative
 	else if ((infix==2)&&(i>1)) iprio = infixprio+1; // left associative
-	s2=printRekExpr(getAppNodeArg(apn,i-1),verbose,iprio);
+	s2=printRekExpr(getAppNodeArg(apn,i-1),verbose,precision-1,iprio);
 #ifdef DebugPrintExpr
 	printf("succ in prRekExpr for arity %i\n",i);
 	printf("arg %i: %s\n",i,s2);
@@ -479,8 +539,13 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 #endif
       }
       if (((infixprio==32768)&&(apn->arity>0)&&(topInfixprio>0))
-	  ||(topInfixprio>infixprio)||(topInfixprio==32768)) {
+	  ||(topInfixprio>infixprio)||(topInfixprio==32768)||(apn->cycle!=NULL)) {
 	replaceStr(&s1,"(",s1,")");
+	if (apn->cycle!=NULL) {
+	  char s[100];
+	  sprintf(s,"(%s where %s = ",apn->cycle,apn->cycle);
+	  replaceStr(&s1,s,s1,")");
+	}
 #ifdef DebugPrintExpr
 	printf("out1...\n");
 #endif
@@ -536,7 +601,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
     } else
       return newStr("_");
   case HatSATA:
-    if (verbose) return printRekExpr(exp->v.expr,verbose,topInfixprio);
+    if (verbose) return printRekExpr(exp->v.expr,verbose,precision-1,topInfixprio);
     else return newStr("_");
   case HatSATB:
     return newStr("_|_");
@@ -549,8 +614,8 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 
 /* pretty printing routine for an expression */
 /* verboseMode=1 will show unevaluated parts of the expression */
-char* prettyPrintExpr(ExprNode* exp,int verboseMode) {
-  return printRekExpr(exp,verboseMode,0);
+char* prettyPrintExpr(ExprNode* exp,unsigned int precision,int verboseMode) {
+  return printRekExpr(exp,verboseMode,precision,0);
 }
 
 
@@ -918,8 +983,8 @@ void showNode(HatFile handle,filepointer fileoffset,int verboseMode,
   char *appstr;
   ExprNode* exp;
 
-  exp = buildExpr(handle,fileoffset,verboseMode,precision);
-  appstr = prettyPrintExpr(exp,1);
+  exp = buildExpr(handle,fileoffset,verboseMode,precision<100 ? 100:2*precision);
+  appstr = prettyPrintExpr(exp,precision,1);
   printf(appstr);
   freeExpr(exp);
   freeStr(appstr);
@@ -933,8 +998,8 @@ unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verbose
   ExprNode* exp;
   unsigned long satc = 0;
 
-  exp = buildExpr(handle,fileoffset,verboseMode,precision);
-  appstr = prettyPrintExpr(exp,1);
+  exp = buildExpr(handle,fileoffset,verboseMode,precision<100 ? 100:2*precision);
+  appstr = prettyPrintExpr(exp,precision,1);
   freeExpr(exp);
 
   satc = getResult(handle,fileoffset);  // find SATC for the application!
@@ -943,8 +1008,8 @@ unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verbose
 #ifdef showAppNode
     printf("(0x%x): ",fileoffset);
 #endif
-    exp = buildExpr(handle,satc,verboseMode,precision);
-    resstr = prettyPrintExpr(exp,1); // don't show any level of unevaluated functions
+    exp = buildExpr(handle,satc,verboseMode,precision<100 ? 100:2*precision);
+    resstr = prettyPrintExpr(exp,precision,1); // don't show any level of unevaluated functions
     freeExpr(exp);
     printf(appstr);
     printf(" = %s\n",resstr); // print value of SAT!

@@ -27,4 +27,4 @@ void          getFunTableEntry(FunTable l,long i,
 
 void          FunTableCheckArities(FunTable ftable);
 
-unsigned long showFunTable(FunTable l);
+unsigned long showFunTable(FunTable l,unsigned int precision);

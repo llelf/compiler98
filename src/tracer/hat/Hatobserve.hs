@@ -66,37 +66,37 @@ main = do
              hattrace <- openTrace file
 	     if (ident1=="") then
                do
-	         putStrLn "\nWelcome to Hatobserve (5/7/01)"
-                 observed <- interactive (file,hattrace) ([],False,10,0)
+	         putStrLn "\nWelcome to Hatobserve (6/7/01)"
+                 observed <- interactive (file,hattrace) ([],False,1,0,50)
 		 return ()
               else
 	       do
                  observed <- makeObserve hattrace verboseMode recursiveMode expertMode
 			     False (\ x -> True) ident1 ident2
-		 if (isIdentNotFound observed) then
+		 if (isTopIdentNotFound observed) then
 		    putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-			      "identifier \""++ident1++"\".\n(Check spelling!)")
+			      "identifier \""++ident2++"\".\n(Check spelling!)")
                   else
-                   if (isTopIdentNotFound observed) then
+                   if (isIdentNotFound observed) then
  		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-			       "identifier \""++ident2++"\".\n(Check spelling!)")
+			       "identifier \""++ident1++"\".\n(Check spelling!)")
                      else
-                      old_showReductionList (fromFound observed)
+                      old_showReductionList 100 (fromFound observed)
 		 return ()
 
-showObservation :: Int -> HatNode -> IO()
-showObservation i node =
+showObservation :: Int -> Int -> HatNode -> IO()
+showObservation precision i node =
  do
    putStr ("#"++(show i)++": ")
-   old_showReduction (Just node)
+   old_showReduction precision (Just node)
 
-showObservationList :: Int -> Int -> [HatNode] -> IO Int
-showObservationList _  _ [] = return 0
-showObservationList i 0 _ = return 0
-showObservationList i max (e:r) =
+showObservationList :: Int -> Int -> Int -> [HatNode] -> IO Int
+showObservationList _ _  _ [] = return 0
+showObservationList _ i 0 _ = return 0
+showObservationList precision i max (e:r) =
     do
-      showObservation i e
-      count <- showObservationList (i+1) (max-1) r
+      showObservation precision i e
+      count <- showObservationList precision (i+1) (max-1) r
       return (count+1)
 
 makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
@@ -125,7 +125,7 @@ makeObserve hattrace verboseMode recursiveMode expertMode filterMode
 unique :: [HatNode] -> IO [HatNode]
 unique observed =
     let tries = (insertTrieList []
-		 (map (\x -> let l = lazyExpression x in linearizeEquation l)
+		 (map (\x -> let l = lazyExpression 200 x in linearizeEquation l)
 		  observed)) in
       let nodes = (getTrieNodes tries) in
        if (null nodes) then
@@ -136,7 +136,7 @@ unique observed =
 
 
 uniqueFilter observed filterFun =
-    let linexpr = (map (\x -> let l = lazyExpression x in linearizeEquation l)
+    let linexpr = (map (\x -> let l = lazyExpression 200 x in linearizeEquation l)
 		   observed);
         tries = (insertTrieList []
 		 (filter filterFun linexpr)) in
@@ -162,17 +162,17 @@ options s =
       r = dropWhile dropFun w in
    ((unwords o),(unwords r))
 
-showSomeMore :: Int -> Int -> [HatNode] -> IO (Int,Bool)
-showSomeMore currentEq equationsPerPage observed =
+showSomeMore :: Int -> Int -> Int -> [HatNode] -> IO (Int,Bool)
+showSomeMore precision currentEq equationsPerPage observed =
  let showNowList = (drop currentEq observed);
      hasMore = (null (drop equationsPerPage showNowList))==False in
   do
-    count <- showObservationList (currentEq+1) equationsPerPage
+    count <- showObservationList precision (currentEq+1) equationsPerPage
 	     showNowList
     return (count+currentEq,hasMore)
 
-interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int) -> IO()
-interactive hatfile state@(_,more,_,_) =
+interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int) -> IO()
+interactive hatfile state@(_,more,_,_,_) =
  do
    if (more==False) then
       putStr "\ncommand>: "
@@ -202,14 +202,14 @@ getNumberParam cmd pattern1 pattern2 =
               Nothing
 
 
-doCommand :: String -> String -> (String,HatTrace) -> ([HatNode],Bool,Int,Int) -> IO()
-doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos)
+doCommand :: String -> String -> (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int) -> IO()
+doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,precision)
   | (cmd=="")||((length (words s)==1)&&((cmd=="D")||(cmd=="DOWN"))) =
     if (more) then
        do
-        (newPos,newMore) <- (showSomeMore currentPos equationsPerPage
+        (newPos,newMore) <- (showSomeMore precision currentPos equationsPerPage
 			     lastObserved)
-	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos)
+	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos,precision)
      else
       do
        if (currentPos>0) then putStrLn "No more applications observed." else
@@ -218,7 +218,8 @@ doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos)
        interactive hatfile state
 
 -- cmd must be atleast one character long!
-doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,currentPos)
+doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
+					currentPos,precision)
     | (cmd=="Q")||(cmd=="QUIT")||(cmd=="EXIT") = putStrLn "Goodbye!\n"
     | (cmd=="H")||(cmd=="HELP") = interactiveHelp >> interactive hatfile state
     | (cmd=="C")||(cmd=="COUNT") =
@@ -233,21 +234,31 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,curre
 	let newPerPage = fromJust (getNumberParam s "L" "LINES") in
           if (newPerPage>0) then
             putStrLn ("Lines per page set to "++(show newPerPage)) >> 
-            interactive hatfile (lastObserved,more,newPerPage,currentPos)
+            interactive hatfile (lastObserved,more,newPerPage,currentPos,precision)
            else
             putStrLn "Lines per page must be greater than 0!" >>
             interactive hatfile state
     | (cmd=="L")||(cmd=="LINES") =
 	putStrLn ("Equations per page is currently set to "++(show equationsPerPage)++
-		  ".") >>
-	interactive hatfile state
+		  ".") >> interactive hatfile state
+    | (isJust (getNumberParam s "+" "+PREC"))||((cmd=="+")||(cmd=="+PREC")) =
+	let val = (getNumberParam s "+" "+PREC");
+	    newPrec = precision+(if (isNothing val) then 1 else fromJust val) in
+            putStrLn ("Precision set to "++(show newPrec)) >> 
+            interactive hatfile (lastObserved,more,equationsPerPage,currentPos,newPrec)
+    | (isJust (getNumberParam s "-" "-PREC"))||((cmd=="-")||(cmd=="-PREC")) =
+	let val = (getNumberParam s "-" "-PREC");
+	    newPrec1 = precision-(if (isNothing val) then 1 else fromJust val);
+	    newPrec = if newPrec1<3 then 3 else newPrec1 in
+            putStrLn ("Precision set to "++(show newPrec)) >> 
+            interactive hatfile (lastObserved,more,equationsPerPage,currentPos,newPrec)
     | (isJust (getNumberParam s "U" "UP")) =
 	let up = fromJust (getNumberParam s "U" "UP") in
          if (up==0) then interactive hatfile state else
           let newPos = if up>currentPos then 0 else currentPos-up in
             doCommand "" "" hatfile (lastObserved,
 				  if (currentPos==newPos) then more else True,
-				  equationsPerPage,newPos)   
+				  equationsPerPage,newPos,precision)   
     | ((isJust (getNumberParam s "D" "DOWN"))||
        (isJust (getNumberParam s "G" "GO"))) =
 	let down = if (isJust (getNumberParam s "D" "DOWN")) then
@@ -262,11 +273,12 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,curre
 	       -- ok, at the list's end: now check for the real end of the list
 	       let realPos = length lastObserved in
                 putStrLn "Now at the end of the list." >>
-                interactive hatfile (lastObserved,False,equationsPerPage,realPos)
+                interactive hatfile (lastObserved,False,equationsPerPage,realPos,
+				     precision)
             else
              doCommand "" "" hatfile (lastObserved,
 				      True,
-				      equationsPerPage,newPos)
+				      equationsPerPage,newPos,precision)
     | (cmd=="U")||(cmd=="UP") = doCommand "UP" ("UP "++(show (2*equationsPerPage)))
 				hatfile state
     | (cmd=="G")||(cmd=="GO") =
@@ -340,7 +352,7 @@ doCommand cmd s hatfile state
           doCommand "O" query hatfile state
         
 doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
-					    more,equationsPerPage,currentPos)
+					    more,equationsPerPage,currentPos,precision)
   | ((cmd=="O")||(cmd=="OBSERVE"))&&(length (words s)>1) =
    let (opts,p) = (options (unwords (tail (words s))));
        pattern1 = (stringLex p);
@@ -359,15 +371,14 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
 			((length pattern)>2)
 			(\x -> (compareExpr x pattern))
 			fun ident2
---         putStrLn "ok1"
-         if (isIdentNotFound newObserved) then
+         if (isTopIdentNotFound newObserved) then
             putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-                      "identifier \""++fun++"\".\n(Check spelling!)") >>
+                      "identifier \""++ident2++"\".\n(Check spelling!)") >>
             interactive hatfile state
           else
-           if (isTopIdentNotFound newObserved) then
+           if (isIdentNotFound newObserved) then
               putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-                        "identifier \""++ident2++"\".\n(Check spelling!)") >>
+                        "identifier \""++fun++"\".\n(Check spelling!)") >>
               interactive hatfile state
             else
 --             putStrLn "searching..." >> 
@@ -376,10 +387,10 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
 		interactive hatfile state
 	      else
                do
-                (newPos,newMore) <- (showSomeMore 0 equationsPerPage
+                (newPos,newMore) <- (showSomeMore precision 0 equationsPerPage
 	 			     (fromFound newObserved))
                 interactive hatfile ((fromFound newObserved),newMore,equationsPerPage,
-				     newPos)
+				     newPos,precision)
 
 doCommand _ _ hatfile state =
     putStrLn "Unknown command. Enter 'h' for help, 'q' to quit." >>
@@ -404,6 +415,7 @@ interactiveHelp =
    putStrLn " <RETURN>                      show more applications (if available)"
    putStrLn ""
    putStrLn " l <n>     or lines <n>        set number of equations listed per page to <n>"
+   putStrLn " +<n>      or -<n>             increase/decrease precision depth for expressions"
    putStrLn ""
    putStrLn " h         or help             for help"
    putStrLn " q         or quit             quit"
@@ -438,6 +450,8 @@ queryHelp =
    putStrLn "                 myfunction _ (myConstructor 2 _) in myOtherFunction"
    putStrLn "                 -rv (myfunction \"Hello World!\" (: 1 (: 2 _))) = [1,_]"
    putStrLn ""
+   putStrLn "ATTENTION: Currently INFIX operators are not supported in patterns!"
+   putStrLn "           Please use the prefix style and enclose applications in parenthesis."
 
 showHelp = 
    do

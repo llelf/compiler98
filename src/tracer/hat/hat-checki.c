@@ -16,7 +16,7 @@
 void interactive();
 char* fname;
 int verboseMode = 0;
-unsigned int precision = 30;
+unsigned int precision = 100;
 HatFile handle;
 
 int main (int argc, char *argv[])
@@ -315,7 +315,7 @@ filepointer printNode(unsigned long offset) {
     ExprNode* exp;
 
     exp = buildExpr(handle,offset,verboseMode,precision);
-    appstr = prettyPrintExpr(exp,1);
+    appstr = prettyPrintExpr(exp,precision,1);
     
     satc = getResult(handle,hatFollowSATs(handle,offset));
     if ((isSAT(handle,satc))&&(satc!=offset)) {
@@ -323,7 +323,7 @@ filepointer printNode(unsigned long offset) {
       printf("reduction: %s = ",appstr);
       freeStr(appstr);
       exp = buildExpr(handle,satc,verboseMode,precision);
-      appstr = prettyPrintExpr(exp,1);
+      appstr = prettyPrintExpr(exp,precision,1);
       printf("%s\n",appstr);
     } else {
       printf("\nredex: %s\n",appstr);

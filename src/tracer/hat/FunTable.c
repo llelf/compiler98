@@ -114,7 +114,7 @@ void addToFunTable(FunTable ftable,ExprNode* funAppl,ExprNode* res,filepointer f
   }
 }
 
-unsigned long showFunTable_internal(FunTable ftable,int mode) {
+unsigned long showFunTable_internal(FunTable ftable,unsigned int precision,int mode) {
   char* appstr;
   char* resstr;
   unsigned long c=0;
@@ -127,8 +127,8 @@ unsigned long showFunTable_internal(FunTable ftable,int mode) {
       while (l!=NULL) {
 	c++;
 	// printf("#%i: ",c);
-	appstr = prettyPrintExpr(l->funAppl,1);
-	resstr = prettyPrintExpr(l->res,1);
+	appstr = prettyPrintExpr(l->funAppl,precision,1);
+	resstr = prettyPrintExpr(l->res,precision,1);
 	printf(appstr);
 	printf(" = %s\n",resstr);
 	freeStr(resstr);
@@ -147,8 +147,8 @@ unsigned long showFunTable_internal(FunTable ftable,int mode) {
     }
 }
 
-unsigned long showFunTable(FunTable l) {
-  return showFunTable_internal(l,0);
+unsigned long showFunTable(FunTable l,unsigned int precision) {
+  return showFunTable_internal(l,precision,0);
 }
 
 FunTable _FunTablecurrent,_FunTablelast=NULL;

@@ -49,7 +49,7 @@ int main (int argc, char *argv[])
     }
   }
 
-  printf("\nWelcome to hat-detect! (5/7/01)\n");
+  printf("\nWelcome to hat-detect! (6/7/01)\n");
   if (err!=0) {
     fprintf(stderr,"\nusage: hat-detect file-name\n");
     fprintf(stderr,"       algorithmic debugging on a hat redex trace file\n\n");
@@ -92,7 +92,7 @@ int getline(char s[], int max) {
 }
 
 void quit() {
-  printf("\n\nOk, goodbye!\n");
+  printf("\nOk, goodbye!\n\n");
   exit(0);
 }
 
@@ -150,6 +150,7 @@ void showReduction(HatFile handle,filepointer application,
 /***********************************************************************/
 
 FunTable currentFTable;
+unsigned int gPrecision;
 
 char* getFunTableStr(int i) {
   char *appstr,*resstr;
@@ -158,15 +159,16 @@ char* getFunTableStr(int i) {
   
   getFunTableEntry(currentFTable,i,&nodenumber,&app,&res);
   if (nodenumber==0) return newStr("");
-  appstr = prettyPrintExpr(app,1);
-  resstr = prettyPrintExpr(res,1);
+  appstr = prettyPrintExpr(app,gPrecision,1);
+  resstr = prettyPrintExpr(res,gPrecision,1);
   replaceStr(&appstr,appstr," = ",resstr);
   freeStr(resstr);
   return appstr;
 }
 
-long showFunTablePaged(FunTable l) {
+long showFunTablePaged(FunTable l,unsigned int precision) {
   currentFTable=l;
+  gPrecision = precision;
   return menu("choose any equation and press <RETURN> or <Q> to cancel",
 	      FunTableLength(l),&getFunTableStr);  
 }
@@ -205,9 +207,9 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
   while (retval==-1) {
     if (reconsider) printf("\nreconsider:");
     printf("\n%i> ",*question);
-    pp1 = prettyPrintExpr(appNode,verboseMode);
+    pp1 = prettyPrintExpr(appNode,precision,verboseMode);
     printf("%s = ",pp1);
-    pp2 = prettyPrintExpr(resNode,verboseMode);
+    pp2 = prettyPrintExpr(resNode,precision,verboseMode);
     printf("%s",pp2);
     if (strlen(pp1)+strlen(pp2)>70) printf("\n");
     freeStr(pp2);freeStr(pp1);
@@ -220,8 +222,8 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
 	if (strlen(answer)>1) {
-	  if ((c=='?')&&(toupper(answer[1]=='N'))) c=MAYBENO;
-	  if ((c=='?')&&(toupper(answer[1]=='Y'))) c=MAYBEYES;
+	  if ((c=='?')&&(toupper(answer[1])=='N')) c=MAYBENO;
+	  if ((c=='?')&&(toupper(answer[1])=='Y')) c=MAYBEYES;
 	  if ((c=='N')&&(answer[1]=='?')) c=MAYBENO;
 	  if ((c=='Y')&&(answer[1]=='?')) c=MAYBEYES;
 	}
@@ -251,7 +253,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	      query = newObserveQuery(filehandle,lmost,0,0,1);
 	    }
 	    results = observeUnique(query,verboseMode,precision);
-	    selected=showFunTablePaged(results);
+	    selected=showFunTablePaged(results,precision);
 	    if (selected>=0) {
 	      ExprNode* dummy;
 	      getFunTableEntry(results,selected,&newAdr,&dummy,&dummy);
