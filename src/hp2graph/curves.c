@@ -169,6 +169,8 @@ void marks(void)
 
   for (i = 0; i < marksize; i++) {
     m = ((double)markdata[i] / xrange) * graphwidth;
+ /* Possible bugfix for the line above if the x-axis does not start at 0 */
+ /* m = ((double)(markdata[i] - sampledata[0]) / xrange) * graphwidth;   */
     outputCaret(xpage(m), ypage(0.0), 4.0);
   }
 }
