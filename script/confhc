@@ -104,7 +104,11 @@ METHOD=
 echo -n "  Looking for hbc... "
 if which hbc >/dev/null 2>&1
 then
-  HBCVERSION=`hbc -v 2>&1 | cut -c20`
+  HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f2`
+  case $HBCVERSION in
+    version) HBCVERSION=`hbc -c 2>&1 | cut -d' ' -f3 | cut -c8` ;;
+    *)       HBCVERSION=`hbc -c 2>&1 | cut -d' ' -f4 | cut -c8` ;;
+  esac
   whichHBC=`which hbc`
   up1_HBC=`dirname $whichHBC`
   up2_HBC=`dirname $up1_HBC`
@@ -211,7 +215,7 @@ cat script/hmakeconfig.inst |\
   else sed -e "s|^lmldir=$|lmldir=${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`|" |\
        sed -e "s|^hbcknown=no$|hbcknown=yes|" |\
        ( case HBCVERSION in
-           5|6) sed -e "s|^HBC98=$|HBC98=yes|"  ;;
+           5|6) sed -e "s|^HBC98=$|HBC98=yes|" ;;
            *)   sed -e "s|^HBC98=$|HBC98=no|" ;;
          esac
        )
