@@ -6,7 +6,7 @@ import LexDigits
 --import Fractional_Ratio
 import Ratio
 
-readFloat:: (RealFloat a) => ReadS a
+readFloat:: (RealFrac a) => ReadS a
 
 readFloat r = [(fromRational ((n%1)*10^^(k-d)), t) | (n,d,s) <- readFix r,
 						     (k,t)   <- readExp s]  ++
