@@ -10,13 +10,38 @@
 <table>
 <tr>
 
+<td valign=top><b>1.7</b></td>
+  <td valign=top>
+	<ul>
+	<li> The previous patch for detecting hbc 0.9999.5 was wrong, now fixed.
+	<li> However, you cannot build hmake with hbc 0.9999.5 (at least on
+	     linux-libc6), as that compiler has buggy libraries.  A binary
+	     distribution built with ghc is available for this platform as
+	     an alternative.
+	<li> It often makes sense to have the default compiler called by
+	     hmake to be the same as the one that built it.  This is now
+	     enabled by default.  You can override it by editing your
+	     hmake.config file, or by setting your HC environment variable
+	     at runtime.
+	<li> Treatment of the <b>-i</b><em>dir</em> option has been changed:
+	     it is now identical to the <b>-I</b><em>dir</em> option, for
+	     compatibility with hbc and ghc.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>1.6.2</b></td>
+  <td valign=top>
+	<ul>
+	<li> Small patch for detecting hbc version >= 0.9999.5 correctly.
+	</ul>
+</td></tr><tr>
+
 <td valign=top><b>1.6.1</b></td>
   <td valign=top>
 	<ul>
 	<li> Small cosmetic patch to fix the -g flag (module dependency
              graph) whose output had multiple entries for some imports
              (depending on how many blank lines preceded it).
-
 	</ul>
 </td></tr><tr>
 
@@ -80,7 +105,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-01-04<br>
+Information last updated: 2000-01-12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

@@ -33,7 +33,7 @@ However, <em>hmake</em> understands and strips the following options.
 <td><b>-nhc98</b><br>
     <b>-hbc</b><br>
     <b>-ghc</b></td>
-	<td>specify which compiler you want to use [default is nhc98].</td>
+	<td>specify which compiler you want to use [default is the compiler you built it with].</td>
 </tr><tr>
 <td><b>-q</b></td>
 	<td>Quiet - don't echo compilation commands.</td>
@@ -62,14 +62,11 @@ However, <em>hmake</em> understands and strips the following options.
 <td><b>-P</b><em>dir/</em></td>
 	<td>Search <em>dir</em> for prelude/stdlib interface files.</td>
 </tr><tr>
-<td><b>-I</b><em>dir/</em></td>
-	<td>Search <em>dir</em> for imported modules - compile them
-	if necessary, and link against the resulting <em>.o</em> files.</td>
+<td><b>-I</b><em>dir/</em></td> <td></td>
 </tr><tr>
 <td><b>-i</b><em>dir/</em></td>
-	<td>Search <em>dir</em> for imported module interface files - but
-	do not compile them, rather link against an archive <em>.a</em> file
-	in that directory.
+	<td>Search <em>dir</em> for imported modules - compile them
+	if necessary, and link against the resulting <em>.o</em> files.</td>
 </tr></table>
 </center>
 
@@ -134,7 +131,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 1999-12-08<br>
+Information last updated: 2000-01-12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
