@@ -3,7 +3,7 @@ case $1 in
   base)	echo Data Debug Control Control/Monad System System/IO System/Console
 	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
 	echo Text/PrettyPrint Text/Html Text/Show
-	echo Foreign Foreign/Marshal Foreign/C
+	echo Foreign Foreign/Marshal Foreign/C NHC
 	;;
   *) ;;
 esac
