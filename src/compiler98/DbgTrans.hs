@@ -29,7 +29,7 @@ import Id(Id)
 import Info(typeSynonymBodyI)
 import TypeSubst(substNT)
 import Nice(niceNewType)
-import List(zipWith3)
+import List  -- (zipWith3)
 
 
 {- table for source references and identifiers refered to from the trace -}
