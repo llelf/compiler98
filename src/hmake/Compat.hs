@@ -1,6 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Compat
+-- Copyright   :  Thomas Hallgren
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
 --
--- Library with LML compatible functions.
---
+--  Library with LML compatible functions.
+-----------------------------------------------------------------------------
+
 module Compat where
 --import Either
 --import Maybe

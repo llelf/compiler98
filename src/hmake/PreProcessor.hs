@@ -1,5 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PreProcessor
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
 -- This module describes various preprocessors for the Haskell language.
 -- If you write a new preprocessor, please add details here.
+-----------------------------------------------------------------------------
+
 module PreProcessor where
 
 import Argv
@@ -14,10 +25,18 @@ data PreProcessor = PreProcessor
 	, ppSuitable         :: HC -> Bool
 	}
 
+-- | * input file suffix 
+--
+-- * unliterate the file?
+--
+-- * PP info
 
-knownSuffixes :: [ ( String			-- input file suffix 
-                   , (String->String->String)  	-- unliterate the file?
-                   , PreProcessor ) ]		-- PP info
+type PPSuffixHandler
+    =  (String
+       , (String->String->String)
+       ,  PreProcessor)
+
+knownSuffixes :: [ PPSuffixHandler ]
 knownSuffixes =
   [ ("gc",     plain, ppGreenCard)
   , ("chs",    plain, ppC2hs)

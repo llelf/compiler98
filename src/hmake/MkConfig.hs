@@ -1,4 +1,15 @@
--- main program for utility hmake-config
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Main
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Main program for utility hmake-config
+-----------------------------------------------------------------------------
+
 module Main where
 
 import Compiler (HC(..))
@@ -196,7 +207,7 @@ add hc config = return $
                           global { knownCompilers =
                                              nub (hc: knownCompilers global)}}
 
--- configure for each style of compiler
+-- | configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
 configure Ghc ghcpath = do
   ghcversion <- runAndReadStdout (escape ghcpath ++ " --version 2>&1 | "
@@ -311,7 +322,7 @@ configure (Unknown hc) hcpath = do
     exitWith (ExitFailure 4)
     return undefined  -- never reached
 
--- Work out which basic compiler.
+-- | Work out which basic compiler.
 hcStyle :: String -> HC
 hcStyle path = toCompiler (basename path)
   where
@@ -322,7 +333,7 @@ hcStyle path = toCompiler (basename path)
                   | "hbc" `isPrefixOf` hc = Hbc
                   | otherwise             = Unknown hc
 
--- Emulate the shell `which` command.
+-- | Emulate the shell `which` command.
 which :: (String->String) -> String -> IO String
 which exe cmd =
   let dir = dirname cmd

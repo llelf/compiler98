@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Order
+-- Copyright   :  Thomas Hallgren? Lennart Augustsson?
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Provides a strongly connected component topological sort.
+-----------------------------------------------------------------------------
+
 module Order (closegraph, decorate, scctsort) where
 import Compat(assocFail)
 import Graph(scceq)
@@ -5,11 +17,14 @@ import ListUtil(lconcatMap)
 import Tsort
 import Utils(apair, asnd, pairwith)
 
+-- unused in hmake
+decorate :: (Eq a) => [(a, b)]
+         -> (t, [[a]])
+         -> (t, [[(a, b)]])
 decorate g = asnd (map (map (\f -> (f, assocFail f g))))
 
--- scctsort: topological sort of strongly connected components
--- Nodes within a scc will appear in an arbitrary order.
-
+-- | Topological sort of strongly connected components.
+--   Nodes within a scc will appear in an arbitrary order.
 scctsort g =
     let sccg = scceq (==) g
         sccs = map (map fst) sccg

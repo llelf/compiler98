@@ -16,6 +16,7 @@ CFGSRCS = RunAndReadStdout.hs Config.hs Compiler.hs Platform.hs
 
 OBJS    = $(patsubst %.hs, $(OBJDIR)/%.$O, $(SRCS))
 CPPOBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, $(CPPSRCS))
+RAWCPP  = $(patsubst %.hs, %.raw, $(SRCS))
 CFGOBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, $(CFGSRCS))
 CFILES    = $(patsubst %.hs, %.$C, $(SRCS))
 CPPCFILES = $(patsubst %.hs, %.$C, $(CPPSRCS))
@@ -50,9 +51,13 @@ clean:
 cleanC: clean
 	rm -f *.hc *.c
 realclean: cleanC
+	rm -f *.raw *.html haddock.css haskell_icon.gif
 	rm -f $(TARGETS)
 package:
 	tar zcvf hmake.tar.gz $(SRCS) $(GCSRCS) $(CPPSRCS) Older.hs MkConfig.hs $(AUX)
+haddock: $(RAWCPP)
+	haddock -h *.raw
+	rm *.raw
 
 
 $(MKPROG): $(OBJDIR) $(OBJS) $(CPPOBJS)
@@ -64,6 +69,9 @@ $(OLDER): $(OBJDIR) $(OBJDIR)/Older.$O
 $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(STRIP) $@
+
+%.raw:
+	cpp -P -traditional $(patsubst %.raw, %.hs, $@) > $@
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) || $(TRUE)

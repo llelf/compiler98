@@ -1,4 +1,17 @@
-module GetDep(showdep,showdebug,showmake,dependency,When) where
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  GetDep
+-- Copyright   :  Thomas Hallgren and Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Get the module dependencies, including the ability to output to a
+-- Makefile.
+-----------------------------------------------------------------------------
+
+module GetDep(showdep,showdebug,showmake,dependency,When,FileInfo) where
 
 import Getmodtime(When(..))
 import Imports(getImports)
@@ -50,24 +63,38 @@ showmake opts goaldir ((f,p,s),i) =
           if (dflag opts) then fixFile opts goaldir (tmod f) (oSuffix opts)
                           else fixFile opts p       (tmod f) (oSuffix opts)
 
-type FileInfo = ( (When,When,When,When)	-- file timestamps
-                , FilePath		-- directory path to file
-                , FilePath		-- source file name, inc path
-                , Bool			-- cpp required?
-                , PreProcessor)		-- applicable preprocessor
+-- | Information about a single file, including its location, whether
+--   it needs a preprocessor, etc.
+--
+-- * file timestamps
+--
+-- * directory path to file
+--
+-- * source file name, inc path
+--
+-- * cpp required?
+--
+-- * applicable preprocessor
+type FileInfo = ( (When,When,When,When)	-- ^ file timestamps
+                , FilePath		-- ^ directory path to file
+                , FilePath		-- ^ source file name, inc path
+                , Bool			-- ^ cpp required?
+                , PreProcessor)		-- ^ applicable preprocessor
 
+-- | Given a list of targets, determine all import dependencies by reading
+--   the source modules, and checking timestamps etc.
 dependency :: DecodedArgs
               -> [( String		-- module name
                   , ( FileInfo		-- timestamps, filepaths, cpp, etc
                     , [String]		-- imports
                     )
-                  )]	-- (accumulator)
-              -> [(String,FilePath)]	-- (module, imported by which file?)
+                  )]	-- ^ accumulator: (module name, FileInfo, imports)
+              -> [(String,FilePath)]	-- ^(module, imported by which file?)
               -> IO [( String		-- module name
                      , ( FileInfo	-- timestamps, filepaths, cpp, etc
                        , [String]	-- imports
                        )
-                     )]
+                     )] -- ^ (module name, FileInfo, imports)
 dependency opts done [] = return done
 dependency opts done ((f,demand):fs) =
   if f `elem` (ignoreHi opts) || f `elem` (map fst done)
@@ -93,6 +120,9 @@ dependency opts done ((f,demand):fs) =
                   dependency opts moredone (needed ++ fs)
 
 
+-- | Attempt to read the given file from some location within the search path.
+--   Determine if it needs any preprocessing, read the timestamps, etc.
+--   Basically populates a FileInfo type.
 readFirst :: DecodedArgs -> String -> String
              -> IO (Maybe ( (When,When,When,When)	-- file timestamps
                           , FilePath		-- directory path to file
@@ -101,6 +131,9 @@ readFirst :: DecodedArgs -> String -> String
                           , String		-- plain file contents
                           , String		-- unliterated file contents
                           ))
+-- ^ (timestamps, path to file, source file name, pp, plain file
+--    contents, unliterated file contents)
+
 readFirst opts name demand =
   watch ("readFirst " ++ show (pathSrc opts) ++
               "\n   " ++ show (pathPrel opts)) >>
@@ -192,6 +225,7 @@ readFirst opts name demand =
          tmod = if hat opts then ("Hat/"++) else id
 
 
+-- | Get the modification time of this file
 readTime :: FilePath -> IO When
 #ifdef __HBC__
 readTime f = catch (getFileStat f >>= \sf->

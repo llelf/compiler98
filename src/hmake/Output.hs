@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Output
+-- Copyright   :  Thomas Hallgren and Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Constructs the commands for each steps in building (compile, link,
+-- & clean).  Each are parameterized by echo :: Bool which indicates
+-- whether or not to echo the command to the terminal.
+-----------------------------------------------------------------------------
+
 module Output(qCompile,qLink,qCleano,qCleanhi) where
 
 import ListUtil -- (lconcatMap)
@@ -8,6 +22,12 @@ import PreProcessor
 import Config
 import RunAndReadStdout (basename)
 
+type Graph t t1 t2 t3 = [(String, ((t, String, t1, t2, t3), [String]))]
+
+-- | Given a boolean to indicate whether or not to echo this command to
+--   the terminal, construct the command.
+doEcho :: Bool -- ^ echo the command before executing it?
+       -> String -> String
 doEcho True cmd = "echo \"" ++ cmd ++ "\"\n" ++ cmd ++ "\n"
 doEcho False cmd = cmd ++ "\n"
 
@@ -31,11 +51,23 @@ hxFile opts path fmodule  =
 cleanModuleName (Program file)    = file
 cleanModuleName (Object file suf) = file
 
+-- | Construct a command for the /clean/ step (rm -f .o files)
+qCleano :: DecodedArgs
+        -> Bool
+        -> Graph a b c d
+        -> Goal
+        -> String
 qCleano  opts echo graph mod =
   let allfiles = close graph [] [cleanModuleName mod]
   in doEcho echo ("rm -f" ++
          concatMap (\(d,f)-> ' ': oFile opts d f) allfiles)
 
+-- | Construct a command for the /realclean/ step (rm -f hi, hat, and hx files)
+qCleanhi :: DecodedArgs -- ^ /opts/
+         -> Bool        -- ^ Should we echo this command as we run it?
+         -> Graph a b c d
+         -> Goal        -- ^ /mod/
+         -> String
 qCleanhi opts echo graph mod =
   let allfiles = close graph [] [cleanModuleName mod]
   in if hat opts then
@@ -49,6 +81,13 @@ qCleanhi opts echo graph mod =
          doEcho echo ("rm -f" ++
              concatMap (\(d,f)-> ' ': hiFile opts d f) allfiles)
 
+-- | Construct the command for the /compile/ commands, depends upon
+--   which compiler we're using, whether we're using hat, etc.
+qCompile :: DecodedArgs
+         -> Bool
+         -> ([(String, String)],
+             (String, String, String, Bool, PreProcessor))
+         -> String
 qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
   test dep (preprocess++hattrans++compilecmd)
  where
@@ -107,6 +146,12 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
                    ++ "IF <Nhc$ReturnCode> THEN " ++ comp
 
 
+-- | Construct the command for the /link/ step in building.
+qLink :: DecodedArgs
+      -> Bool
+      -> Graph a b c d
+      -> Goal
+      -> String
 qLink opts echo graph (Object  file suf) = ""
 qLink opts echo graph (Program file)     =
   cmd
@@ -158,6 +203,14 @@ qLink opts echo graph (Program file)     =
 
 
 
+-- Could be more polymorphic
+-- close :: forall b a t3 t2 t1 t.
+--          (Eq b) =>
+--          [(b, ((t, a, t1, t2, t3), [b]))] -> [(a, b)] -> [b] -> [(a, b)]
+close :: Graph a b c d
+      -> [(String, String)]
+      -> [String]
+      -> [(String, String)]
 close graph acc []      = acc
 close graph acc (f:fs)  =
     if any ((f==).snd) acc then

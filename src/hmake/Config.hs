@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Config
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Handles compiler configuration information, both globally and
+-- locally.  Does reading & writing of configuration files, etc.
+-----------------------------------------------------------------------------
+
 module Config where
 
 import Compiler
@@ -85,9 +98,12 @@ instance Show HmakeConfig where
                     . showString "\n  }\n"
 
 ----
+-- | Suck in a single configuration file.  (Uses unsafePerformIO.)
 readConfig :: FilePath -> HmakeConfig
 readConfig file = unsafePerformIO (safeReadConfig file)
 
+-- | A safe version of "readConfig".  Sucks in a single configuration file,
+--   ensuring it parses correctly.
 safeReadConfig :: FilePath -> IO HmakeConfig
 safeReadConfig file = do
     f <- readFile file
@@ -105,8 +121,9 @@ safeReadConfig file = do
                                      ++ path++"'")
         in (return $! val)
 
-
-readPersonalConfig :: (FilePath,Maybe FilePath) -> IO PersonalConfig
+-- | Read the user's complete configuration.
+readPersonalConfig :: (FilePath,Maybe FilePath) -- ^ (global, local)
+                   -> IO PersonalConfig
 readPersonalConfig (global,local) = do
     g <- safeReadConfig global
     l <- case local of
@@ -115,8 +132,9 @@ readPersonalConfig (global,local) = do
            Nothing -> return Nothing
     return PersonalConfig { globalConfig = g , localConfig  = l }
 
-
-defaultConfigLocation :: Bool -> (FilePath, Maybe FilePath)
+-- | Use getEnv to find the configuration location.  (Uses unsafePerformIO)
+defaultConfigLocation :: Bool -- ^ Create the directory if it doesn't exist.
+                      -> (FilePath, Maybe FilePath)
 defaultConfigLocation create = unsafePerformIO $ do
     machine <- getEnv "MACHINE"
     global <- getEnv "HMAKEDIR"

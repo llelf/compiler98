@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  RunAndReadStdout
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- A few commands to run a shell command and collect it's output, and
+-- to handle filenames.
+-----------------------------------------------------------------------------
+
 module RunAndReadStdout
   ( runAndReadStdout
   , basename, dirname
@@ -9,7 +22,7 @@ import Directory (removeFile)
 import List (isPrefixOf)
 import Platform (unsafePerformIO,getProcessID,withDefault,windows)
 
--- Generate a temporary filename unique to this process.
+-- | Generate a temporary filename unique to this process (uses unsafePerformIO)
 tmpfile :: String -> String
 tmpfile root =
     let tmp = "TEMP" `withDefault` "/tmp" in
@@ -19,7 +32,7 @@ tmpfile root =
              p <- getProcessID
              return (tmp++"/"++root++"."++show p)
 
--- Run a shell command and collect its output.
+-- | Run a shell command and collect its output.
 runAndReadStdout :: String -> IO String
 runAndReadStdout cmd = do
     let output = tmpfile "hmakeconfig"
@@ -44,9 +57,14 @@ runAndReadStdout cmd = do
                           case x of Just c  -> loop (c:cts)
                                     Nothing -> return $ reverse cts
 
--- Analogues of the shell commands of the same name.
-basename,dirname :: String -> String
+-- | Strip directory and suffix from filenames (analogous to the shell
+--   command of the same name).
+basename :: String -> String
 basename = reverse .            takeWhile (not.(`elem`"\\/")) . reverse
+
+-- | Strip non-directory suffix from file name (analogous to the shell
+--   command of the same name).
+dirname :: String -> String
 dirname  = reverse . safetail . dropWhile (not.(`elem`"\\/")) . reverse
   where safetail [] = []
         safetail (_:x) = x

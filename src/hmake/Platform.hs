@@ -1,4 +1,16 @@
 {-# OPTIONS -fglasgow-exts #-}
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Platform
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Platform specific definitions, utilizing cpp pragmas, etc.
+-----------------------------------------------------------------------------
+
 module Platform
   ( withDefault
   , builtby
@@ -27,7 +39,7 @@ import NHC.Internal (unsafePerformIO)
 foreign import ccall "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
-import IOExts (unsafePerformIO)
+import System.IO.Unsafe (unsafePerformIO)
 foreign import ccall "getpid" getProcessID :: IO Int
 #endif
 

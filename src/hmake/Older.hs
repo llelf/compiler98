@@ -1,3 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Main
+-- Copyright   :  Thomas Hallgren
+--
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Main program for 'Older', a helper utility to calculate the dynamic
+-- part of the dependencies when rebuilding a project.  (If module A has
+-- a static dependency on module B, and module B is re-built, then module
+-- A should only be rebuilt if B's interface has changed.)
+-----------------------------------------------------------------------------
 module Main(main) where
 
 import System

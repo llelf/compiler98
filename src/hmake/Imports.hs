@@ -1,5 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Imports
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Get the imports for a single Haskell module after performing a cpp.
+-----------------------------------------------------------------------------
+
 module Imports
-  ( getImports
+  ( getImports, cpp, KeepState(..)
   ) where
 
 import SymTab
@@ -12,7 +24,11 @@ import Numeric  (readHex)
 #define isAlphaNum isAlphanum
 #endif
 
-getImports :: FilePath -> [String] -> String -> [String]
+-- | Get the imports for this Haskell module.
+getImports :: FilePath -- ^ The path to the module
+           -> [String] -- ^ Definitions, from which to build a symbol table (for cpp)
+           -> String   -- ^ The input file to be parsed for imports
+           -> [String] -- ^ A list of imported modules
 getImports fp defines inp =
   let syms = foldr (insertST.defval) emptyST defines
   in (leximports fp . cpp fp syms Keep . lines) inp
@@ -23,7 +39,7 @@ defval sym =
 
 data KeepState = Keep | Drop Int
 
--- Return just the list of lines that the real cpp would decide to keep.
+-- | Return just the list of lines that the real cpp would decide to keep.
 cpp :: FilePath -> SymTab String -> KeepState -> [String] -> [String]
 cpp _ _ _ [] = []
 
@@ -80,7 +96,7 @@ cpp fp syms (Drop n) (('#':x):xs) =
 cpp fp syms d@(Drop n) (x:xs) =
   cpp fp syms d xs
 
--- leximports takes a cpp-ed list of lines and returns the list of imports
+-- | /leximports/ takes a cpp-ed list of lines and returns the list of imports
 leximports :: FilePath -> [String] -> [String]
 leximports fp =
   let

@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Argv
+-- Copyright   :  Thomas Hallgren and Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Command-line parsing for hmake.
+-----------------------------------------------------------------------------
+
 module Argv(Goal(..),DecodedArgs(..),decode,stripGoal) where
 
 import ListUtil (lconcatMap)
@@ -15,6 +27,8 @@ import IO (stderr)
 import IOMisc (hPutStrLn)
 #endif
 
+-- | Target modules.  Either a program or an "Object", which is the
+--   filename and its extension (suffix).
 data Goal = Object  String String
           | Program String
 
@@ -22,37 +36,42 @@ instance Show Goal where
    showsPrec n (Object  name suf) = showString (name++'.':suf)
    showsPrec n (Program name)     = showString name
 
+-- | Get the filename out of this Goal.  In the case of an "Object",
+--   this does not include the extension.
+stripGoal :: Goal -> String
 stripGoal (Object name suf) = name
 stripGoal (Program name)    = name
 
--- The following is the start of an attempt to replace the 12-tuple
--- returned by "decode" with something more meaningful.  Apart from
--- anything else, nhc98 doesn't do 13-tuples, so this is needed if
--- you are to make any extensions to the type.
---
+-- /decode/ originally returned a 12-tuple of arguments.  The structure
+-- /DecodedArgs/ is hopefully rather more meaningful.  (Apart from
+-- anything else, nhc98 didn't do 13-tuples at the time, so this was
+-- needed in order to make extensions to the return value!)
+
+-- | The decoded command-line arguments.
 data DecodedArgs =
      Decoded 
-	{ modules  :: [Goal]		-- specified target modules
-	, pathSrc  :: [String]		-- paths to compilable sources
-	, pathPrel :: [String]		-- paths to prelude .hi files
-	, zdefs    :: [String]		-- cpp options beginning -Z
-	, defs     :: [String]		-- cpp options beginning -D
-	, ignoreHi :: [String]		-- .hi files to ignore
-	, dflag    :: Bool		-- does compiler have a -d option?
-	, quiet    :: Bool		-- option -q for quiet
-	, keepPrel :: Bool		-- option -keepPrelude
-	, isUnix   :: Bool		-- Unix or RiscOS (!)
-	, hat      :: Bool		-- do we perform hat transformation?
-	, debug    :: (String->IO ())	-- debugging printf function
-	, ifnotopt :: ([String]->String->String)  -- conditional (option unset)
-	, ifopt    :: ([String]->String->String)  -- conditional (option set)
-	, goalDir  :: String		-- goal Directory for .o files
-	, hiSuffix :: String		-- .hi / .T.hi
-	, oSuffix  :: String		-- .o  / .T.o / .p.o / .z.o
-        , config   :: PersonalConfig	-- read from file (via optional -ffile)
-        , compiler :: CompilerConfig	-- chosen compiler
+	{ modules  :: [Goal]		-- ^ specified target modules
+	, pathSrc  :: [String]		-- ^ paths to compilable sources
+	, pathPrel :: [String]		-- ^ paths to prelude .hi files
+	, zdefs    :: [String]		-- ^ cpp options beginning -Z
+	, defs     :: [String]		-- ^ cpp options beginning -D
+	, ignoreHi :: [String]		-- ^ .hi files to ignore
+	, dflag    :: Bool		-- ^ does compiler have a -d option?
+	, quiet    :: Bool		-- ^ option -q for quiet
+	, keepPrel :: Bool		-- ^ option -keepPrelude
+	, isUnix   :: Bool		-- ^ Unix or RiscOS (!)
+	, hat      :: Bool		-- ^ do we perform hat transformation?
+	, debug    :: (String->IO ())	-- ^ debugging printf function
+	, ifnotopt :: ([String]->String->String)  -- ^ is option unset?
+	, ifopt    :: ([String]->String->String)  -- ^ is option set?
+	, goalDir  :: String		-- ^ goal Directory for .o files
+	, hiSuffix :: String		-- ^ .hi / .T.hi
+	, oSuffix  :: String		-- ^ .o  / .T.o / .p.o / .z.o
+        , config   :: PersonalConfig	-- ^ from file (via optional -ffile)
+        , compiler :: CompilerConfig	-- ^ chosen compiler
 	}
 
+-- | Given the list of program arguments, decode them.
 decode :: [String] -> DecodedArgs
 decode progArgs =
   let d = Decoded {
@@ -109,6 +128,9 @@ decode progArgs =
 
   isopt opt = opt `elem` flags
 
+  -- Look at the file argument, including the suffix, and decide
+  -- whether it's a 'Program' or an 'Object'.
+  wrapGoal :: String -> Goal
   wrapGoal file =
       let (s,n) = break (=='.') (reverse file)
       in findFirst (\suf -> if s == reverse suf then

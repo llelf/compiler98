@@ -1,5 +1,17 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Compiler
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
 -- This module describes features of the various Haskell compilers.
--- If you write a new Haskell compiler, please add details here!
+-- Abstracts a handful of similar compiler flags.  If you write a new
+-- Haskell compiler, please add details here!
+-----------------------------------------------------------------------------
+
 module Compiler where
 
 import Char (toUpper)
@@ -23,25 +35,25 @@ instance Read HC where
                                            , (x,s) <- lex s'])
 
 
--- all-compiler Haskell'98 cpp symbols
+-- | all-compiler Haskell'98 cpp symbols
 haskell98SymsForCpp = ["__HASKELL98__","__HASKELL__=98"]
 
 hasCoolOptions :: HC -> Bool
 dirOption, hiSuffixOption, oSuffixOption :: HC -> String
 
--- can we use nice compiler options for redirecting outputs?
+-- | can we use nice compiler options for redirecting outputs?
 hasCoolOptions Nhc98 = True
 hasCoolOptions Ghc   = True
 hasCoolOptions _     = False
 
--- what is the compiler's option to place object file in a separate directory?
+-- | what is the compiler's option to place object file in a separate directory?
 dirOption Nhc98 = "-d "
 dirOption Ghc   = "-odir "
 
--- what is the compiler's option for changing the .hi suffix?
+-- | what is the compiler's option for changing the .hi suffix?
 hiSuffixOption Nhc98 = "-hi-suffix="
 hiSuffixOption Ghc   = "-hisuf "
 
--- what is the compiler's option for changing the .o suffix?
+-- | what is the compiler's option for changing the .o suffix?
 oSuffixOption Nhc98 = "-o-suffix="
 oSuffixOption Ghc   = "-osuf "

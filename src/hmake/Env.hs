@@ -1,3 +1,16 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Env
+-- Copyright   :  ...
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Get the import lists of a module (why is this called "Env"?)
+-- No longer used in 'hmake'.
+-----------------------------------------------------------------------------
+
 module Env(haskellImport) where
 import Compat(assocFail, getenvi, splitAtElem, takeWord)
 --import Either
@@ -10,9 +23,13 @@ import Char
 #define isAlphanum isAlphaNum
 #endif
 
--- This parser is just a fast hack. It would be nice to have a compiler
--- option to output the import list of a module.
+-- | Get the import lists for a module. (This parser is just a fast
+--   hack. It would be nice to have a compiler option to output the
+--   import list of a module.)
 
+haskellImport :: Bool     -- ^ If true, allow the output to contain "Prelude"
+              -> String   -- ^ The haskell source with "import Foo" lines
+              -> [String] -- ^ The list of imported modules
 haskellImport kp =
     --filter notFromHbcLibrary .
     (if kp then id else filter notPrelude) .

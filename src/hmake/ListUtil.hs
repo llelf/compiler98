@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  ListUtils
+-- Copyright   :  Thomas Hallgren
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- List utilities, some may be found in standard libraries.
+-----------------------------------------------------------------------------
+
 module ListUtil where
 --import Maybe
 
@@ -8,13 +20,14 @@ takeUntil cs (x:xs)
   | otherwise = x: takeUntil cs xs
 
 
--- Lookup an item in an association list.  Apply a function to it if it is found, otherwise return a default value.
+-- | Lookup an item in an association list.  Apply a function to it
+--   if it is found, otherwise return a default value.
 assoc :: (Eq c) => (a -> b) -> b -> [(c, a)] -> c -> b
 assoc f d [] x                       = d
 assoc f d ((x',y):xys) x | x' == x   = f y
                          | otherwise = assoc f d xys x
 
--- Map and concatename results.
+-- | Map and concatenate results.
 lconcatMap :: (a -> [b]) -> [a] -> [b]
 lconcatMap f []     = []
 lconcatMap f (x:xs) =
@@ -22,28 +35,29 @@ lconcatMap f (x:xs) =
         [] -> lconcatMap f xs
         ys -> ys ++ lconcatMap f xs
 
--- Repeatedly extract (and transform) values until a predicate hold.  Return the list of values.
+-- | Repeatedly extract (and transform) values until a predicate hold.
+--   Return the list of values.
 unfoldr :: (a -> (b, a)) -> (a -> Bool) -> a -> [b]
 unfoldr f p x | p x       = []
               | otherwise = y:unfoldr f p x'
                               where (y, x') = f x
 
--- Map, but plumb a state through the map operation.
+-- | Map, but plumb a state through the map operation.
 mapAccuml :: (a -> b -> (a, c)) -> a -> [b] -> (a, [c])
 mapAccuml f s []     = (s, [])
 mapAccuml f s (x:xs) = (s'', y:ys)
                        where (s',  y)  = f s x
                              (s'', ys) = mapAccuml f s' xs
 
--- Union of sets as lists.
+-- | Union of sets as lists.
 union :: (Eq a) => [a] -> [a] -> [a]
 union xs ys = xs ++ [y | y<-ys, y `notElem` xs]
 
--- Intersection of sets as lists.
+-- | Intersection of sets as lists.
 intersection :: (Eq a) => [a] -> [a] -> [a]
 intersection xs ys = [x | x<-xs, x `elem` ys]
 
---- Functions derived from those above
+--- | Functions derived from those above
 
 chopList :: ([a] -> (b, [a])) -> [a] -> [b]
 chopList f l = unfoldr f null l
@@ -65,12 +79,12 @@ rept 0 _ = []
 rept n x = x : rept (n-1) x
 -}
 
--- Take all the tails
+-- | Take all the tails
 tails :: [a] -> [[a]]
 tails []         = []
 tails xxs@(_:xs) = xxs : tails xs
 
--- group list elements according to an equality predicate
+-- | group list elements according to an equality predicate
 groupEq :: (a->a->Bool) -> [a] -> [[a]]
 groupEq eq xs = chopList f xs
                 where f xs@(x:_) = span (eq x) xs

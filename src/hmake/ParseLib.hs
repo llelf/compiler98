@@ -1,22 +1,31 @@
-{-----------------------------------------------------------------------------
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  ParseLib
+-- Copyright   :  ...
+-- Copyright   :  Graham Hutton (University of Nottingham), Erik Meijer (University of Utrecht)
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+--                  A LIBRARY OF MONADIC PARSER COMBINATORS
+-- 
+--                               29th July 1996
+-- 
+--                  Graham Hutton               Erik Meijer
+--             University of Nottingham    University of Utrecht
+-- 
+-- This Haskell script defines a library of parser combinators, and is
+-- taken from sections 1-6 of our article "Monadic Parser Combinators".
+-- Some changes to the library have been made in the move from Gofer
+-- to Haskell:
+-- 
+--    * Do notation is used in place of monad comprehension notation;
+-- 
+--    * The parser datatype is defined using "newtype", to avoid the overhead
+--      of tagging and untagging parsers with the P constructor.
+-----------------------------------------------------------------------------
 
-                 A LIBRARY OF MONADIC PARSER COMBINATORS
-
-                              29th July 1996
-
-                 Graham Hutton               Erik Meijer
-            University of Nottingham    University of Utrecht
-
-This Haskell 1.3 script defines a library of parser combinators, and is taken
-from sections 1-6 of our article "Monadic Parser Combinators".  Some changes
-to the library have been made in the move from Gofer to Haskell:
-
-   * Do notation is used in place of monad comprehension notation;
-
-   * The parser datatype is defined using "newtype", to avoid the overhead
-     of tagging and untagging parsers with the P constructor.
-
------------------------------------------------------------------------------}
 
 module ParseLib
    (Parser(..), item, first, papply, (+++), sat, {-tok,-} many, many1,
@@ -42,7 +51,9 @@ import Monad
 infixr 5 +++
 
 type Token = Char
---- The parser monad ---------------------------------------------------------
+
+---------------------------------------------------------
+-- | The parser monad
 
 newtype Parser a   = P ([Token] -> [(a,[Token])])
 
@@ -76,7 +87,9 @@ instance MonadPlus Parser where
    -- mplus       :: Parser a -> Parser a -> Parser a
    (P p) MPLUS (P q)  = P (\inp -> (p inp ++ q inp))
 
---- Other primitive parser combinators ---------------------------------------
+-- ------------------------------------------------------------
+-- * Other primitive parser combinators
+-- ------------------------------------------------------------
 
 item               :: Parser Token
 item                = P (\inp -> case inp of
@@ -95,7 +108,9 @@ first (P p)        = P (\inp -> case p inp of
 papply            :: Parser a -> [Token] -> [(a,[Token])]
 papply (P p) inp   = p inp
 
---- Derived combinators ------------------------------------------------------
+-- ------------------------------------------------------------
+-- * Derived combinators
+-- ------------------------------------------------------------
 
 (+++)             :: Parser a -> Parser a -> Parser a
 p +++ q            = first (p MPLUS q)
@@ -143,7 +158,9 @@ ops xs             = foldr1 (+++) [do {p; return op} | (p,op) <- xs]
 bracket           :: Parser a -> Parser b -> Parser c -> Parser b
 bracket open p close = do {open; x <- p; close; return x}
 
---- Useful parsers -----------------------------------------------------------
+-- ------------------------------------------------------------
+-- * Useful parsers
+-- ------------------------------------------------------------
 
 char              :: Char -> Parser Char
 char x             = sat (\y -> x == y)
@@ -178,7 +195,9 @@ nat                = do {x <- digit; return (fromEnum x - fromEnum '0')} `chainl
 int               :: Parser Int
 int                = do {char '-'; n <- nat; return (-n)} +++ nat
 
---- Lexical combinators ------------------------------------------------------
+-- ------------------------------------------------------------
+-- * Lexical combinators
+-- ------------------------------------------------------------
 
 spaces            :: Parser ()
 spaces             = do {many1 (sat isSpace); return ()}
@@ -202,7 +221,9 @@ skip p             = do {junk; p}
 token             :: Parser a -> Parser a
 token p            = do {v <- p; junk; return v}
 
---- Token parsers ------------------------------------------------------------
+-- ------------------------------------------------------------
+-- * Token parsers
+-- ------------------------------------------------------------
 
 natural           :: Parser Int
 natural            = token nat

@@ -1,3 +1,19 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  PackageConfig
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Work out the import directories for a bunch of packages.
+--
+--  * For ghc, we need to consult ghc-pkg for package import directories.
+--
+--  * nhc98 always stores package imports under its default incdir.
+-----------------------------------------------------------------------------
+
 module PackageConfig
   ( packageDirs
   ) where
@@ -12,8 +28,10 @@ import List (partition,intersperse,isPrefixOf)
 import Char (isDigit)
 import Monad (when,foldM)
 
--- Work out the import directories for a bunch of packages.
-packageDirs :: CompilerConfig -> [String] -> [FilePath]
+-- | Work out the import directories for a bunch of packages.
+packageDirs :: CompilerConfig  -- ^ Which compiler, where it's located, etc.
+            -> [String]        -- ^ The packages
+            -> [FilePath]
 
 -- For ghc, we need to consult ghc-pkg for package import directories.
 packageDirs config@(CompilerConfig{ compilerStyle=Ghc

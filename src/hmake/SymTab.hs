@@ -1,3 +1,15 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  SymTab
+-- Copyright   :  Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Symbol Table, in particular it's used for cpp from Imports.hs.
+-----------------------------------------------------------------------------
+
 module SymTab
   ( SymTab
   , emptyST
@@ -8,6 +20,7 @@ module SymTab
   , IndTree
   ) where
 
+-- | Symbol Table
 type SymTab v = IndTree [(String,v)]
 
 emptyST   :: SymTab v
@@ -27,7 +40,7 @@ definedST s    ss = let vs = filter ((==s).fst) ((itind (hash s)) ss)
 
 
 ----
--- Index Trees (storing indexes at nodes).
+-- | Index Trees (storing indexes at nodes).
 
 data IndTree t = Leaf t | Fork Int (IndTree t) (IndTree t)
      deriving Show

@@ -1,9 +1,21 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Main
+-- Copyright   :  Thomas Hallgren and Malcolm Wallace
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Main program for hmake
+-----------------------------------------------------------------------------
+
 module Main(main) where
 import Argv
 import GetDep
 import Getmodtime(isOlder,When(..))
 import ListUtil(lconcatMap,assocDef,pair)
-import Order
+import Order (scctsort)
 import Output
 import IO
 import System

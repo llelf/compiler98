@@ -1,6 +1,20 @@
+-----------------------------------------------------------------------------
+-- |
+-- Module      :  Unlit
+-- Copyright   :  Haskell Committee
+-- 
+-- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+-- Stability   :  Stable
+-- Portability :  All
+--
+-- Remove the "literal" markups from a Haskell source file, including
+-- ">", "\begin{code}, \end{code}", and "#"
+--
 -- Part of the following code is from
 -- "Report on the Programming Language Haskell",
 --   version 1.2, appendix C.
+-----------------------------------------------------------------------------
+
 module Unlit(unlit,plain) where
 
 import Char
