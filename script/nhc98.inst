@@ -203,12 +203,14 @@ processArgs () {
                 ;;
     -H*   ) HEAP=`echo $1 | cut -c3-` ;;
     -[Ll]*) EXTRALIB=$EXTRALIB" "$1;;
+    -Wl,*)  LDFLAGS=$LDFLAGS" "$1;;
     -i*   ) CINCDIRS=$CINCDIRS" -I"`echo $1 | cut -c3-`
             HINCDIRS=$HINCDIRS" -I"`echo $1 | cut -c3-` ;;
     -I*   ) CINCDIRS=$CINCDIRS" "$1
 #           HINCDIRS=$HINCDIRS" "`filepath $1` ;;
             HINCDIRS=$HINCDIRS" "$1 ;;
     -s    ) LDFLAGS=$LDFLAGS" "$1;;
+    -static) LDFLAGS=$LDFLAGS" "$1;;
 #   -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "`filepath $1`
 #           COMPFLAGS=$COMPFLAGS" "`filepath $1`;;
     -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "$1
