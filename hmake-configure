@@ -135,7 +135,7 @@ then
   echo '  (but cmdline options have precedence)'
 fi
 
-INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
+INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date`"
 
 LIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
 BINDIR=${BINDIR-$INSTALLDIR/bin}
