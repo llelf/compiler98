@@ -3,7 +3,7 @@
 #include <string.h>
 #include <errno.h>
 #include <sys/stat.h>
-#include "hat.h"
+#include "art.h"
 #include "utils.h"
 
 #define DEBUG 0

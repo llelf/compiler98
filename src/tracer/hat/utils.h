@@ -1,7 +1,7 @@
 #ifndef _UTILS_H
 #define _UTILS_H
 
-#include "hat.h"
+#include "art.h"
 #if defined(sparc)
 #include <sys/byteorder.h>
 #endif

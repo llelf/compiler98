@@ -21,7 +21,8 @@ FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = $(MACHINE) LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
 LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory CPUTime \
-	     Random Haskell Binary Bit GreenCard BinArray FFI IOExtras Observe
+	     Random Haskell Binary Bit GreenCard BinArray FFI IOExtras \
+             Observe Hat 
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
 SUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${LIBSUBDIRS}

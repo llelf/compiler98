@@ -23,7 +23,7 @@ data Module id =
        Module Pos id (Maybe [Export id]) [ImpDecl id] [FixDecl id] (Decls id)
 
 data Export id =
-       ExportEntity  Pos (Entity id)
+       ExportEntity  Pos (Entity id)  -- pos superfluous, same in entity?
      | ExportModid   Pos id
 
 data ImpDecl id =

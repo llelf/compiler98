@@ -1,7 +1,7 @@
 #ifndef _NODECACHE_H
 #define _NODECACHE_H
 
-#include "hat.h"
+#include "art.h"
 
 int		ncFind	(FileOffset np);
 FileOffset	ncRef	(int ref);

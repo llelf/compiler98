@@ -1,7 +1,9 @@
 #include <stdio.h>
-#include "fileformat.h"
-#include "cinterface.h"
-
+#include <string.h>
+#include <signal.h>
+#include "art.h"
+#include "hat.h"
+#include "cinterface.h"  /* still needed for implementation of magic types */
 
 #if defined(DEBUG)
 #define HIDE(x) x
@@ -9,8 +11,97 @@
 #define HIDE(x)
 #endif
 
-extern int spSize;	/* program's runtime stack size */
-#define	NUM_SATC	32000
+
+FILE *HatFile, *HatOutput, *HatBridge;
+
+
+/* from initexit ********************************************************* */
+
+/* initialisation handler */
+
+void 
+openTrace (char *progname)
+{
+    NodePtr nodeptr;
+
+    unsigned p = 0;
+    char filename[256];
+
+    strcpy(filename,progname);
+    strcat(filename,".hat");		/* the .hat file holds the archive */
+    HatFile = fopen(filename,"w");	/* of redex trails */
+    p = ftell(HatFile);                 /* should be 0 */
+    fprintf(HatFile,"Hat v01");		/* initialise file */
+    fputc(0,HatFile);
+    fwrite(&p,sizeof(unsigned),1,HatFile);
+    fwrite(&p,sizeof(unsigned),1,HatFile);
+
+    initialiseSATstack();
+
+    strcpy(filename,progname);		/* the .output file is a copy of */
+    strcat(filename,".hat.output");	/* stdout */
+    HatOutput = fopen(filename,"w");
+    strcpy(filename,progname);		/* the .bridge file links the output */
+    strcat(filename,".hat.bridge");	/* to the archived trails */
+    HatBridge = fopen(filename,"w");
+
+    signal(SIGQUIT, hat_interrupted);   /* install handler for Control-C */
+    signal(SIGINT, hat_interrupted);
+}
+
+
+/* exit handlers */
+
+void
+closeTrace ()
+{
+  updateSatBs();  /* there should not be any */
+  updateSatCs();
+
+  fclose(HatFile);
+  fclose(HatOutput);
+  fclose(HatBridge);
+}
+
+NodePtr dbg_last_trace = NULL;
+
+
+void
+errorTraceExit(char* errmsg, FileOffset trace, int ecode)
+{
+  CNmType* nt;
+
+  fprintf(stderr, "%s\n", errmsg);
+  nt = primNTCString(errmsg);
+  fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
+  fwrite(&(nt->ptr), sizeof(FileOffset), 1, HatFile);
+  fseek(HatFile,8,SEEK_SET);
+  fwrite(&trace, sizeof(FileOffset), 1, HatFile);
+
+  closeTrace();
+
+  exit(ecode);	
+}
+
+void
+fatal(CTrace *trace)
+{ errorTraceExit("No match in pattern.", trace->ptr, 1); }
+
+/* The following is not used currently
+   Previously it was called from the dbg_trans version of the interpreter */
+void
+dbg_blackhole()
+{ errorTraceExit("Blackhole detected.", readCurrentSatB(), 2); }
+
+void
+hat_interrupted(int sig)
+{ errorTraceExit("Program interrupted. (^C)", readCurrentSatB(), 3); }
+
+
+/* from fileformat ********************************************************* */
+
+#define NUM_SATB   32000  /* should be equal to program's runtime stack size */
+#define	NUM_SATC   32000
 
 static FileOffset HatCounter = 8 + 2*sizeof(FileOffset);
 static FileOffset *SATstack;
@@ -24,14 +115,14 @@ static int SATq = 0;
 void
 initialiseSATstack (void)
 {
-    SATstack = (FileOffset*)malloc(spSize * sizeof(FileOffset));
+    SATstack = (FileOffset*)malloc(NUM_SATB * sizeof(FileOffset));
     if (SATstack==(FileOffset*)0) {
-        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",spSize);
+        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",NUM_SATB);
         exit(10);
     }
-    SATstackSort = (int*)malloc(spSize * sizeof(int));
+    SATstackSort = (int*)malloc(NUM_SATB * sizeof(int));
     if (SATstackSort==(int*)0) {
-        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",spSize);
+        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",NUM_SATB);
         exit(10);
     }
 }
@@ -42,6 +133,7 @@ initialiseSATstack (void)
  */
 
 
+#if 0
 FileOffset
 primModInfo (ModInfo *m)
 {
@@ -54,7 +146,7 @@ primModInfo (ModInfo *m)
     HatCounter = ftell(HatFile);
     return fo;
 }
-
+#endif
 
 /* Function to build a CTrace triple from components.
  */
@@ -652,7 +744,7 @@ primTSatB (CTrace* t1)
 {
     SATstackSort[SATp] = False;
     SATstack[SATp++] = t1->ptr;
-    if (SATp >= spSize) {
+    if (SATp >= NUM_SATB) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
         exit(1);
     }
@@ -665,7 +757,7 @@ primTSatBLonely (CTrace* t1)
 {
     SATstackSort[SATp] = True;
     SATstack[SATp++] = t1->ptr;
-    if (SATp >= spSize) {
+    if (SATp >= NUM_SATB) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
         exit(1);
     }
@@ -835,6 +927,22 @@ primNTChar (char c)
     return mkCNmType(NTChar,fo,False);
 }
 
+
+/* only works for Integer that fits into an Int */
+CNmType* 
+primNTInteger (int i)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimNTInteger -> 0x%x\n",fo);)
+    fputc(((NmType<<5) | NTInteger),HatFile);
+    fputc(0x01,HatFile);
+    fwrite(&i, sizeof(int), 1, HatFile);
+    HatCounter += 2+(sizeof(int));
+    return mkCNmType(NTInteger,fo,False);
+}
+
+#if 0
 CNmType*
 primNTInteger (NodePtr i)
 {
@@ -861,7 +969,25 @@ primNTInteger (NodePtr i)
 #endif
     return mkCNmType(NTInteger,fo,False);
 }
+#endif
 
+
+CNmType*
+primNTRational (int numerator, int denominator)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimNTRational -> 0x%x\n",fo);)
+    fputc(((NmType<<5) | NTRational),HatFile);
+    fputc(0x01,HatFile);	
+    fwrite(&numerator, sizeof(int), 1, HatFile);
+    fputc(0x01,HatFile);	
+    fwrite(&denominator, sizeof(int), 1, HatFile);
+    HatCounter += 3 + (2 * sizeof(int));
+    return mkCNmType(NTRational,fo,False);
+}
+
+#if 0
 CNmType*
 primNTRational (NodePtr i, NodePtr j)
 {
@@ -874,6 +1000,7 @@ primNTRational (NodePtr i, NodePtr j)
     HatCounter += 1 + (2*sizeof(char));
     return mkCNmType(NTRational,fo,False);
 }
+#endif
 
 CNmType*
 primNTFloat (float f)
@@ -899,6 +1026,7 @@ primNTDouble (double d)
     return mkCNmType(NTDouble,fo,False);
 }
 
+#if 0
 CNmType*
 primNTId (IdEntry *id)
 {
@@ -911,10 +1039,7 @@ primNTId (IdEntry *id)
         if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
         fo = htonl(HatCounter);
         HIDE(fprintf(stderr,"\tprimNTId \"%s\" -> 0x%x\n",id->name,fo);)
-        if (id->constr == CONSTR(6,5,5))
-          fputc(((NmType<<5) | NTId),HatFile);
-        else
-          fputc(((NmType<<5) | NTToplevelId),HatFile);
+        fputc(((NmType<<5) | NTId),HatFile);
         fprintf(HatFile,"%s",id->name);
         fputc(0x0,HatFile);
         i = 0;
@@ -953,6 +1078,7 @@ primNTConstr (IdEntry *id)
         return mkCNmType(NTConstr,fo,False);  /* id->srcmod->trusted);  */
     }
 }
+#endif
 
 CNmType*
 primNTTuple ()
@@ -1071,6 +1197,7 @@ primSameTrace (CTrace* t1, CTrace* t2)
 }
 
 
+#if 0
 FileOffset
 primSR0 ()
 {
@@ -1102,6 +1229,7 @@ primSR3 (SrcRef *sr)
         return fo;
     }
 }
+#endif
 
 
 FileOffset

@@ -1,15 +1,26 @@
 {- ---------------------------------------------------------------------------
 Transform a module for generating a trace.
 
+Names are changed.
+Module names are prefixed by a 'T'.
+Variable names are prefixed to make room for new variable names 
+refering to various traces and intermediate expressions.
+Details of new name scheme near the end of this module.
+
 Deferred:
 Records: selectors won't have right type.
+import/export of the form TyCon(..); need extension of module TraceId
+
+In multi-module program may get name conflict, because also names internal to
+a module may be exported. Would need to keep track of all top-level names
+that should be exported by default. 
 
 No monad is used in the transformation, 
 because there is nothing inherently sequential.
 Instead, the definitions of the transformation functions `t*' remind of an 
 attribut grammar: the arguments are the inherited attributes, the elements
 of the result tuples are the synthetic attributes.
--}
+---------------------------------------------------------------------------- -}
 
 module TraceTrans (traceTrans) where
 
@@ -30,6 +41,8 @@ infixr 6 `typeFun`	-- hbc won't let me declare this later.
 
 type Arity = Int
 
+-- ----------------------------------------------------------------------------
+-- Transform a module
 
 traceTrans :: String  -- filename of module 
            -> Module TraceId -> Module TokenId
@@ -41,14 +54,25 @@ traceTrans filename (Module pos modId exps impDecls fixDecls decls) =
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
       (decls' 
-       ++ [declMod pos modId filename]
-       ++ map (declCon modTrace) cons 
-       ++ map (declVar modTrace) vars 
-       ++ map (declPos modTrace) poss))
+       ++ [defNameMod pos modId filename]
+       ++ map (defNameCon modTrace) cons 
+       ++ map (defNameVar modTrace) vars 
+       ++ map (defNamePos modTrace) poss))
   where
-  modTrace = ExpVar pos (nameModule modId)
+  modTrace = ExpVar pos (nameTraceInfoModule modId)
   (poss,vars,cons) = getModuleConsts consts
   (DeclsParse decls',consts) = tDecls (ExpVar pos tokenMkTRoot) decls
+
+-- ----------------------------------------------------------------------------
+-- Transform imports and exports
+
+tExports :: Maybe [Export TraceId] -> Maybe [Export TokenId]
+tExports = fmap (concatMap tExport) 
+
+tExport :: Export TraceId -> [Export TokenId]
+tExport (ExportModid pos modId) = [ExportModid pos (nameTransModule modId)]
+tExport (ExportEntity pos entity) = map (ExportEntity pos) (tEntity entity)
+
 
 tImpDecls :: [ImpDecl TraceId] -> [ImpDecl TokenId]
 tImpDecls decls = 
@@ -82,26 +106,29 @@ tImpSpec (NoHiding entities) = NoHiding (concatMap tEntity entities)
 tImpSpec (Hiding entities)   = Hiding (concatMap tEntity entities)
 
 tEntity :: Entity TraceId -> [Entity TokenId]
-tEntity (EntityVar pos id) = [EntityVar pos (nameWrap id)]
-tEntity (EntityTyConCls pos id) = [EntityTyConCls pos (nameOrg id)]
+tEntity (EntityVar pos id) = [EntityVar pos (nameTransVar id)]
+tEntity (EntityTyConCls pos id) = [EntityTyConCls pos (nameTransTyConCls id)]
   -- INCOMPLETE: if TyCon(..) need also to import/export references to traces
   -- of data constructor names, but how know their names?
 tEntity (EntityTyCon pos id posConIds) = 
-  (EntityTyCon pos (nameOrg id) (mapSnd nameOrg posConIds))
-  : map (\(pos,id) -> EntityVar pos (nameCon id)) posConIds
+  (EntityTyCon pos (nameTransTyConCls id) (mapSnd nameTransCon posConIds))
+  : map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) posConIds
 tEntity (EntityTyCls pos id posVarIds) =
-  [EntityTyCls pos (nameOrg id) (mapSnd nameWrap posVarIds)]
+  [EntityTyCls pos (nameTransTyConCls id) (mapSnd nameTransVar posVarIds)]
 
+-- ----------------------------------------------------------------------------
+-- New top-level definitions for generating shared trace info
+-- 
+-- Trace info for positions and identifier information. They have to be 
+-- top-level, so that they (and their side-effect) are only evaluated once.
+-- INCOMPLETE: an optimising compiler may need noinline pragma. 
+-- The variables referring to variable information need to include the 
+-- position in the name, because the same variable name may be used several 
+-- times.
 
-
-{-
-New top-level definitions for creating trace nodes for positions and identifier information. They have to be top-level, so that they (and their side-effect) are only evaluated once. The variables referring to variable information need to include the position in the name, because the same variable name may be used several times.
--}
-
-
-declMod :: Pos -> TraceId -> String -> Decl TokenId
-declMod pos id filename =
-  DeclFun pos (nameModule id) 
+defNameMod :: Pos -> TraceId -> String -> Decl TokenId
+defNameMod pos id filename =
+  DeclFun pos (nameTraceInfoModule id) 
     [Fun [] 
       (Unguarded 
         (ExpApplication pos 
@@ -110,50 +137,49 @@ declMod pos id filename =
           ,ExpLit pos (LitString Boxed filename)])) 
       noDecls]
 
-
-declCon :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
-declCon modTrace (pos,id) =
-  DeclFun pos (nameCon id)
+defNameCon :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
+defNameCon modTrace (pos,id) =
+  DeclFun pos (nameTraceInfoCon id)
     [Fun []
       (Unguarded
         (ExpApplication pos
           [ExpVar pos tokenMkAtomId
           ,modTrace
-          ,mkSRExp pos
+          ,ExpLit pos (LitInt Boxed (encodePos pos))
           ,ExpLit pos (LitInt Boxed (fixPriority id))
           ,ExpLit pos (LitString Boxed (getUnqualified id))]))
       noDecls]
 
-
-declVar :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
-declVar modTrace (pos,id) =
-  DeclFun pos (nameVar pos id)
+defNameVar :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
+defNameVar modTrace (pos,id) =
+  DeclFun pos (nameTraceInfoVar pos id)
     [Fun []
       (Unguarded
         (ExpApplication pos
           [ExpVar pos tokenMkAtomId
           ,modTrace
-          ,mkSRExp pos
+          ,ExpLit pos (LitInt Boxed (encodePos pos))
           ,ExpLit pos (LitInt Boxed (fixPriority id))
           ,ExpLit pos (LitString Boxed (getUnqualified id))]))
       noDecls]
 
-
-declPos :: Exp TokenId -> Pos -> Decl TokenId
-declPos modTrace pos =
-  DeclFun pos (namePos pos)
+defNamePos :: Exp TokenId -> Pos -> Decl TokenId
+defNamePos modTrace pos =
+  DeclFun pos (nameTraceInfoPos pos)
     [Fun []
       (Unguarded
         (ExpApplication pos
           [ExpVar pos tokenMkPos
           ,modTrace
-          ,ExpLit pos (LitInt Boxed rowcol)]))
+          ,ExpLit pos (LitInt Boxed (encodePos pos))]))
       noDecls]
+
+encodePos :: Pos -> Int
+encodePos pos = 10000*row + col -- encoding of positions in trace file
   where 
   (row, col) = fromPos pos
-  rowcol = 10000*row + col
 
-
+-- ----------------------------------------------------------------------------
 -- abstract data type 
 -- implements sets of positions, variables, constructors (no duplicates)
 -- precondition: variables and constructors are only added once
@@ -188,7 +214,8 @@ getModuleConsts (MC pos ids cons) = (pos,ids,cons)
 insert :: Eq a => a -> [a] -> [a] 
 insert p ps = if p `elem` ps then ps else p:ps
 
--------------
+-- ----------------------------------------------------------------------------
+-- Transformation of declarations, expressions etc.
 
 -- the input of this transformation has a DeclFun for each definition equation
 -- the following function combines equations for a variable into one DeclFun
@@ -233,7 +260,7 @@ tDecl _ (DeclType lhsTy rhsTy) =
   singleDecl $ DeclType (tSimple lhsTy) (tType rhsTy)
 tDecl _ (DeclData sort contexts lhsTy constrs derive) = 
   ([DeclData sort (tContexts contexts) (tSimple lhsTy) 
-    (map tConstr constrs) (tPosTys derive)]
+    (map tConstr constrs) (tPosClss derive)]
   ,[]
   ,foldr (uncurry addCon) emptyModuleConsts (map getCon constrs))
   where
@@ -242,13 +269,14 @@ tDecl _ (DeclDataPrim pos id size) =
   error ("Cannot trace primitive data type (" ++ show id 
     ++ " at position " ++ strPos pos ++ ")")
 tDecl parent (DeclClass pos contexts clsId tyId decls) = 
-  ([DeclClass pos (tContexts contexts) (nameOrg clsId) (nameOrg tyId) decls1]
+  ([DeclClass pos (tContexts contexts) (nameTransTyConCls clsId) 
+     (nameTransTyVar tyId) decls1]
   ,decls2  -- auxiliary definitions have to be outside the class definition
   ,declsConsts)
   where
   (decls1,decls2,declsConsts) = tDecls2 parent decls
 tDecl parent (DeclInstance pos contexts clsId inst decls) = 
-  ([DeclInstance pos (tContexts contexts) (nameOrg clsId) 
+  ([DeclInstance pos (tContexts contexts) (nameTransTyConCls clsId) 
      (tType inst) decls1]
   ,decls2  -- auxiliary definitions have to be outside the instance definition
   ,declsConsts)
@@ -264,14 +292,14 @@ tDecl _ d@(DeclPrimitive pos fnId arity ty) =
   --   then error "tDecl _tprim_ should not occur"
   --   else singleDecl $ DeclPrimitive pos (nameOrg fnId) 2 (mkTFunType ty)
 tDecl _ (DeclForeignImp pos cname fnId arity fspec ty duplicateId) =
-  ([DeclFun pos (nameWrap fnId) 
+  ([DeclFun pos (nameTransVar fnId) 
      [Fun [sr,useParent]
        (Unguarded 
          (ExpApplication pos 
-           [ExpVar pos (tokenPrim arity),ExpVar pos (nameVar pos fnId)
+           [ExpVar pos (tokenPrim arity),ExpVar pos (nameTraceInfoVar pos fnId)
            ,ExpVar pos (nameForeign fnId),sr,useParent]))
        noDecls]
-   ,DeclVarsType [(pos,nameWrap fnId)] [] (mkTFunType ty)]
+   ,DeclVarsType [(pos,nameTransVar fnId)] [] (mkTFunType ty)]
   ,[DeclForeignImp pos 
      (if null cname then getUnqualified fnId else cname) 
      (nameForeign fnId) arity fspec (tokenIdType ty) (nameForeign fnId)]
@@ -328,7 +356,7 @@ tDecl parent (DeclPat (Alt pat rhs decls)) =
 
   projDef :: (Pos,TraceId) -> Decl TokenId
   projDef (pos,id) =
-    DeclFun pos (nameWrap id) 
+    DeclFun pos (nameTransVar id) 
       [Fun [PatWildcard pos,PatWildcard pos]
         (Unguarded (ExpApplication pos 
           [ExpVar pos tokenLazySat
@@ -337,7 +365,7 @@ tDecl parent (DeclPat (Alt pat rhs decls)) =
               (Unguarded 
                 (ExpApplication pos 
                   [ExpVar pos tokenIndir
-                  ,ExpVar pos resultTraceId,ExpVar pos (nameWrap id)])) 
+                  ,ExpVar pos resultTraceId,ExpVar pos (nameTransVar id)])) 
               noDecls]
           ,ExpVar pos (nameTrace id)]))
         noDecls]
@@ -362,22 +390,26 @@ tDecl parent (DeclFun pos id (Fun [] _ _ : _)) =
   error "tDecl: variable multiple defined"
 tDecl parent (DeclFun pos id funs) = 
   tFun pos id funs  -- a function does not use the static parent
+tDecl _ (DeclFixity _) = 
+  ([],[],emptyModuleConsts) 
+  -- fixity declarations have been processed before 
+  -- not needed in output, because pretty printer produces unambiguous output
 tDecl _ _ = error "tDecl: unknown sort of declaration"
 
 
 -- constructor definition in type definition
 tConstr :: Constr TraceId -> Constr TokenId
 tConstr (Constr pos conId tyArgs) =
-  Constr pos (nameOrg conId) (tTyArgs tyArgs)
+  Constr pos (nameTransCon conId) (tTyArgs tyArgs)
 tConstr (ConstrCtx tyVars contexts pos conId tyArgs) =
-  ConstrCtx (tPosTys tyVars) (tContexts contexts) 
-    pos (nameOrg conId) (tTyArgs tyArgs)
+  ConstrCtx (tPosTyVars tyVars) (tContexts contexts) 
+    pos (nameTransCon conId) (tTyArgs tyArgs)
 
 
 tCaf :: Exp TokenId -> Pos -> TraceId -> Rhs TraceId -> Decls TraceId
      -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
 tCaf parent pos id rhs localDecls =
-  ([DeclFun pos (nameWrap id)
+  ([DeclFun pos (nameTransVar id)
      [Fun [PatWildcard pos,PatWildcard pos]
         (Unguarded (ExpVar pos shareId)) noDecls]]
    -- id _ _ = shareId
@@ -393,7 +425,7 @@ tCaf parent pos id rhs localDecls =
    --   where
    --   localDecls'
    -- traceId = constId parent pos id
-  ,pos `addPos` rhsConsts `merge` localDeclsConsts)
+  ,addVar pos id (rhsConsts `merge` localDeclsConsts))
   where
   useParent = ExpVar pos useParentId
   useParentId = nameTrace id
@@ -406,11 +438,11 @@ tFun :: Pos -> TraceId -> [Fun TraceId]
      -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
 
 tFun pos id funs =
-  ([DeclFun pos (nameWrap id) 
+  ([DeclFun pos (nameTransVar id) 
      [Fun [sr,parent]
        (Unguarded
          (ExpApplication pos
-           [ExpVar pos (tokenFun funArity),ExpVar pos (nameVar pos id)
+           [ExpVar pos (tokenFun funArity),ExpVar pos (nameTraceInfoVar pos id)
            ,ExpVar pos wrappedId',sr,parent]))
        noDecls]]
   ,DeclFun pos wrappedId' funs' : newDecls'  
@@ -483,9 +515,7 @@ tFunClauses pos parent ids pVars funArity _
     tFunClauses pos parent ids pVars funArity (neverFailingPats pats) funs
 
 
-{-
-Returns False only if one of the guards definitely has value True.
--}
+-- Returns False only if one of the guards definitely has value True.
 canFail :: [(Exp TraceId,Exp TraceId)] -> Bool
 canFail [] = True
 canFail ((ExpCon _ cid, _) : gdExps) = not (isTrue cid) && canFail gdExps
@@ -550,11 +580,13 @@ tGuardedExps cr parent failCont ((guard,exp):gdExps) =
   (gdExps',gdExpsConsts) = tGuardedExps cr newParent failCont gdExps
 
 
-{-
-To correctly create the trace within guards, a continuation is used.
-The type ContExp should be abstract. Its implementation is only used in 
-the following three functions.
--}
+-- -----------------------------------------
+-- Abstract continuation for guards
+--
+-- To correctly create the trace within guards, a continuation is used.
+-- The type ContExp should be abstract. Its implementation is only used in 
+-- the following three functions.
+
 data ContExp = Fail | Function TokenId [Exp TokenId]
 
 failContinuation :: ContExp
@@ -571,7 +603,7 @@ continuationToExp parent (Function fun args) =
   ExpApplication noPos (ExpVar noPos fun : parent : args)
 
 
-{- Expressions -}
+-- Transform expressions
 
 tExps :: Exp TokenId    -- parent
       -> [Exp TraceId]  -- expressions
@@ -581,10 +613,8 @@ tExps parent =
     (\e (es',cs) -> let (e',c) = tExp False parent e in (e':es',c `merge` cs))
     ([],emptyModuleConsts)
 
-{-
-First argument True iff the parent is equal to this expression, i.e.,
-the result of this expression is the same as the result of the parent.
--}
+-- First argument True iff the parent is equal to this expression, i.e.,
+-- the result of this expression is the same as the result of the parent.
 tExp :: Bool -> Exp TokenId -> Exp TraceId -> (Exp TokenId,ModuleConsts)
 tExp cr parent (ExpLambda pos pats body) =
   (ExpApplication pos 
@@ -694,7 +724,7 @@ tExp cr parent (ExpVar pos id) =
     else (ExpApplication pos [e',mkSRExp pos,parent]
          ,pos `addPos` emptyModuleConsts)
   where
-  e' = ExpVar pos (nameWrap id) 
+  e' = ExpVar pos (nameTransVar id) 
 tExp cr parent e@(ExpCon pos id) =
   tSatConApp parent e []
 tExp cr parent (ExpLit pos (LitString _ s)) =
@@ -749,11 +779,11 @@ tConApp parent c@(ExpCon pos id) args
   | conArity > numberOfArgs = -- undersaturated application
     (ExpApplication pos 
       (ExpVar pos (tokenPa numberOfArgs)
-      :ExpCon pos (nameOrg id)
+      :ExpCon pos (nameTransCon id)
       :ExpVar pos (tokenCn (conArity-numberOfArgs))
       :mkSRExp pos
       :parent
-      :ExpVar pos (nameCon id)
+      :ExpVar pos (nameTraceInfoCon id)
       :args')
     ,pos `addPos` argsConsts)
   | otherwise = tSatConApp parent c args
@@ -763,9 +793,7 @@ tConApp parent c@(ExpCon pos id) args
   (args',argsConsts) = tExps parent args
 
 
-{-
-Transform data constructor application with number of args equal arity.
--}
+-- Transform data constructor application with number of args equal arity.
 tSatConApp :: Exp TokenId   -- parent
            -> Exp TraceId   -- data constructor
            -> [Exp TraceId] -- arguments 
@@ -775,120 +803,14 @@ tSatConApp parent (ExpCon pos id) args =
     (ExpVar pos (tokenCon (length args))
     :mkSRExp pos
     :parent
-    :ExpCon pos (nameOrg id)
-    :ExpVar pos (nameCon id)
+    :ExpCon pos (nameTransCon id)
+    :ExpVar pos (nameTraceInfoCon id)
     :args')
   ,pos `addPos` argsConsts)
   where
   (args',argsConsts) = tExps parent args
 
-
-tPats :: [Pat TraceId] -> [Pat TokenId]
-tPats = map tPat
-
-tPat (ExpRecord pat fields) = ExpRecord (tPat pat) (map tField fields)
-  where
-  tField (FieldExp pos id pat) = FieldExp pos (nameWrap id) (tPat pat)
-tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
-  wrapExp pos (ExpApplication pos (ExpCon pos2 (nameOrg id) : tPats pats)) 
-    (PatWildcard pos)
-tPat (ExpVar pos id) = ExpVar pos (nameWrap id)
-tPat (ExpCon pos id) = wrapExp pos (ExpCon pos (nameOrg id)) (PatWildcard pos)
-{- old:
-tPat (ExpLit pos (LitInteger pos2 i)) =
-  -- Remove this after typechecking
-  ExpApplication pos 
-    [ExpVar pos tokenPatFromConInteger,ExpVar pos t_undef,ExpVar pos t_undef
-    ,ExpLit pos (LitInteger pos2 i)]
-tPat (ExpLit pos (LitRational pos2 r)) =
-  -- Remove this after typechecking
-  ExpApplication pos 
-    [ExpVar pos tokenPatFromConRational,ExpVar pos t_undef,ExpVar pos t_undef
-    ,ExpLit pos (LitRational pos2 r)]
--}
-tPat (ExpLit pos (LitString _ s)) =
-  tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
-tPat (ExpLit pos lit) = 
-  wrapExp pos (ExpLit pos lit) (PatWildcard pos)  -- type change
-tPat (ExpList pos pats) = tPat . mkTList pos $ pats
-tPat (PatAs pos id pat) = PatAs pos (nameWrap id) (tPat pat)
-tPat (PatWildcard pos) = PatWildcard pos  -- type change
-tPat (PatIrrefutable pos pat) = 
-  case tPat pat of
-    ExpApplication pos' [r,p',t'] -> 
-      ExpApplication pos' [r,PatIrrefutable pos p',t']
-    x -> x
-tPat (PatNplusK pos id id' k comp neg) = error "Cannot trace n+k patterns"
-tPat _ = error "tPat: unknown pattern"
-
--- convert a list of expressions into a list expression (with TraceIds)
-mkTList :: Pos -> [Exp TraceId] -> Exp TraceId
-mkTList pos = 
-  foldr (\x xs -> ExpApplication pos [cons,x,xs]) (ExpCon pos tTokenNil)
-  where
-  cons = ExpCon pos tTokenCons
-
-
-tTyArgs :: [(Maybe [(Pos,TraceId)],Type TraceId)] 
-        -> [(Maybe [(Pos,TokenId)],Type TokenId)]
-tTyArgs = map tTyArg
-
-tTyArg :: (Maybe [(Pos,TraceId)],Type TraceId)
-       -> (Maybe [(Pos,TokenId)],Type TokenId)
-tTyArg (maybePosIds,ty) = (fmap tPosTys maybePosIds,tType ty)
-
-
--- ty ==> SR -> Trace -> [[ty]]
-mkTFunType :: Type TraceId -> Type TokenId
-mkTFunType ty = 
-  TypeCons pos tokenSR [] `typeFun` TypeCons pos tokenTrace [] 
-    `typeFun` (tType ty)
-  where
-  pos = getPos ty
-
-tType :: Type TraceId -> Type TokenId
-tType (TypeCons pos tyCon tys) =
-  if isFunTyCon tyCon 
-    then TypeCons pos tokenTrace [] 
-           `typeFun` TypeCons pos t_Arrow (map tType tys)
-    else TypeCons pos tokenR [TypeCons pos (nameOrg tyCon) (map tType tys)]
-tType (TypeApp lTy rTy) = TypeApp (tType lTy) (tType rTy)
-tType (TypeVar pos tyId) = TypeVar pos (nameOrg tyId)
-tType (TypeStrict pos ty) = TypeStrict pos (tType ty)
-
--- just replace TraceIds by TokenIds
-tokenIdType :: Type TraceId -> Type TokenId
-tokenIdType (TypeCons pos tyCon tys) =
-  TypeCons pos (nameOrg tyCon) (map tokenIdType tys)
-tokenIdType (TypeApp lTy rTy) = TypeApp (tokenIdType lTy) (tokenIdType rTy)
-tokenIdType (TypeVar pos tyId) = TypeVar pos (nameOrg tyId)
-tokenIdType (TypeStrict pos ty) = TypeStrict pos (tokenIdType ty) 
-
--- function type constructor
--- infixr 6 `typeFun`
-typeFun :: Type TokenId -> Type TokenId -> Type TokenId
-typeFun ty1 ty2 = TypeCons noPos t_Arrow [ty1,ty2]
-
-
-tContexts :: [Context TraceId] -> [Context TokenId]
-tContexts = map tContext
-
-tContext :: Context TraceId -> Context TokenId
-tContext (Context pos clsId (pos',tyVarId)) =
-  Context pos (nameOrg clsId) (pos',nameOrg tyVarId)
-
-tSimple :: Simple TraceId -> Simple TokenId 
-tSimple (Simple pos tycon posArgs) =
-  Simple pos (nameOrg tycon) (tPosTys posArgs)
-
-tPosExps :: [(Pos,TraceId)] -> [(Pos,TokenId)]
-tPosExps = mapSnd nameWrap
-
-tPosTys :: [(Pos,TraceId)] -> [(Pos,TokenId)]
-tPosTys = mapSnd nameOrg
-
-{- Desugar do-statements -}
-
+-- Desugar do-statements 
 removeDo :: [Stmt TraceId] -> Exp TraceId
 removeDo [StmtExp e] = e
 removeDo (StmtExp e : stmts) =
@@ -922,32 +844,190 @@ removeDo (StmtBind pat e : stmts) =
   pos = getPos e
 
 
--- Change of names
+tPats :: [Pat TraceId] -> [Pat TokenId]
+tPats = map tPat
+
+tPat (ExpRecord pat fields) = ExpRecord (tPat pat) (map tField fields)
+  where
+  tField (FieldExp pos id pat) = FieldExp pos (nameTransField id) (tPat pat)
+tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
+  wrapExp pos (ExpApplication pos (ExpCon pos2 (nameTransCon id) : tPats pats))
+    (PatWildcard pos)
+tPat (ExpVar pos id) = ExpVar pos (nameTransVar id)
+tPat (ExpCon pos id) = 
+  wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos)
+tPat (ExpLit pos (LitString _ s)) =
+  tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
+tPat (ExpLit pos lit) = 
+  wrapExp pos (ExpLit pos lit) (PatWildcard pos)  -- type change
+tPat (ExpList pos pats) = tPat . mkTList pos $ pats
+tPat (PatAs pos id pat) = PatAs pos (nameTransVar id) (tPat pat)
+tPat (PatWildcard pos) = PatWildcard pos  -- type change
+tPat (PatIrrefutable pos pat) = 
+  case tPat pat of
+    ExpApplication pos' [r,p',t'] -> 
+      ExpApplication pos' [r,PatIrrefutable pos p',t']
+    x -> x
+tPat (PatNplusK pos id id' k comp neg) = error "Cannot trace n+k patterns"
+tPat _ = error "tPat: unknown pattern"
+
+-- convert a list of expressions into a list expression (with TraceIds)
+mkTList :: Pos -> [Exp TraceId] -> Exp TraceId
+mkTList pos = 
+  foldr (\x xs -> ExpApplication pos [cons,x,xs]) (ExpCon pos tTokenNil)
+  where
+  cons = ExpCon pos tTokenCons
+
+
+-- ----------------------------------------------------------------------------
+-- Transform types
+
+tTyArgs :: [(Maybe [(Pos,TraceId)],Type TraceId)] 
+        -> [(Maybe [(Pos,TokenId)],Type TokenId)]
+tTyArgs = map tTyArg
+
+tTyArg :: (Maybe [(Pos,TraceId)],Type TraceId)
+       -> (Maybe [(Pos,TokenId)],Type TokenId)
+tTyArg (maybePosIds,ty) = (fmap (mapSnd nameTransField) maybePosIds,tType ty)
+
+
+-- ty ==> SR -> Trace -> [[ty]]
+mkTFunType :: Type TraceId -> Type TokenId
+mkTFunType ty = 
+  TypeCons pos tokenSR [] `typeFun` TypeCons pos tokenTrace [] 
+    `typeFun` (tType ty)
+  where
+  pos = getPos ty
+
+tType :: Type TraceId -> Type TokenId
+tType (TypeCons pos tyCon tys) =
+  TypeCons pos tokenR 
+    [if isFunTyCon tyCon 
+      then TypeCons pos tokenTrace [] 
+             `typeFun` TypeCons pos t_Arrow (map tType tys)
+      else TypeCons pos (nameTransTyConCls tyCon) (map tType tys)]
+tType (TypeApp lTy rTy) = TypeApp (tType lTy) (tType rTy)
+tType (TypeVar pos tyId) = TypeVar pos (nameTransTyVar tyId)
+tType (TypeStrict pos ty) = TypeStrict pos (tType ty)
+
+-- just replace TraceIds by TokenIds
+tokenIdType :: Type TraceId -> Type TokenId
+tokenIdType (TypeCons pos tyCon tys) =
+  TypeCons pos (nameTransTyConCls tyCon) (map tokenIdType tys)
+tokenIdType (TypeApp lTy rTy) = TypeApp (tokenIdType lTy) (tokenIdType rTy)
+tokenIdType (TypeVar pos tyId) = TypeVar pos (nameTransTyVar tyId)
+tokenIdType (TypeStrict pos ty) = TypeStrict pos (tokenIdType ty) 
+
+-- function type constructor
+-- infixr 6 `typeFun`
+typeFun :: Type TokenId -> Type TokenId -> Type TokenId
+typeFun ty1 ty2 = TypeCons noPos t_Arrow [ty1,ty2]
+
+
+tContexts :: [Context TraceId] -> [Context TokenId]
+tContexts = map tContext
+
+tContext :: Context TraceId -> Context TokenId
+tContext (Context pos clsId (pos',tyVarId)) =
+  Context pos (nameTransTyConCls clsId) (pos',nameTransTyVar tyVarId)
+
+tSimple :: Simple TraceId -> Simple TokenId 
+tSimple (Simple pos tycon posArgs) =
+  Simple pos (nameTransTyConCls tycon) (tPosTyVars posArgs)
+
+tPosExps :: [(Pos,TraceId)] -> [(Pos,TokenId)]
+tPosExps = mapSnd nameTransVar
+
+tPosClss :: [(Pos,TraceId)] -> [(Pos,TokenId)]
+tPosClss = mapSnd nameTransTyConCls
+
+tPosTyVars :: [(Pos,TraceId)] -> [(Pos,TokenId)]
+tPosTyVars = mapSnd nameTransTyVar
+
+
+-- ----------------------------------------------------------------------------
+-- New names
 -- Module names and hence all qualifications are prefixed.
--- Names of type constructors and variables remain unchanged.
+-- Names of classes, type constructors and type variables remain unchanged.
 -- Names of data constructors remain unchanged.
+-- (everything but expression variables)
 
-{- Tokens -}
+-- names referring to traces (or parts thereof) of program fragments:
 
-mkUnqualifiedTokenId :: String -> TokenId
-mkUnqualifiedTokenId = visible . reverse
+nameTraceInfoModule :: TraceId -> TokenId
+nameTraceInfoModule = prefixName 't' (error "nameTraceInfoModule: operator")
 
-getUnqualified :: TraceId -> String
-getUnqualified = reverse . unpackPS . extractV . tokenId
+nameTraceInfoVar :: Pos -> TraceId -> TokenId
+nameTraceInfoVar = prefixPosName 'a' '+'
 
-updateToken :: (String -> String) -> TraceId -> TokenId
-updateToken f traceId = 
-  case tokenId (traceId) of
-    t@(TupleId _) -> t
-    Visible n     -> 
-      Visible (packString . reverse . f . reverse . unpackPS $ n) 
-    Qualified m n -> 
-      Qualified 
-        (packString . reverse . (modulePrefix :) . reverse . unpackPS $ m)
-        (packString . reverse . f . reverse . unpackPS $ n) 
-    _             -> error "TraceTrans: updateToken"
+nameTraceInfoCon :: TraceId -> TokenId
+nameTraceInfoCon = prefixName 'a' '+'
 
-{- Generation of new variables -}
+nameTraceInfoPos :: Pos -> TokenId
+nameTraceInfoPos pos = mkUnqualifiedTokenId (('p':) . showsEncodePos pos $ "")
+
+-- names referring to transformed program fragments:
+
+nameTransModule :: TraceId -> TokenId
+nameTransModule = updateToken (modulePrefix :)
+
+nameTransTyConCls  :: TraceId -> TokenId
+nameTransTyConCls = updateToken id  -- only module name is changed
+
+nameTransTyVar :: TraceId -> TokenId
+nameTransTyVar = updateToken id  -- only module name is changed
+
+nameTransCon :: TraceId -> TokenId
+nameTransCon = updateToken id  -- only module name is changed
+
+nameTransField :: TraceId -> TokenId
+nameTransField = prefixName 'e' '^'
+
+nameTransVar :: TraceId -> TokenId
+nameTransVar = prefixName 'o' '-'
+
+-- internal, local names
+
+-- refering to partially transformed expression
+nameWorker :: TraceId -> TokenId
+nameWorker = prefixName 'w' '*'
+
+-- refering to original (unwrapped) foreign import
+nameForeign :: TraceId -> TokenId
+nameForeign = prefixName 'f' '&'
+
+-- names for new variables in transformed expressions:
+-- variable for sharing in transformation of pattern binding
+nameShare :: TraceId -> TokenId
+nameShare = prefixName 's' '|'
+
+-- variable for a trace
+nameTrace :: TraceId -> TokenId
+nameTrace = prefixName 't' '$'
+
+-- second variable for a trace
+nameTrace2 :: TraceId -> TokenId
+nameTrace2 = prefixName 'u' '<'
+
+-- name for a local variable for a source reference
+nameSR :: TraceId -> TokenId
+nameSR = prefixName 'p' '='
+
+-- infinite list of var ids made from one id (for function clauses)
+nameFuns :: TraceId -> [TokenId]
+nameFuns = prefixNames 'f' '>'
+
+-- infinite list of var ids made from one id (for naming arguments)
+nameArgs :: TraceId -> [TokenId]
+nameArgs = prefixNames 'g' '/'
+
+-- infinite list of ids made from a position
+namesFromPos :: Pos -> [TokenId]
+namesFromPos pos =
+  map (mkUnqualifiedTokenId . ('v':) . showsEncodePos pos . ('v':) . show) 
+    [1..]
+
+-- Generation of new variables
 
 showsEncodePos :: Pos -> ShowS
 showsEncodePos pos = shows line . ('v':) . shows column 
@@ -985,79 +1065,37 @@ isOperatorName = not . isAlpha . head
 numToSym :: String -> String
 numToSym = map (("!#$%&*+/<>" !!) . digitToInt)
 
--- the various sort of names ----------------------------------------
+-- Tokens
 
 modulePrefix = 'T'
 
--- referring to transformed module:
-nameTransModule :: TraceId -> TokenId
-nameTransModule = updateToken (modulePrefix :)
+mkUnqualifiedTokenId :: String -> TokenId
+mkUnqualifiedTokenId = visible . reverse
 
--- referring to trace of module
-nameModule :: TraceId -> TokenId
-nameModule = prefixName 't' (error "nameModule: operator")
+getUnqualified :: TraceId -> String
+getUnqualified = reverse . unpackPS . extractV . tokenId
 
--- refering to trace of variable
-nameVar :: Pos -> TraceId -> TokenId
-nameVar = prefixPosName 'a' '+'
-
--- refering to trace of data constructor
-nameCon :: TraceId -> TokenId
-nameCon = prefixName 'a' '+'
-
--- refering to source reference in trace
-namePos :: Pos -> TokenId
-namePos pos = mkUnqualifiedTokenId (('p':) . showsEncodePos pos $ "")
-
--- refering to original values
-nameOrg :: TraceId -> TokenId
-nameOrg = updateToken id  -- module name is changed
-
--- refering to wrapped original value
-nameWrap :: TraceId -> TokenId
-nameWrap = prefixName 'o' '-'
-
--- refering to partially transformed value
-nameWorker :: TraceId -> TokenId
-nameWorker = prefixName 'w' '*'
-
--- referring to original (unwrapped) foreign import
-nameForeign :: TraceId -> TokenId
-nameForeign = prefixName 'f' '&'
-
--- names for new variables in transformed expressions:
--- variable for sharing in transformation of pattern binding
-nameShare :: TraceId -> TokenId
-nameShare = prefixName 's' '|'
-
--- variable for a trace
-nameTrace :: TraceId -> TokenId
-nameTrace = prefixName 't' '$'
-
--- second variable for a trace
-nameTrace2 :: TraceId -> TokenId
-nameTrace2 = prefixName 'u' '<'
-
--- variable for source reference
-nameSR :: TraceId -> TokenId
-nameSR = prefixName 'p' '='
-
--- infinite list of ids made from an id for clauses
-nameFuns :: TraceId -> [TokenId]
-nameFuns = prefixNames 'f' '>'
-
--- infinite list of ids made from an id for naming arguments
-nameArgs :: TraceId -> [TokenId]
-nameArgs = prefixNames 'g' '/'
-
--- infinite list of ids made from a position
-namesFromPos :: Pos -> [TokenId]
-namesFromPos pos =
-  map (mkUnqualifiedTokenId . ('v':) . showsEncodePos pos . ('v':) . show) 
-    [1..]
+-- apply function to unqualified name part 
+-- and prefix module name (if qualified)
+updateToken :: (String -> String) -> TraceId -> TokenId
+updateToken f traceId = 
+  case tokenId (traceId) of
+    t@(TupleId _) -> t
+    Visible n     -> 
+      Visible (packString . reverse . f . reverse . unpackPS $ n) 
+    Qualified m n -> 
+      let unqual = case reverse . unpackPS $ n of
+                     ":" -> "Cons"  -- change predefined names
+                     "[]" -> "Nil"
+                     s -> s
+      in Qualified 
+        (packString . reverse . (modulePrefix :) . reverse . unpackPS $ m)
+        (packString . reverse . f $ unqual) 
+    _             -> error "TraceTrans: updateToken"
 
 
--- hardwired Haskell combinators:
+-- ----------------------------------------------------------------------------
+-- hardwired Haskell combinators and other names used by transformed modules
 
 mkConst :: Exp TokenId -> Exp TokenId -> Pos -> Exp TokenId
 mkConst parent atom pos = 
@@ -1067,11 +1105,11 @@ mkConst parent atom pos =
 -- only used where definition and use position coincide 
 -- (cafs, pattern bindings)
 mkConstVar :: Exp TokenId -> Pos -> TraceId -> Exp TokenId
-mkConstVar parent pos id = mkConst parent (ExpVar pos (nameVar pos id)) pos
-
+mkConstVar parent pos id = 
+  mkConst parent (ExpVar pos (nameTraceInfoVar pos id)) pos
 
 mkSRExp :: Pos -> Exp TokenId
-mkSRExp pos = ExpVar pos (namePos pos)
+mkSRExp pos = ExpVar pos (nameTraceInfoPos pos)
 
 combSat :: Pos -> Bool -> Exp TokenId
 combSat pos cr = ExpVar pos (if cr then tokenEagerSat else tokenLazySat)
@@ -1086,7 +1124,7 @@ mkConstGuard pos parent guardTrace =
     ,mkConst parent (ExpVar pos tokenMkAtomGuard) pos
     ,guardTrace,parent,mkSRExp pos]
 
-
+-- apply data constructor R
 wrapExp :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
 wrapExp pos ev et = ExpApplication pos [ExpCon pos tokenR,ev,et]
 
@@ -1116,7 +1154,7 @@ tokenMkModule :: TokenId
 tokenMkModule = mkTracingToken "mkModule"  -- new
 
 tokenMkPos :: TokenId
-tokenMkPos = mkTracingToken "mkPos"  -- new, similar to mkSR
+tokenMkPos = mkTracingToken "mkSourceRef"  -- new, similar to mkSR
 
 tokenMkAtomId :: TokenId
 tokenMkAtomId = mkTracingToken "mkAtomId"  -- new
@@ -1181,20 +1219,19 @@ tokenFromConInteger :: TokenId
 tokenFromConInteger = mkTracingToken "fromConInteger"
 tokenFromConRational :: TokenId
 tokenFromConRational = mkTracingToken "fromConRational"
-tokenPatFromConInteger :: TokenId
-tokenPatFromConInteger = mkTracingToken "patFromConInteger"
-tokenPatFromConRational :: TokenId
-tokenPatFromConRational = mkTracingToken "patFromConRational"
+-- tokenPatFromConInteger :: TokenId
+-- tokenPatFromConInteger = mkTracingToken "patFromConInteger"
+-- tokenPatFromConRational :: TokenId
+-- tokenPatFromConRational = mkTracingToken "patFromConRational"
 
 -- function for pattern-match failure error message
 tokenFatal :: TokenId
 tokenFatal = mkTracingToken "fatal"
 
-
 -- other hardcoded tokens:
 
 tokenMyseq :: TokenId
-tokenMyseq = mkTracingToken "myseq"
+tokenMyseq = mkTracingToken "Prelude.seq"
 
 tokenSR :: TokenId
 tokenSR = mkTracingToken "SR"
@@ -1202,6 +1239,8 @@ tokenSR = mkTracingToken "SR"
 tokenTrace :: TokenId
 tokenTrace = mkTracingToken "Trace"
 
+-- ----------------------------------------------------------------------------
+-- various little helper functions
 
 -- test for specific tokens
 
@@ -1214,9 +1253,7 @@ isTrue id = (tokenId id) == tTrue
 isOtherwise :: TraceId -> Bool
 isOtherwise id = (tokenId id) == t_otherwise
 
-
-
-{- other stuff -}
+-- other stuff
 
 mkFailExp :: Pos -> Exp TokenId -> Exp TokenId
 mkFailExp pos parent = ExpApplication pos [ExpVar pos tokenFatal,parent]
@@ -1229,3 +1266,6 @@ noDecls = DeclsParse []
 
 mapSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapSnd f = map (\(x,y) -> (x,f y))
+
+-- ----------------------------------------------------------------------------
+-- End

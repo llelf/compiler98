@@ -1,14 +1,9 @@
-#ifndef _FILEFORMAT_H
-#define _FILEFORMAT_H
+/* from initexit ********************************************************* */
 
-#include "ident.h"
-#include "runtime.h"
-#include "hat.h"
+#ifndef _HAT_H
+#define _HAT_H
 
-extern FILE *HatFile;
-extern FILE *HatOutput;
-extern FILE *HatBridge;
-
+#include "art.h"
 
 typedef struct {
     int constr;
@@ -30,9 +25,12 @@ typedef struct {
 } CTrace;
 
 
-void		initialiseSATstack	(void);
+void            openTrace (char *progname);
+void            closeTrace (void);
+void            hat_interrupted(int);
 
-FileOffset	primModInfo	(ModInfo *m);
+
+void		initialiseSATstack	(void);
 
 CTrace*		primTRoot	(void);
 CTrace*		primTAp1	(CTrace* tap, CTrace* tfn
@@ -209,12 +207,12 @@ void		updateSatCs	(void);
 
 CNmType*	primNTInt	(int i);
 CNmType*	primNTChar	(char c);
-CNmType*	primNTInteger	(NodePtr i);
-CNmType*	primNTRational	(NodePtr i,NodePtr j);
+CNmType*	primNTInteger	(int i);
+CNmType*	primNTRational	(int numerator,int denominator);
+/* CNmType*	primNTInteger	(NodePtr i); */
+/* CNmType*	primNTRational	(NodePtr i,NodePtr j); */
 CNmType*	primNTFloat	(float f);
 CNmType*	primNTDouble	(double d);
-CNmType*	primNTId	(IdEntry *id);
-CNmType*	primNTConstr	(IdEntry *id);
 CNmType*	primNTTuple	(void);
 CNmType*	primNTFun	(void);
 CNmType*	primNTCase	(void);
@@ -233,11 +231,8 @@ int		primTrustedFun	(CTrace* t);
 int		primHidden	(CTrace* t);
 CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 
-FileOffset	primSR0		(void);
-FileOffset	primSR3		(SrcRef *sr);
 
 FileOffset	readCurrentSatB	(void);
-void		hat_exit	(char* errmsg,	CTrace* locatn,	int ecode);
 
 FileOffset      primSourceRef   (FileOffset moduleTraceInfo,int pos);
 CNmType*        primAtomId      (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);

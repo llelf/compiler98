@@ -262,14 +262,14 @@ ppExport info (ExportModid pos id) = text "module " <> ppId info id
 
 
 ppEntity :: PPInfo a -> Entity a -> Doc
-ppEntity info (EntityVar pos id) = ppId info id
+ppEntity info (EntityVar pos id) = ppIdAsVar info id
 ppEntity info (EntityTyConCls pos id) = ppId info id <> text "(..)"
 ppEntity info (EntityTyCon pos id ids) = 
   nestS info $ 
-    ppId info id <> (parens . sep fComma . map (ppId info . snd) $ ids)
+    ppId info id <> (parens . sep fComma . map (ppIdAsVar info . snd) $ ids)
 ppEntity info (EntityTyCls pos id ids) =
   nestS info $ 
-    ppId info id <> (parens . sep fComma . map (ppId info . snd) $ ids)
+    ppId info id <> (parens . sep fComma . map (ppIdAsVar info . snd) $ ids)
 
 
 ppImpDecls :: PPInfo a -> [ImpDecl a] -> Doc
@@ -292,7 +292,8 @@ ppInfixClass info InfixDef = text "infixl{-def-} "
 ppInfixClass info InfixL   = text "infixl "
 ppInfixClass info InfixR   = text "infixr "
 ppInfixClass info Infix    = text "infix  "
-ppInfixClass info (InfixPre id) = text "prefix " <> ppId info id <> space
+ppInfixClass info (InfixPre id) = 
+  text "prefix " <> ppIdAsOperator info id <> space
 
 
 ppFixDecl :: PPInfo a -> FixDecl a -> Doc
@@ -439,11 +440,11 @@ ppConstr :: PPInfo a -> Constr a -> Doc
 
 ppConstr info (Constr pos c cs) =
   groupNestS info $
-    sep fSpace (ppId info c : map (ppFieldType info) cs)
+    sep fSpace (ppIdAsVar info c : map (ppFieldType info) cs)
 ppConstr info (ConstrCtx forall ctxs pos c cs) =
   groupNestS info $
     ppForall <> ppContexts info ctxs <> 
-    sep fSpace (ppId info c : map (ppFieldType info) cs)
+    sep fSpace (ppIdAsVar info c : map (ppFieldType info) cs)
   where
   ppForall | null forall = nil
            | otherwise   = groupNestS info (text "forall" <> fSpace <> 
@@ -454,10 +455,11 @@ ppConstr info (ConstrCtx forall ctxs pos c cs) =
 
 ppFieldType :: PPInfo a -> (Maybe [(Pos, a)], Type a) -> Doc
 
-ppFieldType info (Nothing,typ) = ppType info typ
+ppFieldType info (Nothing,typ) = ppTypePrec info True typ
 ppFieldType info (Just posidents,typ) = 
   groupNestS info $
-    text "{" <> (sep fComma . map (ppId info . snd) $ posidents) <> dSpace <> 
+    text "{" <> (sep fComma . map (ppIdAsVar info . snd) $ posidents) <> 
+    dSpace <> 
     text ":: " <> ppType info typ <> text "}"
 
 
@@ -494,10 +496,11 @@ ppDecl info (DeclConstrs pos did cs) =
   groupNestS info $
     text "-- data/dataprim [(field,selector)] =" <> dSpace <>
     (groupNestS info $
-      ppId info did <> 
+      ppIdAsVar info did <> 
       (brackets . sep fComma $ 
         map (\(ps,field,sel) -> 
-                parens (ppId info field <> space <> ppId info sel)) cs))
+                parens (ppIdAsVar info field <> space <> ppIdAsVar info sel)) 
+                       cs))
 
 ppDecl info (DeclClass pos ctxs cls arg decls) =
   nestS info $
@@ -519,23 +522,23 @@ ppDecl info (DeclDefault ts) =
 
 ppDecl info (DeclPrimitive pos ident arity t) =
   groupNestS info $
-    ppId info ident <> fSpace <> text "primitive" <> fSpace 
+    ppIdAsVar info ident <> fSpace <> text "primitive" <> fSpace 
     <> text (show arity) <> text " ::" <> fSpace <> ppType info t
 
 ppDecl info (DeclForeignImp pos str ident arity cast t _) =
   groupNestS info $
     text "foreign import" <> fSpace <> string str <> fSpace <>
-    text (show cast) <> fSpace <> ppId info ident <> text " ::" <> dSpace <> 
-    ppType info t
+    text (show cast) <> fSpace <> ppIdAsVar info ident <> text " ::" <> 
+    dSpace <> ppType info t
 
 ppDecl info (DeclForeignExp pos str ident t) =
   groupNestS info $
-    text "foreign export" <> fSpace <> ppId info ident <> text " ::" <>
+    text "foreign export" <> fSpace <> ppIdAsVar info ident <> text " ::" <>
     dSpace <> ppType info t
 
 ppDecl info (DeclVarsType ids ctxs t) =
   groupNestS info $
-    group (sep fComma (map (ppId info . snd) ids)) <> text " ::" <>
+    group (sep fComma (map (ppIdAsVar info . snd) ids)) <> text " ::" <>
     dSpace <> ppTypeWithContext info ctxs t
 
 ppDecl info (DeclPat alt) = ppAlt info "=" alt
@@ -565,16 +568,17 @@ ppAnnots info = sep line . map (ppAnnot info)
 ppAnnot :: PPInfo a -> Annot a -> Doc
 
 ppAnnot info (AnnotArity (pos,ident) int) =
-  text "{-# ARITY " <> ppId info ident <> text " = " <> 
+  text "{-# ARITY " <> ppIdAsVar info ident <> text " = " <> 
   text (show int) <> text "#-}"
 ppAnnot info (AnnotPrimitive (pos,ident) prim) = 
-  text "{-# PRIMITIVE " <> ppId info ident <> text " = " <> 
+  text "{-# PRIMITIVE " <> ppIdAsVar info ident <> text " = " <> 
   text (unpackPS prim) <> text "#-}"
 ppAnnot info (AnnotNeed posidents) =
   text "{-# NEED " <> sep fSpace (map ppNeed posidents) <> text "#-}"
   where 
-  ppNeed [x] = ppId info x
-  ppNeed xs  = group $ text "{" <> sep fSpace (map (ppId info) xs) <> text "}"
+  ppNeed [x] = ppIdAsVar info x
+  ppNeed xs  = 
+    group $ text "{" <> sep fSpace (map (ppIdAsVar info) xs) <> text "}"
 ppAnnot info (AnnotUnknown) =
   text "{-# ??? #-}"
 
@@ -599,7 +603,7 @@ ppClassCode info (CodeInstance pos cls typ arg ecs methods) =
   groupNestS info $ 
     text "code instance" <> fSpace <> ppId info cls <> fSpace <> 
     ppId info typ <> text " ? = ?" <> line <>
-    sep fSemiSpace (map (ppId info) methods)
+    sep fSemiSpace (map (ppIdAsVar info) methods)
 
 
 ppConstrs :: PPInfo a -> [Constr a] -> Doc
@@ -615,8 +619,9 @@ ppFun :: PPInfo a -> a -> Fun a -> Doc
 ppFun info id (Fun pats rhs w) =
   nestS info $
     (group 
-      (group $ sep fSpace $ ppId info id : map (ppExpPrec info True) pats) <>
-      ppRhs info "=" rhs) <>
+      (group $ sep fSpace $ 
+        ppIdAsVar info id : map (ppExpPrec info True) pats) <>
+        ppRhs info "=" rhs) <>
     ppWhere info w
 
 
@@ -735,9 +740,9 @@ ppExpPrec info _ (ExpCon pos id) =
   ppPos info pos <> 
     case maybeTuple info id of
       Just n -> groupParens info . sep fComma . replicate n $ nil
-      Nothing ->  ppIdAsVarOrCon info id
+      Nothing ->  ppIdAsVar info id
 ppExpPrec info _ (ExpVar pos id) = 
-  ppPos info pos <> ppIdAsVarOrCon info id
+  ppPos info pos <> ppIdAsVar info id
 ppExpPrec info withPar (ExpDict exp) = 
   parenExp info noPos withPar $
     text "{d} " <> ppExpPrec info False exp
@@ -747,10 +752,10 @@ ppExpPrec info _ (ExpList pos es) =
   groupNestS info $
     ppPos info pos <> (brackets $ sep fComma $ map (ppExpPrec info False) es)
 ppExpPrec info _ (Exp2 pos id1 id2) = 
-  ppPos info pos <> ppId info id1 <> text "." <> ppId info id2
+  ppPos info pos <> ppId info id1 <> text "." <> ppIdAsVar info id2
 ppExpPrec info withPar (PatAs pos id pat) =
   parenExp info pos withPar $
-    ppId info id <> text "@" <> ppExpPrec info True pat
+    ppIdAsVar info id <> text "@" <> ppExpPrec info True pat
 ppExpPrec info _ (PatWildcard pos) = 
   ppPos info pos <> text "_"
 ppExpPrec info _ (PatIrrefutable pos pat) =
@@ -758,16 +763,17 @@ ppExpPrec info _ (PatIrrefutable pos pat) =
     ppPos info pos <> text "~" <> ppExpPrec info True pat
 ppExpPrec info withPar (PatNplusK pos n n' k _ _) =
   parenExp info pos withPar $
-    ppId info n <> fSpace <> text "+" <> fSpace <> ppExpPrec info True k 
+    ppIdAsVar info n <> fSpace <> text "+" <> fSpace <> ppExpPrec info True k 
 
 
 ppField :: PPInfo a -> Field a -> Doc
 
 ppField info (FieldExp pos var exp) =
   groupNestS info $
-    ppPos info pos <> ppId info var <> dSpace <> text "<- " <>  ppExp info exp
+    ppPos info pos <> ppIdAsVar info var <> dSpace <> text "<- " <>  
+    ppExp info exp
 ppField info (FieldPun pos var) =
-  ppPos info pos <> ppId info var
+  ppPos info pos <> ppIdAsVar info var
 
 
 ppQual :: PPInfo a -> Qual a -> Doc
@@ -817,9 +823,9 @@ ppId info id = text (id2str info id)
 {-
 If the identifier is an operator, then surround it by paranthesis.
 -}
-ppIdAsVarOrCon :: PPInfo a -> a -> Doc
+ppIdAsVar :: PPInfo a -> a -> Doc
 
-ppIdAsVarOrCon info id
+ppIdAsVar info id
   | isOperator name = text ('(' : name ++ ")")
   | otherwise       = text name
   where
@@ -863,9 +869,10 @@ idIsOperator info id = isOperator (id2str info id)
 
 {- Test if name is an operator -}
 isOperator :: String -> Bool  
-isOperator = not . isVarChar . head
+isOperator = not . isVarChar . last
   where
-  isVarChar c = isAlphaNum c || c == '_'
+  isVarChar c = isAlphaNum c || c == '_' || c == '\'' 
+                 || c == ']'  -- empty list []
 
 
 {- End PrettySyntax -------------------------------------------------------- -}

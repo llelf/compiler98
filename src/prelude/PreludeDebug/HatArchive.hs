@@ -9,6 +9,7 @@ module Prelude
   ,mkNTId',mkNTId,mkNTConstr',mkNTConstr,mkNTTuple,mkNTFun,mkNTCase
   ,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard,mkNTContainer
   ,mkNoSR,mkSR',mkSR
+  ,mkSourceRef,mkAtomId,mkModule,outputTrace
   ) where
 
 import PackedString (PackedString,packString)
@@ -26,7 +27,7 @@ myseq a b = _seq a b		-- MAGIC (bytecode version of seq)
 newtype Trace = Trace CStructure
 foreign import   "primTrustedFun" trustedFun :: Trace -> Bool
 foreign import   "primHidden"     hidden     :: Trace -> Bool
---foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
+foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
 --foreign import mkTrace :: FileTrace -> Bool -> Bool -> Trace
 
 {-
@@ -40,9 +41,37 @@ foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
 --sameAs :: Trace -> Trace -> Bool
 --sameAs t1 t2 = primSameTrace (traceptr t1) (traceptr t2)
 
+
+-- new combinators for portable transformation:
+
+newtype ModuleTraceInfo = MTI Int
+
+foreign import "primSourceRef"
+  mkSourceRef :: ModuleTraceInfo -> Int -> SR
+
+mkAtomId :: ModuleTraceInfo -> Int -> Int -> String -> NmType
+mkAtomId mti pos fixPri unqual = mkAtomId' mti pos fixPri (packString unqual)
+
+foreign import "primAtomId"
+  mkAtomId' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+
+mkModule :: String -> String -> ModuleTraceInfo
+mkModule unqual filename = mkModule' (packString unqual) (packString filename)
+
+foreign import "primModule"
+  mkModule' :: PackedString -> PackedString -> ModuleTraceInfo
+
+outputTrace :: Trace -> String -> IO ()
+outputTrace trace output = outputTrace' (traceptr trace) (packString output)
+
+foreign import "outputTrace"
+  outputTrace' :: FileTrace -> PackedString -> IO ()
+
+
 ----
 -- Trace constructors
 ----
+
 
 foreign import "primTRoot"
  mkTRoot :: Trace
