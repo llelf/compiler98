@@ -51,9 +51,11 @@
   <dd>Very rarely, the compiler will crash on a large source file
       with a ``pointer stack overflow'' or a ``heap overrun'', or sometimes
       no message at all.  As far as I can tell, this is a space fault in
-      the ansi-C backend.  A workaround is to use the <em>-noansiC</em>
+      the ansi-C backend, triggered only if nhc98 was built by hbc.
+      A workaround is to use the <em>-noansiC</em>
       flag (provided you are using a machine for which we have direct
-      assembly language support, i.e. arm, hppa, sparc, x86, mips, alpha).</dd>
+      assembly language support, i.e. arm, hppa, sparc, x86, mips, alpha),
+      or to bootstrap nhc98 with itself, or with ghc.</dd>
 <dt><em>ghc-4.06 bug</em></dt>
   <dd>If you build nhc98 using ghc-4.06, all code using Floats and Doubles
       is broken.  This is due to a bug in ghc, fixed in 4.08.  (Actually,
@@ -69,6 +71,11 @@
 
 <h3>Fixed bugs :-)</h3>
 <dl>
+<dt><em>As-pattern bindings</em> (fixed 010205)</dt>
+  <dd>An @-pattern as argument to a function or lambda was okay,
+      but in a CAF pattern-binding, led either to wrong
+      results or a seg-fault.  It turns out we were generating
+      type-incorrect code.</dd>
 <dt><em>Read/Show instances for named-fields</em> (fixed 000614)</dt>
   <dd>did not show or read the label syntax, just the values.</dd>
 <dt><em>Runtime crashes on Array-based programs</em> (fixed 000314)</dt>
@@ -185,7 +192,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.12.19<br>
+2001.02.05<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

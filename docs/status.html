@@ -33,12 +33,12 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2000-11-29</td>
+  <td>2001-02-05</td>
   <td>2000-12-05</td>
   <td>1997</td>
   <td>1996</td>
   <td>2000-11-23</td>
-  <td>2000-12-05</td>
+  <td>2001-02-05</td>
 </tr>
 </table>
 </center>
@@ -151,8 +151,9 @@ Alternative locations:
 </center>
 
 <p>
-<b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, ix86-FreeBSD,
-   sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN-NT4.
+<b>Known to compile for at least: </b>
+   ix86-Linux, ix86-NetBSD, ix86-FreeBSD, ix86-CYGWIN-NT4, ix86-Cygwin_95,
+   ppc-Linux, sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4.
 <p>
 <b>Important note:</b> The long series of pre-releases is now
 finished, meaning that nhc98 is now pretty stable.  If you would like
@@ -244,7 +245,7 @@ list to post to it).
 
 
 <hr>
-<h3>nhc98 release 1.01 (2000-12-xx) features</h3>
+<h3>nhc98 release 1.01 (2001-02-xx) features</h3>
 <ul>
 <li> Improvement: Fixed a space-leak in the compiler.  Compilation now
               requires approximately half the previous maximum heap,
@@ -269,15 +270,25 @@ list to post to it).
 <li> Bugfix:  Local infix declarations in `where' blocks were ignored.
 <li> Bugfix:  Some non-trivial `newtype' decls produced spurious errors.
 <li> Bugfix:  Printing of characters in the range 0x0100 to 0xffff now works.
+<li> Bugfix:  CAF @-patterns are now fixed.  As a result, Happy-generated
+              parsers should now compile correctly.
+<li> Bugfix:  We now accept {-# pragmas #-} in any position, and understand
+              LINE pragmas.
 </ul>
 The following updates and bugfixes are specifically for <em>Hat</em>,
 the redex-trail-based tracing and debugging system.
 <ul>
+<li> New Feature:  When a traced program is interrupted or terminates with
+                   an error, you get a virtual stack trace of the
+                   computation "for free", without having to start up
+                   a browser.
+<li> New Feature:  Traces are now archived to file, so you do not need
+                   to re-run the program every time you want to browse it.
 <li> Update:  Foreign imports (via the new common primitive FFI) with an
               I/O result type are now also traced (previously only pure
               foreign functions were traced).
 <li> Update:  Interface and object files for tracing now have distinct
-              file suffixes: .T_hi and .T_o.  This improves matters
+              file suffixes: .T.hi and .T.o.  This improves matters
               enormously when switching between normal and tracing versions
               of a program.  It also fixes some dependency bugs when
               building the tracing version of the compiler.  Both the
