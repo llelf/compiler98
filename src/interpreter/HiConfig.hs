@@ -57,7 +57,7 @@ hmake = unsafePerformIO $ do script <- getEnv "SCRIPTDIR"
 nonstdCoerceImport c  = case c of
     Nhc98 -> "import NonStdUnsafeCoerce"
     Hbc   -> ""
-    Ghc   -> "import PrelGHC(unsafeCoerce#)"
+    Ghc   -> "import GHC.Base(unsafeCoerce#)"
     _     -> ""
 nonstdCoerce c  = case c of
     Nhc98 -> "\ncoerce=unsafeCoerce\n"
