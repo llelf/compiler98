@@ -15,7 +15,7 @@
 #endif
 
 FILE *HatFile, *OutputFile, *BridgeFile;
-FileOffset errorRoot, errorMsg;
+FileOffset errorRoot, errorMsg,remoteStartNode=0;
 int ignoreErrors=False;
 unsigned filesize=0, outputsize=0;
 char* progname, *dir;
@@ -77,15 +77,20 @@ initialise (int argc, char **argv)
   char header[8];
   char *arg;
 
-  if ((argc!=2)&&(argc!=3)) {
-    fprintf(stderr,"Usage: %s [-o] program\n",argv[0]);
-    exit(1);
-  }
-  if ((argc==3)&&!strcmp(argv[1],"-o")) {
-    ignoreErrors=True;
-    arg=argv[2];
-  } else {
+  if ((argc==4)&&(strcmp(argv[2],"-remote")==0)) {
     arg=argv[1];
+    remoteStartNode = atoi(argv[3]);
+  } else {
+   if ((argc!=2)&&(argc!=3)) {
+     fprintf(stderr,"Usage: %s [-o] program\n",argv[0]);
+     exit(1);
+   }
+   if ((argc==3)&&!strcmp(argv[1],"-o")) {
+     ignoreErrors=True;
+     arg=argv[2];
+   } else {
+     arg=argv[1];
+   }
   }
   dir = dirname(arg);
   arg = basename(arg,".hat");

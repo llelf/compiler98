@@ -4,7 +4,7 @@
 #include "hat.h"
 
 extern FILE *HatFile, *OutputFile, *BridgeFile;
-extern FileOffset errorRoot, errorMsg;
+extern FileOffset errorRoot, errorMsg,remoteStartNode;
 extern char* progname;
 extern unsigned filesize, outputsize;
 extern int ignoreErrors;
