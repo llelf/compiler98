@@ -10,7 +10,7 @@ import Extra(Pos)
 data GALT = GALT_CON Int | GALT_INT Int deriving (Eq)
 
 data Gcode 
-  = STARTFUN Pos Int     -- Id
+  = STARTFUN Int Int     -- Id
   | NEEDHEAP Int
   | NEEDSTACK Int
   | LABEL Int

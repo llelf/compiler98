@@ -117,7 +117,7 @@ isVar (NTvar v) = True
 isVar (NTexist v) = True
 isVar _ = False
 
-buildCtx :: IntState -> Int -> [((Int, NT), Int)] -> TypeDict -> Exp Int
+buildCtx :: IntState -> Pos -> [((Int, NT), Int)] -> TypeDict -> Exp Int
 buildCtx state pos given (TypeDict cls (NTany tvar) ipos)=
   buildCtx state pos given (TypeDict cls (NTvar tvar) ipos)
 buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =

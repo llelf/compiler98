@@ -121,27 +121,45 @@ assocDef ((k,v):kvs) d a = if a == k then v
 
 -------------------
 
-type Pos = Int
+-- abstract type for storing the position of a syntactic construct in a file,
+-- that is, line and column number
+-- currently only includes start position, not end position
 
-pos2Int p = p
+newtype Pos = P Int
 
-toPos :: Int -> Int -> Pos
-toPos l c =  l*10000 + c
+type Line = Int
+type Column = Int
+
+-- used in STGcode to get encoded start position
+-- STGcode should be changed so that this function can disappear
+pos2Int :: Pos -> Int 
+pos2Int (P p) = p
+
+toPos :: Line -> Column -> Pos
+toPos l c =  P (l*10000 + c)
 
 noPos :: Pos
-noPos = 0
+noPos = P 0
 
-fromPos :: Pos -> (Int,Int)
-fromPos p =
+fromPos :: Pos -> (Line,Column)
+fromPos (P p) =
  let l = p `div`   10000
      c = p - l*10000
  in (l,c)
 
 strPos :: Pos -> String
-strPos 0 = "nopos"
 strPos p = case fromPos p of
+             (0,0) -> "nopos"
 	     (l,c) -> show l ++ ':':show c
 
+instance Show Pos where
+  show p = strPos p
+
+instance Eq Pos where
+  P p1 == P p2 = p1 == p2
+
+instance Ord Pos where  -- for ordering error messages
+  P p1 <= P p2 = p1 <= p2
 
 --------------------
 

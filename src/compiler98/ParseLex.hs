@@ -70,8 +70,10 @@ k_cast = lvarid t_cast "cast"
 
 lvarop :: TokenId -> String -> Parser Pos [PosToken] c
 lvarop tid str = token (\pos t -> case t of L_AVAROP v | v == tid -> Right pos;  x -> Left str)
+
 lvarid :: TokenId -> String -> Parser Pos [PosToken] c
 lvarid tid str = token (\pos t -> case t of L_AVARID v | v == tid -> Right pos;  x -> Left str)
+
 lconid :: TokenId -> String -> Parser Pos [PosToken] c
 lconid tid str = token (\pos t -> case t of L_ACONID v | v == tid -> Right pos;  x -> Left str)
 

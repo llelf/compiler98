@@ -455,7 +455,7 @@ iextractType expInfo (depth,unboxed) q pos tid tvs typ =
 -- the information about the data type comes from an interface file
 -}
 iextractData :: IE -> (TokenId->Bool) -> Either Bool Bool -> [Context TokenId] 
-             -> Int -> TokenId -> [(Pos,TokenId)] -> [Constr TokenId] 
+             -> Pos -> TokenId -> [(Pos,TokenId)] -> [Constr TokenId] 
              -> [TokenId] -> () -> ImportState -> ImportState
 
 iextractData  expInfo q attr ctxs pos tid tvs constrs needs =
@@ -477,7 +477,7 @@ iextractData  expInfo q attr ctxs pos tid tvs constrs needs =
      mapS0 newInstance newinsts
 
 
-iextractDataPrim :: IE -> (TokenId->Bool) -> Int -> TokenId -> Int 
+iextractDataPrim :: IE -> (TokenId->Bool) -> Pos -> TokenId -> Int 
                  -> a -> ImportState -> ImportState
 
 iextractDataPrim expInfo q pos tid size =
@@ -488,7 +488,7 @@ iextractDataPrim expInfo q pos tid size =
      mapS0 newInstance newinsts
 
 
-iextractClass :: IE -> (TokenId->Bool) -> Int -> [Context TokenId] 
+iextractClass :: IE -> (TokenId->Bool) -> Pos -> [Context TokenId] 
               -> TokenId -> TokenId 
               -> [([((a,TokenId),b)],[Context TokenId],Type TokenId)] 
               -> [TokenId] -> () -> ImportState -> ImportState
@@ -504,7 +504,7 @@ iextractClass  expInfo q pos ctxs tid tvar methods needs =
      mapS0 newInstance newinsts
 
 
-newInstance :: (TokenId,TokenId,[Int],[(Int,TokenId,Int)]) 
+newInstance :: (TokenId,TokenId,[Int],[(Pos,TokenId,Int)]) 
             -> a -> ImportState -> ImportState
 
 newInstance (realcls,realcon,free,ctxs) =
@@ -634,9 +634,9 @@ transConstr q al free ctxs needed resType@(NTcons bt _)
 
 ---
 
-transFieldType :: [(TokenId,Int)] -> (Maybe [(Int,TokenId)],Type TokenId) 
+transFieldType :: [(TokenId,Int)] -> (Maybe [(Pos,TokenId)],Type TokenId) 
                -> () -> ImportState 
-               -> ([(Maybe (Int,TokenId,Int),NT)],ImportState)
+               -> ([(Maybe (Pos,TokenId,Int),NT)],ImportState)
 
 transFieldType al (Nothing,typ) =
   transType al typ >>>= \ typ -> unitS [(Nothing,typ)]
@@ -659,7 +659,7 @@ transTypes al free ctxs ts =
 {- transform a syntactic type variable (TokenId) into an internal type variable
 -- (NT), using the given mapping
 -}
-transTVar :: Pos -> [(TokenId,Pos)] -> TokenId 
+transTVar :: Pos -> [(TokenId,Id)] -> TokenId 
           -> () -> ImportState -> (NT,ImportState)
 
 transTVar pos al v =
@@ -669,7 +669,7 @@ transTVar pos al v =
 {- transform syntactic type variable (TokenId) into internal type variable
 -- (Id), using the given mapping
 -}
-uniqueTVar :: Pos -> [(TokenId,Pos)] -> TokenId 
+uniqueTVar :: Pos -> [(TokenId,Id)] -> TokenId 
            -> () -> ImportState -> (Id,ImportState)
 
 uniqueTVar pos al v =
@@ -681,7 +681,7 @@ uniqueTVar pos al v =
 
 
 {- transform syntactic context into internal context -}
-transContext :: [(TokenId,Pos)] -> Context TokenId 
+transContext :: [(TokenId,Id)] -> Context TokenId 
              -> () -> ImportState -> ((Id,Id),ImportState)
 transContext al (Context pos cid [(vpos,vid)]) = 
   unitS pair =>>> transTid pos TClass cid =>>> uniqueTVar vpos al vid
@@ -696,7 +696,7 @@ countArrows _ = 0::Int
 
 
 {- transform a syntactic type into an internal NT type -}
-transType :: [(TokenId,Int)] -> Type TokenId 
+transType :: [(TokenId,Id)] -> Type TokenId 
           -> () -> ImportState -> (NT,ImportState)
 
 transType free (TypeApp  t1 t2) = 

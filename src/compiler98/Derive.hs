@@ -107,7 +107,7 @@ checkClass state cls tid =
 
 deriveOne :: IntState 
           -> ((TokenId,IdKind) -> Int) 
-          -> (((Int,Int),([Int],[(Int,Int)])),(Int,a)) 
+          -> (((Int,Int),([Int],[(Int,Int)])),(Pos,a)) 
           -> b 
           -> IntState 
           -> (Decl Int,IntState)

@@ -535,7 +535,7 @@ renameConstr :: TokenId          {- type constructor of data/newtype def. -}
              -> [(Id,Id)]        {- context of the data/newtype def. -} 
              -> NT               {- defined type (type constructor with vars)-}
              -> Constr TokenId   {- constructor with type arguments -}
-             -> RenameMonad (Id,Bool,[(Int,Int,Int)]) 
+             -> RenameMonad (Id,Bool,[(Pos,Int,Int)]) 
                   {- constructor id, no arguments, fields -}
 
 renameConstr typtid al ctxs resType@(NTcons bt _) 
@@ -544,7 +544,7 @@ renameConstr typtid al ctxs resType@(NTcons bt _)
       es = zip e [1 + length al .. ]
   in
     mapS (transFieldType (es++al)) fieldtypes >>>= \ntss ->
-    let all = concat (ntss :: [[(Maybe (Int,TokenId,Int),NT)]])
+    let all = concat (ntss :: [[(Maybe (Pos,TokenId,Int),NT)]])
 	nts = map snd all
         ifs :: [Maybe Id]
 	ifs = map ( (\v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) 

@@ -8,6 +8,7 @@ module Parse2
 import Extra(pair,triple)
 import Lex hiding (TokenId)
 import Syntax hiding (TokenId)
+import Lexical (PosToken)
 import MkSyntax
 import ParseLib
 import ParseLex
@@ -156,6 +157,7 @@ parseContexts =
 parseContext = 
     (\ (pos,c) pt_t -> Context pos c pt_t)  `parseAp` conid `ap` some varid
 
+parseSimple :: Parser (Simple TokenId) [PosToken] c
 parseSimple =
     (uncurry Simple) `parseAp` conid `ap` many varid
 
@@ -202,6 +204,7 @@ parseStrict p =
 	`orelse`
   p
 
+parseDeriving :: Parser [(Pos, TokenId)] [PosToken] b
 parseDeriving =
     lit L_deriving `revChk` lpar `revChk` manySep comma conid `chk` rpar
         `orelse`

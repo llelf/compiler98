@@ -90,7 +90,7 @@ needEntity q (EntityConClsSome pos hs posidents) = -- TC | TC(id0,id1,...)
     needTid pos TC (q hs)
     >>> needPosIdents q posidents
 
-needPosIdents :: (TokenId->TokenId) -> [(Int,TokenId)] -> NeedLib -> NeedLib
+needPosIdents :: (TokenId->TokenId) -> [(Pos,TokenId)] -> NeedLib -> NeedLib
 needPosIdents q posidents = 
     if any (isTidCon.snd) posidents then
          mapR (\(pos,tid) -> if isTidCon tid then needTid pos Con (q tid)
@@ -481,7 +481,7 @@ bindPat (PatNplusK        pos tid _ _ _ _) = bindTid Var tid >>>
 
 
 ------
-needTids :: Int -> [(IdKind,TokenId)] -> NeedLib -> NeedLib
+needTids :: Pos -> [(IdKind,TokenId)] -> NeedLib -> NeedLib
 needTids pos kindtids = mapR (uncurry (needTid pos)) kindtids
 
 

@@ -83,6 +83,8 @@ bindTid idKind tid (NeedLib r m ms o n) =
 ----	    Just _ ->  NeedLib r (addM m (tids,idKind)) ms (updateAT n (tids,idKind) (pos:))
 ----	    Nothing -> NeedLib r (addM m (tids,idKind)) ms (addAT n undefined (tids,idKind) [pos])
 
+needTid :: Pos -> IdKind -> TokenId -> NeedLib -> NeedLib
+
 needTid pos idKind tid needlib@(NeedLib r m ms o n) =
   case r tid of
     []    -> error ("qualified renaming of "++show tid++" produced no results!")

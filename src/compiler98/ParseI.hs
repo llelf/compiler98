@@ -16,6 +16,7 @@ import ParseLex
 import Parse2
 import TokenId(tNEED,tinterface)
 import PreImp
+import ImportState(ImportState)
 
 data ParseI st tid declneed rest =
 	  ParseEof  st
@@ -97,6 +98,8 @@ semiIterate st s p = s `revChk` iterateSemi st s p
 			`orelse`
 		     parse st
 
+parseITopDecl :: ImportState -> [[TokenId]] -> HideDeclIds
+              -> Parser ImportState [PosToken] c
 parseITopDecl st needs hideFuns =
   cases
       [ (L_type, \pos ->

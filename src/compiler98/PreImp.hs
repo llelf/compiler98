@@ -6,6 +6,7 @@ module PreImp where
 import ImportState(ImportState)
 import TokenId(TokenId)
 import Syntax(Simple,Type,Context,Constr)
+import Extra(Pos)
 
 type HideDeclType = ImportState
                     -> (Int,Bool)		-- depth annotation
@@ -18,17 +19,17 @@ type HideDeclData = ImportState
                     -> Simple TokenId		-- LHS of data decl
                     -> [Constr TokenId]		-- constructors
                     -> [[TokenId]]		-- `needs' = actually exported
-                    -> [(Int,TokenId)] 		-- `deriving' classes
+                    -> [(Pos,TokenId)] 		-- `deriving' classes
                     -> ImportState
 type HideDeclDataPrim = ImportState
-                        -> (Int,TokenId)
+                        -> (Pos,TokenId)
                         -> Int
                         -> ImportState
 type HideDeclClass = ImportState
                      -> [Context TokenId]	-- class contexts
-                     -> (Int,TokenId) 		-- class name
-                     -> [(Int,TokenId)]		-- type variables
-                     -> [([((Int,TokenId),Maybe Int)]
+                     -> (Pos,TokenId) 		-- class name
+                     -> [(Pos,TokenId)]		-- type variables
+                     -> [([((Pos,TokenId),Maybe Int)]
                          ,[Context TokenId]
                          ,Type TokenId
                          )] 			-- methods
@@ -36,11 +37,11 @@ type HideDeclClass = ImportState
                      -> ImportState
 type HideDeclInstance = ImportState
                         -> [Context TokenId]	-- class contexts
-                        -> (Int,TokenId) 	-- class name
+                        -> (Pos,TokenId) 	-- class name
                         -> [Type TokenId]	-- types of this instance
                         -> ImportState
 type HideDeclVarsType = ImportState
-                        -> [((Int,TokenId),Maybe Int)] 
+                        -> [((Pos,TokenId),Maybe Int)] 
                         -> [Context TokenId]
                         -> Type TokenId
                         -> ImportState

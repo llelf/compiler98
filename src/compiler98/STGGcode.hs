@@ -1,6 +1,6 @@
 module STGGcode where -- (stgGcode) where
 
-import Extra(isJust,dropJust)
+import Extra(isJust,dropJust,pos2Int)
 import State
 import PosCode
 import Gcode
@@ -17,25 +17,25 @@ gBindingTop (fun,PosLambda pos [] args@[arg] exp@(PosExpCase cpos (PosVar vpos v
     gOnly con >>>= \ only ->
     if only && any ((var2 ==).snd) posargs then -- Selector function
       let no = dropJust (lookup var2 (zip (map snd posargs) [1..]))
-      in unitS (STARTFUN pos fun : needstack 1 [ SELECTOR_EVAL, SELECT no ])
+      in unitS (STARTFUN (pos2Int pos) fun : needstack 1 [ SELECTOR_EVAL, SELECT no ])
     else     -- Ugly duplication of code
       setFun fun >>>
       pushEnv (zip (map snd args) (map Arg [1..])) >>>
       gExp exp >>>= \ exp ->
       popEnv >>>
       maxDepth >>>= \ d ->
-      unitS (STARTFUN pos fun : needstack d ( exp ++ [RETURN_EVAL]))
+      unitS (STARTFUN (pos2Int pos) fun : needstack d ( exp ++ [RETURN_EVAL]))
 gBindingTop (fun,PosLambda pos env args exp) =
     setFun fun >>>
     pushEnv (zip (map snd args) (map Arg [1..])) >>>
     gExp exp >>>= \ exp ->
     popEnv >>>
     maxDepth >>>= \ d ->
-    unitS (STARTFUN pos fun : needstack d (exp ++ [RETURN_EVAL]))
+    unitS (STARTFUN (pos2Int pos) fun : needstack d (exp ++ [RETURN_EVAL]))
 gBindingTop (fun,PosPrimitive pos fn) =
     setFun fun >>>
     gArity fun >>>= \ (Just arity) ->
-    unitS (STARTFUN pos fun: concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
+    unitS (STARTFUN (pos2Int pos) fun: concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
 	   [PRIMITIVE, DATA_CLABEL fn, RETURN_EVAL ])
 gBindingTop (fun,PosForeign pos fn str c ie) =
     setFun fun >>>
@@ -44,7 +44,7 @@ gBindingTop (fun,PosForeign pos fn str c ie) =
     case ie of
       Imported ->
         unitS
-          (STARTFUN pos fun:
+          (STARTFUN (pos2Int pos) fun:
            concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
            [ PRIMITIVE , DATA_FLABEL fn, RETURN_EVAL ])
       Exported ->
