@@ -12,7 +12,7 @@ C_HEADER(primIntAnd) {
     IND_REMOVE(n);
     y = (unsigned)GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(x&y));
+    C_RETURN(nhc_mkInt(x&y));
 }
 
 /* primIntOr :: Int -> Int -> Int */
@@ -26,7 +26,7 @@ C_HEADER(primIntOr) {
     IND_REMOVE(n);
     y = (unsigned)GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(x|y));
+    C_RETURN(nhc_mkInt(x|y));
 }
 
 /* primIntXor :: Int -> Int -> Int */
@@ -40,7 +40,7 @@ C_HEADER(primIntXor) {
     IND_REMOVE(n);
     y = (unsigned)GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(x^y));
+    C_RETURN(nhc_mkInt(x^y));
 }
 
 /* primIntCompl :: Int -> Int */
@@ -50,7 +50,7 @@ C_HEADER(primIntCompl) {
     IND_REMOVE(n);
     x = (unsigned)GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(~x));
+    C_RETURN(nhc_mkInt(~x));
 }
 
 /* primIntLsh :: Int -> Int -> Int */
@@ -64,7 +64,7 @@ C_HEADER(primIntLsh) {
     IND_REMOVE(n);
     s = GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(i<<s));
+    C_RETURN(nhc_mkInt(i<<s));
 }
 
 /* primIntRsh :: Int -> Int -> Int */
@@ -78,6 +78,6 @@ C_HEADER(primIntRsh) {
     IND_REMOVE(n);
     s = GET_INT_VALUE(n);
 
-    C_RETURN(mkInt(i>>s));
+    C_RETURN(nhc_mkInt(i>>s));
 }
 

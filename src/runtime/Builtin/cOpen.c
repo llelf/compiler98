@@ -26,7 +26,7 @@ C_HEADER(cOpen)
 #ifdef CDBGTRANS
   C_CHECK(512); /* wrong */
 #else
-  C_CHECK(sizeLeft+sizeIOErrorOpen + sizeRight+sizeInt);
+  C_CHECK(nhc_sizeLeft+nhc_sizeIOErrorOpen + nhc_sizeRight+nhc_sizeInt);
 #endif
 
 #ifdef CDBGTRANS
@@ -78,9 +78,9 @@ C_HEADER(cOpen)
     a->size = -1;
     a->path = strdup(filename);
     fo = allocForeignObj(a,gcFile,gcNow);
-    nodeptr = mkRight(mkCInt((Int)fo));
+    nodeptr = nhc_mkRight(nhc_mkCInt((Int)fo));
   } else {
-    nodeptr = mkLeft(mkIOErrorOpen(fileptr,typeptr,mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorOpen(fileptr,typeptr,nhc_mkInt(errno)));
   }
   C_RETURN(nodeptr);
 }
@@ -121,5 +121,5 @@ void* openFileC (char* filename, int iom)
     fo = allocForeignObj((void*)0,(void*)0,gcNone);
     /*fprintf(stderr,"fopen: failed to open file %s for %s\n",filename,type);*/
   }
-  return (void*)mkCInt((int)fo);
+  return (void*)nhc_mkCInt((int)fo);
 }

@@ -21,7 +21,7 @@ C_HEADER(primEqHandlePosn)
   IND_REMOVE(nodeptr);
   fpos2 = getHandlePosn(nodeptr);
 
-  C_RETURN(mkBool(!memcmp(fpos1,fpos2,sizeof(fpos_t))));
+  C_RETURN(nhc_mkBool(!memcmp(fpos1,fpos2,sizeof(fpos_t))));
 }
 #endif
 

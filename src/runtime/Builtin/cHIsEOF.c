@@ -9,7 +9,7 @@ C_HEADER(cHIsEOF)
   NodePtr nodeptr;
   int eof;
   
-  C_CHECK(    sizeRight+(sizeTrue + sizeFalse));
+  C_CHECK(nhc_sizeRight+(nhc_sizeTrue + nhc_sizeFalse));
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -26,7 +26,7 @@ C_HEADER(cHIsEOF)
   }
 #endif
 
-  nodeptr = mkRight(mkBool(eof));
+  nodeptr = nhc_mkRight(nhc_mkBool(eof));
 
   C_RETURN(nodeptr);
 }

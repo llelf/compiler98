@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkIOErrorHSetBuffering(NodePtr a1,NodePtr a2)
+NodePtr nhc_mkIOErrorHSetBuffering(NodePtr a1,NodePtr a2)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
   n[0] = CONSTR(11,2,0);

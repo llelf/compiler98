@@ -29,7 +29,7 @@ C_HEADER(primAllocBA) {
   ba->write = 0;
   ba->free  = size;
 
-  C_RETURN(mkInt((int)tablenext++));
+  C_RETURN(nhc_mkInt((int)tablenext++));
 }
 
 
@@ -51,7 +51,7 @@ C_HEADER(primPutBA) {
   ba->block[ba->write] = bin;
   ba->free--;
 
-  C_RETURN(mkInt(ba->write++));
+  C_RETURN(nhc_mkInt(ba->write++));
 }
 
 
@@ -70,7 +70,7 @@ C_HEADER(primGetBA) {
   IND_REMOVE(nptr);
   n = GET_INT_VALUE(nptr);
 
-  C_RETURN(mkInt((int)ba->block[n]));
+  C_RETURN(nhc_mkInt((int)ba->block[n]));
 }
 
 
@@ -85,7 +85,7 @@ C_HEADER(primGetBAFree) {
 /*ba = (unboxedarray*)GET_INT_VALUE(nptr);*/
   ba = &table[i];
 
-  C_RETURN(mkInt(ba->free));
+  C_RETURN(nhc_mkInt(ba->free));
 }
 
 /* primGetUnboxedArray :: Handle -> Int -> Int -> UnboxedArray */
@@ -116,5 +116,5 @@ C_HEADER(primGetUnboxedArray) {
 
   fread((char*)(ba->block), sizeof(unsigned), wptr, h->fp);
   
-  C_RETURN(mkInt((int)tablenext++));
+  C_RETURN(nhc_mkInt((int)tablenext++));
 }

@@ -26,7 +26,7 @@ C_HEADER(cHClose)
   freeForeignObj(f);
 #endif
 
-  C_RETURN(mkUnit());
+  C_RETURN(nhc_mkUnit());
 }
 #endif
 

@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkSmallIntegerU(Int i)
+NodePtr nhc_mkSmallIntegerU(Int i)
 {
   NodePtr n;
 

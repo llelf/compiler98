@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkExitFailure(NodePtr a1)
+NodePtr nhc_mkExitFailure(NodePtr a1)
 {
   NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(1,1,0);

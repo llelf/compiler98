@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkIOErrorHSetPosn(NodePtr a1,NodePtr a2)
+NodePtr nhc_mkIOErrorHSetPosn(NodePtr a1,NodePtr a2)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
   n[0] = CONSTR(9,2,0);

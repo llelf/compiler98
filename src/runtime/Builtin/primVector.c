@@ -112,7 +112,7 @@ C_HEADER(primUpdateVector)
 
   if (idx<=size) dstptr[idx] = (Node)val;
 
-  C_RETURN(mkUnit());
+  C_RETURN(nhc_mkUnit());
 }	
 
 

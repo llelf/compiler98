@@ -95,7 +95,7 @@ void eval(StablePtr x)
   Ip=IP;			/* restore instruction pointer */
 }
 
-StablePtr makeInt (int x) { return makeStablePtr(mkInt(x)); }
+StablePtr makeInt (int x) { return makeStablePtr(nhc_mkInt(x)); }
 int unmakeInt (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);
@@ -103,7 +103,7 @@ int unmakeInt (StablePtr x)
   return GET_INT_VALUE(n);
 }
 
-StablePtr makeChar (char x) { return makeStablePtr(mkChar(x)); }
+StablePtr makeChar (char x) { return makeStablePtr(nhc_mkChar(x)); }
 char unmakeChar (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);
@@ -111,7 +111,7 @@ char unmakeChar (StablePtr x)
   return GET_CHAR_VALUE(n);
 }
 
-StablePtr makeBool (int x) { return makeStablePtr(mkBool(x)); }
+StablePtr makeBool (int x) { return makeStablePtr(nhc_mkBool(x)); }
 int unmakeBool (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);
@@ -120,7 +120,7 @@ int unmakeBool (StablePtr x)
 }
 
 /* ***********************************************************
-StablePtr makeFloat (float x) { return makeStablePtr(mkFloat(x)); }
+StablePtr makeFloat (float x) { return makeStablePtr(nhc_mkFloat(x)); }
 float unmakeFloat (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);
@@ -128,7 +128,7 @@ float unmakeFloat (StablePtr x)
   return GET_FLOAT_VALUE(n);
 }
 
-StablePtr makeDouble (double x) { return makeStablePtr(mkDouble(x)); }
+StablePtr makeDouble (double x) { return makeStablePtr(nhc_mkDouble(x)); }
 double unmakeDouble (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);
@@ -136,7 +136,7 @@ double unmakeDouble (StablePtr x)
   return GET_DOUBLE_VALUE(n);
 }
 
-StablePtr makePackedString (char* x) { return makeStablePtr(mkString(x)); }
+StablePtr makePackedString (char* x) { return makeStablePtr(nhc_mkString(x)); }
 char* unmakePackedString (StablePtr x)
 {
   NodePtr n = derefStablePtr(x);

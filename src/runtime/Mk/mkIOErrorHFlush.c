@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkIOErrorHFlush(NodePtr a1,NodePtr a2)
+NodePtr nhc_mkIOErrorHFlush(NodePtr a1,NodePtr a2)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
   n[0] = CONSTR(6,2,0);

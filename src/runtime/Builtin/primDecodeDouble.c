@@ -12,7 +12,7 @@ C_HEADER(primDecodeDouble)
   double d;
   NodePtr nodeptr,manptr;
 
-  C_CHECK(1+SIZE_DOUBLE+sizeInt+SIZE_TUPLE(2));
+  C_CHECK(1+SIZE_DOUBLE+nhc_sizeInt+SIZE_TUPLE(2));
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   d = get_double_value(nodeptr);
@@ -22,7 +22,7 @@ C_HEADER(primDecodeDouble)
   INIT_PROFINFO(manptr,&nodeProfInfo)
   C_ADDHP(1+EXTRA+CONINFO_LARGESIZES(GET_CONINFO(manptr)));
 
-  C_RETURN(mkTuple2(manptr,mkInt(exp)));
+  C_RETURN(nhc_mkTuple2(manptr,nhc_mkInt(exp)));
 }
 
 NodePtr primDecodeDoubleMantissa (double d)

@@ -17,7 +17,7 @@ C_HEADER(cHSeek)
   int sm;
   long offset;
 
-  C_CHECK(sizeRight+sizeUnit + sizeLeft+sizeIOErrorHSeek);
+  C_CHECK(nhc_sizeRight+nhc_sizeUnit + nhc_sizeLeft+nhc_sizeIOErrorHSeek);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -53,9 +53,9 @@ C_HEADER(cHSeek)
 #endif
 
   if(err)
-    nodeptr = mkLeft(mkIOErrorHSeek(C_GETARG1(1),mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorHSeek(C_GETARG1(1),nhc_mkInt(errno)));
   else
-    nodeptr = mkRight(mkUnit());
+    nodeptr = nhc_mkRight(nhc_mkUnit());
   
   C_RETURN(nodeptr);
 }

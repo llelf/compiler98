@@ -14,7 +14,7 @@ C_HEADER(cHFlush)
   NodePtr nodeptr;
   int err;
   
-  C_CHECK(sizeRight+sizeUnit + sizeLeft+sizeIOErrorHFlush);
+  C_CHECK(nhc_sizeRight+nhc_sizeUnit + nhc_sizeLeft+nhc_sizeIOErrorHFlush);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -37,9 +37,9 @@ C_HEADER(cHFlush)
 #endif
 
   if(err)
-    nodeptr = mkLeft(mkIOErrorHFlush(C_GETARG1(1),mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorHFlush(C_GETARG1(1),nhc_mkInt(errno)));
   else
-    nodeptr = mkRight(mkUnit());
+    nodeptr = nhc_mkRight(nhc_mkUnit());
   
   C_RETURN(nodeptr);
 }

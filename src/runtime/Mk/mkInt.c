@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkInt(Int i)
+NodePtr nhc_mkInt(Int i)
 {
   NodePtr n;
   n = C_ALLOC(1+EXTRA+1);
@@ -10,7 +10,7 @@ NodePtr mkInt(Int i)
   return n;
 }
 
-NodePtr mkInt64(long long i)
+NodePtr nhc_mkInt64(long long i)
 {
   NodePtr n;
   union { long long wide;
@@ -25,7 +25,7 @@ NodePtr mkInt64(long long i)
   return n;
 }
 
-long long get_64bit_value (NodePtr n)
+long long nhc_get_64bit_value (NodePtr n)
 {
   union { long long wide;
           int       norm[2];

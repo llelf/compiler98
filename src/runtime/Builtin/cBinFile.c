@@ -14,7 +14,7 @@ C_HEADER(cFileTell) {
   a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   n = (int) ftell(a->fp);
-  C_RETURN(mkInt(n));
+  C_RETURN(nhc_mkInt(n));
 }
 
 
@@ -34,5 +34,5 @@ C_HEADER(cFileSeek) {
   n = GET_INT_VALUE(nodeptr);
 
   err = fseek(a->fp, (long)n, 0);
-  C_RETURN(mkInt(err));
+  C_RETURN(nhc_mkInt(err));
 }

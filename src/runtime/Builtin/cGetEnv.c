@@ -24,8 +24,8 @@ C_HEADER(cGetEnv)
 #endif
     { src = getenv(getPackedString(nodeptr));
       if(!src) { /*src = "";*/
-             nodeptr = mkLeft(mkInt(ENOENT));
-      }else{ nodeptr = mkRight(mkPackedString(strlen(src),src)); }
+             nodeptr = nhc_mkLeft(nhc_mkInt(ENOENT));
+      }else{ nodeptr = nhc_mkRight(nhc_mkPackedString(strlen(src),src)); }
     }
 #ifdef PROFILE
   if(record) {

@@ -154,7 +154,7 @@ void printCaf(GcConst caf, Int flags, Int depth)
 
 
 /* Update treats IND nodes as pointers */
-Node update(NodePtr old,NodePtr new)
+Node nhc_update(NodePtr old,NodePtr new)
 {
   NodePtr c;
   if(MASK_WTAG & (UInt)(c = (NodePtr)*old)) {   /* Not a pointer */
@@ -281,7 +281,7 @@ void flipHeap(NodePtr hp)
       hole[0] = (Node)-(Int)scanptr;
     }
     if(scanptr <hp) {
-      Node tag = update(scanptr,newpos);
+      Node tag = nhc_update(scanptr,newpos);
       *scanptr = tag;
       switch(EXT_LARGETAG(tag)) {
       case CON_DATA|VAP_TAG0: case CON_PTRS|VAP_TAG0: case CON_CDATA|VAP_TAG0: case CON_WORDS|VAP_TAG0:
@@ -429,7 +429,7 @@ NodePtr moveHeap(NodePtr hp)
         break;
     }
 
-    tag = update(scanptr,newpos);
+    tag = nhc_update(scanptr,newpos);
     switch(EXT_LARGETAG(tag)) {
 
     case CON_DATA|VAP_TAG0: case CON_PTRS|VAP_TAG0: case CON_CDATA|VAP_TAG0: case CON_WORDS|VAP_TAG0:

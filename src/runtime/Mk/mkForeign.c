@@ -2,10 +2,10 @@
 
 #include "mk.h"
 
-NodePtr mkForeign (void *x, gcCval final)
+NodePtr nhc_mkForeign (void *x, gcCval final)
 {
     ForeignObj *fo;
     fo = allocForeignObj(x,final,gcNow);
-    return mkCInt((Int)fo);
+    return nhc_mkCInt((Int)fo);
 }
 

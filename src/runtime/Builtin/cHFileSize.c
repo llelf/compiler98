@@ -18,7 +18,7 @@ C_HEADER(cHFileSize)
   struct stat buf;
   int err;
   
-  C_CHECK(sizeRight+sizeSmallIntegerU + sizeLeft+sizeInt);
+  C_CHECK(nhc_sizeRight+nhc_sizeSmallIntegerU + nhc_sizeLeft+nhc_sizeInt);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -45,9 +45,9 @@ C_HEADER(cHFileSize)
 #endif
 
   if(!err)
-    nodeptr = mkRight(mkSmallIntegerU(buf.st_size));
+    nodeptr = nhc_mkRight(nhc_mkSmallIntegerU(buf.st_size));
   else
-    nodeptr = mkLeft(mkInt(errno));
+    nodeptr = nhc_mkLeft(nhc_mkInt(errno));
   
   C_RETURN(nodeptr);
 }
@@ -60,7 +60,7 @@ NodePtr primHFileSizeC (FileDesc* f)
   int err;
   err = fstat(fileno(f->fp),&buf);
   if (err)
-    return mkSmallIntegerU(-1);
+    return nhc_mkSmallIntegerU(-1);
   else
-    return mkSmallIntegerU(buf.st_size);
+    return nhc_mkSmallIntegerU(buf.st_size);
 }

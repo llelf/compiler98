@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkTuple7(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7)
+NodePtr nhc_mkTuple7(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7)
 {
   NodePtr n = C_ALLOC(1+EXTRA+7);
   n[0] = CONSTRP(7,0);

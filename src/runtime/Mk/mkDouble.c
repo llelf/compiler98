@@ -1,7 +1,7 @@
 #include "mk.h"
 #include "mutlib.h"
 
-NodePtr mkDouble(double d)
+NodePtr nhc_mkDouble(double d)
 {
   NodePtr n;
   n = C_ALLOC(SIZE_DOUBLE);

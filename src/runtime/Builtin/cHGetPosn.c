@@ -17,7 +17,7 @@ C_HEADER(cHGetPosn)
   int posn;
   fpos_t fpos;
   
-  C_CHECK(sizeRight+sizeHandlePosn + sizeLeft+sizeIOErrorHGetPosn);
+  C_CHECK(nhc_sizeRight+nhc_sizeHandlePosn + nhc_sizeLeft+nhc_sizeIOErrorHGetPosn);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -44,9 +44,9 @@ C_HEADER(cHGetPosn)
 #endif
 
   if(!err)
-    nodeptr = mkRight(mkHandlePosn(&fpos));
+    nodeptr = nhc_mkRight(nhc_mkHandlePosn(&fpos));
   else
-    nodeptr = mkLeft(mkIOErrorHGetPosn(C_GETARG1(1),mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorHGetPosn(C_GETARG1(1),nhc_mkInt(errno)));
   
   C_RETURN(nodeptr);
 }

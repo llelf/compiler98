@@ -1,7 +1,7 @@
 #include "mk.h"
 #include "mutlib.h"
 
-NodePtr mkFloat(float f)
+NodePtr nhc_mkFloat(float f)
 {
   NodePtr n;
   n = C_ALLOC(SIZE_FLOAT);

@@ -13,9 +13,9 @@ C_HEADER(cEvaluating)
   IND_REMOVE(nodeptr);
 
   if((GET_TAG(nodeptr) & VAP_TAG) && !CINFO_NEED(GET_CINFO(nodeptr)) && ZAPPED(nodeptr))
-    nodeptr = mkTrue();
+    nodeptr = nhc_mkTrue();
   else
-    nodeptr = mkFalse();
+    nodeptr = nhc_mkFalse();
 
   C_RETURN(nodeptr);
 }
@@ -32,9 +32,9 @@ C_HEADER(cEvaluated)
   IND_REMOVE(nodeptr);
 
   if((GET_TAG(nodeptr) & VAP_TAG) && !CINFO_NEED(GET_CINFO(nodeptr)))
-    nodeptr = mkFalse();
+    nodeptr = nhc_mkFalse();
   else
-    nodeptr = mkTrue();
+    nodeptr = nhc_mkTrue();
 
   C_RETURN(nodeptr);
 }

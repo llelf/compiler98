@@ -82,7 +82,7 @@ C_HEADER(rdPacked) {
       value = getval(ptr,start,size);
     }
   }
-  nretVal = mkInt(value);
+  nretVal = nhc_mkInt(value);
   INIT_PROFINFO(nretVal,&rdpackProfInfo);
   C_RETURN(nretVal);
 }
@@ -185,10 +185,10 @@ C_HEADER(sizePacked) {
   IND_REMOVE(nodeptr);
   if (CONINFO_SIZE(GET_CONINFO(nodeptr)) == 1+EXTRA) {
       tmp = GET_CONSTR(nodeptr);
-      nretVal = mkInt(tmp>>8);
+      nretVal = nhc_mkInt(tmp>>8);
   } else {
       tmp = GET_VALUE_ARG1(nodeptr,2);
-      nretVal = mkInt(tmp&mask(16));
+      nretVal = nhc_mkInt(tmp&mask(16));
   }
   INIT_PROFINFO(nretVal,&szpackProfInfo);
   C_RETURN(nretVal);
@@ -284,7 +284,7 @@ C_HEADER(primPutPacked) {
  
   err = fwrite((char*)(&binSpace[ptr])+offset, 1, n, a->fp);
  
-  C_RETURN(mkInt(err));
+  C_RETURN(nhc_mkInt(err));
 }
 
  
@@ -309,7 +309,7 @@ C_HEADER(primGetNBytes) {
   binPtr += (offset+err) /4;
   bitIdx  = ((offset+err)%4) <<3;
  
-  C_RETURN(mkInt(ptr));
+  C_RETURN(nhc_mkInt(ptr));
 }
 
 

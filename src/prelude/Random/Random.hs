@@ -65,6 +65,8 @@ data StdGen
 instance RandomGen StdGen where
   next  = stdNext
   split = stdSplit
+  genRange g = (minBound,maxBound)
+  -- without this Hat+nhc98 do not work
 
 #if defined(__HUGS__) || defined(__NHC__)
 instance Show StdGen where

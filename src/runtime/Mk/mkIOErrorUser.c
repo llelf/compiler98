@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkIOErrorUser(NodePtr a1)
+NodePtr nhc_mkIOErrorUser(NodePtr a1)
 {
   NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(0,1,0);

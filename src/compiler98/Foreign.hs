@@ -322,15 +322,15 @@ cConvert Bool         = word "GET_BOOL_VALUE(nodeptr)"
 cConvert Int8         = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Int16        = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Int32        = word "GET_32BIT_VALUE(nodeptr)"
-cConvert Int64        = word "get_64bit_value(nodeptr)"
+cConvert Int64        = word "nhc_get_64bit_value(nodeptr)"
 cConvert Word8        = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Word16       = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Word32       = word "GET_32BIT_VALUE(nodeptr)"
-cConvert Word64       = word "get_64bit_value(nodeptr)"
+cConvert Word64       = word "nhc_get_64bit_value(nodeptr)"
 cConvert Float        = word "get_float_value(nodeptr)"
 cConvert Double       = word "get_double_value(nodeptr)"
 cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
-cConvert PackedString = word "getPackedString(nodeptr)"
+cConvert PackedString = word "nhc_getPackedString(nodeptr)"
 cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
 cConvert StablePtr    = word "GET_INT_VALUE(nodeptr)"
 cConvert ForeignObj   = word "derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr))"
@@ -338,27 +338,27 @@ cConvert Unit         = word "0"
 cConvert (Unknown _)  = word "nodeptr"
 
 hConvert :: Arg -> ShowS -> ShowS
-hConvert Int          s = word "mkInt" . parens s
-hConvert Bool         s = word "mkBool" . parens s
-hConvert Int8         s = word "mkInt8" . parens s
-hConvert Int16        s = word "mkInt16" . parens s
-hConvert Int32        s = word "mkInt32" . parens s
-hConvert Int64        s = word "mkInt64" . parens s
-hConvert Word8        s = word "mkWord8" . parens s
-hConvert Word16       s = word "mkWord16" . parens s
-hConvert Word32       s = word "mkWord32" . parens s
-hConvert Word64       s = word "mkWord64" . parens s
-hConvert Float        s = word "mkFloat" . parens s
-hConvert Double       s = word "mkDouble" . parens s
-hConvert Char         s = word "mkChar" . parens s
-hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
-hConvert Addr         s = word "mkInt" . parens (word "(int)" . s)
-hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
+hConvert Int          s = word "nhc_mkInt" . parens s
+hConvert Bool         s = word "nhc_mkBool" . parens s
+hConvert Int8         s = word "nhc_mkInt8" . parens s
+hConvert Int16        s = word "nhc_mkInt16" . parens s
+hConvert Int32        s = word "nhc_mkInt32" . parens s
+hConvert Int64        s = word "nhc_mkInt64" . parens s
+hConvert Word8        s = word "nhc_mkWord8" . parens s
+hConvert Word16       s = word "nhc_mkWord16" . parens s
+hConvert Word32       s = word "nhc_mkWord32" . parens s
+hConvert Word64       s = word "nhc_mkWord64" . parens s
+hConvert Float        s = word "nhc_mkFloat" . parens s
+hConvert Double       s = word "nhc_mkDouble" . parens s
+hConvert Char         s = word "nhc_mkChar" . parens s
+hConvert PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
+hConvert Addr         s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert StablePtr    s = word "nhc_mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
 hConvert ForeignObj   s =
   warning ("foreign import/export should not return ForeignObj type.\n")
                           s
-hConvert Unit         s = word "mkUnit()"
+hConvert Unit         s = word "nhc_mkUnit()"
 hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched
 
 castConvert :: Arg -> ShowS -> ShowS

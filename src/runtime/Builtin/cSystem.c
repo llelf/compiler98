@@ -35,12 +35,12 @@ C_HEADER(cSystem)
 #endif
 
   if(i == -1) { /* Failed fork or exec */
-    nodeptr = mkLeft(mkInt(errno));
+    nodeptr = nhc_mkLeft(nhc_mkInt(errno));
   } else {
     if(i) {	
-      nodeptr = mkRight(mkExitFailure(mkInt(i)));
+      nodeptr = nhc_mkRight(nhc_mkExitFailure(nhc_mkInt(i)));
     } else {
-      nodeptr = mkRight(mkExitSuccess());
+      nodeptr = nhc_mkRight(nhc_mkExitSuccess());
     }
   }
 

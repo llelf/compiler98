@@ -95,7 +95,7 @@ C_HEADER(cOpenSocket)
   int fdesc;
   FILE *fp;
 
-  C_CHECK(sizeLeft+sizeIOErrorOpen + sizeRight+sizeInt);
+  C_CHECK(nhc_sizeLeft+nhc_sizeIOErrorOpen + nhc_sizeRight+nhc_sizeInt);
 
   hostptr = C_GETARG1(1);
   IND_REMOVE(hostptr);
@@ -142,9 +142,9 @@ C_HEADER(cOpenSocket)
     a->size = -1;
     a->path = "<socket>";
     fo = allocForeignObj(a,gcFile,gcNow);
-    nodeptr = mkRight(mkCInt((int)fo));
+    nodeptr = nhc_mkRight(nhc_mkCInt((int)fo));
   } else {
-    nodeptr = mkLeft(mkIOErrorOpen(hostptr,typeptr,mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorOpen(hostptr,typeptr,nhc_mkInt(errno)));
   }
   C_RETURN(nodeptr);
 }

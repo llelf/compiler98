@@ -15,7 +15,7 @@ C_HEADER(cHSetBuffering)
   int bm,size = BUFSIZ;
   int err;
    
-  C_CHECK(sizeRight+sizeUnit + sizeLeft+sizeIOErrorHIsEOF);
+  C_CHECK(nhc_sizeRight+nhc_sizeUnit + nhc_sizeLeft+nhc_sizeIOErrorHIsEOF);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -57,11 +57,11 @@ C_HEADER(cHSetBuffering)
 #endif
   
   if(err) {
-    nodeptr = mkLeft(mkIOErrorHSetBuffering(C_GETARG1(1),mkInt(errno)));
+    nodeptr = nhc_mkLeft(nhc_mkIOErrorHSetBuffering(C_GETARG1(1),nhc_mkInt(errno)));
   } else {
     a->bm = bm;
     a->size = size;
-    nodeptr = mkRight(mkUnit());
+    nodeptr = nhc_mkRight(nhc_mkUnit());
   }
   
   C_RETURN(nodeptr);

@@ -11,7 +11,7 @@ C_HEADER(primDecodeFloat)
   int exp;
   float f;
   NodePtr nodeptr,manptr,expptr;
-  C_CHECK(1+SIZE_FLOAT+sizeInt+SIZE_TUPLE(2));
+  C_CHECK(1+SIZE_FLOAT+nhc_sizeInt+SIZE_TUPLE(2));
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   f = get_float_value(nodeptr);
@@ -20,7 +20,7 @@ C_HEADER(primDecodeFloat)
   INIT_PROFINFO(manptr,&nodeProfInfo)
   C_ADDHP(1+EXTRA+CONINFO_LARGESIZES(GET_CONINFO(manptr)));
 
-  C_RETURN(mkTuple2(manptr,mkInt(exp)));
+  C_RETURN(nhc_mkTuple2(manptr,nhc_mkInt(exp)));
 }
 
 NodePtr primDecodeFloatMantissa (float f)

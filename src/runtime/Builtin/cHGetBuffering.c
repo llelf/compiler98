@@ -11,22 +11,22 @@ C_HEADER(cHGetBuffering)
   NodePtr nodeptr;
   int bm,err;
    
-  C_CHECK(sizeRight + sizeNoBuffering+sizeBlockBuffering+sizeJust+sizeInt + sizeLeft+sizeIOErrorHIsEOF);
+  C_CHECK(nhc_sizeRight + nhc_sizeNoBuffering+nhc_sizeBlockBuffering+nhc_sizeJust+nhc_sizeInt + nhc_sizeLeft+nhc_sizeIOErrorHIsEOF);
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   switch(a->bm) {
-  case _IONBF: nodeptr = mkRight(mkNoBuffering()); break;
-  case _IOLBF: nodeptr = mkRight(mkLineBuffering()); break;
+  case _IONBF: nodeptr = nhc_mkRight(nhc_mkNoBuffering()); break;
+  case _IOLBF: nodeptr = nhc_mkRight(nhc_mkLineBuffering()); break;
   case _IOFBF:
     if(a->size>=0)
-      nodeptr = mkRight(mkBlockBuffering(mkJust(mkInt(a->size))));
+      nodeptr = nhc_mkRight(nhc_mkBlockBuffering(nhc_mkJust(nhc_mkInt(a->size))));
     else
-      nodeptr = mkRight(mkBlockBuffering(mkNothing()));
+      nodeptr = nhc_mkRight(nhc_mkBlockBuffering(nhc_mkNothing()));
     break;
-  default: nodeptr = mkLeft(mkIOErrorHGetBuffering(C_GETARG1(1),mkInt(a->bm)));
+  default: nodeptr = nhc_mkLeft(nhc_mkIOErrorHGetBuffering(C_GETARG1(1),nhc_mkInt(a->bm)));
   }
   C_RETURN(nodeptr);
 }
@@ -36,11 +36,11 @@ C_HEADER(cHGetBuffering)
 NodePtr hGetBufferingC (FileDesc *f)
 {
   switch(f->bm) {
-    case _IONBF: return mkNoBuffering(); break;
-    case _IOLBF: return mkLineBuffering(); break;
+    case _IONBF: return nhc_mkNoBuffering(); break;
+    case _IOLBF: return nhc_mkLineBuffering(); break;
     case _IOFBF:
-        if(f->size>=0) return mkBlockBuffering(mkJust(mkInt(f->size)));
-        else           return mkBlockBuffering(mkNothing());
+        if(f->size>=0) return nhc_mkBlockBuffering(nhc_mkJust(nhc_mkInt(f->size)));
+        else           return nhc_mkBlockBuffering(nhc_mkNothing());
         break;
     default: break;
   }

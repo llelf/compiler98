@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkJust(NodePtr a1)
+NodePtr nhc_mkJust(NodePtr a1)
 {
   NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(1,1,0);

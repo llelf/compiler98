@@ -15,5 +15,5 @@ C_HEADER(cProfile)
   msg = getPackedString(msgptr);
   do_comment(msg);
 #endif
-  C_RETURN(mkUnit());
+  C_RETURN(nhc_mkUnit());
 }

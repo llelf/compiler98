@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkIOErrorOpen(NodePtr a1,NodePtr a2,NodePtr a3)
+NodePtr nhc_mkIOErrorOpen(NodePtr a1,NodePtr a2,NodePtr a3)
 {
   NodePtr n = C_ALLOC(1+EXTRA+3);
   n[0] = CONSTR(2,3,0);

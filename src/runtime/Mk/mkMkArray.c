@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkMkArray(NodePtr a1,NodePtr a2)
+NodePtr nhc_mkMkArray(NodePtr a1,NodePtr a2)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
   n[0] = CONSTR(0,2,0);

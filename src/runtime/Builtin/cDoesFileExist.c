@@ -12,16 +12,16 @@ C_HEADER(cDoesFileExist)
   Coninfo cinfo;
   char *filename;
 
-  C_CHECK(sizeLeft+sizeIOErrorOpen + sizeRight+sizeBool);
+  C_CHECK(nhc_sizeLeft+nhc_sizeIOErrorOpen + nhc_sizeRight+nhc_sizeBool);
 
   fileptr = C_GETARG1(1);
   IND_REMOVE(fileptr);
   filename = (char*)&fileptr[1+EXTRA];
 
   if (access(filename,0)==0) {
-    nodeptr = mkRight(mkTrue());
+    nodeptr = nhc_mkRight(nhc_mkTrue());
   } else {
-    nodeptr = mkRight(mkFalse());
+    nodeptr = nhc_mkRight(nhc_mkFalse());
   }
   C_RETURN(nodeptr);
 }

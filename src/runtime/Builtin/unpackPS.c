@@ -15,7 +15,7 @@ C_HEADER(unpackPS)
   cinfo =  GET_CONINFO(nodeptr);
   length = CONINFO_LARGESIZES(cinfo) * sizeof(Node) - CONINFO_LARGEEXTRA(cinfo);
 
-  C_CHECK(length * sizeCons);
+  C_CHECK(length * nhc_sizeCons);
 
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -24,10 +24,10 @@ C_HEADER(unpackPS)
   prevptr = (NodePtr)&nodeptr;
   while(length--) {
     int c = *srcptr++;
-    *prevptr = (Node)mkCons(mkChar(c),0);
+    *prevptr = (Node)nhc_mkCons(nhc_mkChar(c),0);
     prevptr = &((NodePtr)(*prevptr))[EXTRA+2];
   }
-  *prevptr = (Node)mkNil();
+  *prevptr = (Node)nhc_mkNil();
 
   C_RETURN(nodeptr);
 }	
@@ -46,7 +46,7 @@ NodePtr unpackPSC (NodePtr e)
   cinfo =  GET_CONINFO(nodeptr);
   length = CONINFO_LARGESIZES(cinfo) * sizeof(Node) - CONINFO_LARGEEXTRA(cinfo);
 
-  C_CHECK(length * sizeCons);
+  C_CHECK(length * nhc_sizeCons);
 
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
@@ -55,10 +55,10 @@ NodePtr unpackPSC (NodePtr e)
   prevptr = (NodePtr)&nodeptr;
   while(length--) {
     int c = *srcptr++;
-    *prevptr = (Node)mkCons(mkChar(c),0);
+    *prevptr = (Node)nhc_mkCons(nhc_mkChar(c),0);
     prevptr = &((NodePtr)(*prevptr))[EXTRA+2];
   }
-  *prevptr = (Node)mkNil();
+  *prevptr = (Node)nhc_mkNil();
 
   return (nodeptr);
 }

@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkLeft(NodePtr a1)
+NodePtr nhc_mkLeft(NodePtr a1)
 {
   NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(0,1,0);

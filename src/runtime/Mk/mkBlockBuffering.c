@@ -1,6 +1,6 @@
 #include "mk.h"
 
-NodePtr mkBlockBuffering(NodePtr a1)
+NodePtr nhc_mkBlockBuffering(NodePtr a1)
 {
   NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(2,1,0);

@@ -8,7 +8,7 @@
  * a C-ptr in Haskell-land such that it can be recovered intact.
  */
 
-NodePtr mkCInt(Int i)
+NodePtr nhc_mkCInt(Int i)
 {
   NodePtr n;
   n = C_ALLOC(1+EXTRA+1);

@@ -13,8 +13,8 @@ void hPutStrC (FileDesc *f, char *s)
 {
     int err;
     err = fputs(s,f->fp);
- /* if (err==EOF) return mkLeft(mkInt(errno)); */
- /* else return mkRight(mkUnit); */
+ /* if (err==EOF) return nhc_mkLeft(nhc_mkInt(errno)); */
+ /* else return nhc_mkRight(nhc_mkUnit); */
 }
 #endif
 
