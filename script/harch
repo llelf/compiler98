@@ -74,6 +74,14 @@ case $OS in
 		  6*) OS=IRIX6;;
 		  *)  OS=IRIX-$REL;;
 		esac;;
+  AIX)		if oslevel >/dev/null 2>&1	# AIX just has to be different
+                then OS=$OS-`oslevel`
+                else OS=$OS-unknown
+                fi
+                if /etc/lsattr -EHl proc0 | grep -i powerpc >/dev/null 2>&1
+                then PROCESSOR=powerpc
+                else PROCESSOR=power
+                fi ;;
   *)		OS=$OS-$REL;;
 esac
 

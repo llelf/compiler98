@@ -30,7 +30,7 @@
 
 #if !defined(LOW_BYTE_FIRST) && !defined(HIGH_BYTE_FIRST)
 #if defined(__sparc__) || defined(__hppa__) || defined(__mc68000) || \
-    defined(__sgi) || defined(__alpha) || defined(__PPC__)
+    defined(__sgi) || defined(__alpha) || defined(__PPC__) || defined(_POWER)
 #define HIGH_BYTE_FIRST
 #elif defined(__arm) || defined(__i386__) || defined(__mips)
 #define LOW_BYTE_FIRST
