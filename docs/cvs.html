@@ -45,9 +45,11 @@ first.  To get read-only access to our repository:
       $ cd ..
 </pre>
      Then, move the libraries directory to the right location within
-     the nhc98 tree and delete the remaining fptools stuff:
+     the nhc98 tree, register it with CVS at that location, and delete
+     the remaining fptools stuff:
 <pre>
       $ mv fptools/libraries nhc/src/libraries
+      $ echo "D/libraries////" &gt;&gt; nhc/src/CVS/Entries
       $ rm -r fptools
 </pre>
 <li> From then on, you should no longer need the <em>-d</em> option,
@@ -139,7 +141,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2002.10.09<br>
+This page last modified: 2002.12.16<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
