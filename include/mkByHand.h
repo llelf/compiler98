@@ -34,3 +34,11 @@ char *getPackedString(NodePtr n);
 extern NodePtr mkForeign(void *x, gcCval f);		/* MW */
 extern NodePtr mkStablePtr(NodePtr x);			/* MW */
 extern NodePtr getStablePtr(NodePtr x);			/* MW */
+
+#define mkInt8(i)	mkInt((char)i)
+#define mkInt16(i)	mkInt((short)i)
+#define mkInt32(i)	mkInt((long)i)
+extern NodePtr mkInt64(long long i);
+#define sizeInt64 (1+EXTRA+2)
+
+extern long long get_64bit_value (NodePtr n);

@@ -422,6 +422,7 @@ extern void printIns(void);
 #define SIZE_FLOAT (EXTRA+2)
 #define SIZE_DOUBLE (EXTRA+3)
 #define SIZE_INT   (EXTRA+2)
+#define SIZE_INT64 (EXTRA+3)
 #define SIZE_APPLY (EXTRA+3)
 #define SIZE_VAP1  (EXTRA+2)
 #define SIZE_VAP2  (EXTRA+3)
@@ -435,6 +436,7 @@ extern void printIns(void);
 #define RSIZE_FLOAT 2
 #define RSIZE_DOUBLE 3
 #define RSIZE_INT   2
+#define RSIZE_INT64 3
 #define RSIZE_APPLY 3
 #define RSIZE_VAP1  2
 #define RSIZE_CONS  3
