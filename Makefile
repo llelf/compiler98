@@ -125,9 +125,6 @@ RUNTIME = \
 	src/runtime/Kernel/*.h \
 	src/runtime/Mk/Makefile* \
 	src/runtime/Mk/*.c
-#	src/runtime/Integer/stmpstddfh \
-#	src/runtime/Builtin/*.h \
-#	src/runtime/Mk/*.h
 
 RUNTIMET = \
 	src/tracer/Makefile* \
@@ -145,17 +142,15 @@ HATTOOLS= lib/$(MACHINE)/hat-stack lib/$(MACHINE)/hat-connect \
 	lib/$(MACHINE)/hat-check
 
 TARGDIR= targets
-TARGETS= runtime bootprelude prelude greencard hp2graph hat \
+TARGETS= runtime prelude greencard hp2graph hat \
 	 profruntime profprelude \
 	 timeruntime timeprelude \
 	 timetraceruntime timetraceprelude \
 	 traceruntime traceprelude \
-	 compiler-nhc compiler-hbc compiler-ghc \
-	 hmake-nhc hmake-hbc hmake-ghc \
-	 greencard-nhc greencard-hbc greencard-ghc \
-	 ccompiler cprelude cgreencard cpragma chmake
-
-#	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
+	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
+	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
+	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
+	 prelude-$(CC) pragma-$(CC)
 
 .PHONY: basic all tracer compiler help config install hat
 
@@ -164,16 +159,16 @@ TARGETS= runtime bootprelude prelude greencard hp2graph hat \
 
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
-compiler: compiler-${BUILDCOMP}
+compiler: hmake compiler-${BUILDCOMP}
+hmake: hmake-${BUILDCOMP}
 help:
-	@echo "Common targets include:        basic all install config"
-	@echo "                               clean realclean"
+	@echo "Common targets include: basic all install config"
+	@echo "                        clean realclean"
+	@echo "  (other subtargets:    compiler hmake runtime prelude"
+	@echo "                        profile timeprof tracer hp2graph hat)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
-	@echo "  (other subtargets: compiler runtime prelude profile timeprof tracer hp2graph"
-	@echo "                     compiler-hbc  compiler-ghc  compiler-nhc"
-	@echo "                     hmake-hbc     hmake-ghc     hmake-nhc"
-	@echo "                     greencard-hbc greencard-ghc greencard-nhc)"
+	@echo "                               etc..."
 
 config: script/errnogen.c
 	./configure --config
@@ -183,15 +178,14 @@ install:
 basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude
 basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude
 basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
-basic-gcc:        runtime cprelude cpragma ccompiler cgreencard chmake
-all-nhc: basic-nhc profile tracer $(TARGDIR)/hood #timeprof
-all-hbc: basic-hbc profile tracer $(TARGDIR)/hood #timeprof
-all-ghc: basic-ghc profile tracer $(TARGDIR)/hood #timeprof
-all-gcc: basic-gcc profile tracer $(TARGDIR)/hood #timeprof
+basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
+		 greencard-$(CC) hmake-$(CC)
+
+all-$(BUILDCOMP): basic-$(BUILDCOMP) profile tracer $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
-tracer: compiler traceruntime traceprelude $(TARGDIR)/traceui
+tracer: compiler-$(BUILDCOMP) traceruntime traceprelude $(TARGDIR)/traceui
 timetraceprof: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
@@ -200,6 +194,7 @@ $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
 	cd src/tracer/runtime; $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
+
 
 $(TARGDIR)/$(MACHINE)/compiler-nhc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=nhc98 install
@@ -210,18 +205,13 @@ $(TARGDIR)/$(MACHINE)/compiler-hbc: $(COMPILER)
 $(TARGDIR)/$(MACHINE)/compiler-ghc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/compiler-ghc
-$(TARGDIR)/$(MACHINE)/compiler-gcc: $(TARGDIR)/$(MACHINE)/ccompiler
 
-#$(TARGDIR)/$(MACHINE)/bootprelude:
-#	cd src/prelude;        $(MAKE) boot
-#	touch $(TARGDIR)/$(MACHINE)/bootprelude
+
 $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
-#$(TARGDIR)/$(MACHINE)/greencard: $(TARGDIR)/$(MACHINE)/bootprelude $(GREENCARD)
-#	cd src/greencard;      $(MAKE) install
-#	touch $(TARGDIR)/$(MACHINE)/greencard
+
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-nhc
@@ -232,8 +222,10 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
+
 $(PRAGMA): script/hmake-PRAGMA.hs
 	$(BUILDWITH) $(shell echo $(BUILDOPTS)) -cpp -o $@ $<
+
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
@@ -248,9 +240,11 @@ $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
 	cd src/interpreter;    $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
+
 $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
 	cd src/hp2graph;       $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/hp2graph
+
 
 $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=p install
@@ -260,15 +254,7 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
-#$(TARGDIR)/$(MACHINE)/tracecompiler-nhc: $(COMPILER)
-#	cd src/compiler98;     $(MAKE) CFG=T HC=nhc98 install
-#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-nhc
-#$(TARGDIR)/$(MACHINE)/tracecompiler-hbc: $(COMPILER)
-#	cd src/compiler98;     $(MAKE) CFG=T HC=hbc install
-#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-hbc
-#$(TARGDIR)/$(MACHINE)/tracecompiler-ghc: $(COMPILER)
-#	cd src/compiler98;     $(MAKE) CFG=T HC=ghc install
-#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-ghc
+
 $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=T install
 	cd src/tracer/runtime; $(MAKE) CFG=T install
@@ -280,7 +266,6 @@ $(TARGDIR)/traceui: lib/rtb.jar $(HATTOOLS)
 	touch $(TARGDIR)/traceui
 
 
-
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=tT install
 	cd src/tracer/runtime; $(MAKE) CFG=tT install
@@ -290,11 +275,11 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
 
 
-
 $(TARGDIR)/hood: lib/hood.jar
 	touch $(TARGDIR)/hood
 $(TARGDIR)/$(MACHINE)/hat: $(HATTOOLS)
 	touch $(TARGDIR)/$(MACHINE)/hat
+
 
 lib/rtb.jar: $(TRACEUI)
 	cd src/tracer/ui;      $(MAKE) CFG=T install
@@ -302,6 +287,7 @@ lib/hood.jar: $(HOODUI)
 	cd src/tracer/hoodui;  $(MAKE) install
 $(HATTOOLS): $(HATUI)
 	cd src/tracer/hat;     $(MAKE) install
+
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=t install
@@ -311,25 +297,27 @@ $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=t install
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 
-$(TARGDIR)/$(MACHINE)/cprelude: $(PRELUDEC)
+
+$(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) fromC 
-	touch $(TARGDIR)/$(MACHINE)/bootprelude $(TARGDIR)/$(MACHINE)/cprelude
-$(TARGDIR)/$(MACHINE)/ccompiler: $(COMPILERC)
+	touch $(TARGDIR)/$(MACHINE)/prelude-$(CC)
+$(TARGDIR)/$(MACHINE)/compiler-$(CC): $(COMPILERC)
 	cd src/compiler98;     $(MAKE) fromC
 	cd src/prelude/$(MACHINE); $(MAKE) clean all	# Patch machine-specific parts.
 	cd src/prelude;        $(MAKE) relink
 	cd src/compiler98;     $(MAKE) relink
-	touch $(TARGDIR)/$(MACHINE)/ccompiler
-$(TARGDIR)/$(MACHINE)/cgreencard: $(GREENCARDC)
+	touch $(TARGDIR)/$(MACHINE)/compiler-$(CC)
+$(TARGDIR)/$(MACHINE)/greencard-$(CC): $(GREENCARDC)
 	cd src/greencard;      $(MAKE) fromC
-	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/cgreencard
-$(TARGDIR)/$(MACHINE)/cpragma: script/hmake-PRAGMA.c
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-$(CC)
+$(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.c
 	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.c
-	touch $(TARGDIR)/$(MACHINE)/cpragma
-$(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
+	touch $(TARGDIR)/$(MACHINE)/pragma-$(CC)
+$(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
 	cd src/interpreter;    $(MAKE) fromC
-	touch $(TARGDIR)/$(MACHINE)/chmake
+	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
+
 
 script/errnogen.c: script/GenerateErrNo.hs
 	hmake script/GenerateErrNo
@@ -337,31 +325,6 @@ script/errnogen.c: script/GenerateErrNo.hs
 
 
 ##### scripts for packaging various distribution formats
-
-# Old, Haskell-only source distribution
-#srcDist:
-#	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
-#	tar cf nhc98src-$(VERSION).tar $(BASIC)
-#	#cd src/compiler98/; $(MAKE) cleandephs
-#	tar rf nhc98src-$(VERSION).tar $(COMPILER)
-#	#tar rf nhc98src-$(VERSION).tar $(DATA2C)
-#	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
-#	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
-#	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
-#	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
-#	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
-#	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
-#	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
-#	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
-#	tar rf nhc98src-$(VERSION).tar $(HMAKE)
-#	tar rf nhc98src-$(VERSION).tar $(MAN)
-#	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
-#	tar rf nhc98src-$(VERSION).tar $(DOC)
-#	mkdir nhc98-$(VERSION)
-#	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
-#	tar cf nhc98src-$(VERSION).tar nhc98-$(VERSION)
-#	rm -r nhc98-$(VERSION)
-#	gzip nhc98src-$(VERSION).tar
 
 binDist:
 	rm -f nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)-$(MACHINE).tar.gz
@@ -377,7 +340,6 @@ binDist:
 	rm -r nhc98-$(VERSION)
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
 
-# This srcDist used to be the cDist.
 srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC $(TARGDIR)/pragmaC nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
