@@ -506,6 +506,10 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 	*pmodule = strdup("Unknown");
 	*pname = strdup("prim");
 	break;
+    case NTContainer:
+	*pmodule = strdup("Unknown");
+	*pname = strdup("<vector>");
+	break;
     case NTCString:
 	*pmodule = strdup("Unknown");
 	np = GET_POINTER_ARG1(t, 1);

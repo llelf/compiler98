@@ -7,9 +7,10 @@ apa:
 	@echo "DCFG = ${DCFG}"
 
 ifeq "${TRACING}" "T"
-SRCS= io.c getconstr.c nodecache.c outputtrace.c minisocklib.c stub.c demo_server.c
+SRCS  = io.c getconstr.c nodecache.c outputtrace.c minisocklib.c \
+	stub.c demo_server.c vector.c
 else
-SRCS= dummy.c
+SRCS  = dummy.c
 endif
 
 OBJS= $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
@@ -61,4 +62,5 @@ ${OBJDIR}/nodecache.o: nodecache.c
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c  -o $@ $<
 ${OBJDIR}/dummy.o: dummy.c
 	$(CC) -c -o $@ $<
-
+${OBJDIR}/vector.o: vector.c getconstr.h 
+	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c vector.c -o $@

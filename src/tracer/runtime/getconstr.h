@@ -18,6 +18,7 @@
 #define NTCString	13
 #define NTIf		14
 #define NTGuard		15
+#define NTContainer	16
 /* NTTrusted == NTId + 16 */
 #define NTTrusted 	22
 
@@ -56,12 +57,14 @@ extern Node D_Prelude_46Right[];
 #define mkNmUnit() (&D_Prelude_46_91_93[0])
 #define mkNmRight() (&D_Prelude_46Right[0])
 #define mkNmTuple() mkNm(NTTuple)
+#define mkNmVector() mkNm(NTContainer)
 
 NodePtr mkNmWithArg(int tag, NodePtr x);
 NodePtr mkNm(int tag);
 NodePtr mkR(NodePtr v, NodePtr t);
 NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr);
 NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr);
+NodePtr mkTInd(NodePtr t1, NodePtr t2);
 
 extern Node C0_Prelude_46SR[];
 #define mkSR() ((NodePtr)C0_Prelude_46SR)

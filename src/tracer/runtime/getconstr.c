@@ -76,6 +76,18 @@ NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr)
   return n;
 }
 
+NodePtr mkTInd(NodePtr t1, NodePtr t2)
+{
+  NodePtr n = C_ALLOC(1+EXTRA+2);
+  n[0] = CONSTR(TagInd, 2, 0);
+#ifdef PROFILE
+  INIT_PROFINFO(n, &dummyProfInfo)
+#endif
+  n[EXTRA+1] = (Node)t1;
+  n[EXTRA+2] = (Node)t2;
+  return n;
+}
+
 NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
 {
   NodePtr n, nt, l, c, ch;
