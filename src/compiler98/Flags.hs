@@ -8,7 +8,7 @@ module Flags
   (Flags,processArgs,pF
   ,sProfile,sRedefine,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
   ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-  ,sIIBound,sIINeed,,sIIRename,sRBound,sRename
+  ,sIIBound,sIINeed,sIIRename,sRBound,sRename
   ,sTraceData,sDBound,sDerive
   ,sEBound,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile
   ,sPrelude
