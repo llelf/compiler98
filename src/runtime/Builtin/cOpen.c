@@ -101,7 +101,7 @@ void* openFileC (char* filename, int iom)
     case ReadMode:      type = "r";  break;
     case WriteMode:     type = "w";  break;
     case AppendMode:    type = "a";  break;
-    case ReadWriteMode: type = "rw"; break;
+    case ReadWriteMode: type = "r+"; break;
   }
 /*fprintf(stderr,"fopen: attempting to open file %s for %s\n",filename,type);*/
 
