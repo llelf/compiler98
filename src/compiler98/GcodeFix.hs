@@ -1,4 +1,4 @@
- module GcodeFix(gcodeFixInit,gcodeFix,gcodeFixFinish) where
+module GcodeFix(gcodeFixInit,gcodeFix,gcodeFixFinish) where
 
 import Gcode
 import IntState(strIS,tidIS,IntState,uniqueIS,lookupIS,globalIS,arityIS,miIS)
@@ -6,7 +6,7 @@ import Memo
 import AssocTree
 import TokenId (TokenId(..))
 import PackedString (PackedString)
-import DbgId(tR, t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden)
+import DbgId(t_R, t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden)
 import State
 import Info
 import Extra
@@ -16,8 +16,21 @@ import Flags
 
 data Down = Down 
 
-		  -- state    prof profstatics                strings                extralabels   live  used labels  before       after
-data Thread = Thread IntState Bool (AssocTree (Int,Int) Int) ((AssocTree String Int),[(Int,Gcode)]) Bool  (Memo Int)  Int [Gcode] Int [Gcode]
+data Thread = Thread 
+       IntState  -- state  
+       Bool -- prof 
+       (AssocTree (Int,Int) Int) -- profstatics
+       ((AssocTree String Int),[(Int,Gcode)]) -- strings, extralabels
+       Bool  -- live
+       (Memo Int)  -- used labels
+       Int [Gcode] -- before 
+       Int [Gcode] -- after
+
+
+type GcodeFixMonad a = State Down Thread a Thread
+
+
+gcodeFixInit :: IntState -> Flags -> (IntState,(Tree a,(Tree ([Char],Int),[(Int,Gcode)])))
 
 gcodeFixInit state flags =
   case uniqueIS state of
@@ -146,8 +159,14 @@ conInfo i down thread@(Thread state prof profstatics strings live labels nbs bs 
   nthcon n con (c:cs) = if con == c then n else nthcon (n+1) con cs
 --nthcon n con [] = error ("nthcon: n=="++show n++" con=="++show con++"\n")
 
+
+checkIfR :: Int -> GcodeFixMonad Bool 
+
 checkIfR i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
-    (tidIS state i == tR, thread)
+    (tidIS state i == t_R, thread)
+
+
+checkIfTrace :: Int -> GcodeFixMonad Bool
 
 checkIfTrace i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
     (tid == t_Ap || tid == t_Nm || tid == t_Ind || tid == t_Root || tid == t_Sat || tid == t_Pruned || tid == t_Hidden, thread)

@@ -11,12 +11,12 @@ module TokenInt(getInts,tokenMain,tokenAllways,tokenBounded,tokenEnum
 
 import IdKind
 import TokenId
-import DbgId
+import DbgId (tokenDbg)
 import AssocTree
 import Info
-import Extra(sndOf)
-import Tree234(treeMapList)
-import Id(Id)
+import Extra (sndOf)
+import Tree234 (treeMapList)
+import Id (Id)
 
 {-
 Creates from a partial mapping from tokenIds and idKinds to ids

@@ -12,11 +12,13 @@ import IdKind(IdKind(..))
 import State
 import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId
-import DbgId
 import Info(Info,isData,isMethod)
 import FSLib
 import Ratio
 import Machine
+import DbgId(t_R,t_ap,t_conInt,t_conInteger,t_conFloat,t_conDouble
+            ,t_fromConInteger,t_fromConRational
+            ,t_patFromConInteger,t_patFromConRational)
 import Id(Id)
 
 
@@ -193,27 +195,27 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType),
          && tidIS state qNum == tNum then
         if tidIS state qType == tInt then
          -- strace (strPos p++": literal Num pattern of type Int\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (LitInt b (fromInteger i))
                                     ,PatWildcard p])
         else if tidIS state qType == tInteger then
          -- strace (strPos p++": literal Num pattern of type Integer\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,l, PatWildcard p])
         else if tidIS state qType == tFloat then
          -- strace (strPos p++": literal Num pattern of type Float\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (litFloatInteger b i)
                                     ,PatWildcard p])
         else if tidIS state qType == tDouble then
          -- strace (strPos p++": literal Num pattern of type Double\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (LitDouble b (fromInteger i))
                                     ,PatWildcard p])
         else if tidIS state qType == tRational then
          -- strace (strPos p++": literal Num pattern of type Rational\n") $
          -- known to be wrong!
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (LitRational b (fromInteger i))
                                     ,PatWildcard p])
 	else error ("fsExp: strange expr(5) at "++ strPos p ++
@@ -312,17 +314,17 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tFloat then
          -- strace (strPos p++": literal Fract pattern of type Float\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (litFloatRational b i)
                                     ,PatWildcard p])
         else if tidIS state qType == tDouble then
          -- strace (strPos p++": literal Fract pattern of type Double\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,ExpLit p2 (LitDouble b (fromRational i))
                                     ,PatWildcard p])
         else if tidIS state qType == tRational then
          -- strace (strPos p++": literal Fract pattern of type Rational\n") $
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	    unitS (ExpApplication p [ExpCon p (tidFun (t_R, Con))
 	                            ,l ,PatWildcard p])
 	else error ("fsExp: strange expr(15) at "++ strPos p ++
                     "\n  definite ctx, pat on lhs is not Float or Double")

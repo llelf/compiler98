@@ -1,3 +1,6 @@
+{-
+Convert STG-code into a string for readable output.
+-}
 module StrPos(strPCode,strPExp) where
 
 import Extra(mixLine,mixSpace)

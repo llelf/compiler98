@@ -8,7 +8,7 @@ import Tree234
 import Extra(trace,noPos,pair,snub,mixSpace,assocDef)
 import IdKind
 import TokenId
-import DbgId
+import DbgId(tTrace,t_R,tSR,tDNum)
 import IntState
 import Syntax
 import SyntaxPos(Pos,HasPos(getPos))
@@ -423,7 +423,7 @@ wrapRTtvars pos =
 wrapRT :: Pos -> Type Id -> DbgDataTransMonad (Type Id)
 
 wrapRT pos t =
-  lookupId TCon tR >>>= \rid ->
+  lookupId TCon t_R >>>= \rid ->
   unitS (TypeCons pos rid [t])
 
 
@@ -473,7 +473,7 @@ dNT :: NT -> DbgDataTransMonad NT
 dNT t =
     lookupId TCon t_Arrow >>>= \arrow ->
     lookupId TCon tTrace >>>= \trail ->
-    lookupId TCon tR >>>= \rt ->
+    lookupId TCon t_R >>>= \rt ->
 {- superfluous
     lookupId TCon t_List >>>= \bilist ->
     lookupId TCon tList >>>= \list ->
@@ -502,7 +502,7 @@ dNT t =
 wrapNTRT :: NT -> DbgDataTransMonad NT
 
 wrapNTRT nt =
-  lookupId TCon tR >>>= \rt ->
+  lookupId TCon t_R >>>= \rt ->
   unitS (NTcons rt [nt])
 
 {-
@@ -513,7 +513,7 @@ wrapRNewType :: NewType -> DbgDataTransMonad NewType
 
 wrapRNewType (NewType free exist ctxs ts) =
   let (t:rts) = reverse ts in
-  lookupId TCon tR >>>= \rt ->
+  lookupId TCon t_R >>>= \rt ->
   unitS (NewType free exist ctxs 
            (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
 
@@ -536,7 +536,7 @@ type definition.
 dConstr :: Constr Id -> DbgDataTransMonad (Constr Id)
 
 dConstr (Constr pos id ts) = 
-    lookupId TCon tR >>>= \rid ->
+    lookupId TCon t_R >>>= \rid ->
     unitS (Constr pos id) =>>> 
     unitS (map (\(fieldnames, ty) -> (fieldnames, TypeCons pos rid [ty])) ts)
 

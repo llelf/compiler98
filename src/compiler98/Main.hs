@@ -590,6 +590,7 @@ nhcFixSyntax flags zcon tidFun code sridt (decls,state,t2i) =
 
 {-
 Remove pattern matching: Change all pattern matches to case expressions.
+Go from Haskell syntax to STG language (PosLambda).
 (actually done by preceding function)
 -}
 nhcCase :: Flags 
@@ -667,6 +668,7 @@ nhcCode1a flags tidFun zcon sridt (decls,state) = do
 
 {-
 Lambda lift
+introduces thunks
 (actually done by preceding function)
 -}
 nhcLift :: Flags 

@@ -12,7 +12,7 @@ import Syntax
 import IdKind
 import PreImport(HideDeclIds,qualRename,preImport)
 import TokenId
-import DbgId
+import DbgId(tokenDbg)
 import TokenInt
 import Flags(Flags(sDbgPrelude,sDbgTrans))
 import SyntaxPos

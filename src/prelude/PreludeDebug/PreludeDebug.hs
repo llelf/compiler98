@@ -14,12 +14,15 @@ import FFIBuiltin (Addr,ForeignObj,StablePtr)
 import FFIBuiltin (Int8,Int16,Int32,Int64,Word8,Word16,Word32,Word64)
 import PreludeBuiltin (Vector)
 
-sameAs :: a -> a -> Bool
-x `sameAs` y = cPointerEquality (E x) (E y)
-
-data _Value = _Evaluating | _Evaluated | _Closure
-
-data E a = E a
+-- begin HatArchive
+data Trace =
+     Ap Trace Traces SR
+   | Nm Trace NmType SR
+   | Ind Trace Trace
+   | Root
+   | Sat Trace Trace
+   | Pruned
+   | Hidden Trace
 
 data NmType =
      NTInt Int
@@ -40,38 +43,244 @@ data NmType =
    | NTGuard
    | NTContainer	-- introduced by MW for Handle/Vector/StablePtr etc.
 
+data SR = SR | SR2 Bool Int | SR3 Int 		-- SR2 no longer used
+
+data Traces = 
+     TNil
+   | TCons Trace Traces 
+
+trustedFun :: Trace -> Bool
+trustedFun t = False
+
+hidden :: Trace -> Bool
+hidden t = False
+
+mkTRoot :: Trace
+mkTRoot = Root
+
+mkTAp1 :: Trace -> Trace -> Trace -> SR -> Trace
+mkTAp1 t tf ta sr = t `myseq` tf `myseq` 
+  ta `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta TNil)) sr
+
+mkTAp2 :: Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp2 t tf ta tb sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb TNil))) sr
+
+mkTAp3 :: Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp3 t tf ta tb tc sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc TNil)))) sr
+
+mkTAp4 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp4 t tf ta tb tc td sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td TNil))))) sr
+
+mkTAp5 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+       -> SR -> Trace
+mkTAp5 t tf ta tb tc td te sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te TNil)))))) sr
+
+mkTAp6 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+       -> Trace -> SR -> Trace
+mkTAp6 t tf ta tb tc td te tf sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf TNil))))))) sr
+
+mkTAp7 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+       -> Trace -> Trace -> SR -> Trace
+mkTAp7 t tf ta tb tc td te tf tg sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg TNil)))))))) sr
+
+mkTAp8 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+       -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp8 t tf ta tb tc td te tf tg th sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` th `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg (TCons th TNil))))))))) sr
+
+mkTAp9 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+       -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp9 t tf ta tb tc td te tf tg th ti sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` th `myseq` ti `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg (TCons th (TCons ti TNil)))))))))) sr
+
+mkTAp10 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+        -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp10 t tf ta tb tc td te tf tg th ti tj sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` th `myseq` ti `myseq` tj `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
+       (TCons tj TNil))))))))))) sr
+
+mkTAp11 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+        -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
+mkTAp11 t tf ta tb tc td te tf tg th ti tj tk sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` th `myseq` ti `myseq` tj `myseq` tk `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
+       (TCons tj (TCons tk TNil)))))))))))) sr
+
+mkTAp12 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+        -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
+        -> SR -> Trace
+mkTAp12 t tf ta tb tc td te tf tg th ti tj tk tl sr = t `myseq` tf `myseq` 
+  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
+  tg `myseq` th `myseq` ti `myseq` tj `myseq` tk `myseq` tl `myseq` sr `myseq`
+  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
+       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
+       (TCons tj (TCons tk (TCons tl TNil))))))))))))) sr
+
+mkTNm :: Trace -> NmType -> SR -> Trace
+mkTNm t nm sr = t `myseq` nm `myseq` sr `myseq` Nm t nm sr
+
+mkTInd :: Trace -> Trace -> Trace
+mkTInd t1 t2 = t1 `myseq` t2 `myseq` Ind t1 t2
+
+mkTHidden :: Trace -> Trace
+mkTHidden t = t `myseq` Hidden t
+
+mkTSatA :: Trace -> Trace
+mkTSatA t = t `myseq` Sat t Root   -- wrong!
+
+mkTSatB :: Trace -> ()
+mkTSatB sat = ()   -- wrong!
+
+mkTSatC :: Trace -> Trace -> ()
+mkTSatC sat t = t `myseq` ()   -- wrong!
+
+mkNTInt :: Int -> NmType
+mkNTInt n = NTInt n
+
+mkNTChar :: Char -> NmType
+mkNTChar c = NTChar c
+
+mkNTInteger :: Integer -> NmType
+mkNTInteger i = NTInteger i
+
+mkNTRational :: Rational -> NmType
+mkNTRational r = NTRational r
+
+mkNTFloat :: Float -> NmType
+mkNTFloat f = NTFloat f
+
+mkNTDouble :: Double -> NmType
+mkNTDouble d = NTDouble d
+
+mkNTId' :: Int -> NmType
+mkNTId' n = NTId n   -- arity must be 1 for STGBuild to work correctly
+
+mkNTConstr' :: Int -> NmType
+mkNTConstr' n = NTConstr n  -- arity must be 1 for STGBuild to work correctly
+
+mkNTFun :: NmType
+mkNTFun = NTFun
+
+mkNTCase :: NmType
+mkNTCase = NTCase
+
+mkNTLambda :: NmType
+mkNTLambda = NTLambda
+
+mkNTIf :: NmType
+mkNTIf = NTIf
+
+mkNTGuard :: NmType
+mkNTGuard = NTGuard
+
+mkNTContainer :: NmType
+mkNTContainer = NTContainer
+
+
+mkNoSR :: SR
+mkNoSR = SR
+
+mkSR' :: Int -> SR  -- dummy to be replaced in STGBuild
+mkSR' n = SR
+
+
+{- Test if two traces are identical, i.e. the very same filepointer. -}
+sameAs :: Trace -> Trace -> Bool
+x `sameAs` y = cPointerEquality (E x) (E y)
+
+-- end HatArchive
+
+{-
+Invariant: the trace argument of R is always fully evaluated.
+Trace arguments that are passed to functions are always fully evaluated.
+(really?)
+-}
+
+data R a = R a Trace
+
+instance Eq a => Eq (R a) where
+    R x _ == R y _ = x == y
+
+instance Ord a => Ord (R a)
+
+type Fun a b = Trace -> R a -> R b
+
+
+{- data constructor R strict in trace argument -}
+mkR :: a -> Trace -> R a
+mkR x t = t `myseq` R x t
+
+
+-- used internally by cCheckEvaluation
+data _Value = _Evaluating | _Evaluated | _Closure
+
+
+data E a = E a
+
+
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
     toNm :: Trace -> a -> SR -> R a
-    toNm t v sr = R v (Nm t NTDummy sr)	-- for safety, we hope never required
+--    toNm t v sr = mkR v (mkTNm t mkNTDummy sr)	
+--    -- for safety, we hope never required
 instance NmCoerce Int where
-    toNm t v sr = R v (Nm t (NTInt v) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTInt v) sr)
 instance NmCoerce Char where
-    toNm t v sr = R v (Nm t (NTChar v) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTChar v) sr)
 instance NmCoerce Integer where
-    toNm t v sr = R v (Nm t (NTInteger v) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTInteger v) sr)
 instance NmCoerce Float where
-    toNm t v sr = R v (Nm t (NTFloat v) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTFloat v) sr)
 instance NmCoerce Double where
-    toNm t v sr = R v (Nm t (NTDouble v) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTDouble v) sr)
 instance NmCoerce Bool where
-    toNm t False sr = R False (Nm t (NTConstr 0) sr)
-    toNm t True  sr = R True  (Nm t (NTConstr 1) sr)
+    toNm t False sr = mkR False (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
+    toNm t True  sr = mkR True  (mkTNm t (mkNTConstr' 1) sr)  -- 1 wrong!
 instance NmCoerce () where
-    toNm t v sr = R v (Nm t (NTConstr 0) sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
 instance NmCoerce Addr where
-    toNm t v sr = R v (Nm t NTContainer sr)
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (StablePtr a) where
-    toNm t v sr = R v (Nm t NTContainer sr)
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce ForeignObj where
-    toNm t v sr = R v (Nm t NTContainer sr)
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce PackedString where
-    toNm t v sr = R v (Nm t NTContainer sr)
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (Vector a) where
-    toNm t v sr = R v (Nm t NTContainer sr)
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (Either a b) where
-    toNm t (Left  (R v (Nm _ nm x))) sr = R (Left  (R v (Nm t nm x))) t
-    toNm t (Right (R v (Nm _ nm x))) sr = R (Right (R v (Nm t nm x))) t
+    toNm t (Left  (R v (Nm _ nm x))) sr = 
+      let t' = mkR v (mkTNm t nm x) in t' `myseq` mkR (Left t') t
+    toNm t (Right (R v (Nm _ nm x))) sr = 
+      let t' = mkR v (mkTNm t nm x) in t' `myseq` mkR (Right t') t
 
 -- These types use dummies for now.  Ideally, we want to convert them to
 -- either Int or Integer (depending on size), but we can't do that yet
@@ -86,114 +295,78 @@ instance NmCoerce Word16
 instance NmCoerce Word32
 instance NmCoerce Word64
 
-{-
--- toNm required to coerce return value from a primitive into a Trace structure
-class NmCoerce a where
-    toNm :: a -> NmType
-    toNm = const NTDummy	-- for safety, should never actually be required
-instance NmCoerce Int where
-    toNm = NTInt
-instance NmCoerce Char where
-    toNm = NTChar
-instance NmCoerce Integer where
-    toNm = NTInteger
-instance NmCoerce Float where
-    toNm = NTFloat
-instance NmCoerce Double where
-    toNm = NTDouble
-instance NmCoerce Bool where
-    toNm False = NTConstr 0
-    toNm True  = NTConstr 1
-instance NmCoerce (a,b) where
-    toNm _ = NTTuple
--}
-
--- Don't change the order!!!
-data Trace =
-     Ap Trace Traces SR
-   | Nm Trace NmType SR
-   | Ind Trace Trace
-   | Root
-   | Sat Trace Trace
-   | Pruned
-   | Hidden Trace
-
-data SR = SR | SR2 Bool Int | SR3 Int 		-- SR2 no longer used
-
-data Traces = 
-     TNil
-   | TCons Trace Traces 
-
-data R a = R a Trace
-
-instance Eq a => Eq (R a) where
-    R x _ == R y _ = x == y
-
-instance Ord a => Ord (R a)
-
-type Fun a b = Trace -> R a -> R b
-
---instance (Show a) => Show (R a) where
---    showsPrec d (R a _) = showsPrec d a
 
 fatal primitive 1 :: Trace -> a
 --cContains primitive 1 :: E a -> [R b]
 --cGetConstrNm primitive 1 :: a -> NmType
 --cGetFunNm primitive 1 :: a -> NmType
-cCheckEvaluation primitive 1 :: E a -> _Value
+--cCheckEvaluation primitive 1 :: E a -> _Value
 cPointerEquality primitive 2 :: E a -> E a -> Bool
 cSeq primitive 2 :: a -> (E b) -> b
 cEnter primitive 3 :: NmType -> Trace -> E a -> a
 cInitializeDebugger primitive 1 :: E a -> a
-trusted primitive 2 :: Trace -> Trace -> Bool
-trust primitive 1 :: Trace -> Bool
+--trusted primitive 2 :: Trace -> Trace -> Bool
+--trust primitive 1 :: Trace -> Bool
 
 enter :: NmType -> Trace -> a -> a
 enter nm t e = cEnter nm t (E e)
 
--- counterpart to 'enter' for primitives: ensures that the result trace
--- is fully evaluated at exactly the same time as the result value.
+{-
+counterpart to 'enter' for primitives: ensures that the result trace
+is fully evaluated (the trace contains the result value).
+-}
 primEnter :: NmCoerce a => SR -> NmType -> Trace -> a -> R a
 primEnter sr nm t e = let v  = enter nm t e
                           vn = toNm t v sr
                       in v `myseq` vn
---primEnter sr nm t e = let v  = enter nm t e
---                          vn = toNm v 
---                      in v `myseq` vn `myseq` (R v (Nm t vn sr))
 
-getRedexes :: R a -> Trace
-getRedexes (R _ t) = t
+
+-- t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> a
 
 t_guard sr (R gv gt) e cont t = 
-    if trust t then
-        if gv then e t else cont t
-    else
-        let t' = Ap t (TCons (Nm t NTGuard sr) (TCons gt (TCons t TNil))) sr 
-	in  if gv then e t' else cont t'
+  if trustedFun t 
+    then if gv then e t else cont t
+    else let t' = mkTAp2 t (mkTNm t mkNTGuard sr) gt t sr
+	 in  t' `myseq` if gv then e t' else cont t'
+
+
+-- tif :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> a
 
 tif sr (R iv it) e1 e2 t = 
-    if trust t then
-        if iv then e1 t else e2 t
-    else
-        let t' = Ap t (TCons (Nm t NTIf sr) (TCons it (TCons t TNil))) sr 
-	in  if iv then e1 t' else e2 t'
+  if trustedFun t 
+    then if iv then e1 t else e2 t
+    else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
+         in  t' `myseq` if iv then e1 t' else e2 t'
 
---contains :: a -> [R b]
---contains x = cContains (E x)
 
-evaled :: a -> _Value
-evaled x = cCheckEvaluation (E x)
-
+{- used by _Driver -}
 initializeDebugger :: a -> a
 initializeDebugger a = 
     cInitializeDebugger (E a)
 
+
+{- A version of `seq' that is sure to work here -}
+myseq :: a -> b -> b
+
 myseq a b = cSeq a (E b)
 
-rseq (R v _) b = cSeq v (E b)
---rseq (R v _) b = cSeq v b
---rseq a b = b
+{- A version of $! that is sure to work here -}
+myseqAp :: (a -> b) -> a -> b
 
+myseqAp f x = x `myseq` f x
+
+
+{- used by 
+   PrimExitWith, PrimPackString, PrimUnpackPS, Enum_Char, Eq_Int, LowVector -}
+rseq :: R a -> b -> b
+
+rseq (R v _) b = cSeq v (E b)
+
+
+{- used by PreludeIO.Monad_IO 
+Sets in a global variable the trace of the passed function.
+This trace is the parent for subsequent output.
+-}
 setOutputContext :: SR -> Trace -> R (Trace -> R (Trace -> R a -> R b)
                                             -> R (Trace -> R a -> R b))
 setOutputContext sr t =
@@ -205,530 +378,319 @@ setOutputContext sr t =
 
 _tprim_setOutputContext primitive 2 :: Trace -> E (R a) -> R a
 
-{-
-storeTrailToo :: SR -> Trace -> R (Trace -> R (Trace -> R a -> R b)
-                                         -> R (Trace -> R a -> R b))
-storeTrailToo sr t0 =
-    R (\t1 xf@(R rf rft) ->
-        R (\t2 a@(R ra rat) ->
-            ap1 sr t2 xf (R a t2))
-          t1)
-      t0
--}
 
 
 -- ---------------------------------------------------------- --
 
-hidden h@(Hidden _) = h
-hidden t            = Hidden t
+{- Mark trace as incomplete due to trusting. -}
+hide :: Trace -> Trace
+
+hide t = if hidden t then t else mkTHidden t
+
+
+{- Check if function and application trace are trusted. -}
+trusted :: Trace -> Trace -> Bool
+
+trusted t tf = trustedFun tf && trustedFun t
+
+
+{- combinators for n-ary application in a non-projective context. -}
+ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
 ap1 sr t (R rf tf) a@(R _ at) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> rf t a
-    else
-        let t1 = Ap t (TCons tf (TCons at TNil)) sr
-	in rf t1 a
+  let t' = if trusted t tf
+             then hide t
+             else mkTAp1 t tf at sr
+  in  t' `myseq` rf t' a
 
 ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap1 sr t (rf t a) b
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt TNil))) sr
-	in pap1 sr t1 (rf t1 a) b
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp2 t tf at bt sr
+  in  t' `myseq` pap1 sr t' (rf t' a) b
 
-ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt)  c@(R _ ct) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap2 sr t (rf t a) b c
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct TNil)))) sr
-	in pap2 sr t1 (rf t1 a) b c
+ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp3 t tf at bt ct sr
+  in  t' `myseq` pap2 sr t' (rf t' a) b c
 
-ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt)  c@(R _ ct) d@(R _ dt) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap3 sr t (rf t a) b c d
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt TNil))))) sr
-	in pap3 sr t1 (rf t1 a) b c d
+ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp4 t tf at bt ct dt sr
+  in  t' `myseq` pap3 sr t' (rf t' a) b c d
 
-ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt)  c@(R _ ct) d@(R _ dt) e@(R _ et) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap4 sr t (rf t a) b c d e
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt
-                                        (TCons et TNil)))))) sr
-	in pap4 sr t1 (rf t1 a) b c d e
+ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp5 t tf at bt ct dt et sr
+  in  t' `myseq` pap4 sr t' (rf t' a) b c d e
 
 ap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap5 sr t (rf t a) b c d e f
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt
-                                        (TCons et
-                                          (TCons ft TNil))))))) sr
-	in pap5 sr t1 (rf t1 a) b c d e f
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp6 t tf at bt ct dt et ft sr
+  in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
 
 ap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap6 sr t (rf t a) b c d e f g
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt
-                                        (TCons et
-                                          (TCons ft
-                                            (TCons gt TNil)))))))) sr
-	in pap6 sr t1 (rf t1 a) b c d e f g
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp7 t tf at bt ct dt et ft gt sr
+  in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
 
 ap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap7 sr t (rf t a) b c d e f g h
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt
-                                        (TCons et
-                                          (TCons ft
-                                            (TCons gt
-                                              (TCons ht TNil))))))))) sr
-	in pap7 sr t1 (rf t1 a) b c d e f g h
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp8 t tf at bt ct dt et ft gt ht sr
+  in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
 
 ap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap8 sr t (rf t a) b c d e f g h i
-    else
-        let t1 = Ap t (TCons tf (TCons at
-                                  (TCons bt
-                                    (TCons ct
-                                      (TCons dt
-                                        (TCons et
-                                          (TCons ft
-                                            (TCons gt
-                                              (TCons ht
-                                                (TCons it TNil)))))))))) sr
-	in pap8 sr t1 (rf t1 a) b c d e f g h i
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp9 t tf at bt ct dt et ft gt ht it sr
+  in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
+
+
+ap10 :: SR -> Trace 
+     -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun f (Fun g (Fun h 
+        (Fun i (Fun j r)))))))))) 
+     -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i -> R j 
+     -> R r 
 
 ap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap9 sr t (rf t a) b c d e f g h i j
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt TNil))))))))))) sr
-	in pap9 sr t1 (rf t1 a) b c d e f g h i j
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+  in  t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
 
 ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) = 
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap10 sr t (rf t a) b c d e f g h i j k
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt
-                                            (TCons kt TNil)))))))))))) sr
-	in pap10 sr t1 (rf t1 a) b c d e f g h i j k
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+  in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k
 
 ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) l@(R _ lt) =  
-    if trusted t tf then
-        case hidden t of
-	    t@(Hidden _) -> pap11 sr t (rf t a) b c d e f g h i j k l
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt
-                                            (TCons kt
-                                              (TCons lt TNil))))))))))))) sr
-	in pap11 sr t1 (rf t1 a) b c d e f g h i j k l
+  let t' = if trusted t tf 
+             then hide t
+             else mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
+  in  t' `myseq` pap11 sr t' (rf t' a) b c d e f g h i j k l
+
+
+{- 
+Combinators for n-ary applications in a projective context 
+The difference to the ap_n combinators is that in the case
+of trusting no hidden trace node has to be created,
+because the skipped trace node has the same type as the 
+parent redex.
+-}
+
+rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
 rap1 sr t (R rf tf) a@(R _ at) = 
-    if trusted t tf then
-        rf t a
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at TNil)) sr
-	in rf t1 a
+  if trusted t tf 
+    then rf t a
+    else let t' = mkTAp1 t tf at sr
+	 in  t' `myseq` rf t' a
+
+
+rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
 
 rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-    if trusted t tf then
-	pap1 sr t (rf t a) b
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt TNil))) sr
-	in pap1 sr t1 (rf t1 a) b
+  if trusted t tf 
+    then pap1 sr t (rf t a) b
+    else let t' = mkTAp2 t tf at bt sr
+         in  t' `myseq` pap1 sr t' (rf t' a) b
 
 rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-    if trusted t tf then
-	pap2 sr t (rf t a) b c
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct TNil)))) sr
-	in pap2 sr t1 (rf t1 a) b c
+  if trusted t tf 
+    then pap2 sr t (rf t a) b c
+    else let t' = mkTAp3 t tf at bt ct sr
+ 	 in  t' `myseq` pap2 sr t' (rf t' a) b c
 
 rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
-    if trusted t tf then
-	pap3 sr t (rf t a) b c d
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt TNil))))) sr
-	in pap3 sr t1 (rf t1 a) b c d
+  if trusted t tf 
+    then pap3 sr t (rf t a) b c d
+    else let t' = mkTAp4 t tf at bt ct dt sr
+	  in t' `myseq` pap3 sr t' (rf t' a) b c d
 
 rap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
-    if trusted t tf then
-	pap4 sr t (rf t a) b c d e
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et TNil)))))) sr
-	in pap4 sr t1 (rf t1 a) b c d e
+  if trusted t tf 
+    then pap4 sr t (rf t a) b c d e
+    else let t' = mkTAp5 t tf at bt ct dt et sr
+	 in  t' `myseq` pap4 sr t' (rf t' a) b c d e
 
 rap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) = 
-    if trusted t tf then
-	pap5 sr t (rf t a) b c d e f
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft TNil))))))) sr
-	in pap5 sr t1 (rf t1 a) b c d e f
+  if trusted t tf 
+    then pap5 sr t (rf t a) b c d e f
+    else let t' = mkTAp6 t tf at bt ct dt et ft sr
+         in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
 
 rap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) = 
-    if trusted t tf then
-	pap6 sr t (rf t a) b c d e f g
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt TNil)))))))) sr
-	in pap6 sr t1 (rf t1 a) b c d e f g
+  if trusted t tf 
+    then pap6 sr t (rf t a) b c d e f g
+    else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
+	 in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
 
 rap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
-    if trusted t tf then
-	pap7 sr t (rf t a) b c d e f g h
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht TNil))))))))) sr
-	in pap7 sr t1 (rf t1 a) b c d e f g h
+  if trusted t tf 
+    then pap7 sr t (rf t a) b c d e f g h
+    else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
+	 in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
 
 rap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
-    if trusted t tf then
-	pap8 sr t (rf t a) b c d e f g h i
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it TNil)))))))))) sr
-	in pap8 sr t1 (rf t1 a) b c d e f g h i
+  if trusted t tf 
+    then pap8 sr t (rf t a) b c d e f g h i
+    else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
+	 in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
 
 rap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
-    if trusted t tf then
-	pap9 sr t (rf t a) b c d e f g h i j
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt TNil))))))))))) sr
-	in pap9 sr t1 (rf t1 a) b c d e f g h i j
+  if trusted t tf 
+    then pap9 sr t (rf t a) b c d e f g h i j
+    else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+	 in  t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
 
 rap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) = 
-    if trusted t tf then
-	pap10 sr t (rf t a) b c d e f g h i j k
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt
-                                            (TCons kt TNil)))))))))))) sr
-	in pap10 sr t1 (rf t1 a) b c d e f g h i j k
+  if trusted t tf 
+    then pap10 sr t (rf t a) b c d e f g h i j k
+    else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+	 in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k
 
 rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) l@(R _ lt) =  
-    if trusted t tf then
-	pap11 sr t (rf t a) b c d e f g h i j k l
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt
-                                            (TCons kt
-                                              (TCons lt TNil))))))))))))) sr
-	in pap11 sr t1 (rf t1 a) b c d e f g h i j k l
+  if trusted t tf 
+    then pap11 sr t (rf t a) b c d e f g h i j k l
+    else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
+	 in  t' `myseq` pap11 sr t' (rf t' a) b c d e f g h i j k l
 
+
+{- 
+Combinators for n-ary application used by the combinators above.
+Introduces a new application node if the function is a saturated
+application.
+-}
+pap0 :: Trace -> R r -> R r
 
 pap0 t e = e
 
+
+pap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
+
 pap1 sr t (R rf tf) a@(R _ at) =
-    if t `sameAs` tf then
-        rf t a
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at TNil)) sr
-        in rf t1 a
+  if t `sameAs` tf 
+    then rf t a
+    else let t' = mkTAp1 t tf at sr
+         in  t' `myseq` rf t' a
 
 pap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) =
-    if t `sameAs` tf then
-        pap1 sr t (rf t a) b
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt TNil))) sr
-        in pap1 sr t1 (rf t1 a) b
+  if t `sameAs` tf 
+    then pap1 sr t (rf t a) b
+    else let t' = mkTAp2 t tf at bt sr
+         in  t' `myseq` pap1 sr t' (rf t' a) b
 
 pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
-    if t `sameAs` tf then
-        pap2 sr t (rf t a) b c
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct TNil)))) sr
-        in pap2 sr t1 (rf t1 a) b c
+  if t `sameAs` tf 
+    then pap2 sr t (rf t a) b c
+    else let t' = mkTAp3 t tf at bt ct sr
+         in t' `myseq` pap2 sr t' (rf t' a) b c
 
 pap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
-    if t `sameAs` tf then
-        pap3 sr t (rf t a) b c d
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt TNil))))) sr
-        in pap3 sr t1 (rf t1 a) b c d
+  if t `sameAs` tf 
+    then pap3 sr t (rf t a) b c d
+    else let t' = mkTAp4 t tf at bt ct dt sr
+         in  t' `myseq` pap3 sr t' (rf t' a) b c d
 
 pap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
-    if t `sameAs` tf then
-        pap4 sr t (rf t a) b c d e
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et TNil)))))) sr
-        in pap4 sr t1 (rf t1 a) b c d e
+  if t `sameAs` tf 
+    then pap4 sr t (rf t a) b c d e
+    else let t' = mkTAp5 t tf at bt ct dt et sr
+         in  t' `myseq` pap4 sr t' (rf t' a) b c d e
 
 pap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) =
-    if t `sameAs` tf then
-        pap5 sr t (rf t a) b c d e f
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft TNil))))))) sr
-        in pap5 sr t1 (rf t1 a) b c d e f
+  if t `sameAs` tf 
+    then pap5 sr t (rf t a) b c d e f
+    else let t' = mkTAp6 t tf at bt ct dt et ft sr
+         in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
 
 pap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) =
-    if t `sameAs` tf then
-        pap6 sr t (rf t a) b c d e f g
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt TNil)))))))) sr
-        in pap6 sr t1 (rf t1 a) b c d e f g
+  if t `sameAs` tf 
+    then pap6 sr t (rf t a) b c d e f g
+    else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
+         in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
 
 pap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) =
-    if t `sameAs` tf then
-        pap7 sr t (rf t a) b c d e f g h
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht TNil))))))))) sr
-        in pap7 sr t1 (rf t1 a) b c d e f g h
+  if t `sameAs` tf 
+    then pap7 sr t (rf t a) b c d e f g h
+    else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
+         in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
+
+
+pap9 :: SR -> Trace 
+     -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun f (Fun g (Fun h 
+        (Fun i r))))))))) 
+     -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i 
+     -> R r 
 
 pap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
-    if t `sameAs` tf then
-        pap8 sr t (rf t a) b c d e f g h i
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it TNil)))))))))) sr
-        in pap8 sr t1 (rf t1 a) b c d e f g h i
+  if t `sameAs` tf 
+    then pap8 sr t (rf t a) b c d e f g h i
+    else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
+         in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
 
 pap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
-    if t `sameAs` tf then
-        pap9 sr t (rf t a) b c d e f g h i j
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt TNil))))))))))) sr
-        in pap9 sr t1 (rf t1 a) b c d e f g h i j
+  if t `sameAs` tf 
+    then pap9 sr t (rf t a) b c d e f g h i j
+    else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+         in t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
 
 pap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) =
-    if t `sameAs` tf then
-        pap10 sr t (rf t a) b c d e f g h i j k
-    else
-        let t1 = Ap t (TCons tf
-                        (TCons at
-                          (TCons bt
-                            (TCons ct
-                              (TCons dt
-                                (TCons et
-                                  (TCons ft
-                                    (TCons gt
-                                      (TCons ht
-                                        (TCons it
-                                          (TCons jt
-                                            (TCons kt TNil)))))))))))) sr
-        in pap10 sr t1 (rf t1 a) b c d e f g h i j k 
+  if t `sameAs` tf 
+    then pap10 sr t (rf t a) b c d e f g h i j k
+    else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+         in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k 
+
 
 
 {-
 Assure that a trace component of wrapped value exists by construction of Sat.
-Used for Cafs.
+Directly used for Cafs
+and used for fun_n, prim_n.
 -}
 lazySat :: R a -> Trace -> R a
 
-lazySat a t = 
-  let R v vt = a in R v (Sat t vt)
+lazySat x t = 
+  let sat = mkTSatA t
+  in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
+          case x of -- create trace for (unevaluated x/v)
+            R v vt ->
+              v `myseq` -- evaluate v and thus extend trace for v
+              mkTSatC sat vt `myseq` -- set trace for evaluated v
+              v) -- return value
+       sat
 
 
 -- The following combinator is currently not used.
@@ -739,145 +701,99 @@ lazySat a t =
 patvar :: NmType -> R a -> SR -> Trace -> R a
 
 patvar nm (R v vt) sr t = 
-  R v (Ind (Nm t nm sr) vt)
+  mkR v (mkTInd (mkTNm t nm sr) vt)
 
-{- old:
-patvar nm (R v vt) sr t = 
-    R v (Nm vt nm sr)
--}
 
-caf rv = \sr t -> rv 
-
-{-
-caf nm rv = 
-    \sr t ->  
-    let R r rt = rv
-	t' = Nm t nm sr
-    in R r (Sat t' rt)
--}
-
+{- Combintors for transforming n-ary functions. -}
+fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
-  let t' = Nm t nm sr
-      R r rt = enter nm t' (rf t)
-  in R r (Sat t' rt)
+  let t' = mkTNm t nm sr
+  in t' `myseq` lazySat (enter nm t' (rf t)) t'  -- t here correct?
+
+
+fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
+     -> R (Trace -> R a -> R r)
 
 fun1 nm rf sr t = 
-  R (\t a ->
-      let (R r rt) = enter nm t (rf t a)
-      in R r (Sat t rt))
-    (Nm t nm sr)
+  mkR (\t a -> lazySat (enter nm t (rf t a)) t)
+      (mkTNm t nm sr)
 
 fun2 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-        let (R r rt) = enter nm t (rf t a b)
-        in R r (Sat t rt))
-      t)
-    (Nm t nm sr)
+  mkR (\t a ->
+      R (\t b -> lazySat (enter nm t (rf t a b)) t)
+        t)
+      (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-          let (R r rt) = enter nm t (rf t a b c)
-          in R r (Sat t rt))
-        t)
-      t)
-    (Nm t nm sr)
-
-fun4 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-            let (R r rt) = enter nm t (rf t a b c d)
-            in R r (Sat t rt))
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c -> lazySat (enter nm t (rf t a b c)) t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun5 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-              let (R r rt) = enter nm t (rf t a b c d e)
-              in R r (Sat t rt))
+fun4 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d -> lazySat (enter nm t (rf t a b c d)) t)
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun6 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-                let (R r rt) = enter nm t (rf t a b c d e f)
-                in R r (Sat t rt))
+fun5 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e -> lazySat (enter nm t (rf t a b c d e)) t)
               t)
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun7 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                  let (R r rt) = enter nm t (rf t a b c d e f g)
-                  in R r (Sat t rt))
+fun6 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f -> lazySat (enter nm t (rf t a b c d e f)) t)
                 t)
               t)
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun8 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                R (\t h ->
-                    let (R r rt) = enter nm t (rf t a b c d e f g h)
-                    in R r (Sat t rt))
+fun7 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g -> lazySat (enter nm t (rf t a b c d e f g)) t)
                   t)
                 t)
               t)
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun9 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                R (\t h ->
-                  R (\t i ->
-                      let (R r rt) = enter nm t (rf t a b c d e f g h i)
-                      in R r (Sat t rt))
+fun8 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h -> lazySat (enter nm t (rf t a b c d e f g h)) t)
                     t)
                   t)
                 t)
@@ -885,22 +801,18 @@ fun9 nm rf sr t =
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun10 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                R (\t h ->
-                  R (\t i ->
-                    R (\t j ->
-                        let (R r rt) = enter nm t (rf t a b c d e f g h i j)
-                        in R r (Sat t rt))
+fun9 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i -> lazySat (enter nm t (rf t a b c d e f g h i)) t)
                       t)
                     t)
                   t)
@@ -909,23 +821,20 @@ fun10 nm rf sr t =
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun11 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                R (\t h ->
-                  R (\t i ->
-                    R (\t j ->
-                      R (\t k ->
-                          let (R r rt) = enter nm t (rf t a b c d e f g h i j k)
-                          in R r (Sat t rt))
+fun10 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j -> lazySat (enter nm t (rf t a b c d e f g 
+                                                           h i j)) t)
                         t)
                       t)
                     t)
@@ -935,25 +844,21 @@ fun11 nm rf sr t =
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
-fun12 nm rf sr t = 
-  R (\t a ->
-    R (\t b ->
-      R (\t c ->
-        R (\t d ->
-          R (\t e ->
-            R (\t f ->
-              R (\t g ->
-                R (\t h ->
-                  R (\t i ->
-                    R (\t j ->
-                      R (\t k ->
-                        R (\t l ->
-                            let (R r rt) =
-                                  enter nm t (rf t a b c d e f g h i j k l)
-                            in R r (Sat t rt))
+fun11 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k -> lazySat (enter nm t (rf t a b c d e f g 
+                                                             h i j k)) t)
                           t)
                         t)
                       t)
@@ -964,17 +869,35 @@ fun12 nm rf sr t =
             t)
           t)
         t)
-      t)
-    (Nm t nm sr)
+      (mkTNm t nm sr)
 
+fun12 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l -> lazySat (enter nm t (rf t a b c d e f g 
+                                                               h i j k l)) t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (mkTNm t nm sr)
 
-{-
-noIfTrace (Hidden _) = True
-noIfTrace (Ap _ (TCons t _) _) = trustedFun t
-noIfTrace (Nm _ nm _) = trustedName nm
-noIfTrace (Sat t _) = trustedFun t
-noIfTrace (Ind ct _) = trustedFun t
--}
 
 -- These four functions are dummies, introduced by the tracing compiler
 -- and then eliminated again before code generation.
@@ -991,321 +914,207 @@ patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
 patFromConRational sr t x = R 1 Root
 ----
 
-rPatBool :: R Bool -> Bool	-- used in the transformation of litpatterns
+{- Used in module Case to translate overloaded numbers in patterns;
+these appear in the prelude in SplitAt, Take, Drop 
+-}
+rPatBool :: R Bool -> Bool	
 rPatBool (R v _) = v
 
-indir :: Trace -> R a -> R a
-indir t (R v t') = R v (Ind t t')
 
+{- For lambda-bound variables in projective context. -}
+indir :: Trace -> R a -> R a
+indir t (R v t') = mkR v (mkTInd t t')
+
+
+{- Combinators for literals in expressions. -}
 conInt :: SR -> Trace -> Int -> R Int
-conInt sr t n = R n (Nm t (NTInt n) sr)
+conInt sr t n = mkR n (mkTNm t (mkNTInt n) sr)
 
 conChar :: SR -> Trace -> Char -> R Char
-conChar sr t c = R c (Nm t (NTChar c) sr)
+conChar sr t c = mkR c (mkTNm t (mkNTChar c) sr)
 
 conInteger :: SR -> Trace -> Integer -> R Integer
-conInteger sr t b = R b (Nm t (NTInteger b) sr)
+conInteger sr t b = mkR b (mkTNm t (mkNTInteger b) sr)
 
 conFloat :: SR -> Trace -> Float -> R Float
-conFloat sr t b = R b (Nm t (NTFloat b) sr)
+conFloat sr t b = mkR b (mkTNm t (mkNTFloat b) sr)
 
 conDouble :: SR -> Trace -> Double -> R Double
-conDouble sr t b = R b (Nm t (NTDouble b) sr)
+conDouble sr t b = mkR b (mkTNm t (mkNTDouble b) sr)
 
 conRational :: SR -> Trace -> Rational -> R Rational
-conRational sr t b = R b (Nm t (NTRational b) sr)
+conRational sr t b = mkR b (mkTNm t (mkNTRational b) sr)
 
 
+{- Combinators for saturated n-ary applications of data constructors. -}
+con0 :: SR -> Trace -> r -> NmType -> R r
 con0 sr t cn nm =
-  R cn (Nm t nm sr)
+  mkR cn (mkTNm t nm sr)
 
+con1 :: SR -> Trace -> (R a -> r) -> NmType -> R a -> R r
 con1 sr t cn nm a@(R _ at) =
-  R (cn a)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at TNil)) sr)
+  mkR (cn a) (mkTAp1 t (mkTNm t nm sr) at sr)
 
 con2 sr t cn nm a@(R _ at) b@(R _ bt) =
-  R (cn a b)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt TNil))) sr)
+  mkR (cn a b) (mkTAp2 t (mkTNm t nm sr) at bt sr)
 
 con3 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  R (cn a b c)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct TNil)))) sr)
+  mkR (cn a b c) (mkTAp3 t (mkTNm t nm sr) at bt ct sr)
 
 con4 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
-  R (cn a b c d)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt TNil))))) sr)
+  mkR (cn a b c d) (mkTAp4 t (mkTNm t nm sr) at bt ct dt sr)
 
 con5 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
-  R (cn a b c d e)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et TNil)))))) sr)
+  mkR (cn a b c d e) (mkTAp5 t (mkTNm t nm sr) at bt ct dt et sr)
 
 con6 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) =
-  R (cn a b c d e f)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft TNil))))))) sr)
+  mkR (cn a b c d e f) (mkTAp6 t (mkTNm t nm sr) at bt ct dt et ft sr)
 
 con7 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) =
-  R (cn a b c d e f g)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt TNil)))))))) sr)
+  mkR (cn a b c d e f g) (mkTAp7 t (mkTNm t nm sr) at bt ct dt et ft gt sr)
 
 con8 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) h@(R _ ht) =
-  R (cn a b c d e f g h)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt
-                          (TCons ht TNil))))))))) sr)
+  mkR (cn a b c d e f g h) 
+    (mkTAp8 t (mkTNm t nm sr) at bt ct dt et ft gt ht sr)
 
 con9 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
-  R (cn a b c d e f g h i)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt
-                          (TCons ht
-                            (TCons it TNil)))))))))) sr)
+  mkR (cn a b c d e f g h i) 
+    (mkTAp9 t (mkTNm t nm sr) at bt ct dt et ft gt ht it sr)
 
 con10 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
-  R (cn a b c d e f g h i j)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt
-                          (TCons ht
-                            (TCons it
-                              (TCons jt TNil))))))))))) sr)
+  mkR (cn a b c d e f g h i j)
+    (mkTAp10 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt sr)
 
 con11 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) =
-  R (cn a b c d e f g h i j k)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt
-                          (TCons ht
-                            (TCons it
-                              (TCons jt
-                                (TCons kt TNil)))))))))))) sr)
+  mkR (cn a b c d e f g h i j k)
+    (mkTAp11 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt sr)
 
 con12 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) l@(R _ lt) =
-  R (cn a b c d e f g h i j k l)
-    (Ap t (TCons (Nm t nm sr)
-            (TCons at
-              (TCons bt
-                (TCons ct
-                  (TCons dt
-                    (TCons et
-                      (TCons ft
-                        (TCons gt
-                          (TCons ht
-                            (TCons it
-                              (TCons jt
-                                (TCons kt
-                                  (TCons lt TNil))))))))))))) sr)
-
-getArgRedexes ((R _ t) : rts) = myseq t (TCons t (getArgRedexes rts))
-getArgRedexes [] = TNil
-
-mkAp n t sr TNil = n
-mkAp n t sr args = Ap t (TCons n args) sr
-
-spine (TCons  _ xs) = spine xs
-spine TNil = ()
-
-value (R v _) = v
+  mkR (cn a b c d e f g h i j k l)
+    (mkTAp12 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt sr)
 
 
--- Combinators for using primitives:   prim_n
+{-
+Combinators for calling foreign functions:   prim_n
+Definitions identical to those of fun_n, except for the use of primEnter
+instead of enter and that the unwrapped arguments are passed.
+(Maybe common abstraction should be defined?)
+-}
+
+prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
 
 prim0 nm rf sr t = 
-  let tf = Nm t nm sr
-  in (\(R v vt)->
-       R v (Sat tf vt))
-     (primEnter sr nm tf rf)
+  let tf = mkTNm t nm sr
+  in tf `myseq` lazySat (primEnter sr nm tf rf) tf
+
+
+prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at) ->
-      (\(R v vt)->
-        R v (Sat t1 vt))
-      (primEnter sr nm t1 (rf a)))
-    tf
+  mkR (\t (R a at) -> lazySat (primEnter sr nm t (rf a)) t)
+    (mkTNm t nm sr)
+
+
+prim2 :: NmCoerce r => 
+         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
 
 prim2 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-        (\(R v vt)->
-          R v (Sat t2 vt))
-        (primEnter sr nm t2 (rf a b)))
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)-> lazySat (primEnter sr nm t (rf a b)) t)
+      t)
+    (mkTNm t nm sr)
 
 prim3 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-          (\(R v vt)->
-            R v (Sat t3 vt))
-          (primEnter sr nm t3 (rf a b c)))
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)-> lazySat (primEnter sr nm t (rf a b c)) t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim4 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-            (\(R v vt)->
-              R v (Sat t4 vt))
-            (primEnter sr nm t4 (rf a b c d)))
-          t3)
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)-> lazySat (primEnter sr nm t (rf a b c d)) t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim5 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-              (\(R v vt)->
-                R v (Sat t5 vt))
-              (primEnter sr nm t5 (rf a b c d e)))
-            t4)
-          t3)
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)-> lazySat (primEnter sr nm t (rf a b c d e)) t)
+            t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim6 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-                (\(R v vt)->
-                  R v (Sat t6 vt))
-                (primEnter sr nm t6 (rf a b c d e f)))
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)-> lazySat (primEnter sr nm t (rf a b c d e f)) t)
+              t)
+            t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim7 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                  (\(R v vt)->
-                    R v (Sat t7 vt))
-                  (primEnter sr nm t7 (rf a b c d e f g)))
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)->
+              R (\t (R g gt)-> 
+                  lazySat (primEnter sr nm t (rf a b c d e f g)) t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim8 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                    (\(R v vt)->
-                      R v (Sat t8 vt))
-                    (primEnter sr nm t8 (rf a b c d e f g h)))
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
-    tf
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)->
+              R (\t (R g gt)->
+                R (\t (R h ht)-> 
+                    lazySat (primEnter sr nm t (rf a b c d e f g h)) t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
 
 prim9 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
+  mkR (\t1 (R a at)->
     R (\t2 (R b bt)->
       R (\t3 (R c ct)->
         R (\t4 (R d dt)->
@@ -1314,9 +1123,7 @@ prim9 nm rf sr t =
               R (\t7 (R g gt)->
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
-                      (\(R v vt)->
-                        R v (Sat t9 vt))
-                      (primEnter sr nm t9 (rf a b c d e f g h i)))
+                      lazySat (primEnter sr nm t9 (rf a b c d e f g h i)) t9)
                     t8)
                   t7)
                 t6)
@@ -1325,12 +1132,10 @@ prim9 nm rf sr t =
           t3)
         t2)
       t1)
-    tf
+    (mkTNm t nm sr)
 
 prim10 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
+  mkR (\t1 (R a at)->
     R (\t2 (R b bt)->
       R (\t3 (R c ct)->
         R (\t4 (R d dt)->
@@ -1340,9 +1145,8 @@ prim10 nm rf sr t =
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
-                        (\(R v vt)->
-                          R v (Sat t vt))
-                        (primEnter sr nm t10 (rf a b c d e f g h i j)))
+                        lazySat (primEnter sr nm t10 (rf a b c d e f 
+                                                         g h i j)) t10)
                       t9)
                     t8)
                   t7)
@@ -1352,12 +1156,10 @@ prim10 nm rf sr t =
           t3)
         t2)
       t1)
-    tf
+    (mkTNm t nm sr)
 
 prim11 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
+  mkR (\t1 (R a at)->
     R (\t2 (R b bt)->
       R (\t3 (R c ct)->
         R (\t4 (R d dt)->
@@ -1368,9 +1170,8 @@ prim11 nm rf sr t =
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
-                          (\(R v vt)->
-                            R v (Sat t11 vt))
-                          (primEnter sr nm t11 (rf a b c d e f g h i j k)))
+                          lazySat (primEnter sr nm t11 (rf a b c d e f 
+                                                           g h i j k)) t11)
                         t10)
                       t9)
                     t8)
@@ -1381,12 +1182,10 @@ prim11 nm rf sr t =
           t3)
         t2)
       t1)
-    tf
+    (mkTNm t nm sr)
 
 prim12 nm rf sr t = 
-  let tf = Nm t nm sr
-  in
-  R (\t1 (R a at)->
+  mkR (\t1 (R a at)->
     R (\t2 (R b bt)->
       R (\t3 (R c ct)->
         R (\t4 (R d dt)->
@@ -1398,9 +1197,8 @@ prim12 nm rf sr t =
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
                         R (\t12 (R l lt)->
-                            (\(R v vt)->
-                              R v (Sat t12 vt))
-                            (primEnter sr nm t12 (rf a b c d e f g h i j k l)))
+                            lazySat (primEnter sr nm t12 (rf a b c d e f 
+                                                             g h i j k l)) t12)
                           t11)
                         t10)
                       t9)
@@ -1412,9 +1210,7 @@ prim12 nm rf sr t =
           t3)
         t2)
       t1)
-    tf
-
-
+    (mkTNm t nm sr)
 
 
 {-
@@ -1424,68 +1220,72 @@ Used for partially applied constructors
 -}
 
 cn1 :: (R a1 -> b) -> Trace -> R (Fun a1 b)
-cn1 rf t = myseq t (R (\t a ->
-                      R (rf a)
-                        t)
-                      t)
+cn1 rf t = R (\t a ->
+             R (rf a)
+               t)
+             t
 
 cn2 :: (R a1 -> R a2 -> b) -> Trace -> R (Fun a1 (Fun a2 b))
-cn2 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (rf a b)
-                          t)
-                        t)
-                      t)
+cn2 rf t = R (\t a ->
+             R (\t b ->
+               R (rf a b)
+                 t)
+               t)
+             t
 
 cn3 :: (R a1 -> R a2 -> R a3 -> b) -> Trace -> R (Fun a1 (Fun a2 (Fun a3 b)))
-cn3 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (rf a b c)
-                      t)t)t)t)
+cn3 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (rf a b c)
+                   t)t)t)t
 
 cn4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> Trace 
     -> R (Fun a1 (Fun a2 (Fun a3 (Fun a4 b))))
-cn4 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (\t d ->
-                            R (rf a b c d)
-                      t)t)t)t)t)
-cn5 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (\t d ->
-                            R (\t e ->
-                              R (rf a b c d e)
-                      t)t)t)t)t)t)
-cn6 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (\t d ->
-                            R (\t e ->
-                              R (\t f ->
-                                R (rf a b c d e f)
-                      t)t)t)t)t)t)t)
-cn7 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (\t d ->
-                            R (\t e ->
-                              R (\t f ->
-                                R (\t g ->
-                                  R (rf a b c d e f g)
-                      t)t)t)t)t)t)t)t)
-cn8 rf t = myseq t (R (\t a ->
-                      R (\t b ->
-                        R (\t c ->
-                          R (\t d ->
-                            R (\t e ->
-                              R (\t f ->
-                                R (\t g ->
-                                  R (\t h ->
-                                    R (rf a b c d e f g h)
-                      t)t)t)t)t)t)t)t)t)
+cn4 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (\t d ->
+                   R (rf a b c d)
+                     t)t)t)t)t
+
+cn5 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (\t d ->
+                   R (\t e ->
+                     R (rf a b c d e)
+                       t)t)t)t)t)t
+
+cn6 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (\t d ->
+                   R (\t e ->
+                     R (\t f ->
+                       R (rf a b c d e f)
+                         t)t)t)t)t)t)t
+
+cn7 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (\t d ->
+                   R (\t e ->
+                     R (\t f ->
+                       R (\t g ->
+                         R (rf a b c d e f g)
+                           t)t)t)t)t)t)t)t
+
+cn8 rf t = R (\t a ->
+             R (\t b ->
+               R (\t c ->
+                 R (\t d ->
+                   R (\t e ->
+                     R (\t f ->
+                       R (\t g ->
+                         R (\t h ->
+                           R (rf a b c d e f g h)
+                             t)t)t)t)t)t)t)t)t
 
 
 {- 
@@ -1498,20 +1298,20 @@ Used for partially applied data constructors.
 pa0 :: b -> (b -> Trace -> c) -> SR -> Trace -> NmType -> c
 
 pa0 c cni sr t nm =
-  cni c (Nm t nm sr) 
+  cni c `myseqAp` (mkTNm t nm sr) 
 
 
 pa1 :: (R a1 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType -> R a1 -> c
 
 pa1 c cni sr t nm a1@(R _ t1) =
-  cni (c a1) (Ap t (TCons (Nm t nm sr) (TCons t1 TNil)) sr)
+  cni (c a1) `myseqAp` mkTAp1 t (mkTNm t nm sr) t1 sr
 
 
 pa2 :: (R a1 -> R a2 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType
     -> R a1 -> R a2 -> c
 
 pa2 c cni sr t nm a1@(R _ t1) a2@(R _ t2) =
-  cni (c a1 a2) (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 TNil))) sr)
+  cni (c a1 a2) `myseqAp` mkTAp2 t (mkTNm t nm sr) t1 t2 sr
 
 
 pa3 :: (R a1 -> R a2 -> R a3 -> b) -> (b -> Trace -> c) 
@@ -1519,8 +1319,7 @@ pa3 :: (R a1 -> R a2 -> R a3 -> b) -> (b -> Trace -> c)
     -> R a1 -> R a2 -> R a3 -> c
 
 pa3 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) =
-  cni (c a1 a2 a3)
-    (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 (TCons t3 TNil)))) sr)
+  cni (c a1 a2 a3) `myseqAp` mkTAp3 t (mkTNm t nm sr) t1 t2 t3 sr
 
 
 pa4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> (b -> Trace -> c) 
@@ -1528,178 +1327,10 @@ pa4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> (b -> Trace -> c)
     -> R a1 -> R a2 -> R a3 -> R a4 -> c
 
 pa4 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) a4@(R _ t4) =
-  cni (c a1 a2 a3 a4) 
-    (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 (TCons t3 (TCons t4 TNil)))))
-      sr)
+  cni (c a1 a2 a3 a4) `myseqAp` mkTAp4 t (mkTNm t nm sr) t1 t2 t3 t4 sr
 
 
-{-- --}
-
-c1 nm rf sr t = 
-  (R (\t a ->
-     R (rf a)
-       t)
-     (Nm t nm sr))
-
-c2 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (rf a b)
-         t)
-       t)
-     (Nm t nm sr))
-
-c3 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (rf a b c)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c4 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (\t d ->
-           R (rf a b c d)
-             t)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c5 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (\t d ->
-           R (\t e ->
-             R (rf a b c d e)
-               t)
-             t)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c6 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (\t d ->
-           R (\t e ->
-             R (\t f ->
-               R (rf a b c d e f)
-                 t)
-               t)
-             t)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c7 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (\t d ->
-           R (\t e ->
-             R (\t f ->
-               R (\t g ->
-                 R (rf a b c d e f g)
-                   t)
-                 t)
-               t)
-             t)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c8 nm rf sr t = 
-  --let fn = cGetConstrNm rf
-  --in myseq fn 
-  (R (\t a ->
-     R (\t b ->
-       R (\t c ->
-         R (\t d ->
-           R (\t e ->
-             R (\t f ->
-               R (\t g ->
-                 R (\t h ->
-                   R (rf a b c d e f g h)
-                     t)
-                   t)
-                 t)
-               t)
-             t)
-           t)
-         t)
-       t)
-     (Nm t nm sr))
-
-c9  = False
-c10 = False
-c11 = False
-c12 = False
-
-
-
-_fromInteger = False
-_fromRational = False
-_error = error "_error"
-
-data RList a = RCons | RNil
-type RString = Bool
-
---class Num a where
---   fff :: a -> a
-
-stringConst primitive 3 :: SR -> Trace -> a -> R String
-
-dbgprint = False
+{- Seems to be used for transformation of primitives, really true -}
 _prim :: a
 _prim = error "_prim"
 
-_hide :: a -> a
-_hide = error "_hide"
-
-dummy :: Char
-dummy = 'a'
-
-
-
-{-
-ap2 primitive 5 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> c)))))) -> ((R a) -> ((R b) -> c)))))
-
-ap3 primitive 6 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> d))))))))) -> ((R a) -> ((R b) -> ((R c) -> d))))))
-
-ap4 primitive 7 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> e)))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> e)))))))
-
-ap5 primitive 8 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> f))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> f))))))))
-
-ap6 primitive 9 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> (R (Trace -> ((R f) -> g)))))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> ((R f) -> g)))))))))
-
-ap7 primitive 10 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> (R (Trace -> ((R f) -> (R (Trace -> ((R g) -> h))))))))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> ((R f) -> ((R g) -> h))))))))))
-
-ap8 primitive 11 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> (R (Trace -> ((R f) -> (R (Trace -> ((R g) -> (R (Trace -> ((R h) -> i)))))))))))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> ((R f) -> ((R g) -> ((R h) -> i)))))))))))
-
-ap9 primitive 12 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> (R (Trace -> ((R f) -> (R (Trace -> ((R g) -> (R (Trace -> ((R h) -> (R (Trace -> ((R i) -> j))))))))))))))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> ((R f) -> ((R g) -> ((R h) -> ((R i) -> j))))))))))))
-
-ap10 primitive 13 ::(SR -> (Trace -> ((R (Trace -> ((R a) -> (R (Trace -> ((R b) -> (R (Trace -> ((R c) -> (R (Trace -> ((R d) -> (R (Trace -> ((R e) -> (R (Trace -> ((R f) -> (R (Trace -> ((R g) -> (R (Trace -> ((R h) -> (R (Trace -> ((R i) -> (R (Trace -> ((R j) -> k)))))))))))))))))))))))))))))) -> ((R a) -> ((R b) -> ((R c) -> ((R d) -> ((R e) -> ((R f) -> ((R g) -> ((R h) -> ((R i) -> ((R j) -> k)))))))))))))
--}

@@ -3,7 +3,6 @@ module STGGcode where -- (stgGcode) where
 import Extra(strace,pair,isJust,dropJust)
 import State
 import IntState hiding (IdKind)
-import DbgId(t_ap)
 import PosCode
 import SyntaxPos
 import Gcode
@@ -138,7 +137,11 @@ gExp exp@(PosExpThunk _ (tag@(PosVar _ v):args)) =
 #ifdef DBGTRANS
   gState >>>= \state ->
   let vid = tidIS state v in
-  if False {-vid `elem` [t_ap n | n <- [1..10]]-} then -- expensive test - change!
+  if False {-vid `elem` [t_ap n | n <- [1..10]]-} then 
+    -- expensive test - change!
+    {- this has been removed already by Jan;
+       the idea was probably to make the ap combinators strict in
+       their arguments to make them more efficient -} 
       mapS (\a -> gExp a >>>= \a' -> unitS (a' ++ [EVAL])) args >>>= \args' ->
       getExtra v >>>= \(_, extra) ->
       unitS (concat args' ++ [PUSH_HEAP, HEAP_VAP v] ++ extra ++ map HEAP (reverse [1..length args]) ++ [SLIDE (length args)])

@@ -18,7 +18,7 @@ import Syntax
 import State(State0(..))
 import IdKind
 import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
-import DbgId(tSR, tR, tTrace)
+import DbgId(tSR, t_R, tTrace)
 import Flags
 import SyntaxPos
 import TypeSubst
@@ -113,7 +113,7 @@ typeOfMain flags tidFun (DeclsScc depends) state =
 		            [NTcons (tidFun (tSR, TCon)) [],
 		             NTcons (tidFun (t_Arrow, TCon))
 		  	        [NTcons (tidFun (tTrace, TCon)) [],
-			         NTcons (tidFun (tR, TCon)) [mainIOType]]]
+			         NTcons (tidFun (t_R, TCon)) [mainIOType]]]
 		    else
 		        mainIOType
 	    in

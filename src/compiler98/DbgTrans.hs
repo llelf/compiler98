@@ -7,7 +7,15 @@ module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
 import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var))
 import TokenId
-import DbgId
+import DbgId(t_R,t_mkTRoot,t_mkTNm 
+            ,t_rseq,t_fatal
+            ,t_lazySat,t_fun,t_primn,t_prim,t_ap,t_rap,t_cn,t_con,t_pa,t_indir
+            ,t_if,t_guard
+            ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
+            ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
+            ,t_conFloat
+            ,t_fromConInteger,t_fromConRational
+            ,t_patFromConInteger,t_patFromConRational)
 import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
                ,uniqueIS,uniqueISs,IE(IEnone),ntI,updateIS
                ,Info(InfoVar,InfoClass,InfoMethod,InfoDMethod,InfoIMethod))
@@ -25,7 +33,7 @@ import List(zipWith5)
 
 
 {- table for source references and identifiers refered to from the trace -}
-type SRIDTable = Maybe ((Int,[Int])        -- source reference table
+type SRIDTable = Maybe ((Int,[Pos])        -- source reference table
                        ,[(Pos,Id)]         -- identifier table
                        ,[ImpDecl TokenId]  -- import declarations
                        ,String)            -- module name
@@ -45,7 +53,6 @@ data Threaded = Threaded
                                -- first is number of current source reference
                                -- second is list of encoded source references
                   [(Pos, Id)]  -- identifier table, accumulated for SRIDTable
-                -- (AssocTree Int (Exp Int)) -- [(Int, Int)]  ??
 
 
 type DbgTransMonad a = State Inherited Threaded a Threaded
@@ -103,7 +110,7 @@ debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
       (decls', Threaded istate' srt idt) -> 
         (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
   start_d :: Exp Id
-  start_d = ExpCon noPos (lookupPrel (t_Root, Con)) 
+  start_d = ExpVar noPos (lookupPrel (t_mkTRoot, Var)) 
             -- data constructor Root of the R type 
   fatal :: Exp Id
   fatal = ExpCon noPos (lookupPrel (t_fatal, Var))
@@ -132,17 +139,7 @@ dTopDecl (DeclClass pos ctx id1 id2 decls) =
               lookupName d >>>= \(Just (InfoDMethod _ _ _ (Just arity) _)) ->
 	      setArity 2 {-arity-} m
 dTopDecl d@(DeclInstance pos ctx id inst decls) = 
-{-YYY
-    lookupId TClass tDisplayable >>>= \hdid ->
-    lookupId TClass tShow >>>= \htid ->
-    lookupId TClass tEq >>>= \heid ->
-    lookupId TClass tOrd >>>= \hoid ->
-    lookupId TClass tEval >>>= \hevid ->
-    if id `elem` [hdid, htid, heid, hoid, hevid] then
-        unitS [d]
-    else
--}
-        unitS  ((:[]) . DeclInstance pos ctx id inst) =>>> dDecls decls
+  unitS  ((:[]) . DeclInstance pos ctx id inst) =>>> dDecls decls
 dTopDecl d = dDecl d
 
 
@@ -167,8 +164,7 @@ dDecl (DeclPat (Alt pat rhs decls)) =
     mapS0 (setArity 2) bvsids >>>  
     mapS0 addId (map fst bvsnvs) >>>
     mapS makeSourceRef (map (fst . fst) bvsnvs) >>>= \srs ->
-    normalFail >=>
-    dRhs rhs >>>= \rhs' ->
+    dRhs rhs failContinuation >>>= \rhs' ->
     dPat pat' >>>= \pat'' ->
     let ExpApplication _ [r,_,tresult] = pat'' in
     dDecls decls >>>= \decls' ->
@@ -295,7 +291,6 @@ isn't yet evaluated.
 dDecl d@(DeclFun pos id fundefs) = 
     addId (pos, id) >>>
     lookupName id >>>= \(Just info) ->
-    getIdArity id >>>= \oa ->
     lookupNameStr id >>>= \funName ->
     --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
     if isCMethod info then
@@ -319,7 +314,7 @@ dDecl d@(DeclForeignImp pos cname id' arity cast typ id) =
 --  lookupNameStr id' >>>= \funName ->
 --  trace ("DeclForeignImp: " ++ funName ++", info=\n" ++ show info) $
     -- generate code for the wrapper
-    dPrim pos id id' arity >>>= \code->
+    dForeignImp pos id id' arity >>>= \code->
     -- get real cname from primed hname (f'), if needed
     let (InfoVar _ (Qualified _ f) _ _ _ _) = info
         cname' = if null cname then reverse (tail (unpackPS f)) else cname
@@ -333,15 +328,16 @@ dDecl d@(DeclForeignExp pos cname id typ) =
 
 dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoD: " ++show info) $
-    if False {-not (doTransform tid)-} then
-        unitS [DeclFun pos id fundefs]
---    else if arity == 0 then
+--    if arity == 0 then
 --        dCaf pos id funName fundefs
-    else if getArity fundefs == arity then
+-- dCaf does not work, 
+-- because shared constants need to be defined outside class/instance
+    if getArity fundefs == arity then
         dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
     else
         case fundefs of
             -- does this recognise compiler-produced undefined methods?
+            -- you don't want to see the explicit call of error in the trace
             [Fun [] (Unguarded (ExpApplication p1 [ExpVar p2 te, emsg])) 
               (DeclsParse [])] ->
 	        lookupId Var t_error >>>= \errorid ->
@@ -355,19 +351,21 @@ dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs =
                                               [ExpVar p2 fatal, redex]))
 					  (DeclsParse [])]]
 		 else
-		     dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
-	    _ -> dFun pos id funName (getArity fundefs) fundefs NoType --(unwrapNT False nt)
+		     dFun pos id funName arity fundefs NoType 
+	    _ -> dFun pos id funName (getArity fundefs) fundefs NoType 
 --	    _ -> dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
 dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoI: " ++show info) $
-    if False {-not (doTransform tid)-} then
-        unitS [DeclFun pos id fundefs]
-    else -- if (getArity fundefs) {-arity-} == 0 then  --- Wrong !!!!
+    -- if (getArity fundefs) {-arity-} == 0 then  --- Wrong !!!!
 --        dCaf pos id funName fundefs
+-- dCaf does not work, 
+-- because shared constants need to be defined outside class/instance
 --    else 
         case fundefs of
            [Fun [] (Unguarded (ExpVar p1 d)) (DeclsParse [])] ->
                -- This must(?) be a wrapper to the method of the superclass
+               -- or default(?)
+               -- you don't want to see the explicit call in the trace
                setArity 2 id >>>
 	       newVars pos 2 >>>= \[sr, redex] ->
 	       unitS [DeclFun pos id [Fun [sr, redex]
@@ -378,12 +376,6 @@ dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs =
 	   _ -> dFun pos id funName (getArity fundefs) fundefs NoType--(unwrapNT False nt)
 
 
-
-doTransform :: TokenId -> Bool
-
-doTransform = ('_'/=) . last . unpackPS . extractV
-
-
 dCaf :: Pos -> Id -> String -> [Fun Id] -> NewType -> DbgTransMonad [Decl Id]
 
 dCaf pos id cafName [Fun [] rhs localDecls] nt =
@@ -391,13 +383,12 @@ dCaf pos id cafName [Fun [] rhs localDecls] nt =
   addNewName 0 True "nt" NoType >>>= \t' ->
   addNewName 0 True cafName nt >>>= \nid ->
   getD >>>= \redex ->                  -- Use the surrounding redex
+  setD (ExpVar pos t') >=>
+  dRhs rhs failContinuation >>>= \rhs' ->
+  dDecls localDecls >>>= \(DeclsParse localDeclsList') ->
   makeSourceRef pos >>>= \sr ->
   makeNTId pos id >>>= \ntId ->
   makeNm pos redex ntId sr >>>= \nte ->
-  setD (ExpVar pos t') >=>
-  normalFail >=>
-  dRhs rhs >>>= \rhs' ->
-  dDecls localDecls >>>= \(DeclsParse localDeclsList') ->
   lookupVar pos t_lazySat >>>= \lazySat ->
   unitS [DeclFun pos id 
           [Fun [PatWildcard pos, PatWildcard pos] 
@@ -509,15 +500,14 @@ dFunClauses funName arity true otherw (Fun pats (Guarded ges) decls : fcs)
     mapS namePat pats >>>= \namedpats ->
     let (patnames, pats') = unzip namedpats in
     addNewName (arity + 1) True funName NoType >>>= \f ->
-    let fail = ExpApplication noPos (ExpVar noPos f:patnames) in
-    setFail fail >=>
     dPats pats' >>>= \pats'' ->
     newVar noPos >>>= \t ->
     setD t >=>
-    dGuardedExprs ges >>>= \expr ->
+    let continuation = functionContinuation f patnames in
+    continuationToExp continuation t >>>= \contExp ->
+    dGuardedExprs ges continuation >>>= \expr ->
     dDecls decls >>>= \decls' ->
-    let failclause = Fun (t:patnames) 
-                       (Unguarded (addAppTrace fail t)) (DeclsParse []) in
+    let failclause = Fun (t:patnames) (Unguarded contExp) (DeclsParse []) in
     dFunClauses funName arity true otherw fcs >>>= \(mfs, nfs) ->
     unitS ([Fun (t:pats'') 
             (Unguarded (ExpApplication noPos [expr, t])) decls'
@@ -525,10 +515,9 @@ dFunClauses funName arity true otherw (Fun pats (Guarded ges) decls : fcs)
           , DeclFun noPos f mfs:nfs)
   | otherwise =
     -- guards cannot fail or last clause
-    normalFail >=>
     getD >>>= \t ->
     dPats pats >>>= \pats' ->
-    dGuardedExprs ges >>>= \e ->
+    dGuardedExprs ges failContinuation >>>= \e ->
     dDecls decls >>>= \decls' ->
     dFunClauses funName arity true otherw fcs >>>= \(mfs, nfs) ->
     let fs = Fun (t:pats') 
@@ -536,36 +525,63 @@ dFunClauses funName arity true otherw (Fun pats (Guarded ges) decls : fcs)
     unitS (fs:mfs, nfs)
 
 
+{-
+To correctly create the trace within guards, a continuation is used.
+The type ContExp should be abstract. Its implementation is only used in 
+the following three functions.
+-}
+data ContExp = Fail | Function Id [Exp Id]
+
+failContinuation :: ContExp
+
+failContinuation = Fail
+
+
+functionContinuation :: Id -> [Exp Id] -> ContExp
+
+functionContinuation = Function
+
+
+continuationToExp :: ContExp -> TraceExp -> DbgTransMonad (Exp Id)
+
+continuationToExp Fail t =
+  lookupVar noPos t_fatal >>>= \fail ->
+  unitS $ ExpApplication noPos [fail, t]
+continuationToExp (Function fun args) t =
+  unitS $ ExpApplication noPos (ExpVar noPos fun : t : args)
+
 
 {-
--- id is the new function we are declaring; id' is the real foreign function
+Create body of wrapper for imported foreign function.
+id is the new function we are declaring; id' is the real foreign function
 -}
-dPrim :: Pos -> Id -> Id -> Int -> DbgTransMonad (Fun Id)
+dForeignImp :: Pos -> Id -> Id -> Int -> DbgTransMonad (Fun Id)
 
-dPrim pos id id' arity =
+dForeignImp pos id id' arity =
     lookupVar pos (t_primn arity) >>>= \primn ->
-    lookupCon pos tNTId >>>= \ntid ->
+    makeNTId pos id >>>= \ntid ->
     setArity 2 id >>>
     newVar pos >>>= \redex ->
     newVar pos >>>= \sr ->
     unitS (Fun [sr, redex]
                (Unguarded
                  (ExpApplication pos 
-                    [ primn
-                    , ExpApplication pos [ntid, ExpLit pos (LitInt Boxed id)]
-                    , ExpVar pos id', sr, redex]))
+                    [primn, ntid, ExpVar pos id', sr, redex]))
                (DeclsParse []))
 
 
-dGuardedExprs :: [(Exp Id,Exp Id)] -> DbgTransMonad (Exp Id)
+{-
+The continuation is used if all guards fail.
+-}
+dGuardedExprs :: [(Exp Id,Exp Id)] -> ContExp -> DbgTransMonad (Exp Id)
 
-dGuardedExprs [] = 
-    getFail >>>= \fail ->
+dGuardedExprs [] cont = 
     newVar noPos >>>= \t ->
-    unitS (ExpLambda noPos [t] (addAppTrace fail t))
-dGuardedExprs ((g, e):ges) = 
+    continuationToExp cont t >>>= \contExp ->
+    unitS (ExpLambda noPos [t] contExp)
+dGuardedExprs ((g, e):ges) cont = 
     let pos = getPos g in
-    dGuardedExprs ges >>>= \ges' ->
+    dGuardedExprs ges cont >>>= \ges' ->
     dExp False g >>>= \g' ->
     newVar pos >>>= \t ->
     setD t >=>
@@ -575,7 +591,8 @@ dGuardedExprs ((g, e):ges) =
     unitS (ExpApplication pos [guard, sr, g', ExpLambda pos [t] e', ges'])
 
 
-addAppTrace :: Exp a -> Exp a -> Exp a
+{- Used for combining fail continuation with a trace -}
+addAppTrace :: Exp Id -> TraceExp -> Exp Id
 
 addAppTrace (ExpApplication pos (f:es)) t = ExpApplication pos (f:t:es)
 addAppTrace f t = ExpApplication noPos [f, t]
@@ -584,9 +601,8 @@ addAppTrace f t = ExpApplication noPos [f, t]
 {- 
 obtain a variable that names the given pattern;
 easy for variable pattern or as pattern; otherwise produces as pattern
-pattern -> (name, pattern)
 -}
-namePat :: Exp Id -> DbgTransMonad (Exp Id,Exp Id)
+namePat :: Pat Id -> DbgTransMonad (Exp Id,Pat Id)
 
 namePat e@(ExpVar p v) = unitS (e, e)
 namePat e@(PatAs p v pat) = unitS (ExpVar p v, e)
@@ -615,6 +631,7 @@ checkPrimitive :: [Fun Id] -> DbgTransMonad (Maybe [Fun Id])
 checkPrimitive 
   [Fun ps (Unguarded (ExpApplication pos (ExpVar p id:f:es))) decls] =
     lookupId Var t_prim >>>= \primid ->
+    -- does this really refer to "_prim" in DebugPrelude ?
     if id == primid then
         getD >>>= \redex ->
 	lookupVar pos t_rseq >>>= \rseq ->
@@ -636,37 +653,12 @@ mkFailExpr pos =
     unitS (ExpApplication pos [fatal, redex])
 
 
-dCafClause :: Fun Id -> DbgTransMonad (Fun Id)
+dRhs :: Rhs Id -> ContExp -> DbgTransMonad (Exp Id)
 
-dCafClause (Fun ps rhs decls) = 
-    unitS Fun =>>> dPats ps =>>> dRhs' rhs =>>> dDecls decls 
-    -- ps should be empty
-
-{- unused; use dFunClauses instead
-dFunClause (Fun ps rhs decls) = 
-    unitS Fun =>>> 
-    (unitS (:) =>>> getD =>>> dPats ps) =>>> 
-    dRhs' rhs =>>> 
-    dDecls decls
--}
-
-dRhs' :: Rhs Id -> DbgTransMonad (Rhs Id)
-
-dRhs' (Unguarded exp) = unitS Unguarded =>>> dExp False exp
-dRhs' (Guarded gdExps) = unitS Guarded =>>> mapS dGdEs gdExps
-
-
-dGdEs :: (Exp Id,Exp Id) -> DbgTransMonad (Exp Id,Exp Id)
-
-dGdEs (gd, e) = unitS pair =>>> dGuard gd =>>> dExp False e
-
-
-dRhs :: Rhs Id -> DbgTransMonad (Exp Id)
-
-dRhs (Unguarded exp) = dExp False exp
-dRhs (Guarded gdExps) = 
+dRhs (Unguarded exp) cont = dExp False exp
+dRhs (Guarded gdExps) cont = 
   getD >>>= \t ->
-  dGuardedExprs gdExps >>>= \expr -> 
+  dGuardedExprs gdExps cont >>>= \expr -> 
   unitS (ExpApplication noPos [expr, t])
 
 {-
@@ -675,16 +667,12 @@ expression is just a variable, the expression including context is
 not a projection.
 -}
 
---dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
+dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
 
 dExps cr es = mapS (dExp cr) es
 
 
-{-
-
--}
--- dExp :: Bool -> Exp Id -> DbgTransMonad (Exp Id)
--- Hugs doesn't work with this correct type declaration
+dExp :: Bool -> Exp Id -> DbgTransMonad (Exp Id)
 
 dExp cr (ExpLambda pos pats e) = 
     newVar pos >>>= \redex ->
@@ -693,11 +681,10 @@ dExp cr (ExpLambda pos pats e) =
     setD redex >=>
     dExp False e >>>= \e' ->
     lookupVar pos (t_fun (length pats)) >>>= \fun ->
-    lookupCon pos tLambda >>>= \lambda ->
-    --getModStr >>>= \modstr ->
+    makeNTLambda pos >>>= \lambda ->
     dPats pats >>>= \pats' ->
     newVar pos >>>= \fpat ->
-    mkFailExpr pos {-Wrong!-} >>>= \fpexp ->
+    mkFailExpr pos {-Wrong or misleading error message -} >>>= \fpexp ->
     makeSourceRef pos >>>= \sr ->
     makeTuple pos npats >>>= \npatstup ->
     makeTuple pos pats' >>>= \patstup ->
@@ -705,15 +692,17 @@ dExp cr (ExpLambda pos pats e) =
 	alts = [Alt patstup (Unguarded e') (DeclsParse []),
 	        Alt fpat (Unguarded fpexp) (DeclsParse [])] 
     in unitS (ExpApplication pos [fun, lambda, lamexp, sr, oldredex])
-dExp cr (ExpLet pos decls e)        = unitS (ExpLet pos) =>>> dDecls decls =>>> dExp False e
-dExp cr (ExpCase pos e alts)        =  
+dExp cr (ExpLet pos decls e) = 
+  unitS (ExpLet pos) =>>> dDecls decls =>>> dExp False e
+  -- shouldn't there be cr instead of False?
+dExp cr (ExpCase pos e alts) =  
   let alt2Fun :: Alt a -> Fun a
       alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls in
   lookupId Con tTrue >>>= \true ->
   lookupId Var t_otherwise >>>= \otherw ->
   lookupVar pos (t_ap 1) >>>= \apply ->
   lookupVar pos (t_fun 1) >>>= \fun ->
-  lookupCon pos tCase >>>= \casenm ->
+  makeNTCase pos >>>= \casenm ->
   dExp cr e >>>= \e' ->
   getD >>>= \oldredex ->
   newVar noPos >>>= \t ->
@@ -825,25 +814,14 @@ saturateConstr c@(ExpCon pos id) args =
   getConArity id >>>= \arity ->
   --trace ("Arity for " ++ show id ++ " is " ++ show arity) $
   if arity > length args' then -- Unsaturated constructor
-    lookupCon pos tNTConstr >>>= \ntconstr ->
+    makeNTConstr pos id >>>= \ntconstr ->
     lookupVar pos (t_cn (arity - length args')) >>>= \cn ->
     lookupVar pos (t_pa (length args')) >>>= \pan ->
     getD >>>= \redex ->
     makeSourceRef pos >>>= \sr ->
-    let mkConNm pos id = 
-          ExpApplication pos [ntconstr, ExpLit pos (LitInt Boxed id)]
-    in unitS (ExpApplication pos (pan:c:cn:sr:redex:mkConNm pos id :args'))
+    unitS (ExpApplication pos (pan:c:cn:sr:redex:ntconstr:args'))
    else
     wrapConst c args'
-
-
-dGuard :: Exp Id -> DbgTransMonad (Exp Id)
-
-dGuard e@(ExpCon p conid) = unitS e -- Must be the constant True
-dGuard e = 
-    lookupVar noPos t_value >>>= \value ->
-    dExp False e >>>= \e' ->
-    unitS (ExpApplication noPos [value, e'])
 
 
 {-
@@ -855,42 +833,20 @@ wrapConst :: Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
 wrapConst c@(ExpCon pos cid) args =
     getD >>>= \d ->
     lookupVar pos (t_con (length args)) >>>= \con ->
-    lookupCon pos tNTConstr >>>= \ntconstr ->
+    makeNTConstr pos cid >>>= \ntconstr ->
     makeSourceRef pos >>>= \sr ->
-    unitS (ExpApplication pos (con:sr:d:c:ExpApplication pos [ntconstr, ExpLit pos (LitInt Boxed cid)]:args))
+    unitS (ExpApplication pos (con:sr:d:c:ntconstr:args))
 
-{-
-mkRList wrapper transformer pos ls =    -- Don't do this when debugged list is built-in
-    lookupCon pos tCons >>>= \c ->
-    let wrapIt [] = wrapper pos =>>> lookupCon pos tNil
-        wrapIt (x:xs) = wrapper pos =>>> (unitS cons =>>> transformer x =>>> wrapIt xs)  
-        cons e l = ExpApplication pos [c, e, l] 
-    in wrapIt ls
--}
+
+{- Unused, string is transformed on a per character basis 
+mkLitString :: Pos -> Exp Id -> DbgTransMonad (Exp Id)
 
 mkLitString pos s =
     getD >>>= \d ->
     lookupVar pos t_stringConst >>>= \stringConst  ->
     makeSourceRef pos >>>= \sr ->
     unitS (ExpApplication pos [stringConst, sr, d, s])
-
-{-
-    lookupVar pos t_const >>>= \c ->
-    makeSourceRef pos >>>= \sr ->
-    mkRList (\_ -> unitS (\e -> ExpApplication pos [c, d, sr, e]))
-            (\e -> unitS (ExpApplication pos [c, d, sr, e]))
-            pos
-            (map (ExpLit pos . LitChar Boxed) s)
 -}
-
-dAlts pos alts =
-    mapS dAlt alts >>>= \alts' ->
-    newVar pos >>>= \pat ->
-    mkFailExpr pos {-Wrong-} >>>= \fpexp ->
-    unitS (alts' ++ [Alt pat (Unguarded fpexp) (DeclsParse [])])
-    
-dAlt (Alt pat rhs decls) =
-    unitS Alt =>>> dPat pat =>>> dRhs' rhs =>>> dDecls decls
 
 
 dPats :: [Pat Id] -> DbgTransMonad [Pat Id] 
@@ -898,9 +854,7 @@ dPats :: [Pat Id] -> DbgTransMonad [Pat Id]
 dPats ps = mapS dPat ps
 
 
-dPat :: Pat Id -> State Inherited Threaded (Pat Id) Threaded
---dPat :: Pat Id -> DbgTransMonad (Pat Id)
--- Hugs doesn't like it. 
+dPat :: Pat Id -> DbgTransMonad (Pat Id)
 
 dPat (ExpApplication pos (c:ps)) = 
   wrapR pos =>>> 
@@ -924,7 +878,6 @@ dPat p@(ExpLit pos (LitString _ s)) =
 dPat p@(ExpLit pos lit)             = wrapR pos =>>> unitS p
 dPat p@(ExpList pos [])             = wrapR pos =>>> unitS p
 dPat (ExpList pos ps)               = foldPatList pos ps
---wrapR pos =>>> (unitS (ExpList pos) =>>> dPats ps)
 dPat (PatAs pos id p)               = unitS (PatAs pos id) =>>> dPat p
 dPat p@(PatWildcard pos)            = unitS p 
 dPat (PatIrrefutable pos p)         = unitS (PatIrrefutable pos) =>>> dPat p
@@ -935,6 +888,10 @@ foldS f z (x:xs) = foldS f z xs >>>= f x
 ---f x =>>> foldS f z xs
 
 
+{- 
+Replace all list constructors in a list expression
+by the constructors of the wrapped list and wrap it.
+-}
 foldPatList :: Pos -> [Exp Id] -> DbgTransMonad (Exp Id)
 
 foldPatList pos [] =  wrapR pos =>>> lookupCon pos t_List
@@ -945,10 +902,11 @@ foldPatList pos (p:ps) =
            =>>> dPat p =>>> foldPatList pos ps) 
 
 
-wrapR :: Pos -> DbgTransMonad (Exp Id -> Exp Id)
+{- Wrap a pattern with R constructor and new variable as trace argument -}
+wrapR :: Pos -> DbgTransMonad (Pat Id -> Pat Id)
 
 wrapR pos =
-    lookupCon pos tR >>>= \r ->
+    lookupCon pos t_R >>>= \r ->
     newVar pos >>>= \wc ->
     unitS (\p -> ExpApplication pos [r, p, wc])
     
@@ -1155,25 +1113,6 @@ getD :: DbgTransMonad (Exp Id)
 getD = \(Inherited d _ _) s -> (d, s)
 
 
-{- set the function `fatal' as the one to be used in case of failure -}
-normalFail :: DbgTransMonad Inherited 
-
-normalFail = 
-    lookupVar noPos t_fatal >>>= \fail ->
-    setFail fail
-
-
-setFail :: Exp Id -> DbgTransMonad Inherited
-
-setFail fail = \(Inherited d _ lookupPrel) s -> 
-                 (Inherited d fail lookupPrel, s) 
-
-
-getFail :: DbgTransMonad (Exp Id)
-
-getFail = \(Inherited _ fail _) s -> (fail, s)
-
-
 {- old, were not used anywhere
 getModStr = \(Inherited _ _ _ modstr) s@(Threaded istate _ _) -> (modstr, s)
 setModStr modstr = \(Inherited d f lp _) s -> (Inherited d f lp modstr, s)
@@ -1188,10 +1127,6 @@ getIdArity id =
         Nothing -> (Nothing, s)
 	Just info -> (Just (arityVI info){-(arityIS istate id)-}, s)
 
-{-
-setArity arity id = \_ (Threaded istate srs) ->
-                        Threaded (updVarArity noPos id arity istate) srs
--}
 
 
 getArity :: [Fun a] -> Int
@@ -1213,6 +1148,10 @@ setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
 	             InfoVar u tid fix exp nt (Just arity)
   in Threaded (IntState unique rps (updateAT st id (\_ -> newid)) errors) 
        srt idt
+{-
+setArity arity id = \_ (Threaded istate srs) ->
+                        Threaded (updVarArity noPos id arity istate) srs
+-}
 
 
 getPositions :: DbgTransMonad (Int,[Int])
@@ -1231,29 +1170,47 @@ makeSourceRef :: Pos -> DbgTransMonad (SRExp)
 
 makeSourceRef p (Inherited _ _ lookupPrel) s@(Threaded is (nsr, srs) idt) =
   if rowcol == head srs then
-    (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr)], s)
+    (ExpApplication p [ExpVar p sr3, ExpLit p (LitInt Boxed nsr)], s)
   else
     let nsr' = nsr+1
-    in seq nsr' (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr')],
+    in seq nsr' (ExpApplication p [ExpVar p sr3, ExpLit p (LitInt Boxed nsr')],
                  Threaded is (nsr', rowcol:srs) idt)
   where 
   (row, col) = fromPos p 
-  rowcol = 10000*row + col
-  sr3 = lookupPrel (tSR3, Con)
+  rowcol = 10000*row + col -- this should probably be done by some function
+                           -- mkSR :: Int -> Int -> SR
+  sr3 = lookupPrel (t_mkSR', Var)
 
 
 
 makeNTId :: Pos -> Id -> DbgTransMonad (NmTypeExp)
 
-makeNTId p id = 
-  lookupCon noPos tNTId >>>= \ntid ->
-  unitS $ ExpApplication p [ntid,ExpLit p (LitInt Boxed id)]
+makeNTId pos id = 
+  lookupVar pos t_mkNTId' >>>= \mkNTId' ->
+  unitS $ ExpApplication pos [mkNTId',ExpLit pos (LitInt Boxed id)]
         
+
+makeNTConstr :: Pos -> Id -> DbgTransMonad (NmTypeExp)
+
+makeNTConstr pos id =
+  lookupVar pos t_mkNTConstr' >>>= \mkNTConstr' ->
+  unitS $ ExpApplication pos [mkNTConstr',ExpLit pos (LitInt Boxed id)]
+
+
+makeNTLambda :: Pos -> DbgTransMonad (NmTypeExp)
+
+makeNTLambda pos = lookupVar pos t_mkNTLambda
+
+
+makeNTCase :: Pos -> DbgTransMonad (NmTypeExp)
+
+makeNTCase pos = lookupVar pos t_mkNTCase
+
 
 makeNm :: Pos -> TraceExp -> NmTypeExp -> SRExp -> DbgTransMonad (TraceExp)
 
 makeNm p parent name sr =
-  lookupCon noPos t_Nm >>>= \nm ->
+  lookupVar noPos t_mkTNm >>>= \nm ->
   unitS $ ExpApplication p [nm, parent, name, sr] 
 
 {-
@@ -1262,17 +1219,6 @@ Add identifier with position to threaded list.
 addId :: (Pos,Id) -> a -> Threaded -> Threaded
 
 addId pid inh (Threaded is srt idt) = Threaded is srt (pid:idt)
-
-
-{- Create expression for a string literal at given position -}
-eStr :: Pos -> [Char] -> Exp a
-
-eStr pos s = ExpLit pos (LitString Boxed s)
-
-
-stripPrelude ('_':'x':s) = s
-stripPrelude ('@':s) = s
-stripPrelude s = s
 
 
 {- is it a class method? -}

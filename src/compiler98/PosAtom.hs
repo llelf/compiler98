@@ -20,6 +20,9 @@ data AtomState =
     IntState
     PosCode
 
+
+posAtom :: IntState -> [(Int,PosLambda)] -> ([(Int,PosLambda)],IntState)
+
 posAtom state code = 
   case (mapS atomTopBinding code) (AtomDown tunknown []) (AtomState state []) of
     (code,AtomState state _) -> (concat code,state)

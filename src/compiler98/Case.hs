@@ -26,7 +26,7 @@ import FSLib
 import MergeSort(mergeSort)
 import SyntaxUtil
 import Foreign(ImpExp(..))
-import DbgId
+import DbgId(t_rPatBool,t_ap)
 import Id(Id)
 
 
@@ -326,7 +326,7 @@ match vars funs def =
 matchMany vars [] def = def
 matchMany vars (x:xs) def = matchOne vars x (matchMany vars xs def) 
 
-
+{-
 matchOne :: [PosExp] 
          -> Pattern 
          -> ( ( Exp Int -> Exp Int,Exp Int,Exp Int,Exp Int,Exp Int
@@ -342,6 +342,7 @@ matchOne :: [PosExp]
             ) 
          -> (IntState,Tree (TokenId,Int)) 
          -> (PosExp,(IntState,Tree (TokenId,Int)))  
+-}
 
 matchOne (ce:ces) (PatternVar x) def =
   case unzip x of
