@@ -315,19 +315,19 @@ $(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
 	touch $(TARGDIR)/$(MACHINE)/prelude
 $(TARGDIR)/$(MACHINE)/traceprelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) CFG=T fromC
-	cd src/prelude/$(MACHINE); $(MAKE) CFG=T clean all
+	cd src/prelude/$(MACHINE)/NHC; $(MAKE) CFG=T clean all
 	cd src/prelude;        $(MAKE) CFG=T relink
 	touch $(TARGDIR)/$(MACHINE)/traceprelude-$(CC)
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
 $(TARGDIR)/$(MACHINE)/timeprelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) CFG=z fromC
-	cd src/prelude/$(MACHINE); $(MAKE) CFG=z clean all
+	cd src/prelude/$(MACHINE)/NHC; $(MAKE) CFG=z clean all
 	cd src/prelude;        $(MAKE) CFG=z relink
 	touch $(TARGDIR)/$(MACHINE)/timeprelude-$(CC)
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 $(TARGDIR)/$(MACHINE)/profprelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) CFG=p fromC
-	cd src/prelude/$(MACHINE); $(MAKE) CFG=p clean all
+	cd src/prelude/$(MACHINE)/NHC; $(MAKE) CFG=p clean all
 	cd src/prelude;        $(MAKE) CFG=p relink
 	touch $(TARGDIR)/$(MACHINE)/profprelude-$(CC)
 	touch $(TARGDIR)/$(MACHINE)/profprelude
