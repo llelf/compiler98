@@ -270,6 +270,18 @@ getNumberParam cmd pattern1 pattern2 =
 	     else
               Nothing
 
+getEquationNumber :: Int -> [HatNode] -> IO (Maybe HatNode)
+getEquationNumber number lastObserved =
+ let node = (drop (number-1) lastObserved) in
+      if (number>0) then
+         do
+          if (null node) then -- This test may take a while!
+	    (putStrLn "No equation with this number!")
+	    >> return Nothing
+	   else
+	    return (Just (head node))
+        else
+	  return Nothing
 
 doCommand :: String -> String -> (String,HatTrace) ->
 	     ([HatNode],Bool,Int,Int,Int,[HatNode],Bool,Bool) -> IO()
@@ -385,6 +397,31 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
 	putStrLn ("Go to which number? Use \"go <n>\" to see equation number <n>.")
 		  >>
 	interactive hatfile state
+    | (cmd=="TRAIL")||(cmd=="TRACE")||(cmd=="T") =
+	let trail = getNumberParam s "T" "TRAIL";
+            trail2 = getNumberParam s "T" "TRACE";
+	    number = if (isJust trail) then (fromJust trail)
+		      else (fromJust trail2) in
+        (if (isJust trail)||(isJust trail2) then
+           do
+             node <- getEquationNumber number lastObserved
+	     if (isJust node) then startExternalTool "T" file (fromJust node)
+		else return ()
+         else
+	   putStrLn "No equation number specified!")
+	>> interactive hatfile state
+    | (cmd=="DEBUG")||(cmd=="D") =
+	let debug = getNumberParam s "D" "DEBUG";
+	    number = fromJust debug in
+         (if (isJust debug) then
+	   do
+             node <- getEquationNumber number lastObserved
+	     if (isJust node) then startExternalTool "A" file (fromJust node)
+		else return ()
+          else
+	   putStrLn "No equation number specified!")
+	>> interactive hatfile state
+
     | (isJust (stringToInt cmd)) =
         let number = (fromJust (stringToInt cmd));
             node = (drop (number-1) lastObserved) in
@@ -396,7 +433,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
               if (null node) then -- This test may take a while!
 	         putStrLn "No equation with this number!"
                else
-                 startExternalTool file (head node)
+                 startExternalTool "" file (head node)
            else
 	      putStrLn "No equation with this number!" 
 	  interactive hatfile state
@@ -504,12 +541,16 @@ doCommand cmd s hatfile state =
      else
       doCommand "O" ("O "++s) hatfile state
 
-startExternalTool file node =
+startExternalTool tool file node =
     let id = toRemoteRep node;
         rhsID = toRemoteRep (hatResult node) in
     do
-      putStr "Start Algorithmic Debugging or Tracer? (A/T): "
-      choice <- getLine
+      choice <- if tool=="" then
+	         do
+		  putStr "Start Algorithmic Debugging or Tracer? (A/T): "
+		  choice <- getLine
+		  return choice
+                else return tool
       if (((length choice)>0)&&(head(upStr(choice))=='T')) then
         do
           putStr "Trace left-hand-side (lhs) or rhs? (L/R): "
@@ -541,8 +582,10 @@ interactiveHelp =
    putStrLn " observe           o           make new observation"
    putStrLn " observe <query>   o <query>   make new observation with query"
    putStrLn " show              s           see a list of observable functions"
-   putStrLn " <n> or #<n>                   start algorithmic debugging session"
+   putStrLn " debug <n>                     start Algorithmic Debugging session"
    putStrLn "                               for observed equation number <n>"
+   putStrLn " trail <n>                     start Redex-Trail browser for"
+   putStrLn "                               observed equation number <n>"
    putStrLn " go <n>            g <n>       go to observed equation number <n>"
    putStrLn " up <n>            u <n>       go up in observation list by <n>"
    putStrLn " down <n>          d <n>       go down in observation list by <n>"

@@ -333,7 +333,7 @@ doCommand cmd s hatfile@(file,_)
 		       "Check settings and availability of hat-observe!")
 	     else return ()
 	  interactive hatfile state
-    | (cmd=="R")||(cmd=="REDEX") =     -- handle "redex" command
+    | (cmd=="R")||(cmd=="REDEX")||(cmd=="TRAIL") =   -- handle "TRAIL" command
 	let lhsID = toRemoteRep child;
 	    rhsID = toRemoteRep (hatResult child) in
 	do
@@ -374,8 +374,8 @@ interactiveHelp reconsider =
    putStrLn " u   or  untrust  to untrust all functions which were previously trusted.\n"
    putStrLn " m   or  memorize to toggle the memorize mode."
    putStrLn " v   or  verbose  to toggle verbose mode.\n"
-   putStrLn " o   or  observe   to observe all applications of the current function."
-   putStrLn " r   or  redex    to start the redex trail browser on the current equation.\n"
+   putStrLn " o   or  observe  to observe all applications of the current function."
+   putStrLn " r   or  trail    to start the redex trail browser on the current equation.\n"
    putStrLn "+[n] or -[n]      to increase or decrease the output precision [by n].\n"
    putStrLn " q   or  quit     to leave the tool.\n"
    putStrLn "Any key to continue..."
