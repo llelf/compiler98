@@ -28,9 +28,9 @@ data NmType =
    | NTRational Rational
    | NTFloat Float
    | NTDouble Double
-   | NTId Int
-   | NTConstr Int
-   | NTTuple
+   | NTId Int		-- compiler hack - actually a struct IdEntry at runtime
+   | NTConstr Int	-- compiler hack - actually a struct IdEntry at runtime
+   | NTTuple		-- unused
    | NTFun
    | NTCase
    | NTLambda 
@@ -38,7 +38,7 @@ data NmType =
    | NTCString Int
    | NTIf
    | NTGuard
-   | NTContainer
+   | NTContainer	-- introduced by MW for Handle/Vector/StablePtr etc.
 
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
@@ -73,7 +73,7 @@ instance NmCoerce (Either a b) where
     toNm t (Left  (R v (Nm _ nm x))) sr = R (Left  (R v (Nm t nm x))) t
     toNm t (Right (R v (Nm _ nm x))) sr = R (Right (R v (Nm t nm x))) t
 
--- This types use dummies for now.  Ideally, we want to convert them to
+-- These types use dummies for now.  Ideally, we want to convert them to
 -- either Int or Integer (depending on size), but we can't do that yet
 -- because the instances of fromIntegral are only available in traced
 -- versions!
@@ -85,11 +85,6 @@ instance NmCoerce Word8
 instance NmCoerce Word16
 instance NmCoerce Word32
 instance NmCoerce Word64
-
---instance NmCoerce a => NmCoerce (IO a) where
---    toNm t (IOPrim (R v _)) sr =
---                      R (IO (R (\t0 rw-> R (Right (toNm t v sr)) t) t))
---                        (Nm t (NTConstr 0) sr)
 
 {-
 -- toNm required to coerce return value from a primitive into a Trace structure
@@ -123,7 +118,7 @@ data Trace =
    | Pruned
    | Hidden Trace
 
-data SR = SR | SR2 Bool Int | SR3 Int 
+data SR = SR | SR2 Bool Int | SR3 Int 		-- SR2 no longer used
 
 data Traces = 
      TNil
