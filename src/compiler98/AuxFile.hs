@@ -8,7 +8,7 @@ module AuxFile
 import Monad(when)
 import IO(hPutStr,stderr)
 import Maybe(isNothing)
-import List(isPrefixOf)
+import List(isPrefixOf,nub,minimumBy)
 
 import Syntax
 import TokenId (TokenId,tPrelude,visImport,t_Tuple,getUnqualified)
@@ -41,6 +41,7 @@ toAuxFile flags aux
     writeFile aux ((showString "module " . shows modid . showChar '\n' .
                     showLines (listAT fullInfo)
                    ) "")
+    {- This warning should be harmless and is just irritating for the user
     let missingDefns = missing exports (fullInfo,fullIdentMap)
 			       definedTypesAndClasses
     when (not (null missingDefns))
@@ -48,6 +49,7 @@ toAuxFile flags aux
             ((showString "\nExported but not defined in this module "
 		. showString "(possibly imported and reexported):\n"
 		. showLines missingDefns) "\n"))
+    -}
   where
     showLines :: Show a => [a] -> ShowS
     showLines = foldr (\x y-> shows x . showChar '\n' . y) id
@@ -74,16 +76,33 @@ getImports reexport (alreadyGot,identMap) flags impdecls = do
     getAuxFile (modid,importVisible) = do
         (_,f) <- readFirst (fixImportNames (sUnix flags) "hx" (show modid)
                                            (sIncludes flags ++ sPreludes flags))
-	(return . map read . tail . lines) f
+	(return . map (myRead (show modid)) . tail . lines) f
 
     extendImportEnv ((modid,importVisible), auxInfos) got =
         foldr (\(k,v) t-> if notGot k t && importVisible k && reexport modid k
-                          then addAT t const k v else t) got auxInfos
+                            then (if notTyCls k 
+                                    then addAT t const k v 
+                                    else addTyCls importVisible t k v) 
+                            else t) got auxInfos
 
     extendIdentMap ((modid,importVisible), auxInfos) got =
         foldr (\(k,_) t-> let i  = subTid k in
-                          if notGot i t && importVisible k && reexport modid k
+                          if notTyCls k && notGot i t && importVisible k 
+                            && reexport modid k
                           then addAT t const i k else t) got auxInfos
+
+    addTyCls :: Visibility -> AuxTree -> Identifier -> AuxiliaryInfo -> AuxTree
+    addTyCls importVisible t k@(TypeClass tyCls) (TyCls v') =
+      addAT t const k 
+        (case v' of
+          Ty cons labels -> 
+            TyCls (Ty (filter (importVisible . Con undefined tyCls) cons) 
+                      (filter (importVisible . Field tyCls) labels))
+          Cls methods -> 
+            TyCls (Cls (filter (importVisible . Method tyCls) methods)))
+
+    notTyCls (TypeClass _) = False
+    notTyCls _ = True
 
     notGot k t = case lookupAT t k of { Nothing -> True; Just _ -> False }
 
@@ -111,9 +130,19 @@ getImports reexport (alreadyGot,identMap) flags impdecls = do
 				t1 == show t2 && f `elem` (map (show.snd) cs)
     (Method c m)`match` (EntityConClsSome _ c2 ms) =
 				c  == show c2 && m `elem` (map (show.snd) ms)
+    (TypeClass tc1) `match` (EntityConClsAll _ tc2) = tc1 == show tc2
+    (TypeClass tc1) `match` (EntityConClsSome _ tc2 _) = tc1 == show tc2
     _           `match`  _                     =  False
 
-
+-- better error message
+myRead :: (Read a) => String -> String -> a
+myRead file s =  
+  case [x | (x,t) <- reads s, ("","") <- lex t] of
+    [x] -> x
+    bs@[]  -> error ("Cannot parse in .hx file " ++ file ++ " line " ++ s)
+--                   (minimumBy (\v w -> compare (length v) (length w)) 
+--                     [t | (x,t) <- reads s, let dummy = x:bs]))
+    y   -> error ("Ambiguous parse of .hx file " ++ file)
 
 -- Visibility is a function denoting whether an identifier should be
 -- added (or not) to the AuxTree structure.
@@ -153,6 +182,12 @@ visibleIn (Just exports) noneSpecified modid
 		ExportEntity _ (EntityConClsAll _ torc) -> [show torc]
 		_ -> []) exports
 
+    explicitTyClss = concatMap
+         (\e-> case e of
+                ExportEntity _ (EntityConClsSome _ tyCls _) -> [show tyCls]
+                ExportEntity _ (EntityConClsAll _ tyCls) -> [show tyCls]
+                _ -> []) exports 
+
     idFilter c@(Con _ typ con)    =  con `elem` explicitSubordinates
 				|| typ `elem` implicitSubordinates
     idFilter v@(Var var)        =  var `elem` explicitVars
@@ -162,6 +197,7 @@ visibleIn (Just exports) noneSpecified modid
     idFilter c@(Field typ f)    =  f   `elem` explicitSubordinates
 				|| typ `elem` implicitSubordinates
 				|| f   `elem` explicitVars
+    idFilter (TypeClass tyCls) = tyCls `elem` explicitTyClss
 
 
 -- If it is left unspecified whether an entity is exported (due to
@@ -220,10 +256,17 @@ auxInfo visible identMap (DeclPrimitive _ f a _) t
 auxInfo visible identMap (DeclForeignImp _ _ _ f a _ _ _) t
     | visible key  = ([],addAT t replaceArity key (emptyAux {args = a}))
 						where key = Var (show f)
--- Add conid/conop identifier, with arity, and any associated field names.
+-- Add type, constructor, with arity, and any associated field names.
 auxInfo visible identMap (DeclData sort _ (Simple _ typ _) tycons _) t =
-  ([],foldr doCon t tycons)
+  ([],addAT (foldr doCon t tycons) const 
+        (TypeClass sTyp) (TyCls (Ty constructors fieldlabels)))
   where
+    sTyp = show typ
+    constructors = 
+      filter (visible . Con undefined sTyp) . map (show . getConstrId) $ tycons
+    fieldlabels = 
+      filter (visible . Field sTyp) . map show . nub . map snd . 
+        concatMap getConstrLabels $ tycons
     doCon (Constr _ c fs) t	   = accept c fs (foldr doFields t fs)
     doCon (ConstrCtx _ _ _ c fs) t = accept c fs (foldr doFields t fs)
     accept con fs t
@@ -238,10 +281,19 @@ auxInfo visible identMap (DeclData sort _ (Simple _ typ _) tycons _) t =
         | visible key = addAT t replaceArity key (emptyAux {args=1})
 	| otherwise = t
 	where key = Field (show typ) (show f)
--- Add class method identifier, arity is always -1.
+-- Add type synonym
+auxInfo visible identMap (DeclType (Simple _ ty _) _) t =
+  ([],addAT t const (TypeClass (show ty)) (TyCls (Ty [] [])))
+-- Add class and class method identifier, arity is always -1.
 auxInfo visible identMap (DeclClass _ _ cls _ (DeclsParse decls)) t =
-  ([],foldr doMethod t decls)
+  ([],addAT (foldr doMethod t decls) const
+        (TypeClass sCls) (TyCls (Cls methods)))
   where
+    sCls = show cls
+    methods =
+      filter (visible . Method sCls) . map show . concatMap getMethods $ decls
+    getMethods (DeclVarsType posIds _ _) = map snd posIds
+    getMethods _ = []
     doMethod (DeclVarsType pis ctxs typ) env = foldr pId env pis
     doMethod (DeclFixity f) env = fixInfo visible identMap f env
     doMethod _ env = env
@@ -252,7 +304,6 @@ auxInfo visible identMap (DeclClass _ _ cls _ (DeclsParse decls)) t =
 auxInfo visible identMap (DeclFixity f) t = ([],fixInfo visible identMap f t)
 -- No other form of decl matters.
 auxInfo visible identMap _ t = ([],t)
---auxInfo visible identMap (DeclType _ _) t =
 --auxInfo visible identMap (DeclTypeRenamed _ _) t =
 --auxInfo visible identMap (DeclDataPrim _ _ _) t =
 --auxInfo visible identMap (DeclConstrs _ _ _) t =

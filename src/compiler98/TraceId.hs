@@ -1,6 +1,7 @@
 module TraceId
   ( TraceId		-- abstract type
   , Fixity(L,R,Pre,Def,None)
+  , TyCls(Ty,Cls)
 			-- constructors:
   , mkLambdaBound      	-- :: TokenId -> TraceId
   , plus		-- :: TokenId -> AuxiliaryInfo -> TraceId
@@ -18,6 +19,7 @@ module TraceId
   , tPriority           -- :: TraceId -> Int {0-9}
   , getUnqualified      -- :: TraceId -> String
   , hasInfo             -- :: TraceId -> Bool
+  , tyClsInfo           -- :: TraceId -> TyCls
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
   , tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenGreater,tTokenMinus
   , tTokenTrue,tTokenFalse,tTokenEQ,tTokenCompare
@@ -38,7 +40,7 @@ import TokenId
   ,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,tenumFromTo
   ,tenumFromThenTo,t_error,t_dot,tshowsPrec,tshowParen,tshowChar
   ,tshowString,treadsPrec,treadParen,trange,tindex,tinRange,t_Tuple,t_Arrow)
-import AuxTypes (AuxiliaryInfo(..),Fixity(..),emptyAux)
+import AuxTypes (AuxiliaryInfo(..),Fixity(..),TyCls(..),emptyAux)
 import Maybe (isJust)
 import PackedString (unpackPS)
 
@@ -53,7 +55,7 @@ instance Eq TraceId where
 
 mkLambdaBound :: TokenId -> TraceId
 mkLambdaBound t = 
-  TI t (Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
+  TI t (Just (Value{ args=(-1), fixity=Def, priority=9, letBound=False}))
 
 plus :: TokenId -> AuxiliaryInfo -> TraceId
 t `plus` aux = TI t (Just aux)
@@ -114,6 +116,9 @@ getUnqualified = reverse . unpackPS . extractV . tokenId
 
 hasInfo :: TraceId -> Bool
 hasInfo (TI _ aux) = isJust aux
+
+tyClsInfo :: TraceId -> TyCls
+tyClsInfo (TI _ (Just (TyCls tyCls))) = tyCls
 
 -- TraceId versions of some hardcoded tokens 
 

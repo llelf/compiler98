@@ -7,16 +7,20 @@ import AssocTree
 import TokenId (TokenId,tPrelude,visImport,t_Tuple)
 
 -- AuxiliaryInfo is the extra information we need to know about identifiers.
-data AuxiliaryInfo = Has
-	{ args     :: Int
-	, fixity   :: Fixity
-	, priority :: Int
-	, letBound :: Bool
-	}
-	deriving (Show,Read)
+data AuxiliaryInfo = 
+         Value {- variable or constructor -}
+	   { args     :: Int
+	   , fixity   :: Fixity
+	   , priority :: Int
+	   , letBound :: Bool }
+       | TyCls TyCls -- needed for im/export of (..)
+       deriving (Show,Read)
 data Fixity = L | R | Pre String | Def | None deriving (Eq,Show,Read)
-emptyAux = Has { args=(-1), fixity=Def, priority=9, letBound=True }
-patternAux = Has { args=(-1), fixity=Def, priority=9, letBound=False }
+data TyCls = Ty [String]{- data constructors -} [String]{- field labels -}
+           | Cls [String]{- methods -}
+  deriving (Show,Read)
+emptyAux = Value { args=(-1), fixity=Def, priority=9, letBound=True}
+patternAux = Value { args=(-1), fixity=Def, priority=9, letBound=False}
 
 -- Identifier is used to distinguish varids from conids, and relate
 -- conids back to the type they belong to.  It also relates methods
@@ -24,6 +28,7 @@ patternAux = Has { args=(-1), fixity=Def, priority=9, letBound=False }
 data Identifier = Var String | Con TypeSort String{-type-} String{-con-}
 		| Field String{-type-} String{-field-}
 		| Method String{-class-} String{-method-}
+                | TypeClass String
 	deriving (Show,Read,Eq,Ord)
 
 data TypeSort = Data | Newtype deriving (Show,Read,Eq,Ord)
@@ -33,6 +38,7 @@ subTid (Var v)      = visImport v
 subTid (Con t _ c)    = possTuple c
 subTid (Field t f)  = visImport f
 subTid (Method c m) = visImport m
+subTid (TypeClass tc) = possTuple tc
 
 possTuple "()" = t_Tuple 0
 possTuple s | "Prelude." `isPrefixOf` s =
@@ -54,6 +60,7 @@ type AuxTree = AssocTree Identifier AuxiliaryInfo
 -- but we then need to know its type (or class) to know whether it
 -- is exported or not.  If an entity is neither a known constructor/field
 -- nor a known method, we assume it is just an ordinary variable.
+-- Types and classes are not stored in an IdentMap
 type IdentMap = AssocTree TokenId{-con, var, or method-} Identifier
 
 -- `mkIdentMap' makes a little lookup table from data constructors and field
@@ -80,6 +87,7 @@ mkIdentMap decls =
     typeSyn (DeclType (Simple pos id vars) _) = [id]
     typeSyn _ = []
 
+    addCon :: (TokenId,TypeSort,[Constr TokenId]) -> IdentMap -> IdentMap
     addCon (typ,typeSort,tycons) t = foldr doCon t tycons
 	where
         doCon (Constr _ c fs) t        = conAndFields c fs t
@@ -89,6 +97,7 @@ mkIdentMap decls =
                                           styp fs
         styp = show typ
 
+    addFields :: IdentMap -> String -> [(Maybe [(t, TokenId)],b)] -> IdentMap
     addFields t typ [] = t
     addFields t typ ((Nothing,_):_) = t
     addFields t typ ((Just posids,_):cs) = foldr doField (rest t) posids
@@ -96,6 +105,7 @@ mkIdentMap decls =
             doField (_,f) t = addAT t const f (Field typ (show f))
             rest t = addFields t typ cs
 
+    addMethod :: (TokenId,[Decl TokenId]) -> IdentMap -> IdentMap
     addMethod (cls, decls) t = foldr doMethod t decls
 	where
 	    doMethod (DeclVarsType pis ctxs typ) t = foldr pId t pis

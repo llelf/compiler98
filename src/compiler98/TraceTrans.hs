@@ -27,7 +27,7 @@ module TraceTrans (traceTrans,maybeStripOffQual) where
 import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
-               ,mkUnqualifiedTokenId,isTidCon
+               ,mkUnqualifiedTokenId,isTidCon,visImport
                ,qualify,visible,extractV,extractM,dropM
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq,t_Colon,t_List)
@@ -35,10 +35,10 @@ import TraceDerive (derive)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos,mapListSnd,mapSnd)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
-               ,getUnqualified,modLetBound
+               ,getUnqualified,modLetBound,tyClsInfo,TyCls(Ty,Cls)
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
-import AuxTypes (AuxiliaryInfo) -- needed for hbc's broken import mechanism
+import AuxTypes (AuxiliaryInfo,possTuple) 
 import List (isPrefixOf,union,partition,nubBy,delete)
 import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
@@ -197,20 +197,26 @@ tImpSpec (Hiding entities)   = Hiding (concatMap tEntity entities)
 tEntity :: Entity TraceId -> [Entity TokenId]
 tEntity (EntityVar pos id) = [EntityVar pos (nameTransLetVar id)]
 tEntity (EntityConClsAll pos id) = 
-  error "Sorry, hat-trans currently cannot handle (..) in import or export lists.\nPlease list all data constructors / field labels / methods.\n"
-  -- [EntityConClsAll pos (nameTransTyConCls id)]
-  -- INCOMPLETE: if TyCon(..) need also to import/export references to traces
-  -- of data constructor names, but how know their names?
-tEntity (EntityConClsSome pos id posIds)
-  | not (null pCons) =  -- i.e. definitely a TyCon
-    (EntityConClsSome pos (nameTransTyConCls id)
-                          (mapListSnd nameTransCon pCons
-                           ++ mapListSnd nameTransField pFields))
-    : map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) pCons
-    -- ++ map (\(pos,id) -> EntityVar pos (nameTraceInfoField id)) pFields
-  | otherwise = -- i.e. probably a TyClass
-    [EntityConClsSome pos (nameTransTyConCls id) 
-      (mapListSnd nameTransLetVar posIds ++ mapListSnd nameShare posIds)]
+  case tyClsInfo id of
+    Ty cons labels -> (EntityConClsSome pos (nameTransTyConCls id)
+                        (map ((,) pos . nameTransCon) consIds
+                         ++ map ((,) pos . nameTransField) labelIds))
+                      : map (EntityVar pos . nameTraceInfoCon) consIds
+                      ++ map (EntityVar pos . nameTransLetVar) labelIds
+      where
+      consIds = map (mkLambdaBound . possTuple) cons
+      labelIds = map (mkLambdaBound . visImport) labels
+    Cls methods -> [EntityConClsAll pos (nameTransTyConCls id)]
+tEntity (EntityConClsSome pos id posIds) =
+  case tyClsInfo id of
+    Ty _ _ -> (EntityConClsSome pos (nameTransTyConCls id)
+                (mapListSnd nameTransCon pCons
+                 ++ mapListSnd nameTransField pFields))
+             : map (\(pos,id) -> EntityVar pos (nameTransLetVar id)) pFields
+             ++ map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) pCons
+    Cls _ -> [EntityConClsSome pos (nameTransTyConCls id) 
+               (mapListSnd nameTransLetVar posIds 
+                 ++ mapListSnd nameShare posIds)]
   where
   (pCons,pFields)   = partition (isTidCon.tokenId.snd) posIds
 

@@ -94,6 +94,11 @@ lookEnv env id =
   where
   stop = error ("Variable or constructor not in scope: " ++ show id)
 
+lookupTyCls :: Environment -> TokenId -> TraceId
+lookupTyCls (auxTree,_) id =
+  case lookupAT auxTree (TypeClass (show id)) of
+    Just info -> id `plus` info
+    _ -> error ("Type or class not in scope: " ++ show id)
 
 -- The class `Relabel' walks the abstract syntax tree, relabelling all
 -- TokenId to TraceId.  Most instances are pretty trivial - the only
@@ -129,10 +134,10 @@ instance Relabel ImpSpec where
   relabel env (Hiding entities)   = Hiding (map (relabel env) entities)
 
 instance Relabel Entity where
-  relabel env (EntityVar p id)		= EntityVar p (mkLambdaBound id)
-  relabel env (EntityConClsAll p id)	= EntityConClsAll p (mkLambdaBound id)
+  relabel env (EntityVar p id)	     = EntityVar p (mkLambdaBound id)
+  relabel env (EntityConClsAll p id) = EntityConClsAll p (lookupTyCls env id)
   relabel env (EntityConClsSome p id cons) = EntityConClsSome p
-						(mkLambdaBound id)
+						(lookupTyCls env id)
 						(relabelPosIds cons)
 
 instance Relabel InfixClass where
