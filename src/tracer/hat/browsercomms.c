@@ -475,7 +475,8 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
 	  ToBrowser(sock, "\"()\"");
 	else
 	  ToBrowser(sock, id->idname);
-	sprintf(str," %d %d ",(id->defnline*10000+id->defncolumn),id->priority);
+	sprintf(str," %d %d %d ",id->isIdentifier,
+		(id->defnline*10000+id->defncolumn),id->priority);
         ToBrowser(sock, str);
 	free(id->idname);
 	free(id->modname);

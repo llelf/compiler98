@@ -287,6 +287,7 @@ readIdentifierAt (FileOffset fo)
   fread(&defnpos,sizeof(int),1,HatFile);
   id->defnline   = ntohl(defnpos)/10000;
   id->defncolumn = ntohl(defnpos)%10000;
+  id->isIdentifier = 0;
   readModuleAt(modpos,&(id->modname),&(id->srcname));
   HIDE(fprintf(stderr,"readIdentifierAt 0x%x -> %s %s %s %d %d %d\n",fo,id->idname,id->modname,id->srcname,id->defnline,id->defncolumn,id->priority);)
   return id;
@@ -346,6 +347,7 @@ readNmTypeAt (FileOffset fo)
   id->priority = (char)3;
   id->defnline = 0;
   id->defncolumn = 0;
+  id->isIdentifier = 0;
 
   freadAt(fo,&c,sizeof(char),1,HatFile);
   if ((c<0x40) || (c>0x50) && (c!=0x56)) {
@@ -404,13 +406,19 @@ readNmTypeAt (FileOffset fo)
 		  sprintf(buf,"%.15f",d);
 		  id->idname = strdup(buf);
 		} break;
-    case NTId:
     case NTConstr:
+		{ free(id->modname);
+		  free(id->srcname);
+		  free(id);
+		  id = readIdentifierAt(fo);
+		} break;
+    case NTId:
     case NTToplevelId:
 		{ free(id->modname);
 		  free(id->srcname);
 		  free(id);
 		  id = readIdentifierAt(fo);
+		  id->isIdentifier=1; // mark node as identifier
 		} break;
     case NTTuple:
 		{ sprintf(buf,",");

@@ -25,6 +25,7 @@ typedef struct {
   char  priority;
   int   defnline;
   int   defncolumn;
+  int   isIdentifier; // 1 = identifier, 0 = constructor/basic value
 } Ident;
 
 char*		basename	(char* path, char* ext); /* ext can be NULL */
