@@ -6,6 +6,9 @@ TARGET = $(DST)/greencard$(EXE)
 ifeq "nhc98" "$(HC)"
   HFLAGS = $(NHEAP)
 endif
+ifeq "ghc" "$(HC)"
+  HFLAGS = -syslib exts
+endif
 
 ## Since adopting hmake, all of this junk is obsolete
 #
