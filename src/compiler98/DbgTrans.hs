@@ -227,7 +227,7 @@ dTopDecl True root (DeclPat (Alt pat rhs decls)) =
   mapS0 addId bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
-  dTrustRhs False root root true otherw rhs >>>= \rhs' ->
+  dTrustRhs True root root true otherw rhs >>>= \rhs' ->
   dPat root pat' >>>= \pat'' ->
   dTrustDecls root decls >>>= \decls' ->
   mkFailExpr pos root >>>= \fe ->
@@ -300,7 +300,7 @@ dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
   mapS0 (setArity 2) bvsids >>>  
   mapS0 addId bvsposids >>>
   mapS makeSourceRef bvspos >>>= \srs ->
-  dSuspectRhs parent rhs failContinuation >>>= \rhs' ->
+  dSuspectRhs True parent rhs failContinuation >>>= \rhs' ->
   dPat parent pat' >>>= \pat'' ->
   let ExpApplication _ [r,_,tresult] = pat'' in
   dSuspectDecls parent decls >>>= \decls' ->
@@ -378,7 +378,7 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
   mapS0 addId bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
-  dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
+  dTrustRhs True hidParent hidParent true otherw rhs >>>= \rhs' ->
   dPat hidParent pat' >>>= \pat'' ->
   dTrustDecls hidParent decls >>>= \decls' ->
   mkFailExpr pos hidParent >>>= \fe ->
@@ -477,8 +477,6 @@ dMethod parent trusted info pos id funName fundefs =
               parent pos id funName fundefs NoType
        _ -> (if trusted then dTrustFun else dSuspectFun) 
               pos id funName (getArity fundefs) fundefs NoType
--- dCaf does not work, 
--- because shared constants need to be defined outside class/instance
 
 
 dSuspectCaf :: Exp Id -> Pos -> Id -> String -> [Fun Id] -> NewType 
@@ -489,7 +487,7 @@ dSuspectCaf parent pos id cafName [Fun [] rhs localDecls] nt =
   addNewName 0 True "nt" NoType >>>= \useParentId ->
   let useParent = ExpVar pos useParentId in
   addNewName 0 True cafName nt >>>= \nid ->
-  dSuspectRhs useParent rhs failContinuation >>>= \rhs' ->
+  dSuspectRhs False useParent rhs failContinuation >>>= \rhs' ->
   dSuspectDecls useParent localDecls >>>= \(DeclsParse localDeclsList') ->
   makeSourceRef pos >>>= \sr ->
   makeNTId pos id >>>= \ntId ->
@@ -699,7 +697,7 @@ dSuspectFunClauses parent funName arity true otherw
     dPats newParent pats' >>>= \pats'' ->
     let continuation = functionContinuation f patnames in
     continuationToExp continuation newParent >>>= \contExp ->
-    dSuspectGuardedExprs newParent ges continuation >>>= \expr ->
+    dSuspectGuardedExprs False newParent ges continuation >>>= \expr ->
     dSuspectDecls newParent decls >>>= \decls' ->
     let failclause = Fun (newParent:patnames) (Unguarded contExp) 
                          (DeclsParse []) in
@@ -711,7 +709,7 @@ dSuspectFunClauses parent funName arity true otherw
   | otherwise =
     -- guards cannot fail or last clause
     dPats parent pats >>>= \pats' ->
-    dSuspectGuardedExprs parent ges failContinuation >>>= \e ->
+    dSuspectGuardedExprs False parent ges failContinuation >>>= \e ->
     dSuspectDecls parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
     let fs = Fun (parent:pats') 
@@ -782,19 +780,19 @@ dTrustForeignImp pos id id' arity =
 {-
 The continuation is used if all guards fail.
 -}
-dSuspectGuardedExprs :: Exp Id -> [(Exp Id,Exp Id)] -> ContExp 
+dSuspectGuardedExprs :: Bool -> Exp Id -> [(Exp Id,Exp Id)] -> ContExp 
                      -> DbgTransMonad (Exp Id)
 
-dSuspectGuardedExprs parent [] cont = 
+dSuspectGuardedExprs cr parent [] cont = 
   newVar noPos >>>= \t ->
   continuationToExp cont t >>>= \contExp ->
   unitS (ExpLambda noPos [t] contExp)
-dSuspectGuardedExprs parent ((g, e):ges) cont = 
+dSuspectGuardedExprs cr parent ((g, e):ges) cont = 
   let pos = getPos g in
-  dSuspectGuardedExprs parent ges cont >>>= \ges' ->
+  dSuspectGuardedExprs cr parent ges cont >>>= \ges' ->
   dSuspectExp True parent g >>>= \g' ->
   newVar pos >>>= \newParent ->
-  dSuspectExp False newParent e >>>= \e' ->
+  dSuspectExp cr newParent e >>>= \e' ->
   lookupVar pos t_guard >>>= \guard ->
   makeSourceRef pos >>>= \sr ->
   unitS (ExpApplication pos 
@@ -881,11 +879,11 @@ mkFailExpr pos parent =
   unitS (ExpApplication pos [fatal, parent])
 
 
-dSuspectRhs :: Exp Id -> Rhs Id -> ContExp -> DbgTransMonad (Exp Id)
+dSuspectRhs :: Bool -> Exp Id -> Rhs Id -> ContExp -> DbgTransMonad (Exp Id)
 
-dSuspectRhs parent (Unguarded exp) cont = dSuspectExp False parent exp
-dSuspectRhs parent (Guarded gdExps) cont = 
-  dSuspectGuardedExprs parent gdExps cont >>>= \expr -> 
+dSuspectRhs cr parent (Unguarded exp) cont = dSuspectExp cr parent exp
+dSuspectRhs cr parent (Guarded gdExps) cont = 
+  dSuspectGuardedExprs cr parent gdExps cont >>>= \expr -> 
   unitS (ExpApplication noPos [expr, parent])
 
 
