@@ -112,7 +112,7 @@ qualRename :: TokenId -> [ImpDecl TokenId] -> TokenId -> [TokenId]
 qualRename modid impdecls = qualRename' qTree 
  where
   qualRename' t q@(Qualified t1 t2)
-    | (Visible t1)==modid && t1!=rpsPrelude  = [Visible t2]
+    | (Visible t1)==modid && t1/=rpsPrelude  = [Visible t2]
     | otherwise =
         case lookupAT t t1 of
 	    Nothing -> [q]
