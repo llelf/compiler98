@@ -29,7 +29,7 @@ public class Script implements Cloneable {
     new ScriptMetaAutoQuit().registerItemType("autoquit");
   }
 
-  private void registerItemType(String name) {
+  protected void registerItemType(String name) {
     this.name = name;
     Script.parseTable.put(name, this);
     Script.classTable.put(this.getClass(), name);
