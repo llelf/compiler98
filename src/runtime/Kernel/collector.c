@@ -552,7 +552,8 @@ again:
 
 WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkInit();)
 
-#ifdef DBGTRANS
+#if 0
+/* #ifdef DBGTRANS */
   {
       extern int traceK, tracePruneSATs;
 
