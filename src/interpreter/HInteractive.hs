@@ -10,12 +10,9 @@ import Maybe
 import Config		-- from src/hmake
 import Compiler		-- from src/hmake
 import HiConfig
-import SimpleLineEditor (delChars, getLineEdited)
+import SimpleLineEditor (delChars, getLineEdited, initialise, restore)
 import LexModule
 import Unlit
-#if USE_READLINE
-import qualified Readline
-#endif
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
@@ -44,21 +41,19 @@ main = do
   putStrLn (replicate 43 ' '++
             "... Using compiler "++compilerPath defaultComp++" ...\n")
   putStrLn ("Type :? for help")
-  hSetBuffering stdout NoBuffering
-  hSetBuffering stdin NoBuffering
-#if USE_READLINE
-  Readline.initialize
-#endif
+  SimpleLineEditor.initialise
   let state = S { options=opts, config=cfg, compiler=defaultComp, cfgfile=file
                 , modules=["Prelude"], scope=Nothing, scopeText=Nothing }
   load state "Prelude" (toplevel state)
   putStrLn "[Cannot continue without Prelude...]"
+  SimpleLineEditor.restore
   exitWith (ExitFailure 1)
 
 quit = do
    putStrLn "[Leaving hmake interactive...]"
    mapM_ (\f-> catch (removeFile f) (\e->done))
          [tmpfile, tmpfile++".hs", tmpfile++".hi", tmpfile++".o"]
+   SimpleLineEditor.restore
    exitWith ExitSuccess
 
 toplevel :: State -> IO ()

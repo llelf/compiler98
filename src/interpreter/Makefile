@@ -11,7 +11,7 @@ CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 ifeq "$(findstring ghc, ${HC})" "ghc"
 HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
-                 -package lang -package util $(READLINE) )
+                 -package lang -package util -package base $(READLINE) )
 export HFLAGS
 endif
 ifeq "$(findstring hbc, ${HC})" "hbc"
@@ -19,7 +19,7 @@ HFLAGS =
 export HFLAGS
 endif
 ifeq "$(findstring nhc98, ${HC})" "nhc98"
-HFLAGS =
+HFLAGS = -package base
 export HFLAGS
 endif
 
@@ -27,7 +27,7 @@ all: $(TARGET)
 install: $(TARGET)
 cfiles: $(SRCS)
 	-rm -f *.hi *.hc
-	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -C HInteractive.hs
+	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -package base -C HInteractive.hs
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
