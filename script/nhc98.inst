@@ -86,7 +86,6 @@ PACKAGES=
 VFLAG=0 
 MFLAG=0 
 TPFLAG=0
-HATFLAG=0
 KEEPS=0
 KEEPC=0
 AS="${CC} -c"
@@ -132,8 +131,6 @@ processArgs () {
                exit 0;;
     -o-suffix=*)  OSUFFIX=`echo $1 | cut -c11-` ;;
     -hc-suffix=*) CSUFFIX=`echo $1 | cut -c12-` ;;
-    -hat  ) HATFLAG=1
-            COMPFLAGS=$COMPFLAGS" -hat" ;;
     -p    ) PROF=p
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
@@ -354,7 +351,6 @@ HSRC=
 CSRC=
 SSRC=
 GR=
-HAT=
 case $COMPFILES in
 ""   ) ;; 
 *    )
@@ -364,25 +360,25 @@ case $COMPFILES in
   do
     CSUF=$CSUFFIX
     case $1 in
-    *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0 HAT=0;
+    *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0;
                               BASENAME=`basename $1 .s`   ;;
-    *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HAT=0;
+    *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .hc`  CSUF=hc ;;
-    *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HAT=0;
+    *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .T.c` CSUF=T.c ;;
-    *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HAT=0;
+    *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .p.c` CSUF=p.c ;;
-    *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HAT=0;
+    *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .z.c` CSUF=z.c ;;
-    *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HAT=0;
+    *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .c`   CSUF=c ;;
-    *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0 HAT=1;
+    *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
                               BASENAME=`basename $1 _.hs_` ;;
-    *.gc  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=1 HAT=0;
+    *.gc  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=1;
                               BASENAME=`basename $1 .gc`  ;;
-    *.hs  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0 HAT=0;
+    *.hs  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
                               BASENAME=`basename $1 .hs`  ;;
-    *.lhs ) UNLIT="-unlit"; HSRC=1; CSRC=0; SSRC=0; GR=0 HAT=0;
+    *.lhs ) UNLIT="-unlit"; HSRC=1; CSRC=0; SSRC=0; GR=0;
                               BASENAME=`basename $1 .lhs` ;;
     esac
 
@@ -488,15 +484,6 @@ case $COMPFILES in
       if test $? -ne 0
       then
 	exit 1
-      fi
-
-      if test $HATFLAG -eq 1
-      then
-        if test $HAT -eq 1
-        then
-          mv $DIRNAME/${BASENAME}_.hat $DIRNAME/${BASENAME}.hat
-        fi
-        exit 0
       fi
 
       if test $PRECPP -ne 0
@@ -620,6 +607,11 @@ else
   SUF=""
 fi
 
+if test "$TRACE" = "T"
+then TRACELIB=$NHC98LIBDIR/$MACHINE/libdebug$SUF.a
+else TRACELIB=
+fi
+
 if test -n "$MAINROUTINE"
 then
   MAINROUTINE=$MAINROUTINE$SUF.o
@@ -627,7 +619,7 @@ fi
 
 if test $TPFLAG -eq 0
 then
-LDLIBS=$MAINROUTINE" "$NHC98LIBDIR/$MACHINE/mutlib$SUF.o" "$NHC98LIBDIR/$MACHINE/mutator$SUF.o" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/libdebug$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
+LDLIBS=$MAINROUTINE" "$NHC98LIBDIR/$MACHINE/mutlib$SUF.o" "$NHC98LIBDIR/$MACHINE/mutator$SUF.o" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$TRACELIB" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
 fi
 
 #for LIBFLAG in $HINCDIRS
@@ -671,7 +663,7 @@ then
    LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/mutator$SUF.o
    LDLIBS=$LDLIBS" "$LLPREL" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
    LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/tprofprel2$SUF.o
-   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/libdebug$SUF.a
+   LDLIBS=$LDLIBS" "$TRACELIB
    LDLIBS=$LDLIBS" "$LLPREL" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
    LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/tprofprel3$SUF.o
    LDLIBS=$LDLIBS" "$LLPREL" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
