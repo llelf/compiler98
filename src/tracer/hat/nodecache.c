@@ -10,7 +10,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
-#include "hat.h"
+#include "art.h"
 
 /* Whenever we see a node, it is given a reference number and placed in 
  * a table, the node cache, using ncInsert(FileOffset np, int hist).

@@ -22,18 +22,19 @@ module Hat
   ,prim12,prim13,prim14,prim15
   ,cn1,cn2,cn3,cn4,cn5,cn6,cn7,cn8
   ,pa0,pa1,pa2,pa3,pa4
+  ,mkTRoot,mkTNm
   ,mkSourceRef,mkAtomId,mkModule
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble,mkNTTuple
   ,mkNTFun,mkNTCase,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard
   ,mkNTContainer,mkNTRational
-  ,outputTrace
+  ,openTrace,closeTrace,outputTrace,fatal
   ) where
 
-import Prelude (Int,Char,Integer,Float,Double,Rational
-               ,Bool(True,False),Ordering(LT,EQ,GT))
-import qualified Prelude (seq,($!)) 
+-- import Prelude (Int,Char,Integer,Float,Double,Rational,String,IO
+--                ,Bool(True,False),Ordering(LT,EQ,GT))
+-- import qualified Prelude 
   -- qualified to mark clearly where original Prelude is used
-import qualified Ratio (numerator,denominator)
+import Ratio (numerator,denominator)
 
 import PackedString (PackedString,packString) -- NONPORTABLE
 import FFI (Addr,ForeignObj,StablePtr
@@ -1674,8 +1675,8 @@ foreign import "primNTInteger"
  mkNTInteger'	:: Int -> NmType
 mkNTRational :: Rational -> NmType
 mkNTRational r = 
-  mkNTRational' ((Prelude.fromInteger . Ratio.numerator $ b)::Int) 
-                ((Prelude.fromInteger . Ratio.denominator $ b)::Int)) 
+  mkNTRational' ((Prelude.fromInteger (Ratio.numerator r))::Int) 
+                ((Prelude.fromInteger (Ratio.denominator r))::Int)
 foreign import "primNTRational"
  mkNTRational' :: Int -> Int -> NmType
 foreign import "primNTFloat"

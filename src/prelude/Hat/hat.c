@@ -1235,15 +1235,15 @@ primSR3 (SrcRef *sr)
 FileOffset
 primTracePtr (CTrace* t)
 {
-    fprintf(stderr,"\tprimTracePtr 0x%x -> 0x%x\n",t,t->ptr);
-    return t->ptr;
+  HIDE(fprintf(stderr,"\tprimTracePtr 0x%x -> 0x%x\n",t,t->ptr);)
+  return t->ptr;
 }
 
 int
 primTrustedFun (CTrace* t)
 {
-    HIDE(fprintf(stderr,"\tprimTrustedFun 0x%x -> %s\n",t,(t->trust?"yes":"no"));)
-    return t->trust;
+  HIDE(fprintf(stderr,"\tprimTrustedFun 0x%x -> %s\n",t,(t->trust?"yes":"no"));)
+  return t->trust;
 }
 
 int

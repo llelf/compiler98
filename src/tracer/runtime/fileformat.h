@@ -3,7 +3,7 @@
 
 #include "ident.h"
 #include "runtime.h"
-#include "hat.h"
+#include "art.h"
 
 extern FILE *HatFile;
 extern FILE *HatOutput;

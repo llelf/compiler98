@@ -28,7 +28,8 @@ import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
                ,visible,extractV
-               ,tPrelude,t_Tuple,t_Arrow,tTrue,t_otherwise,t_undef)
+               ,tPrelude,t_Tuple,t_Arrow,tTrue,t_otherwise,t_undef
+               ,tMain,tmain,tseq)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,just
@@ -45,11 +46,13 @@ type Arity = Int
 -- Transform a module
 
 traceTrans :: String  -- filename of module 
+           -> String  -- base filename for the trace files (without extension)
            -> Module TraceId -> Module TokenId
-traceTrans filename (Module pos modId exps impDecls fixDecls decls) =
+traceTrans filename traceFilename 
+ (Module pos modId exps impDecls fixDecls decls) =
   Module pos
     (nameTransModule modId)
-    (Just [])  -- export decls are not yet transformed, so export everything
+    (if isMain modId then Just [] {- export everything -} else tExports exps)
     (tImpDecls impDecls)
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
@@ -57,11 +60,46 @@ traceTrans filename (Module pos modId exps impDecls fixDecls decls) =
        ++ [defNameMod pos modId filename]
        ++ map (defNameCon modTrace) cons 
        ++ map (defNameVar modTrace) vars 
-       ++ map (defNamePos modTrace) poss))
+       ++ map (defNamePos modTrace) poss
+       ++ if isMain modId then [defMain traceFilename] else [] ))
   where
   modTrace = ExpVar pos (nameTraceInfoModule modId)
   (poss,vars,cons) = getModuleConsts consts
   (DeclsParse decls',consts) = tDecls (ExpVar pos tokenMkTRoot) decls
+
+-- ----------------------------------------------------------------------------
+-- construct new main function definition
+
+-- main = do
+--  T.openTrace "artFilename"
+--  case omain Prelude.undefined Prelude.undefined of
+--    T.R v _ -> v
+--  T.closeTrace
+defMain :: String -> Decl TokenId
+
+defMain artFilename =
+  DeclFun noPos tokenmain
+    [Fun [] (Unguarded (ExpDo noPos 
+      [StmtExp (ExpApplication noPos 
+                 [ExpVar noPos tokenOpenTrace
+                 ,ExpLit noPos (LitString Boxed artFilename)])
+      ,StmtExp (ExpCase noPos 
+                 (ExpApplication noPos
+                   [ExpVar noPos tokenomain
+                   ,ExpVar noPos t_undef
+                   ,ExpVar noPos t_undef])
+                 [Alt (ExpApplication noPos 
+                        [ExpVar noPos tokenR
+                        ,ExpVar noPos tokenValue
+                        ,PatWildcard noPos]) 
+                      (Unguarded (ExpVar noPos tokenValue)) noDecls ])
+      ,StmtExp (ExpVar noPos tokenCloseTrace)
+      ]))
+      noDecls]
+  where
+  tokenmain = visible (reverse "main")
+  tokenomain = nameTransVar (just tmain)
+  tokenValue = visible (reverse "value")
 
 -- ----------------------------------------------------------------------------
 -- Transform imports and exports
@@ -80,7 +118,9 @@ tImpDecls decls =
      then id 
      else ((Import (noPos,nameTransModule (just tPrelude)) (Hiding [])) :))
     ((ImportQ (noPos,tPrelude) (Hiding []))
-    :(ImportQ (noPos,Visible tracingModule) (Hiding [])) 
+     -- ^ hide the standard Prelude 
+    :(ImportQas (noPos,Visible tracingModule) 
+       (noPos,Visible tracingModuleShort) (Hiding [])) 
     :(map tImpDecl decls))
   where 
   importsPrelude :: ImpDecl TraceId -> Bool
@@ -565,7 +605,7 @@ tGuardedExps cr parent failCont ((guard,exp):gdExps) =
               [Fun []
                 (Unguarded (mkConstGuard pos parent guardTrace)) noDecls]])
           (ExpApplication pos 
-            [ExpVar pos tokenMyseq,newParent
+            [ExpVar pos tseq,newParent
             ,ExpIf pos guardValue exp' gdExps'])))
       noDecls]
   ,pos `addPos` guardConsts `merge` expConsts `merge` gdExpsConsts)
@@ -888,27 +928,33 @@ tTyArgs = map tTyArg
 
 tTyArg :: (Maybe [(Pos,TraceId)],Type TraceId)
        -> (Maybe [(Pos,TokenId)],Type TokenId)
-tTyArg (maybePosIds,ty) = (fmap (mapSnd nameTransField) maybePosIds,tType ty)
+tTyArg (maybePosIds,ty) = 
+  (fmap (mapSnd nameTransField) maybePosIds,wrapType (tType ty))
 
 
 -- ty ==> SR -> Trace -> [[ty]]
 mkTFunType :: Type TraceId -> Type TokenId
 mkTFunType ty = 
   TypeCons pos tokenSR [] `typeFun` TypeCons pos tokenTrace [] 
-    `typeFun` (tType ty)
+    `typeFun` wrapType (tType ty)
   where
   pos = getPos ty
 
+-- just rewrite function types:
+-- t1 -> t2  ==>  Trace -> R t1 -> R t2
 tType :: Type TraceId -> Type TokenId
 tType (TypeCons pos tyCon tys) =
-  TypeCons pos tokenR 
-    [if isFunTyCon tyCon 
-      then TypeCons pos tokenTrace [] 
-             `typeFun` TypeCons pos t_Arrow (map tType tys)
-      else TypeCons pos (nameTransTyConCls tyCon) (map tType tys)]
+  if isFunTyCon tyCon 
+    then TypeCons pos tokenTrace [] 
+           `typeFun` TypeCons pos t_Arrow (map (wrapType . tType) tys)
+    else TypeCons pos (nameTransTyConCls tyCon) (map tType tys)
 tType (TypeApp lTy rTy) = TypeApp (tType lTy) (tType rTy)
 tType (TypeVar pos tyId) = TypeVar pos (nameTransTyVar tyId)
 tType (TypeStrict pos ty) = TypeStrict pos (tType ty)
+
+-- ty ==> R ty
+wrapType :: Type TokenId -> Type TokenId
+wrapType ty = TypeCons noPos tokenR [ty]
 
 -- just replace TraceIds by TokenIds
 tokenIdType :: Type TraceId -> Type TokenId
@@ -969,7 +1015,10 @@ nameTraceInfoPos pos = mkUnqualifiedTokenId (('p':) . showsEncodePos pos $ "")
 -- names referring to transformed program fragments:
 
 nameTransModule :: TraceId -> TokenId
-nameTransModule = updateToken (modulePrefix :)
+nameTransModule = updateToken updateModule
+  where
+  updateModule (name@"Main") = name  -- if the module is `Main', then unchanged
+  updateModule name = modulePrefix : name
 
 nameTransTyConCls  :: TraceId -> TokenId
 nameTransTyConCls = updateToken id  -- only module name is changed
@@ -1082,16 +1131,20 @@ updateToken f traceId =
   case tokenId (traceId) of
     t@(TupleId _) -> t
     Visible n     -> 
-      Visible (packString . reverse . f . reverse . unpackPS $ n) 
+      Visible (packString . reverse . f . unqual $ n) 
     Qualified m n -> 
-      let unqual = case reverse . unpackPS $ n of
-                     ":" -> "Cons"  -- change predefined names
-                     "[]" -> "Nil"
-                     s -> s
-      in Qualified 
-        (packString . reverse . (modulePrefix :) . reverse . unpackPS $ m)
-        (packString . reverse . f $ unqual) 
+      Qualified 
+        (packString . reverse . updateModule . reverse . unpackPS $ m)
+        (packString . reverse . f . unqual $ n) 
     _             -> error "TraceTrans: updateToken"
+  where
+  updateModule (name@"Main") = name -- if module is `Main', then unchanged
+  updateModule name = modulePrefix : name
+  unqual :: PackedString -> String
+  unqual n = case reverse . unpackPS $ n of -- change predefined names
+               ":" -> "Cons" 
+               "[]" -> "List" -- here both type and data constructor
+               s -> s
 
 
 -- ----------------------------------------------------------------------------
@@ -1131,10 +1184,14 @@ wrapExp pos ev et = ExpApplication pos [ExpCon pos tokenR,ev,et]
 -- hardwired tokens:
 
 tracingModule :: PackedString
-tracingModule = packString . reverse $ "T"  -- name of module with combinators
+tracingModule = packString . reverse $ "Hat" -- name of module with combinators
+
+tracingModuleShort :: PackedString
+tracingModuleShort = packString . reverse $ "T"  -- abbreviation
+
 
 mkTracingToken :: String -> TokenId
-mkTracingToken s = Qualified tracingModule (packString . reverse $ s)
+mkTracingToken s = Qualified tracingModuleShort (packString . reverse $ s)
 
 mkTracingTokenArity :: String -> Arity -> TokenId
 mkTracingTokenArity s a = mkTracingToken (s ++ show a)
@@ -1230,8 +1287,11 @@ tokenFatal = mkTracingToken "fatal"
 
 -- other hardcoded tokens:
 
-tokenMyseq :: TokenId
-tokenMyseq = mkTracingToken "Prelude.seq"
+tokenOpenTrace :: TokenId
+tokenOpenTrace = mkTracingToken "openTrace"
+
+tokenCloseTrace :: TokenId
+tokenCloseTrace = mkTracingToken "closeTrace"
 
 tokenSR :: TokenId
 tokenSR = mkTracingToken "SR"
@@ -1252,6 +1312,9 @@ isTrue id = (tokenId id) == tTrue
 
 isOtherwise :: TraceId -> Bool
 isOtherwise id = (tokenId id) == t_otherwise
+
+isMain :: TraceId -> Bool
+isMain id = (tokenId id) == tMain
 
 -- other stuff
 

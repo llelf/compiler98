@@ -9,6 +9,7 @@ module Main where
 
 import IO
 import System
+import Monad(when)
 
 import Scc
 import Error
@@ -157,20 +158,18 @@ main' args = do
   {-
   -- Read and write auxiliary information files (for tracing).
   -- Then relabel the syntax tree with the auxiliary information.
-  -- Eventually, the tracing transformation itself will also be in this
-  -- phase of the compiler.
+  -- Then the tracing transformation itself is applied.
+  -- The result is written to file (no redirection possible yet)
   -}
-  if sHatAuxFile flags
-    then do toAuxFile flags (sAuxFile flags) parsedPrg
-          --putStrLn (prettyPrintTokenId flags ppModule parsedPrg)
-            newprog <- auxLabelSyntaxTree flags parsedPrg
-            putStrLn (prettyPrintTraceId flags ppModule newprog) 
-            putStrLn "----------------------------------"    
-            putStrLn (prettyPrintTokenId flags ppModule 
-                       (traceTrans (sSourceFile flags) newprog))
-            exitWith (ExitSuccess)
-    else return ()
 
+  when (sHatTrans flags) $ do
+    toAuxFile flags (sHatAuxFile flags) parsedPrg
+    newprog <- auxLabelSyntaxTree flags parsedPrg
+    writeFile (sHatTransFile flags)
+      (prettyPrintTokenId flags ppModule 
+        (traceTrans (sSourceFile flags) (sHatFileBase flags) newprog))
+    putStrLn ("Wrote " ++ sHatTransFile flags)
+    exitWith (ExitSuccess)
 
   -- (Module _ (Visible modid) _ _ _ _) <- return parsedPrg
   -- Insert check that sPart flags or modid == sourcefile ???

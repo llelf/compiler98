@@ -137,30 +137,28 @@ nhcLexParse flags filename =
                      else mainChar)
   pF (sLex flags) "Lexical" 
      (mixSpace (map (\ (p,l,_,_) -> strPos p ++ ':':show l) lexdata)) 
-  nhcAux flags (parseit parseProg lexdata)
+  nhcHatTrans flags (parseit parseProg lexdata)
 
 
 {-
 -- Read and write auxiliary information files (for tracing).
 -- Then relabel the syntax tree with the auxiliary information.
--- Eventually, the tracing transformation itself will also be in this
--- phase of the compiler.
+-- Then the tracing transformation itself is applied.
+-- The result is written to file (no redirection possible yet)
 -}
-nhcAux :: Flags -> Either (Pos,String,[String]) (Module TokenId) -> IO () 
-nhcAux flags (Left err) = errorMsg (sSourceFile flags) (showErr err)
-nhcAux flags (Right parsedProg) = do
-    if sHatAuxFile flags
-      then do toAuxFile flags (sAuxFile flags) parsedProg
-            --putStrLn (prettyPrintTokenId flags ppModule parsedProg)
-              newprog <- auxLabelSyntaxTree flags parsedProg
-              putStrLn (prettyPrintTraceId flags ppModule newprog) 
-              putStrLn "----------------------------------"    
-              putStrLn (prettyPrintTokenId flags ppModule 
-                         (traceTrans (sSourceFile flags) newprog))
-              exitWith (ExitSuccess)
-      else return ()
-    nhcNeed flags parsedProg
-
+nhcHatTrans :: Flags -> Either (Pos,String,[String]) (Module TokenId) -> IO () 
+nhcHatTrans flags (Left err) = errorMsg (sSourceFile flags) (showErr err)
+nhcHatTrans flags (Right parsedProg) = do
+  if sHatTrans flags
+    then do toAuxFile flags (sHatAuxFile flags) parsedProg
+            newprog <- auxLabelSyntaxTree flags parsedProg
+            writeFile (sHatTransFile flags)
+              (prettyPrintTokenId flags ppModule 
+                (traceTrans (sSourceFile flags) (sHatFileBase flags) newprog))
+            putStrLn ("Wrote " ++ sHatTransFile flags)
+            exitWith (ExitSuccess)
+    else return ()
+  nhcNeed flags parsedProg
 
 {- 
 -- Perform "need" analysis (what imported entities are required?) 

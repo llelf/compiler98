@@ -1,7 +1,7 @@
 #ifndef _IDENT_H
 #define _IDENT_H
 
-#include "hat.h"
+#include "art.h"
 
 typedef struct _IdEntry {
     int constr;

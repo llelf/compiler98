@@ -22,7 +22,8 @@ module Flags where
 -}
 
 import IO
-import OsOnly(fixRootDir,fixTypeFile,fixObjectFile,fixAuxFile)
+import OsOnly(fixRootDir,fixTypeFile,fixObjectFile
+             ,fixHatAuxFile,fixHatTransFile,fixHatFileBase)
 import List(isPrefixOf)
 import Char(isDigit)
 
@@ -32,7 +33,9 @@ data Flags = FF
   ,sSourceFile :: String
   ,sTypeFile   :: String
   ,sObjectFile :: String
-  ,sAuxFile    :: String
+  ,sHatAuxFile   :: String
+  ,sHatTransFile :: String
+  ,sHatFileBase  :: String
   ,sIncludes   :: [String]
   ,sPreludes   :: [String]
 
@@ -54,7 +57,7 @@ data Flags = FF
   ,sDbgTrans   :: Bool	-- do tracing transformation
   ,sDbgPrelude :: Bool	-- use tracing prelude
   ,sDbgTrusted :: Bool	-- trust this module
-  ,sHatAuxFile :: Bool	-- write/read auxiliary information files
+  ,sHatTrans   :: Bool	-- perform portable hat transformation for tracing
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
@@ -178,7 +181,9 @@ processArgs xs = flags
   , sSourceFile=sourcefile
   , sTypeFile=typefile
   , sObjectFile=cfile
-  , sAuxFile=fixAuxFile isUnix rootdir filename
+  , sHatAuxFile=fixHatAuxFile isUnix rootdir filename
+  , sHatTransFile=fixHatTransFile isUnix rootdir filename
+  , sHatFileBase=fixHatFileBase isUnix rootdir filename
   , sIncludes=rootdir:getIncludes xs
   , sPreludes=getPreludes xs
 
@@ -208,7 +213,7 @@ processArgs xs = flags
   , sDbgTrans = fElem False "dbgtrans" xs     -- perform debugging translation
   , sDbgPrelude = fElem False "dbgprelude" xs -- use the debugging prelude
   , sDbgTrusted = fElem False "trusted" xs    -- "trusted" module (don't trace)
-  , sHatAuxFile = fElem False "hx" xs         -- generate/read aux info files
+  , sHatTrans = fElem False "hat" xs     -- preform hat tracing transform
 
   , sAnsiC = fElem True  "ansiC" xs    -- Generate bytecode as ANSI C file
   , s64bit = fElem False "64bit" xs    -- 32bit/64bit word size (ignored)

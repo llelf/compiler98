@@ -1,11 +1,14 @@
+-- operating specific processing of filenames and paths
 module OsOnly
   (isPrelude
   , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
-  , fixAuxFile
+  , fixHatAuxFile,fixHatTransFile,fixHatFileBase
   ) where
 
 isPrelude str = {-take (7::Int)-} str == "Prelude"
 
+-- from complete filename determine path and pure filename without extension
+fixRootDir :: Bool -> String -> (String,String)
 fixRootDir isUnix s =
  let rs = reverse s
  in
@@ -25,10 +28,13 @@ fixRootDir isUnix s =
    stripRiscos ('.':'s':'h':    rr) = rr
    stripRiscos                  rr  = rr
 
+fixImportNames :: Bool -> String -> String -> [String] -> [String]
 fixImportNames isUnix suffix file rootdirs =
   map (\dir-> fixDir isUnix dir ++ (fixFile isUnix file suffix)) rootdirs
 
 
+-- prepare path so that it can be concatenated with filename
+fixDir :: Bool -> String -> String
 fixDir isUnix dir
   | isUnix    = case (dir,last dir) of
                     ("",_)  -> ""
@@ -39,8 +45,12 @@ fixDir isUnix dir
 fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hit"
 fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "c"
 fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
-fixAuxFile    isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
+fixHatAuxFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
+fixHatTransFile isUnix rootdir s = rootdir ++ fixFile isUnix ('T':s) "hs"
+fixHatFileBase isUnix rootdir s = rootdir ++ s 
 
+-- add extension to file
+fixFile :: Bool -> String -> String -> String
 fixFile isUnix file suf =
 {-
   let file =  if isPrelude s
@@ -52,7 +62,11 @@ fixFile isUnix file suf =
       then toUnixPath file ++ '.':suf
       else suf ++ '.':maxTen file
 
+toUnixPath :: String -> String
 toUnixPath = map (\c-> if (c=='.') then '/' else c)
+
+
+-- obscure file compression needed only for RiscOs:
 
 maxTen file = let tolong =  length file - 10
               in if tolong <= 0 then file
