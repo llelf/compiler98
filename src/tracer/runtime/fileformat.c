@@ -209,7 +209,7 @@ primTAp6 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp6 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x06,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -238,7 +238,7 @@ primTAp7 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp7 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x07,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -269,7 +269,7 @@ primTAp8 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp8 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x08,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -302,7 +302,7 @@ primTAp9 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp9 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x09,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -337,7 +337,7 @@ primTAp10 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp10 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x0a,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -374,7 +374,7 @@ primTAp11 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp11 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x0b,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
@@ -413,7 +413,7 @@ primTAp12 (CTrace* tap, CTrace* tfn
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTAp12 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
-    fputc(0x05,HatFile);
+    fputc(0x0c,HatFile);
     fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
