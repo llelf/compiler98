@@ -80,10 +80,13 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-PACKAGES  = base parsec haskell-src QuickCheck HaXml HUnit #OpenGL
+PACKAGEBUILD  = base parsec haskell-src QuickCheck HaXml HUnit
+PACKAGES      = base parsec haskell-src QuickCheck HaXml HUnit OpenGL \
+		GLUT HGL Japi ObjectIO OpenAL Win32 X11 arrows fgl \
+		monads mtl network readline unix
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
-	    $(patsubst %, src/libraries/%, ${PACKAGES})
+	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD})
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -129,7 +132,7 @@ PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc
-INCLUDEPKG = $(patsubst %, include/packages/%, ${PACKAGES})
+INCLUDEPKG = $(patsubst %, include/packages/%, ${PACKAGEBUILD})
 DOC = docs/*
 MAN = man/*.1
 
@@ -142,7 +145,8 @@ TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC) cpphs-$(CC)
+	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC) cpphs-$(CC) \
+	 $(PACKAGES)
 
 .PHONY: default basic all compiler help config install
 
@@ -165,6 +169,8 @@ help:
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
+	@echo "For individual library packages:"
+	@echo "    $(PACKAGEBUILD)"
 
 config: script/errnogen.c
 	./configure --config
@@ -224,9 +230,13 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
 $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
+
+$(patsubst %,${TARGDIR}/${MACHINE}/%,${PACKAGES}):
+	cd src/libraries/`basename $@`; $(MAKE) -f Makefile.nhc98
+	touch $@
 
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
@@ -280,7 +290,7 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 $(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/proflibraries
 
@@ -300,7 +310,7 @@ $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 $(TARGDIR)/$(MACHINE)/timelibraries: $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/timelibraries
 
@@ -344,15 +354,15 @@ $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC): $(HSC2HS) $(HSC2HSC)
 	cd src/hsc2hs;         $(MAKE) -f Makefile.nhc98 fromC
 	touch $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC)
 $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
 $(TARGDIR)/$(MACHINE)/proflibraries-$(CC): $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/proflibraries-$(CC)
 $(TARGDIR)/$(MACHINE)/timelibraries-$(CC): $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/timelibraries-$(CC)
 
@@ -456,7 +466,7 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 $(TARGDIR)/librariesC: $(LIBRARIES)
-	for pkg in ${PACKAGES};\
+	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg;\
 	     $(MAKE) -f Makefile.nhc98 cfiles;\
 	     $(MAKE) CFG=p -f Makefile.nhc98 cfiles;\
