@@ -114,8 +114,8 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
 
   while (1) {
     dstptr = &buf[0];
-    count=CHUNK-1;
-    while (--count) {
+    count=CHUNK;
+    while (count--) {
       C_PUSH(src);
       C_EVALTOS(src);
       src = C_POP();
@@ -124,7 +124,7 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
         case 0: /* []  */
            /* *dstptr = '\0'; */
            /* err = fputs(buf,f->fp); */
-              err = fwrite(buf,sizeof(char),(CHUNK-2-count),f->fp);
+              err = fwrite(buf,sizeof(char),(CHUNK-1-count),f->fp);
               return;
               break;
         case 1: /* (:) */
@@ -136,11 +136,12 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
               IND_REMOVE(chr);
               *dstptr = GET_CHAR_VALUE(chr);
               switch (*dstptr++) {
-                case '\n': *dstptr = '\0';
+                case '\n':
+                        /* *dstptr = '\0'; */
                         /* err = fputs(buf,f->fp); */
-                           err = fwrite(buf,sizeof(char),(CHUNK-1-count),f->fp);
+                           err = fwrite(buf,sizeof(char),(CHUNK-count),f->fp);
                            dstptr = &buf[0];	/* re-initialise loop */
-                           count=CHUNK-1;
+                           count=CHUNK;
                            break;
 #if 0
                 case '\0': err = fputs(buf,f->fp);
@@ -161,7 +162,7 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
     }
  /* *dstptr = '\0'; */
  /* err = fputs(buf,f->fp); */
-    err = fwrite(buf,sizeof(char),(CHUNK-1),f->fp);
+    err = fwrite(buf,sizeof(char),CHUNK,f->fp);
   }
 }
 
@@ -189,8 +190,8 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
 
   while (1) {
     dstptr = &buf[0];
-    count=reqsize-1;
-    while (--count) {
+    count=reqsize;
+    while (count--) {
       C_PUSH(src);
       C_EVALTOS(src);
       src = C_POP();
@@ -198,7 +199,7 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
       switch (GET_CONSTR(src)) { 
         case 0: /* []  */
               /* *dstptr = '\0'; */
-              err = fwrite(buf,sizeof(char),(reqsize-2-count),f->fp);
+              err = fwrite(buf,sizeof(char),(reqsize-1-count),f->fp);
               return;
               break;
         case 1: /* (:) */
@@ -218,7 +219,7 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
       }
     }
     /* *dstptr = '\0'; */
-    err = fwrite(buf,sizeof(char),(reqsize-1),f->fp);
+    err = fwrite(buf,sizeof(char),reqsize,f->fp);
   }
 }
 
