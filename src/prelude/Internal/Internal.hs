@@ -32,6 +32,9 @@ module NHC.Internal
   , Rational
   , (%)
 
+  -- List syntax is un-rebindable, so always refers to Prelude lists
+{-, []((:),[])-}
+
   ) where
 
 import NHC.Internal	-- Yes, it's circular!  (needs a .hi to bootstrap)
