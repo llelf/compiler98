@@ -178,9 +178,11 @@ do
               hcflags=$hcflags" $1" ;;
 
     # package flags - ghc or nhc98
-    -package*|-syslib) hcflags=$hcflags" $1 $2";
-                       hmflags=$hmflags" -package=$2";
-                       shift ;;
+    -package-name) hcflags=$hcflags" $1 $2";
+                   shift ;;
+    -package|-syslib) hcflags=$hcflags" $1 $2";
+                      hmflags=$hmflags" -package=$2";
+                      shift ;;
 
     # Any other compiler flags
     -*) hcflags=$hcflags" $1" ;;
