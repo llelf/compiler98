@@ -11,14 +11,12 @@
 -----------------------------------------------------------------------------
 
 module Imports
-  ( getImports, cpp, KeepState(..)
+  ( getImports
   ) where
 
-import SymTab
-import ParseLib
-import ListUtil (takeUntil)
 import Char
-import Numeric  (readHex)
+import ListUtil (takeUntil)
+import CppIfdef (cppIfdef)
 
 #if !defined(__HASKELL98__)
 #define isAlphaNum isAlphanum
@@ -30,76 +28,8 @@ getImports :: FilePath -- ^ The path to the module
            -> String   -- ^ The input file to be parsed for imports
            -> [String] -- ^ A list of imported modules
 getImports fp defines inp =
-  let syms = foldr (insertST.defval) emptyST defines
-  in (leximports fp . cpp fp syms Keep . lines) inp
+  (leximports fp . lines . cppIfdef fp defines [] False False) inp
 
-defval sym =
-    let (s,d) = break (=='=') sym
-    in if null d then (s,"1") else (s, tail d)
-
--- | Internal state for whether lines are being kept or dropped.
---   In @Drop n b@, @n@ is the depth of nesting, @b@ is whether
---   we have already succeeded in keeping some lines in a chain of
---   @elif@'s
-data KeepState = Keep | Drop Int Bool
-
--- | Return just the list of lines that the real cpp would decide to keep.
-cpp :: FilePath -> SymTab String -> KeepState -> [String] -> [String]
-cpp _ _ _ [] = []
-
-cpp fp syms Keep (l@('#':x):xs) =
-         let ws = words x
-             cmd = head ws
-             sym = head (tail ws)
-             val = let v = tail (tail ws) in
-                   if null v then "1" else head v
-             down = if definedST sym syms then (Drop 1 False) else Keep
-             up   = if definedST sym syms then Keep else (Drop 1 False)
-             keep str = if gatherDefined fp syms str then Keep else (Drop 1 False)
-         in
-         if      cmd == "define" then  cpp fp (insertST (sym,val) syms) Keep xs
-         else if cmd == "undef"  then  cpp fp (deleteST sym syms) Keep xs
-         else if cmd == "line"   then  cpp fp syms  Keep xs
-         else if cmd == "ifndef" then  cpp fp syms  down xs
-         else if cmd == "ifdef"  then  cpp fp syms  up   xs
-         else if cmd == "if"     then  cpp fp syms (keep (drop 2 x)) xs
-         else if cmd == "else"   then  cpp fp syms (Drop 1 False) xs
-         else if cmd == "elif"   then  cpp fp syms (Drop 1 True) xs
-         else if cmd == "endif"  then  cpp fp syms  Keep xs
-         else l: cpp fp syms Keep xs
-                                     --error ("Unknown directive #"++cmd++"\n")
-cpp fp syms Keep (x:xs) =
-    x: cpp fp syms Keep xs
-
--- Old clauses:
---  | prefix "import " x  = modname (x:xs): cpp syms Keep xs
---  | otherwise           = cpp syms Keep xs
-
-cpp fp syms (Drop n b) (('#':x):xs) =
-         let ws = words x
-             cmd = head ws
-             delse    | n==1 && b = Drop 1 b
-                      | n==1      = Keep
-                      | otherwise = Drop n b
-             dend     | n==1      = Keep
-                      | otherwise = Drop (n-1) b
-             keep str | n==1      = if gatherDefined fp syms str then Keep
-                                    else (Drop 1 b)
-                      | otherwise = Drop n b
-         in
-         if      cmd == "define" ||
-                 cmd == "undef"  ||
-                 cmd == "line"   then  cpp fp syms (Drop n b) xs
-         else if cmd == "ifndef" ||
-                 cmd == "if"     ||
-                 cmd == "ifdef"  then  cpp fp syms (Drop (n+1) b) xs
-         else if cmd == "elif"   then  cpp fp syms (keep (drop 4 x)) xs
-         else if cmd == "else"   then  cpp fp syms delse xs
-         else if cmd == "endif"  then  cpp fp syms dend xs
-         else cpp fp syms (Drop n b) xs
-				   --error ("Unknown directive #"++cmd++"\n")
-cpp fp syms d@(Drop n b) (x:xs) =
-  cpp fp syms d xs
 
 -- | /leximports/ takes a cpp-ed list of lines and returns the list of imports
 leximports :: FilePath -> [String] -> [String]
@@ -154,83 +84,5 @@ leximports fp =
       else takeUntil "(-{;" one
 
   in (getmodnames . lines . nestcomment 0 . unlines)
-
-----
-gatherDefined fp st inp =
-  case papply (parseBoolExp st) inp of
-    []      -> error ("In file "++fp++"\n    cannot parse #if directive")
-    [(b,_)] -> b
-    _       -> error ("In file "++fp++"\n    ambiguous parse for #if directive")
-
-parseBoolExp st =
-  do  bracket (skip (char '(')) (parseBoolExp st) (skip (char ')'))
-  +++
-  do  skip (char '!')
-      a <- skip (parseSym st)		-- deals with !x && y
-      parseCont (not a) st
-  +++
-  do  skip (char '!')
-      a <- parseBoolExp st		-- deals with !(x && y)
-      parseCont (not a) st
-  +++
-  do  a <- skip (parseSym st)
-      parseCont a st
-
-parseSym st =
-  do  skip (string "defined")
-      sym <- bracket (skip (char '(')) (skip (many1 alphanum)) (skip (char ')'))
-      return (definedST sym st)
-  +++
-  do  sym <- skip (many1 alphanum)
-      parseComparison sym st
-
-parseCont a st =
-  do  skip (string "||")
-      b <- first (skip (parseBoolExp st))
-      return (a || b)
-  +++
-  do  skip (string "&&")
-      b <- first (skip (parseBoolExp st))
-      return (a && b)
-  +++
-  do  return a
-
-parseComparison sym1 st =
-  do  op <- parseOp st
-      sym2 <- skip (many1 alphanum)
-      let val1 = convert sym1 st
-      let val2 = convert sym2 st
-      return (op val1 val2)
-  +++
-  do  let val = lookupST sym1 st
-      return (if val == Nothing || val == Just "0" then False else True)
-  where
-    convert sym st =
-      case lookupST sym st of
-        Nothing  -> safeRead sym
-        (Just a) -> safeRead a
-    safeRead s =
-      case readHex s of
-        []        -> 0 :: Integer
-        ((n,_):_) -> n :: Integer
-
-parseOp st =
-  do  skip (string ">=")
-      return (>=)
-  +++
-  do  skip (char '>')
-      return (>)
-  +++
-  do  skip (string "<=")
-      return (<=)
-  +++
-  do  skip (char '<')
-      return (<)
-  +++
-  do  skip (string "==")
-      return (==)
-  +++
-  do  skip (string "!=")
-      return (/=)
 
 ----
