@@ -2,6 +2,6 @@
 #include "runtime.h"
 
 /* Dummy to keep linker happy if program isn't linked with Fudgets?.a */
-/* Not all linkers defines referenced but undefined variables */
+/* Not all linkers define referenced but undefined variables. */
 
-int xlib_debug;
+int xlib_debug = 0;
