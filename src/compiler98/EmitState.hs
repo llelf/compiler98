@@ -131,7 +131,7 @@ mentionLabel Code   sym es@(ES n b word labs code) = es
 wrapUse :: String -> String
 wrapUse sym = "useLabel(" ++ sym ++ ")"
 
-outBytes :: Incomplete -> Q String -> Q String
+outBytes :: Incomplete -> [String] -> [String]
 outBytes (w,x,y,z) code = four:code
   where four = " bytes2word(" ++
                w ++ ',' :
@@ -139,7 +139,7 @@ outBytes (w,x,y,z) code = four:code
                y ++ ',' :
                z ++ ")\n,"
 
-outWord :: String -> Q String -> Q String
+outWord :: String -> [String] -> [String]
 outWord x code = wx:code
   where wx = ' ': x ++ "\n,"
 
