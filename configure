@@ -477,6 +477,7 @@ else	# [ "$INSTALL" = "yes" ]
     fi
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
     cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR	-- patch local config also
@@ -549,6 +550,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
     echo -n "nhc98tracer "

@@ -7,31 +7,53 @@
 <hr>
 
 <p>
-Our plans for <b>nhc98</b> include the following.
+This is more of a wishlist than a ToDo list, but anyway...
+our hopes for the future of <b>nhc98</b> include the following.
+<a href="contrib.html">Contributions</a> of libraries, interesting 
+optimisations, bugfixes, and so on, are always welcome.
 
 <ul>
+<li>We have definite funding to make the Haskell tracer into a solid,
+    reliable, and complete tool.  This project has several aims:  to
+    support the full Haskell language including all the more tricky
+    language features;  to use fewer resources (i.e. make it faster and
+    smaller);  to provide a portability interface so that the tracer can
+    be used with other Haskell systems (even if it runs larger and more
+    slowly there);  to improve the browsing interface with scripting and
+    other essential features;  eventually to add a meta-tracer for
+    defining and using trace <em>strategies</em>.
+
 <li>The <em>Fudgets</em> GUI library was once available for nhc13:
-    now that nhc98 has existential types, we can now support Fudgets
-    once again.
-<li>The implementation of <em>GreenCard</em> should be finished.
+    now that nhc98 has existential types, Fudgets could now be supported
+    once again.  Volunteers for this would need to know the internals
+    of Fudgets pretty thoroughly.
+
+<li>The implementation of <em>GreenCard</em> could be completed.
     Remaining unimplemented features include named field syntax
-    and failure specifications.
+    and failure specifications.  In addition, the new primitive FFI
+    still lacks <em>dynamic</em> imports and exports, which are
+    fairly essential for callback-style GUI programming.
+
 <li>It would be very useful to have a set of simple regression tests
     (with an automated interface) to check whether anything breaks on
     a new machine architecture, or after modifying a part of the compiler.
     (We have a set of tests for the binary libraries, and they have
-    definitely proved their worth!)
-<li>As part of the cross-compilation idea, it might be important to
-    be able to pass the word-size of the target machine into the compiler
-    at compile-time.  (It is currently hard-coded in.)
-<li>We would like to replace the current textual format of interface files
-    with a binary format.  (We conjecture a big speed gain during compilation.)
-    One difficulty is that nhc98 is often built with hbc, which
-    does not yet support Binary.  However, it would be of even greater
-    interest to obtain a speed gain when using an nhc98 built with nhc98!
-<li>We hope to continue to improve the tracer, supporting some of the more
-    tricky language features, and eventually adding a meta-tracer for
-    defining and using trace <em>strategies</em>.
+    definitely proved their worth!)  Haskell also needs a set of
+    conformance tests, to determine whether any particular implementation
+    meets the Haskell'98 standard, and if not, where it differs.
+
+<li><em>nhc98</em> would be an ideal basis for a cross-compiler, since
+    it uses standard ANSI C as a backend.  (Note: It might be important to
+    pass the word-size of the target machine into the compiler
+    at compile-time.  It is currently hard-coded in.)
+
+<li>We would like to replace the current textual format of interface
+    files with a binary format.  (We conjecture a big speed gain during
+    compilation.) One difficulty is that nhc98 is often built with hbc,
+    which does not yet support Binary.  However, it would be of even
+    greater interest to obtain a speed gain when using an nhc98 built
+    with nhc98!
+
 </ul>
 
 
@@ -42,10 +64,9 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.01.26<br>
+1999.12.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
-Malcolm.Wallace@cs.york.ac.uk
 
 </td></tr></table>
 </body></html>

@@ -24,7 +24,7 @@
   <td>hmake</td>
 </tr><tr>
   <th bgcolor=#eeeeee>quality</th>
-  <td bgcolor=#ffffdd>pre-release</td>
+  <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
@@ -33,12 +33,12 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>1999-11-30</td>
-  <td>1999-11-19</td>
+  <td>2000-03-01</td>
+  <td>2000-02-18</td>
   <td>1997</td>
   <td>1996</td>
   <td>1999-01-28</td>
-  <td>1999-09-15</td>
+  <td>2000-02-18</td>
 </tr>
 </table>
 </center>
@@ -64,7 +64,7 @@ trace browser, time profiler, and common FFI.
   <td bgcolor=#ffdddd>alpha</td>
   <td bgcolor=#ffffdd>beta</td>
   <td bgcolor=#ffdddd>alpha</td>
-  <td bgcolor=#ffdddd>alpha</td>
+  <td bgcolor=#ffffdd>beta</td>
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
@@ -72,7 +72,7 @@ trace browser, time profiler, and common FFI.
   <td>1999-10-08</td>
   <td>1999-10-08</td>
   <td>1998-06-03</td>
-  <td>1999-11-30</td>
+  <td>2000-03-01</td>
 </tr>
 </table>
 </center>
@@ -98,6 +98,14 @@ by anonymous FTP from
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#dddddd><th>package</th> <th>machine</th>
                     <th>version</th> <th>date</th> <th>size</th></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.0pre16.tar.gz">
+      Haskell + C source trees</a></td>
+  <td>any</td>
+  <td>1.0pre16</td>
+  <td>000302</td>
+  <td>2600kb</td></tr>
 
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.0pre15.tar.gz">
@@ -176,28 +184,28 @@ instructions from the package itself.)
 <p>
 The unified source tree contains the complete Haskell sources for the
 compiler, runtime system, standard prelude, and libraries (including
-Binary) for <b>nhc98</b>, and current versions of <em>GreenCard</em>,
-<em>hp2graph</em>, <em>hmake</em>, and the trace browser.  In addition,
-it contains bootstrapping C sources in case you don't already have a
-Haskell compiler to build nhc98 with.
+Binary, FFI, IOExtras, etc) for <b>nhc98</b>, and current versions of
+<em>GreenCard</em>, <em>hp2graph</em>, <em>hmake</em>, and the trace
+browser.  In addition, it contains bootstrapping C sources in case you
+don't already have a Haskell compiler to build nhc98 with.
 
 <p>
 The binary packages contain just the executables, interface files, and
 object files for the compiler, runtime system, standard prelude,
-libraries (including Binary), <em>GreenCard</em>, <em>hp2graph</em>,
-<em>hmake</em> and the trace browser.  In short, everything (except the
-sources) needed for normal compilation, heap profiling, time profiling,
-and tracing - the full works.
+libraries (including Binary, FFI, IOExtras, etc), <em>GreenCard</em>,
+<em>hp2graph</em>, <em>hmake</em> and the trace browser.  In short,
+everything (except the sources) needed for normal compilation, heap
+profiling, time profiling, and tracing - the full works.
 
 <p>
 The <a href="install.html">installation instructions</a> should be
 comprehensive, but if you have any problems, please mail
-<a href="mailto:Malcolm.Wallace@cs.york.ac.uk?subject=nhc98">
-<tt>Malcolm.Wallace@cs.york.ac.uk</tt></a>
+<a href="mailto:nhc-users@cs.york.ac.uk?subject=nhc98 installation">
+<tt>nhc-users@cs.york.ac.uk</tt></a>
 
 <br><br><hr>
 
-<h3>nhc98 pre-release 16 (2000-xx-xx) features</h3>
+<h3>nhc98 pre-release 16 (2000-03-02) features</h3>
 <ul>
 <li> Addition: The standard Random library.
 <li> Addition: The standard Directory library.
@@ -241,7 +249,6 @@ comprehensive, but if you have any problems, please mail
              all builds from proceeding.)
 <li> Bugfix: On HP-UX machines, the ansiC backend had a problem due to
              conflicts between data/code at link time.
-
 </ul>
 
 <h3>nhc98 pre-release 11 (1999-10-26) features</h3>
@@ -359,10 +366,9 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.01.18<br>
+This page last modified: 2000.03.02<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
-Malcolm.Wallace@cs.york.ac.uk
 
 </td></tr></table>
 </body></html>

@@ -12,7 +12,7 @@
 <dt><em>Because it is easy to install.</em></dt>
 <dd> Some people find <em>ghc</em> and <em>hbc</em> difficult to install
   on their machine.  <em>nhc98</em> is about as easy to setup
-  as Hugs.</dd>
+  as Hugs, and it is as portable too.</dd>
 
 <dt><em>Because you have a small machine.</em></dt>
 <dd>  <em>nhc98</em> is designed for space-efficiency.  Compile the same
@@ -56,10 +56,11 @@
 
 <h3>Novel features of <em>nhc98</em></h3>
 <p>
-Features of <em>nhc98</em> which are not yet available in all other
-Haskell systems include: binary data representations; the
-<em>GreenCard</em> foreign language interface; computational traces;
-time profiling; and portable compilation via C.
+Features of <em>nhc98</em> which are not necessarily available in all
+other Haskell systems include: binary data representations; the
+<em>GreenCard</em> foreign language interface; the new common primitive
+FFI; computational traces; time profiling; and portable compilation via
+C.
 
 <ul>
 <li>
@@ -78,7 +79,8 @@ time profiling; and portable compilation via C.
 <li>
   <em>GreenCard</em> is a preprocessor for interfacing to C libraries.  It was
   developed for ghc and hugs, and is now available for <em>nhc98</em>.  See
-  <a href="greencard-york.html">this page</a> for details.
+  <a href="greencard-york.html">this page</a> for details.  The newer common
+  <a href="ffi.html">primitive FFI</a> is also now available.
 
 <li>
   Advanced facilities for heap-profiling programs.  See tutorial paper [4].
@@ -90,9 +92,9 @@ time profiling; and portable compilation via C.
   Existential types.
 
 <li>
-  Finally, <em>nhc98</em> can be used as a cross-compiler for other machines,
-  including embedded systems.  It can generate bytecode in a portable
-  ANSI-C format.
+  Finally, with a little extra work, <em>nhc98</em> can be used as a
+  cross-compiler for other machines, including embedded systems.  It can
+  generate bytecode in a portable ANSI-C format.
 
 </ul>
 
@@ -149,10 +151,9 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.09.16<br>
+1999.12.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
-Malcolm.Wallace@cs.york.ac.uk
 
 </td></tr></table>
 </body></html>

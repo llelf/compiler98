@@ -46,7 +46,7 @@ instance Show Foreign where
 
 data Arg = Int8  | Int16  | Int32  | Int64
          | Word8 | Word16 | Word32 | Word64
-         | Float | Double | Char   | PackedString
+         | Float | Double | Char   | Bool | PackedString
          | Addr  | StablePtr | ForeignObj | Unknown | Unit
          deriving Show
 
@@ -91,6 +91,7 @@ searchType st (arrow,io) info =
 
     toArg t | t==tInt        = Int32
             | t==tWord       = Word32
+            | t==tBool       = Bool
             | t==tChar       = Char
             | t==tFloat      = Float
             | t==tDouble     = Double
@@ -278,6 +279,7 @@ hResult res =
 ---- shared between foreign import/export ----
 
 cTypename :: Arg -> ShowS
+cTypename Bool         = word "int"
 cTypename Int8         = word "char"
 cTypename Int16        = word "short"
 cTypename Int32        = word "long"
@@ -298,6 +300,7 @@ cTypename Unit         = word "void"
 cTypename Unknown      = word "NodePtr"	-- for passing Haskell heap values
 
 cConvert :: Arg -> ShowS
+cConvert Bool         = word "GET_BOOL_VALUE(nodeptr)"
 cConvert Int8         = word "GET_CHAR_VALUE(nodeptr)"
 cConvert Int16        = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Int32        = word "GET_INT_VALUE(nodeptr)"
@@ -320,6 +323,7 @@ cConvert Unit         = word "0"
 cConvert Unknown      = word "nodeptr"
 
 hConvert :: Arg -> ShowS -> ShowS
+hConvert Bool         s = word "mkBool" . parens s
 hConvert Int8         s = word "mkChar" . parens s
 hConvert Int16        s = word "mkInt" . parens s
 hConvert Int32        s = word "mkInt" . parens s
@@ -337,7 +341,8 @@ hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 --hConvert StablePtr  s = word "mkStablePtr" . parens (word "stableRef" . parens s)
 {- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
-hConvert ForeignObj   s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
+hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return ForeignObj type.") $
+                          word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 --hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
 hConvert Unit         s = word "mkUnit()"
 hConvert Unknown      s = s	-- for passing Haskell heap values untouched

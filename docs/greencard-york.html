@@ -10,8 +10,14 @@
 <em>GreenCard</em> is a preprocessor for Haskell which allows Haskell
 functions to call C.  A paper (now superseded, see below) published in
 the Haskell Workshop 97 proceedings describes the design goals, input
-language, and translation mechanism.  <em>GreenCard</em> is standard
-across (almost) all implementations of Haskell.
+language, and translation mechanism.  <em>GreenCard</em> was supposed
+to be standard across implementations of Haskell - however the
+<em>Hugs</em>/<em>ghc</em> version has now diverged somewhat.
+A new, more flexible but lower-level, primitive FFI is now common
+to <em>Hugs/ghc</em> and <em>nhc98</em>, and it provides a
+greater degree of cross-compiler portability than <em>GreenCard</em>.
+However, <em>GreenCard</em> is still useful for many small tasks, and
+you may find it is just the right tool for your particular application.
 
 <p>
 Since the Haskell Workshop paper, several improvements have been made
@@ -64,7 +70,10 @@ of the tool.
     however, it is possible to go some distance towards providing such a
     facility.  See the document
     <a href="CcallingHaskell.html">CcallingHaskell</a>  and
-    file <tt>$NHC98DIR/lib/greencard.h</tt> for details.</dd>
+    file <tt>$NHC98DIR/lib/greencard.h</tt> for details.
+    <em>(Note: the newer <a href="ffi.html">primitive FFI</a> makes this
+    very much easier - we recommend you use it instead.)</em>
+    </dd>
 
 <dt>DIS variable scope.</dt>
 <dd>The original paper said: "All the C variables bound in the
@@ -105,10 +114,9 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.01.26<br>
+1999.12.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
-Malcolm.Wallace@cs.york.ac.uk
 
 </td></tr></table>
 </body></html>

@@ -47,7 +47,7 @@ import PerformGC
 import NonStdTrace
 import UnsafePtrEq
 
-nyi f = trace ("MoreIO."++f++": not implemented")
+nyi f = trace ("IOExtras."++f++": not implemented")
 
 unsafeInterleaveIO :: IO a -> IO a
 unsafeInterleaveIO = nyi "unsafeInterleaveIO"
