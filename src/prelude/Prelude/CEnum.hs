@@ -1,6 +1,6 @@
 module Prelude where
 
-class  (Ord a) => Enum a where
+class Enum a where
     succ, pred          :: a -> a
     toEnum		:: Int -> a
     fromEnum		:: a -> Int

@@ -19,7 +19,6 @@ module Prelude
     ,module TFilePath
     ,module UserError
     ,module WriteFile
-    ,module UnsafePerformIO
     ) where
 
 import AppendFile
@@ -45,4 +44,3 @@ import Show_IOError
 import TFilePath
 import UserError
 import WriteFile
-import UnsafePerformIO

@@ -57,6 +57,7 @@ ${OBJDIR}/Monad_IO.o: Monad_IO.hs ${OBJDIR}/DIO.o ${OBJDIR}/DIOError.o # ../Prel
 ${OBJDIR}/Functor_IO.o: Functor_IO.hs # ../Prelude/CFunctor.hi
 ${OBJDIR}/Show_IOError.o: Show_IOError.hs ${OBJDIR}/DIOError.o
 ${OBJDIR}/UserError.o: UserError.hs ${OBJDIR}/DIOError.o
+${OBJDIR}/DIOError.o: DIOError.hs ${OBJDIR}/DErrNo.o
 
 
 # And now for C-files dependencies.

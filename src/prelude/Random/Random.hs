@@ -1,5 +1,5 @@
 module Random
-  ( RandomGen (next,split)
+  ( RandomGen (next,split,genRange)
   , StdGen, mkStdGen
   , Random (random, randomR, randoms, randomRs, randomIO, randomRIO)
   , getStdRandom, getStdGen, setStdGen, newStdGen
@@ -19,6 +19,16 @@ import Warning
 class RandomGen g where
   next  :: g -> (Int, g)
   split :: g -> (g, g)
+  genRange :: g -> (Int,Int)
+
+-- constraints:
+--  (1) if (a,b) = genRange g, then a<b
+--  (2) genRange (snd (next g))  = genRange g
+--      genRange (fst (split g)) = genRange g
+--      genRange (snd (split g)) = genRange g
+--  (3) the Int output of (next g) is equally likely to be any of
+--      the Ints in the range (genRange g), including both endpoints.
+
 
 data StdGen = StdGen Int	-- abstract
     deriving (Read,Show)

@@ -117,7 +117,8 @@ COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/nhc98tracer.inst lib/nhctracer.jar \
-         script/nhc98heap.c script/harch script/confhc script/mangler
+         script/nhc98heap.c script/harch script/confhc script/mangler \
+	 script/errnogen.c script/GenerateErrNo.hs
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -178,7 +179,7 @@ help:
 	@echo "                     hmake_b hmake_g hmake_n"
 	@echo "                     greencard_b greencard_g greencard_n)"
 
-config:
+config: script/errnogen.c
 	./configure --config
 install:
 	./configure --install
@@ -197,7 +198,6 @@ timeprof: timeruntime timeprelude
 tracer_n: tracecompiler_n traceruntime traceprelude $(TARGDIR)/traceui
 tracer_b: tracecompiler_b traceruntime traceprelude $(TARGDIR)/traceui
 tracer_g: tracecompiler_g traceruntime traceprelude $(TARGDIR)/traceui
-
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
@@ -299,6 +299,9 @@ $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
+script/errnogen.c: script/GenerateErrNo.hs
+	hmake script/GenerateErrNo
+	script/GenerateErrNo +RTS -H2M -RTS >script/errnogen.c
 
 
 ##### scripts for packaging various distribution formats

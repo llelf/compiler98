@@ -302,6 +302,18 @@ main() {
     echo -n "$ENDIAN "
     echo '(cached) '
   fi
+
+  echo -n "Reading /usr/include/errno.h: "
+  $CCC -o errnogen script/errnogen.c && ./errnogen >DErrNo.hs && rm -f ./errnogen
+  if diff DErrNo.hs src/prelude/PreludeIO/DErrNo.hs >/dev/null
+  then
+    rm -f DErrNo.hs
+    echo 'no change'
+  else
+    mv DErrNo.hs src/prelude/PreludeIO/DErrNo.hs
+    echo 'updated DErrNo.hs'
+  fi
+
 else
   if [ -f lib/$MACHINE/config ]
   then
