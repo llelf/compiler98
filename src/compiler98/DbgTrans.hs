@@ -36,7 +36,7 @@ import Nice(niceNewType)
 import Remove1_3(mkSel,translateExpRecord) -- for records
 import Flags(Flags(sDbgTrusted))
 import Remove1_3(mkSel)
-import Extra (mapSnd)
+import Extra (mapSnd,strPos)
 
 
 {- table for source references and identifiers refered to from the trace -}
@@ -1439,6 +1439,8 @@ dPat refutable parent (ExpRecord con@(ExpCon pos id) fieldPats) =
   dField (FieldExp pos id pat) = 
     dPat refutable parent pat >>>= \(pat',decls) ->
     unitS (FieldExp pos id pat',decls)
+dPat _ _ (PatNplusK pos _ _ _ _ _) = 
+  error ("Sorry, -T does not support n+k patterns. Used at " ++ strPos pos)
 dPat _ _ e = error ("dPat: no match ")
 
 foldS f z []     = z 
