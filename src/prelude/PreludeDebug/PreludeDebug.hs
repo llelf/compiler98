@@ -112,23 +112,25 @@ fatal primitive 1 :: Trace -> a
 --cGetFunNm primitive 1 :: a -> NmType
 --cCheckEvaluation primitive 1 :: E a -> _Value
 cPointerEquality primitive 2 :: E a -> E a -> Bool
---cEnter primitive 3 :: NmType -> Trace -> E a -> a
-cEnter primitive 2 :: Trace -> E a -> a
+--cEnter primitive 2 :: Trace -> E a -> a
 cInitializeDebugger primitive 1 :: E a -> a
 --trusted primitive 2 :: Trace -> Trace -> Bool
 --trust primitive 1 :: Trace -> Bool
 
-enter :: Trace -> a -> a
-enter t e = cEnter t (E e)
+--enter :: Trace -> a -> a
+--enter t e = e --cEnter t (E e)
 
 {-
 counterpart to 'enter' for primitives: ensures that the result trace
 is fully evaluated (the trace contains the result value).
+  ** now `enter' has been eliminated, no longer sure about this defn **
 -}
 primEnter :: NmCoerce a => SR -> Trace -> a -> R a
-primEnter sr t e = let v  = enter t e
-                       vn = toNm t v sr
-                      in v `myseq` vn
+--primEnter sr t e = let v  = enter t e
+--                       vn = toNm t v sr
+--                      in v `myseq` vn
+primEnter sr t e = let vn = toNm t e sr
+                      in e `myseq` vn
 
 
 {- no longer needed
@@ -839,26 +841,26 @@ fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
   let t' = mkTNm t nm sr
-  in t' `myseq` lazySat (enter t' (rf t')) t'  -- t here correct?
+  in t' `myseq` lazySat (rf t') t'  -- t here correct?
 -}
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
 fun1 nm rf sr t = 
-  mkR (\t a -> enter t (rf t a))
+  mkR (\t a -> rf t a)
       (mkTNm t nm sr)
 
 fun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> enter t (rf t a b))
+      R (\t b -> rf t a b)
         t)
       (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> enter t (rf t a b c))
+        R (\t c -> rf t a b c)
           t)
         t)
       (mkTNm t nm sr)
@@ -867,7 +869,7 @@ fun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> enter t (rf t a b c d))
+          R (\t d -> rf t a b c d)
             t)
           t)
         t)
@@ -878,7 +880,7 @@ fun5 nm rf sr t =
       R (\t b ->
         R (\t c ->
           R (\t d ->
-            R (\t e -> enter t (rf t a b c d e))
+            R (\t e -> rf t a b c d e)
               t)
             t)
           t)
@@ -891,7 +893,7 @@ fun6 nm rf sr t =
         R (\t c ->
           R (\t d ->
             R (\t e ->
-              R (\t f -> enter t (rf t a b c d e f))
+              R (\t f -> rf t a b c d e f)
                 t)
               t)
             t)
@@ -906,7 +908,7 @@ fun7 nm rf sr t =
           R (\t d ->
             R (\t e ->
               R (\t f ->
-                R (\t g -> enter t (rf t a b c d e f g))
+                R (\t g -> rf t a b c d e f g)
                   t)
                 t)
               t)
@@ -923,7 +925,7 @@ fun8 nm rf sr t =
             R (\t e ->
               R (\t f ->
                 R (\t g ->
-                  R (\t h -> enter t (rf t a b c d e f g h))
+                  R (\t h -> rf t a b c d e f g h)
                     t)
                   t)
                 t)
@@ -942,7 +944,7 @@ fun9 nm rf sr t =
               R (\t f ->
                 R (\t g ->
                   R (\t h ->
-                    R (\t i -> enter t (rf t a b c d e f g h i))
+                    R (\t i -> rf t a b c d e f g h i)
                       t)
                     t)
                   t)
@@ -963,8 +965,7 @@ fun10 nm rf sr t =
                 R (\t g ->
                   R (\t h ->
                     R (\t i ->
-                      R (\t j -> enter t (rf t a b c d e f g 
-                                                           h i j))
+                      R (\t j -> rf t a b c d e f g h i j)
                         t)
                       t)
                     t)
@@ -987,8 +988,7 @@ fun11 nm rf sr t =
                   R (\t h ->
                     R (\t i ->
                       R (\t j ->
-                        R (\t k -> enter t (rf t a b c d e f g 
-                                                             h i j k))
+                        R (\t k -> rf t a b c d e f g h i j k)
                           t)
                         t)
                       t)
@@ -1013,8 +1013,7 @@ fun12 nm rf sr t =
                     R (\t i ->
                       R (\t j ->
                         R (\t k ->
-                          R (\t l -> enter t (rf t a b c d e f g 
-                                                               h i j k l))
+                          R (\t l -> rf t a b c d e f g h i j k l)
                             t)
                           t)
                         t)
@@ -1037,7 +1036,7 @@ tfun0 :: NmType -> (Trace -> Trace -> R r) -> SR -> Trace -> R r
 tfun0 nm rf sr t = 
   let t' = optMkTNm t nm sr
   in t' `myseq` (if trustedFun t then lazySatLonely else lazySat) 
-                  (enter t' (rf t' (mkTHidden t'))) t'  
+                  (rf t' (mkTHidden t')) t'  
     -- t here correct?
 
 
@@ -1045,19 +1044,19 @@ tfun1 :: NmType -> (Trace -> Trace -> R a -> R r) -> SR -> Trace
      -> R (Trace -> R a -> R r)
 
 tfun1 nm rf sr t = 
-  mkR (\t a -> enter t (rf t (mkTHidden t) a))
+  mkR (\t a -> rf t (mkTHidden t) a)
       (optMkTNm t nm sr)
 
 tfun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> enter t (rf t (mkTHidden t) a b))
+      R (\t b -> rf t (mkTHidden t) a b)
         t)
       (optMkTNm t nm sr)
 
 tfun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> enter t (rf t (mkTHidden t) a b c))
+        R (\t c -> rf t (mkTHidden t) a b c)
           t)
         t)
       (optMkTNm t nm sr)
@@ -1066,7 +1065,7 @@ tfun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> enter t (rf t (mkTHidden t) a b c d))
+          R (\t d -> rf t (mkTHidden t) a b c d)
             t)
           t)
         t)
@@ -1077,7 +1076,7 @@ tfun5 nm rf sr t =
       R (\t b ->
         R (\t c ->
           R (\t d ->
-            R (\t e -> enter t (rf t (mkTHidden t) a b c d e))
+            R (\t e -> rf t (mkTHidden t) a b c d e)
               t)
             t)
           t)
@@ -1090,7 +1089,7 @@ tfun6 nm rf sr t =
         R (\t c ->
           R (\t d ->
             R (\t e ->
-              R (\t f -> enter t (rf t (mkTHidden t) a b c d e f))
+              R (\t f -> rf t (mkTHidden t) a b c d e f)
                 t)
               t)
             t)
@@ -1105,7 +1104,7 @@ tfun7 nm rf sr t =
           R (\t d ->
             R (\t e ->
               R (\t f ->
-                R (\t g -> enter t (rf t (mkTHidden t) a b c d e f g))
+                R (\t g -> rf t (mkTHidden t) a b c d e f g)
                   t)
                 t)
               t)
@@ -1122,7 +1121,7 @@ tfun8 nm rf sr t =
             R (\t e ->
               R (\t f ->
                 R (\t g ->
-                  R (\t h -> enter t (rf t (mkTHidden t) a b c d e f g h))
+                  R (\t h -> rf t (mkTHidden t) a b c d e f g h)
                     t)
                   t)
                 t)
@@ -1141,7 +1140,7 @@ tfun9 nm rf sr t =
               R (\t f ->
                 R (\t g ->
                   R (\t h ->
-                    R (\t i -> enter t (rf t (mkTHidden t) a b c d e f g h i))
+                    R (\t i -> rf t (mkTHidden t) a b c d e f g h i)
                       t)
                     t)
                   t)
@@ -1162,8 +1161,7 @@ tfun10 nm rf sr t =
                 R (\t g ->
                   R (\t h ->
                     R (\t i ->
-                      R (\t j -> enter t (rf t (mkTHidden t) a b c d e f g 
-                                                           h i j))
+                      R (\t j -> rf t (mkTHidden t) a b c d e f g h i j)
                         t)
                       t)
                     t)
@@ -1186,8 +1184,7 @@ tfun11 nm rf sr t =
                   R (\t h ->
                     R (\t i ->
                       R (\t j ->
-                        R (\t k -> enter t (rf (mkTHidden t) t a b c d e f g 
-                                                             h i j k))
+                        R (\t k -> rf (mkTHidden t) t a b c d e f g h i j k)
                           t)
                         t)
                       t)
@@ -1212,8 +1209,7 @@ tfun12 nm rf sr t =
                     R (\t i ->
                       R (\t j ->
                         R (\t k ->
-                          R (\t l -> enter t (rf t (mkTHidden t) a b c d e f g 
-                                                               h i j k l))
+                          R (\t l -> rf t (mkTHidden t) a b c d e f g h i j k l)
                             t)
                           t)
                         t)
