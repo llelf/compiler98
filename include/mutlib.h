@@ -9,8 +9,8 @@ extern Node chars[];
 #define MK_CDATA1(r,i)   (r)[0] =(Node)CONSTRC(0,1,1) ; (r)[1+EXTRA] = (Node)(i)
 #define MK_ENUM(r,i)     (r)[0] =(Node)CONSTR(i,0,0)
 #define MK_INT(r,i)      (r)[0] = CONSTR_INT; (r)[1+EXTRA] = (Node)(i)
-#define GET_INT(c)       (NodePtr)&ints[TABLE_SIZE_INT*HEAPOFFSET(c)]
-#define GET_CHAR(c)      (NodePtr)&chars[TABLE_SIZE_INT*HEAPOFFSET(c)]
+#define GET_INT(c)       (NodePtr)&ints[TABLE_SIZE_INT*(HEAPOFFSET(c)+10)]
+#define GET_CHAR(c)      (NodePtr)&chars[TABLE_SIZE_INT*(HEAPOFFSET(c)+1)]
 #define GET_BOOL(b)      (b?(NodePtr)CON_TRUE:(NodePtr)CON_FALSE)
 #define MK_VAP1(r,f,a)   (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a)
 #define MK_VAP2(r,f,a1,a2) (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a1); (r)[2+EXTRA] = (a2)

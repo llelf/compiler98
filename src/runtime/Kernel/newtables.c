@@ -135,7 +135,7 @@ unsigned PP_compiletime[] = {
 #define DEFINT(n)        CONSTRW(1,0) PROFINFO_Int  ,(unsigned)n
 #define DEFCHAR(n)       CONSTRW(1,0) PROFINFO_Char ,(unsigned)n
 
-Node startBytes[] = {
+Node ints[] = {
      DEFINT(-10)
 ,    DEFINT( -9)
 ,    DEFINT( -8)
@@ -146,9 +146,8 @@ Node startBytes[] = {
 ,    DEFINT( -3)
 ,    DEFINT( -2)
 ,    DEFINT( -1)
-};
-Node ints[] = {
-     DEFINT(  0)
+
+,    DEFINT(  0)
 ,    DEFINT(  1)
 ,    DEFINT(  2)
 ,    DEFINT(  3)
@@ -409,11 +408,10 @@ Node ints[] = {
 ,    DEFINT(256)
 };
 
-Node startChars[] = {
-     DEFCHAR( -1)
-};
 Node chars[] = {
-     DEFCHAR(  0)
+     DEFCHAR( -1)
+
+,    DEFCHAR(  0)
 ,    DEFCHAR(  1)
 ,    DEFCHAR(  2)
 ,    DEFCHAR(  3)
