@@ -20,6 +20,13 @@ SRCS = \
 	primVector.c primIndex.c \
         cBits.c  cDoesFileExist.c
 
+LINKS = haskell2c.h twopass.h
+
+links:
+	@for f in ${LINKS}; do \
+		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
+	done
+
 OBJS = $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
 
 CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${BUGFIX} ${OPT} 
@@ -27,7 +34,7 @@ CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${BUGFIX} ${OPT}
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-all: ${OBJS}
+all: links ${OBJS}
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}

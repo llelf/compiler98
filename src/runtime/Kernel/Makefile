@@ -32,13 +32,20 @@ AS = $(CC) -c
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
+LINKS = bytecode.h cinterface.h mutlib.h newmacros.h node.h runtime.h stableptr.h
+
+links:
+	@for f in ${LINKS}; do \
+		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
+	done
+
 xxx: 
 	echo ${BUILDDIR}
 
 ${ARCHIVE}: ${AOBJS}
 	$(AR) $(ARFLAGS) $@ ${AOBJS}
 
-all: ${OBJS} ${ARCHIVE}
+all: links ${OBJS} ${ARCHIVE}
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}

@@ -14,10 +14,17 @@ HEADERS = gmp-mparam.h
 
 CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT}
 
+LINKS = flt.h
+
+links:
+	@for f in ${LINKS}; do \
+		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
+	done
+
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-all: ${HEADERS} $(OBJS)
+all: links ${HEADERS} $(OBJS)
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}

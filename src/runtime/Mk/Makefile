@@ -29,7 +29,14 @@ CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-all: ${OBJS}
+LINKS = mk.h mkByHand.h mkByProg.h
+
+links:
+	@for f in ${LINKS}; do \
+		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
+	done
+
+all: links ${OBJS}
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
