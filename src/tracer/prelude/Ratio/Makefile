@@ -6,9 +6,10 @@ VPATH = .
 
 .SUFFIXES: .hi .hs .o
 
-SRCS= Reduce.hs RatioCon.hs Denominator.hs Numerator.hs \
-	  Prec.hs Eq_Ratio.hs Num_Ratio.hs Show_Ratio.hs \
-	DRatio.hs TRational.hs PrelRatio.hs
+SRCS= DRatio.hs TRational.hs \
+      Reduce.hs RatioCon.hs PrelRatio.hs \
+      Denominator.hs Numerator.hs \
+      Prec.hs Eq_Ratio.hs Num_Ratio.hs Show_Ratio.hs
 
 NOTDONE= ???
 

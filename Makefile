@@ -78,12 +78,14 @@ PRELUDEC = \
 	src/prelude/Time/*.c
 PRELUDET = \
 	src/tracer/prelude/Makefile* \
+	src/tracer/prelude/*.hi \
 	src/tracer/prelude/*/Makefile* \
 	src/tracer/prelude/Char/*.hs \
 	src/tracer/prelude/DontKnow/*.hs \
 	src/tracer/prelude/IO/*.hs \
 	src/tracer/prelude/List/*.hs \
 	src/tracer/prelude/LowB/*.hs \
+	src/tracer/prelude/LowB/LowSystem.hi \
 	src/tracer/prelude/Maybe/*.hs \
 	src/tracer/prelude/NonStd/*.hs \
 	src/tracer/prelude/PackedString/*.hs \
@@ -96,8 +98,6 @@ PRELUDET = \
 	src/tracer/prelude/System/*.hs \
 	src/tracer/prelude/Text/*.hs
 
-#	src/tracer/prelude/LowB/LowSystem.hi \
-#	src/tracer/prelude/*.hi \
 #	src/tracer/prelude/Array/*.hs \
 #	src/tracer/prelude/Complex/*.hs \
 #	src/tracer/prelude/Debug/*.hs \
