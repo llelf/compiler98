@@ -132,10 +132,10 @@ else	#### tracing
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeList PreludeIO PreludeText PreludeDebug Prelude \
 	Maybe List Monad System IO PackedString \
-	Ix Complex
-NOTYET=	NonStd Array Directory \
+	Ix Array Complex FFI IOExtras
+NOTYET=	NonStd Directory \
 	Locale Time CPUTime Random Haskell \
-	Binary Bit GreenCard BinArray FFI IOExtras Observe
+	Binary Bit GreenCard BinArray Observe
 
 #SUBDIROBJS=$(patsubst %,${OBJ}/%/*.o,${SUBDIRS})
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
