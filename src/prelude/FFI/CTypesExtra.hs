@@ -14,6 +14,8 @@ module NHC.FFI
 
 import NonStdUnsafeCoerce
 import Storable	( Storable(..) )
+import Data.Bits( Bits(..) )
+import NHC.SizedTypes
 import Monad	( liftM )
 import Ptr	( castPtr )
 import CTypes
@@ -27,8 +29,9 @@ INTEGRAL_TYPE(CPtrdiff,CInt)
 INTEGRAL_TYPE(CWchar,CInt)
 INTEGRAL_TYPE(CSigAtomic,CInt)
 INTEGRAL_TYPE(CSize,CInt)
-INTEGRAL_TYPE(CClock,CUInt)
-INTEGRAL_TYPE(CTime,CUInt)
+
+NUMERIC_TYPE(CClock,CUInt)
+NUMERIC_TYPE(CTime,CUInt)
 
 -- Not sure what these are for??
 data CFile   = CFile		-- ??

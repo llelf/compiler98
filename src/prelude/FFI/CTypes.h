@@ -24,7 +24,8 @@ INSTANCE_NUM(T) ;
 NUMERIC_TYPE(T,B) ; \
 INSTANCE_BOUNDED(T) ; \
 INSTANCE_REAL(T) ; \
-INSTANCE_INTEGRAL(T) ;
+INSTANCE_INTEGRAL(T) ; \
+INSTANCE_BITS(T)
 
 #define FLOATING_TYPE(T,B) \
 NUMERIC_TYPE(T,B) ; \
@@ -88,6 +89,22 @@ instance Integral T where { \
    (T i) `quotRem` (T j) = let (q,r) = i `quotRem` j in (T q, T r) ; \
    (T i) `divMod`  (T j) = let (d,m) = i `divMod`  j in (T d, T m) ; \
    toInteger (T i)       = toInteger i }
+
+#define INSTANCE_BITS(T) \
+instance Bits T where { \
+  (T x) .&.     (T y)   = T (x .&.   y) ; \
+  (T x) .|.     (T y)   = T (x .|.   y) ; \
+  (T x) `xor`   (T y)   = T (x `xor` y) ; \
+  complement    (T x)   = T (complement x) ; \
+  shift         (T x) n = T (shift x n) ; \
+  rotate        (T x) n = T (rotate x n) ; \
+  bit                 n = T (bit n) ; \
+  setBit        (T x) n = T (setBit x n) ; \
+  clearBit      (T x) n = T (clearBit x n) ; \
+  complementBit (T x) n = T (complementBit x n) ; \
+  testBit       (T x) n = testBit x n ; \
+  bitSize       (T x)   = bitSize x ; \
+  isSigned      (T x)   = isSigned x }
 
 #define INSTANCE_FRACTIONAL(T) \
 instance Fractional T where { \
