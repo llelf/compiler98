@@ -134,7 +134,7 @@ HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] \
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/*.gc include/*.hx
+INCLUDE = include/*.hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
 HATTOOLSET= hat-stack hat-connect hat-check hat-checki hat-detect hat-observe \
