@@ -6,8 +6,11 @@ import System
 import Char(isDigit,digitToInt,toUpper)
 import IO(hFlush,stdout)
 
-spawnTerminalCmd = "gnome-terminal -e \""
-spawnTerminalEnd = "\"&"
+spawnDetectCmd = "gnome-terminal -e \"hat-detect "
+spawnDetectEnd = "\"&"
+spawnTraceCmd = "hat-trail "
+spawnTraceEnd = "&"
+
 
 -----------------------------------------------------------------------
 -- misc functions
@@ -297,19 +300,12 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
          do
           if (number>0) then
             do
-              putStrLn ("starting detect session for #"++
-	 	       (show number)++" in separate window...")
+--              putStrLn ("starting detect session for #"++
+--	 	       (show number)++" in separate window...")
               if (null node) then -- This test may take a while!
 	         putStrLn "No equation with this number!"
                else
-                 let (_,id) = (head node) in
-                  do
-                   errcode <- system(spawnTerminalCmd++"hat-detect "++
-				     file++" -remote "++(show id)++spawnTerminalEnd)
-                   if (errcode/=ExitSuccess) then
-		      putStrLn ("ERROR: Unable to start hat-detect.\n"++
-				"Check settings and availability of hat-detect!")
-                    else return ()
+                 startExternalTool file (head node)
            else
 	      putStrLn "No equation with this number!" 
 	  interactive hatfile state
@@ -404,6 +400,36 @@ doCommand cmd s hatfile state =
        interactive hatfile state
      else
       doCommand "O" ("O "++s) hatfile state
+
+
+startExternalTool file node@(_,id) =
+    let maybeID = hatResult node;
+	rhsID = if (isNothing maybeID) then 0 else (snd (fromJust maybeID)) in
+    do
+      putStr "Start Algorithmic Debugging or Tracer? (A/T): "
+      choice <- getLine
+      if (((length choice)>0)&&(head(upStr(choice))=='T')) then
+        do
+          putStr "Trace left-hand-side (lhs) or rhs? (L/R): "
+	  lhs <- getLine
+          errcode <- system(spawnTraceCmd++
+			    file++" -remote "++
+			    (show (if ((rhsID==0)||((length lhs)==0)||
+				       (head (upStr lhs)/='R')) then id
+				   else rhsID))++
+			    spawnTraceEnd)
+          if (errcode/=ExitSuccess) then
+	     putStrLn ("ERROR: Unable to start hat-trail.\n"++
+		       "Check settings and availability of hat-trail!")
+	   else return ()
+       else
+        do
+         errcode <- system(spawnDetectCmd++
+			   file++" -remote "++(show id)++spawnDetectEnd)
+	 if (errcode/=ExitSuccess) then
+	    putStrLn ("ERROR: Unable to start hat-detect.\n"++
+		      "Check settings and availability of hat-detect!")
+	  else return ()
 
 interactiveHelp =
   do
