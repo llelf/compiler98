@@ -390,7 +390,7 @@ primTAp12 (FileOffset tap, FileOffset tfn
 
 
 FileOffset
-primTNm (FileOffset tnm, CNmType nm, FileOffset sr)
+primTNm (FileOffset tnm, CNmType* nm, FileOffset sr)
 {
     FileOffset fo;
     fo = ftell(HatFile);
@@ -459,7 +459,9 @@ primTSatB (FileOffset t1)
 }
 
 /* This implementation of SatC is wrong - it creates a new node rather than
- * overwriting the old one.
+ * overwriting the old one.  Also, for the purpose of an initial observation
+ * of correctness, we write two SatCs - first the address to be updated, then
+ * the address it should be updated to.
  */
 
 FileOffset
@@ -469,6 +471,8 @@ primTSatC (FileOffset torig,FileOffset teval)
     fo = ftell(HatFile);
     fo = htonl(fo);
     SHOW(fprintf(stderr,"\tprimTSatC 0x%x 0x%x -> 0x%x\n",torig,teval,fo);)
+    fputc(((Trace<<5) | TSatC),HatFile);
+    fwrite(&torig, sizeof(FileOffset), 1, HatFile);
     fputc(((Trace<<5) | TSatC),HatFile);
     fwrite(&teval, sizeof(FileOffset), 1, HatFile);
     return fo;
@@ -481,11 +485,11 @@ primTSatC (FileOffset torig,FileOffset teval)
  * and also its trustedness (needed).
  */
 
-CNmType
+CNmType*
 mkCNmType (int type, FileOffset fo, int trustedness)
 {
-    CNmType nm;
-    nm = (CNmType) C_ALLOC(1+EXTRA+2);
+    CNmType* nm;
+    nm = (CNmType*) C_ALLOC(1+EXTRA+2);
     nm->constr = CONSTR(type,2,2);
     INIT_PROFINFO((void*)nm,&dummyProfInfo)
     nm->ptr = fo;
@@ -498,7 +502,7 @@ mkCNmType (int type, FileOffset fo, int trustedness)
 
 
 
-CNmType
+CNmType*
 primNTInt (int i)
 {
     FileOffset fo;
@@ -511,7 +515,7 @@ primNTInt (int i)
     return mkCNmType(NTInt,fo,False);
 }
 
-CNmType
+CNmType*
 primNTChar (char c)
 {
     FileOffset fo;
@@ -523,7 +527,7 @@ primNTChar (char c)
     return mkCNmType(NTChar,fo,False);
 }
 
-CNmType
+CNmType*
 primNTInteger (NodePtr i)
 {
     FileOffset fo;
@@ -535,7 +539,7 @@ primNTInteger (NodePtr i)
     return mkCNmType(NTInteger,fo,False);
 }
 
-CNmType
+CNmType*
 primNTRational (NodePtr i, NodePtr j)
 {
     FileOffset fo;
@@ -548,11 +552,10 @@ primNTRational (NodePtr i, NodePtr j)
     return mkCNmType(NTRational,fo,False);
 }
 
-CNmType
+CNmType*
 primNTFloat (float f)
 {
     FileOffset fo;
-    CNmType nm;
     fo = ftell(HatFile);
     fo = htonl(fo);
     SHOW(fprintf(stderr,"\tprimNTFloat -> 0x%x\n",fo);)
@@ -561,7 +564,7 @@ primNTFloat (float f)
     return mkCNmType(NTFloat,fo,False);
 }
 
-CNmType
+CNmType*
 primNTDouble (double d)
 {
     FileOffset fo;
@@ -573,7 +576,7 @@ primNTDouble (double d)
     return mkCNmType(NTDouble,fo,False);
 }
 
-CNmType
+CNmType*
 primNTId (IdEntry *id)
 {
     if (id->fileoffset) {
@@ -599,8 +602,7 @@ primNTId (IdEntry *id)
     }
 }
 
-/* probably never used? */
-CNmType
+CNmType*
 primNTConstr (IdEntry *id)
 {
     if (id->fileoffset) {
@@ -626,7 +628,7 @@ primNTConstr (IdEntry *id)
     }
 }
 
-CNmType
+CNmType*
 primNTTuple ()
 {
     FileOffset fo;
@@ -637,7 +639,7 @@ primNTTuple ()
     return mkCNmType(NTTuple,fo,False);
 }
 
-CNmType
+CNmType*
 primNTFun ()
 {
     FileOffset fo;
@@ -648,7 +650,7 @@ primNTFun ()
     return mkCNmType(NTFun,fo,False);
 }
 
-CNmType
+CNmType*
 primNTCase ()
 {
     FileOffset fo;
@@ -659,7 +661,7 @@ primNTCase ()
     return mkCNmType(NTCase,fo,False);
 }
 
-CNmType
+CNmType*
 primNTLambda ()
 {
     FileOffset fo;
@@ -670,7 +672,7 @@ primNTLambda ()
     return mkCNmType(NTLambda,fo,False);
 }
 
-CNmType
+CNmType*
 primNTDummy ()
 {
     FileOffset fo;
@@ -681,7 +683,7 @@ primNTDummy ()
     return mkCNmType(NTDummy,fo,False);
 }
 
-CNmType
+CNmType*
 primNTCString (char *s)
 {
     FileOffset fo;
@@ -694,7 +696,7 @@ primNTCString (char *s)
     return mkCNmType(NTCString,fo,False);
 }
 
-CNmType
+CNmType*
 primNTIf ()
 {
     FileOffset fo;
@@ -705,7 +707,7 @@ primNTIf ()
     return mkCNmType(NTIf,fo,False);
 }
 
-CNmType
+CNmType*
 primNTGuard ()
 {
     FileOffset fo;
@@ -716,7 +718,7 @@ primNTGuard ()
     return mkCNmType(NTGuard,fo,False);
 }
 
-CNmType
+CNmType*
 primNTContainer ()
 {
     FileOffset fo;
@@ -729,7 +731,7 @@ primNTContainer ()
 
 
 int
-primTrustedNm (CNmType nm)
+primTrustedNm (CNmType* nm)
 {
     SHOW(fprintf(stderr,"\tprimTrustedNm %s\n",(nm->trust?"trust":"suspect"));)
     return nm->trust;
@@ -775,11 +777,11 @@ primSR3 (SrcRef *sr)
 /* Function to build a CTrace triple from components.
  */
 
-CTrace
+CTrace*
 mkTrace (FileOffset fo, int trustedness, int hiddenness)
 {
-    CTrace t;
-    t = (CTrace) C_ALLOC(1+EXTRA+3);
+    CTrace* t;
+    t = (CTrace*) C_ALLOC(1+EXTRA+3);
     t->constr = CONSTR(0,3,3);
     INIT_PROFINFO((void*)t,&dummyProfInfo)
     t->ptr = fo;
@@ -793,21 +795,21 @@ mkTrace (FileOffset fo, int trustedness, int hiddenness)
 }
 
 FileOffset
-primTracePtr (CTrace t)
+primTracePtr (CTrace* t)
 {
     SHOW(fprintf(stderr,"\tprimTracePtr 0x%x -> 0x%x\n",t,t->ptr);)
     return t->ptr;
 }
 
 int
-primTrustedFun (CTrace t)
+primTrustedFun (CTrace* t)
 {
     SHOW(fprintf(stderr,"\tprimTrustedFun 0x%x -> %s\n",t,(t->trust?"yes":"no"));)
     return t->trust;
 }
 
 int
-primHidden (CTrace t)
+primHidden (CTrace* t)
 {
     SHOW(fprintf(stderr,"\tprimHidden 0x%x -> %s\n",t,(t->trust?"yes":"no"));)
     return t->hidden;

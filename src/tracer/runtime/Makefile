@@ -7,7 +7,7 @@ apa:
 	@echo "DCFG = ${DCFG}"
 
 ifeq "${TRACING}" "T"
-SRCS  = io.c getconstr.c nodecache.c outputtrace.c minisocklib.c \
+SRCS  = io.c getconstr.c nodecache.c minisocklib.c \
 	stub.c vector.c numeric.c browsercomms.c ident.c trust.c \
 	stacktrace.c fileformat.c
 else
@@ -45,7 +45,7 @@ ${ARCHIVE}: objdir ${OBJS}
 	ar cr $@ ${OBJS}
 	ranlib $@
 
-ui.h: getconstr.h nodecache.h outputtrace.h ;
+ui.h: getconstr.h nodecache.h fileformat.h ;
 fileformat.h: ident.h ;
 
 ${OBJDIR}/demo_server.o: demo_server.c

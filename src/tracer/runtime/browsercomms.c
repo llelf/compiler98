@@ -21,7 +21,6 @@ extern int traceBreak;
 /*extern void prGraph(NodePtr nodeptr,Int flags,Int d);*/
 
 NodePtr dbg_last_trace = NULL;
-NodePtr outputContext = NULL;
 
 #define	MAX_LINE_SIZE	1024
 #define	MAX_SYM_SIZE	128
@@ -1213,7 +1212,7 @@ C_HEADER(cInitializeDebugger)
     NodePtr nodeptr;
     char *regexp;
 
-    add_user_gc(otMark, otFlip);
+  /*add_user_gc(otMark, otFlip);*/
     signal(SIGQUIT, sigquit_handler);
     signal(SIGINT, ctrl_C_handler);
 
@@ -1252,7 +1251,7 @@ C_HEADER(cConnectToServer)
 	exit(1);
     }
     ncInit();
-    otInit();
+  /*otInit();*/
     /*fprintf(stderr, "setvbuf: %d\n", setvbuf(sock, NULL, _IONBF, BUFSIZ));*/
 
     fprintf(stderr, "Haskell redex trail browser connected...\n");

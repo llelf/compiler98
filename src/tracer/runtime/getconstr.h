@@ -1,6 +1,7 @@
 #ifndef GETCONSTR_H
 #define GETCONSTR_H
 
+#include "node.h"
 #include "fileformat.h"
 
 #if 0
@@ -51,7 +52,7 @@ extern Node D__40_41[];
 extern Node D_Prelude_46Right[];
 
 #define mkNmInt(x)	primNTInt(GET_INT_VALUE(x))
-#define mkNmBool(x)	primNTId((IdEntry*)(CONINFO_NUMBER(*x) == 0 ? (&D_Prelude_46False[0]) : (&D_Prelude_46True[0])))
+#define mkNmBool(x)	primNTConstr((IdEntry*)(GET_BOOL_VALUE(x) ? (&D_Prelude_46True[0]) : (&D_Prelude_46False[0])))
 #define mkNmChar(x)	primNTChar(GET_CHAR_VALUE(x))
 #if 0
 #define mkNmFun(x)	mkNmWithArg(NTFun, x)
@@ -64,12 +65,12 @@ extern Node D_Prelude_46Right[];
 #define mkNmVector()	primNTContainer()
 #define mkNmCString(x)	primNTCString(x)
 
-CNmType mkNmWithArg(int tag, NodePtr x);
-CNmType mkNm(int tag);
+CNmType* mkNmWithArg(int tag, NodePtr x);
+CNmType* mkNm(int tag);
 NodePtr mkR(NodePtr v, NodePtr t);
 NodePtr mkTAp1(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr sr);
 NodePtr mkTAp2(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr ta2, NodePtr sr);
-NodePtr mkTNm(NodePtr t, CNmType nm, NodePtr sr);
+NodePtr mkTNm(NodePtr t, CNmType* nm, NodePtr sr);
 NodePtr mkTInd(NodePtr t1, NodePtr t2);
 
 NodePtr shortCircuitSelectors(NodePtr node);

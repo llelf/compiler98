@@ -4,12 +4,20 @@
 extern int traceGcStat;
 extern int traceBreak;
 
+FileOffset outputContext;
+
 
 /* _tprim_setOutputContext primitive 3 :: Trace -> E (R a) -> R a */
 C_HEADER(_tprim_setOutputContext)
 {
-	NodePtr arg = C_GETARG1(2);
-	outputContext = C_GETARG1(1);
+        CTrace *t; NodePtr arg;
+
+        arg = C_GETARG1(1);
+	IND_REMOVE(arg);
+        t = (CTrace*)arg;
+	outputContext = t->ptr;
+
+        arg = C_GETARG1(2);
 	IND_REMOVE(arg);
 	arg = GET_POINTER_ARG1(arg,1);
 	C_RETURN(arg);
@@ -39,6 +47,7 @@ C_HEADER(_tprim_chPutChar)
 {
     NodePtr handleR, np, ch, result, t, unit_t;
     FileDesc *a;
+    char c;
 
     t = C_GETARG1(1);
     handleR = C_GETARG1(2);
@@ -49,14 +58,15 @@ C_HEADER(_tprim_chPutChar)
     IND_REMOVE(np);
     ch = GET_POINTER_ARG1(np, 1);
     IND_REMOVE(ch);
-    putc(GET_CHAR_VALUE(ch), a->fp);
-    fflush(a->fp); /* Not really necessary... */
-#if 0
-    fprintf(stderr, "\t = 0x%x\n", t);
-    prGraph(t, 1, 1);
-    fprintf(stderr, "\n", t);
-#endif
-    otInsert(GET_CHAR_VALUE(ch), outputContext);
+    c = GET_CHAR_VALUE(ch);
+    putc(c, a->fp);		/* real output */
+    putc(c, HatOutput);		/* copy of output */
+    fwrite(&outputContext, sizeof(FileOffset), 1, HatBridge);
+				/* link trace to output */
+
+/* For heap-based tracing, we did this: */
+/*  otInsert(GET_CHAR_VALUE(ch), outputContext); */
+/* Originally: */
 /*  otInsert(GET_CHAR_VALUE(ch), t); */
     
     unit_t = mkTNm(t, mkNmUnit(), mkSR());

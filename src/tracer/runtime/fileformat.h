@@ -5,6 +5,8 @@
 #include "runtime.h"
 
 extern FILE *HatFile;
+extern FILE *HatOutput;
+extern FILE *HatBridge;
 
 /* Upper 3 bits of tag byte */
 #define Trace		0
@@ -48,7 +50,7 @@ typedef struct {
 #endif
     FileOffset ptr;
     int trust;
-} *CNmType;
+} CNmType;
 
 typedef struct {
     int constr;
@@ -58,7 +60,7 @@ typedef struct {
     FileOffset ptr;
     int trust;
     int hidden;
-} *CTrace;
+} CTrace;
 
 FileOffset	primModInfo	(ModInfo *m);
 
@@ -174,38 +176,38 @@ FileOffset	primTAp12	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ12
                                                , FileOffset sr);
 
-FileOffset	primTNm		(FileOffset tnm, CNmType nm, FileOffset sr);
+FileOffset	primTNm		(FileOffset tnm, CNmType* nm, FileOffset sr);
 FileOffset	primTInd	(FileOffset t1, FileOffset t2);
 FileOffset	primTHidden	(FileOffset t1);
 FileOffset	primTSatA	(FileOffset t1);
 FileOffset	primTSatB	(FileOffset t1);
 FileOffset	primTSatC	(FileOffset t1, FileOffset t2);
 
-CNmType		primNTInt	(int i);
-CNmType		primNTChar	(char c);
-CNmType		primNTInteger	(NodePtr i);
-CNmType		primNTRational	(NodePtr i,NodePtr j);
-CNmType		primNTFloat	(float f);
-CNmType		primNTDouble	(double d);
-CNmType		primNTId	(IdEntry *id);	/* believed not necessary */
-CNmType		primNTConstr	(IdEntry *id);	/* believed not necessary */
-CNmType		primNTTuple	(void);
-CNmType		primNTFun	(void);
-CNmType		primNTCase	(void);
-CNmType		primNTLambda	(void);
-CNmType		primNTDummy	(void);
-CNmType		primNTCString	(char *s);
-CNmType		primNTIf	(void);
-CNmType		primNTGuard	(void);
-CNmType		primNTContainer	(void);
+CNmType*	primNTInt	(int i);
+CNmType*	primNTChar	(char c);
+CNmType*	primNTInteger	(NodePtr i);
+CNmType*	primNTRational	(NodePtr i,NodePtr j);
+CNmType*	primNTFloat	(float f);
+CNmType*	primNTDouble	(double d);
+CNmType*	primNTId	(IdEntry *id);	/* believed not necessary */
+CNmType*	primNTConstr	(IdEntry *id);	/* believed not necessary */
+CNmType*	primNTTuple	(void);
+CNmType*	primNTFun	(void);
+CNmType*	primNTCase	(void);
+CNmType*	primNTLambda	(void);
+CNmType*	primNTDummy	(void);
+CNmType*	primNTCString	(char *s);
+CNmType*	primNTIf	(void);
+CNmType*	primNTGuard	(void);
+CNmType*	primNTContainer	(void);
 
-int		primTrustedNm	(CNmType nm);
+int		primTrustedNm	(CNmType* nm);
 int		primSameTrace	(FileOffset t1, FileOffset t2);
 
-FileOffset	primTracePtr	(CTrace t);
-int		primTrustedFun	(CTrace t);
-int		primHidden	(CTrace t);
-CTrace		mkTrace		(FileOffset p, int tr, int hid);
+FileOffset	primTracePtr	(CTrace* t);
+int		primTrustedFun	(CTrace* t);
+int		primHidden	(CTrace* t);
+CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);

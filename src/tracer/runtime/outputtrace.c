@@ -1,3 +1,8 @@
+/* This whole file is now obsolete.  Output traces are now stored in
+ * two files: one (.hat.output) for the output chars, the other (.hat.bridge)
+ * for the trail pointers.  See io.c.
+ */
+
 #ifdef BIG_ENDIAN
 #undef BIG_ENDIAN
 #endif
@@ -21,6 +26,7 @@
 /* The OutputTrace is an array of (character,trace) pairs, recording
  * all the output behaviour of the Haskell program.
  */
+NodePtr outputContext = NULL;
 
 #define OT_ALLOCSIZE 1024
 

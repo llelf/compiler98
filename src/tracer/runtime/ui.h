@@ -27,7 +27,8 @@
 #include "bytecode.h"
 #include "getconstr.h"
 #include "nodecache.h"
-#include "outputtrace.h"
+#include "fileformat.h"
+/*#include "outputtrace.h"*/
 
 #define DEFAULT_DEPTH 7
 #define DBGPORT 6710
@@ -38,7 +39,7 @@ extern int redTT, redTS, redST, redSS;
 extern int trace_enter, trace_bpregexp, trace_singlestep;
 
 extern NodePtr dbg_last_trace;
-extern NodePtr outputContext;
+extern FileOffset outputContext;
 
 NodePtr	shortCircuitSelectors	(NodePtr node);
 void	showSymbol	(NodePtr t, char **pmodule, char **pname

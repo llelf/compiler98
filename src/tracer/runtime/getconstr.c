@@ -105,7 +105,7 @@ NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr)
   return n;
 }
 #else
-NodePtr mkTNm(NodePtr t, CNmType nm, NodePtr sr)
+NodePtr mkTNm(NodePtr t, CNmType* nm, NodePtr sr)
 {
   unsigned tp, srp, rp;
   tp  = GET_INT_VALUE(t);
@@ -353,10 +353,10 @@ C_HEADER(_tprim_unpackPS)
   C_RETURN(res);
 }
 
-CNmType mkNmWithArg(int tag, NodePtr x)
+CNmType* mkNmWithArg(int tag, NodePtr x)
 {
     /*fprintf(stderr,"getconstr.c: mkNmWithArg\n");*/
-    return (CNmType)0;
+    return (CNmType*)0;
 #if 0
     NodePtr n = C_ALLOC(1+EXTRA+1);
     n[0] = CONSTR(tag, 1, 0);
@@ -368,10 +368,10 @@ CNmType mkNmWithArg(int tag, NodePtr x)
 #endif
 }
 
-CNmType mkNm(int tag)
+CNmType* mkNm(int tag)
 {
     /*fprintf(stderr,"getconstr.c: mkNm\n");*/
-    return (CNmType)0;
+    return (CNmType*)0;
 #if 0
     NodePtr n = C_ALLOC(1+EXTRA);
     n[0] = CONSTR(tag, 0, 0);
