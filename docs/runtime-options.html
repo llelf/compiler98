@@ -129,63 +129,6 @@ picture of the graph.
 
 </td><td width=250 valign=top>
 
-<b>Tracer options.</b>
-<table width=250><tr>
-<td valign=top><em><b>-ds</b> name</em></td>
-	<td>suspect the module <em>name</em> (even if
-            compiled as a trusted module)</td>
-</tr><tr>
-<td valign=top><em><b>-dt</b> name</em></td>
-	<td>trust the module <em>name</em> (even if
-            compiled as a suspect module)</td>
-</tr><tr>
-<td valign=top><em><b>-dshow</b></em></td><td>show ???</td>
-</tr><tr>
-<td valign=top><em><b>-dnr</b></em></td><td>do not trace R ???</td>
-</tr><tr>
-<td valign=top><em><b>-dnsatf</b></em></td><td>do not trace SatF ???</td>
-</tr><tr>
-<td valign=top><em><b>-dnsat</b></em></td><td>do not trace Sat ???</td>
-</tr><tr>
-<td valign=top><em><b>-dq</b></em></td><td>quit tracing when ???</td>
-</tr><tr>
-<td valign=top><em><b>-dps</b></em></td><td>prune Sats ???</td>
-</tr><tr>
-<td valign=top><em><b>-dk</b>size</em></td>
-	<td>prune traces at depth <em>size</em></td>
-</tr><tr>
-<td valign=top><em><b>-D</b>[num]</em></td>
-	<td>turn on stack dumps to depth <em>num</em> (default=1)</td>
-</tr><tr>
-<td valign=top><em><b>-T</b>[flags]</em></td>
-  <td>turn on tracing flags where <em>flags</em> is any sequence of
-	<table><tr>
-	  <td><b>r</b></td><td>trace returns</td>
-	</tr><tr>
-	  <td><b>e</b></td><td>trace evals</td>
-	</tr><tr>
-	  <td><b>b</b></td><td>trace instruction pointer</td>
-	</tr><tr>
-	  <td><b>s</b></td><td>trace stack pointer</td>
-	</tr><tr>
-	  <td><b>h</b></td><td>trace heap pointer</td>
-	</tr><tr>
-	  <td><b>a</b></td><td>dump address</td>
-	</tr><tr>
-	  <td><b>i</b></td><td>dump indirections</td>
-	</tr><tr>
-	  <td><b>t</b></td><td>dump top</td>
-	</tr><tr>
-	  <td><em>num</em></td><td>trace depth</td>
-	</tr></table>
-  If <em>flags</em> is missing, the default is <b>bshait</b></td>
-</tr></table>
-<p>
-Tracer options are only meaningful if the program has been compiled for
-tracing - otherwise they are ignored.
-
-</td></tr>
-<tr><td width=250 valign=top>
 
 <b>Time profiling options.</b>
 <table width=250><tr>
@@ -194,16 +137,16 @@ tracing - otherwise they are ignored.
 <td valign=top><em><b>-tt</b></em></td>
   <td>order results by time consumed per function</td>
 </tr><tr>
-<td valign=top><em><b>-te</b></em></td>
-  <td>order results by number of entries per function</td>
+<td valign=top><em><b>-tc</b></em></td>
+  <td>order results by number of calls per function</td>
 </tr><tr>
-<td valign=top><em><b>-tp</b></em></td>
-  <td>calculate percentages for entries as well as for time consumed</td>
+<td valign=top><em><b>-tm</b></em></td>
+  <td>group results by module</td>
 </tr><tr>
-<td valign=top><em><b>-ts</b></em></td>
-  <td>count sub-function entries separately</td>
+<td valign=top><em><b>-txp</b></em></td>
+  <td>give percentage of calls as well as percentage of time consumed</td>
 </tr><tr>
-<td valign=top><em><b>-tf</b></em></td>
+<td valign=top><em><b>-txs</b></em></td>
   <td>count sub-function entries separately</td>
 </tr><tr>
 <td valign=top><em><b>-t-</b>Module</em></td>
@@ -220,12 +163,15 @@ tracing - otherwise they are ignored.
 </tr><tr>
 </tr></table>
 <p>
-These options are only meaningful if the program has been compiled
-for time profiling - otherwise they are ignored.
-The various single-letter flags can be aggregated together, e.g.
-<em><b>-t</b>tps</em>.  You can give a list of module names
-separated by spaces using the shell quoting mechanism e.g.
-<em><b>-t"+</b>Prelude<b> -</b>Main<b> +</b>IO<b>"</b></em>.
+These options are only meaningful if the program has been compiled for
+time profiling - otherwise they are ignored.  The various single-letter
+flags can be aggregated together, e.g.  <em><b>-t</b>mt</em>.
+You can give a list of module names separated by spaces using the
+shell quoting mechanism e.g.  <em><b>-t"+</b>Prelude<b> -</b>Main<b>
++</b>IO<b>"</b></em>.  The default is to show all functions written
+by the user separately, but only show the total for library modules
+(Prelude, IO, etc.).
+<p>
 The time profile results are produced in a file named
 <em>program<b>.tp</b></em>.
 
@@ -241,7 +187,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.01.26<br>
+2001.05.18<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
