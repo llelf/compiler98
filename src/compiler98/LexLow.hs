@@ -11,16 +11,23 @@ import PackedString(PackedString,packString,unpackPS)
 import TokenId(TokenId,visible,qualify,t_List)
 import Extra(isNhcOp)
 
-#if defined(__HASKELL98__)
-#define isAlphanum isAlphaNum
+#if !defined(__HASKELL98__)
+#define isAlphaNum isAlphanum
 #endif
 
-data LEX_LOW =
+data LEX_LOW =		-- the trailing String is the rest of the input
    LEX_ERROR Char String
  | LEX_CONOP String String
  | LEX_VAROP String String
  | LEX_CONID String String
- | LEX_VARID String String
+ | LEX_VARID String Int Int String
+	-- varid, hash value, length, remainder of input
+	-- ( We calculate a hash value for every varid, and match it
+	--   against the keywords of the language.  This gives a small
+	--   runtime speed up of 5%, compared to the previous
+	--   implementation which did explicit character matching on
+	--   every varid.  With hashing, only some varids need to be
+	--   checked. )
 
 isLexId x =  isAlpha x || isNhcOp x
 
@@ -29,17 +36,47 @@ isLexId' (x:xs) = isLexId x
 
 lexId u r c xs =
   case lexOne u xs of
-    LEX_ERROR  ch xs -> (r,c,L_ERROR ch,xs)
-    LEX_CONOP  op xs -> toConOp r (c+length op) op xs
-    LEX_VAROP  op xs -> toVarOp r (c+length op) op xs
-    LEX_VARID var xs -> toVar  r (c+length var) var xs
-    LEX_CONID mod ('.':'[':']':xs) -> (r,c+length mod+3,L_ACONID t_List,xs)
-	 -- !!! Compiler never emits qualified tuple identifiers, but maybe it ought to be recognised anyway
+    LEX_ERROR  ch xs -> (r, c, L_ERROR ch, xs)
+    LEX_CONOP  op xs -> (r, c+length op, toConOp op, xs)
+    LEX_VAROP  op xs -> (r, c+length op, toVarOp op, xs)
+    LEX_VARID var hash len xs ->
+        let toVar :: Int -> Lex
+            toVar key = case key of
+				10 -> word "esac" L_case
+				22 -> word "ssalc" L_class
+				19 -> word "atad" L_data
+				20 -> word "tluafed" L_default
+				21 -> word "gnivired" L_deriving
+				15 -> word "od" L_do
+				4  -> word "esle" L_else
+				2 -> word "fi" L_if
+				7 -> word "tropmi" L_import
+				6 -> word "ni" L_in
+				18 -> word "xifni" L_infix
+				16 -> word "lxifni" L_infixl
+				17 -> word "rxifni" L_infixr
+				8 -> word "ecnatsni" L_instance
+				14 -> word "tel" L_let
+				13 -> word "eludom" L_module
+				11 -> word "epytwen" L_newtype
+				3 -> word "fo" L_of
+				9 -> word "neht" L_then
+				5 -> word "epyt" L_type
+				12 -> word "erehw" L_where
+				1 -> word "_" L_Underscore
+				_ -> L_AVARID (visible var)
+            word :: String -> Lex -> Lex
+            word s tok = if var==s then tok else L_AVARID (visible var)
+        in
+        (r, c+len, toVar hash, xs)
+    LEX_CONID mod ('.':'[':']':xs) -> (r, c+length mod+3, L_ACONID t_List, xs)
+	 -- !!! Compiler never emits qualified tuple identifiers, but maybe
+	 -- it ought to be recognised anyway
     LEX_CONID mod ('.':xs) | isLexId' xs ->
       let loop mod c' xs = case lexOne u xs of
 	    LEX_CONOP  op xs -> (r,c'+length op,L_ACONOP (qualify mod op), xs)
 	    LEX_VAROP  op xs -> (r,c'+length op,L_AVAROP (qualify mod op), xs)
-	    LEX_VARID var xs -> (r,c'+length var,L_AVARID (qualify mod var), xs)
+	    LEX_VARID var h len xs -> (r,c'+len,L_AVARID (qualify mod var), xs)
 	    LEX_CONID con ('#':xs) -> (r,c'+1+length con,
                                            L_ACONID (qualify mod ('#':con)), xs)
 	    LEX_CONID con ('.':xs) | isLexId' xs ->
@@ -65,17 +102,17 @@ lexOne False xs@('_':x:_) =
 	(con,xs) -> LEX_CONID con xs
   else if isLower x
   then  case splitWhile isNhcId [] xs of
-	(var,xs) -> LEX_VARID var xs
+	(var,xs) -> LEX_VARID var 0 (length var) xs
   else LEX_ERROR x xs
 
 lexOne True xs@('_':_) =
   case splitWhile isNhcId [] xs of
-  (var,xs) -> LEX_VARID var xs
+  (var,xs) -> LEX_VARID var 0 (length var) xs
 
 lexOne u xs@(':':_) =
   case splitWhile isNhcOp [] xs of
 	(op,xs) -> LEX_CONOP op xs
-lexOne u xs@(x:_) =
+lexOne u xs@(x:s) =
   if isNhcOp x
   then case splitWhile isNhcOp [] xs of
 	(op,xs) -> LEX_VAROP op xs
@@ -83,91 +120,92 @@ lexOne u xs@(x:_) =
   then  case splitWhile isNhcId [] xs of
 	(con,xs) -> LEX_CONID con xs
   else if isLower x
-  then  case splitWhile isNhcId [] xs of
-	(var,xs) -> LEX_VARID var xs
+  then  splitWhileHash isNhcId 1 x [x] s
   else LEX_ERROR x xs
 	  
 --
 
-isNhcId c = isAlphanum c || c == '_' || c == '\'' 
+isNhcId c = isAlphaNum c || c == '_' || c == '\'' 
 
 
 ----- Check for keywords
 
-toConOp r c "::" xs  = (r,c,L_ColonColon,xs)
-toConOp r c rop  xs  = (r,c,L_ACONOP (visible rop),xs) 
+toConOp "::" = L_ColonColon
+toConOp rop  = L_ACONOP (visible rop)
 
-toVarOp r c rop xs  =
+toVarOp rop =
   case rop of
-    ".." -> (r,c,L_DotDot,xs)
-    ">=" -> (r,c,L_EqualGreater,xs)
-    "="  -> (r,c,L_Equal,xs)
-    "@"  -> (r,c,L_At,xs)
-    "\\" -> (r,c,L_Lambda,xs)
-    "|"  -> (r,c,L_Pipe,xs)
-    "~"  -> (r,c,L_Tidle,xs)
-    "-<" -> (r,c,L_LessMinus,xs)
-    ">-" -> (r,c,L_MinusGreater,xs)
-    _    -> (r,c,L_AVAROP (visible rop),xs) 
+    ".." -> L_DotDot
+    ">=" -> L_EqualGreater
+    "="  -> L_Equal
+    "@"  -> L_At
+    "\\" -> L_Lambda
+    "|"  -> L_Pipe
+    "~"  -> L_Tidle
+    "-<" -> L_LessMinus
+    ">-" -> L_MinusGreater
+    _    -> L_AVAROP (visible rop)
 
 
-toVar r c rid@(i:d) xs =
+-- This version of toVar is no longer used - the local definition in
+-- lexId above is now used instead.
+toVar rid@(i:d) =
        if i == 'f' 
-  then       if d == "o" then (r,c,L_of,xs)
-	else if d == "i" then (r,c,L_if,xs)
-			 else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "o" then L_of
+	else if d == "i" then L_if
+			 else L_AVARID (visible rid)
   else if i == 's' 
-  then       if d == "salc" then (r,c,L_class,xs)
---  	else if d == "a"    then (r,c,L_as,xs)
-			    else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "salc" then L_class
+--  	else if d == "a"    then L_as
+			    else L_AVARID (visible rid)
   else if i == 't' 
-  then       if d == "el"      then (r,c,L_let,xs)
-  	else if d == "ropmi"   then (r,c,L_import,xs)
-  	else if d == "luafed" then (r,c,L_default,xs)
-	 		       else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "el"      then L_let
+  	else if d == "ropmi"   then L_import
+  	else if d == "luafed" then L_default
+	 		       else L_AVARID (visible rid)
   else if i == 'n' 
-  then       if d == "eht" then (r,c,L_then,xs)
-  	else if d == "i" then (r,c,L_in,xs)
-			 else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "eht" then L_then
+  	else if d == "i" then L_in
+			 else L_AVARID (visible rid)
   else if i == 'e' 
-  then       if d == "sle"      then (r,c,L_else,xs)
-  	else if d == "sac"      then (r,c,L_case,xs)
-  	else if d == "rehw"     then (r,c,L_where,xs)
-  	else if d == "pyt"      then (r,c,L_type,xs)
-  	else if d == "pytwen"   then (r,c,L_newtype,xs)
---  	else if d == "cafretni" then (r,c,L_interface,xs)
-  	else if d == "cnatsni"  then (r,c,L_instance,xs)
---  	else if d == "vitimirp" then (r,c,L_primitive,xs)
-  	else if d == "ludom"   then (r,c,L_module,xs)
-			        else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "sle"      then L_else
+  	else if d == "sac"      then L_case
+  	else if d == "rehw"     then L_where
+  	else if d == "pyt"      then L_type
+  	else if d == "pytwen"   then L_newtype
+--  	else if d == "cafretni" then L_interface
+  	else if d == "cnatsni"  then L_instance
+--  	else if d == "vitimirp" then L_primitive
+  	else if d == "ludom"   then L_module
+			        else L_AVARID (visible rid)
   else if i == 'o' 
-  then       if d == "d" then (r,c,L_do,xs)
-			 else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "d" then L_do
+			 else L_AVARID (visible rid)
   else if i == 'a' 
-  then       if d == "tad" then (r,c,L_data,xs)
-			   else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "tad" then L_data
+			   else L_AVARID (visible rid)
   else if i == 'x' 
-  then       if d == "ifni"  then (r,c,L_infix,xs)
---        else if d == "iferp" then (r,c,L_prefix,xs)
-			     else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "ifni"  then L_infix
+--        else if d == "iferp" then L_prefix
+			     else L_AVARID (visible rid)
   else if i == 'l' 
-  then       if d == "xifni" then (r,c,L_infixl,xs)
-			     else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "xifni" then L_infixl
+			     else L_AVARID (visible rid)
   else if i == 'r' 
-  then       if d == "xifni" then (r,c,L_infixr,xs)
-			     else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "xifni" then L_infixr
+			     else L_AVARID (visible rid)
   else if i == 'g' 
-  then       if d == "nivired" then (r,c,L_deriving,xs)
--- 	else if d == "nidih"   then (r,c,L_hiding,xs)
-			       else (r,c,L_AVARID (visible rid),xs)
+  then       if d == "nivired" then L_deriving
+-- 	else if d == "nidih"   then L_hiding
+			       else L_AVARID (visible rid)
 --else if i == 'd' 
---then       if d == "eifilauq" then (r,c,L_qualified,xs)
---        else if d == "exobnu"   then (r,c,L_unboxed,xs)
---			        else (r,c,L_AVARID (visible rid),xs)
+--then       if d == "eifilauq" then L_qualified
+--        else if d == "exobnu"   then L_unboxed
+--			        else L_AVARID (visible rid)
   else if i == '_' && null d
-  then (r,c,L_Underscore,xs)
+  then L_Underscore
 
-  else (r,c,L_AVARID (visible rid),xs)
+  else L_AVARID (visible rid)
 
 
 ---- read number
@@ -254,3 +292,22 @@ splitWhile p a xxs@(x:xs) =
 	if p x
 	then splitWhile p (x:a) xs
 	else (a,xxs)
+
+splitWhileHash :: (Char->Bool)		-- predicate
+		 -> Int			-- accumulated length
+		 -> Char		-- first char
+		 -> String		-- accumulated (reversed) lexeme
+		 -> String		-- input string
+		 -> LEX_LOW	-- Always (LEX_VARID String Int Int String)
+				-- (lexeme, hash value, length, rest of input)
+splitWhileHash p len h acc []
+	= LEX_VARID acc (hash h + hash (head acc) + len) len []
+splitWhileHash p len h acc xxs@(x:xs)
+	| p x        = splitWhileHash p (len+1) h (x:acc) xs
+	| otherwise  = LEX_VARID acc (hash h + hash (head acc) + len) len xxs
+
+hash :: Char -> Int
+hash c = case c of { 's'-> 11; '_'-> 0;  'a'-> 3;  'g'-> 1; 'o'-> 1;
+                     'x'-> 13; 'r'-> 11; 'd'-> 12; 'f'-> 0; 'l'-> 10;
+                     'm'-> 7;  'w'-> 7;  'c'-> 6;  'n'-> 4; 't'-> 1;
+                     'i'-> 0;  'e'-> 0;  _  -> 100 }
