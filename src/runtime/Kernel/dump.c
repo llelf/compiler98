@@ -209,7 +209,7 @@ void prByteIns (CodePtr ip)
   }
 }
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 jmp_buf prGraphEnv;
 #else
 sigjmp_buf prGraphEnv;
@@ -219,7 +219,7 @@ void (*prGraphOldSig)();
 void prGraphSig()
 {
   signal(SIGSEGV,prGraphOldSig);
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
   longjmp(prGraphEnv,1);
 #else
   siglongjmp(prGraphEnv,1);
@@ -246,7 +246,7 @@ void prGraph(NodePtr nodeptr,Int flags,Int d)
 
   prGraphOldSig = signal(SIGSEGV,prGraphSig);
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
   if(setjmp(prGraphEnv)) {
 #else
   if(sigsetjmp(prGraphEnv,0)) {

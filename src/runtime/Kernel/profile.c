@@ -71,7 +71,7 @@ void timertick(int i)
       nextsampletime += 1000*profileInterval;
     }
   }
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
   /* Cannot use virtual timers on win32, have to use real */
   signal(SIGALRM, timertick);
 #else
@@ -87,7 +87,7 @@ void setuptimer(void)
     inttimer.it_value.tv_sec = 0;
     inttimer.it_value.tv_usec = RATE;
     inttimer.it_interval = inttimer.it_value;
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
     /* Cannot use virtual timers on win32, have to use real */
     signal(SIGALRM, timertick);
     setitimer(ITIMER_REAL, &inttimer, (struct itimerval *)0);

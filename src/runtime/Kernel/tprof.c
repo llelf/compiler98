@@ -618,7 +618,7 @@ void tprofStart(void)
     profileInterval = (double) 0.1; /* 100ms */
   }
   if(timeSample) {
-#if defined(__arm) || defined(__CYGWIN32__)
+#if defined(__arm) || defined(__CYGWIN32__) || defined(__MINGW32__)
     fprintf(stderr,"No timed profiling availible on this machine.\n");
     exit(-1);
 #else

@@ -7,7 +7,7 @@
 
 /* cExitWith :: ExitCode -> a */
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 extern jmp_buf exit_mutator;
 #else
 extern sigjmp_buf exit_mutator;
@@ -28,7 +28,7 @@ C_HEADER(cExitWith)
     exit_code = GET_INT_VALUE(nodeptr);
     break;
   }
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
   longjmp(exit_mutator, 1);
 #else
   siglongjmp(exit_mutator,1);

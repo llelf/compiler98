@@ -1,15 +1,12 @@
 
 #ifndef _MARK_H
 
-#if defined(__CYGWIN32__)
-#  include <sys/types.h>
-#else
-#  if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_AIX)
+#if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_AIX)
 #    include <inttypes.h>
-#  else
+#else
 #    include <stdint.h>
-#  endif
 #endif
+
 #ifndef INT64_MIN
 #define int64_t	long int
 #endif			/* default down to 32 bits if 64 not available */

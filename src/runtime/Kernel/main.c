@@ -36,7 +36,7 @@ void nhc_abort(char *errorMsg)
 static SInfo mainProfInfo = { "<Main>","<Main>","<Main>"};
 #endif
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 extern jmp_buf exit_mutator;
 #else
 extern sigjmp_buf exit_mutator;
@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   *--Sp = Hp;
   Hp += SIZE_VAP1;
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
   if(!setjmp(exit_mutator)) {
 #else
   if(!sigsetjmp(exit_mutator,0)) {

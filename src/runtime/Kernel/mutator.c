@@ -42,7 +42,7 @@ static unsigned char penu_instr=EVAL;
 #define register_instr(x)
 #endif
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 extern jmp_buf exit_mutator;
 #else
 extern sigjmp_buf exit_mutator;

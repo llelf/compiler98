@@ -92,7 +92,7 @@ void getMaxSet(char *maxs)
 
 int exit_code=0;
 
-#ifdef __CYGWIN32__
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
 jmp_buf exit_mutator;
 #else
 sigjmp_buf exit_mutator;
