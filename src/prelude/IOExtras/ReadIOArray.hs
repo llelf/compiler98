@@ -2,6 +2,8 @@ module IOExtras
   ( readIOArray
   ) where
 
+#if 0
+
 import Ix
 import DIOArray
 
@@ -19,3 +21,14 @@ readIOArray :: Ix ix => IOArray ix elt -> ix -> IO elt
 readIOArray (MkIOArray b v) ix =
     primVectorIndexC v (index b ix)
 
+#else
+
+import Ix
+import DIOArray
+import LowVector
+
+readIOArray :: Ix ix => IOArray ix elt -> ix -> IO elt
+readIOArray (MkIOArray b v) ix =
+    primVectorIndexC v (index b ix)
+
+#endif

@@ -2,6 +2,8 @@ module IOExtras
   ( newIOArray
   ) where
 
+#if 0
+
 import Ix
 import DIOArray
 import _E
@@ -21,3 +23,16 @@ newIOArray bounds elt = do
     v <- primNewVectorC (rangeSize bounds) (_E elt)
     return (MkIOArray bounds v)
 
+#else
+
+import Ix
+import DIOArray
+import LowVector
+import _E
+
+newIOArray :: Ix ix => (ix,ix) -> elt -> IO (IOArray ix elt)
+newIOArray bounds elt = do
+    v <- primNewVectorC (rangeSize bounds) (_E elt)
+    return (MkIOArray bounds v)
+
+#endif

@@ -4,7 +4,7 @@ THISLIB	= IOExtras
 SEARCH	= -P$(LOW) -P../PreludeIO -P../Array
 
 SRCS	= \
-	FixIO.hs PerformGC.hs UnsafePerformIO.hs UnsafePtrEq.hs _E.hs \
+	FixIO.hs PerformGC.hs UnsafePerformIO.hs UnsafePtrEq.hs \
 	DIOArray.hs BoundsIOArray.hs FreezeIOArray.hs NewIOArray.hs \
 	ReadIOArray.hs WriteIOArray.hs \
 	DIORef.hs NewIORef.hs ReadIORef.hs WriteIORef.hs

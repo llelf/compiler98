@@ -1,4 +1,4 @@
-module IOExtras(_E(..)) where
+module Array(_E(..)) where
 
 -- a box used to protect args from evaluation when they get passed
 -- to a foreign function

@@ -2,6 +2,8 @@ module IOExtras
   ( writeIOArray
   ) where
 
+#if 0
+
 import FFI
 import Ix
 import DIOArray
@@ -22,4 +24,15 @@ writeIOArray :: Ix ix => IOArray ix elt -> ix -> elt -> IO ()
 writeIOArray (MkIOArray b v) ix elt =
     primUpdateVectorC (index b ix) (_E elt) v
 
+#else
 
+import DIOArray
+import Ix
+import LowVector
+import _E
+
+writeIOArray :: Ix ix => IOArray ix elt -> ix -> elt -> IO ()
+writeIOArray (MkIOArray b v) ix elt =
+    primUpdateVectorC (index b ix) (_E elt) v
+
+#endif

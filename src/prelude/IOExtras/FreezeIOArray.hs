@@ -2,6 +2,8 @@ module IOExtras
   ( freezeIOArray
   ) where
 
+#if 0
+
 import FFI
 import Ix
 import DIOArray
@@ -22,3 +24,16 @@ freezeIOArray (MkIOArray b st) =
     in 
     v `seq` return (MkArray b v)
 
+#else
+
+import Ix
+import DIOArray
+import DArray
+import LowVector
+
+freezeIOArray :: Ix ix => IOArray ix elt -> IO (Array ix elt)
+freezeIOArray (MkIOArray b st) = do
+    v <- primCopyVectorC st
+    return (MkArray b v)
+
+#endif
