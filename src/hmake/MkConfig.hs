@@ -52,7 +52,7 @@ main = do
   writeFile file (show newconfig)
   exitWith ExitSuccess
 
-  where
+ where
     readConfigFile :: [String] -> IO (HmakeConfig,FilePath,[String])
     readConfigFile args = do
       machine <- catch (getEnv "MACHINE")
