@@ -39,6 +39,7 @@ extern FILE *HatFile;
 #define NTIf		14
 #define NTGuard		15
 #define NTContainer	16
+#define NTTrusted	22
 
 typedef struct {
     int constr;
