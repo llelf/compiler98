@@ -22,7 +22,7 @@ _driver w =
 	Right _  -> error "Default exit never done!"
 -}
 
-_toplevel = con0 SR Root World NTDummy
+_toplevel = con0 mkNoSR mkTRoot World mkNTDummy
 
 _driver :: () -> R ()
 _driver () = 
@@ -39,6 +39,7 @@ _driver () =
 	      (ap1 mkNoSR mkTRoot (show mkNoSR mkTRoot) 
 		(err :: R IOError))
           R (Right (R _ t)) _ ->  con0 mkNoSR t () mkNTDummy)
+
 -- ap1 SR Root (error SR Root) (stringConst SR Root "Default exit never done!")
 
 
