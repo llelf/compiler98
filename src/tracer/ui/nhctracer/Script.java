@@ -10,23 +10,23 @@ public class Script implements Cloneable {
   static void registerItemTypes() {
     parseTable = new Hashtable();
     classTable = new Hashtable();
-    new ScriptNodeSelect().registerItemType("nodeselect");
-    new ScriptNodeTrail().registerItemType("nodetrail");
-    new ScriptNodeExpand().registerItemType("nodeexpand");
-    new ScriptNodeSourceRef().registerItemType("nodesourceref");
-    new ScriptNodeDefRef().registerItemType("nodedefref");
-    new ScriptTraceSelect().registerItemType("traceselect");
-    new ScriptTraceTrail().registerItemType("tracetrail");
-    new ScriptOutputSelect().registerItemType("outputselect");
-    new ScriptOutputTrail().registerItemType("outputtrail");
-    new ScriptMetaPause().registerItemType("pause");
-    new ScriptMetaAlarm().registerItemType("alarm");
-    new ScriptMetaMessage().registerItemType("message");
-    new ScriptMetaConnect().registerItemType("connect");
-    new ScriptMetaDisconnect().registerItemType("disconnect");
-    new ScriptMetaNoWait().registerItemType("nowait");
-    new ScriptMetaAutoStart().registerItemType("autostart");
-    new ScriptMetaAutoQuit().registerItemType("autoquit");
+    new Events.NodeSelect().registerItemType("nodeselect");
+    new Events.NodeTrail().registerItemType("nodetrail");
+    new Events.NodeExpand().registerItemType("nodeexpand");
+    new Events.NodeSourceRef().registerItemType("nodesourceref");
+    new Events.NodeDefRef().registerItemType("nodedefref");
+    new Events.TraceSelect().registerItemType("traceselect");
+    new Events.TraceTrail().registerItemType("tracetrail");
+    new Events.OutputSelect().registerItemType("outputselect");
+    new Events.OutputTrail().registerItemType("outputtrail");
+    new Events.MetaPause().registerItemType("pause");
+    new Events.MetaAlarm().registerItemType("alarm");
+    new Events.MetaMessage().registerItemType("message");
+    new Events.MetaConnect().registerItemType("connect");
+    new Events.MetaDisconnect().registerItemType("disconnect");
+    new Events.MetaNoWait().registerItemType("nowait");
+    new Events.MetaAutoStart().registerItemType("autostart");
+    new Events.MetaAutoQuit().registerItemType("autoquit");
   }
 
   protected void registerItemType(String name) {
@@ -78,7 +78,7 @@ public class Script implements Cloneable {
     name = (String)Script.classTable.get(this.getClass());
   }
 
-  boolean expect(StreamTokenizer st, char type) throws IOException, ScriptException { 
+  static boolean expect(StreamTokenizer st, char type) throws IOException, ScriptException { 
     if (checkType(st, type))
       return true;
     else {
@@ -87,7 +87,7 @@ public class Script implements Cloneable {
     }
   }
   
-  boolean checkType(StreamTokenizer st, char type) throws IOException, ScriptException {
+  static boolean checkType(StreamTokenizer st, char type) throws IOException, ScriptException {
     st.nextToken();
     if (st.ttype == type)
       return true;
@@ -107,7 +107,7 @@ public class Script implements Cloneable {
     }
   }
 
-  int getNumber(StreamTokenizer st) throws IOException, ScriptException { 
+  static int getNumber(StreamTokenizer st) throws IOException, ScriptException { 
     st.nextToken();
     if (st.ttype == StreamTokenizer.TT_NUMBER)
       return (int)Math.round(st.nval);
@@ -115,7 +115,7 @@ public class Script implements Cloneable {
       throw new ScriptException("Expected a number, got " + st);
   }
 
-  String getString(StreamTokenizer st) throws IOException, ScriptException { 
+  static String getString(StreamTokenizer st) throws IOException, ScriptException { 
     st.nextToken();
     if (st.ttype == '"')
       return st.sval;
@@ -123,7 +123,7 @@ public class Script implements Cloneable {
       throw new ScriptException("Expected a string, got " + st);
   }
 
-  Vector pathParser(StreamTokenizer st) throws IOException, ScriptException {
+  static Vector pathParser(StreamTokenizer st) throws IOException, ScriptException {
     Vector p = new Vector();
     expect(st, '{');
     if (checkType(st, '}'))
@@ -163,198 +163,4 @@ public class Script implements Cloneable {
   }
 }
 
-class ScriptException extends Exception {
-  public ScriptException(String error) {
-    super(error);
-  }
-}
 
-class ScriptPathContainer extends Script implements Cloneable {
-  Vector path;  
-
-  ScriptPathContainer() { }
-  ScriptPathContainer(Vector path) { this.path = path; }
-
-  Script parseArgs(StreamTokenizer st) throws IOException, ScriptException {
-    path = pathParser(st);
-    return this;
-  }
-
-  public String toString() {
-    return super.toString() + " " + showPath(path);
-  }
-}
-
-class ScriptNodeSelect extends ScriptPathContainer implements Cloneable {
-  ScriptNodeSelect() { }
-  ScriptNodeSelect(Vector path) { super(path); }
-}
-
-class ScriptNodeTrail extends Script implements Cloneable {
-}
-
-class ScriptNodeExpand extends Script implements Cloneable {
-}
-
-class ScriptNodeSourceRef extends Script implements Cloneable {
-}
-
-class ScriptNodeDefRef extends Script implements Cloneable {
-}
-
-class ScriptTraceSelect extends ScriptPathContainer implements Cloneable {
-  ScriptTraceSelect() { }
-  ScriptTraceSelect(Vector path) { super(path); }
-}
-
-class ScriptTraceTrail extends Script implements Cloneable {
-}
-
-class ScriptOutputSelect extends Script implements Cloneable {
-  int refnr, lineno, colno;
-
-  ScriptOutputSelect() { }
-  ScriptOutputSelect(int refnr, int lineno, int colno) {
-    this.refnr = refnr;
-    this.lineno = lineno;
-    this.colno = colno;
-  }
-
-  Script parseArgs(StreamTokenizer st) throws IOException, ScriptException {
-    refnr = getNumber(st);
-    lineno = getNumber(st);
-    colno = getNumber(st);
-    return this;
-  }
-
-  public String toString() {
-    return super.toString() + " " + refnr + " " + lineno + " " + colno;
-  }
-}
-
-class ScriptOutputTrail extends Script implements Cloneable {
-}
-
-class ScriptMetaPause extends Script implements Cloneable {
-}
-
-class ScriptMetaAlarm extends Script implements Cloneable {
-}
-
-class ScriptMetaMessage extends Script implements Cloneable {
-  String message;
-
-  ScriptMetaMessage() {};
-  ScriptMetaMessage(String message) {
-    this.message = quote(message);
-  }
-
-  Script parseArgs(StreamTokenizer st) throws IOException, ScriptException {
-    message = getString(st);
-    return this;
-  }
-
-  String unquote(String s) {
-    char[] cb = new char[s.length()*2];
-    s.getChars(0, s.length(), cb, 0);
-    char ch;
-    int i = 0;
-    while ((ch = cb[i]) != '\0') {
-      switch (ch) {
-      case '\\':
-	switch (cb[i+1]) {
-	case '\"':	 
-	  cb[i] = '\"';
-	  break;
-	case '\\':	 
-	  break;
-	case 'n':
-	  cb[i] = '\n';
-	  break;
-	case 't':
-	  cb[i] = '\t';
-	  break;     
-	}
-	System.arraycopy(cb, i+2, cb, i+1, cb.length-(i+2));
-	i += 2;
-	break;
-      default:
-	i++;
-	break;
-      }
-    }
-    return new String(cb, 0, i);
-  }
-	  
-  String quote(String s) {
-    char[] cb = new char[s.length()*2];
-    s.getChars(0, s.length(), cb, 0);
-    char ch;
-    int i = 0;
-    while ((ch = cb[i]) != '\0') {
-      switch (ch) {
-      case '\"':
-	System.arraycopy(cb, i, cb, i+1, cb.length-(i+1));
-	cb[i] = '\\';
-	i += 2;
-	break;
-      case '\n':
-	System.arraycopy(cb, i, cb, i+1, cb.length-(i+1));
-	cb[i] = '\\';
-	cb[i+1] = 'n';
-	i += 2;
-	break;
-      case '\t':
-	System.arraycopy(cb, i, cb, i+1, cb.length-(i+1));
-	cb[i] = '\\';
-	cb[i+1] = 't';
-	i += 2;
-	break;
-      case '\\':
-	System.arraycopy(cb, i, cb, i+1, cb.length-(i+1));
-	cb[i] = '\\';
-	cb[i+1] = '\\';
-	i += 2;
-	break;
-      default:
-	i++;
-      }
-    }
-    return new String(cb, 0, i);
-  }
-
-  public String toString() {
-    return super.toString() + " \"" + message + "\"";
-  }
-}
-
-class ScriptMetaConnect extends Script implements Cloneable {
-  String host;
-  int port;
-
-  ScriptMetaConnect() {};
-  ScriptMetaConnect(String host, int port) {
-    this.host = host;
-    this.port = port;
-  }
-  Script parseArgs(StreamTokenizer st) throws IOException, ScriptException {
-    host = getString(st);
-    port = getNumber(st);
-    return this;
-  }
-  public String toString() {
-    return super.toString() + " \"" + host + "\" " + port;
-  }
-}
-
-class ScriptMetaDisconnect extends Script implements Cloneable {
-}
-
-class ScriptMetaNoWait extends Script implements Cloneable {
-}
-
-class ScriptMetaAutoStart extends Script implements Cloneable {
-}
-
-class ScriptMetaAutoQuit extends Script implements Cloneable {
-}

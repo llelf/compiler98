@@ -163,7 +163,7 @@ public class OutputPanel extends Panel {
 	    lastcol = output.colno;
 	    refnr = ((OutputChar)obj).refnr;
 	    if (frame != null && frame.script != null)
-	      frame.script.println(new ScriptOutputSelect(refnr, output.lineno, output.colno));
+	      frame.script.println(new Events.OutputSelect(refnr, output.lineno, output.colno));
 	  }
 	}
 	repaint();
@@ -192,7 +192,7 @@ public class OutputPanel extends Panel {
        
 	if (obj instanceof OutputChar) {
 	  if (frame != null && frame.script != null)
-	    frame.script.println(new ScriptOutputTrail());
+	    frame.script.println(new Events.OutputTrail());
 	  OutputChar oc = (OutputChar)obj;
 	  serverConnection.out.println("Gn 5");
 	  serverConnection.out.println(""+oc.refnr);

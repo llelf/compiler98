@@ -150,7 +150,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    ((EDTNode)obj).color = Color.blue;
 	    lastNode = (EDTNode)obj;	    
 	    if ((frame != null) && (frame.script != null))
-	      frame.script.println(new ScriptNodeSelect(lastNode.path()));
+	      frame.script.println(new Events.NodeSelect(lastNode.path()));
 	  } else if (obj instanceof Trace) {
 	    Trace t = (Trace)obj;
 	    EDTNode newNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
@@ -159,7 +159,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    }
 	    if ((frame != null) && (frame.script != null)) {
 	      if (newNode != lastNode)
-		frame.script.println(new ScriptTraceSelect(newNode.path()));
+		frame.script.println(new Events.TraceSelect(newNode.path()));
 	    }
 	    lastNode = newNode;
 	  }
@@ -231,9 +231,9 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  status.setText("The selected component has no trace");
 	} else {
 	  if ((frame != null) && (frame.script != null))
-	    frame.script.println(new ScriptTraceTrail());
+	    frame.script.println(new Events.TraceTrail());
 	  serverConnection.out.println("Gn 5");
-	  serverConnection.out.println(selectedNode.trefnr);
+	  serverConnection.out.println(""+selectedNode.trefnr);
 	  EDTParser parser = new EDTParser(serverConnection, nodeTable);
 	  parser.parseTraceTree(t);
 	  lastNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
@@ -248,7 +248,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    IdName name = (IdName)selectedNode;
 	    SourceRef sr = new SourceRef(name.module, new Integer(name.defpos));
 	    if ((frame != null) && (frame.script != null))
-	      frame.script.println(new ScriptNodeDefRef());
+	      frame.script.println(new Events.NodeDefRef());
 	    if (sr.col > 0) {
 	      status.waitCursor();
 	      try {
@@ -266,7 +266,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  if (sr != null && sr.file != null) {
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
-	      frame.script.println(new ScriptNodeSourceRef());
+	      frame.script.println(new Events.NodeSourceRef());
 	    try {
 	      viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
 	    } catch (ArrayIndexOutOfBoundsException e) {
@@ -290,7 +290,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    status.setText("Expanding");
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
-	      frame.script.println(new ScriptNodeExpand());
+	      frame.script.println(new Events.NodeExpand());
 	    serverConnection.out.println("R 5");
 	    serverConnection.out.println(selectedNode.refnr + " X");
 	    EDTParser parser = new EDTParser(serverConnection, nodeTable);
@@ -315,7 +315,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    status.setText("Expanding");
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
-	      frame.script.println(new ScriptNodeTrail());
+	      frame.script.println(new Events.NodeTrail());
 	    if (selectedNode instanceof CutOffTree) {
 	      CutOffTree cot = (CutOffTree)selectedNode;
 	      serverConnection.out.println("R 5");
@@ -329,7 +329,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      } else {
 		if (selectedNode.irefnr == 0) {
 		  serverConnection.out.println("Gn 5");
-		  serverConnection.out.println(selectedNode.trefnr);
+		  serverConnection.out.println(""+selectedNode.trefnr);
 		  EDTParser parser = new EDTParser(serverConnection, nodeTable);
 		  t = parser.parseTrace(selectedNode.tree);
 		  selectedNode.setTrace(t);
@@ -337,7 +337,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 		  status.setText("");
 		} else {
 		  serverConnection.out.println("In 5");
-		  serverConnection.out.println(selectedNode.irefnr);
+		  serverConnection.out.println(""+selectedNode.irefnr);
 		  EDTParser parser = new EDTParser(serverConnection, nodeTable);
 		  t = parser.parseTrace(selectedNode.tree);
 		  selectedNode.setTrace(t);

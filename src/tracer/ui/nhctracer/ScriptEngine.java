@@ -88,7 +88,7 @@ public class ScriptEngine extends Thread {
     sframe.pack();
     sframe.setVisible(true);
     if (last >= 0 && 
-	(Script)scriptv.elementAt(ix) instanceof ScriptMetaAutoStart) {
+	(Script)scriptv.elementAt(ix) instanceof Events.MetaAutoStart) {
       ix++;
       state.set(RUNNING);
     }
@@ -149,8 +149,8 @@ public class ScriptEngine extends Thread {
       state.set(DONE);
     } else {
       Script script = (Script)scriptv.elementAt(ix++);
-      if (script instanceof ScriptNodeSelect) {
-	Vector path = ((ScriptNodeSelect)script).path;
+      if (script instanceof Events.NodeSelect) {
+	Vector path = ((Events.NodeSelect)script).path;
 	if (f.mainPanel.dbgPanel.lastNode != null)
 	  f.mainPanel.dbgPanel.lastNode.selected = false;
 	if ((f.mainPanel.dbgPanel.scriptObj != null) &&
@@ -159,17 +159,17 @@ public class ScriptEngine extends Thread {
 	f.mainPanel.dbgPanel.lastNode = f.mainPanel.dbgPanel.trace.find(path);
 	f.mainPanel.dbgPanel.lastNode.selected = true;
 	f.mainPanel.dbgPanel.scriptObj = f.mainPanel.dbgPanel.lastNode;
-      } else if (script instanceof ScriptNodeTrail) {
+      } else if (script instanceof Events.NodeTrail) {
 	f.mainPanel.dbgPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON1_MASK, -1, -1, 1, false));
-      } else if (script instanceof ScriptNodeExpand) {
+      } else if (script instanceof Events.NodeExpand) {
 	f.mainPanel.dbgPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON2_MASK, -1, -1, 1, false));
-      } else if (script instanceof ScriptNodeSourceRef) {
+      } else if (script instanceof Events.NodeSourceRef) {
 	  f.mainPanel.dbgPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON3_MASK, -1, -1, 1, false));
-      } else if (script instanceof ScriptNodeDefRef) {
+      } else if (script instanceof Events.NodeDefRef) {
 	  f.mainPanel.dbgPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON3_MASK | InputEvent.BUTTON3_MASK, -1, -1, 1, false));
 	  
-      } else if (script instanceof ScriptTraceSelect) {
-	Vector path = ((ScriptTraceSelect)script).path;
+      } else if (script instanceof Events.TraceSelect) {
+	Vector path = ((Events.TraceSelect)script).path;
 	if (f.mainPanel.dbgPanel.lastNode != null)
 	  f.mainPanel.dbgPanel.lastNode.selected = false;
 	if ((f.mainPanel.dbgPanel.scriptObj != null) &&
@@ -179,18 +179,18 @@ public class ScriptEngine extends Thread {
 	f.mainPanel.dbgPanel.scriptObj = 
 	    f.mainPanel.dbgPanel.lastNode.tree.parent;
 	((Trace)f.mainPanel.dbgPanel.scriptObj).selected = true; 
-      } else if (script instanceof ScriptTraceTrail) {
+      } else if (script instanceof Events.TraceTrail) {
 	f.mainPanel.dbgPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON1_MASK, -1, -1, 1, false));
-      } else if (script instanceof ScriptOutputSelect) {
-	ScriptOutputSelect sos = (ScriptOutputSelect)script;
+      } else if (script instanceof Events.OutputSelect) {
+	Events.OutputSelect sos = (Events.OutputSelect)script;
 	f.mainPanel.outputPanel.refnr = sos.refnr;
 	f.mainPanel.outputPanel.select(sos.lineno, sos.colno);
 	f.mainPanel.outputPanel.repaint();
-      } else if (script instanceof ScriptOutputTrail) {
+      } else if (script instanceof Events.OutputTrail) {
 	f.mainPanel.outputPanel.mhandler.mousePressed(new MouseEvent(f.mainPanel, MouseEvent.MOUSE_PRESSED, 0, InputEvent.BUTTON1_MASK, -1, -1, 1, false));
-      } else if (script instanceof ScriptMetaConnect) {
-	f.host = ((ScriptMetaConnect)script).host;
-	f.port = ((ScriptMetaConnect)script).port;
+      } else if (script instanceof Events.MetaConnect) {
+	f.host = ((Events.MetaConnect)script).host;
+	f.port = ((Events.MetaConnect)script).port;
 	ta.setText("Connecting to " + f.host + " at port " + f.port);
 	f.handler.actionPerformed(new ActionEvent(f.connect, 0, ""));
 	if (f.serverConnection == null) {
@@ -202,21 +202,21 @@ public class ScriptEngine extends Thread {
 	      "Reason: " + f.mainPanel.dbgPanel.status.getText());
 	  state.set(DONE);
 	}
-      } else if (script instanceof ScriptMetaDisconnect) {
+      } else if (script instanceof Events.MetaDisconnect) {
 	ta.setText("Disconnecting.");
 	f.handler.actionPerformed(new ActionEvent(f.disconnect, 0, ""));
-      } else if (script instanceof ScriptMetaMessage) {
-	ta.setText(((ScriptMetaMessage)script).message);
-      } else if (script instanceof ScriptMetaAutoQuit) {
+      } else if (script instanceof Events.MetaMessage) {
+	ta.setText(((Events.MetaMessage)script).message);
+      } else if (script instanceof Events.MetaAutoQuit) {
 	state.set(CANCEL);
       } else {
 	System.err.println("Unhandled script item: " + script);
       }
       f.mainPanel.dbgPanel.repaint();
-      if ( !(script instanceof ScriptMetaMessage)
+      if ( !(script instanceof Events.MetaMessage)
 	&& ix <= last
 	&& (script = (Script)scriptv.elementAt(ix)) instanceof 
-	    ScriptMetaMessage) {
+	    Events.MetaMessage) {
 	next();
       }
       //Toolkit.getDefaultToolkit().sync();
@@ -228,7 +228,7 @@ public class ScriptEngine extends Thread {
     return (ix < last &&
 	    state.get() != DONE &&
 	    (script = (Script)scriptv.elementAt(ix)) instanceof 
-	    ScriptMetaNoWait);
+	    Events.MetaNoWait);
   }
 
   class State {

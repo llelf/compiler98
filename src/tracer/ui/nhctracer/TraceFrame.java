@@ -262,7 +262,7 @@ public class TraceFrame extends Frame {
 	  if (script != null) {
 	    ScriptMessage sm = new ScriptMessage(me);
 	    if (sm.message != null) {
-	      script.println(new ScriptMetaMessage(sm.message));
+	      script.println(new Events.MetaMessage(sm.message));
 	    }
 	  }
 	} else if (target == fontItem) {
@@ -318,7 +318,7 @@ public class TraceFrame extends Frame {
 	  serverConnection = new Connection(host, port);
 	  if (serverConnection.error == null) {
 	    if (script != null)
-	      script.println(new ScriptMetaConnect(host, port));
+	      script.println(new Events.MetaConnect(host, port));
 	    mainPanel.outputPanel.connected(serverConnection);      
 	  } else {
 	    mainPanel.status.setText(serverConnection.error);
@@ -332,7 +332,7 @@ public class TraceFrame extends Frame {
 	  mainPanel.status.setText("Not connected");
 	} else {
 	  if (script != null)
-	    script.println(new ScriptMetaDisconnect());
+	    script.println(new Events.MetaDisconnect());
 	  mainPanel.outputPanel.disconnected();      
 	  serverConnection = null;
 	  mainPanel.viewer.reset();
