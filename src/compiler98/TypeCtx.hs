@@ -17,14 +17,17 @@ initCtxs = []
 removeTSyn state nt@(NTstrict nt') = removeTSyn state nt'
 removeTSyn state nt@(NTcons c nts) =
   case lookupIS state c of
-    Just (InfoData u tid exp (NewType free [] _ [nt]) (DataTypeSynonym uboxed depth)) -> -- No contex in type synonyms
-	removeTSyn state (substNT (zip free nts) nt)
-    _ -> nt	-- It must be an InfoData here, or we have an internal error
+    Just (InfoData u tid exp (NewType free [] _ [nt])
+                             (DataTypeSynonym uboxed depth)) ->
+	 -- No context in type synonyms
+	 removeTSyn state (substNT (zip free nts) nt)
+    _ -> -- It must be an InfoData here, or we have an internal error
+         nt
 removeTSyn state tvar = tvar
 
 
 
---             Is   c  a superclass of cstart ?
+-- Is   c  a superclass of cstart ?
 scof :: IntState -> Int -> Int -> Bool
 scof state c cstart =
   case lookupIS state cstart of
@@ -52,11 +55,13 @@ ctxsSimplify state given cls_nt =
   ctxsSimplify' state given cls_nt []
 
 --                                                                                                 Only NTvar and NTexist in result
-ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))] -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
+ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))]
+                 -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
 ctxsSimplify' state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r
 ctxsSimplify' state given (TypeDict cls (NTvar v) ipos) r = (cls,NTvar v):r
 ctxsSimplify' state given (TypeDict cls (NTexist v) ipos) r = (cls,NTexist v):r
-ctxsSimplify' state given (TypeDict cls (NTstrict nt) ipos) r = -- Don't keep strictness information in ctx?
+ctxsSimplify' state given (TypeDict cls (NTstrict nt) ipos) r =
+  -- Don't keep strictness information in ctx?
   ctxsSimplify' state given (TypeDict cls nt ipos) r
 ctxsSimplify' state given (TypeDict cls nt ipos) r =
   case removeTSyn state nt of
@@ -71,11 +76,13 @@ ctxsSimplify' state given (TypeDict cls nt ipos) r =
 	  foldr (ctxsSimplify' state given) r (pair2ctxs ipos tvs nts ctxs)
 	Nothing ->
 	  case lookupIS state cls of
-	    Nothing -> error ("Internal: CtxsSimplify couldn't find the class " ++ show cls)
+	    Nothing -> error ("Internal: CtxsSimplify couldn't find the class "
+                              ++ show cls)
 	    Just info -> 
 	      case lookupAT (instancesI info) con of
 		Just (tvs,ctxs) ->  
-		  foldr (ctxsSimplify' state given) r (pair2ctxs ipos tvs nts ctxs)
+		  foldr (ctxsSimplify' state given) r
+                        (pair2ctxs ipos tvs nts ctxs)
 		Nothing -> error ("The class " ++ strIS state cls ++
 				 " has no instance for the type "
 				 ++ strIS state con
@@ -118,15 +125,16 @@ buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =
 		( mergeSort
 		. map ( \ ((p,i):_) -> (length p,p,i) )
 		. filter (not.null)
-		. map ( \ ((c,ntv),i) ->  ( map ( \ (c,p) -> (c:p,i) )
-					. filter ((cls==).fst)
-					. allSCof state
-					) c)
+		. map ( \ ((c,ntv),i) -> ( map ( \ (c,p) -> (c:p,i) )
+					 . filter ((cls==).fst)
+					 . allSCof state
+					 ) c)
 		. filter ((nt==).snd.fst)
 		) (given::[((Int,NT),Int)])
       in case lpis of
 	((_,p,i):_) -> mkPath state pos (ExpVar pos i) (reverse p)
-        [] -> (PatWildcard pos) -- Error message generated elsewhere, probably when deriving need
+        [] -> -- Error message generated elsewhere, probably when deriving need
+              (PatWildcard pos)
 buildCtx state pos given (TypeDict cls nt ipos) =
       case removeTSyn state nt of
 	nt@(NTcons con nts) ->
@@ -136,8 +144,12 @@ buildCtx state pos given (TypeDict cls nt ipos) =
 		Just (tvs,[]) ->  
 		   mkRealCon pos state cls con
 		Just (tvs,ctxs) ->  
-		  ExpApplication pos (mkRealCon pos state cls con:map  (buildCtx state pos given) (pair2ctxs ipos tvs nts ctxs))
-		Nothing -> (PatWildcard pos) -- Error message generated elsewhere, probably when deriving need
+		  ExpApplication pos (mkRealCon pos state cls con
+                                     : map (buildCtx state pos given)
+                                           (pair2ctxs ipos tvs nts ctxs))
+		Nothing -> -- Error message generated elsewhere,
+                           -- probably when deriving need
+                           (PatWildcard pos)
 	nt ->
 	  buildCtx state pos given (TypeDict cls nt ipos)
 
@@ -150,11 +162,12 @@ mkRealCon pos state cls con = Exp2 pos cls con
      else mkRealCon state cls (getIndDataIS state conInfo)
 -}
 
-mkPath state pos ea (f:t:r) = mkPath state pos (ExpApplication pos [Exp2 pos f t,ea]) (t:r)  -- superclass from class
+mkPath state pos ea (f:t:r) =
+  -- superclass from class
+  mkPath state pos (ExpApplication pos [Exp2 pos f t,ea]) (t:r)
 mkPath state pos ea _       = ea
 
 --     get all super classes of c (including c itself!) in width first order
-
 -- allSCof :: IntState -> Int ->  [(Int,[Int])]
 allSCof state c = allSCof' state [(c,[])]
 
@@ -166,23 +179,37 @@ allSCof' state (cp@(c,p):cs) =
                  in cp : allSCof' state (cs++sc)
 
 
-  -- Default does not work if it creates new dependecies, this brutal hack cannot handle arguments either!
+-- Default does not work if it creates new dependencies,
+-- this brutal hack cannot handle arguments either!
 -- findDefault :: [AssocTree Int ([b],[c])] -> [Int] -> Maybe Int
 findDefault insts [] = Nothing
 findDefault insts (d:ds) =
-  if all ( \ inst -> case lookupAT inst d of Just ([],[]) -> True; _ -> False) insts
+  if all (\inst-> case lookupAT inst d of Just ([],[])-> True; _-> False) insts
   then Just d
   else findDefault insts ds
 
--- oneDefault:: (Int,[(Int,Int)]) -> (Pos,Exp Int,[Int]) -> IntState -> ([Decl Int],IntState)
+-- oneDefault :: (Int,[(Int,Int)]) -> (Pos,Exp Int,[Int])
+--               -> IntState -> ([Decl Int],IntState)
 oneDefault (tvar,cis) (pos,trueExp,defaults) state =
-  case  findDefault (map (instancesI . dropJust . lookupIS state .  fst) cis) defaults of
-    Just con ->(map ( \ (cls,i) -> (DeclFun noPos i [Fun [] (Unguarded (mkRealCon pos state cls con)) (DeclsScc [])])) cis,state)
-    Nothing -> ([],addError state ("No default for " ++ concatMap ((' ':).strIS state . fst) cis ++ " at " ++ strPos pos ++ "." 
-											++ "(" ++ show tvar ++ "," ++ show cis++")"))
+  case  findDefault (map (instancesI . dropJust . lookupIS state . fst) cis)
+                    defaults of
+    Just con -> (map (\(cls,i)->
+                        (DeclFun noPos i
+                           [Fun [] (Unguarded (mkRealCon pos state cls con))
+                                   (DeclsScc [])])) cis
+                ,state)
+    Nothing -> ([]
+               ,addError state ("No default for "
+                                ++ concatMap ((' ':).strIS state . fst) cis
+                                ++ " at " ++ strPos pos ++ "." 
+				++ "(" ++ show tvar ++ "," ++ show cis++")"))
 
--- buildDefaults::Pos -> [((Int,NT),Int)] -> Exp Int -> [Int] -> IntState -> ([(Decl Int)],IntState)
+-- buildDefaults :: Pos -> [((Int,NT),Int)] -> Exp Int -> [Int] -> IntState
+--                  -> ([(Decl Int)],IntState)
 buildDefaults pos defaultCtxsi trueExp defaults state =
-  let setup = treeMapList (:) (foldr ( \ ((c,nt),i) t -> addAT t (++) (stripNT nt)  [(c,i)]) initAT defaultCtxsi)
+  let setup = treeMapList (:)
+                          (foldr (\((c,nt),i) t -> addAT t (++) (stripNT nt)
+                                                         [(c,i)])
+                                 initAT defaultCtxsi)
       (defaultDecls,state') = mapS oneDefault setup (pos,trueExp,defaults) state
   in (concat defaultDecls,state')
