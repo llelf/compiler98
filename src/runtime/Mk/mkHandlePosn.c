@@ -1,3 +1,4 @@
+#include <string.h>
 #include "mk.h"
 
 NodePtr nhc_mkHandlePosn(fpos_t *fpos)

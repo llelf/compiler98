@@ -16,8 +16,6 @@ extern sigjmp_buf exit_mutator;
 C_HEADER(cExitWith)
 {
   NodePtr nodeptr;
-  char *src;
-  int i;
 
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);

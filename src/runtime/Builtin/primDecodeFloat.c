@@ -7,10 +7,9 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primDecodeFloat","Prelude.Integ
 
 C_HEADER(primDecodeFloat)
 {
-  Int tag,size;
   int exp;
   float f;
-  NodePtr nodeptr,manptr,expptr;
+  NodePtr nodeptr,manptr;
   C_CHECK(1+SIZE_FLOAT+nhc_sizeInt+SIZE_TUPLE(2));
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);

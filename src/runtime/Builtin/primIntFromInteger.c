@@ -7,7 +7,7 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primIntFromInteger","Prelude.In
 
 C_HEADER(primIntFromInteger)
 {
-  Int tag,size,i;
+  Int tag,size;
   NodePtr nodeptr,res;
   C_CHECK(SIZE_INT);
   nodeptr = C_GETARG1(1);

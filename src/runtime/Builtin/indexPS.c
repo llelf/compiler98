@@ -1,4 +1,4 @@
-
+#include <stdlib.h>
 #include "haskell2c.h"
 
 /* indexPS :: Prelude.PackedString -> Prelude.Int -> Prelude.Char */
@@ -7,7 +7,7 @@ C_HEADER(indexPS)
 {
   int length;
   int index;
-  NodePtr nodeptr,*prevptr;
+  NodePtr nodeptr;
   Coninfo cinfo;
   char *srcptr;
 

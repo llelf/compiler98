@@ -7,7 +7,6 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primIntegerFromWord64","Prelude
 
 NodePtr primIntegerFromWord64 (HsWord64 i)
 {
-  Int tag,size;
   NodePtr result;
   C_CHECK(SIZE_INT64);
   if(i==0) {

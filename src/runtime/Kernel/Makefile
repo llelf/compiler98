@@ -39,6 +39,7 @@ ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 ${SOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -S ${CFLAGS} -o - $< |\
+		perl -e 'undef $$/; $$_ = <>; s/^ \s*\.local\s+startLabel\n \s*.comm\s+startLabel,0,4\n (\s*\.globa?l\s+[^\n]+)\n \s*\.data\n (\s*\.align\s*\d+)\n /"\t.data\n" ."$$2\n" ."\t.type startLabel,STT_OBJECT\n" ."\t.size startLabel,0\n" ."startLabel:\n" ."$$1\n" ."$$2\n"/emx; print;' |\
 		sed -e '/.align 32/s/32/4/' -e '/.p2align 5/s/5/2/' |\
 		${CC} -c -x assembler-with-cpp ${CFLAGS} -o $@ -
 

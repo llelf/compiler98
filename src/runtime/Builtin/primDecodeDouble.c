@@ -7,7 +7,6 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primDecodeDouble","Prelude.Inte
 
 C_HEADER(primDecodeDouble)
 {
-  Int tag,size;
   int exp;
   double d;
   NodePtr nodeptr,manptr;

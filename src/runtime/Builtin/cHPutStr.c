@@ -1,4 +1,5 @@
 #include "haskell2c.h"
+#include <stdlib.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -45,31 +46,31 @@ static void
 debug_hPutStr (char *i, NodePtr src)
 {
   if (Hp>=(NodePtr)Sp) {
-    fprintf(stderr,"hPutStr:%s GC required 0x%x>=0x%x\n",i,Hp,Sp);
+    fprintf(stderr,"hPutStr:%s GC required %p>=%p\n",i,Hp,Sp);
   }
   if (!((unsigned)*src&(unsigned)0x3)) {
-    fprintf(stderr,"hPutStr:%s got INDIRECT src=0x%x dst=0x%x\n",i,src,*src);
+    fprintf(stderr,"hPutStr:%s got INDIRECT src=%p dst=0x%lx\n",i,src,*src);
   }
   if ((unsigned)*src&(unsigned)0x1) {
-    fprintf(stderr,"hPutStr:%s got VAP/CAP src=0x%x\n",i,src);
+    fprintf(stderr,"hPutStr:%s got VAP/CAP src=%p\n",i,src);
   }
   if ((unsigned)*src&(unsigned)0x2) {
     switch (GET_LARGETAG(src)) {
       case CON_DATA  | CON_TAG :
       case CON_CDATA | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTR src=0x%x c=%d size=%d psize=%d\n",i,src,GET_CONSTR(src),CONINFO_SIZE(GET_CONINFO(src)),CONINFO_PSIZE(GET_CONINFO(src)));
+        fprintf(stderr,"hPutStr:%s got CONSTR src=%p c=%ld size=%ld psize=%ld\n",i,src,GET_CONSTR(src),CONINFO_SIZE(GET_CONINFO(src)),CONINFO_PSIZE(GET_CONINFO(src)));
         break;
       case CON_PTRS  | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTRP src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
+        fprintf(stderr,"hPutStr:%s got CONSTRP src=%p size=%ld\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
         break;
       case CON_WORDS | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTRW src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
+        fprintf(stderr,"hPutStr:%s got CONSTRW src=%p size=%ld\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
         if (CONINFO_LARGESIZES(GET_CONINFO(src))==1) {
           fprintf(stderr,"hPutStr:%s%s char='%c'\n",i,i,GET_CHAR_VALUE(src));
         }
         break;
       default:
-        fprintf(stderr,"hPutStr:%s got OTHER src=0x%x\n",i,src);
+        fprintf(stderr,"hPutStr:%s got OTHER src=%p\n",i,src);
         break;
     }
   }

@@ -7,7 +7,6 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primDoubleFromInteger","Prelude
 
 C_HEADER(primDoubleFromInteger)
 {
-  Int tag,size,i;
   NodePtr nodeptr,ret;
   C_CHECK(SIZE_DOUBLE);
   nodeptr = C_GETARG1(1);

@@ -1,7 +1,11 @@
 #include "haskell2c.h"
 
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 #include <netdb.h>
 #if 0
 #include <sys/types.h>
@@ -28,7 +32,7 @@ int inet_address(char *host, u_short port, struct sockaddr_in *address)
     char *the_host;
     struct hostent *hp;
     
-    bzero((char *) address, sizeof(*address));
+    memset(address, 0, sizeof(*address));
 
     if (host == NULL) {
 	(void) gethostname(hostname, HOSTNAME_LEN);
@@ -42,7 +46,7 @@ int inet_address(char *host, u_short port, struct sockaddr_in *address)
 	if ((hp = gethostbyname(the_host)) == NULL)
 	    return(SOCKET_RESOLVER_ERROR);
 		
-	bcopy(hp->h_addr, (char *)&address->sin_addr, hp->h_length);
+	memcpy(&address->sin_addr, hp->h_addr, hp->h_length);
     }
 
     address->sin_family = AF_INET;
@@ -86,9 +90,7 @@ int sockopen(char *host, short port, int type)
 
 C_HEADER(cOpenSocket)
 {
-  int length;
   NodePtr hostptr,portptr,typeptr,nodeptr;
-  Coninfo cinfo;
   char *host;
   int type;
   short port;

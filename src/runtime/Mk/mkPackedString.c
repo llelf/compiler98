@@ -1,3 +1,4 @@
+#include <string.h>
 #include "mk.h"
 
 int nhc_sizePackedString(int length)
