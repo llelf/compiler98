@@ -65,12 +65,13 @@ import HPutStr
 import HPutStrLn
 import HPrint
 
-import IsIOErrors
 import Try
 import Bracket
 import Bracket_
 
 #if !defined(TRACING)
+import IsIOErrors
+
 import IsEOFError
 import IsUserError
 
