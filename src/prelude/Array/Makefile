@@ -2,7 +2,7 @@ include Makefile.inc
 
 THISLIB	= Array
 SEARCH	= -P../List -P../Ix
-EXTRA_H_FLAGS	=
+EXTRA_H_FLAGS	= -prelude	# to ensure all Ix instances are re-exported
 EXTRA_C_FLAGS	=
 
 SRCS	= \
@@ -32,7 +32,7 @@ ${OBJDIR}/ArrayFun.$O: ArrayFun.hs ${OBJDIR}/DArray.$O
 ${OBJDIR}/Assocs.$O: Assocs.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Indices.$O ${OBJDIR}/AIndex.$O
 ${OBJDIR}/Bounds.$O: Bounds.hs ${OBJDIR}/DArray.$O
 ${OBJDIR}/Elems.$O: Elems.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Indices.$O ${OBJDIR}/AIndex.$O
-${OBJDIR}/Eq_Array.$O: Eq_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Assocs.$O
+${OBJDIR}/Eq_Array.$O: Eq_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Bounds.$O ${OBJDIR}/Elems.$O
 ${OBJDIR}/AIndex.$O: AIndex.hs ${OBJDIR}/DArray.$O
 ${OBJDIR}/Indices.$O: Indices.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Bounds.$O
 ${OBJDIR}/IxMap.$O: IxMap.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O ${OBJDIR}/AIndex.$O
