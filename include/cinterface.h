@@ -11,8 +11,8 @@
    arguments:
        a status int, 0 first time;
        a pointer to the redex (always a VAP - node);
-       a pointer to the heap pointer a pointer to;
-       the stack pointer.
+       a pointer to the heap pointer;
+       a pointer to the stack pointer.
 
    If the function returns non-zero, then it will be called again,
    after a garbage collection has been performed. The return value
