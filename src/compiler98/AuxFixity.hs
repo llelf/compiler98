@@ -11,7 +11,7 @@ import PackedString(PackedString,packString,unpackPS)
 import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos
-import TokenId(TokenId(..), t_x, t_y, t_flip, tminus, tnegate, visImport)
+import TokenId(TokenId(..), t_x, t_y, t_flip, t_minus, tnegate, visImport)
 import AssocTree
 import PreImp
 import AuxFile
@@ -32,7 +32,7 @@ fixInfixList env ees@(ExpVarOp pos op:es) =
 --  where
 --  varx = ExpVar pos t_x
 --  vary = ExpVar pos t_y
-  in if op == tminus
+  in if op == t_minus
      then (ExpApplication pos [ExpVar pos tnegate, exp])
      else (ExpApplication pos [ExpVar pos t_flip, ExpVar pos op, exp])
              -- desugaring with flip better than lambda for reading a trace

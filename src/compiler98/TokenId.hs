@@ -197,6 +197,7 @@ tIntHash        = qualImpPrel  "Int#"
 
 t_flip          = qualImpPrel  "flip"
 tminus          = qualImpPrel  "-"
+t_minus         = visImport    "-"
 tident          = qualImpPrel  "id"
 tnegate         = qualImpPrel  "negate"
 tTrue           = qualImpPrel  "True"
