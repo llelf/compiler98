@@ -213,7 +213,10 @@ configure Ghc ghcpath = do
   ghcversion <- runAndReadStdout (escape ghcpath ++ " --version 2>&1 | "
                                   ++"sed 's/^.*version[ ]*\\([0-9.]*\\).*/\\1/'"
                                  )
-  let ghcsym = (read (take 3 (filter isDigit ghcversion ++ "0"))) :: Int
+  let ghcsym = let v = (read (take 3 (filter isDigit ghcversion ++ "0"))) :: Int
+               in if v <= 600 then v
+                  else let hundreds = (v`div`100)*100 in
+                       hundreds + ((v-hundreds)`div`10)
       config  = CompilerConfig
 			{ compilerStyle = Ghc
 			, compilerPath  = ghcpath
@@ -268,6 +271,7 @@ configure Ghc ghcpath = do
           return config{ includePaths = pkgDirs libdir (nub idirs) }
         else do ioError (userError ("Can't find ghc includes at "++incdir1))
  where
+    -- ghcDirs only static for ghc < 500; for later versions found dynamically
     ghcDirs n root | n < 400   = [root]
                    | n < 406   = map ((root++"/")++) ["std","exts","misc"
                                                      ,"posix"]
