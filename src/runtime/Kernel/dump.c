@@ -245,7 +245,7 @@ void prGraph(NodePtr nodeptr,Int flags,Int d)
   prGraphOldSig = signal(SIGSEGV,prGraphSig);
 
 #ifdef __CYGWIN32__
-  if(setjmp(prGraphEnv,0)) {
+  if(setjmp(prGraphEnv)) {
 #else
   if(sigsetjmp(prGraphEnv,0)) {
 #endif
