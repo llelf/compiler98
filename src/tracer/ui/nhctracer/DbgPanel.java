@@ -30,6 +30,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   int mouseX, mouseY;
   MouseMotionHandler mmhandler;
   MouseHandler mhandler;
+  String fileName = "";
 
   public DbgPanel(TraceFrame _frame, MainPanel _mainPanel) {
     super();
@@ -62,6 +63,10 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     mbgc = Color.cyan;
 
     trace = null;
+  }
+
+  public void propagateFileName(String filename) {
+   fileName = filename;
   }
 
   void disableListeners() {
@@ -133,6 +138,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   }
     
   class MouseHandler extends MouseAdapter {
+    private EDTNode lastClicked = null;
+
     public void mouseEntered(MouseEvent evt) {
       canvas.requestFocus();
     }
@@ -222,6 +229,35 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	} else if ((modifiers & InputEvent.BUTTON3_MASK) != 0) {
 	  /* right click */
 	  SourceRef sr = selectedNode.sr;
+	  if (selectedNode instanceof IdName) {
+            if (selectedNode==lastClicked) {
+	     try {
+              IdName name = (IdName) selectedNode;
+              String[] l={"xterm","-e","hat-observe",fileName,"-remote",name.name};
+              status.setText("Observing \""+name.name+"\" in separate window");
+              Process process=Runtime.getRuntime().exec(l);
+             } catch (IOException e) {
+               status.setText("ERROR: Unable to start observation tool!");
+             }
+             return;
+            }
+          } else if (selectedNode instanceof Redex) {
+            if (selectedNode==lastClicked) {
+             try {
+              Redex redex = (Redex) selectedNode;
+              int fo = serverConnection.lookupAdr(redex.refnr);
+              String[] l={"xterm","-e","hat-detect",fileName," -remote ",
+			  ""+fo};
+              status.setText("Algorithmic Debugging session in separate window: "+fo+" "+redex.refnr);
+	      Process process=null;
+              if (fo>0) process=Runtime.getRuntime().exec(l);
+             } catch (IOException e) {
+               status.setText("ERROR: Unable to start Algorithmic Debugging tool!");
+             }
+             return;
+            }
+          }
+          lastClicked = selectedNode;
 	  if (sr != null && sr.file != null) {
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))

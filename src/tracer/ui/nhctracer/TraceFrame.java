@@ -204,6 +204,7 @@ public class TraceFrame extends Frame {
       Runtime.getRuntime().exec("hat-connect "+port+" "+filename+startnode);
       Thread.sleep(100);
       doConnect();
+      if (mainPanel!=null) mainPanel.propagateFileName(filename);
     } catch (IOException ex) {
       enableListeners();
       new ModalMessage(me, "Cannot open/read "+filename);

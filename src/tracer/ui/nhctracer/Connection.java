@@ -155,6 +155,18 @@ public class Connection {
 	line = null;
     }
   }
+
+  public int lookupAdr(int refnr) {
+      int i;
+      out.println("L ");
+      out.println(""+refnr);
+      String back=nextToken();
+      try {
+          i=Integer.parseInt(back);
+      } catch (NumberFormatException e) {i=0;}
+      return i;
+  }
+
   class DbgPrintWriter extends PrintWriter {
     DbgPrintWriter(OutputStream os, boolean b) {
       super(os, b);

@@ -51,6 +51,10 @@ public class MainPanel extends Panel {
     outputPanel.enableListeners();
   }
 
+  public void propagateFileName(String filename) {
+   if (dbgPanel!=null) dbgPanel.propagateFileName(filename);
+  }
+
   public Dimension getPreferredSize() {
     return new Dimension(600, 600);
   }
