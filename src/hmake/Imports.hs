@@ -161,7 +161,11 @@ parseBoolExp st =
   do  bracket (skip (char '(')) (parseBoolExp st) (skip (char ')'))
   +++
   do  skip (char '!')
-      a <- parseBoolExp st
+      a <- skip (parseSym st)		-- deals with !x && y
+      parseCont (not a) st
+  +++
+  do  skip (char '!')
+      a <- parseBoolExp st		-- deals with !(x && y)
       parseCont (not a) st
   +++
   do  a <- skip (parseSym st)
