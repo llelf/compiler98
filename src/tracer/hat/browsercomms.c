@@ -668,6 +668,14 @@ loop(FILE *sock, FileOffset fo)
 	case 'F':
 		sendFile(sock, str);
 	        break;
+        case 'L':{
+                static char strout[16];
+	        sscanf(str, "%d", &refnr);
+		next = ncRef(refnr);
+		sprintf(strout,"%d\n",next);
+		ToBrowser(sock, strout);
+	        break;
+		}
 	}
     }
 }
