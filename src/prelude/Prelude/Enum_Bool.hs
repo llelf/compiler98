@@ -16,7 +16,7 @@ instance Enum Bool where
 #else
     toEnum   0 = False
     toEnum   1 = True
-    toEnum   n = error ("Enum.Bool.toEnum on " ++ show n)
+    toEnum   n = error ("(Prelude.toEnum "++show n++" :: Bool) is wrong")
 
     enumFrom n        = _enumFromTo  n 1
     enumFromThen n n' = _enumFromThen n n' 1
