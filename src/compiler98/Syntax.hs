@@ -278,7 +278,7 @@ instance (Show b) => Show (Lit b) where
   showsPrec d lit = litshowsPrec d lit  -- litshowsPrec needed in Symbols to force correct type in gofer
 
 
-litshowsPrec d (LitInteger  b i) = showsPrec d i . showChar 'L' . shows b
+litshowsPrec d (LitInteger  b i) = showsPrec d i . shows b
 litshowsPrec d (LitRational b i) = showsPrec d i . shows b
 litshowsPrec d (LitString b str)= showString (strStr str) . shows b
 litshowsPrec d (LitInt    b i)  = showsPrec d i . shows b
