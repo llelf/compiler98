@@ -17,7 +17,7 @@ extern void finaliseUBA (UBA);
 #define ntohl(x) x
 #endif
 #else
-#ifndef __NetBSD__
+#if !defined(htonl)
 extern unsigned htonl(unsigned);
 extern unsigned ntohl(unsigned);
 #endif
