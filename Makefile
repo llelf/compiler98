@@ -188,7 +188,7 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer #hoodui
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #tracer #hoodui
 
 heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
 timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
@@ -468,51 +468,61 @@ HBIN    = lib/$(MACHINE)/MkProg$(EXE) lib/$(MACHINE)/Older$(EXE) \
 	  lib/$(MACHINE)/hi$(EXE) targets/$(MACHINE)/config.cache
 
 hmakeDist:
-	rm -f hmake-$(HVERSION).tar hmake-$(HVERSION).tar.gz
-	tar cf hmake-$(HVERSION).tar $(HAUX1)
-	tar rf hmake-$(HVERSION).tar $(HAUX2)
-	tar rf hmake-$(HVERSION).tar $(HMAKE)
-	tar rf hmake-$(HVERSION).tar $(HSCRIPT)
-	tar rf hmake-$(HVERSION).tar $(HMAN)
-	mkdir hmake-$(HVERSION)
-	cd hmake-$(HVERSION); tar xf ../hmake-$(HVERSION).tar
-	cp $(HBASIC) hmake-$(HVERSION)
-	cp $(HMFILE) hmake-$(HVERSION)/Makefile
-	cp $(HCONF)  hmake-$(HVERSION)/configure
-	tar cf hmake-$(HVERSION).tar hmake-$(HVERSION)
-	rm -r hmake-$(HVERSION)
-	gzip hmake-$(HVERSION).tar
+	rm -f hmake-$(HMAKEVERSION).tar hmake-$(HMAKEVERSION).tar.gz
+	tar cf hmake-$(HMAKEVERSION).tar $(HAUX1)
+	tar rf hmake-$(HMAKEVERSION).tar $(HAUX2)
+	tar rf hmake-$(HMAKEVERSION).tar $(HMAKE)
+	tar rf hmake-$(HMAKEVERSION).tar $(HSCRIPT)
+	tar rf hmake-$(HMAKEVERSION).tar $(HMAN)
+	mkdir hmake-$(HMAKEVERSION)
+	cd hmake-$(HMAKEVERSION); tar xf ../hmake-$(HMAKEVERSION).tar
+	cp $(HBASIC) hmake-$(HMAKEVERSION)
+	cp $(HMFILE) hmake-$(HMAKEVERSION)/Makefile
+	cp $(HCONF)  hmake-$(HMAKEVERSION)/configure
+	tar cf hmake-$(HMAKEVERSION).tar hmake-$(HMAKEVERSION)
+	rm -r hmake-$(HMAKEVERSION)
+	gzip hmake-$(HMAKEVERSION).tar
 hmakeBinDist:
-	rm -f hmake-$(HVERSION)-$(MACHINE).tar hmake-$(HVERSION)-$(MACHINE).tar.gz
-	tar cf hmake-$(HVERSION)-$(MACHINE).tar $(HAUX1)
-	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HSCRIPT)
-	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HBIN)
-	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HMAN)
-	mkdir hmake-$(HVERSION)
-	cd hmake-$(HVERSION); tar xf ../hmake-$(HVERSION)-$(MACHINE).tar
-	cp $(HBASIC) hmake-$(HVERSION)
-	cp $(HMFILE) hmake-$(HVERSION)/Makefile
-	cp $(HCONF)  hmake-$(HVERSION)/configure
-	tar cf hmake-$(HVERSION)-$(MACHINE).tar hmake-$(HVERSION)
-	rm -r hmake-$(HVERSION)
-	gzip hmake-$(HVERSION)-$(MACHINE).tar
+	rm -f hmake-$(HMAKEVERSION)-$(MACHINE).tar hmake-$(HMAKEVERSION)-$(MACHINE).tar.gz
+	tar cf hmake-$(HMAKEVERSION)-$(MACHINE).tar $(HAUX1)
+	tar rf hmake-$(HMAKEVERSION)-$(MACHINE).tar $(HSCRIPT)
+	tar rf hmake-$(HMAKEVERSION)-$(MACHINE).tar $(HBIN)
+	tar rf hmake-$(HMAKEVERSION)-$(MACHINE).tar $(HMAN)
+	mkdir hmake-$(HMAKEVERSION)
+	cd hmake-$(HMAKEVERSION); tar xf ../hmake-$(HMAKEVERSION)-$(MACHINE).tar
+	cp $(HBASIC) hmake-$(HMAKEVERSION)
+	cp $(HMFILE) hmake-$(HMAKEVERSION)/Makefile
+	cp $(HCONF)  hmake-$(HMAKEVERSION)/configure
+	tar cf hmake-$(HMAKEVERSION)-$(MACHINE).tar hmake-$(HMAKEVERSION)
+	rm -r hmake-$(HMAKEVERSION)
+	gzip hmake-$(HMAKEVERSION)-$(MACHINE).tar
 
-HATSCRIPT = script/harch script/hat-trans.inst
-HATSRCS = src/hat/Makefile* \
-	  src/hat/lib/Makefile* src/hat/lib/*.hs \
-	  src/hat/lib/*.[ch] include/art.h \
-	  src/Makefile.inc Makefile.inc
+
+##### package up hat separately
+
+HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
+		script/confhat script/confhc-hat script/fixghc
+HATMISC = Makefile.inc Makefile.hat hat-configure \
+	  src/Makefile.inc src/hat/Makefile* include/art.h
+HATTRANS = src/compiler98/Makefile* \
+	 $(shell cd src/compiler98; hmake -g HatTrans.hs | cut -d':' -f1 \
+		| sed -e 's/$$/.hs/' | sed -e 's|^|src/compiler98/|' )
+
 hatDist:
-	rm -f hat-$(VERSION).tar hat-$(VERSION).tar.gz
-	tar cf hat-$(VERSION).tar $(HATSCRIPT)
-	tar rf hat-$(VERSION).tar $(HATUI)
-	tar rf hat-$(VERSION).tar $(TRAILUI)
-	tar rf hat-$(VERSION).tar $(HATSRCS)
-	mkdir hat-$(VERSION)
-	cd hat-$(VERSION); tar xf ../hat-$(VERSION).tar
-	tar cf hat-$(VERSION).tar hat-$(VERSION)
-	rm -r hat-$(VERSION)
-	gzip hat-$(VERSION).tar
+	rm -f hat-$(HATVERSION).tar hat-$(HATVERSION).tar.gz
+	tar cf hat-$(HATVERSION).tar $(HATSCRIPT)
+	tar rf hat-$(HATVERSION).tar $(HATTRANS)
+	tar rf hat-$(HATVERSION).tar $(HATLIB)
+	tar rf hat-$(HATVERSION).tar $(HATUI)
+	tar rf hat-$(HATVERSION).tar $(HATMISC)
+	mkdir hat-$(HATVERSION)
+	cd hat-$(HATVERSION); tar xf ../hat-$(HATVERSION).tar
+	cd hat-$(HATVERSION); mv hat-configure configure
+	cd hat-$(HATVERSION); mv Makefile.hat Makefile
+	cd hat-$(HATVERSION)/src/compiler98; mv Makefile.hat Makefile
+	tar cf hat-$(HATVERSION).tar hat-$(HATVERSION)
+	rm -r hat-$(HATVERSION)
+	gzip hat-$(HATVERSION).tar
 
 
 ##### cleanup
