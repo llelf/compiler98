@@ -70,6 +70,10 @@ parseImpSpec =
     Hiding `parseChk` k_hiding `chk` lpar `apCut`
       manySep comma parseEntity `chk` optional comma `chk` rpar
         `orelse`
+    (Hiding []) `parseChk` k_hiding `chk` (k_unit `orelse`
+                                           lit (L_ACONID (TupleId 2)))
+			-- fix for  hiding ()  and  hiding (,)
+        `orelse`
     parse (Hiding [])
 
 parseEntity =
