@@ -22,9 +22,11 @@ import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,just
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail)
+import AuxFile (AuxiliaryInfo)	-- needed only for hbc's broken import mechanism
 import List (isPrefixOf,union)
 import Char (isAlpha,digitToInt)
 
+infixr 6 `typeFun`	-- hbc won't let me declare this later.
 
 type Arity = Int
 
@@ -863,7 +865,7 @@ tokenIdType (TypeVar pos tyId) = TypeVar pos (nameOrg tyId)
 tokenIdType (TypeStrict pos ty) = TypeStrict pos (tokenIdType ty) 
 
 -- function type constructor
-infixr 6 `typeFun`
+-- infixr 6 `typeFun`
 typeFun :: Type TokenId -> Type TokenId -> Type TokenId
 typeFun ty1 ty2 = TypeCons noPos t_Arrow [ty1,ty2]
 

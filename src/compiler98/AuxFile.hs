@@ -1,7 +1,8 @@
 module AuxFile
-  ( toAuxFile		-- primary export used by Main
-  , module AuxFile	-- internals used by module AuxLabelAST
+  ( module AuxFile	-- internals used by module AuxLabelAST
   ) where
+ -- toAuxFile		-- primary export used by Main
+			-- hbc won't let me put both specs in the export list
 
 import Maybe
 import List
