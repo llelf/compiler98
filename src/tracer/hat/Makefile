@@ -17,7 +17,7 @@ install: $(OBJDIR) $(PROGS)
 objdir: $(OBJDIR)
 objs: $(MALCOBJS) $(THORLIBS) $(patsubst %, %.o, $(PROGS))
 clean:
-	rm -f $(MALCOBJS)
+	rm -f $(MALCOBJS) $(THOROBJS)
 realclean: clean
 	rm -f $(PROGS)
 $(OBJDIR):
@@ -44,7 +44,8 @@ hat-check: hat-check.c
 
 
 # Thorsten's libraries and tools
-THORFLAGS = -lncurses -g
+THORFLAGS = -g
+LINKFLAGS = -lncurses -g
 
 $(THOROBJS) : $(OBJDIR)/%.o : %.c
 	$(CC) -c $(THORFLAGS) -o $@ $<
@@ -56,10 +57,10 @@ $(OBJDIR)/hashtable.o: hashtable.h
 $(OBJDIR)/observe.o :  $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
 $(OBJDIR)/menu.o : menu.h $(OBJDIR)/Expressions.o
 hat-detect: hat-detect.c $(OBJDIR)/hatfileops.o $(OBJDIR)/observe.o
-	$(CC) $(THORFLAGS) hat-detect.c -o hat-detect $(THOROBJS)
+	$(CC) $(LINKFLAGS) hat-detect.c -o hat-detect $(THOROBJS)
 hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
-	$(CC) $(THORFLAGS) hat-observe.c -o hat-observe $(THOROBJS) $(ncurses)
+	$(CC) $(LINKFLAGS) hat-observe.c -o hat-observe $(THOROBJS) $(ncurses)
 hat-interact: hat-interact.c $(OBJDIR)/hatfileops.o
-	$(CC) $(THORFLAGS) hat-interact.c -o hat-interact $(THOROBJS) $(ncurses)
+	$(CC) $(LINKFLAGS) hat-interact.c -o hat-interact $(THOROBJS) $(ncurses)
 
 
