@@ -13,7 +13,7 @@ VERSION = 1.11
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HVERSION = 3.00
+HVERSION = 3.01
 # HVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
@@ -21,8 +21,8 @@ HVERSION = 3.00
 ### End of configurable variables
 
 ifeq "" "${MKDIR}"
-MKDIR:=$(PWD)
-#MKDIR:=$(shell pwd)
+MKDIR:=$(shell pwd)
+#MKDIR:=$(PWD)
 endif
 
 TOPDIR= $(MKDIR)
@@ -50,7 +50,7 @@ BUILDDIR=${BUILDBASEDIR}/${MACHINE}
 
 HC = $(LOCAL)nhc98
 export HC
-HMAKE = $(LOCAL)hmake -f ${DST}/hmakerc
+HMAKE = $(LOCAL)hmake
 export HMAKE
 
 BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
