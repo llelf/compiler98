@@ -114,7 +114,7 @@ data Flags = FF
   ,sLex        :: Bool	-- input	after lexing
   ,sILex       :: Bool	-- input	after lexing imported interface files
   ,sParse      :: Bool	-- ast		after parsing
-  ,sIParse     :: Bool	-- ast		after parsing imported interface files
+--  ,sIParse     :: Bool	-- ast		after parsing imported interface files
   ,sNeed       :: Bool	-- need table	before imports
   ,sINeed      :: Bool	-- need table	after all imports
   ,sIINeed     :: Bool	-- need table	after each import
@@ -129,14 +129,14 @@ data Flags = FF
   ,sScc        :: Bool	-- ast		after strongly-connected-components
   ,sType       :: Bool	-- ast		after type check
   ,sFixSyntax  :: Bool	-- ast		after removing newtypes
-  ,sSTG        :: Bool	-- stg tree	after translation from ast
+--  ,sSTG        :: Bool	-- stg tree	after translation from ast
   ,sLift       :: Bool	-- stg tree	after lambda lifting
   ,sCase       :: Bool	-- stg tree	after case pattern simplification
   ,sPrim       :: Bool	-- stg tree	after inserting primitives
   ,sArity      :: Bool	-- stg tree	after arity analysis
-  ,sBCBefore   :: Bool	-- stg tree	before conversion to byte code
+--  ,sBCBefore   :: Bool	-- stg tree	before conversion to byte code
   ,sAtom       :: Bool	-- stg tree	after only atoms in applications
-  ,sSTGCode    :: Bool	-- stg code
+--  ,sSTGCode    :: Bool	-- stg code
   ,sFree       :: Bool	-- stg code	with explicit free variables
 
   ,sGcode      :: Bool	-- g-code
@@ -273,7 +273,7 @@ processArgs xs = flags
   , sFixSyntax = fElem False "fixsyntax" xs           
   -- ^ show syntax tree  after removing newtype constructors and 
   -- fixing Class.Type.metod
-  , sSTG = fElem False "stg" xs	       
+--  , sSTG = fElem False "stg" xs	       
   -- ^ show stg    tree  after translation from syntax tree 
   , sLift = fElem False "lift" xs              	
   -- ^ show syntax tree  after lambda lifting
@@ -281,7 +281,7 @@ processArgs xs = flags
   -- ^ show stg    tree  after simplification of patterns
   , sPrim = fElem False "prim" xs              	
   -- ^ show stg    tree  after inserting primitive functions
-  , sBCBefore = fElem False "bcbefore" xs		
+--  , sBCBefore = fElem False "bcbefore" xs		
   -- ^ show stg    tree  before converting to byte code
 
 
@@ -295,7 +295,7 @@ processArgs xs = flags
   , sKeepCase = fElem False "keepcase" xs     
   -- ^ Don't lift case, we fix those later
   , sArity = fElem False "arity" xs           -- show stg    tree  after arity
-  , sSTGCode = fElem False "stgcode" xs       -- show STG code	-- DW
+--  , sSTGCode = fElem False "stgcode" xs       -- show STG code	-- DW
   , sGcodeOpt2 = fElem False "gcodeopt2" xs   -- show G code optimisation
 
 
@@ -328,7 +328,7 @@ processArgs xs = flags
   , sFunNames = fElem False "funnames" xs            
   -- ^ insert position and name of functions in the code
   , sILex = fElem False "ilex" xs             -- show lexical input
-  , sIParse = fElem False "iparse" xs         -- show syntax tree  after  parser
+--  , sIParse = fElem False "iparse" xs         -- show syntax tree  after  parser
   , sRImport = fElem False "report-imports" xs	
   -- ^ show only imports actually used
 
