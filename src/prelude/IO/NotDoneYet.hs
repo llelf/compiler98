@@ -1,6 +1,8 @@
 module IO where
 
 import PreludeBuiltin(Handle)
+import DIOError
+import DErrNo
 
 hWaitForInput         :: Handle -> Int -> IO Bool
 hWaitForInput h n      = error "Not defined: hWaitForInput"
@@ -28,22 +30,32 @@ hIsSeekable h          = error "Not defined: hIsSeekable"
 
 
 isAlreadyExistsError  :: IOError -> Bool
-isAlreadyExistsError ioerror = error "Not defined: isAlreadyExistsError"
+isAlreadyExistsError (IOErrorC EEXIST) = True	-- file exists
+isAlreadyExistsError (IOErrorC EISDIR) = True	-- is a directory
+isAlreadyExistsError _ = False
 
 isDoesNotExistError   :: IOError -> Bool
-isDoesNotExistError ioerror = error "Not defined: isDoesNotExistError"
+isDoesNotExistError (IOErrorC ENOENT) = True	-- no such file or directory
+isDoesNotExistError (IOErrorC ENXIO)  = True	-- no such device or address
+isDoesNotExistError _ = False
 
 isAlreadyInUseError   :: IOError -> Bool
-isAlreadyInUseError ioerror  = error "Not defined: isAlreadyInUseError"
+isAlreadyInUseError (IOErrorC EBUSY)    = True	-- Device or resource busy
+isAlreadyInUseError (IOErrorC ETXTBSY)  = True	-- Text file busy
+isAlreadyInUseError _  = False
 
 isFullError           :: IOError -> Bool
-isFullError ioerror    = error "Not defined: isFullError"
+isFullError (IOErrorC ENOSPC)    = True		-- device full
+isFullError (IOErrorC EDQUOT)    = True		-- quota exceeded
+isFullError _    = False
 
 isIllegalOperation    :: IOError -> Bool
-isIllegalOperation ioerror = error "Not defined: isIllegalOperation"
+isIllegalOperation (IOErrorC EPERM) = True
+isIllegalOperation _ = False
 
 isPermissionError     :: IOError -> Bool
-isPermissionError ioerror = error "Not defined: isPermissionError"
+isPermissionError (IOErrorC EACCES) = True
+isPermissionError _ = False
 
 
 -- The following implementations are direct from the Library Report.

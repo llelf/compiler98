@@ -68,11 +68,14 @@ objects and the final executable to be placed in this directory by the
 compiler.  Only one -d is allowed.
 .TP
 .BI \-I "dir"
+.BI \-i "dir"
 This option adds directory
 .I dir
 to the search path for source modules.  Modules needed from that directory 
 are compiled (and linked).  If more than one 
 .I \-I
+or
+.I \-i
 is specified, the directories are searched in order.
 .TP
 .BI \-P "dir"
@@ -119,15 +122,15 @@ and to link an executable
 
 	$(HC) $(HFLAGS) -o executable file.o ... 
 
-where HC is your chosen Haskell compiler (default nhc98).
-The commands
+where HC is your chosen Haskell compiler (default is the compiler
+you built hmake with).  The commands
 are then augmented with any compiler/linker options given when invoking
 .I hmake.
 .SH ENVIRONMENT
 .TP
 .B HC
 if set, it is used as the name of the Haskell compiler. The default is
-nhc98.
+the compiler you used to build hmake with.
 .TP
 .B HFLAGS
 if set, is used as extra arguments to the Haskell compiler. The default is

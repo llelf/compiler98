@@ -7,7 +7,7 @@ OBJDIR=${BUILDDIR}/${OBJ}/prelude
 FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
-LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI
+LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI IOExtras
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
 SUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${LIBSUBDIRS}

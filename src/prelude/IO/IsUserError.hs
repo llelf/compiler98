@@ -2,6 +2,6 @@ module IO where
 
 import DIOError
 
-isUserError  :: IOError -> Maybe String
-isUserError (IOErrorUser str) = Just str
-isUserError ioerror = Nothing
+isUserError  :: IOError -> Bool
+isUserError (IOErrorUser str) = True
+isUserError ioerror = False

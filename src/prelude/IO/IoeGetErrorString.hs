@@ -3,6 +3,7 @@ module IO (ioeGetErrorString) where
 import IO
 import DIOError
 import PackedString
+import DErrNo
 
 ioeGetErrorString :: IOError -> String
 ioeGetErrorString (IOErrorUser             str)       = str
@@ -17,5 +18,6 @@ ioeGetErrorString (IOErrorHGetPosn      handle errno) = "hGetPosn"
 ioeGetErrorString (IOErrorHSetPosn      handle errno) = "hSetPosn"
 ioeGetErrorString (IOErrorHGetBuffering handle errno) = "hGetBuffering"
 ioeGetErrorString (IOErrorHSetBuffering handle errno) = "hSetBuffering"
+ioeGetErrorString (IOErrorC errno)                    = show errno
 ioeGetErrorString _ = "unusual IO error"
 

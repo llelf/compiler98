@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="v1.6.1 (date 000104)"
+HMAKEVERSION="v1.7.1 (date 000125)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -277,9 +277,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
-    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$LIBDIR/hmake.config
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$LIBDIR/hmake.config
     echo -n "harch "
     cp script/harch $BINDIR
     echo

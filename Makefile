@@ -1,12 +1,12 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre14x
+VERSION = 1.0pre15
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
 
-HVERSION = 1.6.1
+HVERSION = 1.7.1
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
@@ -392,15 +392,19 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 
 HBASIC  = src/hmake/README src/hmake/INSTALL
 HMFILE  = src/hmake/Makefile.toplevel
-HAUX    = Makefile.inc COPYRIGHT src/Makefile*
+HAUX1   = Makefile.inc COPYRIGHT
+HAUX2   = src/Makefile*
 HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
 	  script/harch script/confhc
 HMAN    = man/hmake.1 docs/hmake
 HCONF   = hmake-configure
+HBIN    = lib/$(MACHINE)/MkProg lib/$(MACHINE)/Older \
+	  targets/$(MACHINE)/config.cache
 
 hmakeDist:
 	rm -f hmake-$(HVERSION).tar hmake-$(HVERSION).tar.gz
-	tar cf hmake-$(HVERSION).tar $(HAUX)
+	tar cf hmake-$(HVERSION).tar $(HAUX1)
+	tar rf hmake-$(HVERSION).tar $(HAUX2)
 	tar rf hmake-$(HVERSION).tar $(HMAKE)
 	tar rf hmake-$(HVERSION).tar $(HSCRIPT)
 	tar rf hmake-$(HVERSION).tar $(HMAN)
@@ -412,6 +416,20 @@ hmakeDist:
 	tar cf hmake-$(HVERSION).tar hmake-$(HVERSION)
 	rm -r hmake-$(HVERSION)
 	gzip hmake-$(HVERSION).tar
+hmakeBinDist:
+	rm -f hmake-$(HVERSION)-$(MACHINE).tar hmake-$(HVERSION)-$(MACHINE).tar.gz
+	tar cf hmake-$(HVERSION)-$(MACHINE).tar $(HAUX1)
+	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HSCRIPT)
+	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HBIN)
+	tar rf hmake-$(HVERSION)-$(MACHINE).tar $(HMAN)
+	mkdir hmake-$(HVERSION)
+	cd hmake-$(HVERSION); tar xf ../hmake-$(HVERSION)-$(MACHINE).tar
+	cp $(HBASIC) hmake-$(HVERSION)
+	cp $(HMFILE) hmake-$(HVERSION)/Makefile
+	cp $(HCONF)  hmake-$(HVERSION)/configure
+	tar cf hmake-$(HVERSION)-$(MACHINE).tar hmake-$(HVERSION)
+	rm -r hmake-$(HVERSION)
+	gzip hmake-$(HVERSION)-$(MACHINE).tar
 
 
 ##### cleanup

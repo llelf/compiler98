@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.0 pre-release 14x (date 991214)"
-HMAKEVERSION="v1.6.1 (date 000104)"
+CONFIGVERSION="v1.0 pre-release 15 (date 000118)"
+HMAKEVERSION="v1.7.1 (date 000125)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -229,6 +229,21 @@ then
     if [ ! -d $BUILDLIBDIR/$MACHINE ]
     then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
+    fi
+  else
+    echo
+    echo "Checking your binary distribution for integrity:"
+    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
+    if [ ! -d $BUILDTARGDIR/$MACHINE ]
+    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created ok)'
+    else echo ' (exists)'
+    fi
+    echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
+    if [ ! -d $BUILDLIBDIR/$MACHINE ]
+    then echo ' (***MISSING!)'
+         echo 'Help!  Have you got the right executables for your machine?'
+         exit 1
+    else echo ' (ok)'
     fi
   fi
 fi
