@@ -517,8 +517,8 @@ clean: cleanhi
 	cd src/greencard;       $(MAKE) clean
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
-	cd src/cpphs;           $(MAKE) clean
-	cd src/hcs2hs;          $(MAKE) clean
+	cd src/cpphs;           $(MAKE) -f Makefile.nhc98 clean
+	cd src/hsc2hs;          $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(BUILDDIR)/obj*			# all object files
