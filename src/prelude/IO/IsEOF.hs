@@ -1,6 +1,8 @@
-module IO where
+module IO (isEOF) where
 
-import IO
+import DHandle
+import PreludeBuiltin (stdin)
+import HIsEOF
 
 isEOF                 :: IO Bool
 isEOF                  = hIsEOF stdin

@@ -1,8 +1,15 @@
-module IO where
+module IO (openFile) where
 
-import IO
-import LowIO(primOpenFile)
+import DHandle
+import IOMode
+import DIOError
+import FFI
+
+foreign import openFileC :: CString -> Int -> Either Int ForeignObj
 
 openFile              :: FilePath -> IOMode -> IO Handle
-openFile fp iomode     = primOpenFile fp iomode
+openFile fp iomode = do
+    f <- _mkIOwf2 (IOErrorC ("openFile "++show iomode) (Just fp) . toEnum)
+             openFileC (toCString fp) (fromEnum iomode)
+    return (Handle f)
 

@@ -1,7 +1,7 @@
 module Prelude (IOError(..)) where
 
 import PackedString
-import IO
+import IO (Handle)
 import DErrNo
 
 data IOError 

@@ -1,8 +1,38 @@
-module IO where
+module IO (hGetChar,cHGetChar) where
 
 import DIO
-import PreludeBuiltin(Handle)
-import LowIO(primHGetChar)
+import DIOError
+import DHandle
+
+#if !defined(TRACING)
+import PreludeBuiltin(_hGetChar)
 
 hGetChar              :: Handle -> IO Char
-hGetChar h             = primHGetChar h
+hGetChar h    = IO (\world -> input h)
+ where
+  input h = let c = cHGetChar h
+            in if c < 0 then
+                 Left (IOErrorEOF h "hGetChar")
+               else
+                 Right (toEnum c)
+
+cHGetChar :: Handle -> Int
+cHGetChar h = _hGetChar h		-- _hGetChar -> special bytecode
+
+
+#else
+
+hGetChar              :: Handle -> IO Char
+hGetChar (Handle h)    = IO (\world -> input h)
+ where
+  input h = let c = cHGetChar h
+            in if c < 0 then
+                 Left (IOErrorEOF (Handle h) "hGetChar")
+               else
+                 Right (toEnum c)
+
+cHGetChar :: ForeignObj -> Int
+cHGetChar handle = _prim _tprim_chGetChar handle
+_tprim_chGetChar primitive 2 :: Trace -> R ForeignObj -> R Int
+
+#endif

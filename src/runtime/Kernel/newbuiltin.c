@@ -5,12 +5,12 @@ extern unsigned CF__95Builtin_46hputc_95ok[];
 extern unsigned Start_World[];
 extern unsigned FN_Prelude_46primLeave[];
 extern unsigned FN_Builtin_46primUnpackCString[];
-extern unsigned CF_Prelude_46stdout[];
-extern unsigned CF_Prelude_46stdin[];
-extern unsigned CF_Prelude_46stderr[];
-extern unsigned CF_Prelude_46_95stdin[];
-extern unsigned CF_Prelude_46_95stdout[];
-extern unsigned CF_Prelude_46_95stderr[];
+extern unsigned CF_IO_46stdout[];
+extern unsigned CF_IO_46stdin[];
+extern unsigned CF_IO_46stderr[];
+extern unsigned CF_IO_46_95stdin[];
+extern unsigned CF_IO_46_95stdout[];
+extern unsigned CF_IO_46_95stderr[];
 
 extern unsigned C0_Prelude_46_91_93[];
 extern unsigned CT_primLeave[];
@@ -33,16 +33,17 @@ extern unsigned PROF_Start_World[];
 extern unsigned PROF_primLeave[];
 extern unsigned PROF_46primUnpackCString[];
 extern unsigned PM_Prelude[];
+extern unsigned PM_IO[];
 extern unsigned PP_compiletime[];
-extern unsigned PROF_Prelude_46stdout[];
-extern unsigned PROF_Prelude_46stdin[];
-extern unsigned PROF_Prelude_46stderr[];
+extern unsigned PROF_IO_46stdout[];
+extern unsigned PROF_IO_46stdin[];
+extern unsigned PROF_IO_46stderr[];
 extern unsigned PC_primToken[];
 extern unsigned PC_hputc_ok[];
 extern unsigned PC_Start_World[];
-extern unsigned PC_Prelude_46stdin[];
-extern unsigned PC_Prelude_46stdout[];
-extern unsigned PC_Prelude_46stderr[];
+extern unsigned PC_IO_46stdin[];
+extern unsigned PC_IO_46stdout[];
+extern unsigned PC_IO_46stderr[];
 #endif
 
 #ifdef DBGTRANS
@@ -52,7 +53,7 @@ extern unsigned stdin_nm[];
 extern unsigned stdin_s[];
 extern unsigned root_t[];
 extern unsigned sr_t[];
-extern unsigned prelude_s[];
+extern unsigned io_s[];
 extern unsigned fo_stdout_node[];
 extern unsigned fo_stderr_node[];
 extern unsigned stdout_t[];
@@ -153,10 +154,10 @@ unsigned PROF_46primUnpackCString[] = {
 
 #ifndef DBGTRANS
 };
-unsigned CF_Prelude_46stdout[] = {
+unsigned CF_IO_46stdout[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdout)
+, useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
@@ -164,10 +165,10 @@ unsigned CF_Prelude_46stdout[] = {
 , useLabel(fo_stdout)
 
 };
-unsigned CF_Prelude_46stdin[] = {
+unsigned CF_IO_46stdin[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -175,10 +176,10 @@ unsigned CF_Prelude_46stdin[] = {
 ,  useLabel(fo_stdin)
 
 };
-unsigned CF_Prelude_46stderr[] = {
+unsigned CF_IO_46stderr[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stderr)
+, useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
@@ -219,10 +220,10 @@ unsigned CF_Prelude_46stderr[] = {
 
 
 };
-unsigned CF_Prelude_46_95stdin[] = {
+unsigned CF_IO_46_95stdin[] = {
   CONSTRR(0, 2, 0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -234,7 +235,7 @@ unsigned CF_Prelude_46_95stdin[] = {
 unsigned fo_stdin_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -245,7 +246,7 @@ unsigned fo_stdin_node[] = {
 unsigned stdin_t[] = {
   CONSTRT(TagNm,3,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -258,20 +259,20 @@ unsigned stdin_t[] = {
 unsigned stdin_nm[] = {
   CONSTR(NTId,3,3)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
 #endif
-, useLabel(prelude_s)
+, useLabel(io_s)
 , 0
 , useLabel(stdin_s)
 
 };
-unsigned CF_Prelude_46_95stdout[] = {
+unsigned CF_IO_46_95stdout[] = {
   CONSTRR(0, 2, 0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdout)
+, useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
@@ -283,7 +284,7 @@ unsigned CF_Prelude_46_95stdout[] = {
 unsigned fo_stdout_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdout)
+, useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
@@ -294,7 +295,7 @@ unsigned fo_stdout_node[] = {
 unsigned stdout_t[] = {
   CONSTRT(TagNm,3,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdout)
+, useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
@@ -307,20 +308,20 @@ unsigned stdout_t[] = {
 unsigned stdout_nm[] = {
   CONSTR(NTId,3,3)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdout)
+, useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
 #endif
-, useLabel(prelude_s)
+, useLabel(io_s)
 , 0
 , useLabel(stdout_s)
 
 };
-unsigned CF_Prelude_46_95stderr[] = {
+unsigned CF_IO_46_95stderr[] = {
   CONSTRR(0, 2, 0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stderr)
+, useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
@@ -332,7 +333,7 @@ unsigned CF_Prelude_46_95stderr[] = {
 unsigned fo_stderr_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stderr)
+, useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
@@ -343,7 +344,7 @@ unsigned fo_stderr_node[] = {
 unsigned stderr_t[] = {
   CONSTRT(TagNm,3,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stderr)
+, useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
@@ -356,19 +357,18 @@ unsigned stderr_t[] = {
 unsigned stderr_nm[] = {
   CONSTR(NTId,3,3)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stderr)
+, useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
 #endif
-, useLabel(prelude_s)
+, useLabel(io_s)
 , 0
 , useLabel(stderr_s)
 
 };
-unsigned prelude_s[] = {
-  bytes2word('P','r','e','l')
-, bytes2word('u','d','e',0)
+unsigned io_s[] = {
+  bytes2word('I','O',0,0)
 };
 unsigned stdin_s[] = {
   bytes2word('<','s','t','d')
@@ -388,7 +388,7 @@ unsigned stderr_s[] = {
 unsigned root_t[] = {
   CONSTRT(TagRoot,0,0)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -398,7 +398,7 @@ unsigned root_t[] = {
 unsigned sr_t[] = {
   CONSTRW(0,TagSR)
 #ifdef PROFILE
-, useLabel(PROF_Prelude_46stdin)
+, useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
@@ -429,39 +429,36 @@ unsigned PROF_Start_World[] = {
 , useLabel(PP_compiletime)
 , useLabel(PC_Start_World)
 };
-unsigned PROF_Prelude_46stdin[] = {
-  useLabel(PM_Prelude)
+unsigned PROF_IO_46stdin[] = {
+  useLabel(PM_IO)
 , useLabel(PP_compiletime)
-, useLabel(PC_Prelude_46stdin)
+, useLabel(PC_IO_46stdin)
 };
-unsigned PROF_Prelude_46stdout[] = {
-  useLabel(PM_Prelude)
+unsigned PROF_IO_46stdout[] = {
+  useLabel(PM_IO)
 , useLabel(PP_compiletime)
-, useLabel(PC_Prelude_46stdout)
+, useLabel(PC_IO_46stdout)
 };
-unsigned PROF_Prelude_46stderr[] = {
-  useLabel(PM_Prelude)
+unsigned PROF_IO_46stderr[] = {
+  useLabel(PM_IO)
 , useLabel(PP_compiletime)
-, useLabel(PC_Prelude_46stderr)
+, useLabel(PC_IO_46stderr)
 
 };
-unsigned PC_Prelude_46stdin[] = {
-  bytes2word('P','r','e','l')
-, bytes2word('u','d','e','.')
-, bytes2word('s','t','d','i')
-, bytes2word('n',0,0,0)
+unsigned PC_IO_46stdin[] = {
+  bytes2word('I','O','.','s')
+, bytes2word('t','d','i','n')
+, 0
 };
-unsigned PC_Prelude_46stdout[] = {
-  bytes2word('P','r','e','l')
-, bytes2word('u','d','e','.')
-, bytes2word('s','t','d','o')
-, bytes2word('u','t',0,0)
+unsigned PC_IO_46stdout[] = {
+  bytes2word('I','O','.','s')
+, bytes2word('t','d','o','u')
+, bytes2word('t',0,0,0)
 };
-unsigned PC_Prelude_46stderr[] = {
-  bytes2word('P','r','e','l')
-, bytes2word('u','d','e','.')
-, bytes2word('s','t','d','e')
-, bytes2word('r','r',0,0)
+unsigned PC_IO_46stderr[] = {
+  bytes2word('I','O','.','s')
+, bytes2word('t','d','e','r')
+, bytes2word('r',0,0,0)
 };
 unsigned PC_primToken[] = {
   bytes2word('P','r','e','l')

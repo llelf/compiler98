@@ -1,6 +1,6 @@
-module IO where
+module IO (ioeGetHandle) where
 
-import IO
+import DHandle
 import DIOError
 
 ioeGetHandle :: IOError -> Maybe Handle

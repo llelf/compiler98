@@ -1,12 +1,14 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
 
 #include "haskell2c.h"
+#if TRACE
+#include "../../tracer/runtime/getconstr.h"
+#endif
 
+#if 0
 /* cHSeek primitive 3 :: Handle -> SeekMode -> Int -> Either IOError () */
-
 C_HEADER(cHSeek)
 {
   FileDesc *a;
@@ -56,4 +58,31 @@ C_HEADER(cHSeek)
     nodeptr = mkRight(mkUnit());
   
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+/* foreign import hSeekC :: Handle -> Int -> Integer -> Either Int () */
+NodePtr hSeekC (FileDesc* f, int seekmode, NodePtr i)
+{
+  int err;
+  int sm;
+  long offset;
+  switch (seekmode) {
+    case AbsoluteSeek: sm = SEEK_SET; break;
+    case RelativeSeek: sm = SEEK_CUR; break;
+    case SeekFromEnd:  sm = SEEK_END; break;
+  }
+  offset = GET_INT_VALUE(i);	/* naughty! */
+  err = fseek(f->fp,offset,sm);
+#if !TRACE
+  if (err)
+    return mkLeft(mkInt(errno));
+  else
+    return mkRight(mkUnit());
+#else
+  if (err)
+    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
+  else
+    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
+#endif
+}

@@ -3,8 +3,8 @@
 #include <errno.h>
 #include "haskell2c.h"
 
+#if 0
 /* cHGetBuffering primitive 1 :: Handle -> Either IOError BufferMode */
-
 C_HEADER(cHGetBuffering)
 {
   FileDesc *a;
@@ -29,4 +29,19 @@ C_HEADER(cHGetBuffering)
   default: nodeptr = mkLeft(mkIOErrorHGetBuffering(C_GETARG1(1),mkInt(a->bm)));
   }
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+/* foreign import hGetBufferingC :: Handle -> IO BufferMode */
+NodePtr hGetBufferingC (FileDesc *f)
+{
+  switch(f->bm) {
+    case _IONBF: return mkNoBuffering(); break;
+    case _IOLBF: return mkLineBuffering(); break;
+    case _IOFBF:
+        if(f->size>=0) return mkBlockBuffering(mkJust(mkInt(f->size)));
+        else           return mkBlockBuffering(mkNothing());
+        break;
+    default: break;
+  }
+}

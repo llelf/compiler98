@@ -1,3 +1,5 @@
-module IO(HandlePosn) where
+module IO(HandlePosn(..)) where
 
-import PreludeBuiltin(HandlePosn)
+import FFI (ForeignObj)
+
+newtype HandlePosn = HandlePosn ForeignObj

@@ -1,5 +1,12 @@
 #include <errno.h>
+#include <string.h>
+#include <stdio.h>
 #include "haskell2c.h"
+#if TRACE
+#include "../../tracer/runtime/getconstr.h"
+#endif
+
+#if 0
 
 #ifdef CDBGTRANS
 /* cOpen primitive 2 :: Trace -> R CString -> R IOMode -> R (Either IOError Handle) */
@@ -69,6 +76,7 @@ C_HEADER(cOpen)
     a->fp = fp;
     a->bm = _IOFBF;
     a->size = -1;
+    a->path = strdup(filename);
     fo = allocForeignObj(a,gcFile,gcNow);
     nodeptr = mkRight(mkCInt((Int)fo));
   } else {
@@ -77,3 +85,45 @@ C_HEADER(cOpen)
   C_RETURN(nodeptr);
 }
 
+#endif
+
+/* foreign import openFileC :: CString -> IOMode -> Either Int ForeignObj */
+NodePtr openFileC (char* filename, int iom)
+{
+  char *type;
+  FILE *fp;
+
+  switch (iom) {
+    case ReadMode:      type = "r+";  break;
+    case WriteMode:     type = "w+";  break;
+    case AppendMode:    type = "a+";  break;
+    case ReadWriteMode: type = "rw"; break;
+  }
+/*fprintf(stderr,"fopen: attempting to open file %s for %s\n",filename,type);*/
+
+  fp = fopen(filename,type);
+  if(fp) {
+    FileDesc *a;
+    ForeignObj *fo;
+    /*fprintf(stderr,"fopen: succeeded\n");*/
+    a = (FileDesc *)malloc(sizeof(FileDesc));
+    a->fp = fp;
+    a->bm = _IOFBF;
+    a->size = -1;
+    a->path = strdup(filename);
+    fo = allocForeignObj(a,gcFile,gcNow);
+    /*fprintf(stderr,"[openFileC: succeeded %x %x]\n",a,a->fp);*/
+#if !TRACE
+    return mkRight(mkCInt((int)fo));
+#else
+    return mkRight(mkR(mkCInt((int)fo),mkTNm(0,mkNmVector(),mkSR())));
+#endif
+  } else {
+    /*fprintf(stderr,"fopen: failed to open file %s for %s\n",filename,type);*/
+#if !TRACE
+    return mkLeft(mkInt(errno));
+#else
+    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
+#endif
+  }
+}

@@ -1,6 +1,6 @@
-
 #include "haskell2c.h"
 
+#if 0
 /* cHClose primitive 1 :: Handle -> () */
 C_HEADER(cHClose)
 {
@@ -28,4 +28,13 @@ C_HEADER(cHClose)
 
   C_RETURN(mkUnit());
 }
+#endif
 
+/* foreign import hCloseC :: Addr -> IO () */
+void hCloseC (FileDesc *f)
+{
+  if (f->fp)
+    fclose(f->fp);
+  f->fp = 0;
+  f->bm = -1;
+}

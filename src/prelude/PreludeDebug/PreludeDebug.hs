@@ -8,7 +8,7 @@ module Prelude where
 
 import PackedString(PackedString)
 import Ratio (Ratio)
-import DIO		-- needed for attaching traces to prim I/O operations.
+--import DIO		-- needed for attaching traces to prim I/O operations.
 import DEither		-- traced version needed, as for DIO.
 import FFIBuiltin (Addr,ForeignObj,StablePtr)
 import PreludeBuiltin (Vector)
@@ -68,6 +68,9 @@ instance NmCoerce PackedString where
     toNm t v sr = R v (Nm t NTContainer sr)
 instance NmCoerce (Vector a) where
     toNm t v sr = R v (Nm t NTContainer sr)
+instance NmCoerce (Either a b) where
+    toNm t (Left  (R v (Nm _ nm x))) sr = R (Left  (R v (Nm t nm x))) t
+    toNm t (Right (R v (Nm _ nm x))) sr = R (Right (R v (Nm t nm x))) t
 
 --instance NmCoerce a => NmCoerce (IO a) where
 --    toNm t (IOPrim (R v _)) sr =

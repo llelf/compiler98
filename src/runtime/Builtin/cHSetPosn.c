@@ -2,9 +2,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "haskell2c.h"
+#if TRACE
+#include "../../tracer/runtime/getconstr.h"
+#endif
 
-/* cHGetPosn primitive 1 :: Handle -> HandlePosn -> Either IOError () */
-
+#if 0
+/* cHSetPosn primitive 1 :: Handle -> HandlePosn -> Either IOError () */
 C_HEADER(cHSetPosn)
 {
   FileDesc *a;
@@ -45,4 +48,23 @@ C_HEADER(cHSetPosn)
     nodeptr = mkRight(mkUnit());
   
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+/* foreign import hSetPosnC :: Handle -> HandlePosn -> Either Int () */
+NodePtr hSetPosnC (FileDesc *f, fpos_t *p)
+{
+  int err;
+  err = fsetpos(f->fp,p);
+#if !TRACE
+  if (err)
+    return mkLeft(mkInt(errno));
+  else
+    return mkRight(mkUnit());
+#else
+  if (err)
+    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
+  else
+    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
+#endif
+}

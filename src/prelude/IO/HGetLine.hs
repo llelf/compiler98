@@ -1,4 +1,4 @@
-module IO where
+module IO (hGetLine) where
 
 import IO
 import HGetChar

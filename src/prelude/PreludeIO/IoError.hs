@@ -1,4 +1,4 @@
-module Prelude where
+module Prelude (ioError) where
 
 import DIO
 

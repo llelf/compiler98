@@ -9,11 +9,7 @@ EXTRA_C_FLAGS	=
 
 SRCS	= \
 	PrimError.hs Blackhole.hs \
-	CHGetChar.hs PrimEqHandlePosn.hs CHPutChar.hs PrimHClose.hs \
- 	PrimHFileSize.hs PrimHFlush.hs PrimHGetBuffering.hs PrimHGetChar.hs \
-	PrimHGetContents.hs PrimHGetPosn.hs PrimHIsEOF.hs PrimHPutChar.hs \
-	PrimHSeek.hs PrimHSetBuffering.hs PrimHSetPosn.hs \
-	PrimOpenFile.hs PrimOpenSocket.hs \
+	PrimOpenSocket.hs \
 	CExitWith.hs PrimExitWith.hs PrimSystem.hs PrimGetArgs.hs \
 	PrimGetEnv.hs PrimGetProgName.hs \
 	PrimComparePS.hs PrimIndex.hs PrimLength.hs PrimPackString.hs \
@@ -25,10 +21,18 @@ SRCS	= \
 	PrimIntegerEq.hs PrimIntegerFromInt.hs PrimIntegerLe.hs \
 	PrimIntegerLt.hs PrimIntegerGe.hs PrimIntegerGt.hs \
 	PrimIntegerMul.hs PrimIntegerNe.hs PrimIntegerNeg.hs PrimIntegerOr.hs \
-	PrimIntegerQuotRem.hs PrimIntegerSub.hs
+	PrimIntegerQuotRem.hs PrimIntegerSub.hs  Ieee.hs
+
+
+#	CHGetChar.hs PrimEqHandlePosn.hs CHPutChar.hs PrimHClose.hs \
+# 	PrimHFileSize.hs PrimHFlush.hs PrimHGetBuffering.hs PrimHGetChar.hs \
+#	PrimHGetContents.hs PrimHGetPosn.hs PrimHIsEOF.hs PrimHPutChar.hs \
+#	PrimHSeek.hs PrimHSetBuffering.hs PrimHSetPosn.hs \
+#	PrimOpenFile.hs \
 
 SRCS_TRICKY	= \
-	_Driver.hs CString.hs LowI.hs LowPS.hs LowSystem.hs LowIO.hs
+	_Driver.hs CString.hs LowI.hs LowPS.hs LowSystem.hs
+#	LowIO.hs
 
 
 # Here are the main rules.

@@ -2,9 +2,12 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include "haskell2c.h"
+#if TRACE
+#include "../../tracer/runtime/getconstr.h"
+#endif
 
+#if 0
 /* cHFlush 1 :: Handle -> (Either IOError ()) */
-
 C_HEADER(cHFlush)
 {
   FileDesc *a;
@@ -39,4 +42,23 @@ C_HEADER(cHFlush)
     nodeptr = mkRight(mkUnit());
   
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+/* foreign import hFlushC :: Handle -> Either Int () */
+NodePtr hFlushC (FileDesc* a)
+{
+  int err;
+  err = fflush(a->fp);
+#if !TRACE
+  if (err)
+    return mkLeft(mkInt(errno));
+  else
+    return mkRight(mkUnit());
+#else
+  if (err)
+    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
+  else
+    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
+#endif
+}

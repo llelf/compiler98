@@ -85,29 +85,29 @@ DL(PROF_46primUnpackCString)
 
 #ifndef DBGTRANS
   AL
-  EX L(CF_Prelude_46stdout)
-DL(CF_Prelude_46stdout)
+  EX L(CF_IO_46stdout)
+DL(CF_IO_46stdout)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdout), 0, 0, 0
+  DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
   DW L(fo_stdout)
 
   AL
-  EX L(CF_Prelude_46stdin)
-DL(CF_Prelude_46stdin)
+  EX L(CF_IO_46stdin)
+DL(CF_IO_46stdin)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
   DW L(fo_stdin)
 
   AL
-  EX L(CF_Prelude_46stderr)
-DL(CF_Prelude_46stderr)
+  EX L(CF_IO_46stderr)
+DL(CF_IO_46stderr)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stderr), 0, 0, 0
+  DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
   DW L(fo_stderr)
 #endif /* DBGTRANS */
@@ -148,95 +148,95 @@ DL(CF_Prelude_46stderr)
 
 
   AL
-  EX L(CF_Prelude_46_95stdin)
-DL(CF_Prelude_46_95stdin)
+  EX L(CF_IO_46_95stdin)
+DL(CF_IO_46_95stdin)
   DW CONSTRR(0, 2, 0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
   DW L(fo_stdin_node), L(stdin_t)
 
 DL(fo_stdin_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
   DW L(fo_stdin)
 
 DL(stdin_t)
   DW CONSTR(TagNm,3,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
   DW L(root_t), L(stdin_nm), L(sr_t)
 
 DL(stdin_nm)
   DW CONSTR(NTId,3,3)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
-  DW L(prelude_s), 0, L(stdin_s)
+  DW L(io_s), 0, L(stdin_s)
 
-  EX L(CF_Prelude_46_95stdout)
-DL(CF_Prelude_46_95stdout)
+  EX L(CF_IO_46_95stdout)
+DL(CF_IO_46_95stdout)
   DW CONSTRR(0, 2, 0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdout), 0, 0, 0
+  DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
   DW L(fo_stdout_node), L(stdout_t)
 
 DL(fo_stdout_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdout), 0, 0, 0
+  DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
   DW L(fo_stdout)
 
 DL(stdout_t)
   DW CONSTR(TagNm,3,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdout), 0, 0, 0
+  DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
   DW L(root_t), L(stdout_nm), L(sr_t)
 
 DL(stdout_nm)
   DW CONSTR(NTId,3,3)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdout), 0, 0, 0
+  DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
-  DW L(prelude_s), 0, L(stdout_s)
+  DW L(io_s), 0, L(stdout_s)
 
-  EX L(CF_Prelude_46_95stderr)
-DL(CF_Prelude_46_95stderr)
+  EX L(CF_IO_46_95stderr)
+DL(CF_IO_46_95stderr)
   DW CONSTRR(0, 2, 0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stderr), 0, 0, 0
+  DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
   DW L(fo_stderr_node), L(stderr_t)
 
 DL(fo_stderr_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stderr), 0, 0, 0
+  DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
   DW L(fo_stderr)
 
 DL(stderr_t)
   DW CONSTR(TagNm,3,0)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stderr), 0, 0, 0
+  DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
   DW L(root_t), L(stderr_nm), L(sr_t)
 
 DL(stderr_nm)
   DW CONSTR(NTId,3,3)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stderr), 0, 0, 0
+  DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
-  DW L(prelude_s), 0, L(stderr_s)
+  DW L(io_s), 0, L(stderr_s)
 
-DL(prelude_s)
-  DS "Prelude"
+DL(io_s)
+  DS "IO"
   DB 0
 
 DL(stdin_s)
@@ -255,13 +255,13 @@ DL(stderr_s)
 DL(root_t)
   DW CONSTRW(0,TagRoot)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
 
 DL(sr_t)
   DW CONSTRW(0,TagSR)
 #ifdef PROFILE
-  DW L(PROF_Prelude_46stdin), 0, 0, 0
+  DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
 
 #endif /* DBGTRANS */
@@ -282,25 +282,25 @@ DL(PROF_hputc_ok)
 DL(PROF_Start_World)
  DW L(PM_Prelude),L(PP_compiletime),L(PC_Start_World)
 
-DL(PROF_Prelude_46stdin)
- DW L(PM_Prelude),L(PP_compiletime),L(PC_Prelude_46stdin)
+DL(PROF_IO_46stdin)
+ DW L(PM_IO),L(PP_compiletime),L(PC_Prelude_46stdin)
 
-DL(PROF_Prelude_46stdout)
- DW L(PM_Prelude),L(PP_compiletime),L(PC_Prelude_46stdout)
+DL(PROF_IO_46stdout)
+ DW L(PM_IO),L(PP_compiletime),L(PC_Prelude_46stdout)
 
-DL(PROF_Prelude_46stderr)
- DW L(PM_Prelude),L(PP_compiletime),L(PC_Prelude_46stderr)
+DL(PROF_IO_46stderr)
+ DW L(PM_IO),L(PP_compiletime),L(PC_Prelude_46stderr)
 
-DL(PC_Prelude_46stdin)
- DS "Prelude.stdin"
+DL(PC_IO_46stdin)
+ DS "IO.stdin"
  DB 0
 
-DL(PC_Prelude_46stdout)
- DS "Prelude.stdout"
+DL(PC_IO_46stdout)
+ DS "IO.stdout"
  DB 0
 
-DL(PC_Prelude_46stderr)
- DS "Prelude.stderr"
+DL(PC_IO_46stderr)
+ DS "IO.stderr"
  DB 0
 
 DL(PC_primToken)

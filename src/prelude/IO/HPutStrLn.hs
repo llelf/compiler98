@@ -1,6 +1,8 @@
-module IO where
+module IO (hPutStrLn) where
 
-import IO
+import DHandle
+import HPutStr
+import HPutChar
 
 hPutStrLn      :: Handle -> String -> IO ()
 hPutStrLn h s   =  do hPutStr h s

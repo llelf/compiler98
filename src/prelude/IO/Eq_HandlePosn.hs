@@ -1,7 +1,17 @@
 module IO(Eq(..)) where
 
-import PrimEqHandlePosn
 import DHandlePosn
+import FFI
+
+#if !defined(TRACING)
+foreign import primEqHandlePosnC :: HandlePosn -> HandlePosn -> Bool
 
 instance Eq HandlePosn where
-  a ==  b = primEqHandlePosn a b
+  a ==  b = primEqHandlePosnC a b
+
+#else
+foreign import primEqHandlePosnC :: ForeignObj -> ForeignObj -> Bool
+
+instance Eq HandlePosn where
+  (HandlePosn a) ==  (HandlePosn b) = primEqHandlePosnC a b
+#endif

@@ -1,8 +1,8 @@
 #include <errno.h>
 #include "haskell2c.h"
 
+#if 0
 /* hIsEOF primitive 1 :: Handle -> (Either IOError Bool) */
-
 C_HEADER(cHIsEOF)
 {
   FileDesc *a;
@@ -29,4 +29,11 @@ C_HEADER(cHIsEOF)
   nodeptr = mkRight(mkBool(eof));
 
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+/* foreign import hIsEOF :: Handle -> IO Bool */
+int hIsEOF (FileDesc* f)
+{
+  return feof(f->fp);
+}

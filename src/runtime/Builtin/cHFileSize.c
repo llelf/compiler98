@@ -1,12 +1,16 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
 
 #include "haskell2c.h"
+#if TRACE
+#include "../../tracer/runtime/getconstr.h"
+#endif
+
 
 /* hFileSize 1 :: Handle -> (Either IOError Integer) */
 
+#if 0
 C_HEADER(cHFileSize)
 {
   FileDesc *a;
@@ -46,4 +50,23 @@ C_HEADER(cHFileSize)
     nodeptr = mkLeft(mkInt(errno));
   
   C_RETURN(nodeptr);
-}	
+}
+#endif
+
+NodePtr primHFileSizeC (FileDesc* f)
+{
+  struct stat buf;
+  int err;
+  err = fstat(fileno(f->fp),&buf);
+#if !TRACE
+  if (err)
+    return mkLeft(mkInt(errno));
+  else
+    return mkRight(mkSmallIntegerU(buf.st_size));
+#else
+  if (err)
+    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
+  else
+    return mkRight(mkR(mkSmallIntegerU(buf.st_size),mkTNm(0,mkNmInt(mkInt(buf.st_size)),mkSR())));
+#endif
+}

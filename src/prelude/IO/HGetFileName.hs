@@ -1,10 +1,14 @@
-module IO where
+module IO (hGetFileName) where
 
-import IO
-import DIO
+import DHandle
+import FFI
 
--- Obsolete in Haskell'98
+#if !defined(TRACING)
+foreign import hGetFileNameC :: Handle -> CString
+hGetFileName h = Just (fromCString (hGetFileNameC h))
 
-hGetFileName        :: Handle -> Maybe FilePath
-hGetFileName handle = Nothing  -- !!! Not done yet
+#else
+foreign import hGetFileNameC :: ForeignObj -> CString
+hGetFileName h = Just (fromCString (hGetFileNameC h))
 
+#endif

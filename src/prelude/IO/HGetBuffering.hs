@@ -1,7 +1,15 @@
-module IO where
+module IO (hGetBuffering) where
 
-import IO
-import LowIO(primHGetBuffering)
+import DHandle
+import BufferMode
 
-hGetBuffering         :: Handle  -> IO BufferMode
-hGetBuffering h        = primHGetBuffering h
+#if !defined(TRACING)
+foreign import "hGetBufferingC" hGetBuffering :: Handle -> IO BufferMode
+
+#else
+foreign import hGetBufferingC :: ForeignObj -> IO BufferMode
+
+hGetBuffering :: Handle -> IO BufferMode	-- BufferMode not done yet.
+hGetBuffering (Handle h) = hGetBufferingC h
+
+#endif

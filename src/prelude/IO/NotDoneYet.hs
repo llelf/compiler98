@@ -1,6 +1,6 @@
 module IO where
 
-import PreludeBuiltin(Handle)
+import DHandle
 import DIOError
 
 hWaitForInput         :: Handle -> Int -> IO Bool

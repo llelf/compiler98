@@ -160,7 +160,7 @@ void gcSocket(void *c)	/* This is another possible second-stage GC */
 /* ForeignObj/Addr stuff */
 /* ********************* */
 
-
+#if 0
 /* The following function *is* visible to the Haskell world. */
 /* makeForeignObj primitive 2 :: Addr -> () -> IO ForeignObj */
 /* -- Note, we assume that the finaliser already has `unsafePerformIO' */
@@ -181,6 +181,7 @@ C_HEADER(primForeignObj)
   nodeptr = (NodePtr)mkRight(mkCInt((Int)fo));
   C_RETURN(nodeptr);
 }
+#endif
 
 /* The following FFI function *is* visible to the Haskell world.         */
 /* -- Note, we assume that the finaliser already has `unsafePerformIO'   */
@@ -212,10 +213,10 @@ C_HEADER(reallyFreeForeignObj)
   IND_REMOVE(nodeptr);
   fo = (void*)GET_INT_VALUE(nodeptr);
 
+  /*printf("reallyFreeForeignObj: releasing %d\n",((int)fo-(int)foreign)/sizeof(ForeignObj));*/
   freeForeignObj(fo);
   C_RETURN(mkUnit());
 }
-
 
 static StablePtr pending[MAX_FOREIGNOBJ];  /* queue for pending finalisers */
 static int       pendingIdx=0;

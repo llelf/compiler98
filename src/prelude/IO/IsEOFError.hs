@@ -1,6 +1,5 @@
-module IO where
+module IO (isEOFError) where
 
-import IO
 import DIOError
 
 isEOFError            :: IOError -> Bool

@@ -1,9 +1,7 @@
 
 module Prelude
     (
-#if !defined(TRACING)
      module AppendFile,
-#endif
      module Catch
     ,IO      -- module DIO
     ,IOError -- module DIOError
@@ -17,19 +15,16 @@ module Prelude
     ,module PutChar
     ,module PutStr
     ,module PutStrLn
-#if !defined(TRACING)
     ,module ReadFile
     ,module ReadIO
     ,module ReadLn
-#endif
     ,module TFilePath
     ,module UserError
     ,module WriteFile
+    ,module _MkIO
     ) where
 
-#if !defined(TRACING)
 import AppendFile
-#endif
 import Catch
 import DIO
 import DIOError
@@ -45,13 +40,13 @@ import Print
 import PutChar
 import PutStr
 import PutStrLn
-#if !defined(TRACING)
 import ReadFile
 import ReadIO
 import ReadLn
-#endif
 import Show_IOError
 import TFilePath
 import UserError
 import WriteFile
 
+-- stuff needed for primitive FFI
+import _MkIO

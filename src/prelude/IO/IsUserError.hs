@@ -1,4 +1,4 @@
-module IO where
+module IO (isUserError) where
 
 import DIOError
 

@@ -1,8 +1,20 @@
-module IO where
+module IO (hPutChar) where
 
 import DIO
-import PreludeBuiltin(Handle)
-import LowIO(primHPutChar)
+import DHandle
 
+#if !defined(TRACING)
 hPutChar              :: Handle -> Char -> IO ()
-hPutChar h chr         = primHPutChar h chr
+hPutChar h c           = IO (\world -> cHPutChar h c)
+
+cHPutChar h c = _hPutChar h c	-- _hPutChar -> special bytecode
+
+#else
+hPutChar              :: Handle -> Char -> IO ()
+hPutChar (Handle h) c  = IO (\world -> cHPutChar h c)
+
+cHPutChar handle ch = _prim _tprim_chPutChar handle ch
+_tprim_chPutChar primitive 3 :: Trace -> R ForeignObj -> R Char
+                                                      -> R (Either IOError ())
+#endif
+

@@ -6,6 +6,7 @@ module Prelude (
     ,_hPutChar,_hGetChar
 #endif
     ,_readCon0, _readConArg, _readCon, _readConInfix -- Don't know why I must be explicit
+    ,unsafePerformIO		-- needed for primitive FFI
     ,module _Id
 
     ,module PreludeList
@@ -141,7 +142,8 @@ import PreludeIO
 import PreludeDebug
 #endif
 
-import Ratio(Rational,(%))	-- needed for literal Rationals
+import Ratio(Rational,(%))		-- needed for literal Rationals
+import IOExtras (unsafePerformIO)	-- needed for primitive FFI
 
 #if !defined(TRACING)
 import Ix  -- to get all Ix instances

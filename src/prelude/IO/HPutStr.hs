@@ -1,7 +1,6 @@
-module IO where
+module IO (hPutStr) where
 
-import DIO
-import PreludeBuiltin(Handle)
+import DHandle
 import HPutChar
 
 hPutStr               :: Handle -> String -> IO ()

@@ -28,7 +28,6 @@ install: $(TARGET)
 cfiles: $(SRCS)
 	$(LOCAL)hmake -clean HInteractive.hs
 	$(LOCAL)hmake -nhc98 -C HInteractive.hs
-	touch cfiles
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
