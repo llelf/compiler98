@@ -44,8 +44,9 @@ isTidOp tid =
   (isNhcOp . head . dropWhile (=='_') . reverse . unpackPS . extractV) tid
 
 isTidCon :: TokenId -> Bool
-isTidCon tid = let (s:_) = (reverse . unpackPS . extractV) tid in
-               (isUpper s || s==':')
+isTidCon tid = isTupleId tid
+               || (let x@(s:_) = (reverse . unpackPS . extractV) tid in
+                   isUpper s || s==':' || x=="[]")
 
 isTupleId :: TokenId -> Bool
 isTupleId (TupleId _)        = True
