@@ -120,7 +120,7 @@ PRELUDET = \
 #	src/tracer/prelude/Monad/*.hs \
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
-	   src/compiler98/*.gc src/compiler98/*.c.inst
+	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
 COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
