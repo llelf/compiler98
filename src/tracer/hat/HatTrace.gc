@@ -32,14 +32,16 @@ module HatTrace (
 	toUndefined,  -- return an undefined node of the same class instance
 	hatNodeType,  -- return type of redex trail node
 	hatParent,    -- return parent of redex trail node
-	hatApplFun,   -- return node for function of an application/constant node
+	hatApplFun,   -- return node for function of an
+                      --   application/constant node
 	hatApplArgs,  -- get list of arguments of an application node
 	hatInfix,     -- get infix priority of an constructor/identifier node
 	hatResult,    -- get result of an application (type complete only)
 	hatName,      -- get name of a name/identifier/constructor node
-	hatProjValue, -- return projected value of projection/SATA/SATB/SATC node
-        hatSourceRef,    -- get information about source position of an application/
-                         -- identifier/constructor node
+	hatProjValue, -- return projected value of projection/SATA/SATB/SATC
+                      --   node
+        hatSourceRef,    -- get information about source position of an
+                         --   application/identifier/constructor node
 	hatValueInt,     -- get Int value of an HatIntNode
 	hatValueChar,    -- get Char value of an HatCharNode
 	hatValueInteger, -- get Integer value of an HatIntegerNode
@@ -93,7 +95,8 @@ module HatTrace (
  -- The following pretty printing functions use C for formatting.
  -- Pretty printing by Haskell is available in the "HatExpression" module!
 
- hatCExpressionStr,   -- get pretty print for expression, using C's pretty printer
+ hatCExpressionStr,   -- get pretty print for expression,
+                      --   using C's pretty printer
  printCExpression,    -- print expression, using C's pretty printer
  printCReduction,     -- print reduction (lhs = rhs) using C's pretty printer
  printCReductionList  -- print list of reductions using C's pretty printer
@@ -111,35 +114,37 @@ type RefNumber       = Int         -- internal only
 
 type HatNodeInternal = (HatTrace,RefNumber)           -- internal only
 
-data HatNode         = HatNode (HatTrace,RefNumber) | -- exported as abstract type only
-		       HatInvalid
+-- HatNode exported as abstract type only
+data HatNode         = HatNode (HatTrace,RefNumber)
+		     | HatInvalid
 
 -- exported data types (exported with constructors)
-data HatNodeType     = HatApplNode      | HatConstantNode |
-                       HatSAT_ANode     | HatSAT_BNode    | HatSAT_CNode |
-                       HatHiddenNode    | HatDummyNode    |
-		       HatProjNode      | HatConstrNode   | HatIdentNode |
-		       HatCaseNode      | HatLambdaNode   | HatIntNode   | HatCharNode  |
-		       HatIntegerNode   | HatRationalNode | HatFloatNode | HatDoubleNode|
-		       HatCStringNode   | HatIfNode       | HatGuardNode |
-		       HatContainerNode | HatInvalidNode  | HatModuleNode
-		       deriving (Show,Eq)
+data HatNodeType     = HatApplNode      | HatConstantNode
+                     | HatSAT_ANode     | HatSAT_BNode    | HatSAT_CNode
+                     | HatHiddenNode    | HatDummyNode
+		     | HatProjNode      | HatConstrNode   | HatIdentNode
+		     | HatCaseNode      | HatLambdaNode   | HatIntNode
+                     | HatCharNode      | HatIntegerNode  | HatRationalNode
+                     | HatFloatNode     | HatDoubleNode
+		     | HatCStringNode   | HatIfNode       | HatGuardNode
+		     | HatContainerNode | HatInvalidNode  | HatModuleNode
+		     deriving (Show,Eq)
 
-data HatApplType     = HatApplied       | HatBlackholed   | HatComplete  | HatValue
-		       deriving (Show,Eq)
+data HatApplType     = HatApplied   | HatBlackholed | HatComplete   | HatValue
+		     deriving (Show,Eq)
 
-data HatInfixType    = HatInfix Int     | HatInfixR Int   | HatInfixL Int| HatNoInfix 
-                       deriving (Show,Eq)
-                       -- HatNoInfix represents default fixity
+data HatInfixType    = HatInfix Int | HatInfixR Int | HatInfixL Int | HatNoInfix
+                     deriving (Show,Eq)
+                     -- HatNoInfix represents default fixity
 
-data ObserveResult   = IdentNotFound    | TopIdentNotFound| Found [HatNode]
+data ObserveResult   = IdentNotFound | TopIdentNotFound | Found [HatNode]
 
-data HatSourceRef    = HatSourceRef {row           :: Int,
-				     column        :: Int,
-				     moduleName    :: String,
-				     moduleFile    :: String,
-				     moduletrusted :: Bool} |
-                       HatNoSourceRef
+data HatSourceRef    = HatSourceRef {row           :: Int
+				    ,column        :: Int
+				    ,moduleName    :: String
+				    ,moduleFile    :: String
+				    ,moduletrusted :: Bool}
+                     | HatNoSourceRef
 
 -- class for all structures representing Hat redexes
 class Show a => HatRep a where
@@ -650,19 +655,19 @@ foreignDetectToList hattrace f =
 %fun getObserveIntStatus :: ForeignObj -> Int
 %call (foreign f query)
 %code
-%     if (observeIdentifier((ObserveQuery) query)==0) status=1;else
-%      if (observeTopIdentifier((ObserveQuery) query)==0) status=2;else
-%       status=0;
+%     if (observeIdentifier((ObserveQuery) query)==0) status=1;
+%     else if (observeTopIdentifier((ObserveQuery) query)==0) status=2;
+%     else status=0;
 %result (int status)
 
 -- convert list of c results in haskell list
 foreignObserveToList :: HatTrace -> ForeignObj -> [HatNode]
 foreignObserveToList hattrace f =
-  foreignObserveToList' 0
+    foreignObserveToList' 0
   where
-   foreignObserveToList' i =
-     let x = (getObservedElement f i) in
-       if (x==0) then [] else (HatNode (hattrace,x)):(foreignObserveToList' (i+1))
+    foreignObserveToList' i =
+      let x = getObservedElement f i in
+      if x==0 then [] else (HatNode (hattrace,x)):(foreignObserveToList' (i+1))
 
 --------------------------------------------------------------------------
 --                                                                      --
@@ -676,13 +681,13 @@ foreignObserveToList hattrace f =
 -- define Eq and Show instances for HatNode
 
 instance Eq HatNode where
-  HatInvalid == HatInvalid = True
+  HatInvalid      == HatInvalid      = True
   (HatNode (a,b)) == (HatNode (c,d)) =
       ((intForeignObjAddr a)==(intForeignObjAddr c))&&(b==d)
   _ == _ = False
 
 instance Show HatNode where
-  show HatInvalid  = "Invalid"
+  show HatInvalid                = "Invalid"
   show (HatNode (hattrace,node)) =
       (show (intForeignObjAddr hattrace))++":"++(show node)
 --------------------------------------------------------------------------
@@ -696,21 +701,20 @@ isInvalidNode node = (hatNodeType node)==HatInvalidNode
 
 hatInvalidNode = HatInvalid  -- don't export structure of HatNode, just a value!
 
--- convert any HatRep to external representation (in order to pass it as an command-line
--- argument to another hat tool).
+-- convert any HatRep to external representation (in order to pass it as a
+-- command-line argument to another hat tool).
 toRemoteRep :: HatRep a => a -> String
 toRemoteRep exp = if (isValidNode exp) then
-		    let (_,node)=(_fromHatNode (toHatNode exp)) in 
-				  show node
-		   else
+		    let (_,node)=(_fromHatNode (toHatNode exp)) in show node
+		  else
                     "INVALID"
 
--- convert  external representation to HatNode (in order to accept an command-line
+-- convert external representation to HatNode (in order to accept a command-line
 -- argument from another hat tool).
 fromRemoteRep :: HatTrace -> String -> HatNode
-fromRemoteRep hattrace s = let i = stoi s in
-				  if (isNothing i) then HatInvalid else
-					 (HatNode (hattrace,(fromJust i)))
+fromRemoteRep hattrace s =
+    let i = stoi s in
+    if (isNothing i) then HatInvalid else (HatNode (hattrace,(fromJust i)))
   where stoi s = stoi' 0 s
 	stoi' i [] =  Just i
 	stoi' i (c:r) | (isDigit c) = stoi' (i*10+(digitToInt c)) r
@@ -718,10 +722,9 @@ fromRemoteRep hattrace s = let i = stoi s in
 
 -- open a trace file
 openTrace :: String -> IO (Maybe HatTrace)
-openTrace s =
-    do
-      h <- c_openTrace s
-      if ((c_isInvalidTrace h)/=0) then return Nothing else return (Just h)
+openTrace s = do
+    h <- c_openTrace s
+    if ((c_isInvalidTrace h)/=0) then return Nothing else return (Just h)
 
 -- get name of a trace file
 %fun hatTraceName :: HatTrace -> String
@@ -742,24 +745,26 @@ _hatNodeType _              = HatInvalidNode
 
 -- get the parent for a HatNode (exportet in HatRep instance for HatNode)
 _hatParent :: HatNode -> HatNode
-_hatParent (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatParent expr)
+_hatParent (HatNode expr@(hattrace,nodenumber)) =
+        _toHatNode (hattrace,c_hatParent expr)
 _hatParent _ = error "Call to \"hatParent\" with \"Invalid\" node."
 
 -- get the original parent of a projection node (former indirection)
 _hatProjRef :: HatNode -> HatNode
-_hatProjRef (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatProjRef expr)
+_hatProjRef (HatNode expr@(hattrace,nodenumber)) =
+        _toHatNode (hattrace,c_hatProjRef expr)
 _hatProjRef _ = error "Call to \"hatProjRef\" with \"Invalid\" node."
 
 -- get the name of an identifier/constructor/module node (exportet in HatRep)
 _hatName :: HatNode -> Maybe String
 _hatName (HatNode hatexpr) = 
- let s = (c_hatName hatexpr) in
-  if (s=="") then Nothing else (Just s)
+    let s = (c_hatName hatexpr) in if (s=="") then Nothing else (Just s)
 _hatName _ = error "Call to \"hatName\" with \"Invalid\" node."
 
 -- get the node representing the function of an application node
 _hatApplFun :: HatNode -> HatNode
-_hatApplFun (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatApplFun expr)
+_hatApplFun (HatNode expr@(hattrace,nodenumber)) =
+        _toHatNode (hattrace,c_hatApplFun expr)
 _hatApplFun _ = error "Call to \"hatApplFun\" with \"Invalid\" node."
 
 -- return arity of an application node (exportet in HatRep instance for HatNode)
@@ -768,48 +773,51 @@ _hatApplArity = c_hatApplArity . _fromHatNode
 
 -- get the list of arguments of an application node
 _hatApplArgs :: HatNode -> [HatNode]
-_hatApplArgs (HatNode expr@(hattrace,h)) = gethatArgs 0 (c_hatApplArity expr)
- where gethatArgs _ 0 = []
-       gethatArgs i j = (HatNode (hattrace,(gethatArgInternal expr i))):
-			(gethatArgs (i+1) (j-1))
+_hatApplArgs (HatNode expr@(hattrace,h)) =
+    gethatArgs 0 (c_hatApplArity expr)
+  where gethatArgs _ 0 = []
+        gethatArgs i j = (HatNode (hattrace,(gethatArgInternal expr i))):
+			 (gethatArgs (i+1) (j-1))
 _hatApplArgs _ = error "Call to \"hatApplArgs\" with \"Invalid\" node."
 
 -- get infix priority and type of an application node
 _hatInfix :: HatNode -> HatInfixType
 _hatInfix (HatNode expr) = 
-  let infixP = (c_hatInfixValue expr) in 
-   toInfixType' (infixP `mod` 4) (infixP `div` 4)
+    toInfixType' (infixP `mod` 4) (infixP `div` 4)
   where
-   toInfixType' 0 infixP = HatInfix infixP
-   toInfixType' 1 infixP = HatInfixR infixP
-   toInfixType' 2 infixP = HatInfixL infixP
-   toInfixType' _ _      = HatNoInfix
+    infixP = c_hatInfixValue expr
+    toInfixType' 0 infixP = HatInfix infixP
+    toInfixType' 1 infixP = HatInfixR infixP
+    toInfixType' 2 infixP = HatInfixL infixP
+    toInfixType' _ _      = HatNoInfix
 _hatInfix _ = error "Call to \"hatInfix\" with \"Invalid\" node."
 
 -- get type of application (Applied,Blackholed,Complete,Value) 
 _hatApplType :: HatNode -> Maybe HatApplType
 _hatApplType = c_hatApplType . _fromHatNode
 
--- get result of an application (if application of type complete, otherwise Nothing)
+-- get result of an application
+--  (if application of type complete, otherwise Nothing)
 _hatResult :: HatNode -> HatNode
-_hatResult (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatResult expr)
+_hatResult (HatNode expr@(hattrace,nodenumber)) =
+        _toHatNode (hattrace,c_hatResult expr)
 _hatResult _ = error "Call to \"hatResult\" with \"Invalid\" node."
 
--- get information about source position, for Identifier/Constructor/Application/Constant
--- nodes
--- returns a HatSourceRef (RowPosition,ColumnPosition,ModuleName,ModuleFile,Trusted)
+-- get information about source position,
+-- for Identifier/Constructor/Application/Constant nodes
+-- returns a HatSourceRef (RowPosition,ColumnPosition,ModuleName
+--				,ModuleFile,Trusted)
 _hatSourceRef :: HatNode -> HatSourceRef
 _hatSourceRef (HatNode expr@(hattrace,nodenumber)) =
     let srcrefNode = (hattrace,c_hatSrcRefNode expr);
-	modinfoNode = if ((snd srcrefNode)==0) then (hattrace,0) else 
+	modinfoNode = if snd srcrefNode == 0 then (hattrace,0) else 
                         (hattrace,c_hatModInfo srcrefNode) in
-      if ((snd modinfoNode)==0) then HatNoSourceRef else
-	(HatSourceRef
-	 (c_hatPosnRow srcrefNode)
-	 (c_hatPosnColumn srcrefNode)
-	 (c_hatModName modinfoNode)
-	 (c_hatModSrcName modinfoNode)
-	 ((c_hatModSrcTrusted modinfoNode)==1))
+    if snd modinfoNode == 0 then HatNoSourceRef
+    else HatSourceRef (c_hatPosnRow srcrefNode)
+                      (c_hatPosnColumn srcrefNode)
+                      (c_hatModName modinfoNode)
+                      (c_hatModSrcName modinfoNode)
+                      ((c_hatModSrcTrusted modinfoNode)==1)
 _hatSourceRef _ = error "Call to \"hatSourceRef\" with \"Invalid\" node."
 
 -- get node representing the "main" caf
@@ -822,8 +830,9 @@ hatErrorRedex hattrace = _toHatNode (hattrace,c_hatErrorRedex hattrace)
 
 -- get error message of an aborted evaluation
 hatErrorMessage :: HatTrace -> Maybe String
-hatErrorMessage hattrace = let e = c_hatErrorMessage hattrace in
-  if (e=="") then Nothing else (Just e)
+hatErrorMessage hattrace =
+    let e = c_hatErrorMessage hattrace in
+    if e=="" then Nothing else Just e
 
 -- get the first node within the HatTrace file
 hatTraceFirst :: HatTrace -> HatNode
@@ -834,23 +843,24 @@ hatTraceNext :: HatRep a => a -> HatNode
 hatTraceNext exp =
     let node = toHatNode exp;
 	HatNode (hattrace,_) = node in
-	if (isInvalidNode node) then HatInvalid else
-	   _toHatNode (hattrace,c_hatNext (_fromHatNode node))
+    if (isInvalidNode node) then HatInvalid
+    else _toHatNode (hattrace,c_hatNext (_fromHatNode node))
 
--- get leftmost outermost symbol of an application (returns an identifier/constructor)
+-- get leftmost outermost symbol of an application
+--  (returns an identifier/constructor)
 hatLeftmost :: HatRep a => a -> HatNode
 hatLeftmost exp =
-    let node = (toHatNode exp) in
-      if (isValidNode node) then
+    let node = toHatNode exp in
+    if isValidNode node then
         let (HatNode expr@(hattrace,nodenumber)) = node in
-	    _toHatNode (hattrace,c_hatLeftmost expr)
-       else error "Call to \"hatLeftmost\" with \"Invalid\" node."
+        _toHatNode (hattrace,c_hatLeftmost expr)
+    else error "Call to \"hatLeftmost\" with \"Invalid\" node."
 
 hatIsCAF      :: HatRep a => a -> Bool
 hatIsCAF exp =
-    let node = (toHatNode exp) in
-      if (isValidNode node) then (c_hatIsCAF (_fromHatNode node)) == 1
-	 else error "Call to \"hatIsCAF\" with \"Invalid\" node."
+    let node = toHatNode exp in
+    if isValidNode node then c_hatIsCAF (_fromHatNode node) == 1
+    else error "Call to \"hatIsCAF\" with \"Invalid\" node."
 
 hatIsTopLevel :: HatRep a => a -> Bool
 hatIsTopLevel exp =
@@ -860,9 +870,9 @@ hatIsTopLevel exp =
 
 hatIsTrusted  :: HatRep a => a -> Bool
 hatIsTrusted exp =
-    let node = (toHatNode exp) in
-     if (isValidNode node) then (c_hatIsTrusted (_fromHatNode node))==1
-	else error "Call to \"hatIsTrusted\" with \"Invalid\" node."
+    let node = toHatNode exp in
+    if isValidNode node then c_hatIsTrusted (_fromHatNode node) == 1
+    else error "Call to \"hatIsTrusted\" with \"Invalid\" node."
 
 --------------------------------------------------------------------------
 -- EDT interface
@@ -870,42 +880,45 @@ hatIsTrusted exp =
 -- returns a list of children for a node
 edtChildren :: HatRep a => a -> [HatNode]
 edtChildren exp =
-    let node = (toHatNode exp) in
-     if (isValidNode node) then
+    let node = toHatNode exp in
+    if isValidNode node then
        let (HatNode e@(hattrace,nodenumber)) = node in
-	   --(foreignObjToList hattrace (getEDTForeignObj e))
-	   (foreignDetectToList hattrace (getDetectInt hattrace nodenumber))
-      else error "Call to \"edtChildren\" with \"Invalid\" node."
+    -- foreignObjToList hattrace (getEDTForeignObj e)
+       foreignDetectToList hattrace (getDetectInt hattrace nodenumber)
+    else error "Call to \"edtChildren\" with \"Invalid\" node."
 
 --------------------------------------------------------------------------
 -- observational interface
 
 -- returns observations within hattrace: all applications of "ident", within
---  a function "topIdent" (leave empty otherwise). If recursive is true, recursive
---  calls to the application are omitted
+--  a function "topIdent" (leave empty otherwise). If recursive is true,
+--  recursive calls to the application are omitted
 observe :: HatTrace -> String -> String -> Bool -> ObserveResult
 observe hattrace ident topIdent recursive =
-  let x = (getObserveInt hattrace ident topIdent (if recursive then 1 else 0));
-      s = (getObserveIntStatus x) in
-   if ((s==2)&&((null topIdent)==False)) then TopIdentNotFound else
-    if (s==1) then IdentNotFound else
-     (Found (foreignObserveToList hattrace x))
+  let x = getObserveInt hattrace ident topIdent (if recursive then 1 else 0)
+      s = getObserveIntStatus x
+  in
+  if s==2 && not (null topIdent) then
+       TopIdentNotFound
+  else if s==1 then
+       IdentNotFound
+  else Found (foreignObserveToList hattrace x)
 
 -- returns observations within hattrace: all applications/values at the given
--- source position are returned. If moduleName is an empty string, the main module
--- is considered.
+-- source position are returned. If moduleName is an empty string, the main
+-- module is considered.
 observeSrc :: HatTrace -> String -> Int -> Int -> ObserveResult
 observeSrc hattrace moduleName line column =
-  let x = (getObserveSrcInt hattrace moduleName line column) in
-     (Found (foreignObserveToList hattrace x))
+  let x = getObserveSrcInt hattrace moduleName line column
+  in Found (foreignObserveToList hattrace x)
 
 -- returns observations within hattrace: all applications/values at the given
--- source position are returned. If moduleName is an empty string, the main module
--- is considered.
+-- source position are returned. If moduleName is an empty string, the main
+-- module is considered.
 observables :: HatTrace -> ObserveResult
 observables hattrace =
-  let x = (getObservablesInt hattrace) in
-     (Found (foreignObserveToList hattrace x))
+  let x = getObservablesInt hattrace
+  in Found (foreignObserveToList hattrace x)
 
 -- predicates for result returned by observe
 
