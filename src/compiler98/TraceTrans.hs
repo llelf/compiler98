@@ -27,11 +27,11 @@ module TraceTrans (traceTrans,maybeStripOffQual) where
 import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified),isTidCon
-               ,qualify,visible,extractV,extractM
+               ,qualify,visible,extractV,extractM,dropM
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq,t_Colon,t_List)
 import PackedString (PackedString,packString,unpackPS)
-import Extra (Pos,noPos,strPos,fromPos)
+import Extra (Pos,noPos,strPos,fromPos,mapListSnd,mapSnd)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
@@ -162,12 +162,12 @@ tEntity (EntityConClsAll pos id) = [EntityConClsAll pos (nameTransTyConCls id)]
 tEntity (EntityConClsSome pos id posIds)
   | not (null pCons) =  -- i.e. definitely a TyCon
     (EntityConClsSome pos (nameTransTyConCls id)
-                          (mapSnd nameTransCon pCons
-                           ++ mapSnd nameTransField pFields))
+                          (mapListSnd nameTransCon pCons
+                           ++ mapListSnd nameTransField pFields))
     : map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) pCons
     -- ++ map (\(pos,id) -> EntityVar pos (nameTraceInfoField id)) pFields
   | otherwise = -- i.e. probably a TyClass
-    [EntityConClsSome pos (nameTransTyConCls id) (mapSnd nameTransVar posIds)]
+    [EntityConClsSome pos (nameTransTyConCls id) (mapListSnd nameTransVar posIds)]
   where
   (pCons,pFields)   = partition (isTidCon.tokenId.snd) posIds
 
@@ -351,9 +351,10 @@ tDecl _ _ (DeclData sort contexts lhsTy constrs derive) =
   ([DeclData sort (tContexts contexts) (tSimple lhsTy) 
     (map tConstr constrs) []] 
     -- "derive" should be empty, because transformed classes cannot be derived
-  ,fieldSelectorDecls
+  ,instDecl:fieldSelectorDecls
   ,foldr (uncurry addCon) fieldSelectorConsts (map getCon constrs))
   where
+  instDecl = wrapValInstDecl (getPos lhsTy) contexts lhsTy constrs
   (fieldSelectorDecls,fieldSelectorConsts) = mkFieldSelectors constrs
   getCon (Constr pos id _) = (pos,id)
   getCon (ConstrCtx _ _ pos id _) = (pos,id)
@@ -529,6 +530,48 @@ tConstr (ConstrCtx tyVars contexts pos conId tyArgs) =
     pos (nameTransCon conId) (tTyArgs tyArgs)
 
 
+-- build the instance of class WrapVal for type with given data constructors
+-- this instance is needed for constructing and updating with labelled fields
+wrapValInstDecl :: Pos -> [Context TraceId] -> Simple TraceId 
+                -> [Constr TraceId] -> Decl TokenId
+wrapValInstDecl pos contexts ty constrs =
+  DeclInstance pos (map (fmap tokenId) contexts) tokenWrapValClass 
+    (fmap tokenId (simpleToType ty)) 
+    (DeclsParse [DeclFun pos ({-dropM-} tokenWrapValFun) (map wrapValFun constrs)])
+  where
+  traceTokenWrapValFun = mkLambdaBound (dropM tokenWrapValFun)
+  sr = ExpVar pos (nameSR traceTokenWrapValFun)
+  parent = ExpVar pos (nameTrace traceTokenWrapValFun)
+  varId = nameTrace2 traceTokenWrapValFun -- actually not a trace
+  var = ExpVar pos varId
+  infiniteTraces = map (ExpVar pos) . nameArgs $ traceTokenWrapValFun
+  wrapValFun :: Constr TraceId -> Fun TokenId
+  wrapValFun constr =
+    Fun [sr,PatAs pos varId consApp,parent] 
+      (Unguarded (wrapExp pos var consAppTrace)) noDecls
+    where
+    consAppTrace = 
+      if numOfArgs == 0 then consNm
+        else ExpApplication pos .
+               (ExpVar pos (tokenMkTAp numOfArgs) :) . (parent :) .
+               (consNm :) . (++ [sr]) $ traces 
+    consNm = 
+      ExpApplication pos 
+        [ExpVar pos tokenMkConst
+        ,parent,ExpVar pos (nameTraceInfoCon consId),sr]
+    consApp =
+      if numOfArgs == 0 then ExpCon pos (tokenId consId)
+        else ExpApplication pos . (ExpCon pos (tokenId consId) :) .
+               map (wrapExp pos (PatWildcard pos)) $ traces
+    consId = getConstrId constr
+    traces = take numOfArgs infiniteTraces :: [Exp TokenId]
+    numOfArgs = sum . map (repeated . fst) $ constrArgs
+    repeated Nothing = 1
+    repeated (Just labels) = length labels
+    constrArgs :: [(Maybe [(Pos,TraceId)],Type TraceId)]
+    constrArgs = getConstrArgumentList constr
+
+
 tHaskellPrimitive :: Pos -> TokenId -> TraceId -> Arity -> Type TraceId 
                   -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
 tHaskellPrimitive pos hasId fnId arity ty 
@@ -600,9 +643,7 @@ mkFieldSelectors constrs =
     nubBy (\(_,id1) (_,id2) -> tokenId id1 == tokenId id2) posFields
   posFields = 
     concat [pf | (Just pf,_) <- concatMap getConstrArgumentList constrs]
-  getConstrArgumentList :: Constr id -> [(Maybe [(Pos,id)],Type id)]
-  getConstrArgumentList (Constr _ _ xs) = xs
-  getConstrArgumentList (ConstrCtx _ _ _ _ xs) = xs
+
 
 -- construct the traced version of a field selector, using the 
 -- normal field selector, i.e. from zname :: T -> R Int construct
@@ -903,17 +944,18 @@ continuationToExp parent (Function fun args) =
   ExpApplication noPos (ExpVar noPos fun : parent : args)
 
 
+mapMerge2 :: (a -> (b,ModuleConsts)) -> [a] -> ([b],ModuleConsts)
+mapMerge2 f = mapSnd (foldr merge emptyModuleConsts) . unzip . map f
+
+
 -- Transform expressions
 
 tExps :: Bool           -- traced
       -> Exp TokenId    -- parent
       -> [Exp TraceId]  -- expressions
       -> ([Exp TokenId],ModuleConsts)
-tExps traced parent = 
-  foldr 
-    (\e (es',cs) -> let (e',c) = tExp traced False parent e 
-                    in (e':es',c `merge` cs))
-    ([],emptyModuleConsts)
+tExps traced parent = mapMerge2 (tExp traced False parent)
+
 
 -- Second argument True iff the parent is equal to this expression, i.e.,
 -- the result of this expression is the same as the result of the parent.
@@ -1012,8 +1054,6 @@ tExp traced cr parent (ExpType pos e contexts ty) =
   ,eConsts)
   where
   (e',eConsts) = tExp traced cr parent e
-tExp traced cr parent (ExpRecord e fields) =
-  error "Cannot yet trace record expressions"
 tExp traced cr parent (ExpApplication pos (f@(ExpCon _ _) : es))=
   tConApp traced parent f es
 tExp traced cr parent (ExpApplication pos es) =
@@ -1095,7 +1135,38 @@ tExp traced cr parent (ExpList pos es) =
   where
   (es',esConsts) = tExps traced parent es
   sr = mkSRExp pos traced
+tExp traced cr parent (ExpRecord (ExpCon pos consId) fields) = -- construction
+  (ExpApplication pos 
+    [ExpVar pos tokenWrapValFun,sr,ExpRecord consUndefined fields',parent]
+  ,pos `addPos` fieldsConsts)
+  where
+  consUndefined = 
+    if consArity == 0 then ExpCon pos (nameTransCon consId)
+      else ExpApplication pos . (ExpCon pos (nameTransCon consId) :) .
+             take consArity . repeat $ ExpVar pos tokenUndefined
+  Just consArity = arity consId
+  sr = mkSRExp pos traced
+  (fields',fieldsConsts) = mapMerge2 (tField traced parent) fields
+tExp traced cr parent (ExpRecord exp fields) = -- update
+  (ExpApplication pos
+    [combUpdate pos traced,sr,parent,exp'
+    ,ExpLambda pos [var] (ExpRecord var fields')]
+  ,pos `addPos` expConsts `merge` fieldsConsts)
+  where
+  var = ExpVar pos (nameFromPos pos)
+  sr = mkSRExp pos traced
+  pos = getPos fields
+  (exp',expConsts) = tExp traced False parent exp
+  (fields',fieldsConsts) = mapMerge2 (tField traced parent) fields
 tExp _ _ _ _ = error "tExp: unknown sort of expression"
+
+
+tField :: Bool -> Exp TokenId -> Field TraceId -> (Field TokenId,ModuleConsts)
+tField traced parent (FieldExp pos labelId exp) =
+  (FieldExp pos (nameTransField labelId) exp',expConsts)
+  where
+  (exp',expConsts) = tExp traced False parent exp
+
 
 -- return False if matching the pattern may fail
 -- otherwise try to return True
@@ -1301,7 +1372,7 @@ tTyArgs = map tTyArg
 tTyArg :: (Maybe [(Pos,TraceId)],Type TraceId)
        -> (Maybe [(Pos,TokenId)],Type TokenId)
 tTyArg (maybePosIds,ty) = 
-  (fmap (mapSnd nameTransField) maybePosIds,wrapType (tType ty))
+  (fmap (mapListSnd nameTransField) maybePosIds,wrapType (tType ty))
 
 
 -- ty ==> SR -> Trace -> [[ty]]
@@ -1356,13 +1427,13 @@ tSimple (Simple pos tycon posArgs) =
   Simple pos (nameTransTyConCls tycon) (tPosTyVars posArgs)
 
 tPosExps :: [(Pos,TraceId)] -> [(Pos,TokenId)]
-tPosExps = mapSnd nameTransVar
+tPosExps = mapListSnd nameTransVar
 
 tPosClss :: [(Pos,TraceId)] -> [(Pos,TokenId)]
-tPosClss = mapSnd nameTransTyConCls
+tPosClss = mapListSnd nameTransTyConCls
 
 tPosTyVars :: [(Pos,TraceId)] -> [(Pos,TokenId)]
-tPosTyVars = mapSnd nameTransTyVar
+tPosTyVars = mapListSnd nameTransTyVar
 
 
 -- ----------------------------------------------------------------------------
@@ -1591,6 +1662,10 @@ mkConstGuard pos parent guardTrace traced =
     ,mkConst parent (ExpVar pos tokenMkAtomGuard) pos traced
     ,guardTrace,parent,mkSRExp pos traced]
 
+combUpdate :: Pos -> Bool -> Exp TokenId
+combUpdate pos traced = 
+  ExpVar pos (if traced then tokenUpdate else tokenUUpdate)
+
 -- apply data constructor R
 wrapExp :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
 wrapExp pos ev et = ExpApplication pos [ExpCon pos tokenR,ev,et]
@@ -1714,6 +1789,11 @@ tokenFun = mkTracingTokenArity "fun"
 tokenUFun :: Arity -> TokenId
 tokenUFun = mkTracingTokenArity "ufun"
 
+tokenUpdate :: TokenId
+tokenUpdate = mkTracingToken "update"
+tokenUUpdate :: TokenId
+tokenUUpdate = mkTracingToken "uupdate"
+
 tokenIndir :: TokenId
 tokenIndir = mkTracingToken "indir"
 
@@ -1728,7 +1808,15 @@ tokenFromLitString = mkTracingToken "fromLitString"
 tokenFromExpList :: TokenId
 tokenFromExpList = mkTracingToken "fromExpList"
 
+tokenWrapValClass :: TokenId
+tokenWrapValClass = mkTracingToken "WrapVal"
+tokenWrapValFun :: TokenId
+tokenWrapValFun = mkTracingToken "wrapVal"
+
 -- tokens of the Prelude
+
+tokenUndefined :: TokenId
+tokenUndefined = mkTPreludeToken "gundefined"
 
 -- for integer literals
 tokenFromInteger :: TokenId
@@ -1833,9 +1921,6 @@ mkFailExp pos parent = ExpApplication pos [ExpVar pos tokenFatal,parent]
 mkTupleExp :: Pos -> [Exp TokenId] -> Exp TokenId
 mkTupleExp pos es = ExpApplication pos (ExpCon pos (t_Tuple (length es)): es)
 
-mapSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
-mapSnd f = map (\(x,y) -> (x,f y))
-
 
 -- ----------------------------------------------------------------------------
 
@@ -1864,7 +1949,7 @@ instance Functor Entity where
   fmap f (EntityVar pos id) = EntityVar pos (f id)
   fmap f (EntityConClsAll pos id) = EntityConClsAll pos (f id)
   fmap f (EntityConClsSome pos id pids) =
-				EntityConClsSome pos (f id) (mapSnd f pids)
+				EntityConClsSome pos (f id) (mapListSnd f pids)
 
 instance Functor InfixClass where
   fmap f InfixDef = InfixDef
@@ -1907,7 +1992,7 @@ instance Functor Decl where
   fmap f (DeclForeignImp pos callconv extfun id a fspec ty id') =
     DeclForeignImp pos callconv extfun (f id) a fspec (fmap f ty) (f id')
   fmap f (DeclVarsType vars contexts ty) =
-    DeclVarsType (mapSnd f vars) (map (fmap f) contexts) (fmap f ty)
+    DeclVarsType (mapListSnd f vars) (map (fmap f) contexts) (fmap f ty)
   fmap f (DeclPat alt) = DeclPat (fmap f alt)
   fmap f (DeclFun pos id funs) = DeclFun pos (f id) (map (fmap f) funs)
   fmap f (DeclIgnore s) = DeclIgnore s
@@ -1943,7 +2028,7 @@ instance Functor Type where
   fmap f (TypeStrict pos ty) = TypeStrict pos (fmap f ty)
 
 instance Functor Simple where
-  fmap f (Simple pos id ids) = Simple pos (f id) (mapSnd f ids)
+  fmap f (Simple pos id ids) = Simple pos (f id) (mapListSnd f ids)
 
 instance Functor Context where
   fmap f (Context pos id (p,id2)) = Context pos (f id) (p,f id2)
@@ -1951,12 +2036,12 @@ instance Functor Context where
 instance Functor Constr where
   fmap f (Constr pos id fields) = Constr pos (f id) (mapFields f fields)
   fmap f (ConstrCtx vars contexts pos id fields) =
-    ConstrCtx (mapSnd f vars) (map (fmap f) contexts) pos (f id) 
+    ConstrCtx (mapListSnd f vars) (map (fmap f) contexts) pos (f id) 
       (mapFields f fields)
 
 mapFields :: (a -> b) 
           -> [(Maybe [(Pos,a)],Type a)] -> [(Maybe [(Pos,b)],Type b)]
-mapFields f = map (\(may,ty)-> (fmap (mapSnd f) may, fmap f ty))
+mapFields f = map (\(may,ty)-> (fmap (mapListSnd f) may, fmap f ty))
 
 instance Functor Stmt where
   fmap f (StmtExp exp) = StmtExp (fmap f exp)

@@ -11,6 +11,9 @@ import NonStdTrace
 import IOExts (trace)
 #endif
 
+mapListSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
+mapListSnd f = map (mapSnd f)
+
 foldls f z [] = z
 foldls f z (x:xs) =
   let z' = f z x

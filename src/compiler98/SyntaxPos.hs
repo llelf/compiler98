@@ -68,6 +68,10 @@ instance HasPos (FixId a) where
     getPos (FixCon pos a) = pos
     getPos (FixVar pos a) = pos
 
+instance HasPos (Field a) where
+    getPos (FieldExp pos _ _) = pos
+    getPos (FieldPun pos _) = pos
+
 -----------------------
 
 getPosList [] = noPos

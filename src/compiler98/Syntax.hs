@@ -177,6 +177,10 @@ data Sig id = Sig [(Pos,id)] (Type id)  -- for interface file?
 
 data Simple id = Simple Pos id [(Pos,id)]
 
+simpleToType :: Simple id -> Type id
+simpleToType (Simple pos tcId pargs) = 
+  TypeCons pos tcId (map (TypeVar pos . snd) pargs)
+
 data Context id = Context Pos id (Pos,id)
 
 
@@ -201,6 +205,15 @@ data Constr id = Constr
                    Pos 
                    id        
                    [(Maybe [(Pos,id)],Type id)]
+
+getConstrId :: Constr id -> id
+getConstrId (Constr _ id _) = id
+getConstrId (ConstrCtx _ _ _ id _) = id
+
+getConstrArgumentList :: Constr id -> [(Maybe [(Pos,id)],Type id)]
+getConstrArgumentList (Constr _ _ xs) = xs
+getConstrArgumentList (ConstrCtx _ _ _ _ xs) = xs
+
 
 type Instance id = Type id  -- Not TypeVar
 
