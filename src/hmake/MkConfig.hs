@@ -144,10 +144,10 @@ configure Ghc ghcpath = do
 			{ compilerStyle = Ghc
 			, compilerPath  = ghcpath
 			, compilerVersion = ghcversion
-			, includePaths = ghcDirs ghcsym incdir1
+			, includePaths  = ghcDirs ghcsym incdir1
 			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
 			, extraCompilerFlags = []
-			, isHaskell98 = ghcsym>=400 }
+			, isHaskell98   = ghcsym>=400 }
         else do
           let incdir2 = dir++"/lib/imports"
           ok <- doesDirectoryExist incdir2
@@ -156,30 +156,38 @@ configure Ghc ghcpath = do
 			{ compilerStyle = Ghc
 			, compilerPath  = ghcpath
 			, compilerVersion = ghcversion
-			, includePaths = ghcDirs ghcsym incdir2
+			, includePaths  = ghcDirs ghcsym incdir2
 			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
 			, extraCompilerFlags = []
-			, isHaskell98 = ghcsym>=400 }
+			, isHaskell98   = ghcsym>=400 }
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
     else do
-      dir <- runAndReadStdout ("grep '^libdir=' "++fullpath++" | head -1 | "
-                               ++ "sed 's/^libdir=.\\(.*\\)./\\1/'")
-      dir <- if null dir then
-                 runAndReadStdout ("grep '^TOPDIROPT=' "++fullpath
-                                   ++" | sed 's/^TOPDIROPT=.-B\\(.*\\).;/\\1/'")
-             else return dir
-      let incdir1 = dir++"/imports"
+      libdir <- runAndReadStdout ("grep '^libdir=' "++fullpath++" | head -1 |"
+                                  ++" sed 's/^libdir=.\\(.*\\)./\\1/'")
+      libdir <- if null libdir then
+                  runAndReadStdout ("grep '^TOPDIROPT=' "++fullpath++" |"
+                                    ++" sed 's/^TOPDIROPT=.-B\\(.*\\).;/\\1/'")
+                else return libdir
+      let incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
-        then return CompilerConfig
+        then do
+          let ghcpkg = dirname fullpath++"/ghc-pkg-"++ghcversion
+          pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+          idirs <- mapM (\p-> runAndReadStdout
+                                  (ghcpkg++" --show-package="
+                                   ++(if last p==',' then init p else p)
+                                   ++" --field=import_dirs"))
+                        (words pkgs)
+          return CompilerConfig
 			{ compilerStyle = Ghc
 			, compilerPath  = ghcpath
 			, compilerVersion = ghcversion
-			, includePaths = ghcDirs ghcsym incdir1
+			, includePaths  = pkgDirs libdir idirs
 			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
 			, extraCompilerFlags = []
-			, isHaskell98 = True }
+			, isHaskell98   = True }
         else do ioError (userError ("Can't find ghc includes at "++incdir1))
   where
     ghcDirs n root | n < 400   = [root]
@@ -189,6 +197,12 @@ configure Ghc ghcpath = do
                                                      ,"posix","num","text"
                                                      ,"util","hssource"
                                                      ,"win32","concurrent"]
+    pkgDirs libdir dirs =
+        map (\dir-> if "$libdir" `isPrefixOf` dir
+                    then libdir++drop 7 dir
+                    else dir)
+            (concatMap words dirs)
+
 configure Nhc98 nhcpath = do
   fullpath <- which nhcpath
   nhcversion <- runAndReadStdout (nhcpath ++ " --version 2>&1 | head -1 | "
