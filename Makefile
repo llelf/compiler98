@@ -85,7 +85,8 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-LIBRARIES = src/libraries
+LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
+	    src/libraries/base
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -145,7 +146,8 @@ HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc
+INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc \
+	  include/base
 DOC = docs/*
 MAN = man/*.1
 HATTOOLSET= hat-stack hat-check hat-detect hat-observe hat-trail hat-view 
@@ -160,7 +162,7 @@ TARGETS= runtime prelude libraries greencard hp2graph hattools \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 prelude-$(CC) pragma-$(CC) \
+	 prelude-$(CC) pragma-$(CC) libraries-$(CC) \
 	 hat-nhc hat-ghc hat-trans-ghc hat-trans-nhc hat-lib-ghc hat-lib-nhc \
 	 hat-tools-ghc hat-tools-nhc
 
@@ -183,7 +185,7 @@ help:
 	@echo "Main targets include:  basic heapprofile timeprofile tracer"
 	@echo "                       all (= basic + heapprofile + timeprofile)"
 	@echo "                       hat config install clean realclean"
-	@echo "  (other subtargets:   compiler hmake runtime prelude"
+	@echo "  (other subtargets:   compiler hmake runtime prelude libraries"
 	@echo "                       greencard hp2graph hattools hoodui"
 	@echo "                       hat-trans hat-lib hat-tools)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
@@ -202,7 +204,7 @@ basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude \
 basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude \
 								libraries
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
-		 greencard-$(CC) hmake-$(CC)
+		 greencard-$(CC) hmake-$(CC) libraries-$(CC)
 
 all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #tracer #hoodui
 
@@ -364,6 +366,9 @@ $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC config
 	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
+$(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
+	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 fromC
+	touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
 
 
 script/errnogen.c: script/GenerateErrNo.hs
@@ -431,7 +436,7 @@ binDist:
 srcDist: $(TARGDIR)/timepreludeC \
 		$(TARGDIR)/heappreludeC $(TARGDIR)/preludeC \
 		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
-		$(TARGDIR)/pragmaC nolinks
+		$(TARGDIR)/pragmaC $(TARGDIR)/librariesC nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
@@ -488,6 +493,9 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
 	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
+$(TARGDIR)/librariesC: $(LIBRARIES)
+	cd src/libraries/base;  $(MAKE) -f Makefile.nhc98 cfiles
+	touch $(TARGDIR)/librariesC
 
 
 
@@ -598,7 +606,7 @@ cleanC:
 	cd src/prelude;		$(MAKE) CFG=p cleanC
 	cd src/prelude;		$(MAKE) CFG=z cleanC
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
-				tracepreludeC timepreludeC heappreludeC
+			tracepreludeC timepreludeC heappreludeC librariesC
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
