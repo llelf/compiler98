@@ -92,7 +92,7 @@ dumpId state profile modinfo output trust ((top, pos, i, tid), lab) =
     where idnhc = fixStr (show tid) ""
           (isVar, pri) = 
 	      case lookupIS state i of
-	          Just (i@(InfoConstr _ _ _ _ _ _)) -> (False, fixityI i)
+	          Just (i@(InfoConstr _ _ _ _ _ _ _)) -> (False, fixityI i)
 	          Just (i@(InfoIMethod _ _ _ _ m)) -> 
 		      case lookupIS state m of 
 		          Just im -> (True, fixityI im)

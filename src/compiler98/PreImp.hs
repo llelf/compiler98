@@ -7,52 +7,72 @@ import ImportState(ImportState)
 import TokenId(TokenId)
 import Syntax(Simple,Type,Context,Constr)
 
-type HideDeclType =    ImportState -> (Int,Bool) -> Simple TokenId 
-                    -> Type TokenId -> ImportState
-type HideDeclData =    ImportState -> Either Bool Bool -> [Context TokenId] 
-                    -> Simple TokenId -> [Constr TokenId] -> [(Int,TokenId)] 
+type HideDeclType = ImportState
+                    -> (Int,Bool)		-- depth annotation
+                    -> Simple TokenId 		-- LHS of synonym
+                    -> Type TokenId		-- RHS of synonym
                     -> ImportState
-type HideDeclDataPrim = ImportState -> (Int,TokenId) -> Int -> ImportState
-type HideDeclClass =   ImportState -> [Context TokenId] -> (Int,TokenId) 
-                     -> (Int,TokenId) 
+type HideDeclData = ImportState
+                    -> Either Bool Bool		-- unboxed?
+                    -> [Context TokenId] 	-- class contexts
+                    -> Simple TokenId		-- LHS of data decl
+                    -> [Constr TokenId]		-- constructors
+                    -> [[TokenId]]		-- `needs' = actually exported
+                    -> [(Int,TokenId)] 		-- `deriving' classes
+                    -> ImportState
+type HideDeclDataPrim = ImportState
+                        -> (Int,TokenId)
+                        -> Int
+                        -> ImportState
+type HideDeclClass = ImportState
+                     -> [Context TokenId]	-- class contexts
+                     -> (Int,TokenId) 		-- class name
+                     -> (Int,TokenId) 		-- type variable
                      -> [([((Int,TokenId),Maybe Int)]
                          ,[Context TokenId]
                          ,Type TokenId
-                         )] 
+                         )] 			-- methods
+                     -> [[TokenId]]		-- `needs' = actually exported
                      -> ImportState
-type HideDeclInstance =    ImportState -> [Context TokenId] -> (Int,TokenId) 
-                        -> Type TokenId -> ImportState
-type HideDeclVarsType = ImportState -> [((Int,TokenId),Maybe Int)] 
-                        -> [Context TokenId] -> Type TokenId -> ImportState
+type HideDeclInstance = ImportState
+                        -> [Context TokenId]	-- class contexts
+                        -> (Int,TokenId) 	-- class name
+                        -> Type TokenId		-- type of this instance
+                        -> ImportState
+type HideDeclVarsType = ImportState
+                        -> [((Int,TokenId),Maybe Int)] 
+                        -> [Context TokenId]
+                        -> Type TokenId
+                        -> ImportState
 type HideDeclIds = (HideDeclType,HideDeclData,HideDeclDataPrim
                    ,HideDeclClass,HideDeclInstance,HideDeclVarsType)
 
 
--- Keep this selectors in sync with the tuple built by mkNeed in PreImport  
+-- Keep these selectors in sync with the tuple built by mkNeed in PreImport  
 
 hType :: HideDeclIds -> HideDeclType
-hType     (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclType
+hType (hideDeclType,_,_,_,_,_) = hideDeclType
 
 hData :: HideDeclIds -> HideDeclData
-hData     (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclData
+hData (_,hideDeclData,_,_,_,_) = hideDeclData
 
 hDataPrim :: HideDeclIds -> HideDeclDataPrim
-hDataPrim (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclDataPrim
+hDataPrim (_,_,hideDeclDataPrim,_,_,_) = hideDeclDataPrim
 
 hClass :: HideDeclIds -> HideDeclClass
-hClass    (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclClass
+hClass (_,_,_,hideDeclClass,_,_) = hideDeclClass
 
 hInstance :: HideDeclIds -> HideDeclInstance
-hInstance (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclInstance
+hInstance (_,_,_,_,hideDeclInstance,_) = hideDeclInstance
 
 hVarsType :: HideDeclIds -> HideDeclVarsType
-hVarsType (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) = hideDeclVarsType
+hVarsType (_,_,_,_,_,hideDeclVarsType) = hideDeclVarsType
 
 
--- Keep this selectors in sync with the tuple built by is2rs in RenameLib
+-- Keep these selectors in sync with the tuple built by is2rs in RenameLib
 
-sLG (localGlobal,qualFun,expFun,fixFun) = localGlobal
+sLG   (localGlobal,qualFun,expFun,fixFun) = localGlobal
 sQual (localGlobal,qualFun,expFun,fixFun) = qualFun
-sExp (localGlobal,qualFun,expFun,fixFun) = expFun
-sFix (localGlobal,qualFun,expFun,fixity) = fixity
+sExp  (localGlobal,qualFun,expFun,fixFun) = expFun
+sFix  (localGlobal,qualFun,expFun,fixity) = fixity
 

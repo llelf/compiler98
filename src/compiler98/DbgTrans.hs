@@ -72,7 +72,6 @@ type SRExp = Exp Id       -- expression of type SR
 
 
 {- obtain the internal state -}
-
 getIntState :: DbgTransMonad IntState
 getIntState inherited threaded@(Threaded intState _ _) = (intState,threaded)
  
@@ -1524,10 +1523,11 @@ newVars pos n = \_ (Threaded istate srt idt) ->
 -}
 mkInfo :: Either Id Id -> String -> Int -> NewType -> Info
 mkInfo (Right u) str arity nt = 
-    InfoVar u (visImport (str ++ "_" ++ show u)) (InfixDef, 9) 
-      IEnone nt (Just arity)
+    InfoVar u (visImport (str++"_"++show u)) IEnone (InfixDef, 9) 
+            nt (Just arity)
+
 mkInfo (Left u) str arity nt = 
-    InfoVar u (visImport str) (InfixDef, 9) IEnone nt (Just arity)
+    InfoVar u (visImport str) IEnone (InfixDef, 9) nt (Just arity)
 
 
 {-
@@ -1595,15 +1595,15 @@ addNewName arity addIdNr str nt =
 -- location in the table (i.e. the lookup key).
 -}
 addNewPrim :: Info -> DbgTransMonad Id
-addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
+addNewPrim (InfoVar _ (Qualified m nm) ie fix nt ar) = 
   \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
       (i, istate') -> 
 	let newNm = Qualified m (packString (unpackPS nm++"'"))
-            info' = InfoVar i newNm fix IEnone NoType ar
+            info' = InfoVar i newNm IEnone fix NoType ar
 	    istate'' = addIS i info' istate'
 	in (i, Threaded istate'' srt idt)
-addNewPrim (InfoVar _ nm fix ie nt ar) = 
+addNewPrim (InfoVar _ nm ie fix nt ar) = 
   error ("In tracing transformation: foreign import has unqualified name?")
 
 {-
@@ -1611,11 +1611,11 @@ addNewPrim (InfoVar _ nm fix ie nt ar) =
 -- location in the table
 -}
 addNewWrapper :: Info -> DbgTransMonad Id
-addNewWrapper (InfoVar _ nm fix ie nt ar) = 
+addNewWrapper (InfoVar _ nm ie fix nt ar) = 
   \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
       (i, istate') -> 
-	let info' = InfoVar i nm fix ie NoType (Just 2)
+	let info' = InfoVar i nm ie fix NoType (Just 2)
 	    istate'' = addIS i info' istate'
 	in (i, Threaded istate'' srt idt)
 
@@ -1626,7 +1626,7 @@ addNewWrapper (InfoVar _ nm fix ie nt ar) =
 overwritePrim :: Id -> Inherited -> Threaded -> Threaded
 overwritePrim i = 
   \_ (Threaded istate srt idt) ->
-      let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
+      let updI (InfoVar i nm ie fix _ _) = InfoVar i nm ie fix NoType (Just 2)
       in Threaded (updateIS istate i updI) srt idt
 
 {-
@@ -1635,9 +1635,9 @@ overwritePrim i =
 overwriteOrigName :: Id -> Inherited -> Threaded -> Threaded
 overwriteOrigName i = 
   \_ (Threaded istate srt idt) ->
-      let updI (InfoVar i (Qualified m f) fix ie nt ar) =
+      let updI (InfoVar i (Qualified m f) ie fix nt ar) =
                 InfoVar i (Qualified m (packString ('\'': unpackPS f)))
-                                          fix ie nt ar
+                                          ie fix nt ar
       in Threaded (updateIS istate i updI) srt idt
 
 
@@ -1662,7 +1662,7 @@ patchFieldSelectorType :: Id -> Inherited -> Threaded -> Threaded
 patchFieldSelectorType id =
   \(Inherited lookupPrel) s@(Threaded istate srt idt) ->
   case lookupIS istate id of
-    Just info@(InfoVar un tok fix ie (NewType all ex ctx [rec,res]) _) ->
+    Just info@(InfoVar un tok ie fix (NewType all ex ctx [rec,res]) _) ->
         -- id is field selector of record defined in imported module
         -- (IExtract.importField constructs the type of the selector
         --  in this form; there seem to be no types of other variables
@@ -1674,7 +1674,7 @@ patchFieldSelectorType id =
       in
       Threaded 
         (updateIS istate id 
-          (\_ -> InfoVar un tok fix ie
+          (\_ -> InfoVar un tok ie fix 
                    (NewType all ex ctx 
                      [NTcons arrow 
                        [NTcons sr [],NTcons arrow 
@@ -1692,14 +1692,14 @@ getArity (Fun pats _ _ : _) = length pats
 setArity :: Int -> Int -> a -> Threaded -> Threaded
 setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
   let newid = case lookupAT st id of
-                Just (InfoMethod u tid fix nt _ cls) ->
-                      InfoMethod u tid fix nt (Just arity) cls
+                Just (InfoMethod u tid ie fix nt _ cls) ->
+                      InfoMethod u tid ie fix nt (Just arity) cls
                 Just (InfoDMethod u tid nt _ cls) ->
                       InfoDMethod u tid nt (Just arity) cls
        	        Just (InfoIMethod u tid nt _ cls) ->
 	              InfoIMethod u tid nt (Just arity) cls
-	        Just (InfoVar u tid fix exp nt _) ->
-	             InfoVar u tid fix exp nt (Just arity)
+	        Just (InfoVar u tid exp fix nt _) ->
+	             InfoVar u tid exp fix nt (Just arity)
   in Threaded (IntState unique rps (updateAT st id (\_ -> newid)) errors) 
        srt idt
 {-
@@ -1758,6 +1758,7 @@ makeNm p parent name sr =
   lookupVar noPos t_mkTNm >>>= \nm ->
   unitS $ ExpApplication p [nm, parent, name, sr] 
 
+
 {- Add identifier with position to threaded list.  -}
 addId :: (Pos,Id) -> a -> Threaded -> Threaded
 addId pid inh (Threaded is srt idt) = Threaded is srt (LocalId pid:idt)
@@ -1765,10 +1766,8 @@ addId pid inh (Threaded is srt idt) = Threaded is srt (LocalId pid:idt)
 addTopId :: (Pos,Id) -> a -> Threaded -> Threaded
 addTopId pid inh (Threaded is srt idt) = Threaded is srt (TopId pid:idt)
 
-
 {- is it a class method? -}
 isCMethod :: Info -> Bool
-
 isCMethod (InfoIMethod _ _ _ _ _) = True
 isCMethod (InfoDMethod _ _ _ _ _) = True
 isCMethod _ = False

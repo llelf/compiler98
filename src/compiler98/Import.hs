@@ -1,5 +1,5 @@
 {- ---------------------------------------------------------------------------
-Read and process the interface file of one imported module.
+-- Read and process the interface file of one imported module.
 -}
 module Import (Flags,ImportState,PackedString,Tree,TokenId,IdKind,HideDeclIds
               ,readFirst,importOne) where
@@ -96,27 +96,27 @@ importOne flags importState (mrps,needFun,hideFun) = do
                              ++ show modid
 			     ++ " in its interface file (" ++ fstr ++")\n")
         else return ()  
-      case parseit (parseInterface2 
-                      (needFixity fixity 
-                         (putModidIS importState (extractV modid))) hideFun) 
+      case parseit (parseInterface2
+                       (needFixity fixity 
+                                   (putModidIS importState (extractV modid)))
+                       hideFun)
                    rest of
         Left err -> parseIError fstr err
 	Right (importState,need,rest) ->
-	  importCont'  importState needFun hideFun mstr fstr need rest
+	  importCont' importState needFun hideFun mstr fstr need rest
 
 
 --                   needFun
 -- down ((Memo TokenId -> [[TokenId]] -> Bool)
 
 importCont' :: ImportState 
-            -> (   (PackedString,PackedString,Tree (TokenId,IdKind)) 
-                -> [[TokenId]] -> Bool
-               ) 
+            -> ((PackedString,PackedString,Tree (TokenId,IdKind)) 
+                  -> [[TokenId]] -> Bool) 
             -> HideDeclIds
-            -> a 
-            -> [Char] 
-            -> Maybe [[TokenId]] 
-            -> [PosToken] 
+            -> a 			-- module name
+            -> [Char] 			-- filename
+            -> Maybe [[TokenId]]	-- need
+            -> [PosToken]		-- lexical input
             -> IO ImportState   
 
 importCont' importState needFun hideFun modid filename need rest =
@@ -131,11 +131,11 @@ importCont' importState needFun hideFun modid filename need rest =
                            (putModid2IS importState visible mrps)) rest)
   importCont (Right (ParseNeed importState (Just needs@(_:_)) rest)) =
      if needFun (getNeedIS importState) needs
-     then importCont (parseit (parseInterface3 importState hideFun) rest)
+     then importCont (parseit (parseInterface3 importState needs hideFun) rest)
      else importCont (parseit (parseUntilNeed importState) rest)
 
   importCont (Right (ParseNeed importState (Just []) rest)) =
-     importCont (parseit (parseInterface3 importState hideFun) rest)
+     importCont (parseit (parseInterface3 importState [] hideFun) rest)
 
   importCont (Right (ParseNeed importState _ rest)) =
      importCont2 (parseit (parseInterface4 importState hideFun) rest)

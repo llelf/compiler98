@@ -46,7 +46,7 @@ addRatioCon tidFun state =
      Just info ->
       case constrsI info of
        [ratioCon] -> (ratioCon,state)
-       [] -> (u,addIS u (InfoConstr  u tRatioCon (InfixL,7)
+       [] -> (u,addIS u (InfoConstr  u tRatioCon IEnone (InfixL,7)
 				    (NewType [1] [] [{- !!! Integral 1 -}] [tvar,tvar,NTcons ratio [tvar]])
 			            [Nothing,Nothing] ratio)
 			(updateIS state ratio (\_ -> updConstrsI info [u])))

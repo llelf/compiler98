@@ -65,7 +65,7 @@ mkSel :: (Pos -- point of definition of selector, i.e in type definition
          -> SelectorMonad (Decl Id)
 
 mkSel (pos,field,selector) = 
-  r13Info field >>>= \  (InfoField unique tid icon_offs iData iSel) ->
+  r13Info field >>>= \  (InfoField unique tid ie icon_offs iData iSel) ->
   mapS (mkFun pos) icon_offs >>>= \ alts ->
   unitS (DeclFun pos selector alts)
 
@@ -173,7 +173,7 @@ nofail :: IntState -> Pat Id -> Bool
 
 nofail state (ExpCon pos con) =
   case lookupIS state con of
-    Just (InfoConstr unique tid fix nt fields iType) ->
+    Just (InfoConstr unique tid ie fix nt fields iType) ->
       case lookupIS state iType of
 	Just (InfoData   unique tid exp nt dk) ->
 	  case dk of
@@ -201,7 +201,7 @@ fieldInfo :: IntState
 
 fieldInfo state (FieldExp pos field exp) =
   case lookupIS state field of
-    Just (InfoField unique tid icon_offs idata iSel) -> (idata,(icon_offs,exp))
+    Just (InfoField unique tid ie icon_offs idata iSel) -> (idata,(icon_offs,exp))
 
 
 {- lookup value in association list; if not there, then return default value -}

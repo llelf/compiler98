@@ -13,10 +13,10 @@ import Syntax
 
 ntIS state i =
   case lookupIS state i of
-    Just (InfoData   unique tid exp nt dk) -> fresh nt state
-    Just (InfoVar     unique tid fix exp nt annot) -> fresh nt state
-    Just (InfoConstr  unique tid fix nt fields iType) -> fresh nt state
-    Just (InfoMethod  unique tid fix nt  annot iClass) ->
+    Just (InfoData   unique tid ie nt dk) -> fresh nt state
+    Just (InfoVar     unique tid ie fix nt annot) -> fresh nt state
+    Just (InfoConstr  unique tid ie fix nt fields iType) -> fresh nt state
+    Just (InfoMethod  unique tid ie fix nt  annot iClass) ->
       case fresh nt state of
         (NewType free@(a:_) [] ctx nts,state) -> (NewType free [] ((iClass,a):ctx) nts,state)
     Just (InfoDMethod  unique tid nt annot iClass) ->
@@ -25,7 +25,7 @@ ntIS state i =
 
     Just (InfoIMethod uI tidI (NewType freeI [] ctxI [ntI]) annotsI iMethod) ->
       case lookupIS state iMethod of
-        Just (InfoMethod uM tidM fixM ntM annotM iClass) ->
+        Just (InfoMethod uM tidM ieM fixM ntM annotM iClass) ->
 	  case fresh ntM state of
             (NewType (a:free) [] ctxM [ntM],state) ->
    	      let phi = addSubst idSubst a ntI

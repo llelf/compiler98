@@ -295,8 +295,8 @@ updateMethodType im id nt = \inh (Threaded (IntState unique rps st errors) d) ->
         Just (InfoDMethod u tid _ annots cls) ->
 	    let st' = updateAT st id (\_ -> InfoDMethod u tid nt annots cls) in
 	    case lookupAT st im of
-	        Just (InfoMethod u tid fix _ annots cls) ->
-		    let st'' = updateAT st' im (\_ -> InfoMethod u tid fix nt annots cls) in
+	        Just (InfoMethod u tid ie fix _ annots cls) ->
+		    let st'' = updateAT st' im (\_ -> InfoMethod u tid ie fix nt annots cls) in
 		    Threaded (IntState unique rps st'' errors) d
 
 updateClassType i tid ie nt ms ds at = \inh (Threaded (IntState unique rps st errors) d) ->
@@ -311,8 +311,8 @@ updateSynType tid nt = \inh (Threaded (IntState unique rps st errors) d) ->
 
 updateConstrType id nt = \inh (Threaded (IntState unique rps st errors) d) ->
     case lookupAT st id of
-        Just (InfoConstr cid tid fix _ annot ty) ->
-	    let st' = updateAT st id (\_ -> InfoConstr cid tid fix nt annot ty) in
+        Just (InfoConstr cid tid ie fix _ annot ty) ->
+	    let st' = updateAT st id (\_ -> InfoConstr cid tid ie fix nt annot ty) in
 	    Threaded (IntState unique rps st' errors) d
 
 replacePreludeId id = \(Inherited _ _ _ reptree _) s -> 

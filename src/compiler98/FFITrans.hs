@@ -89,12 +89,12 @@ copyPrim id cname lookup state =
     case uniqueIS state of
       (i, state1) ->
         let newname = Qualified m (packString ('#':unpackPS name))
-            info    = InfoVar i newname fix IEnone NoType ar
+            info    = InfoVar i newname IEnone fix NoType ar
             state2  = addIS i info state1
             cname'  = if null cname then reverse (unpackPS name) else cname
         in ((i, cname'), state2)
   where
-    (Just (InfoVar _ (Qualified m name) fix ie nt ar)) = lookupIS state id
+    (Just (InfoVar _ (Qualified m name) ie fix nt ar)) = lookupIS state id
 
 
 -- Report whether the result type is IO, after expanding all type synonyms.

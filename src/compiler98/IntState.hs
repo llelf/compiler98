@@ -38,7 +38,7 @@ addDefaultMethod :: a -> (Id,Id) -> IntState -> IntState
 
 addDefaultMethod tidcls (iMethod,iDefault) state@(IntState unique irps@(_,rps) st errors) =
   case lookupIS state iMethod of
-    Just (InfoMethod u tid fix nt' annot iClass) ->
+    Just (InfoMethod u tid ie fix nt' annot iClass) ->
       IntState unique irps 
         (addAT st fstOf iDefault 
           (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass)) 
@@ -56,7 +56,7 @@ addInstMethod :: TokenId -> TokenId -> TokenId -> NewType -> Id
 
 addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rps st errors) =
   case lookupIS state iMethod of
-    Just (InfoMethod u tid fix nt' (Just arity) iClass) -> 
+    Just (InfoMethod u tid ie fix nt' (Just arity) iClass) -> 
       (unique,IntState (unique+1) rps (addAT st (error "adding twice!") unique (InfoIMethod unique (mkQual3 tidcls tidtyp tidMethod) nt (Just arity) iMethod)) errors)
 
 -- -====== State0
@@ -66,7 +66,7 @@ updInstMethodNT :: TokenId -> TokenId -> Int -> NewType -> Int
 
 updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps st errors) =
   case lookupAT st iMethod of
-    Just (InfoMethod _  _  _ _ annots _) ->
+    Just (InfoMethod _ _ _ _ _ annots _) ->
       case lookupAT st i of
 	Just (InfoIMethod u tid' _ _ _) ->
 	    let tid = mkQual3 tidcls tidtyp (dropM tid')
@@ -83,7 +83,7 @@ addInstance cls con free ctxs down state@(IntState unique rps st errors) =
 addNewLetBound :: Int -> TokenId -> a -> IntState -> IntState
 
 addNewLetBound i tid down state =
-  addIS i (InfoVar i tid (InfixDef,9) IEnone NoType Nothing) state
+  addIS i (InfoVar i tid IEnone (InfixDef,9) NoType Nothing) state
 
 -- -==== Reduce
 
@@ -97,13 +97,13 @@ updVarNT :: Pos -> Int -> NewType -> Reduce IntState IntState
 
 updVarNT pos i nt state@(IntState unique rps st errors) =
   case lookupAT st i of
-    Just (InfoVar u tid fix exp NoType annots) ->
+    Just (InfoVar u tid exp fix NoType annots) ->
       case checkNT pos (strIS state) nt of
         Nothing -> IntState unique rps 
-                     (addAT st fstOf i (InfoVar u tid fix exp nt annots)) 
+                     (addAT st fstOf i (InfoVar u tid exp fix nt annots)) 
                      errors
 	Just err -> IntState unique rps st (err :errors)
-    Just (InfoVar u tid fix exp nt' annots) ->
+    Just (InfoVar u tid exp fix nt' annots) ->
       IntState unique rps st 
         (("New type signature for " ++ show tid ++ " at " ++ strPos pos)
          : errors)
@@ -118,10 +118,10 @@ updVarArity :: Pos -> Int -> Int -> Reduce IntState IntState
 
 updVarArity pos i arity state@(IntState unique rps st errors) =
   case lookupAT st i of
-    Just (InfoVar  u tid fix exp nt _) ->  
+    Just (InfoVar  u tid exp fix nt _) ->  
       -- Always update, might change arity for redefined import in Prelude
       IntState unique rps 
-        (addAT st fstOf i (InfoVar u tid fix exp nt (Just arity))) errors
+        (addAT st fstOf i (InfoVar u tid exp fix nt (Just arity))) errors
     _ -> state   
       -- Ignore arity for methods, methods instances and methods default
 
@@ -212,15 +212,15 @@ globalIS state i =
     Nothing -> False
     Just info -> globalI info
   where
-  globalI (InfoData   unique tid exp nt dk) = isExported exp
-  globalI (InfoClass  unique tid exp nt ms ds insts) = isExported exp
-  globalI (InfoVar     unique tid fix IEsel nt annot) = True
-  globalI (InfoVar     unique tid fix exp nt annot) = isExported exp
-  globalI (InfoConstr  unique tid fix nt fields iType) = 
+  globalI (InfoData   unique tid ie nt dk) = isExported ie
+  globalI (InfoClass  unique tid ie nt ms ds insts) = isExported ie
+  globalI (InfoVar     unique tid IEsel fix nt annot) = True
+  globalI (InfoVar     unique tid ie fix nt annot) = isExported ie
+  globalI (InfoConstr  unique tid ie fix nt fields iType) = 
     globalI' (lookupIS state iType) 
-  globalI (InfoField   unique tid icon_offs iData iSel) = 
+  globalI (InfoField   unique tid ie icon_offs iData iSel) = 
     globalI' (lookupIS state iData) 
-  globalI (InfoMethod  unique tid fix nt annot iClass) = True
+  globalI (InfoMethod  unique tid ie fix nt annot iClass) = True
   globalI (InfoIMethod  unique tid nt annot iMethod) = True
   globalI (InfoDMethod  unique tid nt annot iClass) = True
   globalI (InfoName  unique tid arity ptid _) = False --PHtprof
@@ -236,7 +236,7 @@ arityIS state i =
   case lookupIS state i of 
     Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _]) (Just arity) iMethod) ->
 	case lookupIS state iMethod of
-	  Just (InfoMethod  unique tid fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
+	  Just (InfoMethod  unique tid ie fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
 	       length ictxs + iarity + (length . snd . dropJust . lookupAT ((instancesI . dropJust . lookupIS state) iClass)) tcon
 
 --	       length ctxs + arity + (length . snd . dropJust . lookupAT ((instancesI . dropJust . lookupIS state) iClass)) tcon

@@ -98,7 +98,7 @@ fsClsTypSel pos cls typ sel down  up@(state,t2i) =
 		 let   -- !!! Arity of selector doesn't look right !!!
 		    arity = (arityIM . dropJust . lookupIS state) sel + (length . snd . dropJust . lookupAT (instancesI clsInfo)) typ
 		    info = InfoName  u tid arity tid False --PHtprof
---                    info = InfoMethod  u tid (InfixDef,9) NoType (Just arity) cls
+--                    info = InfoMethod  u tid IEnone (InfixDef,9) NoType (Just arity) cls
 		 in (ExpVar pos u,(addIS u info state,addAT t2i sndOf tid u))
 
 
@@ -127,10 +127,17 @@ fsExp2i pos cls i down  up@(state,t2i) =
 	     case uniqueIS state of
 	       (u,state) ->
 		 if isClass clsdatInfo
-		 then    -- Exp2 is either superclass (Ord.Eq) taking one argument ...
-		    (u,(addIS u (InfoMethod  u tid (InfixDef,9) NoType (Just 1) cls) state,addAT t2i sndOf tid u))
+		 then -- Exp2 is either superclass (Ord.Eq) taking one argument ...
+		    (u,(addIS u (InfoMethod u tid IEnone (InfixDef,9) NoType
+                                            (Just 1) cls) state
+                       ,addAT t2i sndOf tid u))
 		 else -- ... or instance (Eq.Int) argument depends on type
-		    let arity = (length . snd . dropJust . lookupAT (instancesI clsInfo)) i   -- snd instead of fst !!!
-		    in seq arity (u,(addIS u (InfoVar  u tid (InfixDef,9) IEall NoType (Just arity)) state,addAT t2i sndOf tid u))
+		    let arity = (length . snd . dropJust
+                                . lookupAT (instancesI clsInfo)) i
+                        -- snd instead of fst !!!
+		    in seq arity (u,(addIS u (InfoVar u tid IEall (InfixDef,9)
+                                                      NoType (Just arity))
+                                             state
+                                    ,addAT t2i sndOf tid u))
 
 {- End Module FSLib ---------------------------------------------------------}

@@ -78,31 +78,29 @@ needModule debugging (Module pos modid exports imports fixdecls topdecls) =
 
 
 needExport :: Export TokenId -> NeedLib -> NeedLib
-
 needExport  (ExportEntity  pos entity) =
-    needEntity entity
+    needEntity id entity
 needExport  (ExportModid   pos hs) =
     needTid pos Modid hs
 
 
-needEntity :: Entity TokenId -> NeedLib -> NeedLib
+needEntity :: (TokenId->TokenId) -> Entity TokenId -> NeedLib -> NeedLib
+needEntity q (EntityVar pos hs) =		-- varid
+    needTid pos Var (q hs)
+needEntity q (EntityTyConCls pos hs) =		-- TyCon(..) | TyCls(..)
+    needTid pos TC (q hs)
+needEntity q (EntityTyCon pos hs posidents) = 	-- TyCon | TyCon(conid,..,conid)
+    needTid pos TCon (q hs)
+    >>> needPosIdents q Con posidents
+needEntity q (EntityTyCls pos hs posidents) =	-- TyCls(varid,..,varid) 
+    needTid pos TClass (q hs)
+    >>> needPosIdents q Method posidents
 
-needEntity (EntityVar  pos hs) =             		-- varid
-    needTid pos Var hs
-needEntity (EntityTyConCls  pos hs) =             	-- TyCon(..) | TyCls(..)
-    needTid pos TC hs
-needEntity (EntityTyCon  pos hs posidents) =   	-- TyCon | TyCon(conid,..,conid)
-       needTid pos TCon hs
-    >>> needPosIdents Con posidents
-needEntity (EntityTyCls  pos hs posidents) =   	-- TyCls(varid,..,varid) 
-       needTid pos TClass hs
-    >>> needPosIdents Method posidents
 
-
-needPosIdents :: IdKind -> [(Int,TokenId)] -> NeedLib -> NeedLib
-
-needPosIdents kind posidents = 
-    mapR ( \ (pos,tid) -> needTid pos kind tid) posidents
+needPosIdents :: (TokenId->TokenId) -> IdKind -> [(Int,TokenId)]
+                 -> NeedLib -> NeedLib
+needPosIdents q kind posidents = 
+    mapR (\(pos,tid) -> needTid pos kind (q tid)) posidents
 
 -----------------------------------
 
@@ -115,22 +113,21 @@ needPosIdents kind posidents =
 
 
 needImport :: ImpDecl TokenId -> NeedLib -> NeedLib
+needImport (Import (pos,tid) impspec) = needImpSpec id impspec
+needImport (Importas (pos,tid) (pos2,tid2) impspec) = needImpSpec id impspec
+needImport (ImportQ (pos,tid) impspec) =
+    needImpSpec (ensureM (extractV tid)) impspec
+needImport (ImportQas (pos,tid) (pos2,tid2) impspec) =
+    needImpSpec (ensureM (extractV tid)) impspec
 
-needImport (Import (pos,tid) impspec) = needImpSpec impspec
-needImport (ImportQ (pos,tid) impspec) = needImpSpec impspec
-needImport (ImportQas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
-needImport (Importas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
 
-
-needImpSpec :: ImpSpec TokenId -> NeedLib -> NeedLib
-
-needImpSpec (NoHiding entities) = mapR needEntity entities
-needImpSpec (Hiding entities)   = unitR
+needImpSpec :: (TokenId->TokenId) -> ImpSpec TokenId -> NeedLib -> NeedLib
+needImpSpec q (NoHiding entities) = mapR (needEntity q) entities
+needImpSpec q (Hiding entities)   = unitR
 
 -----------------------------------
 
 needFixDecl :: (InfixClass TokenId,a,[FixId TokenId]) -> NeedLib -> NeedLib
-
 needFixDecl (InfixPre tid,level,posidents) =
   needTid (getPos (head posidents)) Var tid >>> mapR needFixId posidents
 needFixDecl (typeClass,level,posidents) = 
@@ -138,7 +135,6 @@ needFixDecl (typeClass,level,posidents) =
 
 
 needFixId :: FixId TokenId -> NeedLib -> NeedLib
-
 needFixId (FixCon pos tid) = needTid pos Con tid
 needFixId (FixVar pos tid) = needTid pos Var tid
 

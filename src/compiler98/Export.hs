@@ -35,12 +35,12 @@ export :: Flags
        -> IntState 
        -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])])
 export flags state =
-  let infoExport = (  filter (isExported . expI) . treeMapList ((:).snd) 
+  let infoExport = (filter (isExported . expI) . treeMapList ((:).snd) 
                     . getSymbolTable) 
                    state
-      insts = ( foldr ( \ (InfoClass  unique tid exp nt ms ds insts) r -> 
+      insts = (foldr (\(InfoClass  unique tid exp nt ms ds insts) r -> 
 			foldr (fixInst state (sPrelude flags || notPrelude tid)
-                               unique) 
+                                       unique) 
                               r (treeMapList (:) insts)) []
 	      . filter isClass
 	      . treeMapList ((:).snd)
@@ -51,8 +51,8 @@ export flags state =
     (insts,state) ->
       let 
       (infoInst,depInst) = 
-        unzip (map ( \ ((cls,nt,dep),i) -> (InfoInstance i nt cls,(i,dep))) 
-               insts)
+        unzip (map (\((cls,nt,dep),i) -> (InfoInstance i nt cls,(i,dep))) 
+                   insts)
       depExport = map infoDepend infoExport
 
       depExtra = profile "getAll start" 
@@ -62,11 +62,11 @@ export flags state =
 
       depend = reverse $ profile "start sccDepend" 
                  $ sccDepend (depExport ++ depExtra ++ depInst)
-      expTree = foldr ( \ info tree -> addAT tree sndOf (uniqueI info) info) 
+      expTree = foldr (\info tree -> addAT tree sndOf (uniqueI info) info) 
                       initAT 
                       (infoInst++infoExport)
 
-      declExport = (map (\ xs -> if all isLeft xs
+      declExport = (map (\xs -> if all isLeft xs
 		                  then (False,map dropLeft xs)
 		                  else (True,map dropEither xs)    
                        -- !!! Not good, more is exported than should have been 
@@ -80,20 +80,29 @@ export flags state =
                                     (filter fst declExport))
 
       getFixity :: Info -> [(TokenId,(InfixClass TokenId,Int))]
-      getFixity (InfoData   unique tid IEall nt dk) =
+      getFixity (InfoData unique tid IEall nt dk) =
 	case dk of
 	  Data unboxed constrs -> 
-	    map (( \ info -> (tidI info,fixityI info)) 
-                 . dropJust . lookupIS state) 
+            map ( (\info-> (tidI info, fixityI info)) 
+                . dropJust . lookupIS state)
                 constrs
 	  _ -> []
-      getFixity (InfoData   unique tid _ nt dk) = []
-      getFixity (InfoClass  unique tid exp nt  ms ds insts) = 
-        map (( \ info -> (tidI info,fixityI info)) 
-             . dropJust . lookupIS state) 
+      getFixity (InfoData unique tid IEsome nt dk) =
+	case dk of
+	  Data unboxed constrs -> 
+	    concatMap ( (\info-> case expI info of
+                                   IEsel -> [(tidI info,fixityI info)]
+                                   _     -> [] )
+                      . dropJust . lookupIS state)
+                constrs
+	  _ -> []
+      getFixity (InfoData  unique tid _  nt dk) = []
+      getFixity (InfoClass unique tid ie nt ms ds insts) = 
+        map ( (\info -> (tidI info,fixityI info)) . dropJust . lookupIS state) 
             ms
-      getFixity (InfoVar    unique tid fix exp nt annot) = [(tid,fix)]
+      getFixity (InfoVar unique tid ie fix nt annot) = [(tid,fix)]
       getFixity (InfoInstance unique nt iClass) = []
+      getFixity (InfoConstr unique tid ie fix nt fields iType) = []
       getFixity x = error ("getFixity = " ++ show x)
 
       in 
@@ -110,25 +119,37 @@ export flags state =
         depend@(u,dep) -> depend : getAll state (addM found u) (dep ++ us)
 
 
-  infoDepend (InfoData   unique tid exp nt dk) =
+  infoDepend (InfoData unique tid exp nt dk) =
       case dk of
-	(DataTypeSynonym unboxed depth) ->  (unique,useNewType nt)
-	(DataNewType unboxed constructors) ->  dataDepend exp nt constructors
-	(DataPrimitive size) -> (unique,useNewType nt)
-	(Data unboxed constrs) -> dataDepend exp nt constrs
+	(DataTypeSynonym unboxed depth)    -> (unique, useNewType nt)
+	(DataNewType unboxed constructors) -> dataDepend exp nt constructors
+	(DataPrimitive size)               -> (unique, useNewType nt)
+	(Data unboxed constrs)             -> dataDepend exp nt constrs
     where
       dataDepend exp nt constrs =
-	if exp == IEabs then      (unique,useNewType nt) 
-	else (unique,snub (useNewType nt ++ concatMap (useConstr . lookupIS state) constrs))
+	if exp == IEabs then
+             (unique, useNewType nt) 
+	else (unique, snub (useNewType nt
+                           ++ concatMap (useConstr . lookupIS state) constrs))
 
-  infoDepend (InfoClass  unique tid IEall nt ms ds insts) = (unique,snub (useNewType nt ++ concatMap (useMethod . lookupIS state) ms))
-  infoDepend (InfoClass  unique tid _     nt ms ds insts) = (unique,snub (useNewType nt))
-  infoDepend (InfoVar    unique tid fix exp nt annot) = (unique,useNewType nt)
+  infoDepend (InfoClass unique tid ie nt ms ds insts)
+      | ie==IEall || ie==IEsome =
+          (unique, snub (useNewType nt
+                         ++ concatMap (useMethod . lookupIS state) ms))
+  infoDepend (InfoClass unique tid _     nt ms ds insts) =
+          (unique, snub (useNewType nt))
+  infoDepend (InfoVar unique tid ie fix nt annot) =
+          (unique, useNewType nt)
+  infoDepend (InfoConstr unique tid ie fix nt fields iType) =
+          (unique, useNewType nt)
   infoDepend info = error ("infoDepend " ++ show info)
 
 fixInst state keep unique (con,(free,ctxs)) r =
   if keep || (notPrelude . tidI . dropJust . lookupIS state) con then
-    (unique,NewType free [] ctxs [NTcons con (map NTvar free)],snub (con:map fst ctxs)):r
+    ( unique
+    , NewType free [] ctxs [NTcons con (map NTvar free)]
+    , snub (con:map fst ctxs)
+    ):r
   else
     r
 
@@ -140,7 +161,7 @@ getModule (Qualified m n) = Just m
 getModule _ = Nothing
 
 fixInfo keep state ds (NoRec n) = fixInfo' keep state ds n
-fixInfo keep state ds (Rec ns) = concatMap ( fixInfo' keep state ds) ns
+fixInfo keep state ds (Rec ns) = concatMap (fixInfo' keep state ds) ns
 
 fixInfo' keep state ds n =
   case lookupAT ds n of
@@ -156,9 +177,9 @@ fixInfo' keep state ds n =
 useNewType (NewType free exist ctxs nts) =
   snub (map fst ctxs ++ (concatMap useNT nts))
 
-useConstr (Just (InfoConstr  unique tid fix nt fields iType)) = useNewType nt
+useConstr (Just (InfoConstr unique tid ie fix nt fields iType)) = useNewType nt
 
-useMethod (Just (InfoMethod  unique tid fix nt annot iClass)) = useNewType nt
+useMethod (Just (InfoMethod unique tid ie fix nt annot iClass)) = useNewType nt
 useMethod x = error ("No match in useMethod:" ++ show x)
 
 
@@ -205,9 +226,9 @@ strExport modidl state (fixs,exps) =
   showsExp :: PackedString -> [Info] -> String -> String
 
   showsExp rps infos =
-    showString 
-      "{-# NEED" . foldr ((.).showsNeed rps) id infos . showString " #-}\n" .
-    foldr ((.).showsInfo rps) id infos
+    showString "{-# NEED"
+    . foldr ((.).showsNeed rps) id infos . showString " #-}\n"
+    . foldr ((.).showsInfo rps) id infos
 
   showsHide :: a 
             -> (Bool,Bool,Maybe PackedString,[Info]) 
@@ -235,121 +256,168 @@ strExport modidl state (fixs,exps) =
   showsNeed mrps (InfoData   unique tid exp nt dk) =
       case dk of
 	(DataNewType unboxed constructors) -> 
-          groupNeed mrps exp tid constructors
+                                   groupNeed mrps exp tid constructors
 	(Data unboxed  constrs) -> groupNeed mrps exp tid constrs
 	_ ->  showChar ' ' . showsVar (fixTid mrps tid) 
   showsNeed mrps (InfoClass  unique tid exp nt ms ds insts) = 
     groupNeed mrps exp tid ms
-  showsNeed mrps (InfoVar     unique tid fix exp nt annot) = 
+  showsNeed mrps (InfoVar     unique tid exp fix nt annot) = 
     showChar ' '.showsVar (fixTid mrps tid)
-  showsNeed mrps (InfoConstr  unique tid fix nt fields iType) = 
-    showChar ' '. showsVar (fixTid mrps tid) 
-    . foldr ((.) . showsField mrps) id fields
-  showsNeed mrps (InfoMethod  unique tid fix nt annot iClass) = 
-    showChar ' ' . showsVar (fixTid mrps tid)
+  showsNeed mrps (InfoConstr  unique tid ie fix nt fields iType)
+    | ie==IEsel = showChar ' '. showsVar (fixTid mrps tid) 
+                  . foldr ((.) . showsField mrps) id fields
+    | otherwise =   foldr ((.) . showsField mrps) id fields
+  showsNeed mrps (InfoMethod  unique tid ie fix nt annot iClass)
+    | ie==IEsel = showChar ' ' . showsVar (fixTid mrps tid)
+    | otherwise = id
   showsNeed mrps (InfoInstance unique  nt iClass) = id
 
-  groupNeed mrps exp group parts =
-	if exp == IEall && not (null parts) then 
+  groupNeed mrps ie group parts
+    | (ie==IEall || ie==IEsome) && not (null parts) =
 	  showString " {" . showsVar (fixTid mrps group) 
-          . foldr ((.) . showsNeed mrps . dropJust . lookupIS state) id parts 
+          . foldr ((.) . showsNeed mrps . dropJust . lookupIS state)
+                  id parts 
           . showChar '}'
-	else
+  groupNeed mrps ie group parts =
 	  showChar ' ' . showsVar (fixTid mrps group) 
 
   showsField mrps Nothing = id
   showsField mrps (Just i) = showChar ' ' . shows (fixTid mrps (tidIS state i))
 
  	-- Hack for tuples
-  showsInfo mrps (InfoData   unique (TupleId nargs) exp nt@(NewType free exist ctxs nts) dk) =
+  showsInfo mrps (InfoData unique (TupleId nargs) exp
+                           nt@(NewType free exist ctxs nts) dk) =
       let arg = mkAL free
-	  al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z']) -- a-z is to short!
-	  strNewType = niceCtxs Nothing state al ctxs ++ mixSpace (map (niceNT Nothing state al) nts)
+	  al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z'])
+							 -- a-z is too short!
+	  strNewType = niceCtxs Nothing state al ctxs
+                       ++ mixSpace (map (niceNT Nothing state al) nts)
 	  strArgs = concatMap ((' ':).snd) arg
-	  strTuple = if nargs > 0 then take nargs ('(':repeat ',') ++ ")" else "()"
+	  strTuple = if nargs > 0 then take nargs ('(':repeat ',') ++ ")"
+                                  else "()"
       in
 	case dk of
 	  (DataTypeSynonym unboxed depth) ->
-	    showString "type {-# " . shows depth . (if unboxed then showString " !" else id) . showString " #-} " .
-		showString strTuple . showString strArgs . showString  " = " .
-	    	showString strNewType . showString ";\n"
+	    showString "type {-# " . shows depth
+            . (if unboxed then showString " !" else id) . showString " #-} "
+            . showString strTuple . showString strArgs . showString  " = "
+            . showString strNewType . showString ";\n"
 	  (DataNewType unboxed constrs) ->
-	    showString "newtype {-# " . (if unboxed then showChar '!' else id) . showString " #-} "
-		. showString (niceCtxs Nothing state al ctxs)
-		. showString strTuple . showString strArgs
-		. (if exp == IEall  && not (null constrs) then
-	 	      showString "\n = " .  showString (mix "\n  | " (map (expConstr mrps al . lookupIS state) constrs)) else id)
+	    showString "newtype {-# "
+            . (if unboxed then showChar '!' else id) . showString " #-} "
+	    . showString (niceCtxs Nothing state al ctxs)
+	    . showString strTuple . showString strArgs
+	    . (if exp==IEall && not (null constrs) then
+                 showString "\n = "
+                 . showString (mix "\n  | "
+                                   (map (expConstr mrps al . lookupIS state)
+                                        constrs))
+               else id)
 		. showString ";\n"
 	  (DataPrimitive size) ->
 	    if nargs == 0 then
 	      showString "data primitive () = " . shows size . showString ";\n"
             else
-	      error ("showsInfo in Export can not handle primitive TupleID with " ++ show nargs ++ " arguments.")
+	      error ("showsInfo in Export cannot handle primitive TupleID with "
+                     ++ show nargs ++ " arguments.")
 	  (Data unboxed constrs) ->
-	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs (Just mrps) state al ctxs) . 
-		 showString strTuple . showString strArgs
-		 . (if exp == IEall && not (null constrs) then
-			 showString "\n = " .  showString (mix "\n  | " (map (expConstr mrps al . lookupIS state) constrs)) else id)
-		 . showString ";\n"
-  showsInfo mrps (InfoData   unique tid exp nt@(NewType free exist ctxs nts) dk) =
+	    showString ("data " ++ (if unboxed then "unboxed " else "")
+                        ++ niceCtxs (Just mrps) state al ctxs)
+            . showString strTuple . showString strArgs
+	    . (if exp == IEall && not (null constrs) then
+	         showString "\n = "
+                 . showString (mix "\n  | "
+                                   (map (expConstr mrps al . lookupIS state)
+                                        constrs))
+               else id)
+	    . showString ";\n"
+  showsInfo mrps (InfoData unique tid exp nt@(NewType free exist ctxs nts) dk) =
       let arg = mkAL free
-	  al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z']) -- a-z is to short!
-	  strNewType = niceCtxs (Just mrps) state al ctxs ++ mixSpace (map (niceNT (Just mrps) state al) nts)
+	  al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z'])
+							-- a-z is too short!
+	  strNewType = niceCtxs (Just mrps) state al ctxs
+                       ++ mixSpace (map (niceNT (Just mrps) state al) nts)
 	  strArgs = concatMap ((' ':).snd) arg
       in
 	case dk of
 	  (DataTypeSynonym unboxed depth) ->
-	    showString "type {-# " . shows depth . (if unboxed then showString " !" else id) . showString " #-} " .
-		showsVar (fixTid mrps tid) . showString (strArgs ++ " = ") . showString strNewType . showString ";\n"
+	     showString "type {-# " . shows depth
+             . (if unboxed then showString " !" else id) . showString " #-} "
+             . showsVar (fixTid mrps tid) . showString (strArgs ++ " = ")
+             . showString strNewType . showString ";\n"
 	  (DataNewType unboxed constrs) ->
-	    showString "newtype {-# " . (if unboxed then showChar '!' else id) . showString " #-} "
-		. showString (niceCtxs Nothing state al ctxs) . showsVar (fixTid mrps tid) . showString strArgs
-		. (if exp == IEall && not (null constrs) then
-			 showString "\n  = " . showString  (mix "\n  | " (map (expConstr mrps al . lookupIS state) constrs)) else id)
-		. showString ";\n"
+	     showString "newtype {-# "
+             . (if unboxed then showChar '!' else id) . showString " #-} "
+	     . showString (niceCtxs Nothing state al ctxs)
+             . showsVar (fixTid mrps tid) . showString strArgs
+	     . (if (exp==IEall || exp==IEsome) && not (null constrs) then
+		  showString "\n  = "
+                  . showString  (mix "\n  | "
+                                     (map (expConstr mrps al . lookupIS state)
+                                          constrs))
+                else id)
+	     . showString ";\n"
 	  (DataPrimitive size) ->
-	    showString "data primitive " . showsVar (fixTid mrps tid) . showString " = " . shows size . showString ";\n"
+	     showString "data primitive "
+             . showsVar (fixTid mrps tid) . showString " = " . shows size
+             . showString ";\n"
 	  (Data unboxed constrs) ->
-	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs (Just mrps) state al ctxs) . showsVar (fixTid mrps tid) 
-		. showString strArgs 
-		. (if exp == IEall && not (null constrs) then
-			 showString "\n  = " . showString  (mix "\n  | " (map (expConstr mrps al . lookupIS state) constrs)) else id)
-		. showString ";\n"
+	     showString ("data " ++ (if unboxed then "unboxed " else "")
+                         ++ niceCtxs (Just mrps) state al ctxs)
+             . showsVar (fixTid mrps tid) . showString strArgs 
+             . (if (exp==IEall || exp==IEsome) && not (null constrs) then
+		   (showString "\n  = "
+                   . showString  (mix "\n  | "
+                                      (map (expConstr mrps al . lookupIS state)
+                                           constrs)))
+                else id)
+	     . showString ";\n"
 
-  showsInfo mrps (InfoClass  unique tid exp (NewType free exist ctxs nts)  ms ds insts) = 
+  showsInfo mrps (InfoClass unique tid exp (NewType free exist ctxs nts)
+                            ms ds insts) = 
     let al = mkAL free
-    in showString "class " . showString (niceCtxs Nothing state al ctxs) . showsVar (fixTid mrps tid)
-		 . showString (concatMap ((' ':).snd) al)
-		 . (if exp == IEall && not (null ms) then
-			 showString " where {\n" . showString (concatMap (expMethod mrps . lookupIS state) ms) . showString "};\n"
-		    else
-		      showString ";\n")
-  showsInfo mrps (InfoVar    unique tid fix exp nt annot) =
-	showsVar (fixTid mrps tid) . showsAnnot annot . showString "::" . showString (niceNewType state nt) . showString ";\n"
+    in showString "class " . showString (niceCtxs Nothing state al ctxs)
+       . showsVar (fixTid mrps tid) . showString (concatMap ((' ':).snd) al)
+       . (if (exp==IEall || exp==IEsome) && not (null ms) then
+	    showString " where {\n"
+            . showString (concatMap (expMethod mrps . lookupIS state) ms)
+            . showString "};\n"
+	  else showString ";\n")
+  showsInfo mrps (InfoVar unique tid exp fix nt annot) =
+	showsVar (fixTid mrps tid) . showsAnnot annot . showString "::"
+        . showString (niceNewType state nt) . showString ";\n"
   showsInfo mrps (InfoInstance unique (NewType free exist ctxs [nt]) iClass) =
-	let al = mkAL free
-	in showString "instance " . showString (niceCtxs Nothing state al ctxs) . niceInt Nothing state iClass .  showChar ' ' . showString (niceNT Nothing state al nt) . showString ";\n"
+      let al = mkAL free
+      in showString "instance " . showString (niceCtxs Nothing state al ctxs)
+         . niceInt Nothing state iClass .  showChar ' '
+         . showString (niceNT Nothing state al nt) . showString ";\n"
+  showsInfo mrps (InfoConstr unique tid ie fix nt fields iType) = id
 
   showsAnnot Nothing = id
   showsAnnot (Just a) = showString "{-# " . shows a . showString " #-}"
 
-  expConstr mrps al (Just (InfoConstr  unique (TupleId nargs) fix (NewType free exist ctxs nts) field iType)) =
-       (showString ( if nargs > 0 then take nargs ('(':repeat ',') ++ ") " else "()"))  (mixSpace (map (niceField state al) (zip field (init nts))))
-  expConstr mrps al (Just (InfoConstr  unique tid fix (NewType free exist ctxs ectxs_nts) field iType)) =
+  expConstr mrps al (Just (InfoConstr unique (TupleId nargs) ie fix
+                                   (NewType free exist ctxs nts) field iType)) =
+       (showString (if nargs > 0 then take nargs ('(':repeat ',') ++ ") "
+                                      else "()"))
+       (mixSpace (map (niceField state al) (zip field (init nts))))
+  expConstr mrps al (Just (InfoConstr unique tid ie fix
+                             (NewType free exist ctxs ectxs_nts) field iType)) =
 	-- al contains type variables to string mapping
 	-- exist contains existential type variables not in al
-     let exist' = zip exist (map (:"_fa") ['a'..'z']) -- a-z is to short!
+     let exist' = zip exist (map (:"_fa") ['a'..'z']) -- a-z is too short!
 	 al' = al ++ exist'
          ectxs = map ntContext2Pair (filter contextNT ectxs_nts)
          nts = filter (not . contextNT) ectxs_nts
      in
-	  (if null exist then "" else "forall " ++ mixSpace (map snd exist') ++ " . ") ++
-          niceCtxs Nothing state al' ectxs ++
-          (showsVar (fixTid mrps tid) . showChar ' ')  (mixSpace (map (niceField state al') (zip field (init nts))))
-
+	  (if null exist then ""
+                         else "forall " ++ mixSpace (map snd exist') ++ " . ")
+          ++ niceCtxs Nothing state al' ectxs
+          ++ (showsVar (fixTid mrps tid) . showChar ' ')
+             (mixSpace (map (niceField state al') (zip field (init nts))))
 
   expMethod :: PackedString -> Maybe Info -> String
-  expMethod mrps (Just (InfoMethod  unique tid fix nt annot iClass)) =
+  expMethod mrps (Just (InfoMethod  unique tid ie fix nt annot iClass)) =
     (showString "  " . showsVar (fixTid mrps tid) . showsAnnot annot 
      . showString "::" . showString (niceNewType state nt))  
     ";\n"

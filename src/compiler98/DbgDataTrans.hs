@@ -132,7 +132,7 @@ dTopDecl d@(DeclConstrs pos id fieldIds) =
   transformConstr constr =
     lookupName noPos constr >>>= \(Just info) ->
     case info of
-      InfoConstr cid tid fix nt annot ty ->
+      InfoConstr cid tid ie fix nt annot ty ->
 	dNewType nt >>>= \nt' ->
 	wrapRNewType nt' >>>= \nt'' ->
 	showNT nt'' >>>= \ntstr ->
@@ -153,7 +153,7 @@ dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
   unitS [DeclClass pos ctx id1 id2 decls']
   where 
   transformMethodType (m, d) =
-    lookupName noPos m >>>= \(Just (InfoMethod im _ _ _ _ _)) ->
+    lookupName noPos m >>>= \(Just (InfoMethod im _ _ _ _ _ _)) ->
     lookupName noPos d >>>= \(Just (InfoDMethod id tid nt' (Just arity) _)) ->
     lookupNameStr id >>>= \mstr ->
     if doTransform tid 
@@ -162,7 +162,7 @@ dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
 	dTrace ("Type for " ++ mstr ++ " : " ++ ntstr') $
 	dMethodNewType (arity == 0) nt' >>>= \nt'' -> 
 	updateMethodType im id nt'' >>>
-	lookupName noPos m >>>= \(Just (InfoMethod _ _ _ nt''' _ _)) ->
+	lookupName noPos m >>>= \(Just (InfoMethod _ _ _ _ nt''' _ _)) ->
 	showNT nt''' >>>= \ntstr'' ->
 	dTrace ("Transformed into " ++ ntstr'') $
 	unitS (isHigherOrder id2 nt')
@@ -297,6 +297,7 @@ dExp e@(ExpVar pos id) =
   unitS e
 dExp (ExpDo pos stmts) = 
   dRemoveDo pos stmts
+--unitS (ExpDo pos) =>>> mapS dStmt stmts
 dExp e@(ExpRecord exp fields) =
   unitS ExpRecord =>>> 
   dExp exp =>>> 
@@ -317,12 +318,20 @@ dExp (ExpConOp _ _) = -- doesn't exist here anymore
 dExp e = unitS e
 
 
-dRemoveDo :: a -> [Stmt Id] -> DbgDataTransMonad (Exp Id)
-{-
-This is basically a copy of Remove1_3.removeDo.
-It is just in a different monad. 
+{- dStmt will replace dRemoveDo.  We will now deal with do expressions in
+-- the function transformation.
 -}
+dStmt :: Stmt Id -> DbgDataTransMonad (Stmt Id)
+dStmt (StmtExp exp) = unitS StmtExp =>>> dExp exp
+dStmt (StmtLet decls) = unitS StmtLet =>>> dDecls decls
+dStmt (StmtBind pat exp) = unitS StmtBind =>>> dExp pat =>>> dExp exp
 
+
+{- to be replaced by dStmt -}
+{- This is basically a copy of Remove1_3.removeDo.
+-- It is just in a different monad. 
+-}
+dRemoveDo :: a -> [Stmt Id] -> DbgDataTransMonad (Exp Id)
 dRemoveDo p [StmtExp exp] = dExp exp
 dRemoveDo p (StmtExp exp:r) =
   let pos = getPos exp
@@ -375,7 +384,7 @@ nofail :: IntState -> Exp Id -> Bool
 
 nofail state (ExpCon pos con) =
   case lookupIS state con of
-    Just (InfoConstr unique tid fix nt fields iType) ->
+    Just (InfoConstr unique tid ie fix nt fields iType) ->
       case lookupIS state iType of
 	Just (InfoData unique tid exp nt dk) ->
 	  case dk of
@@ -683,9 +692,9 @@ updateMethodType im id nt =
       Just (InfoDMethod u tid _ annots cls) ->
 	let st' = updateAT st id (\_ -> InfoDMethod u tid nt annots cls) in
 	case lookupAT st im of
-	  Just (InfoMethod u tid fix _ annots cls) ->
+	  Just (InfoMethod u tid ie fix _ annots cls) ->
 	    let st'' = updateAT st' im 
-                         (\_ -> InfoMethod u tid fix nt annots cls) in
+                         (\_ -> InfoMethod u tid ie fix nt annots cls) in
 	    Threaded (IntState unique rps st'' errors) constrs
 
 
@@ -723,9 +732,9 @@ updateConstrType :: Id -> NewType -> a -> Threaded -> Threaded
 updateConstrType id nt = 
   \inh (Threaded (IntState unique rps st errors) constrs) ->
     case lookupAT st id of
-        Just (InfoConstr cid tid fix _ annot ty) ->
+        Just (InfoConstr cid tid ie fix _ annot ty) ->
 	    let st' = updateAT st id 
-                        (\_ -> InfoConstr cid tid fix nt annot ty) in
+                        (\_ -> InfoConstr cid tid ie fix nt annot ty) in
 	    Threaded (IntState unique rps st' errors) constrs
 
 {-
@@ -799,12 +808,12 @@ nubEq p (x:xs) = x : nubEq p (filter ((p x /=) . p) xs)
 -- location in the table (i.e. the lookup key).
 
 addNewPrim :: Info -> DbgDataTransMonad Id
-addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
+addNewPrim (InfoVar _ (Qualified m nm) ie fix nt ar) = 
   \_ (Threaded istate idt) ->
     case uniqueIS istate of
       (i, istate') -> 
         let newNm = Qualified m (packString ('@':unpackPS nm))
-            info' = InfoVar i newNm fix IEnone nt ar
+            info' = InfoVar i newNm IEnone fix nt ar
             istate'' = addIS i info' istate'
         in (i, Threaded istate'' idt)
 
@@ -815,7 +824,7 @@ addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) =
 overwritePrim :: Int -> a -> Threaded -> Threaded
 overwritePrim i = 
   \_ (Threaded istate idt) ->
-      let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
+      let updI (InfoVar i nm ie fix _ _) = InfoVar i nm ie fix NoType (Just 2)
       in Threaded (updateIS istate i updI) idt
 
 

@@ -126,7 +126,6 @@ qualRename impdecls = qualRename' qTree
 
 
 ---- ===================================
--- shorten rpsl = if (isPrelude . reverse . unpackPS) rpsl then rpsPrelude else rpsl
 
 preImport :: Flags -> TokenId -> Tree (TokenId,IdKind) 
           -> Maybe [Export TokenId] -> [ImpDecl TokenId] 
@@ -285,11 +284,11 @@ extractEntity (EntityTyCon  pos tid [])
     | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TCon),IEabs)]
     | otherwise                          = [((tid,TCon),IEabs)]
 extractEntity (EntityTyCon  pos tid ids)
-    | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TCon),IEall)]
-    | otherwise                          = [((tid,TCon),IEall)]
-		  -- Don't care about checking that all constructors are correct
-extractEntity (EntityTyCls  pos tid ids) = [((tid,TClass),IEall)]
-		  -- Don't care about checking that all methods are correct
+    | (tid==t_Arrow || tid==t_List)      =  ((dropM tid,TCon),IEsome) : constrs
+    | otherwise                          =  ((tid,TCon),IEsome) : constrs
+  where constrs = map (\(pos,tid)-> ((tid,Con),IEsel)) ids
+extractEntity (EntityTyCls  pos tid ids) =  ((tid,TClass),IEsome) : methods
+  where methods = map (\(pos,tid)-> ((tid,Method),IEsel)) ids
 
 
 ------
@@ -311,8 +310,8 @@ reExportTid modname exportAT mustBeQualified tid kind =
   
 
 {-
-The selectors for (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,
-hideDeclInstance,hideDeclVarsType) are defined in PreImp and used in ParseI
+-- The selectors for (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,
+-- hideDeclInstance,hideDeclVarsType) are defined in PreImp and used in ParseI
 -}
 
 mkNeed :: Tree (TokenId,IdKind)  
@@ -350,14 +349,17 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
         isJust (lookupAT needI (ensureM rps n))
 				-- is used by other interface (real name)
 				-- (only check first name = type or class)
-     || any (\n-> (isJust . lookupAT needM . forceM orps) n
-                  && imported n)
-            ns			-- used qualified and imported (un)qualified
-     || any (\n-> (isJust . lookupAT needM . dropM) n
-                  && imported n && not (q n))
-            ns			-- used unqualified and imported unqualified
-     || any (\n-> reExportModule && imported n && not (q n))
-            ns			-- reexported whether used or not
+     || any (\n-> imported n &&
+                    (  (isJust . lookupAT needM . forceM orps) n
+              			-- used qualified and imported (un)qualified
+                    || (not (q n)) &&
+                          (  (isJust . lookupAT needM . dropM) n
+              			-- used unqualified and imported unqualified
+                          || reExportModule
+              			-- reexported whether used or not
+                          )
+                    ))
+            ns
 
 
   hideDeclType :: HideDeclType
@@ -369,18 +371,15 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
 		-- used by an interface file, not directly in source code
 
   hideDeclData :: HideDeclData
-  hideDeclData st attr ctxs (Simple pos tid tvs) constrs der =
+  hideDeclData st attr ctxs (Simple pos tid tvs) constrs needs der =
     if imported tid then
---    case lookupAT impT (dropM tid) of
---    Just IEall -> iextractData  (reExport q tid TCon) q attr ctxs pos
---                                tid tvs constrs () st
---    Just IEabs -> iextractData  (reExport q tid TCon) q attr ctxs pos
---                                tid tvs (if q tid then constrs else []) () st
       iextractData (reExport q tid TCon) q attr ctxs pos
-                   tid tvs constrs () st
+                   tid tvs constrs (safetail (concat needs)) () st
    else
       iextractData IEnone (\_->True) attr ctxs pos
-                   tid tvs (if q tid then constrs else []) () st
+                   tid tvs [] {-(if q tid then constrs else [])-} [] () st
+   where safetail xs | null xs   = xs
+                     | otherwise = tail xs
 
   hideDeclDataPrim :: HideDeclDataPrim
   hideDeclDataPrim st (pos,tid) size =
@@ -390,18 +389,15 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
       iextractDataPrim IEnone (\_->True) pos tid size () st
 
   hideDeclClass :: HideDeclClass
-  hideDeclClass st  ctxs (pos,tid) tvar methods =
+  hideDeclClass st  ctxs (pos,tid) tvar methods needs =
     if imported tid then
---    case lookupAT impT (dropM tid) of
---    Just IEall ->  iextractClass (reExport q tid TClass) q pos ctxs tid
---                                 (snd tvar) methods () st
---    Just IEabs ->  iextractClass (reExport q tid TClass) q pos ctxs tid
---                                 (snd tvar) (if q then methods else []) () st
       iextractClass (reExport q tid TClass) q pos ctxs tid
-                    (snd tvar) methods () st
+                    (snd tvar) methods (safetail (concat needs)) () st
     else
       iextractClass IEnone (\_->True) pos ctxs tid
-                    (snd tvar) (if q tid then methods else []) () st
+                    (snd tvar) (if q tid then methods else []) [] () st
+   where safetail xs | null xs   = xs
+                     | otherwise = tail xs
 
   hideDeclInstance :: HideDeclInstance
   hideDeclInstance st ctxs (pos,cls) typ =

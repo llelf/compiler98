@@ -1,4 +1,10 @@
-module ParseI(ParseI(..),parseInterface1,parseInterface2,parseInterface3,parseInterface4,parseUntilNeed) where
+module ParseI ( ParseI(..)
+              , parseInterface1
+              , parseInterface2
+              , parseInterface3
+              , parseInterface4
+              , parseUntilNeed
+              ) where
 
 import Extra(pair,triple)
 import Lex
@@ -18,10 +24,11 @@ data ParseI st tid declneed rest =
 	| ParseNeed st declneed rest
 
 parseAnnotVar =
-   ( \ (_,LitInt Boxed i) -> Just i) `parseChk` lannot `ap` int `chk` rannot 
+   (\(_,LitInt Boxed i) -> Just i) `parseChk` lannot `ap` int `chk` rannot 
 
 parseAnnotType =
-   ( \ (_,LitInt Boxed i) unboxed -> (i,unboxed)) `parseChk` lannot `ap` int `ap` optBang `chk` rannot 
+   (\(_,LitInt Boxed i) unboxed -> (i,unboxed)) `parseChk` lannot `ap` int
+                                                    `ap` optBang `chk` rannot 
 
 parseAnnotNewType =
    lannot `revChk` optBang `chk` rannot 
@@ -35,43 +42,51 @@ optSemi = () `parseChk` semi
 	   parse ()
 
 parseNeedList =
-     many (((:[]).snd) `parseAp`  (conid `orelse` varid)
-	      `orelse`
-           (map snd :: ([(a,b)] -> [b])) `parseChk` lit L_LCURL `apCut` many  (conid `orelse` varid) `chkCut` lit L_RCURL)
+     many ( ((:[]).snd) `parseAp`  (conid `orelse` varid)
+	       `orelse`
+            (map snd :: ([(a,b)] -> [b])) `parseChk` lit L_LCURL
+                      `apCut` many  (conid `orelse` varid) `chkCut` lit L_RCURL)
 
 parseNeedAnnot =
-     Just `parseChk`  optSemi `chk` lannot `chk` lit (L_ACONID tNEED) `apCut`  parseNeedList `chk` rannot
+     Just `parseChk` optSemi `chk` lannot `chk` lit (L_ACONID tNEED)
+                                      `apCut`  parseNeedList `chk` rannot
         `orelse`
      parse Nothing
 
 
 parseInterface1 =
-    ( \ (pos,modid) imports fixdecls rest -> (modid,imports,fixdecls,rest))
+    (\(pos,modid) imports fixdecls rest -> (modid,imports,fixdecls,rest))
                 `parseChk` lit L_interface `apCut` bigModId
                 `chkCut` lit L_where `chkCut` lcurl
-                         `apCut` parseImpDecls
-			 `apCut` parseFixDecls
-			 `apCut` parseRest
+                `apCut` parseImpDecls
+	        `apCut` parseFixDecls
+		`apCut` parseRest
 
-parseInterface2 st hideFun =  triple `parseAp` parseITopDecls st hideFun `ap` parseNeedAnnot `ap` parseRest
+parseInterface2 st hideFun = triple `parseAp` parseITopDecls st [] hideFun
+                                        `ap` parseNeedAnnot `ap` parseRest
 
 parseEof = Nothing `parseChk` optSemi `chk` rcurl
 
 
-parseInterface3 st hideFun =
+parseInterface3 st needs hideFun =
   ParseEof st `parseChk` parseEof
     `orelse`
-  ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` bigModId `apCut` parseRest
+  ParseNext st `parseChk` lit L_interface `apCut` optBang `ap` bigModId
+                                                              `apCut` parseRest
     `orelse`
-  (\st need rest -> ParseNeed st need rest) `parseAp` parseITopDecls st hideFun `apCut` parseNeedAnnot `apCut` parseRest
+  ParseNeed `parseAp` parseITopDecls st needs hideFun `apCut` parseNeedAnnot
+                                                              `apCut` parseRest
 
 parseInterface4 st hideFun =
-  parseITopDecls st hideFun `into` \ st -> ParseEof st `parseChk` parseEof
-						`orelse`
-					   ParseNext st `parseChk` lit L_interface  `apCut` optBang `ap` bigModId `apCut` parseRest
+  parseITopDecls st [] hideFun `into`
+        \st -> ParseEof st `parseChk` parseEof
+	           `orelse`
+               ParseNext st `parseChk` lit L_interface  `apCut` optBang
+                                               `ap` bigModId `apCut` parseRest
 
-parseITopDecls st hideFuns =
-     optSemi `revChk` iterateSemi0 st semi (\st -> parseITopDecl st hideFuns)
+parseITopDecls st needs hideFuns =
+     optSemi `revChk` iterateSemi0 st semi
+                                   (\st -> parseITopDecl st needs hideFuns)
 
 iterateSemi0 st s p = iterateSemi st s p
 			`orelse`
@@ -83,40 +98,60 @@ semiIterate st s p = s `revChk` iterateSemi st s p
 			`orelse`
 		     parse st
 
-parseITopDecl st hideFuns =
-        cases [
-        (L_type, \pos -> hType hideFuns st `parseAp` parseAnnotType `ap` parseSimple `chkCut` equal `apCut` parseType),
-        (L_newtype,  \pos -> (hData hideFuns st . Left) `parseAp` parseAnnotNewType `ap` parseContexts `ap` parseSimple `apCut`
-			   ( equal `revChk` someSep pipe parseConstr
-				`orelse`
-			     parse []) `apCut` parseDeriving),
-        (L_data, \pos ->
+parseITopDecl st needs hideFuns =
+  cases
+      [ (L_type, \pos ->
+                 hType hideFuns st `parseAp` parseAnnotType
+                             `ap` parseSimple `chkCut` equal `apCut` parseType)
+      , (L_newtype, \pos ->
+                    (hData hideFuns st . Left)
+                           `parseAp` parseAnnotNewType `ap` parseContexts
+                           `ap` parseSimple `apCut`
+			       ( equal `revChk` someSep pipe parseConstr
+				   `orelse`
+			         parse [])
+                           `ap` parse needs `apCut` parseDeriving)
+      , (L_data, \pos ->
 		 hDataPrim hideFuns st `parseChk` k_primitive 
 					`ap` conid `chk` equal
                                         `apCut` intPrim
-			`orelse`
-		 (hData hideFuns st . Right) `parseAp` unboxed `ap` parseContexts `ap` parseSimple `apCut`
-                           ( equal `revChk` someSep pipe parseConstr
-                                `orelse`
-                             parse []) `apCut` parseDeriving),
-        (L_class,\pos -> hClass hideFuns st `parseAp` parseContexts `ap` aconid `ap` avarid
-                                      `apCut`  (lit L_where `revChk` lcurl `revChk` parseICSigns `chk` optSemi `chkCut` rcurl
-                                                  `orelse`
-                                                parse [])),
-        (L_instance,\pos -> hInstance hideFuns st `parseAp` parseContexts `apCut` aconid `apCut` parseInst)
-        ]
-        (hVarsType hideFuns st `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar) `chkCut` coloncolon `apCut` parseContexts `apCut` parseType)
+		   `orelse`
+		 (hData hideFuns st . Right) `parseAp` unboxed
+                           `ap` parseContexts `ap` parseSimple `apCut`
+                               ( equal `revChk` someSep pipe parseConstr
+                                    `orelse`
+                                 parse [])
+                           `ap` parse needs `apCut` parseDeriving)
+      , (L_class, \pos ->
+                  hClass hideFuns st `parseAp` parseContexts `ap` aconid
+                            `ap` avarid `apCut`
+                                 (lit L_where `revChk` lcurl
+                                              `revChk` parseICSigns
+                                              `chk` optSemi
+                                              `chkCut` rcurl
+                                       `orelse`
+                                  parse [])
+                            `ap` (parse needs))
+      , (L_instance, \pos ->
+                     hInstance hideFuns st `parseAp` parseContexts
+                                     `apCut` aconid `apCut` parseInst)
+      ]
+      (hVarsType hideFuns st
+           `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar)
+           `chkCut` coloncolon `apCut` parseContexts `apCut` parseType)
 
 parseICSigns =
     id `parseChk` optSemi `ap` manySep semi parseICSign
 
 
 parseICSign =
-    triple `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar) `chk` coloncolon `ap` parseContexts `ap` parseType
+    triple `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar)
+           `chk` coloncolon `ap` parseContexts `ap` parseType
 
 
 
--- Skip until next "{-# NEED list #-}", return (Just ([],Just need,rest))   -- the same type as parseInterface3
+-- Skip until next "{-# NEED list #-}", return (Just ([],Just need,rest))
+-- the same type as parseInterface3
 
 parseUntilNeed st good bad input err =
    untilNeed input
@@ -124,7 +159,10 @@ parseUntilNeed st good bad input err =
    untilNeed [] = error "Internal error in parseUntilNeed"
    untilNeed ((pos,L_EOF,_,_):input) = good (ParseEof st) input err
    untilNeed ((_,L_interface,_,_):input) =
-     (ParseNext st `parseAp` optBang `ap` bigModId `apCut` parseRest) good bad input err
+       (ParseNext st `parseAp` optBang `ap` bigModId `apCut` parseRest)
+       good bad input err
    untilNeed ((_,L_LANNOT,_,_):(_,L_ACONID x,_,_):input) | x == tNEED =
-     ((ParseNeed st . Just) `parseAp` parseNeedList `chk` rannot `apCut` parseRest) good bad input err
+       ((ParseNeed st . Just) `parseAp` parseNeedList `chk` rannot
+                                                      `apCut` parseRest)
+       good bad input err
    untilNeed (_:input) = untilNeed input

@@ -157,7 +157,7 @@ emit g = emits [g]
 conInfo i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
   case lookupIS state i of
     Just (InfoName u (TupleId a) t _ _) -> ((a,0),thread) -- !!! NR the only constructors that can use InfoName is tuples !!! --PHtprof
-    Just cinfo@(InfoConstr _ _ _ _ _ idata) ->
+    Just cinfo@(InfoConstr _ _ _ _ _ _ idata) ->
       case lookupIS state idata of
 	Just info  ->
 	    ((arityI cinfo,nthcon 0 i (constrsI info)),thread)

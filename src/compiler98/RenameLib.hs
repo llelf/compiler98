@@ -487,7 +487,7 @@ bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st
 				-- (addAT st (\a b->b) unique
 				--     (InfoName unique tid 0 tid))
 				-- (addAT st (\a b->b) unique
-				--     (InfoVar unique tid (InfixDef,9) IEall
+				--     (InfoVar unique tid IEall (InfixDef,9)
 				--              (NewType [] [] [] [NTany 0])
 				--              (Just 0)))
                                 derived defaults errors needCheck)
@@ -659,7 +659,7 @@ defineDataPrim tid nt size down (RenameState flags unique irps@(_,rps)
                  )
 
 {-
-Add entry for data or newtype declaration to symboltable.
+-- Add entry for data or newtype declaration to symboltable.
 -}
 defineData :: Maybe Bool {- Nothing: newtype, Just False: data unboxed,
                             Just True: data (boxed) -}
@@ -686,25 +686,30 @@ defineData d tid nt cs down (RenameState flags unique irps@(_,rps) rts rt st
 
 
 {-
-Adds entry for type declaration of given method to symboltable.
-Returns identifier for this entry.
+-- Add entry for type declaration of given method to symboltable.
+-- Return identifier for this entry.
 -}
-defineMethod :: Pos {- position of type declaration -}
-             -> TokenId {- method id -} 
-             -> NewType {- method type -}
-             -> Int {- method arity -} 
-             -> Id {- class to which method belongs -} 
+defineMethod :: Pos	{- position of type declaration -}
+             -> TokenId	{- method id -} 
+             -> NewType	{- method type -}
+             -> Int	{- method arity -} 
+             -> Id	{- class to which method belongs -} 
+             -> TokenId	{- class name -} 
              -> RenameMonad Id
 
-defineMethod  pos tid nt arity classId down
+defineMethod pos tid nt arity classId ctid down
              (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
                           errors needCheck) =
   let realtid = ensureM rps tid
       key = (tid,Method)
+      rex = case sExp down ctid TClass of
+                IEall -> IEsel
+                IEabs -> IEnone
+                _     -> sExp down tid Method
   in case lookupAT rt key of
        Just u ->
          let newst = addAT st combInfo u {-(realtid,Method)-} 
-                       (InfoMethod u realtid (sFix down realtid) nt 
+                       (InfoMethod u realtid rex (sFix down realtid) nt 
                          (Just arity) classId)
          in case checkMNT nt of
               Nothing ->
@@ -725,16 +730,20 @@ defineMethod  pos tid nt arity classId down
 
 
 
-defineConstr tid nt fields bt down (RenameState flags unique irps@(_,rps)
-                                                rts rt st derived defaults
-                                                errors needCheck) = 
+defineConstr typtid tid nt fields bt down
+             (RenameState flags unique irps@(_,rps) rts rt st derived
+                          defaults errors needCheck) = 
   let realtid = ensureM rps tid
       key = (tid,Con)
+      rex = case sExp down typtid TCon of
+                IEall -> IEsel
+                IEabs -> IEnone
+                _     -> sExp down tid Con
   in case lookupAT rt key of
        Just u -> (u,RenameState flags unique irps rts rt
 			 (addAT st combInfo u {-(realtid,Con)-}
-                             (InfoConstr  u realtid
-                                (sFix down realtid) nt fields bt))
+                             (InfoConstr u realtid rex (sFix down realtid)
+                                         nt fields bt))
 			 derived defaults errors needCheck)
 
 defineField typtid bt c ((Nothing,_),_) down up = (Nothing,up)
@@ -747,11 +756,11 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
     case lookupAT rt (tid,Field) of
       Just u ->
         case lookupAT st u of
-	  Just (InfoField u' realtid' cis' bt' iSel') ->
+	  Just (InfoField u' realtid' ie cis' bt' iSel') ->
 	    if bt == bt'
 	    then (Nothing,RenameState flags unique irps rts rt
 			     (addAT st fstOf u' {-(realtid,Field)-}
-                                 (InfoField u' realtid'
+                                 (InfoField u' realtid' ie
                                      ((c,i):cis') bt' iSel'))
 			     derived defaults errors needCheck)
 	    else (Nothing,RenameState flags unique irps rts rt st
@@ -768,15 +777,17 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
 		      (Just (p,u,selu)
 		      ,RenameState flags unique irps rts rt
 			  	   (addAT (addAT st combInfo u
-                                            {-(realtid,Field)-}
-                                            (InfoField u realtid
-                                                [(c,i)] bt selu))
+                                                {-(realtid,Field)-}
+                                                 (InfoField u realtid IEnone
+                                                            [(c,i)] bt selu))
 				          combInfo selu
                                           (InfoVar selu realtid
-                                            (sFix down realtid)
                                                (case sExp down typtid TCon of
 						 IEall -> IEsel
-						 e -> IEnone) NoType (Just 1)))
+						 IEabs -> IEnone
+                                                 _     -> sExp down tid Var)
+                                               (sFix down realtid)
+                                               NoType (Just 1)))
 				   derived defaults errors needCheck)
 
 
@@ -799,9 +810,8 @@ defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st
 	 let realtid = sLG down rps u tid
 	 in  (u,RenameState flags unique irps rts rt
 			(addAT st combInfo u {-(realtid,Var)-}
-			    (InfoVar u realtid
-                                (sFix down (ensureM rps tid))
-                                (sExp down tid Var) NoType Nothing))
+			    (InfoVar u realtid (sExp down tid Var)
+                                (sFix down (ensureM rps tid)) NoType Nothing))
 			derived defaults errors needCheck)
 
 
@@ -818,7 +828,7 @@ defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps)
          case lookupAT st u of 
 	   Nothing -> error ("***defineDefaultMethod(1) " ++
                               show skey ++ " " ++ show u ++ "\n" ++ show rt)
-           Just (InfoMethod _ _ fix nt annot iClass) ->
+           Just (InfoMethod _ _ _ fix nt annot iClass) ->
 	     (unique,RenameState flags (unique+1) irps rts rt
 			 (addAT st combInfo  unique
                                 {-(realtid,MethodDefault)-}
