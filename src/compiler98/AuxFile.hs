@@ -440,7 +440,7 @@ addPat patSort visible pat (env,identMap) = (refutableVars,(newEnv,identMap))
     and . (isNewTypeDataCon id :) . map isIrrefutableField $ fieldPats
     where
     isIrrefutableField (FieldExp _ _ pat) = isIrrefutable pat
-  isIrrefutablePat _ = False
+  isIrrefutable _ = False
 
   isNewTypeDataCon id = case lookupAT identMap id of
     Just (Con Newtype _ _) -> True
