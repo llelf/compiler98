@@ -1358,9 +1358,9 @@ tConApp :: Bool          -- traced?
 tConApp traced parent c@(ExpCon pos id) args 
   | conArity > numberOfArgs = -- undersaturated application
     (ExpApplication pos 
-      (ExpVar pos (tokenPa numberOfArgs)
+      (combPartial pos numberOfArgs
       :ExpCon pos (nameTransCon id)
-      :ExpVar pos (tokenCn (conArity-numberOfArgs))
+      :combCn pos (conArity-numberOfArgs)
       :mkSRExp pos traced
       :parent
       :ExpVar pos (nameTraceInfoCon id)
@@ -1381,7 +1381,7 @@ tSatConApp :: Bool          -- traced?
            -> (Exp TokenId,ModuleConsts)
 tSatConApp traced parent (ExpCon pos id) args =
   (ExpApplication pos 
-    (ExpVar pos (tokenCon (length args))
+    (combCon pos (length args)
     :mkSRExp pos traced
     :parent
     :ExpCon pos (nameTransCon id)
@@ -1916,10 +1916,15 @@ mkSRExp pos traced =
 
 combApply :: Pos -> Bool -> Arity -> Exp TokenId
 combApply pos traced a = 
-  ExpVar pos ((if traced then tokenAp else tokenUAp) a)
+  testArity (if traced then 15 else 8) a "application with more than "
+    " arguments."
+    (ExpVar pos ((if traced then tokenAp else tokenUAp) a))
 
 combFun :: Pos -> Bool -> Arity -> Exp TokenId
-combFun pos traced a = ExpVar pos ((if traced then tokenFun else tokenUFun) a)
+combFun pos traced a = 
+  testArity (if traced then 15 else 8) a 
+    "function definition with more than " " arguments."
+    (ExpVar pos ((if traced then tokenFun else tokenUFun) a))
 
 combConstUse :: Pos -> Bool -> Exp TokenId
 combConstUse pos traced = 
@@ -1941,9 +1946,35 @@ combCase :: Pos -> Bool -> Exp TokenId
 combCase pos traced =
   ExpVar pos (if traced then tokenCase else tokenUCase)
 
+combCon :: Pos -> Arity -> Exp TokenId
+combCon pos arity =
+  testArity 15 arity "application of constructor to more than "
+    " arguments."
+    (ExpVar pos (tokenCon arity))
+
+combPartial :: Pos -> Arity -> Exp TokenId
+combPartial pos arity =
+  testArity 8 arity "partial application of constructor to more than "
+    " arguments."
+    (ExpVar pos (tokenPa arity))
+
+combCn :: Pos -> Arity -> Exp TokenId
+combCn pos arity =
+  testArity 12 arity "partial application of constructor with more than "
+    " missing arguments."
+    (ExpVar pos (tokenCn arity))  
+
 combUpdate :: Pos -> Bool -> Arity -> Exp TokenId
 combUpdate pos traced arity = 
-  ExpVar pos (if traced then tokenUpdate arity else tokenUUpdate)
+  testArity (if traced then 2 else maxBound) arity 
+    "field update with more than " " labels."
+    (ExpVar pos (if traced then tokenUpdate arity else tokenUUpdate))
+
+testArity :: Arity -> Arity -> String -> String -> a -> a
+testArity maxArity arity str1 str2 x =
+  if arity > maxArity 
+    then error ("Cannot handle " ++ str1 ++ show maxArity ++ str2)
+    else x
 
 -- apply data constructor R
 wrapExp :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
