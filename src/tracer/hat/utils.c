@@ -14,6 +14,7 @@
 #define HIDE(x)
 #endif
 
+#define MAX_STRING 1024
 
 FILE *HatFile, *OutputFile, *BridgeFile;
 FileOffset errorRoot, errorMsg,remoteStartNode=0;
@@ -153,7 +154,7 @@ finalise (void)
 FILE*
 openFile (char* base, char* ext)
 {
-  char filename[256];
+  char filename[MAX_STRING];
   FILE* file;
   struct stat buf;
   strcpy(filename,base);
@@ -175,7 +176,7 @@ openFile (char* base, char* ext)
 int
 sizeFile (char* base, char* ext)
 {
-  char filename[256];
+  char filename[MAX_STRING];
   struct stat buf;
   strcpy(filename,base);
   strcat(filename,ext);
@@ -228,7 +229,7 @@ freadAt (FileOffset fo, void* ptr, int size, int nmemb, FILE* stream)
 char*
 readString (void)
 {
-  char c, buf[256];
+  char c, buf[MAX_STRING];
   int i;
 
   i=0; while (c=fgetc(HatFile)) {
@@ -337,7 +338,7 @@ readSRAt (FileOffset fo)
 Ident*
 readNmTypeAt (FileOffset fo)
 {
-  char c, buf[256];  
+  char c, buf[MAX_STRING];  
   Ident *id = (Ident*)malloc(sizeof(Ident));
 
   /* defaults */
@@ -444,7 +445,7 @@ readNmTypeAt (FileOffset fo)
 		} break;
     case NTCString:
 		{ id->idname = readString();
-		  sprintf(buf,"\"CSTRING %s\"",id->idname);
+		  sprintf(buf,"\"%s\"",id->idname);
 		  free(id->idname);
 		  id->idname = strdup(buf);
 		} break;
