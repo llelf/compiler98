@@ -27,9 +27,11 @@ Addr.c: ShowsIntBase.c
 IOHIFILES =  FixIO UnsafePerformIO
 IOHIS     = $(patsubst %,../IOExtras/%.hi,${IOHIFILES})
 
-${OBJ_MAIN}: ../IOExtras/FixIO.hi
+${OBJ_MAIN}:   ../IOExtras/FixIO.hi
+${CFILE_MAIN}: ../IOExtras/FixIO.hi
 ${IOHIS}: ../IOExtras/%.hi : ../IOExtras/%.hs
 	cd ../IOExtras; ${MAKE} $@
 
 ../IOExtras/FixIO.hi: ../IOExtras/UnsafePerformIO.hi
+
 
