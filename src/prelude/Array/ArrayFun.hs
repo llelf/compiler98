@@ -1,5 +1,7 @@
 module Array where
 
+#if !defined(TRACING)
+
 import DArray
 import Ix
 
@@ -22,3 +24,21 @@ array b ivs =
                                            \multiply defined array element")
 -}
         else error "Array.array: out-of-range array association"
+
+#else
+
+import DArray
+import Ix
+import IOExtras
+
+array :: (Ix a) => (a,a) -> [(a,b)] -> Array a b
+array b ivs =
+    if and [inRange b i | (i,_) <- ivs]
+    then unsafePerformIO ( do
+           a <- newIOArray b (error "Array.!: undefined array element")
+           mapM_ (\(i,v)-> writeIOArray a i v) ivs
+           freezeIOArray a
+         )
+    else error "Array.array: out-of-range array association"
+
+#endif

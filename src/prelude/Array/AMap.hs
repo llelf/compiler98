@@ -2,7 +2,7 @@ module Array where
 
 import DArray
 import ArrayFun
-import Index
+import AIndex
 import Bounds
 
 --amap                  :: (Ix a) => (b -> c) -> Array a b -> Array a c

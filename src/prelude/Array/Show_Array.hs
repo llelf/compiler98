@@ -11,4 +11,5 @@ instance  (Ix a, Show a, Show b) => Show (Array a b)  where
                     shows (bounds a) . showChar ' ' .
                     shows (assocs a)                  )
 
-    showsType a = showString " (Array " .  (showsType . fst . bounds) a . showChar ' ' . (showsType . head . elems) a . showChar ')'
+    showsType a = showString " (Array " .  (showsType . fst . bounds) a
+                  . showChar ' ' . (showsType . head . elems) a . showChar ')'

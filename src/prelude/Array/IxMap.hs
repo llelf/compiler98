@@ -2,7 +2,7 @@ module Array where
 
 import DArray
 import ArrayFun
-import Index
+import AIndex
 
 ixmap                 :: (Ix a, Ix b) => (a,a) -> (a -> b) -> Array b c
                                          -> Array a c

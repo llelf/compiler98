@@ -4,7 +4,7 @@ import DArray
 import ArrayFun
 import Indices
 import Difference
-import Index
+import AIndex
 import Bounds
 
 infixl 9  //

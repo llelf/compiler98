@@ -15,6 +15,7 @@ module Array (
     ,ixmap
     ) where
 
+import DArray
 import Ix
 
 import AMap
@@ -23,10 +24,9 @@ import AccumArray
 import ArrayFun
 import Assocs
 import Bounds
-import DArray
 import Elems
 import Eq_Array
-import Index
+import AIndex
 import Indices
 import IxMap
 import ListArray

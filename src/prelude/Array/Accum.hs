@@ -2,7 +2,7 @@ module Array where
 
 import DArray
 import Replace
-import Index
+import AIndex
 
 accum                 :: (Ix a) => (b -> c -> b) -> Array a b -> [(a,c)]
                                    -> Array a b
