@@ -1,0 +1,140 @@
+# This Makefile.common is included from each subdirectory's individual
+# Makefile.  We assume the following definitions have already been
+# made in the importing Makefile.
+#
+# THISLIB = e.g. Complex
+# SRCS    = all .hs .gc and .c files
+# SRCS_T  = all tracing sources
+# SEARCH  = e.g. -P../IO -P../PreludeIO
+#
+# EXTRA_H_FLAGS = e.g. -prelude
+# EXTRA_C_FLAGS = e.g. -I../Binary
+#
+# optionally, to turn off SRC_MAIN(.hs) rules:
+# EXCLUDE_THISLIB_HS = yes
+
+
+OBJDIR   = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
+SRC_MAIN = ${THISLIB}.hs
+.SUFFIXES: .hi .hs .o .gc .c
+
+PART_FLAGS = +CTS -part -redefine -CTS $(SEARCH)
+LIB_FLAGS  = +CTS -lib  -redefine -CTS $(SEARCH)
+
+
+
+ifneq "T" "${TRACING}"
+
+OBJS_HS  = $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs,${SRCS}))
+OBJS_GC  = $(patsubst %.gc, ${OBJDIR}/%.o, $(filter %.gc,${SRCS}))
+OBJS_C   = $(patsubst %.c,  ${OBJDIR}/%.o, $(filter %.c, ${SRCS}))
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+OBJ_MAIN = $(patsubst %.hs, ${OBJDIR}/%.o, ${SRC_MAIN})
+endif
+OBJS = ${OBJS_HS} ${OBJS_GC} ${OBJS_C}
+
+CFILES_HS  = $(patsubst %.hs, %.c, $(filter %.hs, ${SRCS}))
+CFILES_GC  = $(patsubst %.gc, %.c, $(filter %.gc, ${SRCS}))
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+CFILE_MAIN = $(patsubst %.hs, %.c, ${SRC_MAIN})
+endif
+
+CFILES_GEN = ${CFILES_HS} ${CFILES_GC} ${CFILE_MAIN}
+
+
+all: ${OBJS} extra ${OBJ_MAIN}
+extra:
+cfiles: ${CFILES_GEN}
+fromC:
+	$(HC) -c -d $(OBJDIR) $(EXTRA_C_FLAGS) *.c
+objdir: ${OBJDIR}
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+cleanhi:
+	-rm -f *.hi
+cleanC:
+	-rm -f ${CFILES_GEN}
+clean:	cleanhi cleanC
+	-rm -f ${OBJDIR}/*.o *.o
+	-rm -f $(patsubst %.gc, %_.hs, $(filter %.gc, $(SRCS)))
+	-rm -f $(patsubst %.gc, %_.c,  $(filter %.gc, $(SRCS)))
+
+# general build rules for making objects from Haskell files
+${OBJS_HS}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+${OBJS_GC}: ${OBJDIR}/%.o : %.gc
+	${HC} -c ${PART_FLAGS} $(EXTRA_H_FLAGS) -o $@ $<
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+${OBJ_MAIN}: ${OBJS}
+${OBJ_MAIN}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(LIB_FLAGS)  $(EXTRA_H_FLAGS) -o $@ $<
+endif
+
+# general build rule for making objects from C files
+${OBJS_C}: ${OBJDIR}/%.o : %.c
+	$(CC) -c -I$(INCDIR) $(EXTRA_C_FLAGS) -o $@ $<
+
+# general build rules for making C files from Haskell files
+${CFILES_HS}: %.c : %.hs
+	$(HC) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
+${CFILES_GC}: %.c : %.gc
+	$(HC) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+${CFILE_MAIN}: %.c : %.hs
+	$(HC) -C $(LIB_FLAGS)  $(EXTRA_H_FLAGS) $<
+endif
+
+# hack to get round mutual recursion between libraries
+HIFILES = $(patsubst %.hs,../${THISLIB}/%.hi,$(filter %.hs, ${SRCS}))
+${HIFILES}: ../${THISLIB}/%.hi : %.hs
+	$(HC) -c $(PART_FLAGS) -o /dev/null $<
+
+
+else			#### Tracing
+
+OBJS_HS_T  = $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs, ${SRCS_T}))
+OBJS_GC_T  = $(patsubst %.gc, ${OBJDIR}/%.o, $(filter %.gc, ${SRCS_T}))
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+OBJ_MAIN_T = $(patsubst %.hs, ${OBJDIR}/%.o, ${SRC_MAIN})
+endif
+OBJS_T = ${OBJS_HS_T} ${OBJS_GC_T}
+
+all: ${OBJS_T} extra ${OBJ_MAIN_T}
+extra:
+objdir: ${OBJDIR}
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+install: all
+cleanhi:
+	-rm -f *.hi
+clean:  cleanhi
+	-rm -f ${OBJDIR}/*.o *.o
+
+# general build rules for making tracing objects from Haskell/C files
+$(OBJS_HS_T): ${OBJDIR}/%.o: %.hs
+	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+$(OBJS_GC_T): ${OBJDIR}/%.o: %.gc
+	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+${OBJ_MAIN_T}: ${OBJS_T}
+${OBJ_MAIN_T}: ${SRC_MAIN}
+	$(TR_COMPILE) -c $(LIB_FLAGS)  $(EXTRA_H_FLAGS) -o $@ $<
+endif
+
+# hack to get round mutual recursion between libraries
+HIFILES = $(patsubst %.hs,../${THISLIB}/%.hi,$(filter %.hs, ${SRCS}))
+${HIFILES}: ../${THISLIB}/%.hi : %.hs
+	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o /dev/null $<
+
+
+endif
+
+
+# The importing Makefile should now define individual dependencies
+#    e.g.
+# ${OBJDIR}/Function.o: Function.hs ${OBJDIR}/Other.o
+#
+# and C-files dependencies likewise
+#    e.g.
+# AlignBin.c:    BinHandle.c
+
