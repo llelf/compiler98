@@ -57,7 +57,7 @@ dependency opts done ((f,dm):fs) =
                               (getImports source (zdefs opts ++ defs opts) file)
                                     -- previously (haskellImport kp file)
                    hash ('\n':'#':_) = True
-                   hash ('\n':'%':_) = True
+               --  hash ('\n':'%':_) = True	-- why '%'?  for GreenCard?
                    hash (_:xs)  = hash xs
                    hash  []     = False
                    cpp = hash ('\n':content)
