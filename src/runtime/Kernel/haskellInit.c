@@ -404,6 +404,8 @@ void haskellInit (int argc, char **argv)
   /*dumpNewModInfo(HatFile,&NMOD_Prelude); */
   /*fflush(HatFile);*/
 
+    initialiseSATstack();
+
     strcpy(filename,argv[0]);		/* the .output file is a copy of */
     strcat(filename,".hat.output");	/* stdout */
     HatOutput = fopen(filename,"w");

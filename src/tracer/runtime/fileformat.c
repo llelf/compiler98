@@ -9,20 +9,28 @@
 #define HIDE(x)
 #endif
 
-#define	NUM_SATB	8192
+extern int spSize;	/* program's runtime stack size */
 #define	NUM_SATC	32000
 
 static FileOffset HatCounter = 8 + 2*sizeof(FileOffset);
-static FileOffset SATstack[NUM_SATB];
+static FileOffset *SATstack;
 static int SATp = 0;
 static FileOffset SATqueueA[NUM_SATC];
 static FileOffset SATqueueC[NUM_SATC];
 static int SATq = 0;
 
+void
+initialiseSATstack (void)
+{
+    SATstack = (FileOffset*)malloc(spSize * sizeof(FileOffset));
+    if (SATstack==(FileOffset*)0) {
+        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",spSize);
+        exit(10);
+    }
+}
 
 /* Remaining problems include (at least) the following:
- *   . All Integer values are faked to zero for now.
- *   . Hence all Rational values are also dummy.
+ *   . All Rational values are currently dummy.
  *   . Floats and Doubles are written to the file without regard for endianness.
  */
 
@@ -491,7 +499,7 @@ CTrace*
 primTSatB (CTrace* t1)
 {
     SATstack[SATp++] = t1->ptr;
-    if (SATp >= NUM_SATB) {
+    if (SATp >= spSize) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
         exit(1);
     }

@@ -30,6 +30,8 @@ typedef struct {
 } CTrace;
 
 
+void		initialiseSATstack	(void);
+
 FileOffset	primModInfo	(ModInfo *m);
 
 CTrace*		primTRoot	(void);
@@ -182,6 +184,5 @@ CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);
-
 
 #endif
