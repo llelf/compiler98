@@ -63,8 +63,10 @@ relink:
 	strip $(TARGET)
 clean:
 	rm -f $(OBJDIR)/*.$O *.$O *.hi
-realclean: clean
-	rm -f *.hc *.c $(TARGET)
+cleanC: clean
+	rm -f *.hc *.p.c *.z.c
+realclean: cleanC
+	rm -f $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
@@ -74,7 +76,7 @@ ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
-	$(MAKE) clean
+	$(MAKE) cleanC
 	touch "$(OBJDIR)/$(HC)"
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
