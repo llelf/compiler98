@@ -10,5 +10,7 @@ instance  (Integral a) => Enum (Ratio a) where
         toEnum n = fromInteger (toInteger n) :% 1
 	fromEnum = fromInteger . truncate        -- may overflow
 	enumFrom x = numericEnumFrom x
+	enumFromTo x y = numericEnumFromTo x y
 	enumFromThen x y = numericEnumFromThen x y
+	enumFromThenTo x y z = numericEnumFromThenTo x y z
 
