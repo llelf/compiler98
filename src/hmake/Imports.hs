@@ -28,7 +28,7 @@ data KeepState = Keep | Drop Int
 cpp :: SymTab String -> KeepState -> [String] -> [String]
 cpp _ _ [] = []
 
-cpp syms Keep (('#':x):xs) =
+cpp syms Keep (l@('#':x):xs) =
          let ws = words x
              cmd = head ws
              sym = head (tail ws)
@@ -47,7 +47,7 @@ cpp syms Keep (('#':x):xs) =
          else if cmd == "else"   ||
                  cmd == "elif"   then  cpp syms (Drop 1) xs
          else if cmd == "endif"  then  cpp syms  Keep xs
-         else cpp syms Keep xs    --error ("Unknown directive #"++cmd++"\n")
+         else l: cpp syms Keep xs    --error ("Unknown directive #"++cmd++"\n")
 cpp syms Keep (x:xs) =
     x: cpp syms Keep xs
 
