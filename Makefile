@@ -127,6 +127,8 @@ RUNTIME = \
 	src/runtime/Kernel/*.h \
 	src/runtime/Mk/Makefile* \
 	src/runtime/Mk/*.c
+TESTS = tests/README tests/runtests \
+	tests/conformance98 tests/nofib tests/nhc-bugs
 
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
@@ -397,7 +399,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
 		$(TARGDIR)/pragmaC $(TARGDIR)/hsc2hsC $(TARGDIR)/librariesC \
 		$(TARGDIR)/cpphsC \
-		nolinks
+		nolinks cleantest
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
@@ -421,6 +423,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
 	#tar rf nhc98src-$(VERSION).tar $(INCLUDEPKG)
 	tar rf nhc98src-$(VERSION).tar $(DOC)
+	tar rf nhc98src-$(VERSION).tar $(TESTS)
 	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
 	mkdir nhc98-$(VERSION)
 	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
@@ -546,7 +549,10 @@ cleanC:
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
 			timepreludeC heappreludeC hsc2hsC cpphsC librariesC
 
-realclean: clean cleanC
+cleantest:
+	cd tests && ./runtests clean >/dev/null
+
+realclean: clean cleanC cleantest
 	#cd data2c;        $(MAKE) realclean
 	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
 	cd $(TARGDIR)/$(MACHINE);  rm -f hmakerc hmake3.config config.cache
