@@ -9,7 +9,8 @@ module Flags where
             (Flags,processArgs,pF
             ,sProfile,sRedefine,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
             ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
+            ,sIIBound,sIINeed,,sIIRename,sRBound,sRename
+            ,sTraceData,sDBound,sDerive
             ,sEBound,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile
             ,sPrelude
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
@@ -70,7 +71,8 @@ data Flags = FF
   ,sNeed       :: Bool	-- need table	before imports
   ,sINeed      :: Bool	-- need table	after all imports
   ,sIINeed     :: Bool	-- need table	after each import
-  ,sIRename    :: Bool	-- rename table	after imports
+  ,sIRename    :: Bool	-- rename table	after all imports
+  ,sIIRename   :: Bool	-- rename table	after each import
   ,sImport     :: Bool	-- imported filenames
   ,sRImport    :: Bool	-- imports 	actually used
   ,sDepend     :: Bool	-- imported ids	(not currently used)
@@ -103,7 +105,7 @@ data Flags = FF
   
 
 --v debugging flags - show symbol table (after each compiler phase)
-  ,sIBound     :: Bool	-- after imports
+  ,sIBound     :: Bool	-- after all imports
   ,sIIBound    :: Bool	-- after each import
   ,sRBound     :: Bool	-- after rename
   ,sDBound     :: Bool	-- after deriving
@@ -223,6 +225,8 @@ processArgs xs = flags
   , sIRename = fElem False "irename" xs -- show rename table after  import
   , sIINeed = fElem False "iineed" xs   
   -- ^ show need   table between all import files
+  , sIIRename = fElem False "iirename" xs
+  -- ^ show rename table between all imports
   , sRename = fElem False "rename" xs   -- show syntax tree  after   rename
   , sDerive = fElem False "derive" xs   -- show syntax tree  after   derive
   , sRemove = fElem False "remove" xs   
