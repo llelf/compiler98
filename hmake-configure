@@ -249,13 +249,13 @@ then
 
   echo -n "Testing for the readline library:           "
   echo 'main(){;}' >rd.c
-  if ${CC-gcc} -o /dev/null rd.c -lreadline >/dev/null 2>&1
+  if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
   then echo 'yes (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
   else echo 'no  (detected)'
        READLINE=""
   fi
-  rm -f rd.c
+  rm -f rd.out rd.c
 
   if [ "$EXE" = "" ]
   then echo "Executables need .exe suffix?               no  (detected)"
