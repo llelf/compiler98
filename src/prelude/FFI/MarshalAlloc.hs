@@ -1,13 +1,16 @@
 module NHC.FFI
-  ( malloc       -- :: Storable a =>        IO (Ptr a)
-  , mallocBytes  -- ::               Int -> IO (Ptr a)
-  , alloca       -- :: Storable a =>        (Ptr a -> IO b) -> IO b
-  , allocaBytes  -- ::               Int -> (Ptr a -> IO b) -> IO b
-  , reallocBytes -- :: Ptr a -> Int -> IO (Ptr a)
-  , free         -- :: Ptr a -> IO ()
+  ( malloc        -- :: Storable a =>        IO (Ptr a)
+  , mallocBytes   -- ::               Int -> IO (Ptr a)
+  , alloca        -- :: Storable a =>        (Ptr a -> IO b) -> IO b
+  , allocaBytes   -- ::               Int -> (Ptr a -> IO b) -> IO b
+  , realloc       -- :: Storable b => Ptr a        -> IO (Ptr b)
+  , reallocBytes  -- ::               Ptr a -> Int -> IO (Ptr a)
+  , free          -- :: Ptr a -> IO ()
+  , finalizerFree -- :: FinalizerPtr a
   ) where
 
 import Ptr
+import ForeignPtr (FinalizerPtr(..))
 import Storable
 import CError
 import CTypes
@@ -51,6 +54,15 @@ alloca  = doAlloca undefined
 allocaBytes      :: Int -> (Ptr a -> IO b) -> IO b
 allocaBytes size  = bracket (mallocBytes size) free
 
+-- adjust a malloc'ed storage area to the size of the new type
+--
+realloc    :: Storable b => Ptr a -> IO (Ptr b)
+realloc ptr = doRealloc undefined
+  where
+    doRealloc      :: Storable b => b -> IO (Ptr b)
+    doRealloc dummy = 
+        failWhenNULL "realloc" (_realloc ptr (fromIntegral (sizeOf dummy)))
+
 -- adjust a malloc'ed storage area to the given size
 --
 reallocBytes          :: Ptr a -> Int -> IO (Ptr a)
@@ -61,6 +73,10 @@ reallocBytes ptr size  =
 --
 free :: Ptr a -> IO ()
 free  = _free
+
+-- foreign finalizer that performs the free operation
+--
+foreign import ccall "&free" finalizerFree :: FinalizerPtr a
 
 
 ---------------------------------------------------------------------------
@@ -75,7 +91,7 @@ failWhenNULL nm f = do
 
 -- Hmmm, Int is a little bit strange here, C uses size_t
 foreign import ccall unsafe "malloc"  _malloc  :: CSize -> IO (Ptr a)
-foreign import ccall unsafe "realloc" _realloc :: Ptr a -> CSize -> IO (Ptr a)
+foreign import ccall unsafe "realloc" _realloc :: Ptr a -> CSize -> IO (Ptr b)
 foreign import ccall unsafe "free"    _free    :: Ptr a -> IO ()
 
 

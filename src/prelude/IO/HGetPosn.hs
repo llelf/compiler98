@@ -15,7 +15,7 @@ hGetPosn h = do
         errno <- getErrNo
         throwIOError "hGetPosn" Nothing (Just h) errno
       else do
-        f <- newForeignPtr p (free p)  -- nullFunPtr
+        f <- newForeignPtr p finalizerFree	-- (free p)  -- nullFunPtr
         return (HandlePosn h f)
 
 #else

@@ -65,14 +65,15 @@ module NHC.FFI
    -------------------------------------------------------------------
   , ForeignPtr              -- abstract, instance of: Eq
   , FinalizerPtr            -- type synonym for FunPtr (Ptr a -> IO ())
-  , newForeignPtr           -- :: Ptr a -> IO () -> IO (ForeignPtr a)
-  , addForeignPtrFinalizer  -- :: ForeignPtr a -> IO () -> IO ()
-  , newUnsafeForeignPtr     -- :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
-  , addUnsafeForeignPtrFinalizer  -- :: ForeignPtr a -> FinalizerPtr a -> IO ()
+  , newForeignPtr           -- :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
+  , newForeignPtr_          -- :: Ptr a                   -> IO (ForeignPtr a)
+  , addForeignPtrFinalizer  -- :: ForeignPtr a -> FinalizerPtr a -> IO ()
   , withForeignPtr          -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
-  , foreignPtrToPtr         -- :: ForeignPtr a -> Ptr a
+  , unsafeForeignPtrToPtr   -- :: ForeignPtr a -> Ptr a
   , touchForeignPtr         -- :: ForeignPtr a -> IO ()
   , castForeignPtr          -- :: ForeignPtr a -> ForeignPtr b
+  , newConcForeignPtr           -- :: Ptr a -> IO () -> IO (ForeignPtr a)
+  , addConcForeignPtrFinalizer  -- :: ForeignPtr a -> IO () -> IO ()
 
    -------------------------------------------------------------------
    -- `StablePtr a' is a Haskell value passed to the foreign land.

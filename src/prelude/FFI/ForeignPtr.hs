@@ -1,16 +1,18 @@
 module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
     , FinalizerPtr		-- type synonym for FunPtr (Ptr a -> IO ())
-    , newForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
-    , addForeignPtrFinalizer	-- :: ForeignPtr a -> IO () -> IO ()
-    , newUnsafeForeignPtr	-- :: Ptr a -> FinalizerPtr a
+    , newForeignPtr		-- :: Ptr a -> FinalizerPtr a
    				--			-> IO (ForeignPtr a)
-    , addUnsafeForeignPtrFinalizer -- :: ForeignPtr a -> FinalizerPtr a
+    , newForeignPtr_		-- :: Ptr a -> IO (ForeignPtr a)
+    , addForeignPtrFinalizer	-- :: ForeignPtr a -> FinalizerPtr a
    				--			-> IO ()
     , withForeignPtr		-- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
     , touchForeignPtr		-- :: ForeignPtr a -> IO ()
-    , foreignPtrToPtr		-- :: ForeignPtr a -> Ptr a
+    , unsafeForeignPtrToPtr	-- :: ForeignPtr a -> Ptr a
     , castForeignPtr		-- :: ForeignPtr a -> ForeignPtr b
+
+    , newConcForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
+    , addConcForeignPtrFinalizer-- :: ForeignPtr a -> IO () -> IO ()
     ) 
     where
 
@@ -48,7 +50,6 @@ import NonStdUnsafeCoerce
 import Numeric (showHex)
 import NHC.Internal (unsafePerformIO)
 
-data _E a = _E a        -- just a box to protect arg from evaluation
 data ForeignPtr a;	-- primitive type known to the compiler internals
 
 foreign import cast foreignPtrToInt :: ForeignPtr a -> Int
@@ -59,43 +60,41 @@ instance Ord (ForeignPtr a) where
 instance Show (ForeignPtr a) where
   showsPrec _ p = showString "0x" . showHex (foreignPtrToInt p)
 
+
+type FinalizerPtr a = FunPtr (Ptr a -> IO ())
+
 -- Note that `newForeignPtr' is not a strictly legal FFI function.
 -- It is not usually possible to return a ForeignPtr as the result of
 -- a foreign import.  However, in order to implement ForeignPtrs, we
 -- need one single instance of returning a ForeignPtr, and this is it.
 --   *** Do not do it elsewhere!
 
-foreign import ccall "primForeignObjC"
-  primForeignPtr :: Ptr a -> b -> IO (ForeignPtr a)
-
-newForeignPtr      :: Ptr a -> IO () -> IO (ForeignPtr a)
-newForeignPtr p f  = primForeignPtr p (_E (unsafePerformIO f))
-
 foreign import ccall "primForeignPtrC"
-  newUnsafeForeignPtr :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
+  newForeignPtr :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
 
-type FinalizerPtr a = FunPtr (Ptr a -> IO ())
+-- newForeignPtr_ creates a ForeignPtr without a finaliser.
+newForeignPtr_ :: Ptr a -> IO (ForeignPtr a)
+newForeignPtr_ p = newForeignPtr p nullFunPtr
 
 -- addForeignPtrFinalizer is not implemented in nhc98.
-addForeignPtrFinalizer :: ForeignPtr a -> IO () -> IO ()
+addForeignPtrFinalizer :: ForeignPtr a -> FinalizerPtr a -> IO ()
 addForeignPtrFinalizer p free = return ()
-addUnsafeForeignPtrFinalizer :: ForeignPtr a -> FinalizerPtr a -> IO ()
-addUnsafeForeignPtrFinalizer p free = return ()
 
--- `withForeignPtr' is a safer way to use `foreignPtrToPtr'.
+
+-- `withForeignPtr' is a safer way to use `unsafeForeignPtrToPtr'.
 withForeignPtr :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
-withForeignPtr p k = k (foreignPtrToPtr p)
+withForeignPtr p k = k (unsafeForeignPtrToPtr p)
 {- GHC implementation:
   do x <- k (foreignPtrToPtr p)
      touchForeignPtr p
      return x
 -}
 
--- `foreignPtrToPtr' is a highly dangerous operation.  If the last
+-- `unsafeForeignPtrToPtr' is a highly dangerous operation.  If the last
 -- reference to the ForeignPtr disappears before the Ptr that has
 -- been extracted from it is used, then the finaliser could run
 -- rendering the Ptr invalid.
-foreign import cast foreignPtrToPtr :: ForeignPtr a -> Ptr a
+foreign import cast unsafeForeignPtrToPtr :: ForeignPtr a -> Ptr a
 
 -- `Touching' a foreignPtr is just intended to keep it alive across
 -- calls which might otherwise allow it to be GC'ed.  Only really
@@ -111,3 +110,21 @@ mallocForeignPtr :: Storable a => IO (ForeignPtr a)
 mallocForeignPtrBytes :: Int -> IO (ForeignPtr a)
 -}
 
+----------------
+
+-- It was once the case that the finaliser on a ForeignPtr was a
+-- Haskell IO action.  These are the remnants of that implementation.
+-- (It was eventually decided that, for safety, IO finalisers require
+-- concurrency.)
+foreign import ccall "primForeignObjC"
+  primForeignPtr :: Ptr a -> b -> IO (ForeignPtr a)
+
+data _E a = _E a        -- just a box to protect arg from evaluation
+
+newConcForeignPtr      :: Ptr a -> IO () -> IO (ForeignPtr a)
+newConcForeignPtr p f  = primForeignPtr p (_E (unsafePerformIO f))
+
+addConcForeignPtrFinalizer :: ForeignPtr a -> IO () -> IO ()
+addConcForeignPtrFinalizer p free = return ()
+
+----------------
