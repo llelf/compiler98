@@ -2,7 +2,8 @@ module IO (hIsEOF) where
 
 import DHandle
 
-#if !defined(TRACING)
+#if 0
+-- if !defined(TRACING)
 foreign import hIsEOF :: Handle -> IO Bool
 
 #else
