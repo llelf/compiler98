@@ -129,6 +129,9 @@ DL(CF_Prelude_46stderr)
 #define NTLambda	11
 #define NTDummy		12
 #define NTCString	13
+#define NTIf		14
+#define NTGuard		15
+#define NTContainer	16
 /* NTTrusted == NTId + 16 */
 #define NTTrusted 	22
 
