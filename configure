@@ -8,11 +8,11 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.11 (CVS development version)"
-HMAKEVERSION="3.00 (2002-01-18)" export HMAKEVERSION
+HMAKEVERSION="3.01 (2002-02-05)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
-	hat-checki hat-port"
+	hat-checki hat-port hat-explore"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
