@@ -79,7 +79,7 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-PACKAGES  = base parsec haskell-src QuickCheck HaXml
+PACKAGES  = base parsec haskell-src QuickCheck HaXml HUnit
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    $(patsubst %, src/libraries/%, ${PACKAGES})
