@@ -390,7 +390,7 @@ void haskellInit (int argc, char **argv)
     fpos_t p;
     char filename[256];
     extern void dumpNewModInfo(FILE*, void*);
-    extern void*MODULE_Main;
+    extern void *MODULE_Main, NMOD_Prelude;
     strcpy(filename,argv[0]);
     strcat(filename,".hat");
     HatFile = fopen(filename,"w");
@@ -400,6 +400,7 @@ void haskellInit (int argc, char **argv)
     fwrite(&p,sizeof(fpos_t),1,HatFile);
     fwrite(&p,sizeof(fpos_t),1,HatFile);
     dumpNewModInfo(HatFile,MODULE_Main);
+    dumpNewModInfo(HatFile,&NMOD_Prelude);
     fflush(HatFile);
     /*fclose(HatFile);*/
   }
