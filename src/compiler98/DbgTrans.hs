@@ -211,6 +211,52 @@ dTopDecl True root (DeclFun pos id [Fun [] rhs localDecls]) =
            [Fun [] (Unguarded (ExpApplication pos [mkTHidden,useParent])) 
              (DeclsParse [])]
         ]
+dTopDecl True root (DeclPat (Alt pat rhs decls)) =
+  -- for top-level trusted pattern bindings create name node for
+  -- each variable, because it might be called from suspected code.
+  -- here no indirections, because the fact that the trusted variables
+  -- are defined by pattern binding should not be visible.
+  addNewName 0 True "_pv" NoType >>>= \patid ->
+  --trace ("patid = " ++ show patid) $
+  setArity 0 patid >>>
+  patVars pat >>>= \(pat', bvsnvs) ->
+  let bvsposids = map fst bvsnvs -- (pos,id)s of original var 
+      (bvspos,bvsids) = unzip bvsposids 
+      pos = head bvspos in
+  mapS0 (setArity 2) bvsids >>>  
+  mapS0 addId bvsposids >>>
+  lookupId Var t_otherwise >>>= \otherw ->
+  lookupId Con tTrue >>>= \true ->
+  dTrustRhs False root root true otherw rhs >>>= \rhs' ->
+  dPat root pat' >>>= \pat'' ->
+  dTrustDecls root decls >>>= \decls' ->
+  mkFailExpr pos root >>>= \fe ->
+  let evars = map snd bvsnvs in 
+  makeTuple noPos evars >>>= \etup ->
+  zipWithS makeNTId bvspos bvsids >>>= \ntIds ->
+  makeSourceRef noPos >>>= \noSR ->
+  zipWithS (makeNm pos root) ntIds (repeat noSR) >>>= \nms ->
+  addNewName 0 True "nt" NoType >>>= \t' ->
+  lookupVar pos t_lazySat >>>= \lazySat ->
+  addNewName 0 True "rhs" NoType >>>= \rhsId ->
+  let
+    prhs = DeclFun noPos rhsId [Fun [] rhs' (DeclsParse [])]
+    pcase = ExpCase noPos (ExpVar noPos rhsId)
+                  [Alt pat'' (Unguarded etup) (DeclsParse [])
+	          ,Alt (PatWildcard noPos) (Unguarded fe) (DeclsParse [])]
+    pfun = DeclFun noPos patid [Fun [] (Unguarded pcase) decls']
+    vpat p pv i = vcase p pv
+    vcase p pv = ExpCase p (ExpVar p patid) 
+                       [Alt etup (Unguarded pv) (DeclsParse [])]
+    vfun ((p, i), pv) nte = 
+          DeclFun p i 
+            [Fun [PatWildcard p, PatWildcard p] 
+               (Unguarded (ExpApplication pos 
+                            [lazySat, (vpat p pv i), ExpVar p t'] )) 
+               (DeclsParse
+                 [DeclFun p t' [Fun [] (Unguarded nte) (DeclsParse [])]])
+            ]
+  in unitS (zipWith vfun bvsnvs nms ++ [pfun,prhs])
 dTopDecl trusted root d = 
   (if trusted then dTrustDecl else dSuspectDecl) root d >>>= \(ds',auxDs') ->
   unitS (ds' ++ auxDs') 
@@ -319,6 +365,8 @@ dSuspectDecl parent decl = dDecl decl
 dTrustDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
+  -- here no indirections, because the fact that the trusted variables
+  -- are defined by pattern binding should not be visible.
   addNewName 0 True "_pv" NoType >>>= \patid ->
   --trace ("patid = " ++ show patid) $
   setArity 0 patid >>>
@@ -332,7 +380,6 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
   lookupId Con tTrue >>>= \true ->
   dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
   dPat hidParent pat' >>>= \pat'' ->
-  let ExpApplication _ [r,_,tresult] = pat'' in
   dTrustDecls hidParent decls >>>= \decls' ->
   mkFailExpr pos hidParent >>>= \fe ->
   let evars = map snd bvsnvs in 
