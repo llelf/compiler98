@@ -1,3 +1,10 @@
+12-Jan-00:
+	This file is getting very out-of-date.  There have been numerous
+	improvements, bugfixes, and so on since the last entry.  hmake
+	now works with all Haskell compilers, including ghc, hbc, and
+	nhc98.  It is thus distributed separately from the nhc98 compiler
+	now.
+
 13-Jun-98:
 	A major overhaul of everything.  The script now uses /bin/sh instead
 	of tcsh, and recognises a better set of options.  The programs NhcMk

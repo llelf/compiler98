@@ -21,3 +21,9 @@ other configuration settings from the commandline.
 gives a summary of all your configuration options.
 
 
+Note: if you have a binary distribution of hmake, then you simply omit
+the build step:
+
+  $ ./configure   [ --prefix=/my/installation ]
+  $ make install
+

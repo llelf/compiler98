@@ -1,14 +1,15 @@
-# Default definitions filled in by config script, included from Makefile.inc
-include Makefile.inc
+MACHINE := $(shell script/harch)
+export MACHINE
 
-HVERSION = 1.6
-# HVERSION is the version number for hmake.
+# This included config is only for the BUILDWITH variable.
+include targets/$(MACHINE)/config.cache
 
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary*
 
-TARGDIR= targets
-TARGETS= hmake_n hmake_b hmake_g chmake
+LIBDIR  = lib
+TARGDIR = targets
+TARGETS = hmake_n hmake_b hmake_g chmake
 
 
 ##### compiler build + install scripts

@@ -49,7 +49,7 @@ decode progArgs =
   ignoreHi = (map tail . filter (\v -> head v == 'N')) flags
   defs     = (map tail . filter (\v -> head v == 'D')) flags
   zdefs    = (map tail . filter (\v -> head v == 'Z')) flags
-  pathSrc  = (map tail . filter (\v -> head v == 'I')) flags
-  pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
+  pathSrc  = (map tail . filter (\v -> head v == 'I')) flags ++
              (map tail . filter (\v -> head v == 'i')) flags
+  pathPrel = (map tail . filter (\v -> head v == 'P')) flags
 
