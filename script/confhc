@@ -1,6 +1,9 @@
 #!/bin/sh
 #	confhc -- detect installed Haskell compilers and versions
 #	author:   Malcolm.Wallace@cs.york.ac.uk, Sept 1999
+#			added "hmake interactive" config, May 2000
+
+VERSION=${HMAKEVERSION-"1.8 or better"}
 
 echo "  (hmake configuration is done once only.)"
 echo "First we look for already-installed Haskell compilers:"
@@ -181,7 +184,7 @@ if [ "$1" = "" ]
 then
   BUILDHMAKE=
   echo -n "I am guessing that you want to use "
-  # in order of preference: hbc, then ghc, then gcc...
+  # in order of preference: ghc, then hbc, then gcc...
   if [ "$HBCDIR" = "" ];
   then
     if [ "$GHCDIR" = "" ];
@@ -198,8 +201,8 @@ then
       echo -n hbc
       BUILDHMAKE=hbc
     else
-      echo -n "hbc (not ghc)"
-      BUILDHMAKE=hbc
+      echo -n "ghc (not hbc)"
+      BUILDHMAKE=ghc
     fi
   fi
 else
@@ -252,6 +255,33 @@ cat script/hmakeconfig.inst |\
 ) |\
 sed -e "s|^BUILTBY=$|BUILTBY=${BUILDHMAKE}|" >targets/$MACHINE/hmake.config
 
+CONFIGHS=src/interpreter/$MACHINE/LocalConfig.hs
+echo "  Now I'm creating $CONFIGHS"
+mkdir -p src/interpreter/$MACHINE
+echo >$CONFIGHS  "module LocalConfig where"
+echo >>$CONFIGHS "hmakeversion = \"$VERSION\""
+echo >>$CONFIGHS "builtby = \"$BUILDHMAKE\""
+echo >>$CONFIGHS "ghcKnown = " \
+    `if [ "$GHCDIR" = "" ]; then echo "False"; else echo "True"; fi`
+echo >>$CONFIGHS "hbcKnown = " \
+    `if [ "$HBCDIR" = "" ]; then echo "False"; else echo "True"; fi`
+echo >>$CONFIGHS "nhcKnown = " \
+    `if [ "$NHC98DIR" = "" ]; then echo "False"; else echo "True"; fi`
+echo >>$CONFIGHS "hbcdir = \"$HBCDIR/`method $HBCEXT $HBCMETHOD`\""
+echo >>$CONFIGHS "nhc98dir = \"$NHC98DIR\""
+echo >>$CONFIGHS "ghcdir = \"$GHCINCDIR\""
+echo >>$CONFIGHS "ghcver = ${GHCSYM-0}"
+echo >>$CONFIGHS "ghclang = \
+    `case $GHCVER in
+           0.29) echo 2 ;;
+           2.*)  echo 3 ;;
+           3.*)  echo 4 ;;
+           4.*)  echo 5 ;;
+           *)    echo 6 ;;
+     esac`"
+echo >>$CONFIGHS "defaultHc = builtby"
+
+echo
 echo "If I got something wrong, you can edit"
 echo "   targets/$MACHINE/hmake.config"
 echo "   by hand and run 'configure' again.  (I will not undo your changes.)"
