@@ -1,7 +1,7 @@
 module NT ( NT(..), NewType(..)
 	, anyNT, consNT, freeNT, freshNT, polyNT, strTVar
 	, sndNTvar, strNT, strictNT, transCtxs, useNT
-	, contextNT, ntContext2Pair, stripNT
+	, contextNT, ntContext2Pair, stripNT, anyVarNT
 	) where
 
 
@@ -157,3 +157,9 @@ strTVarsCtxsNTs tvs ctxs nts =
 
 
 sndNTvar (c,v) = (c,NTvar v) -- used for ctxs
+
+
+anyVarNT :: NT -> Maybe Id
+anyVarNT (NTany tvn) = Just tvn
+anyVarNT (NTvar tvn) = Just tvn
+anyVarNT _ = Nothing
