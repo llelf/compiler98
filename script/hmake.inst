@@ -144,7 +144,7 @@ do
   # -U*) cppflags=$cppflags" $1"; ;;
 
     # Link flags
-    -L*) LDFLAGS=$LDFLAGS" $1" ;;
+    -L*) LDFLAGS=$LDFLAGS" `filepath $1`" ;;
     -l*) LDFLAGS=$LDFLAGS" $1" ;;
 
     # tracing and profiling flags - mainly nhc98, some hat-trans
