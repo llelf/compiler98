@@ -1,0 +1,335 @@
+#!/bin/sh
+#	configure -- prepare to compile/install hmake
+#	author:   Malcolm.Wallace@cs.york.ac.uk
+#       (nhc13config - March 1998)
+#       (nhc98config - May 1999)
+#       (configure   - Oct 1999)
+#       (hacked for just hmake - December 1999)
+
+# When incrementing this version number, don't forget to change the
+# corresponding definition in the Makefile!
+HMAKEVERSION="v1.6 (date 991208)"
+
+if uname >/dev/null 2>&1
+then OS=`uname -s`
+else OS=unknown
+fi
+
+USER=${USER-`whoami 2>/dev/null`}
+MACHINE=`script/harch`
+INSTALLDIR=/usr/local
+PWD=`pwd`
+case $PWD in	# path mangling required for CYGWIN
+  file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
+  //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
+esac
+
+BUILDWITH=
+
+BUILDLIBDIR=$PWD/lib
+BUILDBINDIR=$PWD/script
+BUILDTARGDIR=$PWD/targets
+BUILDDIR=$BUILDTARGDIR
+
+INSTALL=no
+LIB=yes
+BIN=yes
+MAN=yes
+
+if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+then		# cached settings override defaults above
+  . $BUILDTARGDIR/$MACHINE/config.cache
+fi
+
+while [ "$1" != "" ]
+do
+  case $1 in
+    +lib) LIB=yes ;;
+    -lib) LIB=no ;;
+    +bin) BIN=yes ;;
+    -bin) BIN=no ;;
+    +man) MAN=yes ;;
+    -man) MAN=no ;;
+    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-15` ;;
+    --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
+    --prefix=*)     INSTALLDIR=`echo "$1" | cut -c10-` ;;
+    --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
+    --bindir=*)  BINDIR=`echo "$1" | cut -c10-` ;;
+    --libdir=*)  LIBDIR=`echo "$1" | cut -c10-` ;;
+    --mandir=*)  MANDIR=`echo "$1" | cut -c10-` ;;
+    --hbcdir=*)  HBCDIR=`echo "$1" | cut -c10-` ;;
+    --ghcdir=*)  GHCDIR=`echo "$1" | cut -c10-` ;;
+    --install)   INSTALL=yes ;;
+    --config)    INSTALL=no ;;
+    --help|-h)
+  echo "`basename $0` options:     [default in brackets]"
+  echo "  --config             Configure only (do not install) [default]"
+  echo "  --install            Configure AND install now"
+  echo "  --help / -h          Display these options and quit"
+  echo "  --version / -v       Display versions of `basename $0` and hmake"
+  echo
+  echo "  --buildwith=comp     Build hmake with given compiler [detected]"
+ #echo
+ #echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
+ #echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
+  echo
+  echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
+  echo "  --prefix=rootdir     |"
+  echo "  --installdir=rootdir | Use rootdir as base for installation [/usr/local]"
+  echo "  --bindir=dir         Install scripts in dir [rootdir/bin]"
+  echo "  --libdir=dir         Install libraries in dir [rootdir/lib/hmake]"
+  echo "  --mandir=dir         Install man pages in dir [rootdir/man/man1]"
+  echo
+  echo "  [+/-]bin             Do/don't (re-)install scripts [+bin]"
+  echo "  [+/-]lib             Do/don't (re-)install executables [+lib]"
+  echo "  [+/-]man             Do/don't (re-)install man pages [+man]"
+            exit 0 ;;
+    --version|-v) echo "`basename $0`: $CONFIGVERSION"
+                  echo "hmake:     $HMAKEVERSION"
+                  echo '  [' $INSTALLINFO ']'
+                  exit 0 ;;
+    *) echo "`basename $0`: unrecognised option $1"
+       echo '    (use --help for option information)'
+       exit 1 ;;
+  esac
+  shift
+done
+
+echo Configuring for hmake... '[' $CONFIGVERSION ']'
+if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+then
+  echo "Starting with earlier config in targets/$MACHINE/config.cache"
+  echo '[' $INSTALLINFO ']'
+  echo '  (but cmdline options have precedence)'
+fi
+
+INSTALLINFO="configured for $MACHINE by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
+
+LIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
+BINDIR=${BINDIR-$INSTALLDIR/bin}
+MANDIR=${MANDIR-$INSTALLDIR/man/man1}
+#HBCDIR=${HBCDIR}
+#GHCDIR=${GHCDIR}
+
+case $OS in
+  CYGWIN*) EXE=.exe ;;
+  *)       EXE=  ;;
+esac
+#case $OS in
+#  SunOS)  LIBCOMPAT=" -lsocket"  ;;
+#  NetBSD) LIBCOMPAT=" -lcompat"  ;;
+#  *)      LIBCOMPAT=  ;;
+#esac
+
+# Configure hmake
+echo "--------"
+echo Configuring known compilers... '[' $HMAKEVERSION ']'
+if [ -f script/hmake.config ]
+then
+  echo "  Compilers have already been detected once.  (Remove file script/hmake.config"
+  echo "    and run `basename $0` again if you want to re-do that step.)"
+# echo "  hbc/LML directory:    $HBCDIR"
+# echo "  ghc directory:        $GHCDIR"
+# echo
+else
+  script/confhc $BUILDWITH
+fi
+echo "--------"
+
+echo
+echo "                   Configuration report for hmake."
+
+if [ "$INSTALL" = "no" ]
+then
+  echo "    (You can re-run `basename $0` to change settings before proceeding.)"
+  echo "You wish (eventually) to install the following components in these locations:"
+  echo "    (Installation directories are not created/checked at this stage.)"
+  echo "Final install root:   $INSTALLDIR"
+  if [ "$LIB" = "yes" ]
+  then
+    echo "hmake binaries:       $LIBDIR/$MACHINE"
+  else
+    echo "Executables and libs: (none)"
+  fi
+  if [ "$BIN" = "yes" ]
+  then
+    echo "Scripts:              $BINDIR"
+  else
+    echo "Scripts:              (none)"
+  fi
+  if [ "$MAN" = "yes" ]
+  then
+    echo "Man pages:            $MANDIR"
+  else
+    echo "Man pages:            (none)"
+  fi
+
+  if [ -d src ]		# Don't bother with these if doing a binary distribution
+  then
+    echo
+    echo "Now we check/create your build directories:"
+    echo "Build directory root:  $BUILDDIR"
+    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
+    if [ ! -d $BUILDTARGDIR/$MACHINE ]
+    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "Object files build in: $BUILDDIR/$MACHINE"
+    if [ ! -d $BUILDDIR/$MACHINE ]
+    then mkdir -p $BUILDDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
+    if [ ! -d $BUILDLIBDIR/$MACHINE ]
+    then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+  fi
+fi
+
+echo
+
+# The following tests are unnecessary in a binary (src-less) distribution.
+if [ -d src ]
+then
+  if [ "$BUILDWITH" = "" ]
+  then
+    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+    echo "I have guessed that you want to build hmake with $BUILDWITH"
+  else
+    echo "You said you want to build hmake with $BUILDWITH"
+  fi
+
+  if [ "$EXE" = "" ]
+  then echo "Executables do not have .exe suffix (detected)"
+  else echo "Executables need .exe suffix (detected)"
+  fi
+
+else
+  if [ -f lib/$MACHINE/config ]
+  then
+    . lib/$MACHINE/config
+    echo "Your binary distribution of hmake was built by $BUILDWITH."
+  else
+    echo "ERROR: Your distribution of hmake has no sources and no executables!"
+    exit 1
+  fi
+fi
+
+
+echo
+
+
+if [ "$INSTALL" = "no" ]
+then
+  if [ -d src ]		# Don't overwrite config if doing binary distribution!
+  then
+    echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
+    ( echo "BUILDWITH=$BUILDWITH";
+      echo "INSTALLVER=\"$CONFIGVERSION\"";
+      echo "INSTALLINFO=\"$INSTALLINFO\"";
+      echo "BUILDBASEDIR=$BUILDDIR";
+      echo "EXE=$EXE";
+    ) >$BUILDLIBDIR/$MACHINE/config
+
+    echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
+  fi
+
+else	# [ "$INSTALL" = "yes" ]
+
+  echo "Installation directories are now created/checked."
+  echo "Install directory root is:"
+  echo "    $INSTALLDIR"
+
+  if [ "$LIB" = "yes" ]
+  then
+    echo "Executables and object lib files go into:"
+    echo -n "    $LIBDIR/$MACHINE"
+    if [ ! -d $LIBDIR/$MACHINE ]
+    then mkdir -p $LIBDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    "
+    #cp -p $BUILDLIBDIR/$MACHINE/ tar cf - . ) | ( cd $LIBDIR/$MACHINE; tar xvf - )
+    for file in $BUILDLIBDIR/$MACHINE/*
+    do
+      echo -n "`basename $file` "
+      if [ -f $file ]; then cp -p $file $LIBDIR/$MACHINE; fi
+    done
+    echo -n "hmake.config "
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config \
+                                         >$LIBDIR/$MACHINE/hmake.config
+    echo
+  else
+    echo 'Not (re-)installing executables and library files'
+  fi
+
+  if [ "$BIN" = "yes" ]
+  then 
+    echo "Scripts go into:"
+    echo -n "    $BINDIR"
+    if [ ! -d $BINDIR ]
+    then mkdir -p $BINDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "hmake "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
+    echo -n "hmake.config "
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
+    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$LIBDIR/hmake.config
+    echo -n "harch "
+    cp script/harch $BINDIR
+    echo
+    chmod +x $BINDIR/hmake $BINDIR/harch
+  else
+    echo 'Not (re-)installing scripts'
+  fi
+
+  if [ "$MAN" = "yes" ]
+  then
+    echo "Man pages go into:"
+    echo -n "    $MANDIR"
+    if [ ! -d $MANDIR ]
+    then mkdir -p $MANDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    "
+    for file in man/*
+    do
+      echo -n "`basename $file` "
+      cp $file $MANDIR
+    done
+    echo
+  else
+    echo 'Not (re-)installing man pages'
+  fi
+
+fi
+
+echo "Saving current configuration in targets/$MACHINE/config.cache"
+( echo "INSTALLDIR=$INSTALLDIR" ;
+  if [ "$LIBDIR" != "$INSTALLDIR/lib/hmake" ]; then echo "LIBDIR=$LIBDIR" ; fi;
+  if [ "$MANDIR" != "$INSTALLDIR/man/man1" ]; then echo "MANDIR=$MANDIR" ; fi;
+  if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
+  if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
+  if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
+  echo "BUILDDIR=$BUILDDIR" ;
+  echo "LIB=$LIB" ;
+  echo "BIN=$BIN" ;
+  echo "MAN=$MAN" ;
+  echo "EXE=$EXE" ;
+  echo "INSTALLVER=\"$CONFIGVERSION\"" ;
+  echo "INSTALLINFO=\"$INSTALLINFO\"" ;
+) >$BUILDTARGDIR/$MACHINE/config.cache
+
+echo "Done."
+if [ "$INSTALL" = "yes" ]
+then
+  echo
+  echo "    Please ensure $BINDIR is in your PATH variable."
+fi
+echo
+exit 0
