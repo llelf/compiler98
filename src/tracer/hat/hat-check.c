@@ -543,7 +543,7 @@ nextnode() {
 	  for (; arity-- > -2;)
 	    dopointer(NONZERO, TR, readpointer(), TR, offset);
 	}
-	dopointer(NONZERO, SR, readpointer(), TR, offset);
+	dopointer(MAYBEZERO, SR, readpointer(), TR, offset);
 	break;
       case NAM:
         if (amode) printf(" Name          \t");
