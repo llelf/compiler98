@@ -38,7 +38,7 @@ instance  Show IOError  where
 	showsPrec p (UserError "" str) =
 		showString "I/O error (user-defined):\n  "  . showString str
 	showsPrec p (UserError loc str) =
-		showString "I/O error (user-defined) in " . showString loc .
+		showString "I/O error (user-defined), " . showString loc .
 		showString ":\n  " . showString str
 
 	showsType a = showString "IOError"

@@ -14,7 +14,7 @@ malcolm 2/00 - patched for nhc98
 
 module Random
 	(
-	  RandomGen(next, split)
+	  RandomGen(next, split, genRange)
 	, StdGen
 	, mkStdGen
 	, Random ( random,   randomR,
@@ -54,8 +54,10 @@ toInt   = fromIntegral
 
 
 class RandomGen g where
-   next  :: g -> (Int, g)
-   split :: g -> (g, g)
+    next  :: g -> (Int, g)
+    split :: g -> (g, g)
+    genRange :: g -> (Int,Int)
+    genRange g = (minBound,maxBound)
 
 data StdGen 
  = StdGen Int Int

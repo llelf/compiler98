@@ -1,5 +1,8 @@
 module List where
 
-minimumBy               :: (a -> a -> a) -> [a] -> a
-minimumBy min []        =  error "List.minimumBy: empty list"
-minimumBy min xs        =  foldl1 min xs
+minimumBy               :: (a -> a -> Ordering) -> [a] -> a
+minimumBy cmp []        =  error "List.minimumBy: empty list"
+minimumBy cmp xs        =  foldl1 min xs
+	                       where min x y = case cmp x y of
+                                                  GT -> y
+                                                  _  -> x
