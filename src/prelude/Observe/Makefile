@@ -2,7 +2,7 @@ include Makefile.inc
 
 EXCLUDE_THISLIB_HS = yes
 THISLIB	= Observe
-ifeq "${BUILDWITH}" "nhc98"
+ifeq "${BUILDCOMP}" "nhc"
 EXTRA_H_FLAGS = +RTS -H32M -RTS
 endif
 

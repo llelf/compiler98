@@ -2,13 +2,13 @@ include Makefile.inc
 
 THISLIB	= FFI
 SEARCH	= -P../IOExtras -P$(LOW) -P../PreludeIO -P../$(MACHINE)
-ifeq "$(BUILDWITH)" "hbc"
+ifeq "$(BUILDCOMP)" "hbc"
 EXTRA_H_FLAGS	= +RTS -A16M -H32M -RTS
 endif
-ifeq "${BUILDWITH}" "ghc"
+ifeq "${BUILDCOMP}" "ghc"
 EXTRA_H_FLAGS = +RTS -K4M -RTS
 endif
-ifeq "${BUILDWITH}" "nhc98"
+ifeq "${BUILDCOMP}" "nhc"
 EXTRA_H_FLAGS = +RTS -H32M -RTS
 endif
 
