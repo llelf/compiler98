@@ -1,4 +1,6 @@
 module HatTrace (
+ debugPrint,
+
  HatTrace,      -- type, representing a redex trail file
  HatNode,       -- type, representing a node within the redex trail
 		-- structure of HatTrace and HatNode not revealed
@@ -368,7 +370,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 %fun c_hatInteger :: HatNodeInternal -> Int
 %call (foreign f hattrace,int nodenumber)
-%code 
+%code
 %     if (getNodeType((int) hattrace,nodenumber)!=HatInteger) {
 %        printf("Not an integer node!\n");exit(1);
 %     }
@@ -945,3 +947,8 @@ instance HatRep HatNode where
 
 
 
+%fun debugPrint :: String -> Int
+%call (string s)
+%code 
+%     printf(s);
+%result (int "1")

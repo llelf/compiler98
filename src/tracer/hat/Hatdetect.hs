@@ -7,8 +7,8 @@ import System
 import Char(isDigit,digitToInt,toUpper)
 import IO(hFlush,stdout)
 
-spawnObserveCmd = "xterm -e \"hat-observe "
-spawnObserveEnd = "\"&"
+spawnObserveCmd = "xterm -e hat-observe "
+spawnObserveEnd = "&"
 spawnTraceCmd = "hat-trail "
 spawnTraceEnd = "&"
 

@@ -7,8 +7,8 @@ import System
 import Char(isDigit,digitToInt,toUpper)
 import IO(hFlush,stdout)
 
-spawnDetectCmd = "xterm -e \"hat-detect "
-spawnDetectEnd = "\"&"
+spawnDetectCmd = "xterm -e hat-detect "
+spawnDetectEnd = "&"
 spawnTraceCmd = "hat-trail "
 spawnTraceEnd = "&"
 
@@ -396,7 +396,11 @@ doCommand cmd s hatfile state
       hFlush stdout
       fun <- getLine
       putStrLn ""
-      if (fun=="") then putStrLn "nothing to be observed" else
+      if (fun=="") then 
+         do
+          putStrLn "nothing to be observed"
+          interactive hatfile state         
+       else
        do
         putStrLn "You can observe applications with specific arguments only."
         putStrLn "The '_' matches any subexpression."

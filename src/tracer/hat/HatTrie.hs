@@ -451,15 +451,16 @@ stringLex s =
                              if (length cs==2)&&(head (tail cs)=='\'') then
                                 (c:cs,drop 2 r)
                              else error "Bad character expression!"
-                        | (readMode==NoMode)&&(c=='_')&&((take 2 r)=="|_") 
+                        | (readMode==NoMode)&&(c=='_')&&((take 2 r)=="|_")
                           = ("_|_",(drop 2 r))
-                        | (((isAlphaNum c)||(c=='_'))&&
-                             (readMode `elem` [NoMode,AlphaMode]))
-                            || (((c=='.')||(c=='\''))&&(readMode==AlphaMode))
-			  = let (l,r2) = oneLex AlphaMode r in (c:l,r2)
-                        | ((c `elem` 
-                             ['+','-','*','/','!','&','|','=','<','>',':'])&&
-			  (readMode `elem` [NoMode,SpecialMode]))
+                        | (((isAlphaNum c)||(c=='_')||
+			    (((c=='\'')||(c=='.'))&&(readMode==AlphaMode)))&&
+			   (readMode `elem` [NoMode,AlphaMode]))
+			  = let (l,r2) = oneLex AlphaMode r in
+                              if (c=='\'') then (c:[],r) else (c:l,r2)
+                        | ((c `elem`
+			    ['+','-','*','/','!','&','|','=','<','>',':'])&&
+			   (readMode `elem` [NoMode,SpecialMode]))
 			    = let (l,r2) = oneLex SpecialMode r in (c:l,r2)
                         | (readMode==NoMode)&&(c=='[')&&((take 1 r)=="]") 
                           = ("[]",(drop 1 r))
@@ -517,9 +518,6 @@ stringLinExpr s =
     lin' funs (('[',c):brackets) (",":r) =
           let lexp=(lin' funs (('[',c+1):brackets) r) in
 	       (LAppl:LConstr ":":LFirstArg:(fst lexp), snd lexp)
-    lin' funs brackets (('\'':c:'\'':[]):r) =
-          let lexp=(lin' funs brackets r) in
-	       (LChar c:(fst lexp), snd lexp)
     lin' funs brackets (('"':s):r) =
           let lexp=(lin' funs brackets r) in
                ((makeString s)++(fst lexp), snd lexp)
@@ -532,6 +530,7 @@ stringLinExpr s =
 	   ((token' s):(fst lexp), snd lexp)
     lin' funs brackets [] =
       if (null brackets) then ([],[]) else ([],"Unbalanced parenthesis!")
+    token' ('\'':c:'\'':[]) = LChar c
     token' "_|_" = LSATB
     token' "_" = LSATA
     token' all@(c:_) =
@@ -551,11 +550,12 @@ stringLinExpr s =
            isInfix = if (null sec==False) then 
                        (isInfixOp sec)
                       else False in
-         if (isInfix) then
-              --error ("Infix: "++(show ([lexp,sec,f,r])))
-             sec++(LFirstArg:(f++r))
-          else
-            lexp
+          if (isInfix) then
+               --error ("Infix: "++(show ([lexp,sec,f,r])))
+              sec++(LFirstArg:(f++r))
+           else
+             lexp
+
     isInfixOp [] = False
     isInfixOp (LFirstArg:r) = isInfixOp r
     isInfixOp ((LConstr s):_) = isInfixName s
