@@ -36,13 +36,19 @@ export :: Flags
 export flags state =
   let symbols = map snd . listAT . getSymbolTable
       infoExport = (filter (isExported . expI) . symbols) state
-      insts = (foldr (\(InfoClass  unique tid exp nt ms ds insts) r -> 
+      insts = let hereCls = filter isClass (symbols state)
+                  usedCls = filter isUsedClass (symbols state)
+              in
+              foldr (\(InfoClass  unique tid exp nt ms ds insts) r -> 
 			foldr (fixInst state (sPrelude flags || notPrelude tid)
                                        unique) 
-                              r (listAT insts)) []
-	      . filter isClass
-              . symbols
-	      ) state
+                              r (listAT insts))
+                    [] hereCls
+              ++
+              foldr (\(InfoUsedClass  unique _ insts) r -> 
+			foldr (fixInst state (sPrelude flags) unique) 
+                              r (listAT insts))
+                    [] usedCls
       mrps = mrpsIS state
   in case uniqueISs state insts of
     (insts,state) ->
@@ -135,6 +141,8 @@ export flags state =
                          ++ concatMap (useMethod . lookupIS state) ms))
   infoDepend (InfoClass unique tid _     nt ms ds insts) =
           (unique, snub (useNewType nt))
+  infoDepend (InfoUsedClass unique _ insts) =	-- MW
+          (unique, [])				-- MW
   infoDepend (InfoVar unique tid ie fix nt annot) =
           (unique, useNewType nt)
   infoDepend (InfoConstr unique tid ie fix nt fields iType) =
@@ -248,9 +256,9 @@ strExport modidl state (fixs,exps) =
 
 
  	-- Hack for tuples
-  showsNeed mrps (InfoData   unique (TupleId n) exp nt dk) = id  
+  showsNeed mrps (InfoData unique (TupleId n) exp nt dk) = id  
     -- Always look in tuple definitions
-  showsNeed mrps (InfoData   unique tid exp nt dk) =
+  showsNeed mrps (InfoData unique tid exp nt dk) =
       case dk of
 	(DataNewType unboxed constructors) -> 
                                    groupNeed mrps exp tid constructors
@@ -258,16 +266,17 @@ strExport modidl state (fixs,exps) =
 	_ ->  showChar ' ' . showsVar (fixTid mrps tid) 
   showsNeed mrps (InfoClass  unique tid exp nt ms ds insts) = 
     groupNeed mrps exp tid ms
-  showsNeed mrps (InfoVar     unique tid exp fix nt annot) = 
+  showsNeed mrps (InfoVar unique tid exp fix nt annot) = 
     showChar ' '.showsVar (fixTid mrps tid)
-  showsNeed mrps (InfoConstr  unique tid ie fix nt fields iType)
+  showsNeed mrps (InfoConstr unique tid ie fix nt fields iType)
     | ie==IEsel = showChar ' '. showsVar (fixTid mrps tid) 
                   . foldr ((.) . showsField mrps) id fields
     | otherwise =   foldr ((.) . showsField mrps) id fields
-  showsNeed mrps (InfoMethod  unique tid ie fix nt annot iClass)
+  showsNeed mrps (InfoMethod unique tid ie fix nt annot iClass)
     | ie==IEsel = showChar ' ' . showsVar (fixTid mrps tid)
     | otherwise = id
-  showsNeed mrps (InfoInstance unique  nt iClass) = id
+  showsNeed mrps (InfoInstance _ _ _) = id
+  showsNeed mrps (InfoUsedClass _ _ _) = id
 
   groupNeed mrps ie group parts
     | (ie==IEall || ie==IEsome) && not (null parts) =
@@ -380,6 +389,12 @@ strExport modidl state (fixs,exps) =
             . showString (concatMap (expMethod mrps . lookupIS state) ms)
             . showString "};\n"
 	  else showString ";\n")
+
+----
+  showsInfo mrps (InfoUsedClass unique ((_,tid,_,_):_) insts) =   -- MW
+        showString "class " . showsVar (fixTid mrps tid) . showString (" a;\n")
+----
+
   showsInfo mrps (InfoVar unique tid exp fix nt annot) =
 	showsVar (fixTid mrps tid) . showsAnnot annot . showString "::"
         . showString (niceNewType state nt) . showString ";\n"

@@ -226,6 +226,10 @@ isClass :: Info -> Bool
 isClass (InfoClass _ _ _ _ _ _ _) = True
 isClass _ = False
 
+isUsedClass :: Info -> Bool
+isUsedClass (InfoUsedClass _ _ _) = True
+isUsedClass _ = False
+
 
 depthI :: Info -> Maybe Int
 depthI (InfoData unique tid exp nt dk) =
@@ -309,6 +313,7 @@ tidI (InfoMethod  u tid _ _ _ _ _)     = tid
 tidI (InfoIMethod  u tid _ _ _)        = tid
 tidI (InfoDMethod  u tid _ _ _)        = tid
 tidI (InfoName  u tid _ _ _)           = tid --PHtprof
+tidI (InfoUsedClass u ((_,tid,_,_):_) _) = tid	--MW
 tidI info = error ("tidI (Info.hs) called with bad info:\n" ++ show info)
 
 
