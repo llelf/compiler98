@@ -70,24 +70,24 @@ buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) =
 
 buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
 {- old:
-#ifdef DBGTRANS
-  gState >>>= \state ->                  -- (already done ?) !!! 
-  let vid = tidIS state v in
-  if vid == t_mkNTId' || vid == t_mkNTConstr' then
-      case args of
-          [PosInt _ cid] -> oneHeap True pu (HEAP_GLB "D_" cid)
-          otherwise -> error ("STGBuild: length " ++ show (length args))
-  else if vid == t_mkSR' then
-      getExtra v >>>= \(e, extra) ->
-      case args of
-            [PosInt _ cid] ->
-	      -- Every source refererence needs 3 words 
-              -- (plus any extra profiling words)
-  	      oneHeap True pu (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0)
-  else
-#endif
+--  #ifdef DBGTRANS
+--  gState >>>= \state ->                  -- (already done ?) !!! 
+--  let vid = tidIS state v in
+--  if vid == t_mkNTId' || vid == t_mkNTConstr' then
+--      case args of
+--          [PosInt _ cid] -> oneHeap True pu (HEAP_GLB "D_" cid)
+--          otherwise -> error ("STGBuild: length " ++ show (length args))
+--  else if vid == t_mkSR' then
+--      getExtra v >>>= \(e, extra) ->
+--      case args of
+--            [PosInt _ cid] ->
+--	      -- Every source refererence needs 3 words 
+--              -- (plus any extra profiling words)
+--  	      oneHeap True pu (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0)
+--  else
+-- #endif
 -}
-#ifdef DBGTRANS
+-- #ifdef DBGTRANS
   gState >>>= \state ->                  -- (already done ?) !!! 
   let vid = tidIS state v in
   if vid == t_mkNTId || vid == t_mkNTConstr then
@@ -105,7 +105,7 @@ buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
           (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0) >>>= \build_ptr ->
   	buildAp pu v [build_ptr]
   else
-#endif
+-- #endif
     mapS (buildExp False) args >>>= \ build_ptr ->  
     buildAp pu v build_ptr
 
@@ -154,12 +154,11 @@ buildExp pu (PosInt pos i) = oneHeap True pu (HEAP_INT i)
 buildExp pu (PosChar pos i) = oneHeap True pu (HEAP_CHAR i)
 buildExp pu (PosFloat pos f) = oneHeap True pu (HEAP_FLOAT f )
 buildExp pu (PosDouble pos d) = oneHeap True pu (HEAP_DOUBLE d)
-#if 0 	
 -- #ifdef DBGTRANS
-buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INT (fromInteger i))
-#else
+-- buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INT (fromInteger i))
+-- #else
 buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INTEGER i)
-#endif
+-- #endif
 buildExp pu (PosString pos s) = oneHeap False pu (HEAP_STRING s)
 buildExp pu (PosExpCase pos exp alts) =
   error ("buildExp Case " ++ strPos pos)

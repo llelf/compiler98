@@ -153,8 +153,9 @@ TARGETS= runtime bootprelude prelude greencard hp2graph hat \
 	 compiler-nhc compiler-hbc compiler-ghc \
 	 hmake-nhc hmake-hbc hmake-ghc \
 	 greencard-nhc greencard-hbc greencard-ghc \
-	 ccompiler cprelude cgreencard cpragma chmake \
-	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
+	 ccompiler cprelude cgreencard cpragma chmake
+
+#	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
 
 .PHONY: basic all tracer compiler help config install hat
 
@@ -193,9 +194,9 @@ all-gcc: basic-gcc profile tracer-nhc $(TARGDIR)/hood #timeprof
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
 timetraceprof: timetraceruntime timetraceprelude
-tracer-nhc: tracecompiler-nhc traceruntime traceprelude $(TARGDIR)/traceui
-tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
-tracer-ghc: tracecompiler-ghc traceruntime traceprelude $(TARGDIR)/traceui
+tracer-nhc: traceruntime traceprelude $(TARGDIR)/traceui
+tracer-hbc: traceruntime traceprelude $(TARGDIR)/traceui
+tracer-ghc: traceruntime traceprelude $(TARGDIR)/traceui
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
@@ -262,15 +263,15 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
-$(TARGDIR)/$(MACHINE)/tracecompiler-nhc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) CFG=T HC=nhc98 install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler-nhc
-$(TARGDIR)/$(MACHINE)/tracecompiler-hbc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) CFG=T HC=hbc install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler-hbc
-$(TARGDIR)/$(MACHINE)/tracecompiler-ghc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) CFG=T HC=ghc install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler-ghc
+#$(TARGDIR)/$(MACHINE)/tracecompiler-nhc: $(COMPILER)
+#	cd src/compiler98;     $(MAKE) CFG=T HC=nhc98 install
+#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-nhc
+#$(TARGDIR)/$(MACHINE)/tracecompiler-hbc: $(COMPILER)
+#	cd src/compiler98;     $(MAKE) CFG=T HC=hbc install
+#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-hbc
+#$(TARGDIR)/$(MACHINE)/tracecompiler-ghc: $(COMPILER)
+#	cd src/compiler98;     $(MAKE) CFG=T HC=ghc install
+#	touch $(TARGDIR)/$(MACHINE)/tracecompiler-ghc
 $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=T install
 	cd src/tracer/runtime; $(MAKE) CFG=T install

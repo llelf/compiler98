@@ -534,7 +534,8 @@ nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt
                  then typeOfMain flags tidFun decls state 
                  else return state
       nhcWriteI flags (buildInterface flags modidl state) 
-      nhcFixSyntax flags zcon tidFun code sridt (fixSyntax decls state tidFun)
+      nhcFixSyntax flags zcon tidFun code sridt
+                           (fixSyntax (sDbgTrans flags) decls state tidFun)
     (state,errors) -> do
       pF (True) "Error after type deriving/checking" (mixLine errors)
       pF (sType flags) "Declarations after type deriving:" 

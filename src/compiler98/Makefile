@@ -1,11 +1,11 @@
 include Makefile.inc
 
-ifeq "T" "${TRACING}"
-DBGFLAG=-DDBGTRANS
-endif
+#ifeq "T" "${TRACING}"
+#DBGFLAG=-DDBGTRANS
+#endif
 
 OBJDIR = ${BUILDDIR}/obj/compiler98
-TARGET = ${DST}/nhc98comp${TRACING}${EXE}
+TARGET = ${DST}/nhc98comp${EXE}
 
 SRCS = \
 	AssocTree.hs Bind.hs Case.hs CaseHelp.hs CaseLib.hs CaseOpt.hs \
@@ -35,8 +35,8 @@ GCCFILES = $(patsubst %.gc,%.c,${GCSRCS})
 OBJS = $(patsubst %.hs,$(OBJDIR)/%.o,${SRCS})
 GCOBJS = $(patsubst %.gc,$(OBJDIR)/%.o,${GCSRCS}) $(patsubst %.gc,$(OBJDIR)/%_.o,${GCSRCS})
 
-CPPFILES=FixSyntax STGBuild STGGcode	#GcodeLowC
-DBGOBJS=$(patsubst %,$(OBJDIR)/%.o,${CPPFILES})
+#CPPFILES=FixSyntax STGBuild STGGcode	#GcodeLowC
+#DBGOBJS=$(patsubst %,$(OBJDIR)/%.o,${CPPFILES})
 
 HC = nhc98
 
@@ -53,7 +53,7 @@ HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts 
 $(TARGET): $(EXTRALINK)
 endif
 
-HMAKEFLAGS += $(shell echo $(BUILDOPTS)) $(DBGFLAG)
+HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
 
 
 all: ${TARGET}
@@ -73,7 +73,7 @@ clean:
 realclean: clean
 	rm -f *.c $(TARGET)
 
-$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
+$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS) # $(OBJDIR)/last${TRACING}
 	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) Main
 	mv $(OBJDIR)/Main$(EXE) $(TARGET)
 	strip $(TARGET)
@@ -83,10 +83,10 @@ $(OBJDIR)/$(HC):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc
 	$(MAKE) clean
 	touch "$(OBJDIR)/$(HC)"
-$(OBJDIR)/last${TRACING}:
-	rm -f $(OBJDIR)/last $(OBJDIR)/lastT
-	rm -f $(DBGOBJS)
-	touch $(OBJDIR)/last${TRACING}
+#$(OBJDIR)/last${TRACING}:
+#	rm -f $(OBJDIR)/last $(OBJDIR)/lastT
+#	rm -f $(DBGOBJS)
+#	touch $(OBJDIR)/last${TRACING}
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
 	$(CC) -c -o $@ $<

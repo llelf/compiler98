@@ -134,22 +134,23 @@ gExp exp@(PosExpThunk _ (tag@(PosCon _ v):args)) = -- Should evaluate strict arg
   stgExpPush exp
 
 gExp exp@(PosExpThunk _ (tag@(PosVar _ v):args)) =
-#ifdef DBGTRANS
-  gState >>>= \state ->
-  let vid = tidIS state v in
-  if False {-vid `elem` [t_ap n | n <- [1..10]]-} then 
-    -- expensive test - change!
-    {- this has been removed already by Jan;
-       the idea was probably to make the ap combinators strict in
-       their arguments to make them more efficient -} 
-      mapS (\a -> gExp a >>>= \a' -> unitS (a' ++ [EVAL])) args >>>= \args' ->
-      getExtra v >>>= \(_, extra) ->
-      unitS (concat args' ++ [PUSH_HEAP, HEAP_VAP v] ++ extra ++ map HEAP (reverse [1..length args]) ++ [SLIDE (length args)])
-  else
-      stgExpPush exp
-#else
+-- #ifdef DBGTRANS
+--  gState >>>= \state ->
+--  let vid = tidIS state v in
+--  if False {-vid `elem` [t_ap n | n <- [1..10]]-} then 
+--    -- expensive test - change!
+--    {- this has been removed already by Jan;
+--       the idea was probably to make the ap combinators strict in
+--       their arguments to make them more efficient -} 
+--      mapS (\a -> gExp a >>>= \a' -> unitS (a' ++ [EVAL])) args >>>= \args' ->
+--      getExtra v >>>= \(_, extra) ->
+--      unitS (concat args' ++ [PUSH_HEAP, HEAP_VAP v] ++ extra
+--	      ++ map HEAP (reverse [1..length args]) ++ [SLIDE (length args)])
+--  else
+--      stgExpPush exp
+--  #else
   stgExpPush exp
-#endif
+-- #endif
 
 gExp atom =
   gAtom atom
@@ -191,10 +192,9 @@ gAtom (PosInt pos i) = incDepth >>> unitS [PUSH_INT i]
 gAtom (PosChar pos i) = incDepth >>> unitS [PUSH_CHAR i]
 gAtom (PosFloat pos f) = incDepth >>> unitS [PUSH_FLOAT f]
 gAtom (PosDouble pos d) = incDepth >>> unitS [PUSH_DOUBLE d]
-#if 0
 -- #ifdef DBGTRANS
-gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INT (fromInteger i)]
-#else
+-- gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INT (fromInteger i)]
+-- #else
 gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INTEGER i]
-#endif
+-- #endif
 gAtom atom = stgExpPush atom
