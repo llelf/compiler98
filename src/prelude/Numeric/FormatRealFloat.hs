@@ -22,7 +22,8 @@ formatRealFloat fmt decs x
     mk0 s  = s              -- and 0.34 not .34
     
     mkdot0 "" = ""          -- Used to ensure we print 34, not 34.
-    mkdot0 s  = '.' : s
+    mkdot0 s  = '.' : s     -- when the format specifies no digits
+                            -- after the decimal point
     
     doFmt fmt (is, e)
       = let 
@@ -36,9 +37,9 @@ formatRealFloat fmt decs x
             case decs of
               Nothing ->
                 case ds of
-                   []    -> "0.0e0"
-                   [d]   -> d : ".0e" ++ show (e-1)
-                   d:ds  -> d : '.' : ds ++ 'e':show (e-1)
+                   []     -> "0.0e0"
+                   [d]    -> d : ".0e" ++ show (e-1)
+                   (d:ds) -> d : '.' : ds ++ 'e':show (e-1)
        
               Just dec ->
                 let dec' = max dec 1 in
@@ -46,19 +47,25 @@ formatRealFloat fmt decs x
                   [] -> '0':'.':take dec' (repeat '0') ++ "e0"
                   _ ->
                     let (ei, is') = roundTo base (dec'+1) is
-                        d:ds = map intToDigit
-                                   (if ei > 0 then init is' else is')
+                        (d:ds) = map intToDigit
+                                     (if ei > 0 then init is' else is')
                     in d:'.':ds  ++ "e" ++ show (e-1+ei)
        
 
           FFFixed ->
             case decs of
-               Nothing 
+        --     Nothing ->
+        --         let f 0 s ds = mk0 s ++ "." ++ mk0 ds
+        --             f n s "" = f (n-1) (s++"0") ""
+        --             f n s (d:ds) = f (n-1) (s++[d]) ds
+        --         in f e "" ds
+
+               Nothing		-- always prints a decimal point
                  | e > 0     -> take e (ds ++ repeat '0')
-                                ++ mkdot0 (drop e ds)
-                 | otherwise -> '0' : mkdot0 (replicate (-e) '0' ++ ds)
+                                ++ '.' : mk0 (drop e ds)
+                 | otherwise -> "0." ++ mk0 (replicate (-e) '0' ++ ds)
               
-               Just dec ->
+               Just dec ->	-- print decimal point iff dec > 0
                  let dec' = max dec 0 in
                  if e >= 0 then
                    let (ei, is') = roundTo base (dec' + e) is
@@ -68,7 +75,7 @@ formatRealFloat fmt decs x
                  else
                    let (ei, is') = roundTo base dec' 
                                            (replicate (-e) 0 ++ is)
-                       d : ds = map intToDigit 
+                       (d:ds) = map intToDigit 
                                     (if ei > 0 then is' else 0:is')
                    in  d : mkdot0 ds
 
