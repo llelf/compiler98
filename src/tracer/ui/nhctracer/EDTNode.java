@@ -34,8 +34,6 @@ public abstract class EDTNode extends Object {
   int layers;
   /** True if the node is an expression that should be shown infix */
   boolean infix = false;
-  /** True if the node is a tuple expression */
-  boolean tuple = false;
   /** True if the node is the selected one (used when running scripts) */
   boolean selected = false;
 

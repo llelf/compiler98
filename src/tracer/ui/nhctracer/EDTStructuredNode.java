@@ -34,13 +34,23 @@ public abstract class EDTStructuredNode extends EDTNode {
   //		((IdName)args.elementAt(0)).infix &&
   //		!((IdName)args.elementAt(0)).equals("[]"));
   //    }
-  
-  /** Checks whether this node needs to be enclosed by parentheses */
+
+  public boolean isTuple() {
+    EDTNode head = (EDTNode)args.elementAt(0);
+    return (head instanceof IdName &&
+           ((IdName)head).tupleConsArity == args.size()-1);
+  }
+   
+  /* Checks whether this node needs parentheses.  This depends
+   * both on the nature of the node itself and on the parent
+   * context.
+   */
   public boolean needParens() {
-    if (parent == null) return false;
+    if (isTuple()) return true;
+    if (parent==null || parent.isTuple() || parent instanceof Case)
+      return false;
     { EDTNode phead = (EDTNode)parent.args.elementAt(0);
     EDTNode mhead = (EDTNode)args.elementAt(0);
-    if (mhead.tuple || phead.tuple || parent instanceof Case) return false;
     if (phead instanceof IdName && phead.infix) {
       if (mhead instanceof IdName && mhead.infix) {
 	int ppa = ((IdName)phead).pri;
@@ -63,8 +73,7 @@ public abstract class EDTStructuredNode extends EDTNode {
     EDTNode arg;
     String s;
     boolean isInfix = ((EDTNode)args.elementAt(0)).infix;
-    boolean isTuple = ((EDTNode)args.elementAt(0)).tuple;
-    boolean paren = needParens() || isTuple;
+    boolean paren = needParens();
 
     if (contracted) {
       return (x >= x0 && x <= x0+width ? this : null);
@@ -80,7 +89,7 @@ public abstract class EDTStructuredNode extends EDTNode {
       if (x <= cx)
 	return this;
 
-      if (isTuple) {
+      if (isTuple()) {
 	int commaspacew = spacew + ui.normalfm.charWidth(',');
 	for (i = 1; i < args.size(); i++) {
 	  if (i > 1) {
@@ -146,16 +155,8 @@ public abstract class EDTStructuredNode extends EDTNode {
     int spacew = ui.normalfm.charWidth(' ');
     EDTNode arg;
     int i, x;
-    boolean isInfix = false;
-    
-    try {
-      isInfix = ((EDTNode)args.elementAt(0)).infix;
-    } catch (ArrayIndexOutOfBoundsException e) {
-      System.err.println("Error!!! " + e);
-      System.err.println("dump:\n" + dump());
-    }
-    boolean isTuple = ((EDTNode)args.elementAt(0)).tuple;
-    boolean paren = needParens() || isTuple;
+    boolean isInfix = ((EDTNode)args.elementAt(0)).infix;
+    boolean paren = needParens();
     layers = 0;
 
     //this.x0 = x0;
@@ -181,7 +182,7 @@ public abstract class EDTStructuredNode extends EDTNode {
       g.drawString("(", x0-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
       x += ui.normalfm.charWidth('(');
     }
-    if (isTuple) {
+    if (isTuple()) {
       for (i = 1; i < args.size(); i++) {
 	if (i > 1) {
 	  g.setColor(color);

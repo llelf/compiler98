@@ -1,6 +1,6 @@
 include Makefile.inc
 
-PATH := $(JAVADIR)/bin:$(PATH)
+# PATH := $(JAVADIR)/bin:$(PATH)
 
 ARCHIVE = rtb.jar
 

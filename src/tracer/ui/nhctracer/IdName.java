@@ -6,6 +6,7 @@ public class IdName extends EDTNode {
   String module;
   String name;
   int defpos, pri;
+  int tupleConsArity; /* if this is a tuple constructor, its arity, else -1 */
 
   public IdName(EDTStructuredNode parent, TraceTree tree, int index) {
     this.parent = parent;
@@ -14,9 +15,9 @@ public class IdName extends EDTNode {
     this.trace = null;
   }
 
-  public IdName(EDTStructuredNode parent, TraceTree tree, int index, SourceRef sr, int refnr, String module, String name, int defpos, int pri) {
-    if (name.equals(",,"))
-      name = ",";
+  public IdName(EDTStructuredNode parent, TraceTree tree, int index,
+                SourceRef sr, int refnr, String module, String name,
+	        int defpos, int pri) {
     this.parent = parent;
     this.tree = tree;
     this.index = index;
@@ -33,7 +34,8 @@ public class IdName extends EDTNode {
     infix = !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 	      (c >= '0' && c <= '9') || c == '(' || c == '[' || 
 	      c == '\'' || c == ',' || this.name == "\\");
-    tuple = c == ',';
+    if (c==',') tupleConsArity = name.length()+1;
+    else tupleConsArity = -1;
   }
 
   public String getHelpText() {
@@ -52,7 +54,6 @@ public class IdName extends EDTNode {
     idName.defpos = defpos;
     idName.pri = pri;
     idName.infix = infix;
-    idName.tuple = tuple;
     return idName;
   }
 
@@ -84,7 +85,12 @@ public class IdName extends EDTNode {
     }
     FontMetrics fm = g.getFontMetrics();
     int x = x0;
-    if (infix && (index > 0 || (parent != null && parent.args.size() != 3))){
+    if (infix &&
+       (index > 0 || (parent != null &&
+                      parent.args.size() != 3))
+    || tupleConsArity > 0 &&
+       (index > 0 || (parent != null &&
+                      parent.args.size() != tupleConsArity+1))) {
       parenthesize = true;
       g.drawString("(", x-ui.dx, y0-ui.dy+fm.getHeight());
       x += fm.stringWidth("(");

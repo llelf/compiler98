@@ -13,6 +13,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   Canvas canvas;
   SourceViewer viewer = null;
   ScrollPane scrollpane;
+  Point scrollPt;
   Status status;
   Color mbgc, bgc, fgc, lc;
   Trace trace;
@@ -176,6 +177,12 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 
     public void mouseReleased(MouseEvent evt) {
       repaint();
+      if (scrollPt != null) {
+        scrollpane.invalidate();
+        scrollpane.setScrollPosition(scrollPt);
+	scrollPt = null;
+        scrollpane.validate();
+      }
     }
       
     public void mousePressed(MouseEvent evt) {
@@ -192,9 +199,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       else obj = trace.inside(ui, x+ui.dx, y+ui.dy, START_X, START_Y);
       if (obj == null) return;
       
-      // remember current scrolling position
-      // Point scrollPt = scrollpane.getScrollPosition();
-      
       // Selecting the last whole expression in a trace spine
       // extends the trace itself.  Selecting any other whole
       // expression winds back the trace to make that expression
@@ -209,11 +213,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	        obj = node.tree.parent;
               } else {
 	        node.tree.parent.trees.setSize(node.tree.index + 1);
-		// repaint();
-		// scrollpane.doLayout();
-		// scrollpane.setScrollPosition(scrollPt);
-		// scrollpane.invalidate();
-		// scrollpane.validate();return;
 		return; 
 	      }
         }
@@ -222,6 +221,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       if (obj instanceof Trace) {
 	status.setText("Expanding");
 	status.waitCursor();
+	scrollPt = scrollpane.getScrollPosition();
 	t = (Trace)obj;
 	selectedNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
 	while (selectedNode instanceof Case) {
@@ -348,7 +348,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    }
 	  }
 	  status.normalCursor();
-	  // repaint();
 	}
       }      
       // scrollpane.doLayout();
@@ -369,8 +368,8 @@ public void paint(Graphics g) {
     else {
       if (nullScreen == null) nullScreen = createImage(1,1);
       offsize = trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1);
-      offsize.width += 24;
-      offsize.height += 24;
+      offsize.width += scrollpane.getVScrollbarWidth();
+      offsize.height += scrollpane.getHScrollbarHeight();
     }
     if (offsize.width < cansize.width) offsize.width = cansize.width;
     if (offsize.height < cansize.height) offsize.height = cansize.height;
@@ -399,96 +398,6 @@ public void paint(Graphics g) {
       canvas.setSize(offsize);
     canvas.getGraphics().drawImage(offscreen,0,0,null);
 }
-
-/*
-public void paint{Graphics g) {
-    Dimension d = canvas.getSize();
-    int start_x = START_X, start_y = START_Y;
-    
-    if ((offscreen == null) || (d.width != offscreensize.width) || 
-	(d.height != offscreensize.height)) {
-      offscreen = createImage(d.width, d.height);
-      if (offscreen == null) {
-	System.err.println("Cannot allocate offscreen buffer of size "+
-			   d.width + "x" + d.height + ".");
-	return;
-	// System.exit(-1);
-      }
-      offscreensize = d;
-    }
-    offgraphics = offscreen.getGraphics();
-    offgraphics.setFont(ui.normalfont);
-
-    if (me.doPrint) {
-      PrintJob pj = Toolkit.getDefaultToolkit().getPrintJob(frame, "NhcTracer image", null);
-      if (pj != null) {
-	offgraphics = pj.getGraphics();
-	//pjg.drawImage(offscreen, 10, 10, null);
-	//pjg.dispose();      	
-      }      
-      start_x += 50;
-      start_y += 50;
-    } else {
-      offgraphics.setColor(getBackground());
-      offgraphics.fillRect(0, 0, d.width, d.height);
-    }
-
-    int refnr, trefnr, irefnr;
-    if (lastNode != null) {
-      refnr = lastNode.refnr;
-      trefnr = lastNode.trefnr;
-      irefnr = lastNode.irefnr;
-    } else {
-      refnr = -1;
-      trefnr = -1;
-      irefnr = -1;
-    }
-    if (trace != null) {
-      Dimension extents = trace.paint(offgraphics, ui, start_x, start_y, refnr, trefnr, irefnr);
-      // Reserve some extra space below and to the right
-      extents.width += 24;
-      extents.height += 24;
-      // if (!extents.equals(d) && !me.doPrint)
-      //   canvas.setSize(extents);
-    }
-    if (me.doPrint) {
-      if (Options.arrow.getState()) { // Paint a cursor?
-	int h = 8, w = 4;
-	mouseX += 50;
-	mouseY += 50;
-	int xps[] = 
-	  {mouseX+ui.dx, mouseX+ui.dx+w, mouseX+ui.dx+w, mouseX+ui.dx+h}; 
-	int yps[] = 
-	  {mouseY+ui.dy, mouseY+ui.dy+h, mouseY+ui.dy+w, mouseY+ui.dy+w}; 
-	offgraphics.fillPolygon(xps, yps, 4);
-	offgraphics.drawPolygon(xps, yps, 4);
-	offgraphics.drawLine(mouseX+ui.dx, mouseY+ui.dy, mouseX+ui.dx+h+2, mouseY+ui.dy+h+2);
-	//offgraphics.drawLine(mouseX+ui.dx+1, mouseY+ui.dy, mouseX+ui.dx+13, mouseY+12+ui.dy);
-      }
-      // begin comment
-      try {
-	if (fd == null)
-	  fd = new FileDialog(frame, "Create GIF image", FileDialog.SAVE);
-	fd.show();
-	if (fd.getFile() != null) {
-	  GIFEncoder ge = new GIFEncoder(offscreen);
-	  OutputStream output = 
-	    new BufferedOutputStream(new FileOutputStream(fd.getFile()));
-	  ge.Write(output);
-	}
-      } catch (IOException e) {
-	System.err.println("Couldn't write GIF file: " + e);
-      } catch (AWTException e) {
-	System.err.println("Couldn't create GIF encoder: " + e);
-      }
-      // end comment
-      offgraphics.dispose();
-      me.doPrint = false;
-    } else {
-      canvas.getGraphics().drawImage(offscreen, 0, 0, null);
-    }
-  }
-*/
   
   public Dimension getPreferredSize() {
     return new Dimension(400, GetParams.getInt("nhctracer.dwpHeight", 300));
