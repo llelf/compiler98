@@ -15,7 +15,12 @@ SRCS  = dummy.c
 endif
 
 OBJS= $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
-ARCHIVE = ${DST}/libdebug${CFG}.a
+
+ifeq "${CFG}" ""
+  ARCHIVE = ${DST}/libdebug.a
+else
+  ARCHIVE = ${DST}/libdebug.${CFG}.a
+endif
 
 DEMO = ${OBJDIR}/demo_server
 

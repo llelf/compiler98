@@ -7,6 +7,12 @@ OBJDIRS=$(patsubst %,${OBJDIR}/%,${SUBDIRS})
 
 RUNTIME = Runtime
 
+ifeq "${CFG}" ""
+  SUF=
+else
+  SUF=.${CFG}
+endif
+
 LD = ld
 LDFLAGS = -r
 TRUE = /bin/true
@@ -17,12 +23,12 @@ ARFLAGS = r
 
 all:  ofiles afile nhc98heap$(EXE)
 install: ofiles afile
-	${INSTALL} ${OBJDIR}/Kernel/$(RUNTIME)${CFG}.a ${DST}
-	$(AR) $(ARFLAGS) ${DST}/$(RUNTIME)${CFG}.a ${OBJDIR}/Integer/*.o ${OBJDIR}/Builtin/*.o ${OBJDIR}/Mk/*.o
-	ranlib ${DST}/$(RUNTIME)${CFG}.a
-	${INSTALL} ${OBJDIR}/Kernel/mutator.o ${DST}/mutator${CFG}.o
-	${INSTALL} ${OBJDIR}/Kernel/mutlib.o ${DST}/mutlib${CFG}.o
-	${INSTALL} ${OBJDIR}/Kernel/main.o ${DST}/main${CFG}.o
+	${INSTALL} ${OBJDIR}/Kernel/$(RUNTIME)$(SUF).a ${DST}
+	$(AR) $(ARFLAGS) ${DST}/$(RUNTIME)$(SUF).a ${OBJDIR}/Integer/*.o ${OBJDIR}/Builtin/*.o ${OBJDIR}/Mk/*.o
+	ranlib ${DST}/$(RUNTIME)$(SUF).a
+	${INSTALL} ${OBJDIR}/Kernel/mutator.o ${DST}/mutator$(SUF).o
+	${INSTALL} ${OBJDIR}/Kernel/mutlib.o ${DST}/mutlib$(SUF).o
+	${INSTALL} ${OBJDIR}/Kernel/main.o ${DST}/main$(SUF).o
 ofiles: ${OBJDIR} ${OBJDIRS}
 	cd Kernel; $(MAKE) all
 afile: ${OBJDIR} ${OBJDIRS}
@@ -41,7 +47,7 @@ nolinks:
 	cd Builtin; $(MAKE) nolinks
 	cd Mk;      $(MAKE) nolinks
 realclean: clean
-	rm -f $(DST)/nhc98heap$(EXE) $(DST)/$(RUNTIME)$(CFG).a
+	rm -f $(DST)/nhc98heap$(EXE) $(DST)/$(RUNTIME)$(SUF).a
 
 
 ${OBJDIR}:

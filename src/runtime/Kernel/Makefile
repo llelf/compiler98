@@ -19,7 +19,11 @@ endif
 OOBJS = $(patsubst %.c,${OBJDIR}/%.o,${OSRCS})
 AOBJS = $(patsubst %.c,${OBJDIR}/%.o,${ASRCS})
 
-ARCHIVE=${OBJDIR}/Runtime${CFG}.a 
+ifeq "$(CFG)" ""
+  ARCHIVE=${OBJDIR}/Runtime.a 
+else
+  ARCHIVE=${OBJDIR}/Runtime.${CFG}.a 
+endif
 
 OBJS = ${AOBJS} ${OOBJS}
 

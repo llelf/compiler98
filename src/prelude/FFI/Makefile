@@ -9,6 +9,12 @@ EXTRA_H_FLAGS	=
 endif
 EXTRA_C_FLAGS	=
 
+ifeq "${BUILDWITH}" "ghc"
+ifeq "${TPROF}" "z"
+EXTRA_H_FLAGS = +RTS -K2M -RTS
+endif
+endif
+
 SRCS	= \
 	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs CError.hs StablePtr.hs
 SRCS_T	= \

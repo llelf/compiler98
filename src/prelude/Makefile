@@ -3,20 +3,16 @@ include Makefile.inc
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude
 PRELUDE = Prelude
 ARFLAGS = cr
-ARCHIVE=${DST}/${PRELUDE}${CFG}.a
-
-ifeq "${PROFILING}" "p"
-  ifeq "${TPROF}" "z" #PHtprof
-    O=p.z.o 
-  else
-    O=p.o
-  endif
+ifeq "${CFG}" ""
+ARCHIVE=${DST}/${PRELUDE}.a
 else
-  ifeq "${TPROF}" "z"
-    O=z.o 
-  else
+ARCHIVE=${DST}/${PRELUDE}.${CFG}.a
+endif
+
+ifeq "${CFG}" ""
     O=o
-  endif
+else
+    O=${CFG}.o
 endif
 
 ifneq "${TRACING}" "T"
@@ -52,9 +48,11 @@ boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
 objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: ${SUBDIRCFILES}
 fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
+ifeq "${TPROF}" ""
 clean: ${SUBDIRCLEAN}
 realclean: clean
 	rm $(ARCHIVE)
+endif
 cleanhi:
 	-rm -f */*.hi
 cleanC: ${SUBDIRCLEANC}
@@ -93,134 +91,135 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.$O
 	ranlib $@
 
-else    #### PHtprof
-
-#LowB partitions
-TPLLOWBPR = Blackhole Ieee LowI PrimDecodeDouble PrimDecodeFloat \
-            PrimDoubleFromInteger PrimEncodeDouble PrimEncodeFloat PrimError \
-            PrimFloatFromInteger PrimGetArgs PrimIntFromInteger PrimIntegerAbs \
-            PrimIntegerAdd PrimIntegerAnd PrimIntegerEq PrimIntegerFromInt \
-            PrimIntegerGe PrimIntegerGt PrimIntegerLe PrimIntegerLt PrimIntegerMul \
-            PrimIntegerNe PrimIntegerNeg PrimIntegerOr PrimIntegerQuotRem \
-            PrimIntegerSub PrimOpenSocket
-TPLLOWBPS = LowPS PrimComparePS PrimIndex PrimLength PrimPackString PrimUnpackPS
-TPLLOWBSY = CExitWith LowSystem PrimExitWith
-TPLLOWBCS = CString
-TPLLOWBDR = _Driver
-#Prelude
-TPLABELS3 = Prelude 
-${DST}/tpPrelude${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Prelude.o \
-	$(patsubst %,LowB/%.$O,${TPLLOWBPR}) \
-	Prelude/*.$O PreludeIO/*.$O \
-	PreludeList/*.$O PreludeText/*.$O 
-#PackedString
-TPLABELS3 += PackedString
-${DST}/tpPackedString${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?PackedString.o \
-	$(patsubst %,LowB/%.$O,${TPLLOWBPS}) PackedString/*.$O 
-#System
-TPLABELS3 += System
-${DST}/tpSystem${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?System.o \
-	$(patsubst %,LowB/%.$O,${TPLLOWBSY}) System/*.$O 
-#CString
-TPLABELS3 += CString
-${DST}/tpCString${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?CString.o \
-	$(patsubst %,LowB/%.$O,${TPLLOWBCS})
-#_Driver
-TPLABELS3 += Driver
-${DST}/tpDriver${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Driver.o \
-	$(patsubst %,LowB/%.$O,${TPLLOWBDR})
-#NonStd
-TPLABELS3 += NonStdEval NonStdProfile NonStdTrace \
-             NonStdUnsafeCoerce NonStdGetPID Warning 
-${DST}/tpNonStdEval${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdEval.o \
-	NonStd/NonStdEval.$O 
-${DST}/tpNonStdProfile${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdProfile.o \
-	NonStd/NonStdProfile.$O 
-${DST}/tpNonStdTrace${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdTrace.o \
-	NonStd/NonStdTrace.$O 
-${DST}/tpNonStdUnsafeCoerce${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdUnsafeCoerce.o \
-	NonStd/NonStdUnsafeCoerce.$O
-${DST}/tpNonStdGetPID${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdGetPID.o \
-	NonStd/NonStdGetPID.$O 
-${DST}/tpWarning${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Warning.o \
-	NonStd/Warning.$O
-#UnboxedArray
-TPLABELS3 += UnboxedArray
-${DST}/tpUnboxedArray${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
-	BinArray/UnboxedArray.$O BinArray/Binary_UBA.$O
-#BinArray
-TPLABELS3 += BinArray
-${DST}/tpBinArray${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
-	BinArray/BinArray.$O BinArray/AllocUBA.$O \
-        BinArray/DUnboxedArray.$O BinArray/GetUBAEnd.$O \
-        BinArray/GetUBAFree.$O BinArray/RUBA.$O \
-        BinArray/WUBA.$O BinArray/cLowUnboxedArray.$O
-#Debug
-TPLABELS3 += DbgIface
-${DST}/tpDbgIface${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?DbgIface.o \
-	Debug/*.$O
-
-TPLARSDEF := $(patsubst %,${DST}/tp%${CFG}.a,${TPLABELS3})
-
-#and finally the straightforward ones
-TPLABELS1  = Bit Complex Directory GreenCard Monad Time
-TPLTHEREST = Array Binary CPUTime Char DErrNo FFI Haskell IO \
-             IOExtras Ix List Locale Maybe Numeric Observe Random Ratio
-TPLABELS3 += ${TPLTHEREST}
-TPLARSAUTO = $(patsubst %,${DST}/tp%${CFG}.a,${TPLABELS1} ${TPLTHEREST})
-${TPLARSAUTO}:
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ \
-	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/tpl?%.o,$@) \
-	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/%/*.$O,$@)
-	ranlib $@
-
-#All the tpl?*.o are in ${BUILDDIR}/objt/prelude/
-TPLABELS:= ${TPLABELS3} ${TPLABELS1}
-TPLOBJS := $(patsubst %,${OBJDIR}/tpl1%.o,${TPLABELS}) \
-	   $(patsubst %,${OBJDIR}/tpl2%.o,${TPLABELS3}) \
-	   $(patsubst %,${OBJDIR}/tpl3%.o,${TPLABELS3}) 
-${TPLOBJS}:
-	echo "int TMIP_$(patsubst ${OBJDIR}/tpl%.o,%,$@)[] = {0};" \
-	> ${OBJDIR}/tpltmp.c
-	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
-	rm ${OBJDIR}/tpltmp.c
-
-#tprofprel?.o
-TPPREL1 := $(patsubst %,${OBJDIR}/tprofprel%.o,1)
-TPPREL3 := $(patsubst %,${OBJDIR}/tprofprel%.o,2 3)
-TPPRELS := ${TPPREL1} ${TPPREL3}
-${TPPREL1}: #All lables
-	$(LOCAL)tprofprel 1 \
-	${TPLABELS} > ${OBJDIR}/tpltmp.c
-	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
-	rm ${OBJDIR}/tpltmp.c
-${TPPREL3}: #Only those lables that are needed more than once
-	$(LOCAL)tprofprel $(patsubst ${OBJDIR}/tprofprel%.o,%,$@) \
-	${TPLABELS3} > ${OBJDIR}/tpltmp.c
-	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
-	rm ${OBJDIR}/tpltmp.c
-
-#ARCHIVE
-${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
-	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
-	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
-relink: ${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
-	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
+#else    #### PHtprof
+#
+##LowB partitions
+#TPLLOWBPR = Blackhole Ieee LowI PrimDecodeDouble PrimDecodeFloat \
+#            PrimDoubleFromInteger PrimEncodeDouble PrimEncodeFloat PrimError \
+#            PrimFloatFromInteger PrimGetArgs PrimIntFromInteger PrimIntegerAbs \
+#            PrimIntegerAdd PrimIntegerAnd PrimIntegerEq PrimIntegerFromInt \
+#            PrimIntegerGe PrimIntegerGt PrimIntegerLe PrimIntegerLt PrimIntegerMul \
+#            PrimIntegerNe PrimIntegerNeg PrimIntegerOr PrimIntegerQuotRem \
+#            PrimIntegerSub PrimOpenSocket
+#TPLLOWBPS = LowPS PrimComparePS PrimIndex PrimLength PrimPackString PrimUnpackPS
+#TPLLOWBSY = CExitWith LowSystem PrimExitWith
+#TPLLOWBCS = CString
+#TPLLOWBDR = _Driver
+##Prelude
+#TPLABELS3 = Prelude 
+#${DST}/tpPrelude${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Prelude.o \
+#	$(patsubst %,LowB/%.$O,${TPLLOWBPR}) \
+#	Prelude/*.$O PreludeIO/*.$O \
+#	PreludeList/*.$O PreludeText/*.$O 
+##PackedString
+#TPLABELS3 += PackedString
+#${DST}/tpPackedString${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?PackedString.o \
+#	$(patsubst %,LowB/%.$O,${TPLLOWBPS}) PackedString/*.$O 
+##System
+#TPLABELS3 += System
+#${DST}/tpSystem${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?System.o \
+#	$(patsubst %,LowB/%.$O,${TPLLOWBSY}) System/*.$O 
+##CString
+#TPLABELS3 += CString
+#${DST}/tpCString${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?CString.o \
+#	$(patsubst %,LowB/%.$O,${TPLLOWBCS})
+##_Driver
+#TPLABELS3 += Driver
+#${DST}/tpDriver${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Driver.o \
+#	$(patsubst %,LowB/%.$O,${TPLLOWBDR})
+##NonStd
+#TPLABELS3 += NonStdEval NonStdProfile NonStdTrace \
+#             NonStdUnsafeCoerce NonStdGetPID Warning 
+#${DST}/tpNonStdEval${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdEval.o \
+#	NonStd/NonStdEval.$O 
+#${DST}/tpNonStdProfile${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdProfile.o \
+#	NonStd/NonStdProfile.$O 
+#${DST}/tpNonStdTrace${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdTrace.o \
+#	NonStd/NonStdTrace.$O 
+#${DST}/tpNonStdUnsafeCoerce${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdUnsafeCoerce.o \
+#	NonStd/NonStdUnsafeCoerce.$O
+#${DST}/tpNonStdGetPID${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdGetPID.o \
+#	NonStd/NonStdGetPID.$O 
+#${DST}/tpWarning${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Warning.o \
+#	NonStd/Warning.$O
+##UnboxedArray
+#TPLABELS3 += UnboxedArray
+#${DST}/tpUnboxedArray${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
+#	BinArray/UnboxedArray.$O BinArray/Binary_UBA.$O
+##BinArray
+#TPLABELS3 += BinArray
+#${DST}/tpBinArray${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
+#	BinArray/BinArray.$O BinArray/AllocUBA.$O \
+#        BinArray/DUnboxedArray.$O BinArray/GetUBAEnd.$O \
+#        BinArray/GetUBAFree.$O BinArray/RUBA.$O \
+#        BinArray/WUBA.$O BinArray/cLowUnboxedArray.$O
+##Debug
+#TPLABELS3 += DbgIface
+#${DST}/tpDbgIface${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?DbgIface.o \
+#	Debug/*.$O
+#
+#TPLARSDEF := $(patsubst %,${DST}/tp%${CFG}.a,${TPLABELS3})
+#
+##and finally the straightforward ones
+#TPLABELS1  = Bit Complex Directory GreenCard Monad Time
+#TPLTHEREST = Array Binary CPUTime Char DErrNo FFI Haskell IO \
+#             IOExtras Ix List Locale Maybe Numeric Observe Random Ratio
+#TPLABELS3 += ${TPLTHEREST}
+#TPLARSAUTO = $(patsubst %,${DST}/tp%${CFG}.a,${TPLABELS1} ${TPLTHEREST})
+#${TPLARSAUTO}:
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ \
+#	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/tpl?%.o,$@) \
+#	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/%/*.$O,$@)
+#	ranlib $@
+#
+##All the tpl?*.o are in ${BUILDDIR}/objt/prelude/
+#TPLABELS:= ${TPLABELS3} ${TPLABELS1}
+#TPLOBJS := $(patsubst %,${OBJDIR}/tpl1%.o,${TPLABELS}) \
+#	   $(patsubst %,${OBJDIR}/tpl2%.o,${TPLABELS3}) \
+#	   $(patsubst %,${OBJDIR}/tpl3%.o,${TPLABELS3}) 
+#${TPLOBJS}:
+#	echo "int TMIP_$(patsubst ${OBJDIR}/tpl%.o,%,$@)[] = {0};" \
+#	> ${OBJDIR}/tpltmp.c
+#	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+#	rm ${OBJDIR}/tpltmp.c
+#
+##tprofprel?.o
+#TPPREL1 := $(patsubst %,${OBJDIR}/tprofprel%.o,1)
+#TPPREL3 := $(patsubst %,${OBJDIR}/tprofprel%.o,2 3)
+#TPPRELS := ${TPPREL1} ${TPPREL3}
+#${TPPREL1}: #All lables
+#	$(LOCAL)tprofprel 1 \
+#	${TPLABELS} > ${OBJDIR}/tpltmp.c
+#	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+#	rm ${OBJDIR}/tpltmp.c
+#${TPPREL3}: #Only those lables that are needed more than once
+#	$(LOCAL)tprofprel $(patsubst ${OBJDIR}/tprofprel%.o,%,$@) \
+#	${TPLABELS3} > ${OBJDIR}/tpltmp.c
+#	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+#	rm ${OBJDIR}/tpltmp.c
+#
+##ARCHIVE
+#${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
+#	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+#	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
+#relink: ${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+#	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
 endif
+
 
 #newinterface: prelude lib
 #	mv -f $(INCDIR)/Prelude.hi $(INCDIR)/Prelude.hi.BAK
@@ -297,9 +296,11 @@ fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o
 	ranlib $(ARCHIVE)
 hiclean: ${HICLEAN}
+ifeq "${TPROF}" ""
 clean: ${CLEANDIRS}
 realclean: clean
 	rm -f ${ARCHIVE}
+endif
 mkfiles: ${MKFILES}
 objdir: ${OBJDIR}
 cleanhi:
@@ -330,6 +331,8 @@ ${OBJDIR}:
 ${OBJDIRS}: ${OBJDIR}/% :
 	mkdir -p $@ || /bin/true
 
+ifeq "${TPROF}" ""
+
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
 	rm -f $@
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
@@ -340,3 +343,198 @@ relink:
 	ranlib ${ARCHIVE}
 
 endif
+endif
+
+ifeq "${TPROF}" "z"
+ifneq "${TRACING}" "T"
+#LowB partitions
+TPLLOW = LowB
+TPLLOWPR = Blackhole Ieee LowI PrimDecodeDouble PrimDecodeFloat \
+           PrimDoubleFromInteger PrimEncodeDouble PrimEncodeFloat \
+           PrimError PrimFloatFromInteger PrimGetArgs \
+           PrimIntFromInteger PrimIntegerAbs \
+           PrimIntegerAdd PrimIntegerAnd PrimIntegerEq \
+           PrimIntegerFromInt PrimIntegerGe PrimIntegerGt \
+           PrimIntegerLe PrimIntegerLt PrimIntegerMul \
+           PrimIntegerNe PrimIntegerNeg PrimIntegerOr \
+           PrimIntegerQuotRem PrimIntegerSub PrimOpenSocket
+TPLLOWPS = LowPS PrimComparePS PrimIndex PrimLength \
+           PrimPackString PrimUnpackPS
+TPLLOWSY = CExitWith LowSystem PrimExitWith
+TPLLOWCS = CString
+TPLLOWDR = _Driver
+TPLPRELALL = Prelude/*.${O} PreludeIO/*.${O} \
+             PreludeList/*.${O} PreludeText/*.${O}
+else
+#LowT partitions
+TPLLOW = LowT
+TPLLOWPR = PrimExitWith \
+           FFIBuiltin PrimPackString PrimUnpackPS CString \
+           PrimHPutChar NonStdTrace LowSystem LowPS \
+           PrimIntegerAbs PrimIntegerAdd PrimIntegerAnd \
+           PrimIntegerEq PrimIntegerLe PrimIntegerLt \
+           PrimIntegerGe PrimIntegerGt PrimIntegerNe \
+           PrimIntegerMul PrimIntegerNeg PrimIntegerOr \
+           PrimIntegerQuotRem PrimIntegerSub \
+           PrimIntegerFromInt PrimIntFromIntegerC \
+           PrimEncodeDouble PrimDoubleFromInteger \
+           PrimEncodeFloat  PrimFloatFromInteger \
+           PrimDecodeDouble PrimDecodeFloat \
+           PrimsFloat PrimsDouble
+TPLLOWPS = LowPS PrimPackString PrimUnpackPS
+TPLLOWSY = LowSystem PrimExitWith
+TPLLOWCS = CString
+TPLLOWDR = _Driver
+TPLPRELALL = Prelude/*.${O} PreludeIO/*.${O} \
+             PreludeList/*.${O} PreludeText/*.${O} \
+             PreludeDebug/*.${O}
+endif
+#Prelude
+${DST}/PreludeAll.${CFG}.a:
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Prelude.o \
+	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWPR}) \
+	$(shell echo ${TPLPRELALL})
+#PackedString
+TPLABELS3 = PackedString
+${DST}/PackedString.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?PackedString.o \
+	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWPS}) PackedString/*.${O} 
+#System
+TPLABELS3 += System
+${DST}/System.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?System.o \
+	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWSY}) System/*.${O} 
+#CString
+TPLABELS3 += CString
+${DST}/CString.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?CString.o \
+	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWCS})
+#_Driver
+TPLABELS3 += Driver
+${DST}/Driver.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Driver.o \
+	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWDR})
+#NonStd
+ifneq "${TRACING}" "T" #Tracing = Not yet
+TPLABELS3 += NonStdEval NonStdProfile NonStdTrace \
+             NonStdUnsafeCoerce NonStdGetPID Warning 
+endif
+${DST}/NonStdEval.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdEval.o \
+	NonStd/NonStdEval.${O} 
+${DST}/NonStdProfile.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdProfile.o \
+	NonStd/NonStdProfile.${O} 
+${DST}/NonStdTrace.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdTrace.o \
+	NonStd/NonStdTrace.${O} 
+${DST}/NonStdUnsafeCoerce.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdUnsafeCoerce.o \
+	NonStd/NonStdUnsafeCoerce.${O}
+${DST}/NonStdGetPID.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdGetPID.o \
+	NonStd/NonStdGetPID.${O} 
+${DST}/Warning.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Warning.o \
+	NonStd/Warning.${O}
+#UnboxedArray
+ifneq "${TRACING}" "T" #Tracing = Not yet
+TPLABELS3 += UnboxedArray
+endif
+${DST}/UnboxedArray.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
+	BinArray/UnboxedArray.${O} BinArray/Binary_UBA.${O}
+#BinArray
+ifneq "${TRACING}" "T" #Tracing = Not yet
+TPLABELS3 += BinArray
+endif
+${DST}/BinArray.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
+	BinArray/BinArray.${O} BinArray/AllocUBA.${O} \
+	BinArray/DUnboxedArray.${O} BinArray/GetUBAEnd.${O} \
+	BinArray/GetUBAFree.${O} BinArray/RUBA.${O} \
+	BinArray/WUBA.${O} BinArray/cLowUnboxedArray.${O}
+#Debug
+ifneq "${TRACING}" "T" #Not for tracing
+TPLABELS3 += DbgIface
+endif
+${DST}/DbgIface.${CFG}.a: 
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?DbgIface.o \
+	Debug/*.${O}
+
+# Ensure all the above archives get built
+TPLARSDEF := $(patsubst %,${DST}/%.${CFG}.a,PreludeAll ${TPLABELS3})
+TPLABELS3 += Prelude
+
+#and finally the straightforward ones
+TPLABELS1 = Complex Directory GreenCard Monad 
+ifneq "${TRACING}" "T" #Tracing = Not yet
+TPLABELS1 += Time
+endif
+TPLTHEREST = Array CPUTime Char DErrNo FFI IO IOExtras \
+             Ix List Maybe Numeric Random Ratio
+ifneq "${TRACING}" "T" #Tracing = Not yet
+TPLTHEREST += Bit Binary Haskell Locale Observe
+endif
+
+TPLABELS3 += ${TPLTHEREST}
+TPLARSAUTO = $(patsubst %,${DST}/%.${CFG}.a,${TPLABELS1} ${TPLTHEREST})
+
+${TPLARSAUTO}:
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ \
+	$(patsubst ${DST}/%.${CFG}.a, ${OBJDIR}/tpl?%.o,$@) \
+	$(patsubst ${DST}/%.${CFG}.a, ${OBJDIR}/%/*.${O},$@)
+	ranlib $@
+
+#All the tpl?*.o are in ${BUILDDIR}/obj/prelude/
+TPLABELS:= ${TPLABELS3} ${TPLABELS1}
+TPLOBJS := $(patsubst %,${OBJDIR}/tpl1%.o,${TPLABELS}) \
+           $(patsubst %,${OBJDIR}/tpl2%.o,${TPLABELS3}) \
+           $(patsubst %,${OBJDIR}/tpl3%.o,${TPLABELS3}) 
+
+${TPLOBJS}:
+	echo "int TMIP_$(patsubst ${OBJDIR}/tpl%.o,%,$@)[] = {0};" \
+	> ${OBJDIR}/tpltmp.c
+	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+	rm ${OBJDIR}/tpltmp.c
+
+#tprofprel?$O
+TPPREL1 := ${OBJDIR}/tprofprel1.${O}
+TPPREL3 := $(patsubst %,${OBJDIR}/tprofprel%.${O},2 3)
+TPPRELS := ${TPPREL1} ${TPPREL3}
+${TPPREL1}: #All lables
+	$(LOCAL)tprofprel 1 \
+	${TPLABELS} > ${OBJDIR}/tpltmp.c
+	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+	rm ${OBJDIR}/tpltmp.c
+${TPPREL3}: #Only those lables that are needed more than once
+	$(LOCAL)tprofprel $(patsubst ${OBJDIR}/tprofprel%.${O},%,$@) \
+	${TPLABELS3} > ${OBJDIR}/tpltmp.c
+	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+	rm ${OBJDIR}/tpltmp.c
+
+realclean: clean
+	rm -f ${TPLARSAUTO}
+
+ifneq "${TRACING}" "T"
+
+clean: ${SUBDIRCLEAN}
+	rm -f ${TPPRELS}
+
+${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
+	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
+	rm -f ${TPLOBJS}
+else
+
+clean: ${CLEANDIRS}
+	rm -f ${TPPRELS}
+
+${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK} \
+	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
+	rm -f ${TPLOBJS}
+
+endif
+endif
+

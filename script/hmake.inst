@@ -63,6 +63,8 @@ hcflags=""	# compiler flags only
 ctflags=""	# protected compiler flags
 rtflags=""	# protected compiler run-time flags
 hmrtflags=""	# hmake run-time flags
+TPROF=0
+TRACE=0
 
 
 # Also assume compiler/linker flags from the environment
@@ -131,11 +133,13 @@ do
 
     # tracing and profiling flags (mainly nhc98)
     -T) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o" ;;
+        hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o"
+        TRACE=1 ;;
     -p) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=p.o" ;;
     -t|-z) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=z.o" ;;
+        hmflags=$hmflags" -o-suffix=z.o"
+         TPROF=1 ;;
 
     # mainly GHC flags
     -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
@@ -153,6 +157,11 @@ do
   esac
   shift
 done
+
+# Fix o-suffix when time profiling _and_ tracing
+if test $TPROF -eq 1 -a $TRACE -eq 1	# relies on src/hmake/Argv.hs
+then hmflags=$hmflags" -o-suffix=Tz.o"	# using only the last o-suffix
+fi
 
 if [ "$modules" = "" ]
 then

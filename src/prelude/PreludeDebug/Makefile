@@ -13,6 +13,11 @@ endif
 ifeq "${BUILDWITH}" "nhc98"
 HEAP = +RTS -H32M -RTS
 endif
+ifeq "${BUILDWITH}" "ghc"
+ifeq "${TPROF}" "z"
+HEAP = +RTS -K2M -RTS
+endif
+endif
 
 
 # Here are the main rules.

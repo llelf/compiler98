@@ -291,11 +291,11 @@ $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
-	cd src/runtime;        $(MAKE) CFG=zT install
-	cd src/tracer/runtime; $(MAKE) CFG=zT install
+	cd src/runtime;        $(MAKE) CFG=Tz install
+	cd src/tracer/runtime; $(MAKE) CFG=Tz install
 	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
 $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;	       $(MAKE) CFG=zT install
+	cd src/prelude;	       $(MAKE) CFG=Tz install
 	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
 
 

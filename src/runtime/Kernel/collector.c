@@ -486,7 +486,7 @@ NodePtr callGc(Int size,NodePtr hp, NodePtr *sp, NodePtr *fp)
 {
 #ifdef DBGTRANS
   extern int traceK, traceAdaptablePruning;
-again:
+/* again:	-- label moved downwards */
 #endif
 
 #if defined(PROFILE) || defined(TPROF)
@@ -506,6 +506,7 @@ again:
 #endif
 
 #ifdef DBGTRANS
+again:
   ncInit();
 #endif
 

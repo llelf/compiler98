@@ -90,3 +90,10 @@ endif
 endif
 endif
 
+ifeq "T" "${TRACING}"
+ifeq "z" "${TPROF}"
+  HISUFFIX=T.hi
+  O=Tz.o
+  C=Tz.c
+endif
+endif
