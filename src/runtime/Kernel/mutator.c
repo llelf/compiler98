@@ -350,7 +350,7 @@ void run(NodePtr toplevel)
 
       cinfo = GET_CINFO(nodeptr);
 
-#ifdef PARANOID
+#if PARANOID
       {
 	  int c = (GET_LARGETAG(nodeptr));
 	  switch(c) {
