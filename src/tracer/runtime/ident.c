@@ -156,8 +156,8 @@ ModInfo NMOD__EqInteger = {"_EqInteger", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude
 ModInfo NMOD__Id = {"_Id", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 
 
-#define	TRUST	CONSTR(NTTrusted, 3, 3)
-#define	SUSPECT	CONSTR(NTId, 3, 3)
+#define	TRUST	CONSTR(NTTrusted, 5, 5)
+#define	SUSPECT	CONSTR(NTId, 5, 5)
 
 ModInfo *
 findModule(char *modname, ModInfo *modinfo)
