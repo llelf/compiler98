@@ -1,0 +1,89 @@
+#!/bin/sh
+# configuration file for hmake.
+# Please modify to suit your installation.
+# Copy at $HOME/.hmakerc overrides installation-wide config.
+
+INSTALLVER="InstallVer"
+
+# USINGRTS decides how run-time system options should be passed to hmake
+# itself (***Note: NOT to the compiler called by hmake).  Possible values
+# are:   rts       enclosed between +RTS -RTS
+#        minus     first on commandline, trailed by -
+# If you compiled hmake with ghc or nhc13/98, USINGRTS should be rts.
+# If you compiled hmake with hbc or xtc,      USINGRTS should be minus.
+USINGRTS=rts
+#USINGRTS=minus
+
+# Add or remove Haskell compilers to this list.  It defines the
+# commandline options that allow you to select a compiler at make-time.
+# ( The COMPILERS variable is used inside a case match.  The first char
+#   of each option is stripped and the remainder assigned to the HC variable. )
+#COMPILERS="-hbc | -nhc13 | -nhc98 | -ghc | -xtc"
+#  Note: this feature has been removed in hmake-1.3.
+
+# This defines the default compiler hmake will call if none is specified
+# on the commandline.  (First look in the HC variable from the environment,
+# and if it is empty, then select, say, nhc98.)
+COMP=${HC-nhc98}
+
+
+# Compiler specific prelude/stdlib path info: please configure to taste
+# for your local installation.
+
+# hbc, set up for Haskell 1.3
+#     LMLDIR is the base directory of your hbc installation
+LMLDIR=${LMLDIR-/usr/local/lib/lmlc}
+#     HBCINCPATH is a colon-separated list of directories containing .hi files
+HBCINCPATH=":"${HBCINCPATH-"$LMLDIR/hlib1.3:$LMLDIR/hbc_library1.3"}
+HBCPRELOPTS=`echo $HBCINCPATH | sed -e "s/:/ -P/g"`
+
+# nhc13
+#     NHC13INCDIR is a single directory containing standard .hi files
+NHC13INCDIR=${NHC13INCDIR-/usr/local/include/nhc13}
+
+# nhc98
+#     NHC98INCDIR is a single directory containing standard .hi files
+NHC98INCDIR=${NHC98INCDIR-IncludeDir}
+
+# ghc
+#     GHCINCPATH is a colon-separated list of directories containing .hi files
+#     Please ensure that each directory name has a trailing slash.
+GHCINCDIR=${GHCINCDIR-/usr/lib/ghc-4.04/imports}
+GHCINCPATH=":"${GHCINCPATH-"${GHCINCDIR}/std:${GHCINCDIR}/exts:${GHCINCDIR}/misc:${GHCINCDIR}/posix"}
+GHCPRELOPTS=`echo $GHCINCPATH | sed -e "s/:/ -P/g"`
+
+# xtc
+#     xtc is a modified hbc compiler, so follow the hbc pattern
+XTCDIR=${LMLDIR-/usr/local/lib/xtc}
+XTCINCPATH=":"${XTCINCPATH-"$XTCDIR/hlib1.3:$XTCDIR/hbc_library1.3"}
+XTCPRELOPTS=`echo $XTCINCPATH | sed -e "s/:/ -P/g"`
+
+
+# Zero-out certain variables: do not change these.
+OD=
+EXTRACOMPILERFLAGS=
+CPPSYMBOLS=
+
+# Define the characteristics of each known compiler.
+compilerstyle () {
+  case `basename $1` in
+    hbc)   RTSOPTIONSTYLE=minus;           PRELUDEPATH="${HBCPRELOPTS}"
+           CTSOPTIONSTYLE=none;
+           CPPSYMBOLS="-Z__HBC__"; EXTRACOMPILERFLAGS="-1.3"
+           export LMLDIR HBCINCPATH ;;
+    nhc13) RTSOPTIONSTYLE=rts;             PRELUDEPATH="-P${NHC13INCDIR}/"
+           CTSOPTIONSTYLE=cts;
+           CPPSYMBOLS="-Z__NHC__"; OD="-od" ;;
+    nhc98) RTSOPTIONSTYLE=rts;             PRELUDEPATH="-P${NHC98INCDIR}/"
+           CTSOPTIONSTYLE=cts;
+           CPPSYMBOLS="-Z__NHC__ -Z__HASKELL98__ -Z__HASKELL__=98"; OD="-od" ;;
+    ghc)   RTSOPTIONSTYLE=none;            PRELUDEPATH="${GHCPRELOPTS}"
+           CTSOPTIONSTYLE=none;
+           CPPSYMBOLS="-Z__GLASGOW_HASKELL__ -Z__HASKELL1__=5 \
+			-Z__HASKELL98__ -Z__HASKELL__=98" ;;
+    xtc)   RTSOPTIONSTYLE=minus;           PRELUDEPATH="${XTCPRELOPTS}"
+           CTSOPTIONSTYLE=none;
+           CPPSYMBOLS="-Z__HBC__ -Z__XTC__" ;;
+    *)     RTSOPTIONSTYLE=unknown;         PRELUDEPATH="-Punknown" ;;
+  esac
+}
