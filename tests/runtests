@@ -1,10 +1,15 @@
 #!/bin/bash
 # Run haskell test suites.
 
+if uname -a | grep -i CYGWIN >/dev/null
+then filepath() { cygpath -w "$1" | tr '\\\\' '/'; }
+else filepath() { echo "$1"; }
+fi
+
 PATH=../script:$PATH	export PATH
 HERE="`pwd`"
 BASEDIR="`dirname $HERE`"
-HC="$BASEDIR/script/nhc98"
+HC=`filepath "$BASEDIR/script/nhc98"`
 HMAKEOPTS="-98"
 RTSOPTS="+RTS -H64M -RTS"
 
