@@ -18,7 +18,8 @@ SRCS = \
 	cEval.c \
 	cOpenSocket.c \
 	primVector.c primIndex.c \
-        cBits.c  cDoesFileExist.c cFFI.c
+        cBits.c  cDoesFileExist.c cFFI.c \
+	primsFloat.c primsDouble.c
 
 LINKS = haskell2c.h twopass.h
 
@@ -77,3 +78,5 @@ cOpenSocket.o: cOpenSocket.c haskell2c.h
 cBits.o: cBits.c haskell2c.h
 cDoesFileExist.o: cDoesFileExist.c haskell2c.h
 cFFI.o: cFFI.c
+primsFloat.o: primsFloat.c
+primsDouble.o: primsDouble.c

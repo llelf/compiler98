@@ -17,3 +17,8 @@ C_HEADER(primFloatFromInteger)
   INIT_PROFINFO(ret,&nodeProfInfo)
   C_RETURN(ret);
 }
+
+float primFloatFromIntegerC (NodePtr mantissa)
+{
+  return sencode((MP_INT*)mantissa, 0);
+}

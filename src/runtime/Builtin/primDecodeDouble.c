@@ -24,3 +24,29 @@ C_HEADER(primDecodeDouble)
 
   C_RETURN(mkTuple2(manptr,mkInt(exp)));
 }
+
+NodePtr primDecodeDoubleMantissa (double d)
+{
+  int exp;
+  NodePtr manptr;
+
+  C_CHECK(1+SIZE_DOUBLE);
+
+  manptr = C_HP;
+  exp = ddecode(d,(MP_INT *)manptr);
+  INIT_PROFINFO(manptr,&nodeProfInfo)
+  C_ADDHP(1+EXTRA+CONINFO_LARGESIZES(GET_CONINFO(manptr)));
+
+  return manptr;
+}
+
+int primDecodeDoubleExponent (double d)
+{
+  int exp;
+  NodePtr manptr;
+
+  manptr = C_HP;
+  exp = ddecode(d,(MP_INT *)manptr);
+
+  return exp;
+}

@@ -22,3 +22,8 @@ C_HEADER(primEncodeDouble)
   INIT_PROFINFO(nodeptr,&nodeProfInfo)
   C_RETURN(nodeptr);
 }
+
+double primEncodeDoubleC (NodePtr mantissa, int exp)
+{
+  return dencode((MP_INT *)mantissa,exp);
+}

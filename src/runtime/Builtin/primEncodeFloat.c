@@ -22,3 +22,8 @@ C_HEADER(primEncodeFloat)
   INIT_PROFINFO(nodeptr,&nodeProfInfo)
   C_RETURN(nodeptr);
 }
+
+float primEncodeFloatC (NodePtr mantissa, int exp)
+{
+  return sencode((MP_INT *)mantissa,exp);
+}
