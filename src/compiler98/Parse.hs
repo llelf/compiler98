@@ -54,12 +54,14 @@ parseTopDecl =
     DeclData Nothing `parseAp` parseContexts `ap` parseSimple `chk` 
       equal `apCut` ( (:[]) `parseAp` parseConstr) `apCut` parseDeriving),
   (L_data, \pos -> 
-    (\ (pos,conid) size -> DeclDataPrim pos conid size) `parseChk` 
-      k_primitive `ap` conid `chk` equal `apCut` intPrim
+      (\ (pos,conid) size -> DeclDataPrim pos conid size) `parseChk` 
+        k_primitive `ap` conid `chk` equal `apCut` intPrim
     `orelse`
       (DeclData . Just) `parseAp` unboxed `ap` parseContexts `ap` 
-        parseSimple `chk` equal `apCut` 
-        someSep pipe parseConstr `apCut` parseDeriving),
+        parseSimple `chk` equal `apCut`
+        someSep pipe parseConstr `apCut` parseDeriving
+    `orelse`
+      (\ simpl -> DeclData (Just False) [] simpl [] []) `parseAp` parseSimple ),
   (L_class, \pos -> 
     mkDeclClass `parseAp` parseContexts `ap` aconid `ap` avarid `ap` 
       (id `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl
