@@ -210,6 +210,14 @@ lineCmd = do
                           case c of
                             '~' -> return (Delete R)
                             _   -> return NoOp
+                '4' -> do c <- hGetChar stdin
+                          case c of
+                            '~' -> return (Move End)
+                            _   -> return NoOp
+                '1' -> do c <- hGetChar stdin
+                          case c of
+                            '~' -> return (Move Begin)
+                            _   -> return NoOp
                 _   -> return NoOp
           'O' -> do
               c <- hGetChar stdin
