@@ -217,6 +217,9 @@ C_HEADER(_tprim_cExitWith)
 {
     NodePtr t, c;
 
+    updateSatBs();
+    updateSatCs();
+
     t = C_GETARG1(1);
     c = C_GETARG1(2);
 
@@ -238,6 +241,7 @@ C_HEADER(_tprim_cExitWith)
     }
     terminated = TRUE;
     startDbg(t, TRUE);
+    haskellEnd();
     exit(0);
 }
 
@@ -258,6 +262,7 @@ C_HEADER(cEnter)
     }
 
     dbg_last_trace = C_GETARG1(2);
+    IND_REMOVE(dbg_last_trace);
 
 
     if ((traceBreak > 0) && (reductions > traceBreak))

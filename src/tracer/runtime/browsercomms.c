@@ -1,5 +1,6 @@
 #include "ui.h"
 #include "ident.h"
+#include "fileformat.h"
 
 #if 0
 /*char PM_Prelude[] = "Prelude";*/
@@ -27,18 +28,44 @@ NodePtr dbg_last_trace = NULL;
 
 C_HEADER(fatal)
 {
+  CNmType* nt;
+  CTrace* t;
+  FileOffset fo;
   fprintf(stderr, "No match in pattern.\n");
   terminated = TRUE;
-  startDbg(C_GETARG1(1), FALSE);
+  updateSatBs();
+  updateSatCs();
+  nt = primNTCString("No match in pattern.");
+  fo = nt->ptr;
+  fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
+  fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  t = (CTrace*)C_GETARG1(1);
+  fo = t->ptr;
+  fseek(HatFile,8,SEEK_SET);
+  fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  haskellEnd();
   exit(0);
 }
 
 void
 dbg_blackhole()
 {
+  CNmType* nt;
+  CTrace* t;
+  FileOffset fo;
   fprintf(stderr, "Black hole detected.\n");
   terminated = TRUE;
-  startDbg(dbg_last_trace, FALSE);
+  updateSatBs();
+  updateSatCs();
+  nt = primNTCString("Black hole detected.");
+  fo = nt->ptr;
+  fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
+  fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  t = (CTrace*)dbg_last_trace;
+  fo = t->ptr;
+  fseek(HatFile,8,SEEK_SET);
+  fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  haskellEnd();
   exit(0);
 }
 
