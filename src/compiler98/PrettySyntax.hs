@@ -308,7 +308,7 @@ ppDeclsDepend info (DeclsNoRec decl)  =
   text "-- not recursive" <> line <> 
   ppDecl info decl
 ppDeclsDepend info (DeclsRec decls) =
-  text "-- not recursive" <> line <> 
+  text "-- recursive" <> line <> 
   sep line (map (ppDecl info) decls)
 
 
@@ -623,7 +623,7 @@ ppExpPrec info withPar (ExpDo pos stmts) =
     text "do" <> dSpace <> ppStmts info stmts
 ppExpPrec info withPar (ExpLet pos ds e) =
   parenExp info pos withPar $
-    text "let" <> dSpace <> ppDecls info ds <> text "in " <>
+    text "let" <> dSpace <> ppDecls info ds <> fSpace <> text "in" <> fSpace <>
     parens (ppExpPrec info False e) 
 ppExpPrec info withPar (ExpCase pos e alts) =
   parenExp info pos withPar $
