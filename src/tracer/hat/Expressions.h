@@ -31,6 +31,7 @@ typedef union {
   long intval;
   float floatval;
   char* message;
+  double* doubleval;
   ExprPtr expr;
 } NodeTypes;
 

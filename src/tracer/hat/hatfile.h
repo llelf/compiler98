@@ -25,6 +25,12 @@
 #define TRSATB 5
 #define SATC 6
 #define TRSATC 6
+#define TRSATAIS 12
+#define TRSATBIS 13
+#define TRSATCIS 14
+#define SATAIS 12
+#define SATBIS 13
+#define SATCIS 14
 
 #define MD 1
 #define SUSPECT 0

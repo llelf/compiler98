@@ -14,8 +14,7 @@
 #include "hatfileops.h"
 #include "FunTable.h"
 
-/* optional switch */
-#define showNodeInfo // show additional information about file offsets
+void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current);
 
 void checkCAFs();
 
@@ -23,6 +22,7 @@ char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
 FunTable* memorizedFunsYes = NULL;
 FunTable* memorizedFunsNo = NULL;
+NodeList* CAFList = NULL;
 
 main (int argc, char *argv[])
 {
@@ -38,6 +38,7 @@ main (int argc, char *argv[])
   }
   if (testheader()) {
     userTrustedList = newList();
+    CAFList = newList();
     memorizedFunsYes = newFunTable();
     memorizedFunsNo = newFunTable();
     checkCAFs();
@@ -51,41 +52,45 @@ void quit() {
   exit(0);
 }
 
-int getline(char s[], int max) {
-  int c,i;
-  for (i=0;(i<max-1) && ((c=getchar())!=EOF) && (c!='\n');i++)
-    s[i]=c;
-  s[i]=0;
-  return i;
-}
-
 /* yes = 1, no = 0 */
 void memorizeAnswer(ExprNode* app,ExprNode* res,int answer) {
   if (answer==0)
-    addToFunTable(memorizedFunsNo,app,res);
+    addToFunTable(memorizedFunsNo,app,res,0);
   else 
-    addToFunTable(memorizedFunsYes,app,res);
+    addToFunTable(memorizedFunsYes,app,res,0);
 }
 
 int getMemorizedAnswer(ExprNode* app,ExprNode* res) {
-  int no = isInFunTable(memorizedFunsNo,app,res);
+  int no = 0; // isInFunTable(memorizedFunsNo,app,res); no sense in memorizing no's!
+  // memorized no's must lead to a cycle, if they're actually used!
   int yes = isInFunTable(memorizedFunsYes,app,res);
   if ((!no)&&(yes)) return 1;
   if ((no)&&(!yes)) return 0;
   return -1; // unknown!
 }
 
-void userUntrust() {
+void clearMemorized() {
+  freeFunTable(memorizedFunsNo);
+  freeFunTable(memorizedFunsYes);
+  memorizedFunsYes = newFunTable();
+  memorizedFunsNo = newFunTable();
+}
+
+void untrustAll() {
   freeList(userTrustedList);
 }
 
 void userTrustsFunction(unsigned long fileoffset) {
-  printf("Now trusting function at %u\n",fileoffset);
   insertInList(userTrustedList,fileoffset);
 }
 
 int isUserTrusted(unsigned long fileoffset) {
   return isInList(userTrustedList,fileoffset);
+}
+
+void clearCAFList() {
+  if (CAFList!=NULL) freeList(CAFList);else
+    CAFList = newList();
 }
 
 void showReduction(unsigned long application,unsigned long result,int verbose) {
@@ -96,7 +101,7 @@ void showReduction(unsigned long application,unsigned long result,int verbose) {
 }
 
 int verboseMode = 0;
-int memorizeMode = 0;
+int memorizeMode = 1;
 
 /* returns 1 for yes, 0 for no, 2 for ? */
 int askForApp(int *question,unsigned long appofs,unsigned long resofs,int reconsider) {
@@ -104,7 +109,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
   char answer[11];
   int c,err,retval=-1;
   ExprNode *appNode,*resNode;
-  char* pp;
+  char *pp1,*pp2;
   char isCAF=0;
   unsigned long lmost = leftmostOutermost(appofs);
 
@@ -120,106 +125,147 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
     if ((c==0)||(c==1)) retval=c; // return the memorized answer, if known
   }
   (*question)++;
+  
   while (retval==-1) {
-#ifdef showNodeInfo
-    if (reconsider) {
-      if (isCAF) printf("\n%i. Now reconsider the following CAF (at %u).\n",
-			     *question,appofs);
-      else
-      printf("\n%i. Now reconsider the following equation (at %u/%u).\n",
-	     *question,appofs,resofs);
-    }
-    else {
-      if (isCAF) printf("\n%i. Consider the following CAF (at %u).\n",*question,appofs);
-      else
-	printf("\n%i. Consider the following equation (at %u/%u).\n",*question,appofs,
-	       resofs);
-    }
-#else
-    if (reconsider) {
-      if (isCAF) printf("\n%i. Now reconsider the following CAF.\n",*question);
-      else printf("\n%i. Now reconsider the following equation.\n",*question);
-    }
-    else {
-      if (isCAF)
-	printf("\n%i. Consider the following CAF.\n",*question);
-      else
-	printf("\n%i. Consider the following equation.\n",*question);
-    }
-#endif 
-    pp = prettyPrintExpr(appNode,verboseMode);
-    printf("%s = ",pp);
-    freeStr(pp);
-    pp = prettyPrintExpr(resNode,verboseMode);
-    printf("%s\n",pp);
-    freeStr(pp);
+    if (reconsider) printf("\nreconsider:");
+    printf("\n%i> ",*question);
+    pp1 = prettyPrintExpr(appNode,verboseMode);
+    printf("%s = ",pp1);
+    pp2 = prettyPrintExpr(resNode,verboseMode);
+    printf("%s",pp2);
+    if (strlen(pp1)+strlen(pp2)>70) printf("\n");
+    freeStr(pp2);freeStr(pp1);
     err=0;
-    if (reconsider) printf("Does it seem ok? (Y/N or Help): ");
-    else printf("Does it seem ok? (Y/?/N or Help): ");
+    if (reconsider) printf("   (Y/N): ");
+    else printf("   (Y/?/N): ");
     if (getline(answer,10)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YNQT?HVUMAR",c)==NULL) { // was answer a valid character?
-	printf("Sorry. Please answer the question with 'Yes' or 'No' (Y/N)!\n");
+      if (strchr("YNQT?HVUMGOC*",c)==NULL) { // was answer a valid character?
+	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
-	if (c=='Y') {
+	switch(c) {
+	case '*':
+	  if (answer[1]=='*') {
+	    printf("debug info: %u %u\n",appofs,resofs);
+	  }
+	  break;
+	case 'O': 
+	  {
+	    unsigned long newAdr,newSAT;
+	    seek(lmost);
+	    newAdr = observeNode(lmost,0,verboseMode,1,0);
+	    if ((newAdr>0)&&(newAdr!=appofs)) {
+	      char s[10];
+	      printf("Start detect session for ");
+	      showAppAndResult(newAdr);
+	      printf("(Y/N): ");
+	      getline(s,10);
+	      if (toupper(s[0])=='Y') {
+		NodeList* nl=newList();
+		printf("New detect session for: ");
+		showAppAndResult(newAdr);
+		printf("\n");
+		appendToList(nl,newAdr);
+		askNodeList(0,nl,1);
+		printf("\nResuming previous session.\n");
+	      }
+	    }
+	  }
+	break;
+	case 'Y':
 	  if (memorizeMode) {
 	    memorizeAnswer(appNode,resNode,1);
 	    return 1;
 	  } else retval = 1;
-	}
-	if ((!reconsider)&&(c=='?')) return 2; // maybe...
-	if ((reconsider)&&(c=='?')) {
-	  printf("Sorry, you need to decide now. Answer 'Y' or 'N'.");
-	}
-	if (c=='N') {
+	  break;
+	case '?':
+	   if (!reconsider) {
+	     retval=2; // maybe...
+	     break;
+	   }
+	   if (reconsider) {
+	     printf("   Sorry, you need to decide now. Answer 'Y' or 'N'.");
+	   }
+	   break;
+	case 'N':
 	  if (memorizeMode) {
 	    memorizeAnswer(appNode,resNode,0);
 	    return 0;
 	  } else retval = 0;
-	}
-	if (c=='Q') quit();
-	if (c=='T') {
+	  break;
+	case 'Q':
+	  quit();
+	  break;
+	case 'T':
 	  userTrustsFunction(lmost);
-	  printf("Ok. Function will be trusted from now on.\n");
+	  printf("   Ok. \"");
+	  showNode(lmost);
+	  printf("\" will be trusted from now on.\n");
 	  retval = 1; // answer is yes
-	}
-	if (c=='U') {
-	  userUntrust();
-	  printf("Ok. All functions are untrusted again.\n");
-	}
-	if ((c=='A')||(c=='R')) {
-	  char* treeP;
-	  if (c=='A') treeP = treePrint(appNode,verboseMode,0);
-	  else treeP = treePrint(resNode,verboseMode,0);
-	  printf(treeP);
-	  freeStr(treeP);
-	}
-	if (c=='V') {
+	  break;
+	case 'U':
+	  untrustAll();
+	  printf("   Ok. All functions are untrusted again.\n");
+	  break;
+	case 'A':
+	case 'R':
+	  {
+	    char* treeP;
+	    if (c=='A') treeP = treePrint(appNode,verboseMode,0);
+	    else treeP = treePrint(resNode,verboseMode,0);
+	    printf(treeP);
+	    freeStr(treeP);
+	  }
+	  break;
+	case 'V':
 	  verboseMode = 1-verboseMode;
-	  printf("verbose mode is now ");
+	  printf("   verbose mode is now ");
 	  if (verboseMode) printf("ON\n"); else printf("OFF\n");
 	  freeExpr(appNode);
 	  freeExpr(resNode);
 	  appNode = buildExpr(appofs,verboseMode);
 	  resNode = buildExpr(resofs,verboseMode);
-	}
-	if (c=='M') {
+	  break;
+	case 'M':
 	  memorizeMode = 1-memorizeMode;
-	  printf("memorize mode is now ");
+	  printf("   memorize mode is now ");
 	  if (memorizeMode) printf("ON\n"); else printf("OFF\n");
-	}
-	if (c=='H') {
+	  break;
+	case 'C':
+	  printf("   all memorized answers cleared.\n");
+	  clearMemorized();
+	  break;
+	case 'G':
+	  if (*question==1) {
+	    printf("Cannot go back. Already at question 1.\n");
+	  } else {
+	    int j,i=1;
+	    if ((strlen(answer)>1)&&(toupper(answer[1])!='O')) i++;
+	    j = atol(i+answer);
+	    if ((j<1)||(j>*question)) {
+	      printf("Can only go back to questions 1 to %i.\n",*question);
+	    } else {
+	      retval=10*j;
+	      clearMemorized();
+	    }
+	  }
+	  break;
+	case 'H':
 	  printf("\nhat-detect - HELP\n\n");
 	  printf("Keyboard commands\n\n");
-	  printf("     'Yes'      or 'y', if the equation is ok.\n");
-	  printf("     'No'       or 'n', if it isn't.\n");
+	  printf("     'Yes'      or 'y' if the equation is ok.\n");
+	  printf("     'No'       or 'n' if it isn't.\n");
 	  if (!reconsider)
-	    printf("     '?',               if you are unsure whether it is or is not.\n");
-	  printf("\n     'Trust'    or 't', if the function shall now be trusted.\n");
-	  printf("     'Untrust'  or 'u', to untrust all functions again.\n");
-	  printf("\n     'Memorize' or 'm', to toggle the memorize mode.\n");
+	    printf("     '?'               if you are unsure whether it is or is not.\n");
+	  printf("\n     'Trust'    or 't' if the function shall now be trusted.\n");
+	  printf("     'Untrust'  or 'u' to untrust all functions again.\n");
+	  printf("\n     'Memorize' or 'm' to toggle the memorize mode.\n");
+	  printf("     'Clear'    or 'c' to clear all memorized answers.\n");
 	  printf("     'Verbose'  or 'v' to toggle verbose mode.\n");
+	  printf("     'Go <n>'   or 'g <n>' to go back to question <n>.\n");
+	  printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
 	  printf("\n     'Quit'     or 'q' to leave the tool.\n");
+	  break;
 	}
       }
     }
@@ -274,11 +320,17 @@ void findCAFs(NodeList* nl) {
   char nodeType;
   int bigFileMode = 0;
   
-  if (readCAFsFromFile(nl)==1) {
+  /*
+    if (readCAFsFromFile(nl)==1) {
     return; // ok, read simply read them from disk!
-  }
+    }*/
 
   fsz = filesize()/1000;
+  
+
+  fsz = 1; // dummy: don't show progress during search (is terribly quick)
+
+ 
   if (fsz<20000) lsz=200;else {
     bigFileMode=1;
     fprintf(stderr,"Searching entire hat file for CAFs.\n");
@@ -308,7 +360,15 @@ void findCAFs(NodeList* nl) {
 	  // found a CAF!
 	  if ((isSAT())&&(isTrusted(srcref)==0)&&
 	      (isTopLevel(currentOffset))) {
-	    addBeforeList(nl,currentOffset);
+	    // only search for "main" (new!)
+	    unsigned long lmo = leftmostOutermost(currentOffset);
+	    seek(lmo);
+	    if ((lmo!=0)&&(nextbyte()==NTIDENTIFIER)&&(strcmp(readstring(),"main")==0)) {
+	      
+	      addBeforeList(nl,currentOffset);
+	      
+	      return;
+	    }
 	  }
 	}
       }
@@ -322,28 +382,28 @@ void findCAFs(NodeList* nl) {
   if (bigFileMode) {
     fprintf(stderr,"\nWriting CAFs to file for next session...\n");
   }
-  writeCAFsToFile(nl);
+
+  /* writeCAFsToFile(nl); */
+
   if (bigFileMode)  {
     fprintf(stderr,"\b\b\b\b");
     fflush(stderr);
   }
 }
 
-//#define DebugCheckAppsFor
-
-int checkAppsFor(int *question,unsigned long parentTrace,unsigned long current,
-		  unsigned long result) {
+//#define DebugFindAppsFor
+void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
   char nodeType;
-  unsigned long satc=0;
+  unsigned long satc=0,result;
   int question_old=0;
   while (1) {
-    if (current==0) return 0;
+    if (current==0) return;
 
-    result=findAppSAT(current); // no satc passed along
+    result=findAppSAT(current);
 
     seek(current);
     nodeType = nextbyte();
-#ifdef DebugCheckAppsFor
+#ifdef DebugFindAppsFor
     printf("nodeType at %u is %i, searching %u, resulting %u\n",current,nodeType,
 	   parentTrace,result);
 #endif
@@ -358,27 +418,23 @@ int checkAppsFor(int *question,unsigned long parentTrace,unsigned long current,
 	srcref = readpointer(); // read srcref
 	appTrace = followHidden(appTrace); // follow along hidden to find parent
 
-	if ((appTrace!=parentTrace)&&(checkAppsFor(question,parentTrace,appTrace,result))) {
-	  // check for bug in parent
-	  return 1;
-	} else {
-	  if (appTrace==parentTrace) {
-	    int i=0;
-	    while (i++<arity) {
-#ifdef DebugCheckAppsFor
-	      printf("checking arg %i of %u\n",i,current);
+	if (appTrace!=parentTrace) {
+	  findAppsFor(nl,parentTrace,appTrace);
+	}
+	if (appTrace==parentTrace) {
+	  int i=0;
+	  while (i++<arity) {
+#ifdef DebugFindAppsFor
+	    printf("checking arg %i of %u\n",i,current);
 #endif
-	      seek(current+2+4+i*4);
-	      p = readpointer();
-	      if (checkAppsFor(question,parentTrace,p,p)==1) {
-		return 1;
-	      }
-	    }
+	    seek(current+2+4+i*4);
+	    p = readpointer();
+	    findAppsFor(nl,parentTrace,p);
 	  }
 	}
-
-	if ((appTrace==parentTrace)) {
-#ifdef DebugCheckAppsFor
+	
+	if ((appTrace==parentTrace)||(appTrace==0)) {
+#ifdef DebugFindAppsFor
 	  printf("APP at %u is child!\n",current);
 #endif
 	  satc=followSATs(result);
@@ -386,56 +442,42 @@ int checkAppsFor(int *question,unsigned long parentTrace,unsigned long current,
 	    int trusted = isTrusted(funTrace);
 	    int toplevel = isTopLevel(funTrace);
 	    int isOk=1;
-	    if (trusted==0) {
-#ifdef DebugCheckAppsFor
+	    if ((trusted==0)&&(toplevel)) {
+#ifdef DebugFindAppsFor
 	      printf("Function at %u is not trusted.\n",funTrace);
 	      printf("Toplevel: %i\n",toplevel);
 #endif
-	      if (satc==current) return 0;
-	    }
-
-	    question_old = *question;
-	    while (1) {
-		*question = question_old;
-		if ((trusted==0)&&(toplevel)) {
-		  isOk = askForApp(question,current,satc,0);
-		  if (isOk==1) return 0;
-		}
-		if (checkAppsFor(question,current,satc,result)==0) {
-		  // no bug in these children
-		  if (isOk==2) {
-		    *question = question_old;
-		    isOk = askForApp(question,current,satc,1);
-		  }
-		  if (isOk==0) {
-		    // user said, there is a bug! So it's here!
-		    char s[2];
-		    printf("\nBug located! (at %u)\nIn equation:\n",current);
-		    showReduction(current,satc,1);
-		    printf("in ");
-		    showFunLocation(current);
-		    printf("\nPress 'q' to quit, any other key to go back to question %i:",
-			   question_old+1);
-		    getline(s,2);
-		    if ((s[0]=='q')||(s[0]=='Q')) quit();
-		  } else return 0;
-		} else { // ok, bug was found in one of its children
-		  return 1;
-		}
+	      if (satc!=current) {
+		appendToList(nl,current);
 	      }
-	  } // of if (isSAT())
+	    } else {
+	      if (satc!=current)
+		findAppsFor(nl,current,satc);
+	    }
+	  }
 	}
 	seek(current+2+4+arity*4);
       }
-
-      return 0;
+      return;
     case TRNAM: {
       unsigned long p = readpointer();
+      unsigned long srcref;
       unsigned long newcurrent;
-      if (p==parentTrace) return 0; // caf found
+      skippointer();
+      srcref = readpointer();
+      if ((p==parentTrace)||(p==0)) {
+	if (p==0) {  // CAF found
+	  unsigned long lmo = leftmostOutermost(current);
+	  if (lmo!=0) {
+	    if (isTopLevel(current)&&(isTrusted(srcref)==0)) 
+	      appendToList(nl,current);
+	  }
+	}
+	return;
+      }
       else {
         newcurrent = followSATs(p);
-	if (newcurrent==current) return 0;
+	if (newcurrent==current) return;
 	else current = newcurrent;
       }
     }
@@ -450,54 +492,100 @@ int checkAppsFor(int *question,unsigned long parentTrace,unsigned long current,
       break;
     default: {
 	unsigned long newcurrent = followSATs(current);
-	if (newcurrent==current) return 0;
+	if (newcurrent==current) return;
 	else current = newcurrent;
       }
     break;
     }
   }
-  return 0;
+  return;
 }
 
-void checkCAFs() {
+int askNodeList(int question,NodeList* results,int isTopSession) {
   unsigned long satc;
-  int question = 0,success=0,askAgain;
+  int success,askAgain,question_old,first_question;
+  NodeList* children=NULL;
   char s[2];
   NodeElement* e;
-  NodeList* results=newList();
-  findCAFs(results);
-  e=results->first;
-  while ((success==0)&&(e!=NULL)) {
-    int answer,question_old;
-    askAgain = 0;
-    question_old = question;
-    answer=askForApp(&question,e->fileoffset,0,0);
-    if (answer!=1) {
-      satc=findAppSAT(e->fileoffset);
-      if (checkAppsFor(&question,e->fileoffset,satc,satc)==0) {
+  first_question = question;
+  do {
+    question=first_question;
+    success=0;
+    e=results->first;
+    while ((success==0)&&(e!=NULL)) {
+      int answer;
+      askAgain = 0;
+      question_old = question;
+      if (isInList(CAFList,e->fileoffset)==0) {
+	answer=askForApp(&question,e->fileoffset,0,0);
+	if (isCAF(e->fileoffset)) {
+	  insertInList(CAFList,e->fileoffset);
+	}
+      } else answer=1;
+      if ((answer!=1)&&(answer<10)){
+	satc=findAppSAT(e->fileoffset);
+	children = newList();
+	findAppsFor(children,e->fileoffset,satc);
+	success = askNodeList(question,children,0);
+	if (success>=10) {answer=success;success=0;}
 	if (answer==2) {
-	  question = question_old;
-	  answer = askForApp(&question,e->fileoffset,0,1);
+	question = question_old;
+	answer = askForApp(&question,e->fileoffset,0,1);
 	}
 	if (answer==0) {
-	  printf("Error located!\nBug found in the CAF: \"");
+	  printf("Error located!\nBug found in: \"");
 	  showNode(e->fileoffset,1);
 	  printf("\"\nin ");
 	  showLocation(e->fileoffset);
 	  printf("\n");
 	  printf("\nPress 'q' to quit, any other key to go back to question %i:",
-		 question_old);
+		 question_old+1);
 	  getline(s,2);
 	  if (toupper(s[0])=='Q') quit();
+	  clearMemorized();
+	  untrustAll();
+	  clearCAFList();
 	  askAgain = 1;
-	  question = question_old-1;
+	  question = question_old;
 	}
-      } else success=1;
+      }
+      if (answer>=10) {
+	if (answer / 10 > first_question) {
+	  e=results->first;
+	  question = first_question;
+	  while (question+1<answer /10) {
+	    if (e->next!=NULL) e=e->next;
+	    question++;
+	  }
+	  askAgain=1;
+	} else {
+	  freeList(results);
+	  return answer;
+	}
+      }
+      if (!askAgain) {
+	e=e->next;
+      }
     }
-    if (!askAgain) e=e->next;
-  }
-  if (success==0) {
-    printf("Ok, no bug found!\n");
-  }
-  freeList(results);
+    if ((isTopSession)&&(success==0)) {
+      printf("Ok, no bug found!\n");
+    }
+    if (isTopSession==2) { // it's the main session!
+      printf("\nPress 'q' to quit, any other key to go back to question 1: ");
+      getline(s,2);
+      clearMemorized();
+      untrustAll();
+      clearCAFList();
+    }
+  } while ((isTopSession==2)&&(toupper(s[0])!='Q'));
+  freeList(results);  
+  return success;
+}
+
+void checkCAFs() {
+  int success;
+  NodeList* results=newList();
+  findCAFs(results);
+  askNodeList(0,results,2);
+  quit();
 }

@@ -79,14 +79,6 @@ void checkOutput() {
   close(bridge);
 }*/
 
-int getline(char s[], int max) {
-  int c,i;
-  for (i=0;(i<max-1) && ((c=getchar())!=EOF) && (c!='\n');i++)
-    s[i]=c;
-  s[i]=0;
-  return i;
-}
-
 int isCmd(char* s,char* s1,char* s2) {
   if (strcmp(s,s1)==0) return 1;
   return (strcmp(s,s2)==0);
@@ -160,14 +152,29 @@ unsigned long printNode(unsigned long offset) {
       printf(" SAT(A): ");
       printf("TR %u", readpointer());
       break;
+    case SATAIS:
+      showAble = 1;
+      printf(" isolated SAT(A): ");
+      printf("TR %u", readpointer());
+      break;
     case SATB:
       showAble = 1;
       printf(" SAT(B): ");
       printf("TR %u\t", readpointer());
       break;
+    case SATBIS:
+      showAble = 1;
+      printf(" isolated SAT(B): ");
+      printf("TR %u\t", readpointer());
+      break;
     case SATC:
       showAble = 1;
       printf(" SAT(C): ");
+      printf("TR %u", readpointer());
+      break;
+    case SATCIS:
+      showAble = 1;
+      printf(" isolated SAT(C): ");
       printf("TR %u", readpointer());
       break;
     default:
@@ -201,18 +208,19 @@ unsigned long printNode(unsigned long offset) {
       printf("RATIONAL %s", readrational());
       break;
     case FLOAT:
-      printf("FLOAT %g", readfloat());
+      printf("FLOAT %f", readfloat());
       break;
     case DOUBLE:
-      printf("DOUBLE %g", readdouble());
+      printf("DOUBLE %f", readdouble());
       break;
     case IDENTIFIER:
       printf("identifier: %s ", readstring());
-      { unsigned long modinfo = readpointer();
-      char *fp = readfixpriStr();
-      if (*fp!='\0') printf("%s ", fp);
-      printf("MD %u, ", modinfo);
-      printf(" %s", readposn());
+      {
+	unsigned long modinfo = readpointer();
+	char *fp = readfixpriStr();
+	if (*fp!='\0') printf("%s ", fp);
+	printf("MD %u, ", modinfo);
+	printf(" %s", readposn());
       }
       break; 
     case CONSTRUCTOR:

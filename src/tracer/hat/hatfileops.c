@@ -41,6 +41,22 @@ char* filename(char* name) {
   }
 }
 
+int getline(char s[], int max) {
+  int c,i;
+  fflush(stdout);
+  c=getchar();
+  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
+    if (c==-1) {
+      i--;
+    } else {
+      s[i]=c;
+    }
+    c=getchar();
+  }
+  s[i]=0;
+  return i;
+}
+
 /* open file for reading, save in internal file descriptor */
 int openfile(char* name) {
   name = filename(name);
@@ -224,13 +240,23 @@ char *readrational() {
 }
 
 float readfloat() {
-  return readfourbytes().floatval;
+  fourbytes a = readfourbytes();
+  a.ptrval = htonl(a.ptrval);
+  return a.floatval;
 }
 
+typedef union {
+  double d;
+  fourbytes a[2];
+} eightbytes;
+
 double readdouble() {
-  (void)(readfourbytes());
-  (void)(readfourbytes());
-  return 0.0;  /* DUMMY FOR NOW */ 
+  eightbytes v;
+  v.a[0] = readfourbytes();
+  v.a[1] = readfourbytes();
+  v.a[1].ptrval = htonl(v.a[1].ptrval);
+  v.a[0].ptrval = htonl(v.a[0].ptrval);
+  return v.d;
 }
 
 int hi3(char b) {
@@ -299,6 +325,9 @@ void skipNode(char nodeType) {
     case SATA:
     case SATB:
     case SATC:
+    case SATCIS:
+    case SATBIS:
+    case SATAIS:
       skippointer();
       break;
     default:
@@ -326,10 +355,10 @@ void skipNode(char nodeType) {
       readrational();
       break;
     case FLOAT:
-      readfloat();
+      skipbytes(4);
       break;
     case DOUBLE:
-      readdouble();
+      skipbytes(8);
       break;
     case IDENTIFIER:
       skipstring();  // simply read string
@@ -381,6 +410,7 @@ unsigned long followTrace(unsigned long fileoffset) {
       skippointer();
       fileoffset=readpointer(); // follow this link for prettyPrint
       break;
+    case TRSATCIS:
     case TRSATC:
       fileoffset=readpointer(); // follow link...
       break;
@@ -417,6 +447,7 @@ unsigned long followSATs(unsigned long fileoffset) {
     seek(fileoffset);
     nodeType = nextbyte();
     switch (nodeType) {
+    case TRSATCIS:
     case TRSATC:
       fileoffset=readpointer(); // follow link...
       break;
@@ -562,6 +593,10 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
       exp->v.charval = readchar();
       return exp;
     case NTDOUBLE:
+      exp = newExprNode(b);
+      exp->v.doubleval = (double*) malloc(1,sizeof(double));
+      *(exp->v.doubleval) = readdouble();
+      return exp;
     case NTRATIONAL:
     case NTINTEGER:
       exp = newExprNode(b);
@@ -587,6 +622,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	exp->v.message = newStr("\253HIDDEN\273");
 	return exp;
       } else return NULL;
+    case TRSATAIS:
     case TRSATA: // unevaluated expression
       if (verbose) {
 	p = readpointer();
@@ -595,6 +631,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	return exp;
       } else
 	return NULL;
+    case TRSATBIS:
     case TRSATB:
       exp = newExprNode(b);
       exp->v.intval = readpointer();
@@ -877,7 +914,7 @@ void showPretty(NodeList *nl,int verboseMode) {
 	if (isSAT()) {
 	  ExprNode* r=buildExpr(satc,verboseMode);
 	  ExprNode* a=buildExpr(e->fileoffset,verboseMode);
-	  addToFunTable(results,a,r);
+	  addToFunTable(results,a,r,e->fileoffset);
 	}
 	e=e->next;
       }
@@ -901,6 +938,9 @@ int isTrusted(unsigned long srcref) {
     case TRSATA:
     case TRSATB:
     case TRSATC:
+    case TRSATCIS:
+    case TRSATBIS:
+    case TRSATAIS:
     case SRCREF:
       srcref = readpointer();
       break;
@@ -922,6 +962,7 @@ int isTrusted(unsigned long srcref) {
     case NTGUARD:
     case NTIF:  // IFs are trusted. They do the right thing...
     case NTCASE: // CASEs are trusted, same reason...
+    case TUPLE:
     case NTCONSTRUCTOR: // constructors are "trusted"! => its applications are ok!
       seek(old);
       return 1;
@@ -933,6 +974,19 @@ int isTrusted(unsigned long srcref) {
       seek(old);
       return 0;
     }
+  }
+}
+
+int isCAF(unsigned long fileoffset) {
+  char nodeType,i;
+  unsigned long old = byteoffset();
+  seek(fileoffset);
+  nodeType=nextbyte();
+  switch(nodeType) {
+  case TRNAM:
+    return 1;
+  default:
+    return 0;
   }
 }
 
@@ -953,6 +1007,9 @@ int isTopLevel(unsigned long srcref) {
     case TRSATA:
     case TRSATB:
     case TRSATC:
+    case TRSATAIS:
+    case TRSATBIS:
+    case TRSATCIS:
       srcref=readpointer();
       break;
     case TRNAM:
@@ -970,6 +1027,16 @@ int isTopLevel(unsigned long srcref) {
       skipbytes(1+4);
       srcref = readpointer();
       break;
+    case NTCASE:
+    case NTIF:
+    case NTGUARD:
+    case NTLAMBDA:
+    case NTCONTAINER:
+    case NTTUPLE:
+    case NTDUMMY:
+    case NTFUN:
+    case NTCSTRING:
+      return 0; // not toplevel (necessary for hat-observe funA in funA!)
     default:
       seek(old);
       //fprintf(stderr,"returning 1 (unknown type) ");
@@ -986,8 +1053,11 @@ unsigned long leftmostOutermost(unsigned long fileoffset) {
     switch(nodeType) {
     case TRSATA:
     case TRSATB:
+    case TRSATBIS:
+    case TRSATAIS:
       return 0;
     case TRSATC:
+    case TRSATCIS:
       fileoffset=readpointer();
       break;
     case TRNAM:

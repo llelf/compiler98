@@ -10,11 +10,14 @@ typedef struct lnode* FunTablePtr;
 typedef struct lnode {
   ExprNode* funAppl;
   ExprNode* res;
+  unsigned long fileoffset;
   FunTablePtr next;
 } FunTable;
 
 FunTable* newFunTable();
 void freeFunTable(FunTable* e);
-void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res);
+void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,unsigned long fileoffset);
 void showFunTable(FunTable* l);
+long showFunTablePaged(FunTable* l);
 int isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res);
+unsigned long getFunTableFileOffs(FunTable*l,long i);

@@ -6,6 +6,8 @@
 /* include constants for tags in hat files */
 #include "hatfile.h"
 
+int getline(char s[], int max); /* read string from keyboard */
+
 char* filename(char* name);  /* make proper file extension, if missing */
 int   openfile(char* name);  /* open file for reading, save descriptor internally */
 void  closefile();           /* close file in internal file descriptor */

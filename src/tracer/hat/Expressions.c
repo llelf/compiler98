@@ -128,6 +128,9 @@ void freeExpr(ExprNode* e) {
     case TRSATA:
       freeExpr(e->v.expr);
       break;
+    case NTDOUBLE:
+      free(e->v.doubleval);
+      break;
     case MESSAGE:
       freeStr(e->v.message);
       break;
@@ -366,7 +369,6 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
     return newStr(exp->v.identval->name);
   case NTINTEGER:
   case NTRATIONAL:
-  case NTDOUBLE:
   case NTINT:
     sprintf(minibuf,"%i",exp->v.intval);
     return newStr(minibuf);
@@ -377,6 +379,10 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
   }
   case NTFLOAT:
     sprintf(minibuf,"%f",exp->v.floatval);
+    return newStr(minibuf);
+  case NTDOUBLE:
+    sprintf(minibuf,"%f",*(exp->v.doubleval));
+    //sprintf(minibuf,"DoUbLe");
     return newStr(minibuf);
   case NTTUPLE:
     return newStr("TUPLE");
@@ -458,7 +464,6 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
     else return 2;
   case NTINTEGER:
   case NTRATIONAL:
-  case NTDOUBLE:
   case NTINT:
     if (e1->v.intval==e2->v.intval) return 0;
     else return 2;
@@ -468,6 +473,9 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
   }
   case NTFLOAT:
     if (e1->v.floatval==e2->v.floatval) return 0;
+    else return 2;
+  case NTDOUBLE:
+    if (*(e1->v.doubleval)==*(e2->v.doubleval)) return 0;
     else return 2;
   default:
     return 2;
@@ -726,9 +734,11 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
     //if (functionDepth>=showEvalUpToDepth) return newStr("_");
   case NTCONSTRUCTOR:
     return newStr(exp->v.identval->name);
+  case NTDOUBLE:
+    sprintf(minibuf,"%f",*(exp->v.doubleval));
+    return newStr(minibuf);
   case NTINTEGER:
   case NTRATIONAL:
-  case NTDOUBLE:
   case NTINT:
     sprintf(minibuf,"%i",exp->v.intval);
     return newStr(minibuf);

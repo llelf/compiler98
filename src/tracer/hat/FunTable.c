@@ -1,8 +1,12 @@
-/* FunTable.c
-   Stores a function table. For each function application the list of arguments
-   is saved. Applications may be compared, only the most general application
-   is stored.
-*/
+/**************************************************************************/
+/* FunTable.c                                                             */
+/* Stores a function table. For each function application the list of     */
+/* arguments is saved. Applications may be compared, only the most        */
+/* general application                                                    */
+/* is stored.                                                             */
+/*                                                                        */
+/* Thorsten Brehm, 4/2001                                                 */
+/**************************************************************************/
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -11,6 +15,8 @@
 #include "Expressions.h"
 #include "hatfileops.h"
 #include "FunTable.h"
+#include "menu.h"
+
 //#define doStatistics
 
 FunTable* newFunTable() {
@@ -28,8 +34,19 @@ void freeFunTable(FunTable* e) {
     free(e);
   }
 }
+
+int FunTableLength(FunTable* l) {
+  int c=0;
+  l=l->next;
+  while (l!=NULL) {
+    c++;
+    l=l->next;
+  }
+  return c;
+}
+
 unsigned long thesame = 0,smaller = 0, moregeneral=0,uncomparable=0;
-void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res) {
+void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,unsigned long fileoffset) {
   FunTable* p;
   FunTable* e = newFunTable();
 
@@ -46,6 +63,7 @@ void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res) {
     freeStr(resstr);freeStr(appstr);
     }*/
   e->funAppl = funAppl;
+  e->fileoffset = fileoffset;
   e->res = res;
   e->next = NULL;
   if (l->next==NULL) { // first element!
@@ -84,10 +102,11 @@ void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res) {
   }
 }
 
-void showFunTable(FunTable* l) {
+void showFunTable_internal(FunTable* l,int mode) {
   char* appstr;
   char* resstr;
   unsigned long c=0;
+  char buf[5];
   if ((l==NULL)||(l->next==NULL)) printf("FUNCTION TABLE EMPTY\n"); else
     { 
       l=l->next;
@@ -100,6 +119,10 @@ void showFunTable(FunTable* l) {
 	printf(" = %s\n",resstr);
 	freeStr(resstr);
 	l=l->next;
+	if ((mode)&&(c % 20==0)) {
+	  printf("<press RETURN to continue>");
+	  getline(buf,5);
+	}
       }
 #ifdef doStatistics      
       fprintf(stderr,"found %u unique applications.\n",c);
@@ -107,6 +130,47 @@ void showFunTable(FunTable* l) {
 	      thesame,smaller,moregeneral,uncomparable);
 #endif
     }
+}
+
+void showFunTable(FunTable* l) {
+  showFunTable_internal(l,0);
+}
+
+FunTable* currentFTable;
+int currentFTablePos;
+FunTable* currentFTablePtr;
+
+char* getFunTableStr(int i) {
+  char *appstr,*resstr;
+  if (i<currentFTablePos) {
+    currentFTablePos=0;
+    currentFTablePtr=currentFTable;
+  }
+  while ((currentFTablePtr!=NULL)&&(i>currentFTablePos)) {
+    currentFTablePtr=currentFTablePtr->next;
+    currentFTablePos++;
+  }
+  if (currentFTablePtr==NULL) return newStr("");
+  appstr = prettyPrintExpr(currentFTablePtr->funAppl,1);
+  resstr = prettyPrintExpr(currentFTablePtr->res,1);
+  replaceStr(&appstr,appstr," = ",resstr);
+  freeStr(resstr);
+  return appstr;
+}
+
+unsigned long getFunTableFileOffs(FunTable*l,long i) {
+  l=l->next;
+  while ((l!=NULL)&&(i-->0)) l=l->next;
+  if (l==NULL) return 0;
+  return l->fileoffset;
+}
+
+long showFunTablePaged(FunTable* l) {
+  currentFTable=l->next;
+  currentFTablePtr=l->next;
+  currentFTablePos=0;
+  return menu("choose any equation and press <RETURN> or <Q> to cancel",
+	      FunTableLength(l),&getFunTableStr);  
 }
 
 int isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res) {
