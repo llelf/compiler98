@@ -19,16 +19,20 @@ install procedure:
 
 <h3>System Requirements</h3>
 <p>
+Currently, nhc98 assumes a 32-bit processor, or a 32-bit emulation
+mode on a 64-bit processor.  It does not work on 64-bit-only machines.
+
+<p>
 Users of Windows 95/98/SE/Me/NT/2k/XP/etc, please see these
 <a href="windows.html">special Windows instructions</a> first.
 
 <p>
-If you want to use the graphical debugging tool <em>hood</em>, you
-will need to have Java on your PATH.
-
-<p>
 For the binary release, we assume you have a good C compiler (usually
 <em>gcc</em>), and a <em>sh</em> compatible with the Bourne shell.
+
+<p>
+If you want to use the graphical debugging tool <em>hood</em>, you
+will need to have Java on your PATH.
 
 <p>
 For the source release, you need the usual C compilation management
@@ -137,34 +141,50 @@ to build all the possible facilities.  (A simple <em>make</em>
 without targets builds everything.)
 
 <p>
-The time taken to build nhc98 depends on your machine, which compiler
-you are using, and whether you have asked for just the basic system or
-some extra components.  Here are some sample build times:
+The time taken to build nhc98 depends on your machine, operating
+system, which compiler you are using, and whether you have asked for
+just the basic libraries or extra profiling libraries.  Here are some
+sample build times:
 
 <center>
 <table border=1><tr>
     <td></td>
-    <td colspan=4>ix86-Linux machine:</td>
+    <td colspan=4>ix86 machine:</td>
+    <td colspan=2>powerpc machine:</td>
 </tr><tr>
     <th></th>
     <th colspan=2>500MHz</th>
     <th colspan=2>2.4GHz</th>
+    <th colspan=2>1.3GHz</th>
 </tr><tr>
     <th>build<br>compiler</th>
     <th>basic</th><th>all</th>
     <th>basic</th><th>all</th>
+    <th>basic</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td align=right>9m</td><td align=right>26m</td>
-                <td align=right>4m</td><td align=right>12m</td>
+    <td>gcc/Linux</td><td align=right>9m</td><td align=right>26m</td>
+                      <td align=right>4m</td><td align=right>12m</td>
+                      <td>9m</td><td>-</td>
 </tr><tr>
-    <td>ghc</td><td align=right>31m</td><td align=right>1h11</td>
-                <td align=right>10m</td><td align=right>26m</td>
+    <td>ghc/Linux</td><td align=right>31m</td><td align=right>1h11</td>
+                      <td align=right>10m</td><td align=right>26m</td>
+                      <td>23m</td><td>-</td>
 </tr><tr>
-    <td>hbc</td><td align=right>-</td><td align=right>-</td>
-                <td align=right>12m</td><td align=right>27m</td>
+    <td>gcc/Cygwin</td><td align=right>-</td><td align=right>-</td>
+                      <td align=right>22m</td><td align=right>-</td>
+                      <td>-</td><td>-</td>
 </tr><tr>
-    <td>nhc98</td><td align=right>50m</td><td align=right>3h33</td>
-                <td align=right>23m</td><td align=right>1h15</td>
+    <td>ghc/Cygwin</td><td align=right>-</td><td align=right>-</td>
+                      <td align=right>37m</td><td align=right>-</td>
+                      <td>-</td><td>-</td>
+</tr><tr>
+    <td>hbc/Linux</td><td align=right>-</td><td align=right>-</td>
+                      <td align=right>12m</td><td align=right>27m</td>
+                      <td>-</td><td>-</td>
+</tr><tr>
+    <td>nhc98/Linux</td><td align=right>50m</td><td align=right>3h33</td>
+                        <td align=right>23m</td><td align=right>1h15</td>
+                      <td>-</td><td>-</td>
 </tr></table>
 </center>
 
@@ -188,6 +208,16 @@ If you have any problems, mail <a href="mailto:nhc-bugs@haskell.org">
 <tt>nhc-bugs@haskell.org</tt></a> with a description (and a
 bugfix if you have one!).
 
+<h4>Common gotchas</h4>
+<ul>
+<li> You cannot build nhc98 from a directory with spaces in it.
+<li> If you bootstrap from C sources, and the build segfaults, check
+     the output of '<tt>ulimit -s</tt>'.  If the user process
+     stacksize is set to 8192 or less, this is the cause.  Increase it,
+     either with '<tt>ulimit -s unlimited</tt>', or if that fails,
+     '<tt>ulimit -s hard</tt>'.
+</ul>
+
 <h3>Can you help us?</h3>
 <p>
 If you have built <em>nhc98</em> for a machine not currently listed on the
@@ -210,7 +240,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 28th June 2004<br>
+This page last modified: 10th March 2005<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
