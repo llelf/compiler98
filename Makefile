@@ -431,11 +431,12 @@ $(TARGDIR)/hsc2hsC: $(HSC2HS)
 	cd src/hsc2hs;     $(MAKE) cfiles
 	touch $(TARGDIR)/hsc2hsC
 $(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
-	script/nhc98 -cpp -C script/hmake-PRAGMA.hs touch
-	$(TARGDIR)/pragmaC
+	script/nhc98 -cpp -C script/hmake-PRAGMA.hs
+	touch $(TARGDIR)/pragmaC
 $(TARGDIR)/hmakeC: $(HMAKE)
-	cd src/hmake;	     $(MAKE) cfiles cd src/interpreter;
-	$(MAKE) cfiles touch $(TARGDIR)/hmakeC
+	cd src/hmake;	     $(MAKE) cfiles
+	cd src/interpreter;  $(MAKE) cfiles
+	touch $(TARGDIR)/hmakeC
 $(TARGDIR)/librariesC: $(LIBRARIES)
 	for pkg in ${PACKAGES};\
 	do ( cd src/libraries/$$pkg;\
