@@ -20,7 +20,7 @@ import Memo
 profile a b = b
 
 export flags state =
-  let infoExport =  (filter (isExp . expI) . treeMapList ((:).snd) . getSymbolTable) state
+  let infoExport =  (filter (isExported . expI) . treeMapList ((:).snd) . getSymbolTable) state
 
       insts = ( foldr ( \ (InfoClass  unique tid exp nt ms ds insts) r -> 
 			foldr (fixInst state (sPrelude flags || notPrelude tid) unique) r (treeMapList (:) insts)) []

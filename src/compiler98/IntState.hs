@@ -116,10 +116,10 @@ globalIS state i =
     Nothing -> False
     Just info -> globalI info
  where
-  globalI (InfoData   unique tid exp nt dk) = isExp exp
-  globalI (InfoClass  unique tid exp nt ms ds insts) = isExp exp
+  globalI (InfoData   unique tid exp nt dk) = isExported exp
+  globalI (InfoClass  unique tid exp nt ms ds insts) = isExported exp
   globalI (InfoVar     unique tid fix IEsel nt annot) = True
-  globalI (InfoVar     unique tid fix exp nt annot) = isExp exp
+  globalI (InfoVar     unique tid fix exp nt annot) = isExported exp
   globalI (InfoConstr  unique tid fix nt fields iType) = globalI' (lookupIS state iType) 
   globalI (InfoField   unique tid icon_offs iData iSel) = globalI' (lookupIS state iData) 
   globalI (InfoMethod  unique tid fix nt annot iClass) = True

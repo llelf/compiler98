@@ -9,11 +9,16 @@ import Tree234
 import AssocTree
 import Syntax(InfixClass(..))
 
+-- Guess: this is "Interface Exports"?
 data IE = IEnone | IEsel | IEabs | IEall deriving (Eq,Show) 
-
-isExp IEnone = False
-isExp IEsel = False
-isExp _      = True
+--    defined in a lattice   IEall
+--                          /     \
+--                       IEsel   IEabs
+--                          \     /
+--                           IEnone
+isExported IEnone = False
+isExported IEsel = False
+isExported _      = True
 
 combIE IEall  _ = IEall
 combIE IEnone i = i
@@ -266,10 +271,10 @@ combInfo (InfoClass u tid exp nt ms ds insts) (InfoClass u' tid' exp' nt' ms' ds
 combInfo info@(InfoData u tid exp nt dk) info'@(InfoData u' tid' exp' nt' dk')  =
   case dk' of
     Data unboxed [] -> info
-    _ -> if isExp exp' then info' else info
+    _ -> if isExported exp' then info' else info
 combInfo info                        info'                            =  
   -- Use new (if possible) so that code can override old imported
-	if isExp (expI info)
+	if isExported (expI info)
 	then info
         else info'
 
