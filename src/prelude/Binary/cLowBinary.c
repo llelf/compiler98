@@ -2,7 +2,7 @@
  */
 
 #include "cLowBinary.h"
-#include "localmalloc.h"
+#include <stdlib.h>
 #include <stdio.h>
  
 void clearcache (BinHandle bh) {
