@@ -37,6 +37,7 @@ int		storeRef		(FileOffset fo);
 void		charListP		(FileOffset fo);
 FileOffset	followTrace		(FileOffset fo
 					,FileOffset *pbot, int *pind);
+FileOffset	peekTrace		(FileOffset fo);
 FILE*		waitForBrowserConnection(void);
 void		ToBrowser		(FILE *sock, char *s);
 void		dumpSRToBrowser		(FILE *sock, FileOffset t);

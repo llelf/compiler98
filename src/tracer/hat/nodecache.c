@@ -51,7 +51,8 @@ int ncFind(FileOffset np)
 
 FileOffset ncRef(int ref)
 {
-    return (nodeCache[ref-1].fo);    
+    if (!ref) return 0;
+    return (nodeCache[abs(ref)-1].fo);    
 }
 
 void ncHist(int ref)

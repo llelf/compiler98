@@ -168,12 +168,52 @@ followTrace(FileOffset fo, FileOffset *pbot, int *pind)
 	case TNm:
 	case THidden:
 	    return fo;
+	    break;
 	default:
 	    fprintf(stderr, "followTrace: expected trace tag, got 0x%x).\n",c);
 	    exit(1);
       }
     }
 }
+
+
+/* peekTrace() takes a peek backwards at a trace (or indirection), skipping
+ * over any THidden or TInd nodes to find the nearest "real" trace.
+ * Hence, it is somewhat similar to followTrace().
+ */
+FileOffset
+peekTrace(FileOffset fo)
+{
+    char c;
+
+    while (1) {
+      if (fo==0) return 0;	/* when trace is Root */
+      freadAt(fo,&c,sizeof(char),1,HatFile);
+      switch (c&8 ? c-8 : c) {  /* clear no-APP bit if set */
+        case TInd:
+            fo  = readFO();	/* fst of indirection */
+            (void)readFO();	/* snd of indirection */
+	    break;
+
+	case TSatA:
+	case TSatB:
+	case TSatC:
+            fo = readFO();
+            break;
+
+	case TAp:
+	case TNm:
+	    return fo;
+	    break;
+	case THidden:
+	    fo = readFO();
+	    break;
+	default:
+	    exit(1);
+      }
+    }
+}
+
 
 /* dumpRefToBrowser() sends a nodecache reference for a trace to the browser.
  * If the nodecache doesn't already contain the trace, we insert it, but
@@ -303,13 +343,14 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
   if (bot != 0) {	/* found a bottom */
     ref = ncFind(bot);
     if (ref > 0) {
-      sprintf(&str[0], "(R %d %d)", ref, ind);
+      sprintf(&str[0], "(R %d %d %d)",ref,ind,storeRef(peekTrace(ncRef(ind))));
       ToBrowser(sock, str);
     } else {
       ref = ncInsert(bot, TRUE);
       sprintf(&str[0], "(B %d ", abs(ref));
       ToBrowser(sock, str);
       dumpRefToBrowser(sock, fo);
+      dumpRefToBrowser(sock, peekTrace(fo));
       ToBrowser(sock, ")");
     }
     return;
@@ -334,7 +375,15 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
 	 return;
       }
       if (ref > 0) {
-        sprintf(str, "(R %d %d)", abs(ref), ind);
+        sprintf(str, "(R %d %d ", abs(ref), ind);
+        ToBrowser(sock, str);
+	if (ind==0) {
+	  FileOffset parent;
+	  fread(&c,sizeof(char),1,HatFile);		/* skip arity */
+	  parent = readFO();				/* get parent */
+          sprintf(str, "%d)", storeRef(peekTrace(parent)));
+	} else
+          sprintf(str, "%d)", storeRef(peekTrace(ncRef(ind))));
         ToBrowser(sock, str);
 	charListInProgress = 0;
       } else {
@@ -374,7 +423,8 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
 	  }
 	  ToBrowser(sock, ")");
 	  dumpRefToBrowser(sock, parent);
-	  sprintf(str, " %d)", ind);
+	  sprintf(str, " %d %d)",ind,ind ? storeRef(peekTrace(ncRef(ind)))
+                                         : storeRef(peekTrace(parent)));
 	  ToBrowser(sock, str);
 
 	} else { /* case/if/guard */
@@ -383,14 +433,22 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
 	  dumpSRToBrowser(sock, foSR);
 	  dumpNodeToBrowser(sock, level, foExprs[1]);
 	  dumpNodeToBrowser(sock, level, parent);
-	  sprintf(str, " %d)", ind);
+	  sprintf(str, " %d %d)",ind,ind ? storeRef(peekTrace(ncRef(ind)))
+                                         : storeRef(peekTrace(parent)));
 	  ToBrowser(sock, str);	       
         }
       } break;
 
     case TNm:
       if (ref > 0) {
-        sprintf(str, "(R %d %d)", ref, ind); 
+        sprintf(str, "(R %d %d ",ref,ind);
+        ToBrowser(sock, str);
+        if (ind==0) {
+	  FileOffset parent;
+	  parent = readFO();
+          sprintf(str, "%d)",storeRef(peekTrace(parent)));
+        } else
+          sprintf(str, "%d)",storeRef(peekTrace(ncRef(ind))));
         ToBrowser(sock, str);
       } else {
 	char *mod, *name;
@@ -425,14 +483,15 @@ dumpNodeToBrowser(FILE *sock, int level, FileOffset fo)
 	free(id->srcname);
 	free(id);
 	dumpRefToBrowser(sock, parent);
-	sprintf(str, " %d)", ind);
+	sprintf(str, " %d %d)", ind, ind ? storeRef(peekTrace(ncRef(ind)))
+                                         : storeRef(peekTrace(parent)));
 	ToBrowser(sock, str);
       } break;
 
     case THidden:
       ref = ncFind(fo);
       if (ref > 0) {
-        sprintf(str, "(R %d %d)", ref, ind);
+        sprintf(str, "(R %d %d %d)",ref,ind,storeRef(peekTrace(ncRef(ind))));
         ToBrowser(sock, str);
       } else {
         ref = ncInsert(fo, TRUE);
