@@ -543,6 +543,7 @@ case $COMPFILES in
           echo $CPPAS $ENDIAN $CPPASFLAGS $CINCDIRS $TMPCPPASFILE -o $TMPASFILE
 	fi
 	$CPPAS $ENDIAN $CPPASFLAGS $CINCDIRS $TMPCPPASFILE -o - | \
+		sed -e '/.p2align 5/s/5/2/' |\
 		sed -e '/.align 32/s/32/4/' >$TMPASFILE		# evil mangler!
 	if test $CSRC -eq 0
         then

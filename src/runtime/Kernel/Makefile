@@ -38,8 +38,9 @@ AS = $(CC) -c
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 ${SOBJS}: ${OBJDIR}/%.o: %.c
-	${CC} -S ${CFLAGS} -o - $< | sed '/.align 32/s/32/4/' |\
-		 ${CC} -c -x assembler-with-cpp ${CFLAGS} -o $@ -
+	${CC} -S ${CFLAGS} -o - $< |\
+		sed -e '/.align 32/s/32/4/' -e '/.p2align 5/s/5/2/' |\
+		${CC} -c -x assembler-with-cpp ${CFLAGS} -o $@ -
 
 LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
 	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
