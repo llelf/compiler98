@@ -241,7 +241,7 @@ compilerstyle () {
            IMPORTOPTIONSTYLE=minusi
            export LMLDIR HBCDIR
            ;;
-    nhc98) RTSOPTIONSTYLE=rts
+    nhc98*)RTSOPTIONSTYLE=rts
            CTSOPTIONSTYLE=cts
            IMPORTOPTIONSTYLE=minusP
            OD="-od"
