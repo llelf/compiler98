@@ -18,7 +18,7 @@ openFile fp iomode = do
     a <- openFileC (toCString fp) (fromEnum iomode)
     if a==nullAddr then do 
         errno <- getErrNo
-        mkIOError ("openFile "++show iomode) (Just fp) Nothing errno
+        throwIOError ("openFile "++show iomode) (Just fp) Nothing errno
       else do
         return (addrToHandle a)
 

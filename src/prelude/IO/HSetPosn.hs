@@ -15,7 +15,7 @@ hSetPosn h p = do
     i <- hSetPosnC h p
     if i/=0 then do
         errno <- getErrNo
-        mkIOError "hSetPosn" (hGetFileName h) (Just h) errno
+        throwIOError "hSetPosn" (hGetFileName h) (Just h) errno
       else
         return ()
 
@@ -28,7 +28,7 @@ hSetPosn (Handle h) (HandlePosn p) = do
     i <- hSetPosnC h p
     if i/=0 then do
         errno <- getErrNo
-        mkIOError "hSetPosn" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hSetPosn" (hGetFileName h) (Just (Handle h)) errno
       else
         return ()
 

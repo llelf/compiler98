@@ -15,7 +15,7 @@ hSeek h s i = do
     x <- hSeekC h (fromEnum s) i
     if x/=0 then do
         errno <- getErrNo
-        mkIOError ("hSeek"++show s++" "++show i) (hGetFileName h) (Just h) errno
+        throwIOError ("hSeek"++show s++" "++show i) (hGetFileName h) (Just h) errno
       else
         return ()
 
@@ -28,7 +28,7 @@ hSeek (Handle h) s i = do
     x <- hSeekC h (fromEnum s) i
     if x/=0 then do
         errno <- getErrNo
-        mkIOError ("hSeek"++show s++" "++show i) (hGetFileName h)
+        throwIOError ("hSeek"++show s++" "++show i) (hGetFileName h)
                                                  (Just (Handle h)) errno
       else
         return ()

@@ -14,7 +14,7 @@ hGetPosn h = do
     a <- hGetPosnC h
     if a==nullAddr then do
         errno <- getErrNo
-        mkIOError "hGetPosn" (hGetFileName h) (Just h) errno
+        throwIOError "hGetPosn" (hGetFileName h) (Just h) errno
       else do
         f <- makeForeignObj a (free a)
         return (HandlePosn f)
@@ -27,7 +27,7 @@ hGetPosn (Handle h) = do
     a <- hGetPosnC h
     if a==nullAddr then do
         errno <- getErrNo
-        mkIOError "hGetPosn" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hGetPosn" (hGetFileName h) (Just (Handle h)) errno
       else do
         f <- makeForeignObj a (free a)
         return (HandlePosn f)

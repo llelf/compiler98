@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.8 2001/02/25 16:17:16 malcolm Exp $
+   $Id: FFI.hs,v 1.9 2001/03/14 17:35:13 malcolm Exp $
 -}
 
 module FFI
@@ -66,6 +66,8 @@ module FFI
    -------------------------------------------------------------------
   , getErrNo		-- :: IO Int
   , mkIOError		-- :: String -> Maybe FilePath -> Maybe Handle
+			--      -> Int -> IOError
+  , throwIOError	-- :: String -> Maybe FilePath -> Maybe Handle
 			--      -> Int -> IO a
    -------------------------------------------------------------------
   ) where

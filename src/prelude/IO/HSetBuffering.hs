@@ -15,7 +15,7 @@ hSetBuffering h b = do
     x <- hSetBufferingC h b
     if x/=0 then do
         errno <- getErrNo
-        mkIOError ("hSetBuffering "++show b) (hGetFileName h) (Just h) errno
+        throwIOError ("hSetBuffering "++show b) (hGetFileName h) (Just h) errno
       else
         return ()
 
@@ -29,7 +29,7 @@ hSetBuffering (Handle h) b = do
     x <- hSetBufferingC h b
     if x/=0 then do
         errno <- getErrNo
-        mkIOError ("hSetBuffering "++show b) (hGetFileName h)
+        throwIOError ("hSetBuffering "++show b) (hGetFileName h)
                                              (Just (Handle h)) errno
       else
         return ()

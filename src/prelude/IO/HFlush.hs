@@ -13,7 +13,7 @@ hFlush h = do
     i <- hFlushC h
     if i/=0 then do
         errno <- getErrNo
-        mkIOError "hFlush" (hGetFileName h) (Just h) errno
+        throwIOError "hFlush" (hGetFileName h) (Just h) errno
       else
         return ()
 
@@ -25,7 +25,7 @@ hFlush (Handle h) = do
     i <- hFlushC h
     if i/=0 then do
         errno <- getErrNo
-        mkIOError "hFlush" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hFlush" (hGetFileName h) (Just (Handle h)) errno
       else
         return ()
 

@@ -13,7 +13,7 @@ hFileSize h = do
     i <- primHFileSizeC h
     if i == -1 then do
         errno <- getErrNo
-        mkIOError "hFileSize" (hGetFileName h) (Just h) errno
+        throwIOError "hFileSize" (hGetFileName h) (Just h) errno
       else
         return i
 
@@ -25,7 +25,7 @@ hFileSize (Handle h) = do
     i <- primHFileSizeC h
     if i == -1 then do
         errno <- getErrNo
-        mkIOError "hFileSize" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hFileSize" (hGetFileName h) (Just (Handle h)) errno
       else
         return i
 #endif
