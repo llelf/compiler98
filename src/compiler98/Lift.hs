@@ -8,7 +8,8 @@ import List
 import State
 import PosCode
 import SyntaxPos
-import Extra(removeSet,emptySet,unionSet,removeSet,noPos,strPos,Pos(..),dropJust,strace,pair)
+import Extra (removeSet,emptySet,unionSet,removeSet,noPos,strPos
+             ,Pos(..),dropJust,strace,pair)
 import IntState
 import TokenId
 import IdKind
@@ -23,13 +24,15 @@ data LiftDown =
 
 data LiftThread =
   LiftThread
-    [(Int,[Int])]		-- translation from lifted identifier to new free variables
-    [PosBinding]		-- new top-level definitions
+    [(Int,[Int])]  -- translation from lifted identifier to new free variables
+    [PosBinding]   -- new top-level definitions
     IntState
 
 
 liftCode code state tidFun = 
-  case (mapS liftTopBinding code) (LiftDown True tidFun tunknown) (LiftThread [] [] state) of
+  case (mapS liftTopBinding code)
+             (LiftDown True tidFun tunknown)
+             (LiftThread [] [] state) of
     (code,LiftThread _ _ state) -> (concat code,state)
 
 liftTopBinding d =
@@ -38,7 +41,8 @@ liftTopBinding d =
   liftTop    >>>= \ sc ->
   unitS (d:sc)
 
-liftScc pos bindingsIn down@(LiftDown strict tidFun ptid) up@(LiftThread transIn scIn stateIn) =
+liftScc pos bindingsIn down@(LiftDown strict tidFun ptid)
+                       up@(LiftThread transIn scIn stateIn) =
   let
       (declsInLift,declsInStay) = partition liftIt bindingsIn
 
@@ -46,17 +50,23 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid) up@(LiftThread transIn
       definedStay = map fst declsInStay
 
       envLift = foldr unionSet emptySet 
-		(map (expandEnv transIn) (removeSet (foldr (unionSet . map snd . getEnvs) emptySet declsInLift) definedLift))
+		(map (expandEnv transIn)
+                     (removeSet (foldr (unionSet . map snd . getEnvs)
+                                       emptySet
+                                       declsInLift)
+                                definedLift))
 
       transNew = map (`pair` envLift) definedLift ++ transIn
 
       args = map (PosVar pos) envLift
 
       (declsOutLift,LiftThread _ scInLift state1) =
-		 mapS liftBinding declsInLift (LiftDown True tidFun ptid) (LiftThread transNew [] stateIn)
+		 mapS liftBinding declsInLift (LiftDown True tidFun ptid)
+                                              (LiftThread transNew [] stateIn)
 
       (declsOutStay,LiftThread _ scInStay state2) =
-		 mapS liftBinding declsInStay (LiftDown False tidFun ptid) (LiftThread transNew [] state1)
+		 mapS liftBinding declsInStay (LiftDown False tidFun ptid)
+                                              (LiftThread transNew [] state1)
 
       scHere = map (addArgs envLift) declsOutLift
 
@@ -67,15 +77,21 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid) up@(LiftThread transIn
   in (newBindings, LiftThread transNew newSC newState)
 
 updateInfo ptid (fun, PosLambda pos envs args exp) state =
- let arity = length args
- in updateIS state fun (\ info -> let tid = tidI info
-				  in  (seq tid (InfoName fun tid arity (tidPos ptid pos) True ))) --PHtprof
+ let arity = length args in
+ updateIS state fun
+          (\info-> let tid = tidI info in
+                   (seq tid (InfoName fun tid arity (tidPos ptid pos) True)))
+								 --PHtprof
 
 addArgs newargs (fun, PosLambda pos envs args exp) =
   (fun, PosLambda pos [] (map (pair pos) newargs++args) exp) 
 
 addEnvs trans (fun, PosLambda pos envs args exp) =
-  (fun, PosLambda pos (map (pair pos) (foldr unionSet emptySet (map (expandEnv trans . snd) envs))) args exp)
+  (fun, PosLambda pos (map (pair pos)
+                           (foldr unionSet
+                                  emptySet
+                                  (map (expandEnv trans . snd) envs)))
+                      args exp)
 
 liftIt (fun, PosLambda pos envs args exp) = not (null args)
 
@@ -87,16 +103,22 @@ expandEnv trans f =
     Just set -> set
 
 
-liftLambda pos envs args exp down@(LiftDown strict tidFun ptid) up@(LiftThread transIn scIn stateIn) =
+liftLambda pos envs args exp down@(LiftDown strict tidFun ptid)
+                             up@(LiftThread transIn scIn stateIn) =
   let
-      newEnvs = map (pair pos) (foldr unionSet emptySet (map (expandEnv transIn . snd) envs))
+      newEnvs = map (pair pos)
+                    (foldr unionSet
+                           emptySet
+                           (map (expandEnv transIn . snd) envs))
 
       scHere =  (fun, PosLambda pos [] (newEnvs++args) exp)
       arity = length newEnvs + length args
       (fun,state2) = uniqueIS stateIn
       tid = (visible (reverse ("LAMBDA" ++ show fun))) -- Not exported
       newSC = scHere:scIn
-      newState = seq tid $ addIS fun (InfoName fun tid arity (tidPos ptid pos) True) state2 --PHtprof
+      newState = seq tid $ addIS fun (InfoName fun tid arity
+                                               (tidPos ptid pos) True) --PHtprof
+                                 state2
 
   in (PosExpApp pos (PosVar pos fun:map (uncurry PosVar) newEnvs)
      ,LiftThread transIn newSC newState
@@ -110,7 +132,9 @@ liftBinding (fun,PosPrimitive pos fn) =
 liftBinding (fun,PosForeign pos fn t c ie) =
   unitS (fun,PosForeign pos fn t c ie)
 
-liftExp (PosExpLambda pos envs args exp)  = liftStrict True (liftExp exp) >>>= liftLambda pos envs args
+liftExp (PosExpLambda pos envs args exp) =
+  liftStrict True (liftExp exp) >>>=
+  liftLambda pos envs args
 liftExp (PosExpLet pos bindings exp) =
   liftScc pos bindings >>>= \ bindings ->
   liftExp exp >>>= \ exp -> 
@@ -119,18 +143,21 @@ liftExp e@(PosExpCase pos exp alts) =
   liftGetStrict >>>= \ strict ->
   if strict
   then unitS (PosExpCase pos) =>>> liftExp exp =>>> mapS liftAlt alts
-  else strace "liftExp PosExpCase lazy!" $ liftExp (PosExpLambda pos [] [] e)
+  else strace "liftExp PosExpCase lazy!" $
+       liftExp (PosExpLambda pos [] [] e)
 liftExp e@(PosExpFatBar b e1 e2) =
   liftGetStrict >>>= \ strict ->
   if strict
   then unitS (PosExpFatBar b) =>>> liftExp e1 =>>> liftExp e2
-  else strace "liftExp PosExpFatBar lazy!" $ liftExp (PosExpLambda noPos [] [] e)
+  else strace "liftExp PosExpFatBar lazy!" $
+       liftExp (PosExpLambda noPos [] [] e)
 liftExp (PosExpFail) = unitS PosExpFail
 liftExp e@(PosExpIf pos c e1 e2)       =
   liftGetStrict >>>= \ strict ->
   if strict
   then unitS (PosExpIf pos) =>>> liftExp c =>>> liftExp e1 =>>> liftExp e2
-  else strace "liftExp PosExpIf lazy!" $ liftExp (PosExpLambda pos [] [] e)
+  else strace "liftExp PosExpIf lazy!" $
+       liftExp (PosExpLambda pos [] [] e)
 liftExp (PosExpApp pos es) =  -- hd es is not always strict !!!
   liftGetStrict >>>= \ strict ->
   if strict
@@ -139,7 +166,8 @@ liftExp (PosExpApp pos es) =  -- hd es is not always strict !!!
        liftStrict False (mapS liftExp (tail es)) >>>= \ tail_es ->
        unitS (posExpApp pos (head_es:tail_es))
   else liftApply es >>>= liftExp
-liftExp (PosExpThunk pos (e:es)) = -- A primitive/con/apply with correct number of arguments
+liftExp (PosExpThunk pos (e:es)) =
+  -- A primitive/con/apply with correct number of arguments
   liftExp e >>>= \ e ->
   liftStrict False (mapS liftExp es) >>>= \ es ->
   unitS (PosExpThunk pos (e:es))
@@ -167,12 +195,14 @@ liftApply    (e1:e2:e3:e4:e5:es) =
   liftApply (PosExpThunk (getPos e1) (f:e1:e2:e3:e4:e5:[]):es)
 
 
-liftIdent pos ident down@(LiftDown strict tidFun ptid) up@(LiftThread trans sc state) =
+liftIdent pos ident down@(LiftDown strict tidFun ptid)
+                    up@(LiftThread trans sc state) =
   case lookup ident trans of
     Nothing ->  (PosVar pos ident,up)
     Just env ->  (PosExpApp pos (PosVar pos ident:map (PosVar pos) env),up)
 
-liftSetTid fun down@(LiftDown strict tidFun ptid) up@(LiftThread trans sc state) =  
+liftSetTid fun down@(LiftDown strict tidFun ptid)
+               up@(LiftThread trans sc state) =  
   (LiftDown strict tidFun ((profI . dropJust . lookupIS state) fun),up)
 
 liftTop  down up@(LiftThread trans sc state) =
