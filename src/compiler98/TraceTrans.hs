@@ -136,19 +136,7 @@ tImpDecls modId decls =
     -- but nhc98 needs access to original Prelude for desugaring
     :ImportQas (noPos,Visible tracingModule) 
        (noPos,Visible tracingModuleShort) (Hiding [])
-    :map tImpDecl 
-       ((if any importsPreludeOrOriginal decls || isPrePrelude modId
-           then id 
-           else ((Import (noPos,mkLambdaBound tPrelude) (Hiding [])) :))
-         decls)
-  where 
-  importsPreludeOrOriginal :: ImpDecl TraceId -> Bool
-  importsPreludeOrOriginal impDecl = 
-    let id = importedModule impDecl
-    in tokenId id == tPrelude || "TraceOrig" `isPrefixOf` (getUnqualified id)
-
-isPrePrelude :: TraceId -> Bool
-isPrePrelude = isPrefixOf "Prelude" . getUnqualified 
+    :map tImpDecl decls
 
 tImpDecl :: ImpDecl TraceId -> ImpDecl TokenId
 tImpDecl (Import (pos,id) spec) = 
@@ -1732,15 +1720,6 @@ mkFailExp pos parent = ExpApplication pos [ExpVar pos tokenFatal,parent]
 
 mkTupleExp :: Pos -> [Exp TokenId] -> Exp TokenId
 mkTupleExp pos es = ExpApplication pos (ExpCon pos (t_Tuple (length es)): es)
-
-importedModule :: ImpDecl a -> a
-importedModule (Import (_,id) _) = id 
-importedModule (ImportQ (_,id) _) = id
-importedModule (ImportQas (_,id) _ _) = id 
-importedModule (Importas (_,id) _ _) = id
-
-noDecls :: Decls id
-noDecls = DeclsParse []
 
 mapSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapSnd f = map (\(x,y) -> (x,f y))

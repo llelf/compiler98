@@ -1396,7 +1396,7 @@ class  Read a  where
 
 class  Show a  where
     showsPrec        :: Int -> a -> ShowS
-    show       :: a -> String 
+    show             :: a -> String 
     showList         :: [a] -> ShowS
 
 -- Mimimal complete definition:

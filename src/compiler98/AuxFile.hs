@@ -140,17 +140,12 @@ extendEnv visible toIdent init decls =
 -- following the impspec carefully with regard to explicit naming and
 -- hiding.  We take a kind of need-analysis as the `reexport' argument,
 -- to determine more accurately which entities are really vital to
--- import and which to ignore.  For the moment, we always grab an
--- implicit Prelude, even if there is an explicit one hiding some entities,
--- but this is probably safe because we always ensure that we don't import
--- an identifier if it is already defined locally.
+-- import and which to ignore.  
 
 getImports :: (TokenId->Visibility) -> AuxTree
 		 -> Flags -> [ImpDecl TokenId] -> IO AuxTree
 getImports reexport alreadyGot flags =
     foldM getAuxFile alreadyGot . map impData
-	. (if sPrelude flags then id  -- omit Prelude when bootstrapping
-           else (Import (noPos,tPrelude) (Hiding []) :))
   where
     getAuxFile got (modid,importVisible) = do
         (_,f) <- readFirst (fixImportNames (sUnix flags) "hx" (show modid)
@@ -187,10 +182,10 @@ getImports reexport alreadyGot flags =
     _           `match`  _                    =  False
 
 
+
 -- Visibility is a function denoting whether an identifier should be
 -- added (or not) to the AuxTree structure.
 type Visibility = Identifier -> Bool
-
 
 -- `visibleIn' is a particular kind of visibility, determined
 -- by the explicit exports of the module.

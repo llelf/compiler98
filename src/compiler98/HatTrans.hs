@@ -102,7 +102,8 @@ main' args = do
   -- Then the tracing transformation itself is applied.
   -- The result is written to file (no redirection possible yet)
   -}
-  let prg = maybeStripOffQual "Prelude" parsedPrg
+  let prg = implicitlyImportPrelude flags 
+              (maybeStripOffQual "Prelude" parsedPrg)
   toAuxFile flags (sHatAuxFile flags) prg
   when (sParse flags)
        (putStr (prettyPrintTokenId flags ppModule prg)) -- debug
@@ -116,5 +117,18 @@ main' args = do
             (sHatFileBase flags) newprog)))
   putStrLn ("Wrote " ++ sHatTransFile flags)
   exitWith (ExitSuccess)
+
+
+-- add implicit Prelude, if it is not imported explicitly and we 
+-- are not currently transforming part of the Prelude.
+implicitlyImportPrelude :: Flags -> Module TokenId -> Module TokenId
+implicitlyImportPrelude flags
+  (Module pos modId exports imports fixities decls) =
+  Module pos modId exports imports' fixities decls
+  where 
+  imports' = if sPrelude flags || any ((==) tPrelude . importedModule) imports
+               then imports
+               else Import (noPos,tPrelude) (Hiding []) : imports
+
 
 {- End Module Main ----------------------------------------------------------}

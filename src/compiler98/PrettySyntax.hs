@@ -17,7 +17,7 @@ module PrettySyntax
 
 import Extra(Pos(..),noPos)
 import PrettyLib
-import Syntax
+import Syntax hiding (noDecls)
 import TokenId(TokenId(..),extractV,t_Arrow,t_List)
 import Id(Id)
 import IntState(IntState,strIS,lookupIS)

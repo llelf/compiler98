@@ -21,8 +21,8 @@ module Prelude (
     -- module PreludeText:
     ReadS, ShowS,
     Read(readsPrec, readList),
-    Show(showsPrec, showList),
-    reads, shows, show, read, lex,
+    Show(showsPrec, show, showList),
+    reads, shows, read, lex,
     showChar, showString, readParen, showParen, 
     -- module PreludeIO:
     FilePath, IOError, ioError, userError, catch,
@@ -43,10 +43,13 @@ module Prelude (
 --  List type: 
     []((:), []),
 --  Tuple types: up to 15
-    (,), (,,),(,,,),(,,,,),(,,,,,),(,,,,,,),(,,,,,,,),(,,,,,,,,),(,,,,,,,,,),
-    (,,,,,,,,,,),(,,,,,,,,,,,),(,,,,,,,,,,,,),(,,,,,,,,,,,,,),(,,,,,,,,,,,,,,),
+    (,)((,)), (,,)((,,)),(,,,)((,,,)),(,,,,)((,,,,)),(,,,,,)((,,,,,)),
+    (,,,,,,)((,,,,,,)),(,,,,,,,)((,,,,,,,)),(,,,,,,,,)((,,,,,,,,)),
+    (,,,,,,,,,)((,,,,,,,,,)),(,,,,,,,,,,)((,,,,,,,,,,)),
+    (,,,,,,,,,,,)((,,,,,,,,,,,)),(,,,,,,,,,,,,)((,,,,,,,,,,,,)),
+    (,,,,,,,,,,,,,)((,,,,,,,,,,,,,)),(,,,,,,,,,,,,,,)((,,,,,,,,,,,,,,)),
 --  Trivial type: 
-    (),
+    ()(()),
 --  Functions: 
     (->),
 

@@ -72,3 +72,4 @@ $(OBJDIR)/TChar.o: ${OBJDIR}/TPreludeBasic.o
 
 # C-files dependencies.
 $(OBJDIR)/hat.o: hat.c hat.h $(INCDIR)/art.h
+

@@ -33,6 +33,13 @@ data ImpDecl id =
      | ImportQas (Pos,id) (Pos,id) (ImpSpec id)
      | Importas  (Pos,id) (Pos,id) (ImpSpec id)
 
+importedModule :: ImpDecl a -> a
+importedModule (Import (_,id) _) = id 
+importedModule (ImportQ (_,id) _) = id
+importedModule (ImportQas (_,id) _ _) = id 
+importedModule (Importas (_,id) _ _) = id
+
+
 data ImpSpec id =
        NoHiding [Entity id]
      | Hiding   [Entity id]
@@ -79,6 +86,11 @@ stripFixId (FixVar _ a) = a
 data Decls id =
    DeclsParse [Decl id]
  | DeclsScc [DeclsDepend id]
+
+-- used very often:
+noDecls :: Decls id
+noDecls = DeclsParse []
+
 
 data DeclsDepend id =
        DeclsNoRec (Decl id)
