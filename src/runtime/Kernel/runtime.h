@@ -528,9 +528,6 @@ extern void printIns(void);
 
 #define TABLE_SIZE_INT  (SIZE_INT)
 
-extern Node ints[];
-
-
 /* useful C-macros */
 
 #define IND_REMOVE(p) \
