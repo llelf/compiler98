@@ -25,6 +25,12 @@ extern NodePtr mkTuple9(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,N
 extern NodePtr mkTuple10(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10);
 #define sizeTuple10 (1+EXTRA+10)
 #define Tuple10 0 
+extern NodePtr mkTuple11(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11);
+#define sizeTuple11 (1+EXTRA+11)
+#define Tuple11 0 
+extern NodePtr mkTuple12(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11,NodePtr a12);
+#define sizeTuple12 (1+EXTRA+12)
+#define Tuple12 0 
 extern Node C0_Prelude_46False[];
 #define mkFalse() ((NodePtr)C0_Prelude_46False)
 #define sizeFalse 0
