@@ -4,24 +4,34 @@ import DHandle
 import BufferMode
 import DIOError
 import HGetFileName
+import FFI
 
 #if !defined(TRACING)
 
-foreign import hSetBufferingC :: Handle -> BufferMode -> Either Int ()
+foreign import hSetBufferingC :: Handle -> BufferMode -> IO Int
 
 hSetBuffering         :: Handle  -> BufferMode -> IO ()
-hSetBuffering h b = _mkIOwf2 (IOErrorC ("hSetBuffering "++show b)
-                                       (hGetFileName h) . toEnum)
-                        hSetBufferingC h b
+hSetBuffering h b = do
+    x <- hSetBufferingC h b
+    if x/=0 then do
+        errno <- getErrNo
+        mkIOError ("hSetBuffering "++show b) (hGetFileName h) (Just h) errno
+      else
+        return ()
 
 #else
 
-foreign import hSetBufferingC :: ForeignObj -> BufferMode -> Either Int ()
+foreign import hSetBufferingC :: ForeignObj -> BufferMode -> IO Int
 
 		-- BufferMode not translated yet
 hSetBuffering         :: Handle  -> BufferMode -> IO ()
-hSetBuffering (Handle h) b = _mkIOwf2 (IOErrorC ("hSetBuffering "++show b)
-                                                (hGetFileName h) . toEnum)
-                                 hSetBufferingC h b
+hSetBuffering (Handle h) b = do
+    x <- hSetBufferingC h b
+    if x/=0 then do
+        errno <- getErrNo
+        mkIOError ("hSetBuffering "++show b) (hGetFileName h)
+                                             (Just (Handle h)) errno
+      else
+        return ()
 
 #endif

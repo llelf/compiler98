@@ -4,23 +4,33 @@ import SeekMode
 import DHandle
 import DIOError
 import HGetFileName
+import FFI
 
 #if !defined(TRACING)
 
-foreign import hSeekC :: Handle -> Int -> Integer -> Either Int ()
+foreign import hSeekC :: Handle -> Int -> Integer -> IO Int
 
 hSeek                 :: Handle -> SeekMode -> Integer -> IO () 
-hSeek h s i = _mkIOwf3 (IOErrorC ("hSeek "++show s++" "++show i)
-                                 (hGetFileName h) . toEnum)
-                  hSeekC h (fromEnum s) i
+hSeek h s i = do
+    x <- hSeekC h (fromEnum s) i
+    if x/=0 then do
+        errno <- getErrNo
+        mkIOError ("hSeek"++show s++" "++show i) (hGetFileName h) (Just h) errno
+      else
+        return ()
 
 #else
 
-foreign import hSeekC :: ForeignObj -> Int -> Integer -> Either Int ()
+foreign import hSeekC :: ForeignObj -> Int -> Integer -> IO Int
 
 hSeek                 :: Handle -> SeekMode -> Integer -> IO () 
-hSeek (Handle h) s i = _mkIOwf3 (IOErrorC ("hSeek "++show s++" "++show i)
-                                          (hGetFileName h) . toEnum)
-                           hSeekC h (fromEnum s) i
+hSeek (Handle h) s i = do
+    x <- hSeekC h (fromEnum s) i
+    if x/=0 then do
+        errno <- getErrNo
+        mkIOError ("hSeek"++show s++" "++show i) (hGetFileName h)
+                                                 (Just (Handle h)) errno
+      else
+        return ()
 
 #endif
