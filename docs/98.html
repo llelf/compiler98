@@ -7,10 +7,10 @@
 <hr>
 
 <p>
-<b>nhc98</b> supersedes
-<a href="http://www.cs.york.ac.uk/fp/nhc13/"><b>nhc13</b></a>,
-and is pretty close to being compliant with the Haskell 98 standard.  Here
-is a complete list of the known deficiencies in <em>nhc98</em>.
+<b>nhc98</b> is pretty close to being compliant with the Haskell
+98 standard.  Here is a complete list of the known deficiencies in
+<em>nhc98</em>.  (See also our list of <a href="limits.html">size
+limitations</a>.)
 
 <ul>
 <li> A small number of the new Library functions remain unimplemented.
@@ -26,7 +26,10 @@ is a complete list of the known deficiencies in <em>nhc98</em>.
 
 <li> The monomorphism restriction is not implemented.
 
-<li> The Unicode character set is not supported.
+<li> Although the Unicode character set is used internally, there are
+     no facilities for reading or writing files with characters
+     represented by more than 8-bits.  Large chars currently appear
+     only as numeric escape codes.
 
 </ul>
 
@@ -60,7 +63,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.09.15<br>
+2001.04.25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -31,7 +31,7 @@ sets up <em>hmake</em> to use any of them.
 <p>
 The basic option summary is:
 <pre>
-    Usage: hmake [-nhc98|-hbc|-ghc] [hmake opts] [compiler opts] target ...
+    Usage: hmake [compiler] [hmake-opts] [compiler-opts] target ...
 </pre>
 You can have more than one target: all of them are built.  A target
 can be a module (with .hs, .lhs, .gc, or .hi extension), in which case
@@ -48,10 +48,11 @@ final link.
 Most options are passed straight through to the appropriate compiler.
 However, <em>hmake</em> understands and strips the following options.
 <center>
-<table width=400><tr>
-<td><b>-nhc98</b><br>
+<table border=1 width=400><tr>
+<td><b>-HC=</b><em>comp</em><br>
+    <b>-nhc98</b><br>
     <b>-hbc</b><br>
-    <b>-ghc</b></td>
+    <b>-ghc</b><br></td>
 	<td>specify which compiler you want to use [default is the compiler you built hmake with].</td>
 </tr><tr>
 <td><b>-q</b></td>
@@ -84,7 +85,7 @@ However, <em>hmake</em> understands and strips the following options.
 (That is, the options are used by <em>hmake</em> as well as being
 passed on to the compiler.)
 <center>
-<table width=400><tr>
+<table border=1 width=400><tr>
 <td><b>-d</b><em>objdir</em></td>
 	<td>Search for (and compile) object files in(to) a separate objdir.</td>
 </tr><tr>
@@ -102,7 +103,7 @@ passed on to the compiler.)
 Some options are passed to the compiler's runtime system (using whatever
 underlying mechanism is appropriate for the particular compiler).
 <center>
-<table width=400><tr>
+<table border=1 width=400><tr>
 <td><b>-[Hh]</b><em>size</em></td>
 	<td>Compiler's heap size.</td>
 </tr><tr>

@@ -9,78 +9,114 @@
 <hr>
 
 <p>
-<b>nhc98</b> is a fully-fledged compiler for <em>Haskell 98</em>, the
-standard lazy functional programming language.  It based on Niklas
-R&ouml;jemo's <b>nhc13</b>, a compiler for an earlier version of the
-language.  Written in Haskell, it is small and very portable, and aims
-to produce small executables that run in small amounts of memory.  Is
-a pattern becoming obvious here?  :-)  It also comes with extensive
-tool support.
+<b>nhc98</b> is a fully-fledged compiler for
+<a href="http://www.haskell.org/"><em>Haskell 98</em></a>, the
+standard lazy functional programming language.  Written in Haskell, it
+is small and very portable, and aims to produce small executables that
+run in small amounts of memory.  Is a pattern becoming obvious
+here?  :-)  It also comes with extensive tool support for automatic
+compilation, foreign language interfacing, heap profiling, tracing,
+and debugging.
 
 <p>
-General information about <b>nhc98</b>
+<hr>
+<p>
+
+<table><tr>
+<td width=50% valign=top>
+<p>
+<center><b>about</b></center>
+<font size=-1>
 <dl>
 <dd><a href="york-release.html">Why use <b>nhc98</b>?</a></dd>
-<dd><a href="status.html">Current release status of <b>nhc98</b>.</a></dd>
-<dd><a href="history98.html">Previous release history.</a></dd>
 <dd><a href="98.html">Compliance with Haskell 98 standard.</a></dd>
-<dd><a href="libraries.html">Included libraries.</a></dd>
-<dd><a href="limits.html">Implementation limits (e.g. table sizes etc.).</a></dd>
-<dd><a href="bugs.html">Known bugs.</a></dd>
-<dd><a href="todo.html">Future developments.</a></dd>
 <dd><a href="copyright.html">Copyright and licence information.</a></dd>
 </dl>
+</font>
+
+</td><td width=50% valign=top>
 
 <p>
-<b>nhc98</b> mailing list
+<center><b>download/build/install</b></center>
+<font size=-1>
 <dl>
-<dd><a href="maillist.html">
-    There is a mailing list for all users of the nhc98 compiler.</a>
-<dd><a href="contrib.html">
-    Would you like to contribute to this compiler project as a developer?</a>
-<dd><a href="cvs.html">
-    CVS repository - for the latest development versions.</a></dd>
-</dl>
-
-<p>
-Getting and using <b>nhc98</b>
-<dl>
+<dd><a href="download.html">Download <b>nhc98</b>.</a></dd>
 <dd><a href="install.html">
-    <em>Instructions to download and install <b>nhc98</b></em>.</a></dd>
-<dd><a href="status.html">Current release status of <b>nhc98</b>.</a></dd>
-<dd><a href="config.html">
-    Configuration options - using the <em>configure</em> script.</a></dd>
+    Instructions to build and/or install <b>nhc98</b>.</a></dd>
+<dd><a href="config.html">Configuration options.</a></dd>
+<dd><a href="status.html">Recent changes.</a></dd>
+</dl>
+</font>
+
+</td></tr><tr><td width=50% valign=top>
+
+<p>
+<center><b>user guides</b></center>
+<font size=-1>
+<dl>
 <dd><a href="compiler-options.html">
-    Compile-time options - using the <b>nhc98</b> compiler.</a></dd>
+    Compile-time options.</a></dd>
 <dd><a href="runtime-options.html">
-    Runtime-time options - using programs compiled by <b>nhc98</b>.</a></dd>
+    Runtime-time options.</a></dd>
 <dd><a href="errmsgs.html">
-    Error messages - understanding why things sometimes go wrong.</a></dd>
+    Error messages.</a></dd>
+<dd><a href="libraries.html">Libraries included with <b>nhc98</b>.</a></dd>
+<dd><a href="ffi.html">Foreign function interface.</a></dd>
+<dd><a href="limits.html">Implementation limits.</a></dd>
+</dl>
+</font>
+
+</td><td width=50% valign=top>
+
+<p>
+<center><b>tools</b></center>
+<font size=-1>
+<dl>
 <dd><a href="hmake/interactive.html">
-    Using the <em>hi</em> interactive development environment.</a></dd>
+    <em>hi</em> - interactive development environment.</a></dd>
 <dd><a href="hmake/hmake.html">
-    Using the <em>hmake</em> batch compilation tool.</a></dd>
-<dd><a href="http://www.numeric-quest.com/haskell/explorer/browser.html">
-    Source code browser for <b>nhc98</b>.</a></dd>
+    <em>hmake</em> - batch compilation tool.</a></dd>
+<dd><a href="greencard-york.html"><em>greencard</em> - C-interface tool.</a></dd>
 <dd><a href="tracer.html">
-    Using <em>Hat</em>, the Haskell tracer.</a></dd>
+    <em>Hat</em>, the Haskell tracer.</a></dd>
 <dd>
     Full guide to Using <em>Hat</em>.
       <a href="hatuser.tex">(TeX)</a>
       <a href="hatuser.ps">(PostScript)</a></dd>
+<dd><a href="http://www.numeric-quest.com/haskell/explorer/browser.html">
+    Source code browser for <b>nhc98</b>.</a></dd>
 </dl>
+</font>
+
+</td></tr><tr><td width=50% valign=top>
 
 <p>
-York extensions
+<center><b>development</b></center>
+<font size=-1>
 <dl>
-<dd><a href="98.html">Compliance with Haskell 98 standard.</a></dd>
-<dd><a href="tracer.html">The Haskell tracer.</a></dd>
-<dd><a href="libraries.html">Extra libraries.</a></dd>
-<dd><a href="ffi.html">The new primitive FFI (foreign function interface).</a></dd>
-<dd><a href="greencard-york.html">Using GreenCard with <b>nhc98</b>.</a></dd>
-<dd><a href="greencard.html">The GreenCard preprocessor: call C from Haskell.</a></dd>
-<dd><a href="CcallingHaskell.html">Using GreenCard to call Haskell from C.</a></dd>
+<dd><a href="bugs.html">Known bugs.</a></dd>
+<dd><a href="todo.html">Wish list.</a></dd>
+<dd><a href="contrib.html">
+    Would you like to contribute?</a>
+<dd><a href="cvs.html">
+    Anonymous CVS repository.</a></dd>
 </dl>
+</font>
+
+</td><td width=50% valign=top>
+
+<p>
+<center><b>community</b></center>
+<font size=-1>
+<dl>
+<dd><a href="maillist.html">
+    A mailing list for all <b>nhc98</b> users.</a>
+<dd><a href="http://www.haskell.org/">
+    Other Haskell systems and resources.</a></dd>
+</dl>
+</font>
+
+</td></tr></table>
 
 <p>
 If you have any problems, please send a message to the mailing list
@@ -94,7 +130,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.01.24<br>
+This page last modified: 2001.04.27<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -2,300 +2,60 @@
 <body bgcolor=#ffffff>
 <table><tr><td width=530>
 
-<center><h1>nhc98 current status</h1></center>
+<center><h1>nhc98 status</h1></center>
 
 <hr>
 
-<h3>Status of various components</h3>
+<p>
+The latest stable release is 1.02.  The development tree is at
+version 1.03.  Bugfixes and important changes to the system are
+described here for both versions.
 
 <p>
-<b>The basic, stable, components.</b>
-
-<p>
-<center>
-<table border=1 cellspacing=0 cellpadding=2>
-<tr bgcolor=#ddddff>
-  <th bgcolor=#eeeeee>component</th>
-  <td>compiler</td>
-  <td>prelude + libraries</td>
-  <td>heap profiling</td>
-  <td>hp2graph</td>
-  <td>GreenCard</td>
-  <td>hmake</td>
-</tr><tr>
-  <th bgcolor=#eeeeee>quality</th>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
-</tr>
-<tr bgcolor=#ddddff>
-  <th bgcolor=#eeeeee>last change</th>
-  <td>2001-02-13</td>
-  <td>2001-02-12</td>
-  <td>1997</td>
-  <td>1996</td>
-  <td>2000-11-23</td>
-  <td>2001-02-08</td>
-</tr>
-</table>
-</center>
-
-<p>
-<b>Newer components.</b>
-Relatively recent additions to the compiler are the tracing compiler,
-trace browser, time profiler, and common FFI.
-
-<p>
-<center>
-<table border=1 cellspacing=0 cellpadding=2>
-<tr bgcolor=#ddddff>
-  <th bgcolor=#eeeeee>component</th>
-  <td>binary library</td>
-  <td>tracing compiler/libraries</td>
-  <td>trace browser</td>
-  <td>time profiling</td>
-  <td>common FFI</td>
-  <td><em>hi</em></td>
-  <td>HOOD</td>
-</tr><tr>
-  <th bgcolor=#eeeeee>quality</th>
-  <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ffffdd>beta</td>
-  <td bgcolor=#ffffdd>beta</td>
-  <td bgcolor=#ffdddd>alpha</td>
-  <td bgcolor=#ffffdd>beta</td>
-  <td bgcolor=#ffffdd>beta</td>
-  <td bgcolor=#ffffdd>beta</td>
-</tr>
-<tr bgcolor=#ddddff>
-  <th bgcolor=#eeeeee>last change</th>
-  <td>1998</td>
-  <td>2001-02-13</td>
-  <td>2000-08-20</td>
-  <td>1998</td>
-  <td>2000-03-01</td>
-  <td>2000-11-10</td>
-  <td>2000-09-15</td>
-</tr>
-</table>
-</center>
 
 <hr>
-
-<h3>Distribution packages</h3>
-
-<p>
-<center>
-<table width=450 border=1 cellspacing=0 cellpadding=2>
-<tr bgcolor=#dddddd><th>package</th> <th>machine</th>
-                    <th>version</th> <th>date</th> <th>size</th></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.02.tar.gz">
-      Haskell + C source (.tar.gz)</a></td>
-  <td>any</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>3036kb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-Linux.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>4718kb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-sparc-solaris2.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>sparc-solaris2</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>5827kb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-CYGWIN_95-4.0.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-CYGWIN_95-4.0</td>
-  <td>1.02</td>
-  <td>2001-02-16</td>
-  <td>3184kb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
-      Executable (.deb)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.00 *</td>
-  <td>2000-09-28</td>
-  <td>3Mb</td></tr>
-
-</table>
-</center>
-
-<p>
-<center>
-Alternative locations:
-<br>
-Tarfiles:
-<br>
-<a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/">
-<tt>ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/</tt></a>
-<br>
-ix86-Linux RPMs for RedHat 6.2:
-<br>
-<a href="ftp://urano.iceb.ufop.br/pub/nhc98/">
-<tt>ftp://urano.iceb.ufop.br/pub/nhc98/</tt></a>
-<br>
-ix86-Linux RPMs for RedHat 7:
-<br>
-<a href="http://www.dtek.chalmers.se/~d95mback/nhc98/">
-<tt>http://www.dtek.chalmers.se/~d95mback/nhc98/</tt></a>
-<br>
-ix86-Linux for Debian:
-<br>
-<a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/">
-<tt>http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/</tt></a>
-</center>
-
-<p>
-<b>Known to compile for at least: </b>
-   ix86-Linux, ix86-NetBSD, ix86-FreeBSD, ix86-CYGWIN-NT4, ix86-Cygwin_95,
-   ppc-Linux, sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4.
-<p>
-
-<p>
-All the documents available on the web are included in all the packages.
-(* Please note that the installation instructions for out-of-date packages
-often differ slightly from the ones on the web.  Always follow the
-instructions from the package itself.)
-
-<p>
-The unified source tree contains the complete Haskell sources for the
-compiler, runtime system, standard prelude, and libraries (including
-Binary, FFI, IOExtras, etc) for <b>nhc98</b>, and current versions of
-<em>GreenCard</em>, <em>hp2graph</em>, <em>hmake</em>, and the trace
-browser.  In addition, it contains bootstrapping C sources in case you
-don't already have a Haskell compiler to build nhc98 with.
-
-<p>
-The binary packages contain just the executables, interface files, and
-object files for the compiler, runtime system, standard prelude,
-libraries (including Binary, FFI, IOExtras, etc), <em>GreenCard</em>,
-<em>hp2graph</em>, <em>hmake</em> and the trace browser.  In short,
-everything (except the sources) needed for normal compilation, heap
-profiling, time profiling, and tracing - the full works.
-
-<p>
-The <a href="install.html">installation instructions</a> should be
-comprehensive, but if you have any problems, please mail
-<a href="mailto:nhc-users@cs.york.ac.uk?subject=nhc98 installation">
-<tt>nhc-users@cs.york.ac.uk</tt></a>  (you must be a member of the
-list to post to it).
-
-<br><br><hr>
-<h3>Patches</h3>
-<center>
-<table width=450 border=1 cellspacing=0 cellpadding=2>
-<tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
-                    <th>date</th> <th>fixes what problem?</th></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fpos_t">
-      fpos_t</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-16</td>
-  <td>fixes a compile error in <tt>src/tracer/runtime/ident.c</tt>
-      on RedHat 7 and other systems using the new ISO C standard
-      for <tt>fpos_t</tt>.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-rdonly">
-      rdonly</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-19</td>
-  <td>A file opened in ReadMode or WriteMode was actually opened in
-      ReadWriteMode, so if the file had strict permissions the correct
-      opening command would fail.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-install">
-      install</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-21</td>
-  <td>On Cygwin, 'make install' reported 'nothing to be done' instead
-      of installing the software.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-hat">
-      Hat</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-07</td>
-  <td>The Hat trace browser (rtb) occasionally crashed with a Java numeric
-      error (we were sending corrupted textual data to it).
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fixity">
-      fixity</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-13</td>
-  <td>Operator sections suffered from priority inversion, for example
-      (^2*3) was incorrectly parsed as (^(2*3)), even though ^ binds
-      more tightly than *.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-reexport">
-      reexport</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-22</td>
-  <td>An identifier hidden on import and redefined in the current module,
-      then exported, but also imported qualified and used qualified in the
-      current module, led to an incorrect interface file being generated.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-mkdir">
-      mkdir</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-27</td>
-  <td>The library function Directory.createDirectory gave strange permissions
-      to the new directory.  (Mode was in hex, but should have been octal!)
-      </td></tr>
-
-</table>
-</center>
-
-
-<br><br>
-
-<hr>
-<h3>nhc98 CVS 1.03 (2001-04-xx) features</h3>
+<h3>nhc98 1.03 (CVS development version) features</h3>
 <ul>
-<li> Update:	better printing of I/O error messages.
-<li> Bugfix:	import/hiding/re-export bug.
+<li> New:	Support for extended module namespaces of the form
+		Long.Hierarchical.Module.Name is now provided in both
+		nhc98 and hmake.
+<li> Update:	Improved printing of I/O error messages.
+<li> Bugfix:	An identifier hidden on import and redefined in the
+		current module, then exported, but also imported
+		qualified and used qualified in the current module,
+		led to an incorrect interface file being generated.
 <li> Bugfix:	hmake issued an unnecessary -cpp flag on some literate files.
-<li> Bugfix:	type of IO.hSetPosn was incorrect.
-<li> Bugfix:	openFile ReadWriteMode only opened in ReadMode.
+<li> Bugfix:	Type of IO.hSetPosn :: Handle -> HandlePosn -> IO ()
+		was incorrect
+<li> Bugfix:	Compile-time error in <tt>src/tracer/runtime/ident.c</tt>
+		on RedHat 7 and other systems using the new ISO C standard
+		for <tt>fpos_t</tt>.
+<li> Bugfix:	A file opened in ReadMode or WriteMode was actually
+		opened in ReadWriteMode, so if the file had strict
+		permissions the correct opening command would fail.
+		Conversely, opening in ReadWriteMode actually gave
+		ReadMode instead, and file updates silently failed.
+<li> Bugfix:	Operator sections suffered from priority inversion,
+		for example (^2*3) was incorrectly parsed as (^(2*3)),
+		even though ^ binds more tightly than *.
+<li> Bugfix:	The library function Directory.createDirectory gave
+		strange permissions to the new directory.  (Mode was
+		in hex, but should have been octal!)
+
 </ul>
 The following updates and bugfixes are specifically for <em>Hat</em>,
 the redex-trail-based tracing and debugging system.
 <ul>
 <li> New architecture:  Traced programs now build their trails in files,
-		not in the heap.  This has three consequences:  (1)
+		not in the heap.  This has four consequences:  (1)
 		you no longer need to give your program large amounts
 		of extra memory to trace it;  but (2) you may need to have
 		large amounts of free disk space, particularly to trace
-		long-running programs; and (3) for the moment, traced
+		long-running programs; (3) for the moment, traced
 		programs now run even slower (we are working to improve
-		this).
+		this); and (4) trails are now first-class objects,
+		so new tools can manipulate them to provide several
+		different views of the computation.
 <li> New tools:	Storing trails in files means we can now provide more
 		tools to examine them.	<tt>hat-connect</tt>
 		allows you to use the original graphical browser,
@@ -313,6 +73,9 @@ the redex-trail-based tracing and debugging system.
 <li> Update:	Fuller Standard Library support for tracing: added
 		Directory, System, CPUTime, Random.
 		(Still missing: Time, Locale.)
+<li> Update:	More Haskell'98 language features are accepted:
+		named fields can now be traced, although the hat
+		tools don't yet show them in source form.
 </ul>
 
 <hr>
@@ -377,13 +140,89 @@ the redex-trail-based tracing and debugging system.
 
 
 <hr>
+
+<h3>Status of various components</h3>
+
+<p>
+<b>The basic, stable, components.</b>
+
+<p>
+<center>
+<table border=1 cellspacing=0 cellpadding=2>
+<tr bgcolor=#ddddff>
+  <th bgcolor=#eeeeee>component</th>
+  <td>compiler</td>
+  <td>prelude + libraries</td>
+  <td>heap profiling</td>
+  <td>hp2graph</td>
+  <td>GreenCard</td>
+  <td>hmake</td>
+</tr><tr>
+  <th bgcolor=#eeeeee>quality</th>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
+</tr>
+<tr bgcolor=#ddddff>
+  <th bgcolor=#eeeeee>last change</th>
+  <td>2001-04-24</td>
+  <td>2001-04-20</td>
+  <td>1997</td>
+  <td>1996</td>
+  <td>2000-11-23</td>
+  <td>2001-02-08</td>
+</tr>
+</table>
+</center>
+
+<p>
+<b>Newer components.</b>
+Relatively recent additions to the compiler are the tracing transformation,
+trace browsing tools (hat tools), time profiler, and common FFI.
+
+<p>
+<center>
+<table border=1 cellspacing=0 cellpadding=2>
+<tr bgcolor=#ddddff>
+  <th bgcolor=#eeeeee>component</th>
+  <td>tracing transformation</td>
+  <td>hat tools</td>
+  <td>time profiling</td>
+  <td>common FFI</td>
+  <td><em>hi</em></td>
+  <td>HOOD</td>
+</tr><tr>
+  <th bgcolor=#eeeeee>quality</th>
+  <td bgcolor=#ffffdd>beta</td>
+  <td bgcolor=#ffffdd>beta</td>
+  <td bgcolor=#ffdddd>alpha</td>
+  <td bgcolor=#ffffdd>beta</td>
+  <td bgcolor=#ffffdd>beta</td>
+  <td bgcolor=#ffffdd>beta</td>
+</tr>
+<tr bgcolor=#ddddff>
+  <th bgcolor=#eeeeee>last change</th>
+  <td>2001-04-24</td>
+  <td>2001-04-20</td>
+  <td>1998</td>
+  <td>2000-03-01</td>
+  <td>2000-11-10</td>
+  <td>2000-09-15</td>
+</tr>
+</table>
+</center>
+
+<hr>
 <p>
 The latest updates to these pages are available on the WWW from
 <a href="http://www.cs.york.ac.uk/fp/nhc98/">
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.04.19<br>
+This page last modified: 2001.04.27<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

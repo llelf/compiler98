@@ -8,7 +8,12 @@
 
 <p>
 <em>GreenCard</em> is a preprocessor for Haskell which allows Haskell
-functions to call C.  A paper (now superseded, see below) published in
+functions to call C.  (For the really brave, <b>nhc98</b> also has the
+ability to <a href="CcallingHaskell.html">call Haskell code from C</a>
+using <em>GreenCard</em> to set up the interface.)
+
+<p>
+A paper (now superseded, see below) published in
 the Haskell Workshop 97 proceedings describes the design goals, input
 language, and translation mechanism.  <em>GreenCard</em> was supposed
 to be standard across implementations of Haskell - however the
@@ -20,19 +25,19 @@ However, <em>GreenCard</em> is still useful for many small tasks, and
 you may find it is just the right tool for your particular application.
 
 <p>
-Since the Haskell Workshop paper, several improvements have been made
-to the input language and DIS macros.  <em>GreenCard</em> for <b>nhc98</b>
-follows the design agreed with the Glasgow and Hugs implementors (although
-the Glasgow implementation does not!).  Here is the best extant
-<a href="greencard.html">description</a> closely matching
-the <b>nhc98</b> version.
+Since the Haskell Workshop paper, several improvements have been
+made to the input language and DIS macros.  <em>GreenCard</em>
+for <b>nhc98</b> follows the design agreed with the Glasgow and
+Hugs implementors (although the Glasgow implementation does not!).
+Here is <a href="greencard.html">the best extant description of
+<em>GreenCard</em></a> closely matching the <b>nhc98</b> version.
 
 <p>
 There are just a few differences specific to the <b>nhc98</b> version
 of the tool.
 
 <dl>
-<dt>Some features are not yet implemented.</dt>
+<dt>Some features are not implemented.</dt>
 <dd><tt>%fail</tt> is currently ignored
     silently; <tt>%const</tt> generates a warning and terminates processing;
     you cannot yet use named fields (sometimes known as records) in DIS

@@ -16,41 +16,45 @@ libraries defined in the official
 <p>
 <center>
 <table width=450 border=1 cellspacing=0 cellpadding=2><tr>
-<th>library name</th><th>description</th>
+<th>library name</th><th>complete?</th><th>notes</th>
 </tr><tr>
-<td>Array</td> <td>complete, implementation based on vectors</td>
+<td>Array</td> <td>yes</td> <td>implementation based on vectors</td>
 </tr><tr>
-<td>CPUTime</td> <td>complete</td>
+<td>CPUTime</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Char</td> <td>complete, except for Unicode support</td>
+<td>Char</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Complex</td> <td>complete</td>
+<td>Complex</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Directory</td> <td>complete</td>
+<td>Directory</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>IO</td> <td>some minor omissions</td>
+<td>IO</td> <td>no</td> <td>missing: hReady, hWaitForInput, hLookAhead,
+    hIsOpen, hIsClosed, hIsReadable, hIsWritable, hIsSeekable</td>
 </tr><tr>
-<td>Ix</td> <td>complete</td>
+<td>Ix</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>List</td> <td>complete, with additional fns</td>
+<td>List</td> <td>yes</td> <td>additional fns: deleteFirsts, elemBy,
+    elemIndexBy, lookupBy, notElemBy, permutations, subsequences, sums,
+    products</td>
 </tr><tr>
-<td>Locale</td> <td>complete</td>
+<td>Locale</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Maybe</td> <td>complete</td>
+<td>Maybe</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Monad</td> <td>complete, with additional fn `untilM'</td>
+<td>Monad</td> <td>yes</td> <td>additional fn: untilM</td>
 </tr><tr>
-<td>Numeric</td> <td>incomplete</td>
+<td>Numeric</td> <td>no</td> <td>missing: fromRat, floatToDigits,
+    show[EFG]Float</td>
 </tr><tr>
-<td>Prelude</td> <td>complete</td>
+<td>Prelude</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Random</td> <td>complete, reused from Hugs/ghc</td>
+<td>Random</td> <td>yes</td> <td>identical to Hugs implementation</td>
 </tr><tr>
-<td>Ratio</td> <td>complete</td>
+<td>Ratio</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>System</td> <td>complete</td>
+<td>System</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Time</td> <td>complete except for TimeDiffs</td>
+<td>Time</td> <td>no</td> <td>missing: addToClockTime, diffClockTimes</td>
 
 </tr></table>
 </center>
@@ -77,13 +81,11 @@ Here is the status of non-standard libraries provided by <b>nhc98</b>:
 </tr><tr>
 <td><a href="http://www.haskell.org/ghc/docs/latest/hslibs/sec-ioexts.html">
     IOExtras</a></td>
-    <td>like GHC's IOExts</td>
+    <td>contains IORefs, IOArrays, unsafePerformIO, etc.</td>
 </tr><tr>
 <td>NonStdTrace</td> <td>the common side-effecting <tt>trace</tt> function</td>
 </tr><tr>
 <td>PackedString</td> <td>an efficient representation of strings</td>
-</tr><tr>
-<td>Text</td> <td>obsolete</td>
 
 </tr></table>
 </center>
@@ -96,7 +98,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.06.20<br>
+2001.04.25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

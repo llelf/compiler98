@@ -7,14 +7,25 @@
 <hr>
 
 <p>
+  <em>Compiler limits.</em>  There are some arbitrary limits in nhc98's Prelude:
+
+<center>
+<table><tr>
+<td>Prelude.hs</td><td>max size of a tuple type</td><td>12</td>
+</tr><tr>
+<td>Prelude.hs</td><td>largest Eq instance for a tuple type</td><td>4</td>
+</tr><tr>
+<td>Prelude.hs</td><td>largest Ord instance for a tuple type</td><td>4</td>
+</tr></table>
+</center>
+
+<p>
   <em>Runtime limits.</em>  There are various limits hard-coded into
   the runtime system, whose configured settings are:
 
 <center>
 <table><tr>
 <td>node.h</td><td>max number of constructors in a data type</td><td>512</td>
-</tr><tr>
-<td>STABLE_ALLOCSIZE</td><td>max stable pointers (GreenCard)</td><td>1024</td>
 </tr><tr>
 <td>MAX_FILE_NAME</td><td>max length of filename for profiling</td><td>80</td>
 </tr><tr>
@@ -34,10 +45,10 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.12.06<br>
+2001.04.25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
-Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+
 </td></tr></table>
 </body></html>
 
