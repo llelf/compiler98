@@ -242,7 +242,7 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
   mapS0 addId bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
-  dTrustRhs True hidParent hidParent true otherw rhs >>>= \rhs' ->
+  dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
   dPat hidParent pat' >>>= \pat'' ->
   let ExpApplication _ [r,_,tresult] = pat'' in
   dTrustDecls hidParent decls >>>= \decls' ->
@@ -388,7 +388,7 @@ dTrustCaf hidParent pos id cafName [Fun [] rhs localDecls] nt =
   addNewName 0 True cafName nt >>>= \nid2 ->
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
-  dTrustRhs True hidParent hidParent true otherw rhs >>>= \rhs' ->
+  dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
   dTrustDecls hidParent localDecls >>>= \localDecls' ->
   lookupVar pos t_lazySat >>>= \lazySat ->
   unitS [DeclFun pos id 
@@ -648,7 +648,7 @@ dSuspectGuardedExprs parent [] cont =
 dSuspectGuardedExprs parent ((g, e):ges) cont = 
   let pos = getPos g in
   dSuspectGuardedExprs parent ges cont >>>= \ges' ->
-  dSuspectExp False parent g >>>= \g' ->
+  dSuspectExp True parent g >>>= \g' ->
   newVar pos >>>= \newParent ->
   dSuspectExp False newParent e >>>= \e' ->
   lookupVar pos t_guard >>>= \guard ->
@@ -746,9 +746,8 @@ dSuspectRhs parent (Guarded gdExps) cont =
 
 
 {-
-First argument True iff the context of the expression is such if the
-expression is just a variable, the expression including context is
-not a projection.
+First argument False iff the parent is equal to this expression, i.e.,
+the result of this expression is the same as the result of the parent.
 -}
 
 
@@ -784,7 +783,7 @@ dSuspectExp cr parent (ExpCase pos e alts) =
   lookupVar pos ((if cr then t_ap else t_rap) 1) >>>= \apply ->
   lookupVar pos (t_fun 1) >>>= \fun ->
   makeNTCase pos >>>= \casenm ->
-  dSuspectExp cr parent e >>>= \e' ->
+  dSuspectExp True parent e >>>= \e' ->
   newVar noPos >>>= \caseParent ->
   makeSourceRef pos >>>= \sr ->
   dSuspectFunClauses caseParent "case" 1 true otherw 
@@ -801,7 +800,7 @@ dSuspectExp cr parent (ExpCase pos e alts) =
 	,sr,parent]
       ,e']
 dSuspectExp cr parent (ExpIf pos c e1 e2) = 
-  dSuspectExp cr parent c >>>= \c' ->
+  dSuspectExp True parent c >>>= \c' ->
   newVar pos >>>= \ifParent ->
   dSuspectExp False ifParent e1 >>>= \e1' ->
   dSuspectExp False ifParent e2 >>>= \e2' ->
@@ -834,7 +833,7 @@ dSuspectExp cr parent e@(ExpVar pos id) =
     Nothing -> -- Must be a lambdabound variable
       if cr 
         then unitS e
-	else 
+	else -- the parent is a projection
 	  lookupVar pos t_indir >>>= \indir ->
 	  unitS (ExpApplication pos [indir, parent, e])
     Just n -> -- A letbound or global function
@@ -914,6 +913,11 @@ dSuspectExps :: Exp Id -> [Exp Id] -> DbgTransMonad [Exp Id]
 
 dSuspectExps parent es = mapS (dSuspectExp True parent) es
 
+
+{-
+First argument False, if the unevaluated expression never appears as an argument in the trace. Hence not Sat needs to be created.
+False does not imply that the expression is equal to its parent expression, unlike for the suspected case.
+-}
 
 dTrustExp :: Bool -> Exp Id -> Exp Id -> Exp Id -> DbgTransMonad (Exp Id)
 
@@ -1486,10 +1490,15 @@ isFieldSelector id =
     Just (InfoVar _ _ _ IEsel _ _) -> 
         -- id is field selector of record defined in this module
         (True,s)
+{- bad:
+   also recognises cafs as selectors, because 
+   cafs ignore the SR and Trace argument and hence are polymorphic
+   in these arguments.
     Just (InfoVar _ _ _ _ (NewType _ _ _ nts) _) 
       | (lookupPrel (tSR,TCon)) `notElem` concatMap consNT nts ->
         -- id is field selector of record defined in imported module
         (True,s)
+-}
     _ -> (False,s)
 
 
