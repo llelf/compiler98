@@ -24,6 +24,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "gmp-impl.h"
 
 INTEGER1(primIntegerNeg,mpz_neg)   /* INTEGER1 check size */
+INTEGER1_C(primIntegerNegC,mpz_neg)   /* INTEGER1 check size */
 
 #if PROFILE
 static SInfo negProfInfo = { "Integer","Integer.neg","Integer.neg"};

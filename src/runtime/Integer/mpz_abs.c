@@ -22,6 +22,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "gmp-impl.h"
 
 INTEGER1(primIntegerAbs,mpz_abs) /* INTEGER1 check size */
+INTEGER1_C(primIntegerAbsC,mpz_abs) /* INTEGER1 check size */
 
 #if PROFILE
 static SInfo absProfInfo = { "Integer","Integer.abs","Integer.abs"};

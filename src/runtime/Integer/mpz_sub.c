@@ -23,6 +23,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 INTEGER2(primIntegerSub,mpz_sub,mpz_sub_need)
+INTEGER2_C(primIntegerSubC,mpz_sub,mpz_sub_need)
 
 Int  mpz_sub_need (MP_INT *u, MP_INT *v)
 {

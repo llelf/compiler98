@@ -25,6 +25,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "longlong.h"
 
 INTEGER2(primIntegerQuot,mpz_div,mpz_div_need)
+INTEGER2_C(primIntegerQuotC,mpz_div,mpz_div_need)
 
 Int  mpz_div_need (MP_INT *num, MP_INT *den)
 {

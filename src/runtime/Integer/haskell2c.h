@@ -19,6 +19,18 @@
       C_RETURN(nodeptr); \
     }
 
+#define INTEGER1_C(haskellName,cName) \
+    NodePtr haskellName (NodePtr x) \
+    { \
+      NodePtr result; \
+      MP_INT *a; \
+      a = (MP_INT*)x; \
+      C_CHECK(1+(Int)CONINFO_LARGESIZEU(*x)+EXTRA); \
+      result = C_HP; \
+      C_HP = cName ((MP_INT *)result, a); \
+      return (result); \
+    }
+
 
 #define INTEGER2(haskellName,cName,need) \
     C_HEADER(haskellName) \
@@ -39,6 +51,21 @@
       C_RETURN(nodeptr); \
     }
 
+#define INTEGER2_C(haskellName,cName,need) \
+    NodePtr haskellName (NodePtr x, NodePtr y) \
+    { \
+      NodePtr result; \
+      MP_INT *u,*v; \
+      Int size; \
+      u = (MP_INT*)x; \
+      v = (MP_INT*)y; \
+      size = need(u,v); \
+      C_CHECK(size); \
+      result = C_HP; \
+      C_HP = cName ((MP_INT *)result, u, v); \
+      return (result); \
+    }
+
 
 #define INTEGER2CMP(haskellName,cOp) \
     C_HEADER(haskellName) \
@@ -54,5 +81,14 @@
       C_RETURN(GET_BOOL(cOp)); \
     }
 
+
+#define INTEGER2CMP_C(haskellName,cOp) \
+    int haskellName (NodePtr x, NodePtr y)  \
+    { \
+      MP_INT *a,*b; \
+      a = (MP_INT*)x; \
+      b = (MP_INT*)y; \
+      return (cOp); \
+    }
 
 #endif

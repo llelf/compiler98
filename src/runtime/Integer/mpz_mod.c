@@ -26,6 +26,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 INTEGER2(primIntegerRem,mpz_mod,mpz_mod_need)
+INTEGER2_C(primIntegerRemC,mpz_mod,mpz_mod_need)
 
 #if PROFILE
 static SInfo nodeProfInfo = { "Integer","Integer.mod","Integer.mod"};

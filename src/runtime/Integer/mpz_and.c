@@ -23,6 +23,7 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 
 
 INTEGER2(primIntegerAnd,mpz_and,mpz_and_need)
+INTEGER2_C(primIntegerAndC,mpz_and,mpz_and_need)
 
 /* mpz_and only works for positive numbers !!! */
 

@@ -33,6 +33,10 @@ INTEGER2CMP(primIntegerEq,!mpz_cmp(a,b))
 INTEGER2CMP(primIntegerLe,mpz_cmp(a,b)<=0)
 INTEGER2CMP(primIntegerLt,mpz_cmp(a,b)<0)
 
+INTEGER2CMP_C(primIntegerEqC,!mpz_cmp(a,b))
+INTEGER2CMP_C(primIntegerLeC,mpz_cmp(a,b)<=0)
+INTEGER2CMP_C(primIntegerLtC,mpz_cmp(a,b)<0)
+
 #if 0
 int mpz_eq(MP_INT *u, MP_INT *v)
 {
