@@ -19,7 +19,7 @@ all: $(OBJDIR) $(PROGS)
 install: $(OBJDIR) $(PROGS)
 developer: $(DEST)/hatdetect $(DEST)/hatobserve
 objdir: $(OBJDIR)
-objs: $(MALCOBJS) $(THORLIBS) $(patsubst %, %.o, $(PROGS))
+objs: $(MALCOBJS) $(THOROBJS) $(patsubst %, %.o, $(PROGS))
 clean:
 	rm -f $(MALCOBJS) $(THOROBJS)
 realclean: clean
@@ -58,8 +58,9 @@ LINKFLAGS = -g $(shell echo $(CURSES))
 
 $(THOROBJS) : $(OBJDIR)/%.o : %.c
 	$(CC) -c $(THORFLAGS) -o $@ $<
+
 $(OBJDIR)/hatinterface.o: hatinterface.h hatfile.h $(OBJDIR)/nodelist.o
-$(OBJDIR)/FunTable.o: FunTable.h $(OBJDIR)/Expressions.o $(OBJDIR)/menu.o $(OBJDIR)/hatinterface.o
+$(OBJDIR)/FunTable.o: FunTable.h $(OBJDIR)/Expressions.o $(OBJDIR)/hatinterface.o # $(OBJDIR)/menu.o
 $(OBJDIR)/Expressions.o: Expressions.h hatfile.h $(OBJDIR)/nodelist.o $(OBJDIR)/hashtable.o $(OBJDIR)/hatinterface.o
 $(OBJDIR)/hashtable.o: hashtable.h
 $(OBJDIR)/observe.o : $(OBJDIR)/hatinterface.o $(OBJDIR)/hashtable.o
@@ -67,6 +68,7 @@ $(OBJDIR)/menu.o : menu.h $(OBJDIR)/Expressions.o
 $(OBJDIR)/nodelist.o : nodelist.h FunTable.h hatinterface.h Expressions.h
 $(OBJDIR)/hatgeneral.o : hatgeneral.h hatgeneral.c
 $(OBJDIR)/detect.o : detect.h FunTable.h hatinterface.h Expressions.h nodelist.h hashtable.h
+
 # build c tools of hat-detect and hat-observe (for developing use only)
 $(DEST)/hatdetect: hat-detect.c $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
 	$(CC) hat-detect.c $(THOROBJS) -o $(DEST)/c_hatdetect $(LINKFLAGS)
@@ -74,10 +76,11 @@ $(DEST)/hatobserve: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatinterface.o $
 	$(CC) hat-observe.c $(THOROBJS) -o $(DEST)/c_hatobserve $(LINKFLAGS)
 $(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatinterface.o $(OBJDIR)/hatgeneral.o
 	$(CC) hat-checki.c $(THOROBJS) -o $(DEST)/hat-checki $(LINKFLAGS) $(shell echo $(LIBCOMPAT))
-$(OBJDIR)/hatlib.a:  $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
+
+$(OBJDIR)/hatlib.a: $(THOROBJS)
 	ar -rc $(OBJDIR)/hatlib.a $(THOROBJS)
 
-# Thorsten's haskell libraries and tools
+# Thorsten's haskell tools
 $(DEST)/hat-observe: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
 	$(LOCAL)hmake -nhc98 -K10M +CTS -H20M -CTS Hatobserve $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
 	mv $(OBJDIR)/Hatobserve $(DEST)/hat-observe
@@ -85,13 +88,4 @@ $(DEST)/hat-observe: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs P
 $(DEST)/hat-detect: Hatdetect.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
 	$(LOCAL)hmake -nhc98 -K10M +CTS -H20M -CTS Hatdetect $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
 	mv $(OBJDIR)/Hatdetect $(DEST)/hat-detect
-
-
-
-
-
-
-
-
-
 
