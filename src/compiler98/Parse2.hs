@@ -21,29 +21,35 @@ parseExports =
 parseExport =
     (uncurry ExportModid) `parseChk` lit L_module `apCut` aconid	-- 1.3
         `orelse`
-    (uncurry ExportModid) `parseAp` aconid `chk` dotdot			-- 1.2
-        `orelse`
+ -- (uncurry ExportModid) `parseAp` aconid `chk` dotdot			-- 1.2
+ --     `orelse`
     (\e -> ExportEntity (getPos e) e) `parseAp` parseEntity
 
 parseImpDecls =
     manysSep semi parseImpDecl
 
 parseImpDecl =
-    Importas `parseChk` lit L_import `ap` aconid `chk` k_as `ap` aconid `ap` parseImpSpec -- added in H98
+    Importas `parseChk` lit L_import `ap` nestedImport `chk` k_as
+                    `ap` aconid `ap` parseImpSpec           -- added in H98
 	`orelse`
-    Import `parseChk` lit L_import `ap` aconid `ap` parseImpSpec
+    Import `parseChk` lit L_import `ap` nestedImport `ap` parseImpSpec
 	`orelse`
-    ImportQas `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `chk` k_as `ap` aconid `ap` parseImpSpec -- No longer FAKE
+    ImportQas `parseChk` lit L_import `chk` lit L_qualified
+                    `ap` nestedImport `chk` k_as `ap` aconid `ap` parseImpSpec
 	`orelse`
-    ImportQ `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `ap` parseImpSpec -- FAKE
+    ImportQ `parseChk` lit L_import `chk` lit L_qualified
+                    `ap` nestedImport `ap` parseImpSpec     -- impSpec is FAKE
 
+nestedImport =			-- Extension to H'98, added by MW, 29Sep2000.
+    last `parseAp` someSep k_dot aconid
 
 parseImpSpec =
-    (NoHiding []) `parseChk` k_unit -- fix for import Module()
+    (NoHiding []) `parseChk` k_unit                  -- fix for import Module()
         `orelse`
     NoHiding `parseChk` lpar `apCut` manySep comma parseEntity `chk` rpar
         `orelse`
-    Hiding `parseChk` lit L_hiding `chk` lpar `apCut` manySep comma parseEntity `chk` rpar         
+    Hiding `parseChk` lit L_hiding `chk` lpar `apCut`
+                                         manySep comma parseEntity `chk` rpar
         `orelse`
     parse (Hiding [])
 
