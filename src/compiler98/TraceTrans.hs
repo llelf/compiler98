@@ -1193,10 +1193,10 @@ getUnqualified = reverse . unpackPS . extractV . tokenId
 updateToken :: (String -> String) -> TraceId -> TokenId
 updateToken f traceId = 
   case tokenId (traceId) of
-    t@(TupleId 0) -> if f "" == "a" 
-                       then Qualified transPreludeModule 
-                              (packString . reverse . f $ "Tuple0")
-                       else t
+--  t@(TupleId 0) -> if f "" == "a" 
+--                     then Qualified transPreludeModule 
+--                            (packString . reverse . f $ "Tuple0")
+--                     else t
     t@(TupleId n) -> Qualified 
                        transPreludeModule 
                        (packString . reverse . f $ ("Tuple"++show n)) 

@@ -43,7 +43,7 @@ type Int = Prelude.Int
 
 -- type constructors and data constructors need to have same name,
 -- because transformation doesn't distinguish the two
-type Tuple0 = ()  -- no new data constructor
+data Tuple0 = Tuple0
 aTuple0 = T.mkAtomCon tMain 0 3 "()"
 data Tuple2 a b = Tuple2 (R a) (R b) -- not type Tuple2 a b = (R a,R b)
 aTuple2 = T.mkAtomCon tMain 0 3 "(,)" 
@@ -70,10 +70,10 @@ fromInt :: Trace -> Prelude.Int -> R TPrelude.Int
 fromInt = conInt mkNoSourceRef
 
 toTuple0 :: R TPrelude.Tuple0 -> ()
-toTuple0 (R tp _) = tp
+toTuple0 (R Tuple0 _) = ()
 
 fromTuple0 :: Trace -> () -> R TPrelude.Tuple0
-fromTuple0 = flip mkR
+fromTuple0 t () = mkR Tuple0 t
 
 toList :: (R a -> b) -> R (List a) -> [b]
 toList f (R (Cons x xs) _) = f x : toList f xs
@@ -156,7 +156,7 @@ wputStr t os = fromIO fromTuple0 t $ do
   -- evaluation of the string
 --  outputTrace t s
 --  putStr s
-  return ()
+  return Tuple0
 
 
 -- error :: T.SR -> T.Trace -> T.R (Trace -> T.R String -> a)
