@@ -249,6 +249,22 @@ match vars funs def =
 matchMany vars [] def = def
 matchMany vars (x:xs) def = matchOne vars x (matchMany vars xs def) 
 
+matchOne :: [PosExp] 
+         -> Pattern 
+         -> ( ( Exp Int -> Exp Int,Exp Int,Exp Int,Exp Int,Exp Int
+              , (Exp Int,Exp Int),Exp Int,(TokenId,IdKind) -> Int
+              , PosExp,[Char],Tree (Int,Int) 
+              ) 
+              -> (IntState,Tree (TokenId,Int)) 
+              -> (PosExp,(IntState,Tree (TokenId,Int)))
+            ) 
+         -> ( Exp Int -> Exp Int,Exp Int,Exp Int,Exp Int,Exp Int
+            , (Exp Int,Exp Int),Exp Int,(TokenId,IdKind) -> Int
+            , PosExp,[Char],Tree (Int,Int)
+            ) 
+         -> (IntState,Tree (TokenId,Int)) 
+         -> (PosExp,(IntState,Tree (TokenId,Int)))  
+
 matchOne (ce:ces) (PatternVar x) def =
   case unzip x of
     (pats,funs) ->
@@ -305,7 +321,9 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
 -- (which it is for Integer,Double and Float, but not for unknown types)
 
 matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
+
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
+
 matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]),fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
   unitS (PosExpIf pos) =>>>
@@ -321,6 +339,8 @@ matchAltIf v ces (pat@(ExpLit pos (LitFloat _ a)),fun) =
 matchAltIf v ces (pat@(ExpLit pos (LitDouble _ a)),fun) =
   caseEqDouble >>>= \ equal ->
   mkIfLit v ces pos pat fun equal
+
+
 matchAltIf v ces pat = error ("What? matchAltIf at " ++ strPos (getPos pat) ++ "\n")
 
 mkIfLit :: Int -> [PosExp] -> Pos -> ExpI -> Fun Int -> ExpI -> CaseFun PosExp

@@ -339,6 +339,14 @@ transFieldType al (Just posidents,typ) =
 renameField (FieldExp pos tid exp) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> renameExp exp
 renameField (FieldPun pos tid) = checkPuns pos >>> unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid)
 
+
+renameExp :: Exp TokenId 
+          -> State ( PackedString -> Int -> TokenId -> TokenId
+                   , TokenId -> TokenId
+                   , TokenId -> IdKind -> IE
+                   , TokenId -> (InfixClass TokenId,Int)) 
+                   RenameState (Exp Int) RenameState
+
 renameExp (ExpScc            str exp) = unitS (ExpScc str) =>>> renameExp exp
 renameExp (ExpLambda         pos pats exp) =
     pushScope >>>
@@ -366,7 +374,7 @@ renameExp (ExpType           pos exp ctxs typ) =
     in renameExp exp >>>= \ exp ->  
        mapS (renameCtx al) ctxs >>>= \ ctxs ->
        renameType al typ >>>= \ typ -> 
-    unitS (ExpType pos exp ctxs typ)
+       unitS (ExpType pos exp ctxs typ)
 --- Above only in expressions
 renameExp (ExpApplication   pos exps)  =
     unitS (ExpApplication pos) =>>> mapS renameExp exps

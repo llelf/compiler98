@@ -1,0 +1,12 @@
+#!/bin/sh
+      
+# set flags so that hugs finds the pseudo packed string module
+# and uses the C preprocessor. Note that __HUGS__ is defined
+# for the preprocessor.
+# (there might be a problem if your installation of hugs sets
+# the variable HUGSFLAGS itself) 
+
+HUGSFLAGS="-P/usr/olaf/NHC/src/compiler98/hugs: -F\"gcc -D__HUGS__ -D__HASKELL__=98 -D__HASKELL98__ -D__HASKELL_98__ -x c -E -traditional -P\""
+export HUGSFLAGS
+exec hugs $*
+

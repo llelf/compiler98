@@ -11,6 +11,8 @@ module GcodeLowC
 #define NATIVE
 #elif defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 406
 #define FLOAT
+#elif defined(__HUGS__)
+#define HUGSFLOAT
 #endif
 
 import Char
@@ -185,6 +187,18 @@ gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
                                       emitWord (shows i)
 gcodeCDump state (DATA_D  d)      = let h = doubleToInt0 d
                                         l = doubleToInt1 d in
+                                    emitWord (shows h) >|> emitWord (shows l)
+#elif defined(HUGSFLOAT)
+-- does not work, just bogus translation of floats and doubles into zero bytes
+gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
+                                      let h = 0
+                                          l = 0 in
+                                      emitWord (shows h) >|> emitWord (shows l)
+                                    else-}
+                                      let i = 0 in
+                                      emitWord (shows i)
+gcodeCDump state (DATA_D  d)      = let h = 0
+                                        l = 0 in
                                     emitWord (shows h) >|> emitWord (shows l)
 #endif
 gcodeCDump state (DATA_NOP)       = id

@@ -1,0 +1,31 @@
+nhc98 can be loaded into hugs, which makes development of
+nhc easier. It can even be run inside hugs to translate
+a Haskell file into an interface and a C-file. Only for
+float and double constants wrong byte code is produced.
+
+Things that were necessary to make nhc run within hugs:
+
+* A few type declarations were added. Otherwise hugs would
+  produce type errors. Probably this happened because the
+  internal data structurs of hugs couldn't manage the size
+  of the inferred type (too few type variables?). Type 
+  declarations make inference easier and are also useful.
+
+* Nhc requires a module PackedString which Hugs does not 
+  provide. This directory contains a bogus implementation
+  which is used by Hugs.
+
+* In module GcodeLowC nhc requires functions to translate
+  a float or double constant into its byte representation.
+  Because hugs does not provide such functions, the code
+  was modified to represent all float and double constants
+  as list of 0 bytes, when nhc is run within hugs.
+
+The shell script hugsnhc in this directory calls hugs with the
+necessary settings; that is, path extended to find PackedString
+and preprocessor set to the C-preprocessor.
+
+The C-preprocessor defines the macro __HUGS__
+
+Tested with Hugs98 from February 2000.
+Olaf

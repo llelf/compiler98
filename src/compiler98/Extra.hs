@@ -7,7 +7,7 @@ import Maybe
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
 #endif
-#if defined (__GLASGOW_HASKELL__)
+#if defined (__GLASGOW_HASKELL__) || defined(__HUGS__)
 import IOExts (trace)
 #endif
 

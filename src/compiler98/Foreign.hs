@@ -15,7 +15,7 @@ import TokenId
 import AssocTree
 import Extra (mix)
 import GcodeLow (fun,foreignfun,fixStr)
-#if defined(__GLASGOW_HASKELL__)
+#if defined(__GLASGOW_HASKELL__) || defined(__HUGS__)
 import IOExts (trace)
 #else
 import NonStdTrace
