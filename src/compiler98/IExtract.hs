@@ -25,6 +25,7 @@ import Syntax
 import OsOnly(isPrelude)
 import ImportState
 import Id(Id)
+import Info(patchIE)
 
 --import PrettyLib	-- debugging output only
 --import PrettySyntax	-- debugging output only
@@ -473,7 +474,11 @@ iextractData  expInfo q attr ctxs pos tid tvs constrs needs =
                               ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)])
      >>>= \nt@(NewType free [] ctxs nts) ->
      mapS (transConstr q al free ctxs needs (last nts)) constrs >>>= \cs ->
-     importData q tid expInfo nt 
+     importData q tid -- expInfo nt 
+       ((case attr of
+           Left _ -> patchIE
+           _      -> id) expInfo)
+       nt
        (case attr of
 	  Right unboxed -> Data unboxed cs
 	  Left  unboxed -> DataNewType unboxed cs) >>>

@@ -685,14 +685,14 @@ defineData d tid nt cs down (RenameState flags unique irps@(_,rps) rts rt st
       key = (tid,TCon)
   in case lookupAT rt key of
        Just u ->
-         let (needCheck',dk) =
+         let (needCheck',dk,patch) =
 		case d of
-		  Just unboxed -> (needCheck,Data unboxed cs)
-		  Nothing -> (u:needCheck,DataNewType False cs) 
+		  Just unboxed -> (needCheck,   Data unboxed cs,      id)
+		  Nothing -> (u:needCheck, DataNewType False cs, patchIE)
                               -- unboxed fixed by keepRS
 	 in (u,RenameState flags unique irps rts rt 
 		 (addAT st combInfo u {-(realtid,TCon)-} 
-                    (InfoData u realtid (sExp down tid TCon) nt dk))
+                    (InfoData u realtid (patch (sExp down tid TCon)) nt dk))
 		 derived defaults errors needCheck')
 
 
@@ -793,6 +793,7 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
                                      (InfoVar selu realtid
                                           (case sExp down typtid TCon of
 					      IEall -> IEsel
+					   -- IEsome -> sExp down tid Field
 					   -- IEabs -> sExp down tid Var
                                               _     -> sExp down tid Var)
                                           (sFix down realtid)

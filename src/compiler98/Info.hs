@@ -33,7 +33,6 @@ isExported IEnone = False
 isExported IEsel  = False
 isExported _      = True
 
-
 combIE IEall  _     = IEall
 combIE _      IEall = IEall
 combIE IEnone i     = i
@@ -41,6 +40,11 @@ combIE i     IEnone = i
 combIE IEsome IEabs = IEsome
 combIE IEabs IEsome = IEsome
 combIE _      i     = i
+
+-- Patch newtype for exports  (Its constructor must always be in the
+-- interface file, even if not visible in the importing module.)
+patchIE IEabs = IEsome
+patchIE ie    = ie
 
 data DataKind = 
     DataTypeSynonym Bool  -- True <-> unboxed after expansion
