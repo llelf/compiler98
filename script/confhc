@@ -13,6 +13,7 @@ echo "Looking for already-installed Haskell compilers:"
 HBCKNOWN=
 GHCKNOWN=
 NHCKNOWN=
+CONFIGPATH="$PWD/lib/$MACHINE/hmakerc"
 
 # We need a working BSD-style `echo' command: at least Solaris may not have it.
 #   (The calling script must have already compiled our emulated 'echo'.)
@@ -143,10 +144,29 @@ else
 fi
 echo " to build hmake."
 
+# mangle paths on CYGWIN
+case $MACHINE in
+  *CYGWIN*) if [ -n "$HBCKNOWN" ]
+            then HBCKNOWN=`cygpath -w "$HBCKNOWN" | tr '\\\\' '/'`
+            fi
+            if [ -n "$GHCKNOWN" ]
+            then GHCKNOWN=`cygpath -w "$GHCKNOWN" | tr '\\\\' '/'`
+            fi
+            if [ -n "$GHC2KNOWN" ]
+            then GHC2KNOWN=`cygpath -w "$GHC2KNOWN" | tr '\\\\' '/'`
+            fi
+            if [ -n "$NHCKNOWN" ]
+            then NHCKNOWN=`cygpath -w "$NHCKNOWN" | tr '\\\\' '/'`
+            fi
+            CONFIGPATH=`cygpath -w "$CONFIGPATH" | tr '\\\\' '/'`
+     ;;
+  *) ;;
+esac
+
 # ---- ----
 export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE
 echo "  Now I'm creating targets/$MACHINE/hmake3.config for your installation."
-INVOKE="$PWD/script/hmake-config $PWD/lib/$MACHINE/hmakerc"
+INVOKE="$PWD/script/hmake-config $CONFIGPATH"
 { echo "$INVOKE new"
   if [ "$HBCKNOWN" != "" ]
   then echo "$INVOKE add hbc"

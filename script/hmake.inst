@@ -39,18 +39,20 @@ fi
   }
 #fi
 
-## Fix an absolute Cygwin path to an absolute native Windows path.
-## (Also copes with options like -I/path etc.)
-## This routine is only strictly required when the MkProg executable
-## was built with GHC/mingw32.
-#if echo $MACHINE | grep -y CYGWIN >/dev/null
-#then filepath() { case $1 in
-#                    -?/*) echo `cygpath -w $1` | tr '\\' '/';;
-#                    /*)   echo `cygpath -w $1` | tr '\\' '/';;
-#                    *)    echo $1;;
-#                  esac; }
-#else filepath() { echo $1; }
-#fi
+# Fix an absolute Cygwin path to an absolute native Windows path.
+# (Also copes with options like -I/path etc.)
+# This routine is only strictly required when the MkProg executable
+# was built with GHC/mingw32.
+if echo $MACHINE | grep -y CYGWIN >/dev/null
+then filepath() { case $1 in
+                    -?/*) dir=`echo $1 | cut -c3-`
+                          dir=`cygpath -w "$dir" | tr '\\\\' '/'`
+                          echo `echo $1 | cut-c1-2`$dir ;;
+                    /*)   cygpath -w "$1" | tr '\\\\' '/';;
+                    *)    echo $1;;
+                  esac; }
+else filepath() { echo $1; }
+fi
 
 BUILTBY=
 # USINGRTS decides how run-time system options should be passed to MkProg
@@ -107,12 +109,12 @@ do
     -g)  hmflags=$hmflags" $1"; exec=cat ;;
     -gd) hmflags=$hmflags" $1"; exec=cat ;;
     -M*) hmflags=$hmflags" $1"; exec=cat ;;
-#   -f)  shift; configfile=$1; hmflags=$hmflags" -f`filepath $1`" ;;
-#   -d)  shift; objdir=$1;     hmflags=$hmflags" -d`filepath $1`" ;;
-#   -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" `filepath $1`" ;;
-    -f)  shift; configfile=$1; hmflags=$hmflags" -f$1" ;;
-    -d)  shift; objdir=$1;     hmflags=$hmflags" -d$1" ;;
-    -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" $1" ;;
+    -f)  shift; configfile=$1; hmflags=$hmflags" -f`filepath $1`" ;;
+    -d)  shift; objdir=$1;     hmflags=$hmflags" -d`filepath $1`" ;;
+    -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" `filepath $1`" ;;
+#   -f)  shift; configfile=$1; hmflags=$hmflags" -f$1" ;;
+#   -d)  shift; objdir=$1;     hmflags=$hmflags" -d$1" ;;
+#   -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" $1" ;;
     -hbc)   COMP=hbc ;;
     -ghc)   COMP=ghc ;;
     -nhc98) COMP=nhc98 ;;
@@ -147,14 +149,14 @@ do
           done ;;
 
     # Cpp + import flags - need to translate later, based on haskell compiler
-#   -P*) importflags=$importflags" `filepath $1`" ;;
-#   -I*) importflags=$importflags" `filepath $1`";
-#          bigIflags=$bigIflags" `filepath $1`" ;;
-#   -i*) importflags=$importflags" `filepath $1`" ;;
-    -P*) importflags=$importflags" $1" ;;
-    -I*) importflags=$importflags" $1";
-           bigIflags=$bigIflags" $1" ;;
-    -i*) importflags=$importflags" $1" ;;
+    -P*) importflags=$importflags" `filepath $1`" ;;
+    -I*) importflags=$importflags" `filepath $1`";
+           bigIflags=$bigIflags" `filepath $1`" ;;
+    -i*) importflags=$importflags" `filepath $1`" ;;
+#   -P*) importflags=$importflags" $1" ;;
+#   -I*) importflags=$importflags" $1";
+#          bigIflags=$bigIflags" $1" ;;
+#   -i*) importflags=$importflags" $1" ;;
     -D*) cppflags=$cppflags" $1"; ;;
   # -U*) cppflags=$cppflags" $1"; ;;
 

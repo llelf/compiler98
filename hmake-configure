@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="3.06 (2002-08-09)" export HMAKEVERSION
+HMAKEVERSION="3.07rc4 (2003-02-25)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -30,9 +30,16 @@ INSTALLDIR=/usr/local
 USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
 PWD=`pwd`
-case $PWD in	# path mangling required for CYGWIN
-  file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
-  //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
+case $OS in
+  CYGWIN*) PWD=`cygpath -w "$PWD" | tr '\\\\' '/'`
+           INSTALLDIR=`cygpath -w "$INSTALLDIR" | tr '\\\\' '/'`
+           case $PWD in	# further path mangling required for CYGWIN
+             file://?/*) PWD=`echo $PWD | sed -e "s|^file://||" |\
+                              sed -e "s|^[^/]|&:|"` ;;
+             //?/*)      PWD=`echo $PWD | sed -e "s|^//||" |\
+                              sed -e "s|^[^/]|&:|"` ;;
+           esac ;;
+  *) ;;
 esac
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
@@ -310,6 +317,7 @@ else	# do the following only in binary distributions
   echo "--------"
   script/confhc $BUILDWITH
   echo "--------"
+  sh targets/$MACHINE/hmake3.config	# ...and setup an hmakerc file
 fi
 
 
@@ -394,7 +402,6 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
-    sh targets/$MACHINE/hmake3.config	# setup hmakerc before installing.
     echo -n "    "
     for file in $BUILDLIBDIR/$MACHINE/*
     do

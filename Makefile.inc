@@ -13,7 +13,7 @@ VERSION = 1.15
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HMAKEVERSION = 3.06
+HMAKEVERSION = 3.07rc4
 # HMAKEVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
@@ -33,10 +33,10 @@ TOPDIR := $(MKDIR)
 MACHINE = $(shell $(TOPDIR)/script/harch)
 export MACHINE
 
-# CYG = $(findstring CYGWIN, $(MACHINE))
-# ifeq "CYGWIN" "${CYG}"
-#   TOPDIR := $(shell echo `cygpath -w $(TOPDIR)` | tr '\\' '/' )
-# endif
+CYG = $(findstring CYGWIN, $(MACHINE))
+ifeq "CYGWIN" "${CYG}"
+  TOPDIR := $(shell cygpath -w $(TOPDIR) | tr '\\\\' '/' )
+endif
 
 
 OBJ=obj$(CFG)
@@ -65,7 +65,7 @@ export HC
 HMAKE = $(LOCAL)hmake
 export HMAKE
 
-BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
+BUILDCOMP := $(shell basename $(BUILDWITH) | cut -c1-3 )
 CPP = $(CC) -E -x c
 
 DCFG:=
