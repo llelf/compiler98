@@ -11,7 +11,7 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 
 LIBDIR  = lib
 TARGDIR = targets
-TARGETS = hmake-nhc98 hmake-hbc hmake-ghc chmake hi-nhc98 hi-hbc hi-ghc chi
+TARGETS = hmake-nhc hmake-hbc hmake-ghc chmake hi-nhc hi-hbc hi-ghc chi
 
 
 ##### compiler build + install scripts
