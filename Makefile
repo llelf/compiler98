@@ -111,9 +111,9 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.hc src/interpreter/*.hc
-CPPHS  = src/cpphs/Makefile* src/cpphs/*.hs src/cpphs/docs src/cpphs/tests \
+CPPHS  = src/cpphs/Makefile* src/cpphs/*.hs
+CPPHSC = src/cpphs/*.hc src/cpphs/docs src/cpphs/tests \
 	 src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
-CPPHSC = src/cpphs/*.hc
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
@@ -267,15 +267,15 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 	$(BUILDWITH) $(shell echo $(BUILDOPTS)) -cpp -o $@ $<
 
 
-$(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
+$(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE) $(CPPHS)
 	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
-$(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
+$(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE) $(CPPHS)
 	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
-$(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
+$(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE) $(CPPHS)
 	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
@@ -490,6 +490,7 @@ hmakeDist:
 	tar cf hmake-$(HMAKEVERSION).tar $(HAUX1)
 	tar rf hmake-$(HMAKEVERSION).tar $(HAUX2)
 	tar rf hmake-$(HMAKEVERSION).tar $(HMAKE)
+	tar rf hmake-$(HMAKEVERSION).tar $(CPPHS)
 	tar rf hmake-$(HMAKEVERSION).tar $(HSCRIPT)
 	tar rf hmake-$(HMAKEVERSION).tar $(HMAN)
 	mkdir hmake-$(HMAKEVERSION)
