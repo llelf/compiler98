@@ -211,6 +211,7 @@ timelibraries-hbc: timelibraries
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
+#runtime:
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) all nhc98heap$(EXE)
 	touch $(TARGDIR)/$(MACHINE)/runtime
@@ -266,16 +267,16 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE) $(CPPHS)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE) $(CPPHS)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE) $(CPPHS)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) BUILDCOMP=${BUILDCOMP} all
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 
@@ -340,8 +341,8 @@ $(TARGDIR)/$(MACHINE)/cpphs-$(CC): $(CPPHS)
 	cd src/cpphs;          $(MAKE) -f Makefile.nhc98 fromC
 	touch $(TARGDIR)/$(MACHINE)/cpphs-$(CC)
 $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
-	cd src/hmake;          $(MAKE) fromC config
-	cd src/interpreter;    $(MAKE) fromC
+	cd src/hmake;          $(MAKE) BUILDCOMP=nhc fromC config
+	cd src/interpreter;    $(MAKE) BUILDCOMP=nhc fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
 $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC): $(HSC2HS) $(HSC2HSC)
 	cd src/hsc2hs;         $(MAKE) -f Makefile.nhc98 fromC

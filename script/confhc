@@ -215,34 +215,42 @@ esac
 export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE GHC2KNOWN NHC2KNOWN
 echo "  Now I'm creating targets/$MACHINE/hmake3.config for your installation."
 INVOKE="$PWD/script/hmake-config $CONFIGPATH"
-{ echo "$INVOKE new"
-  if [ "$HBCKNOWN" != "" ]
-  then echo "$INVOKE add hbc"
-       echo "$INVOKE add ${HBCKNOWN}"
-  fi;
-  if [ "$GHCKNOWN" != "" ]
-  then echo "$INVOKE add ghc"
-       echo "$INVOKE add ${GHCKNOWN}"
-       if which ghc-${GHCVERSION} >/dev/null 2>&1
-       then echo "$INVOKE add ghc-${GHCVERSION}"
-       fi
-       if which ${GHCKNOWN}-${GHCVERSION} >/dev/null 2>&1
-       then echo "$INVOKE add ${GHCKNOWN}-${GHCVERSION}"
-       fi
-  fi;
-  if [ "$GHC2KNOWN" != "" ]
-  then echo "$INVOKE add ${COMP}"
-       echo "$INVOKE add ${GHC2KNOWN}"
-  fi;
-  if [ "$NHCKNOWN" != "" ]
-  then echo "$INVOKE add nhc98"
-       echo "$INVOKE add ${NHCKNOWN}"
-  fi;
-  if [ "$NHC2KNOWN" != "" ]
-  then echo "$INVOKE add ${COMP}"
-       echo "$INVOKE add ${NHC2KNOWN}"
-  fi;
-} >targets/$MACHINE/hmake3.config
+if [ -z "$DEBIAN" ]
+then
+  { echo "$INVOKE new"
+    if [ "$HBCKNOWN" != "" ]
+    then echo "$INVOKE add hbc"
+         echo "$INVOKE add ${HBCKNOWN}"
+    fi;
+    if [ "$GHCKNOWN" != "" ]
+    then echo "$INVOKE add ghc"
+         echo "$INVOKE add ${GHCKNOWN}"
+         if which ghc-${GHCVERSION} >/dev/null 2>&1
+         then echo "$INVOKE add ghc-${GHCVERSION}"
+         fi
+         if which ${GHCKNOWN}-${GHCVERSION} >/dev/null 2>&1
+         then echo "$INVOKE add ${GHCKNOWN}-${GHCVERSION}"
+         fi
+    fi;
+    if [ "$GHC2KNOWN" != "" ]
+    then echo "$INVOKE add ${COMP}"
+         echo "$INVOKE add ${GHC2KNOWN}"
+    fi;
+    if [ "$NHCKNOWN" != "" ]
+    then echo "$INVOKE add nhc98"
+         echo "$INVOKE add ${NHCKNOWN}"
+    fi;
+    if [ "$NHC2KNOWN" != "" ]
+    then echo "$INVOKE add ${COMP}"
+         echo "$INVOKE add ${NHC2KNOWN}"
+    fi;
+  } >targets/$MACHINE/hmake3.config;
+else
+  { echo "$INVOKE new";
+    echo "$INVOKE add-dyn /usr/bin/haskell-compiler";
+    echo "$INVOKE default /usr/bin/haskell-compiler";
+  } >targets/$MACHINE/hmake3.config;
+fi
 echo $BUILDHMAKE >targets/$MACHINE/buildwith
 
 echo "Done."

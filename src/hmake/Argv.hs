@@ -18,14 +18,8 @@ import Config
 import PackageConfig (packageDirs)
 import Platform (unsafePerformIO)
 
-#if !defined(__HBC__)
 import List (isPrefixOf)
 import IO (hPutStrLn,stderr)
-#else
-import IsPrefixOf
-import IO (stderr)
-import IOMisc (hPutStrLn)
-#endif
 
 -- | Target modules.  Either a program or an "Object", which is the
 --   filename and its extension (suffix).
@@ -73,20 +67,23 @@ data DecodedArgs =
 	}
 
 -- | Given the list of program arguments, decode them.
-decode :: [String] -> DecodedArgs
+decode :: [String] -> IO DecodedArgs
 decode progArgs =
   let d = Decoded {
       modules  = (map wrapGoal . filter (not . isflag)) progArgs
-    , pathSrc  = (map tail . filter (\v -> head v == 'I')) flags ++
-                 (map tail . filter (\v -> head v == 'i')) flags ++
-                 if isopt "keepPrelude" then pathPrel d else []
-    , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
-                 includePaths (compiler d) ++
-                 packageDirs (compiler d)
-                             (map (drop 8) $
-                              filter ("package="`isPrefixOf`) flags)
-    , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
-                 cppSymbols (compiler d) ++
+    , pathSrc  = error "pathSrc not known yet"
+    , pathPrel = error "pathPrel not known yet"
+    , zdefs    = error "zdefs not known yet"
+ -- , pathSrc  = (map tail . filter (\v -> head v == 'I')) flags ++
+ --              (map tail . filter (\v -> head v == 'i')) flags ++
+ --              if isopt "keepPrelude" then pathPrel d else []
+ -- , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
+ --              includePaths (compiler d) ++
+ --              packageDirs (compiler d)
+ --                          (map (drop 8) $
+ --                           filter ("package="`isPrefixOf`) flags)
+ -- , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
+ --              cppSymbols (compiler d) ++
                  (if isHaskell98 (compiler d) then haskell98SymsForCpp else [])
     , defs     = (map tail . filter (\v -> head v == 'D')) flags
     , ignoreHi = (map tail . filter (\v -> head v == 'N')) flags
@@ -116,12 +113,33 @@ decode progArgs =
                             { globalConfig = readConfig (tail x)
                             , localConfig = Nothing }
                    _   -> error "hmake: only one -fconfigfile option allowed\n" 
-    , compiler = case filter (\v-> "hc=" `isPrefixOf` v) flags of
+    , compiler = error "compiler not known yet"
+ -- , compiler = case filter (\v-> "hc=" `isPrefixOf` v) flags of
+ --                []  -> usualCompiler (config d)
+ --                [x] -> matchCompiler (drop 3 x) (config d)
+ --                _   -> error "hmake: only one -hc=compiler option allowed\n" 
+    }
+  in do
+  cc <- unDyn $ case filter (\v-> "hc=" `isPrefixOf` v) flags of
                    []  -> usualCompiler (config d)
                    [x] -> matchCompiler (drop 3 x) (config d)
                    _   -> error "hmake: only one -hc=compiler option allowed\n" 
-    }
-  in d
+  let d' = d {
+         pathSrc  = (map tail . filter (\v -> head v == 'I')) flags ++
+                    (map tail . filter (\v -> head v == 'i')) flags ++
+                    if isopt "keepPrelude" then pathPrel d' else []
+       , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
+                    includePaths (compiler d') ++
+                    packageDirs (compiler d')
+                                (map (drop 8) $
+                                 filter ("package="`isPrefixOf`) flags)
+       , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
+                    cppSymbols (compiler d') ++
+                    (if isHaskell98 (compiler d') then haskell98SymsForCpp
+                                                  else [])
+       , compiler = cc
+       }
+  return d'
 
  where
   flags = (map tail . filter isflag) progArgs

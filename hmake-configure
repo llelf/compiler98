@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-HMAKEVERSION="3.09 (2004-11-13)" export HMAKEVERSION
+HMAKEVERSION="3.10 (2005-03-xx)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -43,11 +43,19 @@ case $OS in
   *) EXE="" ;;
 esac
 
+case "$PWD" in
+ *' '*)
+   echo "Error: hmake will not build in a directory with spaces anywhere"
+   echo "       in the full pathname."
+   echo "Suggestion: move the build tree somewhere else."
+   exit 1 ;;
+esac
+
 # We need a working `echo' command: at least Solaris2.6 may not have it.
 case `echo -n hello | wc -c | ( read n ; echo $n )` in
     5) ;;
     *) echo "The builtin 'echo' command doesn't do '-n' - emulating it."
-       ${CC-gcc} -o script/echo script/echo.c
+       ${CCC} -o script/echo script/echo.c
        echo () { $PWD/script/echo "$@"; } ;;
 esac
 
@@ -88,6 +96,7 @@ do
     --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
     --bindir=*)  BINDIR=`echo "$1" | cut -c10-` ;;
     --libdir=*)  LIBDIR=`echo "$1" | cut -c10-` ;;
+    --confdir=*) CONFDIR=`echo "$1" | cut -c11-` ;;
     --mandir=*)  MANDIR=`echo "$1" | cut -c10-` ;;
     --hbcdir=*)  HBCDIR=`echo "$1" | cut -c10-` ;;
     --ghcdir=*)  GHCDIR=`echo "$1" | cut -c10-` ;;
@@ -98,7 +107,7 @@ do
   echo "  --config             Configure only (do not install) [default]"
   echo "  --install            Configure AND install now"
   echo "  --help / -h          Display these options and quit"
-  echo "  --version / -v       Display versions of `basename $0` and hmake"
+  echo "  --version / -v       Display version of hmake"
   echo
   echo "  --buildwith=comp     Build hmake with given compiler [detected]"
   echo "  --buildopts=flags    Give extra flags to build-compiler [none]"
@@ -109,9 +118,10 @@ do
   echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
   echo "  --prefix=rootdir     |"
   echo "  --installdir=rootdir | Use rootdir as base for installation [/usr/local]"
-  echo "  --bindir=dir         Install scripts in dir [rootdir/bin]"
-  echo "  --libdir=dir         Install libraries in dir [rootdir/lib/hmake]"
-  echo "  --mandir=dir         Install man pages in dir [rootdir/man/man1]"
+  echo "  --bindir=dir         Install scripts in dir [\$rootdir/bin]"
+  echo "  --libdir=dir         Install libraries in dir [\$rootdir/lib/hmake]"
+  echo "  --confdir=dir        Install configuration data in dir [\$libdir]"
+  echo "  --mandir=dir         Install man pages in dir [\$rootdir/man/man1]"
   echo
   echo "  [+/-]bin             Do/don't (re-)install scripts [+bin]"
   echo "  [+/-]lib             Do/don't (re-)install executables [+lib]"
@@ -138,6 +148,7 @@ fi
 INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date`"
 
 LIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
+CONFDIR=${CONFDIR-$LIBDIR}
 BINDIR=${BINDIR-$INSTALLDIR/bin}
 MANDIR=${MANDIR-$INSTALLDIR/man/man1}
 #HBCDIR=${HBCDIR}
@@ -147,15 +158,20 @@ case $OS in
   CYGWIN*) INSTALLDIR=`cygpath -w "$INSTALLDIR" | tr '\\\\' '/'`
            BUILDDIR=`cygpath -w "$BUILDDIR" | tr '\\\\' '/'`
            LIBDIR=`cygpath -w "$LIBDIR" | tr '\\\\' '/'`
+           CONFDIR=`cygpath -w "$CONFDIR" | tr '\\\\' '/'`
            BINDIR=`cygpath -w "$BINDIR" | tr '\\\\' '/'`
      ;;
   *) ;;
 esac
 
+case $MACHINE in
+  *Darwin[56]) CCC=${CC-cc};;
+  *)           CCC=${CC-gcc};;
+esac
 #case $OS in
-#  SunOS)  LIBCOMPAT=" -lsocket"  ;;
-#  NetBSD) LIBCOMPAT=" -lcompat"  ;;
-#  *)      LIBCOMPAT=  ;;
+# SunOS)  LIBCOMPAT=" -lsocket"  ;;
+# NetBSD) LIBCOMPAT=" -lcompat"  ;;
+# *)      LIBCOMPAT=  ;;
 #esac
 
 # Detect Haskell compilers and choose one for building with.
@@ -163,7 +179,7 @@ esac
 if [ -d src ]	# Delay this step if it is a binary (src-less) distribution.
 then
   echo "--------"
-  script/confhc $BUILDWITH
+  CCC=$CCC script/confhc $BUILDWITH
   echo "--------"
 fi
 
@@ -178,6 +194,7 @@ then
   if [ "$LIB" = "yes" ]
   then
     echo "hmake binaries:       $LIBDIR/$MACHINE"
+    echo "hmakerc:              $CONFDIR/$MACHINE"
   else
     echo "Executables and libs: (none)"
   fi
@@ -247,7 +264,7 @@ then
   else
     echo "You are going to build hmake with:          $BUILDWITH"
   fi
-  GHCSYM=`cat targets/$MACHINE/ghcsym`
+  GHCSYM=`cat targets/$MACHINE/ghcsym || true`
   if [ "$BUILDOPTS" != "" ]
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
@@ -262,16 +279,16 @@ then
 void test (void) { mvaddstr(1,2,"hello world"); }
 int main (void) { test(); }
 !!!
-      if ${CC-gcc} -o curses curses.c >/dev/null 2>/dev/null
+      if ${CCC} -o curses curses.c >/dev/null 2>/dev/null
       then CURSES=""
       else
-        if ${CC-gcc} -o curses curses.c -lncurses >/dev/null 2>/dev/null
+        if ${CCC} -o curses curses.c -lncurses >/dev/null 2>/dev/null
         then CURSES="-lncurses"
         else
-          if ${CC-gcc} -o curses curses.c -lcurses >/dev/null 2>/dev/null
+          if ${CCC} -o curses curses.c -lcurses >/dev/null 2>/dev/null
           then CURSES="-lcurses"
           else
-            if ${CC-gcc} -o curses curses.c -lcurses -ltermcap \
+            if ${CCC} -o curses curses.c -lcurses -ltermcap \
   							>/dev/null 2>/dev/null
             then CURSES="-lcurses -ltermcap"
             else CURSES="-ltermcap -lcurses"     # don't know a good default?
@@ -291,10 +308,10 @@ int main (void) { test(); }
     if [ "$READLINE" = "" ]
     then
       echo 'main(){readline();}' >rd.c
-      if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
+      if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
       then echo '-lreadline (detected)'
            READLINE="-DUSE_READLINE=1 -lreadline"
-      else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
+      else if ${CCC} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
         then echo "-lreadline $CURSES (detected)"
            READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
         else echo "no  (detected)"
@@ -352,19 +369,22 @@ then
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "READLINE=\"$READLINE\"";
       echo "EXE=$EXE";
-      echo "GHCSYM=`cat targets/$MACHINE/ghcsym`";
+      echo "GHCSYM=`cat targets/$MACHINE/ghcsym || true`";
       echo "TRUE=$TRUE";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Adding build scripts for hmake, hmake-config, and hi to"
     echo "    $BUILDBINDIR..."
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hmake-config $BUILDBINDIR/hi
@@ -392,14 +412,17 @@ else	# [ "$INSTALL" = "yes" ]
     cp script/harch $DESTDIR$BINDIR
     echo -n "hmake "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
+    sed -e "s|ConfDir|$CONFDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
     echo -n "hmake-config "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ConfDir|$CONFDIR|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo -n "hi "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hi.inst |\
+    sed -e "s|ConfDir|$CONFDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo
@@ -417,12 +440,19 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
+    echo "Conf files go into:"
+    echo -n "    $DESTDIR$CONFDIR/$MACHINE"
+    if [ ! -d $DESTDIR$CONFDIR/$MACHINE ]
+    then mkdir -p $DESTDIR$CONFDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
     echo -n "    "
     for file in $BUILDLIBDIR/$MACHINE/*
     do
       echo -n "`basename $file` "
       if [ -f $file ]; then cp -p $file $DESTDIR$LIBDIR/$MACHINE; fi
     done
+    mv $DESTDIR$LIBDIR/$MACHINE/hmakerc $DESTDIR$CONFDIR/$MACHINE || true
     echo
   else
     echo 'Not (re-)installing executables and library files'
@@ -451,6 +481,7 @@ fi
 echo "Saving current configuration in targets/$MACHINE/config.cache"
 ( echo "INSTALLDIR=$INSTALLDIR" ;
   if [ "$LIBDIR" != "$INSTALLDIR/lib/hmake" ]; then echo "LIBDIR=$LIBDIR" ; fi;
+  if [ "$CONFDIR" != "$LIBDIR" ]; then echo "CONFDIR=$CONFDIR" ; fi;
   if [ "$MANDIR" != "$INSTALLDIR/man/man1" ]; then echo "MANDIR=$MANDIR" ; fi;
   if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
   if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;

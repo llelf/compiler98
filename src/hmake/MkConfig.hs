@@ -1,6 +1,6 @@
 -----------------------------------------------------------------------------
 -- |
--- Module      :  Main
+-- Module      :  MkConfig
 -- Copyright   :  Malcolm Wallace
 -- 
 -- Maintainer  :  Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
@@ -12,17 +12,12 @@
 
 module Main where
 
-import Compiler (HC(..))
 import Config
-import Platform (unsafePerformIO,escape,windows,exe)
-import RunAndReadStdout (runAndReadStdout, basename, dirname)
-import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
-                 ,Permissions(..),renameFile,createDirectory)
-import System (exitWith,ExitCode(..),getArgs,getEnv,getProgName)
-import List (intersperse,nub,isPrefixOf,sort)
-import Char (isDigit)
-import Monad (foldM,when)
-import Maybe (isJust,fromJust)
+import RunAndReadStdout (dirname)
+import Directory (createDirectory)
+import System (exitWith,ExitCode(..),getArgs)
+import List (nub,sort)
+import Maybe (fromJust)
 import IO (stderr,isDoesNotExistError)
 #ifdef __HBC__
 import IOMisc (hPutStrLn)
@@ -44,20 +39,23 @@ main = do
                    (case lfile of
                       Just f -> putStrLn ("Personal config file is:\n    "++f)
                       Nothing -> return ())
+                   known <- mapM unDyn $ knownComps config
                    putStrLn "Known compilers:"
                    mapM_ putStrLn
                          ((reverse . sort
                            . map (\c-> "    "++compilerPath c
                                        ++"\t("++compilerVersion c++")"))
-                          (knownComps config))
+                          known)
                    putStrLn "Default compiler:"
                    putStrLn ("    "++defaultComp config)
     [hc] -> do -- no command, assume 'add'
-               cc <- configure (hcStyle hc) hc
+               cc <- configure hc
                config' <- add cc config
                writeBack gfile lfile config'
-    ["add",hc]     -> do cc <- configure (hcStyle hc) hc
+    ["add",hc]     -> do cc <- configure hc
                          config' <- add cc config
+                         writeBack gfile lfile config'
+    ["add-dyn",hc] -> do config' <- add (DynCompiler hc) config
                          writeBack gfile lfile config'
     ["delete",hc]  -> do config' <- delete config gfile hc
                          writeBack gfile lfile config'
@@ -65,9 +63,7 @@ main = do
                          writeBack gfile lfile config'
     ["list",hc]    -> do let cc = matchCompiler hc config
                          putStrLn (show cc)
-    _ -> do hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
-                 ++"       hmake-config [configfile] [add|delete|default] hc\n"
-                 ++"                  -- hc is name/path of a Haskell compiler")
+    _ -> do hPutStrLn stderr usage
             exitWith (ExitFailure 1)
   ----
   exitWith ExitSuccess
@@ -77,10 +73,7 @@ main = do
     findConfigFile args =
       case args of
         [] -> do let (g,_) = defaultConfigLocation False
-                 hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
-                  ++"       hmake-config [configfile] [add|delete|default] hc\n"
-                  ++"              -- hc is name/path of a Haskell compiler\n"
-                  ++"  default configfile is:\n    "++g)
+                 hPutStrLn stderr (usage++"\ndefault configfile is:\n    "++g)
                  exitWith (ExitFailure 1)
         (file:"new":_)  -> return (file, Nothing, tail args)
         (file:"list":_) -> return (file, Nothing, tail args)
@@ -88,6 +81,9 @@ main = do
         ("list":_) ->
              let (g,l) = defaultConfigLocation False in return (g, l, args)
         _ -> let (g,l) = defaultConfigLocation True in return (g, l, args)
+    usage = "Usage: hmake-config [configfile] list\n"
+         ++ "       hmake-config [configfile] [add|add-dyn|delete|default] hc\n"
+         ++ "              -- hc is name/path of a Haskell compiler"
 
 {-
     parseConfigFile :: String -> FilePath -> IO HmakeConfig
@@ -98,7 +94,7 @@ main = do
                     hPutStrLn stderr ("hmake-config: Warning: "
                                       ++"Config file not found:\n  '"
                                       ++path++"'")
-                    globalDir <- getEnv "HMAKEDIR"
+                    globalDir <- getEnv "HMAKECONFDIR"
                     let global = globalDir++"/"++machine++"/hmakerc"
                     if path == global
                       then newConfigFile path
@@ -207,6 +203,7 @@ add hc config = return $
                           global { knownCompilers =
                                              nub (hc: knownCompilers global)}}
 
+{-
 -- | configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
 configure Ghc ghcpath = do
@@ -379,4 +376,4 @@ which exe cmd =
     perms file = do
         p <- getPermissions file
         return (if executable p then Just file else Nothing)
-
+-}

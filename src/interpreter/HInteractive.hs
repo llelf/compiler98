@@ -36,8 +36,8 @@ main = do
                                return (cfg, Just file, opts)
         _ -> do cfg <- readPersonalConfig (defaultConfigLocation False)
                 return (cfg,Nothing,options)
-  let defaultComp = usualCompiler cfg
-      opts = options ++ extraHiOptions defaultComp
+  defaultComp <- unDyn (usualCompiler cfg)
+  let opts = options ++ extraHiOptions defaultComp
   putStrLn banner
   putStrLn (replicate 43 ' '++
             "... Using compiler "++compilerPath defaultComp++" ...\n")
@@ -229,13 +229,14 @@ commands ws state = let target = tail ws in do
           putStrLn ("Current compiler: "++compilerPath (compiler state)
                     ++" ("++compilerVersion (compiler state)++")")
           putStr   "Compilers available:\n     "
+          kcs <- (mapM unDyn . knownComps . config) state
           putStrLn ((concat . intersperse ("\n     ")
                     . reverse . sort
                     . map (\cc->compilerPath cc++"\t("++compilerVersion cc++")")
-                    . knownComps . config) state)
+                    ) kcs)
        else if compilerKnown (head target) (config state) then do
-               let newcomp = matchCompiler (head target) (config state)
-                   newopts = ((options state)
+               newcomp <- unDyn (matchCompiler (head target) (config state))
+               let newopts = ((options state)
                                        \\ extraHiOptions (compiler state))
                                        ++ extraHiOptions newcomp
                makeclean ".o" (modules state)

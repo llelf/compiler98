@@ -4,14 +4,14 @@ OBJDIR = ${BUILDDIR}/obj/interpreter
 TARGET = ${DST}/HInteractive$(EXE)
 
 SRCS   = HInteractive.hs HiConfig.hs SimpleLineEditor.hs LexModule.hs
-OTHERS = Unlit.hs Compiler.hs Config.hs	Platform.hs # from src/hmake
+OTHERS = Unlit.hs Compiler.hs Config.hs	Platform.hs RunAndReadStdout.hs # from src/hmake
 
 CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 
 ifeq "$(findstring ghc, ${HC})" "ghc"
 HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
-                 -package lang -package util -package base $(READLINE) )
+      -package lang -package util -package base $(READLINE) )
 export HFLAGS
 endif
 ifeq "$(findstring hbc, ${HC})" "hbc"
@@ -25,7 +25,7 @@ endif
 
 all: $(TARGET)
 cfiles: cleanC $(SRCS)
-	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -package base -C HInteractive.hs
+	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -C HInteractive.hs
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o
 cleanC: clean

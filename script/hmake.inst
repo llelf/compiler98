@@ -8,8 +8,9 @@ INSTALLVER="InstallVer"
 SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
+HMAKECONFDIR=${HMAKECONFDIR-ConfDir}
 TMP=${TMP-/tmp}
-export HMAKEDIR		# to find location of global hmakerc file.
+export HMAKEDIR HMAKECONFDIR	# to find location of global hmakerc file.
 
 MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}	# the real `hmake' program
 OLDER=${OLDER-$HMAKEDIR/$MACHINE/Older}		# a helper program
@@ -249,8 +250,8 @@ then
     if [ -f $HOME/.hmakerc/$MACHINE ]
     then COMP=`grep defaultCompiler $HOME/.hmakerc/$MACHINE |cut -d'"' -f2`
     else
-      if [ -f $HMAKEDIR/$MACHINE/hmakerc ]
-      then COMP=`grep defaultCompiler $HMAKEDIR/$MACHINE/hmakerc |cut -d'"' -f2`
+      if [ -f $HMAKECONFDIR/$MACHINE/hmakerc ]
+      then COMP=`grep defaultCompiler $HMAKECONFDIR/$MACHINE/hmakerc |cut -d'"' -f2`
       else COMP=$BUILTBY	# a desparate fallback position
       fi
     fi
@@ -261,22 +262,29 @@ fi
 OD=
 # Define the characteristics of each known compiler.
 compilerstyle () {
-  case `basename $1` in
+  COMPILERSTYLE=`basename $1 | cut -c1-3`
+  case $COMPILERSTYLE in
+    ghc|hbc|nhc) ;;
+    *) COMPILERSTYLE=`$1 2>&1 | head -1 | cut -c1-3`;;
+  esac
+  case $COMPILERSTYLE in
     hbc)   RTSOPTIONSTYLE=minus
            CTSOPTIONSTYLE=none
            IMPORTOPTIONSTYLE=minusi
            export LMLDIR HBCDIR
            ;;
-    nhc98*)RTSOPTIONSTYLE=rts
+    nhc)   RTSOPTIONSTYLE=rts
            CTSOPTIONSTYLE=cts
            IMPORTOPTIONSTYLE=minusP
            OD="-od"
            ;;
-    ghc*)  RTSOPTIONSTYLE=none
+    ghc)   RTSOPTIONSTYLE=none
            CTSOPTIONSTYLE=none
            IMPORTOPTIONSTYLE=minusi
            ;;
-    *)     ;;
+    *)     echo "No compiler style found" >&2
+           exit 1
+           ;;
   esac
 }
 

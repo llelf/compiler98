@@ -8,12 +8,11 @@ TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
-          MkProg.hs IsPrefixOf.hs Compiler.hs PreProcessor.hs \
-	  PackageConfig.hs Config.hs RunAndReadStdout.hs
+          MkProg.hs Compiler.hs PreProcessor.hs \
+	  PackageConfig.hs RunAndReadStdout.hs Argv.hs
 CPPHSSRCS  = CppIfdef.hs ParseLib.hs Position.hs ReadFirst.hs Tokenise.hs \
 	     SymTab.hs HashDefine.hs
-CPPSRCS = Argv.hs Graph.hs GetDep.hs Compat.hs Imports.hs \
-	  Platform.hs
+CPPSRCS = Graph.hs GetDep.hs Compat.hs Imports.hs Platform.hs Config.hs
 CFGSRCS = RunAndReadStdout.hs Config.hs Compiler.hs Platform.hs
  
 
@@ -29,15 +28,16 @@ AUX     = Makefile* BuildNew* HISTORY README* Summary TODO nhcmakeR cfiles \
           hmake hmake.1
 
 HC = $(LOCAL)nhc98	# can be overridden by caller HC=...
+BUILDCOMP = nhc		# override this too if you override HC
 HFLAGS = $(shell echo $(BUILDOPTS)) #-$(CFG)
 
-ifeq "nhc98" "$(findstring nhc98, ${HC})"
+ifeq "nhc" "$(BUILDCOMP)"
 HEAP = -H4M
 endif
-ifeq "ghc" "$(findstring ghc, ${HC})"
+ifeq "ghc" "$(BUILDCOMP)"
 HFLAGS += $(shell ${LOCAL}fixghc ${GHCSYM} -package lang)
 endif
-ifeq "hbc" "$(findstring hbc, ${HC})"
+ifeq "hbc" "$(BUILDCOMP)"
 hbc: CppIfdef.hs
 	sed -e 's/System.IO.Unsafe/IOExts/' CppIfdef.hs >hbc
 	cp -a hbc CppIfdef.hs
@@ -133,7 +133,8 @@ ${OBJDIR}/RunAndReadStdout.$O:	${OBJDIR}/Platform.$O
 ${OBJDIR}/PackageConfig.$O:	${OBJDIR}/Config.$O ${OBJDIR}/Compiler.$O \
 			${OBJDIR}/Platform.$O ${OBJDIR}/RunAndReadStdout.$O 
 ${OBJDIR}/Platform.$O:	
-${OBJDIR}/Config.$O:	${OBJDIR}/Compiler.$O ${OBJDIR}/Platform.$O
+${OBJDIR}/Config.$O:	${OBJDIR}/Compiler.$O ${OBJDIR}/Platform.$O \
+			${OBJDIR}/RunAndReadStdout.$O 
 ${OBJDIR}/Compiler.$O:	
 ${OBJDIR}/ListUtil.$O:	
 ${OBJDIR}/Argv.$O:	${OBJDIR}/ListUtil.$O ${OBJDIR}/Compiler.$O \
@@ -142,17 +143,13 @@ ${OBJDIR}/Argv.$O:	${OBJDIR}/ListUtil.$O ${OBJDIR}/Compiler.$O \
 ${OBJDIR}/MkProg.$O:	${OBJDIR}/Argv.$O ${OBJDIR}/GetDep.$O \
 			${OBJDIR}/Getmodtime.$O ${OBJDIR}/ListUtil.$O \
 			${OBJDIR}/Order.$O ${OBJDIR}/Output.$O 
-${OBJDIR}/MkConfig.$O:	${OBJDIR}/Compiler.$O ${OBJDIR}/Config.$O \
-			${OBJDIR}/Platform.$O
+${OBJDIR}/MkConfig.$O:	${OBJDIR}/Compiler.$O ${OBJDIR}/Config.$O
 ${OBJDIR}/Older.$O:	
 
-ifeq "hbc" "$(HC)"
-${OBJDIR}/Argv.$O:	${OBJDIR}/IsPrefixOf.$O
-endif
 
 
 # C-files dependencies.
-MkConfig.$C: Compiler.$C Config.$C Platform.$C RunAndReadStdout.$C 
+MkConfig.$C: Compiler.$C Config.$C
 Output.$C: ListUtil.$C FileName.$C Argv.$C PreProcessor.$C Config.$C \
 	RunAndReadStdout.$C 
 Utils.$C: Compat.$C ListUtil.$C 
@@ -178,7 +175,7 @@ GetDep.$C: Getmodtime.$C Imports.$C FileName.$C Unlit.$C Argv.$C \
 RunAndReadStdout.$C: Platform.$C 
 PackageConfig.$C: Config.$C Compiler.$C Platform.$C RunAndReadStdout.$C 
 Platform.$C: 
-Config.$C: Compiler.$C Platform.$C 
+Config.$C: Compiler.$C Platform.$C RunAndReadStdout.$C
 Compiler.$C: 
 ListUtil.$C: 
 Argv.$C: ListUtil.$C Compiler.$C Config.$C PackageConfig.$C Platform.$C 

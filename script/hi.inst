@@ -4,6 +4,7 @@
 #	(also ensures that hi's config is identical to hmake)
 SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
+HMAKECONFDIR=${HMAKECONFDIR-ConfDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 INSTALLVER="InstallVer"
 export MACHINE INSTALLVER HMAKEDIR SCRIPTDIR

@@ -9,7 +9,7 @@
 # corresponding definition in Makefile.inc!
 VERSIONNUM=117
 NHC98VERSION="v1.17 (CVS version)"
-HMAKEVERSION="3.09 (2004-11-13)" export HMAKEVERSION
+HMAKEVERSION="3.10 (2005-03-xx)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
 # (remember to keep in sync with PACKAGES defn in top-level Makefile)
@@ -41,9 +41,9 @@ INSTALLDIR=/usr/local
 
 USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
-case $OS in
-  Darwin*) CCC=${CC-cc};;
-  *)       CCC=${CC-gcc};;
+case $MACHINE in
+  powerpc-Darwin[56]) CCC=${CC-cc};;
+  *)                  CCC=${CC-gcc};;
 esac
 PWD=`pwd`
 case $OS in
@@ -390,7 +390,7 @@ int main (void) { test(); }
           fi
         fi
       fi
-      rm -f curses curses.c
+      rm -f curses curses.o curses.c
       echo -n "$CURSES "
       echo '(detected) '
     else
@@ -553,15 +553,18 @@ then
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
     echo -n "hmake "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
     echo -n "hmake-config "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
     echo -n "hi "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
+    sed -e "s|ConfDir|$BUILDLIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
     echo -n "greencard "
@@ -686,15 +689,18 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/nhc98
     echo "	hmake"
     sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hmake.inst |\
+    sed -e "s|ConfDir|$HMAKELIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
     echo "	hmake-config"
     sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ConfDir|$HMAKELIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo "	hi"
     sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hi.inst |\
+    sed -e "s|ConfDir|$HMAKELIBDIR|" |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo "	hood"

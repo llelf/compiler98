@@ -56,6 +56,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
       if ok
         then do
           let ghcpkg = matching ghc (ghcPkg ghc (compilerVersion config))
+       -- ghcpkg <- runAndReadStdout
+       --                  ("echo `" ++ ghc ++ " --print-libdir`/bin/ghc-pkg")
        -- pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
           pkgs <- runAndReadStdout (ghcpkg++" -l")
           let (ok,bad) = partition (\p-> elemBy versionMatch p (deComma pkgs))

@@ -22,9 +22,9 @@ import System
 
 
 main =
- getArgs >>= \ args ->
+ getArgs >>= \args->
+ decode args >>= \d->
  let
-  d = decode args
   echo = not (quiet d)
 
   order g = (scctsort . map (\(f,(tps,i)) -> (f,i))) g
