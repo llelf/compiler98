@@ -4,18 +4,11 @@ module IOExtras
 
 import Ix
 import DIOArray
+import _E
+
+foreign import primNewVectorC :: Int -> _E a -> IO (Vector a)
 
 newIOArray :: Ix ix => (ix,ix) -> elt -> IO (IOArray ix elt)
-newIOArray bounds elt =
-    mkVector bounds elt >>= return . MkIOArray bounds
-
-
--- primVector is used identically for Array and IOArray
-primVector primitive 2 :: Int -> [(Int,a)] -> Vector a
-
-mkVector :: (Ix ix) => (ix,ix) -> elt -> IO (Vector elt)
-mkVector bounds val =
-    let ivs =  [ (index bounds i, val) | i <- range bounds ]
-        force [] f = f
-        force ((i,v):xs) f = i `seq` force xs f
-    in force ivs (return (primVector (rangeSize bounds) ivs))
+newIOArray bounds elt = do
+    v <- primNewVectorC (rangeSize bounds) (_E elt)
+    return (MkIOArray bounds v)

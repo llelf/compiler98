@@ -2,7 +2,7 @@ module IOExtras
   ( unsafePtrEq
   ) where
 
-import FFI
+--import FFI
 
 foreign import "unsafePtrEq" unsafePtrEq :: a -> a -> Bool
 

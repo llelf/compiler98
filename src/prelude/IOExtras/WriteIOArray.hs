@@ -5,12 +5,10 @@ module IOExtras
 import FFI
 import Ix
 import DIOArray
+import _E
 
 writeIOArray :: Ix ix => IOArray ix elt -> ix -> elt -> IO ()
 writeIOArray (MkIOArray b v) ix elt =
-    let i = index b ix
-    in
-    primUpdateVector i elt v   `seq`   return ()
+    primUpdateVectorC (index b ix) (_E elt) v
 
--- updateVector is currently used only for IOArray, not for Array
-primUpdateVector primitive 3 :: Int -> a -> Vector a -> ()
+foreign import primUpdateVectorC :: Int -> _E a -> Vector a -> IO ()

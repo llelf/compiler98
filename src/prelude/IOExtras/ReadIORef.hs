@@ -2,8 +2,9 @@ module IOExtras
   ( readIORef
   ) where
 
-import FFI
 import DIORef
+import ReadIOArray
 
 readIORef :: IORef a -> IO a
-readIORef (IORef r) = deRefStablePtr r
+readIORef (IORef a) = do
+    readIOArray a 0
