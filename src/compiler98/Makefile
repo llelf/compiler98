@@ -71,7 +71,7 @@ realclean: clean
 	rm -f *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
-	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main $(LINK)
+	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main $(BUILDOPTS) $(LINK)
 	mv $(OBJDIR)/Main $(TARGET)
 	strip $(TARGET)
 ${OBJDIR}:

@@ -13,7 +13,7 @@ OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
 GCOBJS = $(patsubst %.gc,${OBJDIR}/%.o,${GCSRCS})
 MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
 CFILES = $(patsubst %.hs,%.c,${SRCS})
-GCCFILES = $(patsubst %.gc,%.c,${SRCS})
+GCCFILES = $(patsubst %.gc,%.c,${GCSRCS})
 MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
 
 HFLAGS = -part
