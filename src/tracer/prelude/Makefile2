@@ -1,0 +1,243 @@
+
+PROF=
+
+COMPILE=nhc98 $(PROF) -part -prelude -redefine -dbgprelude -c -P/grp/fp/nhc98/lib_b/debug/
+DBG_COMPILE=nhc98 $(PROF) -part -prelude -redefine -c -dbgtrans -P/grp/fp/nhc98/lib_b/debug/
+PLAIN_COMPILE=nhc98 -c $(PROF) -part -prelude -redefine -dbgprelude
+
+OBJS= _Zap_Stack.o _Zap_Arg.o _Foldr.o _Filter.o _Driver.o ZipWith.o Words.o Tail.o StartDbg.o SplitAt.o Span.o Snd.o Shows.o Show_Int.o ShowString.o ShowSigned.o ShowParen.o ShowChar.o Show.o Reverse.o Repeat.o Real_Int.o PutStr.o PutChar.o Otherwise.o Ord_Ordering.o Ord_Int.o Ord_Char.o Ord_Bool.o OrOr.o Or.o Num_Int.o Not.o Monad_List.o Monad_IO.o MonadZero_List.o MonadPlus_List.o Lines.o Length.o Iterate.o IsSpace.o Integral_Int.o Index.o Id.o Head.o Functor_List.o Fst.o Foldr.o Foldl.o Flip.o Filter.o ExitWith.o Error.o Eq_Ordering.o Eq_List.o Eq_Int.o Eq_Char.o Eq_Bool.o Eq_2.o Enum_Ordering.o Enum_Int.o Enum_Char.o Enum_Bool.o Elem.o DropWhile.o DUnit.o DOrdering.o DList.o DIOError.o DIO.o DExitCode.o DEither.o DBool.o D9.o D8.o D7.o D4.o D3.o D2.o D11.o Const.o Concat.o Compose.o CShow.o CReal.o COrd.o CNum.o CMonadZero.o CMonadPlus.o CMonad.o CIntegral.o CFractional.o CEq.o CEnum.o Break.o ApplyM.o Any.o AndAnd.o PrimOps.o
+
+
+#CEval.o CExitWith.o CHPutChar.o HPutChar.o HPutStr.o PrimError.o PrimExitWith.o PrimHPutChar.o ShowInt.o Show_IOError.o 
+
+# Doesn't work:
+# ExitWith.hs
+# MonadIO.hs
+# Num_Int.hs
+# PutChar.hs
+
+
+objs: $(OBJS)
+
+PrimOps.o: PrimOps.hs
+	$(COMPILE) PrimOps.hs
+AndAnd.o: AndAnd.hs
+	$(DBG_COMPILE) AndAnd.hs
+Any.o: Any.hs
+	$(DBG_COMPILE) Any.hs
+Apa.o: Apa.hs
+	$(PLAIN_COMPILE) Apa.hs
+ApplyM.o: ApplyM.hs
+	$(DBG_COMPILE) ApplyM.hs
+Break.o: Break.hs
+	$(DBG_COMPILE) Break.hs
+CEnum.o: CEnum.hs
+	$(DBG_COMPILE) CEnum.hs
+CEq.o: CEq.hs
+	$(DBG_COMPILE) CEq.hs
+#CEval.o: CEval.hs
+#	$(DBG_COMPILE) CEval.hs
+#CExitWith.o: CExitWith.hs
+#	$(DBG_COMPILE) CExitWith.hs
+#CHPutChar.o: CHPutChar.hs
+#	$(DBG_COMPILE) CHPutChar.hs
+CFractional.o: CFractional.hs
+	$(DBG_COMPILE) CFractional.hs
+CIntegral.o: CIntegral.hs
+	$(DBG_COMPILE) CIntegral.hs
+CMonad.o: CMonad.hs
+	$(DBG_COMPILE) CMonad.hs
+CMonadPlus.o: CMonadPlus.hs
+	$(DBG_COMPILE) CMonadPlus.hs
+CMonadZero.o: CMonadZero.hs
+	$(DBG_COMPILE) CMonadZero.hs
+CNum.o: CNum.hs
+	$(DBG_COMPILE) CNum.hs
+Const.o: Const.hs
+	$(DBG_COMPILE) Const.hs
+COrd.o: COrd.hs
+	$(DBG_COMPILE) COrd.hs
+CReal.o: CReal.hs
+	$(DBG_COMPILE) CReal.hs
+CShow.o: CShow.hs
+	$(DBG_COMPILE) CShow.hs
+Compose.o: Compose.hs
+	$(DBG_COMPILE) Compose.hs
+Concat.o: Concat.hs
+	$(DBG_COMPILE) Concat.hs
+D2.o: D2.hs
+	$(DBG_COMPILE) D2.hs
+D3.o: D3.hs
+	$(DBG_COMPILE) D3.hs
+D4.o: D4.hs
+	$(DBG_COMPILE) D4.hs
+D7.o: D7.hs
+	$(DBG_COMPILE) D7.hs
+D8.o: D8.hs
+	$(DBG_COMPILE) D8.hs
+D9.o: D9.hs
+	$(DBG_COMPILE) D9.hs
+D11.o: D11.hs
+	$(DBG_COMPILE) D11.hs
+DBool.o: DBool.hs
+	 $(PLAIN_COMPILE) DBool.hs
+DEither.o: DEither.hs
+	$(DBG_COMPILE) DEither.hs
+DExitCode.o: DExitCode.hs
+	$(DBG_COMPILE) DExitCode.hs
+DIO.o: DIO.hs
+	$(DBG_COMPILE) DIO.hs
+DIOError.o: DIOError.hs
+	$(DBG_COMPILE) DIOError.hs
+DList.o: DList.hs
+	$(DBG_COMPILE) DList.hs
+DOrdering.o: DOrdering.hs
+	$(DBG_COMPILE) DOrdering.hs
+DropWhile.o: DropWhile.hs
+	$(DBG_COMPILE) DropWhile.hs
+DUnit.o: DUnit.hs
+	$(DBG_COMPILE) DUnit.hs
+Elem.o: Elem.hs
+	$(DBG_COMPILE) Elem.hs
+Enum_Bool.o: Enum_Bool.hs
+	$(DBG_COMPILE) Enum_Bool.hs
+Enum_Char.o: Enum_Char.hs
+	$(DBG_COMPILE) Enum_Char.hs
+Enum_Int.o: Enum_Int.hs
+	$(DBG_COMPILE) Enum_Int.hs
+Enum_Ordering.o: Enum_Ordering.hs
+	$(DBG_COMPILE) Enum_Ordering.hs
+Eq_2.o: Eq_2.hs
+	$(DBG_COMPILE) Eq_2.hs
+Eq_Bool.o: Eq_Bool.hs
+	$(DBG_COMPILE) Eq_Bool.hs
+Eq_Char.o: Eq_Char.hs
+	$(DBG_COMPILE) Eq_Char.hs
+Eq_Int.o: Eq_Int.hs
+	$(DBG_COMPILE) Eq_Int.hs
+Eq_List.o: Eq_List.hs
+	$(DBG_COMPILE) Eq_List.hs
+Eq_Ordering.o: Eq_Ordering.hs
+	$(DBG_COMPILE) Eq_Ordering.hs
+Error.o: Error.hs
+	$(COMPILE) Error.hs
+ExitWith.o: ExitWith.hs
+	$(COMPILE) ExitWith.hs
+Filter.o: Filter.hs
+	$(DBG_COMPILE) Filter.hs
+_Filter.o: _Filter.hs
+	$(DBG_COMPILE) _Filter.hs
+Flip.o: Flip.hs
+	$(DBG_COMPILE) Flip.hs
+Foldl.o: Foldl.hs
+	$(DBG_COMPILE) Foldl.hs
+Foldr.o: Foldr.hs
+	$(DBG_COMPILE) Foldr.hs
+_Foldr.o: _Foldr.hs
+	$(DBG_COMPILE) _Foldr.hs
+Fst.o: Fst.hs
+	$(DBG_COMPILE) Fst.hs
+Functor_List.o: Functor_List.hs
+	$(DBG_COMPILE) Functor_List.hs
+Head.o: Head.hs
+	$(DBG_COMPILE) Head.hs
+#HPutChar.o: HPutChar.hs
+#	$(DBG_COMPILE) HPutChar.hs
+#HPutStr.o: HPutStr.hs
+#	$(DBG_COMPILE) HPutStr.hs
+Id.o: Id.hs
+	$(DBG_COMPILE) Id.hs
+Index.o: Index.hs
+	$(DBG_COMPILE) Index.hs
+Integral_Int.o: Integral_Int.hs
+	$(DBG_COMPILE) Integral_Int.hs
+IsSpace.o: IsSpace.hs
+	$(DBG_COMPILE) IsSpace.hs
+Iterate.o: Iterate.hs
+	$(DBG_COMPILE) Iterate.hs
+Length.o: Length.hs
+#	$(DBG_COMPILE) Length.hs
+Lines.o: Lines.hs
+	$(DBG_COMPILE) Lines.hs
+MonadPlus_List.o: MonadPlus_List.hs
+	$(DBG_COMPILE) MonadPlus_List.hs
+MonadZero_List.o: MonadZero_List.hs
+	$(DBG_COMPILE) MonadZero_List.hs
+Monad_IO.o: Monad_IO.hs
+	$(DBG_COMPILE) Monad_IO.hs
+Monad_List.o: Monad_List.hs
+	$(DBG_COMPILE) Monad_List.hs
+Not.o: Not.hs
+	$(DBG_COMPILE) Not.hs
+Num_Int.o: Num_Int.hs
+	$(DBG_COMPILE) Num_Int.hs
+Or.o: Or.hs
+	$(DBG_COMPILE) Or.hs
+OrOr.o: OrOr.hs
+	$(DBG_COMPILE) OrOr.hs
+Ord_Bool.o: Ord_Bool.hs
+	$(DBG_COMPILE) Ord_Bool.hs
+Ord_Char.o: Ord_Char.hs
+	$(DBG_COMPILE) Ord_Char.hs
+Ord_Int.o: Ord_Int.hs
+	$(DBG_COMPILE) Ord_Int.hs
+Ord_Ordering.o: Ord_Ordering.hs
+	$(DBG_COMPILE) Ord_Ordering.hs
+Otherwise.o: Otherwise.hs
+	$(DBG_COMPILE) Otherwise.hs
+#PrimError.o: PrimError.hs
+#	$(DBG_COMPILE) PrimError.hs
+#PrimExitWith.o: PrimExitWith.hs
+#	$(DBG_COMPILE) PrimExitWith.hs
+#PrimHPutChar.o: PrimHPutChar.hs
+#	$(DBG_COMPILE) PrimHPutChar.hs
+#PrimIntFromInteger.o: PrimIntFromInteger.hs
+#	$(DBG_COMPILE) PrimIntFromInteger.hs
+PutChar.o: PutChar.hs
+	$(COMPILE) PutChar.hs
+PutStr.o: PutStr.hs
+	$(DBG_COMPILE) PutStr.hs
+Real_Int.o: Real_Int.hs
+	$(DBG_COMPILE) Real_Int.hs
+Repeat.o: Repeat.hs
+	$(DBG_COMPILE) Repeat.hs
+Reverse.o: Reverse.hs
+	$(DBG_COMPILE) Reverse.hs
+Show.o: Show.hs
+	$(DBG_COMPILE) Show.hs
+ShowChar.o: ShowChar.hs
+	$(DBG_COMPILE) ShowChar.hs
+#ShowInt.o: ShowInt.hs
+#	$(DBG_COMPILE) ShowInt.hs
+ShowParen.o: ShowParen.hs
+	$(DBG_COMPILE) ShowParen.hs
+ShowSigned.o: ShowSigned.hs
+#	$(DBG_COMPILE) ShowSigned.hs
+ShowString.o: ShowString.hs
+	$(DBG_COMPILE) ShowString.hs
+#Show_IOError.o: Show_IOError.hs
+#	$(DBG_COMPILE) Show_IOError.hs
+Show_Int.o: Show_Int.hs
+	$(DBG_COMPILE) Show_Int.hs
+Shows.o: Shows.hs
+	$(DBG_COMPILE) Shows.hs
+Snd.o: Snd.hs
+	$(DBG_COMPILE) Snd.hs
+Span.o: Span.hs
+	$(DBG_COMPILE) Span.hs
+SplitAt.o: SplitAt.hs
+	$(DBG_COMPILE) SplitAt.hs
+StartDbg.o: StartDbg.hs
+	$(COMPILE) StartDbg.hs
+Tail.o: Tail.hs
+	$(DBG_COMPILE) Tail.hs
+Words.o: Words.hs
+	$(DBG_COMPILE) Words.hs
+ZipWith.o: ZipWith.hs
+	$(DBG_COMPILE) ZipWith.hs
+_Driver.o: _Driver.hs
+	$(COMPILE) _Driver.hs
+_Zap_Arg.o: _Zap_Arg.hs
+	$(PLAIN_COMPILE) _Zap_Arg.hs
+_Zap_Stack.o: _Zap_Stack.hs
+	$(PLAIN_COMPILE) _Zap_Stack.hs

@@ -1,0 +1,9 @@
+# Script started at Fri Oct 16 14:21:04 GMT+00:00 1998
+metaconnect "localhost" 6710
+traceselect {1, 1}
+tracetrail
+traceselect {2, 1}
+nodeselect {1, 1}
+nodeselect {-1, 1, 1}
+nodetrail
+# Script finished at Fri Oct 16 14:21:20 GMT+00:00 1998

@@ -1,0 +1,8 @@
+# Script started at Mon Oct 19 15:21:51 GMT+00:00 1998
+metadisconnect
+metaconnect "dogbert.cs.chalmers.se" 6713
+metamessage "Hmm, why did we take the tail of an empty list?"
+nodeselect {-2, 1, 1}
+nodesourceref
+metamessage "Aha, insert's base case is erroneous!"
+# Script finished at Mon Oct 19 15:23:39 GMT+00:00 1998
