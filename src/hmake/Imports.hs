@@ -12,10 +12,10 @@ import Numeric  (readHex)
 #define isAlphaNum isAlphanum
 #endif
 
-getImports :: [String] -> String -> [String]
-getImports defines inp =
+getImports :: FilePath -> [String] -> String -> [String]
+getImports fp defines inp =
   let syms = foldr (insertST.defval) emptyST defines
-  in (leximports . cpp syms Keep . lines) inp
+  in (leximports fp . cpp fp syms Keep . lines) inp
 
 defval sym =
     let (s,d) = break (=='=') sym
@@ -25,10 +25,10 @@ data KeepState = Keep | Drop Int
 
 -- Used to return the list of module names.
 -- Now returns just the list of lines that cpp decides to keep.
-cpp :: SymTab String -> KeepState -> [String] -> [String]
-cpp _ _ [] = []
+cpp :: FilePath -> SymTab String -> KeepState -> [String] -> [String]
+cpp _ _ _ [] = []
 
-cpp syms Keep (l@('#':x):xs) =
+cpp fp syms Keep (l@('#':x):xs) =
          let ws = words x
              cmd = head ws
              sym = head (tail ws)
@@ -36,58 +36,62 @@ cpp syms Keep (l@('#':x):xs) =
                    if null v then "1" else head v
              down = if definedST sym syms then (Drop 1) else Keep
              up   = if definedST sym syms then Keep else (Drop 1)
-             keep str = if gatherDefined syms str then Keep else (Drop 1)
+             keep str = if gatherDefined fp syms str then Keep else (Drop 1)
          in
-         if      cmd == "define" then  cpp (insertST (sym,val) syms) Keep xs
-         else if cmd == "undef"  then  cpp (deleteST sym syms) Keep xs
-         else if cmd == "line"   then  cpp syms  Keep xs
-         else if cmd == "ifndef" then  cpp syms  down xs
-         else if cmd == "ifdef"  then  cpp syms  up   xs
-         else if cmd == "if"     then  cpp syms (keep (drop 2 x)) xs
+         if      cmd == "define" then  cpp fp (insertST (sym,val) syms) Keep xs
+         else if cmd == "undef"  then  cpp fp (deleteST sym syms) Keep xs
+         else if cmd == "line"   then  cpp fp syms  Keep xs
+         else if cmd == "ifndef" then  cpp fp syms  down xs
+         else if cmd == "ifdef"  then  cpp fp syms  up   xs
+         else if cmd == "if"     then  cpp fp syms (keep (drop 2 x)) xs
          else if cmd == "else"   ||
-                 cmd == "elif"   then  cpp syms (Drop 1) xs
-         else if cmd == "endif"  then  cpp syms  Keep xs
-         else l: cpp syms Keep xs    --error ("Unknown directive #"++cmd++"\n")
-cpp syms Keep (x:xs) =
-    x: cpp syms Keep xs
+                 cmd == "elif"   then  cpp fp syms (Drop 1) xs
+         else if cmd == "endif"  then  cpp fp syms  Keep xs
+         else l: cpp fp syms Keep xs
+                                     --error ("Unknown directive #"++cmd++"\n")
+cpp fp syms Keep (x:xs) =
+    x: cpp fp syms Keep xs
 
 -- Old clauses:
 --  | prefix "import " x  = modname (x:xs): cpp syms Keep xs
 --  | otherwise           = cpp syms Keep xs
 
-cpp syms (Drop n) (('#':x):xs) =
+cpp fp syms (Drop n) (('#':x):xs) =
          let ws = words x
              cmd = head ws
              delse    | n==1      = Keep
                       | otherwise = Drop n
              dend     | n==1      = Keep
                       | otherwise = Drop (n-1)
-             keep str | n==1      = if gatherDefined syms str then Keep
+             keep str | n==1      = if gatherDefined fp syms str then Keep
                                     else (Drop 1)
                       | otherwise = Drop n
          in
          if      cmd == "define" ||
                  cmd == "undef"  ||
-                 cmd == "line"   then  cpp syms (Drop n) xs
+                 cmd == "line"   then  cpp fp syms (Drop n) xs
          else if cmd == "ifndef" ||
                  cmd == "if"     ||
-                 cmd == "ifdef"  then  cpp syms (Drop (n+1)) xs
-         else if cmd == "elif"   then  cpp syms (keep (drop 4 x)) xs
-         else if cmd == "else"   then  cpp syms delse xs
-         else if cmd == "endif"  then  cpp syms dend xs
-         else cpp syms (Drop n) xs   --error ("Unknown directive #"++cmd++"\n")
-cpp syms d@(Drop n) (x:xs) =
-  cpp syms d xs
+                 cmd == "ifdef"  then  cpp fp syms (Drop (n+1)) xs
+         else if cmd == "elif"   then  cpp fp syms (keep (drop 4 x)) xs
+         else if cmd == "else"   then  cpp fp syms delse xs
+         else if cmd == "endif"  then  cpp fp syms dend xs
+         else cpp fp syms (Drop n) xs
+				   --error ("Unknown directive #"++cmd++"\n")
+cpp fp syms d@(Drop n) (x:xs) =
+  cpp fp syms d xs
 
 -- leximports takes a cpp-ed list of lines and returns the list of imports
-leximports :: [String] -> [String]
-leximports =
+leximports :: FilePath -> [String] -> [String]
+leximports fp =
   let
     nestcomment n ('{':'-':cs) | n>=0 = nestcomment (n+1) cs
     nestcomment n ('-':'}':cs) | n>0  = nestcomment (n-1) cs
     nestcomment n (c:cs)       | n>0  = nestcomment n cs
     
-    nestcomment 0 ('-':'}':cs)        = error ("found close comment -} but no matching open {-")
+    nestcomment 0 ('-':'}':cs)        =
+        error ("In file "++fp++"\n"
+               ++"    found close comment -} but no matching open {-")
     nestcomment 0 ('-':'-':cs)        =
         if null munch
           || isSpace nextchr
@@ -102,7 +106,9 @@ leximports =
     nestcomment 0 ('"':cs)            = '"': endstring cs
     nestcomment 0 (c:cs)              = c: nestcomment 0 cs
     nestcomment 0 []                  = []
-    nestcomment n []                  = error ("found "++show n++" open comments {- but no matching close -}")
+    nestcomment n []                  =
+        error ("In file "++fp++"\n    found "++show n
+               ++" open comments {- but no matching close -}")
 
     endstring ('\\':'"':cs) = '\\':'"': endstring cs
     endstring ('"':cs) = '"': nestcomment 0 cs
@@ -129,11 +135,11 @@ leximports =
   in (getmodnames . lines . nestcomment 0 . unlines)
 
 ----
-gatherDefined st inp =
+gatherDefined fp st inp =
   case papply (parseBoolExp st) inp of
-    []      -> error "cannot parse #if directive"
+    []      -> error ("In file "++fp++"\n    cannot parse #if directive")
     [(b,_)] -> b
-    _       -> error "ambiguous parse for #if directive"
+    _       -> error ("In file "++fp++"\n    ambiguous parse for #if directive")
 
 parseBoolExp st =
   do  bracket (skip (char '(')) (parseBoolExp st) (skip (char ')'))

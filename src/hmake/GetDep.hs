@@ -54,7 +54,7 @@ dependency opts done ((f,dm):fs) =
            Right (t,p,file,source) ->
                readFile source >>= \content->
                let i = filter (`notElem` (ignoreHi opts))
-                              (getImports (zdefs opts ++ defs opts) file)
+                              (getImports source (zdefs opts ++ defs opts) file)
                                     -- previously (haskellImport kp file)
                    hash ('\n':'#':_) = True
                    hash ('\n':'%':_) = True
