@@ -134,13 +134,14 @@ C_HEADER(cOpenSocket)
   }
 #endif
   if(fp) {
-    FileDesc a;
+    FileDesc *a;
     ForeignObj *fo;
-    a.fp = fp;
-    a.bm = _IOFBF;
-    a.size = -1;
-    fo = allocCData(&a,NULL,gcFile);
-    nodeptr = mkRight(mkCInt((Int)fo));
+    a = (FileDesc*)malloc(sizeof(FileDesc));
+    a->fp = fp;
+    a->bm = _IOFBF;
+    a->size = -1;
+    fo = allocCData(a,gcFile,gcNow);
+    nodeptr = mkRight(mkCInt((int)fo));
   } else {
     nodeptr = mkLeft(mkIOErrorOpen(hostptr,typeptr,mkInt(errno)));
   }
