@@ -9,6 +9,7 @@
 
 #include "node.h"
 #include "mutlib.h"
+#include "initend.h"
 /* #include "runtime.h" -- already included in node.h */
 
 
@@ -34,8 +35,6 @@ void nhc_abort(char *errorMsg)
 #ifdef PROFILE
 static SInfo mainProfInfo = { "<Main>","<Main>","<Main>"};
 #endif
-
-extern int exit_code;
 
 #ifdef __CYGWIN32__
 extern jmp_buf exit_mutator;

@@ -134,10 +134,7 @@ unsigned PP_compiletime[] = {
 #define DEFINT(n)        CONSTRW(1,0) PROFINFO_Int  ,(unsigned)n
 #define DEFCHAR(n)       CONSTRW(1,0) PROFINFO_Char ,(unsigned)n
 
-extern unsigned ints[];
-extern unsigned chars[];
-
-static unsigned startBytes[] = {
+unsigned startBytes[] = {
      DEFINT(-10)
 ,    DEFINT( -9)
 ,    DEFINT( -8)
@@ -411,7 +408,7 @@ unsigned ints[] = {
 ,    DEFINT(256)
 };
 
-static unsigned startChars[] = {
+unsigned startChars[] = {
      DEFCHAR( -1)
 };
 unsigned chars[] = {

@@ -4,7 +4,7 @@
 #include "node.h"
 /* #include "newmacros.h"  -- already included in node.h */
 /* #include "runtime.h"    -- already included in node.h */
-/* #include "bytecode.h"   /* Need value for GA1EVAL */
+/* #include "bytecode.h"   -- need value for GA1EVAL */
 /*                         -- already included in node.h via newmacros.h */
 #include "mark.h"
 #include "mutlib.h"
@@ -116,7 +116,7 @@ NodePtr ind_remove(NodePtr np)
 	op = np;
 	np = (NodePtr)*np;
 	if (np == NULL) {
-	    fprintf(stderr, "Hmm np = NULL, op = 0x%x after %d loops\n",
+	    fprintf(stderr, "Hmm np = NULL, op = %p after %d loops\n",
 		    op, n);
 	    return np;
 	    /* **np;*/
@@ -445,7 +445,7 @@ void markCaf(void)
   while(newCaf != GcEnd) {
     GcConst cptr = newCaf;
     Int size = cptr->sizeArity;
-    Int i,arity = SNDHW(size);
+    Int i;
     size = FSTHW(size);
 
 #ifdef DYNAMIC
@@ -474,7 +474,7 @@ void markCaf(void)
 	  addCaf(CINFO_FINFO(cinfo));
 	} break;
       case CON_TAG:
-	fprintf(stderr,"CON_TAG in markCaf(1) cptr = %8lx sizeArity = %08lx i = %2d %8lx:%08lx\n",(UInt)cptr,cptr->sizeArity,i,(UInt)&cptr->ptr[i],(UInt)nptr);
+	fprintf(stderr,"CON_TAG in markCaf(1) cptr = %p sizeArity = %08x i = %2ld %p:%p\n",cptr,cptr->sizeArity,i,&cptr->ptr[i],nptr);
 	exit(-1);
       case IND_TAG:
 	mark(&cptr->ptr[i]);

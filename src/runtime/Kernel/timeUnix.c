@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #ifdef __hppa__
 #define _POSIX_SOURCE

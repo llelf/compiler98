@@ -9,6 +9,8 @@
 
 #include "node.h"
 #include "mutlib.h"
+#include "initend.h"
+#include "stableptr.h"
 /* #include "runtime.h" -- already included in node.h */
 
 #define ARGSIZE 200	/* Obsolete?  Used to limit number of cmdline args. */
@@ -64,9 +66,9 @@ double numArg(int unit, char *s)
   } else if (SIZE_UNIT & unit) {
     if(prefix<0) prefix = -prefix;
     switch(*s) {
-    case 'b': case 'B': s++; i = assign(i,i*prefix)/sizeof(Node); break;
+    case 'b': case 'B': s++; assign(i,i*prefix)/sizeof(Node); break;
     case 'w': case 'W': s++; assign(i,i*prefix); break;
-    default: i = assign(i,i*prefix)/sizeof(Node); break;
+    default: assign(i,i*prefix)/sizeof(Node); break;
     }
   }
       

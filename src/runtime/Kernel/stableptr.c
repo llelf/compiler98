@@ -3,6 +3,7 @@
 #endif
 
 #include <sys/types.h>
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -82,7 +83,7 @@ void stableFlip()
   mapStablePtrs(flip);
 }
 
-int stableInit() {
+void stableInit() {
     long i;
 
     if (!(StableTable = (NodePtr*)malloc(STABLE_ALLOCSIZE*sizeof(NodePtr*)))) {

@@ -121,16 +121,16 @@ void printCaf(GcConst caf, Int flags, Int depth)
     NodePtr *inptr = &cptr->ptr[0];
     switch(GET_TAG(inptr)) {
     case VAP_TAG0: case VAP_TAG1:
-      fprintf(stderr,"%08x * ",inptr);
-      fprintf(stderr," %08x",*inptr);
+      fprintf(stderr,"%p * ",inptr);
+      fprintf(stderr," %p",*inptr);
       fprintf(stderr,"\n");
       break;     /* Not updated yet */
     case CON_TAG:
       fprintf(stderr,"CON_TAG in markCaf\n");
       exit(-1);
     case IND_TAG:
-      fprintf(stderr,"%08x   ",inptr);
-      fprintf(stderr," %08x",*inptr);
+      fprintf(stderr,"%p   ",inptr);
+      fprintf(stderr," %p",*inptr);
       fprintf(stderr,"\n");
       break;
     }
@@ -180,7 +180,7 @@ void flipCaf(void)
   while(caf != GcEnd) {
     GcConst cptr = caf;
     Int size = cptr->sizeArity;
-    int i,arity = SNDHW(size);
+    int i;
     size = FSTHW(size);
 
     {

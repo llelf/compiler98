@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include "haskell2c.h"
 #include "newmacros.h"
 #include "stableptr.h"

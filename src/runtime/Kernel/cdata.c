@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "mk.h"
 /* #include "runtime.h"	-- now included from cinterface.h below */

@@ -11,6 +11,7 @@
 /* #include "bytecode.h" -- already included in node.h via newmacros.h */
 #include "mutlib.h"
 #include "mark.h"
+#include "initend.h"
 
 #if defined(__GNUC__) && !defined(DEBUG)
 #  define USE_GCC_LABELS 1
@@ -41,7 +42,6 @@ static unsigned char penu_instr=EVAL;
 #define register_instr(x)
 #endif
 
-extern int exit_code;
 #ifdef __CYGWIN32__
 extern jmp_buf exit_mutator;
 #else
@@ -89,7 +89,7 @@ static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
 
 #endif
 
-#define DUMP_NODE(n) fprintf(stderr," %08x at %08x\n",n[0],n);
+#define DUMP_NODE(n) fprintf(stderr," %08lx at %p\n",n[0],n);
 
 #if PARANOID
 
@@ -121,7 +121,9 @@ static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
 
 #if defined(DEBUG)
 #define SHOW(x)	x
+#if USE_GCC_LABELS
 static char *instr_names[];
+#endif
 #else
 #define SHOW(x)
 #endif
@@ -133,7 +135,7 @@ void run(NodePtr toplevel)
   CodePtr ip;			/* -- shadow globals for efficiency */
   NodePtr vapptr;
   NodePtr nodeptr;
-  NodePtr *constptr;
+  NodePtr *constptr = NULL;
 
   TPROF_SETUP
 
@@ -197,15 +199,14 @@ void run(NodePtr toplevel)
 	  ip += HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8);
       } Break;
     Case(NOP):
-      fprintf(stderr,"Executed NOP at %08x\n",ip);
+      fprintf(stderr,"Executed NOP at %p\n",ip);
       Break;
 
     Case(PRIMITIVE):
       { Primitive fun;
-	int gc = 0;
 	ip = (CodePtr) ALIGNPTR(ip);
 	fun = *(Primitive*)ip;
-        SHOW(fprintf(stderr,"\tPRIMITIVE 0x%x\n",(int)fun);)
+        SHOW(fprintf(stderr,"\tPRIMITIVE %p\n",fun);)
         fflush(stderr);
 	ip += sizeof(Primitive);
         TPROF_GREENCARD_ENTER;
@@ -899,7 +900,7 @@ void run(NodePtr toplevel)
               nodeptr = 0;
               break;
           default :
-              fprintf(stderr,"Trying to get tag from unevaluated node in TABLESWITCH at %08x!\n",ip-1);
+              fprintf(stderr,"Trying to get tag from unevaluated node in TABLESWITCH at %p!\n",ip-1);
               fprintf(stderr,"Node is:\n");
               DUMP_NODE(nodeptr);
               exit(-1);
@@ -997,7 +998,7 @@ int sizeofNode(Node tag) {
 
 #endif
 
-#if defined(BYTECODE_PROF) || defined(DEBUG)
+#if defined(BYTECODE_PROF) || (defined(DEBUG) && USE_GCC_LABELS)
 #  undef ins
 static char *instr_names[] = {
  "DUMMY_FOR_ZERO",
