@@ -262,6 +262,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %       case HatApplication:
 %       case HatName:newnode = getSrcRef();break;
 %       case HatIdentifier:
+%       case HatTopIdentifier:
 %       case HatConstructor:
 %       case HatSrcRef:
 %            break;
@@ -341,7 +342,10 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %call (foreign f hattrace,int nodenumber)
 %code
 %     switch(getNodeType((int) hattrace,nodenumber)) {
-%      case HatConstructor:case HatIdentifier:case HatModule:
+%      case HatConstructor:
+%      case HatIdentifier:
+%      case HatTopIdentifier:
+%      case HatModule:
 %        s = getName();
 %        if (s==NULL) s=newStr("");else
 %         if (*s==0) s=newStr(" ");     // empty name!
@@ -516,6 +520,7 @@ toHatNodeType 77 = HatCStringNode
 toHatNodeType 78 = HatIfNode
 toHatNodeType 79 = HatGuardNode
 toHatNodeType 80 = HatContainerNode
+toHatNodeType 86 = HatIdentNode
 toHatNodeType _  = HatInvalidNode
 
 fromHatNodeType _ = 0

@@ -315,12 +315,14 @@ filepointer printNode(unsigned long offset) {
     char *appstr;
     filepointer lmo;
     ExprNode* exp;
+    char xx;
 
     exp = buildExpr(handle,offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,precision,1);
     
     lmo = hatLMO(handle,offset);
-    if ((lmo!=0)&&(getNodeType(handle,lmo)==HatIdentifier)) {
+    if ((lmo!=0) && ((xx=getNodeType(handle,lmo))==HatIdentifier
+                     || xx==HatTopIdentifier)) {
      satc = getResult(handle,hatFollowSATs(handle,offset));
      if ((isSAT(handle,satc))&&(satc!=offset)) {
        printf("corresponding SAT at: 0x%x\n\n",satc);

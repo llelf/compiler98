@@ -120,6 +120,7 @@
 #define HatIf 78
 #define HatGuard 79
 #define HatContainer 80
+#define HatTopIdentifier 86
 
 #define HatSrcRef 96
 

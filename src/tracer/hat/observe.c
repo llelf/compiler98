@@ -132,9 +132,11 @@ ObserveQuery newObserveQuerySource(int handle,
   if ((moduleName==NULL)||(strcmp(moduleName,"")==0)) {
     filepointer p = hatMainCAF(handle);
     if (p!=0) {
+      char nodeType=0;
       getNodeType(handle,p); // go to main CAF
       p = getNameType();
-      if (getNodeType(handle,p)==HatIdentifier) {
+      nodeType= getNodeType(handle,p);
+      if (nodeType==HatIdentifier || nodeType==HatTopIdentifier) {
 	newQ->moduleRef = getModInfo();
       }
     }
@@ -225,7 +227,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 	    filepointer fun = hatLMO(handle,currentOffset);
 	    char lmoType = 0;
 	    if (fun!=0) lmoType = getNodeType(handle,fun);
-	    if (lmoType==HatIdentifier) {
+	    if (lmoType==HatIdentifier || lmoType==HatTopIdentifier) {
 	      filepointer result = getResult(handle,currentOffset);
 	      if ((result!=0)&&(isSAT(handle,result))&&
 		  (getNodeType(handle,result)!=HatSATA)) { // make sure, result is available!
@@ -274,6 +276,7 @@ filepointer nextObservable(_ObserveQuery* query) {
     nodeType = getNodeType(handle,currentOffset);
     switch (nodeType) {
     case HatIdentifier:
+    case HatTopIdentifier:
       if (isTopLevel(handle,currentOffset)) {
 	query->currentOffset = currentOffset;
 	query->found++;
@@ -417,7 +420,7 @@ void findNodes(HatFile handle,
       fflush(stderr);
     }
     nodeType = getNodeType(handle,currentOffset);
-    if (nodeType==HatIdentifier) {
+    if (nodeType==HatIdentifier || nodeType==HatTopIdentifier) {
       if ((identifierNode==0)||((topIdentifier!=NULL)&&(topIdentifierNode==0))) {
 	if (isTopLevel(handle,currentOffset)) {
 	  // search for identifier
