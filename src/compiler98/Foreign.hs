@@ -46,8 +46,8 @@ instance Show Foreign where
 
 data Arg = Int8  | Int16  | Int32  | Int64
          | Word8 | Word16 | Word32 | Word64
-         | Float | Double | Char   | Addr
-         | StablePtr | ForeignObj | Unknown | Unit
+         | Float | Double | Char   | PackedString
+         | Addr  | StablePtr | ForeignObj | Unknown | Unit
          deriving Show
 
 data Res = IOResult Arg | IOVoid | Pure Arg
@@ -106,6 +106,7 @@ searchType st (arrow,io) info =
             | t==tWord16     = Word16
             | t==tWord32     = Word32
             | t==tWord64     = Word64
+            | t==tPackedString  = PackedString
             | otherwise      = trace ("Warning: foreign import/export has non-primitive type: "++show t) Unknown
 
     getNT (NewType _ _ _ [nt]) = nt
@@ -277,66 +278,69 @@ hResult res =
 ---- shared between foreign import/export ----
 
 cTypename :: Arg -> ShowS
-cTypename Int8       = word "char"
-cTypename Int16      = word "short"
-cTypename Int32      = word "long"
-cTypename Int64      = word "long long"
-cTypename Word8      = word "unsigned char"
-cTypename Word16     = word "unsigned short"
-cTypename Word32     = word "unsigned long"
-cTypename Word64     = word "unsigned long long"
-cTypename Float      = word "float"
-cTypename Double     = word "double"
-cTypename Char       = word "char"
-cTypename Addr       = word "void*"
-cTypename StablePtr  = word "StablePtr"
-cTypename ForeignObj = word "void*"
+cTypename Int8         = word "char"
+cTypename Int16        = word "short"
+cTypename Int32        = word "long"
+cTypename Int64        = word "long long"
+cTypename Word8        = word "unsigned char"
+cTypename Word16       = word "unsigned short"
+cTypename Word32       = word "unsigned long"
+cTypename Word64       = word "unsigned long long"
+cTypename Float        = word "float"
+cTypename Double       = word "double"
+cTypename Char         = word "char"
+cTypename PackedString = word "char*"
+cTypename Addr         = word "void*"
+cTypename StablePtr    = word "StablePtr"
+cTypename ForeignObj   = word "void*"
 --cTypename ForeignObj = word "CData*"
-cTypename Unit       = word "void"
-cTypename Unknown    = word "NodePtr"	-- for passing Haskell heap values
+cTypename Unit         = word "void"
+cTypename Unknown      = word "NodePtr"	-- for passing Haskell heap values
 
 cConvert :: Arg -> ShowS
-cConvert Int8       = word "GET_CHAR_VALUE(nodeptr)"
-cConvert Int16      = word "GET_16BIT_VALUE(nodeptr)"
-cConvert Int32      = word "GET_INT_VALUE(nodeptr)"
-cConvert Int64      = word "GET_64BIT_VALUE(nodeptr)"
-cConvert Word8      = word "GET_CHAR_VALUE(nodeptr)"
-cConvert Word16     = word "GET_16BIT_VALUE(nodeptr)"
-cConvert Word32     = word "GET_INT_VALUE(nodeptr)"
-cConvert Word64     = word "GET_64BIT_VALUE(nodeptr)"
-cConvert Float      = word "get_float_value(nodeptr)"
-cConvert Double     = word "get_double_value(nodeptr)"
-cConvert Char       = word "GET_CHAR_VALUE(nodeptr)"
-cConvert Addr       = word "GET_INT_VALUE(nodeptr)"
---cConvert Addr     = word "((cdataArg((CData*)GET_INT_VALUE(nodeptr)))->cval)"
-cConvert StablePtr  = word "GET_INT_VALUE(nodeptr)"
+cConvert Int8         = word "GET_CHAR_VALUE(nodeptr)"
+cConvert Int16        = word "GET_16BIT_VALUE(nodeptr)"
+cConvert Int32        = word "GET_INT_VALUE(nodeptr)"
+cConvert Int64        = word "GET_64BIT_VALUE(nodeptr)"
+cConvert Word8        = word "GET_CHAR_VALUE(nodeptr)"
+cConvert Word16       = word "GET_16BIT_VALUE(nodeptr)"
+cConvert Word32       = word "GET_INT_VALUE(nodeptr)"
+cConvert Word64       = word "GET_64BIT_VALUE(nodeptr)"
+cConvert Float        = word "get_float_value(nodeptr)"
+cConvert Double       = word "get_double_value(nodeptr)"
+cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
+cConvert PackedString = word "getPackedString(nodeptr)"
+cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
+--cConvert Addr       = word "((cdataArg((CData*)GET_INT_VALUE(nodeptr)))->cval)"
+cConvert StablePtr    = word "GET_INT_VALUE(nodeptr)"
 --cConvert StablePtr  = word "stableInsert(getStablePtr(nodeptr))"
-cConvert ForeignObj = word "(cdataArg((CData*)GET_INT_VALUE(nodeptr))->cval)"
+cConvert ForeignObj   = word "(cdataArg((CData*)GET_INT_VALUE(nodeptr))->cval)"
 --cConvert ForeignObj = word "cdataArg((CData*)GET_INT_VALUE(nodeptr))"
-cConvert Unit       = word "0"
-cConvert Unknown    = word "nodeptr"
+cConvert Unit         = word "0"
+cConvert Unknown      = word "nodeptr"
 
 hConvert :: Arg -> ShowS -> ShowS
-hConvert Int8       s = word "mkChar" . parens s
-hConvert Int16      s = word "mkInt" . parens s
-hConvert Int32      s = word "mkInt" . parens s
-hConvert Int64      s = word "mkInt" . parens s
-hConvert Word8      s = word "mkChar" . parens s
-hConvert Word16     s = word "mkInt" . parens s
-hConvert Word32     s = word "mkInt" . parens s
-hConvert Word64     s = word "mkInt" . parens s
-hConvert Float      s = word "mkFloat" . parens s
-hConvert Double     s = word "mkDouble" . parens s
-hConvert Char       s = word "mkChar" . parens s
-hConvert Addr       s = word "mkCInt" . parens (word "(int)" . s)
---hConvert Addr     s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
-hConvert StablePtr  s = word "mkInt" . parens (word "(int)" . s)
+hConvert Int8         s = word "mkChar" . parens s
+hConvert Int16        s = word "mkInt" . parens s
+hConvert Int32        s = word "mkInt" . parens s
+hConvert Int64        s = word "mkInt" . parens s
+hConvert Word8        s = word "mkChar" . parens s
+hConvert Word16       s = word "mkInt" . parens s
+hConvert Word32       s = word "mkInt" . parens s
+hConvert Word64       s = word "mkInt" . parens s
+hConvert Float        s = word "mkFloat" . parens s
+hConvert Double       s = word "mkDouble" . parens s
+hConvert Char         s = word "mkChar" . parens s
+hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
+hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
+--hConvert Addr       s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
+hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 --hConvert StablePtr  s = word "mkStablePtr" . parens (word "stableRef" . parens s)
 {- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
-hConvert ForeignObj s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
+hConvert ForeignObj   s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 --hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
-hConvert Unit       s = word "mkUnit()"
-hConvert Unknown    s = s	-- for passing Haskell heap values untouched
+hConvert Unit         s = word "mkUnit()"
+hConvert Unknown      s = s	-- for passing Haskell heap values untouched
 
 openparen  = showChar '('
 closeparen = showChar ')'

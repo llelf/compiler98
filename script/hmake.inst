@@ -58,8 +58,10 @@ do
                exit 0;;
 
     # Flags to hmake itself
+    -keepPrelude)  hmflags=$hmflags" $1" ;;
     -n)  hmflags=$hmflags" -q"; exec=cat ;;
     -q)  hmflags=$hmflags" $1" ;;
+    -N*) hmflags=$hmflags" $1" ;;
     -g)  hmflags=$hmflags" $1"; exec=cat ;;
     -M*) hmflags=$hmflags" $1"; exec=cat ;;
     -d)  shift; objdir=$1; hmflags=$hmflags" -d$1" ;;

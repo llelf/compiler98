@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="v1.7.1 (date 000125)"
+HMAKEVERSION="v1.7.2 (date 000207)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -314,6 +314,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
   if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
   if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
+  echo "BUILDWITH=$BUILDWITH" ;
   echo "BUILDDIR=$BUILDDIR" ;
   echo "LIB=$LIB" ;
   echo "BIN=$BIN" ;

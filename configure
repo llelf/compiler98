@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.0 pre-release 15 (date 000118)"
-HMAKEVERSION="v1.7.1 (date 000125)"
+HMAKEVERSION="v1.7.2 (date 000207)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -403,7 +403,14 @@ then
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
+    if [ "$BUILDWITH" = "gcc" ]
+    then
+      sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+      sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
+      sed -e "s|^nhc98incdir=|nhc98incdir=$BUILDINCDIR \#|" >$BUILDLIBDIR/hmake.config
+    else
+      sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
+    fi
 
     echo -n "Adding build scripts to $BUILDBINDIR...    "
     echo -n "nhc98 "
@@ -472,6 +479,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
+    cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR	-- patch local config also
     #echo -n "config "	# Now simply re-use build config.
     #( echo "ENDIAN=$ENDIAN";
     #  case $RTSFLAG in

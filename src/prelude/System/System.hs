@@ -5,6 +5,8 @@ module System (
      ,getEnv
      ,system
      ,exitWith
+     ,exitFailure
+     ,system
      ) where
 
 import DExitCode
@@ -16,4 +18,5 @@ import GetArgs
 import GetProgName
 import GetEnv
 import ExitWith
+import ExitFailure
 import SystemFun

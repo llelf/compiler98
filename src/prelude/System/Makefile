@@ -3,8 +3,10 @@ include Makefile.inc
 THISLIB = System
 
 SRCS	= \
-	Eq_ExitCode.hs    GetArgs.hs        GetProgName.hs    Read_ExitCode.hs  SystemFun.hs         \
-	DExitCode.hs      ExitWith.hs       GetEnv.hs         Ord_ExitCode.hs   Show_ExitCode.hs  
+	DExitCode.hs Eq_ExitCode.hs Read_ExitCode.hs \
+	Ord_ExitCode.hs  Show_ExitCode.hs  \
+	GetArgs.hs GetProgName.hs GetEnv.hs \
+	ExitWith.hs ExitFailure.hs SystemFun.hs
 
 
 

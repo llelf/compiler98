@@ -43,6 +43,10 @@ HC = nhc98
 ifeq "hbc" "${HC}"
 HMAKEFLAGS = -H32M
 endif
+ifeq "nhc98" "${HC}"
+HFLAGS = -H8M
+export HFLAGS
+endif
 ifeq "ghc" "${HC}"
 HMAKEFLAGS = +CTS -syslib exts -syslib misc -CTS
 endif

@@ -2,7 +2,7 @@ include Makefile.inc
 
 THISLIB = PreludeIO
 
-SRCS	= DErrNo.hs \
+SRCS	= DErrNo.hs StrError.hs \
 	Eq_IOError.hs    Monad_IO.hs      ReadLn.hs 	\
 	AppendFile.hs    Print.hs         Show_IOError.hs \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
@@ -50,22 +50,23 @@ ${CFILES} ${MAINCFILE}: %.c : %.hs
 
 
 # I know that they depoend on .hi, but make is stupid :-(
-${OBJDIR}/Catch.o: Catch.hs ${OBJDIR}/DIO.o
-${OBJDIR}/Eq_IOError.o: Eq_IOError.hs ${OBJDIR}/DIOError.o
-${OBJDIR}/Fail.o: Fail.hs ${OBJDIR}/DIO.o
-${OBJDIR}/Monad_IO.o: Monad_IO.hs ${OBJDIR}/DIO.o ${OBJDIR}/DIOError.o # ../Prelude/CMonad.hi
-${OBJDIR}/Functor_IO.o: Functor_IO.hs # ../Prelude/CFunctor.hi
-${OBJDIR}/Show_IOError.o: Show_IOError.hs ${OBJDIR}/DIOError.o
-${OBJDIR}/UserError.o: UserError.hs ${OBJDIR}/DIOError.o
-${OBJDIR}/DIOError.o: DIOError.hs ${OBJDIR}/DErrNo.o
+${OBJDIR}/Catch.o:        ${OBJDIR}/DIO.o
+${OBJDIR}/Eq_IOError.o:   ${OBJDIR}/DIOError.o ${OBJDIR}/DErrNo.o
+${OBJDIR}/Fail.o:         ${OBJDIR}/DIO.o
+${OBJDIR}/Monad_IO.o:     ${OBJDIR}/DIO.o ${OBJDIR}/DIOError.o # ../Prelude/CMonad.hi
+${OBJDIR}/Functor_IO.o:   # ../Prelude/CFunctor.hi
+${OBJDIR}/Show_IOError.o: ${OBJDIR}/DIOError.o ${OBJDIR}/DErrNo.o ${OBJDIR}/StrError.o
+${OBJDIR}/UserError.o:    ${OBJDIR}/DIOError.o
+${OBJDIR}/DIOError.o:     ${OBJDIR}/DErrNo.o
 
 
 # And now for C-files dependencies.
 Catch.c:        DIO.c
-Eq_IOError.c:   DIOError.c
+Eq_IOError.c:   DIOError.c DErrNo.c
 Fail.c:         DIO.c
 Monad_IO.c:     DIO.c DIOError.c # ../Prelude/CMonad.hi
 Functor_IO.c:   # ../Prelude/CFunctor.hi
-Show_IOError.c: DIOError.c
+Show_IOError.c: DIOError.c DErrNo.c StrError.c
 UserError.c:    DIOError.c
+DIOError.c:	DErrNo.c
 

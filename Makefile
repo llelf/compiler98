@@ -1,12 +1,12 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre15
+VERSION = 1.0pre15x
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
 
-HVERSION = 1.7.1
+HVERSION = 1.7.2
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
@@ -158,11 +158,11 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 	 profruntime profprelude \
 	 timeruntime timeprelude \
 	 traceruntime traceprelude \
-	 compiler_n compiler_b compiler_g \
-	 hmake_n hmake_b hmake_g \
-	 greencard_n greencard_b greencard_g \
+	 compiler-nhc compiler-hbc compiler-ghc \
+	 hmake-nhc hmake-hbc hmake-ghc \
+	 greencard-nhc greencard-hbc greencard-ghc \
 	 ccompiler cprelude cgreencard chmake \
-	 tracecompiler_n tracecompiler_b tracecompiler_g
+	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
 
 
 ##### compiler build + install scripts
@@ -174,30 +174,30 @@ help:
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "  (other subtargets: runtime prelude profile timeprof hp2graph"
-	@echo "                     compiler_b compiler_g compiler_n"
-	@echo "                     tracer_b tracer_g tracer_n "
-	@echo "                     hmake_b hmake_g hmake_n"
-	@echo "                     greencard_b greencard_g greencard_n)"
+	@echo "                     compiler-hbc  compiler-ghc  compiler-nhc"
+	@echo "                     tracer-hbc    tracer-ghc    tracer-nhc"
+	@echo "                     hmake-hbc     hmake-ghc     hmake-nhc"
+	@echo "                     greencard-hbc greencard-ghc greencard-nhc)"
 
 config: script/errnogen.c
 	./configure --config
 install:
 	./configure --install
 
-basic-nhc: runtime hmake_n greencard_n compiler_n prelude
-basic-hbc: runtime hmake_b greencard_b compiler_b prelude
-basic-ghc: runtime hmake_g greencard_g compiler_g prelude
+basic-nhc: runtime hmake-nhc greencard-nhc compiler-nhc prelude
+basic-hbc: runtime hmake-hbc greencard-hbc compiler-hbc prelude
+basic-ghc: runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-gcc: runtime cprelude ccompiler cgreencard chmake
-all-nhc: basic-nhc profile hp2graph tracer_n   #timeprof
-all-hbc: basic-hbc profile hp2graph tracer_b   #timeprof
-all-ghc: basic-ghc profile hp2graph tracer_g   #timeprof
-all-gcc: basic-gcc profile hp2graph #tracer??  #timeprof
+all-nhc: basic-nhc profile hp2graph tracer-nhc   #timeprof
+all-hbc: basic-hbc profile hp2graph tracer-hbc   #timeprof
+all-ghc: basic-ghc profile hp2graph tracer-ghc   #timeprof
+all-gcc: basic-gcc profile hp2graph tracer-nhc   #timeprof
 
 profile: profruntime profprelude
 timeprof: timeruntime timeprelude
-tracer_n: tracecompiler_n traceruntime traceprelude $(TARGDIR)/traceui
-tracer_b: tracecompiler_b traceruntime traceprelude $(TARGDIR)/traceui
-tracer_g: tracecompiler_g traceruntime traceprelude $(TARGDIR)/traceui
+tracer-nhc: tracecompiler-nhc traceruntime traceprelude $(TARGDIR)/traceui
+tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
+tracer-ghc: tracecompiler-ghc traceruntime traceprelude $(TARGDIR)/traceui
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
@@ -206,15 +206,15 @@ $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/tracer/runtime; $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
 
-$(TARGDIR)/$(MACHINE)/compiler_n: $(COMPILER)
+$(TARGDIR)/$(MACHINE)/compiler-nhc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=nhc98 install
-	touch $(TARGDIR)/$(MACHINE)/compiler_n
-$(TARGDIR)/$(MACHINE)/compiler_b: $(COMPILER)
+	touch $(TARGDIR)/$(MACHINE)/compiler-nhc
+$(TARGDIR)/$(MACHINE)/compiler-hbc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=hbc install
-	touch $(TARGDIR)/$(MACHINE)/compiler_b
-$(TARGDIR)/$(MACHINE)/compiler_g: $(COMPILER)
+	touch $(TARGDIR)/$(MACHINE)/compiler-hbc
+$(TARGDIR)/$(MACHINE)/compiler-ghc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=ghc install
-	touch $(TARGDIR)/$(MACHINE)/compiler_g
+	touch $(TARGDIR)/$(MACHINE)/compiler-ghc
 
 #$(TARGDIR)/$(MACHINE)/bootprelude:
 #	cd src/prelude;        $(MAKE) boot
@@ -226,25 +226,25 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 #$(TARGDIR)/$(MACHINE)/greencard: $(TARGDIR)/$(MACHINE)/bootprelude $(GREENCARD)
 #	cd src/greencard;      $(MAKE) install
 #	touch $(TARGDIR)/$(MACHINE)/greencard
-$(TARGDIR)/$(MACHINE)/greencard_n: $(GREENCARD)
+$(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=nhc98 install
-	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_n
-$(TARGDIR)/$(MACHINE)/greencard_b: $(GREENCARD)
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-nhc
+$(TARGDIR)/$(MACHINE)/greencard-hbc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=hbc install
-	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_b
-$(TARGDIR)/$(MACHINE)/greencard_g: $(GREENCARD)
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-hbc
+$(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=ghc install
-	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_g
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
-$(TARGDIR)/$(MACHINE)/hmake_n: $(HMAKE)
+$(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
-	touch $(TARGDIR)/$(MACHINE)/hmake_n
-$(TARGDIR)/$(MACHINE)/hmake_b: $(HMAKE)
+	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
+$(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=hbc install
-	touch $(TARGDIR)/$(MACHINE)/hmake_b
-$(TARGDIR)/$(MACHINE)/hmake_g: $(HMAKE)
+	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
+$(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install
-	touch $(TARGDIR)/$(MACHINE)/hmake_g
+	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
 	cd src/hp2graph;       $(MAKE) install
@@ -258,15 +258,15 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install  #cleanhi 
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
-$(TARGDIR)/$(MACHINE)/tracecompiler_n: $(COMPILER)
+$(TARGDIR)/$(MACHINE)/tracecompiler-nhc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) CFG=T HC=nhc98 install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler_n
-$(TARGDIR)/$(MACHINE)/tracecompiler_b: $(COMPILER)
+	touch $(TARGDIR)/$(MACHINE)/tracecompiler-nhc
+$(TARGDIR)/$(MACHINE)/tracecompiler-hbc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) CFG=T HC=hbc install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler_b
-$(TARGDIR)/$(MACHINE)/tracecompiler_g: $(COMPILER)
+	touch $(TARGDIR)/$(MACHINE)/tracecompiler-hbc
+$(TARGDIR)/$(MACHINE)/tracecompiler-ghc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) CFG=T HC=ghc install
-	touch $(TARGDIR)/$(MACHINE)/tracecompiler_g
+	touch $(TARGDIR)/$(MACHINE)/tracecompiler-ghc
 $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=T install
 	cd src/tracer/runtime; $(MAKE) CFG=T install

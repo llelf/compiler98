@@ -75,6 +75,7 @@ qualImpRev = Qualified rpsPrelude . packString . reverse
 qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
 qualImpFFI = Qualified rpsFFI     . packString . reverse
+qualImpPS  = Qualified rpsPS      . packString . reverse
 --pqualImpRev = Qualified rpsPrelude . packString . reverse
 
 rpsPrelude      = (packString . reverse ) "Prelude"
@@ -82,6 +83,7 @@ rpsBinary       = (packString . reverse ) "Binary"
 rpsRatio        = (packString . reverse ) "PrelRatio"
 --rpsDPrelude      = (packString . reverse ) "DPrelude"
 rpsFFI          = (packString . reverse ) "FFIBuiltin"
+rpsPS           = (packString . reverse ) "PackedString"
 
 
 isUnit (TupleId 0) = True
@@ -266,3 +268,4 @@ tWord8		= qualImpFFI  "Word8"
 tWord16		= qualImpFFI  "Word16"
 tWord32		= qualImpFFI  "Word32"
 tWord64		= qualImpFFI  "Word64"
+tPackedString	= qualImpPS   "PackedString"
