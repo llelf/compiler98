@@ -89,7 +89,7 @@ do
     +docs) DOCS=yes ;;
     -docs) DOCS=no ;;
     --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-` ;;
-    --buildopts=*)  BUILDOPTS=`echo "$1" | cut -c13-` ;;
+    --buildopts=*)  BUILDOPTS=$BUILDOPTS" "`echo "$1" | cut -c13-` ;;
     --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
     --prefix=*)     INSTALLDIR=`echo "$1" | cut -c10-` ;;
     --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
