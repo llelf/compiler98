@@ -18,6 +18,8 @@ include ../Makefile.common
 # Here are some extra rules.
 ../PreludeList/%.${HISUFFIX} : ../PreludeList/%.hs
 	cd ../PreludeList; ${MAKE} $@
+../Char/%.${HISUFFIX} : ../Char/%.hs
+	cd ../Char; ${MAKE} $@
 ../Prelude/%.${HISUFFIX} : ../Prelude/%.hs
 	cd ../Prelude; ${MAKE} $@
 
@@ -30,4 +32,5 @@ ${OBJDIR}/ReadOct.$O: ReadOct.hs ${OBJDIR}/ReadInt.$O
 ${OBJDIR}/ReadFloat.$O : ReadFloat.hs ${OBJDIR}/ReadDec.$O
 ${OBJDIR}/ReadLitChar.$O : ReadLitChar.hs ${OBJDIR}/AsciiTab.$O ${OBJDIR}/ReadDec.$O ${OBJDIR}/ReadOct.$O ${OBJDIR}/ReadHex.$O
 ${OBJDIR}/ShowLitChar.$O : ShowLitChar.hs ${OBJDIR}/AsciiTab.$O
+${OBJDIR}/LexDigits.$O : LexDigits.hs ../Char/IsDigit.${HISUFFIX}
 
