@@ -56,6 +56,7 @@ ppCpp, ppGreenCard, ppHsc2hs, ppC2hs, ppHappy, ppNone :: PreProcessor
 ppCpp = PreProcessor
 	{ ppExecutableName = "gcc -E -traditional"
 	, ppDefaultOptions = \d-> "-x c" : map ("-D"++) (defs d++zdefs d)
+	                                ++ map ("-I"++) (pathSrc d)
 	, ppOutputFileOption = \f-> "> "++f
 	, ppSuitable = \hc-> True
 	}

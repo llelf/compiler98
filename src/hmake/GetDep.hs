@@ -109,7 +109,7 @@ dependency opts done ((f,demand):fs) =
                    hash  []          = False
                    i = filter (`notElem` (ignoreHi opts))
                               (getImports source (zdefs opts ++ defs opts)
-                                          unlitfile)
+                                          (pathSrc opts) unlitfile)
                    moredone = (f,((times,path,source,cpp,preproc),i)):done
                    needed = map (\x->(x,source)) i
                in
