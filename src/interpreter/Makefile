@@ -3,10 +3,10 @@ include Makefile.inc
 OBJDIR = ${BUILDDIR}/obj/interpreter
 TARGET = ${DST}/HInteractive$(EXE)
 
-SRCS   = HInteractive.hs HmakeConfig.hs SimpleLineEditor.hs \
-	 Unlit.hs LexModule.hs
+SRCS   = HInteractive.hs HiConfig.hs SimpleLineEditor.hs LexModule.hs
+OTHERS = Unlit.hs Local.hs Compiler.hs Config.hs	# from src/hmake
 
-#CFILES = $(patsubst %.hs, *.$C, $(SRCS))
+CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 
 ifeq "${HC}" "ghc"
@@ -26,15 +26,16 @@ endif
 all: $(TARGET)
 install: $(TARGET)
 cfiles: $(SRCS)
-	$(HMAKE) -hc=$(LOCAL)nhc98 -clean HInteractive.hs
-	$(HMAKE) -hc=$(LOCAL)nhc98 -C HInteractive.hs
+	-rm -f *.hi *.hc
+	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -C HInteractive.hs
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
-	-rm -f *.hc *.c $(TARGET) cfiles
+	-rm -f *.hc *.c
 
 $(TARGET): $(OBJDIR) $(SRCS)
-	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)")
+	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)") \
+		-I../hmake -i../hmake
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 
@@ -42,6 +43,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
 fromC: $(OBJDIR)
+	cp $(CHFILES) .
 	$(LOCAL)nhc98 -cpp -o $(TARGET) -d$(OBJDIR) *.$C
 	strip $(TARGET)
 

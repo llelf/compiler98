@@ -7,7 +7,9 @@ import Directory
 import List
 import Maybe
 
-import HmakeConfig
+import Config		-- from src/hmake
+import Compiler		-- from src/hmake
+import HiConfig
 import SimpleLineEditor (delChars, getLineEdited)
 import LexModule
 import Unlit
@@ -20,7 +22,9 @@ debug x = return ()
 done = return ()
 
 data State = S { options  :: [String]
-               , compiler :: Compiler
+               , config   :: HmakeConfig
+               , compiler :: CompilerConfig
+               , cfgfile  :: Maybe FilePath	-- the hmake configfile
                , modules  :: [String]
                , scope    :: Maybe String	-- could be `elem` modules
                , scopeText  :: Maybe String	-- modified text of module
@@ -28,17 +32,23 @@ data State = S { options  :: [String]
 
 main = do
   options <- getArgs
-  let opts = options ++ defaultOptions defaultCompiler
+  (cfg,file,options) <- case options of
+                          ("-f":file:opts) -> do cfg <- safeReadConfig file
+                                                 return (cfg,Just file,opts)
+                          _ -> do cfg <- safeReadConfig defaultConfigLocation
+                                  return (cfg,Nothing,options)
+  let defaultComp = usualCompiler cfg
+      opts = options ++ extraCompilerFlags defaultComp
   putStrLn banner
   putStrLn (replicate 43 ' '++
-            "... Using compiler "++show defaultCompiler++" ...\n")
+            "... Using compiler "++compilerPath defaultComp++" ...\n")
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
   hSetBuffering stdin NoBuffering
 #if USE_READLINE
   Readline.initialize
 #endif
-  let state = S { options=opts, compiler=defaultCompiler
+  let state = S { options=opts, config=cfg, compiler=defaultComp, cfgfile=file
                 , modules=["Prelude"], scope=Nothing, scopeText=Nothing }
   load state "Prelude" (toplevel state)
   putStrLn "[Cannot continue without Prelude...]"
@@ -86,10 +96,10 @@ evaluate expr _ state = do
   hPutStr f (
     "module Main where\n\n" ++
     concatMap (\m-> "import "++m++"\n") (modules state \\ scopem) ++
-    "\n" ++ nonstdCoerceImport (compiler state) ++
+    "\n" ++ nonstdCoerceImport (compilerStyle (compiler state)) ++
     modtext ++
-    "\n" ++ nonstdCoerce (compiler state) ++
-    "\n" ++ nonstdShow (compiler state) ++
+    "\n" ++ nonstdCoerce (compilerStyle (compiler state)) ++
+    "\n" ++ nonstdShow (compilerStyle (compiler state)) ++
     "\nmain = let expr  = (" ++ expr ++ ")" ++
     "\n           shown = show expr" ++
     "\n       in case shown of" ++
@@ -123,7 +133,8 @@ showtype expr _ state = do
 
 compile flag file state continue = do
   if flag then putStr "[Compiling..." else done
-  ok <- system ("hmake -"++show (compiler state)++" -I. "
+  ok <- system ("hmake -hc="++compilerPath (compiler state)++" -I. "
+                ++(case cfgfile state of {Just f-> ("-f "++f++" "); _->"";})
                 ++unwords (options state)++" "++file++" >/dev/null")
   case ok of
     ExitSuccess -> do if flag then delChars "[Compiling..." else done
@@ -176,7 +187,8 @@ commands ws state = let target = tail ws in do
                loadAll state done
       )
   command "type"
-      (if compiler state == Nhc98 then showtype (unwords target) target state
+      (if compilerStyle (compiler state) == Nhc98
+       then showtype (unwords target) target state
        else putStrLn ":type command only supported for nhc98 compiler")
 {-
       (do f <- openFile (tmpfile++".hs") WriteMode
@@ -209,35 +221,35 @@ commands ws state = let target = tail ws in do
           toplevel (state {options=newopts}) )
   command "hc"
       (if null target then do
-            putStrLn ("Current compiler: "++show (compiler state))
-       else let newcomp = toComp (head target)
-                newopts = ((options state) \\ defaultOptions (compiler state))
-                                           ++ defaultOptions newcomp
-            in
-            if compilerKnown newcomp then do
+            putStrLn ("Current compiler: "++compilerPath (compiler state))
+       else if compilerKnown (head target) (config state) then do
+               let ncomp = matchCompiler (head target) (config state)
+                   nopts = ((options state)
+                                       \\ extraCompilerFlags (compiler state))
+                                       ++ extraCompilerFlags ncomp
                makeclean ".o" (modules state)
                makeclean ".hi" (modules state)
-               let newstate = state {options=newopts, compiler=newcomp}
+               let newstate = state {options=nopts, compiler=ncomp}
                loadAll newstate (toplevel newstate)	-- explicit return
             else do
                putStrLn ("Compiler "++head target++" not known/configured")
-               putStrLn ("Current compiler: "++show (compiler state))
+               putStrLn ("Current compiler: "++compilerPath (compiler state))
       )
-  command "trace"
-      (if null target || head target `notElem` ["on","off"] then do
-           putStr ("Tracing currently: ")
-           putStrLn (if "-T" `elem` options state then "on" else "off")
-       else
-       let newopts =
-             case head target of
-               "on" -> ((options state) \\ defaultOptions (compiler state))
-                                        ++ defaultOptions Nhc98 ++ ["-T"]
-               "off" -> (options state) \\ ["-T"]
-       in do
-            makeclean ".o" (modules state)
-            makeclean ".hi" (modules state)
-            let newstate = state {options=newopts, compiler=Nhc98}
-            loadAll newstate (toplevel newstate))	-- explicit return
+--command "trace"
+--    (if null target || head target `notElem` ["on","off"] then do
+--         putStr ("Tracing currently: ")
+--         putStrLn (if "-T" `elem` options state then "on" else "off")
+--     else
+--     let newopts =
+--           case head target of
+--             "on" -> ((options state) \\ extraCompilerFlags (compiler state))
+--                                      ++ extraCompilerFlags "nhc98" ++ ["-T"]
+--             "off" -> (options state) \\ ["-T"]
+--     in do
+--          makeclean ".o" (modules state)
+--          makeclean ".hi" (modules state)
+--          let newstate = state {options=newopts, compiler=Nhc98}
+--          loadAll newstate (toplevel newstate))	-- explicit return
   command "?" (putStrLn help)
   putStrLn ("[Unknown command :"++head ws++"]")
  where
@@ -259,7 +271,7 @@ findF action hiaction state mod success = do
       normal False ".gc" (
         foldr  prelude
               (putStrLn ("[Module "++mod++" not found...]"))
-              (preludePaths (compiler state)))))
+              (includePaths (compiler state)))))
  where
 --normal :: Bool -> String -> IO b -> IO b
   normal lit ext continue = let file = mod++ext in do
