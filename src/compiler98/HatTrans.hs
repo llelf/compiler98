@@ -41,7 +41,7 @@ import Parse(parseProg)
 
 import AuxFile(toAuxFile)
 import AuxLabelAST(auxLabelSyntaxTree)
-import TraceTrans(traceTrans)
+import TraceTrans(traceTrans,maybeStripOffQual)
 
 
 --import NonStdProfile
