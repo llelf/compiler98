@@ -10,9 +10,9 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   TraceFrame frame;
   MainPanel mainPanel;
   Thread DbgInterface;
-  Canvas canvas;
+  TraceCanvas canvas;
   SourceViewer viewer = null;
-  ScrollPane scrollpane;
+  TraceScrollPane scrollpane;
   Status status;
   Color mbgc, bgc, lc;
   Trace trace;
@@ -42,18 +42,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 
     setBackground(Color.white);
 
-    canvas = new Canvas() {
-      public void paint(Graphics g) {
-	me.repaint();
-      }
-      public Dimension getPreferredSize() {
-	return new Dimension(400, 300);
-      }
-    };
-    canvas.setBackground(getBackground());
-    canvas.addMouseMotionListener(mmhandler = new MouseMotionHandler());
-    canvas.addMouseListener(mhandler = new MouseHandler());
-
+    canvas = new TraceCanvas(1200,900);
     nodeTable = new NodeTable();
 
     ui = new UI();
@@ -63,8 +52,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     ui.normalfm = getFontMetrics(ui.normalfont);	
     ui.boldfm = getFontMetrics(ui.boldfont);	
 
-    scrollpane = new ScrollPane();
-    scrollpane.add(canvas);
+    scrollpane = new TraceScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED, canvas);
 
     this.setLayout(new BorderLayout());
     this.add(scrollpane, BorderLayout.CENTER);
@@ -76,7 +64,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     trace = null;
   }
 
-  void disableListeners() {
+void disableListeners() {
     canvas.removeMouseMotionListener(mmhandler);
     canvas.removeMouseListener(mhandler);
   }
@@ -317,47 +305,73 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     }
   }
 
-public void paint(Graphics g) { 
-    
-    // First determine the appropriate size for the offscreen buffer.
-    // It must be large enough for the trace, if any.
-    
-    Dimension offsize;
-    Dimension cansize = canvas.getSize();
-    if (trace == null) offsize = cansize;
-    else {
-      if (nullScreen == null) nullScreen = createImage(1,1);
-      offsize = trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1);
-      offsize.width += scrollpane.getVScrollbarWidth();
-      offsize.height += scrollpane.getHScrollbarHeight();
+  class TraceCanvas extends Canvas {
+
+    public TraceCanvas(int width, int height) {
+      setSize(width,height);
+      setBackground(Color.white);
+      setBackground(getBackground());
+      addMouseMotionListener(mmhandler = new MouseMotionHandler());
+      addMouseListener(mhandler = new MouseHandler());
     }
-    if (offsize.width < cansize.width) offsize.width = cansize.width;
-    if (offsize.height < cansize.height) offsize.height = cansize.height;
+
+    public void paint(Graphics g) { 
+
+      // First paint the trace onto an off-screen buffer.
+      // Image offscreen = createImage(offsize.width,offsize.height);
+      Image offscreen = createImage(getSize().width, getSize().height);
+      Graphics offgraphics = offscreen.getGraphics();
+      offgraphics.setFont(ui.normalfont);
+      offgraphics.setColor(getBackground());
+      offgraphics.fillRect(0, 0, getSize().width, getSize().height);
+      int refnr, trefnr, irefnr;
+      if (lastNode != null) {
+	refnr  = lastNode.refnr;
+	trefnr = lastNode.trefnr;
+	irefnr = lastNode.irefnr;
+      } else 
+	refnr = trefnr = irefnr = -1;
+      if (trace != null)
+	trace.paint(offgraphics, ui, 0, 0, refnr, trefnr, irefnr);
+
+      // Now transfer the off-screen image to the canvas, which
+      // may need to be enlarged.
+      canvas.getGraphics().drawImage(offscreen,0,0,null);
+    }
+  }
+  
+  class TraceScrollPane extends ScrollPane {
     
-    // Now paint the trace onto the off-screen buffer.
+    public TraceScrollPane(int policy, TraceCanvas canvas) {
+      super(policy);
+      add(canvas);
+    }
     
-    Image offscreen = createImage(offsize.width,offsize.height);
-    Graphics offgraphics = offscreen.getGraphics();
-    offgraphics.setFont(ui.normalfont);
-    offgraphics.setColor(getBackground());
-    offgraphics.fillRect(0, 0, offsize.width, offsize.height);
-    int refnr, trefnr, irefnr;
-    if (lastNode != null) {
-      refnr  = lastNode.refnr;
-      trefnr = lastNode.trefnr;
-      irefnr = lastNode.irefnr;
-    } else 
-      refnr = trefnr = irefnr = -1;
-    if (trace != null)
-      trace.paint(offgraphics, ui, 0, 0, refnr, trefnr, irefnr);
-    
-    // Finally, transfer the off-screen image to the canvas, which
-    // may need to be enlarged.
-    
-    if (cansize.width < offsize.width || cansize.height < offsize.height)
-      canvas.setSize(offsize);
-    canvas.getGraphics().drawImage(offscreen,0,0,null);
-}
+    public void checksize() {
+      if (trace != null) {
+	Dimension cansize = canvas.getSize();
+	if (nullScreen == null) nullScreen = createImage(1,1);
+	Dimension tracesize =
+          trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1);
+	if (tracesize.width > cansize.width ||
+            tracesize.height > cansize.height) {
+	  Point p = getScrollPosition();
+	  int newWidth = cansize.width;
+	  while (newWidth < tracesize.width) newWidth += 400;
+	  int newHeight = cansize.height;
+	  while (newHeight < tracesize.height) newHeight += 300;
+	  canvas = new TraceCanvas(newWidth, newHeight);
+	  addImpl(canvas, null, 0);
+	  setScrollPosition(p);
+	}
+      }
+    }
+  }
+  
+  public void paint(Graphics g) {
+    scrollpane.checksize();
+    canvas.paint(g);
+  }
   
   public Dimension getPreferredSize() {
     return new Dimension(400, GetParams.getInt("nhctracer.dwpHeight", 300));
