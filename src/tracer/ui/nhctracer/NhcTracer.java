@@ -11,7 +11,6 @@ public class NhcTracer extends Applet {
   static final String defaultHost = "localhost";
   static final int defaultPort = 6710;
   boolean isApplet = true;
-  DemoPanel demoPanel;
   
   public void run() {
   }
@@ -41,10 +40,7 @@ public class NhcTracer extends Applet {
 	System.err.println("Bad port number " + portStr + ", using default.");
       }
     }
-    if (isApplet) {
-      demoPanel = new DemoPanel(this);
-      add(demoPanel);
-    } else {
+    if (!isApplet) {
       TraceFrame traceFrame = new TraceFrame(host,port);
       traceFrame.setSize(600, 700);
       traceFrame.setVisible(true);
@@ -55,10 +51,9 @@ public class NhcTracer extends Applet {
     }
   }
   
+  /* Redundant for non-applet?
   public void stop() {
     if (isApplet) {
-      //demoPanel.stop();
-      //System.err.println("After demoPanel.stop()");
       super.stop();
     }
   }
@@ -68,6 +63,7 @@ public class NhcTracer extends Applet {
       demoPanel.start();
     }
   }
+  */
 	
   static void usage() {
     System.err.println("Usage: java NhcTracer port");
@@ -97,7 +93,6 @@ public class NhcTracer extends Applet {
     NhcTracer nt = new NhcTracer();
     nt.isApplet = false;
     nt.init();
-    nt.start();
   }
 }
 

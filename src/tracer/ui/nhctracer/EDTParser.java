@@ -24,11 +24,6 @@ public class EDTParser {
     public Trace parseTrace(TraceTree ptree) {
         Trace trace = new Trace(ptree);
 	TraceTree tree = parseTraceTree(trace);
-	
-// 	if (parent != null) {
-// 	    parent.setTrace(trace);
-// 	    parent.ptrace.addTrace(trace);
-// 	}
 	return trace;
     }
 
@@ -189,10 +184,8 @@ public class EDTParser {
 		System.err.println("ParseEDT: hmm, Root...");
 		System.exit(-1);
 		//return null;
-	    case 'P':
-		return new Pruned(parent, tree, index);
 	    default:
-		System.err.println("ParseEDT: expected '(', 'C', or 'B', but got " + t);
+		System.err.println("ParseEDT: unexpected character: " + t);
 		System.exit(-1);
         }
 	return null;

@@ -17,7 +17,7 @@ public class MainPanel extends Panel {
   public MainPanel(TraceFrame _frame) {
     frame = _frame;
     status = new Status("Not connected");
-    viewer = new SourceViewer(true, status);
+    viewer = new SourceViewer(status);
     dbgPanel = new DbgPanel(frame, this);
     outputPanel = new OutputPanel(frame, status);
     outputPanel.setDbgPanel(dbgPanel);

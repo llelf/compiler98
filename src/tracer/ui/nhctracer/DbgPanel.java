@@ -13,7 +13,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   Canvas canvas;
   SourceViewer viewer = null;
   ScrollPane scrollpane;
-  Point scrollPt;
   Status status;
   Color mbgc, bgc, fgc, lc;
   Trace trace;
@@ -22,20 +21,15 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   EDTNode selectedNode = null;
   public static int START_X = 0;
   public static int START_Y = 0;
-  // Image offscreen;
-  // Dimension offscreensize;
-  // Graphics offgraphics;
   Image nullScreen;
   Connection serverConnection;
   UI ui;
   NodeTable nodeTable;
   DbgPanel me;
-  boolean doPrint = false;
   FileDialog fd = null;
   int mouseX, mouseY;
   MouseMotionHandler mmhandler;
   MouseHandler mhandler;
-  // KeyHandler khandler;
 
   public DbgPanel(TraceFrame _frame, MainPanel _mainPanel) {
     super();
@@ -59,12 +53,12 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     canvas.setBackground(getBackground());
     canvas.addMouseMotionListener(mmhandler = new MouseMotionHandler());
     canvas.addMouseListener(mhandler = new MouseHandler());
-    // canvas.addKeyListener(khandler = new KeyHandler());
 
     nodeTable = new NodeTable();
 
     ui = new UI();
-    ui.normalfont = GetParams.getFont("nhctracer.tracefont", Font.PLAIN, "SansSerif", 18);
+    ui.normalfont =
+      GetParams.getFont("nhctracer.tracefont", Font.PLAIN, "SansSerif", 14);
     ui.boldfont = ui.normalfont;
     ui.normalfm = getFontMetrics(ui.normalfont);	
     ui.boldfm = getFontMetrics(ui.boldfont);	
@@ -86,13 +80,11 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   void disableListeners() {
     canvas.removeMouseMotionListener(mmhandler);
     canvas.removeMouseListener(mhandler);
-    // canvas.removeKeyListener(khandler);
   }
 
   void enableListeners() {
     canvas.addMouseMotionListener(mmhandler);
     canvas.addMouseListener(mhandler);
-    // canvas.addKeyListener(khandler);
   }
 
   public void connected() {
@@ -107,23 +99,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       frame.script.println(message);
     }
   }
-
-  // a secret key that may have worked once, when
-  // an old paint method printed to file instead
-  // if doPrint was set
-  /*
-  class KeyHandler extends KeyAdapter {
-    public void keyPressed(KeyEvent evt) {
-      switch (evt.getKeyChar()) {
-      case 'p':
-	if (evt.isMetaDown()) {
-	  me.doPrint = true;
-	  me.repaint();
-	}
-      }
-    }
-  }
-  */
   
   class MouseMotionHandler extends MouseMotionAdapter {
     public void mouseMoved(MouseEvent evt) {
@@ -133,7 +108,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	return;
       Object obj = 
 	trace.inside(ui, mouseX+ui.dx, mouseY+ui.dy, START_X, START_Y);
-	
       if (obj == null) {	
 	if (lastNode != null) {
 	  lastNode.color = Color.black;
@@ -154,7 +128,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      frame.script.println(new Events.NodeSelect(lastNode.path()));
 	  } else if (obj instanceof Trace) {
 	    Trace t = (Trace)obj;
-	    EDTNode newNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
+	    EDTNode newNode =
+	      ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
 	    while (newNode instanceof Case) {
 	      newNode = (EDTNode)((Case)newNode).args.elementAt(1);
 	    }
@@ -177,12 +152,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 
     public void mouseReleased(MouseEvent evt) {
       repaint();
-      if (scrollPt != null) {
-        scrollpane.invalidate();
-        scrollpane.setScrollPosition(scrollPt);
-	scrollPt = null;
-        scrollpane.validate();
-      }
     }
       
     public void mousePressed(MouseEvent evt) {
@@ -199,10 +168,11 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       else obj = trace.inside(ui, x+ui.dx, y+ui.dy, START_X, START_Y);
       if (obj == null) return;
       
-      // Selecting the last whole expression in a trace spine
-      // extends the trace itself.  Selecting any other whole
-      // expression winds back the trace to make that expression
-      // the last.
+      /* Selecting the last whole expression in a trace spine
+       * extends the trace itself.  Selecting any other whole
+       * expression winds back the trace to make that expression
+       * the last.
+       */
       if (obj instanceof EDTNode) {
 	EDTNode node = (EDTNode)obj;
 	if (node.parent == null &&
@@ -221,7 +191,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       if (obj instanceof Trace) {
 	status.setText("Expanding");
 	status.waitCursor();
-	scrollPt = scrollpane.getScrollPosition();
 	t = (Trace)obj;
 	selectedNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
 	while (selectedNode instanceof Case) {
@@ -243,7 +212,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       } else if (obj instanceof EDTNode) {
 	selectedNode = (EDTNode)obj;
 	if ((modifiers & InputEvent.BUTTON3_MASK) != 0 &&
-	    (modifiers & InputEvent.SHIFT_MASK) != 0) {	// Shift-right click
+	    (modifiers & InputEvent.SHIFT_MASK) != 0) {
+ 	  /* shift + right click */
 	  if (selectedNode instanceof IdName) {
 	    IdName name = (IdName)selectedNode;
 	    SourceRef sr = new SourceRef(name.module, new Integer(name.defpos));
@@ -252,7 +222,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    if (sr.col > 0) {
 	      status.waitCursor();
 	      try {
-	        viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	        viewer.showSourceLocation(serverConnection,
+		  sr.file, sr.line, sr.col);
 	      } catch (ArrayIndexOutOfBoundsException e) {
 	    	status.setText("No source reference to definition");
 	      }
@@ -261,14 +232,16 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      status.setText("No source reference to definition");
 	    }
 	  }
-	} else if ((modifiers & InputEvent.BUTTON3_MASK) != 0) {	// Right click
+	} else if ((modifiers & InputEvent.BUTTON3_MASK) != 0) {
+	  /* right click */
 	  SourceRef sr = selectedNode.sr;
 	  if (sr != null && sr.file != null) {
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
 	      frame.script.println(new Events.NodeSourceRef());
 	    try {
-	      viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	      viewer.showSourceLocation(serverConnection,
+	        sr.file, sr.line, sr.col);
 	    } catch (ArrayIndexOutOfBoundsException e) {
 	      status.setText("No source reference");
             }
@@ -276,16 +249,9 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  } else {
 	    status.setText("No source reference");
 	  }
-	} else if ((modifiers & InputEvent.BUTTON2_MASK) != 0 &&
-		   (modifiers & InputEvent.SHIFT_MASK) != 0) { // Shift-middle click
-	  if (selectedNode instanceof HString)
-	    ((HString)selectedNode).consify();
-	  else
-	    if (!HString.tryStringify(selectedNode))
-	      status.setText("Selected component is not a string");
-	  // repaint();
-	} else if ((modifiers & InputEvent.BUTTON2_MASK) != 0) {	// Middle click
-	  if (selectedNode instanceof CutOffTree) { // Expand it
+	} else if ((modifiers & InputEvent.BUTTON2_MASK) != 0) {
+  	  /* middle click*/
+	  if (selectedNode instanceof CutOffTree) {
 	    CutOffTree cot = (CutOffTree)selectedNode;
 	    status.setText("Expanding");
 	    status.waitCursor();
@@ -303,12 +269,12 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      ((EDTStructuredNode)obj).contract();
 	    }
 	  }
-	} else if ((modifiers & InputEvent.SHIFT_MASK) != 0) { // Shift-left click
-	  System.err.println(selectedNode.show());
-	} else {						// Left click
+	} else if ((modifiers & InputEvent.BUTTON1_MASK) != 0) {
+	  /* left click */
 	  if (selectedNode.trace != null) {
 	    selectedNode.trace.hidden = !selectedNode.trace.hidden;
-	  } else if ((t = selectedNode.tree.inTrace(selectedNode.trefnr)) != null) {
+	  } else if ((t = selectedNode.tree.inTrace(selectedNode.trefnr))
+	                != null) {
 	    selectedNode.setTrace(t);
 	    status.setText("");
 	  } else {
@@ -350,10 +316,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  status.normalCursor();
 	}
       }      
-      // scrollpane.doLayout();
-      // scrollpane.setScrollPosition(scrollPt);
-      // scrollpane.invalidate();
-      // scrollpane.validate();
     }
   }
 

@@ -4,7 +4,6 @@ import java.awt.*;
 import java.io.*;
 import java.util.Vector;
 import java.util.Hashtable;
-//import com.sun.java.swing.*;
 
 public class SourceViewer extends Panel {
     Status status;
@@ -12,25 +11,19 @@ public class SourceViewer extends Panel {
     Hashtable files;
     FileInfo currentFile;
     static final String spaces = "        ";
-    boolean useNetConn;
     TabbedPanel tabPanel;
 
-    public SourceViewer(boolean useNetConn, Status status) {
-        this.useNetConn = useNetConn;
+    public SourceViewer(Status status) {
 	this.status = status;
  	setLayout(new BorderLayout());
 
 	viewer = new TextArea(); //(12, 80);
 	add(viewer, BorderLayout.CENTER);
 	viewer.setEditable(false);
-	viewer.setFont(GetParams.getFont("nhctracer.sourcefont", Font.PLAIN, "Courier", 12));
+	viewer.setFont(GetParams.getFont("nhctracer.sourcefont",
+	                                 Font.PLAIN, "Courier", 12));
 	files = new Hashtable(20);
-
-	//resize(600, 400);
-	//setTitle("Source code browser");
-	//show();
     }
-
   
     public void setTabPanel(TabbedPanel tabPanel) {
         this.tabPanel = tabPanel;
@@ -47,21 +40,16 @@ public class SourceViewer extends Panel {
     }
 
     public void showSourceLocation(Connection conn, String filename, int r, int c) {
-      //setCursor(Frame.WAIT_CURSOR);			
 	getToolkit().sync();
 	if (filename != null && readFile(conn, filename)) {
 	    markPosition(r-1, c);
-	    //System.err.println("Marking line " + r + " col " + c + "\n");
-	    //showSelection();
 	}
-	//setCursor(Frame.DEFAULT_CURSOR);			
 	getToolkit().sync();
     }
 
     public void noSourceLocation() {
 	viewer.setText("");
 	currentFile = null;
-	//setTitle("No source reference available.");
     }
 
     public String replaceTabs(String s) {
@@ -83,22 +71,6 @@ public class SourceViewer extends Panel {
 	return s;
     }
 
-  BufferedReader findSourceFile(String filename) {
-    BufferedReader file;
-    String dirs[] = {"/grp/fp/nhcdbg/hsruntime/", 
-		     "/grp/fp/nhcdbg/hsruntime/mini-prelude/",
-		     "/grp/fp/nhcdbg/hsruntime/boxes/"};
-    for (int i = 0; i < dirs.length; i++) {
-      try {
-	file = new BufferedReader(new FileReader(dirs[i]+filename));
-	return file;
-      } catch (FileNotFoundException e) {
-      }
-    }
-    System.err.println("findSourceFile: Couldn't find " + filename);
-    return null;
-  }
-
     public boolean readFile(Connection conn, String filename) {
 	BufferedReader file;
 
@@ -107,13 +79,9 @@ public class SourceViewer extends Panel {
 	    return true;
 	}
 	status.setText("Loading " + filename);
-	    if (useNetConn) {
-	        conn.out.println("F");
-	        conn.out.println(filename);
-	        file = conn.in;
-	    } else {
-	      file = findSourceFile(filename);
-	    }
+	    conn.out.println("F");
+	    conn.out.println(filename);
+	    file = conn.in;
 	    FileInfo fi = new FileInfo();
 	    String line;
 
@@ -145,7 +113,6 @@ public class SourceViewer extends Panel {
     public void markPosition(int r, int c) {
         Integer i = (Integer)currentFile.lines.elementAt(r);
 	viewer.select(i.intValue() + c-1, i.intValue() + c);
-	//tabPanel.setSelectedComponent(this); //Swing
 	tabPanel.select("Source code");
     }
 
