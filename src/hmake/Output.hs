@@ -64,9 +64,10 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
                             "hat-trans $HATFLAGS "++pfile
     | otherwise = ""
   compilecmd = doEcho echo $
-    hc ++ "-c " ++ cppcmd ++
-    (if (dflag opts) then "-d "++(goalDir opts) else "-o "++ofile) ++
-    " " ++ hfile
+    hc ++ "-c " ++ cppcmd
+    ++ (if hat opts then "-package hat " else " ")
+    ++ (if (dflag opts) then "-d "++goalDir opts++" " else "-o "++ofile++" ")
+    ++ hfile
 
   hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
      | otherwise   = compilerPath (compiler opts)
@@ -97,6 +98,7 @@ qLink opts echo graph (Program file)     =
                         fixFile opts ""   (tmod f) (oSuffix opts)
                    else fixFile opts path (tmod f) (oSuffix opts)
   objfiles = close graph [] [file]
+  hatflag = if hat opts then "-package hat " else ""
   hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
      | otherwise   = compilerPath (compiler opts)
   cmd | isUnix opts =
@@ -104,7 +106,7 @@ qLink opts echo graph (Program file)     =
           if null goaldir then
 	    let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
-	     ++ doEcho echo (hc ++ " -o "++file++objs++" ${LDFLAGS}")
+	     ++ doEcho echo (hc++hatflag++" -o "++file++objs++" ${LDFLAGS}")
 	     ++ "fi\n"
           else
 	    let objs = lconcatMap (\(d,f) -> ' ':
@@ -112,7 +114,7 @@ qLink opts echo graph (Program file)     =
                                   objfiles in
 	    "if ( cd "++goaldir++" && [ `$OLDER "
              ++     file ++ " "++objs++"` = 1 ] )\nthen\n"
-	     ++ doEcho echo ("cd "++goal++" && "++hc++" -o "
+	     ++ doEcho echo ("cd "++goal++" && "++hc++hatflag++" -o "
                              ++file++objs++" ${LDFLAGS}")
 	     ++ "fi\n"
       | otherwise =
