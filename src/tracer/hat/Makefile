@@ -10,8 +10,8 @@ OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 
 PROGS = hat-stack hat-connect hat-check
 
-all: $(PROGS)
-install: $(PROGS)
+all: $(OBJDIR) $(PROGS)
+install: $(OBJDIR) $(PROGS)
 	$(INSTALL) $(PROGS) $(LIBDIR)/$(MACHINE)
 objdir: $(OBJDIR)
 objs: $(OBJS)
