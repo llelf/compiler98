@@ -975,10 +975,15 @@ tExp traced cr parent (ExpVar pos id) =
   e' = ExpVar pos (nameTransVar id) 
 tExp traced cr parent e@(ExpCon pos id) =
   tConApp traced parent e []
-tExp traced cr parent (ExpLit pos (LitString _ s)) =
+tExp traced cr parent (ExpLit pos litstr@(LitString _ s)) =
   -- the result is very large; should use special wrapper that
   -- transforms string in traced string instead
-  tExp traced cr parent (ExpList pos (map (ExpLit pos . LitChar Boxed) s))
+--  tExp traced cr parent (ExpList pos (map (ExpLit pos . LitChar Boxed) s))
+  (ExpApplication pos
+     [ExpVar pos tokenFromLitString,sr,parent,ExpLit pos litstr]
+  ,pos `addPos` emptyModuleConsts)
+  where
+  sr = mkSRExp pos traced
 tExp traced cr parent (ExpLit pos lit@(LitChar _ _)) =
   (ExpApplication pos 
     [ExpVar pos tokenConChar,mkSRExp pos traced,parent,ExpLit pos lit]
@@ -1023,7 +1028,13 @@ tExp traced cr parent (ExpLit pos lit@(LitInteger _ _)) =
 tExp traced cr parent (ExpList pos es) =
   -- the result is very large; should use special wrapper that
   -- transforms list in traced list instead
-  tExp traced cr parent . mkTList pos $ es
+--  tExp traced cr parent . mkTList pos $ es
+  (ExpApplication pos
+     [ExpVar pos tokenFromExpList,sr,parent,ExpList pos es']
+  ,pos `addPos` esConsts)
+  where
+  (es',esConsts) = tExps traced parent es
+  sr = mkSRExp pos traced
 tExp _ _ _ _ = error "tExp: unknown sort of expression"
 
 -- return False if matching the pattern may fail
@@ -1208,6 +1219,7 @@ tPat (PatNplusK pos id _ k _ _) =
   var2 = ExpVar pos tid2
   tid2 = mkLambdaBound (nameFromPos pos)
 tPat p = error ("tPat: unknown pattern at " ++ strPos (getPos p))
+
 
 -- convert a list of expressions into a list expression (with TraceIds)
 mkTList :: Pos -> [Exp TraceId] -> Exp TraceId
@@ -1644,6 +1656,11 @@ tokenConChar = mkTracingToken "conChar"
 
 tokenConInteger :: TokenId
 tokenConInteger = mkTracingToken "conInteger"
+
+tokenFromLitString :: TokenId
+tokenFromLitString = mkTracingToken "fromLitString"
+tokenFromExpList :: TokenId
+tokenFromExpList = mkTracingToken "fromExpList"
 
 -- tokens of the Prelude
 
