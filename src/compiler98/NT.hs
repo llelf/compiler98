@@ -5,15 +5,16 @@ module NT ( NT(..), NewType(..)
 	) where
 
 
+import Id(Id)
 import Extra(mixComma,mixSpace,mix,snub,flatten)
 import Char
 
 data NewType = NoType
-             | NewType [Int]       -- universally quantified type variables
-                       [Int]       -- existentially quantified type variables
-                       [(Int,Int)] -- context (class, type variable)
-                       [NT]        -- simple types 
-                                   -- ex.: [Int,Char,Bool] = Int->Char->Bool
+             | NewType [Id]       -- universally quantified type variables
+                       [Id]       -- existentially quantified type variables
+                       [(Id,Id)]  -- context (class, type variable)
+                       [NT]       -- simple types 
+                                  -- ex.: [Int,Char,Bool] = Int->Char->Bool
              deriving (Eq)
 
 instance Show NewType where
@@ -21,15 +22,15 @@ instance Show NewType where
   showsPrec d (NewType free exist ctxs nts) = 
     showString (strTVarsCtxsNTs free ctxs nts)
 
-data NT = NTany   Int  -- can be instantiated with unboxed 
-                       -- (needed during type checking)
-        | NTvar   Int
-        | NTexist Int
+data NT = NTany   Id  -- can be instantiated with unboxed 
+                      -- (needed during type checking)
+        | NTvar   Id
+        | NTexist Id
         | NTstrict NT
 	| NTapp   NT NT
-        | NTcons  Int [NT] 
-        | NTcontext Int Int  -- context (class, type variable)
-                             -- purpose here completely unclear (used?)
+        | NTcons  Id [NT] 
+        | NTcontext Id Id  -- context (class, type variable)
+                           -- purpose here completely unclear (used?)
          deriving (Eq,Ord)
 
 stripNT (NTany   v) = v
@@ -46,6 +47,10 @@ ntContext2Pair (NTcontext c a) = (c,a)
 contextNT (NTcontext _ _) = True
 contextNT  _ = False
 
+
+{- Determine the type constructors that occur in the given type -}
+consNT :: NT -> [Id]
+
 consNT nt =
   consNT' nt []
  where
@@ -53,6 +58,12 @@ consNT nt =
   consNT' (NTapp t1 t2) r = consNT' t1 (consNT' t2 r)
   consNT' (NTcons c nts) r = c:foldr consNT' r nts
   consNT' _ r = r
+
+{- 
+Same as consNT except that constructor from NTcontext goes also into result.
+used only in module Export 
+-}
+useNT :: NT -> [Id]
 
 useNT (NTany  a) = []
 useNT (NTvar  a) = []
@@ -62,12 +73,23 @@ useNT (NTapp t1 t2) =  useNT t1 ++ useNT t2
 useNT (NTcons a tas) =  a:concatMap useNT tas
 useNT (NTcontext c v) =  [c]
 
+
+{- Determine type variables that occur in given type. -}
+freeNT :: NT -> [Id]
+
 freeNT (NTany  a) = [a]
 freeNT (NTvar  a) = [a]
 freeNT (NTexist a) = [a]
 freeNT (NTstrict t) = freeNT t
 freeNT (NTapp t1 t2) =  freeNT t1 ++ freeNT t2
 freeNT (NTcons a tas) =  concat (map freeNT tas)
+
+
+{- 
+Exchange type variables according to given mapping in given type. 
+(not existentially quantified vars.
+-}
+freshNT :: (Id -> Id) -> NT -> NT
 
 freshNT tv (NTany  a) = NTany (tv a)
 freshNT tv (NTvar  a) = NTvar (tv a)

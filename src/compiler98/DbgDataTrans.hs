@@ -1,5 +1,6 @@
 {- ---------------------------------------------------------------------------
-
+Transforms all type definitions and type annotations of a program 
+for producing traces for debugging.
 -}
 module DbgDataTrans(dbgDataTrans) where
 
@@ -27,8 +28,11 @@ data Inherited = Inherited
                    (Tree (Int, Int)) -- reptree?
                    Bool              -- True if more debugging output
 data Threaded = Threaded 
-                   IntState          -- internal compiler state
-                   [(Pos, Int)]      -- constrs?
+                   IntState    -- internal compiler state
+                   [(Pos, Id)] -- defined data constructors
+
+type DbgDataTransMonad a = State Inherited Threaded a Threaded
+
 
 dbgDataTrans :: Flags                -- compiler flags (to test if debugging)
              -> IntState             -- internal compiler state
@@ -37,7 +41,9 @@ dbgDataTrans :: Flags                -- compiler flags (to test if debugging)
              -> Decls Id         -- input declarations
              -> (Decls Id        -- modified declarations
                 ,IntState            -- modified internal state
-                ,Maybe [(Pos,Int)])  -- constrs?, if transformation performed
+                ,Maybe [(Pos,Id)])   -- defined data constructors, 
+                                     -- if transformation performed
+                                     -- for SRIDTable
 
 dbgDataTrans flags state reptree lookupPrel dptopdecls =
   if (sDbgTrans flags) 
@@ -51,13 +57,19 @@ dbgDataTrans flags state reptree lookupPrel dptopdecls =
       (dptopdecls, state, Nothing)
 
 
-dTopDecls :: Decls Id -> Inherited -> Threaded -> (Decls Id,Threaded)
+dTopDecls :: Decls Id -> DbgDataTransMonad (Decls Id)
 
 dTopDecls (DeclsParse ds) = 
     getArities ds >=>
     unitS DeclsParse =>>> 
     (mapS dTopDecl ds >>>= \dss -> unitS (concat dss))
+
+
+dTopDecl :: Decl Int -> DbgDataTransMonad [Decl Id]
+
 --dTopDecl d@(DeclType (Simple tid _ _) t) = 
+-- type synonym definitions are removed earlier by the compiler
+-- and replaced by the following annotation
 dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
     lookupName noPos tid >>>= \(Just (InfoData _ _ _ nt _)) ->
     dNewType nt >>>= \nt' ->
@@ -76,9 +88,10 @@ dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
     unitS [DeclIgnore "Type Synonym"]
 dTopDecl (DeclData mb ctx simple constrs tycls) =
   dTrace ("DbgDataTrans.dTopDecl.DeclData") $
-  unitS (:[])  =>>> (unitS (DeclData mb ctx) {- =>>> addCtx ctx simple-} 
-  =>>> unitS simple 
-  =>>> mapS dConstr constrs =>>> unitS tycls)
+  unitS (:[])  
+  =>>> (unitS (DeclData mb ctx) {- =>>> addCtx ctx simple-} 
+        =>>> unitS simple 
+        =>>> mapS dConstr constrs =>>> unitS tycls)
 dTopDecl d@(DeclConstrs pos id constrids) = 
   dTrace ("DbgDataTrans.dTopDecl.DeclConstrs" ++ show constrids) $
   lookupName noPos id >>>= \(Just idinfo) ->
@@ -151,14 +164,14 @@ dTopDecl (DeclDataPrim pos id size) =
 dTopDecl d = dDecl d
 
 
-dDecls :: Decls Id -> Inherited -> Threaded -> (Decls Id,Threaded)
+dDecls :: Decls Id -> DbgDataTransMonad (Decls Id)
 
 dDecls (DeclsParse ds) = 
     getArities ds >=>
     unitS DeclsParse =>>> (mapS dDecl ds >>>= \dss -> unitS (concat dss))
 
 
-dDecl :: Decl Id -> State Inherited Threaded [Decl Id] Threaded
+dDecl :: Decl Id -> DbgDataTransMonad [Decl Id]
 
 dDecl d@(DeclDefault tys) = unitS [d]
 dDecl d@(DeclVarsType vars ctx ty) = 
@@ -223,24 +236,23 @@ dDecl d@(DeclForeignExp _ _ _ _) = unitS [d]
 dDecl x = error "Hmmm. No match in dbgDataTrans.dDecl"
 
 
-dFunClause :: Fun Id -> Inherited -> Threaded -> (Fun Id,Threaded)
+dFunClause :: Fun Id -> DbgDataTransMonad (Fun Id)
 
 dFunClause (Fun ps gdses decls) = 
     unitS (Fun ps) =>>> mapS dGdEs gdses =>>> dDecls decls
 
 
-dGdEs :: (Exp Id,Exp Id) 
-      -> Inherited -> Threaded -> ((Exp Id,Exp Id),Threaded)
+dGdEs :: (Exp Id,Exp Id) -> DbgDataTransMonad (Exp Id,Exp Id)
 
 dGdEs (gd, e) = unitS pair =>>> dExp gd =>>> dExp e
 
 
-dExps :: [Exp Id] -> Inherited -> Threaded -> ([Exp Id],Threaded)
+dExps :: [Exp Id] -> DbgDataTransMonad [Exp Id]
 
 dExps es = mapS dExp es
 
 
-dExp :: Exp Id -> Inherited -> Threaded -> (Exp Id,Threaded)
+dExp :: Exp Id -> DbgDataTransMonad (Exp Id)
 
 dExp (ExpLambda pos pats e) = 
   unitS (ExpLambda pos pats) =>>> dExp e
@@ -282,8 +294,7 @@ dExp (ExpConOp _ _)
 dExp e = unitS e
 
 
-dRemoveDo :: a -> [Stmt Id] 
-          -> Inherited -> Threaded -> (Exp Id,Threaded)
+dRemoveDo :: a -> [Stmt Id] -> DbgDataTransMonad (Exp Id)
 
 dRemoveDo p [StmtExp exp] = dExp exp
 dRemoveDo p (StmtExp exp:r) =
@@ -348,7 +359,7 @@ nofail state (PatIrrefutable pos pat) = True
 nofail state _ = False
 
 
-dAlt :: Alt Id -> Inherited -> Threaded -> (Alt Id,Threaded)
+dAlt :: Alt Id -> DbgDataTransMonad (Alt Id)
 
 dAlt (Alt pat gdexps decls) = 
     unitS (Alt pat) =>>> mapS dGdEs gdexps =>>> dDecls decls
@@ -360,7 +371,7 @@ Type translating functions
 {-
 Translate a type. All entities are wrapped in the RT type
 -}
-dType :: Type Id -> Inherited -> Threaded -> (Type Id,Threaded)
+dType :: Type Id -> DbgDataTransMonad (Type Id)
 
 dType t =
   lookupId TCon t_Arrow >>>= \arrow ->
@@ -381,17 +392,15 @@ dType t =
   in  dt t
 
 
-wrapRTtvars :: Pos
-            -> Inherited 
-            -> Threaded 
-            -> ((Type Id,a) -> (Type Id,a),Threaded)
+{- unused:
+wrapRTtvars :: Pos -> DbgDataTransMonad ((Type Id,a) -> (Type Id,a))
 
 wrapRTtvars pos =
   lookupId TCon tR >>>= \rid ->
   unitS (\(t, tvs) -> (TypeCons pos rid [t], tvs))
+-}
 
-
-wrapRT :: Pos -> Type Id -> Inherited -> Threaded -> (Type Id,Threaded)
+wrapRT :: Pos -> Type Id -> DbgDataTransMonad (Type Id)
 
 wrapRT pos t =
   lookupId TCon tR >>>= \rid ->
@@ -403,15 +412,14 @@ Translate a type with context.
 All type entities are wrapped in the RT type.
 Context is left unchanged.
 -}
-dCtxType :: Pos -> a -> Type Id
-         -> Inherited -> Threaded -> ((a,Type Id),Threaded)
+dCtxType :: Pos -> a -> Type Id -> DbgDataTransMonad (a,Type Id)
 
 dCtxType pos ctx ty' =
   dType ty' >>>= \ty'' ->
   unitS (ctx, ty'')
 
 
-dMethodNewType :: a -> NewType -> Inherited -> Threaded -> (NewType,Threaded)
+dMethodNewType :: a -> NewType -> DbgDataTransMonad NewType
 
 dMethodNewType isCaf (NewType free exist ctxs [nt]) =
 --Y  lookupId TClass tDisplayable >>>= \dispid ->
@@ -427,14 +435,20 @@ dMethodNewType isCaf (NewType free exist ctxs [nt]) =
   unitS  (NewType free exist (ctxs ++ newctxs) [nt''])   
 
 
-dNewType :: NewType -> Inherited -> Threaded -> (NewType,Threaded)
+{- 
+Translates a type (here NewType) similar to function dType.
+-}
+dNewType :: NewType -> DbgDataTransMonad NewType
 
 dNewType (NewType free exist ctxs nts) =
     mapS dNT nts >>>= \nts' ->
     unitS  (NewType free exist ctxs nts')
 
 
-dNT :: NT -> Inherited -> Threaded -> (NT,Threaded)
+{- 
+Translates a type (here NT) similar to function dType.
+-}
+dNT :: NT -> DbgDataTransMonad NT
 
 dNT t =
     lookupId TCon t_Arrow >>>= \arrow ->
@@ -455,20 +469,24 @@ dNT t =
         dt (NTstrict t) = unitS NTstrict =>>> dt t
 	dt t@(NTvar id) = unitS t
 	dt t@(NTany id) = unitS t
-	isTuple (TupleId _) = True
-	isTuple  _ = False
+        -- unused:
+	-- isTuple (TupleId _) = True
+	-- isTuple  _ = False
 	wrapNTs = map (\nt -> NTcons rt [nt])
     in  dt t 
 
 
-wrapNTRT :: NT -> Inherited -> Threaded -> (NT,Threaded)
+wrapNTRT :: NT -> DbgDataTransMonad NT
 
 wrapNTRT nt =
   lookupId TCon tR >>>= \rt ->
   unitS (NTcons rt [nt])
 
-
-wrapRNewType :: NewType -> Inherited -> Threaded -> (NewType,Threaded)
+{-
+Wrap type constructor R around all argument but not the result type.
+Arguments and result are assumed to be given in form of a list.
+-}
+wrapRNewType :: NewType -> DbgDataTransMonad NewType
 
 wrapRNewType (NewType free exist ctxs ts) =
   let (t:rts) = reverse ts in
@@ -477,7 +495,7 @@ wrapRNewType (NewType free exist ctxs ts) =
            (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
 
 
-topLevelNT :: NT -> Inherited -> Threaded -> (NT,Threaded)
+topLevelNT :: NT -> DbgDataTransMonad NT
 
 topLevelNT nt =
   lookupId TCon t_Arrow >>>= \arrow ->
@@ -487,15 +505,19 @@ topLevelNT nt =
   unitS (NTcons arrow [NTcons sr [], NTcons arrow [NTcons d [], nt']])
 
 
-dConstr :: Constr Id -> Inherited -> Threaded -> (Constr Id,Threaded)
+{-
+Apply type constructor R to type appearing in rhs of data/newtype 
+type definition.
+-}
+dConstr :: Constr Id -> DbgDataTransMonad (Constr Id)
 
 dConstr (Constr pos id ts) = 
     lookupId TCon tR >>>= \rid ->
     unitS (Constr pos id) =>>> 
-    unitS (map (\(a, b) -> (a, TypeCons pos rid [b])) ts)
+    unitS (map (\(fieldnames, ty) -> (fieldnames, TypeCons pos rid [ty])) ts)
 
 
-addSR :: Type Id -> Inherited -> Threaded -> (Type Id,Threaded)
+addSR :: Type Id -> DbgDataTransMonad (Type Id)
 
 addSR t = 
     lookupId TCon t_Arrow >>>= \arrow ->
@@ -503,7 +525,7 @@ addSR t =
     unitS (tc arrow [tc sr [], t])
 
 
-addD :: Type Id -> Inherited -> Threaded -> (Type Id,Threaded)
+addD :: Type Id -> DbgDataTransMonad (Type Id)
 
 addD t =
     lookupId TCon tTrace >>>= \did ->
@@ -513,7 +535,7 @@ addD t =
 {-
 Remove RT wrapper on the top level in type synonyms
 -}
-remR :: Type a -> b -> c -> (Type a,c)
+remR :: Type a -> DbgDataTransMonad (Type a)
 
 remR (TypeCons pos id [t]) = unitS t
 
@@ -547,7 +569,7 @@ isHigherOrder cvar (NewType free exist ctxs ts) =
 {-
 Determine Id for identifier given by kind and token
 -}
-lookupId :: IdKind -> TokenId -> Inherited -> Threaded -> (Id,Threaded)
+lookupId :: IdKind -> TokenId -> DbgDataTransMonad (Id)
 
 lookupId kind ident = 
   \(Inherited lookupPrel _ _ _ _) s -> (lookupPrel (ident, kind), s)
@@ -556,7 +578,7 @@ lookupId kind ident =
 {-
 Return info for given identifier
 -}
-lookupName :: a {-Pos-} -> Id -> b -> Threaded -> (Maybe Info,Threaded)
+lookupName :: a {-Pos-} -> Id -> DbgDataTransMonad (Maybe Info)
 
 lookupName pos ident = 
   \inh s@(Threaded state _) -> (lookupIS state ident, s)
@@ -564,7 +586,7 @@ lookupName pos ident =
 {-
 Return name for given identifier
 -}
-lookupNameStr :: Id -> a -> Threaded -> (String,Threaded)
+lookupNameStr :: Id -> DbgDataTransMonad String
 
 lookupNameStr ident  = 
   \inh s@(Threaded state _) -> (strIS state ident, s)
@@ -572,8 +594,8 @@ lookupNameStr ident  =
 
 -- Used for debugging
 
-showTheType :: (Show a, StrId a) 
-            => Type a -> b -> Threaded -> (String,Threaded)
+showTheType :: (Show a, StrId a) => Type a -> DbgDataTransMonad String
+
 showTheType t     = 
   \inh s@(Threaded state _) -> (strType False state t, s)
 showContext ctxs  = 
@@ -592,14 +614,14 @@ showNT (NewType free exist ctxs nts)  =
   arg = mkAL free
 
 
-getArity :: Id -> Inherited -> a -> (Id,a)
+getArity :: Id -> DbgDataTransMonad Id
 
 getArity id = \(Inherited _ alist _ _ _) s -> (assocDef alist (-1) id, s)
 --  (assocDef alist (error ("Internal error: Can't find arity for id #" 
 --                          ++ show id)) id, s)
 
 
-getArities :: [Decl Id] -> Inherited -> a -> (Inherited,a)
+getArities :: [Decl Id] -> DbgDataTransMonad Inherited
 
 getArities ds = \(Inherited lookupPrel _ cv reptree ot) s ->
     let ga (DeclFun pos id (Fun pat _ _:_)) = [(id, length pat)]
@@ -644,6 +666,12 @@ updateSynType tid nt =
 	    let st' = updateAT st tid (\_ -> InfoData u rtid ie nt k) in
 	    Threaded (IntState unique rps st' errors) constrs
 
+
+{-
+Set new type in symboltable info for given data constructor
+-}
+updateConstrType :: Id -> NewType -> a -> Threaded -> Threaded
+
 updateConstrType id nt = 
   \inh (Threaded (IntState unique rps st errors) constrs) ->
     case lookupAT st id of
@@ -652,23 +680,41 @@ updateConstrType id nt =
                         (\_ -> InfoConstr cid tid fix nt annot ty) in
 	    Threaded (IntState unique rps st' errors) constrs
 
+{-
+Add given data constructor with position to list in threaded state.
+Here *only* place where this list is modified in the transformation.
+-}
+addConstr :: Pos -> Id -> a -> Threaded -> Threaded
+
 addConstr pos id = \inh (Threaded is constrs) ->
     Threaded is ((pos, id):constrs)
 
+
+newVar :: Pos -> DbgDataTransMonad (Exp Id)
 
 newVar pos = \_ (Threaded istate cs) ->
                  case uniqueIS istate of
 	             (i, is') -> (ExpVar pos i, Threaded is' cs)
 
+
+getState :: DbgDataTransMonad IntState
+
 getState = \_ t@(Threaded is _) -> (is, t)
 
+
+setClassVar :: Id -> DbgDataTransMonad Inherited
 
 setClassVar id = \(Inherited lookupPrel alist _ reptree ot) s ->
     (Inherited lookupPrel alist id reptree ot, s)
 
 
+getClassVar :: DbgDataTransMonad Id
+
 getClassVar = \(Inherited _ _ cv _ _) s -> (cv, s)
 
+
+isNumSubClass :: Id -- class id
+                 -> DbgDataTransMonad Bool
 
 isNumSubClass c = \(Inherited lookupPrel _ _ _ _) s@(Threaded is  _) ->
     let dcnum  = lookupPrel (tDNum, TClass)
@@ -678,21 +724,32 @@ isNumSubClass c = \(Inherited lookupPrel _ _ _ _) s@(Threaded is  _) ->
     in (scof c, s)
 
 
+dTrace :: String -> (Inherited -> a -> b) -> Inherited -> a -> b
+
 dTrace str c = \i@(Inherited _ _ cv _ ot) s -> 
                  (if ot then trace str else id) (c i s)
 
 
+{- construct type from type constructor and types as arguments -}
+tc :: Id -- type constructor
+      -> [Type Id] 
+      -> Type Id
+
 tc c ts = TypeCons noPos c ts
 
+
+{- unused:
 nubEq p [] = []
 nubEq p (x:xs) = x : nubEq p (filter ((p x /=) . p) xs)
+-}
 
 -- Malcolm's additions:
 {-
 Create a new primitive identifier with given Info, changing just the
 location in the table (i.e. the lookup key).
 -}
-addNewPrim :: Info -> a -> Threaded -> (Id,Threaded)
+addNewPrim :: Info -> DbgDataTransMonad Id
+
 addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
   \_ (Threaded istate idt) ->
     case uniqueIS istate of
@@ -702,11 +759,13 @@ addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) =
             istate'' = addIS i info' istate'
         in (i, Threaded istate'' idt)
 
+
 {-
 Overwrite the original primitive identifier with new Info, reflecting
 the change in type and arity.
 -}
 overwritePrim :: Int -> a -> Threaded -> Threaded
+
 overwritePrim i = 
   \_ (Threaded istate idt) ->
       let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)

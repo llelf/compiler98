@@ -334,8 +334,9 @@ nhcExtract :: Flags           -- passes: compiler flags
               -- passes: maping from id token and kind to internal id
            -> c 
            -> Decls Id       -- reads: declarations of program
-           -> Maybe [(Pos,Int)] 
-              -- passes: Constrs? information between 2 tracing transformations
+           -> Maybe [(Pos,Id)] 
+              -- passes between 2 tracing transformations
+              -- data constructors defined in the module (by data/newtype)
            -> [ImpDecl TokenId] -- passes: import declarations of module
            -> IntState        -- updates: internal compiler state
            -> IO ()
@@ -360,7 +361,8 @@ nhcDbgTrans :: Flags             -- reads: compiler flags
             -- reads: maping from id token and kind to internal id
             -> c 
             -> Decls Id          -- updates: declarations of program
-            -> Maybe [(Pos,Int)] -- Constrs? produced by data transformation
+            -> Maybe [(Pos,Id)] 
+               -- uses: data constructors defined in module (by data/newtype)
             -> [ImpDecl TokenId] -- reads: import declarations of module
             -> IntState          -- updates: internal compiler state
             -> IO () 

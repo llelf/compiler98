@@ -59,7 +59,12 @@ data Info =
                   Id       -- unique
                   TokenId  -- token of data type name
                   IE 
-                  NewType  -- case type synonym: type it is defined to be
+                  NewType  -- if type synonym: type it is defined to be
+                           -- if data or newtype: defined type
+                           -- e.g.: data Num a => Test a b = A a | B b
+                           -- NewType [1,2] [] [(NumId, 1)] 
+                           --   [NTvar 1, NTvar 2, NTcons TestId 
+                           --                        [NTvar 1, NTvar 2]]
                   DataKind -- kind of data type 
   | InfoClass     Int      -- unique
                   TokenId  -- token of class name
@@ -230,14 +235,20 @@ updTypeSynonym unboxed depth (InfoData   unique tid exp nt dk) =
 	  (InfoData   unique tid exp nt (DataTypeSynonym unboxed depth)) 
 
 
+{-
+Sets the unboxedness information in newtype info as given.
+-}
 updNewType :: Bool -> Info -> Info
 
-updNewType unboxed (InfoData   unique tid exp nt dk) =
+updNewType unboxed (InfoData unique tid exp nt dk) =
       case dk of
-	(DataNewType _ constructors) -> InfoData   unique tid exp nt (DataNewType unboxed constructors)
+	(DataNewType _ constructors) -> 
+          InfoData unique tid exp nt (DataNewType unboxed constructors)
 
-
--- newNT is only applied to identifiers without types, i.e. never methods of any kind!
+{-
+Sets the type information in variable info as given.
+Is only applied to identifiers without types,i.e. never methods of any kind!
+-}
 newNT :: NewType -> Info -> Info
 
 newNT nt (InfoVar unique tid fix exp _ annot) =  InfoVar unique tid fix exp nt annot

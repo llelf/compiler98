@@ -78,18 +78,18 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors
     Left x ->
       (unique,getInts (lookupAll (rt:rts)),rps,st,derived,defaults,errors ++ x)
   where
-  checkTypes :: Tree (Int,Info) -> [Int] -> Either [String] (Tree (Int,Info))
+  checkTypes :: Tree (Id,Info) -> [Id] -> Either [String] (Tree (Id,Info))
   checkTypes st needCheck =
     case foldls (checkPrep st) ([],[]) needCheck of   
       -- !!! Do these checks at defining site only !!!
-      (synType,newType) ->
+      (synType,newType) -> -- first look for error in type synonym defs
 	let keep = map fst synType
 	    sccSyn = sccDepend 
                        (map ( \ (u,d) -> (u,filter (`elem` keep) d)) synType)
         in
 	  case (filter isRec sccSyn) of
 	    x@(_:_) -> Left (map (err2 st) x)
-	    [] ->
+	    [] -> -- now look for error in newtype defs
 	      case foldls ( \ (st,err) (u,c) -> 
 				case isUnBoxedNT st newType [u] c of
 				  Just unboxed -> 
@@ -120,6 +120,20 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors
       Nothing -> 0
       Just d  -> d
 
+
+  {- 
+  Determines for given newtype type constructor, if the renamed type
+  is unboxed. Returns Nothing if definition is circular.
+  -}
+  isUnBoxedNT :: Tree (Id,Info) -- symboltable
+              -> [(Id,Id)]  -- for every newtype type constructor 
+                            -- the top type constructor of the renamed type
+              -> [Id]       -- accumulates newtype type constructors
+                            -- that have already been visited to recognise
+                            -- circularity.
+              -> Id         -- newtype type constructor that is tested
+              -> Maybe Bool
+
   isUnBoxedNT st nt ac u =
     if u `elem` ac then	-- already been here, so circular defn.
       Nothing
@@ -144,12 +158,13 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors
                       case (ntI . dropJust . lookupAT st) coni of
                         (NewType _ _ _ [NTcons u' _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
-                        _ -> error ("when renaming: newtype of imported newtype")
-                    [] -> strace ("Warning: when renaming newtype of imported newtype:\n"++
-                                  "  Real type of imported newtype is not visible.\n"++
-                                  "  I might get boxed/unboxed info wrong.") Nothing
+                        _ -> error "when renaming: newtype of imported newtype"
+                    [] -> strace 
+                     ("Warning: when renaming newtype of imported newtype:\n"++
+                      "  Real type of imported newtype is not visible.\n"++
+                      "  I might get boxed/unboxed info wrong.") Nothing
 
-  isUnBoxedTS st u = -- Not circular dependency when this function is called
+  isUnBoxedTS st u = -- No circular dependency when this function is called
     case lookupAT st u of
       Nothing -> -- FAKE This is a BUG but unboxed is not used anyway
         False
@@ -164,6 +179,20 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors
 	  Nothing ->
 	    isDataUnBoxed info
 
+  {- 
+  Add some information about given type constructor to list,
+  either to list about type synonyms or list about newtypes.
+  Type constructor must be for type synonym or newtype.
+  -}
+  checkPrep :: Tree (Id,Info) -- symboltable
+            -> ([(Id,[Id])],[(Id,Id)]) 
+               -- 1 synonym list: type constructor, type cons occuring in rhs
+               -- 2 newtype list: type constructor, top type constructor
+               --     of renamed type (eg. [] in newtype T = T [Int])
+            -> Id -- type constructor 
+            -> ([(Id,[Id])],[(Id,Id)])
+               -- same format as argument
+
   checkPrep st (synType,newType) u =
     case lookupAT st u of
       Just info ->
@@ -176,16 +205,18 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors
             case constrsI info of
 	      (coni:_) ->
 		 case (ntI . dropJust . lookupAT st ) coni of
-  	            (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
-                    _ -> error ("Couldn't find rhs of newtype: "++show (tidI info)++
-                                "\nTwo conflicting datatype definitions?")
-	      [] -> (synType,newType)		-- !!! Not a good solution !!!
+  	           (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
+                   _ -> error ("Couldn't find rhs of newtype: " ++
+                               show (tidI info)++
+                               "\nTwo conflicting datatype definitions?")
+	      [] -> (synType,newType) -- !!! Not a good solution !!!
       Nothing -> error ("Couldn't find definition for newtype "++show u)
 
-  err2 ts (Rec [x]) = "Circular type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
+  err2 ts (Rec [x]) = 
+    "Circular type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
   err2 ts (Rec (x:xs)) = "Circular dependency between the type synonyms "
-		    ++ concatMap ((++", "). show . tidI . dropJust . lookupAT ts) xs ++ "and "
-		    ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
+    ++ concatMap ((++", "). show . tidI . dropJust . lookupAT ts) xs ++ "and "
+    ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
 
 -- Only important that it works for data, class, type and newtype
 thisModule rps (TupleId _) = rps == rpsPrelude
@@ -544,7 +575,7 @@ defineDefault types down
       needCheck
 
 {-
-Add a type synonym to symboltabe. (It must be already in renaming table.)
+Add a type synonym to symboltable. (It must be already in renaming table.)
 -}
 
 defineType :: TokenId      {- type synonym -}
@@ -622,7 +653,7 @@ Add entry for data or newtype declaration to symboltable.
 defineData :: Maybe Bool {- Nothing: newtype, Just False: data unboxed,
                             Just True: data (boxed) -}
            -> TokenId    {- type constructor -}
-           -> NewType 
+           -> NewType    {- defined type (coded with type variables) -}
            -> [Id]       {- data constructors -} 
            -> State RenameToken RenameState Id RenameState
 

@@ -74,7 +74,8 @@ data DeclsDepend id =
 data Decl id =
        -- type   simple  = type
        DeclType (Simple id) (Type id)
-       -- {data/data unboxed/newtype} context => simple constrs 
+       -- {Nothing = newtype, Just False = data, Just True = data unboxed}
+       -- context => simple = constrs 
        -- deriving (tycls)
      | DeclData (Maybe Bool) [Context id] (Simple id) [Constr id] [(Pos,id)]
        -- data primitive conid size
@@ -151,7 +152,7 @@ data Constr id = Constr
                    id        -- data constructor
                    [(Maybe [(Pos,id)],Type id)]
                    -- argumentlist with field labels if any
-                   -- (many field labes with same type possible)
+                   -- (many field labels with same type possible)
                | ConstrCtx  
                    [(Pos,id)]     -- type variabes from forall
                    [Context id]   -- context of data constructor

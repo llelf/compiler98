@@ -37,8 +37,9 @@ data Inherited = Inherited
 
 data Threaded = Threaded 
                   IntState 
-                  (Id, [Id])   -- source reference table
-                  [(Pos, Id)]  -- identifier table
+                  (Id, [Id])   -- source reference table, 
+                               -- accumulated for SRIDTable
+                  [(Pos, Id)]  -- identifier table, accumulated for SRIDTable
                 -- (AssocTree Int (Exp Int)) -- [(Int, Int)]  ??
 
 
@@ -65,7 +66,6 @@ dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
 {-
 Transforms all value definitions for producing traces for debugging.
 -}
-{-
 debugTrans :: a 
            -> IntState 
            -> ((TokenId,IdKind) -> Id) 
@@ -73,11 +73,10 @@ debugTrans :: a
            -> b 
            -> [ImpDecl TokenId]  
            -> Decls Id 
-           -> Maybe [(Pos,Int)] 
-           -> (Decls Id              -- transformed declarations
+           -> Maybe [(Pos,Id)] -- data constructors defined by data/newtype
+           -> (Decls Id        -- transformed declarations
               ,IntState
               ,SRIDTable)
--}
 
 debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
   initDebugTranslate (dTopDecls decls) istate lookupPrel
@@ -618,8 +617,8 @@ dExp cr (ExpApplication pos (f:es))     =
 	    dExps True (f:es) >>>= \fes ->
 	    getD >>>= \trail ->
             unitS (ExpApplication pos (apply:sr:trail:fes))
-dExp cr e@(ExpCon pos id)           = saturateConstr e []
-dExp cr e@(ExpVar pos id)		 = 
+dExp cr e@(ExpCon pos id) = saturateConstr e []
+dExp cr e@(ExpVar pos id) = 
     lookupName id >>>= \name ->
     getIdArity id >>>= \arity ->
     case arity of
@@ -672,10 +671,12 @@ dExp cr (ExpList pos es) =
     foldS 
         (\e es -> wrapConst consid [e, es])
         (lookupCon pos t_List >>>= \nil -> wrapConst nil []) es'
-dExp cr e                           = error ("dExp: no match")
+dExp cr e = error ("dExp: no match")
 
 
-saturateConstr :: Exp Id -> [Exp Id] -> DbgTransMonad (Exp Int)
+saturateConstr :: Exp Id      -- data constructor
+               -> [Exp Id]    -- arguments of the data constructor
+               -> DbgTransMonad (Exp Id) -- transformed constructor application
 
 saturateConstr c@(ExpCon pos id) args =
     --trace ("<<< " ++ show id' ++ " -> " ++ show id) $
@@ -1099,6 +1100,9 @@ makeSourceRef p (Inherited _ _ lookupPrel) s@(Threaded is (nsr, srs) idt) =
   sr3 = lookupPrel (tSR3, Con)
 
 
+{-
+Add identifier with position to threaded list.
+-}
 addId :: (Pos,Id) -> a -> Threaded -> Threaded
 
 addId pid inh (Threaded is srt idt) = Threaded is srt (pid:idt)
