@@ -24,7 +24,7 @@
 <dt><em>the monomorphism restriction</em></dt>
   <dd>is not implemented.</dd>
 <dt><em>the Unicode character set</em></dt>
-  <dd>is not fully supported yet - internally, characters are 16-bits,
+  <dd>is not fully supported yet - internally, characters are 32-bits,
       but Haskell source files are read in 8-bit UTF.</dd>
 <dt><em>Latin-ISO-8859-1 character set not fully supported</em></dt>
   <dd><a href="bugs/nhc13test18.hs">Example program</a>.</dd>
@@ -66,15 +66,15 @@
   <dd><a href="bugs/nhc98test21.hs">Example program</a>.</dd>
 <dt><em>Nhc does not handle data types with arguments of kind *->* correctly</em></dt>
   <dd><a href="bugs/nhc98test22.hs">Example program</a>.</dd>
-<dt><em>Import bugs</em></dt>
-  <dd>An `import M' should bring both qualified and unqualified names into
-      scope.  Currently, only unqualified names are available.  A workaround
-      is to use an additional explicit `import qualified M'.
 </dl>
 
 
 <h3>Fixed bugs :-)</h3>
 <dl>
+<dt><em>Import bugs</em> (fixed 011019)</dt>
+  <dd>An `import M' should bring both qualified and unqualified names into
+      scope, but nhc98 only made unqualified names are available unless
+      there was an additional explicit `import qualified M'.</dd>
 <dt><em>As-pattern bindings</em> (fixed 010205)</dt>
   <dd>An @-pattern as argument to a function or lambda was okay,
       but in a CAF pattern-binding, led either to wrong
@@ -196,7 +196,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.08.08<br>
+2001.10.22<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

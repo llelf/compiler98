@@ -17,12 +17,9 @@ low-level FFI is at
 <tt>http://www.haskell.org/ghc/docs/latest/set/ffi.html</tt></a>
 
 <p>
-We also supply a version of Sven Panne's proposed FFI library which
-adds a layer of useful functions on top of the basic mechanism.  His
-specification is at
-
-<a href="http://www.pms.informatik.uni-muenchen.de/mitarbeiter/panne/haskell_libs/ffi.html">
-<tt>http://www.pms.informatik.uni-muenchen.de/mitarbeiter/panne/haskell_libs/ffi.html</tt></a>
+We also supply a version of the proposed standard FFI libraries which
+add a layer of useful functions on top of the basic mechanism.  The
+signature of nhc98's FFI library is <a href="libs/FFI.html">here</a>.
 
 You can use this library in <b>nhc98</b> by adding <tt>import FFI</tt> to
 your programs.
@@ -55,8 +52,8 @@ your programs.
      declaration.
 <li> The set of primitive types allowed across the FFI is slightly larger
      than the standard set in <b>nhc98</b>:  we allow <tt>PackedString</tt>
-     (also known as <tt>CString</tt>) to be passed - these are genuine
-     null-terminated C-style strings.  Used as a result type, the string
+     to be passed - these are genuine null-terminated C-style strings.
+     Used as a result type, the string
      is copied into the Haskell heap (allowing the original pointer to be
      freed safely); used as an argument type, a pointer to the
      heap-allocated string is passed to C (i.e. do not free it!).
@@ -85,7 +82,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.11.28<br>
+This page last modified: 2001.11.28<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

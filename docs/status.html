@@ -14,6 +14,21 @@ described here for the two most recent released versions.
 <p>
 
 <hr>
+<h3>nhc98 1.11 (CVS development version) features</h3>
+<ul>
+<li> Bugfix:	The Time library now has implementations of addToClockTime
+		and diffClockTimes, and tdPicoSec is renamed to tdPicosec.
+<li> Bugfix:	The Numeric library now has implementations of floatToDigits,
+		formatRealFloat, fromRat, and show[EFG]Float.
+<li> Bugfix:	It is now possible to tunnel from hat-trail to
+		hat-observe and hat-detect.  In hat-trail, double
+		right-click on an identifier to start hat-observe,
+		or on an entire redex to start hat-detect.
+<li> Bugfix:	Numerous small problems with building on MacOS X have
+		been ironed out.
+</ul>
+
+<hr>
 <h3>nhc98 1.10 (2001-10-19) features</h3>
 <ul>
 <li> Bugfix:	The qualified import/export namespace is now managed much
@@ -21,9 +36,9 @@ described here for the two most recent released versions.
 		of the Haskell'98 Report.
 <li> Bugfix:	In the Hat tools, there is a more accurate distinction between
 		top-level identifiers and local identifiers.
-		enabling the user to jump directly to something of interest.
-<li> Bugfix:	Numerous small bugfixes in hat-observe, hat-detect, and
-		hat-trail.
+<li> Bugfix:	Numerous small bugfixes in hat-observe and hat-detect,
+		including better pretty-printing of infix expressions and
+		strings.
 </ul>
 
 <hr>
@@ -93,7 +108,7 @@ time profiler, and common FFI.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>2001-10-18</td>
-  <td>2001-10-18</td>
+  <td>2001-10-26</td>
   <td>1997</td>
   <td>1996</td>
   <td>2001-06-01</td>
@@ -122,7 +137,7 @@ time profiler, and common FFI.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>2001-10-16</td>
-  <td>2001-10-18</td>
+  <td>2001-10-25</td>
   <td>2001-05-18</td>
   <td>2001-03-01</td>
   <td>2000-11-10</td>
@@ -138,7 +153,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.10.18<br>
+This page last modified: 2001.10.26<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

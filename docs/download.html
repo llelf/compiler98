@@ -45,6 +45,38 @@ instructions</a>.
   <td>2001-10-19</td>
   <td>5.9Mb</td></tr>
 
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-basic-freebsd.tgz">
+      Executable (.tar.gz)<br><font size=-1>(basic compiler)</font></a></td>
+  <td>ix86-FreeBSD-4.4</td>
+  <td>1.10</td>
+  <td>2001-10-23</td>
+  <td>2.9Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-with_tracer-freebsd.tgz">
+      Executable (.tar.gz)<br><font size=-1>(with tracer)</font></a></td>
+  <td>ix86-FreeBSD-4.4</td>
+  <td>1.10</td>
+  <td>2001-10-23</td>
+  <td>5.6Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-1.src.rpm">
+      Sources (.rpm)</a></td>
+  <td>any</td>
+  <td>1.10</td>
+  <td>2001-10-25</td>
+  <td>6.8Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-1.i386.rpm">
+      Executable (.rpm)</a></td>
+  <td>ix86-Linux (RH7.2)</td>
+  <td>1.10</td>
+  <td>2001-10-25</td>
+  <td>4.9Mb</td></tr>
+
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.08.tar.gz">
       Sources (.tar.gz)</a></td>
@@ -97,26 +129,25 @@ instructions</a>.
 </center>
 
 <p>
-<center>
 <em>Alternative locations:</em>
 <br>
-Tarfiles:
-<br>
+Tarfiles and RPMs:
 <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/">
 <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/</tt></a>
 <br>
-ix86-Linux RPMs for RedHat 6.2:
-<br>
-<a href="ftp://urano.iceb.ufop.br/pub/nhc98/">
-<tt>ftp://urano.iceb.ufop.br/pub/nhc98/</tt></a>
+ix86-Linux RPMs for SuSE 7.1:
+<a href="http://www.informatik.uni-bonn.de/~ralf/hmake-2.03-1.i386.rpm">
+<tt>http://www.informatik.uni-bonn.de/~ralf/hmake-2.03-1.i386.rpm</tt></a>
+<a href="http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.i386.rpm">
+<tt>http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.i386.rpm</tt></a>
+<a href="http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.src.rpm">
+<tt>http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.src.rpm</tt></a>
 <br>
 ix86-Linux RPMs for RedHat 7:
-<br>
 <a href="http://www.dtek.chalmers.se/~d95mback/nhc98/">
 <tt>http://www.dtek.chalmers.se/~d95mback/nhc98/</tt></a>
 <br>
 ix86-Linux for Debian:
-<br>
 <a href="http://people.debian.org/~bfulgham/nhc98">
 <tt>http://people.debian.org/~bfulgham/nhc98</tt></a>
 <br>
@@ -124,14 +155,12 @@ ix86-Linux for Debian:
 <tt>http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/</tt></a>
 <br>
 ix86-FreeBSD for 4.4-Stable:
+<a href="http://ist.unibw-muenchen.de/People/obraun/nhc98-1.10-basic-freebsd.tgz">
+<tt>http://ist.unibw-muenchen.de/People/obraun/nhc98-1.10-basic-freebsd.tgz</tt></a>
 <br>
-<a href="http://ist.unibw-muenchen.de/People/obraun/nhc98-1.08-basic-freebsd.tgz">
-<tt>http://ist.unibw-muenchen.de/People/obraun/nhc98-1.08-basic-freebsd.tgz</tt></a>
+<a href="http://ist.unibw-muenchen.de/People/obraun/nhc98-1.10-with_tracer-freebsd.tgz">
+<tt>http://ist.unibw-muenchen.de/People/obraun/nhc98-1.10-with_tracer-freebsd.tgz</tt></a>
 <br>
-<a href="http://ist.unibw-muenchen.de/People/obraun/nhc98-1.08-with_tracer-freebsd.tgz">
-<tt>http://ist.unibw-muenchen.de/People/obraun/nhc98-1.08-with_tracer-freebsd.tgz</tt></a>
-<br>
-</center>
 
 <hr>
 
@@ -139,7 +168,7 @@ ix86-FreeBSD for 4.4-Stable:
 <center>
 <b>Known to compile for at least the following machine/OS combinations:</b><br>
 <table border=1 cellspacing=0 cellpadding=2 bgcolor="#dddddd"><tr>
-<td>ix86</td><td>Linux, NetBSD, FreeBSD, CYGWIN_NT4, CYGWIN_95</td>
+<td>ix86</td><td>Linux, NetBSD, FreeBSD, OpenBSD, CYGWIN_NT4, CYGWIN_95</td>
 </tr><tr>
 <td>ppc</td><td>Linux</td>
 </tr><tr>
@@ -191,6 +220,74 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-keywords">
+      keywords</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-12</td>
+  <td>Do not treat `qualified', `hiding', or `interface' as keywords of
+      the language - they are significant only in certain positions.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-counter">
+      counter</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-12</td>
+  <td>Increase garbage collection counters to 64-bits for correct reports
+      in long-running computations.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-hp2graph">
+      hp2graph</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-09</td>
+  <td>Workaround for a rare buffer problem in hp2graph.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-arrow">
+      arrow</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-08</td>
+  <td>Accept `instance ClassName (Prelude.->)' in source and interface files.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-MacOSX">
+      MacOS X</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-08</td>
+  <td>Bugfix to pass PowerPC endianness into the build on a MacOS X machine.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-hiding">
+      hiding</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-01</td>
+  <td>Where an entire module is re-exported, but one of its variables
+      is hidden on import, the hidden variable should not be re-exported.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-Array">
+      Array</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-10-24</td>
+  <td>Fix link message "undefined reference to
+      `FN_Ix_46_95_46Unknown_46variable'" when using library Array.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-ghc5.02">
+      ghc5.02</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-10-23</td>
+  <td>Update configuration script (again) to detect ghc-5.02 correctly.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-ghc5.02">
       ghc5.02</a></td>
   <td>nhc98 v1.08</td>
@@ -198,7 +295,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Update configuration script to detect ghc-5.02 correctly.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-hmake">
       hmake</a></td>
   <td>nhc98 v1.08</td>
@@ -206,7 +303,7 @@ be comprehensive, but if you have any problems, please mail
   <td>When hmake detects an error, the message should go to stderr, not stdout.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-hat-makefile">
       hat-makefile</a></td>
   <td>nhc98 v1.08</td>
@@ -228,7 +325,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.10.19<br>
+This page last modified: 2001.11.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
