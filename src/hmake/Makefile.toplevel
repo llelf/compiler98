@@ -7,7 +7,8 @@ BUILDCOMP = $(shell echo ${BUILDWITH} | cut -c1-3)
 
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
-	src/interpreter/Makefile* src/interpreter/*.hs
+	src/interpreter/Makefile* src/interpreter/*.hs \
+	src/cpphs/*.hs
 
 LIBDIR  = lib
 TARGDIR = targets
@@ -39,13 +40,13 @@ $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	@echo "WARNING: hmake might not build correctly from C sources!"
@@ -53,13 +54,13 @@ $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
 $(TARGDIR)/$(MACHINE)/hi-nhc: $(HMAKE) hmake-nhc
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hi-nhc98
 $(TARGDIR)/$(MACHINE)/hi-hbc: $(HMAKE) hmake-hbc
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hi-hbc
 $(TARGDIR)/$(MACHINE)/hi-ghc: $(HMAKE) hmake-ghc
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hi-ghc
 $(TARGDIR)/$(MACHINE)/chi: $(HMAKEC) chmake
 	@echo "WARNING: hi might not build correctly from C sources!"
