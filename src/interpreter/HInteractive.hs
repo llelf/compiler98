@@ -75,6 +75,7 @@ toplevel state = do
           _   -> evaluate s (words s) state
      toplevel state
 
+evaluate :: String -> [String] -> State -> IO ()
 evaluate expr ("main":args) state =
   case scope state of
     Nothing ->
