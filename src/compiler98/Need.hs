@@ -1,23 +1,57 @@
-module Need(needProg) where
+{- ---------------------------------------------------------------------------
+Perform "need" analysis (which imported entities are required?) 
+-}
+module Need(Flags,Module,TokenId,NeedTable,HideDeclIds,PackedString,IdKind
+           ,Tree
+           ,needProg) where
 
 import Reduce
-import NeedLib
+import NeedLib(NeedLib,initNeed,needit,popNeed,pushNeed,bindTid,needTid
+              ,NeedTable)
 import Syntax
 import IdKind
-import PreImport
+import PreImport(HideDeclIds,qualRename,preImport)
 import TokenId
 import DbgId
 import TokenInt
-import Flags
+import Flags(Flags(sDbgPrelude,sDbgTrans))
 import SyntaxPos
 import Extra
 import SyntaxUtil(infixFun)
 import Tree234
 
+import Overlap(Overlap)
+import Info(IE)
+import PackedString(PackedString)
+import ImportState(ImportState)
+
+
+needProg :: Flags -> Module TokenId -> a {- [FixDecl TokenId] -} 
+         -> (NeedTable
+            ,TokenId -> [TokenId]
+            ,Overlap
+            ,Either [Char] 
+               (Bool -> Bool -> TokenId -> IdKind -> IE
+               ,[(PackedString
+                 ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
+                  -> [[TokenId]] -> Bool
+                 ,HideDeclIds
+                 )
+                ]
+               )
+            )
+
 needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) inf =
   let qualFun = qualRename impdecls
-  in case needit (needModule (sDbgTrans flags || sDbgPrelude flags) n) qualFun (initNeed (modidl == tMain)) of
-       (need,overlap) -> (need,qualFun,overlap,preImport flags modidl (treeMap fst need) exports impdecls)
+  in case needit (needModule (sDbgTrans flags || sDbgPrelude flags) n) 
+                 qualFun (initNeed (modidl == tMain)) of
+       (need,overlap) -> (need,qualFun,overlap
+                         ,preImport flags modidl (treeMap fst need) 
+                            exports impdecls
+                         )
+
+
+needModule :: Bool -> Module TokenId -> NeedLib -> NeedLib
 
 needModule debugging (Module pos modid exports imports fixdecls topdecls) =
       pushNeed >>>
@@ -35,12 +69,18 @@ needModule debugging (Module pos modid exports imports fixdecls topdecls) =
       popNeed
 
 
---------------------------------
+-- ------------------------------
+
+
+needExport :: Export TokenId -> NeedLib -> NeedLib
 
 needExport  (ExportEntity  pos entity) =
     needEntity entity
 needExport  (ExportModid   pos hs) =
     needTid pos Modid hs
+
+
+needEntity :: Entity TokenId -> NeedLib -> NeedLib
 
 needEntity (EntityVar  pos hs) =             		-- varid
     needTid pos Var hs
@@ -53,6 +93,9 @@ needEntity (EntityTyCls  pos hs posidents) =   	-- TyCls(varid,..,varid)
        needTid pos TClass hs
     >>> needPosIdents Method posidents
 
+
+needPosIdents :: IdKind -> [(Int,TokenId)] -> NeedLib -> NeedLib
+
 needPosIdents kind posidents = 
     mapR ( \ (pos,tid) -> needTid pos kind tid) posidents
 
@@ -64,20 +107,32 @@ needPosIdents kind posidents =
 --    unitR -- needTid pos Modid tid
 --needImport (ImportQas (pos,tid) (pos2,tid2)) =
 --    unitR -- needTid pos Modid tid
+
+
+needImport :: ImpDecl TokenId -> NeedLib -> NeedLib
+
 needImport (Import (pos,tid) impspec) = needImpSpec impspec
 needImport (ImportQ (pos,tid) impspec) = needImpSpec impspec
 needImport (ImportQas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
 needImport (Importas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
+
+
+needImpSpec :: ImpSpec TokenId -> NeedLib -> NeedLib
 
 needImpSpec (NoHiding entities) = mapR needEntity entities
 needImpSpec (Hiding entities)   = unitR
 
 -----------------------------------
 
+needFixDecl :: (InfixClass TokenId,a,[FixId TokenId]) -> NeedLib -> NeedLib
+
 needFixDecl (InfixPre tid,level,posidents) =
   needTid (getPos (head posidents)) Var tid >>> mapR needFixId posidents
 needFixDecl (typeClass,level,posidents) = 
   mapR needFixId posidents
+
+
+needFixId :: FixId TokenId -> NeedLib -> NeedLib
 
 needFixId (FixCon pos tid) = needTid pos Con tid
 needFixId (FixVar pos tid) = needTid pos Var tid
@@ -254,6 +309,9 @@ needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var
 --      "\nPunning of named fields has been removed from the Haskell language."++
 --      "\nUse "++show var++"="++show var++" instead.")
 
+
+needExp :: Exp TokenId -> NeedLib -> NeedLib
+
 needExp (ExpScc            str exp) =  needExp exp
 needExp (ExpLambda         pos pats exp) =
      pushNeed  >>> mapR bindPat pats  >>> needExp exp  >>> popNeed
@@ -287,6 +345,9 @@ needExp (PatNplusK        pos tid _ _ _ _) = needTid pos Var tid >>>
 
 ----------- ========================
 
+
+bindImport :: ImpDecl TokenId -> NeedLib -> NeedLib
+
 bindImport (Import (pos,tid) impspec) =
     bindTid Modid tid
 bindImport (ImportQ (pos,tid) impspec) =
@@ -296,21 +357,38 @@ bindImport (ImportQas (pos,tid) (pos2,tid2) impspec) =
 bindImport (Importas (pos,tid) (pos2,tid2) impspec) =
     bindTid Modid tid >>> bindTid Modid tid2
 
+
 -- Hack to enforce that constructors are bound before need is checked
+bindDataDecls :: Decls TokenId -> NeedLib -> NeedLib
+
 bindDataDecls (DeclsParse decls)   = mapR bindDataDecl decls
 
 bindDataDecl (DeclType (Simple pos tid posidents) typ) =  bindTid TSyn tid
 bindDataDecl (DeclDataPrim pos tid size) = bindTid TCon tid
-bindDataDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = bindTid TCon tid >>> mapR bindConstr constrs
+bindDataDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = 
+  bindTid TCon tid >>> mapR bindConstr constrs
 bindDataDecl _ = unitR
 
+{-
+Binds defined class identifiers and term variables,
+not type constructors or data constructors, that is,
+stores them in a memo inside needLib.
+Used both in renaming and need analysis phase.
+-}
+bindDecls :: Decls TokenId -> NeedLib -> NeedLib
 
 bindDecls (DeclsParse decls)   = mapR bindDecl decls
 
-bindDecl (DeclType (Simple pos tid posidents) typ) =  unitR -- bindTid TSyn tid
+
+bindDecl :: Decl TokenId -> Reduce NeedLib NeedLib
+
+bindDecl (DeclType (Simple pos tid posidents) typ) =  unitR 
+  -- ^ bindTid TSyn tid
 bindDecl (DeclDataPrim pos tid size) = unitR -- bindTid TCon tid
-bindDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = unitR -- bindTid TCon tid >>> mapR bindConstr constrs
-bindDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) = bindTid TClass tClass >>> mapR bindClass decls
+bindDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = unitR 
+  -- ^ bindTid TCon tid >>> mapR bindConstr constrs
+bindDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) = 
+  bindTid TClass tClass >>> mapR bindClass decls
 bindDecl (DeclInstance pos ctxs tClass inst (DeclsParse decls)) = unitR
 bindDecl (DeclDefault types) = unitR
 bindDecl (DeclVarsType posidents ctxs typ) = unitR
@@ -319,7 +397,8 @@ bindDecl (DeclPat (Alt pat@(ExpInfixList pos pats) _ _)) =
         [ExpVarOp pos tid] -> bindTid Var tid
         [] -> bindPat pat
         _ -> error (show pos ++ ": (n+k) patterns are not supported\n")
-bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  -- Also generate need for constructors
+bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  
+  -- ^ Also generate need for constructors
 bindDecl (DeclPrimitive pos tid arity t) = bindTid Var tid
 bindDecl (DeclForeignImp pos _ tid arity cast t) = bindTid Var tid
 bindDecl (DeclForeignExp pos _ tid t) = unitR
@@ -329,16 +408,30 @@ bindDecl d@(DeclError str) = unitR
 bindDecl (DeclAnnot decl annots) = unitR
 bindDecl (DeclFixity f) = unitR
 
-bindConstr (Constr                pos hs ftypes) = bindTid Con hs >>> mapR bindFieldType ftypes
-bindConstr (ConstrCtx forall ctxs pos hs ftypes) = bindTid Con hs >>> mapR bindFieldType ftypes
+
+bindConstr :: Constr TokenId -> NeedLib -> NeedLib
+
+bindConstr (Constr                pos hs ftypes) = 
+  bindTid Con hs >>> mapR bindFieldType ftypes
+bindConstr (ConstrCtx forall ctxs pos hs ftypes) = 
+  bindTid Con hs >>> mapR bindFieldType ftypes
 
 bindFieldType (Nothing,_) = unitR
-bindFieldType (Just posidents,_) = mapR ( \ (p,v) -> bindTid Var v >>> bindTid Field v) posidents
+bindFieldType (Just posidents,_) = 
+  mapR ( \ (p,v) -> bindTid Var v >>> bindTid Field v) posidents
 
-bindClass (DeclVarsType posidents ctxs typ) = mapR (bindTid Method . snd) posidents
+
+bindClass :: Decl TokenId -> NeedLib -> NeedLib
+
+bindClass (DeclVarsType posidents ctxs typ) = 
+  mapR (bindTid Method . snd) posidents
 bindClass _ = unitR
 
-bindField (FieldExp pos var pat) = needTid pos Field var >>> bindTid Var var >>> bindPat pat
+
+bindField :: Field TokenId -> NeedLib -> NeedLib
+
+bindField (FieldExp pos var pat) = 
+  needTid pos Field var >>> bindTid Var var >>> bindPat pat
 bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
 --bindField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
 --      show var ++
@@ -346,20 +439,26 @@ bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
 --      "\nUse "++show var++"="++show var++" instead.")
 
 --- Above only in expressions
+
+bindPat :: Exp TokenId -> NeedLib -> NeedLib
+
 bindPat (ExpApplication   pos exps) = mapR bindPat exps
-bindPat (ExpInfixList     pos (ExpVarOp _ _:pats)) = mapR bindPat pats -- must be prefix -
+bindPat (ExpInfixList     pos (ExpVarOp _ _:pats)) = mapR bindPat pats 
+  -- ^ must be prefix -
 bindPat (ExpInfixList     pos exps) = mapR bindPat exps
 bindPat (ExpVar           pos tid)  = bindTid Var tid
 bindPat (ExpCon           pos tid)  = needTid pos Con tid
 bindPat (ExpVarOp         pos tid)  = bindTid Var tid
 bindPat (ExpConOp         pos tid)  = needTid pos Con tid
-
-bindPat e@(ExpLit         pos (LitInteger  _ _)) = needTid pos Var t_equalequal >>> needTids pos tokenInteger
-bindPat e@(ExpLit         pos (LitRational _ _)) = needTid pos Var t_equalequal >>> needTids pos tokenRational
+bindPat e@(ExpLit         pos (LitInteger  _ _)) = 
+  needTid pos Var t_equalequal >>> needTids pos tokenInteger
+bindPat e@(ExpLit         pos (LitRational _ _)) = 
+  needTid pos Var t_equalequal >>> needTids pos tokenRational
 bindPat e@(ExpLit         pos lit)  = unitR
 
 bindPat (ExpList          pos exps) = mapR bindPat exps
-bindPat (ExpRecord pat fields) = bindPat pat >>> mapR bindField fields   -- pat is alwasy ExpCon
+bindPat (ExpRecord pat fields) = 
+  bindPat pat >>> mapR bindField fields   -- pat is alwasy ExpCon
 --- Below only in patterns
 bindPat (PatAs            pos hs pat) = bindTid Var hs >>> bindPat pat
 bindPat (PatWildcard      pos)        = unitR
@@ -369,9 +468,11 @@ bindPat (PatNplusK        pos tid _ _ _ _) = bindTid Var tid >>>
 
 
 ------
-
+needTids :: Int -> [(IdKind,TokenId)] -> NeedLib -> NeedLib
 needTids pos kindtids = mapR (uncurry (needTid pos)) kindtids
 
+
+isVarOp :: Exp a -> Bool
 isVarOp (ExpVarOp _ _) = True
 isVarOp _ = False
 

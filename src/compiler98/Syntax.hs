@@ -72,36 +72,41 @@ data DeclsDepend id =
      | DeclsRec   [Decl id]
 
 data Decl id =
---        type   simple  = type
+       -- type   simple  = type
        DeclType (Simple id) (Type id)
---        {data/data unboxed/newtype} context => simple constrs deriving (tycls)
+       -- {data/data unboxed/newtype} context => simple constrs 
+       -- deriving (tycls)
      | DeclData (Maybe Bool) [Context id] (Simple id) [Constr id] [(Pos,id)]
---        data primitive conid size
+       -- data primitive conid size
      | DeclDataPrim Pos id Int
-	-- Introduced by Rename to mark that we might need to generate selector funktions
-     | DeclConstrs Pos id [(Pos,id,id)]  -- position data/dataprim [(field,selector)]
---        class context => class where { csign; valdef }
+       -- Introduced by Rename to mark that we might need 
+       -- to generate selector funktions
+       --       position data/dataprim [(field,selector)]
+     | DeclConstrs Pos id [(Pos,id,id)] 
+       -- class context => class where { csign; valdef }
+       -- position, context, class, type variable, declarations in class
      | DeclClass Pos [Context id] id id (Decls id)
---        instance context => tycls inst where { valdef }
+       -- instance context => tycls inst where { valdef }
      | DeclInstance Pos [Context id] id (Instance id) (Decls id)
---        default (type,..)
+       -- default (type,..)
      | DeclDefault [Type id]
---        var primitive arity :: type
+       -- var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
---        foreign import [callconv] [extfun] [unsafe|cast] var :: type
+       -- foreign import [callconv] [extfun] [unsafe|cast] var :: type
      | DeclForeignImp Pos String id Int Bool (Type id)
---        foreign export  callconv  [extfun]  var :: type
+       -- foreign export  callconv  [extfun]  var :: type
      | DeclForeignExp Pos String id (Type id)
---      vars :: context => type
+       -- vars :: context => type
      | DeclVarsType [(Pos,id)] [Context id] (Type id)
      | DeclPat (Alt id)
      | DeclFun Pos id [Fun id]
---     | DeclSelect id Int id  -- introduced with pattern elimination (id = select Int id)
+--   | DeclSelect id Int id  
+       -- ^ introduced with pattern elimination (id = select Int id)
 --     Used for unimplemented things
      | DeclIgnore String
      | DeclError String
      | DeclAnnot (Decl id) [Annot id]
---     infix[rl] int id,..,id
+     -- infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
 
 data ClassCode ctx id =
@@ -132,7 +137,8 @@ data Simple id = Simple Pos id [(Pos,id)]
 data Context id = Context Pos id (Pos,id)
 
 -- ConstrCtx is always used if forall is specified
--- the intention is to remove Constr completely when all of nhc13 have been updated 
+-- the intention is to remove Constr completely when all of nhc13 
+-- have been updated 
 --                          forall      context     constructor   argumentlist with fields if any
 data Constr id = Constr                             Pos id        [(Maybe [(Pos,id)],Type id)]
                | ConstrCtx  [(Pos,id)] [Context id] Pos id        [(Maybe [(Pos,id)],Type id)]

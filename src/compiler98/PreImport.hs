@@ -1,4 +1,8 @@
-module PreImport (qualRename, preImport) where
+{- ---------------------------------------------------------------------------
+
+imported by Main and Need
+-}
+module PreImport (HideDeclIds,qualRename,preImport) where
 
 import List(partition)
 import MergeSort
@@ -20,6 +24,19 @@ import OsOnly
 import Scc
 import IExtract
 import Info
+import NeedLib(NeedTable)
+import ImportState(ImportState)
+import PreImp(HideDeclIds,HideDeclType,HideDeclData,HideDeclDataPrim
+             ,HideDeclClass,HideDeclInstance,HideDeclInstance
+             ,HideDeclVarsType)
+
+
+-- internal implementation declaration
+type IntImpDecl = (TokenId,Bool, Bool,Either [(TokenId,IE)] [(TokenId,IE)])
+                -- module notqual qual              explicit     hiding
+
+
+qualRename :: [ImpDecl TokenId] -> TokenId -> [TokenId]
 
 qualRename impdecls = qualRename' qTree 
  where
@@ -40,6 +57,18 @@ qualRename impdecls = qualRename' qTree
 ---- ===================================
 -- shorten rpsl = if (isPrelude . reverse . unpackPS) rpsl then rpsPrelude else rpsl
 
+preImport :: Flags -> TokenId -> Tree (TokenId,IdKind) 
+          -> [Export TokenId] -> [ImpDecl TokenId] 
+          -> Either [Char] 
+               (Bool -> Bool -> TokenId -> IdKind -> IE
+               ,[(PackedString
+                 ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
+                  -> [[TokenId]] 
+                  -> Bool
+                 ,HideDeclIds
+                 )
+                ]
+               )
 
 preImport flags mtid@(Visible mrps) need expdecls impdecls =
   case transImport impdecls of
@@ -48,15 +77,18 @@ preImport flags mtid@(Visible mrps) need expdecls impdecls =
       if null expdecls || (isJust . lookupAT expAT) (mtid,Modid)
       then Right (expFun1, map (mkNeed need expAT) impdecls)
       else Right (expFun2 mrps expAT, map (mkNeed need expAT) impdecls)
- where
+  where
   expAT = mkExportAT expdecls
 
 
--- transImport order the import files (with prelude last), insert
--- qualified import of prelude and check that all imports are consistent
+{-
+transImport orders the import files (with prelude last), inserts
+qualified import of prelude and checks that all imports are consistent
+-}
+transImport :: [ImpDecl TokenId] 
+            -> Either String {- <errors -} [IntImpDecl]
 
-				--        errors   module notqual qual              explicit     hiding
-transImport :: [ImpDecl TokenId] -> Either String [(TokenId,Bool,  Bool,  Either [(TokenId,IE)] [(TokenId,IE)])]
+
 transImport impdecls =
   case concatMap checkImport impdecls2 of
     err@(_:_) -> Left (unlines err)
@@ -65,7 +97,7 @@ transImport impdecls =
 --          [] ->  Right (map finalTouch impdecls2)	-- removed in H98
     [] ->  Right (map finalTouch impdecls2)
 
- where
+  where
 
   impdecls2 =  (sortImport . traverse initAT False)
                      (ImportQ (noPos,tPrelude) (Hiding []) :
@@ -80,10 +112,20 @@ transImport impdecls =
 			. map ( \ (k,v) -> if k == tPrelude then (Right k,(k,v)) else (Left k,(k,v)) )
 			) impdecls
 
-  traverse :: AssocTree TokenId (Bool,Maybe [TokenId],[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])])
-                -> Bool
-		-> [ImpDecl TokenId]
-		-> [(TokenId,(Bool,Maybe [TokenId],[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]))]
+  traverse :: AssocTree TokenId 
+                (Bool
+                ,Maybe [TokenId]
+                ,[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]
+                )
+           -> Bool
+	   -> [ImpDecl TokenId]
+	   -> [(TokenId
+               ,(Bool
+                ,Maybe [TokenId]
+                ,[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]
+                )
+               )
+              ]
 
   traverse acc True  []      = treeMapList (:) acc
   traverse acc False []      = traverse acc False [Import (noPos,tPrelude) (Hiding [])]
@@ -93,24 +135,35 @@ transImport impdecls =
         traverse (addAT acc comb tid info) prel' xs
 
 
-  comb (nq,Nothing,xs) (nq',q',     xs') = (nq || nq', q'           ,xs++xs') -- Not qualified , import specification
-  comb (nq,q,      xs) (nq',Nothing,xs') = (nq || nq', q            ,xs++xs') -- Not qualified , import specification
-  comb (nq,Just q, xs) (nq',Just q',xs') = (nq || nq',Just (q ++ q'),xs++xs') -- Not qualified , import specification
+  comb (nq,Nothing,xs) (nq',q',     xs') = (nq || nq', q'           ,xs++xs') 
+    -- ^ Not qualified , import specification
+  comb (nq,q,      xs) (nq',Nothing,xs') = (nq || nq', q            ,xs++xs') 
+    -- ^ Not qualified , import specification
+  comb (nq,Just q, xs) (nq',Just q',xs') = (nq || nq',Just (q ++ q'),xs++xs') 
+    -- ^ Not qualified , import specification
 
-  extractImp prel (ImportQ  (pos,tid) impspec)  = (prel,tid,(False,Just [], [(pos,extractSpec impspec)]))
+  extractImp prel (ImportQ  (pos,tid) impspec) = 
+    (prel,tid,(False,Just [], [(pos,extractSpec impspec)]))
   extractImp prel (ImportQas (pos,tid) (apos,atid) impspec) =
-                                                  (prel,tid,(False,Just [atid],[(pos,extractSpec impspec)]))
-  extractImp prel (Import (pos,tid) impspec)    = (prel || tid == tPrelude
-						      ,tid,(True, Nothing, [(pos,extractSpec impspec)]))
+    (prel,tid,(False,Just [atid],[(pos,extractSpec impspec)]))
+  extractImp prel (Import (pos,tid) impspec) = 
+    (prel || tid == tPrelude,tid,(True, Nothing, [(pos,extractSpec impspec)]))
   extractImp prel (Importas (pos,tid) (apos,atid) impspec) =
-                                                  (prel,tid,(True,Just [atid],[(pos,extractSpec impspec)]))
+    (prel,tid,(True,Just [atid],[(pos,extractSpec impspec)]))
 
   extractSpec (NoHiding entities) = Left (map extractImpEntity entities)
   extractSpec (Hiding entities) = Right (map extractImpEntity entities)
 
-  extractImpEntity e = case funFix (extractEntity e) of ((tid,kind),ie) -> (tid,ie)
+  extractImpEntity e = 
+    case funFix (extractEntity e) of ((tid,kind),ie) -> (tid,ie)
 
-  checkImport :: (TokenId,(Bool,Maybe [TokenId],[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])])) -> [String]
+  checkImport :: (TokenId
+                 ,(Bool
+                  ,Maybe [TokenId]
+                  ,[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]
+                  )
+                 ) 
+              -> [String]
   checkImport (tid,(nq,q,pos_spec)) =
     case partition (isLeft . snd) pos_spec of
       ([],hide)  -> []  -- Only explicit hide
@@ -118,17 +171,27 @@ transImport impdecls =
       (imp,hide) ->
 	if (null . filter (not.null) . map (dropRight . snd)) hide
 	then []         -- Ok as all hidings are empty
-	else ["Conflicting imports for " ++ show tid ++", used both explicit imports (at" ++ (mixCommaAnd . map (strPos . fst)) imp 
-		    ++ ") and explicit hidings (at " ++  (mixCommaAnd . map (strPos . fst)) hide ++")."]
+	else ["Conflicting imports for " ++ show tid ++
+              ", used both explicit imports (at" ++ 
+              (mixCommaAnd . map (strPos . fst)) imp 
+	      ++ ") and explicit hidings (at " ++  
+              (mixCommaAnd . map (strPos . fst)) hide ++")."]
 
 
-  finalTouch :: (TokenId,(Bool,Maybe [TokenId],[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]))
-		 -> (TokenId,Bool,Bool,Either [(TokenId,IE)] [(TokenId,IE)])
-  finalTouch (tid,(nq,q,pos_spec)) = -- import specification is ok if finalTouch is called
+  finalTouch :: (TokenId
+                ,(Bool
+                 ,Maybe [TokenId]
+                 ,[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]
+                 )
+                )
+	     -> (TokenId,Bool,Bool,Either [(TokenId,IE)] [(TokenId,IE)])
+  finalTouch (tid,(nq,q,pos_spec)) = 
+    -- import specification is ok if finalTouch is called
     case partition (isLeft . snd) pos_spec of
       (imp,[])   ->  -- Only explicit import
 	(tid,nq,isJust q,Left (concatMap (dropLeft . snd) imp))
-      (_,hide) -> -- Either only explicit hide, or explicit import and empty explict hide.
+      (_,hide) -> 
+        -- Either only explicit hide, or explicit import and empty explict hide
 	(tid,nq,isJust q,Right (concatMap (dropRight . snd) hide))
 
 
@@ -147,9 +210,11 @@ checkForMultipleImport imports =
 
 ------------------------------------------------------------------------------
 
-
+expFun1 :: Bool -> Bool -> TokenId -> IdKind -> IE
 expFun1 v q tid kind = IEall
 
+expFun2 :: PackedString -> AssocTree (TokenId,IdKind) IE 
+        -> Bool -> Bool -> TokenId -> IdKind -> IE
 expFun2 rps expAT v q tid kind =
 {-
   case lookupAT expAT (tid,kind) of
@@ -158,11 +223,13 @@ expFun2 rps expAT v q tid kind =
 -}
       case lookupAT expAT (dropM tid,kind) of
         Just imp | v -> imp
-        _  -> 
+        _            -> 
           case lookupAT expAT (forceM rps tid,kind) of
             Just imp | q -> imp
-            _  -> IEnone
+            _            -> IEnone
 
+
+mkExportAT :: [Export TokenId] -> AssocTree (TokenId,IdKind) IE
 
 mkExportAT expdecls =
    expAT
@@ -191,8 +258,19 @@ extractEntity (EntityTyCls  pos tid ids) = ((tid,TClass),IEall)  -- Don't care a
 --------------------------------------
   
 
---- The selectors for (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,hideDeclInstance,hideDeclVarsType) are defined
---- in PreImp and used in ParseI
+{-
+The selectors for (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,
+hideDeclInstance,hideDeclVarsType) are defined in PreImp and used in ParseI
+-}
+
+mkNeed :: Tree (TokenId,IdKind)  
+       -> Tree ((TokenId,IdKind),IE) 
+       -> IntImpDecl 
+       -> (PackedString
+          ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
+           -> [[TokenId]] -> Bool
+          ,HideDeclIds
+          )
 
 mkNeed needM expAT (vt@(Visible rps),nq,q,Left ei) =  -- explicit import
    (rps
@@ -215,32 +293,39 @@ mkNeed needM expAT (vt@(Visible rps),nq,q,Left ei) =  -- explicit import
 		Just IEall -> any (isJust .lookupAT needM . dropM) ns
 		Nothing -> False
 
+  hideDeclType :: HideDeclType
   hideDeclType st attr (Simple pos tid tvs) typ = 
     case lookupAT impT (dropM tid) of
       Just _  -> iextractType (expFun nq q tid TSyn) attr nq    q pos tid tvs typ () st
       Nothing -> iextractType IEnone            attr False q pos tid tvs typ () st
 
+  hideDeclData :: HideDeclData
   hideDeclData st attr ctxs (Simple pos tid tvs) constrs der =
     case lookupAT impT (dropM tid) of
       Just IEall -> iextractData  (expFun nq q tid TCon) nq    q attr ctxs pos tid tvs constrs () st
       Just IEabs -> iextractData  (expFun nq q tid TCon) nq    q attr ctxs pos tid tvs (if q then constrs else []) () st
       Nothing ->    iextractData  IEnone            False q attr ctxs pos tid tvs (if q then constrs else []) () st
 
+  hideDeclDataPrim :: HideDeclDataPrim
   hideDeclDataPrim st (pos,tid) size =
     case lookupAT impT (dropM tid) of
       Just _  -> iextractDataPrim (expFun nq q tid TCon) nq    q pos tid size () st
       Nothing -> iextractDataPrim IEnone            False q pos tid size () st
 
+  hideDeclClass :: HideDeclClass
   hideDeclClass st  ctxs (pos,tid) tvar methods =
     case lookupAT impT (dropM tid) of
       Just IEall ->  iextractClass  (expFun nq q tid TClass) nq    q pos ctxs tid (snd tvar) methods () st
       Just IEabs ->  iextractClass  (expFun nq q tid TClass) nq    q pos ctxs tid (snd tvar) (if q then methods else []) () st
       Nothing -> iextractClass  IEnone              False q pos ctxs tid (snd tvar) (if q then methods else []) () st
 
+  hideDeclInstance :: HideDeclInstance
   hideDeclInstance st ctxs (pos,cls) typ =
     iextractInstance ctxs pos cls typ () st
 
-  hideDeclVarsType st postidanots ctxs typ =    -- interface files should never depend on functions
+  hideDeclVarsType :: HideDeclVarsType
+  hideDeclVarsType st postidanots ctxs typ =    
+  -- interface files should never depend on functions
 {- we don't create interface files with more than one function/type
     case filter (isJust . lookupAT impT . dropM . snd . fst) postidanots of
       [] -> st
@@ -274,21 +359,25 @@ mkNeed needM expAT (vt@(Visible rps),nq,q,Right eh) = -- explicit hiding
         (q && any (isJust . lookupAT needM . forceM rps) ns)  -- qualified import and used qualified (No methods if in interface part)
      || any (isJust . lookupAT needM . dropM) ns
 
+  hideDeclType :: HideDeclType
   hideDeclType st attr (Simple pos tid tvs) typ = 
     case lookupM hideT (dropM tid) of
       Just _ ->  iextractType IEnone            attr False q pos tid tvs typ () st -- used  in interface file
       Nothing -> iextractType (expFun nq q tid TSyn) attr nq    q pos tid tvs typ () st
 
+  hideDeclData :: HideDeclData
   hideDeclData st attr ctxs (Simple pos tid tvs) constrs der =
     case lookupM hideT (dropM tid) of
       Just _ ->  iextractData  IEnone            False q attr ctxs pos tid tvs (if q then constrs else []) () st
       Nothing -> iextractData  (expFun nq q tid TCon) nq    q attr ctxs pos tid tvs constrs () st
 
+  hideDeclDataPrim :: HideDeclDataPrim
   hideDeclDataPrim st (pos,tid) size =
     case lookupM hideT (dropM tid) of
       Just _  -> iextractDataPrim IEnone            False q pos tid size () st -- used by import
       Nothing -> iextractDataPrim (expFun nq q tid TCon) nq    q pos tid size () st
 
+  hideDeclClass :: HideDeclClass
   hideDeclClass st ctxs (pos,tid) tvar methods =
     case lookupM hideT (dropM tid) of
       Just _  -> iextractClass IEnone False q pos ctxs tid (snd tvar) (if q then methods else []) () st
@@ -299,10 +388,13 @@ mkNeed needM expAT (vt@(Visible rps),nq,q,Right eh) = -- explicit hiding
 	  exp ->
 	      iextractClass exp    nq    q pos ctxs tid (snd tvar) methods () st
 
+  hideDeclInstance :: HideDeclInstance
   hideDeclInstance st ctxs (pos,cls) typ =
     iextractInstance ctxs pos cls typ () st
 
-  hideDeclVarsType st postidanots ctxs typ =   -- interface files should never depend on functions
+  hideDeclVarsType :: HideDeclVarsType
+  hideDeclVarsType st postidanots ctxs typ =   
+  -- interface files should never depend on functions
 {-  We don't create interface files with more than one function/type!
     case filter ( (\ tid -> (isNothing . lookupM hideT . dropM) tid && (isNothing . lookupM hideT) tid) . snd . fst) postidanots of
       [] ->  st

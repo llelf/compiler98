@@ -1,4 +1,7 @@
-module Export(export,strExport) where
+{- ---------------------------------------------------------------------------
+Builds the contents of the interface file
+-}
+module Export(Flags,PackedString,IntState,buildInterface) where
 
 import List
 import Info
@@ -14,54 +17,89 @@ import MergeSort(unique)
 import Syntax(InfixClass(..))
 import Nice
 import IExtract(defFixity)
-import Flags
+import Flags(Flags(sPrelude))
 import Memo
---import NonStdProfile
+
+--import NonStdProfile -- only for debugging the compiler
 profile a b = b
 
-export flags state =
-  let infoExport =  (filter (isExported . expI) . treeMapList ((:).snd) . getSymbolTable) state
 
+{- 
+Build the contents of the interface file 
+-}
+buildInterface :: Flags -> PackedString -> IntState -> String
+
+buildInterface flags modidl state =
+  strExport modidl state (export flags state)
+
+{-
+Collect the information that has to go into the interface file.
+-}
+export :: Flags 
+       -> IntState 
+       -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])])
+
+export flags state =
+  let infoExport = (  filter (isExported . expI) . treeMapList ((:).snd) 
+                    . getSymbolTable) 
+                   state
       insts = ( foldr ( \ (InfoClass  unique tid exp nt ms ds insts) r -> 
-			foldr (fixInst state (sPrelude flags || notPrelude tid) unique) r (treeMapList (:) insts)) []
+			foldr (fixInst state (sPrelude flags || notPrelude tid)
+                               unique) 
+                              r (treeMapList (:) insts)) []
 	      . filter isClass
 	      . treeMapList ((:).snd)
 	      . getSymbolTable
 	      ) state
-
       mrps = mrpsIS state
   in case uniqueISs state insts of
     (insts,state) ->
       let 
-	(infoInst,depInst) = unzip (map ( \ ((cls,nt,dep),i) -> (InfoInstance i nt cls,(i,dep))) insts)
-        depExport = map infoDepend infoExport
+      (infoInst,depInst) = 
+        unzip (map ( \ ((cls,nt,dep),i) -> (InfoInstance i nt cls,(i,dep))) 
+               insts)
+      depExport = map infoDepend infoExport
 
-	depExtra = profile "getAll start" (getAll state (foldr (flip addM) initM (map fst depExport)) (concatMap snd depExport ++ concatMap snd depInst))
+      depExtra = profile "getAll start" 
+                   (getAll state 
+                           (foldr (flip addM) initM (map fst depExport))
+                           (concatMap snd depExport ++ concatMap snd depInst))
 
-	depend = reverse (profile "start sccDepend" (sccDepend (depExport ++ depExtra ++ depInst)))
-        expTree = foldr ( \ info tree -> addAT tree sndOf (uniqueI info) info) initAT (infoInst++infoExport)
+      depend = reverse $ profile "start sccDepend" 
+                 $ sccDepend (depExport ++ depExtra ++ depInst)
+      expTree = foldr ( \ info tree -> addAT tree sndOf (uniqueI info) info) 
+                      initAT 
+                      (infoInst++infoExport)
 
-	declExport = (map (\ xs -> if all isLeft xs
+      declExport = (map (\ xs -> if all isLeft xs
 		                  then (False,map dropLeft xs)
-		                  else (True,map dropEither xs)    -- !!! Not good, more is exported than should have been 
+		                  else (True,map dropEither xs)    
+                       -- !!! Not good, more is exported than should have been 
 			  )
 		     . filter (not . null) 
 		     . map (fixInfo (sPrelude flags) state expTree)
 		     ) depend
 
-        infExport = filter ( (/=defFixity) . snd) (concatMap (concatMap getFixity . snd) (filter fst declExport))
+      infExport = filter ( (/=defFixity) . snd)
+                         (concatMap (concatMap getFixity . snd) 
+                                    (filter fst declExport))
 
-        getFixity (InfoData   unique tid IEall nt dk) =
-	  case dk of
-	    Data unboxed constrs -> 
-	      map (( \ info -> (tidI info,fixityI info)) . dropJust . lookupIS state) constrs
-	    _ -> []
-        getFixity (InfoData   unique tid _ nt dk) = []
-        getFixity (InfoClass  unique tid exp nt  ms ds insts) = 
-	  map (( \ info -> (tidI info,fixityI info)) . dropJust . lookupIS state) ms
-        getFixity (InfoVar    unique tid fix exp nt annot) = [(tid,fix)]
-        getFixity (InfoInstance unique nt iClass) = []
-        getFixity x = error ("getFixity = " ++ show x)
+      getFixity :: Info -> [(TokenId,(InfixClass TokenId,Int))]
+      getFixity (InfoData   unique tid IEall nt dk) =
+	case dk of
+	  Data unboxed constrs -> 
+	    map (( \ info -> (tidI info,fixityI info)) 
+                 . dropJust . lookupIS state) 
+                constrs
+	  _ -> []
+      getFixity (InfoData   unique tid _ nt dk) = []
+      getFixity (InfoClass  unique tid exp nt  ms ds insts) = 
+        map (( \ info -> (tidI info,fixityI info)) 
+             . dropJust . lookupIS state) 
+            ms
+      getFixity (InfoVar    unique tid fix exp nt annot) = [(tid,fix)]
+      getFixity (InfoInstance unique nt iClass) = []
+      getFixity x = error ("getFixity = " ++ show x)
 
       in 
 	(infExport,declExport)
@@ -127,13 +165,21 @@ useConstr (Just (InfoConstr  unique tid fix nt fields iType)) = useNewType nt
 useMethod (Just (InfoMethod  unique tid fix nt annot iClass)) = useNewType nt
 useMethod x = error ("No match in useMethod:" ++ show x)
 
-strExport keep modidl state (fixs,exps) =
+
+{- Create content of interface file. -}
+strExport :: PackedString -- module name
+          -> IntState 
+          -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])]) 
+          -> String
+
+strExport modidl state (fixs,exps) =
   ( showString ("interface " ++ reverse (unpackPS modidl) ++ " where {\n")
   . foldr ((.).showsFix modrps) id fixs
-  . foldr ((.).showsHide modrps) id (optExport False Nothing (map preExport exps))
+  . foldr ((.).showsHide modrps) id 
+          (optExport False Nothing (map preExport exps))
   ) "}\n"
 
- where
+  where
   modrps = mrpsIS state
 
   preExport (visible,infos@(InfoInstance u nt iClass:_)) =
@@ -146,38 +192,72 @@ strExport keep modidl state (fixs,exps) =
   optExport preV preRps (((v,rps),infos):xs) =
     (preV == v && preRps == rps,v,rps,infos) : optExport v rps xs
 
+
+  showsFix :: PackedString 
+           -> (TokenId,(InfixClass TokenId,Int)) 
+           -> String -> String
+
   showsFix mrps (tid,(InfixPre i,l)) =
-    showString "prefix ". niceTid state i . showChar ' ' . shows l . showChar ' ' . showsOp (fixTid mrps tid) . showString ";\n"
+    showString "prefix ". niceTid state i . showChar ' ' . shows l 
+    . showChar ' ' . showsOp (fixTid mrps tid) . showString ";\n"
   showsFix mrps (tid,(InfixDef ,l)) = id
-  showsFix mrps (tid,(inf,l)) =  shows inf . showChar ' ' . shows l . showChar ' ' . showsOp (fixTid mrps tid) . showString ";\n"
+  showsFix mrps (tid,(inf,l)) =  
+    shows inf . showChar ' ' . shows l 
+    . showChar ' ' . showsOp (fixTid mrps tid) . showString ";\n"
+
+
+  showsExp :: PackedString -> [Info] -> String -> String
 
   showsExp rps infos =
-    showString "{-# NEED" . foldr ((.).showsNeed rps) id infos . showString " #-}\n" .
+    showString 
+      "{-# NEED" . foldr ((.).showsNeed rps) id infos . showString " #-}\n" .
     foldr ((.).showsInfo rps) id infos
 
-  showsHide mrps (prev,visible,rps,infos) =  -- Would have prefered not to use qualified names, but have to
-	(if prev || isNothing rps then id
-          else (if visible then showString "interface ! " else showString "interface ") . (showString . reverse . unpackPS . dropJust) rps)
-	. showString "\n{-# NEED" . foldr ((.).showsNeed (dropJust rps)) id infos . showString " #-}\n" -- need does not need to be qualified
-	. foldr ((.).showsInfo (dropJust rps)) id infos						  -- but the definitions must
+  showsHide :: a 
+            -> (Bool,Bool,Maybe PackedString,[Info]) 
+            -> String -> String
+
+  showsHide mrps (prev,visible,rps,infos) =  
+    -- Would have prefered not to use qualified names, but have to
+    (if prev || isNothing rps 
+       then id
+       else (if visible 
+               then showString "interface ! " 
+               else showString "interface ") 
+            . (showString . reverse . unpackPS . dropJust) rps)
+    . showString "\n{-# NEED" 
+    . foldr ((.).showsNeed (dropJust rps)) id infos 
+    . showString " #-}\n" 
+        -- need does not need to be qualified
+    . foldr ((.).showsInfo (dropJust rps)) id infos			
+	-- but the definitions must
 
 
  	-- Hack for tuples
-  showsNeed mrps (InfoData   unique (TupleId n) exp nt dk) = id  -- Always look in tuple definitions
+  showsNeed mrps (InfoData   unique (TupleId n) exp nt dk) = id  
+    -- Always look in tuple definitions
   showsNeed mrps (InfoData   unique tid exp nt dk) =
       case dk of
-	(DataNewType unboxed constructors) -> groupNeed mrps exp tid constructors
+	(DataNewType unboxed constructors) -> 
+          groupNeed mrps exp tid constructors
 	(Data unboxed  constrs) -> groupNeed mrps exp tid constrs
 	_ ->  showChar ' ' . showsVar (fixTid mrps tid) 
-  showsNeed mrps (InfoClass  unique tid exp nt ms ds insts) = groupNeed mrps exp tid ms
-  showsNeed mrps (InfoVar     unique tid fix exp nt annot) = showChar ' '.showsVar (fixTid mrps tid)
-  showsNeed mrps (InfoConstr  unique tid fix nt fields iType) = showChar ' '. showsVar (fixTid mrps tid) . foldr ((.) . showsField mrps) id fields
-  showsNeed mrps (InfoMethod  unique tid fix nt annot iClass) = showChar ' ' . showsVar (fixTid mrps tid)
+  showsNeed mrps (InfoClass  unique tid exp nt ms ds insts) = 
+    groupNeed mrps exp tid ms
+  showsNeed mrps (InfoVar     unique tid fix exp nt annot) = 
+    showChar ' '.showsVar (fixTid mrps tid)
+  showsNeed mrps (InfoConstr  unique tid fix nt fields iType) = 
+    showChar ' '. showsVar (fixTid mrps tid) 
+    . foldr ((.) . showsField mrps) id fields
+  showsNeed mrps (InfoMethod  unique tid fix nt annot iClass) = 
+    showChar ' ' . showsVar (fixTid mrps tid)
   showsNeed mrps (InfoInstance unique  nt iClass) = id
 
   groupNeed mrps exp group parts =
 	if exp == IEall && not (null parts) then 
-	  showString " {" . showsVar (fixTid mrps group) . foldr ((.) . showsNeed mrps . dropJust . lookupIS state) id parts . showChar '}'
+	  showString " {" . showsVar (fixTid mrps group) 
+          . foldr ((.) . showsNeed mrps . dropJust . lookupIS state) id parts 
+          . showChar '}'
 	else
 	  showChar ' ' . showsVar (fixTid mrps group) 
 
@@ -271,7 +351,12 @@ strExport keep modidl state (fixs,exps) =
           niceCtxs Nothing state al' ectxs ++
           (showsVar (fixTid mrps tid) . showChar ' ')  (mixSpace (map (niceField state al') (zip field (init nts))))
 
+
+  expMethod :: PackedString -> Maybe Info -> String
+
   expMethod mrps (Just (InfoMethod  unique tid fix nt annot iClass)) =
-	(showString "  " . showsVar (fixTid mrps tid) . showsAnnot annot . showString "::" . showString (niceNewType state nt))  ";\n"
+    (showString "  " . showsVar (fixTid mrps tid) . showsAnnot annot 
+     . showString "::" . showString (niceNewType state nt))  
+    ";\n"
 
 

@@ -9,7 +9,7 @@ import State(State0(..))
 import IdKind
 import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
 import DbgId(tSR, tR, tTrace)
-import Flags(sDbgTrans)
+import Flags(Flags(sDbgTrans))
 import SyntaxPos
 import TypeSubst
 import TypeUnify

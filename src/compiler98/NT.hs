@@ -9,19 +9,27 @@ import Extra(mixComma,mixSpace,mix,snub,flatten)
 import Char
 
 data NewType = NoType
-             | NewType [Int] [Int] [(Int,Int)] [NT] deriving (Eq)
+             | NewType [Int]       -- universally quantified type variables
+                       [Int]       -- existentially quantified type variables
+                       [(Int,Int)] -- context (class, type variable)
+                       [NT]        -- simple types 
+                                   -- ex.: [Int,Char,Bool] = Int->Char->Bool
+             deriving (Eq)
 
 instance Show NewType where
   showsPrec d (NoType) =  showString " -- no type --"
-  showsPrec d (NewType free exist ctxs nts) = showString (strTVarsCtxsNTs free ctxs nts)
+  showsPrec d (NewType free exist ctxs nts) = 
+    showString (strTVarsCtxsNTs free ctxs nts)
 
-data NT = NTany   Int  -- can be instansiated with unboxed
+data NT = NTany   Int  -- can be instantiated with unboxed 
+                       -- (needed during type checking)
         | NTvar   Int
         | NTexist Int
         | NTstrict NT
 	| NTapp   NT NT
         | NTcons  Int [NT] 
-        | NTcontext Int Int
+        | NTcontext Int Int  -- context (class, type variable)
+                             -- purpose here completely unclear (used?)
          deriving (Eq,Ord)
 
 stripNT (NTany   v) = v
@@ -85,6 +93,13 @@ polyNT fv (NTcons a tas) = NTcons a (map (polyNT fv) tas)
 
 transCtxs tv tc ctxs = map ( \ (c,v) -> (tc c,tv v)) ctxs 
 
+
+
+{- Show function for NT, parameterised by show functions for 
+constructors/class names and for type variables.
+-}
+strNT :: (Int -> String) -> (Int -> String) -> NT -> String
+
 strNT c p (NTany  a) = p a++"#"
 strNT c p (NTvar  a) = p a
 strNT c p (NTexist a) = p a++"?"
@@ -110,10 +125,12 @@ strCtxs ctxs = "(" ++ mixComma (map ( \ (c,v) -> show c ++ ' ':strTVar v ) ctxs)
 strTVs [] = ""
 strTVs tvs =  "\\/ " ++ mixSpace (map strTVar tvs) ++ " . "
 
-strTVarsCtxsNT tvs ctxs nt =  strTVs tvs ++ strCtxs ctxs ++ strNT show strTVar nt
+strTVarsCtxsNT tvs ctxs nt =  
+  strTVs tvs ++ strCtxs ctxs ++ strNT show strTVar nt
 
 strTVarsCtxsNTs tvs ctxs [] =  strTVs tvs ++ strCtxs ctxs ++ " -"
-strTVarsCtxsNTs tvs ctxs nts =  strTVs tvs ++ strCtxs ctxs ++ mix " -> " (map (strNT show strTVar) nts)
+strTVarsCtxsNTs tvs ctxs nts =  
+  strTVs tvs ++ strCtxs ctxs ++ mix " -> " (map (strNT show strTVar) nts)
 
 
 sndNTvar (c,v) = (c,NTvar v) -- used for ctxs

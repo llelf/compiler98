@@ -1,4 +1,8 @@
-module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos(..),AssocTree(..),Tree{-,PackedString-}) where
+{- ---------------------------------------------------------------------------
+Central data structures of the symbol table
+-}
+module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos(..)
+           ,AssocTree(..),Tree{-,PackedString-}) where
 
 import IdKind(IdKind)
 import TokenId(TokenId)
@@ -17,8 +21,9 @@ data IE = IEnone | IEsel | IEabs | IEall deriving (Eq,Show)
 --                          \     /
 --                           IEnone
 isExported IEnone = False
-isExported IEsel = False
+isExported IEsel  = False
 isExported _      = True
+
 
 combIE IEall  _ = IEall
 combIE IEnone i = i
@@ -26,28 +31,92 @@ combIE _ IEall  = IEall
 combIE i IEnone = i
 combIE _      i = i
 
-data DataKind =  -- Bool tells if type will be unboxed after expension
-    DataTypeSynonym Bool Int	  -- depth (used to determine which type synonym to expand)
+data DataKind =  -- Bool tells if type will be unboxed after expansion
+    DataTypeSynonym Bool Int   -- depth (used to determine 
+                               -- which type synonym to expand)
   | DataNewType	    Bool [Int]    -- constructor(one or zero) 
   | Data 	    Bool [Int]    -- constructors
   | DataPrimitive   Int	          -- size
   deriving (Show)
 
 data Info =
-    InfoClear   -- used to remove imported when redefining in mutaly recursive modules and when compiling the prelude
-  | InfoUsed      Int [(IdKind,TokenId,PackedString,Pos)]
-  | InfoUsedClass Int [(IdKind,TokenId,PackedString,Pos)]  (AssocTree Int ([Int],[(Int,Int)]))  -- the tree does con -> (free,ctxs)
-
-  | InfoData         Int TokenId IE NewType DataKind 
-  | InfoClass        Int TokenId IE NewType [Int] [Int] (AssocTree Int ([Int],[(Int,Int)]))    -- the tree does con -> (free,ctxs)
-  | InfoVar          Int TokenId (InfixClass TokenId,Int) IE NewType (Maybe Int)
-  | InfoConstr       Int TokenId (InfixClass TokenId,Int) NewType [Maybe Int] Int
-  | InfoField        Int TokenId [(Int,Int)] Int Int	-- unique tid [(constructor,offset)] type selector
-  | InfoMethod       Int TokenId (InfixClass TokenId,Int) NewType (Maybe Int) Int
-  | InfoIMethod      Int TokenId NewType (Maybe Int) Int    -- The type is NewType free instancs_ctx instance_type, for real type follow int
-  | InfoDMethod      Int TokenId NewType (Maybe Int) Int
-  | InfoInstance     Int NewType Int			-- Only used in Export
-  | InfoName         Int TokenId Int TokenId		-- inserted late to hold name and arity for some functions (second TokenId is profname )
+    InfoClear   -- used to remove imported when redefining in mutally 
+                -- recursive modules and when compiling the prelude
+  | InfoUsed      Int      -- unique
+                  [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
+  | InfoUsedClass Int      -- unique
+                  [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
+                  (AssocTree Int ([Int],[(Int,Int)]))  
+                  -- instances of the class
+                  -- the tree associates a type constructor with
+                  -- the free variables and the superclass context 
+                  -- of an instance
+  | InfoData      -- data type (algebraic, type synonym, ...)
+                  Int      -- unique
+                  TokenId  -- token of data type name
+                  IE 
+                  NewType  
+                  DataKind -- kind of data type 
+  | InfoClass     Int      -- unique
+                  TokenId  -- token of class name
+                  IE 
+                  NewType 
+                  [Int]    -- ms this and
+                  [Int]    -- ns this together describe class methods
+                  (AssocTree Int ([Int],[(Int,Int)]))    
+                  -- instances of the class
+                  -- the tree associates a type constructor with
+                  -- the free variables and the superclass context 
+                  -- of an instance
+  | InfoVar       -- term variable 
+                  Int          -- unique 
+                  TokenId      -- token for name
+                  (InfixClass TokenId,Int)  -- fixity 
+                  IE 
+                  NewType      -- type
+                  (Maybe Int)  -- arity (if available)
+  | InfoConstr    -- data constructor
+                  Int          -- unique 
+                  TokenId      -- token for name
+                  (InfixClass TokenId,Int)  -- fixity 
+                  NewType      -- type of the constructor
+                  [Maybe Int]  -- field names (if they exist) 
+                  Int          -- data type to which constructor belongs
+  | InfoField     -- field name
+                  Int          -- unique
+                  TokenId      -- token for name
+                  [(Int,Int)]  -- icon_offs
+                  Int          -- iData
+                  Int          -- iSel	
+                  -- unique tid [(constructor,offset)] type selector
+  | InfoMethod    Int          -- unique 
+                  TokenId      -- token for name
+                  (InfixClass TokenId,Int) -- fixity
+                  NewType 
+                  (Maybe Int)  -- arity (if available)
+                  Int          -- unique of class to which method belongs
+  | InfoIMethod   Int          -- unique 
+                  TokenId      -- token for name
+                  NewType 
+                  (Maybe Int)  -- arity (if available) 
+                  Int          -- iMethod
+                  -- The type is NewType free instancs_ctx instance_type, 
+                  -- for real type follow int
+  | InfoDMethod   Int          -- unique
+                  TokenId      -- token for name
+                  NewType 
+                  (Maybe Int)  -- arity (if available) 
+                  Int
+  | InfoInstance  -- Only used in Export
+                  Int          -- unique
+                  NewType 
+                  Int	       -- unique of class (of which this is instance)
+  | InfoName      Int          -- unique
+                  TokenId      -- token for name
+                  Int          -- arity
+                  TokenId      
+    -- inserted late to hold name and arity for some functions 
+    -- (second TokenId is profname )
   deriving (Show)
 
 {- Template
@@ -164,6 +233,7 @@ newNT :: NewType -> Info -> Info
 newNT nt (InfoVar unique tid fix exp _ annot) =  InfoVar unique tid fix exp nt annot
 
 
+ntI :: Info -> NewType
 
 ntI (InfoData   unique tid exp nt dk) = nt
 -- ntI (InfoClass  unique tid exp nt ms ds) =  nt   --- Not needed?
@@ -173,8 +243,13 @@ ntI (InfoMethod  unique tid fix nt annot iClass) = nt
 ntI (InfoIMethod  unique tid nt annot iMethod) = nt  -- Work here?
 ntI (InfoDMethod  unique tid nt annot iClass) = nt
 
-strictI (InfoConstr  unique tid fix (NewType free [] ctx nts) fields iType) = map strictNT (init nts)
-strictI _ = []  -- Not strict in any argument so it doesn't matter if we return empty list
+
+strictI :: Info -> [Bool]
+
+strictI (InfoConstr  unique tid fix (NewType free [] ctx nts) fields iType) = 
+  map strictNT (init nts)
+strictI _ = []  
+  -- Not strict in any argument so it doesn't matter if we return empty list
 
 qDefI (InfoUsed _ _) = False
 qDefI (InfoUsedClass _ _ _) = False
@@ -193,6 +268,9 @@ uniqueI (InfoDMethod  unique _ _ _ _) = unique
 uniqueI (InfoInstance unique _ _) = unique
 uniqueI (InfoName  unique _ _ _) = unique
 
+
+tidI :: Info -> TokenId
+
 tidI (InfoData   unique tid exp nt dk) = tid
 tidI (InfoClass  u tid _ _ _ _ _) = tid
 tidI (InfoVar     u tid _ _ _ _) = tid
@@ -204,16 +282,43 @@ tidI (InfoDMethod  u tid _ _ _) = tid
 tidI (InfoName  u tid _ _) = tid
 tidI info = error ("tidI (Info.hs) called with bad info:\n" ++ show info)
 
+
+cmpTid :: TokenId -> Info -> Bool
+
 cmpTid t (InfoUsed _ _) = False
 cmpTid t (InfoUsedClass _ _ _) = False
 cmpTid t i =  tidI i == t
 
+
+methodsI :: Info -> [(Int,Int)]
+
 methodsI (InfoClass u tid e nt ms ds inst) = zip ms ds
+
+
+instancesI :: Info -> Tree (Int,([Int],[(Int,Int)]))
+
 instancesI (InfoClass u tid e nt ms ds inst) = inst
-instancesI info@(InfoUsedClass u uses inst) = strace ("***instanceI(1) " ++ show info ++ "\n") inst
-instancesI info = strace ("***instanceI(2) " ++ show info ++ "\n") initAT -- This is a lie!!! For some reason has this class no real entry
-superclassesI (InfoClass u tid e (NewType free [] ctxs nts) ms ds inst) = map fst ctxs
+instancesI info@(InfoUsedClass u uses inst) = 
+  strace ("***instanceI(1) " ++ show info ++ "\n") inst
+instancesI info = 
+  strace ("***instanceI(2) " ++ show info ++ "\n") initAT 
+  -- This is a lie!!! For some reason has this class no real entry
+
+
+{- Return identifiers of all superclasses of the class which is described
+by given info -}
+superclassesI :: Info -> [Int]
+
+superclassesI (InfoClass u tid e (NewType free [] ctxs nts) ms ds inst) = 
+  map fst ctxs
 superclassesI info = error ("superclassesI " ++ show info)
+
+{- Add information about an instance to info of a class.
+If information about this instance exists already in info, then info left
+unchanged.
+type constructor -> free type variables -> context -> class info -> class info
+-}
+addInstanceI :: Int -> [Int] -> [(Int,Int)] -> Info -> Info
 
 addInstanceI con free ctxs info@(InfoClass u tid e nt ms ds inst) =
   case lookupAT inst con of
@@ -226,49 +331,63 @@ addInstanceI con free ctxs info@(InfoUsedClass u uses inst) =
 addInstanceI con free ctxs (InfoUsed u uses) = 
 	addInstanceI con free ctxs (InfoUsedClass u uses initAT)
 
-
+{-
+In joining two trees for describing instances the second one gets
+precedence in case of conflict.
+-}
 joinInsts :: AssocTree Int a -> AssocTree Int a -> AssocTree Int a
 
 joinInsts inst inst' =
   foldr ( \ (k,v) inst -> addAT inst sndOf k v) inst (treeMapList (:) inst')
 
 
-{- Determine constructors from the info for a type -}
+{- Determine constructors of a type from the info of the type -}
 constrsI :: Info -> [Int]
 
 constrsI (InfoName  unique tid i ptid) = [unique]   
   -- ^this is a lie! but it is consistent with belongstoI :-)
 constrsI (InfoData   unique tid exp nt dk) =
       case dk of
-	(DataTypeSynonym unboxed depth) ->  strace ("Constr of type synonym " ++ show tid) []
+	(DataTypeSynonym unboxed depth) ->  
+           strace ("Constr of type synonym " ++ show tid) []
 	(DataNewType unboxed constructors) -> constructors
-	(DataPrimitive size) ->  strace ("Constr of data primitive " ++ show tid) []
+	(DataPrimitive size) ->  
+           strace ("Constr of data primitive " ++ show tid) []
 	(Data unboxed  constrs) -> constrs
 constrsI info = error ("constrsI " ++ show info)
 
+
+updConstrsI :: Info -> [Int] -> Info
+
 updConstrsI (InfoData   unique tid exp nt dk) constrs' =
-      case dk of
-	(Data unboxed  constrs) -> InfoData   unique tid exp nt (Data unboxed  constrs')
+  case dk of
+    (Data unboxed  constrs) -> 
+      InfoData   unique tid exp nt (Data unboxed  constrs')
 
 fieldsI (InfoConstr unique tid fix nt fields iType) = fields
 
 
 combInfo :: Info -> Info -> Info
 
-combInfo  InfoClear                       info'                     = info'
-combInfo (InfoUsed _ w)                  (InfoUsed u' w')           = InfoUsed u' (w++w')
-combInfo (InfoUsed _ _)                   info'                     = info'
-combInfo  info                            InfoClear                 = info
-combInfo  info                           (InfoUsed _ _)             = info
-combInfo i1@(InfoUsedClass _ uses insts) i2@(InfoClass u tid exp nt ms ds insts') =
-	 InfoClass u tid exp nt ms ds (joinInsts insts' insts)
-combInfo i1@(InfoClass _ tid exp nt ms ds insts) i2@(InfoUsedClass u uses insts') =
-	 InfoClass u tid exp nt ms ds (joinInsts insts' insts)
-combInfo (InfoClass u tid exp nt ms ds insts) (InfoClass u' tid' exp' nt' [] [] insts') =	
-	 InfoClass u tid (combIE exp exp') nt ms ds (joinInsts insts' insts)
-combInfo (InfoClass u tid exp nt ms ds insts) (InfoClass u' tid' exp' nt' ms' ds' insts') =	
-	 InfoClass u tid (combIE exp exp') nt' ms' ds' (joinInsts insts' insts)
-combInfo info@(InfoData u tid exp nt dk) info'@(InfoData u' tid' exp' nt' dk')  =
+combInfo  InfoClear      info'                     = info'
+combInfo (InfoUsed _ w) (InfoUsed u' w')           = InfoUsed u' (w++w')
+combInfo (InfoUsed _ _)  info'                     = info'
+combInfo  info           InfoClear                 = info
+combInfo  info          (InfoUsed _ _)             = info
+combInfo i1@(InfoUsedClass _ uses insts) 
+         i2@(InfoClass u tid exp nt ms ds insts') =
+  InfoClass u tid exp nt ms ds (joinInsts insts' insts)
+combInfo i1@(InfoClass _ tid exp nt ms ds insts) 
+         i2@(InfoUsedClass u uses insts') =
+  InfoClass u tid exp nt ms ds (joinInsts insts' insts)
+combInfo (InfoClass u tid exp nt ms ds insts) 
+         (InfoClass u' tid' exp' nt' [] [] insts') =	
+  InfoClass u tid (combIE exp exp') nt ms ds (joinInsts insts' insts)
+combInfo (InfoClass u tid exp nt ms ds insts) 
+         (InfoClass u' tid' exp' nt' ms' ds' insts') =	
+  InfoClass u tid (combIE exp exp') nt' ms' ds' (joinInsts insts' insts)
+combInfo info@(InfoData u tid exp nt dk) 
+         info'@(InfoData u' tid' exp' nt' dk')  =
   case dk' of
     Data unboxed [] -> info
     _ -> if isExported exp' then info' else info
@@ -297,16 +416,23 @@ arityVI (InfoDMethod  unique tid nt (Just arity) iClass) = arity
 arityVI (InfoName  unique tid arity ptid) = arity
 
 -- arity with context
-arityI (InfoVar     unique tid fix exp (NewType _ _ ctxs _) (Just arity)) =  length ctxs + arity
-arityI (InfoVar     unique tid fix exp NoType (Just arity)) =  arity   -- NR Generated after type deriving
-arityI (InfoConstr  unique tid fix (NewType _ _ _ nts) fields iType) = length nts - 1
+arityI (InfoVar     unique tid fix exp (NewType _ _ ctxs _) (Just arity)) =  
+  length ctxs + arity
+arityI (InfoVar     unique tid fix exp NoType (Just arity)) =  
+  arity   -- NR Generated after type deriving
+arityI (InfoConstr  unique tid fix (NewType _ _ _ nts) fields iType) = 
+  length nts - 1
 arityI (InfoMethod  unique tid fix nt (Just arity) iClass) = 1
--- Wrong !!! -- arityI (InfoIMethod unique tid (NewType _ _ ctxs _) (Just arity) iMethod) = length ctxs + arity
-arityI (InfoDMethod  unique tid  (NewType _ _ ctxs _) (Just arity) iClass) = length ctxs + arity + 1  {- 1 is for the dictionary -}
+-- Wrong !!! 
+-- arityI (InfoIMethod unique tid (NewType _ _ ctxs _) (Just arity) iMethod) =
+-- length ctxs + arity
+arityI (InfoDMethod  unique tid  (NewType _ _ ctxs _) (Just arity) iClass) = 
+  length ctxs + arity + 1  {- 1 is for the dictionary -}
 arityI (InfoName  unique tid arity ptid) = arity
 arityI info =  error ("arityI " ++ show info)
 
-arityIM (InfoMethod  unique tid fix (NewType _ _ ctx _) (Just arity) iClass) = length ctx + arity
+arityIM (InfoMethod  unique tid fix (NewType _ _ ctx _) (Just arity) iClass) =
+  length ctx + arity
 
 fixityI (InfoVar     unique tid fix exp nt annot) = fix
 fixityI (InfoConstr  unique tid fix nt fields iType) = fix

@@ -1,3 +1,7 @@
+{- ---------------------------------------------------------------------------
+Internal state of the compiler 
+used from the renaming pass until code generation
+-}
 module IntState(module IntState, module Info, AssocTree(..), Tree) where
 
 import AssocTree
@@ -73,31 +77,64 @@ updVarArity pos i arity state@(IntState unique rps st errors) =
 
 -- -==== Stand alone
 
+{- Add new info for identifier to the symbol table -}
+addIS :: Int -> Info -> IntState -> IntState
+
 addIS u info state@(IntState unique rps st errors) =
   IntState unique rps (addAT st combInfo u info) errors
 
+
+{- Lookup identifier in symbol table -} 
+lookupIS :: IntState -> Int -> Maybe Info
+
 lookupIS (IntState unique rps st errors) i = lookupAT st i
+
+
+{- Update info for identifier in symbol table -}
+updateIS :: IntState -> Int -> (Info -> Info) -> IntState
 
 updateIS (IntState unique rps st errors) i upd =
   IntState unique rps (updateAT st i upd) errors
 
+
+{- Obtain a new unique and hence also a new internal state -}
+uniqueIS :: IntState -> (Int,IntState)
+
 uniqueIS (IntState unique rps st errors) = (unique,IntState (unique+1) rps st errors)
+
+
+{- Associate new uniques with given list of entities; hence also new internal
+state -}
+uniqueISs :: IntState -> [a] -> ([(a,Int)],IntState)
 
 uniqueISs (IntState unique rps st errors) l =
    (zip l [unique..],IntState (unique+(length l)) rps st errors)
+
+
+{- Give printable string for identifier -}
+strIS :: IntState -> Int -> String
 
 strIS state i =
    case lookupIS state i of
      Just info -> show (tidI info)
      Nothing -> 'v':show i
 
+
+{- Give token of identifier -}
+tidIS :: IntState -> Int -> TokenId
+
 tidIS state i =
    case lookupIS state i of
      Just info -> tidI info
 
+getErrors :: IntState -> (IntState,[String])
 getErrors (IntState unique rps st errors) = (IntState unique rps st [], errors)
-addError (IntState unique rps st errors) err = IntState unique rps st (err:errors)
 
+addError :: IntState -> [Char] -> IntState
+addError (IntState unique rps st errors) err = 
+  IntState unique rps st (err:errors)
+
+getSymbolTable :: IntState -> Tree (Int,Info)
 getSymbolTable (IntState unique rps st errors) = st
 
 mrpsIS (IntState unique (i,rps) st errors) = rps
@@ -115,13 +152,15 @@ globalIS state i =
   case lookupIS state i of
     Nothing -> False
     Just info -> globalI info
- where
+  where
   globalI (InfoData   unique tid exp nt dk) = isExported exp
   globalI (InfoClass  unique tid exp nt ms ds insts) = isExported exp
   globalI (InfoVar     unique tid fix IEsel nt annot) = True
   globalI (InfoVar     unique tid fix exp nt annot) = isExported exp
-  globalI (InfoConstr  unique tid fix nt fields iType) = globalI' (lookupIS state iType) 
-  globalI (InfoField   unique tid icon_offs iData iSel) = globalI' (lookupIS state iData) 
+  globalI (InfoConstr  unique tid fix nt fields iType) = 
+    globalI' (lookupIS state iType) 
+  globalI (InfoField   unique tid icon_offs iData iSel) = 
+    globalI' (lookupIS state iData) 
   globalI (InfoMethod  unique tid fix nt annot iClass) = True
   globalI (InfoIMethod  unique tid nt annot iMethod) = True
   globalI (InfoDMethod  unique tid nt annot iClass) = True

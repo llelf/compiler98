@@ -1,3 +1,10 @@
+{- ---------------------------------------------------------------------------
+Renames identifiers (also patches fixity information)
+
+Also provides
+ctxs2NT to transform syntax tree type into internal type
+fixInstance used by module Derive
+-}
 module Rename(ctxs2NT, fixInstance, rename) where
 
 import List
@@ -7,7 +14,8 @@ import Bind
 import RenameLib
 import Fixity(fixInfixList)
 import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
-import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
+import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt
+              ,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
 import State
 import IdKind
 import Extra
@@ -21,45 +29,104 @@ import SyntaxPos
 import SyntaxUtil(infixFun)
 
 import StrSyntax(strConstr)
+import Overlap(Overlap)
+
+{-
+Uniquely rename all identfiers (also patch fixity)
+-}
+rename :: Flags 
+       -> PackedString 
+       -> (TokenId -> [TokenId]) 
+       -> (Bool -> Bool -> TokenId -> IdKind -> IE) 
+       -> [(InfixClass TokenId,Int,[FixId TokenId])] 
+       -> Decls TokenId -- declarations of program
+       -> ImportState 
+       -> Overlap
+       -> Either [String] 
+            (Decls Int -- renamed declarations of program
+            ,IntState  -- internal state with symbol table
+            ,(TokenId,IdKind) -> Int       -- tidFun
+            ,(TokenId,IdKind) -> Maybe Int -- tidFunSafe
+            ,[(Int,[(Pos,Int)])]           -- derived
+            ,Maybe [Int]                   -- userDefault
+            ,Tree ((TokenId,IdKind),Either [Pos] [Int])  -- rt
+            )
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =
-  case is2rs flags mrps qualFun expFun overlap importState of
+  case is2rs flags mrps qualFun expFun overlap importState 
+         :: Either [String] (TokenId -> TokenId
+                            ,TokenId -> IdKind -> IE
+                            ,RenameState
+                            ,Tree ((TokenId,IdKind),Either [Pos] [Int])) of
     Right (qualFun,expFun,state,irt) ->
-      case renameTopDecls inf topdecls qualFun expFun state of
+      case renameTopDecls inf topdecls qualFun expFun state
+             :: (Decls Int,RenameState) of
 	(DeclsParse topdecls,state) -> 
           case keepRS state of
 	    (unique,(tidFun,tidFunSafe),rps,ts,derived,userDefaults,[]) ->
- 		case mapS (fixInstance (tidFun (tTrue,Con))) topdecls () (IntState unique rps ts []) of
-		   (topdecls,state) -> Right (DeclsParse topdecls,state,tidFun,tidFunSafe,derived,userDefaults,irt)
-	    (unique,(tidFun,tidFunSafe),rps,st,derived,userDefaults,errors) -> Left errors
+ 	      case mapS (fixInstance (tidFun (tTrue,Con))) topdecls () 
+                     (IntState unique rps ts []) of
+		(topdecls,state) -> 
+                  Right (DeclsParse topdecls,state,tidFun,tidFunSafe
+                        ,derived,userDefaults,irt)
+	    (unique,(tidFun,tidFunSafe),rps,st,derived,userDefaults,errors) ->
+              Left errors
     Left errors -> Left errors
 
 ---- ===============================
 
+{-
+In the input of this function every equation is a function declaration of its
+own, as produced by the parser. This function groups succeeding equations 
+for the same function/variable identifier into a single function declaration.
+-}
+
+groupFun :: Eq a => Decls a -> Decls a
+
 groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
   where
-    groupFun' [] = []
-    groupFun' (DeclFun pos fun funs:r) =
-            DeclFun pos fun (funs++funs'):    groupFun' r'
-                    where (funs',r') =     groupFun'' fun [] r
-    groupFun' (d@(DeclPat (Alt (ExpVar pos fun) gdexps w)):r) = 
-	  groupFun' (DeclFun pos fun [Fun [] gdexps w]:r)
-    groupFun' (d@(DeclPat (Alt (ExpInfixList pos es) gdexps w)):r) = 
-          case infixFun es of
-	    Nothing -> d: groupFun' r
-            Just (e1,pos',fun',e2) -> groupFun' (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
-    groupFun' (d:r) = d:    groupFun' r
 
-    groupFun'' fun a (DeclFun pos fun' funs:r) | fun == fun' =
-            groupFun'' fun (a++funs) r
-    groupFun'' fun a  (d@(DeclPat (Alt (ExpVar pos fun') gdexps w)):r) = 
-	  groupFun'' fun a  (DeclFun pos fun' [Fun [] gdexps w]:r)
-    groupFun'' fun a dr@(DeclPat (Alt (ExpInfixList pos es) gdexps w):r) = 
-          case infixFun es of
-	    Nothing -> (a,dr)
-            Just (e1,pos',fun',e2) -> groupFun'' fun a  (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
-    groupFun'' fun a r = (a,r)
+  groupFun' :: Eq a => [Decl a] -> [Decl a]
 
+  groupFun' [] = []
+  groupFun' (DeclFun pos fun funs:r) =
+    DeclFun pos fun (funs++funs'):    groupFun' r'
+    where 
+    (funs',r') =     groupFun'' fun [] r
+  groupFun' (d@(DeclPat (Alt (ExpVar pos fun) gdexps w)):r) = 
+    groupFun' (DeclFun pos fun [Fun [] gdexps w]:r)
+  groupFun' (d@(DeclPat (Alt (ExpInfixList pos es) gdexps w)):r) = 
+    case infixFun es of
+      Nothing -> d: groupFun' r
+      Just (e1,pos',fun',e2) -> 
+        groupFun' (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
+  groupFun' (d:r) = d:    groupFun' r
+
+  groupFun'' :: Eq a => a -> [Fun a] -> [Decl a] -> ([Fun a],[Decl a])
+
+  groupFun'' fun a (DeclFun pos fun' funs:r) | fun == fun' =
+    groupFun'' fun (a++funs) r
+  groupFun'' fun a  (d@(DeclPat (Alt (ExpVar pos fun') gdexps w)):r) = 
+    groupFun'' fun a  (DeclFun pos fun' [Fun [] gdexps w]:r)
+  groupFun'' fun a dr@(DeclPat (Alt (ExpInfixList pos es) gdexps w):r) = 
+    case infixFun es of
+      Nothing -> (a,dr)
+      Just (e1,pos',fun',e2) -> 
+        groupFun'' fun a  (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
+  groupFun'' fun a r = (a,r)
+
+
+{-
+Rename statements of a do expression
+-}
+renameStmts :: [Stmt TokenId] 
+            -> (PackedString -> Int -> TokenId -> TokenId
+               ,TokenId -> TokenId
+               ,TokenId -> IdKind -> IE
+               ,TokenId -> (InfixClass TokenId,Int)
+               ) 
+            -> RenameState 
+            -> ([Stmt Int],RenameState)
 
 renameStmts (StmtExp exp:[]) = renameExp exp >>>= \ exp -> unitS [StmtExp exp]
 renameStmts (StmtExp exp:r) =
@@ -90,12 +157,22 @@ renameStmts (StmtLet decls':r) =
 
 ---- ==============================
 
+renameTopDecls :: [(InfixClass TokenId,Int,[FixId TokenId])] 
+               -> Decls TokenId 
+               -> (TokenId -> TokenId) 
+               -> (TokenId -> IdKind -> IE) 
+               -> RenameState 
+               -> (Decls Int,RenameState)
+
 renameTopDecls inf topdecls1 qualFun expFun state1 =
  let (DeclsParse topdecls') = groupFun topdecls1
+       -- group equations for same function definition together
      fixdecls = sepFixDecls topdecls'
+       -- separate fixity declarations
      state2 =  (pushScope >>>
 	        bindDecls (DeclsParse topdecls')
 		) (globalTid,qualFun,expFun) state1
+       -- store all defined term variables and class ids in a memo 
 
      (fixity,state3) = fixFixityRS defFixFun state2 (inf++fixdecls)
      (topdecls2,state4) =
@@ -104,13 +181,25 @@ renameTopDecls inf topdecls1 qualFun expFun state1 =
 		) (globalTid,qualFun,expFun,fixity) state3
  in (DeclsParse topdecls2,state4)
 
+
 sepFixDecls = concatMap (\decl-> case decl of
                                   DeclFixity f -> [f]
                                   _ -> [])
 
+
+
 renameDecls (DeclsParse decls) (_,qualFun,expFun,fixity2) state3 =
     let (fixity3,state4) = fixFixityRS fixity2 state3 (sepFixDecls decls) in
     (unitS DeclsParse =>>> mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
+
+
+renameDecl :: Decl TokenId 
+           -> State (PackedString -> Int -> TokenId -> TokenId
+                    ,TokenId -> TokenId
+                    ,TokenId -> IdKind -> IE
+                    ,TokenId -> (InfixClass TokenId,Int)
+                    ) 
+                    RenameState (Decl Int) RenameState
 
 renameDecl (DeclType (Simple pos tid tvs) typ) =
   let al = tvPosTids tvs
@@ -119,7 +208,6 @@ renameDecl (DeclType (Simple pos tid tvs) typ) =
      --  gross hack...
      unitS (DeclIgnore "Type Synonym")
 --   unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
-
 renameDecl (DeclDataPrim  pos tid size) =
   uniqueTid pos TCon tid >>>= \ i ->
   defineDataPrim tid (NewType [] [] [] [NTcons i []]) size >>>= \ d ->
@@ -139,11 +227,11 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
 	else
          unitS) (DeclConstrs pos d (concat fields))
 
-
 renameDecl (DeclClass pos ctxs tid tvar decls') =
   let al = tvTids [tvar]
       (DeclsParse decls) = groupFun decls'
-  in transTypes al (map snd al) ctxs [TypeCons pos tid [TypeVar pos tvar]] >>>= \ nt -> 
+  in transTypes al (map snd al) ctxs 
+       [TypeCons pos tid [TypeVar pos tvar]] >>>= \ nt -> 
      transContext al (Context pos tid (pos,tvar)) >>>= \ ctx@(c,t) -> 
      fixClassMethods tvar ctx decls >>>= \ declmds ->
      defineClass pos tid nt (map snd declmds) >>> 
@@ -420,7 +508,10 @@ renameExp (PatNplusK        pos tid _ k _ _) =
 
 ----- ===================
 
-fixInstance iTrue (DeclInstance pos ctxs i instanceType@(TypeCons _ ti tvs) (DeclsParse instmethods)) =
+fixInstance :: Int -> Decl Int -> a -> IntState -> (Decl Int,IntState)
+
+fixInstance iTrue (DeclInstance pos ctxs i instanceType@(TypeCons _ ti tvs) 
+  (DeclsParse instmethods)) =
     ensureDefaults pos i >>>= \ cinfo ->
     mapS ( \ (m,d) -> getInfo m >>>= \ minfo -> unitS (minfo,d)) (methodsI cinfo) >>>= \ cmds ->
     getInfo ti >>>= \ tinfo ->

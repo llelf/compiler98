@@ -1,6 +1,6 @@
 module Reduce where
 
-infixl 5 >>>			-- Using >>> instead of >> to avoid problems with 1.3 Prelude
+infixl 5 >>>   -- Using >>> instead of >> to avoid problems with 1.3 Prelude
 
 type Reduce  s   s' = s -> s'
 
