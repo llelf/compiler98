@@ -221,9 +221,10 @@ commands ws state = let target = tail ws in do
           toplevel (state {options=newopts}) )
   command "hc"
       (if null target then do
-          putStrLn ("Current compiler:    "++compilerPath (compiler state))
-          putStr    "Compilers available: "
-          putStrLn ((concat . intersperse (",\n"++replicate 21 ' ')
+          putStrLn ("Current compiler: "++compilerPath (compiler state)
+                    ++" ("++compilerVersion (compiler state)++")")
+          putStr   "Compilers available:\n     "
+          putStrLn ((concat . intersperse ("\n     ")
                     . reverse . sort
                     . map (\cc->compilerPath cc++"\t("++compilerVersion cc++")")
                     . knownCompilers . config) state)
