@@ -14,11 +14,11 @@ C_HEADER(cGetProgName)
   if(replay) {
     int length;
     REPLAY(length);
-    res = allocPackedString(length);
-    REPLAY_STR(length,getPackedString(res));
+    res = nhc_allocPackedString(length);
+    REPLAY_STR(length,nhc_getPackedString(res));
   } else
 #endif
-    res = mkPackedString(strlen(Argv[0]),Argv[0]);
+    res = nhc_mkPackedString(strlen(Argv[0]),Argv[0]);
 #ifdef PROFILE
   if(record) {
     int length = strlen(Argv[0]);

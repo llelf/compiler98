@@ -25,16 +25,16 @@ C_HEADER(primComparePS)
 
   if(cmp = strncmp(srcptr1,srcptr2,(length1<length2?length1:length2))) {
     if(cmp<0)
-      nodeptr = mkLT();
+      nodeptr = nhc_mkLT();
     else
-      nodeptr = mkGT();
+      nodeptr = nhc_mkGT();
   } else {
     if(length1 < length2) 
-      nodeptr = mkLT();
+      nodeptr = nhc_mkLT();
     else if (length1 == length2)
-      nodeptr = mkEQ();
+      nodeptr = nhc_mkEQ();
     else
-      nodeptr = mkGT();
+      nodeptr = nhc_mkGT();
   }
   C_RETURN(nodeptr);
 }	
@@ -42,20 +42,9 @@ C_HEADER(primComparePS)
 int
 primComparePSC (char* srcptr1, char* srcptr2)
 {
-  int length1,length2,cmp;
-  length1 = strlen(srcptr1);
-  length2 = strlen(srcptr2);
-  if(cmp = strncmp(srcptr1,srcptr2,(length1<length2?length1:length2))) {
-    if(cmp<0)
-      return (-1);
-    else
-      return 1;
-  } else {
-    if(length1 < length2) 
-      return (-1);
-    else if (length1 == length2)
-      return 0;
-    else
-      return 1;
-  }
+  int cmp;
+  cmp = strcmp(srcptr1,srcptr2);
+  if(cmp<0)  return (-1);
+  if(cmp==0) return 0;
+  if(cmp>0)  return 1;
 }

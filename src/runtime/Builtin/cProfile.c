@@ -12,7 +12,7 @@ C_HEADER(cProfile)
   char *msg;
   msgptr = C_GETARG1(1);
   IND_REMOVE(msgptr);
-  msg = getPackedString(msgptr);
+  msg = nhc_getPackedString(msgptr);
   do_comment(msg);
 #endif
   C_RETURN(nhc_mkUnit());

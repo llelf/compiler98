@@ -18,11 +18,11 @@ C_HEADER(cGetEnv)
   if(replay) {
     int length;
     REPLAY(length);
-    nodeptr = allocPackedString(length);
-    REPLAY_STR(length,getPackedString(nodeptr));
+    nodeptr = nhc_allocPackedString(length);
+    REPLAY_STR(length,nhc_getPackedString(nodeptr));
   } else
 #endif
-    { src = getenv(getPackedString(nodeptr));
+    { src = getenv(nhc_getPackedString(nodeptr));
       if(!src) { /*src = "";*/
              nodeptr = nhc_mkLeft(nhc_mkInt(ENOENT));
       }else{ nodeptr = nhc_mkRight(nhc_mkPackedString(strlen(src),src)); }

@@ -25,7 +25,7 @@ C_HEADER(cSystem)
       REPLAY(errno);
   } else
 #endif
-    i = system(getPackedString(nodeptr));
+    i = system(nhc_getPackedString(nodeptr));
 #ifdef PROFILE
   if(record) {
     RECORD(i);
