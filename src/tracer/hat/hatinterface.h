@@ -114,7 +114,7 @@ BOOL          isTopLevel     (HatFile handle,
 			      filepointer nodenumber);
 BOOL          isTrusted      (HatFile handle,
 			      filepointer nodenumber);
-BOOL          isTopLevelUntrusted(HatFile handle,
+BOOL          isTopLevelOrTrusted(HatFile handle,
 				  filepointer srcref);
 BOOL          isCAF          (HatFile handle,
 			      filepointer nodenumber);

@@ -657,7 +657,7 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
   }
 }
 
-BOOL isTopLevelUntrusted(HatFile handle,filepointer srcref) {
+BOOL isTopLevelOrTrusted(HatFile handle,filepointer srcref) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);
   while (1) {
@@ -692,7 +692,7 @@ BOOL isTopLevelUntrusted(HatFile handle,filepointer srcref) {
     case HatTuple:
     case HatConstructor: // constructors are "trusted"! => its applications are ok!
       hatSeekNode(handle,old);
-      return 1;
+      return 0;
     case HatIdentifier:
       if (getTopLevelFlag()==0) return 0;
       srcref=getModInfo(); // follow module info

@@ -111,7 +111,7 @@ int isEDTChild(HatFile handle,filepointer nodenumber,filepointer parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
-      if (isTopLevelUntrusted(handle,nodenumber)) {//&&(hatResult(handle,nodenumber)!=0)) {
+      if (isTopLevelOrTrusted(handle,nodenumber)) {//&&(hatResult(handle,nodenumber)!=0)) {
 	hatSeekNode(handle,old);
 	return 0;
       }
@@ -253,7 +253,7 @@ int hasAncestor(HatFile handle,filepointer nodenumber,filepointer parent) {
   }
 }
 
-//#define DebuggedtChildrenFor
+// #define DebuggedtChildrenFor
 
 #ifdef DebuggedtChildrenFor
 int debugLines = 0;
