@@ -577,15 +577,20 @@ extending error messages appropriately.
 defineDefault :: [Type Id] -> a -> RenameState -> RenameState
 defineDefault types down (RenameState flags unique rps rts rt st
                                       derived Nothing errors needCheck) =
-    case partition (\nt-> case nt of TypeCons _ _ [] -> True; _ -> False) 
+    case partition (\nt-> case nt of TypeCons _ _ [] -> True;
+                                     TypeApp _ _ -> True; 
+                                     _ -> False) 
                    types of
       (cs,[]) -> 
         RenameState flags unique rps rts rt st derived 
-          (Just (map (\(TypeCons _ con _)-> con) types)) errors needCheck
+          (Just (map getCon types)) errors needCheck
       (_,es) ->  
         RenameState flags unique rps rts rt st derived Nothing
 	  (("Illegal type in default at " ++ strPos (getPos es)):errors) 
           needCheck
+    where
+    getCon (TypeCons _ con _) = con
+    getCon (TypeApp tf ta) = getCon tf	-- not really sure about this.
 defineDefault types down (RenameState flags unique rps rts rt st
                                       derived defaults errors needCheck) =
     RenameState flags unique rps rts rt st derived defaults 
@@ -753,7 +758,7 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
   let realtid = ensureM rps tid
       key = (tid,Field)
   in
-    case lookupAT rt (tid,Field) of
+    case lookupAT rt key of
       Just u ->
         case lookupAT st u of
 	  Just (InfoField u' realtid' ie cis' bt' iSel') ->
@@ -772,23 +777,21 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
 	  Nothing ->
 	    case lookupAT rt (tid,Var) of
 	      Just selu ->
-		case lookupAT rt key of
-		  Just u ->
-		      (Just (p,u,selu)
-		      ,RenameState flags unique irps rts rt
-			  	   (addAT (addAT st combInfo u
-                                                {-(realtid,Field)-}
-                                                 (InfoField u realtid IEnone
-                                                            [(c,i)] bt selu))
-				          combInfo selu
-                                          (InfoVar selu realtid
-                                               (case sExp down typtid TCon of
-						 IEall -> IEsel
-						 IEabs -> IEnone
-                                                 _     -> sExp down tid Var)
-                                               (sFix down realtid)
-                                               NoType (Just 1)))
-				   derived defaults errors needCheck)
+		( Just (p,u,selu)
+		, RenameState flags unique irps rts rt
+                              (addAT (addAT st combInfo u {-(realtid,Field)-}
+                                            (InfoField u realtid IEnone
+						       -- Var gives true IEinfo
+                                                       [(c,i)] bt selu))
+				     combInfo selu
+                                     (InfoVar selu realtid
+                                          (case sExp down typtid TCon of
+					      IEall -> IEsel
+					   -- IEabs -> sExp down tid Var
+                                              _     -> sExp down tid Var)
+                                          (sFix down realtid)
+                                          NoType (Just 1)))
+                              derived defaults errors needCheck)
 
 
 {- creates token for instance methods for tuple type? -} 
