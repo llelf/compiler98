@@ -191,7 +191,8 @@ addBefore' align8 gs' down thread@(Thread state prof profstatics strings live la
   search gs nbs [] = Nothing
   search gs nbs bbs@(b:bs) =
 	if eqInit gs bbs then Just nbs
-	else search gs (nbs+1) bs
+	else let nbs1 = nbs+1
+             in seq nbs1 (search gs nbs1 bs)
 
 
 addAfter g down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
@@ -204,7 +205,8 @@ addAfter g down thread@(Thread state prof profstatics strings live labels nbs bs
   search g nas [] = Nothing
   search g nas (a:as) =
 	if g == a then Just nas
-	else search g (nas-1) as
+	else let nas1 = nas-1
+             in seq nas1 (search g nas1 as)
 
 
 gFix g@(NEEDHEAP i) = ifLive (emit g)
