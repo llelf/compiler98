@@ -83,8 +83,10 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
+PACKAGES  = base QuickCheck
+
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
-	    src/libraries/base
+	    $(patsubst %, src/libraries/%, ${PACKAGES})
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -210,7 +212,9 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
 $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
-	cd src/libraries/base; $(MAKE) -f Makefile.nhc98
+	for pkg in ${PACKAGES}; \
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ; \
+	done
 	touch $(TARGDIR)/$(MACHINE)/libraries
 
 
@@ -306,7 +310,9 @@ $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
 $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
-	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 fromC
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
+	done
 	touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
 
 
@@ -399,7 +405,9 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 $(TARGDIR)/librariesC: $(LIBRARIES)
-	cd src/libraries/base;  $(MAKE) -f Makefile.nhc98 cfiles
+	for pkg in ${PACKAGES};
+	do ( cd src/libraries/$$pkg;  $(MAKE) -f Makefile.nhc98 cfiles; ) ;\
+	done
 	touch $(TARGDIR)/librariesC
 
 
