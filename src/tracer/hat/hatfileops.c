@@ -143,6 +143,7 @@ int openfile(char* name) {
 
 /* close file in internal file descriptor */
 void closefile() {
+  printf("Closing file %u\n",currentHandle);
   close(hatHandle[currentHandle].f);
   free(hatHandle[currentHandle].buf);
 }
@@ -366,11 +367,11 @@ void skipNode(char nodeType) {
       }
       break;
     case NAM: // Name
-      skipbytes(4*3);
-      break;
+	skipbytes(4*3);
+	break;
     case IND: //  Indirection
-      skipbytes(4*2);
-      break;
+	skipbytes(4*2);
+	break;
     case HIDDEN: // Hidden
     case SATA:
     case SATB:
@@ -378,69 +379,71 @@ void skipNode(char nodeType) {
     case SATCIS:
     case SATBIS:
     case SATAIS:
-      skippointer();
-      break;
+	skippointer();
+	break;
     default:
-      fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
-	      lo5(nodeType), byteoffset()-1);
-      exit(1);
+	fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
+		lo5(nodeType), byteoffset()-1);
+	exit(1);
     }
     break;
   case MD: // Module / trusted or untrusted
-    skipstring();
-    skipstring();
-    break;
+      skipstring();
+      skipstring();
+      break;
   case NT:
     switch (lo5(nodeType)) {
     case INT:
-      skipbytes(4);
-      break;
+	skipbytes(4);
+	break;
     case CHAR:
-      skipbytes(1);
-      break;
+	skipbytes(1);
+	break;
     case INTEGER:
-      skipinteger();
-      break;       
+	skipinteger();
+	break;       
     case RATIONAL:
-      skiprational();
-      break;
+	skiprational();
+	break;
     case FLOAT:
-      skipbytes(4);
-      break;
+	skipbytes(4);
+	break;
     case DOUBLE:
-      skipbytes(8);
-      break;
+	skipbytes(8);
+	break;
     case IDENTIFIER:
-      skipstring();  // simply read string
-      skipbytes(4+1+4);
-      break; 
+	skipstring();  // simply read string
+	skipbytes(4+1+4);
+	break; 
     case CONSTRUCTOR:
-      skipstring();
-      skipbytes(4+1+4);
-      break; 
+	skipstring();
+	skipbytes(4+1+4);
+	break; 
     case TUPLE:
     case FUN:
     case CASE:
     case LAMBDA:
     case DUMMY:
-    case CSTRING:
     case IF:
     case GUARD:
     case CONTAINER:
-      break;
+	break;
+    case CSTRING:
+	skipstring();
+	break;
     default:
-      fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
-	      lo5(nodeType), byteoffset()-1);
-      exit(1);
+	fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
+		lo5(nodeType), byteoffset()-1);
+	exit(1);
     }
     break;
   case SR:
-    skipbytes(4+4);
-    break;
+      skipbytes(4+4);
+      break;
   default:
-    fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
-	    hi3(nodeType), byteoffset()-1);
-    exit(1);
+      fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
+	      hi3(nodeType), byteoffset()-1);
+      exit(1);
   }
 }
 
@@ -701,9 +704,9 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
       exp->v.intval = getTrace();
       return exp;
     default:
-      fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x\n",
-	      b, byteoffset());
-      exit(1);
+      fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x, handle: %u\n",
+	      b, byteoffset(),currentHandle);
+      return NULL; //exit(1);
     }
   }
   return NULL;
@@ -744,12 +747,21 @@ void showLocation(unsigned long fileoffset) {
       return;
     case TRAPP:
       {
-	fileoffset = getSrcRef();
+	//fileoffset = getSrcRef();
+	fileoffset = getFunTrace();
 	break;
       }
     case TRNAM:
-      fileoffset = getSrcRef();
+      //fileoffset = getSrcRef();
+      fileoffset = getNmType();
       break;
+    case NTIDENTIFIER:
+      fileoffset = getModInfo();
+      s = getPosnStr();
+      showLocation(fileoffset);
+      printf(", %s\n",s);
+      seek(old);
+      return;
     default:
       seek(old);
       return;

@@ -224,7 +224,7 @@ int getObserve(char* ident,char* topIdent,
   observeIdentifier(ident,topIdent,verbosemode,uniqueMode,recursivemode,
 		    precision,results);
   l = FunTableLength(results);
-  //printf("New Observe: %i\n",l);
+  //printf("New Observe: %i for %s\n",l,ident);
   {
     int i=0;
     FunTable *e = results->next;
@@ -235,6 +235,7 @@ int getObserve(char* ident,char* topIdent,
       e=e->next;
     }
     (*childrenArray)[i]=-1;
+    //printf("observed %i\n",i);
   }
   freeFunTable(results);
   return l;

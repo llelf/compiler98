@@ -171,7 +171,8 @@ int getEDTchildren(unsigned long parentTrace,int **childrenArray) {
       i++;
       e=e->next;
     }
-    (*childrenArray)[i]=(long) (-1);
+    (*childrenArray)[i]=(-1);
+    //printf("detected %i\n",i);
   }
   freeList(results);
   freeHashTable(hash);
@@ -179,7 +180,7 @@ int getEDTchildren(unsigned long parentTrace,int **childrenArray) {
 }
 
 void freeArray(int *array) {
-  //printf("Freeing...\n");
+  //printf("Freeing %u...\n",array);
   if (array!=NULL) free(array);
   array = NULL;
   //printf("Free!\n");

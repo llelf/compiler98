@@ -323,7 +323,7 @@ void interactive(unsigned long current) {
       else return;
     }  else
       if (isCmd(command,"quit","q")) {
-	printf("Ok. Goodbye. Thank you for using hat-interactive! :)\n\n");
+	printf("Ok. Goodbye. Thank you for using hat-check-interactive! :)\n\n");
 	exit(0);
       } else {
 	if (isCmd(command,"next","n")) {
