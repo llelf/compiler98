@@ -5,6 +5,7 @@ module MkSyntax
 	( mkAppExp, mkAppInst, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
+        , mkLambda, mkLet, mkDo, mkFieldExp,mkExpList
 	, mkExpListComp, mkIf, mkInfixList
 	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
 	, mkTypeList, mkPatNplusK, mkParLhs
@@ -68,8 +69,26 @@ notOp _ = True
 --mkRevTypeArrow p a b = TypeCons p t_Arrow [b,a]
 mkTypeList p t = TypeCons p t_List [t]
 
-mkIf pos c e1 e2 = ExpIf pos c e1 e2
-mkCase pos exp alts = ExpCase pos exp alts 
+-- passes position of lambda
+mkLambda pos pats e = 
+  let p = mergePos pos (getPos e) in p `seq` ExpLambda p pats e
+
+-- passes position of let
+mkLet pos decls e =
+  let p = mergePos pos (getPos e) in p `seq` ExpLet p decls e
+
+-- passes position of do
+mkDo pos stmts =
+  let p = mergePos pos (getPos stmts) in p `seq` ExpDo p stmts
+
+-- passes position of if
+mkIf pos e1 e2 e3 =
+  let p = mergePos pos (getPos e3) in p `seq` ExpIf p e1 e2 e3
+
+-- passes position of case
+mkCase pos e alts =
+  let p = mergePos pos (getPos alts) in p `seq` ExpCase p e alts
+
 
 mkEnumFrom pos eFrom =
         ExpApplication pos [ExpVar pos tenumFrom,eFrom]
@@ -86,11 +105,20 @@ mkAppExp [e] = e
 mkAppExp es@(e:es') = 
   ExpApplication (mergePos (getPos e) (getPos (last es'))) es
 
+-- passes positions of left and right parenthesis
+mkParExp posl [ExpConOp pos' id] posr = ExpCon pos' id
+mkParExp posl [ExpVarOp pos' id] posr = ExpVar pos' id
+mkParExp posl [e] posr = e
+mkParExp posl es  posr = 
+  let p = mergePos posl posr 
+  in p `seq` ExpApplication p (ExpCon p (t_Tuple (length es)):es)
 
-mkParExp pos [ExpConOp pos' id] = ExpCon pos' id
-mkParExp pos [ExpVarOp pos' id] = ExpVar pos' id
-mkParExp pos [e] = e
-mkParExp pos es  = ExpApplication pos (ExpCon pos (t_Tuple (length es)):es)
+mkFieldExp pos ident exp =
+  let p = mergePos pos (getPos exp) in p `seq` FieldExp pos ident exp
+
+-- passes positions of left and right brackets
+mkExpList posl exps posr =
+  let p = mergePos posl posr in p `seq` ExpList p exps
 
 mkParLhs pos app args = ExpApplication pos (app:args)
 
@@ -155,7 +183,8 @@ mkExpListComp pos qs e = ExpApplication noPos [trans pos qs e,ExpList noPos []]
 mkInt pos i = ExpLit pos (LitInt Boxed i)
 
 mkPatNplusK (pos,tid) (posi,integer) =
-    PatNplusK pos tid undefined (ExpLit posi integer) undefined undefined
+  let p = mergePos pos posi in p `seq` 
+    PatNplusK p tid undefined (ExpLit posi integer) undefined undefined
 -- While parsing (n+k), can't choose a unique replacement identifier n',
 -- so leave some fields to be filled in later.
 

@@ -50,6 +50,11 @@ instance HasPos (Rhs a) where
     getPos (Guarded gdes) = 
       mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
 
+instance HasPos (Stmt a) where
+  getPos (StmtExp exp) = getPos exp
+  getPos (StmtBind pat exp) = mergePos (getPos pat) (getPos exp)
+  getPos (StmtLet decls) = getPos decls
+
 instance HasPos (Exp a) where
   getPos (ExpDict        exp)       = getPos exp
   getPos (ExpScc         str exp)   = getPos exp
@@ -89,7 +94,7 @@ instance HasPos (Simple a) where
 
 instance HasPos (Type a) where
     getPos (TypeApp  t1 t2) = mergePos (getPos t1) (getPos t2)
-    getPos (TypeCons  pos _ _) = pos
+    getPos (TypeCons  pos _ _) = pos -- position of constructor, not whole type
     getPos (TypeVar   pos _)   = pos
     getPos (TypeStrict  pos _)   = pos
 

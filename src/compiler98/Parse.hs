@@ -10,7 +10,8 @@ import Syntax
 import MkSyntax	( mkAppExp, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
-	, mkExpListComp, mkIf, mkInfixList
+	, mkExpListComp, mkIf, mkInfixList, mkExpList
+        , mkLambda, mkLet, mkDo, mkFieldExp
 	, mkParExp, mkPatNplusK -- , mkParLhs
 	)
 import Parse2
@@ -229,7 +230,8 @@ parseExp =
 
 parseExpType :: Parser (Exp TokenId -> Exp TokenId) [PosToken] a
 parseExpType =
-      (\pos ctx t e-> ExpType pos e ctx t) `parseAp` coloncolon `apCut`
+      (\pos ctx t e-> ExpType (mergePos pos (getPos t)) e ctx t) 
+              `parseAp` coloncolon `apCut`
               parseContexts `ap` parseType
         `orelse`
       parse id
@@ -241,7 +243,8 @@ parseStmt =
    (lit L_let `into` \_-> lcurl `into` \_-> parseDecls `into`
                  \decls-> rcurl `into` \_->
 	((lit L_in `into` \_-> parseExp `into`
-                  \exp-> parse (StmtExp (ExpLet (getPos decls) decls exp)))
+              \exp-> parse (StmtExp (ExpLet 
+                            (mergePos (getPos decls) (getPos exp)) decls exp)))
 	    `orelse`
 	  parse (StmtLet decls)))
 	`orelse`
@@ -251,21 +254,23 @@ parseStmt =
 
 parseExp10 =
     cases 
-        [(L_Lambda,\pos -> (ExpLambda pos) `parseAp` parsePats
-                                           `chk` rarrow `apCut` parseExp),
-         (L_let,   \pos -> (ExpLet pos) `parseChk` lcurl `ap` parseDecls 
-                                        `chk` optSemi `chk` rcurl
-                                        `chk` lit L_in `ap` parseExp),
-         (L_do,   \pos -> (ExpDo pos) `parseChk` lcurl
-                                        `ap` somesSep semi parseStmt
-                                    `chk` optSemi `chk` rcurl),
-         (L_if,    \pos -> (mkIf pos) `parseAp` parseExp 
-                              `chk` lit L_then `ap` parseExp
-                              `chk` lit L_else `ap` parseExp),
-         (L_case,  \pos -> (mkCase pos) `parseAp` parseExp `chk` lit L_of
-                                        `chk` lcurl
-                                        `ap` (somesSep semi (parseAlt rarrow)) 
-                                        `chk` optSemi `chk` rcurl)]
+        [(L_Lambda,\pos -> (mkLambda pos) 
+           `parseAp` parsePats `chk` rarrow `apCut` parseExp),
+         (L_let,   \pos -> (mkLet pos)
+           `parseChk` lcurl `ap` parseDecls 
+           `chk` optSemi `chk` rcurl
+           `chk` lit L_in `ap` parseExp),
+         (L_do,    \pos -> (mkDo pos)
+           `parseChk` lcurl `ap` somesSep semi parseStmt
+           `chk` optSemi `chk` rcurl),
+         (L_if,    \pos -> (mkIf pos) 
+           `parseAp` parseExp 
+           `chk` lit L_then `ap` parseExp
+           `chk` lit L_else `ap` parseExp),
+         (L_case,  \pos -> (mkCase pos) 
+           `parseAp` parseExp `chk` lit L_of
+           `chk` lcurl `ap` (somesSep semi (parseAlt rarrow)) 
+           `chk` optSemi `chk` rcurl)]
          parseFExp
 
 parseFExp  = mkAppExp `parseAp` some parseAExpR1
@@ -284,25 +289,25 @@ parseAExp =
     cases 
          [(L_LBRACK, \pos -> parseBrackExp0 pos),
           (L_LPAR,   \pos -> (mkParExp pos) `parseAp` manySep comma parseExp
-                                            `chk` rpar)]
+                                            `ap` rpar)]
     (uncurry ExpLit `parseAp`
             (integer `orelse` rational `orelse` char `orelse` string))
 
 
 parseFieldExp =
-    varid `into` (\(pos,ident)-> (FieldExp pos ident `parseChk` equal
-                                                     `ap` parseExp)
+    varid `into` (\(pos,ident)-> (mkFieldExp pos ident `parseChk` equal
+                                                       `ap` parseExp)
 					`orelse`		-- H98 removes
 				 parse (FieldPun pos ident)	-- H98 removes
                  )
 
 parseBrackExp0 pos =                -- found '['
-    (ExpList pos []) `parseChk` rbrack
+    (mkExpList pos []) `parseAp` rbrack
         `orelse`
     parseExp `revAp` parseBrackExp1 pos
 
 parseBrackExp1 pos =                -- found '[e'
-    (\e -> ExpList pos [e]) `parseChk` rbrack
+    (\posr e -> mkExpList pos [e] posr) `parseAp` rbrack
         `orelse`
     mkEnumFrom pos `parseChk` dotdot `chk` rbrack
         `orelse`
@@ -313,15 +318,15 @@ parseBrackExp1 pos =                -- found '[e'
     comma `revChk` (parseExp `revAp` parseBrackExp2 pos)
 
 parseBrackExp2 pos =                -- found '[e,e'
-    (\e2 e1 -> ExpList pos [e1,e2]) `parseChk` rbrack
+    (\posr e2 e1 -> mkExpList pos [e1,e2] posr) `parseAp` rbrack
         `orelse`
     mkEnumThenFrom pos `parseChk` dotdot `chk` rbrack
         `orelse`
     mkEnumToThenFrom pos `parseChk` dotdot `ap` parseExp `chk` rbrack
         `orelse`
-    (\es e2 e1 -> ExpList pos (e1:e2:es)) `parseChk` comma
+    (\es posr e2 e1 -> mkExpList pos (e1:e2:es) posr) `parseChk` comma
                                           `ap` manySep comma parseExp
-                                          `chk` rbrack
+                                          `ap` rbrack
 
 parseQual =
    (lit L_let `into` \_-> lcurl `into` \_-> parseDecls `into`
@@ -376,15 +381,15 @@ parsePat0 = mkInfixList `parseAp` someSafe (parseOpPat `orelse` parseFPat)
 parseOpPat = anyop
 
 parseFPat =
-    (\(pos,c) args -> ExpApplication pos (ExpCon pos c:args))
-                                          `parseAp` conid `ap` some parseAPat
+    (\(pos,c) args -> mkAppExp (ExpCon pos c:args))
+                      `parseAp` conid `ap` some parseAPat
         `orelse`
     parseAPat
 
 parseAPat = parseAPat2 `into` parseAPat1
 
 parseFieldPat =
-    varid `into` (\(pos,ident)-> FieldExp pos ident `parseChk` equal
+    varid `into` (\(pos,ident)-> mkFieldExp pos ident `parseChk` equal
                                                     `ap` parsePat
 					`orelse`		-- H98 removes
 				   parse (FieldPun pos ident)	-- H98 removes
@@ -398,8 +403,9 @@ parseAPat1 exp =
   
 
 parseAPat2 =
-    varid `revAp` ((\e (pos,i) -> PatAs pos i e) `parseChk` lit L_At
-                                                 `ap` parseAPat
+    varid `revAp` ((\e (pos,i) -> let p = mergePos pos (getPos e) 
+                                  in p `seq` PatAs pos i e) 
+                      `parseChk` lit L_At `ap` parseAPat
                         `orelse`
                     parse (\ (pos,e) -> ExpVar pos e)
                   )
@@ -408,9 +414,9 @@ parseAPat2 =
         `orelse`
     PatWildcard `parseAp` lit L_Underscore
         `orelse`
-    mkParExp `parseAp` lpar `ap` manySepSafe comma parsePat `chk` rpar
+    mkParExp `parseAp` lpar `ap` manySepSafe comma parsePat `ap` rpar
         `orelse`
-    ExpList `parseAp` lbrack `ap` manySepSafe comma parsePat `chk` rbrack
+    mkExpList `parseAp` lbrack `ap` manySepSafe comma parsePat `ap` rbrack
         `orelse`
     PatIrrefutable `parseAp` lit L_Tidle `ap` parseAPat
         `orelse`
