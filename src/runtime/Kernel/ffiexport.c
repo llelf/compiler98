@@ -90,6 +90,7 @@ NodePtr evalExport(NodePtr x)
 {
   CodePtr IP=Ip;		/* save global instruction pointer */
   StablePtr p = makeStablePtr(x);
+  Fp = Sp;
   C_PUSH(x);
   C_EVALTOS(x);
   C_POP();
