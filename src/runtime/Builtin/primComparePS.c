@@ -38,3 +38,24 @@ C_HEADER(primComparePS)
   }
   C_RETURN(nodeptr);
 }	
+
+int
+primComparePSC (char* srcptr1, char* srcptr2)
+{
+  int length1,length2,cmp;
+  length1 = strlen(srcptr1);
+  length2 = strlen(srcptr2);
+  if(cmp = strncmp(srcptr1,srcptr2,(length1<length2?length1:length2))) {
+    if(cmp<0)
+      return (-1);
+    else
+      return 1;
+  } else {
+    if(length1 < length2) 
+      return (-1);
+    else if (length1 == length2)
+      return 0;
+    else
+      return 1;
+  }
+}
