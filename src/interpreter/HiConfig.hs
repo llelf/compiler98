@@ -1,3 +1,4 @@
+{-# OPTIONS -fglasgow-exts #-}
 -- Known Haskell compilers and their locations are all stored in an
 -- hmakerc file which is maintained with the hmake-config utility.
 -- This module no longer deals with that side of things.
@@ -27,7 +28,7 @@ foreign import "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
 import IOExts (unsafePerformIO)
-import Posix (getProcessID)
+foreign import "getpid" getProcessID :: IO Int
 #endif
 
 -- Generate a temporary filename unique to this invocation.

@@ -10,8 +10,8 @@ CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 
 ifeq "${HC}" "ghc"
-HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts \
-                 -package lang -package util -package posix $(READLINE) )
+HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
+                 -package lang -package util $(READLINE) )
 export HFLAGS
 endif
 ifeq "${HC}" "hbc"
@@ -35,7 +35,7 @@ realclean: clean
 
 $(TARGET): $(OBJDIR) $(SRCS)
 	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)") \
-		-I../hmake -i../hmake
+		-i../hmake
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 
