@@ -264,7 +264,7 @@ void dopointer(int requiretag, unsigned long requireoffset,
       /*exit(1);*/
     }
   }
-  printf("(%s %u)", tag2str(requiretag), requireoffset);
+  printf("(%s 0x%x)", tag2str(requiretag), requireoffset);
 }
   
 /* reading, checking and/or writing header and node information
@@ -285,7 +285,7 @@ nodes() {
     char b = nextbyte();
     switch (hi3(b)) {
     case TR:
-      printf("TR %u: ", offset);
+      printf("TR 0x%x: ", offset);
       switch (lo5(b)) {
       case APP:
         { int arity = readarity();
@@ -329,7 +329,7 @@ nodes() {
       }
       break;
     case MD:
-      printf("MD %u:  ", offset);
+      printf("MD 0x%x:  ", offset);
       switch (lo5(b)) {
           case SUSPECT: printf("module (suspect)\t"); break;
           case TRUSTED: printf("module (trusted)\t"); break;
@@ -339,7 +339,7 @@ nodes() {
       printf("\"%s\"", readstring());
       break;
     case NT:
-      printf("NT %u:  ", offset);
+      printf("NT 0x%x:  ", offset);
       switch (lo5(b)) {
       case INT:
         printf("INT %d", readint());
@@ -411,7 +411,7 @@ nodes() {
       }
       break;
     case SR:
-      printf("SR %u:  Source reference\t", offset);
+      printf("SR 0x%x:  Source reference\t", offset);
       dopointer(MD, readpointer(), SR, offset);
       printf(" %s", readposn());
       break;

@@ -8,7 +8,7 @@ SRCS  = nodecache.c minisocklib.c \
 
 OBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(SRCS))
 
-PROGS = hat-stack hat-connect
+PROGS = hat-stack hat-connect hat-check
 
 all: $(PROGS)
 install: $(PROGS)
@@ -26,6 +26,9 @@ hat-stack: $(OBJS)
 hat-connect: $(OBJS)
 	$(CC) -o hat-connect $(OBJDIR)/browsercomms.o $(OBJDIR)/utils.o \
 			$(OBJDIR)/nodecache.o $(OBJDIR)/minisocklib.o
+hat-check: hat-check.c
+	$(CC) -o hat-check hat-check.c
+
 
 ${OBJDIR}:
 	mkdir -p $(OBJDIR)
