@@ -63,13 +63,15 @@ module NHC.FFI
    -------------------------------------------------------------------
    -- `ForeignPtr a' is a C pointer value with an associated finaliser.
    -------------------------------------------------------------------
-  , ForeignPtr                -- abstract, instance of: Eq
-  , newForeignPtr             -- :: Ptr a -> FunPtr (...) -> IO (ForeignPtr a)
-  , addForeignPtrFinalizer   -- :: ForeignPtr a -> FunPtr (...) -> IO ()
-  , withForeignPtr            -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
-  , foreignPtrToPtr           -- :: ForeignPtr a -> Ptr a
-  , touchForeignPtr           -- :: ForeignPtr a -> IO ()
-  , castForeignPtr            -- :: ForeignPtr a -> ForeignPtr b
+  , ForeignPtr              -- abstract, instance of: Eq
+  , newForeignPtr           -- :: Ptr a -> IO () -> IO (ForeignPtr a)
+  , addForeignPtrFinalizer  -- :: ForeignPtr a -> IO () -> IO ()
+  , newUnsafeForeignPtr     -- :: Ptr a -> FunPtr (...) -> IO (ForeignPtr a)
+  , addUnsafeForeignPtrFinalizer  -- :: ForeignPtr a -> FunPtr (...) -> IO ()
+  , withForeignPtr          -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
+  , foreignPtrToPtr         -- :: ForeignPtr a -> Ptr a
+  , touchForeignPtr         -- :: ForeignPtr a -> IO ()
+  , castForeignPtr          -- :: ForeignPtr a -> ForeignPtr b
 
    -------------------------------------------------------------------
    -- `StablePtr a' is a Haskell value passed to the foreign land.

@@ -1,11 +1,11 @@
 module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
- -- , newForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
- -- , addForeignPtrFinalizer	-- :: ForeignPtr a -> IO () -> IO ()
-    , newForeignPtr		-- :: Ptr a -> FunPtr (Ptr a -> IO ())
-				--		 -> IO (ForeignPtr a)
-    , addForeignPtrFinalizer	-- :: ForeignPtr a -> FunPtr (Ptr a -> IO ())
-				--		 -> IO ()
+    , newForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
+    , addForeignPtrFinalizer	-- :: ForeignPtr a -> IO () -> IO ()
+    , newUnsafeForeignPtr	-- :: Ptr a -> FunPtr (Ptr a -> IO ())
+   				--			-> IO (ForeignPtr a)
+    , addUnsafeForeignPtrFinalizer -- :: ForeignPtr a -> FunPtr (Ptr a -> IO ())
+   				--			-> IO ()
     , withForeignPtr		-- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
     , touchForeignPtr		-- :: ForeignPtr a -> IO ()
     , foreignPtrToPtr		-- :: ForeignPtr a -> Ptr a
@@ -45,7 +45,9 @@ import Ptr
 import FunPtr
 import NonStdUnsafeCoerce
 import Numeric (showHex)
+import NHC.Internal (unsafePerformIO)
 
+data _E a = _E a        -- just a box to protect arg from evaluation
 data ForeignPtr a;	-- primitive type known to the compiler internals
 
 foreign import cast foreignPtrToInt :: ForeignPtr a -> Int
@@ -61,14 +63,23 @@ instance Show (ForeignPtr a) where
 -- a foreign import.  However, in order to implement ForeignPtrs, we
 -- need one single instance of returning a ForeignPtr, and this is it.
 --   *** Do not do it elsewhere!
+
+foreign import ccall "primForeignObjC"
+  primForeignPtr :: Ptr a -> b -> IO (ForeignPtr a)
+
+newForeignPtr      :: Ptr a -> IO () -> IO (ForeignPtr a)
+newForeignPtr p f  = primForeignPtr p (_E (unsafePerformIO f))
+
 foreign import ccall "primForeignPtrC"
-    newForeignPtr :: Ptr a -> FunPtr (Ptr a -> IO ()) -> IO (ForeignPtr a)
+  newUnsafeForeignPtr :: Ptr a -> FunPtr (Ptr a -> IO ()) -> IO (ForeignPtr a)
 
 -- addForeignPtrFinalizer is not implemented in nhc98.
-addForeignPtrFinalizer :: ForeignPtr a -> FunPtr (Ptr a -> IO ()) -> IO ()
+addForeignPtrFinalizer :: ForeignPtr a -> IO () -> IO ()
 addForeignPtrFinalizer p free = return ()
+addUnsafeForeignPtrFinalizer :: ForeignPtr a -> FunPtr (Ptr a -> IO ()) -> IO ()
+addUnsafeForeignPtrFinalizer p free = return ()
 
--- `withForeignObj' is a safer way to use `foreignPtrToPtr'.
+-- `withForeignPtr' is a safer way to use `foreignPtrToPtr'.
 withForeignPtr :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
 withForeignPtr p k = k (foreignPtrToPtr p)
 {- GHC implementation:
@@ -83,7 +94,7 @@ withForeignPtr p k = k (foreignPtrToPtr p)
 -- rendering the Ptr invalid.
 foreign import cast foreignPtrToPtr :: ForeignPtr a -> Ptr a
 
--- `Touching' a foreignObj is just intended to keep it alive across
+-- `Touching' a foreignPtr is just intended to keep it alive across
 -- calls which might otherwise allow it to be GC'ed.  Only really
 -- an issue in GHC - for nhc98 a null-op is sufficient.
 touchForeignPtr :: ForeignPtr a -> IO ()
