@@ -21,6 +21,8 @@ instance Binary UnboxedArray where
 %  p = vtell(bh);
 %  closecache(bh);
 %  vsync(bh);
+%  temp = htonl(0);	/* some extra padding, just in case */
+%  write(bh->loc.fd,&temp,sizeof(unsigned));
 %  temp = htonl(uba->free);
 %  write(bh->loc.fd,&temp,sizeof(unsigned));
 %  temp = htonl(uba->write);
@@ -38,6 +40,7 @@ instance Binary UnboxedArray where
 %  closecache(bh);
 %  vsync(bh);
 %  uba = (UBA)malloc(sizeof(struct UnboxedArray));
+%  read(bh->loc.fd,&temp,sizeof(unsigned));	/* read and ignore padding */
 %  read(bh->loc.fd,&temp,sizeof(unsigned));
 %  uba->free = ntohl(temp);
 %  read(bh->loc.fd,&temp,sizeof(unsigned));
