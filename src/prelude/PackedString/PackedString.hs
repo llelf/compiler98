@@ -1,5 +1,3 @@
-#if !defined(TRACING)
-
 module NHC.PackedString(PackedString,
 	append,break,concat,cons,drop,dropWhile,
 	filter,foldl,foldr,head,index,
@@ -48,37 +46,3 @@ import UnpackPS
 import Unwords
 import Words
 
-#else
-
-module NHC.PackedString(PackedString, packString, unpackPS) where
-
-import DPackedString
-import PackString
-import UnpackPS
-
-import Eq_PackedString
-import Ord_PackedString
-import Show_PackedString
-
-{-
-data PackedString = PS String
-
-packString :: String -> PackedString
-packString = PS
-
-unpackPS :: PackedString -> String
-unpackPS (PS s) = s
-
-instance Show PackedString where
-    showsPrec _ (PS s) = showString s
-
-instance Eq PackedString where
-    PS a == PS b = a == b
-
-instance Ord PackedString where
-    compare (PS a) (PS b) = compare a b
-    PS a <  PS b = a <  b
-    PS a <= PS b = a <= b
--}
-
-#endif

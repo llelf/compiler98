@@ -13,15 +13,6 @@ SRCS	= \
         LexLitChar.hs ReadLitChar.hs ShowLitChar.hs \
         ToLower.hs ToUpper.hs
 
-SRCS_T	= \
-	AsciiTab.hs Chr.hs Ord.hs IsDigit.hs DigitToInt.hs IntToDigit.hs \
-	IsLatin1.hs IsSpace.hs IsUpper.hs \
-	IsAscii.hs IsControl.hs \
-	IsHexDigit.hs IsLower.hs IsOctDigit.hs IsPrint.hs \
-	IsAlpha.hs IsAlphaNum.hs \
-	ShowLitChar.hs \
-	ToLower.hs ToUpper.hs \
-	LexLitChar.hs ReadLitChar.hs
 
 # Here are the main rules.
 include ../Makefile.common

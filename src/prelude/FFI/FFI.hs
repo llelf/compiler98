@@ -211,9 +211,7 @@ import Storable		-- class defining storage sizes and routines
 import ForeignObj	-- obsolete, C address (pointer) + finaliser
 import ForeignPtr	-- C pointer values with finalisers
 
-#if !defined(TRACING)
 import StablePtr	-- Haskell values passed to foreign land
-#endif
 
 import MarshalAlloc	-- routines for memory allocation
 import MarshalArray	-- routines for bulk memory allocation/storage

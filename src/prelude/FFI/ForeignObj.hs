@@ -2,9 +2,7 @@ module NHC.FFI
   ( ForeignObj			-- abstract, instance of: Eq
   , makeForeignObj		-- :: Addr -> IO () -> IO ForeignObj
   , newForeignObj		-- :: Addr -> IO () -> IO ForeignObj
-#if !defined(TRACING)
   , freeForeignObj		-- :: ForeignObj -> IO ()
-#endif
   , foreignObjToAddr		-- :: ForeignObj -> Addr
   , withForeignObj		-- :: ForeignObj -> (Addr -> IO a) -> IO a
   , touchForeignObj		-- :: ForeignObj -> IO ()
@@ -47,7 +45,6 @@ foreign import cast foreignObjToAddr	:: ForeignObj -> Addr
 -- But it is impossible to do the opposite!
 --foreign cast addrToForeignObj	:: Addr       -> ForeignObj	-- WRONG!
 
-#if !defined(TRACING)
 -- Just occasionally, we really want to finalise a ForeignObj early.
 -- This is slightly dangerous, because the ForeignObj could remain live
 -- indefinitely following its finalisation, allowing nasty people to
@@ -61,7 +58,6 @@ freeForeignObj fo = _mkIOok1 reallyFreeForeignObj fo
 -- finaliser for the Addr, then additionally releases the ForeignObj storage
 -- itself for possible re-use.
 reallyFreeForeignObj primitive 1 :: ForeignObj -> ()
-#endif
 
 -- New operation suggested by Marcin Kowalcsycz.
 -- It is a safer way to use the older, less safe, `foreignObjToAddr'.

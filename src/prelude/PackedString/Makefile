@@ -16,9 +16,6 @@ SRCS	= \
 	Foldl.hs            Read_PackedString.hs  Unwords.hs \
 	Foldr.hs            Reverse.hs            Words.hs \
 	Head.hs             Show_PackedString.hs
-SRCS_T	= \
-	DPackedString.hs PackString.hs UnpackPS.hs \
-	Eq_PackedString.hs Ord_PackedString.hs Show_PackedString.hs
 
 
 # Here are the main rules.

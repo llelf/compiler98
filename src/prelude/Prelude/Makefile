@@ -59,20 +59,12 @@ COMMON_SRCS = \
 # The following are used for the normal Prelude
 SRCS = ${COMMON_SRCS} \
 	_Zap_Arg.hs     _Zap_Stack.hs
+
 OLD =	_Apply1.hs      _Apply2.hs      _Apply3.hs          _Apply4.hs \
         _EqInteger.hs \
 	_Id.hs
 
-#  _TupleIndex.hs  _TupleRange.hs  \
 
-# The following are used for the tracing Prelude
-SRCS_T	= ${COMMON_SRCS}
-
-# The following are also used for the tracing Prelude,
-# however, they are not traced themselves.
-SRCS_NT = _EqInteger.hs StartDbg.hs _Id.hs
-
-PLSRCS	= _Apply1.hs _Apply2.hs _Apply3.hs _Apply4.hs _Zap_Arg.hs _Zap_Stack.hs
 NOTDONE	= _TupleIndex.hs _TupleRange.hs
 
 
@@ -82,22 +74,6 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-PLOBJS   = $(patsubst %.hs, ${OBJDIR}/%.$O, ${PLSRCS})
-PLCFILES = $(patsubst %.hs, %.$C, ${PLSRCS})
-
-ifeq "T" "${TRACING}"
-extra: ${PLOBJS}
-extracfiles: ${PLCFILES}
-cleanExtraC:
-	-rm ${PLCFILES}
-$(PLOBJS): ${OBJDIR}/%.$O: %.hs
-	${HC} -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-	cp `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
-$(PLCFILES): %.$C: %.hs
-	${HC} -C $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-	mv `basename $< .hs`.hc `basename $< .hs`.$C
-endif
-
 
 
 # Here are the dependencies.

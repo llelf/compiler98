@@ -11,7 +11,6 @@ SRCS	= \
 	ApproxRational.hs    RatioCon.hs \
 	Denominator.hs       Numerator.hs \
         Prec.hs              Reduce.hs
-SRCS_T	= ${SRCS}
 
 
 # Here are the main rules.

@@ -4,8 +4,6 @@ import DHandle
 import DHandlePosn
 import NHC.FFI
 
--- #if !defined(TRACING)
-#if 1
 
 foreign import ccall hSetPosnC :: Handle -> ForeignPtr () -> IO Int
 
@@ -18,17 +16,3 @@ hSetPosn (HandlePosn h p) = do
       else
         return ()
 
-#else
-
-foreign import ccall hSetPosnC :: ForeignObj -> ForeignObj -> IO Int
-
-hSetPosn              :: HandlePosn -> IO () 
-hSetPosn (HandlePosn h@(Handle hfo) p) = do
-    i <- hSetPosnC hfo p
-    if i/=0 then do
-        errno <- getErrNo
-        throwIOError "hSetPosn" Nothing (Just h) errno
-      else
-        return ()
-
-#endif

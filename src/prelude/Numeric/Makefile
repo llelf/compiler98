@@ -12,7 +12,6 @@ SRCS	= \
 	ShowEFloat.hs	ShowFFloat.hs	ShowGFloat.hs \
 	FromRat.hs	FormatRealFloat.hs
 
-SRCS_T = ${SRCS}
 	 
 
 # Here are the main rules.

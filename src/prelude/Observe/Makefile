@@ -7,7 +7,6 @@ EXTRA_H_FLAGS = +RTS -H32M -RTS
 endif
 
 SRCS	=
-SRCS_T	=
 LIBSRCS = Observe.lhs
 
 

@@ -6,9 +6,7 @@ module IO (
     ,SeekMode(AbsoluteSeek,RelativeSeek,SeekFromEnd)
     ,stdin, stdout, stderr, hClose
     ,openFile, hFileSize, hIsEOF, isEOF
-#if !defined(TRACING)
     ,hSetBuffering, hGetBuffering
-#endif
     ,hFlush, hGetPosn, hSetPosn, hSeek
     ,hWaitForInput, hReady, hGetLine, hLookAhead
     ,hGetChar
@@ -26,9 +24,7 @@ module IO (
     ,readFile, writeFile, appendFile, readIO, readLn
 
     ,hGetFileName			-- not standard Haskell'98
-#if !defined(TRACING)
     ,SocketType(..), openSocket		-- not standard Haskell'98
-#endif
   ) where
 
 --import Ix
@@ -50,10 +46,8 @@ import HFileSize
 import HIsEOF
 import IsEOF
 
-#if !defined(TRACING)
 import HSetBuffering
 import HGetBuffering
-#endif
 
 import HFlush
 import HGetPosn
@@ -80,10 +74,8 @@ import IoeGetFileName
 
 import HGetFileName
 
-#if !defined(TRACING)
 import OpenSocket
 import DSocket
-#endif
 
 import NotDoneYet
 

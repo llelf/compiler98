@@ -5,7 +5,6 @@ THISLIB	= NonStd
 SEARCH	= -P$(LOW)
 
 SRCS	=
-SRCS_T	=
 LIBSRCS = \
 	NonStdUnsafeCoerce.hs \
 	NonStdProfile.hs \

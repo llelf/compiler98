@@ -4,7 +4,6 @@ THISLIB	= Internal
 SEARCH	=
 
 SRCS	=
-SRCS_T	=
 
 
 # Here are the main rules.

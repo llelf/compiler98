@@ -18,7 +18,6 @@ endif
 
 
 SRCS	=
-SRCS_T	=
 
 
 # Here are the main rules.

@@ -13,17 +13,6 @@ SRCS	= \
 	                 GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
 	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
-SRCS_T	=\
-	DIO.hs          DIOError.hs    GetChar.hs      GetContents.hs \
-	                Monad_IO.hs    PutChar.hs      PutStr.hs      \
-	PutStrLn.hs     IoError.hs     UserError.hs    TFilePath.hs   \
-	WriteFile.hs    Catch.hs       GetLine.hs      Print.hs       \
-	Show_IOError.hs Eq_IOError.hs  Functor_IO.hs   _MkIO.hs       \
-	ReadIO.hs       ReadLn.hs      StrError.hs  \
-	AppendFile.hs   ReadFile.hs
-SUSPECT = Interact.hs
-
-SUSPECT_O = $(patsubst %.hs, ${OBJDIR}/%.$O, ${SUSPECT})
 
 
 
@@ -33,12 +22,6 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-
-ifeq "T" "${TRACING}"
-extra: ${SUSPECT_O}
-${SUSPECT_O}: ${OBJDIR}/%.$O : %.hs
-	$(HC) -c -T -dbgtrans -notrusted -DTRACING -P$(INCDIR) $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-endif
 
 
 # Here are the dependencies.

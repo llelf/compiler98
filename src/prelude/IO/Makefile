@@ -3,7 +3,7 @@ include Makefile.inc
 THISLIB	= IO
 SEARCH	= -P../PreludeIO -P$(LOW) -P../$(MACHINE)
 
-COMMON_SRCS = \
+SRCS = \
 	DHandle.hs	  DHandlePosn.hs \
 	HFlush.hs         HPrint.hs        HSetPosn.hs \
         IsEOF.hs          SeekMode.hs      BufferMode.hs \
@@ -18,16 +18,10 @@ COMMON_SRCS = \
 	IoeGetErrorString.hs	HGetLine.hs	\
 	Eq_Handle.hs      Eq_HandlePosn.hs \
 	Show_Handle.hs    Show_HandlePosn.hs \
-	IsIOErrors.hs     Try.hs           Bracket.hs	Bracket_.hs
-
-SRCS	= ${COMMON_SRCS} \
+	IsIOErrors.hs     Try.hs           Bracket.hs	Bracket_.hs \
 	HSetBuffering.hs HGetBuffering.hs \
 	DSocket.hs OpenSocket.hs \
 	StdIO.hs
-SRCS_T	= ${COMMON_SRCS}
-SRCS_NT = StdIO.hs
-NOTDONEYET = \
-	HSetBuffering.hs HGetBuffering.hs DSocket.hs OpenSocket.hs
 
 
 # Here are the main rules.

@@ -9,8 +9,6 @@ SRCS	= \
 	ReadIOArray.hs WriteIOArray.hs \
 	DIORef.hs NewIORef.hs ReadIORef.hs WriteIORef.hs \
 	ExcludeFinalisers.hs
-SRCS_T	= \
-	$(SRCS)
 
 
 # Here are the main rules.

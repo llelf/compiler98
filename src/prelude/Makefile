@@ -15,11 +15,9 @@ else
     O=${CFG}.o
 endif
 
-ifneq "${TRACING}" "T"
-
 FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = $(MACHINE)/NHC LowB PreludeList PreludeIO PreludeText Prelude
-BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
+BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString #Debug
 LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory CPUTime \
 	     Random Binary Bit GreenCard BinArray FFI IOExtras \
              Observe Internal
@@ -266,88 +264,8 @@ endif
 #	mv -f $(INCDIR)/GreenCard.hi $(INCDIR)/GreenCard.hi.BAK	# MW
 #	cp GreenCard/GreenCard.hi $(INCDIR)/GreenCard.hi	# MW
 
-else	#### tracing
-
-
-# .SUFFIXES: .subdir
-SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
-	PreludeList PreludeIO PreludeText PreludeDebug Prelude \
-	Maybe List Monad System IO PackedString \
-	Ix Array Complex GreenCard Directory CPUTime Random \
-	FFI IOExtras
-NOTYET=	NonStd \
-	Locale Time \
-	Binary Bit BinArray Observe
-
-SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
-SUBDIRSINSTALL=$(patsubst %,%.install,${SUBDIRS})
-OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
-SUBDIRCFILES=$(patsubst %,%.cfiles,${SUBDIRS})
-SUBDIRFROMC=$(patsubst %,%.fromC,${SUBDIRS})
-SUBDIRCLEANC=$(patsubst %,%.cleanC,${SUBDIRS})
-CLEANDIRS=$(patsubst %,%.clean,${SUBDIRS})
-MKFILES=$(patsubst %,%.mkfiles,${SUBDIRS})
-HICLEAN=$(patsubst %,%.hiclean,${SUBDIRS})
-
-
-all: ${ARCHIVE}
-install: ${ARCHIVE}
-cfiles: ${SUBDIRCFILES}
-fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o
-	ranlib $(ARCHIVE)
-hiclean: ${HICLEAN}
-ifeq "${TPROF}" ""
-clean: ${CLEANDIRS}
-realclean: clean
-	rm -f ${ARCHIVE}
-endif
-mkfiles: ${MKFILES}
-objdir: ${OBJDIR}
-cleanhi:
-	-rm -f */*.T.hi
-cleanC: ${SUBDIRCLEANC}
-
-
-%.mkfiles:
-	rm $(patsubst %.mkfiles,%,$@)/obj
-%.cfiles: 
-	cd $(patsubst %.cfiles,%,$@); ${MAKE} cfiles
-%.fromC: 
-	cd $(patsubst %.fromC,%,$@); $(MAKE) fromC
-%.clean:
-	cd $(patsubst %.clean,%,$@); ${MAKE} clean
-%.cleanC: 
-	cd $(patsubst %.cleanC,%,$@); ${MAKE} cleanC
-%.hiclean:
-	cd $(patsubst %.hiclean,%,$@); ${MAKE} hiclean
-%.subdir:
-	cd $(patsubst %.subdir,%,$@); ${MAKE} all
-%.install:
-	cd $(patsubst %.install,%,$@); ${MAKE} install
-
-
-${OBJDIR}:
-	mkdir -p ${OBJDIR} || $(TRUE)
-${OBJDIRS}: ${OBJDIR}/% :
-	mkdir -p $@ || $(TRUE)
-
-ifeq "${TPROF}" ""
-
-${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
-	rm -f $@
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
-	ranlib $@
-
-relink:
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
-	ranlib ${ARCHIVE}
-
-endif
-endif
 
 ifeq "${TPROF}" "z"
-ifneq "${TRACING}" "T"
 #LowB partitions
 TPLLOW = LowB
 TPLLOWPR = Blackhole Ieee LowI PrimDecodeDouble PrimDecodeFloat \
@@ -366,30 +284,6 @@ TPLLOWCS = CString
 TPLLOWDR = _Driver
 TPLPRELALL = Prelude/*.${O} PreludeIO/*.${O} \
              PreludeList/*.${O} PreludeText/*.${O}
-else
-#LowT partitions
-TPLLOW = LowT
-TPLLOWPR = PrimExitWith \
-           FFIBuiltin PrimPackString PrimUnpackPS CString \
-           PrimHPutChar NonStdTrace LowSystem LowPS \
-           PrimIntegerAbs PrimIntegerAdd PrimIntegerAnd \
-           PrimIntegerEq PrimIntegerLe PrimIntegerLt \
-           PrimIntegerGe PrimIntegerGt PrimIntegerNe \
-           PrimIntegerMul PrimIntegerNeg PrimIntegerOr \
-           PrimIntegerQuotRem PrimIntegerSub \
-           PrimIntegerFromInt PrimIntFromIntegerC \
-           PrimEncodeDouble PrimDoubleFromInteger \
-           PrimEncodeFloat  PrimFloatFromInteger \
-           PrimDecodeDouble PrimDecodeFloat \
-           PrimsFloat PrimsDouble
-TPLLOWPS = LowPS PrimPackString PrimUnpackPS
-TPLLOWSY = LowSystem PrimExitWith
-TPLLOWCS = CString
-TPLLOWDR = _Driver
-TPLPRELALL = Prelude/*.${O} PreludeIO/*.${O} \
-             PreludeList/*.${O} PreludeText/*.${O} \
-             PreludeDebug/*.${O}
-endif
 #Prelude
 ${DST}/PreludeAll.${CFG}.a:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Prelude.o \
@@ -416,10 +310,8 @@ ${DST}/Driver.${CFG}.a:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Driver.o \
 	$(patsubst %,${TPLLOW}/%.${O},${TPLLOWDR})
 #NonStd
-ifneq "${TRACING}" "T" #Tracing = Not yet
 TPLABELS3 += NonStdEval NonStdProfile NonStdTrace \
              NonStdUnsafeCoerce NonStdGetPID Warning 
-endif
 ${DST}/NonStdEval.${CFG}.a: 
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?NonStdEval.o \
 	NonStd/NonStdEval.${O} 
@@ -439,29 +331,23 @@ ${DST}/Warning.${CFG}.a:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Warning.o \
 	NonStd/Warning.${O}
 #UnboxedArray
-ifneq "${TRACING}" "T" #Tracing = Not yet
 TPLABELS3 += UnboxedArray
-endif
 ${DST}/UnboxedArray.${CFG}.a: 
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
 	BinArray/UnboxedArray.${O} BinArray/Binary_UBA.${O}
 #BinArray
-ifneq "${TRACING}" "T" #Tracing = Not yet
 TPLABELS3 += BinArray
-endif
 ${DST}/BinArray.${CFG}.a: 
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
 	BinArray/BinArray.${O} BinArray/AllocUBA.${O} \
 	BinArray/DUnboxedArray.${O} BinArray/GetUBAEnd.${O} \
 	BinArray/GetUBAFree.${O} BinArray/RUBA.${O} \
 	BinArray/WUBA.${O} BinArray/cLowUnboxedArray.${O}
-#Debug
-ifneq "${TRACING}" "T" #Not for tracing
-TPLABELS3 += DbgIface
-endif
-${DST}/DbgIface.${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?DbgIface.o \
-	Debug/*.${O}
+##Debug
+#TPLABELS3 += DbgIface
+#${DST}/DbgIface.${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?DbgIface.o \
+#	Debug/*.${O}
 
 # Ensure all the above archives get built
 TPLARSDEF := $(patsubst %,${DST}/%.${CFG}.a,PreludeAll ${TPLABELS3})
@@ -469,14 +355,10 @@ TPLABELS3 += Prelude
 
 #and finally the straightforward ones
 TPLABELS1 = Complex Directory GreenCard Monad 
-ifneq "${TRACING}" "T" #Tracing = Not yet
 TPLABELS1 += Time
-endif
 TPLTHEREST = Array CPUTime Char DErrNo FFI IO IOExtras \
              Ix List Maybe Numeric Random Ratio
-ifneq "${TRACING}" "T" #Tracing = Not yet
 TPLTHEREST += Bit Binary Locale Observe
-endif
 
 TPLABELS3 += ${TPLTHEREST}
 TPLARSAUTO = $(patsubst %,${DST}/%.${CFG}.a,${TPLABELS1} ${TPLTHEREST})
@@ -517,8 +399,6 @@ ${TPPREL3}: #Only those lables that are needed more than once
 realclean: clean
 	rm -f ${TPLARSAUTO}
 
-ifneq "${TRACING}" "T"
-
 clean: ${SUBDIRCLEAN}
 	rm -f ${TPPRELS}
 
@@ -528,16 +408,6 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
 	rm -f ${TPLOBJS}
 relink: ${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
 	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
-else
 
-clean: ${CLEANDIRS}
-	rm -f ${TPPRELS}
-
-${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK} \
-	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
-	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
-	rm -f ${TPLOBJS}
-
-endif
 endif
 

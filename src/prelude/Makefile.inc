@@ -17,25 +17,5 @@ ifeq "z" "${TPROF}"
 HC += -z
 endif
 
-ifneq "${TRACING}" "T"
-
 LOW = ../LowB/
-
-else	#### tracing
-
-LOW = ../LowT/
-COMPILE      = ${HC} -c -part -redefine \
-		-dbgprelude -trusted -P${INCDIR}/ \
-		-DTRACING
-DBG_COMPILE  = ${HC} -T -c -part -redefine \
-		-dbgtrans -trusted -P${INCDIR}/ \
-		-DTRACING
-PLAIN_COMPILE= ${HC} -c -part -redefine -dbgprelude
-
-X_COMPILE    = ${HC} -dbgprelude -trusted -P${INCDIR} -DTRACING \
-		-hi-suffix=T.hi
-TR_COMPILE   = ${HC} -T -dbgtrans -trusted -P${INCDIR} -DTRACING
-PL_COMPILE   = ${HC} -dbgprelude
-
-endif
 

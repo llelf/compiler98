@@ -10,7 +10,6 @@ SRCS	= \
         ZipWithM.hs FoldM.hs          MapAndUnzipM.hs \
         Msum.hs     ZipWithM_.hs      Guard.hs \
         MonadPlus_List.hs MonadPlus_Maybe.hs
-SRCS_T	= ${SRCS}
 
 # Here are the main rules.
 include ../Makefile.common

@@ -2,9 +2,7 @@ module Prelude (
     (->),Double,Char,Integer,Float,Int
 --  ,_eqDouble,_eqInteger,_eqFloat   -- Should not be visible (case stmts)
     ,_leInteger,_subInteger          -- Also should not be visible (for n+k)
-#if !defined(TRACING)
     ,_hPutChar,_hGetChar
-#endif
     ,_readCon0, _readConArg, _readCon, _readConInfix -- Don't know why I must be explicit
 --  ,unsafePerformIO		-- needed for primitive FFI
 --  ,module _Id
@@ -12,9 +10,6 @@ module Prelude (
     ,module PreludeList
     ,module PreludeText
     ,module PreludeIO
-#if defined(TRACING)
-    ,module PreludeDebug
-#endif
 
     ,module _EnumFromThen
     ,module _EnumFromThenTo
@@ -29,10 +24,8 @@ module Prelude (
     ,module _Foldr
     ,module _FromEnum
     ,module _ToEnum
-#if !defined(TRACING)
 --  ,module _TupleIndex
 --  ,module _TupleRange
-#endif
 --  ,module _Apply1
 --  ,module _Apply2
 --  ,module _Apply3
@@ -141,16 +134,11 @@ import Id
 import PreludeList
 import PreludeText
 import PreludeIO
-#if defined(TRACING)
-import PreludeDebug
-#endif
 
 import Ratio(Rational,(%))		-- needed for literal Rationals
 --import IOExtras (unsafePerformIO)	-- needed for primitive FFI
 
-#if !defined(TRACING)
 --import Ix  -- to get all Ix instances
-#endif
 
 -- Shouldn't be visible, but they are:-(
 --import _Id
@@ -168,10 +156,8 @@ import _Foldr
 import _FromEnum
 import _NplusK
 import _ToEnum
-#if !defined(TRACING)
 --import _TupleIndex
 --import _TupleRange
-#endif
 --import _Apply1
 --import _Apply2
 --import _Apply3

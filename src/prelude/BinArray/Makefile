@@ -10,7 +10,6 @@ SRCS	= \
 	AllocUBA.gc DUnboxedArray.gc RUBA.gc GetUBAEnd.gc Binary_UBA.gc \
 	GetUBAFree.gc WUBA.gc \
 	cLowUnboxedArray.c
-SRCS_T	=
 
 
 # Here are some extra rules.

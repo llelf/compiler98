@@ -9,7 +9,6 @@ SRCS	= \
 	DDay.gc DMonth.gc DClockTime.gc DCalendarTime.gc \
 	GetClockTime.gc ToCalendarTime.gc ToClockTime.gc \
 	ToUTCTime.gc
-SRCS_T	=
 
 
 # Here are the main rules.

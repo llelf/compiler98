@@ -4,25 +4,21 @@ import NHC.Internal (IO(..))
 import DIOError(IOError(..))
 -- import CMonad
 
-#if !defined(TRACING)
-#  define setOutputContext	
-#else
-#endif
 
 instance Monad IO where
     x >>= y  = IO (primBind1 x y)
 	       where 
 		primBind1 (IO xf) y w =
-		  case setOutputContext xf w of 
+		  case xf w of 
 		    Right xv -> case y xv of
-                                  IO yv -> setOutputContext yv w
+                                  IO yv -> yv w
 	            Left err -> Left err -- Changing type 
     x >>  y  = IO (primBind2 x y)
 	       where 
 		primBind2 (IO xf) y w =
-		  case setOutputContext xf w of 
+		  case xf w of 
 		    Right xv -> case y of
-                                  IO yv -> setOutputContext yv w
+                                  IO yv -> yv w
 	            Left err -> Left err -- Changing type 
     return a = IO (primReturn a)
                where

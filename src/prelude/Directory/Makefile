@@ -14,17 +14,6 @@ SRCS	= \
 	GetDirectoryContents.gc \
 	DPermissions.gc SetPermissions.gc GetPermissions.gc
 
-SRCS_T	= \
-	RenameFile.hs \
-	PatchIOError.hs DoesFileExist.gc DoesDirectoryExist.gc \
-	RemoveFile.hs \
-	CreateDirectory.hs RemoveDirectory.hs RenameDirectory.hs \
-	SetCurrentDirectory.hs GetCurrentDirectory.hs \
-	DPermissions.gc SetPermissions.gc
-
-NOTYET = \
-	GetDirectoryContents.gc \
-	GetModificationTime.gc GetPermissions.gc
 
 
 # Here are the main rules.

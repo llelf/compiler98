@@ -5,7 +5,7 @@ SEARCH	= -P../PreludeIO -P../Numeric -P../Char
 EXTRA_H_FLAGS	= -prelude
 EXTRA_C_FLAGS	=
 
-COMMON_SRCS	= \
+SRCS	= \
 	TReadS.hs        Lex.hs           ReadParen.hs  \
 	CRead.hs         Read_2.hs        Reads.hs      \
 	CShow.hs         Read_3.hs        Show_IO.hs 	\
@@ -25,11 +25,8 @@ COMMON_SRCS	= \
 	Read_8.hs	Read_9.hs	Read_10.hs	Read_11.hs	\
 	Read_12.hs	Read_13.hs	Read_14.hs	Read_15.hs	\
 	Show_8.hs	Show_9.hs	Show_10.hs	Show_11.hs	\
-	Show_12.hs	Show_13.hs	Show_14.hs	Show_15.hs
-
-SRCS	= $(COMMON_SRCS) Show_Fun.hs
-SRCS_T	= $(COMMON_SRCS)
-NOTDONE= Show_Fun.hs
+	Show_12.hs	Show_13.hs	Show_14.hs	Show_15.hs	\
+	Show_Fun.hs
 
 
 # Here are the main rules.

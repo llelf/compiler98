@@ -21,8 +21,6 @@ SRCS	= \
 	DropWhile.hs   Length.hs      Repeat.hs      TakeWhile.hs \
         Filter.hs
 
-SRCS_T	= ${SRCS}
-
 
 # Here are the main rules.
 include ../Makefile.common

@@ -4,7 +4,6 @@ THISLIB	= Random
 SEARCH	=
 
 SRCS	=
-SRCS_T	=
 
 ifeq "${BUILDCOMP}" "hbc"
 EXTRA_H_FLAGS   =       +RTS -H16M -A2M -RTS

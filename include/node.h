@@ -41,7 +41,7 @@
                | ...
 
 
-      coninfo | size:8,  psize:8,  R:3, number:9, 00:2,  tag:2             Must be same as in (new)macros.h
+      coninfo | size:8,  psize:8,  number:12, 00:2,  tag:2             Must be same as in (new)macros.h
                          size   = Size of node
                          psize  = Number of pointers
                          number = Constructor number
@@ -110,11 +110,7 @@
 #define GET_CONINFO(p)    EXT_CONINFO(*(p))
 #define CONINFO_SIZE(p)   (((p)>>24)&0xff)
 #define CONINFO_PSIZE(p)  (((p)>>16)&0xff)
-#define CONINFO_NUMBER(p) (((p)>>4)&0x1ff)	/*SPARUD*/
-/* #define CONINFO_NUMBER(p) (((p)>>4)&0xfff)   ORIGINAL*/
-#define CONINFO_IS_R(p)   ((p)&MASK_R)		/*SPARUD*/
-#define CONINFO_IS_TRACE(p)   ((p)&MASK_TRACE)	/*SPARUD*/
-#define CONINFO_PRUNED(p)   ((p)&MASK_PRUNED)	/*SPARUD*/
+#define CONINFO_NUMBER(p) (((p)>>4)&0xfff)
 #define CONINFO_LARGESIZES(p) (((Int)p)>>(4+LARGE_EXTRA))
 #define CONINFO_LARGESIZEU(p) (ABS(((Int)p)>>(4+LARGE_EXTRA)))
 #define CONINFO_LARGEEXTRA(p) (((p)>>4)&((1<<LARGE_EXTRA)-1))

@@ -15,13 +15,12 @@ endif
 
 EXTRA_C_FLAGS	=
 
-COMMON_SRCS = \
+SRCS = \
 	Addr.hs Ptr.hs FunPtr.hs Storable.hs \
 	ForeignObj.hs ForeignPtr.hs Int.hs Word.hs \
 	CError.hs CTypes.hs CTypesExtra.hs CStrings.hs \
-	MarshalAlloc.hs MarshalArray.hs MarshalError.hs MarshalUtils.hs
-SRCS	= $(COMMON_SRCS) StablePtr.hs
-SRCS_T	= $(COMMON_SRCS)
+	MarshalAlloc.hs MarshalArray.hs MarshalError.hs MarshalUtils.hs \
+	StablePtr.hs
 
 
 # Here are the main rules.

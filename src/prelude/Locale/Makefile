@@ -4,7 +4,6 @@ THISLIB	= Locale
 SEARCH	=
 
 SRCS	= DTimeLocale.hs       DefaultTimeLocale.hs
-SRCS_T	=
 
 
 # Here are the main rules.

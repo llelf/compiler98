@@ -5,16 +5,9 @@ import Denominator
 import RatioCon
 import Num_Ratio
 import RealFrac_Ratio
-#if defined(TRACING)
-import PrimsDouble
-#endif
 
 instance  Fractional Double  where
-#if !defined(TRACING)
   x / y = x / y 		-- MAGIC
-#else
-  x / y = primDoubleDiv x y
-#endif
 
   fromRational x =
       let f ex = let y :: Double

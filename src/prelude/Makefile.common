@@ -4,7 +4,6 @@
 #
 # THISLIB = e.g. Complex
 # SRCS    = all .hs .gc and .c files
-# SRCS_T  = all tracing sources
 # SEARCH  = e.g. -P../IO -P../PreludeIO
 #
 # EXTRA_H_FLAGS = e.g. -prelude
@@ -21,8 +20,6 @@ SRC_MAIN = ${THISLIB}.hs
 PART_FLAGS = +CTS -part -redefine -CTS $(SEARCH)
 LIB_FLAGS  = +CTS -lib  -redefine -CTS $(SEARCH)
 
-
-ifneq "T" "${TRACING}"
 
 OBJS_HS  = $(patsubst %.hs, ${OBJDIR}/%.$O, $(filter %.hs,${SRCS}))
 OBJS_GC  = $(patsubst %.gc, ${OBJDIR}/%.$O, $(filter %.gc,${SRCS}))
@@ -56,7 +53,7 @@ cleanhi:
 	-rm -f *.hi
 cleanC: cleanExtraC
 	-rm -f ${CFILES_GEN} ${CFILES_XS}
-clean:	cleanhi cleanC
+clean:	cleanhi
 	-rm -f ${OBJDIR}/*.$O *.$O
 	-rm -f $(patsubst %.gc, %_.hs, $(filter %.gc, $(SRCS)))
 	-rm -f $(patsubst %.gc, %_.$C,  $(filter %.gc, $(SRCS)))
@@ -91,81 +88,6 @@ endif
 HIFILES = $(patsubst %.hs,../${THISLIB}/%.${HISUFFIX},$(filter %.hs, ${SRCS}))
 ${HIFILES}: ../${THISLIB}/%.${HISUFFIX} : %.hs
 	$(HC) -c $(PART_FLAGS) -o /dev/null $<
-
-
-else			#### Tracing
-
-
-OBJS_HS_T  = $(patsubst %.hs, ${OBJDIR}/%.$O, $(filter %.hs, ${SRCS_T}))
-OBJS_GC_T  = $(patsubst %.gc, ${OBJDIR}/%.$O, $(filter %.gc, ${SRCS_T}))
-OBJS_HS_NT = $(patsubst %.hs, ${OBJDIR}/%.$O, $(filter %.hs, ${SRCS_NT}))
-ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-OBJ_MAIN = $(patsubst %.hs, ${OBJDIR}/%.$O, ${SRC_MAIN})
-endif
-OBJS_T = ${OBJS_HS_T} ${OBJS_GC_T} ${OBJS_HS_NT}
-
-CFILES_HS_T  = $(patsubst %.hs, %.$C, $(filter %.hs, ${SRCS_T}))
-CFILES_GC_T  = $(patsubst %.gc, %.$C, $(filter %.gc, ${SRCS_T}))
-CFILES_NT    = $(patsubst %.hs, %.$C, $(filter %.hs, ${SRCS_NT}))
-ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-CFILE_MAIN_T = $(patsubst %.hs, %.$C, ${SRC_MAIN})
-endif
-
-CFILES_GEN_T = ${CFILES_HS_T} ${CFILES_GC_T} ${CFILES_NT} ${CFILE_MAIN_T}
-
-
-all: ${OBJS_T} extra ${OBJ_MAIN}
-extra:
-cfiles: extracfiles ${CFILES_GEN_T}
-extracfiles:
-fromC:
-	$(HC) -c -T -d $(OBJDIR) $(EXTRA_C_FLAGS) *.$C
-objdir: ${OBJDIR}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-install: all
-cleanhi:
-	-rm -f *.${HISUFFIX}
-cleanC: cleanExtraC
-	-rm -f ${CFILES_GEN_T}
-cleanExtraC:
-clean:  cleanhi
-	-rm -f ${OBJDIR}/*.$O *.$O
-
-# general build rules for making tracing objects from Haskell/C files
-$(OBJS_HS_T): ${OBJDIR}/%.$O: %.hs
-	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-$(OBJS_GC_T): ${OBJDIR}/%.$O: %.gc
-	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-$(OBJS_HS_NT): ${OBJDIR}/%.$O: %.hs
-	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-	cp `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
-ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-${OBJ_MAIN}: ${OBJS_T}
-${OBJ_MAIN}: ${SRC_MAIN}
-	$(TR_COMPILE) -c $(LIB_FLAGS)  $(EXTRA_H_FLAGS) -o $@ $<
-endif
-
-# general build rules for making C files from Haskell files
-${CFILES_HS_T}: %.$C : %.hs
-	$(TR_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
-${CFILES_GC_T}: %.$C : %.gc
-	$(TR_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
-$(CFILES_NT)  : %.$C : %.hs
-	$(X_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
-	mv `basename $< .hs`.hc `basename $< .hs`.$C
-ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-${CFILE_MAIN_T}: %.$C : %.hs
-	$(TR_COMPILE) -C $(LIB_FLAGS)  $(EXTRA_H_FLAGS) $<
-endif
-
-# hack to get round mutual recursion between libraries
-HIFILES = $(patsubst %.hs,../${THISLIB}/%.${HISUFFIX},$(filter %.hs, ${SRCS}))
-${HIFILES}: ../${THISLIB}/%.${HISUFFIX} : %.hs
-	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o /dev/null $<
-
-
-endif
 
 
 # The importing Makefile should now define individual dependencies

@@ -26,7 +26,6 @@ SRCS	= \
 	ZipWith4.hs ZipWith5.hs ZipWith6.hs ZipWith7.hs \
 	Zip4.hs Zip5.hs Zip6.hs Zip7.hs
 
-SRCS_T	 = ${SRCS}
 
 
 # Here are the main rules.

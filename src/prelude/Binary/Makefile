@@ -19,7 +19,6 @@ SRCS	= \
 	cLowBinary.c
 	# SizedBin.hs \
 	# SizeofBin.gc DirectPut.gc
-SRCS_T	=
 
 
 # Here are the main rules.

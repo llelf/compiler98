@@ -7,7 +7,6 @@ SRCS	= \
 	FromMaybe.hs    MapMaybe.hs     IsNothing.hs \
 	CatMaybes.hs    IsJust.hs       MaybeToList.hs  \
 	FromJust.hs     ListToMaybe.hs
-SRCS_T	= ${SRCS}
 
 
 

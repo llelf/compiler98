@@ -12,7 +12,6 @@ SRCS	= \
 	DComplex.hs            Num_Complex.hs         Show_Complex.hs \
 	Eq_Complex.hs          Phase.hs               \
 	Fractional_Complex.hs  Polar.hs
-SRCS_T	= ${SRCS}
 
 
 # Here are the main rules.

@@ -13,7 +13,6 @@ change the evaluation order.
 E.g., don't use `const' instead of the lambda abstraction of world.
 -}
 
-#if !defined(TRACING)
 import PreludeBuiltin(_hGetChar)
 
 hGetChar              :: Handle -> IO Char
@@ -29,23 +28,3 @@ cHGetChar :: Handle -> Int
 cHGetChar h = _hGetChar h		-- _hGetChar -> special bytecode
 
 
-#else
-
-hGetChar              :: Handle -> IO Char
-hGetChar (Handle h)    = IO (input h)
- where
-  input h world = 
-    let c = cHGetChar h
-    in if c < 0 
-         then Left (EOFError "hGetChar" (Handle h))
-         else Right (toEnum c)
-
-foreign import ccall "_chGetChar" cHGetChar :: ForeignObj -> Int
-
-{-
-cHGetChar :: ForeignObj -> Int
-cHGetChar handle = _prim _tprim_chGetChar handle
-_tprim_chGetChar primitive 2 :: Trace -> R ForeignObj -> R Int
--}
-
-#endif

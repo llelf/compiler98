@@ -14,7 +14,6 @@ SRCS	= \
 	ArrayFun.hs    Elems.hs       IxMap.hs       Replace.hs     \
 	ArrayLow.hs
 
-SRCS_T	= $(SRCS)
 
 
 # Here are the main rules.
