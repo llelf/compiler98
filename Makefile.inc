@@ -52,7 +52,7 @@ PROFILING=$(findstring p,${CFG})
 TPROF=$(findstring t,${CFG})
 
 ifeq "T" "${TRACING}"
-DCFG:=${DCFG} -DTRACE -DDBGTRANS
+DCFG:=${DCFG} -DTRACE=1 -DDBGTRANS
 endif
 
 ifeq "p" "${PROFILING}"

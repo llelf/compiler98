@@ -238,7 +238,7 @@ then
   if [ "$BUILDWITH" = "" ]
   then
     BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
-    echo "I have guessed that you want to build hmake with $BUILDWITH"
+    echo "I have guessed you will build hmake with:   $BUILDWITH"
   else
     echo "You are going to build hmake with:          $BUILDWITH"
   fi
