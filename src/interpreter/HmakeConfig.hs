@@ -9,16 +9,24 @@
 
 module HmakeConfig where
 
+import System
 #ifdef __HBC__
 import UnsafePerformIO
+import GetPid
+getProcessID = getPid
 #endif
 #ifdef __NHC__
 import IOExtras (unsafePerformIO)
+foreign import "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
 import IOExts (unsafePerformIO)
+import Posix (getProcessID)
 #endif
-import System
+
+-- Generate a temporary filename unique to this invocation.
+tmpfile = unsafePerformIO $ do p <- getProcessID
+                               return ("/tmp/Main"++show p)
 
 -- Get an environment variable if it exists, or default to given string
 withDefault name def = unsafePerformIO $

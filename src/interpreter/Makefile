@@ -10,8 +10,8 @@ SRCS   = HInteractive.hs HmakeConfig.hs SimpleLineEditor.hs \
 
 
 ifeq "${HC}" "ghc"
-HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts -package lang \
-                                          -package util $(READLINE) )
+HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts \
+                 -package lang -package util -package posix $(READLINE) )
 export HFLAGS
 endif
 ifeq "${HC}" "hbc"
@@ -32,7 +32,7 @@ cfiles: $(SRCS)
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
-	-rm -f *.c $(TARGET)
+	-rm -f *.c $(TARGET) cfiles
 
 $(TARGET): $(OBJDIR) $(SRCS)
 	$(LOCAL)hmake -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)")

@@ -46,6 +46,8 @@ main = do
 
 quit = do
    putStrLn "[Leaving hmake interactive...]"
+   mapM_ (\f-> catch (removeFile f) (\e->done))
+         [tmpfile, tmpfile++".hs", tmpfile++".hi", tmpfile++".o"]
    exitWith ExitSuccess
 
 toplevel :: State -> IO ()
@@ -73,13 +75,11 @@ evaluate expr ("main":args) state =
         let mod = head (modules state) in
         compile True mod state (run ("./"++mod) args)
     Just _  -> do
-        let tmpfile = "/tmp/Main"
         f <- openFile (tmpfile++".hs") WriteMode
         hPutStr f (fromJust (scopeText state) ++ "\nmain = _ain\n")
         hClose f
         compile True tmpfile state (run tmpfile args)
 evaluate expr _ state = do
-  let tmpfile = "/tmp/Main"
   let modtext = fromMaybe "" (scopeText state)
   let scopem  = maybeToList (scope state)
   f <- openFile (tmpfile++".hs") WriteMode
@@ -105,13 +105,11 @@ showtype expr ("main":args) state =
         let mod = head (modules state) in
         compile False mod (state{options=(options state)++["-showtype"]}) done
     Just _  -> do
-        let tmpfile = "/tmp/Main"
         f <- openFile (tmpfile++".hs") WriteMode
         hPutStr f (fromJust (scopeText state) ++ "\nmain = _ain\n")
         hClose f
         compile False tmpfile (state{options=(options state)++["-showtype"]}) done
 showtype expr _ state = do
-  let tmpfile = "/tmp/Main"
   let modtext = fromMaybe "" (scopeText state)
   let scopem  = maybeToList (scope state)
   f <- openFile (tmpfile++".hs") WriteMode
@@ -181,8 +179,7 @@ commands ws state = let target = tail ws in do
       (if compiler state == Nhc98 then showtype (unwords target) target state
        else putStrLn ":type command only supported for nhc98 compiler")
 {-
-      (do let tmpfile = "/tmp/Main"
-          f <- openFile (tmpfile++".hs") WriteMode
+      (do f <- openFile (tmpfile++".hs") WriteMode
           hPutStr f (
             "module Main where\n\n" ++
             concatMap (\m-> "import "++m++"\n") (modules state) ++
