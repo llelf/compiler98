@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="3.07rc4 (2003-02-25)" export HMAKEVERSION
+HMAKEVERSION="3.07rc4 (2003-03-01)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -38,8 +38,10 @@ case $OS in
                               sed -e "s|^[^/]|&:|"` ;;
              //?/*)      PWD=`echo $PWD | sed -e "s|^//||" |\
                               sed -e "s|^[^/]|&:|"` ;;
-           esac ;;
-  *) ;;
+           esac
+           READLINE=""
+           EXE=.exe ;;
+  *) EXE="" ;;
 esac
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
@@ -142,10 +144,6 @@ MANDIR=${MANDIR-$INSTALLDIR/man/man1}
 #HBCDIR=${HBCDIR}
 #GHCDIR=${GHCDIR}
 
-case $OS in
-  CYGWIN*) EXE=.exe ;;
-  *)       EXE=  ;;
-esac
 #case $OS in
 #  SunOS)  LIBCOMPAT=" -lsocket"  ;;
 #  NetBSD) LIBCOMPAT=" -lcompat"  ;;
@@ -246,52 +244,55 @@ then
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
 
-  echo -n "Testing for the curses library:             "
-  if [ "$CURSES" = "" ]
+  if [ "$EXE" = "" ]
   then
-    cat >curses.c <<!!!
+    echo -n "Testing for the curses library:             "
+    if [ "$CURSES" = "" ]
+    then
+      cat >curses.c <<!!!
 #include <curses.h>
 void test (void) { mvaddstr(1,2,"hello world"); }
 int main (void) { test(); }
 !!!
-    if ${CC-gcc} -o curses curses.c >/dev/null 2>/dev/null
-    then CURSES=""
-    else
-      if ${CC-gcc} -o curses curses.c -lncurses >/dev/null 2>/dev/null
-      then CURSES="-lncurses"
+      if ${CC-gcc} -o curses curses.c >/dev/null 2>/dev/null
+      then CURSES=""
       else
-        if ${CC-gcc} -o curses curses.c -lcurses >/dev/null 2>/dev/null
-        then CURSES="-lcurses"
+        if ${CC-gcc} -o curses curses.c -lncurses >/dev/null 2>/dev/null
+        then CURSES="-lncurses"
         else
-          if ${CC-gcc} -o curses curses.c -lcurses -ltermcap \
-							>/dev/null 2>/dev/null
-          then CURSES="-lcurses -ltermcap"
-          else CURSES="-ltermcap -lcurses"     # don't know a good default?
+          if ${CC-gcc} -o curses curses.c -lcurses >/dev/null 2>/dev/null
+          then CURSES="-lcurses"
+          else
+            if ${CC-gcc} -o curses curses.c -lcurses -ltermcap \
+  							>/dev/null 2>/dev/null
+            then CURSES="-lcurses -ltermcap"
+            else CURSES="-ltermcap -lcurses"     # don't know a good default?
+            fi
           fi
         fi
       fi
+      rm -f curses curses.o curses.c
+      echo -n "$CURSES "
+      echo '(detected) '
+    else
+      echo -n "$CURSES "
+      echo '(cached) '
     fi
-    rm -f curses curses.o curses.c
-    echo -n "$CURSES "
-    echo '(detected) '
-  else
-    echo -n "$CURSES "
-    echo '(cached) '
-  fi
 
-  echo -n "Testing for the readline library: "
-  echo 'main(){readline();}' >rd.c
-  if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
-  then echo '          -lreadline (detected)'
-       READLINE="-DUSE_READLINE=1 -lreadline"
-  else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
-    then echo "          -lreadline $CURSES (detected)"
-       READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
-    else echo "          no  (detected)"
-       READLINE=""
+    echo -n "Testing for the readline library: "
+    echo 'main(){readline();}' >rd.c
+    if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
+    then echo '          -lreadline (detected)'
+         READLINE="-DUSE_READLINE=1 -lreadline"
+    else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
+      then echo "          -lreadline $CURSES (detected)"
+         READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
+      else echo "          no  (detected)"
+         READLINE=""
+      fi
     fi
+    rm -f rd.c rd.out
   fi
-  rm -f rd.c rd.out
 
   if [ "$EXE" = "" ]
   then echo "Executables need .exe suffix?               no  (detected)"
