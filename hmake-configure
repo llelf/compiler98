@@ -25,7 +25,7 @@ case $PWD in	# path mangling required for CYGWIN
 esac
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
-case `echo -n hello | wc -c | ( read n ; echo $n)` in
+case `echo -n hello | wc -c | ( read n ; echo $n )` in
     5) ;;
     *) echo "The builtin 'echo' command doesn't do '-n' - emulating it."
        ${CC-gcc} -o script/echo script/echo.c
@@ -116,7 +116,7 @@ then
   echo '  (but cmdline options have precedence)'
 fi
 
-INSTALLINFO="configured for $MACHINE by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
+INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
 
 LIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
 BINDIR=${BINDIR-$INSTALLDIR/bin}
@@ -135,20 +135,23 @@ esac
 #esac
 
 # Configure hmake
-echo "--------"
-echo Configuring known compilers... '[' $HMAKEVERSION ']'
-if [ -f targets/$MACHINE/hmake.config ]
+if [ -d src ]	# Delay this step if it is a binary (src-less) distribution.
 then
-  echo "  Compilers have already been detected once.  (Remove file"
-  echo "    targets/$MACHINE/hmake.config"
-  echo "    and run `basename $0` again if you want to re-do that step.)"
-# echo "  hbc/LML directory:    $HBCDIR"
-# echo "  ghc directory:        $GHCDIR"
-# echo
-else
-  script/confhc $BUILDWITH
+  echo "--------"
+  echo Configuring known compilers... '[' $HMAKEVERSION ']'
+  if [ -f targets/$MACHINE/hmake.config ]
+  then
+    echo "  Compilers have already been detected once.  (Remove file"
+    echo "    targets/$MACHINE/hmake.config"
+    echo "    and run `basename $0` again if you want to re-do that step.)"
+  # echo "  hbc/LML directory:    $HBCDIR"
+  # echo "  ghc directory:        $GHCDIR"
+  # echo
+  else
+    script/confhc $BUILDWITH
+  fi
+  echo "--------"
 fi
-echo "--------"
 
 echo
 echo "                   Configuration report for hmake."
@@ -246,6 +249,17 @@ else
     echo "ERROR: Your distribution of hmake has no sources and no executables!"
     exit 1
   fi
+  echo "--------"
+  echo Configuring known compilers... '[' $HMAKEVERSION ']'
+  if [ -f targets/$MACHINE/hmake.config ]
+  then
+    echo "  Compilers have already been detected once.  (Remove file"
+    echo "    targets/$MACHINE/hmake.config"
+    echo "    and run `basename $0` again if you want to re-do that step.)"
+  else
+    script/confhc $BUILDWITH
+  fi
+  echo "--------"
 fi
 
 
@@ -311,11 +325,11 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$LIBDIR/$MACHINE/hmake.config
-    echo -n "harch "
-    cp script/harch $BINDIR
     echo -n "hi "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hi.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hi
+    echo -n "harch "
+    cp script/harch $BINDIR
     echo
     chmod +x $BINDIR/hmake $BINDIR/harch $BINDIR/hi
   else

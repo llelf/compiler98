@@ -37,19 +37,20 @@ $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/hmake_n: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
-	cd src/interpreter;    $(MAKE) BUILDWITH=nhc98 install
+	cd src/interpreter;    $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake_n
 $(TARGDIR)/$(MACHINE)/hmake_b: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=hbc install
-	cd src/interpreter;    $(MAKE) BUILDWITH=hbc install
+	cd src/interpreter;    $(MAKE) HC=hbc install
 	touch $(TARGDIR)/$(MACHINE)/hmake_b
 $(TARGDIR)/$(MACHINE)/hmake_g: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install
-	cd src/interpreter;    $(MAKE) BUILDWITH=ghc install
+	cd src/interpreter;    $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake_g
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
+	@echo "WARNING: hmake might not build correctly from C sources!"
 	cd src/hmake;          $(MAKE) fromC
-	@echo "hmake interactive cannot currently be built from C sources"
+	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
 
@@ -65,4 +66,4 @@ realclean: clean
 	cd $(TARGDIR);  rm -f hmakeC
 	rm -f $(LIBDIR)/$(MACHINE)/*
 	rm -f $(TARGDIR)/$(MACHINE)/config.cache
-	rm -f script/hmake
+	rm -f script/hmake script/hi

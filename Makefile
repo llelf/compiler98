@@ -136,7 +136,7 @@ HP2GRAPH = src/hp2graph/Makefile* src/hp2graph/README \
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
-HMAKEC = src/hmake/*.c
+HMAKEC = src/hmake/*.c src/interpreter/*.c
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
@@ -408,6 +408,7 @@ $(TARGDIR)/greencardC: $(GREENCARD)
 	touch $(TARGDIR)/greencardC
 $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
+	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 
 
@@ -423,8 +424,8 @@ HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
 	  script/echo.c
 HMAN    = man/hmake.1 docs/hmake
 HCONF   = hmake-configure
-HBIN    = lib/$(MACHINE)/MkProg lib/$(MACHINE)/Older \
-	  lib/$(MACHINE)/hi targets/$(MACHINE)/config.cache
+HBIN    = lib/$(MACHINE)/MkProg$(EXE) lib/$(MACHINE)/Older$(EXE) \
+	  lib/$(MACHINE)/hi$(EXE) targets/$(MACHINE)/config.cache
 
 hmakeDist:
 	rm -f hmake-$(HVERSION).tar hmake-$(HVERSION).tar.gz
@@ -472,6 +473,7 @@ cleanC:
 	rm -f src/compiler98/*.c
 	rm -f src/greencard/*.c
 	rm -f src/hmake/*.c
+	rm -f src/interpreter/*.c
 	cd src/prelude;		$(MAKE) cleanC
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC traceui
 

@@ -6,11 +6,11 @@ TARGET = ${DST}/hi$(EXE)
 SRCS   = hi.hs HmakeConfig.hs
 
 
-ifeq "${BUILDWITH}" "ghc"
+ifeq "${HC}" "ghc"
 HFLAGS = -fglasgow-exts -syslib lang
 export HFLAGS
 endif
-ifeq "${BUILDWITH}" "hbc"
+ifeq "${HC}" "hbc"
 endif
 
 all: $(TARGET)
@@ -23,7 +23,7 @@ realclean: clean
 	-rm -f *.c $(TARGET)
 
 $(TARGET): $(OBJDIR) $(SRCS)
-	$(LOCAL)hmake -$(BUILDWITH) hi -d$(OBJDIR) $(shell echo $(BUILDOPTS))
+	$(LOCAL)hmake -$(HC) hi -d$(OBJDIR) $(shell echo $(BUILDOPTS))
 	mv $(OBJDIR)/hi$(EXE) $(TARGET)
 	strip $(TARGET)
 

@@ -143,7 +143,7 @@ then
   echo '  (but cmdline options have precedence)'
 fi
 
-INSTALLINFO="configured for $MACHINE by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
+INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
 
 HLIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
 LIBDIR=${LIBDIR-$INSTALLDIR/lib/nhc98}
@@ -165,20 +165,23 @@ case $OS in
 esac
 
 # Configure hmake
-echo "--------"
-echo Configuring hmake... '[' $HMAKEVERSION ']'
-if [ -f targets/$MACHINE/hmake.config ]
+if [ -d src ]	# Delay this step if it is a binary (src-less) distribution.
 then
-  echo "  hmake has already been configured once.  (Remove file"
-  echo "    targets/$MACHINE/hmake.config"
-  echo "    and run `basename $0` again if you want to re-do that step.)"
-# echo "  hbc/LML directory:    $HBCDIR"
-# echo "  ghc directory:        $GHCDIR"
-# echo
-else
-  script/confhc $BUILDWITH
+  echo "--------"
+  echo Configuring hmake... '[' $HMAKEVERSION ']'
+  if [ -f targets/$MACHINE/hmake.config ]
+  then
+    echo "  hmake has already been configured once.  (Remove file"
+    echo "    targets/$MACHINE/hmake.config"
+    echo "    and run `basename $0` again if you want to re-do that step.)"
+  # echo "  hbc/LML directory:    $HBCDIR"
+  # echo "  ghc directory:        $GHCDIR"
+  # echo
+  else
+    script/confhc $BUILDWITH
+  fi
+  echo "--------"
 fi
-echo "--------"
 
 echo
 echo "                   Configuration report for nhc98."
@@ -341,15 +344,27 @@ main() {
     echo 'updated DErrNo.hs'
   fi
 
-else
+else	# do the following only in binary distributions
   if [ -f lib/$MACHINE/config ]
   then
     . lib/$MACHINE/config
     echo "Your binary distribution of nhc98 was built by $BUILDWITH."
   else
-    echo "ERROR: Your distribution of nhc98 has no sources and no executables!"
+    echo "ERROR: This nhc98 distribution apparently has no sources and no executables!"
     exit 1
   fi
+  # hmake config deferred from earlier because of BUILDWITH variable
+  echo Configuring hmake... '[' $HMAKEVERSION ']'
+  echo "--------"
+  if [ -f targets/$MACHINE/hmake.config ]
+  then
+    echo "  hmake has already been configured once.  (Remove file"
+    echo "    targets/$MACHINE/hmake.config"
+    echo "    and run `basename $0` again if you want to re-do that step.)"
+  else
+    script/confhc $BUILDWITH
+  fi
+  echo "--------"
 fi
 
 echo -n "Default heap for compiled programs is: "
@@ -502,7 +517,7 @@ else	# [ "$INSTALL" = "yes" ]
       if [ -f $file ]; then cp -p $file $LIBDIR/$VERSION; fi
     done
     if [ $HLIBDIR != $LIBDIR ]
-    then ( cd $LIBDIR/$VERSION; mv MkProg Older hi $HLIBDIR/$VERSION )
+    then ( cd $LIBDIR/$VERSION; mv MkProg$EXE Older$EXE hi$EXE $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
