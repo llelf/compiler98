@@ -419,7 +419,6 @@ int main (void) { test(); }
      cp src/prelude/PreludeIO/Makefile.inc src/prelude/$MACHINE/NHC/Makefile.inc
      cp src/prelude/DErrNo.hs   src/prelude/$MACHINE/NHC
      cp src/prelude/DErrNo.hc   src/prelude/$MACHINE/NHC
-     cp src/prelude/DErrNo.T.c  src/prelude/$MACHINE/NHC
      cp src/prelude/DErrNo.p.c  src/prelude/$MACHINE/NHC
      cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE/NHC
   fi
