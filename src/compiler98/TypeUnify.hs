@@ -44,7 +44,7 @@ unify state phi (t1@(NTcons _ _),t2@(NTvar tvn2)) =
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
 unify state phi (t1@(NTcons c1 ts1),t2@(NTcons c2 ts2)) =
-  if c1 == c2 
+  if c1 == c2 && isNotTypeSynonym state c1
   then if length ts1 == length ts2 -- length check because of constructor classes
        then unifyl state phi (zip ts1 ts2)
        else
@@ -172,6 +172,11 @@ expandAll state t@(NTcons tcon ts) =
     Right (d,nt) -> expandAll state (expand nt ts)
 expandAll state t = t
 
+isNotTypeSynonym :: IntState -> Id -> Bool
+isNotTypeSynonym state con =
+  case unifyExpand state con of
+    Right _ -> False
+    Left _ -> True
 
 {-
 If tcon is a type synoym, then unifyExpand returns the depth and the

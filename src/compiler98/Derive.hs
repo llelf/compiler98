@@ -178,7 +178,7 @@ oneStep state given ((cls_con@(cls,con),(free,ctxs)),pos_types@(pos,types)) =
   case ( sort
        . ctxsReduce state
        . (map (mapSnd NTvar) data_ctxs ++)
-       . concatMap (ctxsSimplify state given)
+       . concatMap (ctxsSimplify [] state given)
        . map (\ nt -> TypeDict cls nt [(0,pos)])) types of
      ctxs -> ((cls_con,(free,map (mapSnd stripNT) ctxs)),pos_types)
 

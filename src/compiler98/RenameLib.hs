@@ -843,6 +843,11 @@ defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps)
                                 {-(realtid,MethodDefault)-}
                                 (InfoDMethod unique realtid nt annot iClass))
 			 derived defaults errors needCheck)
+           Just _ -> (unique
+                     ,RenameState flags (unique+1) irps rts rt st derived
+                       defaults 
+                       (("Default method declared outside class: " ++ show tid)
+                       :errors) needCheck)
 
 
 defineInstMethod :: TokenId -> RenameMonad Id

@@ -139,7 +139,7 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
                                   -- that are needed
 		( partition  ( \ (c,nt) -> stripNT nt `elem` globalTVars)
 	        . ctxsReduce state
- 		. concatMap (ctxsSimplify state [])
+ 		. concatMap (ctxsSimplify (map getPos decls) state [])
 --                . map ( \ (TypeDict c nt _) -> (c,nt))
                 ) uniqueCtxs
 

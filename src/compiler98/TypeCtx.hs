@@ -49,30 +49,31 @@ ctxReduce state ctx@(c,nt) ctxs =
 	     then ctxs
              else ctx: ctxs
 
-
-ctxsSimplify state given cls_nt =
-  ctxsSimplify' state given cls_nt []
+ctxsSimplify :: [Pos] -> IntState -> [((Int,Int),([Int],[(Int,Int)]))]
+                -> TypeDict -> [(Int,NT)]
+ctxsSimplify poss state given cls_nt =
+  ctxsSimplify' poss state given cls_nt []
 
 -- Only NTvar and NTexist in result
-ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))]
+ctxsSimplify' :: [Pos] -> IntState -> [((Int,Int),([Int],[(Int,Int)]))]
                  -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
-ctxsSimplify' state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r
-ctxsSimplify' state given (TypeDict cls (NTvar v) ipos) r = (cls,NTvar v):r
-ctxsSimplify' state given (TypeDict cls (NTexist v) ipos) r = (cls,NTexist v):r
-ctxsSimplify' state given (TypeDict cls (NTstrict nt) ipos) r =
+ctxsSimplify' _ state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r
+ctxsSimplify' _ state given (TypeDict cls (NTvar v) ipos) r = (cls,NTvar v):r
+ctxsSimplify' _ state given (TypeDict cls (NTexist v) ipos) r = (cls,NTexist v):r
+ctxsSimplify' poss state given (TypeDict cls (NTstrict nt) ipos) r =
   -- Don't keep strictness information in ctx?
-  ctxsSimplify' state given (TypeDict cls nt ipos) r
-ctxsSimplify' state given (TypeDict cls nt ipos) r =
+  ctxsSimplify' poss state given (TypeDict cls nt ipos) r
+ctxsSimplify' poss state given (TypeDict cls nt ipos) r =
   case removeTSyn state nt of
     (NTvar v) ->  (cls,NTvar v):r
     (NTany v) ->  (cls,NTvar v):r
     (NTexist v) ->  (cls,NTexist v):r
     (NTstrict nt) ->   -- Don't keep strictness information in ctx?
-      ctxsSimplify' state given (TypeDict cls nt ipos) r
+      ctxsSimplify' poss state given (TypeDict cls nt ipos) r
     (NTcons con nts) ->
       case lookup (cls,con) given of
         Just (tvs,ctxs) -> -- A derived instance
-	  foldr (ctxsSimplify' state given) r (pair2ctxs ipos tvs nts ctxs)
+	  foldr (ctxsSimplify' poss state given) r (pair2ctxs ipos tvs nts ctxs)
 	Nothing ->
 	  case lookupIS state cls of
 	    Nothing -> error ("Internal: CtxsSimplify couldn't find the class "
@@ -80,13 +81,16 @@ ctxsSimplify' state given (TypeDict cls nt ipos) r =
 	    Just info -> 
 	      case lookupAT (instancesI info) con of
 		Just (tvs,ctxs) ->  
-		  foldr (ctxsSimplify' state given) r
+		  foldr (ctxsSimplify' poss state given) r
                         (pair2ctxs ipos tvs nts ctxs)
 		Nothing -> error ("The class " ++ strIS state cls ++
 				 " has no instance for the type "
 				 ++ strIS state con
 				 ++ ".\nPossible sources for the problem are: "
-				 ++ mixCommaAnd (map (strPos . snd) ipos))
+				 ++ mixCommaAnd (map (strPos . snd) ipos)
+                                 ++ "\nWhen type checking declarations at: " 
+                                 ++ mixCommaAnd (map strPos poss)
+                                 ++ "\n")
 --  (NTapp (NTvar v) nt2) -> 
 --              (cls,NTapp (NTvar v) nt2):r
 --  (NTapp (NTany v) nt2) -> 
