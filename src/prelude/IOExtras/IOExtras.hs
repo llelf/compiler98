@@ -21,6 +21,7 @@ module NHC.IOExtras
   , performGC		-- :: IO ()
   , trace		-- :: String -> a -> a
   , unsafePtrEq		-- :: a -> a -> Bool
+  , excludeFinalisers	-- :: IO a -> IO a
   ) where
 
 
@@ -45,6 +46,7 @@ import FreezeIOArray
 import PerformGC
 import NonStdTrace
 import UnsafePtrEq
+import ExcludeFinalisers
 
 nyi f = trace ("IOExtras."++f++": not implemented")
 
