@@ -66,7 +66,7 @@ $(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard
 	mv $(OBJDIR)/GreenCard $(TARGET)
 	strip $(TARGET)
 $(OBJDIR)/GreenCard:
-	$(LOCAL)hmake -$(HC) -d $(OBJDIR) GreenCard
+	$(LOCAL)hmake -$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
 
 ## Obsolete
 #
