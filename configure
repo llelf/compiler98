@@ -59,6 +59,14 @@ case $OS in
   *) EXE="" ;;
 esac
 
+case "$PWD" in
+  *' '*)
+    echo "Error: nhc98 will not build in a directory with spaces anywhere"
+    echo "       in the full pathname."
+    echo "Suggestion: move the build tree somewhere else."
+    exit 1 ;;
+esac
+
 # We need a working `echo' command: at least Solaris2.6 may not have it.
 case `echo -n hello | wc -c | ( read n ; echo $n )` in
     5) ;;
