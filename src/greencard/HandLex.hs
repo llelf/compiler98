@@ -104,6 +104,7 @@ skip n p s ss k = k (addcol n p) (drop n s) ss
 blank :: (Posn->String->[String]->[Token]) ->
           Posn -> String -> [String] -> [Token]
 blank k p    []    ss  = lextop (blank k) (newline p) ss
+blank k p ['\^M']  ss  = lextop (blank k) (newline p) ss
 blank k p (' ': s) ss  = blank k (addcol 1 p) s ss
 blank k p ('\t':s) ss  = blank k (tab p) s ss
 blank k p    s     ss  = k p s ss
