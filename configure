@@ -30,6 +30,7 @@ esac
 #RTSFLAG=yes
 HEAP=100000
 BUILDWITH=
+GHCSYM=
 
 BUILDLIBDIR=$PWD/lib
 BUILDINCDIR=$PWD/include
@@ -260,6 +261,7 @@ then
   else
     echo "You said you want to build nhc98 with $BUILDWITH"
   fi
+  GHCSYM=`grep "^ghcsym=" script/hmake.config | cut -c8-10`
   case $BUILDWITH in
     hbc|xtc)  RTSFLAG=no;;
     ghc|nhc)  RTSFLAG=yes;;
@@ -400,6 +402,7 @@ then
       echo "LIBCOMPAT=\"$LIBCOMPAT\"";
       echo "EXE=$EXE";
       echo "CC=$CCC";
+      echo "GHCSYM=$GHCSYM";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
@@ -480,7 +483,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
-    cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR	-- patch local config also
+    cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR	# patch local config also
     #echo -n "config "	# Now simply re-use build config.
     #( echo "ENDIAN=$ENDIAN";
     #  case $RTSFLAG in

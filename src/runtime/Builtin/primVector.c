@@ -27,7 +27,7 @@ C_HEADER(primVector)
   size = GET_INT_VALUE(res);
 
   res = C_ALLOC(1+EXTRA+size);
-  res[0] = CONSTRW(size,0);
+  res[0] = CONSTRP(size,0);
   INIT_PROFINFO(res,&nodeProfInfo)
   
   dstptr = (NodePtr)&res[1+EXTRA];
@@ -80,7 +80,7 @@ C_HEADER(primCopyVector)
   size = CONINFO_LARGESIZES(GET_CONINFO(arg));
 
   res = C_ALLOC(1+EXTRA+size);
-  res[0] = CONSTRW(size,0);
+  res[0] = CONSTRP(size,0);
   INIT_PROFINFO(res,&nodeProfInfoCopy)
   
   srcptr = (NodePtr)&arg[1+EXTRA];

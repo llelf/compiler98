@@ -81,11 +81,14 @@ NHC98INCDIR=${NHC98INCDIR-${nhc98incdir}}
 
 # ghc, set up for various versions of the Haskell language
 #     GHCINCDIR is either a single directory containing standard .hi files:
-#ghcincdir=/usr/lib/ghc-3.02/lib/imports
+# ghcincdir=/usr/lib/ghc-3.02/lib/imports
 #     or it contains multiple dirs each of which contains standard .hi files:
-#ghcincdir=/usr/lib/ghc-4.04/imports
+# ghcincdir=/usr/lib/ghc-4.04/imports
 ghcincdir=
 ghcknown=no
+# ghcsym is the value of __GLASGOW_HASKELL__
+ghcsym=0
+
 GHCINCDIR=${GHCINCDIR-${ghcincdir}}
 
 # Depending on compiler version, we have to choose cpp symbols.
@@ -97,10 +100,16 @@ then
   #     GHCINCPATH is a colon-separated list of directories containing .hi files
   GHCINCPATH=":"${GHCINCPATH-${GHCINCDIR}}
   GHCCPP="-Z__HASKELL1__=${GHC}"
-else
+elif [ ${ghcsym} -lt 406 ]
+then
   # ghc, for Haskell'98
   #     GHCINCPATH is a colon-separated list of directories containing .hi files
   GHCINCPATH=":"${GHCINCPATH-"${GHCINCDIR}/std:${GHCINCDIR}/exts:${GHCINCDIR}/misc:${GHCINCDIR}/posix"}
+  GHCCPP="-Z__HASKELL1__=5 ${HASKELL98}"
+else
+  # ghc, for Haskell'98, with new hslibs
+  #     GHCINCPATH is a colon-separated list of directories containing .hi files
+  GHCINCPATH=":"${GHCINCPATH-"${GHCINCDIR}/std:${GHCINCDIR}/data:${GHCINCDIR}/lang:${GHCINCDIR}/posix:${GHCINCDIR}/net:${GHCINCDIR}/num:${GHCINCDIR}/text:${GHCINCDIR}/util:${GHCINCDIR}/win32"}
   GHCCPP="-Z__HASKELL1__=5 ${HASKELL98}"
 fi
 GHCPRELOPTS=`echo $GHCINCPATH | sed -e "s/:/ -P/g"`
@@ -138,7 +147,7 @@ compilerstyle () {
            KNOWN=${nhc98known} ;;
     ghc)   RTSOPTIONSTYLE=none;            PRELUDEPATH="${GHCPRELOPTS}"
            CTSOPTIONSTYLE=none;
-           CPPSYMBOLS="-Z__GLASGOW_HASKELL__ ${GHCCPP}"
+           CPPSYMBOLS="-Z__GLASGOW_HASKELL__=${ghcsym} ${GHCCPP}"
            KNOWN=${ghcknown} ;;
     xtc)   RTSOPTIONSTYLE=minus;           PRELUDEPATH="${XTCPRELOPTS}"
            CTSOPTIONSTYLE=none;

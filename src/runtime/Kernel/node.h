@@ -47,10 +47,10 @@
                          number = Constructor number
 
 
-      coninfo | size:LARGE_SIZE,                   xx:LARGE_EXTRA  01:2,  tag:2             Must be same as in (new)macros.h
+      coninfo | size:LARGE_SIZE,  xx:LARGE_EXTRA  01:2,  tag:2             Must be same as in (new)macros.h
                          size   = Size of node, all words are pointers
 
-      coninfo | size:LARGE_SIZE,                   xx:LARGE_EXTRA  11:2,  tag:2             Must be same as in (new)macros.h
+      coninfo | size:LARGE_SIZE,  xx:LARGE_EXTRA  11:2,  tag:2             Must be same as in (new)macros.h
                          size   = Size of node, all words are integers
 
 

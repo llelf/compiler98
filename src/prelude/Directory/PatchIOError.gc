@@ -6,7 +6,7 @@ import DIOError
 
 %-#include <sys/stat.h>
 %-#include <unistd.h>
-%-#include <errno.h>;
+%-#include <errno.h>
 
 %fun readErrNo :: () -> IO ErrNo
 %call ()

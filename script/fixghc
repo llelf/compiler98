@@ -1,0 +1,14 @@
+#!/bin/sh
+#	fixghc:  a small script to patch up the -syslib changes between
+#		versions 4.04 and 4.06 of ghc.
+
+ghcversion=$1
+shift
+libs=$*
+
+if [ $ghcversion -lt 406 ]
+then
+  echo $libs | sed -e 's/lang/exts/g'
+else
+  echo $libs
+fi

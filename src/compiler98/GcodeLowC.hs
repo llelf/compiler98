@@ -3,6 +3,15 @@ module GcodeLowC
   , gcodeCHeader
   ) where
 
+#if defined(__HBC__) 
+#define NATIVE
+#elif defined(__NHC__)
+#define NHCFLOAT
+#elif defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ < 406
+#define NATIVE
+#elif defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 406
+#define FLOAT
+#endif
 
 import Char
 
@@ -16,10 +25,12 @@ import IntState(strIS,IntState,dummyIntState)
 import EmitState
 import Prim(strPrim)
 import Machine
-#if defined(__HBC__) || defined(__GLASGOW_HASKELL__)
+#if defined(NATIVE)
 import Native
-#elif defined(__NHC__)
+#elif defined(NHCFLOAT)
 import NhcFloats
+#elif defined(FLOAT)
+import Floats
 #endif
 
 #if defined(__HASKELL98__)
@@ -147,7 +158,7 @@ gcodeCDump state (DATA_CONSTHEADER a b) = emitWord (showString "HW(" .
 gcodeCDump state (DATA_W  i)      = emitWord (shows i)
 gcodeCDump state (DATA_S  s)      = foldr (>|>) (emitByte (shows 0))
                                           (map (emitByte.shows.fromEnum) s)
-#if defined(__HBC__) || defined(__GLASGOW_HASKELL__)
+#if defined(NATIVE)
 gcodeCDump state (DATA_F  f)      = {-no need to test if floatIsDouble-}
                                     let bytes = showBytes f [] in
                                     foldr (>|>) id
@@ -155,7 +166,7 @@ gcodeCDump state (DATA_F  f)      = {-no need to test if floatIsDouble-}
 gcodeCDump state (DATA_D  d)      = let bytes = showBytes d [] in
                                     foldr (>|>) id
                                         (map (emitByte.shows.fromEnum) bytes)
-#elif defined(__NHC__)
+#elif defined(NHCFLOAT)
 gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
                                       let (h,l) = doubleToInts f in
                                       emitWord (shows h) >|> emitWord (shows l)
@@ -163,6 +174,17 @@ gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
                                       let i = floatToInt f in
                                       emitWord (shows i)
 gcodeCDump state (DATA_D  d)      = let (h,l) = doubleToInts d in
+                                    emitWord (shows h) >|> emitWord (shows l)
+#elif defined(FLOAT)
+gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
+                                      let h = doubleToInt0 f in
+                                          l = doubleToInt1 f in
+                                      emitWord (shows h) >|> emitWord (shows l)
+                                    else-}
+                                      let i = floatToInt f in
+                                      emitWord (shows i)
+gcodeCDump state (DATA_D  d)      = let h = doubleToInt0 d in
+                                        l = doubleToInt1 d in
                                     emitWord (shows h) >|> emitWord (shows l)
 #endif
 gcodeCDump state (DATA_NOP)       = id

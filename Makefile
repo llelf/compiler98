@@ -113,13 +113,14 @@ PRELUDET = \
 #	src/tracer/prelude/Ix/*.hs \
 #	src/tracer/prelude/Monad/*.hs \
 
-COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs  src/compiler98/*.gc
+COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
+	   src/compiler98/*.gc src/compiler98/*.c.inst
 COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/nhc98tracer.inst lib/nhctracer.jar \
          script/nhc98heap.c script/harch script/confhc script/mangler \
-	 script/errnogen.c script/GenerateErrNo.hs
+	 script/errnogen.c script/GenerateErrNo.hs script/fixghc
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c

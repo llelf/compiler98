@@ -27,7 +27,7 @@ SRCS = \
 	SccModule.hs State.hs StrPos.hs StrSyntax.hs Syntax.hs SyntaxPos.hs \
 	SyntaxUtil.hs TokenId.hs TokenInt.hs Tree234.hs Type.hs TypeCtx.hs \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
-	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs
+	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs,%.c,${SRCS})
@@ -48,7 +48,11 @@ HFLAGS = -H8M
 export HFLAGS
 endif
 ifeq "ghc" "${HC}"
-HMAKEFLAGS = +CTS -syslib exts -syslib misc -CTS
+HMAKEFLAGS=$(shell $(LOCAL)fixghc $(GHCSYM) +CTS -syslib lang -syslib misc -CTS)
+$(TARGET): $(OBJDIR)/ghc_floats.o
+LINK=ghc_floats.o
+else
+LINK=
 endif
 
 
@@ -67,7 +71,7 @@ realclean: clean
 	rm -f *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
-	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main
+	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main $(LINK)
 	mv $(OBJDIR)/Main $(TARGET)
 	strip $(TARGET)
 ${OBJDIR}:
@@ -81,6 +85,10 @@ $(OBJDIR)/last${TRACING}:
 	rm -f $(DBGOBJS)
 	touch $(OBJDIR)/last${TRACING}
  
+$(OBJDIR)/ghc_floats.o: ghc_floats.c
+	$(CC) -c -o $@ $<
+ghc_floats.c: ghc_floats.c.inst
+	cp ghc_floats.c.inst ghc_floats.c
 
 
 .SUFFIXES: .hs .o .c .gc

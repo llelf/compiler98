@@ -134,6 +134,7 @@ if which ghc >/dev/null 2>&1
 then
   whichGHC=`which ghc`
   GHCVER=`${whichGHC} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
+  GHCSYM=`echo $GHCVER | tr "." " " | ( read x y; echo $x$y; )`
   GHCDIR=`grep '^\$libdir=' ${whichGHC} | head -1 | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
   if [ -d $GHCDIR/imports ]
   then GHCINCDIR=$GHCDIR/imports
@@ -223,8 +224,9 @@ cat script/hmakeconfig.inst |\
 ) |\
 ( if [ "$GHCDIR" = "" ];
   then cat
-  else sed -e "s|^ghcincdir=$|ghcincdir=${GHCINCDIR}|" |\
-       sed -e "s|^ghcknown=no$|ghcknown=yes|" |\
+  else sed -e "s|^ghcincdir=$|ghcincdir=${GHCINCDIR}|" \
+           -e "s|^ghcknown=no$|ghcknown=yes|" \
+           -e "s|^ghcsym=0$|ghcsym=${GHCSYM}|"  |\
        ( case $GHCVER in
            0.29) sed -e "s|^GHC=0$|GHC=2|"  ;;
            2.*)  sed -e "s|^GHC=0$|GHC=3|"  ;;
