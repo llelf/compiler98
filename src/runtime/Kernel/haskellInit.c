@@ -137,7 +137,7 @@ void haskellInit (int argc, char **argv)
 #endif
   
 /*Argv = (char **)malloc(ARGSIZE*sizeof(char *));*/
-  Argv = (char **)malloc(argc*sizeof(char *));
+  Argv = (char **)malloc((argc+1)*sizeof(char *));
   if(!Argv) {
     fprintf(stderr,"Out of memory when reserving space for %d arguments\n",argc);
     exit(-1);
