@@ -62,7 +62,7 @@ traceTrans traced filename traceFilename
        ++ map (defNameCon modTrace) cons 
        ++ map (defNameVar True modTrace) tvars 
        ++ map (defNameVar False modTrace) vars 
-       ++ map (defNamePos modTrace) poss
+       ++ (if traced then map (defNamePos modTrace) poss else [])
        ++ if isMain modId then [defMain traceFilename] else [] ))
   where
   modTrace = ExpVar pos (nameTraceInfoModule modId)
@@ -437,7 +437,7 @@ tDecl traced parent (DeclPat (Alt pat rhs decls)) =
   mkConstDecl :: Exp TokenId -> Pos -> TraceId -> Decl TokenId
   mkConstDecl parent pos id =
     DeclFun pos (nameTrace id)
-      [Fun [] (Unguarded (mkConstVar parent pos id)) noDecls]
+      [Fun [] (Unguarded (mkConstVar parent pos id traced)) noDecls]
 
   projDef :: (Pos,TraceId) -> Decl TokenId
   projDef (pos,id) =
@@ -504,7 +504,7 @@ tCaf traced parent pos id rhs localDecls =
    --   where
    --   localDecls'
   ,[DeclFun pos useParentId
-     [Fun [] (Unguarded (mkConstVar parent pos id)) noDecls]
+     [Fun [] (Unguarded (mkConstVar parent pos id traced)) noDecls]
    ]
    -- traceId = constId parent pos id
   ,addVar pos id emptyModuleConsts `withLocal` 
@@ -649,7 +649,8 @@ tGuardedExps traced cr parent failCont ((guard,exp):gdExps) =
           (DeclsParse
             [DeclFun pos newParentId
               [Fun []
-                (Unguarded (mkConstGuard pos parent guardTrace)) noDecls]])
+                (Unguarded (mkConstGuard pos parent guardTrace traced)) 
+                noDecls]])
           (ExpIf pos guardValue exp' gdExps')))
 -- see if seq is necessary at all for traced version
 -- definitely should not be used for untraced version
@@ -722,7 +723,7 @@ tExp traced cr parent (ExpLambda pos pats body) =
                 [Alt (mkTupleExp pos pats') (Unguarded body') noDecls
                 ,Alt (PatWildcard pos) 
                    (Unguarded (mkFailExp pos lambdaParent)) noDecls])
-    ,mkSRExp pos
+    ,mkSRExp pos traced
     ,parent]
   ,pos `addPos` bodyConsts)
   where
@@ -743,14 +744,14 @@ tExp traced cr parent (ExpDo pos stmts) =
 tExp traced cr parent (ExpCase pos e alts) =
   (ExpApplication pos
     [combApply pos traced cr 1
-    ,mkSRExp pos
+    ,mkSRExp pos traced
     ,parent
     ,ExpApplication pos
       [combFun pos traced 1
       ,ExpVar pos tokenMkAtomCase
       ,ExpLet pos (DeclsParse (DeclFun pos varId fun' : defs'))
         (ExpVar pos varId)
-      ,mkSRExp pos
+      ,mkSRExp pos traced
       ,parent]
     ,e']
   -- ap1 sr parent 
@@ -784,8 +785,8 @@ tExp traced cr parent (ExpIf pos cond e1 e2) =
                   (ExpApplication pos
                     [ExpVar pos (tokenMkTAp 2)
                     ,parent
-                    ,mkConst parent (ExpVar pos tokenMkAtomIf) pos
-                    ,condT,parent,mkSRExp pos]))
+                    ,mkConst parent (ExpVar pos tokenMkAtomIf) pos traced
+                    ,condT,parent,mkSRExp pos traced]))
                 noDecls]])
           (ExpApplication pos 
             [combSat pos traced cr,ExpIf pos condV e1' e2',ifParent])))
@@ -809,18 +810,18 @@ tExp traced cr parent (ExpApplication pos (f@(ExpCon _ _) : es))=
   tConApp traced parent f es
 tExp traced cr parent (ExpApplication pos es) =
   (ExpApplication pos 
-    (combApply pos traced cr (length es - 1):mkSRExp pos:parent:es')
+    (combApply pos traced cr (length es - 1):mkSRExp pos traced:parent:es')
   ,pos `addPos` esConsts)
   where
   (es',esConsts) = tExps traced parent es
-tExp _ cr parent (ExpVar pos id) =
+tExp traced cr parent (ExpVar pos id) =
   if isLambdaBound id  
     then 
       if cr 
       then (ExpApplication pos [ExpVar pos tokenIndir,parent,e']
            ,emptyModuleConsts) 
       else (e',emptyModuleConsts)
-    else (ExpApplication pos [e',mkSRExp pos,parent]
+    else (ExpApplication pos [e',mkSRExp pos traced,parent]
          ,pos `addPos` emptyModuleConsts)
   where
   e' = ExpVar pos (nameTransVar id) 
@@ -830,8 +831,8 @@ tExp traced cr parent (ExpLit pos (LitString _ s)) =
   -- the result is very large; should use special wrapper that
   -- transforms string in traced string instead
   tExp traced cr parent (ExpList pos (map (ExpLit pos . LitChar Boxed) s))
-tExp _ cr parent (ExpLit pos lit) =
-  (ExpApplication pos [tLit lit,mkSRExp pos,parent,ExpLit pos lit]
+tExp traced cr parent (ExpLit pos lit) =
+  (ExpApplication pos [tLit lit,mkSRExp pos traced,parent,ExpLit pos lit]
   ,pos `addPos` emptyModuleConsts)
   where
   tLit (LitInt _ _) = ExpVar pos tokenConInt
@@ -881,7 +882,7 @@ tConApp traced parent c@(ExpCon pos id) args
       (ExpVar pos (tokenPa numberOfArgs)
       :ExpCon pos (nameTransCon id)
       :ExpVar pos (tokenCn (conArity-numberOfArgs))
-      :mkSRExp pos
+      :mkSRExp pos traced
       :parent
       :ExpVar pos (nameTraceInfoCon id)
       :args')
@@ -902,7 +903,7 @@ tSatConApp :: Bool          -- traced?
 tSatConApp traced parent (ExpCon pos id) args =
   (ExpApplication pos 
     (ExpVar pos (tokenCon (length args))
-    :mkSRExp pos
+    :mkSRExp pos traced
     :parent
     :ExpCon pos (nameTransCon id)
     :ExpVar pos (nameTraceInfoCon id)
@@ -1221,19 +1222,20 @@ updateToken f traceId =
 -- ----------------------------------------------------------------------------
 -- hardwired Haskell combinators and other names used by transformed modules
 
-mkConst :: Exp TokenId -> Exp TokenId -> Pos -> Exp TokenId
-mkConst parent atom pos = 
+mkConst :: Exp TokenId -> Exp TokenId -> Pos -> Bool -> Exp TokenId
+mkConst parent atom pos traced = 
   ExpApplication pos 
-    [ExpVar pos tokenMkConst,parent,atom,mkSRExp pos]
+    [ExpVar pos tokenMkConst,parent,atom,mkSRExp pos traced]
 
 -- only used where definition and use position coincide 
 -- (cafs, pattern bindings)
-mkConstVar :: Exp TokenId -> Pos -> TraceId -> Exp TokenId
-mkConstVar parent pos id = 
-  mkConst parent (ExpVar pos (nameTraceInfoVar pos id)) pos
+mkConstVar :: Exp TokenId -> Pos -> TraceId -> Bool -> Exp TokenId
+mkConstVar parent pos id traced = 
+  mkConst parent (ExpVar pos (nameTraceInfoVar pos id)) pos traced
 
-mkSRExp :: Pos -> Exp TokenId
-mkSRExp pos = ExpVar pos (nameTraceInfoPos pos)
+mkSRExp :: Pos -> Bool -> Exp TokenId
+mkSRExp pos traced = 
+  ExpVar pos (if traced then nameTraceInfoPos pos else tokenMkNoPos)
 
 combSat :: Pos -> Bool -> Bool -> Exp TokenId
 combSat pos traced cr = 
@@ -1248,12 +1250,12 @@ combApply pos traced cr a =
 combFun :: Pos -> Bool -> Arity -> Exp TokenId
 combFun pos traced a = ExpVar pos ((if traced then tokenFun else tokenUFun) a)
 
-mkConstGuard :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
-mkConstGuard pos parent guardTrace =
+mkConstGuard :: Pos -> Exp TokenId -> Exp TokenId -> Bool -> Exp TokenId
+mkConstGuard pos parent guardTrace traced =
   ExpApplication pos
     [ExpVar pos (tokenMkTAp 2),parent
-    ,mkConst parent (ExpVar pos tokenMkAtomGuard) pos
-    ,guardTrace,parent,mkSRExp pos]
+    ,mkConst parent (ExpVar pos tokenMkAtomGuard) pos traced
+    ,guardTrace,parent,mkSRExp pos traced]
 
 -- apply data constructor R
 wrapExp :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
@@ -1290,6 +1292,9 @@ tokenMkModule = mkTracingToken "mkModule"
 
 tokenMkPos :: TokenId
 tokenMkPos = mkTracingToken "mkSourceRef" 
+
+tokenMkNoPos :: TokenId
+tokenMkNoPos = mkTracingToken "mkNoSourceRef"
 
 tokenMkAtomCon :: TokenId
 tokenMkAtomCon = mkTracingToken "mkAtomCon"
