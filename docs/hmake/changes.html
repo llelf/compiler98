@@ -14,7 +14,14 @@
   <td valign=top>
 	<ul>
         <li> New options: -clean and -realclean, which remove relevant
-             .o files (or both .o and .hi files).
+               .o files (or both .o and .hi files).
+        <li> Addition of a simple line editor to <em>hi</em>.
+        <li> Bugfix: the auto-configuration of <em>hi</em> was erratic,
+               but should now work much more smoothly.
+        <li> Bugfix: all the nasty possibilities of unmatched comment
+	       characters inside strings and unmatched quote chars
+	       inside comments no longer cause hmake to give up on
+	       trying to extract dependencies from a file.
 	</ul>
 </td></tr><tr>
 
@@ -22,10 +29,10 @@
   <td valign=top>
 	<ul>
         <li> New addition: hmake interactive, or <em>hi</em> for short.
-             Looks and feels like
-             Hugs, but uses hmake + any Haskell compiler as a backend.
+               Looks and feels like Hugs, but uses hmake + any Haskell
+               compiler as a backend.
 	<li> Small bugfixes, for instance to allow #-} at the beginning
-             of a line (previously interpreted as a cpp directive!).
+               of a line (previously interpreted as a cpp directive!).
 	</ul>
 </td></tr><tr>
 
@@ -139,7 +146,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-06-12<br>
+Information last updated: 2000-06-23<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
