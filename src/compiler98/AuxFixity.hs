@@ -11,7 +11,7 @@ import PackedString(PackedString,packString,unpackPS)
 import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos
-import TokenId(TokenId(..), t_x, t_flip, visImpRev)
+import TokenId(TokenId(..), t_x, t_flip, visImport)
 import AssocTree
 import PreImp
 import AuxFile
@@ -118,7 +118,7 @@ rebuild :: Num a =>
 	 ((Fixity,c),(Exp TokenId,a)) -> [Exp TokenId] -> [Exp TokenId]
 rebuild (_,(op,2)) (e1:e2:es) = ExpApplication (getPos op) [op,e2,e1]:es
 rebuild ((Pre fun,_) ,(op,_)) (e1:es) =
-        ExpApplication (getPos op) [ExpVar (getPos op) (visImpRev fun),e1]:es
+        ExpApplication (getPos op) [ExpVar (getPos op) (visImport fun),e1]:es
 rebuild (_,(op,n)) es =
         error ("Not enough arguments at " ++ strPos (getPos op))
 

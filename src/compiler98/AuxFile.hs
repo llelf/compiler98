@@ -15,7 +15,7 @@ import NonStdTrace (trace)
 #endif
 
 import Syntax
-import TokenId (TokenId,visImpRev,tPrelude)
+import TokenId (TokenId,tPrelude)
 import AssocTree
 import OsOnly
 import Import

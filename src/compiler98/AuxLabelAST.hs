@@ -9,7 +9,7 @@ import TraceId
 import Flags
 import Syntax
 import SyntaxUtil (infixFun)
-import TokenId (TokenId,visImpRev)
+import TokenId (TokenId)
 import AssocTree
 
 
