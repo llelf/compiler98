@@ -4,7 +4,7 @@ OBJDIR = $(BUILDDIR)/$(OBJ)/greencard
 TARGET = $(DST)/greencard-nhc98$(EXE)
 
 ifeq "nhc98" "$(HC)"
-  HFLAGS = $(shell echo $(BUILDOPTS)) $(NHEAP)
+  HFLAGS = $(shell echo $(BUILDOPTS)) +CTS -H4Mb -CTS
 endif
 ifeq "ghc" "$(HC)"
   HFLAGS = $(shell echo $(BUILDOPTS)) +CTS $(shell $(LOCAL)fixghc $(GHCSYM) -syslib exts) -CTS
