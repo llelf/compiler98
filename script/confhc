@@ -130,7 +130,7 @@ if which ghc >/dev/null 2>&1
 then
   whichGHC=`which ghc`
   GHCVER=`${whichGHC} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-  GHCDIR=`grep '^\$libdir=' ${whichGHC} | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
+  GHCDIR=`grep '^\$libdir=' ${whichGHC} | head -1 | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
   if [ -d $GHCDIR/imports ]
   then GHCINCDIR=$GHCDIR/imports
   elif [ -d $GHCDIR/lib/imports ]
