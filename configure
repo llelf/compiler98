@@ -336,8 +336,12 @@ main() {
   if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
   then echo '          yes (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
-  else echo '          no  (detected)'
+  else if ${CCC} -o rd.out rd.c -lreadline -lncurses >/dev/null 2>&1
+    then echo '          yes (detected)'
+       READLINE="-DUSE_READLINE=1 -lreadline -lncurses"
+    else echo '          no  (detected)'
        READLINE=""
+    fi
   fi
   rm -f rd.c rd.out
 
