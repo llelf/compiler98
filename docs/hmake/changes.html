@@ -10,6 +10,31 @@
 <table>
 <tr>
 
+<td valign=top><b>3.02</b></td>
+  <td valign=top>
+	<ul>
+        <li> An automatic invocation of a pre-processor should supply
+             default options to it.  Also fix the dependency determination
+             to correctly use the un-pre-processed file modification time.
+        <li> When the hmake option <em>-hat</em> is used, add
+             <em>-package hat</em> to the generated calls to the compiler.
+        <li> Minor configuration fix to ease building under Cygwin.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>3.01</b></td>
+  <td valign=top>
+	<ul>
+        <li> When detecting ghc 5.00 or later, hmake-config now uses the
+             relevant ghc-pkg tool to discover import directories.
+        <li> An hmake command with no specified compiler no longer fails
+             if the location of the config file (to provide a default
+	     compiler) cannot be discovered correctly.
+        <li> If a <tt>.hs.cpp</tt> file is discovered, use the <tt>-x c</tt>
+             option correctly (was missing a space before).
+	</ul>
+</td></tr><tr>
+
 <td valign=top><b>3.00</b></td>
   <td valign=top>
 	<ul>
@@ -222,7 +247,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-01-15<br>
+Information last updated: 2002-03-14<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
