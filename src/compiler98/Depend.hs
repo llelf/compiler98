@@ -1,6 +1,6 @@
 module Depend(depend) where
 
-import Flags
+import Flags (Flags,sDepend,sPrelude,sSourceFile,sUnix)
 import IntState
 import Memo
 import Tree234
