@@ -22,5 +22,8 @@ case $1 in
 	;;
   Japi) echo Graphics Graphics/UI Graphics/UI/Japi
 	;;
+  fgl)	echo Data Data/Graph Data/Graph/Inductive Data/Graph/Inductive/Monad
+	echo Data/Graph/Inductive/Query Data/Graph/Inductive/Internal
+	;;
   *) ;;
 esac
