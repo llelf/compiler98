@@ -309,7 +309,9 @@ connectToDebugger()
 	    exit(1);
 	}
 	fflush(stdout);
-	fprintf(stderr, "%d reductions (%d TT, %d TS, %d ST, %d SS), waiting at port %d...\n", reductions, redTT, redTS, redST, redSS, port+i);
+        if (1)
+          fprintf(stderr, "%d reductions (%d TT, %d TS, %d ST, %d SS)\n", reductions, redTT, redTS, redST, redSS);
+        fprintf(stderr, "Waiting for connection from trace browser on port %d...\n", port+i);
         len=sizeof(addr);
 	if ((fdesc = accept(s, &addr, &len)) == -1) {
 	    fprintf(stderr, "Couldn't accept connection\n");
@@ -1671,6 +1673,7 @@ ModInfo NMOD__Apply3 = {"_Apply3", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD__Apply4 = {"_Apply4", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD_PreludeBuiltin = {"PreludeBuiltin", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD_PreludeDebug = {"PreludeDebug", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
+ModInfo NMOD__EqInteger = {"_EqInteger", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 
 extern ModInfo *MODULE_Main;
 extern ModInfo NMOD_Prelude;
