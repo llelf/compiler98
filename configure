@@ -9,7 +9,7 @@
 # corresponding definition in Makefile.inc!
 VERSIONNUM=117
 NHC98VERSION="v1.17 (CVS version)"
-HMAKEVERSION="3.08 (2003-06-23)" export HMAKEVERSION
+HMAKEVERSION="3.09 (2004-11-13)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
 PACKAGES="base parsec haskell-src QuickCheck HaXml"
@@ -145,7 +145,7 @@ do
   echo "  --libdir=dir         Install libraries in dir [rootdir/lib/nhc98]"
   echo "  --incdir=dir         Install interfaces in dir [rootdir/include/nhc98]"
   echo "  --mandir=dir         Install man pages in dir [rootdir/man/man1]"
-  echo "  --docdir=dir         Install html docs in dir [/usr/doc/nhc98]"
+  echo "  --docdir=dir         Install html docs in dir [rootdir/doc/nhc98]"
   echo
   echo "  [+/-]bin             Do/don't (re-)install scripts [+bin]"
   echo "  [+/-]lib             Do/don't (re-)install executables [+lib]"
