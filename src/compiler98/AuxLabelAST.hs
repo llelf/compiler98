@@ -9,7 +9,7 @@ import TraceId
 import Flags
 import Syntax
 import SyntaxUtil (infixFun)
-import TokenId (TokenId)
+import TokenId (TokenId(..))
 import AssocTree
 
 
@@ -65,7 +65,14 @@ lookEnv env mk id =
   let v = mk id in
   case lookupAT env v of
     Just info -> id `plus` info
-    _ -> error ("AuxLabelAST.lookEnv: "++show v++" not in environment")
+    _ -> case id of
+		-- this is a horrible hack to by-pass qualified names.
+           Qualified _ x -> let v' = mk (Visible x) in
+                            case lookupAT env v' of
+                              Just info -> id `plus` info
+                              _ -> error ("AuxLabelAST.lookEnv: "++show v
+                                          ++" not in environment")
+           _ -> error ("AuxLabelAST.lookEnv: "++show v++" not in environment")
 
 mkVar, mkCon :: TokenId -> Identifier
 mkVar id = Var (show id)
