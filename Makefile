@@ -148,10 +148,12 @@ TARGETS= runtime prelude greencard hp2graph hattools \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 hat-nhc hat-ghc \
-	 prelude-$(CC) pragma-$(CC)
+	 prelude-$(CC) pragma-$(CC) \
+	 hat-nhc hat-ghc hat-trans-ghc hat-trans-nhc hat-lib-ghc hat-lib-nhc \
+	 hat-tools-ghc hat-tools-nhc
 
-.PHONY: default basic all tracer compiler help config install hat hattools
+.PHONY: default basic all tracer compiler help config install \
+	hat hat-trans hat-lib hat-tools
 
 
 ##### compiler build + install scripts
@@ -168,9 +170,10 @@ help:
 	@echo "Default target is:     basic + heapprofile + timeprofile"
 	@echo "Main targets include:  basic heapprofile timeprofile tracer"
 	@echo "                       all (= basic + heapprofile + timeprofile)"
-	@echo "                       config install clean realclean"
+	@echo "                       hat config install clean realclean"
 	@echo "  (other subtargets:   compiler hmake runtime prelude"
-	@echo "                       greencard hp2graph hattools hoodui)"
+	@echo "                       greencard hp2graph hattools hoodui"
+	@echo "                       hat-trans hat-lib hat-tools)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -295,30 +298,6 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
 
 
-hoodui: $(TARGDIR)/hoodui
-$(TARGDIR)/hoodui: lib/hood.jar
-	touch $(TARGDIR)/hoodui
-$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS)
-	touch $(TARGDIR)/$(MACHINE)/hat
-
-
-lib/hood.jar: $(HOODUI)
-	cd src/hoodui;         $(MAKE) install
-$(HATTOOLS): $(HATUI)
-	cd src/hat/tools;      $(MAKE) HC=nhc98 install
-	cd src/hat/oldtools;   $(MAKE) install	# Not for long!
-$(TARGDIR)/$(MACHINE)/hat-nhc: $(HATLIB) $(HATTOOLS)
-	cd src/compiler98;     $(MAKE) HC=nhc98 hat-trans
-	cd src/hat/lib;	       $(MAKE) HC=nhc98 all
-	cd src/hat/lib;	       $(MAKE) HC=nhc98 install-nhc98
-	touch $(TARGDIR)/$(MACHINE)/hat-nhc
-$(TARGDIR)/$(MACHINE)/hat-ghc: $(HATLIB) $(HATTOOLS)
-	cd src/compiler98;     $(MAKE) HC=ghc hat-trans
-	cd src/hat/lib;	       $(MAKE) HC=ghc all
-	cd src/hat/lib;	       $(MAKE) HC=ghc install-ghc
-	touch $(TARGDIR)/$(MACHINE)/hat-ghc
-
-
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=z install
 	#cd src/hat/runtime;    $(MAKE) CFG=z install
@@ -371,6 +350,44 @@ $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 script/errnogen.c: script/GenerateErrNo.hs
 	hmake script/GenerateErrNo
 	script/GenerateErrNo +RTS -H2M -RTS >script/errnogen.c
+
+
+######### tracing with HOOD
+
+hoodui: $(TARGDIR)/hoodui
+$(TARGDIR)/hoodui: lib/hood.jar
+	touch $(TARGDIR)/hoodui
+lib/hood.jar: $(HOODUI)
+	cd src/hoodui;         $(MAKE) install
+
+
+######### tracing with Hat
+hat-trans: hat-trans-$(BUILDCOMP)
+hat-lib:   hat-lib-$(BUILDCOMP)
+hat-tools: hat-tools-$(BUILDCOMP)
+hat-$(BUILDCOMP): hat-trans-$(BUILDCOMP) hat-lib-$(BUILDCOMP) \
+			hat-tools-$(BUILDCOMP)
+
+$(TARGDIR)/$(MACHINE)/hat-trans-ghc: $(HATTRANS)
+	cd src/compiler98;	$(MAKE) HC=ghc hat-trans
+	touch $(TARGDIR)/$(MACHINE)/hat-trans-ghc
+$(TARGDIR)/$(MACHINE)/hat-trans-nhc: $(HATTRANS)
+	cd src/compiler98;	$(MAKE) HC=nhc98 hat-trans
+	touch $(TARGDIR)/$(MACHINE)/hat-trans-nhc
+$(TARGDIR)/$(MACHINE)/hat-lib-ghc: $(HATLIB)
+	cd src/hat/lib;		$(MAKE) HC=ghc all install-ghc
+	touch $(TARGDIR)/$(MACHINE)/hat-lib-ghc
+$(TARGDIR)/$(MACHINE)/hat-lib-nhc: $(HATLIB)
+	cd src/hat/lib;		$(MAKE) HC=nhc98 all install-nhc98
+	touch $(TARGDIR)/$(MACHINE)/hat-lib-nhc
+$(TARGDIR)/$(MACHINE)/hat-tools-ghc: $(HATUI)
+	cd src/hat/tools;      $(MAKE) HC=ghc install
+	#cd src/hat/oldtools;   $(MAKE) install
+	touch $(TARGDIR)/$(MACHINE)/hat-tools-ghc
+$(TARGDIR)/$(MACHINE)/hat-tools-nhc: $(HATUI)
+	cd src/hat/tools;      $(MAKE) HC=nhc98 install
+	#cd src/hat/oldtools;   $(MAKE) install
+	touch $(TARGDIR)/$(MACHINE)/hat-tools-nhc
 
 
 ##### scripts for packaging various distribution formats
@@ -538,7 +555,7 @@ clean: cleanhi
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
-	-cd src/hat/tools;      $(MAKE) clean
+	-cd src/hat/tools &&    $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(BUILDDIR)/obj*			# all object files
 
