@@ -86,9 +86,13 @@ CPPAS="${CC} -x c -S"
 CPPASFLAGS=" -I${NHC98INCDIR}/ "
 #CPPASFLAGS=" -I- -I${NHC98INCDIR}/ "
 
-GREENCARD=${GREENCARD-"$NHC98LIBDIR/$MACHINE/greencard-nhc98 -"}
+GREENCARD="$NHC98LIBDIR/$MACHINE/greencard-nhc98"
+if test $USINGRTS -eq 0 ; then
+  GREENCARD="$GREENCARD -"
+fi
 GREENCARDOPTS=${GREENCARDOPTS}" -tnhc98"
 GRCC="${CC} -I${NHC98INCDIR}/"
+HSC2HS="$NHC98BINDIR/hsc2hs"	# hsc2hs script handles USINGRTS
 
 PACKAGES=
 
@@ -235,10 +239,11 @@ processArgs () {
     -U*   ) CPPFLAGS=$CPPFLAGS" "$1;;
     -*    ) COMPFLAGS=$COMPFLAGS" "$1;;
     *.s   ) COMPFILES=$COMPFILES" "$1;;
-    *.hc   ) COMPFILES=$COMPFILES" "$1;;
+    *.hc  ) COMPFILES=$COMPFILES" "$1;;
     *.c   ) COMPFILES=$COMPFILES" "$1;;
     *.hs  ) COMPFILES=$COMPFILES" "$1;;
     *.lhs ) COMPFILES=$COMPFILES" "$1;;
+    *.hsc ) HSCFILES=$HSCFILES" "$1;;
     *.gc  ) GRFILES=$GRFILES" "$1;;
     *     ) LDFILES=$LDFILES" "$1;; 
     esac
@@ -360,6 +365,46 @@ case $GRFILES in
       fi
       COMPFILES=$COMPFILES" "$GRFILE
     fi
+
+    shift
+  done;;
+esac
+
+# Now for the hsc2hs preprocessor.
+case $HSCFILES in
+""   ) ;;
+*    )
+  set $HSCFILES
+  while test $1
+  do
+    case $1 in
+    *.hsc  ) BASENAME=`basename $1 .hsc` ;;
+    esac
+    DIRNAME=`dirname $1`
+    objdir=`findDir "$DIRNAME" "$OBJDIR"`
+
+    HSCFILE=$DIRNAME/$BASENAME.hsc
+    HSFILE=$DIRNAME/$BASENAME.hs
+
+    if test $MFLAG -eq 1
+    then
+      echo "`basename $HSCFILE .hsc`: " \
+      `grep '^import' $HSCFILE | awk '{ print $2 }' | awk -F '(' '{ print $1 }'`
+      shift
+      continue
+    fi
+    if test $VFLAG -eq 1
+    then
+      echo `basename $HSC2HS` $CINCDIRS $HSCFILE
+    fi
+    $HSC2HS $CINCDIRS $HSCFILE
+    if test $? -ne 0
+    then
+      echo "`basename $HSC2HS` failed on $HSCFILE"
+      exit 1
+    fi
+
+    COMPFILES=$COMPFILES" "${HSFILE}
 
     shift
   done;;
