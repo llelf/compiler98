@@ -65,17 +65,26 @@ z (InfoInstance unique  nt iClass) =
 z (InfoName pos unique tid Int ptid) =
 -}
 
+clearI :: a -> Info
 clearI _ = InfoClear
 
 
 --isClear InfoClear = True
 --isClear _ = False
 
+isMethod :: Info -> Bool
+
 isMethod (InfoMethod unique tid fix nt annot iClass) = True
 isMethod _ = False
 
+
+isData :: Info -> Bool 
+
 isData (InfoData   unique tid exp nt dk) = True
 isData _ = False
+
+
+isRealData :: Info -> Bool
 
 isRealData (InfoData   unique tid exp nt dk) =
       case dk of
@@ -84,6 +93,9 @@ isRealData (InfoData   unique tid exp nt dk) =
 	(DataPrimitive size) -> True
 	(Data unboxed  constrs) -> True
 isRealData info = error ("isRealData " ++ show info)
+
+
+isRenamingFor :: AssocTree Int Info -> Info -> NewType
 
 isRenamingFor st (InfoData  unique tid exp nt (DataTypeSynonym _ depth))   = nt
 isRenamingFor st info@(InfoData  unique tid exp nt (DataNewType _ constrs)) =
@@ -94,6 +106,9 @@ isRenamingFor st info@(InfoData  unique tid exp nt (DataNewType _ constrs)) =
                Nothing -> error ("Cannot find info for newtype constructor: "++show info)
 isRenamingFor st info = error ("isRenamingFor " ++ show info)
 
+
+isDataUnBoxed :: Info -> Bool  
+ 
 isDataUnBoxed (InfoData   unique tid exp nt dk) =
       case dk of
 	(DataTypeSynonym unboxed depth) -> unboxed
@@ -102,11 +117,19 @@ isDataUnBoxed (InfoData   unique tid exp nt dk) =
 	(DataPrimitive size) -> True
 isDataUnBoxed info = error ("isDataUnBoxed: " ++ show info)
 
+
+isField :: Info -> Bool
+
 isField (InfoField _ _ _ _ _) = True
 isField _ = False
 
+isClass :: Info -> Bool
+
 isClass (InfoClass _ _ _ _ _ _ _) = True
 isClass _ = False
+
+
+depthI :: Info -> Maybe Int
 
 depthI (InfoData   unique tid exp nt dk) =
       case dk of
@@ -114,10 +137,16 @@ depthI (InfoData   unique tid exp nt dk) =
 	_ -> Nothing
 depthI _ = Nothing
 
+
+updTypeSynonym :: Bool -> Int -> Info -> Info
+
 updTypeSynonym unboxed depth (InfoData   unique tid exp nt dk) =
       case dk of
 	(DataTypeSynonym _ _) ->
 	  (InfoData   unique tid exp nt (DataTypeSynonym unboxed depth)) 
+
+
+updNewType :: Bool -> Info -> Info
 
 updNewType unboxed (InfoData   unique tid exp nt dk) =
       case dk of
@@ -125,6 +154,8 @@ updNewType unboxed (InfoData   unique tid exp nt dk) =
 
 
 -- newNT is only applied to identifiers without types, i.e. never methods of any kind!
+newNT :: NewType -> Info -> Info
+
 newNT nt (InfoVar unique tid fix exp _ annot) =  InfoVar unique tid fix exp nt annot
 
 
@@ -190,11 +221,18 @@ addInstanceI con free ctxs info@(InfoUsedClass u uses inst) =
 addInstanceI con free ctxs (InfoUsed u uses) = 
 	addInstanceI con free ctxs (InfoUsedClass u uses initAT)
 
--- joinInsts :: AssocTree Int ([Int],[(Int,Int)]) -> AssocTree Int ([Int],[(Int,Int)]) -> AssocTree Int ([Int],[(Int,Int)])
+
+joinInsts :: AssocTree Int a -> AssocTree Int a -> AssocTree Int a
+
 joinInsts inst inst' =
   foldr ( \ (k,v) inst -> addAT inst sndOf k v) inst (treeMapList (:) inst')
 
-constrsI (InfoName  unique tid i ptid) = [unique]   -- this is a lie! but it is consistent with belongstoI :-)
+
+{- Determine constructors from the info for a type -}
+constrsI :: Info -> [Int]
+
+constrsI (InfoName  unique tid i ptid) = [unique]   
+  -- ^this is a lie! but it is consistent with belongstoI :-)
 constrsI (InfoData   unique tid exp nt dk) =
       case dk of
 	(DataTypeSynonym unboxed depth) ->  strace ("Constr of type synonym " ++ show tid) []
@@ -208,6 +246,9 @@ updConstrsI (InfoData   unique tid exp nt dk) constrs' =
 	(Data unboxed  constrs) -> InfoData   unique tid exp nt (Data unboxed  constrs')
 
 fieldsI (InfoConstr unique tid fix nt fields iType) = fields
+
+
+combInfo :: Info -> Info -> Info
 
 combInfo  InfoClear                       info'                     = info'
 combInfo (InfoUsed _ w)                  (InfoUsed u' w')           = InfoUsed u' (w++w')
@@ -226,7 +267,8 @@ combInfo info@(InfoData u tid exp nt dk) info'@(InfoData u' tid' exp' nt' dk')  
   case dk' of
     Data unboxed [] -> info
     _ -> if isExp exp' then info' else info
-combInfo info                        info'                            =  -- Use new (if possible) so that code can override old imported
+combInfo info                        info'                            =  
+  -- Use new (if possible) so that code can override old imported
 	if isExp (expI info)
 	then info
         else info'
@@ -267,14 +309,21 @@ fixityI (InfoMethod  unique tid fix nt annot iClass) = fix
 fixityI _ = (InfixDef,9::Int)
 
 
+belongstoI :: Info -> Int
+
 belongstoI (InfoConstr  unique tid fix nt fields iType) = iType
 belongstoI (InfoField   unique tid icon_offs iData iSel) = iData
 belongstoI (InfoMethod  unique tid fix nt annot iClass) = iClass
-belongstoI (InfoIMethod  unique tid nt annot iMethod) = iMethod  -- Maybe ought to be it's own function
+belongstoI (InfoIMethod  unique tid nt annot iMethod) = iMethod  
+  -- ^Maybe ought to be it's own function
 belongstoI (InfoDMethod  unique tid nt annot iClass) = iClass
 belongstoI (InfoInstance unique  nt iClass) = iClass
-belongstoI (InfoName  unique tid i ptid) = unique   -- this is a lie! but it is consistent with constrsI :-)
+belongstoI (InfoName  unique tid i ptid) = unique   
+  -- ^this is a lie! but it is consistent with constrsI :-)
 belongstoI info =  error ("belongstoI " ++ show info)
+
+
+profI :: Info -> TokenId
 
 profI (InfoData   unique tid exp nt dk) = tid
 profI (InfoClass  u tid _ _ _ _ _) = tid
