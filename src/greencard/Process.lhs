@@ -29,7 +29,11 @@ import PrelBase(maybe) -- workaround for GHC 2.02
 #endif
 
 #if defined(__HASKELL98__)
+#  if !defined(__HBC__)
 import IO(hPutStrLn)
+#  else
+hPutStrLn h s = hPutStr h s >> hPutChar h '\n'
+#  endif
 #define MPLUS `mplus`
 #else
 #define MPLUS ++
