@@ -5,8 +5,8 @@ module HmakeConfig where
 
 -- Known Haskell compilers and their locations are all automatically
 -- generated into LocalConfig.
-import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
-                    hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
+--import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
+--                    hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
 
 #ifdef __HBC__
 import UnsafePerformIO
@@ -25,8 +25,29 @@ withDefault name def = unsafePerformIO $
              if null val then return def else return val)
          (\e-> return def)
 
+-- Definitions previously imported from LocalConfig
+hmakeversion = "INSTALLVER" `withDefault` "1.8 or better"
+builtby      = "BUILTBY"    `withDefault` "unknown"
+ghcKnown     = case "ghcknown" `withDefault` "no" of
+                 "yes" -> True
+                 _     -> False
+hbcKnown     = case "hbcknown" `withDefault` "no" of
+                 "yes" -> True
+                 _     -> False
+nhcKnown     = case "nhc98known" `withDefault` "no" of
+                 "yes" -> True
+                 _     -> False
+ghcdir       = "GHCINCDIR" `withDefault` "unknown"
+hbcdir       = "HBCDIR" `withDefault` "unknown"
+nhc98dir     = "NHC98INCDIR" `withDefault` "unknown"
+ghcver       = read ("ghcsym" `withDefault` "0") `asTypeOf` 0
+ghclang      = read ("GHC" `withDefault` "0") `asTypeOf` 0
+defaultHc    = "COMP" `withDefault` "nhc98"
+
+
 -- What compilers are possible choices?
 data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
+toComp "gcc"   = Nhc98	-- to cope with bootstrapping from C.
 toComp "nhc98" = Nhc98
 toComp "ghc"   = Ghc
 toComp "hbc"   = Hbc
@@ -52,7 +73,7 @@ preludePaths c  = case c of
 nonstdCoerce c  = case c of
     Nhc98 -> "import NonStdUnsafeCoerce\n\ 
               \coerce=unsafeCoerce"
-    Hbc   -> "#define coerce coerceNotFound"
+    Hbc   -> "coerce = id	-- wrong"
     Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
              \coerce :: a -> b\ncoerce = unsafeCoerce#"
     _     -> ""

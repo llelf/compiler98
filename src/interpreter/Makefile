@@ -1,7 +1,9 @@
 include Makefile.inc
 
-PROG =	$(MACHINE)/hi$(EXE)
-SRCS =	$(MACHINE)/hi.hs $(MACHINE)/HmakeConfig.hs $(MACHINE)/LocalConfig.hs
+OBJDIR = ${BUILDDIR}/obj/interpreter
+TARGET = ${DST}/hi$(EXE)
+
+SRCS   = hi.hs HmakeConfig.hs
 
 
 ifeq "${BUILDWITH}" "ghc"
@@ -11,27 +13,26 @@ endif
 ifeq "${BUILDWITH}" "hbc"
 endif
 
-all: $(PROG)
-install: all
-	mv $(PROG) $(DST)
+all: $(TARGET)
+install: $(TARGET)
+cfiles:
+	$(LOCAL)hmake -nhc98 -C hi.hs
 clean:
-	-rm -f $(PROG)
-	cd $(MACHINE); rm -f *.hi *.o
+	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/hi$(EXE)
+realclean: clean
+	-rm -f *.c $(TARGET)
 
-$(PROG): $(SRCS)
-	cd $(MACHINE); $(LOCAL)hmake -$(BUILDWITH) $(shell echo $(BUILDOPTS)) hi
+$(TARGET): $(OBJDIR) $(SRCS)
+	$(LOCAL)hmake -$(BUILDWITH) hi -d$(OBJDIR) $(shell echo $(BUILDOPTS))
+	mv $(OBJDIR)/hi$(EXE) $(TARGET)
+	strip $(TARGET)
 
-$(MACHINE)/hi.hs: hi.hs
-	cp hi.hs $(MACHINE)
-$(MACHINE)/HmakeConfig.hs: HmakeConfig.hs
-	cp HmakeConfig.hs $(MACHINE)
+$(OBJDIR):
+	mkdir -p $(OBJDIR)
 
-fromC: $(SRCS)		# actually, make with fresh nhc98, not from C.
-	cd $(MACHINE); $(LOCAL)nhc98 -c      LocalConfig.hs
-	cd $(MACHINE); $(LOCAL)nhc98 -c -cpp HmakeConfig.hs
-	cd $(MACHINE); $(LOCAL)nhc98 -c -cpp hi.hs
-	$(LOCAL)nhc98 -o $(PROG) $(MACHINE)/*.o
-	mv $(PROG) $(DST)
+fromC: $(OBJDIR)
+	$(LOCAL)nhc98 -cpp -o $(TARGET) -d$(OBJDIR) *.c
+	strip $(TARGET)
 
 
 paper.ps: paper.dvi
