@@ -1,9 +1,0 @@
-module Maybe
-(Var "catMaybes",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "fromJust",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "fromMaybe",Has{args=2,fixity=Def,priority=9,letBound=True})
-(Var "isJust",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "isNothing",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "listToMaybe",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "mapMaybe",Has{args=1,fixity=Def,priority=9,letBound=True})
-(Var "maybeToList",Has{args=1,fixity=Def,priority=9,letBound=True})
