@@ -11,17 +11,12 @@ module GcodeLow
 	,fixStr,showId
 	) where
 
-import Char
-
 import Gcode
 import Extra(strStr,splitIntegral,SplitIntegral(..))
 import IntState(strIS,IntState,dummyIntState)
 import Prim(strPrim)
 import Machine
-
-#if defined(__HASKELL98__)
-#define isAlphanum isAlphaNum
-#endif
+import SysDeps(isAlphaNum)
 
 extra = 4::Int	-- make room for largest profile info
 
@@ -275,7 +270,7 @@ fixStr s
 
 fixStr' [] = id
 fixStr' (c:cs)
-  | isAlphanum c = showChar c . fixStr' cs
+  | isAlphaNum c = showChar c . fixStr' cs
   | otherwise    = showChar '_' . shows (fromEnum c) . fixStr' cs
 
 showJump j i =

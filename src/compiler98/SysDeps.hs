@@ -1,5 +1,5 @@
 module SysDeps (
-   module PS, trace
+   module PS, trace, isAlphaNum
 ) where
 
 #if __GLASGOW_HASKELL__ >= 502
@@ -14,4 +14,13 @@ import NonStdTrace (trace)
 import Debug.Trace (trace)
 #else
 import IOExts      (trace)
+#endif
+
+#if defined(__HASKELL98__)
+import Char        (isAlphaNum)
+#else
+import Char        (isAlphanum)
+
+isAlphaNum :: Char -> Bool
+isAlphaNum = isAlphanum
 #endif

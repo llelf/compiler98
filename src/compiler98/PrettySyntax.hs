@@ -11,10 +11,6 @@ module PrettySyntax
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
 
-#if !defined(__HASKELL98__)
-#define isAlphaNum isAlphanum
-#endif
-
 import Extra(Pos(..),noPos)
 import PrettyLib
 import Syntax hiding (noDecls)
@@ -24,8 +20,7 @@ import IntState(IntState,strIS,lookupIS)
 import Nice(niceInt,niceNT,mkAL)
 import Info(Info(InfoData),tidI)
 import NT(NewType(NewType))
-import SysDeps (unpackPS)
-import Char(isAlphaNum)
+import SysDeps (unpackPS,isAlphaNum)
 import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
 

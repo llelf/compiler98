@@ -3,17 +3,13 @@ module LexLow(lexId,isLexId
              ) where
 
 import Ratio
-import Char
+import Char(isAlpha,isUpper,isLower,isDigit)
 
 import HbcOnly(makeDouble)
 import Lex
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS,isAlphaNum)
 import TokenId(TokenId,visible,qualify,t_List)
 import Extra(isNhcOp)
-
-#if !defined(__HASKELL98__)
-#define isAlphaNum isAlphanum
-#endif
 
 data LEX_LOW =		-- the trailing String is the rest of the input
    LEX_ERROR Char String

@@ -1,18 +1,14 @@
 module LexPre(lexPre,PosTokenPre) where
 
-import Char
+import Char(isSpace,isDigit,isAlpha)
 
 import Extra(snd3)
 import Error(errorLC)
 import Lex
 import LexLow
 import LexStr	-- includes: tab,lexChr
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString,unpackPS,isAlphaNum)
 import TokenId(TokenId,t_List,t_Arrow,t_Pair,t_Tuple)
-
-#if defined(__HASKELL98__)
-#define isAlphanum isAlphaNum
-#endif
 
 type PosTokenPre = (PackedString,Int,Int,Lex)
 
@@ -31,7 +27,7 @@ iPreLex u file r c ('\xa0':xs)     = iPreLex u file r (c+1) xs	-- &nbsp;
 iPreLex u file r c ('\t':xs)       = iPreLex u file r (tab c) xs
 iPreLex u file r c ('-':'-':xs)
   | null munch || isSpace nextchr || nextchr `elem` ",()[]{};\"'`"
-     || isAlphanum nextchr = skipline (iPreLex u file (r+1) 1) xs
+     || isAlphaNum nextchr = skipline (iPreLex u file (r+1) 1) xs
 	where
 		munch = dropWhile (=='-') xs
                 nextchr = head munch
