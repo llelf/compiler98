@@ -3,11 +3,14 @@ module System where
 import PackedString(PackedString,unpackPS)
 import CString
 import DIO
+import DIOError
 
-cGetEnv primitive 1 :: CString -> PackedString
+cGetEnv primitive 1 :: CString -> Either Int PackedString
 
 primGetEnv str =
   IO ( \ world ->
-	   let args = cGetEnv (toCString str)
-	   in args `seq` Right (unpackPS args) )
+           let cstr = toCString str in
+	   case cGetEnv cstr of
+             Left errno -> Left (IOErrorSystem cstr errno)
+             Right ps   -> Right (unpackPS ps))
 

@@ -53,7 +53,7 @@ cleanExtraC:
 ${OBJDIR}/PrimError.o: PrimError.hs  ${OBJDIR}/CExitWith.o
 ${OBJDIR}/PrimExitWith.o: PrimExitWith.hs ${OBJDIR}/../PreludeIO/DIO.o ${OBJDIR}/CExitWith.o
 ${OBJDIR}/PrimGetArgs.o: PrimGetArgs.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimGetEnv.o: PrimGetEnv.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimGetEnv.o: PrimGetEnv.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o ${OBJDIR}/../PreludeIO/DIOError.o
 ${OBJDIR}/PrimGetProgName.o: PrimGetProgName.hs  ${OBJDIR}/../PreludeIO/DIO.o
 ${OBJDIR}/PrimHClose.o: PrimHClose.hs   ${OBJDIR}/../PreludeIO/DIO.o
 ${OBJDIR}/PrimHFileSize.o: PrimHFileSize.hs   ${OBJDIR}/../PreludeIO/DIO.o
@@ -93,7 +93,7 @@ ${OBJDIR}/_Driver.o: _Driver.hs ${OBJDIR}/../PreludeIO/DIO.o
 PrimError.c:          CExitWith.c
 PrimExitWith.c:       ../PreludeIO/DIO.c CExitWith.c
 PrimGetArgs.c:        ../PreludeIO/DIO.c
-PrimGetEnv.c:         CString.c  ../PreludeIO/DIO.c
+PrimGetEnv.c:         CString.c  ../PreludeIO/DIO.c ../PreludeIO/DIOError.c
 PrimGetProgName.c:    ../PreludeIO/DIO.c
 PrimHClose.c:         ../PreludeIO/DIO.c
 PrimHFileSize.c:      ../PreludeIO/DIO.c

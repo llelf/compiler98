@@ -22,5 +22,5 @@ int cSystem (char *cmd) {
 
 import DErrNo
 
-foreign import "cSystem" cSystem :: CString -> IO 
+foreign import "cSystem" cSystem :: CString -> IO (Either .. ..)
 -}
