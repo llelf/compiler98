@@ -148,20 +148,16 @@ preImport :: Flags -> TokenId -> Tree (TokenId,IdKind)
 --    Just xs -> export only entities from the list xs
 
 preImport flags mtid@(Visible mrps) need (Just expdecls) impdecls =
-  case transImport impdecls of
-    Left err -> Left err
-    Right impdecls ->
-      Right ( if null expdecls || (isJust . lookupAT exportAT) (mtid,Modid)
-                then reExportAll
-                else reExportTid mrps exportAT
-            , map (mkNeed need exportAT) impdecls)
+  let impdecls' = transImport impdecls in
+  Right ( if null expdecls || (isJust . lookupAT exportAT) (mtid,Modid)
+          then reExportAll
+          else reExportTid mrps exportAT
+        , map (mkNeed need exportAT) impdecls')
   where
   exportAT = mkExportAT expdecls
 preImport flags mtid@(Visible mrps) need Nothing impdecls =
-  case transImport impdecls of
-    Left err -> Left err
-    Right impdecls ->
-           Right (reExportTid mrps initAT, map (mkNeed need initAT) impdecls)
+  let impdecls' = transImport impdecls in
+  Right (reExportTid mrps initAT, map (mkNeed need initAT) impdecls')
 
 
 {-
@@ -170,13 +166,11 @@ preImport flags mtid@(Visible mrps) need Nothing impdecls =
 -- and checks that all imports are consistent
 -}
 transImport :: [ImpDecl TokenId] 
-            -> Either String{-errors-} [IntImpDecl]
+            -> [IntImpDecl]
 
-transImport impdecls = Right (map finalTouch impdecls2)
-
+transImport impdecls = impdecls'
   where
-
-  impdecls2 =  (sortImport . traverse initAT False)
+  impdecls' =  (sortImport . traverse initAT False)
               -- (ImportQ (noPos,tPrelude) (Hiding []) :
                   (ImportQ (noPos,vis "Ratio") (NoHiding
 				[EntityTyConCls noPos (vis "Rational")
@@ -193,10 +187,10 @@ transImport impdecls = Right (map finalTouch impdecls2)
                           else (Left k,(k,v)) )
           ) impdecls
 
-  traverse :: AssocTree TokenId ([Pos],[TokenId],ImportedNamesInScope)
+  traverse :: AssocTree TokenId ImportedNamesInScope
            -> Bool	-- have we found an explicit Prelude import yet?
 	   -> [ImpDecl TokenId]
-	   -> [(TokenId, ([Pos],[TokenId],ImportedNamesInScope))]
+	   -> [(TokenId, ImportedNamesInScope)]
 
   traverse acc True  []      = treeMapList (:) acc
   traverse acc False []      = traverse acc False [Import (noPos,tPrelude)
@@ -204,19 +198,16 @@ transImport impdecls = Right (map finalTouch impdecls2)
   traverse acc prel (x:xs)  =
     case extractImp x of
       (tid,info) ->
-        traverse (addAT acc comb tid info) (prel || tid==tPrelude) xs
-
-  -- combine two imports: arg is (srcpos, renamings, impspec)
-  comb (p1,a1,spec1) (p2,a2,spec2) = (p1++p2, a1++a2, joinNames spec1 spec2)
+        traverse (addAT acc joinNames tid info) (prel || tid==tPrelude) xs
 
   extractImp (ImportQ  (pos,tid) impspec) = 
-    (tid, ([pos], [],     Q (extractSpec impspec)))
+    (tid, Q (extractSpec impspec))
   extractImp (ImportQas (pos,tid) (apos,atid) impspec) =
-    (tid, ([pos], [atid], Q (extractSpec impspec)))
+    (tid, Q (extractSpec impspec))
   extractImp (Import (pos,tid) impspec) = 
-    (tid, ([pos], [],     NQ (extractSpec impspec)))
+    (tid, NQ (extractSpec impspec))
   extractImp (Importas (pos,tid) (apos,atid) impspec) =
-    (tid, ([pos], [atid], NQ (extractSpec impspec)))
+    (tid, NQ (extractSpec impspec))
 
   extractSpec (NoHiding entities) = Allow (concatMap extractImpEntity entities)
   extractSpec (Hiding entities)   = Deny  (concatMap extractImpEntity entities)
@@ -240,11 +231,6 @@ transImport impdecls = Right (map finalTouch impdecls2)
 --	      ++ ") and explicit hidings (at " ++  
 --            (mixCommaAnd . map (strPos . fst)) hide ++")."]
 -}
-
-
-  finalTouch :: (TokenId, ([Pos],[TokenId],ImportedNamesInScope))
-	     -> IntImpDecl
-  finalTouch (tid,(pos,alts,spec)) =  (tid,spec)
 
 
 {- Obsolete in H'98
@@ -414,5 +400,9 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
       [] -> st
       postidanots ->
 -}
-	 iextractVarsType  reExport q postidanots ctxs typ () st
+	 iextractVarsType (\q tid idkind ->
+                              if imported tid && not (q tid)
+                              then reExport q tid idkind
+                              else IEnone)
+                          q postidanots ctxs typ () st
 
