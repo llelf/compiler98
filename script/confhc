@@ -74,6 +74,29 @@ if [ "$GHCKNOWN" = "" ]
 then  echo "(not found)"
 else  echo "found ${GHCVERSION}"
 fi
+
+
+# There may be another version of ghc to look for.
+COMP=$1
+if [ "`echo $COMP | cut -c1-3`" = "ghc" ]
+then
+  VER=`echo $COMP | cut -c5-`
+  if [ -n "$VER" -a "$VER" != "$GHCVERSION" ]
+  then
+    echo -n "  Looking for $COMP...   "
+    if which $COMP >/dev/null 2>&1
+    then
+      GHC2KNOWN=`which $COMP`
+      GHC2VERSION=`${GHC2KNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
+      echo $GHC2VERSION | tr "." " " | ( read x y z; echo $x$y; ) \
+						 >targets/$MACHINE/ghcsym;
+    fi
+    if [ "$GHC2KNOWN" = "" ]
+    then  echo "(not found)"
+    else  echo "found ${GHC2VERSION}"
+    fi
+  fi
+fi
   
   
 # Finally, check for a previous installation of nhc98.
@@ -134,12 +157,13 @@ INVOKE="$PWD/script/hmake-config $PWD/lib/$MACHINE/hmakerc"
        echo "$INVOKE add ${GHCKNOWN}"
        echo "$INVOKE add ${GHCKNOWN}-${GHCVERSION}"
   fi;
+  if [ "$GHC2KNOWN" != "" ]
+  then echo "$INVOKE add ghc-${GHC2VERSION}"
+       echo "$INVOKE add ${GHC2KNOWN}"
+  fi;
   if [ "$NHCKNOWN" != "" ]
   then echo "$INVOKE add nhc98"
        echo "$INVOKE add ${NHCKNOWN}"
-  fi;
-  if [ "$BUILDHMAKE" != "ghc" -a "$BUILDHMAKE" != "nhc98" ]
-  then echo "$INVOKE add ${BUILDHMAKE}"
   fi;
 } >targets/$MACHINE/hmake3.config
 echo $BUILDHMAKE >targets/$MACHINE/buildwith
