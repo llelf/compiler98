@@ -1,0 +1,71 @@
+<html><head><title>The <em>hmake interactive</em> line editor</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The <em>hmake interactive</em> line editor</h1></center>
+
+<hr>
+<p>
+<em>Hmake interactive</em> allows you to type expressions at the
+commandline, one expression per line.  If you have a long expression,
+you are likely to make a mistake somewhere.  Hence, we include a
+simple line editor to allow you to correct mistakes before pressing
+the <tt>return</tt> key.
+
+<p>
+This line editor does <b>not</b> provide the full functionality you
+would expect from, say, the <em>readline</em> library that is often
+linked into <em>Hugs</em>.  In particular, there is not yet any
+history mechanism for retrieving earlier expressions or commands.
+It just provides a few very basic facilities - and of course, it is
+written fully in Haskell'98.  Hence, do feel free to change or add
+your own preferred keystrokes for editing.
+
+
+
+<h3>Editing Keystrokes</h3>
+<p>
+A word of warning: the keystrokes noted in this table seem to be
+extremely dependent on the terminal settings of the environment in
+which you run <em>hi</em>.  You might need to experiment a little
+to discover what works on your machine.  For my shell, I need to
+set <tt>stty -icanon min 1</tt> for these to work.
+<center>
+<table border=1 width=100%><tr>
+<td><b>backspace</b><br>
+    <b>^H</b></td>
+    <td>move the cursor left by one character without changing anything</td>
+</tr><tr>
+<td><b>delete</b><br>
+    <b>^?</b></td>
+	<td>delete the character under the cursor (not to the left!)</td>
+</tr><tr>
+<td><b>^L</b></td>
+    <td>move the cursor right by one character without changing anything</td>
+</tr><tr>
+<td><b>^K</b></td>
+    <td>kill the line (abandon it completely)</td>
+</tr><tr>
+<td><b>return</b><br>
+    <b>^J</b><br>
+    <b>^M</b></td>
+    <td>accept the whole line (regardless of cursor position)</td>
+</tr></table>
+</center>
+
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 2000-06-21<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+
