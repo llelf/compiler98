@@ -20,7 +20,9 @@ parseExports =
     Just `parseChk` lpar `apCut` manySep comma parseExport `chk` 
       optional comma `chk` rpar
         `orelse`
-    parse Nothing `chk` lit (L_ACONID (TupleId 0))
+    parse Nothing `chk` (lit (L_ACONID (TupleId 0))
+                            `orelse`
+                         lit (L_ACONID (TupleId 2)))
         `orelse`
     parse (Just [])
 
@@ -59,7 +61,8 @@ deQualify   (pos,Qualified a b) = (pos, (Visible . packString . concat)
 
 
 parseImpSpec =
-    (NoHiding []) `parseChk` k_unit                  -- fix for import Module()
+    (NoHiding []) `parseChk` (k_unit `orelse` lit (L_ACONID (TupleId 2)))
+			-- fix for  import Module()  and  import Module (,)
         `orelse`
     NoHiding `parseChk` lpar `apCut` manySep comma parseEntity `chk` 
       optional comma `chk` rpar
