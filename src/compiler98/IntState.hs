@@ -2,7 +2,7 @@
 Internal state of the compiler 
 used from the renaming pass until code generation
 -}
-module IntState(module IntState, module Info, AssocTree(..), Tree) where
+module IntState(module IntState, module Info) where
 
 import AssocTree
 import NT

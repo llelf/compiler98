@@ -1,12 +1,7 @@
 {- ---------------------------------------------------------------------------
 Internal state of the compiler used from need analysis until renaming
 -}
-module ImportState
-	(module ImportState
-	,module Info 
---	,PackedString
-	,TokenId,Decl,InfixClass,IdKind
-        ,NewType,Pos(..)) where
+module ImportState (module ImportState, module Info, Decl) where
 
 import SysDeps(PackedString,packString,unpackPS)
 import NT
