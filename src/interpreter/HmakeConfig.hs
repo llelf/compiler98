@@ -12,8 +12,12 @@ module HmakeConfig where
 import System
 #ifdef __HBC__
 import UnsafePerformIO
+#ifdef __HASKELL98__
 import GetPid
 getProcessID = getPid
+#else
+getProcessID = return 3154	-- arbitrary number
+#endif
 #endif
 #ifdef __NHC__
 import IOExtras (unsafePerformIO)
