@@ -120,7 +120,7 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-         script/hmakeconfig.inst script/nhc98tracer.inst lib/nhctracer.jar \
+         script/hmakeconfig.inst script/rtb.inst lib/rtb.jar \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \

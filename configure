@@ -397,7 +397,7 @@ then
     echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
     ( echo "ENDIAN=$ENDIAN";
       echo "BUILDWITH=$BUILDWITH";
-      echo "BUILDOPTS=$BUILDOPTS";
+      echo "BUILDOPTS=\"$BUILDOPTS\"";
       case $RTSFLAG in
         no)  echo "USINGRTS=0" ;;
         yes) echo "USINGRTS=1" ;;
@@ -502,8 +502,8 @@ else	# [ "$INSTALL" = "yes" ]
     #  echo "EXE=$EXE";
     #  echo "CC=$CCC";
     #) >$LIBDIR/$VERSION/config
-    echo -n "nhctracer.jar "
-    cp $BUILDLIBDIR/nhctracer.jar $LIBDIR
+    echo -n "rtb.jar "
+    cp $BUILDLIBDIR/rtb.jar $LIBDIR
     echo
   else
     echo 'Not (re-)installing executables and library files'
@@ -562,10 +562,10 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
-    echo -n "nhc98tracer "
-    sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98tracer.inst |\
+    echo -n "rtb "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/rtb.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98tracer
+    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/rtb
     echo -n "greencard "
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -575,7 +575,7 @@ else	# [ "$INSTALL" = "yes" ]
     echo -n "harch "
     cp script/harch $BINDIR
     echo
-    chmod +x $BINDIR/nhc98 $BINDIR/hmake $BINDIR/nhc98tracer $BINDIR/greencard $BINDIR/hp2graph $BINDIR/harch
+    chmod +x $BINDIR/nhc98 $BINDIR/hmake $BINDIR/rtb $BINDIR/greencard $BINDIR/hp2graph $BINDIR/harch
   else
     echo 'Not (re-)installing scripts'
   fi
