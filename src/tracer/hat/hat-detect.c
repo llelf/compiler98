@@ -32,7 +32,7 @@ NodeList* userTrustedList = NULL; // list of trusted functions
 FunTable memorizedFunsYes = NULL;
 FunTable memorizedFunsNo = NULL;
 NodeList* CAFList = NULL;
-unsigned int precision = 100;
+unsigned int precision = 200;
 int filehandle;
 filepointer mainCAF;
 

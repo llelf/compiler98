@@ -826,8 +826,8 @@ filepointer hatMainCAF(HatFile h) {
 	      return currentOffset;
 	    }
 	    currentOffset = satc;
-	  }
-	}
+	  } else currentOffset = satc;
+	} else currentOffset = satc;
       } else currentOffset = hatSeqNext(h,currentOffset);
       break;
     default:
