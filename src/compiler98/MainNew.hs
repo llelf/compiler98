@@ -408,8 +408,8 @@ main' args = do
    ,escode)	-- :: EmitState
        <- if (sAnsiC flags) 
           then do
-             let eslabs = startEmitState Labels
-                 escode = startEmitState Code
+             let eslabs = emitWord Labels "42" (startEmitState Labels)
+                 escode = emitWord Code   "42" (startEmitState Code)
              return (foldr (\a b-> gcodeGather Labels state b a) eslabs zcons
                     ,foldr (\a b-> gcodeGather Code   state b a) escode zcons)
           else do
