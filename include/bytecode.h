@@ -1,4 +1,3 @@
-
 #ifndef _BYTECODE_H
 #define _BYTECODE_H
 
