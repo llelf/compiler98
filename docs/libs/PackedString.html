@@ -1,0 +1,77 @@
+<html><head><title>The PackedString library</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The PackedString library in nhc98</h1></center>
+
+<hr>
+This document sketches the PackedString library in nhc98.  It is
+closely based on the non-standard PackedString library in hbc.
+It provides a more space-efficient representation of 8-bit character
+strings than the standard list-of-characters representation.
+A PackedString containing n characters occupies at most (n`div`4)+2
+words of heap memory, whereas a fully evaluated ordinary string
+occupies at least (n*2)+2 words.  The price to pay is that the contents
+of a PackedString is always fully evaluated, whereas an ordinary
+String may be lazy.  Thus, an unevaluated String can actually take
+less space than an evaluated PackedString.
+
+
+<hr>
+<h3>The PackedString library</h3>
+<pre>
+module PackedString
+    ( PackedString	-- abstract, instance of Eq, Ord, Show, Read
+    , packString	-- :: String -> PackedString
+    , unpackPS		-- :: PackedString -> String 
+
+    , cons	-- :: Char -> PackedString -> PackedString
+    , nil	-- :: PackedString
+    , head	-- :: PackedString -> Char
+    , tail	-- :: PackedString -> PackedString
+
+    , append	-- :: PackedString -> PackedString -> PackedString
+    , break	-- :: (Char->Bool) -> PackedString -> (PackedString, PackedString)
+    , concat	-- :: [PackedString] -> PackedString
+    , drop	-- :: Int -> PackedString -> PackedString
+    , dropWhile	-- :: (Char->Bool) -> PackedString -> PackedString
+    , filter	-- :: (Char->Bool) -> PackedString -> PackedString
+    , foldl	-- :: (a->Char->a) -> a -> PackedString -> a
+    , foldr	-- :: (Char->a->a) -> a -> PackedString -> a
+    , index	-- :: PackedString -> Int -> Char
+    , length	-- :: PackedString -> Int
+    , lines	-- :: PackedString -> [PackedString]
+    , map	-- :: (Char->Char) -> PackedString -> PackedString
+    , null	-- :: PackedString -> Bool
+    , reverse	-- :: PackedString -> PackedString
+    , span	-- :: (Char->Bool) -> PackedString -> (PackedString, PackedString)
+    , splitAt	-- :: Int -> PackedString -> (PackedString, PackedString)
+    , substr	-- :: PackedString -> Int -> Int -> PackedString
+    , take	-- :: Int -> PackedString -> PackedString
+    , takeWhile	-- :: (Char->Bool) -> PackedString -> PackedString
+    , unlines	-- :: [PackedString] -> PackedString
+    , unwords	-- :: [PackedString] -> PackedString
+    , words	-- PackedString -> [PackedString]
+    )
+where
+
+import Prelude hiding (append,break,concat,cons,drop,dropWhile,
+		filter,foldl,foldr,head,Ix(..),
+		length,lines,Functor(..),map,nil,null,
+		reverse,span,splitAt,substr,tail,take,
+		takeWhile,unlines,unwords,words)
+</pre>
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+2001.11.27<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+
+</td></tr></table>
+</body></html>

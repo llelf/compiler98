@@ -1,0 +1,52 @@
+<html><head><title>The IOExtras library</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The IOExtras library in nhc98</h1></center>
+
+<hr>
+This document sketches the IOExtras library in nhc98.  It is loosely
+based on the non-standard IOExts library in ghc.
+
+<hr>
+<h3>The IOExtras library</h3>
+<pre>
+module IOExtras
+  ( fixIO		-- :: (a->IO a) -> IO a
+  , unsafePerformIO	-- :: IO a -> a
+
+  , IORef		-- data IORef a = <abstract>
+    -- instance Eq (IORef a)
+  , newIORef		-- :: a -> IO (IORef a)
+  , readIORef		-- :: IORef a -> IO a
+  , writeIORef		-- :: IORef a -> a -> IO ()
+
+  , module Ix		-- re-export Ix for the benefit of IOArrays
+  , IOArray		-- data IOArray ix elt -- mutable arrays
+  , newIOArray		-- :: Ix ix => (ix,ix) -> elt -> IO (IOArray ix elt)
+  , boundsIOArray	-- :: Ix ix => IOArray ix elt -> (ix, ix)
+  , readIOArray		-- :: Ix ix => IOArray ix elt -> ix -> IO elt
+  , writeIOArray	-- :: Ix ix => IOArray ix elt -> ix -> elt -> IO ()
+  , freezeIOArray	-- :: Ix ix => IOArray ix elt -> IO (Array ix elt)
+    -- instance Eq (IOArray ix elt)
+
+  , performGC		-- :: IO ()
+  , trace		-- :: String -> a -> a
+  , unsafePtrEq		-- :: a -> a -> Bool
+  ) where
+</pre>
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+2001.11.27<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+
+</td></tr></table>
+</body></html>
+

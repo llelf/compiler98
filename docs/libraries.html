@@ -43,8 +43,7 @@ libraries defined in the official
 </tr><tr>
 <td>Monad</td> <td>yes</td> <td>additional fn: untilM</td>
 </tr><tr>
-<td>Numeric</td> <td>no</td> <td>missing: fromRat, floatToDigits,
-    show[EFG]Float</td>
+<td>Numeric</td> <td>yes</td> <td>additional fn: showIntBase</td>
 </tr><tr>
 <td>Prelude</td> <td>yes</td> <td>.</td>
 </tr><tr>
@@ -54,7 +53,7 @@ libraries defined in the official
 </tr><tr>
 <td>System</td> <td>yes</td> <td>.</td>
 </tr><tr>
-<td>Time</td> <td>no</td> <td>missing: addToClockTime, diffClockTimes</td>
+<td>Time</td> <td>yes</td> <td>.</td>
 
 </tr></table>
 </center>
@@ -73,19 +72,18 @@ Here is the status of non-standard libraries provided by <b>nhc98</b>:
 </tr><tr>
 <td><a href="libs/Bit.html">Bit</a></td> <td>bit-twiddling operations, e.g. and, or, xor</td>
 </tr><tr>
-<td>FFI</td> <td>foreign function interface</td>
+<td><a href="libs/FFI.html">FFI</a></td> <td>foreign function interface</td>
 </tr><tr>
 <td>GreenCard</td> <td>just the standard <tt>%dis</tt> definitions and
                        constructors you need in order to write your own
                        GreenCard files</td>
 </tr><tr>
-<td><a href="http://www.haskell.org/ghc/docs/latest/hslibs/sec-ioexts.html">
-    IOExtras</a></td>
+<td><a href="libs/IOExtras.html">IOExtras</a></td>
     <td>contains IORefs, IOArrays, unsafePerformIO, etc.</td>
 </tr><tr>
 <td>NonStdTrace</td> <td>the common side-effecting <tt>trace</tt> function</td>
 </tr><tr>
-<td>PackedString</td> <td>an efficient representation of strings</td>
+<td><a href="libs/PackedString.html">PackedString</a></td> <td>a space-efficient representation of strings</td>
 
 </tr></table>
 </center>
@@ -98,7 +96,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.04.25<br>
+2001.11.27<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
