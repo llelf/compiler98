@@ -180,6 +180,7 @@ case $CODE in
      CODE=$?
      rm $TMP/hmake$$
      exit $CODE ;;
-  *) echo "Stop - hmake dependency error."
+  *) rm $TMP/hmake$$
+     echo "Stop - hmake dependency error."
      exit $CODE ;;
 esac
