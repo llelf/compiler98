@@ -162,6 +162,9 @@ then
     #GHCDIR=`ghc-pkg --show-package std --field import_dirs`
     #GHCINCDIR=`dirname $GHCDIR`
     GHCDIR=`grep '^libdir' ${whichGHC} | head -1 | sed 's/^libdir=.\(.*\)./\1/'`
+    if [ ! -d $GHCDIR/imports ]
+    then GHCDIR=`grep '^TOPDIROPT' ${whichGHC} | head -1 | sed 's/^TOPDIROPT="*-B\([^";]*\).*/\1/'`
+    fi
     if [ -d $GHCDIR/imports ]
     then GHCINCDIR=$GHCDIR/imports
     else GHCDIR=""
