@@ -16,7 +16,7 @@ esac
 
 
 # Nasty compatibility stuff between /bin/sh/ and bash for arithmetic.
-if sh --version -e | grep -i gnu >/dev/null
+if sh --version | grep -i gnu >/dev/null
 then increment() { ( let x=$1+1; echo $x; ); }
 else increment() { echo $1 + 1 | bc; }
 fi
