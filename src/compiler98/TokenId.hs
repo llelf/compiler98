@@ -14,7 +14,7 @@ qualify rmodule rtoken = Qualified (packString rmodule) (packString rtoken)
 
 data TokenId =
      TupleId Int -- no distinction between the type and the value constructor?
-   | Visible   PackedString
+   | Visible   PackedString  -- unqualified name
    | Qualified PackedString PackedString
      -- token for qualified name: module name, variable name
    | Qualified2 TokenId TokenId	
