@@ -23,7 +23,6 @@ PRELUDEA = \
 	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
-	src/prelude/Hat/Makefile* src/prelude/Hat/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
 	src/prelude/Ix/Makefile* src/prelude/Ix/*.hs
@@ -62,7 +61,6 @@ PRELUDEC = \
 	src/prelude/Directory/*.hc     src/prelude/Directory/*.c \
 	src/prelude/GreenCard/*.hc     src/prelude/GreenCard/*.c \
 	src/prelude/Haskell/*.hc       src/prelude/Haskell/*.c \
-	src/prelude/Hat/*.hc           src/prelude/Hat/*.c \
 	src/prelude/IO/*.hc            src/prelude/IO/*.c \
 	src/prelude/IOExtras/*.hc      src/prelude/IOExtras/*.c \
 	src/prelude/Ix/*.hc            src/prelude/Ix/*.c \
@@ -124,15 +122,15 @@ RUNTIME = \
 	src/runtime/Mk/*.c
 
 RUNTIMET = \
-	src/tracer/Makefile* \
-	src/tracer/runtime/Makefile* \
-	src/tracer/runtime/*.[ch]
+	src/hat/Makefile* \
+	src/hat/runtime/Makefile* \
+	src/hat/runtime/*.[ch]
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
-TRACEUI = src/tracer/ui/Makefile* src/tracer/ui/nhctracer/*
-HATUI	= src/tracer/hat/Makefile* src/tracer/hat/*.[ch] \
-	  src/tracer/hat/*.hs src/tracer/hat/*.gc
-HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
-	  src/tracer/hoodui/com/microstar/xml/*
+TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
+HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] \
+	  src/hat/tools/*.hs src/hat/tools/*.gc
+HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
+	  src/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/*.gc include/*.hx
 DOC = docs/*
 MAN = man/*.1
@@ -212,7 +210,7 @@ $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
-	cd src/tracer/runtime; $(MAKE) install
+	cd src/hat/runtime;    $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
 
 
@@ -269,7 +267,7 @@ $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
 
 $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=p install
-	cd src/tracer/runtime; $(MAKE) CFG=p install
+	cd src/hat/runtime;    $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profruntime
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
@@ -278,7 +276,7 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 
 $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=T install
-	cd src/tracer/runtime; $(MAKE) CFG=T install
+	cd src/hat/runtime;    $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceruntime
 $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=T install
@@ -287,7 +285,7 @@ $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=Tz install
-	cd src/tracer/runtime; $(MAKE) CFG=Tz install
+	cd src/hat/runtime;    $(MAKE) CFG=Tz install
 	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
 $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=Tz install
@@ -301,17 +299,17 @@ $(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) lib/hat-trail.jar
 	touch $(TARGDIR)/$(MACHINE)/hat
 
 
-lib/hat-trail.jar: $(TRACEUI)
-	cd src/tracer/ui;      $(MAKE) CFG=T install
+lib/hat-trail.jar: $(TRAILUI)
+	cd src/hat/trail;      $(MAKE) CFG=T install
 lib/hood.jar: $(HOODUI)
-	cd src/tracer/hoodui;  $(MAKE) install
+	cd src/hoodui;         $(MAKE) install
 $(HATTOOLS): $(HATUI)
-	cd src/tracer/hat;     $(MAKE) install
+	cd src/hat/tools;      $(MAKE) install
 
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=z install
-	cd src/tracer/runtime; $(MAKE) CFG=z install
+	cd src/hat/runtime;    $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeruntime
 $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=z install
@@ -392,7 +390,7 @@ srcDist: $(TARGDIR)/tracepreludeC $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
-	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
+	tar rf nhc98src-$(VERSION).tar $(TRAILUI)
 	tar rf nhc98src-$(VERSION).tar $(HOODUI)
 	tar rf nhc98src-$(VERSION).tar $(HATUI)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
@@ -484,6 +482,23 @@ hmakeBinDist:
 	rm -r hmake-$(HVERSION)
 	gzip hmake-$(HVERSION)-$(MACHINE).tar
 
+HATSCRIPT = script/harch script/hat-trans.inst
+HATSRCS = src/hat/Makefile* \
+	  src/hat/lib/Makefile* src/hat/lib/*.hs \
+	  src/hat/lib/*.[ch] include/art.h \
+	  src/Makefile.inc Makefile.inc
+hatDist:
+	rm -f hat-$(VERSION).tar hat-$(VERSION).tar.gz
+	tar cf hat-$(VERSION).tar $(HATSCRIPT)
+	tar rf hat-$(VERSION).tar $(HATUI)
+	tar rf hat-$(VERSION).tar $(TRAILUI)
+	tar rf hat-$(VERSION).tar $(HATSRCS)
+	mkdir hat-$(VERSION)
+	cd hat-$(VERSION); tar xf ../hat-$(VERSION).tar
+	tar cf hat-$(VERSION).tar hat-$(VERSION)
+	rm -r hat-$(VERSION)
+	gzip hat-$(VERSION).tar
+
 
 ##### cleanup
 
@@ -494,7 +509,7 @@ clean: cleanhi
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
-	cd src/tracer/hat;      $(MAKE) clean
+	cd src/hat/tools;       $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(BUILDDIR)/obj*			# all object files
 
