@@ -149,7 +149,7 @@ void run(NodePtr toplevel)
 #  define Case(x)	l##x
 #  define Break		SHOW(fprintf(stderr,"%s\t\t",instr_names[*ip]);) \
 			SHOW(fprintf(stderr,"hp=0x%x sp=0x%x fp=0x%x ip=0x%x\n",hp,sp,fp,ip);) \
-			register_instr(*ip); goto *labs[*ip++]
+			register_instr(*ip); ip++; goto *labs[*(ip-1)]
 #  define EndDispatch	
 #else
 #  define Dispatch	switch (*ip++) {
