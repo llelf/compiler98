@@ -29,7 +29,7 @@ data Inherited = Inherited
                    Bool              -- True if more debugging output
 data Threaded = Threaded 
                    IntState    -- internal compiler state
-                   [(Pos, Id)] -- defined data constructors
+                   [(Pos, Id)] -- defined data constructors for SRIDTable
 
 type DbgDataTransMonad a = State Inherited Threaded a Threaded
 
@@ -41,9 +41,10 @@ dbgDataTrans :: Flags                -- compiler flags (to test if debugging)
              -> Decls Id         -- input declarations
              -> (Decls Id        -- modified declarations
                 ,IntState            -- modified internal state
-                ,Maybe [(Pos,Id)])   -- defined data constructors, 
+                ,Maybe [(Pos,Id)])   -- defined data constructors
+                                     -- and field selectors for SRIDTable,
                                      -- if transformation performed
-                                     -- for SRIDTable
+
 
 dbgDataTrans flags state reptree lookupPrel dptopdecls =
   if (sDbgTrans flags) 
@@ -107,37 +108,42 @@ dTopDecl (DeclData mb ctx simple constrs tycls) =
         =>>> unitS simple 
         =>>> mapS dConstr constrs =>>> unitS tycls)
 -}
-dTopDecl d@(DeclConstrs pos id constrids) = 
-  dTrace ("DbgDataTrans.dTopDecl.DeclConstrs" ++ show constrids) $
+dTopDecl d@(DeclConstrs pos id fieldIds) = 
+  dTrace ("DbgDataTrans.dTopDecl.DeclConstrs" ++ show fieldIds) $
+  mapS0 addFieldSelector fieldIds >>>
   lookupName noPos id >>>= \(Just idinfo) ->
     case idinfo of
       InfoData did tid ie nt dk ->
 	dTrace ("InfoData: " ++ show tid) $
 	case dk of
 	  Data b constrs ->
-	    mapS0 (addConstr pos) constrs >>>
+	    mapS0 (addConstrField pos) constrs >>>
 	    mapS0 transformConstr constrs >>>
 	    unitS [d]
 	  DataNewType b constrs ->
-	    mapS0 (addConstr pos) constrs >>>
+	    mapS0 (addConstrField pos) constrs >>>
 	    mapS0 transformConstr constrs >>>
 	    unitS [d]
 	  _ -> error ("dk = " ++ show dk)
       _ -> error ("idinfo = " ++ show idinfo)
   --lookupNameStr id >>>= \idstr ->
   --error ("dDecl: DeclConstrs " ++ show pos ++ " " ++ idstr ++ " " 
-  --       ++ show constrids ++ "\n" ++ show idinfo)
-    where transformConstr constr =
-              lookupName noPos constr >>>= \(Just info) ->
-	          case info of
-		      InfoConstr cid tid fix nt annot ty ->
-		          dNewType nt >>>= \nt' ->
-			  wrapRNewType nt' >>>= \nt'' ->
-			  showNT nt'' >>>= \ntstr ->
-		          dTrace ("\nInfoConstr: " ++ show tid ++ 
-                                  " has new type " ++ ntstr) $
-			  updateConstrType constr nt''
-		      _ -> error ("info = " ++ show info)     
+  --       ++ show fieldIds ++ "\n" ++ show idinfo)
+  where
+  addFieldSelector (pos,fieldName,fieldSelector) = 
+    addConstrField pos fieldSelector
+  
+  transformConstr constr =
+    lookupName noPos constr >>>= \(Just info) ->
+    case info of
+      InfoConstr cid tid fix nt annot ty ->
+	dNewType nt >>>= \nt' ->
+	wrapRNewType nt' >>>= \nt'' ->
+	showNT nt'' >>>= \ntstr ->
+	dTrace ("\nInfoConstr: " ++ show tid ++ 
+                " has new type " ++ ntstr) $
+	  updateConstrType constr nt''
+      _ -> error ("info = " ++ show info)     
 dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
   -- Try to get class method types
   lookupName noPos id1 >>>= \clsinfo@(Just (InfoClass i tid ie nt ms ds at)) ->
@@ -722,12 +728,13 @@ updateConstrType id nt =
 	    Threaded (IntState unique rps st' errors) constrs
 
 {-
-Add given data constructor with position to list in threaded state.
+Add given data constructor or field selector with position 
+to list in threaded state.
 Here *only* place where this list is modified in the transformation.
 -}
-addConstr :: Pos -> Id -> a -> Threaded -> Threaded
+addConstrField :: Pos -> Id -> a -> Threaded -> Threaded
 
-addConstr pos id = \inh (Threaded is constrs) ->
+addConstrField pos id = \inh (Threaded is constrs) ->
     Threaded is ((pos, id):constrs)
 
 

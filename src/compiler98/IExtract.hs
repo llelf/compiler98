@@ -289,31 +289,49 @@ combRT u (Right us) =  Right (u:us)
 
 ---- ==================================================
 
+iextractType :: IE -> (Int,Bool) -> Bool -> Bool -> a -> TokenId 
+             -> [(Pos,TokenId)] -> Type TokenId 
+             -> () -> ImportState -> ImportState
 
 iextractType expInfo (depth,unboxed) v q pos tid tvs typ = 
   let al = tvPosTids tvs
   in transTypes al (map snd al) [] [typ] >>>= \ nt ->
      importData v q tid expInfo nt (DataTypeSynonym unboxed depth)
 
+
+{- extend importState by a new data type;
+   the information about the data type comes from an interface file -}
+iextractData :: IE -> Bool -> Bool -> Either Bool Bool -> [Context TokenId] 
+             -> Int -> TokenId -> [(Pos,TokenId)] -> [Constr TokenId] 
+             -> () -> ImportState -> ImportState
+
 iextractData  expInfo v q attr ctxs pos tid tvs constrs = --- !!!!
   let al = tvPosTids tvs 
       free = map snd al
   in transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free [] ctxs nts) ->
      mapS (transConstr v q al free ctxs (last nts)) constrs >>>= \cs ->
-     importData v q tid expInfo nt (case attr of
-						 Right unboxed -> Data unboxed cs
-						 Left  unboxed -> DataNewType unboxed cs) >>>
+     importData v q tid expInfo nt 
+       (case attr of
+	  Right unboxed -> Data unboxed cs
+	  Left  unboxed -> DataNewType unboxed cs) >>>
      checkInstanceCon tid >>>= \ newinsts ->
      mapS0 newInstance newinsts
 
 
-
+iextractDataPrim :: IE -> Bool -> Bool -> Int -> TokenId -> Int 
+                 -> a -> ImportState -> ImportState
 
 iextractDataPrim expInfo v q pos tid size =
      transTid pos TCon tid >>>= \ i ->
      importData v q tid expInfo (NewType [] [] [] [NTcons i []]) (DataPrimitive size) >>>
      checkInstanceCon tid >>>= \ newinsts ->
      mapS0 newInstance newinsts
+
+
+iextractClass :: IE -> Bool -> Bool -> Int -> [Context TokenId] 
+              -> TokenId -> TokenId 
+              -> [([((a,TokenId),b)],[Context TokenId],Type TokenId)] 
+              -> () -> ImportState -> ImportState
 
 iextractClass  expInfo v q pos ctxs tid tvar methods =
   let al = tvTids [tvar] 
@@ -324,11 +342,19 @@ iextractClass  expInfo v q pos ctxs tid tvar methods =
      checkInstanceCls tid >>>= \ newinsts ->
      mapS0 newInstance newinsts
 
+
+newInstance :: (TokenId,TokenId,[Int],[(Int,TokenId,Int)]) 
+            -> a -> ImportState -> ImportState
+
 newInstance (realcls,realcon,free,ctxs) =
   mapS (\ (pos,cls,tvar) -> transTid pos TClass cls >>>= \ cls -> unitS (cls,tvar)) ctxs >>>= \ ctxs ->
   transTid noPos TCon realcon >>>= \ con ->
   transTid noPos TClass realcls >>>= \ _ ->  -- Only to ensure class exists!!
   importInstance realcls con free ctxs
+
+
+iextractInstance :: [Context TokenId] -> a -> TokenId -> Type TokenId 
+                 -> () -> ImportState -> ImportState
 
 iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
   existTid TClass cls >>>= \qcls ->
@@ -352,6 +378,10 @@ iextractVarsType  expFun v q postidanots ctxs typ =
 
 ---
 
+transMethod :: Bool -> Bool -> TokenId -> (Int,a) 
+            -> ([((b,TokenId),c)],[Context TokenId],Type TokenId) 
+            -> () -> ImportState -> ([Int],ImportState)
+
 transMethod v q tvar ctx@(c,tv) (postidanots,ctxs,typ) =
    let al = tvTids (snub (tvar:freeType typ))
        arity = countArrows typ
@@ -363,6 +393,11 @@ transMethod v q tvar ctx@(c,tv) (postidanots,ctxs,typ) =
 		 mapS ( \ ((pos,tid),annot) -> importMethod v q tid nt (Just arity) c) postidanots)
 
 ---
+
+
+transConstr :: Bool -> Bool -> [(TokenId,Int)] -> [Int] -> [(Id,Id)] 
+            -> NT -> Constr TokenId 
+            -> () -> ImportState -> (Int,ImportState)
 
 transConstr v q al free ctxs resType@(NTcons bt _) (Constr pos cid types) = 
   mapS (transFieldType al) types >>>= \ntss ->
@@ -390,14 +425,27 @@ transConstr v q al free ctxs resType@(NTcons bt _) (ConstrCtx forall ectxs' pos 
     unitS c
 
 ---
+
+transFieldType :: [(TokenId,Int)] -> (Maybe [(Int,TokenId)],Type TokenId) 
+               -> () -> ImportState 
+               -> ([(Maybe (Int,TokenId,Int),NT)],ImportState)
+
 transFieldType al (Nothing,typ) =
   transType al typ >>>= \ typ -> unitS [(Nothing,typ)]
 transFieldType al (Just posidents,typ) =
   transType al typ >>>= \ typ ->
-  mapS ( \ (p,v) -> transTid p Field v >>>= \ i -> unitS (Just (p,v,i),typ))  posidents
+  mapS ( \ (p,v) -> transTid p Field v >>>= \ i -> 
+                    unitS (Just (p,v,i),typ))  posidents
+
+
+transTypes :: [(TokenId,Int)] -> [Id] -> [Context TokenId] -> [Type TokenId] -> () -> ImportState -> (NewType,ImportState)
 
 transTypes al free ctxs ts =
   unitS (NewType free []) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+
+
+transTVar :: (Show a, Eq a) => Int -> [(a,Int)] -> a 
+          -> () -> ImportState -> (NT,ImportState)
 
 transTVar pos al v =
   unitS NTvar =>>> uniqueTVar pos al v
@@ -414,6 +462,10 @@ countArrows (TypeCons pos tid [a,f]) =
   then 1 + countArrows f
   else 0
 countArrows _ = 0::Int
+
+
+transType :: [(TokenId,Int)] -> Type TokenId 
+          -> () -> ImportState -> (NT,ImportState)
 
 transType free (TypeApp  t1 t2) = unitS NTapp =>>> transType free t1 =>>> transType free t2
 transType free (TypeCons  pos hs types) = unitS NTcons =>>> transTid pos TCon hs =>>> mapS (transType free) types

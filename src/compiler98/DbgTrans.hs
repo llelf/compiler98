@@ -5,9 +5,9 @@ to produce traces for debugging.
 module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
 
 import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
-import IdKind(IdKind(Con,Var))
+import IdKind(IdKind(Con,Var,TCon))
 import TokenId
-import DbgId(t_R,t_mkTRoot,t_mkTNm 
+import DbgId(t_R,tSR,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal,t_rPatBool
             ,t_lazySat,t_fun,t_tfun,t_primn,t_tprimn
             ,t_prim,t_ap,t_rap,t_tap,t_trap
@@ -28,7 +28,7 @@ import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
-import Info(typeSynonymBodyI)
+import Info(typeSynonymBodyI,IE(IEsel))
 import TypeSubst(substNT)
 import Nice(niceNewType)
 import Flags(Flags,sDbgTrusted)
@@ -838,8 +838,27 @@ dSuspectExp cr parent e@(ExpVar pos id) =
 	  lookupVar pos t_indir >>>= \indir ->
 	  unitS (ExpApplication pos [indir, parent, e])
     Just n -> -- A letbound or global function
-      makeSourceRef pos >>>= \sr ->
-      unitS (ExpApplication pos [e, sr, parent]) 
+      isFieldSelector id >>>= \isSelector ->
+      if isSelector 
+        then
+          lookupVar pos (t_fun 1) >>>= \fun1 ->
+          lookupVar pos (t_indir) >>>= \indir ->
+          lookupCon pos (t_R) >>>= \r ->
+          newVar pos >>>= \selParent ->
+          newVar pos >>>= \record ->
+          makeNTId pos id >>>= \selectorname ->
+          makeSourceRef pos >>>= \sr ->
+          unitS 
+            (ExpApplication pos 
+              [fun1,selectorname
+              ,(ExpLambda pos [selParent,ExpApplication pos 
+                                           [r,record,PatWildcard pos]] 
+                 (ExpApplication pos 
+                   [indir,selParent,ExpApplication pos [e,record]]))
+              ,sr,parent]) 
+        else
+          makeSourceRef pos >>>= \sr ->
+          unitS (ExpApplication pos [e, sr, parent]) 
 dSuspectExp cr parent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -982,8 +1001,28 @@ dTrustExp cr parent hidParent e@(ExpVar pos id) =
 	  lookupVar pos t_indir >>>= \indir ->
 	  unitS (ExpApplication pos [indir, hidParent, e])
     Just n -> -- A letbound or global function
-      lookupVar pos t_mkNoSR >>>= \mkNoSR ->
-      unitS (ExpApplication pos [e, mkNoSR, if cr then hidParent else parent]) 
+      isFieldSelector id >>>= \isSelector ->
+      if isSelector 
+        then
+          lookupVar pos (t_tfun 1) >>>= \tfun1 ->
+          lookupVar pos (t_indir) >>>= \indir ->
+          lookupCon pos (t_R) >>>= \r ->
+          newVar pos >>>= \selParent ->
+          newVar pos >>>= \record ->
+          makeNTId pos id >>>= \selectorname ->
+          makeSourceRef pos >>>= \sr ->
+          unitS 
+            (ExpApplication pos 
+              [tfun1,selectorname
+              ,(ExpLambda pos [selParent,PatWildcard pos
+                              ,ExpApplication pos [r,record,PatWildcard pos]] 
+                 (ExpApplication pos 
+                   [indir,selParent,ExpApplication pos [e,record]]))
+              ,sr,parent]) 
+        else
+          lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+          unitS (ExpApplication pos 
+                  [e, mkNoSR, if cr then hidParent else parent]) 
 dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -1188,6 +1227,11 @@ dPat parent (PatAs pos id p)        = unitS (PatAs pos id) =>>> dPat parent p
 dPat _ p@(PatWildcard pos)          = unitS p 
 dPat parent (PatIrrefutable pos p)  = 
   unitS (PatIrrefutable pos) =>>> dPat parent p
+dPat parent (ExpRecord con@(ExpCon pos id) fieldPats) =
+  wrapR pos =>>> (unitS (ExpRecord con) =>>> mapS dField fieldPats)
+  where
+  dField :: Field Id -> DbgTransMonad (Field Id)
+  dField (FieldExp pos id pat) = unitS (FieldExp pos id) =>>> dPat parent pat
 dPat _ e                            = error ("dPat: no match ")
 
 foldS f z []     = z 
@@ -1430,6 +1474,23 @@ getIdArity id =
         Nothing -> (Nothing, s)
 	Just info -> (Just (arityVI info){-(arityIS istate id)-}, s)
 
+
+{- 
+Most gruesome test to determine if an identifier is a field selector
+of a record. 
+-}
+isFieldSelector :: Id -> DbgTransMonad Bool
+isFieldSelector id =
+  \(Inherited lookupPrel) s@(Threaded istate _ _) ->
+  case lookupIS istate id of
+    Just (InfoVar _ _ _ IEsel _ _) -> 
+        -- id is field selector of record defined in this module
+        (True,s)
+    Just (InfoVar _ _ _ _ (NewType _ _ _ nts) _) 
+      | (lookupPrel (tSR,TCon)) `notElem` concatMap consNT nts ->
+        -- id is field selector of record defined in imported module
+        (True,s)
+    _ -> (False,s)
 
 
 getArity :: [Fun a] -> Int

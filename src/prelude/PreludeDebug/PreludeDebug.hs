@@ -762,7 +762,6 @@ tpap11 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
          in  tpap10 p t' (rf t' a) b c d e f g h i j k 
 
 
-
 {-
 Assure that a trace component of wrapped value exists by construction of Sat.
 Directly used for Cafs

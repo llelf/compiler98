@@ -116,7 +116,21 @@ importCont' :: ImportState
                 -> (Int,Bool) 
                 -> Simple TokenId 
                 -> Type TokenId 
-                -> ImportState,ImportState -> Either Bool Bool -> [Context TokenId] -> Simple TokenId -> [Constr TokenId] -> [(Int,TokenId)] -> ImportState,ImportState -> (Int,TokenId) -> Int -> ImportState,ImportState -> [Context TokenId] -> (Int,TokenId) -> (Int,TokenId) -> [([((Int,TokenId),Maybe Int)],[Context TokenId],Type TokenId)] -> ImportState,ImportState -> [Context TokenId] -> (Int,TokenId) -> Type TokenId -> ImportState,ImportState -> [((Int,TokenId),Maybe Int)] -> [Context TokenId] -> Type TokenId -> ImportState) 
+                -> ImportState
+               ,   ImportState -> Either Bool Bool -> [Context TokenId] 
+                -> Simple TokenId -> [Constr TokenId] -> [(Int,TokenId)] 
+                -> ImportState
+               ,   ImportState -> (Int,TokenId) -> Int 
+                -> ImportState,ImportState -> [Context TokenId] 
+                -> (Int,TokenId) -> (Int,TokenId) 
+                -> [([((Int,TokenId),Maybe Int)]
+                    ,[Context TokenId],Type TokenId)] 
+                -> ImportState
+               ,   ImportState -> [Context TokenId] -> (Int,TokenId) 
+                -> Type TokenId -> ImportState,ImportState 
+                -> [((Int,TokenId),Maybe Int)] -> [Context TokenId] 
+                -> Type TokenId -> ImportState
+               ) 
             -> a 
             -> [Char] 
             -> Maybe [[TokenId]] 
