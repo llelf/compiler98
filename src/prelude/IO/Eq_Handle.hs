@@ -1,7 +1,7 @@
 module IO(Eq(..)) where
 
 import DHandle
-import FFI
+import NHC.FFI
 
 
 foreign import ccall primEqHandleC     :: ForeignObj -> ForeignObj -> Bool

@@ -1,4 +1,4 @@
-module BinArray
+module NHC.BinArray
   ( BinArray(..)
   , newBinArray
   , intoBinArray
@@ -7,8 +7,8 @@ module BinArray
   , getBinArray
   ) where
 
-import qualified Binary
-import Binary
+import qualified NHC.Binary
+import NHC.Binary
 import UnboxedArray (UnboxedArray, allocUBA, wUBA, rUBA, getUBAFree, getUBAEnd)
 
 

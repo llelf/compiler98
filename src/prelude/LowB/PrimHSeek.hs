@@ -1,7 +1,7 @@
 module Prelude where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 
 cHSeek primitive 3 :: Handle -> SeekMode -> Int -> Either IOError ()
 

@@ -1,6 +1,6 @@
 module Directory (removeDirectory) where
 
-import FFI
+import NHC.FFI
 import Monad (when)
 
 foreign import ccall rmdir :: PackedString -> IO Int

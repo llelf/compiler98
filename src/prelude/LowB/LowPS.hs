@@ -1,4 +1,4 @@
-module PackedString(
+module NHC.PackedString(
     PackedString
    ,primComparePS
    ,unpackPS

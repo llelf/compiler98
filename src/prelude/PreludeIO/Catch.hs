@@ -1,6 +1,6 @@
 module Prelude(catch) where
 
-import DIO
+import NHC.Internal (IO(..))
 
 catch :: IO a -> (IOError -> IO a) -> IO a
 catch x handle =

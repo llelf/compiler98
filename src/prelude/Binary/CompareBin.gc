@@ -1,8 +1,8 @@
-module Binary
+module NHC.Binary
   ( compareBin
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import BinPtr
 import BinHandle
 

@@ -1,6 +1,6 @@
 module Prelude (Show(..)) where
 
-import DIO
+import NHC.Internal (IO(..))
 
 instance (Show a) => Show (IO a) where
   showsPrec d a = showString "<<IO action>>"

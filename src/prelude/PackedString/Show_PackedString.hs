@@ -1,4 +1,4 @@
-module PackedString(Show(..)) where
+module NHC.PackedString(Show(..)) where
 
 import DPackedString
 import UnpackPS

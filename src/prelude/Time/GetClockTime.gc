@@ -2,7 +2,7 @@ module Time
   ( getClockTime
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import DClockTime
 
 %-#include <time.h>

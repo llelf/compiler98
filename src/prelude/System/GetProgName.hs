@@ -1,6 +1,6 @@
 module System where
 
-import FFI
+import NHC.FFI
 
 foreign import ccall primGetProgName :: IO PackedString
 

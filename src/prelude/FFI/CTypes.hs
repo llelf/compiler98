@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
 	( -- Integral types, instances of: Eq, Ord, Num, Read, Show, Enum,
 	  -- Typeable, Storable, Bounded, Real, Integral, Bits
 	  CChar(..),    CSChar(..),  CUChar(..)

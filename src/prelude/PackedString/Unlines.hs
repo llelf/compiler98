@@ -1,4 +1,4 @@
-module PackedString where
+module NHC.PackedString where
 
 import Prelude hiding (unlines)
 import qualified Prelude (unlines)

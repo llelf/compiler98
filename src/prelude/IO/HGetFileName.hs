@@ -1,7 +1,7 @@
 module IO (hGetFileName) where
 
 import DHandle
-import FFI
+import NHC.FFI
 
 -- #if !defined(TRACING)
 #if 1

@@ -1,4 +1,4 @@
-module IOExtras
+module NHC.IOExtras
   ( fixIO		-- :: (a->IO a) -> IO a
   , unsafePerformIO	-- :: IO a -> a
   , unsafeInterleaveIO	-- :: IO a -> IO a
@@ -25,7 +25,7 @@ module IOExtras
 
 
 import FixIO
-import UnsafePerformIO
+import NHC.Internal (unsafePerformIO)
 import Ix
 
 import DIORef

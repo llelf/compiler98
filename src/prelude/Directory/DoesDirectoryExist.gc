@@ -1,7 +1,7 @@
 module Directory (doesDirectoryExist) where
 
-import GreenCard
-import FFI
+import NHC.GreenCard
+import NHC.FFI
 
 %-#include <sys/types.h>
 %-#include <sys/stat.h>

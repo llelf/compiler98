@@ -2,7 +2,7 @@ module Prelude(Show(..)) where
 
 import DIOError
 import IO
-import DErrNo
+import NHC.DErrNo
 import StrError
 
 instance  Show IOError  where

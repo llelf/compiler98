@@ -1,6 +1,6 @@
 module Directory (setCurrentDirectory) where
 
-import FFI
+import NHC.FFI
 import Monad (when)
 
 foreign import ccall chdir :: PackedString -> IO Int

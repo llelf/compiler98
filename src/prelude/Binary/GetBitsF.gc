@@ -1,8 +1,8 @@
-module Binary
+module NHC.Binary
   ( getBitsF
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import BinPtr    ({-type-}BinPtr(..))
 import BinHandle ({-type-}BinHandle(..))
 

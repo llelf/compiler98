@@ -1,6 +1,6 @@
 module Prelude where
 
-import DIO
+import NHC.Internal (IO(..))
 import DIOError(IOError(..))
 -- import CMonad
 

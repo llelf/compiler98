@@ -1,7 +1,7 @@
 module Prelude where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 import DIOError
 import PreludeBuiltin
 import CHGetChar

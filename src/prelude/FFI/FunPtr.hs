@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( FunPtr		-- abstract, instance of: Eq, Ord, Show
   , nullFunPtr		-- :: FunPtr a
   , castFunPtr		-- :: FunPtr a -> FunPtr b

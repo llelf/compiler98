@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( Storable
       ( sizeOf		-- :: a -> Int
       , alignment	-- :: a -> Int

@@ -10,10 +10,9 @@ SRCS	= \
 	Eq_IOError.hs    Monad_IO.hs      ReadLn.hs 	\
 	AppendFile.hs    Print.hs         Show_IOError.hs \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
-	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
+	                 GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
-	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs	   \
-	_MkIO.hs
+	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
 SRCS_T	=\
 	DIO.hs          DIOError.hs    GetChar.hs      GetContents.hs \
 	                Monad_IO.hs    PutChar.hs      PutStr.hs      \
@@ -43,10 +42,8 @@ endif
 
 
 # Here are the dependencies.
-${OBJDIR}/Catch.$O:        ${OBJDIR}/DIO.$O
 ${OBJDIR}/Eq_IOError.$O:   ${OBJDIR}/DIOError.$O
-${OBJDIR}/IoError.$O:      ${OBJDIR}/DIO.$O
-${OBJDIR}/Monad_IO.$O:     ${OBJDIR}/DIO.$O ${OBJDIR}/DIOError.$O # ../Prelude/CMonad.hi
+${OBJDIR}/Monad_IO.$O:     ${OBJDIR}/DIOError.$O # ../Prelude/CMonad.hi
 ${OBJDIR}/Functor_IO.$O:   # ../Prelude/CFunctor.hi
 ${OBJDIR}/Show_IOError.$O: ${OBJDIR}/DIOError.$O ${OBJDIR}/StrError.$O
 ifneq "T" "${TRACING}"
@@ -55,18 +52,14 @@ endif
 ${OBJDIR}/UserError.$O:    ${OBJDIR}/DIOError.$O
 ${OBJDIR}/DIOError.$O:     #${OBJDIR}/DErrNo.$O
 ${OBJDIR}/ReadLn.$O:       ${OBJDIR}/ReadIO.$O
-${OBJDIR}/_MkIO.$O:        ${OBJDIR}/DIO.$O
 
 
 # And now for C-files dependencies.
-Catch.$C:        DIO.$C
 Eq_IOError.$C:   DIOError.$C #DErrNo.$C
-IoError.$C:      DIO.$C
-Monad_IO.$C:     DIO.$C DIOError.$C # ../Prelude/CMonad.hi
+Monad_IO.$C:     DIOError.$C # ../Prelude/CMonad.hi
 Functor_IO.$C:   # ../Prelude/CFunctor.hi
 Show_IOError.$C: DIOError.$C StrError.$C #DErrNo.$C 
 UserError.$C:    DIOError.$C
 DIOError.$C:	#DErrNo.$C
 ReadLn.$C:	ReadIO.$C
-_MkIO.$C:	DIO.$C
 

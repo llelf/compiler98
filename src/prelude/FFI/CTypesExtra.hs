@@ -1,4 +1,4 @@
-module FFI 
+module NHC.FFI 
   -- Integral types, instances of: Eq, Ord, Num, Read, Show, Enum,
   -- Storable, Bounded, Real, Integral
   ( CPtrdiff(..), CSize(..), CWchar(..), CSigAtomic(..)

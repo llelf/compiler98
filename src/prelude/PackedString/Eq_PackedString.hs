@@ -1,4 +1,4 @@
-module PackedString(Eq(..)) where
+module NHC.PackedString(Eq(..)) where
 
 import DPackedString
 import PrimComparePS(primComparePS)

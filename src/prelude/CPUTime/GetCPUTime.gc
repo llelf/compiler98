@@ -1,6 +1,6 @@
 module CPUTime(getCPUTime) where
 
-import GreenCard
+import NHC.GreenCard
 import CpuTimePrecision
 
 getCPUTime :: IO Integer

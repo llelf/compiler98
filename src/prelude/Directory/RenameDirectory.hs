@@ -1,6 +1,6 @@
 module Directory (renameDirectory) where
 
-import FFI
+import NHC.FFI
 import Monad (when)
 
 foreign import noproto rename :: PackedString -> PackedString -> IO Int

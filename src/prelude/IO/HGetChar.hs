@@ -1,6 +1,6 @@
 module IO (hGetChar,cHGetChar) where
 
-import DIO
+import NHC.Internal (IO(..))
 import DIOError
 import DHandle
 

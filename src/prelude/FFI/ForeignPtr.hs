@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
  -- , newForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
  -- , addForeignPtrFinalizer	-- :: ForeignPtr a -> IO () -> IO ()
@@ -61,7 +61,7 @@ instance Show (ForeignPtr a) where
 -- a foreign import.  However, in order to implement ForeignPtrs, we
 -- need one single instance of returning a ForeignPtr, and this is it.
 --   *** Do not do it elsewhere!
-foreign import ccall "primForeignObjC"
+foreign import ccall "primForeignPtrC"
     newForeignPtr :: Ptr a -> FunPtr (Ptr a -> IO ()) -> IO (ForeignPtr a)
 
 -- addForeignPtrFinalizer is not implemented in nhc98.

@@ -1,4 +1,4 @@
-module PackedString where
+module NHC.PackedString where
 
 import Prelude hiding (foldl)
 import qualified Prelude (foldl)

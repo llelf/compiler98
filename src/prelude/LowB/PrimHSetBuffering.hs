@@ -1,7 +1,7 @@
 module Prelude where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 
 cHSetBuffering primitive 2 :: Handle -> BufferMode -> Either IOError ()
 

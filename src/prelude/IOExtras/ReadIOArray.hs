@@ -1,4 +1,4 @@
-module IOExtras
+module NHC.IOExtras
   ( readIOArray
   ) where
 

@@ -1,4 +1,4 @@
-module Binary
+module NHC.Binary
   ( getFAt
   ) where
 

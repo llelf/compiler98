@@ -1,7 +1,7 @@
 module Prelude where
 
 import PreludeBuiltin
-import DIO
+import NHC.Internal (IO(..))
 -- import CHPutChar
 
 primHPutChar :: Handle -> Char -> IO ()

@@ -1,7 +1,7 @@
 module System where
 
 import System
-import DIO
+import NHC.Internal (IO(..))
 import CExitWith
 
 primExitWith code =

@@ -1,4 +1,4 @@
-module PackedString(Ord(..)) where
+module NHC.PackedString(Ord(..)) where
 
 import DPackedString
 import Eq_PackedString

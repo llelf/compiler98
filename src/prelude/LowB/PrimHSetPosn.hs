@@ -1,7 +1,7 @@
 module Prelude where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 import PreludeBuiltin(HandlePosn)
 
 cHSetPosn primitive 2 :: Handle -> HandlePosn -> Either IOError ()

@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( StablePtr		-- abstract
   , newStablePtr	-- :: a -> IO (StablePtr a)
   , deRefStablePtr	-- :: StablePtr a -> IO a

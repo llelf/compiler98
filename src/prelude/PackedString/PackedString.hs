@@ -1,6 +1,6 @@
 #if !defined(TRACING)
 
-module PackedString(PackedString,
+module NHC.PackedString(PackedString,
 	append,break,concat,cons,drop,dropWhile,
 	filter,foldl,foldr,head,index,
 	length,lines,map,nil,null,packString,
@@ -50,7 +50,7 @@ import Words
 
 #else
 
-module PackedString(PackedString, packString, unpackPS) where
+module NHC.PackedString(PackedString, packString, unpackPS) where
 
 import DPackedString
 import PackString

@@ -2,7 +2,7 @@ module IO (openFile) where
 
 import DHandle (Handle(..))
 import IOMode
-import FFI
+import NHC.FFI
 
 {-  All this was incorrect.  It opened a small gap between the
     allocation of the ForeignObj, and its attachment into the program

@@ -16,7 +16,7 @@ SRCS_T	=
 # Here are some extra rules.
 cfiles: cfilescheck
 cfilescheck:
-	cp $(INCDIR)/Binary.${HISUFFIX} ../Binary  # hack around compiler bug!
+	cp $(INCDIR)/NHC/Binary.${HISUFFIX} ../Binary  # hack around compiler bug!
 
 
 # Here are the main rules.

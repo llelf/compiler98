@@ -1,7 +1,7 @@
 module IO where
 
 import DIOError
-import DErrNo
+import NHC.DErrNo
 
 isAlreadyExistsError  :: IOError -> Bool
 isAlreadyExistsError (IOError _ _ _ errno) = errno `elem` alreadyexists

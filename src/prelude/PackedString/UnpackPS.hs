@@ -1,3 +1,3 @@
-module PackedString(unpackPS) where
+module NHC.PackedString(unpackPS) where
 
 import LowPS(unpackPS)

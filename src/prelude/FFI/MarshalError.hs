@@ -1,4 +1,4 @@
-module FFI (
+module NHC.FFI (
   -- throw an exception on specific return values
   throwIf,       -- :: (a -> Bool) -> (a -> String) -> IO a       -> IO a
   throwIf_,      -- :: (a -> Bool) -> (a -> String) -> IO a       -> IO ()

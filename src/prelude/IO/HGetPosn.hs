@@ -2,7 +2,7 @@ module IO (hGetPosn) where
 
 import DHandle
 import DHandlePosn
-import FFI
+import NHC.FFI
 
 -- #if !defined(TRACING)
 #if 1

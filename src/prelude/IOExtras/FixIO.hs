@@ -1,6 +1,6 @@
-module IOExtras where
+module NHC.IOExtras where
 
-import UnsafePerformIO
+import NHC.Internal (unsafePerformIO)
 
 fixIO :: (a -> IO a) -> IO a
 fixIO f = let x = unsafePerformIO (f x)

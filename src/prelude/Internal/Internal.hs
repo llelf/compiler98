@@ -1,20 +1,67 @@
-module Prelude
-  ( _mkIOok0,  _mkIOok1,  _mkIOok2,  _mkIOok3, _mkIOok4,  _mkIOok5
-  , _mkIOok6,  _mkIOok7,  _mkIOok8,  _mkIOok9, _mkIOok10, _mkIOok11, _mkIOok12
-#if 0
-  , _mkIOok13, _mkIOok14, _mkIOok15
-#endif
+module NHC.Internal
+  ( _apply1
+  , _apply2
+  , _apply3
+  , _apply4
+  , _id
+  , _eqInteger
+  , _eqFloat
+  , _eqDouble
+
+  -- IO stuff
+  , World(..)
+  , IO(..)
+  , IOError(..)
+  , _mkIOok0
+  , _mkIOok1
+  , _mkIOok2
+  , _mkIOok3
+  , _mkIOok4
+  , _mkIOok5
+  , _mkIOok6
+  , _mkIOok7
+  , _mkIOok8
+  , _mkIOok9
+  , _mkIOok10
+  , _mkIOok11
+  , _mkIOok12
+  , unsafePerformIO
+
+  -- Rational stuff
+  , Ratio(..)
+  , Rational
+  , (%)
+
   ) where
 
-import DIO
+import NHC.Internal	-- Yes, it's circular!  (needs a .hi to bootstrap)
+import Prelude	(($!),flip,id,error,undefined
+		,Char,String,Bool,Int,Integer,Float,Double
+		,(++),Either(..),(,),[](..),(),Show(show)
+		,Integral(..),gcd,Eq(..),Num(..))
+import Ratio (Ratio(..),Rational,(%))
+
+_apply1 f x = f x
+_apply2 f x y = f x y
+_apply3 f x y z = f x y z
+_apply4 f x y z u = f x y z u
+
+_id x = x
+
+foreign import ccall "primIntegerEqC" _eqInteger :: Integer -> Integer -> Bool
+foreign import ccall "primFloatEqC"   _eqFloat   :: Float   -> Float   -> Bool
+foreign import ccall "primDoubleEqC"  _eqDouble  :: Double  -> Double  -> Bool
+
+
+-- IO things
+data World = World
+newtype IO a = IO (World -> Either IOError a)
 
 -- mkIOok functions lift any non-failing pure function to become a
 --        monadic IO action, eliminating sharing of results etc.
 -- These are intended to be applied by machine-generated code only.
--- Arities: 0-15
-
-
-_mkIOok0 :: (()->a) -> IO a	-- Note: no CAFs allowed!
+-- Arities: 0-12
+_mkIOok0 :: (()->a) -> IO a     -- Note: no CAFs allowed!
 _mkIOok1 :: (b->a) -> (b->IO a)
 _mkIOok2 :: (c->b->a) -> (c->b->IO a)
 _mkIOok3 :: (d->c->b->a) -> (d->c->b->IO a)
@@ -31,14 +78,6 @@ _mkIOok11 :: (l->k->j->i->h->g->f->e->d->c->b->a)
           -> (l->k->j->i->h->g->f->e->d->c->b->IO a)
 _mkIOok12 :: (m->l->k->j->i->h->g->f->e->d->c->b->a)
           -> (m->l->k->j->i->h->g->f->e->d->c->b->IO a)
-#if 0
-_mkIOok13 :: (n->m->l->k->j->i->h->g->f->e->d->c->b->a)
-          -> (n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
-_mkIOok14 :: (o->n->m->l->k->j->i->h->g->f->e->d->c->b->a)
-          -> (o->n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
-_mkIOok15 :: (p->o->n->m->l->k->j->i->h->g->f->e->d->c->b->a)
-          -> (p->o->n->m->l->k->j->i->h->g->f->e->d->c->b->IO a)
-#endif
 
 _mkIOok0  fn = IO (\_->Right $! fn ())
 _mkIOok1  fn = \a-> IO (\_->Right $! fn a)
@@ -56,12 +95,24 @@ _mkIOok11 fn = \a b c d e f g h i j k->
                IO (\_->Right $! fn a b c d e f g h i j k)
 _mkIOok12 fn = \a b c d e f g h i j k l->
                IO (\_->Right $! fn a b c d e f g h i j k l)
-#if 0
-_mkIOok13 fn = \a b c d e f g h i j k l m->
-               IO (\_->Right $! fn a b c d e f g h i j k l m)
-_mkIOok14 fn = \a b c d e f g h i j k l m n->
-               IO (\_->Right $! fn a b c d e f g h i j k l m n)
-_mkIOok15 fn = \a b c d e f g h i j k l m n o->
-               IO (\_->Right $! fn a b c d e f g h i j k l m n o)
-#endif
 
+-- unsafePerformIO relies on the internal representation of the IO monad.
+unsafePerformIO :: IO a -> a
+unsafePerformIO (IO f) =
+  case f World of
+    Left err -> error ("unsafePerformIO: "++show err)
+    Right a  -> a
+
+{-
+-- Rational stuff, required in the Prelude because of literal numbers.
+data Ratio a = a :% a
+type Rational = Ratio Integer
+
+infixl 7 %
+(%)                     :: (Integral a) => a -> a -> Ratio a
+x % 0                   =  error "Ratio.%: zero denominator"
+x % y                   =  let top = x * signum y
+                               bot = abs y
+                               d   = gcd top bot
+                           in (top`quot`d) :% (y`quot`d)
+-}

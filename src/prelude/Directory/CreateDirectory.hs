@@ -1,6 +1,6 @@
 module Directory (createDirectory) where
 
-import FFI
+import NHC.FFI
 import Numeric (readOct)
 import Monad   (when)
 

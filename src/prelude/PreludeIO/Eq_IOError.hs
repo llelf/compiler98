@@ -1,7 +1,7 @@
 module Prelude(Eq(..)) where
 
 import DIOError
-import DErrNo
+import NHC.DErrNo
 
 instance Eq IOError where
   (IOError _ _ _ e)	== (IOError _ _ _ e')	=    e == e'

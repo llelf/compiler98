@@ -4,7 +4,7 @@ module Directory
   , patchIOErrorF
   , patchIOErrorFVal) where
 
-import FFI
+import NHC.FFI
 
 returnEither :: String -> Maybe String -> Int -> a -> IO a
 returnEither cmd file err val =

@@ -1,6 +1,6 @@
 module Directory (setPermissions) where
 
-import GreenCard
+import NHC.GreenCard
 import PatchIOError
 import DPermissions
 

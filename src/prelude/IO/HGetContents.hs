@@ -1,6 +1,6 @@
 module IO (hGetContents) where
 
-import DIO
+import NHC.Internal (IO(..))
 import DHandle
 import HGetChar(cHGetChar)
 

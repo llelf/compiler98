@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   (
   -- allocation
   mallocArray,    -- :: Storable a => Int -> IO (Ptr a)

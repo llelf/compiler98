@@ -42,7 +42,7 @@ import Time		( getClockTime, ClockTime(..) )
 #endif
 
 #ifdef __NHC__
-import IOExtras	        ( unsafePerformIO, IORef, newIORef, readIORef,
+import NHC.IOExtras     ( unsafePerformIO, IORef, newIORef, readIORef,
                           writeIORef)
 import Numeric		( readDec )
 

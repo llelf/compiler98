@@ -1,6 +1,6 @@
 module System where
 
-import FFI
+import NHC.FFI
 
 foreign import ccall primGetEnv  :: PackedString -> IO (Ptr Char)
 foreign import cast  ptrToString :: (Ptr Char) -> PackedString

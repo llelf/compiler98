@@ -1,10 +1,10 @@
-module FFI 
+module NHC.FFI 
   ( getErrNo
   , mkIOError
   , throwIOError
   ) where
 
-import DErrNo
+import NHC.DErrNo
 import DIOError
 import IO (Handle)
 

@@ -1,6 +1,6 @@
 module Directory (removeFile) where
 
-import FFI
+import NHC.FFI
 import Monad (when)
 
 foreign import ccall unlink :: PackedString -> IO Int

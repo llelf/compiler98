@@ -2,7 +2,7 @@ module Array where
 
 import Ix
 import DArray
-import IOExtras
+import NHC.IOExtras
 
 infixl 9  !
 

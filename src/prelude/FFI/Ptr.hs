@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( Ptr		-- abstract, instance of: Eq, Ord, Enum, Show
   , nullPtr	-- :: Ptr a
   , castPtr	-- :: Ptr a -> Ptr b

@@ -1,13 +1,13 @@
 module Prelude (
     (->),Double,Char,Integer,Float,Int
-    ,_eqDouble,_eqInteger,_eqFloat   -- Should not be visible (case stmts)
+--  ,_eqDouble,_eqInteger,_eqFloat   -- Should not be visible (case stmts)
     ,_leInteger,_subInteger          -- Also should not be visible (for n+k)
 #if !defined(TRACING)
     ,_hPutChar,_hGetChar
 #endif
     ,_readCon0, _readConArg, _readCon, _readConInfix -- Don't know why I must be explicit
-    ,unsafePerformIO		-- needed for primitive FFI
-    ,module _Id
+--  ,unsafePerformIO		-- needed for primitive FFI
+--  ,module _Id
 
     ,module PreludeList
     ,module PreludeText
@@ -24,7 +24,7 @@ module Prelude (
     ,module _EnumInRange
     ,module _EnumIndex
     ,module _EnumRange
-    ,module _EqInteger
+--  ,module _EqInteger
     ,module _Filter
     ,module _Foldr
     ,module _FromEnum
@@ -33,10 +33,10 @@ module Prelude (
 --  ,module _TupleIndex
 --  ,module _TupleRange
 #endif
-    ,module _Apply1
-    ,module _Apply2
-    ,module _Apply3
-    ,module _Apply4
+--  ,module _Apply1
+--  ,module _Apply2
+--  ,module _Apply3
+--  ,module _Apply4
 
     ,module AndAnd
     ,module ApplyM
@@ -146,14 +146,14 @@ import PreludeDebug
 #endif
 
 import Ratio(Rational,(%))		-- needed for literal Rationals
-import IOExtras (unsafePerformIO)	-- needed for primitive FFI
+--import IOExtras (unsafePerformIO)	-- needed for primitive FFI
 
 #if !defined(TRACING)
 --import Ix  -- to get all Ix instances
 #endif
 
 -- Shouldn't be visible, but they are:-(
-import _Id
+--import _Id
 import _EnumFromThen
 import _EnumFromThenTo
 import _EnumFromTo
@@ -162,7 +162,7 @@ import _EnumFromToInc
 import _EnumInRange
 import _EnumIndex
 import _EnumRange
-import _EqInteger
+--import _EqInteger
 import _Filter
 import _Foldr
 import _FromEnum
@@ -172,10 +172,10 @@ import _ToEnum
 --import _TupleIndex
 --import _TupleRange
 #endif
-import _Apply1
-import _Apply2
-import _Apply3
-import _Apply4
+--import _Apply1
+--import _Apply2
+--import _Apply3
+--import _Apply4
 
 import AndAnd
 import ApplyM

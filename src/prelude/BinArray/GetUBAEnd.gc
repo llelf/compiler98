@@ -1,8 +1,8 @@
-module BinArray
+module NHC.BinArray
   ( getUBAEnd
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import DUnboxedArray ({-type-}UnboxedArray(..))
 import BinPtr        ({-type-}BinPtr(..))
 

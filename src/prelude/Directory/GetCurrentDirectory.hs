@@ -1,6 +1,6 @@
 module Directory (getCurrentDirectory) where
 
-import FFI
+import NHC.FFI
 import Monad
 
 foreign import ccall getcwd        :: Addr -> Int -> IO Addr

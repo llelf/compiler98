@@ -1,6 +1,6 @@
 module Directory (doesFileExist) where
 
-import GreenCard
+import NHC.GreenCard
 
 %-#include <sys/types.h>
 %-#include <sys/stat.h>

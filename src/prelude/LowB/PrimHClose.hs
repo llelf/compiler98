@@ -1,7 +1,7 @@
 module Prelude(cHClose,primHClose,Handle) where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 
 cHClose primitive 1 :: Handle -> ()
 

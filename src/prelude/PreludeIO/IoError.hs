@@ -1,6 +1,6 @@
 module Prelude (ioError) where
 
-import DIO
+import NHC.Internal (IO(..))
 
 ioError :: IOError -> IO a
 ioError e = IO ( const (Left e) )

@@ -3,7 +3,7 @@ module IO(Eq(..)) where
 import DHandlePosn
 import DHandle
 import Eq_Handle
-import FFI
+import NHC.FFI
 
 
 foreign import ccall primEqHandlePosnC :: ForeignPtr () -> ForeignPtr () -> Bool

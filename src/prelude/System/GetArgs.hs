@@ -1,6 +1,6 @@
 module System where
 
-import FFI
+import NHC.FFI
 
 foreign import ccall cGetArg      :: IO (Ptr Char)
 foreign import cast  ptrToCString :: (Ptr Char) -> IO PackedString

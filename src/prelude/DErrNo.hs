@@ -1,4 +1,4 @@
-module DErrNo where
+module NHC.DErrNo where
 
 {- Automatically generated from /usr/include/errno.h -}
 {- Then stripped by hand to a core common to most machines. -}

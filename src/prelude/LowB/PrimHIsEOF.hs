@@ -2,7 +2,7 @@ module Prelude where
 
 import IO
 import DIOError
-import DIO
+import NHC.Internal (IO(..))
 
 cHIsEOF  primitive 1 :: Handle -> Either IOError Bool
 

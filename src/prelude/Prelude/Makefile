@@ -58,9 +58,9 @@ COMMON_SRCS = \
 
 # The following are used for the normal Prelude
 SRCS = ${COMMON_SRCS} \
-        _Apply1.hs      _Apply2.hs      _Apply3.hs          _Apply4.hs \
+	_Zap_Arg.hs     _Zap_Stack.hs
+OLD =	_Apply1.hs      _Apply2.hs      _Apply3.hs          _Apply4.hs \
         _EqInteger.hs \
-	_Zap_Arg.hs     _Zap_Stack.hs       \
 	_Id.hs
 
 #  _TupleIndex.hs  _TupleRange.hs  \

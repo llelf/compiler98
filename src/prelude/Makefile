@@ -18,11 +18,11 @@ endif
 ifneq "${TRACING}" "T"
 
 FSTSUBDIRS = Char Ratio Numeric
-PRELSUBDIRS = $(MACHINE) LowB PreludeList PreludeIO PreludeText Prelude
+PRELSUBDIRS = $(MACHINE)/NHC LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
 LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory CPUTime \
 	     Random Haskell Binary Bit GreenCard BinArray FFI IOExtras \
-             Observe 
+             Observe Internal
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
 SUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${LIBSUBDIRS}

@@ -1,7 +1,7 @@
 module Prelude (strError) where
 
-import FFI
-import DErrNo
+import NHC.FFI
+import NHC.DErrNo
 
 foreign import ccall "strerror" primStrError :: Int -> PackedString
 

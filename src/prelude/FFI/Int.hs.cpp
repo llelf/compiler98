@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   -- all types are abstract and instances of:
   -- Num, Bounded, Real, Integral, Ix, Enum, Read, Show
   ( Int8

@@ -1,8 +1,8 @@
-module Binary
+module NHC.Binary
   ( sizeBin
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import BinHandle ({-type-}BinHandle(..))
 
 %-#include "cLowBinary.h"

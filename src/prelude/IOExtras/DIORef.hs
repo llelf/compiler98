@@ -1,9 +1,9 @@
 {-# OPTIONS_COMPILE -prelude #-}
-module IOExtras
+module NHC.IOExtras
   ( IORef(..)
   ) where
 
-import FFI
+import NHC.FFI
 import PreludeBuiltin (Vector)
 import IO (Handle)	-- hack to avoid compiler error with -T
 

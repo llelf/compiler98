@@ -1,7 +1,7 @@
 module IO (hClose,hCloseC) where
 
 import DHandle
-import FFI
+import NHC.FFI
 
 foreign import ccall hCloseC :: ForeignObj -> IO ()
 

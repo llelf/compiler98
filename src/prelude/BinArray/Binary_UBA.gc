@@ -1,7 +1,7 @@
 module UnboxedArray where
 
-import GreenCard
-import Binary    ({-class-}Binary(..))
+import NHC.GreenCard
+import NHC.Binary    ({-class-}Binary(..))
 import BinHandle ({-type-} BinHandle(..))
 import BinPtr    ({-type-} BinPtr(..))
 import Bin       ({-type-} Bin(..))

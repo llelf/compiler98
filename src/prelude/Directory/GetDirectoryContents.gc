@@ -1,6 +1,6 @@
 module Directory (getDirectoryContents) where
 
-import GreenCard
+import NHC.GreenCard
 import PatchIOError
 
 %-#include <dirent.h>

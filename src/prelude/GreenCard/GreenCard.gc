@@ -1,4 +1,4 @@
-module GreenCard
+module NHC.GreenCard
   ( PackedString
   , toCString
   , fromCString
@@ -7,9 +7,9 @@ module GreenCard
   , Addr
   ) where
 
-import FFI (ForeignObj,StablePtr,Addr)
+import NHC.FFI (ForeignObj,StablePtr,Addr)
 --import DIO (IO(..))
-import PackedString (PackedString)
+import NHC.PackedString (PackedString)
 import CString (toCString, fromCString)
 
 %dis int x          = declare "int" x in (%%Int x)

@@ -1,4 +1,4 @@
-module FFI (
+module NHC.FFI (
   -- representation of strings in C
   CString,           -- = Ptr CChar
   CStringLen,        -- = (CString, Int)

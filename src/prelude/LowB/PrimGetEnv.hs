@@ -1,8 +1,8 @@
 module System where
 
-import PackedString(PackedString,unpackPS)
+import NHC.PackedString(PackedString,unpackPS)
 import CString
-import DIO
+import NHC.Internal (IO(..))
 import DIOError
 
 cGetEnv primitive 1 :: PackedString -> Either Int PackedString

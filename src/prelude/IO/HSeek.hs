@@ -2,7 +2,7 @@ module IO (hSeek) where
 
 import SeekMode
 import DHandle
-import FFI
+import NHC.FFI
 
 -- #if !defined(TRACING)
 #if 1

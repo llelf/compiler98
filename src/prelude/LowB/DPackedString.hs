@@ -1,3 +1,3 @@
-module PackedString where
+module NHC.PackedString where
 
 data PackedString;

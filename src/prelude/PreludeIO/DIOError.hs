@@ -1,7 +1,7 @@
 module Prelude (IOError(..)) where
 
 import IO (Handle)
-import DErrNo
+import NHC.DErrNo
 
 data IOError
 	--             operation  filename     file         error-code

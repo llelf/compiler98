@@ -2,7 +2,7 @@ module Prelude(cOpen,primOpenFile,Handle,IOMode,FilePath) where
 
 import IO
 import CString
-import DIO
+import NHC.Internal (IO(..))
 
 cOpen primitive 2 :: CString -> IOMode -> (Either IOError Handle)
 

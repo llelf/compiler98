@@ -14,7 +14,7 @@ TODO:
  o Use QuickCheck to test that observe "label" x = x
 
 \begin{code}
-module Observe 
+module NHC.Observe 
 	( observe	 -- observe :: (Observable a) => String -> a -> a
 	, observe_	 -- observe_ :: (Observable a) => Int -> String -> a -> a
 	, Observing(..)	 -- a -> a
@@ -34,7 +34,7 @@ import Monad
 import Array
 import qualified Array
 import System
-import IOExtras
+import NHC.IOExtras
 \end{code}
 
 

@@ -1,4 +1,4 @@
-module PackedString where
+module NHC.PackedString where
 
 import Prelude hiding(takeWhile,length,Ix(..),substr)
 import DPackedString

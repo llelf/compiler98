@@ -1,6 +1,6 @@
 module Prelude(Floating(..)) where
 
--- import Ratio
+import Ratio
 
 #if defined(TRACING)
 import PrimsFloat

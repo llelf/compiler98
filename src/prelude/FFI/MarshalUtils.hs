@@ -1,4 +1,4 @@
-module FFI (
+module NHC.FFI (
   -- combined allocation and marshalling
   with,          -- :: Storable a => a -> (Ptr a -> IO b) -> IO b
   new,           -- :: Storable a => a -> IO (Ptr a)

@@ -1,8 +1,8 @@
-module Binary
+module NHC.Binary
   ( directPut
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import BinHandle ({-type-}BinHandle(..))
 import SizedBin  ({-type-}Size(..))
 import BinPtr    ({-type-}BinPtr(..))

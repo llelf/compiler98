@@ -1,4 +1,4 @@
-module PackedString(Read(..)) where
+module NHC.PackedString(Read(..)) where
 
 import DPackedString
 import PackString

@@ -1,7 +1,6 @@
 module _Driver where
 
-import PreludeBuiltin
-import DIO
+import NHC.Internal (IO(..),World(..))
 import System
 import Main
 

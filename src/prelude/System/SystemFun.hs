@@ -1,6 +1,6 @@
 module System where
 
-import FFI
+import NHC.FFI
 import DExitCode
 
 foreign import ccall "system" primSystem :: PackedString -> IO Int

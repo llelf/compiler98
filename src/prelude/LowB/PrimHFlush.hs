@@ -1,7 +1,7 @@
 module Prelude where
 
 import IO
-import DIO
+import NHC.Internal (IO(..))
 
 cHFlush primitive 1 :: Handle  -> Either IOError ()
 

@@ -1,6 +1,6 @@
 module Time where
 
-import GreenCard
+import NHC.GreenCard
 import DClockTime
 import DCalendarTime
 

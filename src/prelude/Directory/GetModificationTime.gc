@@ -1,6 +1,6 @@
 module Directory (getModificationTime) where
 
-import GreenCard
+import NHC.GreenCard
 import PatchIOError
 import DClockTime ({-type-}ClockTime(..))
 

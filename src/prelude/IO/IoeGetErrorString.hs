@@ -2,7 +2,7 @@ module IO (ioeGetErrorString) where
 
 import IO
 import DIOError
-import DErrNo
+import NHC.DErrNo
 
 ioeGetErrorString :: IOError -> String
 ioeGetErrorString (IOError op _ _ errno)  = op

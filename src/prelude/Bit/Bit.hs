@@ -1,4 +1,4 @@
-module Bit(
+module NHC.Bit(
   Bits(..)
 ) where
 

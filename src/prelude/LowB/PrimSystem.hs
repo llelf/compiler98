@@ -2,7 +2,7 @@ module System where
 
 import CString
 import DIOError(IOError(IOErrorSystem))
-import DIO
+import NHC.Internal (IO(..))
 import System
 
 cSystem primitive 1 :: PackedString -> Either Int ExitCode

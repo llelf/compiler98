@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( ForeignObj			-- abstract, instance of: Eq
   , makeForeignObj		-- :: Addr -> IO () -> IO ForeignObj
   , newForeignObj		-- :: Addr -> IO () -> IO ForeignObj
@@ -11,7 +11,7 @@ module FFI
   ) where
 
 import Addr     (Addr)
-import IOExtras (unsafePerformIO)
+import NHC.Internal (unsafePerformIO)
 
 data ForeignObj;	-- primitive type known to compiler internals
 

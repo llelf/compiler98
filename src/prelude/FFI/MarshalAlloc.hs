@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
   ( malloc       -- :: Storable a =>        IO (Ptr a)
   , mallocBytes  -- ::               Int -> IO (Ptr a)
   , alloca       -- :: Storable a =>        (Ptr a -> IO b) -> IO b
@@ -12,7 +12,7 @@ import Storable
 import CError
 import CTypes
 import CTypesExtra (CSize)
-import DErrNo
+import NHC.DErrNo
 
 import IO (bracket)
 import Monad (when)

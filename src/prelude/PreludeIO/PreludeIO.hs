@@ -1,4 +1,3 @@
-
 module Prelude
     (
      module AppendFile,
@@ -21,12 +20,11 @@ module Prelude
     ,module TFilePath
     ,module UserError
     ,module WriteFile
-    ,module _MkIO
     ) where
 
 import AppendFile
 import Catch
-import DIO
+import NHC.Internal (IO)
 import DIOError
 import Eq_IOError
 import Functor_IO
@@ -48,5 +46,3 @@ import TFilePath
 import UserError
 import WriteFile
 
--- stuff needed for primitive FFI
-import _MkIO

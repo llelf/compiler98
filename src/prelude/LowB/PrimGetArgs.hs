@@ -1,7 +1,7 @@
 module System where
 
-import PackedString(PackedString,unpackPS)
-import DIO
+import NHC.PackedString(PackedString,unpackPS)
+import NHC.Internal (IO(..))
 
 cGetArgs primitive 0 :: [PackedString]
 

@@ -1,4 +1,4 @@
-module FFI
+module NHC.FFI
    -------------------------------------------------------------------
    -- {Int,Word}{8,16,32,64} are abstract and instances of Eq, Ord,
    --   Num, Bounded, Real, Integral, Ix, Enum, Read, Show
@@ -222,4 +222,4 @@ import CStrings		-- C pointer to array of char
 import CString		-- nhc98-only
 import CError		-- nhc98-only
 
-import IOExtras (unsafePerformIO)
+import NHC.Internal (unsafePerformIO)

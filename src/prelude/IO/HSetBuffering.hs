@@ -2,7 +2,7 @@ module IO (hSetBuffering) where
 
 import DHandle
 import BufferMode
-import FFI
+import NHC.FFI
 
 -- #if !defined(TRACING)
 #if 1

@@ -1,8 +1,8 @@
-module Binary
+module NHC.Binary
   ( copyBits
   ) where
 
-import GreenCard
+import NHC.GreenCard
 import BinHandle ({-type-}BinHandle(..))
 import BinPtr    ({-type-}BinPtr(..))
 import SeekBin   (seekBin)
