@@ -119,7 +119,7 @@ C_HEADER(_tprim_IntSignum)
     a = shortCircuitSelectors(GET_POINTER_ARG1(a, 1));
     v = GET_INT_VALUE(a);
     result = mkInt(v < 0 ? -1 : 1);
-    fprintf(stderr, "Now in primIntSignum arg=%d\n", v);
+    /*fprintf(stderr, "Now in primIntSignum arg=%d\n", v);*/
     C_RETURN(mkR(result, mkTNm(t, mkNmInt(result), mkSR())));
 }
 
