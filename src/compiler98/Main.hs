@@ -51,6 +51,7 @@ import StrPos(strPCode)
 
 import TokenId(TokenId(..),t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
 import IdKind(IdKind(..))
+import Id(Id)
 import Lex(Lex,LexAnnot)  -- need show
 
 import Unlit(unlit)
@@ -130,7 +131,7 @@ main' args = nhcLexParse flags (sRealFile flags)
 
 
 {- lex and parse source code -}
-nhcLexParse :: Flags -> [Char] -> IO () 
+nhcLexParse :: Flags -> String -> IO () 
 
 nhcLexParse flags filename = profile "parse" $ do
   mainChar <- catch (readFile filename) (can'tOpen filename) 
@@ -251,40 +252,12 @@ nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e impdecls inf 
               (ppDecls False intState decls 0) 
            pF (sRBound flags) "Symbol table after rename and fixity:"  
               (mixLine (map show (treeMapList (:) (getSymbolTable intState))))
-	   nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun 
-             tidFunSafe intState importState derived impdecls decls
+
+           nhcDerive flags modidl mrps expFun userDefault tidFun 
+             tidFunSafe intState derived impdecls decls {- constrs -}
 	 (intState,errors) -> do
      	   pF (True) "Error after rename " (mixLine errors) 
 	   exit
-
-
-{-
-Debugging source-to-source translation of data type definitions.
-For tracing only.
--} 
-nhcDbgDataTrans :: Flags 
-                -> PackedString 
-                -> a {- PackedString -} 
-                -> b {- Bool -> Bool -> TokenId -> IdKind -> IE -}
-                -> Maybe [Int] 
-                -> ((TokenId,IdKind) -> Int) 
-                -> c {- (TokenId,IdKind) -> Maybe Int -}
-                -> IntState 
-                -> d {- ImportState -} 
-                -> [(Int,[(Pos,Int)])] 
-                -> [ImpDecl TokenId] 
-                -> Decls Int 
-                -> IO ()  
-
-nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun tidFunSafe 
-  intState importState derived impdecls decls =
-  let (decls', derived', intState', constrs) = 
-        dbgDataTrans flags intState (error "repTree") tidFun derived decls 
-  in do
-    pF (sDbg flags) "Abstract syntax tree after debug type transformation"
-       (ppDecls False intState' decls' 0) 
-    nhcDerive flags modidl mrps expFun userDefault tidFun tidFunSafe 
-      intState' derived' impdecls decls' constrs
 
 
 {-
@@ -294,70 +267,113 @@ nhcDerive :: Flags
           -> PackedString 
           -> a 
           -> b 
-          -> Maybe [Int] 
-          -> ((TokenId,IdKind) -> Int) 
+          -> Maybe [Id]         -- passes: user defaults for Num classes
+          -> ((TokenId,IdKind) -> Id) 
+             -- reads: maping from id token and kind to internal id
           -> c 
-          -> IntState 
-          -> [(Int,[(Pos,Int)])] 
-          -> [ImpDecl TokenId] 
-          -> Decls Int 
-          -> Maybe [(Pos,Int)] 
+          -> IntState           -- updates: internal compiler state
+          -> [(Id,[(Pos,Id)])] 
+             -- instances that have to be derived
+             -- class , position where derived, type constructor
+          -> [ImpDecl TokenId]  -- passes: import declarations of module
+          -> Decls Id           -- updates: declarations of module
           -> IO ()
 
 nhcDerive flags modidl  mrps  expFun userDefault tidFun tidFunSafe 
-  intState derived impdecls decls constrs =
+  intState derived impdecls decls {- constrs -} =
   profile "derive" $
-  nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe constrs 
-    impdecls (derive tidFun intState derived decls)
+  case (derive tidFun intState derived decls) of
+    Left errors -> do
+      pF (True) "Deriving failed:" (mixLine errors) 
+      exit
+    Right (intState',decls') -> do
+      pF (sDerive flags) "Declarations after deriving:" 
+          (ppDecls False intState' decls' 0) 
+      pF (sDBound flags) "Symbol table after deriving:"  
+         (mixLine (map show (treeMapList (:) (getSymbolTable intState')))) 
+      nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun 
+        tidFunSafe intState' impdecls decls'
+
 
 {-
-Extract what?
+Debugging source-to-source translation of data type definitions.
+For tracing only.
+Transforms data type definitions and all type expressions occurring in
+declarations.
+-} 
+nhcDbgDataTrans :: Flags           -- reads: compiler flags
+                -> PackedString    -- passes: module identifier
+                -> a 
+                -> b 
+                -> Maybe [Id]      -- passes: user defaults for Num classes
+                -> ((TokenId,IdKind) -> Id) 
+                   -- reads: maping from id token and kind to internal id
+                -> c 
+                -> IntState       -- updates: internal compiler state
+                -> [ImpDecl TokenId] -- passes: import declarations of module
+                -> Decls Id       -- updates: declarations of program
+                -> IO ()  
+
+nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun tidFunSafe 
+  intState {- importState derived -} impdecls decls = do
+  let (decls'{-, derived'-}, intState', constrs) = 
+        dbgDataTrans flags intState (error "repTree") tidFun {-derived-} decls 
+  pF (sDbg flags) "Abstract syntax tree after debug type transformation"
+     (ppDecls False intState' decls' 0) 
+
+  nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe 
+    decls' constrs impdecls intState'
+
+
+{-
+Adds arity of all defined variables to symbol table of internal state.
+Adds type of variables from type declarations and primitive and foreign
+function definitions to symbol table of internal state
+(but not type declarations from classes).
+May discover a few errors and add appropriate messages to internal state.
 -}
-nhcExtract :: Flags 
-           -> PackedString 
+nhcExtract :: Flags           -- passes: compiler flags
+           -> PackedString    -- passes: module identifier
            -> a 
            -> b 
-           -> Maybe [Int] 
-           -> ((TokenId,IdKind) -> Int) 
+           -> Maybe [Id]      -- passes: user defaults for Num classes
+           -> ((TokenId,IdKind) -> Id)  
+              -- passes: maping from id token and kind to internal id
            -> c 
+           -> Decls Id       -- reads: declarations of program
            -> Maybe [(Pos,Int)] 
-           -> [ImpDecl TokenId] 
-           -> Either [String] (IntState,Decls Int) 
+              -- passes: Constrs? information between 2 tracing transformations
+           -> [ImpDecl TokenId] -- passes: import declarations of module
+           -> IntState        -- updates: internal compiler state
            -> IO ()
 
-nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe 
-  constrs impdecls (Left errors) = do
-    pF (True) "Deriving failed:" (mixLine errors) 
-    exit
-nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe 
-  constrs impdecls (Right (intState,decls)) =
-    profile "extract" $ do
-    pF (sDerive flags) "Declarations after deriving:" 
-       (ppDecls False intState decls 0) 
-    pF (sDBound flags) "Symbol table after deriving:"  
-       (mixLine (map show (treeMapList (:) (getSymbolTable intState)))) 
-    nhcDbgTrans flags modidl  mrps expFun userDefault tidFun tidFunSafe 
-      decls constrs impdecls (extract decls intState)
+nhcExtract flags modidl mrps expFun userDefault tidFun 
+  tidFunSafe decls constrs impdecls intState = do
+  nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
+    tidFunSafe decls constrs impdecls (extract decls intState)
+
 
 {-
 Debugging source-to-source translation of function definitions 
 (for tracing only)
+Reads the types put into the symbol table of internal state by extract pass.
 -}
-nhcDbgTrans :: Flags 
-            -> PackedString 
+nhcDbgTrans :: Flags             -- reads: compiler flags
+            -> PackedString      -- reads: module identifier
             -> a 
             -> b 
-            -> Maybe [Int] 
-            -> ((TokenId,IdKind) -> Int) 
+            -> Maybe [Id]        -- passes: user defaults for Num classes
+            -> ((TokenId,IdKind) -> Id) 
+            -- reads: maping from id token and kind to internal id
             -> c 
-            -> Decls Int 
-            -> Maybe [(Pos,Int)] 
-            -> [ImpDecl TokenId] 
-            -> IntState 
+            -> Decls Id          -- updates: declarations of program
+            -> Maybe [(Pos,Int)] -- Constrs? produced by data transformation
+            -> [ImpDecl TokenId] -- reads: import declarations of module
+            -> IntState          -- updates: internal compiler state
             -> IO () 
 
-nhcDbgTrans flags modidl mrps expFun userDefault tidFun tidFunSafe decls 
-  constrs impdecls state =
+nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
+  tidFunSafe decls constrs impdecls state =
     profile "dbgtrans" $
     case getErrors state of
       (state,[]) -> do
@@ -374,14 +390,14 @@ nhcDbgTrans flags modidl mrps expFun userDefault tidFun tidFunSafe decls
 
 
 {-
-Translate list comprehensions, do notation, etc, to core)
+Translate list comprehensions, do notation, etc, to core.
 -} 
 nhcRemove :: Flags 
           -> PackedString 
           -> a 
           -> b 
-          -> Maybe [Int] 
-          -> ((TokenId,IdKind) -> Int) 
+          -> Maybe [Id] 
+          -> ((TokenId,IdKind) -> Id) 
           -> c 
           -> (Decls Int,IntState,Maybe ((Int,[Int]),[(Pos,Int)]
                                        ,[ImpDecl TokenId],String)) 
@@ -402,11 +418,11 @@ nhcScc :: Flags
        -> PackedString 
        -> a 
        -> b 
-       -> Maybe [Int] 
-       -> ((TokenId,IdKind) -> Int) 
+       -> Maybe [Id] 
+       -> ((TokenId,IdKind) -> Id) 
        -> c 
        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
-       -> (Decls Int,[Int],IntState) 
+       -> (Decls Id,[Int],IntState) 
        -> IO ()
 
 nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt 
@@ -424,6 +440,7 @@ nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt
       pF (True) "Error after remove fileds:" (mixLine errors)
       exit
 
+
 {- 
 Type inference 
 -}
@@ -432,13 +449,13 @@ nhcType :: Flags
         -> PackedString 
         -> a 
         -> b 
-        -> Maybe [Int]  -- types chosen by user for defaulting of Num classes
+        -> Maybe [Id]  -- types chosen by user for defaulting of Num classes
         -> ((TokenId,IdKind) -> Int) 
         -> c 
         -> IntState 
         -> [ClassCode (Exp Int) Int] 
         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
-        -> Decls Int 
+        -> Decls Id
         -> IO ()
 
 nhcType flags zcon modidl  mrps  expFun userDefault tidFun tidFunSafe 
@@ -515,10 +532,10 @@ optimisation: evaluation of `fromInteger' where possible
 -}
 nhcFixSyntax :: Flags 
              -> [Int] 
-             -> ((TokenId,IdKind) -> Int) 
+             -> ((TokenId,IdKind) -> Id) 
              -> [ClassCode (Exp Int) Int] 
              -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
-             -> ([Decl Int],IntState,Tree (TokenId,Int)) 
+             -> ([Decl Id],IntState,Tree (TokenId,Int)) 
              -> IO ()
 
 nhcFixSyntax flags zcon tidFun code sridt (decls,state,t2i) =
@@ -540,7 +557,7 @@ Remove pattern matching: Change all pattern matches to case expressions.
 -}
 nhcCase :: Flags 
         -> [Int] 
-        -> ((TokenId,IdKind) -> Int) 
+        -> ((TokenId,IdKind) -> Id) 
         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
@@ -562,7 +579,7 @@ Expand primitives ?
 (actually done by preceding function)
 -}
 nhcPrim :: Flags 
-        -> ((TokenId,IdKind) -> Int) 
+        -> ((TokenId,IdKind) -> Id) 
         -> [Int] 
         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
         -> ([(Int,PosLambda)],IntState) 
@@ -582,7 +599,7 @@ Determine free variables (for lambda lifting)
 (actually done by preceding function)
 -}
 nhcFree :: Flags 
-        -> ((TokenId,IdKind) -> Int) 
+        -> ((TokenId,IdKind) -> Id) 
         -> [Int] 
         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
         -> ([(Int,PosLambda)],IntState) 
@@ -647,6 +664,10 @@ nhcCode1b flags tidFun zcon sridt (decls,state) = do
   nhcAtom flags zcon sridt (posAtom state decls)
 
 
+{-
+Pos Atom (not sure what this does!)
+(actually done by preceding function)
+-}
 nhcAtom :: Flags 
         -> [Int] 
         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
@@ -661,6 +682,10 @@ nhcAtom flags zcon sridt (decls,state) =
   dumpZCon flags state (gcodeZCon (sProfile flags) state zcon) sridt decls
 
 
+{-
+Dump zero-arity constructors to object file (as Gcode)
+(actually done by preceding function)
+-}
 dumpZCon :: Flags 
          -> IntState 
          -> [[Gcode]] 
@@ -697,6 +722,15 @@ dumpZCon flags state zcons sridt decls =
     dumpCode handle flags [] (gcodeFixInit state flags) es decls
 
 
+{-
+Generate Gcode for functions: for each declaration, do
+       STGGcode
+        GcodeFix
+        GcodeOpt1
+        GcodeMem
+        GcodeOpt2
+        GcodeRel
+-} 
 dumpCode :: Handle 
          -> Flags 
          -> [Foreign] 
@@ -707,7 +741,6 @@ dumpCode :: Handle
 
 dumpCode handle flags foreigns (state,fixState) es [] =
      dumpCodeEnd handle flags state es foreigns (gcodeFixFinish state fixState)
-
 dumpCode handle flags foreigns (state,fixState) es (decl:decls) =
   -- profile "dump code" $
   nhcCode2 handle flags fixState decls es foreigns 
@@ -757,6 +790,9 @@ nhcCode6 handle flags fixState decls state es foreigns gcode = do
   dumpCode handle flags foreigns (state,fixState) es' decls
 
 
+{-
+Dump Gcode to object file (as bytecode)
+-}
 dumpCodeEnd :: Handle 
             -> Flags 
             -> IntState 
@@ -796,6 +832,8 @@ dumpCodeEnd handle flags state es foreigns gcode =
 
 
 ---   Small help functions
+
+strISInt :: IntState -> Id -> String
 
 strISInt state v = strIS state v ++ "{"++show v++"}"
 

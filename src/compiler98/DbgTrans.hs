@@ -22,6 +22,7 @@ import NT
 import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
+import Id(Id)
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace(trace)
 #endif
@@ -61,7 +62,7 @@ debugTrans :: a
            -> ((TokenId,IdKind) -> Int) 
            -> PackedString 
            -> b 
-           -> c 
+           -> c {- [ImpDecl TokenId] -} 
            -> Decls Int 
            -> Maybe [(Pos,Int)] 
            -> (Decls Int,IntState,Maybe ((Int,[Int]),[(Pos,Int)],c,[Char]))
@@ -117,6 +118,9 @@ dTopDecl d = dDecl d
 dDecls (DeclsParse ds) = 
     mapS dDecl ds >>>= \dss -> 
     unitS (DeclsParse (concat dss))
+
+
+dDecl :: Decl Id -> State (Inherited a) Threaded [Decl Id] Threaded
 
 dDecl d@(DeclDefault tys) = unitS [d]
 dDecl d@(DeclVarsType vars ctx ty) = unitS [d] 
@@ -225,6 +229,10 @@ dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs =
 
 doTransform = ('_'/=) . last . unpackPS . extractV
 
+
+dCaf :: Pos -> Id -> String -> [Fun Id] -> NewType 
+     -> Inherited a -> Threaded -> ([Decl Id],Threaded)
+
 dCaf pos id cafName fundefs nt =
     lookupCon pos tNTId >>>= \ntid ->
     lookupCon pos t_Nm >>>= \nm ->
@@ -245,23 +253,42 @@ dCaf pos id cafName fundefs nt =
     newVar pos >>>= \ot ->
     noGuard >>>= \ng ->
     let tre = ExpVar pos tr
-	nte = {-ExpIf pos tre redex-} (ExpApplication pos 
-				    [nm, redex, ExpApplication pos 
-                                     [ntid, ExpLit pos (LitInt Boxed id)], sr])
-        ce = {-ExpApplication pos [cSeq, ExpVar pos t', (ExpApplication pos [te, ExpIf pos tre (ExpApplication pos [r, v, ot])-}
-			   (ExpApplication pos [r, v, ExpApplication pos 
-						     [sat, ExpVar pos t', ot]]){-])]-}
+	nte = {-ExpIf pos tre redex-} 
+              (ExpApplication pos 
+		 [nm, redex, ExpApplication pos 
+                               [ntid, ExpLit pos (LitInt Boxed id)]
+                 ,sr]
+              )
+        ce = {-ExpApplication pos 
+                 [cSeq, ExpVar pos t', (ExpApplication pos 
+                           [te, ExpIf pos tre (ExpApplication pos [r, v, ot])-}
+	     (ExpApplication pos [r, v, ExpApplication pos 
+					  [sat, ExpVar pos t', ot]])
+             {-])]-}
     in
 
-    unitS [DeclFun pos id [Fun [PatWildcard pos, PatWildcard pos] 
-                                [(ng, ExpVar pos nid)] (DeclsParse [])],
-           DeclFun pos nid [Fun [] 
-                               [(ng, 
-			         ExpCase pos e [Alt (PatIrrefutable pos (ExpApplication pos [r, v, ot]))
-				                     [(ng, ce)] (DeclsParse [])])]
-			       (DeclsParse
-			         (DeclFun pos t' [Fun [] [(ng, nte)] (DeclsParse [])]:DeclFun pos tr [Fun [] [(ng, ExpApplication pos [trust, redex])]
-		           (DeclsParse [])]:decls))]]
+  unitS [DeclFun pos id 
+           [Fun [PatWildcard pos, PatWildcard pos] 
+                [(ng, ExpVar pos nid)] (DeclsParse [])
+           ]
+        ,DeclFun pos nid 
+           [Fun [] 
+             [(ng, ExpCase pos e 
+                     [Alt (PatIrrefutable pos (ExpApplication pos [r, v, ot]))
+		  	  [(ng, ce)] (DeclsParse [])
+                     ]
+             )]
+	     (DeclsParse
+	        (DeclFun pos t' [Fun [] [(ng, nte)] (DeclsParse [])] 
+                :DeclFun pos tr [Fun [] [(ng
+                                         ,ExpApplication pos [trust, redex])]
+		                   (DeclsParse [])
+                                ]
+                :decls
+                )
+             )
+           ]
+        ]
 
 	   
 dFun pos id funName arity fundefs nt =
@@ -759,8 +786,12 @@ newVars pos n = \_ (Threaded istate srt idt) ->
 	                (is, istate') -> (map (ExpVar pos . snd) is, 
 			                  Threaded istate' srt idt)
 
-
-mkInfo :: Either Int Int -> String -> Int -> NewType -> Info
+{-
+Make info for a variable with given Id, name, arity and type.
+Right Id: Id is added to name
+Left Id: name used as given 
+-}
+mkInfo :: Either Id Id -> String -> Int -> NewType -> Info
 
 mkInfo (Right u) str arity nt = 
     InfoVar u (visImpRev (str ++ "_" ++ show u)) (InfixDef, 9) 
@@ -770,6 +801,16 @@ mkInfo (Left u) str arity nt =
     InfoVar u (visImpRev str) (InfixDef, 9) IEnone nt (Just arity)
 
 
+{-
+Wraps off most of the SRs, Traces and Rs.
+e.g. 
+unwrapNT 0 True (R Bool) = R Bool
+unwrapNT 1 False (SR -> Trace -> R(Trace -> R Int -> R Bool)) = 
+  Trace -> R Int -> R Bool
+unwrapNT 2 False 
+  (SR -> Trace -> R(Trace -> R Int -> R(Trace -> R Char -> R Int))) =
+  Trace -> R Int -> R Char -> R Int
+-}
 unwrapNT :: Int -> Bool -> NewType -> NewType
 
 unwrapNT arity isCaf nt@NoType = nt
@@ -786,8 +827,12 @@ unwrapNT arity isCaf
 unwrapNT arity isCaf nt = error ("unwrapNT: strange type: " ++ show nt)
 
 
+{-
+Create a new identifier with given arity, name and type.
+Boolean argument decides if Id is appended to name.
+-}
 addNewName :: Int -> Bool -> String -> NewType 
-           -> Inherited a -> Threaded -> (Int,Threaded)
+           -> Inherited a -> Threaded -> (Id,Threaded)
 
 addNewName arity addIdNr str nt = 
   \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->

@@ -55,7 +55,7 @@ keepRS :: RenameState
           ,((TokenId,IdKind) -> Int,(TokenId,IdKind) -> Maybe Int)
           ,(Int,PackedString)
           ,Tree (Int,Info)      -- the symbol table
-          ,[(Int,[(Pos,Int)])]
+          ,[(Int,[(Pos,Int)])]  -- derived
           ,Maybe [Int]          -- user defined defaults for Num classes
           ,[String])            -- errors
 

@@ -11,7 +11,12 @@ import List
 import Syntax
 import Extra(pair,isJust,dropJust,strace)
 import Bind(bindPat,bindDecls,identPat)
-import RenameLib
+import RenameLib(ImportState,RenameState,keepRS,is2rs,renameError,popScope
+                ,pushScope,globalTid,fixFixityRS,localTid,defineType
+                ,transTypes,defineDataPrim,uniqueTid,defineDerived,defineData
+                ,defineClass,transContext,defineDefault,defineVar,defineMethod
+                ,transType,defineDefaultMethod,defineInstMethod,uniqueTVar
+                ,defineField,defineConstr,checkPuns,bindNK)
 import Fixity(fixInfixList)
 import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
 import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt
@@ -30,6 +35,7 @@ import SyntaxUtil(infixFun)
 
 import StrSyntax(strConstr)
 import Overlap(Overlap)
+import Flags(Flags)
 
 {-
 Uniquely rename all identfiers (also patch fixity)
@@ -190,7 +196,8 @@ sepFixDecls = concatMap (\decl-> case decl of
 
 renameDecls (DeclsParse decls) (_,qualFun,expFun,fixity2) state3 =
     let (fixity3,state4) = fixFixityRS fixity2 state3 (sepFixDecls decls) in
-    (unitS DeclsParse =>>> mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
+    (unitS DeclsParse =>>> 
+    mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
 
 
 renameDecl :: Decl TokenId 
@@ -216,7 +223,10 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
   let al = tvPosTids tvs 
       free = map snd al
   in 
-     transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free [] ctxs nts) ->
+     transTypes al free ctxs 
+       (map (uncurry TypeVar) tvs 
+             ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= 
+       \ nt@(NewType free [] ctxs nts) ->
      mapS (renameConstr tid al free ctxs (last nts)) constrs >>>= \csfields ->
      let (cs,noargs,fields) = unzip3 csfields 
      in defineData b tid nt cs >>>= \d ->

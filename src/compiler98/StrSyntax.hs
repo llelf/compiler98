@@ -1,3 +1,7 @@
+{- ---------------------------------------------------------------------------
+Functions to convert an identifier (either TokenId or Unique) into a
+printable string.
+-}
 module StrSyntax where
 
 import Lex
@@ -37,10 +41,16 @@ strAnnot d p (AnnotNeed posidents) =
 strAnnot d p (AnnotUnknown) =
         ("{-# ??? #-}")
 
+
+strExports :: StrId a => b -> IntState -> [Export a] -> String
+
 strExports d p [] =
         ""
 strExports d p exports =
         "(" ++ mixComma (map (strExport d p) exports) ++ ")"
+
+
+strExport :: StrId a => b -> IntState -> Export a -> [Char]
 
 strExport d p (ExportEntity pos entity) =
         strEntity d p entity
@@ -111,3 +121,5 @@ strInst d p t = strType d p t
 
 strVarsType d p (DeclVarsType ids cxs t) =
         mixComma (map ((pStd p).snd) ids) ++ " :: " ++ strContexts d p cxs ++ strType d p t
+
+{- End Module StrSyntax -----------------------------------------------------}
