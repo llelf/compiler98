@@ -32,8 +32,12 @@ hGetChar (Handle h)    = IO (const (input h))
                else
                  Right (toEnum c)
 
+foreign import "_chGetChar" cHGetChar :: ForeignObj -> Int
+
+{-
 cHGetChar :: ForeignObj -> Int
 cHGetChar handle = _prim _tprim_chGetChar handle
 _tprim_chGetChar primitive 2 :: Trace -> R ForeignObj -> R Int
+-}
 
 #endif
