@@ -14,6 +14,10 @@ This release is mainly a maintenance refresh, fixing numerous bugs,
 and adding support for many of the new hierarchical libraries that
 are also supplied with ghc-6.4 and Hugs.
 
+Main bugfixes:
+    * Resolved configuration bugs when using ghc-6.2 and ghc-6.4 with hmake.
+    * Build failures associated with gcc-3.3 and upward have been fixed.
+
 Main feature updates:
     * Supplied with these standard library packages:
           base, parsec, haskell-src, QuickCheck, HaXml, HUnit, Cabal
@@ -22,18 +26,16 @@ Main feature updates:
     * cpphs: The compiler and hmake now use cpphs rather than your
              C compiler for preprocessing.  This removes problems with
              string gaps, primes in identifiers, and so on.
-    * Now supplied with a small test suite to help verify whether
+    * Source now supplied with a small test suite to help verify whether
       the compiler works on new platforms.
 
-Main bugfixes:
-    * Resolved configuration bugs when using ghc-6.2 and ghc-6.4 with hmake.
-    * Build failures associated with gcc-3.3 and upward have been fixed.
-
-This release of nhc98 has been tested on the following machines:
-    ix86-Linux      (Slackware 10 and RedHat 7.2 using ghc, hbc, gcc, nhc98)
-    ix86-Cygwin     (Windows 2000 using gcc (fails with ghc))
-    sparc-solaris2  (SunOS 5.9 using ghc, gcc, nhc98)
-    powerpc-Darwin7 (MacOS X 10.3 using ghc, gcc)
+This release of nhc98 has been tested with the following machines
+and build compilers:
+    ix86-Linux      (Slackware 10 and RedHat 7.2
+                     built with ghc-5, ghc-6, hbc, gcc-2.95, gcc-3.3, nhc98)
+    ix86-Cygwin     (Windows 2000 built with gcc-3.3, ghc-6)
+    sparc-solaris2  (SunOS 5.9 built with ghc-6, gcc-2.95, nhc98)
+    powerpc-Darwin7 (MacOS X 10.3 using ghc-6, gcc-2.95, gcc-3.3)
 
 Credits:
     Malcolm Wallace (release manager)
