@@ -20,13 +20,6 @@ data _E a = _E a	-- just a box to protect arg from evaluation
 makeForeignObj			:: Addr -> IO () -> IO ForeignObj
 makeForeignObj a f		 = primForeignObjC a (_E (unsafePerformIO f))
 
---makeForeignObj		:: Addr -> (Addr->IO()) -> IO ForeignObj
---makeForeignObj a f		 = primForeignObj a (unsafePerformIO (f a))
-
--- Note that `primForeignObj' is a primitive, not a `foreign import',
--- because the latter FFI has no way to return a complete ForeignObj
--- including finaliser - it can only return the address contained within.
-primForeignObj primitive 2	:: Addr -> a -> IO ForeignObj
 
 -- Note that `primForeignObjC' does not strictly conform to the FFI
 -- standard.  It is not legal to return a ForeignObj as the result of
