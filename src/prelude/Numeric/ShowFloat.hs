@@ -1,4 +1,13 @@
-module Numeric(showFloat) where
+module Numeric (showFloat) where
+
+import ShowGFloat
+
+showFloat :: (RealFloat a) => a -> ShowS
+showFloat = showGFloat Nothing
+
+{-
+-- All the code below is from a earlier version of the Numeric library.
+-- It has now be replaced by the code above.
 
 import Ratio(Ratio,Rational,(%))
 
@@ -45,3 +54,4 @@ showFloat' x =
     b		= floatRadix x
     w		= floatDigits x
 
+-}
