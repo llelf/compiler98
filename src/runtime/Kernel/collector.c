@@ -21,6 +21,7 @@ NodePtr hpBase;
 NodePtr bitTable;
 
 /* int hpSize = HEAPSIZE;  -- defined at compile-time, and linked in */
+extern int hpSize;
 int spSize = STACKSIZE;
 NodePtr hpStart,hpEnd;
 NodePtr *spStart,*spEnd;
@@ -639,11 +640,17 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
   hpBase = hp;
 
   if(hp+size >= (NodePtr)sp) { /* !!! hpLimit */
-    fprintf(stderr,"Only %d words after gc, need %ld words\n",(NodePtr)sp-hp,size);
-    fprintf(stderr,"\n\nUsed  %ld words of heap.\n",hp-hpBase+hpTotal);
-    fprintf(stderr,"Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
-    fprintf(stderr,"%d words to next gc.\n",(NodePtr)sp-hp);
-    fprintf(stderr,"Max live after gc: %ld words.\n",hpMaxSurvive);
+    fprintf(stderr,"The program ran out of heap memory.");
+    fprintf(stderr,"  (Current heapsize is %d bytes.)\n",hpSize);
+    fprintf(stderr,"You can set a bigger size with e.g. +RTS -H4M -RTS");
+    fprintf(stderr," (4M = four megabytes).");
+    fprintf(stderr,"GC stats:\n  ");
+    fprintf(stderr,"  Only %d words after gc, need %ld words.\n"
+                                                         ,(NodePtr)sp-hp,size);
+    fprintf(stderr,"  Used  %ld words of heap.",hp-hpBase+hpTotal);
+    fprintf(stderr,"  Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
+    fprintf(stderr,"  %d words to next gc.",(NodePtr)sp-hp);
+    fprintf(stderr,"  Max live after gc: %ld words.\n",hpMaxSurvive);
 #if TRACE
     startDbg(*sp,0/*FALSE*/);
 #endif
