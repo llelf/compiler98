@@ -695,7 +695,7 @@ else	# [ "$INSTALL" = "yes" ]
       else echo ' (exists)'
       fi
     fi
-    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
+    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . --exclude ghc --exclude nhc98 ) |\
       ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
     if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
