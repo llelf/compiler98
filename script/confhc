@@ -63,14 +63,17 @@ fi
   
   
 # Now look for GHC.  Determining the version number here is due to Simon Marlow.
+ghcsym () {
+  echo __GLASGOW_HASKELL__ >/tmp/ghcsym.hs;
+  $1 -E -cpp -optP-P /tmp/ghcsym.hs -o $2;
+  rm -f /tmp/ghcsym.hs;
+}
 echo -n "  Looking for ghc...   "
 if which ghc >/dev/null 2>&1
 then
   GHCKNOWN=`which ghc`
   GHCVERSION=`${GHCKNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-  echo __GLASGOW_HASKELL__ >/tmp/ghcsym.hs;
-  ${GHCKNOWN} -E -cpp -optP-P /tmp/ghcsym.hs -o targets/$MACHINE/ghcsym;
-  rm -f /tmp/ghcsym.hs
+  ghcsym ${GHCKNOWN} targets/$MACHINE/ghcsym;
 fi
 if [ "$GHCKNOWN" = "" ]
 then  echo "(not found)"
@@ -90,9 +93,7 @@ then
     then
       GHC2KNOWN=`which $COMP`
       GHC2VERSION=`${GHC2KNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-      echo __GLASGOW_HASKELL__ >/tmp/ghcsym.hs;
-      ${GHC2KNOWN} -E -cpp -optP-P /tmp/ghcsym.hs -o targets/$MACHINE/ghcsym;
-      rm -f /tmp/ghcsym.hs
+      ghcsym ${GHC2KNOWN} targets/$MACHINE/ghcsym;
     fi
     if [ "$GHC2KNOWN" = "" ]
     then  echo "(not found)"
