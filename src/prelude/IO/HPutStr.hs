@@ -3,8 +3,7 @@ module IO (hPutStr) where
 import DHandle
 import HPutChar
 
-#if 1
--- defined(TRACING)
+#if defined(TRACING)
 -- This is the definitely working, but inefficient, version.
 hPutStr               :: Handle -> String -> IO ()
 hPutStr h []           = return ()
