@@ -128,7 +128,7 @@ RUNTIMET = \
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
 	  src/hat/lib/*.hs      src/hat/lib/*.hx \
-	  src/hat/lib/hat-package.conf
+	  src/hat/lib/Hat/*.hs	src/hat/lib/hat-package.conf
 HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
 	  src/hat/oldtools/Makefile* src/hat/oldtools/*.[ch] \
 	  src/hat/oldtools/*.hs src/hat/oldtools/*.gc
@@ -378,10 +378,10 @@ $(TARGDIR)/$(MACHINE)/hat-trans-nhc: src/hat/trans/*.hs src/compiler98/*.hs
 	cd src/hat/trans;	$(MAKE) HC=nhc98 all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-ghc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=ghc all install-ghc
+	cd src/hat/lib;		$(MAKE) HC=ghc all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-nhc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=nhc98 all install-nhc98
+	cd src/hat/lib;		$(MAKE) HC=nhc98 all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-tools-ghc: $(HATUI)
 	cd src/hat/tools;      $(MAKE) HC=ghc install
@@ -526,8 +526,8 @@ HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
 HATMISC = Makefile.inc Makefile.hat hat-configure \
 	  src/Makefile.inc src/hat/Makefile* include/art.h
 HATTRANS = src/hat/trans/Makefile* \
-	 $(shell hmake -M HatTrans.hs -Isrc/hat/trans -Isrc/compiler98 \
-		 -package lang \
+	 $(shell hmake -package lang -M HatTrans.hs \
+		-Isrc/hat/trans -Isrc/compiler98 \
 		| cut -d':' -f1 | sed -e 's/\.o$$/.hs/' | sed -e '/^. /d' )
 HATMAN  = man/hat-*
 HATDOCS = docs/hat/*

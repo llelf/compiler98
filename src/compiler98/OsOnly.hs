@@ -46,7 +46,7 @@ fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hit"
 fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "c"
 fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
 fixHatAuxFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
-fixHatTransFile isUnix rootdir s = rootdir ++ fixFile isUnix ('T':s) "hs"
+fixHatTransFile isUnix rootdir s = "Hat/"++ rootdir ++ fixFile isUnix s "hs"
 fixHatFileBase isUnix rootdir s = rootdir ++ s 
 
 -- add extension to file
