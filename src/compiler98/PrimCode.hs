@@ -381,7 +381,7 @@ evalPrim met =
        if met == rpsseq then Just SEQ
   else Nothing
 
-rpsseq = impRev "seq"
+rpsseq = impRev "_seq"
 
 ---- ======================================================
 

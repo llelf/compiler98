@@ -19,7 +19,8 @@ newtype SR        = SR        Int
 
 data E a = E a			-- E to protect a closure from evaluation
 
-myseq a b = cSeq a (E b)	-- need our own version of seq
+myseq a b = _seq a b		-- bytecode
+--myseq a b = cSeq a (E b)	-- need our own version of seq
 cSeq primitive 2 :: a -> (E b) -> b
 
 newtype Trace = Trace CStructure
