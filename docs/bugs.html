@@ -22,8 +22,6 @@
 <dt><em>Strictness annotations on named-field labels</em></dt>
   <dd>are not implemented - although you can use strictness annotations
       elsewhere.</dd>
-<dt><em>Read/Show instances for named-fields</em></dt>
-  <dd>do not show or read the label syntax, just the values.</dd>
 <dt><em>Precursor to one below </em></dt>
   <dd><a href="bugs/nhc13test2.hs">Example program</a>.</dd>
 <dt><em>Type checking: default declarations</em></dt>
@@ -64,6 +62,8 @@
 
 <h3>Fixed bugs :-)</h3>
 <dl>
+<dt><em>Read/Show instances for named-fields</em> (fixed 000614)</dt>
+  <dd>did not show or read the label syntax, just the values.</dd>
 <dt><em>Runtime crashes on Array-based programs</em> (fixed 000314)</dt>
   <dd>A program although it compiled, crashed intermittently at runtime,
       sometimes with SegFaults, sometimes with other errors.  This was
