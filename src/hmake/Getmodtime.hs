@@ -5,10 +5,10 @@ import Time
 data When = Never | At ClockTime  deriving (Eq, Ord)
 
 instance Show When where
-    showsPrec d Never = showString "never"
+    showsPrec d Never = showString "Never"
     showsPrec d (At i) = showString ("At "++show i)
 
-show_When Never = "never"
+show_When Never = "Never"
 show_When (At t) = show t
 
 isOlder Never _ = True
