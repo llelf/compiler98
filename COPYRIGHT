@@ -7,16 +7,26 @@ The majority of the hmake tool is
 Many modifications to hmake are
 (c) copyright to Malcolm Wallace, 1998-1999.
 
+The hmake interactive tool is
+(c) copyright to Malcolm Wallace, 2000.
+
 The hp2graph tool is
 (c) copyright to David Wakeling and Niklas Rojemo, 1991-1996.
 
-The nhc98tracer tool is
-(c) copyright to Jan Sparud, 1996-1998.
+The Hat rtb (redex trail browser) tool is
+(c) copyright to Jan Sparud, 1996-1998,
+with modifications 
+(c) copyright to Colin Runciman, 2000.
+
+The HOOD Observe library and graphical browser are
+(c) copyright to Andy Gill, 2000.
+The HOOD graphical browser incorporates open source Java components
+(c) copyright MicroStar Inc, 1999.  (Please read their separate license.)
 
 Other parts of the nhc98 compiler, libraries, and system were
 contributed by Malcolm Wallace, Jan Sparud, David Wakeling, Colin
-Runciman, and Phil Hassall, and are (c) copyright to them, their
-respective institutions, or funding bodies, 1996-1999.
+Runciman, Phil Hassall, and Olaf Chitil, and are (c) copyright to them, their
+respective institutions, or funding bodies, 1996-2000.
 
 The development of nhc98 (and its predecessor nhc13) has been supported
 by NUTEK (Sweden), Canon Research Europe Ltd., EPSRC (UK), and the
