@@ -12,7 +12,7 @@ THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 
 
 PROGNAMES = hat-stack hat-connect hat-observe hat-check hat-detect hat-checki \
-            hatobserve hatdetect
+            hat-port hatobserve hatdetect
 PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
 all: $(OBJDIR) $(PROGS)
@@ -40,6 +40,9 @@ $(DEST)/hat-connect: hat-connect.c browsercomms.h $(MALCOBJS)
 $(DEST)/hat-stack: hat-stack.c utils.h $(MALCOBJS)
 	$(CC) $(OPT) -I$(INCDIR) hat-stack.c $(OBJDIR)/utils.o \
 		-o $(DEST)/hat-stack
+$(DEST)/hat-port: hat-port.c $(OBJDIR)/minisocklib.o
+	$(CC) $(OPT) -I$(INCDIR) hat-port.c $(OBJDIR)/minisocklib.o \
+		-o $(DEST)/hat-port
 
 
 # Colin's libraries and tools

@@ -79,7 +79,7 @@ static void resolver_error(char *call, char *host)
  *		SYSCALL_ERROR	: if bind fails
  *		RESOLVER_ERROR	: if it can't get the address of the local host
  */
-static int bind_address(int sd, short port)
+int bind_address(int sd, short port)
 {
     struct sockaddr_in sin;
     int errno_save;
