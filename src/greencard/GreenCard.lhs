@@ -8,7 +8,7 @@ module Main(main) where
 
 import Package
 import System( getArgs )
-import GetOpt
+import GetOptSOF
 import Process( processFile )
 import Target( Target(..) )
 import ListUtils( split, dropSuffix )

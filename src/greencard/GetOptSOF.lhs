@@ -1,6 +1,6 @@
 --A command-line options library - sof 1/97
 
-> module GetOpt
+> module GetOptSOF
 >        (
 >         Opt(..),  -- instance Functor, Monad, MonadZero, MonadPlus (in 1.3)
 >

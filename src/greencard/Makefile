@@ -11,7 +11,7 @@ ifeq "ghc" "$(findstring ghc, ${HC})"
 endif
 
 
-SRCS =	Casm GetOpt GreenCard ListUtils Name Package \
+SRCS =	Casm GetOptSOF GreenCard ListUtils Name Package \
 	PrettyUtils Target Type NHCBackend DIS Decl  \
 	FillIn NameSupply Pretty Proc Process \
 	HandLex HandParse ParseLib
@@ -49,7 +49,7 @@ $(OBJDIR)/GreenCard$(EXE):
 #DIS.c:         Name.c Pretty.c PrettyUtils.c Casm.c
 #Decl.c:        Name.c DIS.c Type.c Pretty.c
 #FillIn.c:      Decl.c Proc.c Name.c DIS.c Type.c Casm.c Pretty.c PrettyUtils.c ListUtils.c NameSupply.c
-#GreenCard.c:   Package.c GetOpt.c Process.c Target.c ListUtils.c
+#GreenCard.c:   Package.c GetOptSOF.c Process.c Target.c ListUtils.c
 #HandParse.c:   HandLex.c Name.c Type.c DIS.c Decl.c ParseLib.c
 #NameSupply.c:  Name.c
 #NHCBackend.c:  Pretty.c PrettyUtils.c Decl.c DIS.c Casm.c FillIn.c NameSupply.c
