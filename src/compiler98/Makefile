@@ -62,7 +62,7 @@ clean:
 realclean: clean
 	rm -f *.c $(TARGET)
 
-$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING}
+$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
 	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main
 	mv $(OBJDIR)/Main $(TARGET)
 	strip $(TARGET)

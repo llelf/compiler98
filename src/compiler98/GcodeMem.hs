@@ -35,6 +35,7 @@ eitherOf  as bs = filter (`notElem` bs) as ++ bs
 bothOf as bs = filter (`elem` bs) as 
 
 needheap 0 gs = gs
+needheap n (NEEDSTACK m:gs) = NEEDHEAP (n+m) : gs
 needheap n gs = NEEDHEAP n : gs
 
 use :: Int -> [Int] -> [Int]

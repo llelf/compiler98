@@ -24,7 +24,9 @@ lexical u file l =
 lexicalCont :: PosToken -> Either String [PosToken]
 lexicalCont (p,t,(i:s@(i':_)),r) =
                 if i > 0
-                then Right ((p,t,s,r) : iLex s i' r)
+                then -- Right ((p,t,s,r) : iLex s i' r) -- not correct?
+                     case r of
+                       ((f,_,_,_):_) -> Right (piLex f s i' p t r)
                 else Left "Layout }"
 lexicalCont (p,t, []  ,r) = 
                 Left "Layout }"
@@ -46,8 +48,8 @@ iLex s i ((f,r,c,t):pt) =
     (_:s'@(i':_)) = s
     p = toPos r c
 
-    piLex :: PackedString -> LexState -> Int -> Pos -> Lex -> [PosTokenPre] -> [PosToken]
-    piLex file s i p tok tr@((f,r,c,t'):pt)
+piLex :: PackedString -> LexState -> Int -> Pos -> Lex -> [PosTokenPre] -> [PosToken]
+piLex file s i p tok tr@((f,r,c,t'):pt)
       | tok `elem` [L_let, L_where, L_of, L_do] =
           (p,tok,s,tr)
           : if t' == L_LCURL then
@@ -60,16 +62,16 @@ iLex s i ((f,r,c,t):pt) =
                   else
                     (p, L_RCURL',s,tr)
                     : iLex s i tr
-    piLex file s i p L_LCURL  pt =
+piLex file s i p L_LCURL  pt =
           (p,L_LCURL,s,pt)
           : iLex (0:s) 0 pt
-    piLex file s i p L_RCURL  pt = 
+piLex file s i p L_RCURL  pt = 
       if i == 0
       then case s of 
              (_:s'@(i':_)) -> (p,L_RCURL,s,pt) : iLex s' i' pt
              _             -> failPos file p "Unbalanced '}' (Stack empty)."
       else failPos file p "Unbalanced '}' (No explicit '{' in scope)"
-    piLex file s i p t pt  =
+piLex file s i p t pt  =
           (p,t,s,pt)
           : iLex s i pt
 
