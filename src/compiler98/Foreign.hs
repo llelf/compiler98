@@ -158,9 +158,16 @@ findFirst f (x:xs) =
 
 strForeign :: Foreign -> ShowS
 strForeign f@(Foreign Imported cast cname hname arity args res) =
-    nl . showString "/*" . space . shows f . space . showString "*/" . nl .
+    nl . comment (shows f) . nl .
     word "extern" . space . cResType res . space . word realcname .
       parens (listsep comma (map cTypename args)) . semi .
+    word "#ifdef PROFILE" . nl .
+    word "static SInfo" . space . word profinfo . space . equals . space .
+      opencurly . strquote (word modname) . comma .
+                  strquote (shows hname) . comma .
+                  strquote (word modname . dot . shows res) .
+      closecurly . semi .
+    word "#endif" . nl .
     word "C_HEADER" . parens (foreignname hname) . space .
     opencurly . nl .
       indent . word "NodePtr nodeptr" . semi .
@@ -171,7 +178,7 @@ strForeign f@(Foreign Imported cast cname hname arity args res) =
        else if length args == 1 && noarg (head args)
        then cCall realcname 0 res
        else cCall realcname arity res) . nl .
-      cFooter res .
+      cFooter profinfo res .
     closecurly . nl
   where
     cArg a n = indent . cArgDecl a n
@@ -179,11 +186,13 @@ strForeign f@(Foreign Imported cast cname hname arity args res) =
       case cname of
         "" -> (reverse . unpackPS . extractV) hname
         _  -> cname
+    modname = (reverse . unpackPS . extractM) hname
     noarg Unit = True
     noarg _    = False
+    profinfo = "pf_"++realcname
 
 strForeign f@(Foreign Exported _ cname hname arity args res) =
-    nl . showString "/*" . space . shows f . space . showString "*/" . nl .
+    nl . comment (shows f) . nl .
     cCodeDecl realcname args res . space .
     opencurly . nl .
       --cResDecl res .
@@ -235,13 +244,15 @@ cCast arity res =
         _      -> word "result = " . parens (cResType res) . parens (narg 1) . semi
       )
 
-cFooter (Pure arg) =
+cFooter profinfo (Pure arg) =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
+    indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
-cFooter (IOResult arg) =
+cFooter profinfo (IOResult arg) =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
+    indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
-cFooter IOVoid =
+cFooter profinfo IOVoid =
     indent . word "C_RETURN(mkUnit())" . semi
  
 
@@ -363,6 +374,7 @@ closeparen = showChar ')'
 opencurly  = showChar '{'
 closecurly = showChar '}'
 parens s   = openparen . s . closeparen
+strquote s = showChar '"' . s . showChar '"'
 squares s  = showChar '[' . s . showChar ']'
 semi       = showChar ';' . nl
 nl         = showChar '\n'
@@ -370,8 +382,9 @@ space      = showChar ' '
 equals     = showChar '='
 word       = showString
 comma      = showChar ','
+dot        = showChar '.'
 listsep s x= if length x > 0 then foldr1 (\l r-> l . s . r) x else id
 indent     = space . space
 narg n     = word "arg" . shows n
-comment s  = word "/* " . s . word " */"
+comment s  = word "/*" . space . s . space . word "*/"
 
