@@ -43,7 +43,7 @@ lib:  $(patsubst %,%.make,${LIBSUBDIRS})
 prel: $(patsubst %,%.make,${PRELSUBDIRS})
 boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.$O
-	ranlib ${ARCHIVE}
+	-ranlib ${ARCHIVE}
 objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: ${SUBDIRCFILES}
 fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
@@ -84,11 +84,11 @@ ifeq "${TPROF}" ""
 
 relink:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.$O
-	ranlib ${ARCHIVE}
+	-ranlib ${ARCHIVE}
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.$O
-	ranlib $@
+	-ranlib $@
 
 #else    #### PHtprof
 #
@@ -183,7 +183,7 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 #	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ \
 #	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/tpl?%.o,$@) \
 #	$(patsubst ${DST}/tp%${CFG}.a, ${OBJDIR}/%/*.$O,$@)
-#	ranlib $@
+#	-ranlib $@
 #
 ##All the tpl?*.o are in ${BUILDDIR}/objt/prelude/
 #TPLABELS:= ${TPLABELS3} ${TPLABELS1}
@@ -367,7 +367,7 @@ ${TPLARSAUTO}:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ \
 	$(patsubst ${DST}/%.${CFG}.a, ${OBJDIR}/tpl?%.o,$@) \
 	$(patsubst ${DST}/%.${CFG}.a, ${OBJDIR}/%/*.${O},$@)
-	ranlib $@
+	-ranlib $@
 
 #All the tpl?*.o are in ${BUILDDIR}/obj/prelude/
 TPLABELS:= ${TPLABELS3} ${TPLABELS1}
