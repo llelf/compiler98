@@ -370,7 +370,8 @@ matchOne (ce:ces) (PatternNK x) def =
   caseTranslate v (concatMap (getTrans.fst) x) >=>
   mapS (matchNK v ces) x >>>= \ nks ->
   def >>>= \ e2 ->
-  optFatBar (f (foldr ($) PosExpFail nks)) e2
+--optFatBar (f (foldr ($) PosExpFail nks)) e2
+  optFatBar (f (foldr1 (PosExpFatBar True) nks)) e2
 
 matchOne (ce:ces) (PatternIf x) def =
   varExp ce >>>= \ (v,f,ce) ->
@@ -475,7 +476,8 @@ matchAltInt ces (i,funs) =
   match ces funs (unitS PosExpFail) >>>= \ exp ->
   unitS (PosAltInt noPos i  exp)
 
-matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun (PosExp->PosExp)
+--matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun (PosExp->PosExp)
+matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
 matchNK v ces (PatNplusK pos n n' k kle ksub, fun) =
   match ces [fun] (unitS PosExpFail) >>>= \ exp ->
   caseDecl 
@@ -485,7 +487,8 @@ matchNK v ces (PatNplusK pos n n' k kle ksub, fun) =
   caseDecl 
     (DeclFun pos n [Fun [] (Unguarded ksub) (DeclsScc [])]) >>>= \ binding ->
   unitS 
-    (\f-> PosExpLet pos local (PosExpIf pos cond (PosExpLet pos binding exp) f))
+--  (\f-> PosExpLet pos local (PosExpIf pos cond (PosExpLet pos binding exp) f))
+    (PosExpLet pos local (PosExpIf pos cond (PosExpLet pos binding exp) PosExpFail))
 
 ------------------
 
