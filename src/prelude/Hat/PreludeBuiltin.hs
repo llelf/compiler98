@@ -5,7 +5,7 @@ module PreludeBuiltin (
   -- reexport from module PreludeBuiltinTypes   
   Bool(True,False),Char,Int,Integer,Float,Double,IOError 
   ,[]((:),[]),IO
-  ,()(()),
+  ,()(())
   ,(,)((,)), (,,)((,,)),(,,,)((,,,)),(,,,,)((,,,,)),(,,,,,)((,,,,,))
   ,(,,,,,,)((,,,,,,)),(,,,,,,,)((,,,,,,,)),(,,,,,,,,)((,,,,,,,,))
   ,(,,,,,,,,,)((,,,,,,,,,)),(,,,,,,,,,,)((,,,,,,,,,,))
