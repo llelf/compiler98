@@ -31,7 +31,7 @@ realclean: clean
 
 
 $(OBJDIR):
-	mkdir -p $(OBJDIR) || /bin/true
+	mkdir -p $(OBJDIR) || $(TRUE)
 
 $(OBJS): $(OBJDIR)/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $<

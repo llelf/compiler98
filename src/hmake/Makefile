@@ -63,7 +63,7 @@ $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	strip $@
 
 $(OBJDIR):
-	mkdir -p $(OBJDIR) || /bin/true
+	mkdir -p $(OBJDIR) || $(TRUE)
 $(OBJS): $(OBJDIR)/%.$O : %.hs
 	$(HC) $(HFLAGS) -c -o $@ $<
 $(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O: $(OBJDIR)/%.$O : %.hs

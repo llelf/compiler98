@@ -34,7 +34,7 @@ realclean: clean
 
 
 $(OBJDIR):
-	mkdir -p $(OBJDIR) || /bin/true
+	mkdir -p $(OBJDIR) || $(TRUE)
 $(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard$(EXE)
 	mv $(OBJDIR)/GreenCard$(EXE) $(TARGET)
 	strip $(TARGET)

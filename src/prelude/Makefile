@@ -79,7 +79,7 @@ ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 
 ${OBJDIRS}: ${OBJDIR}/% :
-	mkdir -p $@ || /bin/true
+	mkdir -p $@ || $(TRUE)
 
 
 ifeq "${TPROF}" ""
@@ -328,9 +328,9 @@ cleanC: ${SUBDIRCLEANC}
 
 
 ${OBJDIR}:
-	mkdir -p ${OBJDIR} || /bin/true
+	mkdir -p ${OBJDIR} || $(TRUE)
 ${OBJDIRS}: ${OBJDIR}/% :
-	mkdir -p $@ || /bin/true
+	mkdir -p $@ || $(TRUE)
 
 ifeq "${TPROF}" ""
 

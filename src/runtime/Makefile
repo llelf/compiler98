@@ -13,7 +13,6 @@ else
   SUF=.${CFG}
 endif
 
-TRUE = /bin/true
 LDFLAGS = -r
 ARFLAGS = r
 
@@ -51,7 +50,7 @@ ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 
 ${OBJDIRS}: ${OBJDIR}/% :
-	mkdir -p $@  || /bin/true
+	mkdir -p $@ || $(TRUE)
 
 objdir: ${OBJDIR}
 	cd Kernel;  $(MAKE) objdir
