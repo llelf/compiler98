@@ -6,7 +6,7 @@ EXTRA_H_FLAGS	=
 EXTRA_C_FLAGS	=
 
 SRCS	= CpuTimePrecision.hs GetCPUTime.gc
-SRCS_T	=
+SRCS_T	= ${SRCS}
 
 # Here are the main rules.
 include ../Makefile.common

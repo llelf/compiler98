@@ -136,9 +136,10 @@ else	#### tracing
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeList PreludeIO PreludeText PreludeDebug Prelude \
 	Maybe List Monad System IO PackedString \
-	Ix Array Complex GreenCard Directory FFI IOExtras
+	Ix Array Complex GreenCard Directory CPUTime Random \
+	FFI IOExtras
 NOTYET=	NonStd \
-	Locale Time CPUTime Random Haskell \
+	Locale Time Haskell \
 	Binary Bit BinArray Observe
 
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
