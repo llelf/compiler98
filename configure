@@ -7,7 +7,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.09 (CVS development version)"
+CONFIGVERSION="v1.11 (CVS development version)"
 HMAKEVERSION="2.03 (2001-10-02)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
