@@ -145,7 +145,7 @@ do
   echo "  --config             Configure only (do not install) [default]"
   echo "  --install            Configure AND install now"
   echo "  --help / -h          Display these options and quit"
-  echo "  --version / -v       Display versions of `basename $0` and nhc98"
+  echo "  --version / -v       Display versions of hmake and nhc98"
   echo
  #echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
   echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
