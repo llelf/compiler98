@@ -46,7 +46,6 @@ module Flags
   ,sArity
   ,sLBound
   ,sLift
-  ,sProfile
   ,sABound
   ,sAtom
   ,sAnsiC
@@ -170,7 +169,6 @@ data Flags = FF
   ,sShowIndent :: Int   -- indentation for nesting shown intermediate program
   ,sShowQualified :: Bool -- show qualified ids as far as possible
   }
-  deriving Show
 
 
 -- not a selector, but a function:
