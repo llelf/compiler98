@@ -189,7 +189,7 @@ strChr' del c = if isPrint c
                  then if c == del 
                       then "\\" ++ [c]
                       else [c]
-                 else "\\" ++ map (toEnum . (+(fromEnum '0')))
+                 else "\\o" ++ map (toEnum . (+(fromEnum '0')))
                                   (ctoo (fromEnum c))
                     where ctoo c = [(c `div` 64),(c `div` 8) `mod` 8,c `mod` 8]
                           
