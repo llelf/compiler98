@@ -22,7 +22,7 @@
 #define HsWord64	unsigned long long
 
 #define HS_CHAR_MIN	0
-#define HS_CHAR_MAX	255
+#define HS_CHAR_MAX	0xff
 #define HS_INT_MIN	HS_INT32_MIN
 #define HS_INT_MAX	HS_INT32_MAX
 
@@ -36,12 +36,12 @@
 #define HS_INT64_MAX	9223372036854775807
 
 #define HS_WORD8_MIN	0
-#define HS_WORD8_MAX	255
+#define HS_WORD8_MAX	0xff
 #define HS_WORD16_MIN	0
-#define HS_WORD16_MAX	65535
+#define HS_WORD16_MAX	0xffff
 #define HS_WORD32_MIN	0
-#define HS_WORD32_MAX	(HsWord32)4294967295
+#define HS_WORD32_MAX	(HsWord32)0xffffffff
 #define HS_WORD64_MIN	0
-#define HS_WORD64_MAX	(HsWord64)18446744073709551615
+#define HS_WORD64_MAX	(HsWord64)0xffffffffffffffff
 
 #endif
