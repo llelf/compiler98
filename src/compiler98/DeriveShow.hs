@@ -1,6 +1,7 @@
 module DeriveShow (deriveShow) where
 
 import List
+import Maybe
 import Syntax
 import MkSyntax(mkInt)
 import IntState
@@ -42,6 +43,7 @@ deriveShow tidFun cls typ tvs ctxs pos =
 
 mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expLessThan expDot pos constrInfo =
   let 
+      fields = fieldsI constrInfo
       conTid = dropM (tidI constrInfo)
       con = ExpCon pos (uniqueI constrInfo)
       expShowsConOp = ExpApplication pos [expShowString,ExpLit pos (LitString Boxed (showsOp conTid ""))]
@@ -78,7 +80,9 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
 							        ,expShowSpace
 								,ExpApplication pos [expShowsPrec,mkInt pos rp,v2e]]]]]]
 		)] (DeclsParse []))
-    NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+
+    NewType _ _ _ (_:nts) | any isNothing fields ->
+      -- We only want a list with one element for each argument, the elements themselves are never used
       mapS ( \ _ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \ args ->
       let exp10 = ExpLit pos (LitInt Boxed 10)
           exp9 = ExpLit pos (LitInt Boxed 9)
@@ -90,6 +94,48 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
 			      expShowsConVar
 			      args])]
             (DeclsParse []))
+
+    NewType _ _ _ (_:nts) ->  -- named field labels must be shown
+      mapS ( \ _ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \ args ->
+      mapS (getInfo.fromJust) fields >>>= \ labels ->
+      let exp10 = ExpLit pos (LitInt Boxed 10)
+          exp9 = ExpLit pos (LitInt Boxed 9)
+	  expShowsPrec10 arg = ExpApplication pos [expShowsPrec,exp10,arg]
+	  expShowsLabel label = ExpApplication pos [expShowString,ExpLit pos (LitString Boxed (showsVar (dropM (tidI label)) "="))]
+          expShowsOpen  = ExpApplication pos [expShowString,ExpLit pos (LitString Boxed "{")]
+          expShowsClose = ExpApplication pos [expShowString,ExpLit pos (LitString Boxed "}")]
+          expShowsComma = ExpApplication pos [expShowString,ExpLit pos (LitString Boxed ",")]
+      in unitS (
+	    Fun [expD,ExpApplication pos (con:args)]
+	     [(expTrue,
+               ExpApplication pos [expShowParen,
+                 ExpApplication pos [expLessThan,exp9,expD],
+
+                 ( foldl (\acc item->
+                          ExpApplication pos [expDot,acc,item]) expShowsConVar .
+                   (expShowsOpen:) .
+                   (++[expShowsClose]) .
+                   intersperse expShowsComma .
+                   zipWith (\label arg->
+                              ExpApplication pos [expDot,expShowsLabel label,
+                                                         expShowsPrec10 arg])
+                           labels
+                 ) args
+                 ])]
+
+--               ExpApplication pos [expDot,
+--                 foldl ( \ acc (label,arg) ->
+--                       ExpApplication pos [expDot,
+--                         ExpApplication pos [expDot, acc ,
+--                           ExpApplication pos [expDot, expShowSpace,
+--                             expShowsLabel label]],
+--                         expShowsPrec10 arg])
+--		      (ExpApplication pos [expDot, expShowsConVar, expShowsOpen])
+--		      (zip (map tidI labels) args),
+--                  expShowsClose]])]
+
+              (DeclsParse []))
+
 
 mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot pos typInfo constrInfos =
   getUnique >>>= \ v ->

@@ -207,7 +207,7 @@ updConstrsI (InfoData   unique tid exp nt dk) constrs' =
       case dk of
 	(Data unboxed  constrs) -> InfoData   unique tid exp nt (Data unboxed  constrs')
 
-filedsI (InfoConstr unique tid fix nt fields iType) = fields
+fieldsI (InfoConstr unique tid fix nt fields iType) = fields
 
 combInfo  InfoClear                       info'                     = info'
 combInfo (InfoUsed _ w)                  (InfoUsed u' w')           = InfoUsed u' (w++w')
