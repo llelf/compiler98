@@ -1,6 +1,7 @@
-module NHC.PackedString where
+module NHC.PackedString(index) where
 
 import DPackedString(PackedString)
 import Prelude hiding(Ix(range,index,inRange))
 
-index primitive 2 :: PackedString -> Int -> Char
+indexPS primitive 2 :: PackedString -> Int -> Char
+index x y = indexPS x y

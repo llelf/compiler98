@@ -1,9 +1,9 @@
 
 #include "haskell2c.h"
 
-/* index :: Prelude.PackedString -> Prelude.Int -> Prelude.Char */
+/* indexPS :: Prelude.PackedString -> Prelude.Int -> Prelude.Char */
 
-C_HEADER(index)
+C_HEADER(indexPS)
 {
   int length;
   int index;
