@@ -292,6 +292,7 @@ esac
 
 # Get ready to build...
 HFLAGS="$rtflags$ctflags$hcflags$flags $HFLAGS"
+HATFLAGS="$HATFLAGS $importflags"
 
 export HC HFLAGS OLDER LDFLAGS	# MkProg expects these variables to be set.
 export HATFLAGS			# ditto
