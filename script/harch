@@ -85,7 +85,7 @@ case $OS in
                 then OS=$OS-`oslevel`
                 else OS=$OS-unknown
                 fi
-                if /etc/lsattr -EHl proc0 | grep -i powerpc >/dev/null 2>&1
+                if lsattr -EHl proc0 | grep -i powerpc >/dev/null 2>&1
                 then PROCESSOR=powerpc
                 else PROCESSOR=power
                 fi ;;
