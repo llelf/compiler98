@@ -196,7 +196,9 @@ tImpSpec (Hiding entities)   = Hiding (concatMap tEntity entities)
 
 tEntity :: Entity TraceId -> [Entity TokenId]
 tEntity (EntityVar pos id) = [EntityVar pos (nameTransLetVar id)]
-tEntity (EntityConClsAll pos id) = [EntityConClsAll pos (nameTransTyConCls id)]
+tEntity (EntityConClsAll pos id) = 
+  error "Sorry, hat-trans currently cannot handle (..) in import or export lists.\nPlease list all data constructors / field labels / methods.\n"
+  -- [EntityConClsAll pos (nameTransTyConCls id)]
   -- INCOMPLETE: if TyCon(..) need also to import/export references to traces
   -- of data constructor names, but how know their names?
 tEntity (EntityConClsSome pos id posIds)

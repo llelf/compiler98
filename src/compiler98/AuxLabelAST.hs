@@ -5,6 +5,7 @@ module AuxLabelAST
 
 import List (nubBy)
 import Char (isUpper)
+import Maybe (isJust)
 import AuxTypes(Environment,mkIdentMap,useIdentMap,Identifier(..)
                ,AuxiliaryInfo(letBound))
 import AuxFile(Visibility,PatSort(Refutable,Irrefutable)
@@ -174,13 +175,21 @@ instance Relabel Decl where
   relabel env (DeclVarsType pis ctxs typ) =
 	DeclVarsType (relabelRealPosIds env pis) (map (relabel env) ctxs)
 							(relabel env typ)
-  relabel env (DeclPat alt@(Alt (ExpInfixList p exps) rhs decls)) =
-	case infixFun exps of
-	    Just (e1,pos,fun,e2) ->
-		 relabel env (DeclFun pos fun [Fun [e1,e2] rhs decls])
-	    Nothing -> DeclPat (relabel env alt)
-  relabel env (DeclPat alt@(Alt pat rhs decls)) =
-	DeclPat (relabel env alt)
+  relabel env (DeclPat (Alt (ExpInfixList p exps) rhs decls))
+    | isJust infixFunExps 
+    = relabel env (DeclFun pos fun [Fun [e1,e2] rhs decls])
+    where
+    infixFunExps = infixFun exps
+    Just (e1,pos,fun,e2) = infixFunExps
+  relabel env (DeclPat (Alt pat rhs ds@(DeclsParse decls))) =
+    let (irrefutableDeclIds,newEnv) = extendEnv vi env decls
+    in  DeclPat 
+          (Alt (relabel newEnv pat) (relabel newEnv rhs) 
+            (addVars newEnv (nubBy (\x y -> show x == show y) -- for scope 
+              irrefutableDeclIds) 
+              (relabel newEnv ds)))
+          -- dont' use relable Alt, because that extends environment also
+          -- by variables in the pattern
   relabel env (DeclFun p f funs) =
 	DeclFun p 
           -- ensure that defined id always with arity, even in class/instance
@@ -267,6 +276,7 @@ instance Relabel Fun where
           (relabel newEnv ds))
 
 instance Relabel Alt where
+  -- only uses for Alts in cases, not in pattern bindings
   relabel env (Alt pat rhs ds@(DeclsParse decls)) =
     let (irrefutableDeclIds,declEnv) = extendEnv vi env decls
         (irrefutableIds,newEnv) = 
@@ -347,7 +357,7 @@ relabelPosIds = map (\(p,i)->(p,mkLambdaBound i))
 relabelRealPosIds :: Environment -> [(Pos,TokenId)] -> [(Pos,TraceId)]
 relabelRealPosIds env = map (\(p,i)->(p,lookEnv env i))
 
-
+-- Create definitions for let-bound variants of irrefutable variables.
 addVars :: Environment -> [TokenId] -> Decls TraceId -> Decls TraceId
 addVars env irrefutableIds (DeclsParse ds) =
   DeclsParse (map mkDef irrefutableIds ++ ds)
