@@ -10,7 +10,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tTrue,tShow,tshowParen,tshowChar,tshowString,tshowsType,tshowsPrec,t_lessthan,t_dot,dropM,isTidOp)
+import TokenId(TokenId,tTrue,tShow,tshowParen,tshowChar,tshowString,tshowsType,tshowsPrec,t_lessthan,t_dot,dropM,isTidOp,visImpRev)
 import Nice(showsOp,showsVar)
 
 deriveShow tidFun cls typ tvs ctxs pos =
@@ -167,7 +167,7 @@ mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot 
       NewType free exist _ _ ->
 	mapS (\ f -> getUnique >>>= \ i -> unitS (f,i,ExpVar pos i)) 
           free >>>= \ fitypes ->
-	mapS0 ( \ (f,i,ei) -> addNewLetBound i tshowsType) fitypes >>>
+	mapS0 (\(f,i,ei)-> addNewLetBound i (visImpRev ('v':(show i)))) fitypes >>>
         mapS ( getType pos expA expShowsType expTrue expShowString constrInfos ) fitypes >>>= \ des ->
         case unzip des of
 	  (ds,es) ->
