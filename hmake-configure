@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="2.02 (2001-02-08)" export HMAKEVERSION
+HMAKEVERSION="2.03 (2001-10-02)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -247,26 +247,58 @@ then
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
 
+  echo -n "Testing for the curses library:             "
+  if [ "$CURSES" = "" ]
+  then
+    cat >curses.c <<!!!
+#include <curses.h>
+void test (void) { mvaddstr(1,2,"hello world"); }
+int main (void) { test(); }
+!!!
+    if $CCC -o curses curses.c >/dev/null 2>/dev/null
+    then CURSES=""
+    else
+      if $CCC -o curses curses.c -lncurses >/dev/null 2>/dev/null
+      then CURSES="-lncurses"
+      else
+        if $CCC -o curses curses.c -lcurses >/dev/null 2>/dev/null
+        then CURSES="-lcurses"
+        else
+          if $CCC -o curses curses.c -lcurses -ltermcap >/dev/null 2>/dev/null
+          then CURSES="-lcurses -ltermcap"
+          else CURSES="-ltermcap -lcurses"     # don't know a good default?
+          fi
+        fi
+      fi
+    fi
+    rm -f curses curses.c
+    echo -n "$CURSES "
+    echo '(detected) '
+  else
+    echo -n "$CURSES "
+    echo '(cached) '
+  fi
+
   echo -n "Testing for the readline library: "
-  echo 'main(){;}' >rd.c
+  echo 'main(){readline();}' >rd.c
   if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
-  then echo '          yes (detected)'
+  then echo '          -lreadline (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
-  else if ${CC-gcc} -o rd.out rd.c -lreadline -lncurses >/dev/null 2>&1
-    then echo '          yes (detected)'
-       READLINE="-DUSE_READLINE=1 -lreadline -lncurses"
+  else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
+    then echo '          -lreadline $CURSES (detected)'
+       READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
     else echo '          no  (detected)'
        READLINE=""
     fi
   fi
-  rm -f rd.c rd.out ;;
+  rm -f rd.c rd.out
 
   if [ "$EXE" = "" ]
   then echo "Executables need .exe suffix?               no  (detected)"
   else echo "Executables need .exe suffix?               yes (detected)"
   fi
 
-else
+else	# do the following only in binary distributions
   if [ -f lib/$MACHINE/config ]
   then
     . lib/$MACHINE/config
