@@ -24,9 +24,9 @@ import FillIn( ProtoProc, fillinProc, ppProtoProc, Consts, genConsts, genConsts2
 import Target( Target(..) )
 import NHCBackend (cNhc, hNhc)
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ <= 202
-import PrelBase(maybe) -- workaround for GHC 2.02
-#endif
+-- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ <= 202
+-- import PrelBase(maybe) -- workaround for GHC 2.02
+-- #endif
 
 #if defined(__HASKELL98__)
 #  if !defined(__HBC__)

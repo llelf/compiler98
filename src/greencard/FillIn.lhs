@@ -33,9 +33,9 @@ import List( intersperse )
 import Monad (MonadPlus(mplus))
 #endif
 
-#if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ <= 202
-import PrelBase(maybe) -- workaround for GHC 2.02
-#endif
+-- #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ <= 202
+-- import PrelBase(maybe) -- workaround for GHC 2.02
+-- #endif
 
 
 \end{code}
