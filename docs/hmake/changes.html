@@ -1,0 +1,76 @@
+<html><head><title>hmake versions</title></head>
+<body bgcolor=white text=black>
+<table><tr><td width=500>
+
+<center>
+<h1><em>hmake</em> versions</h1>
+</center>
+<hr>
+
+<table>
+<tr>
+<td valign=top><b>1.6</b></td>
+  <td valign=top>
+	<ul>
+	<li> <em>hmake</em> driver script now returns true exit status.
+	<li> Import determination is no longer confused by {- -} nested
+             comments, end-of-line comments, or line-breaks between the
+             "import"/"qualified" keywords and module name.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>1.5</b></td>
+  <td valign=top>
+	<ul>
+	<li> Various bugfixes.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>1.4</b></td>
+  <td valign=top>
+	<ul>
+	<li> Symbol error in GetDep.hs when compiling with ghc, fixed.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>1.3</b></td>
+  <td valign=top>
+	<ul>
+	<li> Cpp-emulation now understands numeric comparisons.
+	<li> Compiler cpp symbols (e.g. <tt>__HBC__</tt>) are not defined twice now.
+	<li> Revert to allowing <em>both</em> GHCINCDIR and GHCINCPATH.
+	</ul>
+</td></tr><tr>
+
+<td valign=top><b>1.2</b></td>
+  <td valign=top>
+	<ul>
+	<li> Allow "<tt>import A-- comment</tt>", "<tt>import A;</tt>",
+             "<tt>import A{-comment-}</tt>".
+	<li> Change GHCINCDIR to GHCINCPATH to allow multiple directories
+             for prelude .hi files.
+</td></tr><tr>
+
+<td valign=top><b>1.1</b></td>
+  <td valign=top>	Minor bug fixes.
+</td></tr><tr>
+
+<td valign=top><b>1.0</b></td>
+  <td valign=top>	Initial release (separated from nhc98/nhc13).
+</td></tr></table>
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 1999-12-08<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+
+</body></html>

@@ -20,8 +20,6 @@
 </tr><tr>
 <td>MAX_CDATA</td><td>max open files + ForeignObjs</td><td>1024</td>
 </tr><tr>
-<td>ARGSIZE</td><td>max commandline arguments</td><td>100</td>
-</tr><tr>
 <td>HEAPSIZE</td><td>default heap (change on commandline)</td><td>DefaultHeap</td>
 </tr><tr>
 <td>STACKSIZE</td><td>default stack (change on commandline)</td><td>20000 words</td>
@@ -36,7 +34,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.01.26<br>
+1999.12.06<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>

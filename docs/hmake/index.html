@@ -1,0 +1,112 @@
+<html><head><title>hmake - a make tool for Haskell programs</title></head>
+<body bgcolor=white text=black>
+<table><tr><td width=500>
+
+
+<center>
+<h1>hmake - a make tool for Haskell programs</h1>
+</center>
+
+<hr>
+
+<h3>What is hmake?</h3>
+<p>
+See <a href="hmake.html">hmake.html</a>.
+
+<h3>Download</h3>
+<p>
+Download the hmake sources from
+  <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
+  <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a>
+
+<p>
+(Note: If you have the nhc13 or nhc98 compilers, then you already have
+hmake.  The standard configuration and build process for the compiler
+should have done everything for you.  However, if you installed ghc,
+hbc, etc, after nhc98, you will probably need to update the config file
+for hmake.  See below.)
+
+<h3>Configure, compile, and install</h3>
+<p>
+<pre>
+  $ ./configure  --prefix=/my/installation
+  $ make
+  $ make install
+</pre>
+
+<h3>Configuration options</h3>
+<p>
+Use
+<pre>
+  $ configure --help
+</pre>
+to discover what options you can change at configuration time.  The
+configuration process actually does quite a good job of detecting what
+Haskell compilers you have, where they live, and anything special they
+might need.  However, should you need to change anything by hand,
+see the notes below about the <em>hmake.config</em> file.
+
+<h3>Notes</h3>
+<p>
+`harch' is a little script for determining your processor/OS
+combination.  It is supplied because many sites have heterogeneous
+networks of machines all accessing a common filespace.  You only need to
+install one copy of the `hmake' script, which uses `harch' to select the
+correct executables for any particular machine.
+
+<p>
+The hmake.config file can appear in any of several places:
+<pre>
+    $HOME/.hmakerc
+    /usr/local/lib/hmake/$MACHINE/hmake.config
+    /usr/local/lib/hmake/hmake.config
+</pre>
+These are searched for in order - the first found overrides the others.
+Hence, individual users can add their own Haskell systems, and
+particular machine architectures can offer variations from the standard
+system-wide config.
+
+<p>
+Of course, you don't have to use the locations /usr/local/bin and
+/usr/local/lib for your installation.  Just use --prefix= at configuration
+time to reflect your preference.
+
+<h3>Bug Reports</h3>
+<p>
+Please send bug reports, bug fixes, and suggestions for improvements to
+<tt>Malcolm.Wallace@cs.york.ac.uk</tt>
+
+<h3>Version and Change Log</h3>
+<p>
+Current version is hmake-1.6, (1999-12-08).  See
+<a href="changes.html">changes.html</a> for the history of versions,
+bugfixes, and other updates.
+
+<h3>Copyright</h3>
+<p>
+The core of the hmake tool is
+(c) copyright to Thomas Hallgren, 1991-1997.
+(Code is incorporated from the earlier tools hbcmake and nhc13make.)
+Many additions and modifications to hmake are
+(c) copyright to Malcolm Wallace, 1998-1999.
+
+<p>
+You may re-distribute or modify this software, but you must retain this
+copyright notice.
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 1999-12-08<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+
+</body>
+</html>

@@ -1,0 +1,144 @@
+<html><head><title>The hmake compilation tool</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The <em>hmake</em> compilation tool</h1></center>
+
+<hr>
+<p>
+<em>Hmake</em> is intended as a replacement for <em>hbcmake</em>,
+<em>lmlmake</em>, <em>nhc13make</em>, and for those horribly
+complex <em>ghc</em> Makefiles.  For those
+who are unfamiliar with <em>hmake</em>, the big advantage is that
+you don't have to write a Makefile - the tool extracts dependencies
+automatically from your source files, and issues appropriate commands to
+rebuild your target.  In particular, it knows about <em>.hi</em> interface
+files - even though a source module has changed, if its interface file has
+not changed, then other modules which import it do not need to be recompiled.
+
+<p>
+The basic option summary is:
+<pre>
+    Usage: hmake [-nhc98|-hbc|-ghc] [-q] [-n] [-g] [-M] [opts] target ...
+</pre>
+
+
+
+<h3>Options</h3>
+<p>
+Most options are passed straight through to the appropriate compiler.
+However, <em>hmake</em> understands and strips the following options.
+<center>
+<table width=400><tr>
+<td><b>-nhc98</b><br>
+    <b>-hbc</b><br>
+    <b>-ghc</b></td>
+	<td>specify which compiler you want to use [default is nhc98].</td>
+</tr><tr>
+<td><b>-q</b></td>
+	<td>Quiet - don't echo compilation commands.</td>
+</tr><tr>
+<td><b>-n</b></td>
+	<td>Noexec - echo compilation commands but don't execute them.</td>
+</tr><tr>
+<td><b>-g</b></td>
+	<td>Graph - show module dependency graph (implies -n).</td>
+</tr><tr>
+<td><b>-M</b></td>
+	<td>Makefile - show dependencies in Makefile format (implies -n).</td>
+</tr><tr>
+<td><b>-Md</b></td>
+	<td>as for -M, but treats <b>-d</b> <em>objdir</em> specially.</td>
+</tr></table>
+</center>
+
+<p>
+<em>Hmake</em> also makes use of some compiler options if you specify them.
+<center>
+<table width=400><tr>
+<td><b>-d</b><em>objdir</em></td>
+	<td>Search for (and compile) object files in(to) a separate objdir.</td>
+</tr><tr>
+<td><b>-P</b><em>dir/</em></td>
+	<td>Search <em>dir</em> for prelude/stdlib interface files.</td>
+</tr><tr>
+<td><b>-I</b><em>dir/</em></td>
+	<td>Search <em>dir</em> for imported modules - compile them
+	if necessary, and link against the resulting <em>.o</em> files.</td>
+</tr><tr>
+<td><b>-i</b><em>dir/</em></td>
+	<td>Search <em>dir</em> for imported module interface files - but
+	do not compile them, rather link against an archive <em>.a</em> file
+	in that directory.
+</tr></table>
+</center>
+
+<p>
+Some options are passed to the compiler's runtime system (using whatever
+underlying mechanism is appropriate for the particular compiler).
+<center>
+<table width=400><tr>
+<td><b>-[Hh]</b><em>size</em></td>
+	<td>Compiler's heap size.</td>
+</tr><tr>
+<td><b>-[ASV]</b><em>size</em></td>
+	<td>Compiler's stack size.</td>
+</tr><tr>
+<td><b>-B</b></td>
+	<td>Compiler's garbage collector options.</td>
+</tr></table>
+</center>
+
+<p>
+You can force an option which would otherwise be interpreted by another
+part of the system to be passed to the compiler by enclosing it
+within <em>+CTS</em> ... <em>-CTS</em> delimiters.  For example, with
+<b>nhc98</b>, to set the final executable's default heapsize rather than
+the compiler's heapsize, use <em>+CTS -H4mb -CTS</em>.
+
+
+
+<h3>Recent improvements</h3>
+<p>
+Some improvements over the previous tools are:
+<ul>
+<li>You can store object files in a separate directory from your sources.
+<li>It understands <em>cpp</em> directives: this is particularly useful for
+    imports which differ depending on which compiler you are using.
+    For example,
+<pre>
+        #if defined(__HBC__) || defined(__GLASGOW_HASKELL__)
+        import Native
+        #elsif __NHC__
+        import Binary
+        #endif
+</pre>
+    The compiler symbols are defined automatically - you can also define
+    other symbols with <em><b>-D</b>sym[=val]</em> on the commandline.
+<li>It automatically inserts the <em><b>-cpp</b></em> compiler option, but
+    only for those modules which actually require it.
+<li>If you specify <em>.o</em> or <em>.a</em> files on the commandline, it
+    simply links against them, rather than searching for source dependencies
+    for them.
+</ul>
+
+<p>
+I'd welcome any bug reports, or ideas for other options or behaviours
+you would find useful.
+
+
+<hr>
+<p>
+The latest updates to this software are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/hmake/">
+<tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
+
+<p>
+Information last updated: 1999-12-08<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+
