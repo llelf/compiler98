@@ -172,10 +172,10 @@ transImport impdecls = impdecls'
   where
   impdecls' =  (sortImport . traverse initAT False)
                 (ImportQ (noPos,tNHCInternal) (Hiding [])
---              :ImportQ (noPos,vis "Ratio") (NoHiding
---				[EntityConClsAll noPos (vis "Rational")
---				,EntityConClsAll noPos (vis "Ratio")
---				,EntityVar noPos (vis "%")])
+                :ImportQ (noPos,vis "Ratio") (NoHiding
+  				[EntityConClsAll noPos (vis "Rational")
+  				,EntityConClsAll noPos (vis "Ratio")
+  				,EntityVar noPos (vis "%")])
                 :impdecls)
   vis = Visible . packString . reverse
 
