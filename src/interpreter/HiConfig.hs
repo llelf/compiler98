@@ -24,11 +24,11 @@ getProcessID = return 3154	-- arbitrary number
 #endif
 #ifdef __NHC__
 import IOExtras (unsafePerformIO)
-foreign import "getpid" getProcessID :: IO Int
+foreign import ccall "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
 import IOExts (unsafePerformIO)
-foreign import "getpid" getProcessID :: IO Int
+foreign import ccall "getpid" getProcessID :: IO Int
 #endif
 
 -- Generate a temporary filename unique to this invocation.
