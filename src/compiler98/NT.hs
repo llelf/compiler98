@@ -137,7 +137,8 @@ instance Show NT where
 strTVar v = let cv =  toEnum (v + fromEnum 'a')
             in if 'a' <= cv && cv <= 'z'
 	       then [cv]
-	       else '_':show v
+	       else toEnum (v`mod`26 + fromEnum 'a'):'_':show (v`div`26)
+	--     else '_':show v
 
 
 strCtxs ::  [(Int,Int)] -> String

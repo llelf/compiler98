@@ -76,17 +76,20 @@ ctxsSimplify' state given (TypeDict cls nt ipos) r =
 	      case lookupAT (instancesI info) con of
 		Just (tvs,ctxs) ->  
 		  foldr (ctxsSimplify' state given) r (pair2ctxs ipos tvs nts ctxs)
-		Nothing -> error ("The class " ++ strIS state cls ++ " has no instance for the type " ++ strIS state con
-				  ++ ".\nPossible sources for the problem are:" ++ mixCommaAnd (map (strPos . snd) ipos))
+		Nothing -> error ("The class " ++ strIS state cls ++
+				 " has no instance for the type "
+				 ++ strIS state con
+				 ++ ".\nPossible sources for the problem are: "
+				 ++ mixCommaAnd (map (strPos . snd) ipos))
 --  (NTapp (NTvar v) nt2) -> 
 --              (cls,NTapp (NTvar v) nt2):r
 --  (NTapp (NTany v) nt2) -> 
 --              (cls,NTapp (NTvar v) nt2):r
     (NTapp nt1 nt2) -> 
-        error ("Couldn't simplify the context (("
-                ++ strNT (strIS state) strTVar nt1 ++ ") "
+        error ("Couldn't simplify the context (" ++ strIS state cls ++ " ("
+                ++ strNT (strIS state) strTVar nt1 ++ " "
                 ++ strNT (strIS state) strTVar nt2
-                ++ ").\nPossible sources for the problem are:"
+                ++ ")).\nPossible sources for the problem are: "
                 ++ mixCommaAnd (map (strPos . snd) ipos))
     ent -> error ("Internal: CtxsSimplify expanded the type synonym "
                 ++ show nt ++ " to " ++ show ent 
