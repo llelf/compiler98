@@ -1,4 +1,4 @@
-module Prelude
+module PreludeIO
     (
      module AppendFile,
      module Catch
