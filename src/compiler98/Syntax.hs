@@ -13,7 +13,7 @@ type representation "NewType" and "NT". So the syntactic constructs that
 use "Type" are removed by the renaming pass or the type representation is only
 half translated (TokenId -> Id). Are the latter still used later?
 
-It probably would have been better if the whole syntax had been paramterised
+It probably would have been better if the whole syntax had been parameterised
 with respect to the type representation; but such an additional parameter 
 would also be tiresome.
 -}
@@ -183,6 +183,11 @@ data Constr id = Constr
 
 type Instance id = Type id  -- Not TypeVar
 
+
+{-
+The following is ismorphic to the type constructor Qual.
+Possibly Stmt should be removed and its usage replaced everywhere by Qual.
+-}
 data Stmt id =
     StmtExp  (Exp id)		-- exp
   | StmtBind (Exp id) (Exp id)	-- pat <- exp
@@ -209,7 +214,7 @@ data Exp id =  -- used both for expressions and patterns
                         -- exp :: context => type
 --- Above only in expressions, not in patterns
     | ExpRecord	        (Exp id) [Field id]
-    | ExpApplication    Pos [Exp id]
+    | ExpApplication    Pos [Exp id] -- always at least two elements?
     | ExpVar            Pos id
     | ExpCon            Pos id
     | ExpInfixList      Pos [Exp id] -- Temporary, introduced by parser because
@@ -223,7 +228,10 @@ data Exp id =  -- used both for expressions and patterns
     | PatAs             Pos id (Pat id)
     | PatWildcard       Pos
     | PatIrrefutable    Pos (Pat id)
--- (n+k) pattern - store:   n  n' (k<=n')  (n'-k)
+-- idea: f (n+k) = exp[n]
+--  =>   f n' | k <= n' = exp[n]
+--         where n = n'-k 
+-- (n+k) pattern - store:   n  n' k        (k<=n')  (n'-k)
     | PatNplusK		Pos id id (Exp id) (Exp id) (Exp id)
 
 data Field id = FieldExp  Pos id (Exp id)

@@ -16,11 +16,15 @@ module Flags where
             ,sArity,sLBound,sLift,sProfile,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
             ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
-            ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType) where
+            ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
+            ,sShowWidth,sShowQualified) where
 -}
 
 import IO
 import OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
+import List(isPrefixOf)
+import Char(isDigit)
+
 
 data Flags = FF 
   {sRealFile   :: String
@@ -110,7 +114,9 @@ data Flags = FF
 
 --v miscellaneous flags
   ,sShowType   :: Bool	-- report type of "main" (for hmake interactive)
-
+  ,sShowWidth  :: Int   -- width for showing intermediate program
+  ,sShowIndent :: Int   -- indentation for nesting shown intermediate program
+  ,sShowQualified :: Bool -- show qualified ids as far as possible
   }
   deriving Show
 
@@ -286,6 +292,12 @@ processArgs xs = flags
   , sTraceFns = fElem False "tracefns" xs  -- ast after transforming functions
 
   , sShowType = fElem False "showtype" xs  -- report type of "main"
+
+  , sShowWidth = cardFlag 80 "showwidth=" xs  -- set width for showing 
+                                              -- intermediate program
+  , sShowIndent = cardFlag 2 "showindent=" xs -- set indentation for nesting
+  , sShowQualified = fElem True "showqualified" xs  
+  -- ^ show qualified ids as far as possible
   }
   
   
@@ -315,5 +327,17 @@ fElem :: Bool -> [Char] -> [String] -> Bool
 fElem def f flags = if ('-':f) `elem` flags then True
                     else if ('-':'n':'o':f) `elem` flags then False
                     else def
+
+
+{-
+Returns the value of an option with a numerical (cardinal) value.
+If the option is not given, then the default value (first arg.) is returned.
+Ignores syntactically incorrect options.
+-}
+cardFlag :: Int -> [Char] -> [String] -> Int
+cardFlag def f flags = if null settings then def else read (last settings)
+  where
+  settings = filter (all isDigit) . map (drop (length f + 1)) . 
+             filter (isPrefixOf ('-':f)) $ flags
 
 

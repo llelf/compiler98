@@ -13,7 +13,6 @@ import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
                ,Info(InfoVar,InfoClass,InfoMethod,InfoDMethod,InfoIMethod))
 import Syntax
 import SyntaxPos
-import StrSyntax
 import NT
 import State
 import AssocTree
@@ -146,7 +145,7 @@ dDecls (DeclsParse ds) =
     unitS (DeclsParse (concat dss))
 
 
-dDecl :: Decl Id -> DbgTransMonad [Decl Id]
+-- dDecl :: Decl Id -> DbgTransMonad [Decl Id]
 
 dDecl d@(DeclTypeRenamed _ _) = unitS [d]
 dDecl d@(DeclDefault tys) = unitS [d]
@@ -391,20 +390,19 @@ dFun pos id funName arity fundefs nt =
   prependTypeSigIfExists intState pos wrappedFun =
     case nt of
       NoType -> \x->x
-      _      -> ( DeclIgnore ("Type signature" ++ niceNewType intState nt) :)
+      _      -> ( DeclIgnore ("Type signature " ++ niceNewType intState nt) :)
                 -- a bit of a hack
                 -- type signatures do not exist any more in this phase in
                 -- the syntax tree, but the information is useful for
-                -- debugging
-
+                -- debugging (also necessary for polymorphic recursion?)
 
 {-
 For each clause of the function definition e, return a transformed
 definition e', and possibly declare a new auxiliary function to handle
 failure across guards.
 -}
-dFunClauses :: String -> Id -> Id -> [Fun Id] 
-            -> DbgTransMonad ([Fun Int],[Decl Int])
+--dFunClauses :: String -> Id -> Id -> [Fun Id] 
+--            -> DbgTransMonad ([Fun Int],[Decl Int])
 
 dFunClauses funName true otherwise [] = unitS ([], [])
 -- No guards (i.e. guard==True) is the easiest case.
@@ -588,7 +586,7 @@ expression is just a variable, the expression including context is
 not a projection.
 -}
 
-dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
+--dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
 
 dExps cr es = mapS (dExp cr) es
 

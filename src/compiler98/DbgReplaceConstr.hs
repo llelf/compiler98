@@ -11,7 +11,6 @@ import DbgId
 import IntState
 import Syntax
 import SyntaxPos
-import StrSyntax
 import Flags
 import Bind
 import RenameLib

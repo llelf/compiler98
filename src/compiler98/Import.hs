@@ -22,8 +22,6 @@ import Error
 import IExtract
 import ImportState(ImportState,putModid2IS)
 import IntState(dummyIntState)
-import PPSyntax(ppModule,ppDecl,ppDecls,ppImpDecls,ppInterface,ppFun
-               ,ppClassCodes)
 import Tree234(Tree)
 import IdKind(IdKind)
 import PreImp(HideDeclIds)

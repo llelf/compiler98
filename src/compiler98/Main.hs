@@ -25,7 +25,6 @@ import State(State0(..))
 import ImportState(ImportState,Info,IE,initIS,getErrorsIS,getSymbolTableIS
                   ,getRenameTableIS)
 import IntState(IntState,dummyIntState,getSymbolTable,getErrors,strIS,mrpsIS)
-import PPLib
 import NeedLib(initNeed)
 import RenameLib(getSymbolTableRS,RenameState,getErrorsRS)
 import PreImport
@@ -43,10 +42,9 @@ import Flags
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
 -}
-import StrSyntax(strType,StrId(..))
 import SyntaxPos	-- DW
-import PPSyntax(ppModule,ppDecl,ppDecls,ppImpDecls,ppInterface,ppFun,
-                ppClassCodes)
+import PrettySyntax(prettyPrintTokenId,prettyPrintId
+                   ,ppModule,ppTopDecls,ppClassCodes)
 import StrPos(strPCode)
 
 import TokenId(TokenId(..),t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
@@ -152,7 +150,7 @@ nhcNeed flags
         (Right (parsedProg@(Module pos (Visible modid) e impdecls inf d))) =
   -- Insert check that sPart flags or modid == sourcefile
 {-profile "need" $-}  do
-    pF (sParse flags) "Parse" (ppModule False dummyIntState parsedProg 0) 
+    pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedProg) 
     let parsedProg' = 
           dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedProg 
     case needProg flags parsedProg' inf of
@@ -246,7 +244,7 @@ nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e
 	 (intState,[]) -> do
            depend flags intState rt 
            pF (sRename flags) "Declarations after rename and fixity:" 
-              (ppDecls False intState decls 0) 
+              (prettyPrintId flags intState ppTopDecls decls) 
            pF (sRBound flags) "Symbol table after rename and fixity:"  
               (mixLine (map show (treeMapList (:) (getSymbolTable intState))))
 
@@ -314,7 +312,7 @@ nhcDerive flags modidl  mrps  expFun userDefault tidFun tidFunSafe
       exit
     Right (intState',decls') -> do
       pF (sDerive flags) "Declarations after deriving:" 
-          (ppDecls False intState' decls' 0) 
+          (prettyPrintId flags intState' ppTopDecls decls') 
       pF (sDBound flags) "Symbol table after deriving:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable intState')))) 
       nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun 
@@ -346,7 +344,7 @@ nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun tidFunSafe
   let (decls'{-, derived'-}, intState', constrs) = 
         dbgDataTrans flags intState (error "repTree") tidFun {-derived-} decls 
   pF (sTraceData flags) "Abstract syntax tree after tracing type transformation"
-     (ppDecls False intState' decls' 0) 
+     (prettyPrintId flags intState' ppTopDecls decls') 
 
   nhcExtract flags modidl mrps  expFun userDefault tidFun tidFunSafe 
     decls' constrs impdecls intState'
@@ -440,7 +438,7 @@ nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe
           (decls, state, sridt) =
   {-profile "remove" $-} do
   pF (sTraceFns flags) "Tracing Transformation on function definitions"
-                       (ppDecls False state decls 0) 
+                       (prettyPrintId flags state ppTopDecls decls) 
   nhcScc flags modidl mrps expFun userDefault tidFun tidFunSafe sridt 
     (removeDecls decls tidFun state)
 
@@ -467,7 +465,7 @@ nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt
   case getErrors state of
     (state,[]) -> do
       pF (sRemove flags) "Declarations after remove fields:" 
-         (ppDecls False state decls 0) 
+         (prettyPrintId flags state ppTopDecls decls) 
       case rmClasses tidFun state decls of
 	(code,decls,state) ->
 	  nhcType flags zcon modidl  mrps  expFun userDefault tidFun 
@@ -498,9 +496,10 @@ nhcType :: Flags
 nhcType flags zcon modidl  mrps  expFun userDefault tidFun tidFunSafe 
         intState code sridt decls =
   profile "type" $ do
-  pF (sScc flags) "Declarations after scc:" (ppDecls False intState decls 0)
+  pF (sScc flags) "Declarations after scc:" 
+    (prettyPrintId flags intState ppTopDecls decls)
   pF (sScc flags) "Class/instances after scc:" 
-    (ppClassCodes False intState code 0)
+    (prettyPrintId flags intState ppClassCodes code)
   nhcInterface flags zcon modidl  mrps expFun tidFun tidFunSafe sridt 
     (typeTopDecls tidFun userDefault intState code (sDbgTrans flags) decls)
 
@@ -526,7 +525,7 @@ nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt
   case getErrors state of
     (state,[]) -> do
       pF (sType flags) "Declarations after type deriving:" 
-         (ppDecls False state decls 0) 
+         (prettyPrintId flags state ppTopDecls decls) 
       pF (sTBound flags) "Symbol table after type deriving:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
       pF (sRImport flags) ("Actual imports used by this module ("++mod++"):") 
@@ -539,7 +538,7 @@ nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt
     (state,errors) -> do
       pF (True) "Error after type deriving/checking" (mixLine errors)
       pF (sType flags) "Declarations after type deriving:" 
-         (ppDecls False state decls 0) 
+         (prettyPrintId flags state ppTopDecls decls) 
       pF (sTBound flags) "Symbol table after type deriving:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable state))))
       exit
@@ -579,7 +578,7 @@ nhcFixSyntax :: Flags
 nhcFixSyntax flags zcon tidFun code sridt (decls,state,t2i) =
   {-profile "fixsyntax" $-}  do
   pF (sFixSyntax flags) "Declarations after fixSyntax"
-     (mixLine (map (\ d -> ppDecl False state d 0) decls)) 
+     (prettyPrintId flags state ppTopDecls (DeclsParse decls))
   pF (sFSBound flags) "Symbol table after fixSyntax:"  
      (mixLine (map show (treeMapList (:) (getSymbolTable state))))
   nhcCase flags zcon tidFun sridt 

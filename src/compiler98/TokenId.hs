@@ -13,7 +13,7 @@ qualify rmodule rtoken = Qualified (packString rmodule) (packString rtoken)
 
 
 data TokenId =
-     TupleId   Int
+     TupleId Int -- no distinction between the type and the value constructor?
    | Visible   PackedString
    | Qualified PackedString PackedString
      -- token for qualified name: module name, variable name

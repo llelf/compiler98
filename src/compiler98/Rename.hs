@@ -35,7 +35,6 @@ import SyntaxPos
 import SyntaxUtil(infixFun)
 import Id(Id)
 
-import StrSyntax(strConstr)
 import Overlap(Overlap)
 import Flags(Flags)
 

@@ -20,11 +20,11 @@ SRCS = \
 	Import.hs ImportState.hs Info.hs IntState.hs IdKind.hs Lex.hs LexLow.hs \
 	LexPre.hs LexStr.hs Lexical.hs Lift.hs Machine.hs Main.hs Memo.hs \
 	MergeSort.hs MkSyntax.hs NT.hs Need.hs NeedLib.hs Nice.hs OsOnly.hs \
-	PPLib.hs PPSyntax.hs Parse.hs Parse2.hs ParseCore.hs ParseI.hs \
+	PrettyLib.hs PrettySyntax.hs Parse.hs Parse2.hs ParseCore.hs ParseI.hs \
 	ParseLex.hs ParseLib.hs PosAtom.hs PosCode.hs PreImp.hs PreImport.hs \
 	Prim.hs PrimCode.hs Reduce.hs Remove1_3.hs Rename.hs RenameLib.hs \
 	RmClasses.hs STGArity.hs STGBuild.hs STGGcode.hs STGState.hs Scc.hs \
-	SccModule.hs State.hs StrPos.hs StrSyntax.hs Syntax.hs SyntaxPos.hs \
+	SccModule.hs State.hs StrPos.hs Syntax.hs SyntaxPos.hs \
 	SyntaxUtil.hs TokenId.hs TokenInt.hs Tree234.hs Type.hs TypeCtx.hs \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
 	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs FFITrans.hs

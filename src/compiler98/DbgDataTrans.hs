@@ -12,11 +12,11 @@ import DbgId
 import IntState
 import Syntax
 import SyntaxPos(Pos,HasPos(getPos))
-import StrSyntax(StrId,strType,strContexts,strVarsType,strSimple)
 import Flags(Flags(sDbgTrans,sTraceFns))
 import State
 import NT
 import Nice(niceCtxs, niceNT, mkAL)
+import PrettySyntax(simplePrintId,ppType,ppContexts,ppSimple,ppDecl)
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
@@ -72,7 +72,7 @@ dTopDecl d@(DeclTypeRenamed pos id) =
   dNewType nt >>>= \nt' ->
   showNT nt >>>= \ntstr ->
   showNT nt' >>>= \ntpstr ->
-  dTrace ("Type syn  " ++ ntstr ++ " changed to " ++ ntpstr) $
+  dTrace ("\nType syn\n" ++ ntstr ++ "\nchanged to\n" ++ ntpstr) $
   updateSynType id nt' >>>
   unitS [d]
 
@@ -206,13 +206,13 @@ dDecl d@(DeclVarsType vars ctx ty) =
             if False {-arity == 0-} {- assumes id is not a caf, wrong? -}
               then
        	        showVarsType (DeclVarsType vars ctx' ty'') >>>= \svt2 ->
-                dTrace ("Signature:\n" ++ svt1 ++ "\nchanged to:\n" ++ svt2) $
+                dTrace ("\nSignature:\n" ++ svt1 ++ "\nchanged to:\n" ++ svt2) $
                   unitS (DeclVarsType [(pos, id)] ctx' ty'')
 	      else
 	        addD ty'' >>>= \ty''' -> 
 		addSR ty''' >>>= \ty'''' ->
 		showVarsType (DeclVarsType vars ctx' ty'''') >>>= \svt2 ->
-                dTrace ("Signature:\n" ++ svt1 ++ "\nchanged to:\n" ++ svt2) $
+                dTrace ("\nSignature:\n" ++ svt1 ++ "\nchanged to:\n" ++ svt2) $
 	          unitS (DeclVarsType [(pos, id)] ctx' ty'''')
       in  mapS checkForCAF vars
 dDecl (DeclPat (Alt pat gdes decls)) = 
@@ -610,19 +610,31 @@ lookupNameStr ident  =
 
 -- Used for debugging
 
-showTheType :: (Show a, StrId a) => Type a -> DbgDataTransMonad String
+showTheType :: Type Id -> DbgDataTransMonad String
 showTheType t     = 
-  \inh s@(Threaded state _) -> (strType False state t, s)
-showContext ctxs  = 
-  \inh s@(Threaded state _) -> (strContexts False state ctxs, s)
-showVarsType vt   = 
-  \inh s@(Threaded state _) -> (strVarsType False state vt, s)
-showSimple simple = 
-  \inh s@(Threaded state _) -> (strSimple False state simple, s)
-showNT (NewType free exist ctxs nts)  = 
-  \(Inherited lookupPrel _ cv reptree ot) s@(Threaded state _) -> 
-    (niceCtxs Nothing state al ctxs 
-     ++ mixSpace (map (niceNT Nothing state al) nts), s)
+  getState >>>= \state -> unitS (simplePrintId state ppType t)
+
+
+showContext :: [Context Id] -> DbgDataTransMonad String
+showContext ctxs = 
+  getState >>>= \state -> unitS (simplePrintId state ppContexts ctxs)
+
+
+showVarsType :: Decl Id {- expect DeclVarsType -} -> DbgDataTransMonad String 
+showVarsType vt = 
+  getState >>>= \state -> unitS (simplePrintId state ppDecl vt)
+
+
+showSimple :: Simple Id -> DbgDataTransMonad String
+showSimple simple =
+  getState >>>= \state -> unitS (simplePrintId state ppSimple simple)
+
+
+showNT :: NewType -> DbgDataTransMonad String
+showNT (NewType free exist ctxs nts)  =
+  getState >>>= \state -> 
+  unitS (niceCtxs Nothing state al ctxs 
+    ++ mixSpace (map (niceNT Nothing state al) nts))
   where 
   al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z']) 
        -- a-z is too short!
@@ -630,6 +642,7 @@ showNT (NewType free exist ctxs nts)  =
 
 
 getArity :: Id -> DbgDataTransMonad Id
+
 getArity id = \(Inherited _ alist _ _ _) s -> (assocDef alist (-1) id, s)
 --  (assocDef alist (error ("Internal error: Can't find arity for id #" 
 --                          ++ show id)) id, s)
