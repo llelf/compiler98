@@ -107,6 +107,7 @@ extractM v = rpsPrelude
 {- get identifier name from token, without qualification -}
 extractV :: TokenId -> PackedString
 
+extractV (TupleId n) = packString ('(' : foldr (:) ")" (replicate n ','))
 extractV (Visible v) = v
 extractV (Qualified m v) =  v
 extractV (Qualified2 t1 t2) = extractV t2
