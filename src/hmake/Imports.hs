@@ -27,7 +27,9 @@ getImports :: FilePath -- ^ The path to the module
            -> [String] -- ^ Definitions, from which to build a symbol table (for cpp)
            -> String   -- ^ The input file to be parsed for imports
            -> [String] -- ^ A list of imported modules
-getImports fp defines = leximports fp . cppIfdef fp defines [] False False
+getImports fp defines = leximports fp
+                        . unlines . map snd
+                        . cppIfdef fp defines [] False False
 
 
 -- | /leximports/ takes a cpp-ed input and returns the list of imports
