@@ -17,7 +17,9 @@ public abstract class EDTStructuredNode extends EDTNode {
     contracted = !contracted;
   }
 
-  /* Set the children to this node */
+  /* Set the children to this node.
+   * TO DO: evaluate and cache isTuple, isArithSeq, isInfix
+   */
   public void setArgs(Vector args) {
     this.args = args;	
   }
@@ -41,13 +43,21 @@ public abstract class EDTStructuredNode extends EDTNode {
            ((IdName)head).tupleConsArity == args.size()-1);
   }
    
+  public boolean isArithSeq() {
+    EDTNode head = (EDTNode)args.elementAt(0);
+    return (head instanceof IdName &&
+           ((IdName)head).arithSeqArity == args.size()-1);
+  }
+   
   /* Checks whether this node needs parentheses.  This depends
    * both on the nature of the node itself and on the parent
    * context.
    */
   public boolean needParens() {
     if (isTuple()) return true;
-    if (parent==null || parent.isTuple() || parent instanceof Case)
+    if (isArithSeq()) return false;
+    if (parent==null || parent.isTuple() || parent.isArithSeq()
+        || parent instanceof Case)
       return false;
     { EDTNode phead = (EDTNode)parent.args.elementAt(0);
     EDTNode mhead = (EDTNode)args.elementAt(0);
@@ -101,6 +111,45 @@ public abstract class EDTStructuredNode extends EDTNode {
 	    return arg.inside(ui, x, y, cx, y0);
 	  cx += arg.width;		    
 	}		
+      } else if (isArithSeq()) {
+        int kind = ((IdName)args.elementAt(0)).arithSeqKind;
+	cx += ui.normalfm.charWidth('[');
+	if (x <= cx) return this;
+	arg = (EDTNode)args.elementAt(1);
+	if (x <= cx+arg.width)
+	    return arg.inside(ui, x, y, cx, y0);
+	cx += arg.width;
+	/* Sequence kinds are:
+	 * 1 enumFrom, 2 enumFromThen, 3 enumFromTo, 4 enumFromThenTo
+	 */
+	switch (kind) {
+	case 1: case 3:
+	  cx += ui.normalfm.stringWidth("..");
+	  if (x <= cx) return this;
+	  if (kind==3) {
+	    arg = (EDTNode)args.elementAt(2);
+	    if (x <= cx+arg.width)
+              return arg.inside(ui, x, y, cx, y0);
+	  }
+	  break;
+	case 2: case 4:
+          cx += ui.normalfm.stringWidth(", ");
+	  if (x <= cx) return this;
+	  arg = (EDTNode)args.elementAt(2);
+	  if (x <= cx+arg.width)
+	    return arg.inside(ui, x, y, cx, y0);
+	  cx += arg.width + ui.normalfm.stringWidth("..");
+	  if (x <= cx) return this;
+	  if (kind==4) {
+	    arg = (EDTNode)args.elementAt(3);
+	    if (x <= cx+arg.width)
+              return arg.inside(ui, x, y, cx, y0);
+	  }
+	  break;
+        default:
+	  System.err.println("Bad arithmetic sequence kind");
+	  System.exit(1);
+	}	  
       } else if (isInfix && args.size() == 3) {
 	arg = (EDTNode)args.elementAt(1);
 	if (x <= cx+arg.width)
@@ -193,6 +242,47 @@ public abstract class EDTStructuredNode extends EDTNode {
 	arg = (EDTNode)args.elementAt(i);
 	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
       }
+    } else if (isArithSeq()) {
+      int kind = ((IdName)args.elementAt(0)).arithSeqKind;
+      g.setColor(color);
+      g.drawString("[", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+      x += ui.normalfm.charWidth('[');
+      arg = (EDTNode)args.elementAt(1);
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+      /* Sequence kinds are:
+       * 1 enumFrom, 2 enumFromThen, 3 enumFromTo, 4 enumFromThenTo
+       */
+      switch (kind) {
+      case 1: case 3:
+	g.setColor(color);
+	g.drawString("..", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+	x += ui.normalfm.stringWidth("..");
+	if (kind==3) {
+	  arg = (EDTNode)args.elementAt(2);
+	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	}
+	break;
+      case 2: case 4:
+	g.setColor(color);
+	g.drawString(", ", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+	x += ui.normalfm.stringWidth(", ");
+	arg = (EDTNode)args.elementAt(2);
+	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	g.setColor(color);
+	g.drawString("..", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+	x += ui.normalfm.stringWidth("..");
+	if (kind==4) {
+	  arg = (EDTNode)args.elementAt(3);
+	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	}
+	break;
+      default:
+	System.err.println("Bad arithmetic sequence kind");
+	System.exit(1);
+      }
+      g.setColor(color);
+      g.drawString("]", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+      x += ui.normalfm.charWidth(']');      	  
     } else if (isInfix && args.size() == 3) {
       String name = ((IdName)args.elementAt(0)).name;
       arg = (EDTNode)args.elementAt(1);
@@ -215,7 +305,6 @@ public abstract class EDTStructuredNode extends EDTNode {
       g.drawString(")", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
       width += ui.normalfm.charWidth(')');
     }
-
     annotate(g, ui, x0, y0, refnr, trefnr, irefnr);
     return width;
   }

@@ -6,7 +6,11 @@ public class IdName extends EDTNode {
   String module;
   String name;
   int defpos, pri;
-  int tupleConsArity; /* if this is a tuple constructor, its arity, else -1 */
+  int tupleConsArity;/* if this is a tuple constructor, its arity, or -1 */
+  int arithSeqArity; /* if this is an enumFrom... function, its arity, or -1 */
+  int arithSeqKind;  /* ditto its kind:
+      * 1 enumFrom, 2 enumFromThen, 3 enumFromTo, 4 enumFromThenTo
+      */
 
   public IdName(EDTStructuredNode parent, TraceTree tree, int index) {
     this.parent = parent;
@@ -33,9 +37,22 @@ public class IdName extends EDTNode {
     int c = this.name.charAt(0);
     infix = !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 	      (c >= '0' && c <= '9') || c == '(' || c == '[' || 
-	      c == '\'' || c == ',' || this.name == "\\");
+	      c == '\'' || c == ',' || c == '_' || this.name == "\\");
     if (c==',') tupleConsArity = name.length()+1;
     else tupleConsArity = -1;
+    if (c=='e') {
+      if (name.equals("enumFrom")) {
+        arithSeqArity = 1; arithSeqKind = 1;
+      } else if (name.equals("enumFromThen")) {
+        arithSeqArity = 2; arithSeqKind = 2;
+      } else if (name.equals("enumFromTo")) {
+        arithSeqArity = 2; arithSeqKind = 3;
+      } else if (name.equals("enumFromThenTo")) {
+        arithSeqArity = 3; arithSeqKind = 4;
+      } else {
+        arithSeqArity = -1; arithSeqKind = -1;
+      }
+    } else { arithSeqArity = -1; arithSeqKind = -1; }
   }
 
   public String getHelpText() {
