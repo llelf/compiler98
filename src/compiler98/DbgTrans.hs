@@ -290,6 +290,12 @@ in the second declaration list.
 -}
 dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
+dSuspectDecl parent (DeclPat (Alt (PatAs pos id p) rhs decls)) =
+  dSuspectDecl parent (DeclFun pos id [Fun [] rhs decls]) >>>= \(dc1,dc2) ->
+  dSuspectDecl parent 
+    (DeclPat (Alt p (Unguarded (ExpVar pos id)) (DeclsParse [])))
+    >>>= \(dp1,dp2) ->
+  unitS (dc1++dp1,dc2++dp2)
 dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
   addNewName 0 True "_pv" NoType >>>= \patid ->
   --trace ("patid = " ++ show patid) $
@@ -1409,7 +1415,8 @@ dPat parent (ExpList pos ps)        = foldPatList parent pos ps
 dPat parent (PatAs pos id p)        = unitS (PatAs pos id) =>>> dPat parent p
 dPat _ p@(PatWildcard pos)          = unitS p 
 dPat parent (PatIrrefutable pos p)  = 
-  unitS (PatIrrefutable pos) =>>> dPat parent p
+  dPat parent p >>>= \(ExpApplication pos' [r,p',t']) ->
+  unitS (ExpApplication pos' [r, PatIrrefutable pos p', t'])
 dPat parent (ExpRecord con@(ExpCon pos id) fieldPats) =
   wrapR pos =>>> (unitS (ExpRecord con) =>>> mapS dField fieldPats)
   where
