@@ -64,6 +64,7 @@ IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
 HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -syslib exts -syslib misc -CTS)  $(IMPROVE) $(EXTRALINK)
 $(TARGET): $(EXTRALINK)
+$(HATTRANS): $(EXTRALINK)
 endif
 
 HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
