@@ -162,16 +162,17 @@ keepRS (RenameState flags unique rps rts rt st derived
                       case (ntI . dropJust . lookupAT st) coni of
                         (NewType _ _ _ [NTcons u' _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
-                        _ -> strace 
-                         ("Warning: renaming newtype of imported newtype:\n"++
-                          "  Real type of "++show(tidI info)++
-                                                          " is not visible.\n"++
-                          "  I might get boxed/unboxed info wrong.")
+                        _ -> -- strace 
+                      -- ("Warning: renaming newtype of imported newtype:\n"++
+                      --  "  Real type of "++show(tidI info)++
+                      --                                  " is not visible.\n"++
+                      --  "  I might get boxed/unboxed info wrong.")
                           (Just False)
-                    [] -> strace 
-                     ("Warning: when renaming newtype of imported newtype:\n"++
-                      "  Real type of "++show(tidI info)++" is not visible.\n"++
-                      "  I might get boxed/unboxed info wrong.") (Just False)
+                    [] -> -- strace 
+                 --  ("Warning: when renaming newtype of imported newtype:\n"++
+                 --   "  Real type of "++show(tidI info)++" is not visible.\n"++
+                 --   "  I might get boxed/unboxed info wrong.")
+                     (Just False)
       Nothing -> Nothing	-- possibly not circular at all
 
   isUnBoxedTS st u = -- No circular dependency when this function is called
