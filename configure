@@ -663,6 +663,8 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
       then sed -e "s|greencard-nhc98 -|greencard-nhc98|"; else cat; fi ) |\
+    ( if [ "$MOREEVIL" = "yes" ];
+      then sed -e "s|#	perl|	perl|"; else cat; fi ) |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/nhc98
     echo "	hmake"
