@@ -252,6 +252,8 @@ list to post to it).
               and as a result, compile time is 5-10% faster.
 <li> Update:  'hi' now uses GNU's readline library if available.
 <li> Update:  Improved error reporting in hmake.
+<li> Update:  Improved the raw speed of both output and input for compiled
+              programs, by between 3x and 10x, depending on usage.
 <li> Bugfix:  Auto-configuration of hmake.  It occasionally failed to find
               an already-installed version of nhc98.  Also, on Solaris
               (and other System V based OSes), auto-detection of
@@ -270,7 +272,7 @@ list to post to it).
 <li> Bugfix:  Local infix declarations in `where' blocks were ignored.
 <li> Bugfix:  Some non-trivial `newtype' decls produced spurious errors.
 <li> Bugfix:  Printing of characters in the range 0x0100 to 0xffff now works.
-<li> Bugfix:  CAF @-patterns are now fixed.  As a result, Happy-generated
+<li> Bugfix:  @-pattern-bindings are now fixed.  As a result, Happy-generated
               parsers should now compile correctly.
 <li> Bugfix:  We now accept {-# pragmas #-} in any position, and understand
               LINE pragmas.
@@ -282,8 +284,6 @@ the redex-trail-based tracing and debugging system.
                    an error, you get a virtual stack trace of the
                    computation "for free", without having to start up
                    a browser.
-<li> New Feature:  Traces are now archived to file, so you do not need
-                   to re-run the program every time you want to browse it.
 <li> Update:  Foreign imports (via the new common primitive FFI) with an
               I/O result type are now also traced (previously only pure
               foreign functions were traced).
