@@ -960,10 +960,11 @@ mkTFunType ty =
 -- t1 -> t2  ==>  Trace -> R t1 -> R t2
 tType :: Type TraceId -> Type TokenId
 tType (TypeCons pos tyCon tys) =
-  if isFunTyCon tyCon 
-    then TypeCons pos tokenTrace [] 
-           `typeFun` TypeCons pos t_Arrow (map (wrapType . tType) tys)
-    else TypeCons pos (nameTransTyConCls tyCon) (map tType tys)
+--  if isFunTyCon tyCon 
+--    then TypeCons pos tokenTrace [] 
+--           `typeFun` TypeCons pos t_Arrow (map (wrapType . tType) tys)
+--    else 
+  TypeCons pos (nameTransTyConCls tyCon) (map tType tys)
 tType (TypeApp lTy rTy) = TypeApp (tType lTy) (tType rTy)
 tType (TypeVar pos tyId) = TypeVar pos (nameTransTyVar tyId)
 tType (TypeStrict pos ty) = TypeStrict pos (tType ty)
@@ -1166,6 +1167,7 @@ updateToken f traceId =
   updateModule name = modulePrefix : name
   unqual :: PackedString -> String
   unqual n = case reverse . unpackPS $ n of -- change predefined names
+               "->" -> "Fun"
                ":" -> "Cons" 
                "[]" -> "List" -- here both type and data constructor
                s -> s
@@ -1192,7 +1194,8 @@ combSat :: Pos -> Bool -> Exp TokenId
 combSat pos cr = ExpVar pos (if cr then tokenEagerSat else tokenLazySat)
 
 combApply :: Pos -> Bool -> Arity -> Exp TokenId
-combApply pos cr a = ExpVar pos ((if cr then tokenRap else tokenAp) a)
+combApply pos cr a = ExpVar pos (tokenAp a)
+                        -- ((if cr then tokenRap else tokenAp) a)
 
 mkConstGuard :: Pos -> Exp TokenId -> Exp TokenId -> Exp TokenId
 mkConstGuard pos parent guardTrace =
@@ -1283,8 +1286,8 @@ tokenLazySat = mkTracingToken "lazySat"
 tokenAp :: Arity -> TokenId
 tokenAp = mkTracingTokenArity "ap" 
 
-tokenRap :: Arity -> TokenId
-tokenRap = mkTracingTokenArity "rap" 
+-- tokenRap :: Arity -> TokenId
+-- tokenRap = mkTracingTokenArity "rap" 
 
 tokenFun :: Arity -> TokenId
 tokenFun = mkTracingTokenArity "fun"

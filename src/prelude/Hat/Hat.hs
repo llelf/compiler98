@@ -3,11 +3,11 @@
 -- combinators in Haskell and interfaces to C-functions
 
 module Hat 
-  (R(R),mkR,SR,Trace,NmType,ModuleTraceInfo
+  (R(R),mkR,Fun(Fun),SR,Trace,NmType,ModuleTraceInfo
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
-  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
-  ,rap14,rap15
+--  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
+--  ,rap14,rap15
   ,pap0,pap1,pap2,pap3,pap4,pap5,pap6,pap7,pap8,pap9,pap10,pap11,pap12
   ,pap13,pap14
   ,lazySat,lazySatLonely,eagerSat
@@ -71,7 +71,7 @@ No, not for pap: pap will force evaluation immediately.
 
 data R a = R a Trace
 
-type Fun a b = Trace -> R a -> R b
+newtype Fun a b = Fun (Trace -> R a -> R b)
 
 
 {- data constructor R strict in trace argument -}
@@ -106,47 +106,49 @@ primEnter sr t e = let vn = toNm t e sr
 -- ----------------------------------------------------------------------------
 -- combinators for n-ary application in a non-projective context.
 
-ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
+ap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r 
 
-ap1 sr t (R rf tf) a@(R _ at) = 
+ap1 sr t (R (Fun rf) tf) a@(R _ at) = 
   let t' = mkTAp1 t tf at sr
   in  lazySat (rf t' a) t'
 
-ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
+ap2 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) = 
   let t' = mkTAp2 t tf at bt sr
   in  lazySat (pap1 sr t t' (rf t' a) b) t'
 
-ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+ap3 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   let t' = mkTAp3 t tf at bt ct sr
   in  lazySat (pap2 sr t t' (rf t' a) b c) t'
 
 
-ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+ap4 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   let t' = mkTAp4 t tf at bt ct dt sr
   in  lazySat (pap3 sr t t' (rf t' a) b c d) t'
 
 
-ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
+ap5 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                         e@(R _ et) = 
   let t' = mkTAp5 t tf at bt ct dt et sr
   in  lazySat (pap4 sr t t' (rf t' a) b c d e) t'
 
-ap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                   f@(R _ ft) = 
+ap6 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                         e@(R _ et) f@(R _ ft) = 
   let t' = mkTAp6 t tf at bt ct dt et ft sr
   in  lazySat (pap5 sr t t' (rf t' a) b c d e f) t'
 
-ap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                   f@(R _ ft) g@(R _ gt) = 
+ap7 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                         e@(R _ et) f@(R _ ft) g@(R _ gt) = 
   let t' = mkTAp7 t tf at bt ct dt et ft gt sr
   in  lazySat (pap6 sr t t' (rf t' a) b c d e f g) t'
 
-ap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                   f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
+ap8 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                         e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
   in  lazySat (pap7 sr t t' (rf t' a) b c d e f g h) t'
 
-ap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                   f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
+ap9 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                         e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                         i@(R _ it) = 
   let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
   in  lazySat (pap8 sr t t' (rf t' a) b c d e f g h i) t'
 
@@ -157,52 +159,56 @@ ap10 :: SR -> Trace
      -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i -> R j 
      -> R r 
 
-ap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
+ap10 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) = 
   let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
   in  lazySat (pap9 sr t t' (rf t' a) b c d e f g h i j) t'
 
-ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                    k@(R _ kt) = 
+ap11 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) k@(R _ kt) = 
   let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
   in  lazySat (pap10 sr t t' (rf t' a) b c d e f g h i j k) t'
 
-ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                    k@(R _ kt) l@(R _ lt) =  
+ap12 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) =  
   let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
   in  lazySat (pap11 sr t t' (rf t' a) b c d e f g h i j k l) t'
 
-ap13 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                    k@(R _ kt) l@(R _ lt) m@(R _ mt) =  
+ap13 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) 
+                          m@(R _ mt) =  
   let t' = mkTAp13 t tf at bt ct dt et ft gt ht it jt kt lt mt sr
   in  lazySat (pap12 sr t t' (rf t' a) b c d e f g h i j k l m) t'
 
-ap14 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =  
+ap14 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) 
+                          m@(R _ mt) n@(R _ nt) =  
   let t' = mkTAp14 t tf at bt ct dt et ft gt ht it jt kt lt mt nt sr
   in  lazySat (pap13 sr t t' (rf t' a) b c d e f g h i j k l m n) t'
 
-ap15 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
+ap15 sr t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                          e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                          i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) 
+                          m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
   let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot sr
   in  lazySat (pap14 sr t t' (rf t' a) b c d e f g h i j k l m n o) t'
 
 
 
 {- 
-Combinators for n-ary applications in a projective context 
-The difference to the ap_n combinators is that in the case
-of trusting no hidden trace node has to be created,
-because the skipped trace node has the same type as the 
-parent redex.
--}
-
--- suspected:
+Combinators for n-ary applications in a projective context.
+Is more efficient than ap?, because of the following optimisation:
+No Sat is needed, because when the application is needed in the trace,
+the application also needs to be evaluated.
+However, the application is only linked with the trace after whnf is
+reached. If the computation is aborted in between, there is no link
+and hence no chance for hat-detect to locate all children.
+So currently don't use this optimisation.
 
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
@@ -283,7 +289,7 @@ rap15 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
   let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot sr
   in  pap14 sr t t' (rf t' a) b c d e f g h i j k l m n o
-
+-}
 
 -- Combinators for n-ary application used by the combinators above.
 -- Introduces a new application node if the function is a saturated
@@ -294,9 +300,9 @@ pap0 :: Trace -> R r -> R r
 pap0 t e = e
 
 
-pap1 :: SR -> Trace -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
+pap1 :: SR -> Trace -> Trace -> R (Fun a r) -> R a -> R r
 
-pap1 sr p t (R rf tf) a =
+pap1 sr p t (R (Fun rf) tf) a =
   if t `sameAs` tf 
     then rf t a
     else case a of 
@@ -304,7 +310,7 @@ pap1 sr p t (R rf tf) a =
              let t' = mkTAp1 p tf at sr
              in  t' `Prelude.seq` eagerSat (rf t' a) t'
 
-pap2 sr p t (R rf tf) a b =
+pap2 sr p t (R (Fun rf) tf) a b =
   if t `sameAs` tf 
     then pap1 sr p t (rf t a) b
     else case a of 
@@ -314,7 +320,7 @@ pap2 sr p t (R rf tf) a b =
                in  eagerSat (pap1 sr p t' (rf t' a) b) t'
 
 
-pap3 sr p t (R rf tf) a b c =
+pap3 sr p t (R (Fun rf) tf) a b c =
   if t `sameAs` tf 
     then pap2 sr p t (rf t a) b c
     else case a of 
@@ -325,34 +331,35 @@ pap3 sr p t (R rf tf) a b c =
                  in eagerSat (pap2 sr p t' (rf t' a) b c) t'
 
 
-pap4 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
+pap4 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
   if t `sameAs` tf 
     then pap3 sr p t (rf t a) b c d
     else let t' = mkTAp4 p tf at bt ct dt sr
          in  eagerSat (pap3 sr p t' (rf t' a) b c d) t'
 
-pap5 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
+pap5 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                            e@(R _ et) =
   if t `sameAs` tf 
     then pap4 sr p t (rf t a) b c d e
     else let t' = mkTAp5 p tf at bt ct dt et sr
          in  eagerSat (pap4 sr p t' (rf t' a) b c d e) t'
 
-pap6 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                      f@(R _ ft) =
+pap6 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                            e@(R _ et) f@(R _ ft) =
   if t `sameAs` tf 
     then pap5 sr p t (rf t a) b c d e f
     else let t' = mkTAp6 p tf at bt ct dt et ft sr
          in  eagerSat (pap5 sr p t' (rf t' a) b c d e f) t'
 
-pap7 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                      f@(R _ ft) g@(R _ gt) =
+pap7 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                            e@(R _ et) f@(R _ ft) g@(R _ gt) =
   if t `sameAs` tf 
     then pap6 sr p t (rf t a) b c d e f g
     else let t' = mkTAp7 p tf at bt ct dt et ft gt sr
          in  eagerSat (pap6 sr p t' (rf t' a) b c d e f g) t'
 
-pap8 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                      f@(R _ ft) g@(R _ gt) h@(R _ ht) =
+pap8 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                            e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) =
   if t `sameAs` tf 
     then pap7 sr p t (rf t a) b c d e f g h
     else let t' = mkTAp8 p tf at bt ct dt et ft gt ht sr
@@ -365,47 +372,51 @@ pap9 :: SR -> Trace -> Trace
      -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i 
      -> R r 
 
-pap9 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
+pap9 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                            e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                            i@(R _ it) =
   if t `sameAs` tf 
     then pap8 sr p t (rf t a) b c d e f g h i
     else let t' = mkTAp9 p tf at bt ct dt et ft gt ht it sr
          in  eagerSat (pap8 sr p t' (rf t' a) b c d e f g h i) t'
 
-pap10 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
+pap10 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                             e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                             i@(R _ it) j@(R _ jt) =
   if t `sameAs` tf 
     then pap9 sr p t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 p tf at bt ct dt et ft gt ht it jt sr
          in eagerSat (pap9 sr p t' (rf t' a) b c d e f g h i j) t'
 
-pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                       k@(R _ kt) =
+pap11 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                             e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                             i@(R _ it) j@(R _ jt) k@(R _ kt) =
   if t `sameAs` tf 
     then pap10 sr p t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt sr
          in  eagerSat (pap10 sr p t' (rf t' a) b c d e f g h i j k) t'
 
-pap12 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                       k@(R _ kt) l@(R _ lt) =
+pap12 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                             e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                             i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) =
   if t `sameAs` tf 
     then pap11 sr p t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 p tf at bt ct dt et ft gt ht it jt kt lt sr
          in  eagerSat (pap11 sr p t' (rf t' a) b c d e f g h i j k l) t'
 
-pap13 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                       k@(R _ kt) l@(R _ lt) m@(R _ mt) =
+pap13 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                             e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                             i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) 
+                             m@(R _ mt) =
   if t `sameAs` tf 
     then pap12 sr p t (rf t a) b c d e f g h i j k l m
     else let t' = mkTAp13 p tf at bt ct dt et ft gt ht it jt kt lt mt sr
          in  eagerSat (pap12 sr p t' (rf t' a) b c d e f g h i j k l m) t'
 
-pap14 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                       k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
+pap14 sr p t (R (Fun rf) tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) 
+                             e@(R _ et) f@(R _ ft) g@(R _ gt) h@(R _ ht) 
+                             i@(R _ it) j@(R _ jt) k@(R _ kt) l@(R _ lt) 
+                             m@(R _ mt) n@(R _ nt) =
   if t `sameAs` tf 
     then pap13 sr p t (rf t a) b c d e f g h i j k l m n
     else let t' = mkTAp14 p tf at bt ct dt et ft gt ht it jt kt lt mt nt sr
@@ -431,6 +442,7 @@ lazySat x t =
        sat
 
 
+-- specially marked Sat that doesn't belong to the preceding trace node
 lazySatLonely :: R a -> Trace -> R a
 
 lazySatLonely x t = 
@@ -485,276 +497,279 @@ fun0 nm rf sr t =
 -}
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
-     -> R (Trace -> R a -> R r)
+     -> R (Fun a r)
 
 fun1 nm rf sr t = 
-  mkR (\t a -> rf t a)
+  mkR (Fun (\t a -> rf t a))
       (mkTNm t nm sr)
 
+fun2 :: NmType -> (Trace -> R a -> R b -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b r))
+
 fun2 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b -> rf t a b)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b -> rf t a b))
+        t))
       (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c -> rf t a b c)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c -> rf t a b c))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun4 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d -> rf t a b c d)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d -> rf t a b c d))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun5 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e -> rf t a b c d e)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e -> rf t a b c d e))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun6 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f -> rf t a b c d e f)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f -> rf t a b c d e f))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun7 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g -> rf t a b c d e f g)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g -> rf t a b c d e f g))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun8 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h -> rf t a b c d e f g h)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h -> rf t a b c d e f g h))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun9 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i -> rf t a b c d e f g h i)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i -> rf t a b c d e f g h i))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun10 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j -> rf t a b c d e f g h i j)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j -> rf t a b c d e f g h i j))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun11 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j ->
-                        R (\t k -> rf t a b c d e f g h i j k)
-                          t)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j ->
+                        R (Fun (\t k -> rf t a b c d e f g h i j k))
+                          t))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun12 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j ->
-                        R (\t k ->
-                          R (\t l -> rf t a b c d e f g h i j k l)
-                            t)
-                          t)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j ->
+                        R (Fun (\t k ->
+                          R (Fun (\t l -> rf t a b c d e f g h i j k l))
+                            t))
+                          t))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun13 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j ->
-                        R (\t k ->
-                          R (\t l ->
-                            R (\t m -> rf t a b c d e f g h i j k l m)
-                              t)
-                            t)
-                          t)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j ->
+                        R (Fun (\t k ->
+                          R (Fun (\t l ->
+                            R (Fun (\t m -> rf t a b c d e f g h i j k l m))
+                              t))
+                            t))
+                          t))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun14 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j ->
-                        R (\t k ->
-                          R (\t l ->
-                            R (\t m ->
-                              R (\t n -> rf t a b c d e f g h i j k l m n)
-                                t)
-                              t)
-                            t)
-                          t)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j ->
+                        R (Fun (\t k ->
+                          R (Fun (\t l ->
+                            R (Fun (\t m ->
+                              R (Fun (\t n -> rf t a b c d e f g h i j k l m n))
+                                t))
+                              t))
+                            t))
+                          t))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 fun15 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d ->
-            R (\t e ->
-              R (\t f ->
-                R (\t g ->
-                  R (\t h ->
-                    R (\t i ->
-                      R (\t j ->
-                        R (\t k ->
-                          R (\t l ->
-                            R (\t m ->
-                              R (\t n ->
-                                R (\t o -> rf t a b c d e f g h i j k l m n o)
-                                  t)
-                                t)
-                              t)
-                            t)
-                          t)
-                        t)
-                      t)
-                    t)
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
+  mkR (Fun (\t a ->
+      R (Fun (\t b ->
+        R (Fun (\t c ->
+          R (Fun (\t d ->
+            R (Fun (\t e ->
+              R (Fun (\t f ->
+                R (Fun (\t g ->
+                  R (Fun (\t h ->
+                    R (Fun (\t i ->
+                      R (Fun (\t j ->
+                        R (Fun (\t k ->
+                          R (Fun (\t l ->
+                            R (Fun (\t m ->
+                              R (Fun (\t n ->
+                                R (Fun (\t o -> rf t a b c d e f g h i j k l m n o))
+                                  t))
+                                t))
+                              t))
+                            t))
+                          t))
+                        t))
+                      t))
+                    t))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
       (mkTNm t nm sr)
 
 
@@ -885,7 +900,7 @@ prim0 nm rf sr t =
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
-  mkR (\t (R a at) -> primEnter sr t (rf a))
+  mkR (Fun (\t (R a at) -> primEnter sr t (rf a)))
     (mkTNm t nm sr)
 
 
@@ -893,285 +908,285 @@ prim2 :: NmCoerce r =>
          NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
 
 prim2 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)-> primEnter sr t (rf a b))
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)-> primEnter sr t (rf a b)))
+      t))
     (mkTNm t nm sr)
 
 prim3 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)-> primEnter sr t (rf a b c))
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)-> primEnter sr t (rf a b c)))
+        t))
+      t))
     (mkTNm t nm sr)
 
 prim4 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)-> primEnter sr t (rf a b c d))
-          t)
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)-> primEnter sr t (rf a b c d)))
+          t))
+        t))
+      t))
     (mkTNm t nm sr)
 
 
 prim5 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)->
-          R (\t (R e et)-> primEnter sr t (rf a b c d e))
-            t)
-          t)
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)-> primEnter sr t (rf a b c d e)))
+            t))
+          t))
+        t))
+      t))
     (mkTNm t nm sr)
 
 prim6 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)->
-          R (\t (R e et)->
-            R (\t (R f ft)-> primEnter sr t (rf a b c d e f))
-              t)
-            t)
-          t)
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)-> primEnter sr t (rf a b c d e f)))
+              t))
+            t))
+          t))
+        t))
+      t))
     (mkTNm t nm sr)
 
 prim7 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)->
-          R (\t (R e et)->
-            R (\t (R f ft)->
-              R (\t (R g gt)-> 
-                  primEnter sr t (rf a b c d e f g))
-                t)
-              t)
-            t)
-          t)
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)->
+              R (Fun (\t (R g gt)-> 
+                  primEnter sr t (rf a b c d e f g)))
+                t))
+              t))
+            t))
+          t))
+        t))
+      t))
     (mkTNm t nm sr)
 
 prim8 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)->
-          R (\t (R e et)->
-            R (\t (R f ft)->
-              R (\t (R g gt)->
-                R (\t (R h ht)-> 
-                    primEnter sr t (rf a b c d e f g h))
-                  t)
-                t)
-              t)
-            t)
-          t)
-        t)
-      t)
+  mkR (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)->
+              R (Fun (\t (R g gt)->
+                R (Fun (\t (R h ht)-> 
+                    primEnter sr t (rf a b c d e f g h)))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
+      t))
     (mkTNm t nm sr)
 
 prim9 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                      primEnter sr t9 (rf a b c d e f g h i))
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                      primEnter sr t9 (rf a b c d e f g h i)))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim10 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
                         primEnter sr t10 (rf a b c d e f 
-                                                         g h i j))
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                         g h i j)))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim11 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
-                      R (\t11 (R k kt)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
                           primEnter sr t11 (rf a b c d e f 
-                                                           g h i j k))
-                        t10)
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                           g h i j k)))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim12 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
-                      R (\t11 (R k kt)->
-                        R (\t12 (R l lt)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
                             primEnter sr t12 (rf a b c d e f 
-                                                             g h i j k l))
-                          t11)
-                        t10)
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                             g h i j k l)))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim13 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
-                      R (\t11 (R k kt)->
-                        R (\t12 (R l lt)->
-                          R (\t13 (R m mt)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
                               primEnter sr t13 (rf a b c d e f 
-                                                         g h i j k l m))
-                            t12)
-                          t11)
-                        t10)
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                         g h i j k l m)))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim14 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
-                      R (\t11 (R k kt)->
-                        R (\t12 (R l lt)->
-                          R (\t13 (R m mt)->
-                            R (\t14 (R n nt)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
+                            R (Fun (\t14 (R n nt)->
                                 primEnter sr t14 (rf a b c d e f 
-                                                         g h i j k l m n))
-                              t13)
-                            t12)
-                          t11)
-                        t10)
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                         g h i j k l m n)))
+                              t13))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 prim15 nm rf sr t = 
-  mkR (\t1 (R a at)->
-    R (\t2 (R b bt)->
-      R (\t3 (R c ct)->
-        R (\t4 (R d dt)->
-          R (\t5 (R e et)->
-            R (\t6 (R f ft)->
-              R (\t7 (R g gt)->
-                R (\t8 (R h ht)->
-                  R (\t9 (R i it)->
-                    R (\t10 (R j jt)->
-                      R (\t11 (R k kt)->
-                        R (\t12 (R l lt)->
-                          R (\t13 (R m mt)->
-                            R (\t14 (R n nt)->
-                              R (\t15 (R o ot)->
+  mkR (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
+                            R (Fun (\t14 (R n nt)->
+                              R (Fun (\t15 (R o ot)->
                                   primEnter sr t15 (rf a b c d e f 
-                                                         g h i j k l m n o))
-                                t14)
-                              t13)
-                            t12)
-                          t11)
-                        t10)
-                      t9)
-                    t8)
-                  t7)
-                t6)
-              t5)
-            t4)
-          t3)
-        t2)
-      t1)
+                                                         g h i j k l m n o)))
+                                t14))
+                              t13))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
     (mkTNm t nm sr)
 
 
@@ -1184,72 +1199,72 @@ Used for partially applied constructors
 -}
 
 cn1 :: (R a1 -> b) -> Trace -> R (Fun a1 b)
-cn1 rf t = R (\t a ->
+cn1 rf t = R (Fun (\t a ->
              R (rf a)
-               t)
+               t))
              t
 
 cn2 :: (R a1 -> R a2 -> b) -> Trace -> R (Fun a1 (Fun a2 b))
-cn2 rf t = R (\t a ->
-             R (\t b ->
+cn2 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
                R (rf a b)
-                 t)
-               t)
+                 t))
+               t))
              t
 
 cn3 :: (R a1 -> R a2 -> R a3 -> b) -> Trace -> R (Fun a1 (Fun a2 (Fun a3 b)))
-cn3 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
+cn3 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
                  R (rf a b c)
-                   t)t)t)t
+                   t))t))t))t
 
 cn4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> Trace 
     -> R (Fun a1 (Fun a2 (Fun a3 (Fun a4 b))))
-cn4 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
-                 R (\t d ->
+cn4 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
+                 R (Fun (\t d ->
                    R (rf a b c d)
-                     t)t)t)t)t
+                     t))t))t))t))t
 
-cn5 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
-                 R (\t d ->
-                   R (\t e ->
+cn5 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
+                 R (Fun (\t d ->
+                   R (Fun (\t e ->
                      R (rf a b c d e)
-                       t)t)t)t)t)t
+                       t))t))t))t))t))t
 
-cn6 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
-                 R (\t d ->
-                   R (\t e ->
-                     R (\t f ->
+cn6 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
+                 R (Fun (\t d ->
+                   R (Fun (\t e ->
+                     R (Fun (\t f ->
                        R (rf a b c d e f)
-                         t)t)t)t)t)t)t
+                         t))t))t))t))t))t))t
 
-cn7 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
-                 R (\t d ->
-                   R (\t e ->
-                     R (\t f ->
-                       R (\t g ->
+cn7 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
+                 R (Fun (\t d ->
+                   R (Fun (\t e ->
+                     R (Fun (\t f ->
+                       R (Fun (\t g ->
                          R (rf a b c d e f g)
-                           t)t)t)t)t)t)t)t
+                           t))t))t))t))t))t))t))t
 
-cn8 rf t = R (\t a ->
-             R (\t b ->
-               R (\t c ->
-                 R (\t d ->
-                   R (\t e ->
-                     R (\t f ->
-                       R (\t g ->
-                         R (\t h ->
+cn8 rf t = R (Fun (\t a ->
+             R (Fun (\t b ->
+               R (Fun (\t c ->
+                 R (Fun (\t d ->
+                   R (Fun (\t e ->
+                     R (Fun (\t f ->
+                       R (Fun (\t g ->
+                         R (Fun (\t h ->
                            R (rf a b c d e f g h)
-                             t)t)t)t)t)t)t)t)t
+                             t))t))t))t))t))t))t))t))t
 
 
 {- 
@@ -1258,8 +1273,6 @@ Create application node for function that is partially applied to i
 arguments and transform partial application with given function.
 Used for partially applied data constructors.
 -}
-
--- suspected:
 
 pa0 :: b -> (b -> Trace -> c) -> SR -> Trace -> NmType -> c
 
@@ -1297,9 +1310,7 @@ pa4 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) a4@(R _ t4) =
 
 
 -- ----------------------------------------------------------------------------
--- part from HatArchive
-
--- foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
+-- interface to foreign C functions
 
 sameAs :: Trace -> Trace -> Bool
 (Trace fileptr1) `sameAs` (Trace fileptr2) = fileptr1 == fileptr2

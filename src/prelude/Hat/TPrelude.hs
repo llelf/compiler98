@@ -1,6 +1,6 @@
 -- a toy prelude for Hat tracing
 -- wraps a few essential Prelude functions and types to test portable tracing
-module TPrelude where
+module TPrelude (module TPrelude,Fun(Fun)) where
 
 import Hat as T
 import FFI (Addr,ForeignObj,StablePtr
@@ -93,8 +93,7 @@ fromPolyList = fromList (\_ x -> x)
 -- ----------------------------------------------------------------------------
 -- functions:
 
-(-++) :: SR -> Trace 
-    -> R (Trace -> (R (List a)) -> R (Trace -> (R (List a)) -> (R (List a))))
+(-++) :: SR -> Trace -> R (Fun (List a) (Fun (List a) (List a)))
 (-++) p t = T.fun2 (+++) (*++) p t
 
 (+++) = mkAtomIdToplevel tMain noPos 21 "++"
@@ -103,8 +102,7 @@ fromPolyList = fromList (\_ x -> x)
 (*++) t xs ys = fromPolyList t (toPolyList xs ++ toPolyList ys) 
 
 
-oreverse :: SR -> Trace 
-         -> R (Trace -> R (List a) -> R (List a))
+oreverse :: SR -> Trace -> R (Fun (List a) (List a))
 oreverse preverse treverse =
   fun1 a0v0reverse wreverse preverse treverse
 
@@ -114,22 +112,20 @@ wreverse :: Trace -> R (List a) -> R (List a)
 wreverse t xs = fromPolyList t (reverse (toPolyList xs))
 
 
-omap :: SR -> Trace 
-     -> R (Trace -> R (Trace -> R a -> R b) 
-     -> R (Trace -> R (List a) -> R (List b)))
+omap :: SR -> Trace -> R (Fun (Fun a b) (Fun (List a) (List b)))
 omap pmap tmap =
   fun2 a0v0map wmap pmap tmap
 
 a0v0map = mkAtomIdToplevel tMain noPos 3 "map"
 
-wmap :: Trace -> R (Trace -> R a -> R b) -> R (List a) -> R (List b)
+wmap :: Trace -> R (Fun a b) -> R (List a) -> R (List b)
 wmap t f xs = fromPolyList t (map (ap1 mkNoSourceRef hidden f) (toPolyList xs))
   where
   hidden = mkTHidden t
 
 
 oputStr :: SR -> Trace 
-        -> R (Trace -> (R TPrelude.String) -> R (TPrelude.IO TPrelude.Tuple0))
+        -> R (Fun TPrelude.String (TPrelude.IO TPrelude.Tuple0))
 
 oputStr pputStr tputStr =
   T.fun1 a8v1putStr wputStr pputStr tputStr
@@ -142,13 +138,6 @@ wputStr t os = fromIO fromTuple0 t $ do
   outputTrace t s
   putStr s
   return ()
-
-
-unwrap :: R TPrelude.String -> Prelude.String
-unwrap (T.R s _) = go s
-  where
-  go List = []
-  go (Cons (R c _) (R rest _)) = c : go rest
 
 
 -- error :: T.SR -> T.Trace -> T.R (Trace -> T.R String -> a)
