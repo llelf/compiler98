@@ -20,6 +20,7 @@ module Platform
   , escape
   , unsafePerformIO
   , getProcessID
+  , shell
   ) where
 
 import System (getEnv,system)
