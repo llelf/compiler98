@@ -134,7 +134,7 @@
 #define DD(x)      .double 0d##x
 #define DF(x)      .float 0d##x
 #define DS         .ascii
-#if defined(__linux) || defined(__CYGWIN32__)
+#if defined(__linux) || defined(__CYGWIN32__) || defined(__MINGW32__)
 #define AL         .align 4
 #define AL_D       .align 8
 #define EX         .globl

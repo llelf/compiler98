@@ -6,7 +6,7 @@ double dencode(MP_INT *man, int iexp);
 int ddecode(double f,MP_INT *man);
 
 
-#if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(__alpha) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(bsdi) || defined(__CYGWIN32__) || defined(__OpenBSD__)
+#if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(__alpha) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(bsdi) || defined(__CYGWIN32__) || defined(__MINGW32__) || defined(__OpenBSD__)
 
 /* #define DBL_RADIX 2		-- defined in <float.h>	*/
 /* #define DBL_DIGITS 53	-- use DBL_MANT_DIG	*/
