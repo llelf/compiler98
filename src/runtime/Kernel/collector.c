@@ -671,7 +671,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
     fprintf(stderr,"  %d words to next gc.",(NodePtr)sp-hp);
     fprintf(stderr,"  Max live after gc: %ld words.\n",hpMaxSurvive);
 #if TRACE
-    startDbg(*sp,0/*FALSE*/);
+    hat_exit("Out of heap.",0,-1);
 #endif
     exit(-1);
   }
