@@ -54,10 +54,10 @@ rename :: Flags
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =
   case is2rs flags mrps qualFun expFun overlap importState 
-         :: Either [String] (TokenId -> TokenId
-                            ,TokenId -> IdKind -> IE
-                            ,RenameState
-                            ,Tree ((TokenId,IdKind),Either [Pos] [Int])) of
+         :: (Either [String] (TokenId -> TokenId
+                             ,TokenId -> IdKind -> IE
+                             ,RenameState
+                             ,Tree ((TokenId,IdKind),Either [Pos] [Int]))) of
     Right (qualFun,expFun,state,irt) ->
       case renameTopDecls inf topdecls qualFun expFun state
              :: (Decls Int,RenameState) of
