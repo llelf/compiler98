@@ -11,6 +11,9 @@ import HmakeConfig
 import SimpleLineEditor (delChars, getLineEdited)
 import LexModule
 import Unlit
+#if USE_READLINE
+import qualified Readline
+#endif
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
@@ -32,27 +35,37 @@ main = do
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
   hSetBuffering stdin NoBuffering
+#if USE_READLINE
+  Readline.initialize
+#endif
   let state = S { options=opts, compiler=defaultCompiler
                 , modules=["Prelude"], scope=Nothing, scopeText=Nothing }
   load state "Prelude" (toplevel state)
   putStrLn "[Cannot continue without Prelude...]"
   exitWith (ExitFailure 1)
 
+quit = do
+   putStrLn "[Leaving hmake interactive...]"
+   exitWith ExitSuccess
+
 toplevel :: State -> IO ()
 toplevel state = do
-  case scope state of
-    Nothing  -> putStr (head (modules state)++ "> ")
-    Just mod -> putStr (mod++ "*> ")
-  s <- getLineEdited
-  if (null s || all isSpace s) then done else
-    case head s of
-      ':' -> let ws = words (tail s) in
-             if (null ws) then done else
-               case head (head ws) of
-                 '!' -> do system (unwords ((tail (head ws)):tail ws)) >> done
-                 _   -> commands ws state
-      _   -> evaluate s (words s) state
-  toplevel state
+  let prompt = case scope state of
+  		    Nothing  -> head (modules state)++ "> "
+    		    Just mod -> mod++ "*> "
+  s <- getLineEdited prompt
+  case s of
+    Nothing -> quit
+    Just s  -> do
+     if (null s || all isSpace s) then done else
+    	case head s of
+          ':' -> let ws = words (tail s) in
+                 if (null ws) then done else
+                 case head (head ws) of
+                   '!' -> system (unwords ((tail (head ws)):tail ws)) >> done
+                   _   -> commands ws state
+          _   -> evaluate s (words s) state
+     toplevel state
 
 evaluate expr ("main":args) state =
   case scope state of
@@ -234,9 +247,6 @@ commands ws state = let target = tail ws in do
   command :: String -> IO () -> IO ()
   command name action =
     if head ws `isPrefixOf` name then action >> toplevel state else done
-  quit = do
-     putStrLn "[Leaving hmake interactive...]"
-     exitWith ExitSuccess
   indent = mapM_ (\x-> putStrLn ("  "++x))
 
 -- find file (a generalisation of earlier implementation of 'load')

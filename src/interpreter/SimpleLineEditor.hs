@@ -4,24 +4,39 @@ module SimpleLineEditor
   ) where
 
 import IO
+import Monad (when)
+import Char
+#if USE_READLINE
+import Readline
+#endif
 
 delChars :: String -> IO ()
 delChars []     = return ()
 delChars (_:xs) = do putStr "\BS \BS"
                      delChars xs
 
-
 -- getLineEdited relies on having the terminal in non-buffered mode,
 -- therefore please ensure that `hSetBuffering NoBuffering' is called
 -- before using this.
 
-getLineEdited :: {- [String] -> -}  IO String
-getLineEdited {-history-} = gl "" 0
+#if USE_READLINE
+
+getLineEdited :: String -> IO (Maybe String)
+getLineEdited prompt = do
+  ms <- readline prompt
+  case ms of 
+    Nothing -> return ms
+    Just s  -> when (not (all isSpace s)) (addHistory s) >> return ms
+
+#else
+
+getLineEdited :: String -> {- [String]-> -}  IO (Maybe String)
+getLineEdited prompt {-history-} = putStr prompt >> gl "" 0
   where
-  gl s 0 = do
+  gl s 0 = do		-- s is accumulated line, 0 is cursor position
     c <- hGetChar stdin
     case c of
-      '\n'   -> return (reverse s)
+      '\n'   -> return (Just (reverse s))
       '\DEL' -> do delChars "^?"
                    gl s 0
       '\BS'  -> do delChars "^H"
@@ -33,15 +48,15 @@ getLineEdited {-history-} = gl "" 0
   --               putChar '\n'
   --               return (reverse s)
       '\^K'  -> do putChar '\n'
-                   return ""
+                   return (Just "")
       '\^L'  -> do delChars "^L"
                    gl s 0
       c      -> gl (c:s) 0
 
-  gl s n = do
+  gl s n = do		-- s is accumulated line, n(/=0) is cursor position
     c <- hGetChar stdin
     case c of
-      '\n'   -> return (reverse s)
+      '\n'   -> return (Just (reverse s))
       '\DEL' -> do let n1 = n-1
                    delChars "^?"
                    putStr (reverse (take n1 s) ++ " ")
@@ -60,9 +75,9 @@ getLineEdited {-history-} = gl "" 0
   --  '\^J'  -> do delChars "^J"
   --               putStr (reverse (take n s))
   --               putChar '\n'
-                   return (reverse s)
+                   return (Just (reverse s))
       '\^K'  -> do putChar '\n'
-                   return ""
+                   return (Just "")
       '\^L'  -> do let n1 = n-1
                    delChars "^L"
                    putStr (reverse (take n s))
@@ -72,3 +87,4 @@ getLineEdited {-history-} = gl "" 0
                    putStr (replicate n '\BS')
                    gl (take n s ++ c: drop n s) n
 
+#endif -- USE_READLINE
