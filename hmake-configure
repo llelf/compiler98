@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="1.8 (000605)" export HMAKEVERSION
+HMAKEVERSION="1.9 (000623)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -33,6 +33,7 @@ case `echo -n hello | wc -c | ( read n ; echo $n )` in
 esac
 
 BUILDWITH=
+GHCSYM=
 
 BUILDLIBDIR=$PWD/lib
 BUILDBINDIR=$PWD/script
@@ -231,6 +232,7 @@ then
   else
     echo "You are going to build hmake with $BUILDWITH"
   fi
+  GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   if [ "$BUILDOPTS" != "" ]
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
@@ -277,10 +279,17 @@ then
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "EXE=$EXE";
+      echo "GHCSYM=$GHCSYM";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Updating hmake config script in $BUILDLIBDIR/$MACHINE/hmake.config..."
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$BUILDLIBDIR/$MACHINE/hmake.config
+    echo "Adding build scripts for hmake and hi to $BUILDBINDIR..."
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
+    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi
   fi
 
 else	# [ "$INSTALL" = "yes" ]
