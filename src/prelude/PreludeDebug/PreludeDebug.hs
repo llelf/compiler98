@@ -131,25 +131,30 @@ primEnter sr t e = let v  = enter t e
                       in v `myseq` vn
 
 
+{- For guards in suspected code; in trusted code use guards directly -}
+
 t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> Trace -> a
 
 t_guard sr (R gv gt) e cont t = 
-  if trustedFun t 
+{-  if trustedFun t 
     then if gv then e t else cont t
-    else let t' = mkTAp2 t (mkTNm t mkNTGuard sr) gt t sr
-	 in  t' `myseq` if gv then e t' else cont t'
-         -- no SAT necessary, because the unevaluated form never
-         -- has to be shown (the result wrapped expression is only
-         -- created when it also has to be evaluated)
+    else -}
+  let t' = mkTAp2 t (mkTNm t mkNTGuard sr) gt t sr
+  in  t' `myseq` if gv then e t' else cont t'
+  -- no SAT necessary, because the unevaluated form never
+  -- has to be shown (the result wrapped expression is only
+  -- created when it also has to be evaluated)
 
+{- For if in suspected code; in trusted code translate into explicit case -}
 
 tif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 tif sr (R iv it) e1 e2 t = 
-  if trustedFun t 
+{-  if trustedFun t 
     then lazySat (if iv then e1 t else e2 t) t
-    else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
-         in  lazySat (if iv then e1 t' else e2 t') t'
+    else -}
+  let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
+  in  lazySat (if iv then e1 t' else e2 t') t'
 
 
 {- 
@@ -160,10 +165,11 @@ Hence need no lazy SAT.
 trif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 trif sr (R iv it) e1 e2 t = 
-  if trustedFun t 
+{-  if trustedFun t 
     then if iv then e1 t else e2 t
-    else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
-         in  t' `myseq` eagerSat (if iv then e1 t' else e2 t') t'
+    else -}
+  let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
+  in  t' `myseq` eagerSat (if iv then e1 t' else e2 t') t'
 
 
 {- used by _Driver -}
