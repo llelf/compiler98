@@ -1,0 +1,152 @@
+/**************************************************************************/
+/* nodelist.c                                                             */
+/* simple list operations to manage sorted lists of fileoffsets           */
+/*                                                                        */
+/* Thorsten Brehm, 5/2001                                                 */
+/**************************************************************************/
+
+#include <stdio.h>
+#include <string.h>
+#include "Expressions.h"
+#include "hatfileops.h"
+#include "FunTable.h"
+#include "nodelist.h"
+
+/* return an empty list */
+NodeList* newList() {
+  int sz = sizeof(NodeList);
+  NodeList* e = (NodeList*) calloc(1,sz); // sets both pointers to NULL!
+}
+
+/* append to lists end */
+void appendToList(NodeList *nl,unsigned long foffset) {
+  int sz = sizeof(NodeElement);
+  NodePtr e = (NodePtr) calloc(1,sz);
+  if (e==NULL) {
+    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
+    fprintf(stderr,"ERROR: No more space in heap!\n\n");
+    exit(1);
+  }
+  e->fileoffset = foffset;
+  if (nl->last==NULL) {
+    nl->first = e;
+    nl->last = e;
+  } else {
+    nl->last->next = e;
+    nl->last = e;
+  }
+}
+
+/* insert an element at lists beginning */
+void addBeforeList(NodeList *nl,unsigned long foffset) {
+  int sz = sizeof(NodeElement);
+  NodePtr e = (NodePtr) calloc(1,sz);
+  if (e==NULL) {
+    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
+    fprintf(stderr,"ERROR: No more space in heap!\n\n");
+    exit(1);
+  }
+  e->fileoffset = foffset;
+  e->next=nl->first;
+  nl->first = e;
+  if (nl->last==NULL) nl->last=e;
+}
+
+/* insert element appropriately within the list */
+void insertInList(NodeList *nl,unsigned long foffset) {
+  int sz = sizeof(NodeElement);
+  NodePtr l,e = (NodePtr) calloc(1,sz);
+  if (e==NULL) {
+    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
+    fprintf(stderr,"ERROR: No more space in heap!\n\n");
+    exit(1);
+  }
+  e->fileoffset = foffset;
+  l=nl->first;
+  if ((l==NULL)||(l->fileoffset>=foffset)) {
+    e->fileoffset=foffset;
+    e->next = nl->first;
+    nl->first = e;
+    if (nl->last==NULL) nl->last = e;
+    return;
+  }
+  while ((l->next!=NULL)&&(l->next->fileoffset<foffset)) l=l->next;
+  e->next=l->next;
+  l->next = e;
+  if (e->next==NULL) nl->last=e;
+}
+
+/* check for element in list */
+int isInList(NodeList *nl,unsigned long foffset) {
+  NodePtr e;
+  if (nl->first==NULL) return 0; // list empty! => not in list!
+  if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
+    return 0;  // foffset without range of stored values => not in list!
+  e = nl->first;
+  while ((e!=NULL)&&(e->fileoffset!=foffset)) e=e->next;
+  return (e!=NULL);
+}
+
+
+/* show values in list */
+void showList(NodeList *nl) {
+  NodePtr e;
+  e = nl->first;
+  if (e==NULL) printf("EMPTY\n"); else
+    {
+      while (e!=NULL) {
+	printf("element: %u\n",e->fileoffset);
+	e=e->next;
+      }
+    }
+}
+
+/* return the number of elements in the list */
+unsigned long listLength(NodeList *nl) {
+  NodePtr e;
+  unsigned long l = 0;
+  e = nl->first;
+  while (e!=NULL) {
+    e=e->next;
+    l++;
+  }
+  return l;
+}
+
+/* free the entire list */
+void freeList(NodeList *nl) {
+  NodePtr e,f;
+  e = nl->first;
+  while (e!=NULL) {
+    f=e;
+    e=e->next;
+    free(f);
+  }
+  nl->first=NULL;
+  nl->last=NULL;
+}
+
+/* show pretty printing of all nodes (and their results) in the list */
+void showPretty(NodeList *nl,int verboseMode) {
+  NodePtr e;
+  FunTable* results = newFunTable();
+  e = nl->first;
+
+  if (e==NULL) printf("FUNCTION TABLE EMPTY\n"); else
+    {
+      unsigned long lngth = listLength(nl);
+      unsigned long satc,lsz = 0,built = 0;
+      while (e!=NULL) {
+	satc=findAppSAT(e->fileoffset);  // find SATC for the application!
+	if (isSAT()) {
+	  ExprNode* r=buildExpr(satc,verboseMode);
+	  ExprNode* a=buildExpr(e->fileoffset,verboseMode);
+	  addToFunTable(results,a,r,e->fileoffset);
+	}
+	e=e->next;
+      }
+    }
+  fflush(stderr);
+  showFunTable(results);
+  freeFunTable(results);
+}

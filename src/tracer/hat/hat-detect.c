@@ -546,9 +546,8 @@ int askNodeList(int question,NodeList* results,int isTopSession) {
 	answer = askForApp(&question,e->fileoffset,0,1);
 	}
 	if (answer==0) {
-	  printf("Error located!\nBug found in: \"");
-	  showNode(e->fileoffset,1);
-	  printf("\"\nin ");
+	  printf("\nError located!\nBug found in: ");
+	  showReduction(e->fileoffset,findAppSAT(e->fileoffset),verboseMode);
 	  showLocation(e->fileoffset);
 	  printf("\n");
 	  printf("\nPress 'q' to quit, any other key to go back to question %i:",
