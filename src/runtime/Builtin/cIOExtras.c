@@ -11,4 +11,4 @@ int	getErrNo		(void)	{ return errno; }
 
 int	excludeFinalisers=0;
 void	blockFinalisers		(void)	{ excludeFinalisers++; }
-void	unblockFinalisers	(void)	{ excludeFinalisers++; }
+void	unblockFinalisers	(void)	{ excludeFinalisers--; }
