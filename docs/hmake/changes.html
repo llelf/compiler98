@@ -10,6 +10,26 @@
 <table>
 <tr>
 
+<td valign=top><b>3.06</b></td>
+  <td valign=top>
+	<ul>
+        <li> Better handling of package libraries.  Previously, the package
+             import directories were detected at installation time, so the
+             addition of a new package required a re-configure of hmake.
+             Also, because all of the package dirs were searched on every
+             invocation, hmake could not warn of a missing `package' flag.
+             Now, package dirs are detected at runtime, and only for the
+             requested packages - this fixes both problems.
+        <li> Added the cmdline option `list' to <tt>hmake-config</tt> to
+             display the set of Haskell compilers known to <tt>hmake</tt>.
+        <li> Bugfix for the -hat option.  Ensure that if a file goes through
+             cpp before hat-trans, the resulting .hx file is moved from the
+             temporary dir back to the build dir.
+        <li> Bugfix, to ensure that hmake isn't confused by the escaped
+             character \\ in a literal string.
+	</ul>
+</td></tr><tr>
+
 <td valign=top><b>3.05</b></td>
   <td valign=top>
 	<ul>
@@ -277,7 +297,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-06-06<br>
+Information last updated: 2002-08-06<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

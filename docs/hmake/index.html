@@ -6,34 +6,87 @@
 <center>
 <h1>hmake - a make tool for Haskell programs</h1>
 </center>
-
+<table><tr><td width=200 align=center>
+<a href="hmake.html">What is hmake?</a><br>
+<a href="hmake.html#use">How do I use it?</a><br>
+<a href="interactive.html">hmake interactive (hi)</a><br>
+<a href="hmake-config.html">hmake-config</a><br>
+</td><td width=200 align=center>
+<a href="#news">Recent news</a><br>
+<a href="#download">Downloads</a><br>
+<a href="#install">Build and install</a><br>
+<a href="#who">Contacts</a><br>
+</td></tr></table>
 <hr>
 
 <h3>What is hmake?</h3>
 <p>
-<em>hmake</em> is a compilation manager for Haskell programs.
-See <a href="hmake.html">hmake.html</a> for more details.
+<ul>
+<li><em>hmake</em> is a compilation manager for Haskell programs.
+    See <a href="hmake.html">hmake.html</a> for more details.
+<li><em>hmake interactive</em>, or <em>hi</em> for short, is an interactive
+    program development environment for Haskell, rather like <em>Hugs</em>.
+    See <a href="interactive.html">interactive.html</a> for more details.
+<li><em>hmake-config</em> is an auxiliary tool for managing the set
+    of compilers known by <em>hmake</em>, useful when you install a
+    new compiler, or a new version of a compiler.
+    See <a href="hmake-config.html">hmake-config.html</a> for more details.
+</ul>
 
-<h3>What is hmake interactive?</h3>
-<p>
-<em>hmake interactive</em>, or <em>hi</em> for short, is an interactive
-program development environment for Haskell, rather like <em>Hugs</em>.
-See <a href="interactive.html">interactive.html</a> for more details.
 
-<h3>Download</h3>
+<hr>
+<h3><a name="news">Recent News</a></h3>
 <p>
-Download the hmake (including <em>hi</em>) sources from
+The current version is hmake-3.06 (date 2002-08-09).
+<ul>
+<li> Better handling of package libraries.  Previously, the package
+     import directories were detected at installation time, so the
+     addition of a new package required <em>hmake-config</em> to be
+     invoked to update the config database.  Also, because all of the
+     package dirs were searched on every invocation, <em>hmake</em>
+     could not warn of a missing <em>-package</em> flag.  Now, package
+     dirs are detected at runtime, and only for the requested packages
+     - this fixes both problems.
+<li> Added the cmdline option <em>list</em> to <em>hmake-config</em> to
+     display the set of Haskell compilers known to <em>hmake</em>.
+<li> Bugfix for the <em>-hat</em> option.  Ensure that if a file goes
+     through <em>cpp</em> before <em>hat-trans</em>, the resulting
+     <em>.hx</em> file is moved from the temporary dir back to the build dir.
+<li> Bugfix, to ensure that <em>hmake</em> isn't confused by the escaped
+     character \\ in a literal string.
+</ul>
+
+<p>
+See <a href="changes.html">changes.html</a> for the full history of
+versions, bugfixes, and other updates.
+
+
+<hr>
+<h3><a name="download">Download</a></h3>
+<p>
+Download the full <em>hmake</em> sources from<br>
   <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
   <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a><br>
+  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.06.tar.gz">
+  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.06.tar.gz</tt></a>
 
 <p>
-(Note: If you have the nhc98 compiler, then you already have
-hmake.  The standard configuration and build process for the compiler
-should have done everything for you.  However, if you installed ghc,
-hbc, etc, after nhc98, you will probably need to update the config file
-for hmake.  See <a href="hmake-config.html">hmake-config.html</a>.)
+RPMs for RedHat are available from
+  <a href="http://haskell.org/~petersen/rpms/i386/">
+  <tt>http://haskell.org/~petersen/rpms/i386/</tt></a>
 
-<h3>Configure, compile, and install</h3>
+<p>
+(Note: If you have the <em>nhc98</em> compiler, then you already
+have some version of <em>hmake</em>.  However, if you installed another
+compiler after <em>nhc98</em>, you will probably need to run <a
+href="hmake-config.html">hmake-config</a> to add the new compiler to
+<em>hmake</em>'s database.  Also, it is perfectly safe to download a
+newer version of <em>hmake</em> and install it on top of the version
+that came with <em>nhc98</em>.)
+
+
+<hr>
+<h3><a name="install">Configure, compile, and install</a></h3>
 <p>
 <pre>
   $ ./configure  --prefix=/my/installation
@@ -41,7 +94,6 @@ for hmake.  See <a href="hmake-config.html">hmake-config.html</a>.)
   $ make install
 </pre>
 
-<h3>Configuration options</h3>
 <p>
 Use
 <pre>
@@ -50,10 +102,12 @@ Use
 to discover what options you can change at configuration time.  The
 configuration process actually does quite a good job of detecting what
 Haskell compilers you have, where they live, and anything special they
-might need.  However, should you need to change anything later by hand,
-use the <a href="hmake-config.html"><em>hmake-config</em></a> utility.
+might need.  However, should you need to change anything by hand, after
+installation, use the <a href="hmake-config.html"><em>hmake-config</em></a>
+utility.
 
-<h3>Notes</h3>
+<p>
+<b>Notes</b>
 <p>
 `harch' is a little script for determining your processor/OS
 combination.  It is supplied because many sites have heterogeneous
@@ -81,26 +135,24 @@ hmakerc file will be created for them.  (Only the person who installs
 hmake can change the system-wide hmakerc).
 
 
-<h3>Bug Reports</h3>
+<hr>
+<h3><a name="who">Contacts</a></h3>
 <p>
 Please send bug reports, bug fixes, and suggestions for improvements to
 <tt>Malcolm.Wallace@cs.york.ac.uk</tt>
 
-<h3>Version and Change Log</h3>
 <p>
-Current version is hmake-3.05 (date 2002-06-06).  See
-<a href="changes.html">changes.html</a> for the history of versions,
-bugfixes, and other updates.
-
-<h3>Copyright</h3>
+<b>Copyright</b>
 <p>
 The core of the hmake tool is
-(c) copyright to Thomas Hallgren, 1991-1997.
-(Code is incorporated from the earlier tools hbcmake and nhc13make.)
+&copy; copyright to Thomas Hallgren, 1991-1997.<br>
+(Code is incorporated from the earlier tools hbcmake and nhc13make.)<br>
 Many additions and modifications to hmake are
-(c) copyright to Malcolm Wallace, 1998-2002.
+&copy; copyright to Malcolm Wallace, 1998-2002.<br>
 Hmake interactive (hi) is
-(c) copyright to Malcolm Wallace, 2000-2002.
+&copy; copyright to Malcolm Wallace, 2000-2002.<br>
+Hmake-config is
+&copy; copyright to Malcolm Wallace, 2002.<br>
 
 <p>
 You may re-distribute or modify this software, but you must retain this
@@ -113,7 +165,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-06-12<br>
+Information last updated: 2002-08-09<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

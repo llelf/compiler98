@@ -3,20 +3,28 @@
 <table><tr><td width=500>
 
 <center><h1>The <em>hmake-config</em> utility</h1></center>
+<center>
+<a href="#usage">Usage</a><br>
+<a href="#view">Viewing the compiler database</a><br>
+<a href="#update">Updating the compiler database</a>
+</center>
 
 <hr>
 <p>
-<em>Hmake-config</em> is a small utility for managing your hmake
-configuration.  It updates an <em>hmakerc</em> file by adding or
-deleting knowledge about a particular Haskell compiler, or changing
-the default compiler.
+<em>Hmake-config</em> is a small utility for managing your <em>hmake</em>
+compiler database.  It can show a summary of which compilers are known,
+or it can update the database (held in an <em>hmakerc</em> file)
+by adding or deleting knowledge about a particular Haskell compiler,
+or changing the default compiler.
 
-<h3>Usage</h3>
+<h3><a name="usage">Usage</a></h3>
 <p>
 The basic option summary is:
 <pre>
-    Usage: hmake-config [cfgfile] [add|delete|default] compiler
+    Usage: hmake-config [cfgfile] list
+           hmake-config [cfgfile] [add|delete|default] compiler
 </pre>
+The <em>cfgfile</em> holds the database of known compilers.
 The specification of a <em>cfgfile</em> is optional - if it is
 not given, the file <tt>$HOME/.hmakerc/$MACHINE</tt> is assumed.
 (If you use a non-standard location for the hmakerc file, you will
@@ -28,12 +36,51 @@ where <tt>$MACHINE</tt> is the machine architecture as reported by
 <tt>`harch`</tt>, not the actual machine name.)
 
 <p>
+<b><a name="view">Viewing the compiler database</a></b>
+<p>
+<center>
+<table border=1 width=400><tr>
+<td><b>list</b><br></td>
+	<td>All compilers known by <em>hmake</em> are listed, one
+	per line.  The default compiler is also shown.
+</tr></table>
+</center>
+<p>
+For instance:
+<pre>
+    $ hmake-config list
+    Config file is:
+        /usr/malcolm/.hmakerc/ix86-Linux
+    Known compilers:
+        nhc98	(v1.14)
+        hbc	(0.9999.5b,)
+        ghc-4.08.2	(4.08.2)
+        ghc-5.02.2	(5.02.2)
+        ghc	(5.02.2)
+        /usr/local/bin/nhc98	(v1.14)
+        /usr/local/bin/hbc	(0.9999.5b,)
+        /usr/local/bin/ghc	(5.02.2)
+    Default compiler:
+        nhc98
+</pre>
+<p>
+The hmakerc file manipulated by <em>hmake-config</em> is written in
+plain text, as a structured Haskell value.  You are free to read it,
+and edit it by hand if you wish.  Be aware however that a later use
+of <em>hmake-config</em> with the action <em>add</em> may override
+any changes you make.
+
+
+<p>
+<b><a name="update">Updating the compiler database</a></b>
+<p>
 One of the actions <em>add</em>, <em>delete</em>, or <em>default</em>
 is applied to the <em>compiler</em> given on the commandline.  (If no
 action is given, <em>add</em> is assumed.)  The <em>compiler</em>
 can be specified either as a simple name which resolves to an
-executable command name via the normal <tt>$PATH</tt> mechanism, or as an
-absolute pathname to the compiler.
+executable command name via the normal <tt>$PATH</tt> mechanism,
+or as an absolute pathname to the compiler (these are treated as
+different database entries).
 
 <center>
 <table border=1 width=400><tr>
@@ -59,13 +106,6 @@ absolute pathname to the compiler.
 
 <h3>Notes</h3>
 <p>
-The hmakerc file manipulated by <em>hmake-config</em> is written in
-plain text, as a structured Haskell value.  You are free to read it,
-and edit it by hand if you wish.  Be aware however that a later use
-of <em>hmake-config</em> with the action <em>add</em> may override
-any changes you make.
-
-<p>
 To support users who may have access to heterogeneous machines on a
 network with a shared filespace, there is a separate <em>hmakerc</em>
 file for each machine architecture they use.  This is very important
@@ -77,10 +117,6 @@ It is difficult to detect the exact directories in which
 Thus <em>hmake-config</em> relies on the environment variables
 <tt>HBCDIR</tt> or <tt>LMLDIR</tt> for the correct location.
 
-<p>
-I'd welcome any bug reports, or ideas for other options or behaviours
-you would find useful.
-
 
 <hr>
 <p>
@@ -89,7 +125,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-01-21<br>
+Information last updated: 2002-08-09<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
