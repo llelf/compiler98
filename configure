@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.01 (date 2000-12-xx)"
-HMAKEVERSION="2.02 (0012xx)" export HMAKEVERSION
+CONFIGVERSION="v1.01 (date 2001-01-xx)"
+HMAKEVERSION="2.02 (0101xx)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -473,8 +473,8 @@ then
       sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$BUILDLIBDIR/$MACHINE/hmake.config
     fi
 
-    echo -n "Adding build scripts to $BUILDBINDIR...    "
-    echo -n "nhc98 "
+    echo "Adding build scripts to $BUILDBINDIR...    "
+    echo -n "    nhc98 "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
       then sed -e "s|greencard-nhc98 -|greencard-nhc98|"; else cat; fi ) |\
@@ -519,26 +519,28 @@ else	# [ "$INSTALL" = "yes" ]
       else echo ' (exists)'
       fi
     fi
-    echo -n "    "
-    #cp -p $BUILDLIBDIR/$MACHINE/ tar cf - . ) | ( cd $DESTDIR$LIBDIR/$MACHINE; tar xvf - )
-    for file in $BUILDLIBDIR/$MACHINE/*
-    do
-      echo -n "`basename $file` "
-      if [ -f $file ]; then cp -p $file $DESTDIR$LIBDIR/$MACHINE; fi
-    done
+    ( cd $BUILDLIBDIR/$MACHINE/; tar cf - . ) |\
+        ( cd $DESTDIR$LIBDIR/$MACHINE; tar xvf - ) | sed -e 's/^/	/'
+    # for file in $BUILDLIBDIR/$MACHINE/*
+    # do
+    #   if [ -f $file ]
+    #   then echo "	`basename $file`"
+    #        cp -p $file $DESTDIR$LIBDIR/$MACHINE
+    #   fi
+    # done
     if [ $DESTDIR$HLIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
            mv MkProg$EXE Older$EXE HInteractive$EXE $DESTDIR$HLIBDIR/$MACHINE )
     fi
-    echo -n "hmake.config "
+    echo "	hmake.config"
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
     cp $DESTDIR$HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR/$MACHINE	# patch local config also
-    echo -n "rtb.jar "
+    echo "	rtb.jar"
     cp $BUILDLIBDIR/rtb.jar $DESTDIR$LIBDIR
-    echo -n "hood.jar "
+    echo "	hood.jar"
     cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
     echo
   else
@@ -553,26 +555,14 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$INCDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "    "
     for file in $BUILDINCDIR/*
     do
-      echo -n "`basename $file` "
-      if [ -f $file ]; then cp $file $DESTDIR$INCDIR; fi
+      if [ -f $file ]
+      then echo "	`basename $file` "
+           cp $file $DESTDIR$INCDIR
+      fi
     done
     echo
-  # echo "Tracer interface files go into:"
-  # echo -n "    $DESTDIR$INCDIR/tracer"
-  # if [ ! -d $DESTDIR$INCDIR/tracer ]
-  # then mkdir -p $DESTDIR$INCDIR/tracer;  echo ' (created)'
-  # else echo ' (exists)'
-  # fi
-  # echo -n "    "
-  # for file in $BUILDINCDIR/tracer/*
-  # do
-  #   echo -n "`basename $file` "
-  #   cp $file $DESTDIR$INCDIR/tracer
-  # done
-  # echo
   else
     echo 'Not (re-)installing interface and include files'
   fi
@@ -585,38 +575,38 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$BINDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "    nhc98 "
+    echo "	nhc98"
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
       then sed -e "s|greencard-nhc98 -|greencard-nhc98|"; else cat; fi ) |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/nhc98
-    echo -n "hmake "
+    echo "	hmake"
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
-    echo -n "hmake.config "
+    echo "	hmake.config"
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
-    echo -n "rtb "
+    echo "	rtb"
     sed -e "s|ExecutableDir|$LIBDIR|" script/rtb.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/rtb
-    echo -n "hood "
+    echo "	hood"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hood.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hood
-    echo -n "greencard "
+    echo "	greencard"
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/greencard-nhc98
-    echo -n "hi "
+    echo "	hi"
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
-    echo -n "hp2graph "
+    echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
-    echo -n "harch "
+    echo "	harch"
     cp script/harch $DESTDIR$BINDIR
     echo
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
@@ -635,10 +625,9 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$MANDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "    "
     for file in man/*
     do
-      echo -n "`basename $file` "
+      echo "	`basename $file` "
       cp $file $DESTDIR$MANDIR
     done
     echo
