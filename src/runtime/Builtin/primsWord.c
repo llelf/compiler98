@@ -69,20 +69,20 @@ extern void* primIntegerFromIntC (int   d);
 #define FR_INT(d)     primIntFromIntegerC(d)
 #define TO_INT(d)       primIntegerFromIntC(d)
 HsWord8   primWord8FromInteger  (void* d)	{
-    HsWord8 i = (HsWord8)FR_INT(d);
-    if ((d < HS_WORD8_MIN) || (d > HS_WORD8_MAX))
+    int i = FR_INT(d);
+    if ((i < HS_WORD8_MIN) || (i > HS_WORD8_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word8 value\n");
-    return (HsWord8)d; }
+    return (HsWord8)i; }
 HsWord16  primWord16FromInteger (void* d)	{
-    HsWord16 i = (HsWord16)FR_INT(d);
-    if ((d < HS_WORD16_MIN) || (d > HS_WORD16_MAX))
+    int i = FR_INT(d);
+    if ((i < HS_WORD16_MIN) || (i > HS_WORD16_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word16 value\n");
-    return (HsWord16)d; }
+    return (HsWord16)i; }
 HsWord32  primWord32FromInteger (void* d)	{
-    HsWord32 i = (HsWord32)FR_INT(d);
-    if ((d < HS_WORD32_MIN) || (d > HS_WORD32_MAX))
+    int i = FR_INT(d);
+    if ((i < HS_WORD32_MIN) || (i > HS_WORD32_MAX))
         fprintf (stderr,"Warning: fromInteger truncates to fit Word32 value\n");
-    return (HsWord32)d; }
+    return (HsWord32)i; }
 HsWord64  primWord64FromInteger (void* d)	{ return (HsWord64)FR_INT(d); }
 void*     primWord8ToInteger  (HsWord8 d)	{ return TO_INT((int)d); }
 void*     primWord16ToInteger (HsWord16 d)	{ return TO_INT((int)d); }

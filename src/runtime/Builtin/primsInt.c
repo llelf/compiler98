@@ -74,20 +74,20 @@ extern void* primIntegerFromIntC (int   d);
 #define FR_INT(i)	primIntFromIntegerC(d)
 #define TO_INT(i)	primIntegerFromIntC(d)
 HsInt8	primInt8FromInteger  (void* d)		{
-    HsInt8 i = (HsInt8)FR_INT(d);
+    int i = FR_INT(d);
     if ((i < HS_INT8_MIN) || (i > HS_INT8_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int8 value\n");
-    return i; }
+    return (HsInt8)i; }
 HsInt16	primInt16FromInteger (void* d)		{
-    HsInt16 i = (HsInt16)FR_INT(d);
+    int i = FR_INT(d);
     if ((i < HS_INT16_MIN) || (i > HS_INT16_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int16 value\n");
-    return i; }
+    return (HsInt16)i; }
 HsInt32	primInt32FromInteger (void* d)		{
-    HsInt32 i = (HsInt32)FR_INT(d);
+    int i = FR_INT(d);
     if ((i < HS_INT32_MIN) || (i > HS_INT32_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int32 value\n");
-    return i; }
+    return (HsInt32)i; }
 HsInt64	primInt64FromInteger (void* d)		{ return (HsInt64)FR_INT(d); }
 void*	primInt8ToInteger  (HsInt8 d)		{ return TO_INT((int)d); }
 void*	primInt16ToInteger (HsInt16 d)		{ return TO_INT((int)d); }
