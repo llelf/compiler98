@@ -63,9 +63,9 @@ BUILTBY=
 # If you compiled hmake with ghc or nhc13/98, USINGRTS should be rts.
 # If you compiled hmake with hbc or xtc,      USINGRTS should be minus.
 case $BUILTBY in
-  ghc|nhc*) USINGRTS=rts;;
-  hbc|xtc) USINGRTS=minus;;
-  gcc)     USINGRTS=rts; BUILTBY=nhc98 ;;
+  ghc*|nhc*) USINGRTS=rts;;
+  hbc|xtc)   USINGRTS=minus;;
+  gcc*)      USINGRTS=rts; BUILTBY=nhc98 ;;
 esac
 
 
@@ -303,8 +303,8 @@ export HATFLAGS			# ditto
 export MACHINE			# nhc98 script is faster if this is set.
 
 # Here we go...
-#$MKPROG -hc=`filepath $COMP` $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
-$MKPROG -hc=$COMP $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
+#$MKPROG $hmrtflags -hc=`filepath $COMP` $hmflags $flags $modules >$TMP/hmake$$
+$MKPROG $hmrtflags -hc=$COMP $hmflags $flags $modules >$TMP/hmake$$
 CODE=$?
 case $CODE in
   0) cat $TMP/hmake$$ | $exec
