@@ -63,7 +63,7 @@ isTupleId (Qualified3 _ _ t) = isTupleId t
 isTupleId _                  = False
 
 --notPrelude (Qualified tid n) = tid /= rpsDPrelude && tid /= rpsPrelude
-notPrelude (Qualified tid n) = (tid /= rpsPrelude) && (tid /= rpsInternal)
+notPrelude (Qualified tid n) = (tid /= rpsPrelude) -- && (tid /= rpsInternal)
 notPrelude (Qualified2 t1 t2) = notPrelude t1 && notPrelude t2 
 notPrelude (Qualified3 t1 t2 t3) = notPrelude t1 && notPrelude t2 
 notPrelude (TupleId _) = False
@@ -308,9 +308,9 @@ tshowChar       = qualImpPrel  "showChar"
 tshowParen      = qualImpPrel  "showParen"
 treadParen      = qualImpPrel  "readParen"
 tFractional     = qualImpPrel  "Fractional"
-tRational       = visImport  "Rational"	-- Changed in Haskell 98
-tRatio          = visImport  "Ratio"		-- Changed in Haskell 98
-tRatioCon       = visImport  "%"		-- Changed in Haskell 98
+tRational       = qualImpRat  "Rational"	-- Changed in Haskell 98
+tRatio          = qualImpRat  "Ratio"		-- Changed in Haskell 98
+tRatioCon       = qualImpRat  "%"		-- Changed in Haskell 98
 tPRIMITIVE      = visImport "PRIMITIVE"
 tNEED           = visImport "NEED"
 t_primitive     = visImport "primitive"
