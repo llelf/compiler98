@@ -213,7 +213,7 @@ configure Ghc ghcpath = do
 			, isHaskell98   = ghcsym>=400 }
   if windows && ghcsym < 500
     then do
-      fullpath <- which ghcpath
+      fullpath <- which exe ghcpath
       let incdir1 = dirname (dirname fullpath)++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
@@ -221,7 +221,7 @@ configure Ghc ghcpath = do
         else do ioError (userError ("Can't find ghc includes at\n  "++incdir1))
     else if ghcsym < 500
     then do
-      fullpath <- which ghcpath
+      fullpath <- which exe ghcpath
       dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -1 | "
                                ++ "sed 's/^\\$libdir=[^/]*\\(.*\\).;/\\1/'")
       let incdir1 = dir++"/imports"
@@ -243,7 +243,7 @@ configure Ghc ghcpath = do
       ok <- doesDirectoryExist incdir1
       if ok
         then do
-          fullpath <- fmap escape (which ghcpath)
+          fullpath <- fmap escape (which exe ghcpath)
           let ghcpkg0 = dirname fullpath++"/ghc-pkg-"++ghcversion
           ok <- doesFileExist ghcpkg0
           let ghcpkg = if ok then ghcpkg0 else dirname fullpath++"/ghc-pkg"
@@ -271,7 +271,7 @@ configure Ghc ghcpath = do
     deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
 
 configure Nhc98 nhcpath = do
-  fullpath <- which nhcpath
+  fullpath <- which id nhcpath
   nhcversion <- runAndReadStdout (nhcpath
                                   ++" --version 2>&1 | cut -d' ' -f2 | head -1")
   dir <- runAndReadStdout ("grep '^NHC98INCDIR' "++fullpath
@@ -321,10 +321,9 @@ hcStyle path = toCompiler (basename path)
                   | "hbc" `isPrefixOf` hc = Hbc
                   | otherwise             = Unknown hc
 
-
 -- Emulate the shell `which` command.
-which :: String -> IO String
-which cmd =
+which :: (String->String) -> String -> IO String
+which exe cmd =
   let dir = dirname cmd
   in case dir of
     "" -> do -- search the shell environment PATH variable for candidates
