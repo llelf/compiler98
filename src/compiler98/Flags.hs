@@ -15,8 +15,6 @@ module Flags
   ,sSourceFile
   ,sUnderscore
   ,sLex
-  ,sDbgPrelude
-  ,sDbgTrans
   ,sNeed
   ,sParse
   ,sIRename
@@ -27,11 +25,9 @@ module Flags
   ,sIIRename
   ,sRBound
   ,sRename
-  ,sTraceData
   ,sDBound
   ,sDerive
   ,sEBound
-  ,sTraceFns
   ,sRemove
   ,sScc
   ,sRImport
@@ -69,7 +65,6 @@ module Flags
   ,sILex
   ,sPart
   ,sLib
-  ,sDbgTrusted
   ,sTprof
   ,sFunNames
   ,sDepend
@@ -79,11 +74,6 @@ module Flags
   ,sShowIndent
   ,sShowQualified
   ,sHiSuffix
---  ,sHatTrans
---  ,sHatAuxFile
---  ,sHatTransFile
---  ,sHatFileBase
---  ,sHatTransFile
   ) where
 
 import IO
@@ -98,9 +88,6 @@ data Flags = FF
   ,sSourceFile :: String
   ,sTypeFile   :: String
   ,sObjectFile :: String
---  ,sHatAuxFile   :: String
---  ,sHatTransFile :: String
---  ,sHatFileBase  :: String
   ,sIncludes   :: [String]
   ,sPreludes   :: [String]
 
@@ -117,12 +104,6 @@ data Flags = FF
   ,sPrelude    :: Bool	-- keep prelude defns in interface file
   ,sLib        :: Bool	-- compiling a library
   ,sKeepCase   :: Bool	-- don't lift case, we fix those later
-
---v Flags to control compilation for tracing
-  ,sDbgTrans   :: Bool	-- do tracing transformation
-  ,sDbgPrelude :: Bool	-- use tracing prelude
-  ,sDbgTrusted :: Bool	-- trust this module
---  ,sHatTrans   :: Bool	-- perform portable hat transformation for tracing
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
@@ -146,8 +127,6 @@ data Flags = FF
   ,sDepend     :: Bool	-- imported ids	(not currently used)
   ,sRename     :: Bool	-- ast		after rename
   ,sDerive     :: Bool	-- ast		after deriving
-  ,sTraceData  :: Bool	-- ast		after tracing transform (data)
-  ,sTraceFns   :: Bool	-- ast		after tracing transform (fns)
   ,sRemove     :: Bool	-- ast		after named-field removal
   ,sScc        :: Bool	-- ast		after strongly-connected-components
   ,sType       :: Bool	-- ast		after type check
@@ -243,9 +222,6 @@ processArgs xs = flags
   , sSourceFile=sourcefile
   , sTypeFile=typefile
   , sObjectFile=cfile
---  , sHatAuxFile=fixHatAuxFile isUnix rootdir filename
---  , sHatTransFile=fixHatTransFile isUnix rootdir filename
---  , sHatFileBase=fixHatFileBase isUnix rootdir filename
   , sIncludes=rootdir:getIncludes xs
   , sPreludes=getPreludes xs
 
@@ -271,11 +247,6 @@ processArgs xs = flags
   , sLib = fElem False "lib" xs         
   -- ^ Compiling a lib, don't complain if importing modules with names 
   -- that differs from their filename.
-
-  , sDbgTrans = fElem False "dbgtrans" xs     -- perform debugging translation
-  , sDbgPrelude = fElem False "dbgprelude" xs -- use the debugging prelude
-  , sDbgTrusted = fElem False "trusted" xs    -- "trusted" module (don't trace)
---  , sHatTrans = fElem False "hat" xs     -- preform hat tracing transform
 
   , sAnsiC = fElem True  "ansiC" xs    -- Generate bytecode as ANSI C file
   , s64bit = fElem False "64bit" xs    -- 32bit/64bit word size (ignored)
@@ -363,10 +334,6 @@ processArgs xs = flags
   , sIParse = fElem False "iparse" xs         -- show syntax tree  after  parser
   , sRImport = fElem False "report-imports" xs	
   -- ^ show only imports actually used
-
-  , sTraceData = fElem False "tracedata" xs	      	     
-  -- ^ show ast after debugging translation for data
-  , sTraceFns = fElem False "tracefns" xs  -- ast after transforming functions
 
   , sShowType = fElem False "showtype" xs  -- report type of "main"
 

@@ -1,17 +1,11 @@
 include Makefile.inc
 
-#ifeq "T" "${TRACING}"
-#DBGFLAG=-DDBGTRANS
-#endif
-
 OBJDIR = ${BUILDDIR}/obj/compiler98
 TARGET = ${DST}/nhc98comp${EXE}
-HATTRANS = ${DST}/hat-trans${EXE}
 
 SRCS = \
 	AssocTree.hs Bind.hs Case.hs CaseHelp.hs CaseLib.hs CaseOpt.hs \
-	DbgDataTrans.hs DbgDumpSRIDTable.hs DbgDumpSRIDTableC.hs DbgId.hs \
-	DbgTrans.hs Depend.hs Derive.hs DeriveBinary.hs \
+	Depend.hs Derive.hs DeriveBinary.hs \
 	DeriveBounded.hs DeriveEnum.hs DeriveEq.hs \
 	DeriveEval.hs DeriveIx.hs DeriveLib.hs DeriveOrd.hs DeriveRead.hs \
 	DeriveShow.hs EmitState.hs Error.hs Export.hs Extra.hs Extract.hs \
@@ -36,18 +30,6 @@ GCCFILES = $(patsubst %.gc, %.$C, ${GCSRCS})
 OBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, ${SRCS})
 GCOBJS = $(patsubst %.gc, $(OBJDIR)/%.$O, ${GCSRCS}) $(patsubst %.gc,$(OBJDIR)/%_.$O,${GCSRCS})
 
-#CPPFILES=FixSyntax STGBuild STGGcode	#GcodeLowC
-#DBGOBJS=$(patsubst %, $(OBJDIR)/%.$O, ${CPPFILES})
-HATSRCS = TraceDerive.hs TraceTrans.hs SyntaxUtil.hs AuxLabelAST.hs \
-	AuxFixity.hs Overlap.hs DbgId.hs TokenInt.hs NeedLib.hs IExtract.hs \
-	State.hs ImportState.hs PreImp.hs ParseI.hs Memo.hs Import.hs \
-	AuxFile.hs ParseLex.hs ParseLib.hs Parse2.hs SyntaxPos.hs \
-	MkSyntax.hs Parse.hs LexStr.hs LexLow.hs LexPre.hs Lexical.hs \
-	Unlit.hs Lex.hs AuxTypes.hs TraceId.hs Nice.hs Reduce.hs \
-	MergeSort.hs Info.hs IdKind.hs NT.hs Tree234.hs AssocTree.hs \
-	IntState.hs PrettyLib.hs PrettySyntax.hs OsOnly.hs Flags.hs \
-	ParseCore.hs Id.hs TokenId.hs HbcOnly.hs Extra.hs Syntax.hs \
-	Error.hs HatTrans.hs
 
 HC = nhc98	# can be overridden by caller with 'make HC=...'
 
@@ -62,15 +44,13 @@ IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
 HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package lang -syslib misc )  $(IMPROVE) $(EXTRALINK)
 $(TARGET): $(EXTRALINK)
-$(HATTRANS): $(EXTRALINK)
 endif
 
-HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
+HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 
 
-all: ${TARGET} #${HATTRANS}
-hat-trans: ${HATTRANS}
-install: ${TARGET} #${HATTRANS}
+all: ${TARGET}
+install: ${TARGET}
 objdir: ${OBJDIR}
 cfiles: $(OBJDIR)/$(HC)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
@@ -82,7 +62,7 @@ relink:
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
 	strip $(TARGET)
 clean:
-	rm -f $(OBJDIR)/*.$O *.$O *.hi *.hc
+	rm -f $(OBJDIR)/*.$O *.$O *.hi
 realclean: clean
 	rm -f *.hc *.c $(TARGET)
 
@@ -90,10 +70,6 @@ $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	strip $(TARGET)
-$(HATTRANS): ${OBJDIR} $(OBJDIR)/$(HC) $(HATSRCS)
-	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
-	mv $(OBJDIR)/HatTrans$(EXE) $(HATTRANS)
-	strip $(HATTRANS)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):

@@ -4,7 +4,7 @@ Various functions for type checking:
 ...
 -}
 module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
-               ,typeIdentDict,debugTranslating,getIdent,getTypeErrors,typeError
+               ,typeIdentDict,getIdent,getTypeErrors,typeError
                ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
                ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
                ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK
@@ -17,7 +17,6 @@ import Syntax
 import State(State0(..))
 import IdKind
 import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
-import DbgId(tSR, t_R, tTrace)
 import Flags
 import SyntaxPos
 import TypeSubst
@@ -104,17 +103,8 @@ typeOfMain flags tidFun (DeclsScc depends) state =
       else
         case ntIS state imain of
 	  (NewType free [] [] [nt],state) ->
-	    let mainIOType = NTcons (tidFun (tIO,TCon)) 
+	    let mainType = NTcons (tidFun (tIO,TCon)) 
 	                         [NTvar (tidFun (t_Tuple 0,TCon))]
-	        mainType =
-	            if sDbgTrans flags then
-	  	        NTcons (tidFun (t_Arrow, TCon))
-		            [NTcons (tidFun (tSR, TCon)) [],
-		             NTcons (tidFun (t_Arrow, TCon))
-		  	        [NTcons (tidFun (tTrace, TCon)) [],
-			         NTcons (tidFun (t_R, TCon)) [mainIOType]]]
-		    else
-		        mainIOType
 	    in
 	    case unify state idSubst (nt, mainType) of
 	      Right phi -> return state
@@ -139,7 +129,7 @@ typeOfMain flags tidFun (DeclsScc depends) state =
 typeUnify :: ShowS -> NT -> NT -> TypeDown -> TypeState -> (NT,TypeState)
 
 typeUnify errFun t1 t2  
-  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) 
+  down@(TypeDown env tidFun defaults ctxDict envDict) 
   up@(TypeState state phi ctxs ectxsi) =
     {-
     trace ("\n\n1: " ++ 
@@ -165,10 +155,10 @@ typeUnify errFun t1 t2
 
 typeUnifyMany :: ShowS -> [NT] -> TypeDown -> TypeState -> (NT,TypeState)
 
-typeUnifyMany errFun []  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeUnifyMany errFun []  down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
   case uniqueIS state of
     (unique,state) -> (NTany unique,TypeState state phi ctxs ectxsi)
-typeUnifyMany errFun ts@(t:_) down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeUnifyMany errFun ts@(t:_) down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
       case unifyr state phi ts of
         Right phi -> let t' = subst phi t in seq t'  (t',TypeState state phi ctxs ectxsi)
         Left  (phi,str) ->
@@ -180,7 +170,7 @@ typeUnifyApply :: (String -> Int -> String)
                -> [NT] 
                -> TypeDown -> TypeState -> (NT,TypeState)
 
-typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
   seq nextTvar (unifyApply state phi f (zip [1 .. ] xs))
  where
   (nextTvar,_) = uniqueIS state
@@ -228,13 +218,13 @@ getState down up@(TypeState state phi ctxs ectxsi) =
 setState state down up@(TypeState _ phi ctxs ectxsi) = 
   TypeState state phi ctxs ectxsi
 
-extendEnv ext down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up =
-  (TypeDown (ext++env) tidFun defaults ctxDict envDict dbgtrans,up)
+extendEnv ext down@(TypeDown env tidFun defaults ctxDict envDict) up =
+  (TypeDown (ext++env) tidFun defaults ctxDict envDict,up)
 
-getEnv down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up =
+getEnv down@(TypeDown env tidFun defaults ctxDict envDict) up =
   (env,up)
 
-getIdent key down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up =
+getIdent key down@(TypeDown env tidFun defaults ctxDict envDict) up =
   (tidFun key,up)
 
 -- Drop dictionaries if it is seq, this is used in PrimCode
@@ -243,7 +233,7 @@ qDict state exp dict = ExpApplication (getPos exp) (exp:map ExpDict dict)
 
 -- Dictionaries done at call site!
 
-typeIdentDef convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeIdentDef convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
    case lookupEnv ident env of
      Just t ->                             -- Type under construction
 	  let t' = subst phi t
@@ -254,7 +244,7 @@ typeExpCon pos ident down up@(TypeState state phi ctxs ectxsi) =
   case typeExpCon' pos ident down up of
     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,expT),up)
 
-typeExpCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeExpCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
   case ntIS state ident of  -- Be strict!
     (NoType,state) -> -- Not possible for constructors!
 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
@@ -278,7 +268,7 @@ typePatCon pos ident down up@(TypeState state phi ctxs ectxsi) =
   case typePatCon' pos ident down up of
     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,existNT eTVar expT,eTVar),up)
 
-typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs inEctxsi) =
+typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs inEctxsi) =
   case ntIS state ident of  -- Be strict!
     (NoType,state) -> -- Not possible for constructors!
 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
@@ -308,7 +298,7 @@ typeIdentDict convar pos ident down up@(TypeState state phi ctxs ectxsi) =
   case typeIdentDict' convar pos ident down up of
     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,expT),up)
 
-typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(TypeState state phi ctxs ectxsi) =
   case ntIS state ident of  -- Be strict!
     (NoType,state) ->
       case lookupEnv ident env of
@@ -326,9 +316,6 @@ typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDi
 	      in seq nt' ((convar ident,nt',map (\ i -> assocDef ctxDict 
 								  (error "TypeLib:162")
 								  i) is,eTVar),TypeState state phi (ctxs'++ctxs) ectxsi)
-
-
-debugTranslating down@(TypeDown _ _ _ _ _  dbgtrans) up = (dbgtrans, up)
 
 
 checkExist oldEnv eTVars down up@(TypeState state phi ctxs ectxsi) =

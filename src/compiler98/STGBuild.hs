@@ -11,7 +11,6 @@ import StrPos
 import STGState(Where(Arg,Stack,Heap,HeapLate,Direct),Thread(Thread)
                ,updTOS,popEnv,updHeap,getExtra,incDepthIf,gArity
                ,lateWhere,gWhereAbs,gState)
-import DbgId(t_mkNTId,t_mkNTConstr, t_mkSR)
 import Machine(wsize)
 
 
@@ -69,43 +68,6 @@ buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) =
 	    )
 
 buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
-{- old:
---  #ifdef DBGTRANS
---  gState >>>= \state ->                  -- (already done ?) !!! 
---  let vid = tidIS state v in
---  if vid == t_mkNTId' || vid == t_mkNTConstr' then
---      case args of
---          [PosInt _ cid] -> oneHeap True pu (HEAP_GLB "D_" cid)
---          otherwise -> error ("STGBuild: length " ++ show (length args))
---  else if vid == t_mkSR' then
---      getExtra v >>>= \(e, extra) ->
---      case args of
---            [PosInt _ cid] ->
---	      -- Every source refererence needs 3 words 
---              -- (plus any extra profiling words)
---  	      oneHeap True pu (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0)
---  else
--- #endif
--}
--- #ifdef DBGTRANS
-  gState >>>= \state ->                  -- (already done ?) !!! 
-  let vid = tidIS state v in
-  if vid == t_mkNTId || vid == t_mkNTConstr then
-    case args of
-      [PosInt _ cid] -> 
-        oneHeap True pu (HEAP_GLB "D_" cid) >>>= \build_ptr ->
-        buildAp pu v [build_ptr]
-  else if vid == t_mkSR then
-    getExtra v >>>= \(e, extra) ->
-    case args of
-      [PosInt _ cid] ->
-	-- Every source refererence needs 3 words 
-        -- (plus any extra profiling words)
-        oneHeap True pu 
-          (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0) >>>= \build_ptr ->
-  	buildAp pu v [build_ptr]
-  else
--- #endif
     mapS (buildExp False) args >>>= \ build_ptr ->  
     buildAp pu v build_ptr
 

@@ -33,15 +33,15 @@ import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
 
 import Flags(Flags,processArgs,pF
             ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
-            ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
+            ,sNeed,sParse,sIRename,sIBound,sINeed
+            ,sIIBound,sIINeed,sRBound,sRename,sDBound,sDerive
             ,sEBound,sIIRename
-            ,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
+            ,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
 import SyntaxPos	-- DW
-import PrettySyntax(prettyPrintTokenId,prettyPrintId -- ,prettyPrintTraceId
+import PrettySyntax(prettyPrintTokenId,prettyPrintId
                    ,ppModule,ppTopDecls,ppClassCodes)
 import StrPos(strPCode)
 
@@ -59,10 +59,6 @@ import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS,addPreludeTupleInstances)
 import Rename(rename)
 import FFITrans(ffiTrans)
-import DbgDataTrans(dbgDataTrans)
-import DbgTrans(SRIDTable,debugTrans,dbgAddImport)
-import DbgDumpSRIDTable(dbgDumpSRIDTable)
-import DbgDumpSRIDTableC(dbgDumpSRIDTableC)
 import EmitState
 import Derive(derive)
 import Extract(extract)
@@ -95,9 +91,6 @@ import PackedString(PackedString, unpackPS)
 
 import Foreign(Foreign,strForeign)
 import ReportImports(reportFnImports)
---import AuxFile(toAuxFile)
---import AuxLabelAST(auxLabelSyntaxTree)
---import TraceTrans(traceTrans,maybeStripOffQual)
 
 
 --import NonStdProfile
@@ -152,29 +145,6 @@ main' args = do
   pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedPrg) 
 
 
-{- Now in hat-trans only.
-  {-
-  -- Read and write auxiliary information files (for tracing).
-  -- Then relabel the syntax tree with the auxiliary information.
-  -- Then the tracing transformation itself is applied.
-  -- The result is written to file (no redirection possible yet)
-  -}
-
-  when (sHatTrans flags) $ do
-    let prg = maybeStripOffQual "Prelude" parsedPrg
-    toAuxFile flags (sHatAuxFile flags) prg
-    -- putStr (prettyPrintTokenId flags ppModule prg) -- debug
-    newprog <- auxLabelSyntaxTree flags prg
-    -- putStr (prettyPrintTraceId flags ppModule newprog) -- debug
-    writeFile (sHatTransFile flags)
-      (prettyPrintTokenId flags ppModule 
-        (maybeStripOffQual "TPrelude" 
-          (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
-            (sHatFileBase flags) newprog)))
-    putStrLn ("Wrote " ++ sHatTransFile flags)
-    exitWith (ExitSuccess)
--}
-
   -- (Module _ (Visible modid) _ _ _ _) <- return parsedPrg
   -- Insert check that sPart flags or modid == sourcefile ???
 
@@ -183,15 +153,12 @@ main' args = do
   -- Perform "need" analysis (what imported entities are required?) 
   -- Second argument may contain error message or parse tree
   -}
-  parsedPrg' <- return (
-          dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedPrg)
-
   beginPhase "need"
   (need		-- :: NeedTable
    ,qualFun	-- :: TokenId -> [TokenId]
    ,overlap	-- :: Overlap
    ,info)	-- :: Either String (expFun,imports)
-         <- return (needProg flags parsedPrg')
+         <- return (needProg flags parsedPrg)
   (expFun	-- :: (TokenId->Bool) -> TokenId -> IdKind -> IE
    ,imports)	-- :: [ ( PackedString
 		--      , (PackedString, PackedString, Tree (TokenId,IdKind))
@@ -214,7 +181,7 @@ main' args = do
   -- Rename identifiers (also patches fixity information)
   -- Changes from ImportState to IntState
   -}
-  (Module _ (Visible modid) _ impdecls inf decls) <- return parsedPrg'
+  (Module _ (Visible modid) _ impdecls inf decls) <- return parsedPrg
 
   beginPhase "rename"
   (decls	-- :: Decls Id  (renamed from decls :: Decls TokenId)
@@ -264,22 +231,6 @@ main' args = do
 
 
   {-
-  -- Debugging source-to-source translation of data type definitions.
-  -- For tracing only.
-  -- Transforms data type definitions and all type expressions occurring in
-  -- declarations.
-  -} 
-  beginPhase "dbgdatatrans"
-  (decls	-- :: Decls Id
-   ,state	-- :: IntState
-   ,constrs)	-- :: Maybe [(Pos,Id)]
-             <- return (dbgDataTrans flags state (error "repTree")
-                                     tidFun decls)
-  pF (sTraceData flags) "Abstract syntax tree after tracing type transformation"
-     (prettyPrintId flags state ppTopDecls decls) 
-
-
-  {-
   -- Adds arity of all defined variables to symbol table of internal state.
   -- Adds type of variables from type declarations and primitive and foreign
   -- function definitions to symbol table of internal state
@@ -292,26 +243,6 @@ main' args = do
   pF (sEBound flags) "Symbol table after extract:"  
            (mixLine (map show (listAT (getSymbolTable state)))) 
   catchError (getErrorsIS state) "Errors after extract phase" mixLine
-
-
-  {-
-  -- Debugging source-to-source translation of function definitions 
-  -- (for tracing only)
-  -- Reads the types put into the symbol table of internal state by
-  -- the extract pass.
-  -- sridt :: SRIDTable   (table for source refs and ids for tracing)
-  -}
-  beginPhase "dbgtrans"
-  (decls	-- :: Decls Id
-   ,state	-- :: IntState
-   ,sridt)	-- :: SRIDTable
-          <- return (if sDbgTrans flags 
-                       then debugTrans flags state tidFun modid
-                                       (sSourceFile flags) impdecls
-                                       decls constrs 
-                       else (decls, state, Nothing))
-  pF (sTraceFns flags) "Tracing Transformation on function definitions"
-                       (prettyPrintId flags state ppTopDecls decls) 
 
 
   {-
@@ -354,8 +285,7 @@ main' args = do
   (code		-- :: [ClassCode (Exp Id) Id]
    ,decls	-- :: Decls Id
    ,state)	-- :: IntState
-          <- return (typeTopDecls tidFun userDefault state
-                                  code (sDbgTrans flags) decls)
+          <- return (typeTopDecls tidFun userDefault state code decls)
   pF (sType flags) "Declarations after type deriving:" 
          (prettyPrintId flags state ppTopDecls decls) 
   pF (sTBound flags) "Symbol table after type deriving:"  
@@ -387,7 +317,7 @@ main' args = do
   (decls	-- :: [Decl Id]
    ,state	-- :: IntState
    ,t2i)	-- :: Tree (TokenId,Id)
-        <- return (fixSyntax (sDbgTrans flags) decls state tidFun)
+        <- return (fixSyntax decls state tidFun)
   pF (sFixSyntax flags) "Declarations after fixSyntax"
           (prettyPrintId flags state ppTopDecls (DeclsParse decls))
   pF (sFSBound flags) "Symbol table after fixSyntax:"  
@@ -419,8 +349,7 @@ main' args = do
   beginPhase "prim"
   (decls	-- :: [(Id,PosLambda)]
    ,state)	-- :: IntState
-          <- return (primCode primFlags (not (sDbgTrans flags))
-                              tidFun state decls)
+          <- return (primCode primFlags True tidFun state decls)
   pF (sPrim flags) "Declarations after prim expand:" 
           (strPCode (strISInt state) decls) 
   pF (sPBound flags) "Symbol table after prim expand:"  
@@ -491,14 +420,11 @@ main' args = do
    ,escode)	-- :: EmitState
        <- if (sAnsiC flags) 
           then do
-             let eslabs = dbgDumpSRIDTableC Labels handle state flags sridt 
-                              (startEmitState Labels)
-                 escode = dbgDumpSRIDTableC Code   handle state flags sridt 
-                              (startEmitState Code)
+             let eslabs = startEmitState Labels
+                 escode = startEmitState Code
              return (foldr (\a b-> gcodeGather Labels state b a) eslabs zcons
                     ,foldr (\a b-> gcodeGather Code   state b a) escode zcons)
           else do
-            dbgDumpSRIDTable handle state flags sridt 
             catch (hPutStr handle (gcodeHeader 
                      (foldr ( \ a b -> foldr (gcodeDump state) b a) 
                                              "\n" zcons)))

@@ -8,7 +8,7 @@ import IdKind
 import State
 import NT
 import TypeLib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
-              ,typeIdentDict,debugTranslating,getIdent,getTypeErrors,typeError
+              ,typeIdentDict,getIdent,getTypeErrors,typeError
               ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
               ,getState,setState
               ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
@@ -34,12 +34,12 @@ import Id(Id)
 --import PPSyntax   -- just for debugging
 --import StrSyntax  -- just for debugging
 
-typeTopDecls tidFun defaults state code dbgtrans topdecls =
+typeTopDecls tidFun defaults state code topdecls =
   let defaults' =
         case defaults of
 	  Nothing -> [tidFun (tInteger,TCon),tidFun (tDouble,TCon)]
 	  Just def -> def 
-      result =  typeTopDeclScc topdecls tidFun defaults' dbgtrans finalState state
+      result =  typeTopDeclScc topdecls tidFun defaults' finalState state
       finalState = snd result
   in case result of
        (topdecls,state) ->
@@ -61,12 +61,12 @@ typeCode (CodeInstance pos cls typ _ _ ms) tidFun state =
 
 typeTopDeclScc :: Decls Id 
                -> ((TokenId,IdKind) -> Int) 
-               -> [Id] -> Bool -> a 
+               -> [Id] -> a 
                -> IntState 
                -> (Decls Id,IntState)
 
-typeTopDeclScc (DeclsScc xs) tidFun defaults dbgtrans finalState state =
-     case mapS typeDepend xs (TypeDown initEnv tidFun defaults [] [] dbgtrans) (TypeState state idSubst initCtxs []) of
+typeTopDeclScc (DeclsScc xs) tidFun defaults finalState state =
+     case mapS typeDepend xs (TypeDown initEnv tidFun defaults [] []) (TypeState state idSubst initCtxs []) of
 	(xs,TypeState state phi ctxs ectxsi) -> (DeclsScc (concat xs),state)
 
 
@@ -90,7 +90,7 @@ typeDepend (DeclsRec ds13) =
 typeScc :: [Decl Id] 
         -> TypeDown -> TypeState -> (([Decl Id],[Decl Id]),TypeState)
 
-typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
+typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict)
               up@(TypeState state phi inCtxs ectxsi) = 
   let -- ctxs should only get up but the monad can not handle that!
       trueExp :: Exp Id  -- this expression has become superfluous,
@@ -109,7 +109,7 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
 		mapS typeDecl decls
                      (TypeDown (envHere++env) tidFun defaults
                                (usedCtx ++ ctxsDict)
-                               (derivedDict ++ envDict) dbgtrans)
+                               (derivedDict ++ envDict))
                      up'
 
       phiEnv :: [(Int,NT)]
@@ -491,20 +491,12 @@ typeFun fun arrow funT retT (Fun args13 rhs decls) =
 
 
 typeLit e@(ExpLit pos (LitInteger _ _)) =    --- Add fromInteger
-  debugTranslating >>>= \dbgtrans ->
-  if dbgtrans then
-      getIdent (tInteger,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
-  else
       getIdent (tInteger,TCon) >>>= \ tcon ->
       getIdent (tfromInteger,Var) >>>= \ tfromInteger ->
       typeIdentDict (ExpVar pos) pos tfromInteger >>>= \ (exp,expT) ->
       typeUnifyApply (msgLit pos "integer") [expT,NTcons tcon []] >>>= \ t ->
       unitS (ExpApplication pos [exp,e],t)
 typeLit e@(ExpLit pos (LitRational _ _)) =	--- Add fromRational
-  debugTranslating >>>= \dbgtrans ->
-  if dbgtrans then
-      getIdent (tRational,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
-  else
       getIdent (tRational,TCon) >>>= \ tcon ->
       getIdent (tfromRational,Var) >>>= \ tfromRational ->
       typeIdentDict (ExpVar pos) pos tfromRational >>>= \ (exp,expT) ->

@@ -21,7 +21,6 @@ data TypeDown =
 	[Int]			-- defaults
 	[(Int,Exp Int)]		-- ctxDict
 	[(Int,[Exp Int])]	-- envDict
-        Bool			-- Debug translating?
 
 data TypeState =
       TypeState

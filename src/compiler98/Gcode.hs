@@ -112,8 +112,6 @@ data Gcode
   | DATA_VAP Int
   | DATA_CAP Int Int
   | DATA_CON  Int Int   -- size cno
-  | DATA_CONR Int Int   -- size cno (an R-node)
-  | DATA_CONT Int Int   -- size cno (a Trace-node)
   | DATA_CONW Int Int   -- size extra
   | DATA_CONP Int Int   -- size extra
   deriving (Eq)
@@ -233,8 +231,6 @@ strGcodePrim sL state (DATA_GLB s i)    = "  DATA_GLB " ++ s ++ strIS state i ++
 strGcodePrim sL state (DATA_VAP i)      = "  DATA_VAP " ++ shows i "(" ++ strIS state i ++ ")\n" 
 strGcodePrim sL state (DATA_CAP  i s)   = "  DATA_CAP " ++ strIS state i ++ ":" ++ shows s (" (" ++ shows i ")\n" )
 strGcodePrim sL state (DATA_CON  s c)   = "  DATA_CON " ++ shows s (' ':shows c "\n")
-strGcodePrim sL state (DATA_CONR s c)   = "  DATA_CONR " ++ shows s (' ':shows c "\n")
-strGcodePrim sL state (DATA_CONT s c)   = "  DATA_CONT " ++ shows s (' ':shows c "\n")
 strGcodePrim sL state (DATA_CONW s e)   = "  DATA_CONW " ++ shows s (' ':shows e "\n")
 strGcodePrim sL state (DATA_CONP s e)   = "  DATA_CONP " ++ shows s (' ':shows e "\n")
 

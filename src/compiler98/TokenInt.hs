@@ -11,7 +11,6 @@ module TokenInt(getInts,tokenMain,tokenAllways,tokenBounded,tokenEnum
 
 import IdKind
 import TokenId
-import DbgId (tokenDbg)
 import AssocTree
 import Info
 import Extra (sndOf)
@@ -38,7 +37,7 @@ getInts tidk2i =
                 ++ tokenMain
 		++ tokenMonad ++ tokenBounded ++ tokenEnum
 		++ tokenEq ++ tokenEval ++ tokenIx
-		++ tokenOrd ++ tokenRead ++ tokenShow ++ tokenDbg
+		++ tokenOrd ++ tokenRead ++ tokenShow
                 ++ tokenBinary ++ tokenNplusK ++ tokenFFI)  --MALCOLM modified
 
    fix :: (IdKind,TokenId) 

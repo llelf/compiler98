@@ -13,9 +13,8 @@ import Syntax
 import IdKind
 import PreImport(HideDeclIds,qualRename,preImport)
 import TokenId
-import DbgId(tokenDbg)
 import TokenInt
-import Flags(Flags(sDbgPrelude,sDbgTrans))
+import Flags(Flags())
 import SyntaxPos
 import Extra
 import SyntaxUtil(infixFun)
@@ -44,8 +43,7 @@ needProg :: Flags
 
 needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
   let qualFun = qualRename modidl impdecls
-  in case needit (needModule (sDbgTrans flags || sDbgPrelude flags) n) 
-                 qualFun (initNeed (modidl == tMain)) of
+  in case needit (needModule n) qualFun (initNeed (modidl == tMain)) of
        (need,overlap) -> ( need
                          , qualFun
                          , overlap
@@ -55,9 +53,9 @@ needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
                          )
 
 
-needModule :: Bool -> Module TokenId -> NeedLib -> NeedLib
+needModule :: Module TokenId -> NeedLib -> NeedLib
 
-needModule debugging (Module pos modid exports imports fixdecls topdecls) =
+needModule (Module pos modid exports imports fixdecls topdecls) =
       pushNeed >>>
       bindDataDecls topdecls >>>
       bindDecls topdecls >>>
@@ -71,7 +69,6 @@ needModule debugging (Module pos modid exports imports fixdecls topdecls) =
       mapR needImport imports >>>
       mapR needFixDecl fixdecls >>>
       needDecls topdecls >>>
-      (if debugging then needTids pos tokenDbg else unitR) >>>
       popNeed
 
 

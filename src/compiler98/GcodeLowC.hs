@@ -230,12 +230,6 @@ gcodeCDump p state (DATA_CAP  i s)  = let lab = sfun ++ showId state i ""
 gcodeCDump p state (DATA_CON  s c)  = emitWord p ("CONSTR(" ++
 					          show c ++  ',':
 					          show s ++  ",0)")
-gcodeCDump p state (DATA_CONR s c)  = emitWord p ("CONSTRR(" ++
-					          show c ++  ',':
-					          show s ++  ",0)")
-gcodeCDump p state (DATA_CONT s c)  = emitWord p ("CONSTRT(" ++
-					          show c ++  ',':
-					          show s ++  ",0)")
 gcodeCDump p state (DATA_CONW s e)  = emitWord p ("CONSTRW(" ++
 					          show s ++  ',':
 			 		          show e ++  ")")

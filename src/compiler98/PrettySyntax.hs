@@ -6,7 +6,7 @@ a structured document for pretty printing.
 module PrettySyntax
   ( PPInfo(..)
   , prettyPrintSimple
-  , prettyPrintTokenId, prettyPrintId, simplePrintId -- , prettyPrintTraceId
+  , prettyPrintTokenId, prettyPrintId, simplePrintId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
@@ -28,34 +28,8 @@ import PackedString (unpackPS)
 import Char(isAlphaNum)
 import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
--- import TraceId(TraceId,hasInfo,arity,isLambdaBound,tokenId)
--- import AuxTypes (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
 
 
-{-
-prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
-prettyPrintTraceId flags pp =
-  pretty (sShowWidth flags) . 
-  pp PPInfo{withPositions = False
-           ,indent = sShowIndent flags
-           ,id2str = id2strTraceId
-           ,tyVar2str = id2strTraceId -- show
-           ,isFunctionArrow = (\tr-> tokenId tr == t_Arrow)
-           ,isList = (\tr-> tokenId tr == t_List)
-           ,maybeTuple = maybeTupleTraceId}
-  where
-  id2strTraceId t = ( if sShowQualified flags
-                      then show (tokenId t)
-                      else (reverse . unpackPS . extractV) (tokenId t)
-                    ) ++
-                    ( if hasInfo t 
-                        then "{-"++ show (arity t) ++"/"++
-{-			     ( if isLambdaBound t then "lam-}" else "let-}" )
-                        else "")
-  maybeTupleTraceId t = case tokenId t of
-                          TupleId n -> Just n
-                          _         -> Nothing
--}
 
 prettyPrintSimple :: Int -> (PPInfo TokenId -> a -> Doc) -> a -> String
 prettyPrintSimple width pp =

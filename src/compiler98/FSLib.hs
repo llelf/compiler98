@@ -17,7 +17,6 @@ import Id(Id)
 
 type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)
                   , Exp Id           -- expId
-                  , Bool             -- tracing?
                   , (TokenId,IdKind) -> Id) --tidFun
 
 type Threaded = (IntState, AssocTree TokenId Id)
@@ -25,19 +24,17 @@ type Threaded = (IntState, AssocTree TokenId Id)
 type FSMonad a = State Inherited Threaded a Threaded
 
 
-startfs :: Bool		-- are we dealing with trace-transformed code?
-        -> (Decls Id -> FSMonad a)
+startfs :: (Decls Id -> FSMonad a)
         -> Decls Id 
         -> IntState
         -> ((TokenId,IdKind) -> Id) 
         -> (a, IntState, AssocTree TokenId Id)
 
-startfs trace fs x state tidFun =
+startfs fs x state tidFun =
       let down = ( ( ExpCon noPos (tidFun (t_List,Con))	 
 		   , ExpCon noPos (tidFun (t_Colon,Con))	 
 		   )
 		 , ExpVar noPos (tidFun (t_id,Var))  
-                 , trace
 		 , tidFun
 		 )
 
@@ -48,19 +45,16 @@ startfs trace fs x state tidFun =
 
 
 fsList :: FSMonad (Exp Id, Exp Id)
-fsList down@(expList,expId,trace,tidFun) up = (expList,up)
+fsList down@(expList,expId,tidFun) up = (expList,up)
 
 fsId :: FSMonad (Exp Id)
-fsId down@(expList,expId,trace,tidFun) up = (expId,up)
-
-fsTracing :: FSMonad Bool
-fsTracing down@(expList,expId,trace,tidFun) up = (trace,up)
+fsId down@(expList,expId,tidFun) up = (expId,up)
 
 fsState :: FSMonad IntState
 fsState down up@(state,t2i) = (state,up)
 
 fsTidFun :: FSMonad ((TokenId,IdKind) -> Id)
-fsTidFun down@(expList,expId,trace,tidFun) up =
+fsTidFun down@(expList,expId,tidFun) up =
   (tidFun,up)
 
 

@@ -6,7 +6,6 @@ import Memo
 import AssocTree
 import TokenId (TokenId(..))
 import PackedString (PackedString)
-import DbgId(t_R)
 import State
 import Info
 import Extra
@@ -177,20 +176,6 @@ conInfo i down thread@(Thread state prof profstatics strings live
   nthcon n con [] =
       error ("GcodeFix.nthcon: (n=="++show n++") (con=="++show con++") []\n")
 
-
-checkIfR :: Int -> GcodeFixMonad Bool 
-
-checkIfR i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
-    (tidIS state i == t_R, thread)
-
-
-{- no longer needed with file archiving:
-checkIfTrace :: Int -> GcodeFixMonad Bool
-
-checkIfTrace i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
-    (tid == t_Ap || tid == t_Nm || tid == t_Ind || tid == t_Root || tid == t_Sat || tid == t_Pruned || tid == t_Hidden, thread)
-    where tid = tidIS state i
--}
 
 
 addString str els down thread@(Thread state prof profstatics (strings,elabels) live labels nbs bs nas as) = 
@@ -405,20 +390,8 @@ gFix g@(HEAP_VAP  i) = ifLive $
     emits [HEAP_CVAL i]
 gFix g@(HEAP_CON  i) = ifLive $
     conInfo i >>>= \ (s,c) ->
-    checkIfR i >>>= \isR ->
-    if isR then
-        addBefore [DATA_CONR s c] >>>= \ i ->
-        emits [HEAP_CVAL i]
-    else 
-        {- no longer needed with file archiving
-        checkIfTrace i >>>= \isTrace ->
-	if isTrace then
-	    addBefore [DATA_CONT s c] >>>= \ i ->
-            emits [HEAP_CVAL i]
-	else
-        -}
-	    addBefore [DATA_CON s c] >>>= \ i ->
-            emits [HEAP_CVAL i]
+    addBefore [DATA_CON s c] >>>= \ i ->
+    emits [HEAP_CVAL i]
 gFix g@(HEAP_CAP  i a) = ifLive $
     addAfter (DATA_CAP i a) >>>= \ i ->
     emits [HEAP_CVAL i] 

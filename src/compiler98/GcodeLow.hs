@@ -164,8 +164,6 @@ gcodeSize (DATA_GLB s i)    = wsize
 gcodeSize (DATA_VAP i)      = wsize
 gcodeSize (DATA_CAP  i s)   = wsize
 gcodeSize (DATA_CON  s c)   = wsize
-gcodeSize (DATA_CONR s c)   = wsize
-gcodeSize (DATA_CONT s c)   = wsize
 gcodeSize (DATA_CONW s e)   = wsize
 gcodeSize (DATA_CONP s e)   = wsize
 
@@ -218,8 +216,6 @@ gcodeNeed extra (DATA_GLB _ _)  = (0,0)
 gcodeNeed extra (DATA_VAP _)    = (0,0)
 gcodeNeed extra (DATA_CAP _ _)  = (0,0)
 gcodeNeed extra (DATA_CON  _ _) = (0,0)
-gcodeNeed extra (DATA_CONR _ _) = (0,0)
-gcodeNeed extra (DATA_CONT _ _) = (0,0)
 gcodeNeed extra (DATA_CONW _ _) = (0,0)
 gcodeNeed extra (DATA_CONP _ _) = (0,0)
 -- gcodeNeed extra MATCHCON        = (0,0)	-- DAVID
@@ -408,12 +404,6 @@ gcodeDump state (DATA_VAP i)      = showString " DW VAPTAG(" . showString fun . 
 gcodeDump state (DATA_CAP  i s)   = showString " DW CAPTAG(" . showString fun . showId state i .  showChar ',' 
 							     . shows s . showString ")\n"
 gcodeDump state (DATA_CON  s c)   = showString " DW CONSTR(" . shows c .  showChar ','
-							     . shows s .  showChar ','
-							     . showChar '0' .  showString ")\n"
-gcodeDump state (DATA_CONR s c)   = showString " DW CONSTRR(" . shows c .  showChar ','
-							     . shows s .  showChar ','
-							     . showChar '0' .  showString ")\n"
-gcodeDump state (DATA_CONT s c)   = showString " DW CONSTRT(" . shows c .  showChar ','
 							     . shows s .  showChar ','
 							     . showChar '0' .  showString ")\n"
 gcodeDump state (DATA_CONW s e)   = showString " DW CONSTRW(" . shows s .  showChar ','

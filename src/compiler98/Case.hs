@@ -25,7 +25,6 @@ import CaseOpt
 import FSLib
 import SyntaxUtil
 import Foreign(ImpExp(..))
-import DbgId(t_rPatBool,t_ap)
 import Id(Id)
 
 
@@ -408,38 +407,14 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
 matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
--- match (traced) numeric literal in an unresolved context
-matchAltIf v ces (pat@(ExpApplication pos
-                         [ap1, sr, t			-- ap_1 sr t
-                         ,ExpApplication _
-                            [ExpVar _ _, dict, _, _]	-- fromInteger/Rational
-                         ,ExpApplication _ _		-- (construct (R lit))
-                      -- ,ExpApplication _
-                      --    [ExpVar _ con, _, _,	-- (construct an
-                      --     ExpLit _ lit]		--   (R lit _))
-                         ]), fun) =
-  caseEqualNumEq >>>= \ equalNumEq ->
-  caseTidFun >>>= \ tidFun ->
---strace ("numeric literal pattern in an overloaded context at "++
---        strPos pos++"\n") $
-  unitS (PosExpIf pos) =>>>
-	caseExp (ExpApplication pos
-                   [ExpVar pos (tidFun (t_rPatBool,Var))
-	           ,ExpApplication pos
-                      [ExpVar pos (tidFun (t_ap 2,Var)), sr, t
-                      ,ExpApplication pos [equalNumEq dict, sr, t]
-                      ,ExpVar pos v
-                      ,pat]]) =>>>
-	match ces [fun] (unitS PosExpFail) =>>>
-          (unitS PosExpFail)
--- match (untraced) numeric literal in an unresolved context
+-- match numeric literal in an unresolved context
 matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]), fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
   unitS (PosExpIf pos) =>>>
 	caseExp (ExpApplication pos [equalNumEq dict,ExpVar pos v,pat]) =>>>
 	match ces [fun] (unitS PosExpFail) =>>>
           (unitS PosExpFail)
--- match numeric literals (traced or untraced) in resolved contexts
+-- match numeric literals in resolved contexts
 matchAltIf v ces (pat@(ExpLit pos (LitInteger _ a)),fun) =
   caseEqInteger >>>= \ equal ->
   mkIfLit v ces pos pat fun equal

@@ -124,7 +124,7 @@ data Decl id =
        -- | var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
        -- | foreign import [callconv] [extfun] [unsafe|cast|noproto] var :: type
-       --   (final id parts are wrapper-fn for Trace and IO respectively)
+       --                                   (final id part is wrapper-fn for IO)
        --               callconv extfun intfun arity [u|c|n] ty wrapperId
      | DeclForeignImp Pos CallConv String id Int Safety (Type id) id
        -- | foreign export  callconv  [extfun]  var :: type
