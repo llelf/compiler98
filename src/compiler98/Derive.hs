@@ -19,6 +19,7 @@ import TypeCtx
 import State
 import IdKind
 import TypeData
+import Id(Id)
 
 --import DeriveEval		-- Removed in Haskell 98
 import DeriveEq
@@ -33,42 +34,75 @@ import DeriveBinary		-- MALCOLM
 
 import DeriveLib
 
-derive :: ((TokenId,IdKind) -> Int) ->
+derive :: ((TokenId,IdKind) -> Id) ->
 	  IntState 		->
-	  [(Int,[(Pos,Int)])] 	->
-	  Decls Int 		-> Either [[Char]] (IntState,(Decls Int))
+	  [(Id,[(Pos,Id)])] 	-> -- instances that have to be derived:
+		                   -- class, (type constructor with position)
+	  Decls Id 		-> Either [String] (IntState,(Decls Id))
 
 derive tidFun state derived (DeclsParse topdecls) =
-       case doPreWork derived of
-	 preWork ->
-           case allThere preWork of
-             errors@(_:_) -> Left errors
-             [] -> case mapS (\ w -> deriveOne state tidFun w >>>= \decl ->  fixInstance (tidFun (tTrue,Con)) decl) (work preWork) () state of
-		       (instdecls,state) -> Right (state,DeclsParse ( instdecls ++ topdecls))
- where 
-   doPreWork d = (concatMap ( \  (con,pos_clss) -> map (pair con) pos_clss))  d
+  case doPreWork derived of
+    preWork ->
+      case allThere preWork of
+        errors@(_:_) -> Left errors
+        [] -> 
+          case mapS (\ w -> 
+                     deriveOne state tidFun w >>>= \decl ->  
+                     fixInstance (tidFun (tTrue,Con)) decl) 
+                 (work preWork) () state of
+	    (instdecls,state) -> 
+              Right (state,DeclsParse ( instdecls ++ topdecls))
+  where 
+  -- just reorder
+  doPreWork :: [(Id,[(Pos,Id)])] -> [(Id,(Pos,Id))]
+  doPreWork d = (concatMap ( \  (con,pos_clss) -> map (pair con) pos_clss))  d
 
-   allThere preWork = foldr (checkSC state (foldr ( \ (con,(pos,cls)) t -> addM t (cls,con)) initM preWork)) [] preWork
+  allThere :: [(Id,(Pos,Id))] -> [String]
+  allThere preWork = 
+    foldr (checkSC state 
+            (foldr ( \ (con,(pos,cls)) t -> addM t (cls,con)) initM preWork))
+      [] preWork
 
-   work preWork = solve state (map (startDeriving tidFun state) preWork)
+  work :: [(Id,(Pos,Id))] -> [(((Int,Int),([Int],[(Int,Int)])),(Pos,[NT]))]
+  work preWork = solve state (map (startDeriving tidFun state) preWork)
 
+
+copyInst :: Id -> Id -> (Pos,Id) -> IntState -> IntState
 copyInst tcon realtcon (pos,cls) state =
   case lookupAT ((instancesI . dropJust . lookupIS state) cls) realtcon of
     Just (free,ctxs) -> addInstance cls tcon free ctxs () state
-    Nothing -> addError state ("Deriving of " ++ strIS state cls ++ " at " ++ strPos pos ++ " for newtype " ++ strIS state tcon
-			       ++ " is not possible as no instance exist for the isomorphic type" ++ strIS state realtcon)
+    Nothing -> 
+      addError state 
+        ("Deriving of " ++ strIS state cls ++ " at " ++ strPos pos ++ 
+         " for newtype " ++ strIS state tcon ++ 
+         " is not possible as no instance exist for the isomorphic type" ++ 
+         strIS state realtcon)
 
 
+checkSC :: IntState -> Tree (Id,Id) -> (Id,(Pos,Id)) -> [String] -> [String]
 checkSC state willDerive (con,(pos,cls)) errors =
   case lookupIS state cls of
     Just info ->
-      case (map ( \ sc -> case lookupIS state sc of Just info -> (sc,instancesI info))  . superclassesI) info of
+      case (map (\ sc -> 
+                 case lookupIS state sc of 
+                   Just info -> (sc,instancesI info))  
+             . superclassesI) info of
         scinsts ->
-	  case filter ( \ (sc,insts) -> isNothing (lookupM willDerive (sc,con)) && isNothing (lookupAT insts con)) scinsts of
+	  case filter (\ (sc,insts) -> 
+                       isNothing (lookupM willDerive (sc,con)) 
+                         && isNothing (lookupAT insts con)) 
+                 scinsts of
 	    [] -> errors
-	    scinsts -> ("Need " ++ mixCommaAnd (map ( \ (sc,_) -> strIS state sc ++ ' ':strIS state con ) scinsts)
-		     ++ " to derive " ++ strIS state cls ++ ' ':strIS state con ++ " at " ++ strPos pos):errors
+	    scinsts -> ("Need " ++ 
+                        mixCommaAnd 
+                          (map (\ (sc,_) -> 
+                                strIS state sc ++ ' ':strIS state con ) 
+                          scinsts)
+		        ++ " to derive " ++ strIS state cls ++ 
+                        ' ':strIS state con ++ " at " ++ strPos pos) : errors
 
+
+checkClass :: IntState -> Id -> TokenId -> Bool
 checkClass state cls tid =
    case lookupIS state cls of
      Nothing -> False
@@ -88,25 +122,17 @@ deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types))
 -}
 deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tEq = deriveEq tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tOrd = deriveOrd tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tShow = deriveShow tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tRead = deriveRead tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tEnum = deriveEnum tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tIx = deriveIx tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tBounded = deriveBounded tidFun cls typ tvs ctxs pos
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) 
   | checkClass state cls tBinary = deriveBinary tidFun cls typ tvs ctxs pos  
-  --MALCOLM
-deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) =
-  getInfo cls >>>= \ clsInfo ->
-  deriveError ("Don't know how to derive " ++ show (tidI clsInfo) 
-               ++ " at " ++ strPos pos)
+  | otherwise =
+      getInfo cls >>>= \ clsInfo ->
+      deriveError ("Don't know how to derive " ++ show (tidI clsInfo) 
+                   ++ " at " ++ strPos pos)
 
 
 --- ============================   Derive needed contexts

@@ -3,11 +3,14 @@ module DeriveEq(deriveEq) where
 import Syntax
 import IntState
 import IdKind
+import Id(Id)
 import NT
 import State
 import DeriveLib
 import TokenId(TokenId,t_fromEnum,tFalse,tTrue,tEq,t_equalequal,t_andand)
 
+deriveEq :: ((TokenId,IdKind) -> Id) -> Id -> Id -> [Int] -> [(Id,Id)] -> Pos 
+         -> a -> IntState -> (Decl Id,IntState)
 deriveEq tidFun cls typ tvs ctxs pos =
  getUnique >>>= \x ->
  getUnique >>>= \y ->
@@ -43,7 +46,8 @@ deriveEq tidFun cls typ tvs ctxs pos =
                (Unguarded (ExpCon pos (tidFun (tFalse,Con))))
                (DeclsParse [])])]
        
-
+mkEqFun :: Exp Id -> ((TokenId,IdKind) -> Id) -> Pos -> Info 
+        -> a -> IntState -> (Fun Id,IntState)
 mkEqFun expTrue tidFun pos constrInfo =
  let con = ExpCon pos (uniqueI constrInfo)
  in case ntI constrInfo of
