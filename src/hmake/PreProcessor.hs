@@ -24,6 +24,7 @@ knownSuffixes =
   , ("hsc",    plain, ppHsc2hs)
   , ("y",      plain, ppHappy)
   , ("ly",     unlit, ppHappy)
+  , ("x",      plain, ppAlex)
   , ("hs.cpp", plain, ppCpp)
   , ("gc",     plain, ppNone)	-- note, for nhc98 only
   , ("hs",     plain, ppNone)
@@ -59,6 +60,12 @@ ppHappy = PreProcessor
 	{ ppExecutableName = "happy"
 	, ppDefaultOptions = \_-> []
 	, ppOutputFileOption = \_-> ""
+	, ppSuitable = \hc-> True
+	}
+ppAlex = PreProcessor
+	{ ppExecutableName = "alex"
+	, ppDefaultOptions = \_-> []
+	, ppOutputFileOption = \f-> "-o "++f
 	, ppSuitable = \hc-> True
 	}
 ppNone = PreProcessor
