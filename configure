@@ -498,9 +498,9 @@ then
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
     echo -n "hat-trail "
-    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
-    sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$BUILDBINDIR/hat-trail
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trail.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail
     for hattool in $HATTOOLS
     do  echo -n $hattool" "
         rm -f $BUILDBINDIR/$hattool
