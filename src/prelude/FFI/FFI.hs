@@ -64,10 +64,11 @@ module NHC.FFI
    -- `ForeignPtr a' is a C pointer value with an associated finaliser.
    -------------------------------------------------------------------
   , ForeignPtr              -- abstract, instance of: Eq
+  , FinalizerPtr            -- type synonym for FunPtr (Ptr a -> IO ())
   , newForeignPtr           -- :: Ptr a -> IO () -> IO (ForeignPtr a)
   , addForeignPtrFinalizer  -- :: ForeignPtr a -> IO () -> IO ()
-  , newUnsafeForeignPtr     -- :: Ptr a -> FunPtr (...) -> IO (ForeignPtr a)
-  , addUnsafeForeignPtrFinalizer  -- :: ForeignPtr a -> FunPtr (...) -> IO ()
+  , newUnsafeForeignPtr     -- :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
+  , addUnsafeForeignPtrFinalizer  -- :: ForeignPtr a -> FinalizerPtr a -> IO ()
   , withForeignPtr          -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
   , foreignPtrToPtr         -- :: ForeignPtr a -> Ptr a
   , touchForeignPtr         -- :: ForeignPtr a -> IO ()

@@ -1,10 +1,11 @@
 module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
+    , FinalizerPtr		-- type synonym for FunPtr (Ptr a -> IO ())
     , newForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
     , addForeignPtrFinalizer	-- :: ForeignPtr a -> IO () -> IO ()
-    , newUnsafeForeignPtr	-- :: Ptr a -> FunPtr (Ptr a -> IO ())
+    , newUnsafeForeignPtr	-- :: Ptr a -> FinalizerPtr a
    				--			-> IO (ForeignPtr a)
-    , addUnsafeForeignPtrFinalizer -- :: ForeignPtr a -> FunPtr (Ptr a -> IO ())
+    , addUnsafeForeignPtrFinalizer -- :: ForeignPtr a -> FinalizerPtr a
    				--			-> IO ()
     , withForeignPtr		-- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
     , touchForeignPtr		-- :: ForeignPtr a -> IO ()
@@ -71,12 +72,14 @@ newForeignPtr      :: Ptr a -> IO () -> IO (ForeignPtr a)
 newForeignPtr p f  = primForeignPtr p (_E (unsafePerformIO f))
 
 foreign import ccall "primForeignPtrC"
-  newUnsafeForeignPtr :: Ptr a -> FunPtr (Ptr a -> IO ()) -> IO (ForeignPtr a)
+  newUnsafeForeignPtr :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
+
+type FinalizerPtr a = FunPtr (Ptr a -> IO ())
 
 -- addForeignPtrFinalizer is not implemented in nhc98.
 addForeignPtrFinalizer :: ForeignPtr a -> IO () -> IO ()
 addForeignPtrFinalizer p free = return ()
-addUnsafeForeignPtrFinalizer :: ForeignPtr a -> FunPtr (Ptr a -> IO ()) -> IO ()
+addUnsafeForeignPtrFinalizer :: ForeignPtr a -> FinalizerPtr a -> IO ()
 addUnsafeForeignPtrFinalizer p free = return ()
 
 -- `withForeignPtr' is a safer way to use `foreignPtrToPtr'.
