@@ -27,7 +27,7 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     -- Sourcefile name
     emitAlign p >|>
     defineLabel p Local (modpre) >|>
-    emitString p srcid >|>
+    emitString p filename >|>
     -- Module name
     emitAlign p >|>
     defineLabel p Local ("NMODN") >|>
@@ -35,10 +35,8 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     -- Identifier table (strings)
     emitAlign p >|>
     foldr (>|>) (emitWord p ("0")) (map (emitName p) idtlabs) >|>
-    -- Source references
-    emitAlign p >|>
-    foldr (>|>) id (map (emitSR p) (zip [0..] (reverse srs))) >|>
     -- Name table
+    emitAlign p >|>
     defineLabel p Global ("NM_" ++ srcid) >|>
     foldr (>|>) id (map (emitId p) idtlabs) >|>
     emitWord p ("0") >|>
@@ -46,18 +44,24 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     defineLabel p Local ("N_IMPORTS") >|>
     foldr (>|>) (emitWord p ("0")) (map (emitImport p) impdecls) >|>
     -- Module record
-    defineLabel p Global ("NMOD_" ++ srcid) >|>
+    defineLabel p Global (modinfo) >|>
     useLabel p (modpre) >|>
     useLabel p ("NM_" ++ srcid) >|>
     useLabel p ("N_IMPORTS") >|>
     useLabel p ("NMODN") >|>
+    emitWord p ("0") >|>
+    -- Source references
+    emitAlign p >|>
+    foldr (>|>) id (map (emitSR p) (zip [0..] (reverse srs))) >|>
+    -- special Main record
     if modid == "Main" then
         defineLabel p Global ("MODULE_Main") >|>
-        useLabel p ("NMOD_" ++ srcid)
+        useLabel p (modinfo)
     else
         id
     where profile = sProfile flags
           modpre = "D_" ++ srcid
+          modinfo = "NMOD_" ++ srcid
           trust = sDbgTrusted flags
 	  idtlabs = zip [(p, i, (tidI . dropJust . lookupIS state) i) 
 	                | (p, i) <- idt
@@ -68,6 +72,8 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	                                      ++sObjectFile flags++":" ++ 
 					      show ioerror ++ "\n") 
 			      >> exitWith (ExitFailure (-1))
+          filename = let ms = sSourceFile flags
+		     in reverse (takeWhile ('/' /=) (reverse ms))
           srcid = let ms = sSourceFile flags
 	              ms' = case break ('.'==) (reverse ms) of
 			      ("sh", rf) -> reverse (tail rf)
@@ -90,7 +96,8 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	       else
 	          id) >|>
 	      emitWord p (show sr) >|>
-	      useLabel p (modpre)
+              useLabel p (modinfo) >|>
+	      emitWord p ("0")
           emitId p ((pos, i, tid), lab) =
 	      defineLabel p Global ("D_" ++ idnhc) >|>
 	      -- The 6 below is the constructor number of NTId
@@ -107,10 +114,11 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 		  emitWord p (show 0)
 	       else
 	          id) >|>
-	      useLabel p (modpre) >|>
+              useLabel p (modinfo) >|>
 	      emitWord p (show pos) >|>
 	      useLabel p ("L_" ++ show lab) >|>
-	      emitWord p (show (priority pri))
+	      emitWord p (show (priority pri)) >|>
+              emitWord p ("0")
 	    where
 	      idnhc = fixStr (show tid) ""
 	      (isVar, pri) = 

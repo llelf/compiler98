@@ -347,8 +347,10 @@ dumpSR(FILE *sock, NodePtr t)
     if (t && (GET_TAG(t)==CON_TAG)) {
 	Coninfo cinfo = GET_CONINFO(t);
 	if (CONINFO_NUMBER(cinfo) == 2) { /* SR3 */
+            ModInfo *mod;
+            mod = (ModInfo*)GET_POINTER_ARG1(t,2);
 	    rowcol = (int)t[1+EXTRA];
-	    sprintf(&str[0], "\"%s.hs\" %d ", (char *)GET_POINTER_ARG1(t, 2), rowcol);
+	    sprintf(&str[0], "\"%s\" %d ", (char *)mod->srcfile, rowcol);
 	    ToBrowser(sock, str);	    
 	} else if (CONINFO_NUMBER(cinfo) == 0) { /* SR */
 	    ToBrowser(sock, "* ");

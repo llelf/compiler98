@@ -27,6 +27,7 @@ int traceIp,traceSp,traceHp,traceFlag;
 int traceDepth = 1;
 int traceGcStat = 0;
 FILE *traceGcFd = NULL;
+FILE *HatFile;
 #endif
 #if INSCOUNT
 int insCount;
@@ -384,6 +385,26 @@ void haskellInit (int argc, char **argv)
     } 
   }
 
+#ifdef DBGTRANS
+  {
+    fpos_t p;
+    char filename[256];
+    extern void dumpNewModInfo(FILE*, void*);
+    extern void*MODULE_Main;
+    strcpy(filename,argv[0]);
+    strcat(filename,".hat");
+    HatFile = fopen(filename,"w");
+    fgetpos(HatFile,&p);
+    fprintf(HatFile,"Hat v01");		/* initialise file */
+    fputc(0,HatFile);
+    fwrite(&p,sizeof(fpos_t),1,HatFile);
+    fwrite(&p,sizeof(fpos_t),1,HatFile);
+    dumpNewModInfo(HatFile,MODULE_Main);
+    fflush(HatFile);
+    /*fclose(HatFile);*/
+  }
+#endif
+
   initForeignObjs();
   initGc(hpSize,&Hp,spSize,&Sp);
   stableInit();  /*MW*/
@@ -450,6 +471,10 @@ int haskellEnd (int argc, char **argv) {
   if(gcStatics) {
     finishGc(Hp,1);
   }
+
+#ifdef DBGTRANS
+  fclose(HatFile);
+#endif
 
   return exit_code;
 }

@@ -1,4 +1,8 @@
 #include "ui.h"
+#include "ident.h"
+
+#define		EXPR_DEPTH	2
+/*#define	EXPR_DEPTH	DEFAULT_DEPTH */
 
 /* Show a single expression from the trace.  Return the parent trace of
  * this whole expression.
@@ -13,11 +17,13 @@ stackSR(NodePtr t)
     if (t && (GET_TAG(t)==CON_TAG)) {
         Coninfo cinfo = GET_CONINFO(t);
         if (CONINFO_NUMBER(cinfo) == 2) { /* SR3 */
+            ModInfo *modinfo;
+            modinfo = (ModInfo*)GET_POINTER_ARG1(t,2);
             rowcol = (int)t[1+EXTRA];
             row = rowcol / 10000;
             col = rowcol % 10000;
-            fprintf(stderr, "line-%d/col-%d of \"%s.hs\"",
-				 row, col, (char *)GET_POINTER_ARG1(t, 2));
+            fprintf(stderr, "line-%d/col-%d of \"%s\"",
+				 row, col, (char *)modinfo->srcfile);
         } else if (CONINFO_NUMBER(cinfo) == 0) { /* SR */
             fprintf(stderr, "dynamic site");
         } else {
@@ -127,7 +133,7 @@ stackTrace(NodePtr t)
 {
     NodePtr parent, sr;
     fprintf(stderr, "\nVirtual stack trace:\n    ");
-    parent = stackExpr(t, DEFAULT_DEPTH, &sr);
+    parent = stackExpr(t, EXPR_DEPTH, &sr);
     stackSR(sr);
     while (parent) {
         fprintf(stderr, "\n    ");

@@ -5,6 +5,115 @@
 #include "getconstr.h"
 #include "ident.h"
 
+#include <netinet/in.h>
+
+void
+dumpModInfo (FILE *dumpfile, ModInfo *modinfo)
+{
+    static char* srcFiles[2048];
+    static int   srcFileIdx = 0;
+    int i=0;
+
+    for (i=0; i<srcFileIdx; i++) {
+        if (modinfo->srcfile == srcFiles[i])
+            return;
+    }
+    srcFiles[srcFileIdx++] = modinfo->srcfile;
+    if (srcFileIdx >= 2048) {
+        fprintf(stderr,"dumpModInfo: exceeded cache for src filenames\n");
+        exit(1);
+    }
+
+    fprintf(dumpfile,"MODINFO %s (file %s)\n"
+                    ,modinfo->modname,modinfo->srcfile);
+
+    {
+        IdEntry *id = modinfo->idtable;
+        while (id->constr != 0) {
+            fprintf(dumpfile,"    DEFINES: %s (pri=%d, defnpos=%d/%d)\n"
+                            ,id->name, id->pri
+                            ,(id->srcpos/10000), (id->srcpos%10000));
+            id++;
+        }
+    }
+
+    if (modinfo->modinfo == NULL) {
+        fprintf(dumpfile,"Module %s (%s) has NULL import table\n"
+                        ,modinfo->modname,modinfo->srcfile);
+    } else {
+        i=0;
+        if (modinfo->modinfo[0]!=NULL) fprintf(dumpfile,"    IMPORTS:");
+        while (modinfo->modinfo[i] != NULL) {
+            fprintf(dumpfile," %s",modinfo->modinfo[i]->srcfile);
+            i++;
+        }
+        if (modinfo->modinfo[0]!=NULL) fprintf(dumpfile,"\n");
+        i=0;
+        while (modinfo->modinfo[i] != NULL) {
+            dumpModInfo(dumpfile,modinfo->modinfo[i]);
+            i++;
+        }
+    }
+}
+
+void
+dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
+{
+    fpos_t mypos, idpos;
+    int i=0;
+
+    if (modinfo->fileoffset) {
+      /*fprintf(stderr,"INFO: module %s file %s is already on file at %d\n"
+                      ,modinfo->modname, modinfo->srcfile
+                      ,ntohl(modinfo->fileoffset));*/
+        return;
+    }
+
+    /* dump this module info */
+    fgetpos(dumpfile,&mypos);
+    mypos = htonl(mypos);	/* ensure network byte-ordering */
+    fprintf(dumpfile,"%c%s%c%s%c", 0x20
+                    ,modinfo->modname, 0x0, modinfo->srcfile, 0x0);
+    modinfo->fileoffset = mypos;
+
+    /* dump identifiers defined in this module */
+    {
+        IdEntry *id = modinfo->idtable;
+        while (id->constr != 0) {
+            fgetpos(dumpfile,&idpos);
+            idpos = htonl(idpos);	/* ensure network byte-ordering */
+            fputc(0x46,dumpfile);
+            fwrite(id->name, sizeof(char), 1+strlen(id->name), dumpfile);
+            if (id->srcmod->fileoffset) {
+              fwrite(&(id->srcmod->fileoffset), sizeof(FileOffset), 1,dumpfile);
+            } else {
+              fprintf(stderr,"IDENTRY: %s (module %s not dumped)\n"
+                            ,id->name,id->srcmod->modname);
+              fwrite(&mypos, sizeof(fpos_t), 1, dumpfile);
+            }
+            fputc((char)id->pri,dumpfile);
+            i = htonl(id->srcpos);
+            fwrite(&i, sizeof(int), 1, dumpfile);
+            id->fileoffset = idpos;
+            id++;
+        }
+    }
+
+    /* follow imported module list */
+    if (modinfo->modinfo == NULL) {
+        fprintf(stderr,"Module %s (%s) has NULL import table\n"
+                        ,modinfo->modname,modinfo->srcfile);
+    } else {
+        i=0;
+        while (modinfo->modinfo[i] != NULL) {
+            dumpNewModInfo(dumpfile,modinfo->modinfo[i]);
+            i++;
+        }
+    }
+}
+
+
+
 
 void
 showDbgInfo(ModInfo *modInfo)
@@ -95,7 +204,7 @@ changeTrustedness(ModInfo *modInfo, char *fun, int constr)
    fprintf(stderr, "Changing trustedness for %s (%s)\n", modInfo->modname, 
 	   fun == NULL ? "all functions" : fun);
    while (identry->constr != 0) {
-     fprintf(stderr, "Module: %s\n", identry->srcmod);
+     fprintf(stderr, "Module: %s\n", identry->srcmod->modname);
      fprintf(stderr, "Checking %s\n", identry->name);
      if ((fun == NULL) || (strcmp(fun, identry->name) == 0)) {
        changed++;

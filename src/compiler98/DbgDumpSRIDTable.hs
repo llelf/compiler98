@@ -23,28 +23,31 @@ dbgDumpSRIDTable :: Handle -> IntState -> Flags -> SRIDTable -> IO ()
 dbgDumpSRIDTable handle state flags Nothing = return ()
 dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) = 
     output (showString "DL(" . showString modpre . showString ")\n" . 
-            chopString srcid .
+            chopString filename .
 	    showString "  AL\n  EX L(NM_" . showString srcid . 
             showString ")\n DL(NM_" . showString srcid . showString ")\n") >>
-    mapM_ (dumpId state (sProfile flags) modpre output trust) idtlabs >>
+    mapM_ (dumpId state (sProfile flags) modinfo output trust) idtlabs >>
     output (showString "  DW 0\n") >>
     mapM_ (dumpNs state (sProfile flags) modpre output trust) idtlabs >>
     output (showString "  AL\nDL(D_srstart)\n") >>
-    mapM_ (dumpSR state (sProfile flags) modpre output) (reverse srs) >>
+    mapM_ (dumpSR state (sProfile flags) modinfo output) (reverse srs) >>
     output (showString " DL(N_IMPORTS)\n") >>
     mapM_ (dumpImport output) impdecls >>
-    output (showString "  DW 0\n  EX L(NMOD_" . showString srcid .
-            showString ")\n DL(NMOD_" . showString srcid .
-	    showString ")\n  DW L(" . showString modpre . showString "), L(NM_" .
-	    showString srcid . showString "), L(N_IMPORTS), L(NMODN)\n" .
+    output (showString "  DW 0\n  EX L(" . showString modinfo .
+            showString ")\n DL(" . showString modinfo .
+	    showString ")\n  DW L(" . showString modpre .
+            showString "), L(NM_" . showString srcid .
+            showString "), L(N_IMPORTS), L(NMODN)\n" .
+            showString " DW 0\n" .
 	    showString " DL(NMODN)\n" . chopString modid . 
 	    showString "  AL\n") >>
     if modid == "Main" then
-        output (showString "  EX L(MODULE_Main)\n DL(MODULE_Main)\n DW L(NMOD_" .
-	        showString srcid . showString ")\n")
+        output (showString "  EX L(MODULE_Main)\n DL(MODULE_Main)\n DW L(" .
+	        showString modinfo . showString ")\n")
     else
         return ()
     where modpre = "D_" ++ srcid
+          modinfo = "NMOD_" ++ srcid
           trust = sDbgTrusted flags
 	  idtlabs = zip [(p, i, (tidI . dropJust . lookupIS state) i) 
 	                | (p, i) <- idt
@@ -55,13 +58,15 @@ dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	                                      ++sObjectFile flags++":" ++ 
 					      show ioerror ++ "\n") 
 			      >> exitWith (ExitFailure (-1))
+          filename = let ms = sSourceFile flags
+		     in reverse (takeWhile ('/' /=) (reverse ms))
           srcid = let ms = sSourceFile flags
 	              ms' = case break ('.'==) (reverse ms) of
 			      ("sh", rf) -> reverse (tail rf)
 			      ("shl", rf) -> reverse (tail rf)
 			      _ -> ms
 		  in reverse (takeWhile ('/' /=) (reverse ms'))
-dumpId state profile modpre output trust ((pos, i, tid), lab) =
+dumpId state profile modinfo output trust ((pos, i, tid), lab) =
     output (showString "  EX L(D_" . showString idnhc . 
             showString ")\nDL(D_" . showString idnhc . 
 	    -- The 6 below is the constructor number of NTId
@@ -72,9 +77,11 @@ dumpId state profile modpre output trust ((pos, i, tid), lab) =
 	     else
 	        showString ")\n  DW CONSTR(6,3,3)\n  DW ") . 
 	    (if profile then showString "L(prof_NTId), 0, 0, 0, " else id) .
-	    showString "L(" . showString modpre . showString "), " . shows pos . 
+	    showString "L(" . showString modinfo .
+            showString "), " . shows pos . 
 	    showString ", L(L_" . shows lab . showString "), " .
-	    shows (priority pri) . showString"\n")
+	    shows (priority pri) . showString"\n" .
+            showString "  DW 0\n")
     where idnhc = fixStr (show tid) ""
           (isVar, pri) = 
 	      case lookupIS state i of
@@ -103,11 +110,12 @@ dumpNs state profile modpre output trust ((pos, _, tid), lab) =
     output (showString "DL(L_" . shows lab . showString ")\n" .
             chopString (untoken tid))
 
-dumpSR state profile srcid output sr =
+dumpSR state profile modinfo output sr =
     -- (2, 2, 2) -> (Tag 2 (SR3), size 2, 2 non-pointers)
-    output (showString "  DW CONSTR(2,2,2)\n  DW " .
-            (if profile then showString "L(prof_SR3), 0, 0, 0, " else id) . 
-            shows sr . showString ", L(" . showString srcid . showString ")\n")
+    output (showString "  DW CONSTR(2,2,2)\n  DW "
+           . (if profile then showString "L(prof_SR3), 0, 0, 0, " else id)
+           . shows sr . showString ", L(" . showString modinfo
+           . showString ")\n  DW 0\n")
 
 dumpImport output impdecl = 
 {-
