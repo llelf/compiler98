@@ -53,7 +53,7 @@ instance Show Foreign where
 data Arg = Int8  | Int16  | Int32  | Int64
          | Word8 | Word16 | Word32 | Word64
          | Float | Double | Char   | Bool | Int
-         | Ptr   | FunPtr | StablePtr | ForeignPtr
+         | Ptr   | FunPtr [Arg] | StablePtr | ForeignPtr
          | Addr  | ForeignObj | Integer | PackedString
          | Unknown String | Unit
 
@@ -72,7 +72,7 @@ instance Show Arg where
   showsPrec p Char         = showString "Prelude.Char"
   showsPrec p Bool         = showString "Prelude.Bool"
   showsPrec p Ptr	   = showString "FFI.Ptr"
-  showsPrec p FunPtr	   = showString "FFI.FunPtr"
+  showsPrec p (FunPtr t)   = showString "FFI.FunPtr"
   showsPrec p StablePtr    = showString "FFI.StablePtr"
   showsPrec p ForeignPtr   = showString "FFI.ForeignPtr"
   showsPrec p Addr         = showString "FFI.Addr"		-- deprecated
@@ -82,12 +82,9 @@ instance Show Arg where
   showsPrec p Unit         = showString "Prelude.()"
   showsPrec p (Unknown s)  = showString s
 
--- Note: as of 2000-10-18, the result can never have an IO type - Pure only.
+-- Note: as of 2000-10-18, the result can never have an IO type - pure only.
 -- (IO results are created by wrapping auxiliary _mkIOokN around a pure call.)
-newtype Res = Pure Arg
-
-instance Show Res where
-    showsPrec p (Pure arg)       = shows arg
+type Res = Arg
 
 foreignname hname = showString foreignfun . fixStr (show hname)
 localname hname   = showString fun . fixStr (show hname)
@@ -139,21 +136,24 @@ parseEntity entity hname =
     
 
 searchType :: AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
-searchType st arrow info =
+searchType st (arrow,io) info =
   let
     toList (NTcons c nts) | c==arrow  = let [a,b] = nts in a: toList b
+    toList (NTcons c nts) | c==io     = let [a]   = nts in [a] -- within FunPtr
     toList (NTstrict nt)  = toList nt
     toList nt             = [nt]
 
     toTid (NTcons c nts)  =
       case lookupAT st c of
-        Just i | isRealData i -> let nm = tidI i in
-                                 Pure (toArg nm)
-               | otherwise    -> toTid (getNT (isRenamingFor st i))
+        Just i | isRealData i ->
+                     case toArg (tidI i) of
+                       FunPtr _ -> FunPtr (map toTid (toList (head nts)))
+                       t        -> t
+               | otherwise -> toTid (getNT (isRenamingFor st i))
     toTid (NTapp t1 t2)   = toTid t1
     toTid (NTstrict t)    = toTid t
-    toTid t = Pure (Unknown (show t))  -- error ("Unrecognised NT: "++show t)
-		-- (Pure Unknown) lets polymorphic heap-values across unmolested
+    toTid t = Unknown (show t)  -- error ("Unrecognised NT: "++show t)
+		-- 'Unknown' lets polymorphic heap-values across unmolested
 
     toArg t | t==tInt        = Int
          -- | t==tWord       = Word32
@@ -162,7 +162,7 @@ searchType st arrow info =
             | t==tFloat      = Float
             | t==tDouble     = Double
             | t==tPtr        = Ptr
-            | t==tFunPtr     = FunPtr
+            | t==tFunPtr     = FunPtr []
             | t==tStablePtr  = StablePtr
             | t==tForeignPtr = ForeignPtr
             | t==tAddr       = Addr		-- deprecated
@@ -186,20 +186,18 @@ searchType st arrow info =
     getNT (NewType _ _ _ (nt:_)) = nt
     getNT _                    = error ("Unable to retrieve newtype info.")
 
-    dropRes args [res]             = (reverse args, res)
-    dropRes args (x:xs)            = dropRes (dropPure x:args) xs
-
-    dropPure (Pure arg) = arg
+    splitRes args = (init args, last args)
 
   in
-    (dropRes [] . map toTid . toList . getNT . ntI) info
+    (splitRes . map toTid . toList . getNT . ntI) info
 
 ----
-type ForeignMemo = Int
+type ForeignMemo = (Int,Int)
 
 foreignMemo :: AssocTree Int Info -> ForeignMemo
 foreignMemo st =
-    findFirst (check t_Arrow . lookupAT st) [1..]
+    (findFirst (check t_Arrow . lookupAT st) [1..]
+    ,findFirst (check tIO     . lookupAT st) [1..])
   where
     check tid (Just info) | cmpTid tid info  = Just (uniqueI info)
                           | otherwise        = Nothing
@@ -240,6 +238,7 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
          CCast -> cCast arity res
          Address -> cAddr cname res
          FunAddress -> cFunAddr cname
+         Dynamic -> cDynamic arity res
          _ -> if length args == 1 && noarg (head args)
               then cCall cname 0 res
               else cCall cname arity res) . nl .
@@ -250,14 +249,13 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
     genProto Ordinary cname =
           word "extern" . space . cResType res . space . word cname
           . parens (listsep comma (map cTypename args)) . semi
-    genProto CCast cname = id
-    genProto Address cname = id
-       -- word "extern" . space . cResType res . space . word cname . semi
-    genproto FunAddress cname =
+    genProto FunAddress cname =
           word "extern" . space . cResType res . space . word cname
           . parens id . semi
-    genproto Dynamic cname = error "foreign import dynamic not yet supported."
-    genproto Wrapper cname = error "foreign import wrapper not yet supported."
+    genProto CCast   cname = id
+    genProto Address cname = id
+    genProto Dynamic cname = id
+    genProto Wrapper cname = error "foreign import wrapper not yet supported."
 
     cArg a n = indent . cArgDecl a n
     modname  = (reverse . unpackPS . extractM) hname
@@ -277,10 +275,10 @@ strForeign f@(Foreign Exported _ _ _ cname hname arity args res) =
 
 ---- foreign import ----
 
-cArgDecl Unit n =
-    comment (cTypename Unit . space . narg n)
-cArgDecl arg n =
-    cTypename arg . space . narg n
+cArgDecl (FunPtr t) n = cResType (last t) . parens (star . narg n)
+                        . parens (listsep comma (map cTypename (init t)))
+cArgDecl Unit       n = comment (cTypename Unit . space . narg n)
+cArgDecl arg        n = cTypename arg . space . narg n
 
 cArgDefn Unit n =
     id
@@ -290,27 +288,22 @@ cArgDefn arg n =
     indent . narg n . showString " = " .
     parens (cTypename arg) . cConvert arg . semi
 
-cResDecl (Pure Unit) = id
-cResDecl (Pure arg) =
-    indent . cTypename arg . space . word "result" . semi
+cResDecl (FunPtr t) = indent . cResType (last t) . parens (star . word "result")
+                      . parens (listsep comma (map cTypename (init t)))
+cResDecl Unit = id
+cResDecl arg  = indent . cTypename arg . space . word "result" . semi
 
 cCall cname arity res =
       indent . (case res of
-                --  IOVoid      -> id
-                --  Pure [Unit] -> id
-                    Pure Unit   -> id
-                    _           -> word "result = ") .
+                    Unit -> id
+                    _    -> word "result = ") .
       word cname .  parens (listsep comma (map narg [1..arity])) . semi
 
 cCast arity res =
     if arity /= 1 then
       error ("\"foreign import cast\" has wrong arity.")
     else
-      indent .
-      (case res of
-        Pure  _      -> word "result = " . parens (cResType res) .
-                                              parens (narg 1) . semi
-      )
+      indent . word "result = " . parens (cResType res) . parens (narg 1) . semi
 
 cAddr cname res =
     indent . word "result = " . parens (cResType res) . word "&" .
@@ -319,7 +312,13 @@ cAddr cname res =
 cFunAddr cname =
     indent . word "result = " . word cname . semi
 
-cFooter profinfo (Pure arg) =
+cDynamic arity res =
+      indent . (case res of
+                    Unit -> id
+                    _    -> word "result = ") .
+      word "(*arg1)" .  parens (listsep comma (map narg [2..arity])) . semi
+
+cFooter profinfo arg =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
@@ -331,7 +330,7 @@ cCodeDecl cname args res =
     cResType res . space . word cname . space .
       parens (listsep comma (zipWith cArgDecl args [1..]))
 
-cResType (Pure  res )     = cTypename res
+cResType res = cTypename res
 
 hCall arity hname args =
     indent . word "NodePtr nodeptr, vap, args" . squares (shows arity) . semi .
@@ -350,11 +349,8 @@ hCall arity hname args =
                   equals . space . hConvert arg (narg n) . semi
     hArg2 arg n = indent . word "*Hp++ = (Node)args" . squares (shows (n-1)) . semi
 
-hResult (Pure Unit) = id	-- allow for IO ()
-hResult res =
-    indent . word "return" . space . cResult res . semi
-  where
-    cResult (Pure arg) = cConvert arg
+hResult Unit = id	-- allow for IO ()
+hResult res  = indent . word "return" . space . cConvert res . semi
 
 
 ---- shared between foreign import/export ----
@@ -374,7 +370,8 @@ cTypename Char         = word "char"
 cTypename Float        = word "float"
 cTypename Double       = word "double"
 cTypename Ptr          = word "void*"
-cTypename FunPtr       = word "void*"
+cTypename (FunPtr t)   = cResType (last t) . parens star
+                         . parens (listsep comma (map cTypename (init t)))
 cTypename StablePtr    = word "StablePtr"
 cTypename ForeignPtr   = word "void*"
 cTypename Unit         = word "void"
@@ -399,7 +396,7 @@ cConvert Word16       = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Word32       = word "GET_32BIT_VALUE(nodeptr)"
 cConvert Word64       = word "nhc_get_64bit_value(nodeptr)"
 cConvert Ptr          = word "GET_INT_VALUE(nodeptr)"
-cConvert FunPtr       = word "GET_INT_VALUE(nodeptr)"
+cConvert (FunPtr _)   = word "GET_INT_VALUE(nodeptr)"
 cConvert StablePtr    = word "GET_INT_VALUE(nodeptr)"
 cConvert ForeignPtr   = word "derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr))"
 cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
@@ -424,7 +421,7 @@ hConvert Word16       s = word "nhc_mkWord16" . parens s
 hConvert Word32       s = word "nhc_mkWord32" . parens s
 hConvert Word64       s = word "nhc_mkWord64" . parens s
 hConvert Ptr          s = word "nhc_mkInt" . parens (word "(int)" . s)
-hConvert FunPtr       s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert (FunPtr _)   s = word "nhc_mkInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "nhc_mkInt" . parens (word "(int)" . s)
 {- Returning ForeignPtr's to Haskell is usually illegal: -}
 hConvert ForeignPtr   s =
@@ -455,6 +452,7 @@ equals     = showChar '='
 word       = showString
 comma      = showChar ','
 dot        = showChar '.'
+star       = showChar '*'
 listsep s x= if length x > 0 then foldr1 (\l r-> l . s . r) x else id
 indent     = space . space
 narg n     = word "arg" . shows n
