@@ -10,6 +10,10 @@ module PrettySyntax
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
 
+#if !defined(__HASKELL98__)
+#define isAlphaNum isAlphanum
+#endif
+
 import Extra(Pos(..),noPos)
 import PrettyLib
 import Syntax
