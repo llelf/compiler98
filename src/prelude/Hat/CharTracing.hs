@@ -16,3 +16,4 @@ module Char (
     ) where
 
 import PreludeBasic
+
