@@ -217,6 +217,8 @@ keepRS (RenameState flags unique rps rts rt st derived
 		 case (ntI . dropJust . lookupAT st ) coni of
   	           (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
   	           (NewType _ [] _ [NTvar v,res]) -> (synType,(u,v):newType)
+  	           (NewType _ [] _ [NTapp v1 v2,res]) -> (synType,newType)
+			-- ^ MW hack: omits potential circularity check!
                    _ -> error ("Couldn't find rhs of newtype: " ++
                                show (tidI info)++
                                "\nTwo conflicting newtype definitions?")
