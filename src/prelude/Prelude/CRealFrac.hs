@@ -17,6 +17,3 @@ class  (Real a, Fractional a) => RealFrac a  where
     ceiling x	=  case properFraction x of (n,r) -> if r>0 then n+1 else n
     floor x	=  case properFraction x of (n,r) -> if r<0 then n-1 else n
 
-#if !defined(TRACING)
-#endif
-

@@ -19,5 +19,3 @@ class  (Fractional a) => Floating a  where
     tan  x		=  sin  x / cos  x
     tanh x		=  sinh x / cosh x
 
-#if !defined(TRACING)
-#endif

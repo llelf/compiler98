@@ -5,7 +5,3 @@ primDecodeFloatC f = (primDecodeFloatMantissa f, primDecodeFloatExponent f)
 
 foreign import primDecodeFloatMantissa :: Float -> Integer
 foreign import primDecodeFloatExponent :: Float -> Int
-
-{-
-foreign import primDecodeFloatC :: Float -> (Integer,Int)
--}

@@ -26,12 +26,3 @@ instance  Fractional Float  where
             (_,ef) = decodeFloat (fromInteger (numerator x) `asTypeOf` x0
         	                                / fromInteger (denominator x))
 
-
-#if 0
-import Ratio((%),numerator,denominator)
-
-instance  Fractional Float  where
-  x / y = _prim _tprim_FractionalFloatDivide x y
-
-_tprim_FractionalFloatDivide primitive 3 :: Trace -> R Float -> R Float -> R Float
-#endif
