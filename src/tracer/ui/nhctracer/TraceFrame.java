@@ -117,6 +117,8 @@ public class TraceFrame extends Frame {
       public void windowClosing(WindowEvent e) {
         stop();
 	me.dispose();
+        System.exit(0);  // windowClosing requires explicit call to System.exit
+                         // otherwise java loops forever
       }
     });
     
