@@ -85,8 +85,9 @@ showRed verboseMode precision node =
 	      else
 	        ""
 	in
-	  s1++s2
-
+--	  s1++s2
+          (prettyPrint precision verboseMode node)++" = "++
+	    (prettyPrint precision verboseMode res)
 
 -- add new node to the list of recent nodes. List holds node, linear representaion of it,
 -- and the value of the users answer (Yes=True, No=False)
@@ -135,7 +136,7 @@ interactive hatfile state@((node:children),recentNodes,trusted,postponed,questnu
 --       putStr (show questnumber++"> "++
 --         (showRed verboseMode precision node))
        putStr 
-         (showReduction verboseMode precision node 
+        (showReduction verboseMode precision node 
            (show questnumber++"> ")
            (if reconsider then "(Y/?Y/N): " else "(Y/?Y/?N/N): "))
 --       if (reconsider) then putStr "  (Y/?Y/N): " else putStr "  (Y/?Y/?N/N): "

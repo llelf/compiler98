@@ -113,7 +113,8 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 			         "identifier \""++ident1++"\".\n(Check spelling!)")
                       else
                        do
-                         showObservationList 20 1 100 (fromFound observed)
+                         showObservationList verboseMode 20 1 100
+				             (fromFound observed)
                          return ()
 --                       printCReductionList 100 (fromFound observed)
                   return ()
@@ -134,21 +135,21 @@ observableIdents hattrace =
 	    filter (\x -> ((hatNodeType x)==HatIdentNode)) f -- return all identifiers
 	 else []
 
-showObservation :: Int -> Int -> HatNode -> IO ()
-showObservation precision i node =
-  putStr $ showReduction False precision node ("#"++(show i)++": ") ""
+showObservation :: Bool -> Int -> Int -> HatNode -> IO ()
+showObservation verboseMode precision i node =
+  putStr $ showReduction verboseMode precision node ("#"++(show i)++": ") ""
 -- do
 --   putStr ("#"++(show i)++": ")
---   printCReduction precision node
+--   printReduction verboseMode (toHatLimit precision node)
 
-showObservationList :: Int -> Int -> Int -> [HatNode] -> IO Int
-showObservationList _ _  _ [] = return 0
-showObservationList _ i 0 _ = return 0
-showObservationList precision i max (e:r) =
+showObservationList :: Bool -> Int -> Int -> Int -> [HatNode] -> IO Int
+showObservationList _ _ _  _ [] = return 0
+showObservationList _ _ i 0 _ = return 0
+showObservationList verboseMode precision i max (e:r) =
     do
-      showObservation precision i e
+      showObservation verboseMode precision i e
       putStrLn ""
-      count <- showObservationList precision (i+1) (max-1) r
+      count <- showObservationList verboseMode precision (i+1) (max-1) r
       return (count+1)
 
 makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
@@ -201,13 +202,13 @@ options s =
       r = dropWhile dropFun w in
    ((unwords o),(unwords r))
 
-showSomeMore :: Int -> Int -> Int -> [HatNode] -> IO (Int,Bool)
-showSomeMore precision currentEq equationsPerPage observed =
+showSomeMore :: Int -> Int -> Int -> Bool -> [HatNode] -> IO (Int,Bool)
+showSomeMore precision currentEq equationsPerPage verboseMode observed =
  let showNowList = (drop currentEq observed);
      hasMore = (null (drop equationsPerPage showNowList))==False in
   do
-    count <- showObservationList precision (currentEq+1) equationsPerPage
-	     showNowList
+    count <- showObservationList verboseMode precision (currentEq+1)
+	                         equationsPerPage showNowList
     return (count+currentEq,hasMore)
 
 interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int,[HatNode],
@@ -250,7 +251,7 @@ doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,
     if (more) then
        do
         (newPos,newMore) <- (showSomeMore precision currentPos equationsPerPage
-			     lastObserved)
+			     verboseMode lastObserved)
 	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos,precision,
 			     observable,verboseMode,recursiveMode)
      else
@@ -453,7 +454,7 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
 	      else
                do
                 (newPos,newMore) <- (showSomeMore precision 0 equationsPerPage
-	 			     (fromFound newObserved))
+	 			     verboseMode (fromFound newObserved))
                 interactive hatfile ((fromFound newObserved),newMore,equationsPerPage,
 				     newPos,precision,observable,
 				     verboseMode,recursiveMode)

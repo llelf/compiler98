@@ -12,7 +12,7 @@ THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 
 
 PROGNAMES = hat-stack hat-connect hat-observe hat-check hat-detect hat-checki \
-            hat-port # hatobserve hatdetect
+            hat-port # hatobserve # hatdetect
 PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
 all: $(OBJDIR) $(PROGS)

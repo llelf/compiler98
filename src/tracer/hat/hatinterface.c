@@ -324,7 +324,7 @@ void skipNode(char nodeType) {
 	skippointer();
 	break;
     default:
-	fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
+	fprintf(stderr, "skipNode: strange low-bits tag %d in TR 0x%x\n",
 		lo5(nodeType), hatNodeNumber(currentHandle)-1);
 	exit(1);
     }
@@ -353,8 +353,8 @@ void skipNode(char nodeType) {
     case DOUBLE:
 	skipbytes(8);
 	break;
-    case IDENTIFIER:
     case TOPIDENTIFIER:
+    case IDENTIFIER:
 	skipstring();  // simply read string
 	skipbytes(4+1+4);
 	break; 
@@ -375,7 +375,7 @@ void skipNode(char nodeType) {
 	skipstring();
 	break;
     default:
-	fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
+	fprintf(stderr, "skipNode: strange low-bits tag %d in NT 0x%x\n",
 		lo5(nodeType), hatNodeNumber(currentHandle)-1);
 	exit(1);
     }
@@ -384,7 +384,7 @@ void skipNode(char nodeType) {
       skipbytes(4+4);
       break;
   default:
-      fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
+      fprintf(stderr, "skipNode: strange high-bits tag %d at byte offset 0x%x\n",
 	      hi3(nodeType), hatNodeNumber(currentHandle)-1);
       exit(1);
   }
@@ -522,7 +522,6 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
       fileoffset = getNameType();
       break;
     case NTIDENTIFIER:
-    case NTTOPIDENTIFIER:
       fileoffset = getModInfo();
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
@@ -547,7 +546,6 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case NTIDENTIFIER:
-    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       fileoffset = getParent();
       s = getPosnStr();
@@ -629,7 +627,6 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
     case NTCONSTRUCTOR: // constructors are "trusted"! => its applications are ok!
       hatSeekNode(handle,old);
       return 1;
-    case NTTOPIDENTIFIER:
     case NTIDENTIFIER:
       srcref=getModInfo(); // follow module info
       break;
@@ -667,6 +664,10 @@ BOOL _internalIsLHSModule(HatFile handle,filepointer modinfo) {
   return 0;
 }
 
+BOOL isNTToplevel() {
+  return (seenextbyte()==NTTOPIDENTIFIER);
+}
+
 int isTopLevel(HatFile handle,filepointer srcref) {
   char nodeType,i;
   filepointer old = hatNodeNumber(handle);
@@ -694,9 +695,7 @@ int isTopLevel(HatFile handle,filepointer srcref) {
 //    i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
 //    hatSeekNode(handle,old);
 //    return i;
-      return 0;
-    case NTTOPIDENTIFIER:
-      return 1;
+      return isNTToplevel();
     case TRAPP:
       srcref = getAppFun();
       break;
@@ -736,7 +735,6 @@ filepointer hatLMO(HatFile handle,filepointer fileoffset) {
       fileoffset=getNameType(); // follow nmType
       break;
     case NTIDENTIFIER:
-    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       return fileoffset;
     case TRAPP:
@@ -767,7 +765,6 @@ filepointer hatLMOName(HatFile handle,filepointer fileoffset) {
       return fileoffset;
       break;
     case NTIDENTIFIER:
-    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       return fileoffset;
     case TRAPP:
@@ -938,7 +935,7 @@ filepointer hatMainCAF(HatFile h) {
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
 	    filepointer lmo = hatLMO(h,currentOffset);
-	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTTOPIDENTIFIER)&&
+	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTIDENTIFIER)&&
 		(strcmp(getName(),"main")==0)) {
 	      return currentOffset;
 	    }
@@ -1177,6 +1174,7 @@ char getNodeType(HatFile h,filepointer nodenumber) {
   hatSeekNode(h,nodenumber);
   nodeType=seenextbyte();
   if ((nodeType&240)==0) nodeType=nodeType & 247;
+  if (nodeType==NTTOPIDENTIFIER) return NTIDENTIFIER;
   return (nodeType == MDTRUSTED ? HatModule : nodeType);
 }
 

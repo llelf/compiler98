@@ -210,7 +210,7 @@ filepointer printNode(unsigned long offset) {
       printf("TR 0x%x", getParent());
       break;
     default:
-      printf("strange low-bits tag %d in TR 0x%x\n",
+      printf("printNode: strange low-bits tag %d in TR 0x%x\n",
 	     llo5(b), offset);
     }
     break;
@@ -246,7 +246,7 @@ filepointer printNode(unsigned long offset) {
       printf("DOUBLE %f", getDoubleValue());
       break;
     case IDENTIFIER:
-    case TOPIDENTIFIER:
+      if (isTopLevel(handle,offset)) printf("Toplevel ");
       printf("identifier: %s ", getName());
       {
 	unsigned long modinfo = getModInfo();
@@ -294,7 +294,7 @@ filepointer printNode(unsigned long offset) {
       printf("CONTAINER");
       break;
     default:
-      printf("strange low-bits tag %d in NT 0x%x\n",
+      printf("printNode: strange low-bits tag %d in NT 0x%x\n",
 	     llo5(b), offset);
     }
     break;
@@ -304,7 +304,7 @@ filepointer printNode(unsigned long offset) {
     printf(" %s", getPosnStr());
     break;
   default:
-    printf("strange high-bits tag %d at byte offset 0x%x\n",
+    printf("printNode: strange high-bits tag %d at byte offset 0x%x\n",
 	   lhi3(b), offset);
   }
   printf("\n");
@@ -315,14 +315,12 @@ filepointer printNode(unsigned long offset) {
     char *appstr;
     filepointer lmo;
     ExprNode* exp;
-    char xx;
 
     exp = buildExpr(handle,offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,precision,1);
     
     lmo = hatLMO(handle,offset);
-    if ((lmo!=0) && ((xx=getNodeType(handle,lmo))==HatIdentifier
-                     || xx==HatTopIdentifier)) {
+    if ((lmo!=0)&&(getNodeType(handle,lmo)==HatIdentifier)) {
      satc = getResult(handle,hatFollowSATs(handle,offset));
      if ((isSAT(handle,satc))&&(satc!=offset)) {
        printf("corresponding SAT at: 0x%x\n\n",satc);

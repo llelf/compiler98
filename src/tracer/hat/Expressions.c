@@ -87,7 +87,6 @@ void freeExpr(ExprNode* e) {
       freeAppNode(e->v.appval);
       break;
     case HatIdentifier:
-    case HatTopIdentifier:
     case HatConstructor:
       freeIdentNode(e->v.identval);
       break;
@@ -126,7 +125,6 @@ int getExprInfixPrio(ExprNode* e) {
   case HatSATA:
     return getExprInfixPrio(e->v.expr);
   case HatIdentifier:
-  case HatTopIdentifier:
   case HatConstructor:
     return e->v.identval->infixpriority;
   default:
@@ -255,7 +253,6 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 	return exp;
 	}
     case HatIdentifier:
-    case HatTopIdentifier:
     case HatConstructor: {
       int infix,infixprio;
       exp = newExprNode(b);
@@ -481,7 +478,6 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
       else
 	switch (apn->fun->type) {
 	case HatIdentifier:
-	case HatTopIdentifier:
 	case HatConstructor:
 	  s1 = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
@@ -574,7 +570,6 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
       }
     }
   case HatIdentifier:
-  case HatTopIdentifier:
   case HatConstructor:
     return newStr(exp->v.identval->name);
   case HatInteger:
@@ -623,7 +618,7 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
   case HatSATB:
     return newStr("_|_");
   default:
-    fprintf(stderr, "strange type in expression syntax tree %i\n",
+    fprintf(stderr, "printRekExpr: strange type in expression syntax tree %i\n",
 	    exp->type);
     exit(1);
   }
@@ -668,7 +663,6 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
       return cmp;
     }
   case HatIdentifier:
-  case HatTopIdentifier:
   case HatConstructor:
     if (strcmp(e1->v.identval->name,e2->v.identval->name)==0) return 0;
     else return 2;
@@ -847,7 +841,6 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 	switch (apn->fun->type) {
 	case NTIDENTIFIER:
 	case NTCONSTRUCTOR:
-	case NTTOPIDENTIFIER:
 	  fun = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
@@ -943,7 +936,6 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 	}*/
     }
   case NTIDENTIFIER:
-  case NTTOPIDENTIFIER:
     //if (functionDepth>=showEvalUpToDepth) return newStr("_");
   case NTCONSTRUCTOR:
     return newStr(exp->v.identval->name);
@@ -992,7 +984,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
   case TRSATB:
     return newStr("_|_");
   default:
-    fprintf(stderr, "strange type in expression syntax tree %i\n",
+    fprintf(stderr, "treePrint: strange type in expression syntax tree %i\n",
 	    exp->type);
     exit(1);
   }
