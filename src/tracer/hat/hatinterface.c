@@ -1097,6 +1097,7 @@ double getDoubleValue() {
   prepareBuffer(8);
   lbuf = boff;
 
+  skipbyte();
   v.a[0] = readfourbytes();
   v.a[1] = readfourbytes();
   v.a[1].ptrval = htonl(v.a[1].ptrval);
