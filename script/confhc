@@ -64,9 +64,9 @@ fi
   
 # Now look for GHC.  Determining the version number here is due to Simon Marlow.
 ghcsym () {
-  echo __GLASGOW_HASKELL__ >/tmp/ghcsym.hs;
-  $1 -E -cpp -optP-P /tmp/ghcsym.hs -o $2;
-  rm -f /tmp/ghcsym.hs;
+  echo __GLASGOW_HASKELL__ >ghcsym.hs;
+  $1 -E -cpp -optP-P ghcsym.hs -o $2;
+  rm -f ghcsym.hs;
 }
 echo -n "  Looking for ghc...   "
 if which ghc >/dev/null 2>&1
