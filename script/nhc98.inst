@@ -27,18 +27,20 @@ fi
 # Fix a broken 'mv' command on Cygwin.
 mv () { { cp $1 $2 && rm $1; } || echo "Warning: can't move $1 to $2"; }
 
-## Fix an absolute Cygwin path to an absolute native Windows path.
-## (Also copes with options like -I/path etc.)
-## This routine is only strictly required when the compiler proper
-## was built with GHC/mingw32.
-#if echo $MACHINE | grep -y CYGWIN >/dev/null
-#then filepath() { case $1 in
-#                    -?/*) echo `cygpath -w $1` | tr '\\' '/';;
-#                    /*)   echo `cygpath -w $1` | tr '\\' '/';;
-#                    *)    echo $1;;
-#                  esac; }
-#else filepath() { echo $1; }
-#fi
+# Fix an absolute Cygwin path to an absolute native Windows path.
+# (Also copes with options like -I/path etc.)
+# This routine is only strictly required when the compiler proper
+# was built with GHC/mingw32.
+if echo $MACHINE | grep -y CYGWIN >/dev/null
+then filepath() { case $1 in
+                    -?/*) dir=`echo $1 | cut -c3-`
+                          dir=`cygpath -w "$dir" | tr '\\\\' '/'`
+                          echo `echo $1 | cut-c1-2`$dir ;;
+                    /*)   cygpath -w "$1" | tr '\\' '/';;
+                    *)    echo $1;;
+                  esac; }
+else filepath() { echo $1; }
+fi
 
 # If USINGRTS is non-zero then flags to the runtime is enclosed in
 #     +RTS runtimeflags -RTS,
@@ -105,7 +107,7 @@ LDLAST="-lm"
 
 HEAP=
 AOUT=a.out
-TMP=/tmp
+TMP=`filepath ${TEMP-/tmp}`
 
 # Define a routine for getting OPTIONS pragmas out of source files.
 checkPragmas () {
@@ -189,8 +191,8 @@ processArgs () {
     -nomain)    MAINROUTINE="" ;;
     -noansiC)   CPPAS=${CPPDEFAULT}
                 COMPFLAGS=$COMPFLAGS" "$1;;
-    -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries
-                NHC98INCDIR=$NHC98INCDIR/libraries
+    -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries	# not needed
+                NHC98INCDIR=$NHC98INCDIR/libraries	# not needed
                 COMPFLAGS=$COMPFLAGS" "$1;;
     -package)   shift; package=$1;
                 PACKAGES=$PACKAGES" $package"
@@ -207,14 +209,14 @@ processArgs () {
     -i*   ) CINCDIRS=$CINCDIRS" -I"`echo $1 | cut -c3-`
             HINCDIRS=$HINCDIRS" -I"`echo $1 | cut -c3-` ;;
     -I*   ) CINCDIRS=$CINCDIRS" "$1
-#           HINCDIRS=$HINCDIRS" "`filepath $1` ;;
-            HINCDIRS=$HINCDIRS" "$1 ;;
+            HINCDIRS=$HINCDIRS" "`filepath $1` ;;
+#           HINCDIRS=$HINCDIRS" "$1 ;;
     -s    ) LDFLAGS=$LDFLAGS" "$1;;
     -static) LDFLAGS=$LDFLAGS" "$1;;
-#   -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "`filepath $1`
-#           COMPFLAGS=$COMPFLAGS" "`filepath $1`;;
-    -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "$1
-            COMPFLAGS=$COMPFLAGS" "$1;;
+    -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "`filepath $1`
+            COMPFLAGS=$COMPFLAGS" "`filepath $1`;;
+#   -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "$1
+#           COMPFLAGS=$COMPFLAGS" "$1;;
     -D*   ) CPPFLAGS=$CPPFLAGS" "$1;;
     -U*   ) CPPFLAGS=$CPPFLAGS" "$1;;
     -*    ) COMPFLAGS=$COMPFLAGS" "$1;;
@@ -267,6 +269,7 @@ findObjDir () {
     case $dirname in
       /*)   echo ${OBJDIR-$dirname};;
       ../*) echo ${OBJDIR-$dirname};;
+      ./*)  echo ${OBJDIR-$dirname};;
       *)    if [ -z "$OBJDIR" ]
             then echo $dirname
             else echo $OBJDIR/$dirname
@@ -303,10 +306,8 @@ case $GRFILES in
     fi
     if test $VFLAG -eq 1
     then
-#     echo `basename $GREENCARD` $GREENCARDOPTS -P`filepath $NHC98INCDIR` `filepath $GRFILE`
       echo `basename $GREENCARD` $GREENCARDOPTS -P$NHC98INCDIR $GRFILE
     fi
-#   $GREENCARD $GREENCARDOPTS -P`filepath $NHC98INCDIR` `filepath $GRFILE`
     $GREENCARD $GREENCARDOPTS -P$NHC98INCDIR $GRFILE
     if test $? -ne 0
     then
@@ -477,10 +478,10 @@ case $COMPFILES in
 
       if test $VFLAG -eq 1
       then
-#       echo  $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS -I. $UNLIT -P`filepath ${NHC98INCDIR}` `filepath $HSFILE` `filepath $POSTGRFILE` `filepath $TMPHIFILE` `filepath $TMPCPPASFILE`
+#       echo  $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS -I. $UNLIT -P${NHC98INCDIR} `filepath $HSFILE` $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
         echo  $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS -I. $UNLIT -P${NHC98INCDIR} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
       fi
-#     $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -I. -P`filepath ${NHC98INCDIR}` `filepath $HSFILE` `filepath $POSTGRFILE` `filepath $TMPHIFILE` `filepath $TMPCPPASFILE`
+#     $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -I. -P${NHC98INCDIR} `filepath $HSFILE` $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
       $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS -I. $UNLIT -P${NHC98INCDIR} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
 
       if test $? -ne 0
