@@ -1,0 +1,239 @@
+@B@<Unix-like systems@>
+
+This section defines the system-specific interface for the runtime on
+Unix-like systems.
+
+@$@<Unix-like interface@>==@{@-
+#include <setjmp.h>
+
+@<Unix-like output definitions@>
+@<Unix-like EXITPROG definition@>
+@<Unix-like memory allocation definitions@>
+@<Exit mutator jump buffer@>
+@}
+
+@$@<Unix-like routines@>==@{@-
+#include <setjmp.h>
+#include "runtime.h"
+
+@<Unix-like output routines@>
+@<main Unix routine@>
+@}
+
+@O@<timeUnix.c@>==@{@-
+#include <stdlib.h>
+#include <stdio.h>
+#ifdef __hppa__
+#define _POSIX_SOURCE
+#endif
+#include <sys/types.h>
+#include <sys/times.h>
+#include "runtime.h"
+
+@<timerClear routine@>
+@<timerRead routine@>
+@<timerStart and timerStop routines@>
+@}
+
+@C@<Main Unix support@>
+
+On Unix systems we process the command-line arguments that are passed to
+@{main@}.  Then we call @{nhc_main@} to actually start the runtime.
+
+The @{exit_mutator@} jump buffer provides a way for the @{exitWith@}
+builtin to terminate execution.
+
+@$@<Exit mutator jump buffer@>==@{@-
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+extern jmp_buf exit_mutator;
+#else
+extern sigjmp_buf exit_mutator;
+#endif
+@}
+
+FIXME: At the moment there is no real command-line processing so the
+arguments are just dummied up to just contain the program name.
+
+@$@<main Unix routine@>==@{@-
+int Argc;
+char *Argv[2] = { NULL, NULL };
+
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+jmp_buf exit_mutator;
+#else
+sigjmp_buf exit_mutator;
+#endif
+
+int main(int argc, char *argv[])
+{
+    Argc = 1;
+    Argv[0] = argv[0];
+
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+    if (!setjmp(exit_mutator)) {
+#else
+    if (!sigsetjmp(exit_mutator, 0)) {
+#endif
+        nhc_main();
+        ERROR_OUT("What, nhc_main returned!\n");
+        EXITPROG(-1);
+    }
+}
+@}
+
+On Unix-like systems output is just sent to standard output and error as
+one would expect.  The standard I/O facilities are used.
+
+@$@<Unix-like output definitions@>==@{@-
+#include <stdio.h>
+
+#define ERROR_OUT _error_out
+#define FLUSH_OUT fflush(stdout)
+#define FLUSH_ERR fflush(stderr)
+
+extern @<_error_out header@>;
+@}
+
+@$@<_error_out header@>@M==@{@-
+void _error_out(const char *fmt, ...)@-
+@}
+
+@$@<Unix-like output routines@>==@{@-
+#include <stdio.h>
+#include <stdarg.h>
+
+@<_error_out header@>
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf (stderr, fmt, ap);
+    va_end(ap);
+}
+@}
+
+@{EXITPROG@} just turns into the @{exit@} system call.  We're not using
+@{EXIT@} because that's a bytecode instruction.
+
+@$@<Unix-like EXITPROG definition@>==@{@-
+#define EXITPROG exit
+@}
+
+@{MALLOC@} and @{REALLOC@} are just the standard @{malloc@} and
+@{realloc@} library function.
+
+@$@<Unix-like memory allocation definitions@>==@{@-
+#define MALLOC malloc
+#define REALLOC realloc
+@}
+
+@C@<Unix timer support@>
+
+This section supports the collection of user-level timings on Unix. 
+System time spent on behalf of the program is ignored.
+
+@$@<Timer interface@>==@{@-
+@<TIMER_VALUE macro@>
+
+@<Timer type@>
+@<Clock rate@>
+
+extern @<timerClear header@>;
+extern @<timerStart header@>;
+extern @<timerStop header@>;
+@}
+
+Timers are structures with two unsigned integer components, although the 
+high integer is only currently used to detected overflow of the low half.
+
+@$@<Timer type@>+=@{@-
+typedef struct {
+  unsigned int l;
+  unsigned int h;
+} timer;
+@}
+
+Timers count in multples of the clock rate which we export as @{HZ@}.
+
+@$@<Clock rate@>+=@{@-
+#ifdef __arm
+#define HZ 100
+#else
+#include <sys/param.h>
+#endif
+
+#ifndef HZ
+#ifdef __mips
+#define HZ 50
+#else
+#define HZ 100
+#endif
+#endif
+@}
+
+Timers are reset by @{timerClear@}.
+
+@$@<timerClear header@>@M==@{@-
+void timerClear(timer *t)@-
+@}
+
+@$@<timerClear routine@>+=@{@-
+@<timerClear header@>
+{
+  t->l = 0;
+  t->h = 0;
+}
+@}
+
+@{timerStart@} and @{timerStop@} @/bookend@/ activity that is to be timed.
+To avoid having to store the cumulative total and the start time of the 
+region currently being measured, we just subtract the start time from the
+current total and add it in again when we stop.  Note, this means that the
+timer value is highly inaccurate before we stop so it should only be read
+while stopped.
+
+@$@<timerStart header@>@M==@{@-
+void timerStart(timer *t)@-
+@}
+
+@$@<timerStop header@>@M==@{@-
+void timerStop(timer *t)@-
+@}
+
+@$@<timerStart and timerStop routines@>==@{@-
+@<timerStart header@>
+{
+  timer t2;
+  timerRead(&t2);
+  t->l -= t2.l;
+}
+
+@<timerStop header@>
+{
+  timer t2;
+  timerRead(&t2);
+  t->l += t2.l;
+}
+@}
+
+@{timerRead@} is the routine that actually accesses the user time from the
+system for @{timerStart@} and @{timerStop@}.
+
+@$@<timerRead routine@>==@{@-
+static void timerRead(timer *t)
+{
+  struct tms buffer;
+  if (times(&buffer) == (clock_t)-1) {
+    perror("times failed");
+    EXITPROG(-1);
+  }
+  t->l = (unsigned int)buffer.tms_utime;
+  t->h = 0;
+}
+@}
+
+Finally, @{TIMER_VALUE@} returns the current value of a timer.  As noted
+earlier, this is only valid outside a measuring region.
+
+@$@<TIMER_VALUE macro@>==@{@-
+#define TIMER_VALUE(t) ((double)t.l/(double)HZ)
+@}

@@ -1,0 +1,26 @@
+TODO list
+---------
+
+- check that it formats properly with the standard FunnelWeb instead of the
+Eli version
+
+- resolve FIXMEs
+
+- add more overview description including relationship to other parts of
+the runtiem (i.e., Builtin, Integer and Mk)
+
+- add profiling etc left out of original version
+
+- do something with blocks marked #if 0 or equiv
+
+- standardise all the different schemes for debugging information output
+(SHOW, EDB, DEBUG, debug etc), make sure all modules have suitable tracing
+support
+
+- add timer stuff to system interface description
+
+- incorporate dump.c
+
+- add Wadler optimisation stuff back into the marking module (see the empty
+@<Perform Wadler optimisation@> macro)
+

@@ -1,0 +1,38 @@
+@A@<System-specific interfaces@>
+
+This module encapsulates interfaces to system-specific functionality.  It
+is not present in the original runtime but it is introduced here to make
+it easier to port the runtime to radically different platforms such as
+Palm OS.
+
+@O@<system.c@>==@{@-
+@<Unix-like routines@>
+@}
+
+@$@<System interface@>==@{@-
+@<Unix-like interface@>
+@}
+
+@B@<Interface description@>
+
+Each of the sets of system-specific definitions provides an entry point to
+the runtime appropriate to that system (e.g., @{main@} on Unix systems).
+
+@{Argc@} and @{Argv@} are set to the command line argument count and value
+array after any runtime-specific arguments have been removed.
+
+The macro @{ERROR_OUT@} provides a portable way to output error messages.
+Its parameters are as in @{printf@}.  @{FLUSH_OUT@} and @{FLUSH_ERR@} just
+flush the standard output and error streams (if that makes sense).
+
+@{EXITPROG@} triggers a process exit with numeric status on platforms for
+which this makes sense.
+
+@{MALLOC@} allocates dynamic memory given the number of bytes needed. 
+@{REALLOC@} alters the size of a previously @{MALLOC@}ed dynamic memory
+area.
+
+@! Following are includes of specific system support, one subsection
+@! per system.
+
+@i unix.fwi

@@ -1,0 +1,171 @@
+@A@<Main module@>
+
+The main module is responsible for coordinating the initialisation,
+execution and finalisation of the runtime.  The actual path taken to get
+to the code here is system dependent.
+
+@O@<main.c@>==@{@-
+#include "runtime.h"
+#include "stableptr.h"
+
+@<Error handler@>
+@<Main timers@>
+@<Exit code@>
+
+@<nhc_main routine@>
+@<nhc_abort routine@>
+@}
+
+@$@<Main interface@>==@{@-
+extern @<Main timers@>
+extern @<Exit code@>;
+
+extern @<nhc_main header@>;
+extern @<nhc_abort header@>;
+@}
+
+@B@<nhc_main routine@>
+
+The @{nhc_main@} routine starts the runtime proper rolling.  The actual
+code that is performed is contributed by the separate runtime modules
+described in later sections.  Note that the actual entry point to the
+program is system-dependent. Whatever it is, it calls @{nhc_main@} when
+ready to go.  @{nhc_main@} sets everything up, runs the user program and
+then shuts everything down.
+
+@$@<nhc_main header@>@M==@{@-
+int nhc_main()
+@}
+
+@$@<nhc_main routine@>==@{@-
+@<nhc_main header@>
+{
+    @<Collector initialisation@>
+    @<Mutator initialisation@>
+    @<Foreign object initialisation@>
+    @<Initialise stable pointers@>
+    @<Initialise the exit code@>
+    @<Clear and start main timers@>
+    
+    @<Mutator execution@>
+
+    @<Stop main timers@>
+    @<Print execution times@>
+    @<Exit the program@>
+}
+@}
+
+The global @{exit_code@} determines the exit status of the program.  It
+can be set by the Haskell function @{exitWith@}, for example.
+
+@$@<Exit code@>@M==@{@-
+int exit_code;
+@}
+
+@$@<Initialise the exit code@>==@{@-
+exit_code = 0;
+@}
+
+@$@<Exit the program@>==@{@-
+EXITPROG(exit_code);
+@}
+
+@B@<Abort handling@>
+
+This function is always used when an error of a Haskell program cannot be
+caught by the Haskell program.  It is not (yet) used for nhc internal
+errors (e.g. wrong bytecode)
+ 
+@$@<nhc_abort header@>@M==@{@-
+void nhc_abort(char *errorMsg)@-
+@}
+
+@$@<nhc_abort routine@>==@{@-
+@<nhc_abort header@>
+{
+  ERROR_OUT("%s\n",errorMsg);
+  if (haskellErrorHandler)
+     (*haskellErrorHandler)(errorMsg);
+  EXITPROG(-1);
+}
+@}
+
+An error handler can be registered by assigning to this variable. The
+error message is passed to it.
+
+@$@<Error handler@>==@{@-
+void (*haskellErrorHandler)(char *errorMsg) = NULL;
+@}
+
+FIXME: this variable is not exported in the original version so it can't
+be used in different modules. Shall we remove it?
+
+@B@<Collect timing measurements@>
+
+Two global time counts are maintained: @{totalTime@} which includes
+everything and @{runTime@} which doesn't include startup and shutdown time
+for things like profiling.
+
+FIXME: since we don't have profiling at all at the moment, these two are
+the same.
+
+@$@<Main timers@>@M==@{@-
+timer totalTime, runTime;
+@}
+
+@$@<Clear and start main timers@>==@{@-
+timerClear(&totalTime);
+timerClear(&runTime);
+timerStart(&totalTime);
+timerStart(&runTime);
+@}
+
+@$@<Stop main timers@>+=@{@-
+timerStop(&runTime);
+timerStop(&totalTime);
+@}
+
+We print the times at the end of execution.
+
+FIXME: this should be controlled by the -B flag when we have argument
+processing.
+
+@$@<Print execution times@>==@{@-
+{
+  @<Complain about timer wrap@>@(totalTime@)
+  ERROR_OUT("Total time = %7.2f\n", TIMER_VALUE(totalTime));
+  @<Complain about timer wrap@>@(gcTime@)
+  ERROR_OUT("Gc time = %7.2f\n", TIMER_VALUE(gcTime));
+  @<Complain about timer wrap@>@(runTime@)
+  ERROR_OUT("Run time = %7.2f\n", TIMER_VALUE(runTime));
+}
+@}
+
+@$@<Complain about timer wrap@>@(@1@)@M==@{@-
+if (@1.h)
+    ERROR_OUT("Timer overflow: @1 wrapped around %d times.\n", @1.h);
+@}
+
+@B@<Runtime interface@>
+
+The rest of the runtime is implemented by modules described in the
+following sections.  Many of the modules contribute to the interface
+exported by @{runtime.h@} defined here. 
+
+@O@<runtime.h@>==@{@-
+#ifndef _RUNTIME_H
+#define _RUNTIME_H
+@<System interface@>
+@<Graph interface@>
+
+@<Timer interface@>
+@<Collector interface@>
+@<Foreign object interface@>
+@<Main interface@>
+@<Mutator interface@>
+@<Newbuiltin interface@>
+@<Newtables interface@>
+#endif
+@}
+
+

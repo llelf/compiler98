@@ -1,0 +1,65 @@
+@T title titlefont centre "A Literate Haskell Runtime System"
+@T vskip 5 mm
+@T title normalfont centre "(Version 0.9, April 2005)"
+@T vskip 8 mm
+
+@T title smalltitlefont centre "Abstract"
+
+This document is a literate version of the @{nhc98@} runtime kernel for
+the Haskell programming language.  The intended audience includes a)
+students wishing to learn how a modern functional language is executed,
+and b) developers who plan to modify or port the runtime.
+
+The current version omits many features of the full runtime including
+profiling since the main aim of this exercise is to aid our understanding
+of the runtime and produce an understandable version.  Ultimately, it is
+planned to bring all of the features of the standard runtime into this
+version.
+
+@T vskip 80 mm
+@T title smalltitlefont centre "Credits"
+
+Tony Sloane (@{asloane@@ics.mq.edu.au@}) created the first version of the
+literate runtime based on code from version @{1.16@} of the @{nhc98@}
+distribution. He coordinates the project and edits this document.  Malcolm
+Wallace (@{malcolm@@cs.york.ac.uk@}) is the current maintainer of
+@{nhc98@} and contributes many insights into the operation of the runtime.
+
+FIXME: Credit original author and substantial code contributors.
+
+This document contains portions of the @{nhc98@} implementation notes
+written by Malcolm Wallace and previously published in the @{nhc98@}
+distribution. 
+
+@T new_page
+
+@T table_of_contents
+
+@! The actual code comes from the modules included below.  The order of
+@! inclusion here should be preserved to introduce features in a logical
+@! sequence.
+
+@! The main module comes first
+
+@i main.fwi
+
+@! Then the modules defining the graph structure and memory allocation
+
+@i graph.fwi
+@i collector.fwi
+@i mark.fwi
+
+@! Then the modules concerned with actually executing the program
+
+@i bytecode.fwi
+@i mutator.fwi
+@i newbuiltin.fwi
+
+@! Finally the more specialised support modules
+
+@i cdata.fwi
+@i cinterface.fwi
+@i newtables.fwi
+@i stableptr.fwi
+@i system.fwi
+

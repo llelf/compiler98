@@ -1,0 +1,778 @@
+@A@<Graph structure@>
+
+This section describes the memory layout for heap nodes and the various
+access and update macros.  It also describes code structures.
+
+FIXME: standardize node and cell terminology in this file and elsewhere.
+
+The macros defined in this module can end up in @{runtime.h@} (defined by
+the main module) or in @{node.h@}, @{newmacros.h@} or @{mutlib.h@}
+(defined by this module). The placement of individual macros in specific
+headers seems somewhat arbitrary but is defined so that only the relevant
+parts are included into the various places that use the macros.  We stick
+with the previous structure so we can work with the @{nhc98@} compiler
+unchanged.
+
+@O@<node.h@>==@{@-
+#ifndef _NODE_H
+#define _NODE_H
+
+#include "runtime.h"
+#include "newmacros.h"
+
+@<Tag access macros@>
+@<Zap bit macros@>
+@<BUILD_IND macro@>
+@<Indirect address macros@>
+@<Function info macros@>
+@<Constructor info macros@>
+@<Large tag and constructor info macros@>
+@<Constructor access macros@>
+@<Argument access macros@>
+@<Value access macros@>
+@<Application access macros@>
+
+#endif
+@}
+
+@O@<newmacros.h@>==@{@-
+#include "bytecode.h"
+
+@<Word parameter macros@>
+@<Basic word macros@>
+@<Word tags@>
+@<ZAP_BIT macro@>
+@<Entry point macros@>
+@<Half word mask@>
+@<Constructor tags@>
+@<Constructor creation macros@>
+@<Large field sizes@>
+@}
+
+@O@<mutlib.h@>==@{@-
+#include "runtime.h"
+
+@<Alignment macros@>
+
+@<Graph mutlib interface@>
+@<Mutator mutlib interface@>
+@<Newtables mutlib interface@>
+@}
+
+@O@<mutlib.c@>==@{@-
+#include "runtime.h"
+#include "mutlib.h"
+#include "newmacros.h"
+
+@<Float and double constructor functions@>
+@<Float and double value access functions@>
+@}
+
+@$@<Graph interface@>==@{@-
+@<Basic types@>
+@<Node and Code types@>
+@<HeapOffset type and macro@>
+@<Extra node space macro@>
+@<Zap node macros@>
+@<IND_REMOVE macro@>
+@<Finfo type@>
+@<Cinfo type@>
+@<Coninfo type@>
+@<Boolean and Nil builders@>
+@<Value size macros@>
+@}
+
+@$@<Graph mutlib interface@>==@{@-
+@<Boolean and Nil access macros@>
+@<Value construction macros@>
+
+extern @<mk_float header@>;
+extern @<mk_double header@>;
+extern @<get_float_value header@>;
+extern @<get_double_value header@>;
+@}
+
+@B@<Types@>
+
+We define convenience types for the 32-bit versions of integers and
+unsigned characters.
+
+@$@<Basic types@>==@{@-
+typedef long Int;
+typedef unsigned long UInt;
+typedef unsigned char UChar;
+@}
+
+Nodes are represented by unsigned integers.  Code is a sequence of
+unsigned byte codes.
+
+@$@<Node and Code types@>==@{@-
+typedef UInt  Node;
+typedef Node  *NodePtr;
+typedef UChar Code;
+typedef Code  *CodePtr;
+@}
+
+The basic parameters of memory usage are expressed in the following values.
+@{WORDSHIFT@} is the @{log2@} of @{WORDSIZE@}.  @{WORDMASK@} is a mask of the
+low @{WORDSHIFT@} bits.  @{NS@} is the node size in number of bytes.
+
+@$@<Word parameter macros@>==@{@-
+#define WORDSHIFT 5
+#define WORDSIZE  (1<<WORDSHIFT)
+#define WORDMASK  (WORDSIZE-1)
+#define NS        (WORDSIZE>>3)
+@}
+
+@{HEAPOFFSET@} provides access to a heap pointer as a signed value. 
+
+FIXME: not sure why this is really needed, but it's used in a bunch of
+places.
+
+@$@<HeapOffset type and macro@>==@{@-
+typedef signed long HeapOffset;
+#define HEAPOFFSET(x)  ((HeapOffset)(x))
+@}
+
+@B@<Alignment@>
+
+Occasionally it is necessary to align the instruction pointer.  The macros
+@{ALIGNPTR@}, @{ALIGNPTR2@} and @{ALIGNPTR4@} provide alignment to pointer
+boundary (usually four byte), two, and four byte boundaries.
+
+@$@<Alignment macros@>==@{@-
+#define MASKPTR      (sizeof(void *)-1)
+#define ALIGNPTR(x)  ((MASKPTR+(Int)(x)) & ~MASKPTR)
+#define ALIGNPTR2(x) ((1+(Int)(x)) & ~1)
+#define ALIGNPTR4(x) ((3+(Int)(x)) & ~3)
+@}
+
+@B@<Basic word manipulation@>
+
+The following macros provide basic facilities for packing and unpacking words.
+
+FIXME: the use of NS here is inconsistent.  Use it in all places (e.g., TOP
+and bytes2word) or in no places?  In fact, is it right to use NS at all here?
+
+@$@<Basic word macros@>==@{@-
+#ifdef HIGH_BYTE_FIRST
+#define TOP(h)              (((h)>>8)&0xff)
+#define BOT(h)              ((h)&0xff)
+#define HW(b,a)             ((a) | ((b) << (4*NS)))
+#define FSTHW(w)            ((w)>>(4*NS))
+#define SNDHW(w)            ((w)&( (1<<(4*NS))-1))
+#define bytes2word(a,b,c,d) (unsigned)(((a&0xff)<<24) + \
+                                       ((b&0xff)<<16) + \
+                                       ((c&0xff)<<8)  + \
+                                        (d&0xff))
+#endif
+
+#ifdef LOW_BYTE_FIRST
+#define TOP(h)              ((h)&0xff)
+#define BOT(h)              (((h)>>8)&0xff)
+#define HW(b,a)             ((b) | ((a) << (4*NS)))
+#define FSTHW(w)            ((w)&( (1<<(4*NS))-1))
+#define SNDHW(w)            ((w)>>(4*NS))
+#define bytes2word(a,b,c,d) (unsigned)(((d&0xff)<<24) + \
+                                       ((c&0xff)<<16) + \
+                                       ((b&0xff)<<8)  + \
+                                        (a&0xff))
+#endif
+@}
+
+@B@<Tags@>
+
+Each heap node consists of a header word plus zero or more argument words.
+The header word has a two-bit tag in the low end that indicates the type
+of node.  @{MASK_WTAG@} is uses to access these bits.
+
+@$@<Word tags@>+=@{@-
+#define MASK_WTAG 3
+@}
+
+There are three kinds of cells: indirections (@{IND_TAG@}), variable
+applications (@{VAP_TAG@}) and data represented by constructors and their
+fields (@{CON_TAG@}).  Tag three is currently unused.
+
+@$@<Word tags@>+=@{@-
+#define IND_TAG 0
+#define VAP_TAG 1
+#define CON_TAG 2
+@}
+
+Tags are accessed using @{EXT_TAG@} (for words) and @{GET_TAG@} for pointers
+to words.
+
+@$@<Tag access macros@>==@{@-
+#define EXT_TAG(x) (MASK_WTAG & (UInt)(x))
+#define GET_TAG(p) EXT_TAG(*(p))
+@}
+
+@B@<Extra space in nodes@>
+
+For extensions such as profiling we need to be able to keep extra
+information in each heap node.  The constant @{EXTRA@} denotes how many
+extra words are present in each node.  These words are not interpreted by
+any part of the runtime except the relevant extension.  For now this is
+zero since we have no extensions yet.
+
+@$@<Extra node space macro@>==@{@-
+#define EXTRA 0
+@}
+
+@B@<Zapping nodes@>
+
+Nodes can be @/zapped@/ by setting their high bit (@{ZAP_BIT@}).
+@{ZAPPED@} tests the zap bit and @{ZAP@} sets it.  In both cases, the
+parameter is a pointer to the memory word, not the word itself.
+
+FIXME: exactly what is zapping used for?
+
+@$@<ZAP_BIT macro@>==@{@-
+#define ZAP_BIT (1L<<(WORDSIZE-1))
+@}
+
+@$@<Zap bit macros@>==@{@-
+#define ZAPPED(p) (ZAP_BIT & (UInt)*(p))
+#define ZAP(p)    (*(UInt*)(p) |= ZAP_BIT )
+@}
+
+Arguments and stack nodes can also be zapped using the @{ZAP_ARG_NODE@} and
+@{ZAP_STACK_NODE@} which are implemented in the prelude.
+
+@$@<Zap node macros@>==@{@-
+#define ZAP_ARG_NODE   ((NodePtr) CF_Prelude_46_95zap_95arg)
+#define ZAP_STACK_NODE ((NodePtr) CF_Prelude_46_95zap_95stack)
+
+extern Node CF_Prelude_46_95zap_95arg[];
+extern Node CF_Prelude_46_95zap_95stack[];
+@}
+
+@B@<Indirection nodes@>
+
+In an indirection node the non-tag part of the word is a pointer to the
+target of the redirection which relies on pointers having an alignment of
+four.
+
+@$@<Indirection nodes@>@Z==@{@-
+        -------------
+INDIR   | *node   00|
+        -------------
+@}
+
+Indirection nodes are made using @{BUILD_IND@}.
+
+@$@<BUILD_IND macro@>==@{@-
+#define BUILD_IND(p) ((Node) (IND_TAG | (UInt)(p)))
+@}
+
+Chains of indirections can be removed using @{IND_REMOVE@}.
+
+FIXME: not sure why it stops at zapped nodes.  Need to clarify this zapping
+stuff.
+
+@$@<IND_REMOVE macro@>==@{@-
+#define IND_REMOVE(p) \
+    while((!((int)p & ZAP_BIT)) && (0==(*p & MASK_WTAG))) p = (NodePtr)*p
+@}
+
+Extracting the address in an indirection node can be done with either the
+node itself (@{EXT_IND_ADDRESS@}) or with a pointer to it
+(@{GET_IND_ADDRESS@}).  The auxiliary macro @{EXT_WADDRESS@} extracts a
+word pointer ignoring the tag and zap bits.
+
+@$@<Indirect address macros@>==@{@-
+#define EXT_WADDRESS(x)    ((NodePtr)(~MASK_WTAG & ~ZAP_BIT & (UInt)(x)))
+#define EXT_IND_ADDRESS(x) EXT_WADDRESS(x)
+#define GET_IND_ADDRESS(p) EXT_IND_ADDRESS(*(p))
+@}
+
+@B@<Application nodes@>
+
+Application nodes represent the application of functions to zero or more
+arguments.  They comprise an information part in one word and a sequence
+of words holding arguments.
+
+@$@<Application nodes@>@Z==@{@-
+        ---------------------------
+VAP/CAP | info    x1| args ...    |
+        ---------------------------
+@}
+
+The info portion contains a pointer to the function being applied laid out
+as a sequence of bytes as follows:
+
+@$@<Application node info header@>@Z==@{@-
+        |   arity    |     0      |
+        |    ...     |    ...     |
+info    |    need    |    size    |
+        |    ...     |    ...     |
+        |     0      |   arity    |
+        |        constptr         |
+        |            "            |
+        | code
+        | ....
+@}
+
+The first part of the info block is a list of pairs giving the
+combinations of arguments needed and present.  E.g., for a function with
+arity two we have the pairs (2,0), (1,1) and (0,2), representing
+application to zero, one or two arguments, respectively.  A function
+pointer is a VAP (vector application) if all of the arguments are present
+(e.g., (0,2)) and a CAP (FIXME: what exactly does this stand for?, partial
+applications) if some of the arguments are missing (e.g., (2,0) and (1,1)).
+
+After the list of pairs comes a word @{constptr@} which is a pointer to
+the constant table for this function.  The constant table essentially
+holds the environment for this function - pointers to the functions it
+calls, but also any numeric values or literal constructors.
+
+FIXME: what is the CONSTR... bit doing?  need more expl for all of this.
+Perhaps it should be further down with the FINFO_CAF stuff.
+
+@$@<Constant table layout@>@Z==@{@-
+         | CONSTR/WCONSTR/I32/FLOAT/STRING etc
+         | *function name       This line only if profiling
+constptr | size << 16 | arity:16
+         | link field
+         | CAF_fun              This line only if arity == 0
+         | CAF/VAP/CAP etc
+         | ...
+@}
+
+After the constant table pointer comes the bytecode of the function.  In
+the code generated by the compiler this address is denoted by an @{FN@}
+label such as @{FN_Prelude_46sum@} for @{Prelude.sum@}.  When a heap
+closure is built, the function pointer which you might expect to point
+directly at the @{FN_@} symbol actually points to the appropriate byte
+pair that confirms whether it is a saturated application or not (and
+incidentally tells the runtime system how many words to expect in the
+application heap cell).
+
+The macros @{VAPTAG@} and @{CAPTAG@} are used to construct references to
+the relevant part of the header of an application given a pointer to the
+code of the function.  @{VAPTAG@} is used if all of the arguments are
+present; @{CAPTAG@} takes a parameter indicating the number of arguments
+still needed.  @{C_VAPTAG@} does the same thing as @{VAPTAG@}.
+
+FIXME: why is VAP_TAG used here and not just an offset of 1?  The tag used
+for VAPs seems unrelated to the offset required and coincidentally they are
+both 1.
+
+FIXME: not sure why we need C_VAPTAG as well.  Also, it doesn't use
+useLabel on fun which doesn't do anything but should be consistent or
+remove completely.
+
+@$@<Entry point macros@>==@{@-
+#define useLabel(name)   ((unsigned)name)
+#define VAPTAG(fun)      useLabel(fun) - (NS + 2) + VAP_TAG
+#define CAPTAG(fun,need) useLabel(fun) - (NS + 2 + (2 * need)) + VAP_TAG
+#define C_VAPTAG(fun)    fun - (NS + 2) + VAP_TAG
+@}
+
+These macros calculate a byte position preceding the actual function code
+code.  So @{VAPTAG@} calculates five bytes before the symbol, which is the
+last byte of the pairs that indicate arity, and hence gives the exact
+arity this function requires, meaning that applications built with a
+@{VAPTAG@}'d function must be saturated. On the other hand, @{CAPTAG@}
+calculates further backwards by two bytes for every argument that is still
+required for saturation, and must be used only to build partial
+applications.
+
+FIXME: it seems like five bytes back (and two more for each needed arg)
+would just point to the right byte of the pair.  What about the other byte?
+
+@{EXT_FINFO@} and @{GET_FINFO@} extract the function information from a
+word and pointer to a word, respectively.  The auxiliary macro
+@{EXT_HADDRESS@} extracts a halfword pointer ignoring the tag and zap bits.
+
+@$@<Finfo type@>==@{@-
+typedef UInt *Finfo;
+@}
+
+@$@<Half word mask@>==@{@-
+#define MASK_HTAG 1
+@}
+
+@$@<Function info macros@>+=@{@-
+#define EXT_HADDRESS(x) ((NodePtr)(~MASK_HTAG & ~ZAP_BIT & (UInt)(x)))
+#define EXT_FINFO(p)    (Finfo)EXT_HADDRESS(p)
+#define GET_FINFO(p)    EXT_FINFO(*(p))
+@}
+
+The @{FINFO_*@} macros provide access to the different components of the
+function information given a @{VAP@} pointer for the function.
+
+@$@<Function info macros@>+=@{@-
+#define FINFO_ARITY(p) (((UChar *)(p))[1])
+#define FINFO_CAF(p)   (FINFO_CONST(p)[2])
+#define FINFO_CODE(p)  (NS+2+(CodePtr)p)
+#define FINFO_CONST(p) (*((NodePtr **)(2+(CodePtr)p)))
+@}
+
+@{FINFO_ARITY@} returns the arity of the function from the second byte of
+the @{VAP@} pair.
+
+@{FINFO_CAF@} returns a pointer to element two of the functions constant
+table which by convention is a completely unapplied version of the
+function.  In the code generated by the compiler this entry is denoted
+by an @{F0@} label such as @{F0_Prelude_46sum@} for @{Prelude.sum@}.
+
+@{FINFO_CODE@} returns a pointer to the bytecode of the function by
+skipping over the pair of bytes representing the @{VAP@} and the constant
+table pointer.
+
+Finally, @{FINFO_CONST@} returns a pointer to the constant table by just
+accessing the pointer in the next whole word after the @{VAP@} pair.
+
+FIXME: these macros all seem to be assuming that p points to the VAP 
+pair for the function and not to the arity byte of the pair as the VAPTAG
+macro above seems to create?  What am I missing?
+
+The @{VAP_CONST@} and @{VAP_CODE@} macros are convenience macros for
+access to the constant table and code sections of a function given its
+@{VAP@} pointer.
+
+@$@<Function info macros@>+=@{@-
+#define VAP_CONST(p) FINFO_CONST(GET_FINFO(p))
+#define VAP_CODE(p)  FINFO_CODE(GET_FINFO(p))
+@}
+
+The following macros do the same things as the @{FINFO@} ones but in the
+context of non-completely applied functions (i.e., @{CAP@}s).
+
+@$@<Cinfo type@>==@{@-
+typedef UInt *Cinfo;
+@}
+
+@$@<Constructor info macros@>==@{@-
+#define EXT_CINFO(p)   EXT_FINFO(p)
+#define GET_CINFO(p)   EXT_CINFO(*(p))
+#define CINFO_NEED(p)  (((UChar *)(p))[0])
+#define CINFO_SIZE(p)  (((UChar *)(p))[1])
+#define CINFO_FINFO(p) ((Finfo)((UInt)p+(UInt)2*CINFO_NEED(p)))
+#define CINFO_CODE(p)  FINFO_CODE(CINFO_FINFO(p))
+@}
+
+@B@<Constructor nodes@>
+
+Constructor nodes are denoted with the tag @{CON_TAG@}.  In addition the
+next two bits contain an extra tag that describes the variety of layout in
+the rest of the cell.  @{MASK_CON@} masks out just these bits.  Tag two is
+currently unused.  
+
+@$@<Constructor tags@>==@{@-
+#define MASK_CON  0x0c
+#define CON_DATA  0x00
+#define CON_PTRS  0x04
+#define CON_WORDS 0x0c 
+@}
+
+The @{EXT_LARGETAG@} and @{GET_LARGETAG@} macros return the node and
+constructor tags for a node and node pointer, respectively. 
+@{EXT_CONINFO@} and @{GET_CONINFO@} return the constructor info without
+the node tag.
+
+FIXME: collector seems to use EXT_CONINFO and then something like
+CONINFO_PSIZE.  Presumably could just use CONINFO_PSIZE by itself since
+the node tag will get shifted out by the macro, no need to mask it
+out first.
+
+@$@<Coninfo type@>==@{@-
+typedef UInt Coninfo;
+@}
+
+@$@<Large tag and constructor info macros@>==@{@-
+#define EXT_LARGETAG(x) ((MASK_CON|MASK_WTAG) & (UInt)(x))
+#define GET_LARGETAG(p) EXT_LARGETAG(*(p))
+
+#define EXT_CONINFO(p)  (Coninfo)(~MASK_WTAG & (UInt)p)
+#define GET_CONINFO(p)  EXT_CONINFO(*(p))
+@}
+
+A @{CON_DATA@} cell contains a mixture of pointer and integer values.  The
+@{size@} field gives the total size of the cell and @{psize@} the number
+of pointers in the cell; the pointers come first in the rest of the cell. 
+The @{number@} field gives the number of the particular constructor being
+applied in this cell.  @{CONSTR@} builds a @{CON_DATA@} header.
+
+FIXME: confirm claim that pointers come first.
+
+@$@<Mixed data cells@>@Z==@{@-
+size:8,  psize:8,  number:12, 00:2,  tag:2
+@}
+
+@$@<Constructor creation macros@>+=@{@-
+#define CONSTR(c,s,ws) \
+    (((s)<<24) | (((s)-(ws))<<16) | ((c)<<4) | CON_DATA | CON_TAG)
+@}
+
+These macros extract the fields of a @{CON_DATA@} cell.  They should only be
+applied to the results of @{GET_CONINFO@} to make sure that unrelated bits
+are removed.  Note: this doesn't matter at the moment because the tag is at
+the low end and would get shifted out anyway, but other tag placements would
+cause problems.
+
+@$@<Constructor access macros@>+=@{@-
+#define CONINFO_SIZE(p)   (((p)>>24)&0xff)
+#define CONINFO_PSIZE(p)  (((p)>>16)&0xff)
+#define CONINFO_NUMBER(p) (((p)>>4)&0xfff)
+@}
+
+Special uses of @{CONINFO_NUMBER@} are to return the constructor number
+itself (@{GET_CONSTR@}) and to return a Boolean value
+(@{GET_BOOL_VALUE@}).  Note that for the Boolean type the constructors are
+in the order @{False@} then @{True@} so the constructor number is the
+value.
+
+@$@<Constructor access macros@>+=@{@-
+#define GET_CONSTR(p)         CONINFO_NUMBER(GET_CONINFO(p))
+#define GET_BOOL_VALUE(p)     CONINFO_NUMBER(GET_CONINFO(p))
+@}
+
+A @{CON_PTRS@} cell contains only pointers.  The @{size@} field says how
+many there are (currently limited to 26 bits).  @{CONSTRP@} builds a
+@{CON_PTRS@} header.
+
+FIXME: describe the use(s) of the xx field (if any).
+
+@$@<Pointer-only data cells@>@Z==@{@-
+size:LARGE_SIZE,  xx:LARGE_EXTRA  01:2,  tag:2
+@}
+
+@$@<Constructor creation macros@>+=@{@-
+#define CONSTRP(s,e) \
+    (((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | \
+     CON_PTRS | CON_TAG)
+@}
+
+These constants must add up to 28 bits.
+
+@$@<Large field sizes@>==@{@-
+#define LARGE_EXTRA 2
+#define LARGE_SIZE  26
+@}
+
+A @{CON_WORDS@} cell contains only integer words.  The @{size@} field says
+how many there are (limited as in the @{CON_PTRS@} case).  @{CONSTRW@}
+builds a @{CON_WORDS@} header.
+
+@$@<Integer-only data cells@>@Z==@{@-
+size:LARGE_SIZE,  xx:LARGE_EXTRA  11:2,  tag:2
+@}
+
+@$@<Constructor creation macros@>+=@{@-
+#define CONSTRW(s,e) \
+    (((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | \
+     CON_WORDS | CON_TAG)
+@}
+
+The following macros extra the large fields from @{CON_PTRS@} and
+@{CON_WORDS@} cells.
+
+@$@<Constructor access macros@>+=@{@-
+#define ABS(a) ((a)<0?-(a):a)
+
+#define CONINFO_LARGESIZES(p) (((Int)p)>>(4+LARGE_EXTRA))
+#define CONINFO_LARGESIZEU(p) (ABS(((Int)p)>>(4+LARGE_EXTRA)))
+#define CONINFO_LARGEEXTRA(p) (((p)>>4)&((1<<LARGE_EXTRA)-1))
+@}
+
+@C@<Accessing arguments@>
+
+Each constructor cell contains zero or more arguments.  The following
+macros provide access to the arguments by skipping from the header over
+any extra words in the cell.  All of these macros assume that they get a
+pointer to the node, not the node itself.
+
+@{GET_POINTER_ARG1@} and @{GET_VALUE_ARG1@} both access the @/ith@/ argument
+returning it as a node pointer or node, respectively.  @{GET_INT_ARG1@} returns
+the @/ith@/ argument as an integer.
+
+@$@<Argument access macros@>==@{@-
+#define GET_POINTER_ARG1(p,i) (NodePtr)((p)[HEAPOFFSET(EXTRA+(i))])
+#define GET_VALUE_ARG1(p,i)   (Node)((p)[HEAPOFFSET(EXTRA+(i))])
+#define GET_INT_ARG1(p,i)     (Int)((p)[HEAPOFFSET(EXTRA+(i))])
+@}
+
+@{GET_INT_VALUE@} is a shortcut to get the first integer argument value.  
+Similarly, there are macros for accessing character arguments and arguments
+of variable integer sizes.
+
+@$@<Value access macros@>==@{@-
+#define GET_INT_VALUE(p)      GET_INT_ARG1(p,1)
+#define GET_CHAR_VALUE(p)     (char)GET_INT_VALUE(p)
+#define GET_8BIT_VALUE(p)     (unsigned char)GET_INT_VALUE(p)
+#define GET_16BIT_VALUE(p)    (unsigned short)GET_INT_VALUE(p)
+#define GET_32BIT_VALUE(p)    (unsigned long)GET_INT_VALUE(p)
+@}
+
+@{GET_APPLY_FUN@} and @{GET_APPLY_ARG@} access the fucntion and argument
+parts of an application, respectively.
+
+@$@<Application access macros@>==@{@-
+#define GET_APPLY_FUN(p)      GET_POINTER_ARG1(p,1)
+#define GET_APPLY_ARG(p)      GET_POINTER_ARG1(p,2)
+@}
+
+@B@<Constant nodes@>
+
+Standard boolean values can be accessed using @{GET_BOOL@}.  The true and
+false values are implemented by fixed Prelude values.  Similarly for
+@{GET_NIL@}.  See @{newtables.fwi@} for integers and characters.
+
+@$@<Boolean and Nil access macros@>==@{@-
+#define GET_BOOL(b) (b?(NodePtr)CON_TRUE:(NodePtr)CON_FALSE)
+#define GET_NIL()   (NodePtr)CON_NIL
+@}
+
+@$@<Boolean and Nil builders@>==@{@-
+#define CON_TRUE  ((Node)C0_Prelude_46True)
+#define CON_FALSE ((Node)C0_Prelude_46False)
+#define CON_NIL   ((Node)C0_Prelude_46_91_93)
+
+extern Node C0_Prelude_46False[];
+extern Node C0_Prelude_46True[];
+extern Node C0_Prelude_46_91_93[];
+@}
+
+@B@<Building applications, lists, integers and enums@>
+
+@{MK_VAP1@} builds a @{VAP@} node representing the application of a
+function to one argument.  The resulting node size is given by
+@{SIZE_VAP1@}.
+
+@$@<Value construction macros@>+=@{@-
+#define MK_VAP1(r,f,a) (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a)
+@}
+
+@$@<Value size macros@>+=@{@-
+#define SIZE_VAP1 (EXTRA+2)
+@}
+
+@{MK_CONS@} builds a cons cell containing its arguments.
+
+@$@<Value construction macros@>+=@{@-
+#define CONSTR_CONS ((Node)CONSTR(1,2,0))
+#define MK_CONS(r,f,a) \
+    (r)[0] = CONSTR_CONS; (r)[1+EXTRA] = (f); (r)[2+EXTRA] = (a)
+@}
+
+@$@<Value size macros@>+=@{@-
+#define SIZE_CONS (EXTRA+3)
+@}
+
+The @{MK_INT@} and @{MK_ENUM@} macros just create nodes containing a single
+integer value or an enumerated value, respectively.  Note that the latter
+has no extra words because the constructor is the value.
+
+@$@<Value construction macros@>+=@{@-
+#define CONSTR_INT   ((Node)CONSTRW(1,0))
+#define MK_INT(r,i)  (r)[0] = CONSTR_INT; (r)[1+EXTRA] = (Node)(i)
+#define MK_ENUM(r,i) (r)[0] = (Node)CONSTR(i,0,0)
+@}
+
+@$@<Value size macros@>+=@{@-
+#define SIZE_INT  (EXTRA+2)
+#define SIZE_ENUM (EXTRA+1)
+@}
+
+@B@<Building and accessing float and double values@>
+
+Float and double values are created by @{mk_float@} and @{mk_double@}. 
+Routines are used instead of macros because we use a variant record hack
+to convert the values into one or two integers.
+
+@$@<mk_float header@>@M==@{@-
+void mk_float(NodePtr p,float f)@-
+@}
+
+@$@<mk_double header@>@M==@{@-
+void mk_double(NodePtr p,double f)@-
+@}
+
+@$@<Float and double constructor functions@>==@{@-
+@<mk_float header@>
+{
+  union {
+    float f;
+    int   i;
+  } conv;
+  
+  conv.f = f;
+  p[0] = CONSTR_FLOAT;
+  p[EXTRA+1] = conv.i;
+}
+
+@<mk_double header@>
+{
+  union {
+    double d;
+    int i[2];
+  } conv;
+  conv.d = f;
+  p[0] = CONSTR_DOUBLE;
+  p[EXTRA+1] = conv.i[DOUBLE_L];
+  p[EXTRA+2] = conv.i[DOUBLE_H];
+}
+@}
+
+@$@<Value construction macros@>+=@{@-
+#define CONSTR_FLOAT  CONSTR_INT
+#define CONSTR_DOUBLE ((Node)CONSTRW(2,0))
+@}
+
+FIXME: why use CONSTR_INT here?  Surely it's safer to define it separately
+as CONSTRW(1,0) in case the layout changes.
+
+@{DOUBLE_H@} and @{DOUBLE_L@} define the packing order for the two halves
+of a double value.
+
+@$@<Value construction macros@>+=@{@-
+#define DOUBLE_H      1
+#define DOUBLE_L      0
+@}
+
+The following macros specify the size of the float and double nodes
+returned by @{mk_float@} and @{mk_double@}.
+
+@$@<Value size macros@>+=@{@-
+#define SIZE_DOUBLE (EXTRA+3)
+#define SIZE_FLOAT  (EXTRA+2)
+@}
+
+@{get_float_value@} and @{get_double_value@} just return the numeric value
+out of a heap cell of the appropriate type.
+
+@$@<get_float_value header@>@M==@{@-
+float get_float_value(NodePtr p)@-
+@}
+
+@$@<get_double_value header@>@M==@{@-
+double get_double_value(NodePtr p)@-
+@}
+
+@$@<Float and double value access functions@>==@{@-
+@<get_float_value header@>
+{
+  union {
+    float  f;
+    Int    i;
+  } conv;
+  conv.i = p[EXTRA+1];
+  return conv.f;
+}
+
+@<get_double_value header@>
+{
+  union {
+    double d;
+    int i[2];
+  } conv;
+  conv.i[DOUBLE_L] = p[EXTRA+1];
+  conv.i[DOUBLE_H] = p[EXTRA+2];
+  return conv.d;
+}
+@}
+
+
