@@ -83,7 +83,7 @@ searchType st (arrow,io) info =
         (IOResult . dropPure . toTid . head) nts
       else case lookupAT st c of
         Just i | isRealData i -> Pure (toArg (tidI i))
-               | otherwise    -> toTid (getNT (ntI i))
+               | otherwise    -> toTid (getNT (isRenamingFor st i))
     toTid (NTapp t1 t2)   = toTid t1
     toTid (NTstrict t)    = toTid t
     toTid t = Pure Unknown  -- error ("Unrecognised NT: "++show t)
