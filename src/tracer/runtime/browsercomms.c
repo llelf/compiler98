@@ -757,7 +757,7 @@ dump(FILE *sock, int level, NodePtr t)
            ToBrowser(sock, str);
 	   dumpSR(sock, GET_POINTER_ARG1(t, 3));
 	   showSymbol(GET_POINTER_ARG1(t, 2), &mod, &name, &defpos, &pri);
-	   sprintf(&str[0], "%s.hs", mod);
+	   sprintf(&str[0], "%s", mod);
 	   ToBrowser(sock, str);
 	   ToBrowser(sock, " ");
 	   if (name[0] == '\0')
