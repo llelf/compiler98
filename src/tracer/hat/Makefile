@@ -62,13 +62,10 @@ $(OBJDIR)/nodelist.o : nodelist.h FunTable.h hatinterface.h Expressions.h
 $(OBJDIR)/hatgeneral.o : hatgeneral.h hatgeneral.c
 $(OBJDIR)/detect.o : detect.h FunTable.h hatinterface.h Expressions.h nodelist.h hashtable.h
 $(DEST)/hat-detect: hat-detect.c $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
-	$(CC) $(LINKFLAGS) hat-detect.c $(THOROBJS) \
-		-o $(DEST)/hat-detect
+	$(CC) hat-detect.c $(THOROBJS) -o $(DEST)/hat-detect $(LINKFLAGS)
 $(DEST)/hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatinterface.o $(OBJDIR)/hashtable.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
-	$(CC) $(LINKFLAGS) hat-observe.c $(THOROBJS) $(ncurses) \
-		-o $(DEST)/hat-observe
+	$(CC) hat-observe.c $(THOROBJS) -o $(DEST)/hat-observe $(LINKFLAGS)
 $(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatinterface.o $(OBJDIR)/hatgeneral.o
-	$(CC) $(LINKFLAGS) hat-checki.c $(THOROBJS) $(ncurses) \
-		-o $(DEST)/hat-checki
+	$(CC) hat-checki.c $(THOROBJS) -o $(DEST)/hat-checki $(LINKFLAGS)
 
 
