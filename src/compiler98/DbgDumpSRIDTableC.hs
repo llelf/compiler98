@@ -14,6 +14,7 @@ import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
 import EmitState
 import DbgTrans(SRIDTable)
+import GcodeLow (fixStr)
 
 #if defined(__HASKELL98__)
 #define isAlphanum isAlphaNum
@@ -80,8 +81,9 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	              ms' = case break ('.'==) (reverse ms) of
 			      ("sh", rf) -> reverse (tail rf)
 			      ("shl", rf) -> reverse (tail rf)
+			      ("gc", rf) -> reverse (tail rf)
 			      _ -> ms
-		  in reverse (takeWhile ('/' /=) (reverse ms'))
+		  in fixStr (reverse (takeWhile ('/' /=) (reverse ms'))) ""
 
           emitName p ((pos, _, tid), lab) =
 	      defineLabel p Local ("L_" ++ show lab) >|>
