@@ -11,8 +11,11 @@ then
   echo "  This might restrict your ability to use hat-trail."
 fi
 
-CLASSPATH=$NHC98LIBDIR/hat-trail.jar
-export CLASSPATH
 echo "hat-trail: starting java browser ..."
+case $MACHINE in
+  ix86-CYGWIN*) CLASSPATH=`cygpath -w -p $NHC98LIBDIR/hat-trail.jar` ;;
+  *)            CLASSPATH=$NHC98LIBDIR/hat-trail.jar ;;
+esac
+export CLASSPATH
 killall -w -q hat-connect || true
 java nhctracer.HatTrail "$@" &

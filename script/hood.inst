@@ -12,7 +12,10 @@ MACHINE=`${NHC98BINDIR}/harch`
 #fi
 
 case $# in
-  1) CLASSPATH=$NHC98LIBDIR/hood.jar
+  1) case $MACHINE in
+       ix86-CYGWIN*) CLASSPATH=`cygpath -w -p $NHC98LIBDIR/hood.jar` ;;
+       *)            CLASSPATH=$NHC98LIBDIR/hood.jar ;;
+     esac
      export CLASSPATH
      echo Starting Hood user interface...
      java Hood "$1" & ;;
