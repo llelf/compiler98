@@ -107,5 +107,9 @@ matchCompiler hc config =
           (error ("hmake: the compiler '"++hc++"' is not known.\n"))
           (knownCompilers config)
 
+compilerKnown :: String -> HmakeConfig -> Bool
+compilerKnown hc config =
+    any (\comp -> compilerPath comp == hc) (knownCompilers config)
+
 usualCompiler :: HmakeConfig -> CompilerConfig
 usualCompiler config = matchCompiler (defaultCompiler config) config

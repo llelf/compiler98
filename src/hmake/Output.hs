@@ -98,10 +98,13 @@ qLink opts echo graph (Program file)     =
   cmd | isUnix opts =
 	  let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
           if null goaldir then
+	    let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
 	     ++ doEcho echo (hc ++ " -o "++file++objs++" ${LDFLAGS}")
 	     ++ "\nfi\n"
           else
+	    let objs = lconcatMap (\(d,f) -> ' ':
+                                   fixFile opts "" f (oSuffix opts)) objfiles in
 	    "if ( cd "++goaldir++" && [ `$OLDER "
              ++     file ++ " "++objs++"` = 1 ] )\nthen\n"
 	     ++ doEcho echo ("cd "++goal++" && "++hc++" -o "

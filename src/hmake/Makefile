@@ -37,8 +37,9 @@ all: $(TARGETS)
 install: $(TARGETS)
 config:
 	sh $(BUILDDIR)/hmake3.config
-cfiles: $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
+cfiles: clean $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
 fromC: $(OBJDIR)
+	$(HC) $(HFLAGS) -C Local.hs	# patch local configuration first
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
 	$(HC) $(HFLAGS)    -o $(MKCONFIG) -d $(OBJDIR) MkConfig.$C $(CFGCFILES)
