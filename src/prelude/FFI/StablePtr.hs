@@ -13,9 +13,9 @@ module FFI
 import FFIBuiltin (StablePtr,Addr)
 import Ptr
 
-foreign import "makeStablePtr"  newStablePtr   :: a -> IO (StablePtr a)
-foreign import "derefStablePtr" deRefStablePtr :: StablePtr a -> IO a
-foreign import "freeStablePtr"  freeStablePtr  :: StablePtr a -> IO ()
+foreign import ccall "makeStablePtr"  newStablePtr   :: a -> IO (StablePtr a)
+foreign import ccall "derefStablePtr" deRefStablePtr :: StablePtr a -> IO a
+foreign import ccall "freeStablePtr"  freeStablePtr  :: StablePtr a -> IO ()
 
 castStablePtrToPtr :: StablePtr a -> Ptr ()
 castStablePtrToPtr s = Ptr (stablePtrToAddr s)
@@ -23,7 +23,7 @@ castStablePtrToPtr s = Ptr (stablePtrToAddr s)
 castPtrToStablePtr :: Ptr () -> StablePtr a
 castPtrToStablePtr (Ptr a) = addrToStablePtr a
 
-foreign cast stablePtrToAddr :: StablePtr a -> Addr	--DEPRECATED
-foreign cast addrToStablePtr :: Addr -> StablePtr a	--DEPRECATED
+foreign import cast stablePtrToAddr :: StablePtr a -> Addr	--DEPRECATED
+foreign import cast addrToStablePtr :: Addr -> StablePtr a	--DEPRECATED
 
 makeStablePtr = newStablePtr	-- DEPRECATED: only for backwards compatibility

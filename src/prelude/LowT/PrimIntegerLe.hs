@@ -1,5 +1,5 @@
 module Prelude where
 
-foreign import "primIntegerLeC" primIntegerLe :: Integer -> Integer -> Bool
+foreign import ccall "primIntegerLeC" primIntegerLe :: Integer -> Integer -> Bool
 
 

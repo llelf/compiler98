@@ -3,7 +3,7 @@ module System where
 import FFI
 import DExitCode
 
-foreign import "system" primSystem :: PackedString -> IO Int
+foreign import ccall "system" primSystem :: PackedString -> IO Int
 
 system :: String -> IO ExitCode
 system cmd = do

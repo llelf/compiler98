@@ -9,8 +9,8 @@ module FFI
 import FFIBuiltin (Addr)
 import Numeric (showHex)
 
-foreign cast addrToInt :: Addr -> Int
-foreign cast intToAddr :: Int  -> Addr
+foreign import cast addrToInt :: Addr -> Int
+foreign import cast intToAddr :: Int  -> Addr
 
 
 instance Eq   Addr where

@@ -5,7 +5,7 @@ import FFI
 
 -- #if !defined(TRACING)
 #if 1
-foreign import primHFileSizeC :: Handle -> IO Integer
+foreign import ccall primHFileSizeC :: Handle -> IO Integer
 
 hFileSize :: Handle -> IO Integer
 hFileSize h = do
@@ -17,7 +17,7 @@ hFileSize h = do
         return i
 
 #else
-foreign import primHFileSizeC :: ForeignObj -> IO Integer
+foreign import ccall primHFileSizeC :: ForeignObj -> IO Integer
 
 hFileSize :: Handle -> IO Integer
 hFileSize (Handle h) = do

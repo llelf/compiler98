@@ -133,5 +133,5 @@ moveBytes dest src size  = _memmove dest src (fromIntegral size) >> return ()
 
 -- basic C routines needed for memory copying
 --
-foreign import "memcpy" noproto _memcpy :: Ptr a -> Ptr a -> CSize -> IO (Ptr a)
-foreign import "memmove"       _memmove :: Ptr a -> Ptr a -> CSize -> IO (Ptr a)
+foreign import noproto "memcpy" _memcpy :: Ptr a -> Ptr a -> CSize -> IO (Ptr a)
+foreign import ccall "memmove" _memmove :: Ptr a -> Ptr a -> CSize -> IO (Ptr a)

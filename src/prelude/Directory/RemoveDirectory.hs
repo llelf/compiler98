@@ -3,7 +3,7 @@ module Directory (removeDirectory) where
 import FFI
 import Monad (when)
 
-foreign import rmdir :: PackedString -> IO Int
+foreign import ccall rmdir :: PackedString -> IO Int
 
 removeDirectory :: FilePath -> IO ()
 removeDirectory fp = do

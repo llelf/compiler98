@@ -4,7 +4,7 @@ import DHandle
 import FFI
 
 
-foreign import primEqHandleC     :: ForeignObj -> ForeignObj -> Bool
+foreign import ccall primEqHandleC     :: ForeignObj -> ForeignObj -> Bool
 
 instance Eq Handle where
   (Handle h)  == (Handle j)   =   primEqHandleC h j

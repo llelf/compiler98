@@ -1,18 +1,18 @@
 module Prelude where
 
 -- Num
-foreign import "primFloatSignumC" primFloatSignum :: Float -> Float
-foreign import "primFloatAbsC" primFloatAbs :: Float -> Float
-foreign import "primFloatAddC" primFloatAdd :: Float -> Float -> Float
-foreign import "primFloatSubC" primFloatSub :: Float -> Float -> Float
-foreign import "primFloatMulC" primFloatMul :: Float -> Float -> Float
+foreign import ccall "primFloatSignumC" primFloatSignum :: Float -> Float
+foreign import ccall "primFloatAbsC" primFloatAbs :: Float -> Float
+foreign import ccall "primFloatAddC" primFloatAdd :: Float -> Float -> Float
+foreign import ccall "primFloatSubC" primFloatSub :: Float -> Float -> Float
+foreign import ccall "primFloatMulC" primFloatMul :: Float -> Float -> Float
 -- Fractional
-foreign import "primFloatDivC" primFloatDiv :: Float -> Float -> Float
+foreign import ccall "primFloatDivC" primFloatDiv :: Float -> Float -> Float
 
 -- Eq and Ord
-foreign import "primFloatEqC" primFloatEq   :: Float -> Float -> Bool
-foreign import "primFloatLeC" primFloatLe   :: Float -> Float -> Bool
-foreign import "primFloatLtC" primFloatLt   :: Float -> Float -> Bool
+foreign import ccall "primFloatEqC" primFloatEq   :: Float -> Float -> Bool
+foreign import ccall "primFloatLeC" primFloatLe   :: Float -> Float -> Bool
+foreign import ccall "primFloatLtC" primFloatLt   :: Float -> Float -> Bool
 
 primFloatNe :: Float -> Float -> Bool
 primFloatNe a b = not (primFloatEq a b)
@@ -22,13 +22,13 @@ primFloatGt :: Float -> Float -> Bool
 primFloatGt a b = primFloatLt b a
 
 -- Floating
-foreign import "primFloatExpC"  primFloatExp	:: Float -> Float
-foreign import "primFloatLogC"  primFloatLog	:: Float -> Float
-foreign import "primFloatSqrtC" primFloatSqrt	:: Float -> Float
-foreign import "primFloatSinC"  primFloatSin	:: Float -> Float
-foreign import "primFloatCosC"  primFloatCos	:: Float -> Float
-foreign import "primFloatTanC"  primFloatTan	:: Float -> Float
-foreign import "primFloatAsinC" primFloatAsin	:: Float -> Float
-foreign import "primFloatAcosC" primFloatAcos	:: Float -> Float
-foreign import "primFloatAtanC" primFloatAtan	:: Float -> Float
+foreign import ccall "primFloatExpC"  primFloatExp	:: Float -> Float
+foreign import ccall "primFloatLogC"  primFloatLog	:: Float -> Float
+foreign import ccall "primFloatSqrtC" primFloatSqrt	:: Float -> Float
+foreign import ccall "primFloatSinC"  primFloatSin	:: Float -> Float
+foreign import ccall "primFloatCosC"  primFloatCos	:: Float -> Float
+foreign import ccall "primFloatTanC"  primFloatTan	:: Float -> Float
+foreign import ccall "primFloatAsinC" primFloatAsin	:: Float -> Float
+foreign import ccall "primFloatAcosC" primFloatAcos	:: Float -> Float
+foreign import ccall "primFloatAtanC" primFloatAtan	:: Float -> Float
 

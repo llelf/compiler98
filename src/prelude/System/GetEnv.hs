@@ -2,8 +2,8 @@ module System where
 
 import FFI
 
-foreign import primGetEnv :: PackedString -> IO Addr
-foreign cast addrToString :: Addr -> PackedString
+foreign import ccall primGetEnv   :: PackedString -> IO Addr
+foreign import cast  addrToString :: Addr -> PackedString
 
 getEnv                    :: String -> IO String
 getEnv symbol = do

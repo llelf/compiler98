@@ -1,4 +1,4 @@
 module Prelude where
 
-foreign import "primintegerOrC" primIntegerOr :: Integer -> Integer -> Integer
+foreign import ccall "primintegerOrC" primIntegerOr :: Integer -> Integer -> Integer
 

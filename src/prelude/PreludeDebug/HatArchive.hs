@@ -25,10 +25,10 @@ data E a = E a			-- E to protect a closure from evaluation
 myseq a b = _seq a b		-- MAGIC (bytecode version of seq)
 
 newtype Trace = Trace CStructure
-foreign import   "primTrustedFun" trustedFun :: Trace -> Bool
-foreign import   "primHidden"     hidden     :: Trace -> Bool
-foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
---foreign import mkTrace :: FileTrace -> Bool -> Bool -> Trace
+foreign import ccall "primTrustedFun" trustedFun :: Trace -> Bool
+foreign import ccall "primHidden"     hidden     :: Trace -> Bool
+foreign import ccall "primTracePtr"   traceptr   :: Trace -> FileTrace
+--foreign import ccall mkTrace :: FileTrace -> Bool -> Bool -> Trace
 
 {-
 data Trace     = Trace  { traceptr    :: FileTrace
@@ -37,7 +37,7 @@ data Trace     = Trace  { traceptr    :: FileTrace
                         }
 -}
 
-foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
+foreign import ccall "primSameTrace" sameAs :: Trace -> Trace -> Bool
 --sameAs :: Trace -> Trace -> Bool
 --sameAs t1 t2 = primSameTrace (traceptr t1) (traceptr t2)
 
@@ -46,25 +46,25 @@ foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
 
 newtype ModuleTraceInfo = MTI Int
 
-foreign import "primSourceRef"
+foreign import ccall "primSourceRef"
   mkSourceRef :: ModuleTraceInfo -> Int -> SR
 
 mkAtomId :: ModuleTraceInfo -> Int -> Int -> String -> NmType
 mkAtomId mti pos fixPri unqual = mkAtomId' mti pos fixPri (packString unqual)
 
-foreign import "primAtomId"
+foreign import ccall "primAtomId"
   mkAtomId' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
 
 mkModule :: String -> String -> ModuleTraceInfo
 mkModule unqual filename = mkModule' (packString unqual) (packString filename)
 
-foreign import "primModule"
+foreign import ccall "primModule"
   mkModule' :: PackedString -> PackedString -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
 outputTrace trace output = outputTrace' (traceptr trace) (packString output)
 
-foreign import "outputTrace"
+foreign import ccall "outputTrace"
   outputTrace' :: FileTrace -> PackedString -> IO ()
 
 
@@ -73,17 +73,17 @@ foreign import "outputTrace"
 ----
 
 
-foreign import "primTRoot"
+foreign import ccall "primTRoot"
  mkTRoot :: Trace
 
-foreign import "primTAp1"
+foreign import ccall "primTAp1"
  mkTAp1 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp2"
+foreign import ccall "primTAp2"
  mkTAp2 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -91,7 +91,7 @@ foreign import "primTAp2"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp3"
+foreign import ccall "primTAp3"
  mkTAp3 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -100,7 +100,7 @@ foreign import "primTAp3"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp4"
+foreign import ccall "primTAp4"
  mkTAp4 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -110,7 +110,7 @@ foreign import "primTAp4"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp5"
+foreign import ccall "primTAp5"
  mkTAp5 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -121,7 +121,7 @@ foreign import "primTAp5"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp6"
+foreign import ccall "primTAp6"
  mkTAp6 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -133,7 +133,7 @@ foreign import "primTAp6"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp7"
+foreign import ccall "primTAp7"
  mkTAp7 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -146,7 +146,7 @@ foreign import "primTAp7"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp8"
+foreign import ccall "primTAp8"
  mkTAp8 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -160,7 +160,7 @@ foreign import "primTAp8"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp9"
+foreign import ccall "primTAp9"
  mkTAp9 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -175,7 +175,7 @@ foreign import "primTAp9"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp10"
+foreign import ccall "primTAp10"
  mkTAp10 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -191,7 +191,7 @@ foreign import "primTAp10"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp11"
+foreign import ccall "primTAp11"
  mkTAp11 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -208,7 +208,7 @@ foreign import "primTAp11"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp12"
+foreign import ccall "primTAp12"
  mkTAp12 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -226,7 +226,7 @@ foreign import "primTAp12"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp13"
+foreign import ccall "primTAp13"
  mkTAp13 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -245,7 +245,7 @@ foreign import "primTAp13"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp14"
+foreign import ccall "primTAp14"
  mkTAp14 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -265,7 +265,7 @@ foreign import "primTAp14"
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTAp15"
+foreign import ccall "primTAp15"
  mkTAp15 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
@@ -287,43 +287,43 @@ foreign import "primTAp15"
 	-> Trace	-- result
 
 
-foreign import "primTNm"
+foreign import ccall "primTNm"
  mkTNm :: Trace		-- trace of Nm
 	-> NmType	-- NmType
 	-> SR		-- src ref
 	-> Trace	-- result
 
-foreign import "primTInd"
+foreign import ccall "primTInd"
  mkTInd :: Trace		-- trace 1
 	-> Trace	-- trace 2
 	-> Trace	-- result
 
-foreign import "primTHidden"
+foreign import ccall "primTHidden"
  mkTHidden :: Trace	-- trace
 	-> Trace	-- result
 
-foreign import "primTSatA"
+foreign import ccall "primTSatA"
  mkTSatA :: Trace	-- trace of unevaluated expr
 	-> Trace	-- result
 
-foreign import "primTSatB"
+foreign import ccall "primTSatB"
  mkTSatB :: Trace	-- original SatA
 	-> Trace	-- result
 
-foreign import "primTSatC"
+foreign import ccall "primTSatC"
  mkTSatC :: Trace	-- original SatB (or SatA)
 	-> Trace	-- trace of reduced value
 	-> Trace	-- result
 
-foreign import "primTSatALonely"
+foreign import ccall "primTSatALonely"
  mkTSatALonely :: Trace	-- trace of unevaluated expr
 	-> Trace	-- result
 
-foreign import "primTSatBLonely"
+foreign import ccall "primTSatBLonely"
  mkTSatBLonely :: Trace	-- original SatA
 	-> Trace	-- result
 
-foreign import "primTSatCLonely"
+foreign import ccall "primTSatCLonely"
  mkTSatCLonely :: Trace	-- original SatB (or SatA)
 	-> Trace	-- trace of reduced value
 	-> Trace	-- result
@@ -534,39 +534,39 @@ mkTSatC torig tnew =
 ----
 -- NmType constructors
 ----
-foreign import "primNTInt"
+foreign import ccall "primNTInt"
  mkNTInt	:: Int -> NmType
-foreign import "primNTChar"
+foreign import ccall "primNTChar"
  mkNTChar	:: Char -> NmType
-foreign import "primNTInteger"
+foreign import ccall "primNTInteger"
  mkNTInteger	:: Integer -> NmType
-foreign import "primNTRational"
+foreign import ccall "primNTRational"
  primNTRational	:: Integer -> Integer -> NmType
-foreign import "primNTFloat"
+foreign import ccall "primNTFloat"
  mkNTFloat	:: Float -> NmType
-foreign import "primNTDouble"
+foreign import ccall "primNTDouble"
  mkNTDouble	:: Double -> NmType
-foreign import "primNTId"
+foreign import ccall "primNTId"
  mkNTId		:: CStructure -> NmType	--   replaced by this one at runtime
-foreign import "primNTConstr"
+foreign import ccall "primNTConstr"
  mkNTConstr	:: CStructure -> NmType	--   replaced by this one at runtime
-foreign import "primNTTuple"
+foreign import ccall "primNTTuple"
  mkNTTuple	:: NmType
-foreign import "primNTFun"
+foreign import ccall "primNTFun"
  mkNTFun	:: NmType
-foreign import "primNTCase"
+foreign import ccall "primNTCase"
  mkNTCase	:: NmType
-foreign import "primNTLambda"
+foreign import ccall "primNTLambda"
  mkNTLambda	:: NmType
-foreign import "primNTDummy"
+foreign import ccall "primNTDummy"
  mkNTDummy	:: NmType
-foreign import "primNTCString"
+foreign import ccall "primNTCString"
  mkNTCString	:: PackedString -> NmType
-foreign import "primNTIf"
+foreign import ccall "primNTIf"
  mkNTIf		:: NmType
-foreign import "primNTGuard"
+foreign import ccall "primNTGuard"
  mkNTGuard	:: NmType
-foreign import "primNTContainer"
+foreign import ccall "primNTContainer"
  mkNTContainer	:: NmType
 
 mkNTRational	:: Rational -> NmType
@@ -576,7 +576,7 @@ mkNTId' x	= undefined x		-- dummy for compile time only
 mkNTConstr'	:: Int -> NmType	-- dummy for compile time only
 mkNTConstr' x	= undefined x		-- dummy for compile time only
 
-foreign import "primTrustedNm" trustedNm	:: NmType -> Bool
+foreign import ccall "primTrustedNm" trustedNm	:: NmType -> Bool
 
 {-
 ----
@@ -605,13 +605,13 @@ mkNTContainer	= primNTContainer
 ----
 -- SR constructors
 ----
-foreign import "primSR0"
+foreign import ccall "primSR0"
  mkNoSR		:: SR
 
 mkSR'		:: Int -> SR		-- dummy for compile time only
 mkSR' x		= undefined x		-- dummy
 
-foreign import "primSR3"
+foreign import ccall "primSR3"
  mkSR		:: CStructure -> SR	-- is replaced by this one at runtime
 
 --mkNoSR	= primSR0

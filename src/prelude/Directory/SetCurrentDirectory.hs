@@ -3,7 +3,7 @@ module Directory (setCurrentDirectory) where
 import FFI
 import Monad (when)
 
-foreign import chdir :: PackedString -> IO Int
+foreign import ccall chdir :: PackedString -> IO Int
 
 setCurrentDirectory :: FilePath -> IO ()
 setCurrentDirectory fp = do

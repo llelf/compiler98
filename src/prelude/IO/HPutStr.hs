@@ -20,7 +20,7 @@ hPutStr h (x:xs)       = hPutChar h x >> hPutStr h xs
 -- they have a different data representation that needs to be
 -- coded explicitly in C.
 
-foreign import "hPutStrC" hPutStrC :: Handle -> String -> IO ()
+foreign import ccall "hPutStrC" hPutStrC :: Handle -> String -> IO ()
 
 hPutStr               :: Handle -> String -> IO ()
 hPutStr h []           = return ()

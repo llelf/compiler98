@@ -1,2 +1,2 @@
 module Prelude where
-foreign import "primIntFromIntegerC" primIntFromIntegerC :: Integer -> Int
+foreign import ccall "primIntFromIntegerC" primIntFromIntegerC :: Integer -> Int

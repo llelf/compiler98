@@ -40,7 +40,7 @@ hGetChar (Handle h)    = IO (input h)
          then Left (EOFError "hGetChar" (Handle h))
          else Right (toEnum c)
 
-foreign import "_chGetChar" cHGetChar :: ForeignObj -> Int
+foreign import ccall "_chGetChar" cHGetChar :: ForeignObj -> Int
 
 {-
 cHGetChar :: ForeignObj -> Int

@@ -2,7 +2,7 @@ module System where
 
 import FFI
 
-foreign import primGetProgName :: IO PackedString
+foreign import ccall primGetProgName :: IO PackedString
 
 getProgName             :: IO String
 getProgName = primGetProgName >>= return . fromCString

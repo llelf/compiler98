@@ -1,3 +1,3 @@
 module Prelude where
 
-foreign import primDoubleFromIntegerC :: Integer -> Double
+foreign import ccall primDoubleFromIntegerC :: Integer -> Double

@@ -6,7 +6,7 @@ import FFI
 
 -- #if !defined(TRACING)
 #if 1
-foreign import hGetPosnC :: Handle -> IO Addr
+foreign import ccall hGetPosnC :: Handle -> IO Addr
 
 hGetPosn              :: Handle -> IO HandlePosn
 hGetPosn h = do
@@ -19,7 +19,7 @@ hGetPosn h = do
         return (HandlePosn h f)
 
 #else
-foreign import hGetPosnC :: ForeignObj -> IO Addr
+foreign import ccall hGetPosnC :: ForeignObj -> IO Addr
 
 hGetPosn              :: Handle -> IO HandlePosn
 hGetPosn h@(Handle hfo) = do

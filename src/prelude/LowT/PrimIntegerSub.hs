@@ -1,3 +1,3 @@
 module Prelude where
 
-foreign import "primIntegerSubC" primIntegerSub :: Integer -> Integer -> Integer
+foreign import ccall "primIntegerSubC" primIntegerSub :: Integer -> Integer -> Integer

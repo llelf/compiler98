@@ -74,8 +74,8 @@ failWhenNULL nm f = do
    return addr
 
 -- Hmmm, Int is a little bit strange here, C uses size_t
-foreign import ccall "malloc"  unsafe _malloc  :: CSize -> IO (Ptr a)
-foreign import ccall "realloc" unsafe _realloc :: Ptr a -> CSize -> IO (Ptr a)
-foreign import ccall "free"    unsafe _free    :: Ptr a -> IO ()
+foreign import ccall unsafe "malloc"  _malloc  :: CSize -> IO (Ptr a)
+foreign import ccall unsafe "realloc" _realloc :: Ptr a -> CSize -> IO (Ptr a)
+foreign import ccall unsafe "free"    _free    :: Ptr a -> IO ()
 
 

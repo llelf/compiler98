@@ -1,4 +1,4 @@
 module Prelude where
 
-foreign import "primIntegerMulC" primIntegerMul :: Integer -> Integer -> Integer
+foreign import ccall "primIntegerMulC" primIntegerMul :: Integer -> Integer -> Integer
 

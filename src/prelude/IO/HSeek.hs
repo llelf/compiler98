@@ -7,7 +7,7 @@ import FFI
 -- #if !defined(TRACING)
 #if 1
 
-foreign import hSeekC :: Handle -> Int -> Integer -> IO Int
+foreign import ccall hSeekC :: Handle -> Int -> Integer -> IO Int
 
 hSeek                 :: Handle -> SeekMode -> Integer -> IO () 
 hSeek h s i = do
@@ -20,7 +20,7 @@ hSeek h s i = do
 
 #else
 
-foreign import hSeekC :: ForeignObj -> Int -> Integer -> IO Int
+foreign import ccall hSeekC :: ForeignObj -> Int -> Integer -> IO Int
 
 hSeek                 :: Handle -> SeekMode -> Integer -> IO () 
 hSeek (Handle h) s i = do

@@ -3,7 +3,7 @@ module IO (hClose,hCloseC) where
 import DHandle
 import FFI
 
-foreign import hCloseC :: ForeignObj -> IO ()
+foreign import ccall hCloseC :: ForeignObj -> IO ()
 
 hClose                :: Handle -> IO () 
 #if !defined(TRACING)

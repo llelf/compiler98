@@ -4,5 +4,5 @@ module IOExtras
 
 --import FFI
 
-foreign import "unsafePtrEq" unsafePtrEq :: a -> a -> Bool
+foreign import ccall "unsafePtrEq" unsafePtrEq :: a -> a -> Bool
 

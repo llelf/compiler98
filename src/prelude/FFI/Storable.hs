@@ -69,8 +69,8 @@ class Storable a where
 ----------------------------------------------------------------------
 -- system-dependent instances
 
-foreign import readCharAtAddr  :: Ptr Char -> IO Char
-foreign import writeCharAtAddr :: Ptr Char -> Char -> IO ()
+foreign import ccall readCharAtAddr  :: Ptr Char -> IO Char
+foreign import ccall writeCharAtAddr :: Ptr Char -> Char -> IO ()
 
 instance Storable Char where
    sizeOf        = const 1
@@ -78,8 +78,8 @@ instance Storable Char where
    peek          = readCharAtAddr
    poke          = writeCharAtAddr
 
-foreign import readIntAtAddr  :: Ptr Int -> IO Int
-foreign import writeIntAtAddr :: Ptr Int -> Int -> IO ()
+foreign import ccall readIntAtAddr  :: Ptr Int -> IO Int
+foreign import ccall writeIntAtAddr :: Ptr Int -> Int -> IO ()
 
 instance Storable Int where
    sizeOf        = const 4
@@ -87,8 +87,8 @@ instance Storable Int where
    peek          = readIntAtAddr
    poke          = writeIntAtAddr
 
-foreign import readAddrAtAddr  :: Ptr (Ptr a) -> IO (Ptr a)
-foreign import writeAddrAtAddr :: Ptr (Ptr a) -> Ptr a -> IO ()
+foreign import ccall readAddrAtAddr  :: Ptr (Ptr a) -> IO (Ptr a)
+foreign import ccall writeAddrAtAddr :: Ptr (Ptr a) -> Ptr a -> IO ()
 
 instance Storable (Ptr a) where
    sizeOf        = const 4
@@ -96,8 +96,8 @@ instance Storable (Ptr a) where
    peek          = readAddrAtAddr
    poke          = writeAddrAtAddr
 
-foreign import readFloatAtAddr  :: Ptr Float -> IO Float
-foreign import writeFloatAtAddr :: Ptr Float -> Float -> IO ()
+foreign import ccall readFloatAtAddr  :: Ptr Float -> IO Float
+foreign import ccall writeFloatAtAddr :: Ptr Float -> Float -> IO ()
 
 instance Storable Float where
    sizeOf        = const 4
@@ -105,8 +105,8 @@ instance Storable Float where
    peek          = readFloatAtAddr
    poke          = writeFloatAtAddr
 
-foreign import readDoubleAtAddr  :: Ptr Double -> IO Double
-foreign import writeDoubleAtAddr :: Ptr Double -> Double -> IO ()
+foreign import ccall readDoubleAtAddr  :: Ptr Double -> IO Double
+foreign import ccall writeDoubleAtAddr :: Ptr Double -> Double -> IO ()
 
 instance Storable Double where
    sizeOf        = const 8
@@ -114,8 +114,8 @@ instance Storable Double where
    peek          = readDoubleAtAddr
    poke          = writeDoubleAtAddr
 
-foreign import readWord8AtAddr  :: Ptr Word8 -> IO Word8
-foreign import writeWord8AtAddr :: Ptr Word8 -> Word8 -> IO ()
+foreign import ccall readWord8AtAddr  :: Ptr Word8 -> IO Word8
+foreign import ccall writeWord8AtAddr :: Ptr Word8 -> Word8 -> IO ()
 
 instance Storable Word8 where
    sizeOf        = const 1
@@ -123,8 +123,8 @@ instance Storable Word8 where
    peek          = readWord8AtAddr
    poke          = writeWord8AtAddr
 
-foreign import readWord16AtAddr  :: Ptr Word16 -> IO Word16
-foreign import writeWord16AtAddr :: Ptr Word16 -> Word16 -> IO ()
+foreign import ccall readWord16AtAddr  :: Ptr Word16 -> IO Word16
+foreign import ccall writeWord16AtAddr :: Ptr Word16 -> Word16 -> IO ()
 
 instance Storable Word16 where
    sizeOf        = const 2
@@ -132,8 +132,8 @@ instance Storable Word16 where
    peek          = readWord16AtAddr
    poke          = writeWord16AtAddr
 
-foreign import readWord32AtAddr  :: Ptr Word32 -> IO Word32
-foreign import writeWord32AtAddr :: Ptr Word32 -> Word32 -> IO ()
+foreign import ccall readWord32AtAddr  :: Ptr Word32 -> IO Word32
+foreign import ccall writeWord32AtAddr :: Ptr Word32 -> Word32 -> IO ()
 
 instance Storable Word32 where
    sizeOf        = const 4
@@ -141,8 +141,8 @@ instance Storable Word32 where
    peek          = readWord32AtAddr
    poke          = writeWord32AtAddr
 
-foreign import readWord64AtAddr  :: Ptr Word64 -> IO Word64
-foreign import writeWord64AtAddr :: Ptr Word64 -> Word64 -> IO ()
+foreign import ccall readWord64AtAddr  :: Ptr Word64 -> IO Word64
+foreign import ccall writeWord64AtAddr :: Ptr Word64 -> Word64 -> IO ()
 
 instance Storable Word64 where
    sizeOf        = const 8
@@ -150,8 +150,8 @@ instance Storable Word64 where
    peek          = readWord64AtAddr
    poke          = writeWord64AtAddr
 
-foreign import readInt8AtAddr  :: Ptr Int8 -> IO Int8
-foreign import writeInt8AtAddr :: Ptr Int8 -> Int8 -> IO ()
+foreign import ccall readInt8AtAddr  :: Ptr Int8 -> IO Int8
+foreign import ccall writeInt8AtAddr :: Ptr Int8 -> Int8 -> IO ()
 
 instance Storable Int8 where
    sizeOf        = const 1
@@ -159,8 +159,8 @@ instance Storable Int8 where
    peek          = readInt8AtAddr
    poke          = writeInt8AtAddr
 
-foreign import readInt16AtAddr  :: Ptr Int16 -> IO Int16
-foreign import writeInt16AtAddr :: Ptr Int16 -> Int16 -> IO ()
+foreign import ccall readInt16AtAddr  :: Ptr Int16 -> IO Int16
+foreign import ccall writeInt16AtAddr :: Ptr Int16 -> Int16 -> IO ()
 
 instance Storable Int16 where
    sizeOf        = const 2
@@ -168,8 +168,8 @@ instance Storable Int16 where
    peek          = readInt16AtAddr
    poke          = writeInt16AtAddr
 
-foreign import readInt32AtAddr  :: Ptr Int32 -> IO Int32
-foreign import writeInt32AtAddr :: Ptr Int32 -> Int32 -> IO ()
+foreign import ccall readInt32AtAddr  :: Ptr Int32 -> IO Int32
+foreign import ccall writeInt32AtAddr :: Ptr Int32 -> Int32 -> IO ()
 
 instance Storable Int32 where
    sizeOf        = const 4
@@ -177,8 +177,8 @@ instance Storable Int32 where
    peek          = readInt32AtAddr
    poke          = writeInt32AtAddr
 
-foreign import readInt64AtAddr  :: Ptr Int64 -> IO Int64
-foreign import writeInt64AtAddr :: Ptr Int64 -> Int64 -> IO ()
+foreign import ccall readInt64AtAddr  :: Ptr Int64 -> IO Int64
+foreign import ccall writeInt64AtAddr :: Ptr Int64 -> Int64 -> IO ()
 
 instance Storable Int64 where
    sizeOf        = const 8

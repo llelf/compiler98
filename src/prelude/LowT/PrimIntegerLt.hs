@@ -1,6 +1,6 @@
 module Prelude where
 
-foreign import "primIntegerLtC" primIntegerLt :: Integer -> Integer -> Bool
+foreign import ccall "primIntegerLtC" primIntegerLt :: Integer -> Integer -> Bool
 
 
 

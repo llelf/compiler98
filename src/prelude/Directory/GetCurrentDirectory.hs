@@ -3,8 +3,8 @@ module Directory (getCurrentDirectory) where
 import FFI
 import Monad
 
-foreign import getcwd        :: Addr -> Int -> IO Addr
-foreign cast   addrToCString :: Addr -> PackedString
+foreign import ccall getcwd        :: Addr -> Int -> IO Addr
+foreign import cast  addrToCString :: Addr -> PackedString
 
 getCurrentDirectory :: IO FilePath
 getCurrentDirectory = do

@@ -22,7 +22,7 @@ import DErrNo
 
 {-# CCODE #include <stdlib.h> #-}
 {-# CCODE extern int system (const char *cmd); #-}
-foreign import "system" cSystem :: CString -> IO Int
+foreign import ccall "system" cSystem :: CString -> IO Int
 primSystem cmd = do
     v <- cSystem cmd
     if v==(-1) || v==127

@@ -1,4 +1,4 @@
 module Prelude where
 
-foreign import "primIntegerAndC" primIntegerAnd :: Integer -> Integer -> Integer
+foreign import ccall "primIntegerAndC" primIntegerAnd :: Integer -> Integer -> Integer
 

@@ -9,10 +9,10 @@ import PreludeBuiltin(Vector)
 import _E
 
 #if !defined(TRACING)
-foreign import primCopyVectorC :: Vector a -> IO (Vector a)
-foreign import primNewVectorC :: Int -> _E a -> IO (Vector a)
-foreign import primVectorIndexC :: Vector a -> Int -> IO a
-foreign import primUpdateVectorC :: Int -> _E a -> Vector a -> IO ()
+foreign import ccall primCopyVectorC :: Vector a -> IO (Vector a)
+foreign import ccall primNewVectorC :: Int -> _E a -> IO (Vector a)
+foreign import ccall primVectorIndexC :: Vector a -> Int -> IO a
+foreign import ccall primUpdateVectorC :: Int -> _E a -> Vector a -> IO ()
 
 
 #else

@@ -7,7 +7,7 @@ import FFI
 -- #if !defined(TRACING)
 #if 1
 
-foreign import hSetBufferingC :: Handle -> BufferMode -> IO Int
+foreign import ccall hSetBufferingC :: Handle -> BufferMode -> IO Int
 
 hSetBuffering         :: Handle  -> BufferMode -> IO ()
 hSetBuffering h b = do
@@ -20,7 +20,7 @@ hSetBuffering h b = do
 
 #else
 
-foreign import hSetBufferingC :: ForeignObj -> BufferMode -> IO Int
+foreign import ccall hSetBufferingC :: ForeignObj -> BufferMode -> IO Int
 
 		-- BufferMode not translated yet
 hSetBuffering         :: Handle  -> BufferMode -> IO ()

@@ -36,11 +36,11 @@ newForeignObj = makeForeignObj
 -- get it as an Addr, then attach the finaliser using `makeForeignObj'.
 -- However, in order to implement the latter, we need one single instance
 -- of returning a ForeignObj, and this is it.  ***Do not do it elsewhere!
-foreign import primForeignObjC  :: Addr -> a -> IO ForeignObj
+foreign import ccall primForeignObjC  :: Addr -> a -> IO ForeignObj
 
 
 -- Get the hidden Addr out of a ForeignObj.
-foreign cast foreignObjToAddr	:: ForeignObj -> Addr
+foreign import cast foreignObjToAddr	:: ForeignObj -> Addr
 
 -- But it is impossible to do the opposite!
 --foreign cast addrToForeignObj	:: Addr       -> ForeignObj	-- WRONG!

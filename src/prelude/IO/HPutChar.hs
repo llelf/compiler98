@@ -13,7 +13,7 @@ cHPutChar h c = _hPutChar h c	-- _hPutChar -> special bytecode
 hPutChar              :: Handle -> Char -> IO ()
 {-
 hPutChar (Handle h) c  = cHPutChar h c
-foreign import "chPutChar" cHPutChar :: ForeignObj -> Char -> IO ()
+foreign import ccall "chPutChar" cHPutChar :: ForeignObj -> Char -> IO ()
 -}
 
 hPutChar (Handle h) c  = IO (cHPutChar h c)

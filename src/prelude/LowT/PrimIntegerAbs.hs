@@ -1,3 +1,3 @@
 module Prelude where
 
-foreign import "primIntegerAbsC" primIntegerAbs :: Integer -> Integer
+foreign import ccall "primIntegerAbsC" primIntegerAbs :: Integer -> Integer

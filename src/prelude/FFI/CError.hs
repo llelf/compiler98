@@ -8,7 +8,7 @@ import DErrNo
 import DIOError
 import IO (Handle)
 
-foreign import getErrNo :: IO Int
+foreign import ccall getErrNo :: IO Int
 
 mkIOError :: String -> Maybe FilePath -> Maybe Handle -> Int -> IOError
 mkIOError str mf mh err = IOError str mf mh (toEnum err)

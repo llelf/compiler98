@@ -3,7 +3,7 @@ module Directory (removeFile) where
 import FFI
 import Monad (when)
 
-foreign import unlink :: PackedString -> IO Int
+foreign import ccall unlink :: PackedString -> IO Int
 
 removeFile :: FilePath -> IO ()
 removeFile fp = do

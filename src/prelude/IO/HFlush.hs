@@ -5,7 +5,7 @@ import FFI
 
 -- #if !defined(TRACING)
 #if 1
-foreign import hFlushC :: Handle -> IO Int
+foreign import ccall hFlushC :: Handle -> IO Int
 
 hFlush :: Handle -> IO ()
 hFlush h = do
@@ -17,7 +17,7 @@ hFlush h = do
         return ()
 
 #else
-foreign import hFlushC :: ForeignObj -> IO Int
+foreign import ccall hFlushC :: ForeignObj -> IO Int
 
 hFlush :: Handle -> IO ()
 hFlush (Handle h) = do

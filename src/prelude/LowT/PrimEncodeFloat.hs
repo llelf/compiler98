@@ -1,3 +1,3 @@
 module Prelude where
 
-foreign import primEncodeFloatC :: Integer -> Int -> Float
+foreign import ccall primEncodeFloatC :: Integer -> Int -> Float

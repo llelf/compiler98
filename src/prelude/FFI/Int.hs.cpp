@@ -28,22 +28,22 @@ module FFI
 ; INSTANCE_SHOW(T)
 
 #define FOREIGNS(T)	\
-; foreign import primEq##T		:: T -> T  -> Bool	\
-; foreign import primLt##T		:: T -> T  -> Bool	\
-; foreign import primLe##T		:: T -> T  -> Bool	\
-; foreign import primGt##T		:: T -> T  -> Bool	\
-; foreign import primGe##T		:: T -> T  -> Bool	\
-; foreign import primAdd##T		:: T -> T  -> T		\
-; foreign import primSub##T		:: T -> T  -> T		\
-; foreign import primMul##T		:: T -> T  -> T		\
-; foreign import primAbs##T		:: T       -> T		\
-; foreign import primSignum##T		:: T       -> T		\
-; foreign import primQuot##T		:: T -> T  -> T		\
-; foreign import primRem##T		:: T -> T  -> T		\
-; foreign import primToEnum##T		:: Int     -> T		\
-; foreign import primFromEnum##T	:: T       -> Int	\
-; foreign import prim##T##FromInteger	:: Integer -> T		\
-; foreign import prim##T##ToInteger	:: T       -> Integer
+; foreign import ccall primEq##T		:: T -> T  -> Bool	\
+; foreign import ccall primLt##T		:: T -> T  -> Bool	\
+; foreign import ccall primLe##T		:: T -> T  -> Bool	\
+; foreign import ccall primGt##T		:: T -> T  -> Bool	\
+; foreign import ccall primGe##T		:: T -> T  -> Bool	\
+; foreign import ccall primAdd##T		:: T -> T  -> T		\
+; foreign import ccall primSub##T		:: T -> T  -> T		\
+; foreign import ccall primMul##T		:: T -> T  -> T		\
+; foreign import ccall primAbs##T		:: T       -> T		\
+; foreign import ccall primSignum##T		:: T       -> T		\
+; foreign import ccall primQuot##T		:: T -> T  -> T		\
+; foreign import ccall primRem##T		:: T -> T  -> T		\
+; foreign import ccall primToEnum##T		:: Int     -> T		\
+; foreign import ccall primFromEnum##T		:: T       -> Int	\
+; foreign import ccall prim##T##FromInteger	:: Integer -> T		\
+; foreign import ccall prim##T##ToInteger	:: T       -> Integer
 
 
 #define INSTANCE_EQ(T)	\

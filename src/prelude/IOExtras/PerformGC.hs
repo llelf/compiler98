@@ -2,4 +2,4 @@ module IOExtras
   ( performGC
   ) where
 
-foreign import "performGC" performGC :: IO ()
+foreign import ccall "performGC" performGC :: IO ()
