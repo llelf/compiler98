@@ -531,6 +531,18 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	}
 	// build function
 	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose));
+	/* special workaround for IO(_) follows: show operation behind HIDDEN node,
+	   to give atleast some information about the kind of IO performed */
+	if ((fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
+	  IdentNode* id = fun->v.identval;
+	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
+	    unsigned long hidden = followSATs((unsigned long) getAppNodeArg(apn,0));
+	    if (getNodeType()==TRHIDDEN) {
+	      setAppNodeArg(apn,0,(ExprNode*) (getTrace()));
+	    }
+	  }
+	}
+	/* workaround for IO(_) ends */
 	i=0;
 	while (i++<arity) {
 #ifdef DebugbuildExpr

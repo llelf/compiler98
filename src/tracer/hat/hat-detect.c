@@ -141,7 +141,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
     else printf("   (Y/?/N): ");
     if (getline(answer,10)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YNQT?HVUMGOC*",c)==NULL) { // was answer a valid character?
+      if (strchr("YNQT?HVUMGOC*0123456789",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
 	switch(c) {
@@ -236,18 +236,26 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	  printf("   all memorized answers cleared.\n");
 	  clearMemorized();
 	  break;
+	case '0':
+	case '1':case '2':case '3':case '4':case '5':case '6':case '7':case '8':case '9':
 	case 'G':
 	  if (*question==1) {
 	    printf("Cannot go back. Already at question 1.\n");
 	  } else {
 	    int j,i=1;
-	    if ((strlen(answer)>1)&&(toupper(answer[1])!='O')) i++;
+	    if (toupper(answer[0])=='G') { // go command
+	      if ((strlen(answer)>1)&&
+		  ((toupper(answer[1])=='O')||(toupper(answer[1])==' '))) i++;
+	    } else i=0; // only number answered
 	    j = atol(i+answer);
 	    if ((j<1)||(j>*question)) {
-	      printf("Can only go back to questions 1 to %i.\n",*question);
+	      if (j<1) printf("Bad number given.\n");
+	      else printf("Can only go back to questions 1 to %i.\n",*question);
 	    } else {
 	      retval=10*j;
 	      clearMemorized();
+	      untrustAll();
+	      clearCAFList();
 	    }
 	  }
 	  break;
@@ -263,7 +271,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	  printf("\n     'Memorize' or 'm' to toggle the memorize mode.\n");
 	  printf("     'Clear'    or 'c' to clear all memorized answers.\n");
 	  printf("     'Verbose'  or 'v' to toggle verbose mode.\n");
-	  printf("     'Go <n>'   or 'g <n>' to go back to question <n>.\n");
+	  printf("     'Go <n>'   or '<n>' to go back to question <n>.\n");
 	  printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
 	  printf("\n     'Quit'     or 'q' to leave the tool.\n");
 	  break;
