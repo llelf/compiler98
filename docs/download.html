@@ -46,20 +46,12 @@ instructions</a>.
   <td>5.9Mb</td></tr>
 
 <tr bgcolor=#ddffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-basic-freebsd.tgz">
-      Executable (.tar.gz)<br><font size=-1>(basic compiler)</font></a></td>
+  <td><a href="http://www.freebsd.org/cgi/ports.cgi?query=nhc98&stype=all">
+      Sources+Executable</a></td>
   <td>ix86-FreeBSD-4.4</td>
   <td>1.10</td>
-  <td>2001-10-23</td>
-  <td>2.9Mb</td></tr>
-
-<tr bgcolor=#ddffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-with_tracer-freebsd.tgz">
-      Executable (.tar.gz)<br><font size=-1>(with tracer)</font></a></td>
-  <td>ix86-FreeBSD-4.4</td>
-  <td>1.10</td>
-  <td>2001-10-23</td>
-  <td>5.6Mb</td></tr>
+  <td>2002-01-03</td>
+  <td></td></tr>
 
 <tr bgcolor=#ddffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-1.src.rpm">
@@ -220,6 +212,51 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-IO">
+      IO</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-12-17</td>
+  <td>The IO library did not re-export the PreludeIO definitions.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-lhs">
+      lhs</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-12-17</td>
+  <td>Hmake formerly preferred a .hs file over a .lhs file.  This patch
+      reverses the preference.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-patterns">
+      patterns</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-12-10</td>
+  <td>An infix pattern decl of the form<br>
+      <tt>a `Foo` (b `Bar` c) = 3 `Foo` (4 `Bar` 5)</tt><br>
+      could not be compiled because the parser lost the explicit bracketing
+      on the LHS.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-commas">
+      commas</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-12-10</td>
+  <td>Allow an empty import/export decl with a single stray comma.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-blockbuffer">
+      blockbuffer</a></td>
+  <td>nhc98 v1.10</td>
+  <td>2001-11-28</td>
+  <td>Fix block-buffered file handles, so that they produce output
+      exactly when the buffer is full.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-keywords">
       keywords</a></td>
   <td>nhc98 v1.10</td>
@@ -325,7 +362,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.11.12<br>
+This page last modified: 2002.01.08<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
