@@ -928,17 +928,17 @@ void run(NodePtr toplevel)
           ip += *t;
         }
         Break;
-
-    Case(MKIORETURN):	/* MW */
+    Case(MKIORETURN):	/* MW - now obsolete */
         INSTR("mkIOreturn");
         printf("mutator:MKIORETURN\n");
+#if 0
         nodeptr = *sp;
         MK_VAP1(hp,C_VAPTAG(IORETURN),nodeptr); /* Build a call to IO.return */
         INIT_PROFINFO(hp,&apply1ProfInfo)
         *sp = hp;
         hp += SIZE_VAP1;
+#endif
         Break;
-
     Case(ENDCODE):
       INSTR("endcode");
       fprintf(stderr,"Tried to evaluate beyond end of function.\n");
