@@ -50,7 +50,7 @@ nhc98dir     = "NHC98INCDIR" `withDefault` "unknown"
 ghcver       = read ("ghcsym" `withDefault` "0") `asTypeOf` 0
 ghclang      = read ("GHC" `withDefault` "0") `asTypeOf` 0
 
-defaultCompiler = toComp ("HC" `withDefault` ("COMP" `withDefault` "nhc98"))
+defaultCompiler = toComp ("HC" `withDefault` ("COMP" `withDefault` builtby))
 
 
 -- What compilers are possible choices?

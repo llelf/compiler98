@@ -12,10 +12,6 @@ import SimpleLineEditor (delChars, getLineEdited)
 import LexModule
 import Unlit
 
-#if defined(__GLASGOW_HASKELL__)
-import Posix
-#endif
-
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
 done = return ()
@@ -35,9 +31,6 @@ main = do
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
   hSetBuffering stdin NoBuffering
-#if defined(__GLASGOW_HASKELL__)
-  installHandler sigINT Ignore Nothing
-#endif
   let state = S { options=opts, compiler=defaultCompiler
                 , modules=["Prelude"], scope=Nothing, scopeText=Nothing }
   load state "Prelude" (toplevel state)

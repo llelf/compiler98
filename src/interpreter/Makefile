@@ -10,7 +10,7 @@ SRCS   = HInteractive.hs HmakeConfig.hs SimpleLineEditor.hs \
 
 
 ifeq "${HC}" "ghc"
-HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts -syslib exts -syslib posix)
+HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) -fglasgow-exts -syslib exts)
 export HFLAGS
 endif
 ifeq "${HC}" "hbc"
