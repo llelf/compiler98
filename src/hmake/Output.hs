@@ -8,15 +8,26 @@ import Argv  -- Goal
 doEcho True cmd = "echo \"" ++ cmd ++ "\"\n" ++ cmd ++ "\n"
 doEcho False cmd = cmd ++ "\n"
 
+oFile :: String -> Bool -> String -> String -> String
 oFile goalDir unix path mod =
     if null goalDir then fixFile unix path    mod "o"
                     else fixFile unix goalDir mod "o"
 hiFile unix path mod  =  fixFile unix path    mod "hi"
 
-qCleano  echo goalDir unix (_,(p,m,source,cpp)) =
-    doEcho echo ("rm -f " ++ oFile goalDir unix p m)
-qCleanhi echo unix (_,(p,m,source,cpp)) =
-    doEcho echo ("rm -f " ++ hiFile unix p m)
+cleanModuleName (Program file) = file
+cleanModuleName (Object file) = file
+
+qCleano  echo goalDir unix graph mod =
+  let allfiles = close graph [] [cleanModuleName mod]
+  in doEcho echo ("rm -f" ++
+         concatMap (\(d,f)-> ' ': oFile goalDir unix d f) allfiles)
+
+qCleanhi echo unix graph mod =
+  let allfiles = close graph [] [cleanModuleName mod]
+  in doEcho echo ("rm -f" ++
+         concatMap (\(d,f)-> ' ': hiFile unix d f) allfiles)
+--in unlines $
+--   map (\(d,f)-> doEcho echo ("rm -f " ++ hiFile unix d f)) allfiles
 
 qCompile echo goalDir dflag defines unix (dep,(p,m,source,cpp)) =
   if null dep
@@ -78,6 +89,7 @@ qLink echo goalDir dflag unix graph (Program file) =
   goal = if goalDir=="" then "." else goalDir
   mkOfile path f = if dflag then fixFile unix ""   f "o"
                             else fixFile unix path f "o"
+  objfiles = close graph [] [file]
   cmd = if unix 
         then
 	  let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
@@ -124,10 +136,9 @@ qLink echo goalDir dflag unix graph (Program file) =
 --                      ++ "\n"
 
 
-  objfiles = close graph [] [file]
 
-  close graph acc []      = acc
-  close graph acc (f:fs)  =
+close graph acc []      = acc
+close graph acc (f:fs)  =
     if any ((f==).snd) acc then
       close graph acc fs
     else

@@ -84,8 +84,8 @@ main =
       build_graph modules >>= \(cycles,build,nhcg)->
       let objcmds = lconcatMap (qCompile echo goalDir dflag defs unix) build
           execmds = lconcatMap (qLink    echo goalDir dflag unix nhcg) modules
-          cleano  = lconcatMap (qCleano  echo goalDir unix) build
-          cleanhi = lconcatMap (qCleanhi echo unix) build
+          cleano  = lconcatMap (qCleano  echo goalDir unix nhcg) modules
+          cleanhi = lconcatMap (qCleanhi echo unix nhcg) modules
       in do
          hPutStr stderr
              (if null cycles then ""
