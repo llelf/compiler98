@@ -102,12 +102,18 @@ main' args = do
   -- Then the tracing transformation itself is applied.
   -- The result is written to file (no redirection possible yet)
   -}
-  toAuxFile flags (sHatAuxFile flags) parsedPrg
-  newprog <- auxLabelSyntaxTree flags parsedPrg
+  let prg = maybeStripOffQual "Prelude" parsedPrg
+  toAuxFile flags (sHatAuxFile flags) prg
+  when (sParse flags)
+       (putStr (prettyPrintTokenId flags ppModule prg)) -- debug
+  newprog <- auxLabelSyntaxTree flags prg
+  when (sTraceFns flags)
+       (putStr (prettyPrintTraceId flags ppModule newprog)) -- debug
   writeFile (sHatTransFile flags)
       (prettyPrintTokenId flags ppModule 
-        (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
-          (sHatFileBase flags) newprog))
+        (maybeStripOffQual "TPrelude"
+          (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
+            (sHatFileBase flags) newprog)))
   putStrLn ("Wrote " ++ sHatTransFile flags)
   exitWith (ExitSuccess)
 
