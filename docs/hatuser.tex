@@ -36,18 +36,18 @@
 
 \section{Introduction}\label{introduction}
 
-Hat is a source-level tracer for Haskell (the \emph{Ha}skell \emph{T}racer). A tracer is a tool that gives the user access to otherwise invisible information about a computation. Hat helps the programmer to understand how a program works or why it does not work. It is not only intended for locating errors (and it cannot modify and thus correct a program), but also for understanding how a correct program works, especially for teaching and program maintenance. Hence we avoid the popular name ``debugger''. Note that a profiler, which gives access to information about the time or space behaviour of a program, is also a kind of tracer. However, Hat is not suitable for that kind of purpose.
+Hat is a source-level tracer for Haskell (the \emph{Ha}skell \emph{T}racer). A tracer is a tool that gives the user access to otherwise invisible information about a computation. Programmers use Hat to understand how a program works or why it does not work. It is not only intended for locating errors, but also for understanding how a correct program works, especially for teaching and program maintenance. Hence we avoid the popular name ``debugger''. Note that a profiler, which gives access to information about the time or space behaviour of a program, is also a kind of tracer. However, Hat is not suitable for that kind of purpose.
 
 Conventional tracers (debuggers) for imperative languages allow the user to step through the program computation, stop at given points and examine variable contents.
 This tracing method is unsuitable for a lazy functional language such as Haskell, because its evaluation order is complex, function arguments are usually unwieldy large unevaluated expressions and generally computation details do not match the user's high-level view of functions mapping values to values.
 
 Tracing a program with Hat consists of two phases. First the program runs as normal except that additionally information about the computation is gathered. Second, after the program has terminated, the trace is viewed. 
-Hat can be used for programs that terminate normally, that abort with an error message or that do not terminate and hence are interrupted by the programmer.
+Hat can be used for programs that terminate normally, that terminate with an error message or that terminate when interrupted by the programmer.
 
 The trace produced by Hat shows the relationships between the expressions that were reduced by the computation (\emph{redexes}) and the values the computation yielded. A redex is an application of a function to arguments, for example \texttt{length [1+5,2+5]}. Hat does not show the function arguments as unevaluated as they were actually passed in the computation, for example \texttt{map (+5) [1,2]}, but as far evaluated as they are at the end of the computation, for example \texttt{[1+5,2+5]}. The trace describes which redex through its reduction caused the creation of which other redexes and values. The former redex is called the \emph{parent} redex of the latter redexes and values. We call the whole trace of Hat a \emph{redex trail}.
 
-Because the trace describes the parent relationship between all redexes and values created by a computation, it is a huge graph. Hence the programmer views the trace with an interactive browser program with a graphical user interface that permits to selectively view only those parts of the trace that are of interest.
-Viewing the trace starts with the program output or the expression who's reduction led to program abortion. The programmer demands to see parents of given expressions and thus walks \emph{backwards} through the trace.
+Because the trace describes the parent relationship between all redexes and values created by a computation, it may be a huge graph. Hence the programmer views the trace with an interactive browser program with a graphical user interface selectively viewing only those parts of the trace that are of interest.
+Viewing the trace starts with the program output or the expression that led to program abortion. The programmer demands to see parents of given expressions and thus walks \emph{backwards} through the trace.
 
 \emph{This user manual definitely requires screen shots that demonstrate what is explained in the text. For the moment, please use the system at the same time as you are reading this manual.}
 
@@ -65,7 +65,7 @@ all the necessary compiling and linking automatically.
 \item
 If the computation of your program is not short, then run it with a larger-than-normal heap space.
 For example, give additional arguments \texttt{+RTS -H10M -RTS} to specify a ten-megabyte heap.
-Note that the whole trace is allocated on the heap and hence, as a rough rule of thumb, 100 bytes of heap memory are required for each traced reduction.
+Note that the whole trace is allocated on the heap and, as a rough rule of thumb, 100 bytes of heap memory are required for each traced reduction.
 
 \item
 The program first executes as usual.
@@ -76,10 +76,10 @@ now available.  The program does \emph{not} terminate but waits
 for the browser to connect to it.
    
 If it seems that the program is stuck in a loop, then
-force the trace-available state by keying an interrupt
+force halting by keying an interrupt
 (usually \texttt{Ctrl-C}).
 
-At this point the program also states how many reductions had been performed by the computation, and how many of these were calls of trusted functions by trusted functions, trusted functions by suspected functions, suspected functions by trusted functions and suspected functions by suspected functions (see Section~\ref{trusting} about trusting).
+At this point the program also states how many reductions have been performed by the computation, and how many of these were calls of trusted functions by trusted functions, trusted functions by suspected functions, suspected functions by trusted functions and suspected functions by suspected functions (see Section~\ref{trusting} about trusting).
 
 \item
 If the browser \texttt{rtb} is not already running, then start it.
@@ -91,7 +91,7 @@ of the browser window.
 The browser communicates with the traced Haskell program.
 \end{enumerate}
 
-After exploration of the trace click on the `disconnect' button in the upper part of the browser window. If the traced program had been interrupted, then its execution continues. Otherwise it terminates directly.
+After exploration of the trace click on the `disconnect' button in the upper part of the browser window. If the traced program was interrupted, then its execution continues. Otherwise it terminates directly.
 The browser is exited by selecting ``Exit'' in the ``File'' menu.
 
 %------------------------------------------------------------------------------
@@ -128,7 +128,7 @@ By clicking over a section you cause the parent redex for that section to be dis
 \subsection{Selecting an expression in the trace pane}
 
 You select an expression in the trace pane just by moving the mouse pointer over it. The currently-selected expression is marked by a red box around it. You can select any subexpression of a displayed expression. Hence you select an expression \texttt{sqrt y} by moving the mouse pointer on the space between \texttt{sqrt} and \texttt{y} (the invisible application). If you move the mouse pointer on \texttt{sqrt}, then you only select the expression \texttt{sqrt}. If you move it on \texttt{y}, then you only select \texttt{y}.
-Selecting exactly the expression that you desire may need time to get used to.
+Quickly selecting exactly the expression that you desire may take practice.
 
 \subsection{Viewing a parent}
 
@@ -136,7 +136,7 @@ At the start the trace pane contains only a single line with a redex and an arro
 
 If you \emph{left}-click on the whole redex, then the parent is shown exactly below the selected redex and the arrow on the left is extended appropriately. If you left-click on the whole redex that just appeared, then its parent is shown below and the arrow is extended anew. You can continue left-clicking on whole redexes until the redex is \texttt{main} or another top-level constant. These do not have parents. To indicate that the end has been reached, the arrow is replaced by a horizontal line.
 
-If you left-click on a proper subexpression of a redex, then its parent will be shown in the line below as well. However, the parent will be indented further to the right. On its left a new arrow in a new colour appears. The selected expression is underlined in the same colour. Again the parent of part or the whole new redex can be demanded.
+If you left-click on a proper subexpression of a redex, then its parent will be shown in the line below as well. However, the parent will be indented further to the right. On its left a new arrow in a new colour appears. The selected expression is underlined in the same colour. 
 
 So a parent of a whole redex is shown further down along the same arrow.
 The parent of a proper subexpression is displayed with a new arrow. The colour of underlinings and arrows indicates which subexpression belong to which parent. 
@@ -148,10 +148,10 @@ As a shortcut for obtaining the parent of a whole redex you may simply left-clic
 
 The trace pane may be scrolled, but it quickly becomes cluttered nonetheless. Hence those parts of the trace that are no longer of interest need to be removed from the display.
 
-By left-clicking on an expression who's parent is already on display,
+By left-clicking on an expression for which the parent is already on display,
 the parent and any of its ancestors are removed from the display.
 
-After you folded away the ancestors of a subexpression that subexpression will be underlined with a dashed line. This dashed line shall remind you that you already looked at ancestors of the subexpression.
+After you folded away the ancestors of a subexpression that subexpression will be underlined with a dashed line. This dashed line is a reminder that you have already looked at ancestors of the subexpression.
 
 
 \subsection{The source code pane}\label{source}
@@ -160,9 +160,9 @@ Usually it is not enough just to see the relationship between the values and red
 
 If you \emph{right}-click on an expression in the trace pane, then the source file where that instance of the expression was created is loaded and shown in the source code pane, and the cursor moves to the corresponding location in the file.
 
-Note that, if the selected expression is a variable or constant, then the cursor shows this variable or constant in the source code. However, if the selected expression is more complex, then the shown expression in the source may contain variables where the selected expression has values. The selected expression is an \emph{instance} of the shown source code expression.
+Note that, if the selected expression is a variable or constant, then the cursor shows this variable or constant in the source code. However, if the selected expression is more complex, then the source may contain variables where the selected expression has values. The selected expression is an \emph{instance} of the source code expression.
 
-To get to the point of definition of a variable or data constructor, you \emph{right}-click on it in the trace as before, but with the \emph{shift} key pressed.
+To see the definition of a variable or data constructor, you \emph{right}-click on it in the trace as before, but with the \emph{shift} key pressed.
 
 
 \subsection{Contraction of a large subexpression}
@@ -186,7 +186,7 @@ You have to right-click on \verb?(\)? as described in Section~\ref{source} to se
 
 \subsubsection{The undefined value $\bot$}
 
-In a lazy language such as Haskell, a redex is not evaluated if its value is not needed. It follows, that all redexes in a computation will either be unevaluated or evaluated, when the computation terminates successfully. In some cases though, the computation is aborted because of a run-time error or interruption by the user. Then evaluation of a redex may have begun, but not yet resulted in a value. We call the result of such a redex \emph{undefined} and denote it by $\bot$ in the trace pane.
+If the computation is aborted because of a run-time error or interruption by the user, then evaluation of a redex may have begun, but not yet resulted in a value. We call the result of such a redex \emph{undefined} and denote it by $\bot$ in the trace pane.
 
 A typical case where we obtain $\bot$ is when in order to compute the value of a redex the value of the redex itself is needed. The occurrence of such a situation is called a \emph{black hole}. The following example causes a black hole:
 
@@ -250,7 +250,7 @@ As just stated many expressions have the same parent. To show you which expressi
 \subsection{Shared expressions}
 
 When you select an expression in the trace pane, sometimes not only this expression is surrounded by a red box but also some other occurrences of the expression.
-The reason is that the marked occurrences are shared, that is, they are not just equal, but they actually share the same space in memory.
+The reason is that the marked occurrences are shared. That is, they are not just equal, but they actually share the same space in memory.
 This operational observation can often help you to understand a computation.
 
 \subsection{Shared expressions with different parents}
@@ -262,7 +262,7 @@ For example, for the program
 main = print (head [True, False])
 \end{code}
 the parent of the result value \texttt{True} is the redex
-\texttt{head [True, False]}. The result value \texttt{True} is the same as the first element of the list, the values are shared. However, the parent of the \texttt{True} in the list is \texttt{main}. 
+\texttt{head [True, False]}. The result value \texttt{True} is the same as the first element of the list, the values are shared. However, the parent of the \texttt{True} in the list is \texttt{main}, whereas the parent of the result is \texttt{head [True, False]}.
 
 
 %------------------------------------------------------------------------------
@@ -270,7 +270,7 @@ the parent of the result value \texttt{True} is the redex
 
 \section{Partial traces}
 
-To avoid unnecessary detail or/and to save heap space it is desirable to create a partial trace that does not contain every reduction of a computation.
+To avoid unnecessary detail or/and to save heap space it may be desirable to create a partial trace that does not contain every reduction of a computation.
 Hat provides two different ways to specify a partial trace.
 
 
@@ -292,7 +292,7 @@ take 5 (1:2:3:4:5:\(\dashedBox\))
 The parent of $\dashedBox$ is \texttt{from 1}, as for the whole expression
 \texttt{(1:2:3:4:5:\(\dashedBox\))}.
 
-You can trust single functions but also whole modules.
+You can trust single functions or whole modules.
 The choice of which components to trust and which to suspect can be made at
 compile-time but can also be altered at run-time.
    
@@ -312,7 +312,7 @@ By default only the \texttt{Prelude} is trusted.
 Pruning is a more radical way to reduce the size of a trace.
 At each garbage collection, trace structure more
 than a specified distance \emph{n} from all continuing evaluation points
-is discarded. Often you find a good deal of information in traces even for very small distances --- after all, the last garbage collection may have been some time ago. Hence even setting the distance to 0 is a worthwhile option.
+is discarded. Often you find a good deal of information in traces even for very small values of \emph{n} --- after all, the last garbage collection may have been some time ago. Hence even setting the distance to 0 is a worthwhile option.
  
 Any pruning is specified at run-time: for example,
 \texttt{+RTS -dk2 -RTS}.
@@ -330,21 +330,25 @@ By default there is no pruning.
 \section{Some advice from experience}
 
 \begin{itemize}
-\item First-time users of Hat tend to quickly unfold large parts of the trace and thus clutter the screen and get lost. Think well, before you demand to see another parent. It is seldomly useful to follow a long sequence of parents for whole redexes. Do not forget that you can ask for the parent of any subexpression. Choose the subexpression that interests you carefully. When locating an error, a wrong subexpression of an argument is a good candidate for further enquiry.
+\item First-time users of Hat tend to quickly unfold large parts of the trace and thus clutter the screen and get lost. Think well, before you demand to see another parent. It is seldom useful to follow a long sequence of parents for whole redexes. Do not forget that you can ask for the parent of any subexpression. Choose the subexpression that interests you carefully. When locating an error, a wrong subexpression of an argument is a good candidate for further enquiry.
 
 In our experience usually less than 10 parents need to be viewed to locate an error, even in large programs.
 
 \item Use the links to the source as described in Section~\ref{source}. The trace is designed to be of minimal size. The source gives valuable context information.
 
-\item Use the various forms of highlighting described in Section~\ref{advanced}. The conveyed information often makes viewing a parent superfluous.
+\item Use the various forms of highlighting described in Section~\ref{advanced}. The information conveyed by highlighting often makes viewing a parent superfluous.
 
-\item Avoid $\lambda$-abstractions in your program. In fact, informative function names are very helpful for tracing.
+\item Avoid $\lambda$-abstractions in your program. Informative function names are very helpful for tracing.
 
 \end{itemize}
 
 %------------------------------------------------------------------------------
 
 \section{Further features of the browser}
+
+\subsection{Select a font for the trace}
+
+You can select the font in which the trace is displayed by selecting the ``Select font'' option in the ``Options'' menu. A dialogue appears in which you can choose the font face, the style and the size. Note that you have to press ``Enter'' or ``Return'' to change the size. The effect of your choice is shown in the dialogue. You commit your choice by selecting ``Ok''.
 
 \subsection{Change the server/port}
 
@@ -369,7 +373,7 @@ with comments.
 
 To create a new script select the ``Create script'' option in the ``File'' menu. A file selector box will ask you for the file name of the script. The extension ``.scr'' will be appended automatically to the file name, if you do not give it.
 
-On the message panel between the trace pane and the program output and source panes the browser informs you that script recording is on. All your actions in exploring the trace will be recorded. You can also write a comment about the actions you just performed or you are going to perform by selecting the ``Add script message'' option in the ``File'' menu. A window will appear in which you can type your comment. Press ``Ok'' when you completed your comment and continue exploring the trace.
+On the message panel between the trace pane and the program output and source panes the browser informs you that script recording is on. All your actions in exploring the trace will be recorded. You can also write a comment about the actions you just performed or you are going to perform by selecting the ``Add script message'' option in the ``File'' menu. A window will appear in which you can type your comment. Press ``Ok'' when you complete your comment and continue exploring the trace.
 
 You end script recording by selecting the ``End script'' option in the ``File'' menu.
 
@@ -391,9 +395,6 @@ between each step.
 Note that when a script is active, you cannot manually explore trails.
 
 
-\subsection{Select a font for the trace}
-
-You can select the font in which the trace is displayed by selecting the ``Select font'' option in the ``Options'' menu. A dialogue appears in which you can choose the font face, the style and the size. Note that you have to press ``Enter'' or ``Return'' to change the size. The effect of your choice is shown in the dialogue. You commit your choice by selecting ``Ok''.
 
 %------------------------------------------------------------------------------
 
