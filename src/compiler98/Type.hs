@@ -376,11 +376,15 @@ typeLit e@(ExpLit pos (LitInteger _ _)) =    --- Add fromInteger
       typeUnifyApply (msgLit pos "integer") [expT,NTcons tcon []] >>>= \ t ->
       unitS (ExpApplication pos [exp,e],t)
 typeLit e@(ExpLit pos (LitRational _ _)) =	--- Add fromRational
-  getIdent (tRational,TCon) >>>= \ tcon ->
-  getIdent (tfromRational,Var) >>>= \ tfromRational ->
-  typeIdentDict (ExpVar pos) pos tfromRational >>>= \ (exp,expT) ->
-  typeUnifyApply (msgLit pos "rational") [expT,NTcons tcon []] >>>= \ t ->
-  unitS (ExpApplication pos [exp,e],t)
+  debugTranslating >>>= \dbgtrans ->
+  if dbgtrans then
+      getIdent (tRational,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
+  else
+      getIdent (tRational,TCon) >>>= \ tcon ->
+      getIdent (tfromRational,Var) >>>= \ tfromRational ->
+      typeIdentDict (ExpVar pos) pos tfromRational >>>= \ (exp,expT) ->
+      typeUnifyApply (msgLit pos "rational") [expT,NTcons tcon []] >>>= \ t ->
+      unitS (ExpApplication pos [exp,e],t)
 typeLit e@(ExpLit pos (LitString _ _)) = getIdent (tString,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
 typeLit e@(ExpLit pos (LitInt _ _))    = getIdent (tInt,TCon)    >>>= \tcon -> unitS (e,NTcons tcon [])
 typeLit e@(ExpLit pos (LitFloat _ _))  = getIdent (tFloat,TCon)  >>>= \tcon -> unitS (e,NTcons tcon [])

@@ -600,7 +600,13 @@ dExp cr e@(ExpLit pos (LitInteger b i)) =
     getD >>>= \d ->
     makeSourceRef pos >>>= \sr -> 
     unitS (ExpApplication pos [fci, sr, d, e])
-dExp cr e@(ExpLit pos lit)          = 
+dExp cr e@(ExpLit pos (LitRational b i)) = 
+    -- Remove this after typechecking
+    lookupVar pos t_fromConRational >>>= \fcr ->
+    getD >>>= \d ->
+    makeSourceRef pos >>>= \sr -> 
+    unitS (ExpApplication pos [fcr, sr, d, e])
+dExp cr e@(ExpLit pos lit) = 	-- at a guess, this clause is obsolete.
     dLit lit >>>= \constr ->
     getD >>>= \d ->
     makeSourceRef pos >>>= \sr -> 
@@ -702,6 +708,12 @@ dPat p@(ExpLit pos (LitInteger b i))=
     getD >>>= \d ->
     makeSourceRef pos >>>= \sr -> 
     unitS (ExpApplication pos [pfci, sr, d, p])
+dPat p@(ExpLit pos (LitRational b i))= 
+    -- Remove this after typechecking
+    lookupVar pos t_patFromConRational >>>= \pfcr ->
+    getD >>>= \d ->
+    makeSourceRef pos >>>= \sr -> 
+    unitS (ExpApplication pos [pfcr, sr, d, p])
 dPat p@(ExpLit pos (LitString _ s)) = 
     foldPatList pos (map (ExpLit pos . LitChar Boxed) s)
 dPat p@(ExpLit pos lit)             = wrapR pos =>>> unitS p

@@ -26,6 +26,7 @@ import FSLib
 import MergeSort(mergeSort)
 import SyntaxUtil
 import Foreign(ImpExp(..))
+import DbgId
 
 caseTopLevel modstr t2i code topdecls state tidFun =
     let
@@ -325,7 +326,15 @@ matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
 
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
-matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]),fun) =
+-- match (traced) numeric literal in an unresolved context
+matchAltIf v ces (pat@(ExpApplication pos
+                         [ap1, sr, t			-- ap_1 sr t
+                         ,(ExpApplication _
+                             [ExpVar _ _, dict, _, _])	-- fromInteger/fromRational
+                         ,(ExpApplication _
+                                 [ExpVar _ con, _, _,	-- (construct an
+                                  ExpLit _ lit])	--   (R lit _))
+                         ]), fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
   caseTidFun >>>= \ tidFun ->
 --strace ("Warning: numeric literal pattern in an overloaded context at "++
@@ -349,6 +358,7 @@ matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]), fun) =
 	caseExp (ExpApplication pos [equalNumEq dict,ExpVar pos v,pat]) =>>>
 	match ces [fun] (unitS PosExpFail) =>>>
           (unitS PosExpFail)
+-- match numeric literals (traced or untraced) in resolved contexts
 matchAltIf v ces (pat@(ExpLit pos (LitInteger _ a)),fun) =
   caseEqInteger >>>= \ equal ->
   mkIfLit v ces pos pat fun equal
@@ -356,6 +366,12 @@ matchAltIf v ces (pat@(ExpLit pos (LitFloat _ a)),fun) =
   caseEqFloat >>>= \ equal ->
   mkIfLit v ces pos pat fun equal
 matchAltIf v ces (pat@(ExpLit pos (LitDouble _ a)),fun) =
+  caseEqDouble >>>= \ equal ->
+  mkIfLit v ces pos pat fun equal
+matchAltIf v ces (pat@(ExpLit pos (LitRational _ a)),fun) =
+  strace ("Warning: literal numeric Rational pattern at "++strPos pos++"\n"++
+          "    Compiled code _will_ give wrong result.\n"++
+          "    This compiler is at fault - report as a bug.\n") $
   caseEqDouble >>>= \ equal ->
   mkIfLit v ces pos pat fun equal
 
