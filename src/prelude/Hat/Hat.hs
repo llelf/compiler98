@@ -38,9 +38,14 @@ module Hat
   -- qualified to mark clearly where original Prelude is used
 import Ratio (numerator,denominator)
 
-import PackedString (PackedString,packString) -- NONPORTABLE
--- import MagicTypes (NmType,CStructure) -- NONPORTABLE
-  -- magic C-type living in Haskell heap
+import FFI (unsafePerformIO,CString,withCString)	-- PORTABLE
+--import PackedString (PackedString,packString) -- NONPORTABLE
+  -- import MagicTypes (NmType,CStructure) -- NONPORTABLE
+    -- magic C-type living in Haskell heap
+
+useString :: (CString -> a) -> (String -> a)
+f `useString` s = unsafePerformIO (
+                      withCString s (\s'-> let z = f s' in z `seq` return z))
 
 type Pos = Int
 noPos = 0
@@ -48,10 +53,10 @@ noPos = 0
 -- ----------------------------------------------------------------------------
 
 openTrace :: String -> IO ()
-openTrace progname = openTrace' (packString progname)
+openTrace progname = openTrace' `useString` progname
 
 foreign import "openTrace"
-  openTrace' :: PackedString -> IO () 
+  openTrace' :: CString -> IO () 
 
 foreign import "closeTrace"
   closeTrace :: IO ()
@@ -1325,32 +1330,32 @@ foreign import "primSourceRef"
   mkSourceRef :: ModuleTraceInfo -> Int -> SR
 
 mkAtomCon :: ModuleTraceInfo -> Int -> Int -> String -> NmType
-mkAtomCon mti pos fixPri unqual = mkAtomCon' mti pos fixPri (packString unqual)
+mkAtomCon mti pos fixPri unqual = (mkAtomCon' mti pos fixPri) `useString` unqual
 
 foreign import "primAtomCon"
-  mkAtomCon' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+  mkAtomCon' :: ModuleTraceInfo -> Int -> Int -> CString -> NmType
 
 mkAtomId :: ModuleTraceInfo -> Int -> Int -> String -> NmType
-mkAtomId mti pos fixPri unqual = mkAtomId' mti pos fixPri (packString unqual)
+mkAtomId mti pos fixPri unqual = (mkAtomId' mti pos fixPri) `useString` unqual
 
 foreign import "primAtomId"
-  mkAtomId' :: ModuleTraceInfo -> Pos -> Int -> PackedString -> NmType
+  mkAtomId' :: ModuleTraceInfo -> Pos -> Int -> CString -> NmType
 
 mkAtomIdToplevel :: ModuleTraceInfo -> Pos -> Int -> String -> NmType
 mkAtomIdToplevel mti pos fixPri unqual = 
-  mkAtomIdToplevel' mti pos fixPri (packString unqual)
+  (mkAtomIdToplevel' mti pos fixPri) `useString` unqual
 
 foreign import "primAtomIdToplevel"
-  mkAtomIdToplevel' :: ModuleTraceInfo -> Pos -> Int -> PackedString -> NmType
+  mkAtomIdToplevel' :: ModuleTraceInfo -> Pos -> Int -> CString -> NmType
 
 mkModule :: String -> String -> ModuleTraceInfo
-mkModule unqual filename = mkModule' (packString unqual) (packString filename)
+mkModule unqual filename = (mkModule' `useString` unqual) `useString` filename
 
 foreign import "primModule"
   mkModule' :: PackedString -> PackedString -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
-outputTrace trace output = outputTrace' trace (packString output)
+outputTrace trace output = outputTrace' trace `useString` output
 
 foreign import "outputTrace"
   outputTrace' :: Trace -> PackedString -> IO ()
