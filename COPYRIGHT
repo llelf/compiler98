@@ -1,40 +1,43 @@
-The majority of the source code of the nhc98 Haskell compiler is
+The basic source code of the nhc98 Haskell compiler is
 (c) copyright to Niklas Rojemo, 1991-1998.
 
 Many parts of the nhc98 compiler, libraries, and system were
 contributed or modified by Malcolm Wallace, Jan Sparud, David Wakeling,
 Colin Runciman, Phil Hassall, and Olaf Chitil, and are (c) copyright
-to them, their respective institutions, or funding bodies, 1996-2002.
+to them, their respective institutions, or funding bodies, 1996-2003.
 
 The core of the hmake tool is
 (c) copyright to Thomas Hallgren, 1991-1997.
 (Code is incorporated from the earlier tools hbcmake and nhc13make.)
 Many modifications to hmake are
-(c) copyright to Malcolm Wallace, 1998-2001.
+(c) copyright to Malcolm Wallace, 1998-2003.
 
 The hmake interactive tool is
 (c) copyright to Malcolm Wallace, 2000.
+
+The hmake-config tool is
+(c) copyright to Malcolm Wallace, 2002-2003.
 
 The hp2graph tool is
 (c) copyright to David Wakeling and Niklas Rojemo, 1991-1996.
 
 The hat-trans tool is
-(c) copyright to Olaf Chitil, 2002.
+(c) copyright to Olaf Chitil, 2002-2003.
 
 The hat-observe tool is
-(c) copyright to Thorsten Brehm, 2001.
+(c) copyright to Malcolm Wallace and Thorsten Brehm, 2001-2003.
 
 The hat-detect tool is
 (c) copyright to Thorsten Brehm, 2001.
 
 The hat-trail tool is
-(c) copyright to Malcolm Wallace, 2002.
+(c) copyright to Malcolm Wallace, 2002-2003.
 
 The hat-stack tool is
-(c) copyright to Malcolm Wallace, 2001.
+(c) copyright to Malcolm Wallace, 2001-2002.
 
 The hat-check tool is
-(c) copyright to Colin Runciman, 2001.
+(c) copyright to Colin Runciman, 2001-2002.
 
 The hat-trail-in-java (redex trail browser) tool is
 (c) copyright to Jan Sparud, 1996-1998,
@@ -51,6 +54,10 @@ BSD-style license.  That implementation of Random is
 (c) copyright Lennart Augustsson, with modifications by Sigbjorn Finne.
 Some parts of the implementation of the Time library were also
 contributed by Lennart.
+
+The hierarchical libraries base package is
+(c) copyright the University of Glasgow, and is distributed under
+a separate BSD-style license.
 
 
 The development of nhc98 (and its predecessor nhc13) has been supported
