@@ -2,10 +2,11 @@
 #	simple redirection script to find the correct executable
 #	for this machine architecture
 #	(also ensures that hi's config is identical to hmake)
-MACHINE=${MACHINE-"`ScriptDir/harch`"}
+SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
+MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 INSTALLVER="InstallVer"
-export MACHINE INSTALLVER
+export MACHINE INSTALLVER HMAKEDIR SCRIPTDIR
 
 if [ ! -d $HMAKEDIR/$MACHINE ]
 then

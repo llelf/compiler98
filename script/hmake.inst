@@ -9,6 +9,7 @@ SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
 TMP=${TMP-/tmp}
+export HMAKEDIR		# to find location of global hmakerc file.
 
 MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}	# the real `hmake' program
 OLDER=${OLDER-$HMAKEDIR/$MACHINE/Older}		# a helper program

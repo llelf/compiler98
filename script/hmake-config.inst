@@ -6,9 +6,7 @@ SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
 TMP=${TMP-/tmp}
-export MACHINE
-
-MKCONFIG=${MKCONFIG-$HMAKEDIR/$MACHINE/MkConfig}
+export MACHINE HMAKEDIR
 
 if [ ! -d $HMAKEDIR/$MACHINE ]
 then
@@ -18,4 +16,4 @@ then
   exit 1
 fi
 
-$MKCONFIG "$@"
+exec $HMAKEDIR/$MACHINE/MkConfig "$@"
