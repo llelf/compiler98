@@ -14,5 +14,5 @@ fi
 
 CLASSPATH=$NHC98LIBDIR/rtb.jar
 export CLASSPATH
-echo Redex Trail Browser started, please wait for java to initialise...
+echo Starting Hat user interface, please wait (java is slow :-)...
 java -Dtracer.tracefont=Helvetica:18 -Dtracer.outputfont=Courier:18 -Dtracer.sourcefont=Courier:14 nhctracer.NhcTracer 6710 "$@" &
