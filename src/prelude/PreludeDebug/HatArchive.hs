@@ -1,22 +1,20 @@
 module HatArchive where
 
-import PreludeBuiltin (Filed)
-
-{-
-data Filed a			-- an abstract type, variable 'a' is phantom
--}
+import PackedString (PackedString)
+import HatBuiltin (CStructure,NmType,SR,FileTrace)
+-- import Ratio (Ratio(..))	-- remove Rationals for now
 
 
-data Trace = Trace   { traceptr    :: Filed Trace
-                     , trustedFun  :: Bool
-                     , hidden      :: Bool
-                     }
-data NmType = NmType { nmtypeptr   :: Filed NmType
-                     , trustedNm   :: Bool
-                     }
-newtype SR = SR      { _sr         :: Filed SR
-                     }
+data E a = E a			-- E to protect a closure from evaluation
 
+myseq a b = cSeq a (E b)	-- need our own version of seq
+cSeq primitive 2 :: a -> (E b) -> b
+
+
+data Trace     = Trace  { traceptr    :: FileTrace
+                        , trustedFun  :: Bool
+                        , hidden      :: Bool
+                        }
 
 ----
 -- Trace constructors
@@ -96,94 +94,119 @@ mkTSatC :: Trace	-- original SatB (or SatA)
 -- Trace constructor.
 
 mkTRoot =
-    Trace { traceptr   = primTRoot
-          , trustedFun = False
-          , hidden     = False
-          }
+    let t = primTRoot
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = False
+                    , hidden     = False
+                    }
 mkTAp1 tap tfn targ1 sr =
-    Trace { traceptr   = primTAp1 (traceptr tap)
-                                  (traceptr tfn)
-                                  (traceptr targ1)
-                                  (_sr sr)
-          , trustedFun = trustedFun tap && trustedFun tfn
-          , hidden     = False
-          }
+    let t = primTAp1 (traceptr tap)
+                     (traceptr tfn)
+                     (traceptr targ1)
+                     sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun tfn
+                    , hidden     = False
+                    }
 mkTAp2 tap tfn targ1 targ2 sr =
-    Trace { traceptr   = primTAp2 (traceptr tap)
-                                  (traceptr tfn)
-                                  (traceptr targ1)
-                                  (traceptr targ2)
-                                  (_sr sr)
-          , trustedFun = trustedFun tap && trustedFun tfn
-          , hidden     = False
-          }
+    let t = primTAp2 (traceptr tap)
+                     (traceptr tfn)
+                     (traceptr targ1)
+                     (traceptr targ2)
+                     sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun tfn
+                    , hidden     = False
+                    }
 mkTAp3 tap tfn targ1 targ2 targ3 sr =
-    Trace { traceptr   = primTAp3 (traceptr tap)
-                                  (traceptr tfn)
-                                  (traceptr targ1)
-                                  (traceptr targ2)
-                                  (traceptr targ3)
-                                  (_sr sr)
-          , trustedFun = trustedFun tap && trustedFun tfn
-          , hidden     = False
-          }
+    let t = primTAp3 (traceptr tap)
+                     (traceptr tfn)
+                     (traceptr targ1)
+                     (traceptr targ2)
+                     (traceptr targ3)
+                     sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun tfn
+                    , hidden     = False
+                    }
 mkTAp4 tap tfn targ1 targ2 targ3 targ4 sr =
-    Trace { traceptr   = primTAp4 (traceptr tap)
-                                  (traceptr tfn)
-                                  (traceptr targ1)
-                                  (traceptr targ2)
-                                  (traceptr targ3)
-                                  (traceptr targ4)
-                                  (_sr sr)
-          , trustedFun = trustedFun tap && trustedFun tfn
-          , hidden     = False
-          }
+    let t = primTAp4 (traceptr tap)
+                     (traceptr tfn)
+                     (traceptr targ1)
+                     (traceptr targ2)
+                     (traceptr targ3)
+                     (traceptr targ4)
+                     sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun tfn
+                    , hidden     = False
+                    }
 mkTAp5 tap tfn targ1 targ2 targ3 targ4 targ5 sr =
-    Trace { traceptr   = primTAp5 (traceptr tap)
-                                  (traceptr tfn)
-                                  (traceptr targ1)
-                                  (traceptr targ2)
-                                  (traceptr targ3)
-                                  (traceptr targ4)
-                                  (traceptr targ5)
-                                  (_sr sr)
-          , trustedFun = trustedFun tap && trustedFun tfn
-          , hidden     = False
-          }
+    let t = primTAp5 (traceptr tap)
+                     (traceptr tfn)
+                     (traceptr targ1)
+                     (traceptr targ2)
+                     (traceptr targ3)
+                     (traceptr targ4)
+                     (traceptr targ5)
+                     sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun tfn
+                    , hidden     = False
+                    }
 mkTNm tnm nm sr =
-    Trace { traceptr   = primTNm (traceptr tnm)
-                                 (nmtypeptr nm)
-                                 (_sr sr)
-          , trustedFun = trustedNm nm
-          , hidden     = False
-          }
+    let t = primTNm (traceptr tnm)
+                    nm
+                    sr
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedNm nm
+                    , hidden     = False
+                    }
 mkTInd t1 t2 =
-    Trace { traceptr   = primTInd (traceptr t1)
-                                  (traceptr r2)
-          , trustedFun = trustedFun t1
-          , hidden     = False
-          }
+    let t = primTInd (traceptr t1)
+                     (traceptr t2)
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun t1
+                    , hidden     = False
+                    }
 mkTHidden t1 =
-    Trace { traceptr   = primTHidden (traceptr t1)
-          , trustedFun = trustedFun t1
-          , hidden     = True
-          }
+    let t = primTHidden (traceptr t1)
+    in
+    if hidden t1 then t1 else			-- collapse Hidden chains
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun t1
+                    , hidden     = True
+                    }
 mkTSatA t1 =
-    Trace { traceptr   = primTSatA (traceptr t1)
-          , trustedFun = trustedFun t1
-          , hidden     = False
-          }
+    let t = primTSatA (traceptr t1)
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun t1
+                    , hidden     = False
+                    }
 mkTSatB t1 =
-    Trace { traceptr   = primTSatB (traceptr t1)
-          , trustedFun = trustedFun t1
-          , hidden     = False
-          }
+    let t = primTSatB (traceptr t1)
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun t1
+                    , hidden     = False
+                    }
 mkTSatC torig tnew =
-    Trace { traceptr   = primTSatC (traceptr torig)
-                                   (traceptr tnew)
-          , trustedFun = trustedFun torig
-          , hidden     = False
-          }
+    let t = primTSatC (traceptr torig)
+                      (traceptr tnew)
+    in
+    t `myseq` Trace { traceptr   = t
+                    , trustedFun = trustedFun torig
+                    , hidden     = False
+                    }
 
 
 ----
@@ -192,93 +215,147 @@ mkTSatC torig tnew =
 mkNTInt		:: Int -> NmType
 mkNTChar	:: Char -> NmType
 mkNTInteger	:: Integer -> NmType
-mkNTRational	:: Integer -> Integer -> NmType
+--mkNTRational	:: Rational -> NmType
 mkNTFloat	:: Float -> NmType
 mkNTDouble	:: Double -> NmType
-mkNTId		:: Int -> NmType
-mkNTConstr	:: Int -> NmType
+mkNTId'		:: Int -> NmType	-- dummy for compile time only
+mkNTId		:: CStructure -> NmType	--   replaced by this one at runtime
+mkNTConstr'	:: Int -> NmType	-- dummy for compile time only
+mkNTConstr	:: CStructure -> NmType	--   replaced by this one at runtime
 mkNTTuple	:: NmType
 mkNTFun		:: NmType
 mkNTCase	:: NmType
 mkNTLambda	:: NmType
 mkNTDummy	:: NmType
-mkNTCString	:: NmType
 mkNTCString	:: PackedString -> NmType
 mkNTIf		:: NmType
 mkNTGuard	:: NmType
 mkNTContainer	:: NmType
 
+foreign import "primTrustedFun" trustedNm	:: NmType -> Bool
+
+----
+-- NmType constructor implementations
+----
+mkNTInt		= primNTInt
+mkNTChar	= primNTChar
+mkNTInteger	= primNTInteger
+--mkNTRational ((R n _) :% (R d _))	= primNTRational n d
+mkNTFloat	= primNTFloat
+mkNTDouble	= primNTDouble
+mkNTId'	    x	= undefined x		-- dummy for compile time only
+mkNTId	 	= primNTId		-- dummy for compile time only
+mkNTConstr' x	= undefined x		-- dummy for compile time only
+mkNTConstr	= primNTConstr		-- dummy for compile time only
+mkNTTuple	= primNTTuple
+mkNTFun		= primNTFun
+mkNTCase	= primNTCase
+mkNTLambda	= primNTLambda
+mkNTDummy	= primNTDummy
+mkNTCString	= primNTCString
+mkNTIf		= primNTIf
+mkNTGuard	= primNTGuard
+mkNTContainer	= primNTContainer
+
+
 ----
 -- SR constructors
 ----
-mkSR0		:: SR
-mkSR3		:: Int -> SR
+mkNoSR		:: SR
+mkSR'		:: Int -> SR		-- dummy for compile time only
+mkSR		:: CStructure -> SR	-- is replaced by this one at runtime
+
+mkNoSR		= primSR0
+mkSR' x		= undefined x		-- dummy
+mkSR		= primSR3
 
 
 ----
 -- Primitive stuff
 ----
-foreign import primTRoot :: Filed Trace
+foreign import primTRoot :: FileTrace
 
-foreign import primTAp1 :: Filed Trace		-- application
-			-> Filed Trace		-- fn
-			-> Filed Trace		-- arg1
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTAp1 :: FileTrace		-- application
+			-> FileTrace		-- fn
+			-> FileTrace		-- arg1
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTAp2 :: Filed Trace		-- application
-			-> Filed Trace		-- fn
-			-> Filed Trace		-- arg1
-			-> Filed Trace		-- arg2
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTAp2 :: FileTrace		-- application
+			-> FileTrace		-- fn
+			-> FileTrace		-- arg1
+			-> FileTrace		-- arg2
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTAp3 :: Filed Trace		-- application
-			-> Filed Trace		-- fn
-			-> Filed Trace		-- arg1
-			-> Filed Trace		-- arg2
-			-> Filed Trace		-- arg3
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTAp3 :: FileTrace		-- application
+			-> FileTrace		-- fn
+			-> FileTrace		-- arg1
+			-> FileTrace		-- arg2
+			-> FileTrace		-- arg3
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTAp4 :: Filed Trace		-- application
-			-> Filed Trace		-- fn
-			-> Filed Trace		-- arg1
-			-> Filed Trace		-- arg2
-			-> Filed Trace		-- arg3
-			-> Filed Trace		-- arg4
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTAp4 :: FileTrace		-- application
+			-> FileTrace		-- fn
+			-> FileTrace		-- arg1
+			-> FileTrace		-- arg2
+			-> FileTrace		-- arg3
+			-> FileTrace		-- arg4
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTAp5 :: Filed Trace		-- application
-			-> Filed Trace		-- fn
-			-> Filed Trace		-- arg1
-			-> Filed Trace		-- arg2
-			-> Filed Trace		-- arg3
-			-> Filed Trace		-- arg4
-			-> Filed Trace		-- arg5
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTAp5 :: FileTrace		-- application
+			-> FileTrace		-- fn
+			-> FileTrace		-- arg1
+			-> FileTrace		-- arg2
+			-> FileTrace		-- arg3
+			-> FileTrace		-- arg4
+			-> FileTrace		-- arg5
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTNm :: Filed Trace		-- trace of Nm
-			-> Filed NmType		-- NmType
-			-> Filed SR		-- src ref
-			-> Filed Trace		-- result
+foreign import primTNm :: FileTrace		-- trace of Nm
+			-> NmType		-- NmType
+			-> SR			-- src ref
+			-> FileTrace		-- result
 
-foreign import primTInd :: Filed Trace		-- trace 1
-			-> Filed Trace		-- trace 2
-			-> Filed Trace		-- result
+foreign import primTInd :: FileTrace		-- trace 1
+			-> FileTrace		-- trace 2
+			-> FileTrace		-- result
 
-foreign import primTHidden :: Filed Trace	-- trace
-			-> Filed Trace		-- result
+foreign import primTHidden :: FileTrace		-- trace
+			-> FileTrace		-- result
 
-foreign import primTSatA :: Filed Trace		-- trace of unevaluated expr
-			-> Filed Trace		-- result
+foreign import primTSatA :: FileTrace		-- trace of unevaluated expr
+			-> FileTrace		-- result
 
-foreign import primTSatB :: Filed Trace		-- original SatA
-			-> Filed Trace		-- result
+foreign import primTSatB :: FileTrace		-- original SatA
+			-> FileTrace		-- result
 
-foreign import primTSatC :: Filed Trace		-- original SatB (or SatA)
-			-> Filed Trace		-- trace of reduced value
-			-> Filed Trace		-- result
+foreign import primTSatC :: FileTrace		-- original SatB (or SatA)
+			-> FileTrace		-- trace of reduced value
+			-> FileTrace		-- result
 
+
+foreign import primNTInt	:: Int -> NmType
+foreign import primNTChar	:: Char -> NmType
+foreign import primNTInteger	:: Integer -> NmType
+--foreign import primNTRational	:: Integer -> Integer -> NmType
+foreign import primNTFloat	:: Float -> NmType
+foreign import primNTDouble	:: Double -> NmType
+foreign import primNTId		:: CStructure -> NmType
+foreign import primNTConstr	:: CStructure -> NmType
+foreign import primNTTuple	:: NmType
+foreign import primNTFun	:: NmType
+foreign import primNTCase	:: NmType
+foreign import primNTLambda	:: NmType
+foreign import primNTDummy	:: NmType
+foreign import primNTCString	:: PackedString -> NmType
+foreign import primNTIf		:: NmType
+foreign import primNTGuard	:: NmType
+foreign import primNTContainer	:: NmType
+
+
+foreign import primSR0	:: SR
+foreign import primSR3	:: CStructure -> SR
