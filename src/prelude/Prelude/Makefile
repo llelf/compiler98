@@ -80,7 +80,7 @@ ifeq "T" "${TRACING}"
 extra: ${PLOBJS}
 $(PLOBJS): ${OBJDIR}/%.$O: %.hs
 	${HC} -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-	mv `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
+	cp `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
 endif
 
 
