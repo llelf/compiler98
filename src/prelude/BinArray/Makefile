@@ -39,12 +39,12 @@ ${OBJDIR}/BinArray.$O: BinArray.hs ${OBJDIR}/UnboxedArray.$O ${OBJS}
 
 
 # C-files dependencies.
-AllocUBA.c:     DUnboxedArray.c
-Binary_UBA.c:   DUnboxedArray.c
-GetUBAEnd.c:    DUnboxedArray.c
-GetUBAFree.c:   DUnboxedArray.c
-RUBA.c:         DUnboxedArray.c
-WUBA.c:         DUnboxedArray.c
-UnboxedArray.c: DUnboxedArray.c AllocUBA.c Binary_UBA.c GetUBAEnd.c GetUBAFree.c RUBA.c WUBA.c
-BinArray.c:     UnboxedArray.c 
+AllocUBA.$C:     DUnboxedArray.$C
+Binary_UBA.$C:   DUnboxedArray.$C
+GetUBAEnd.$C:    DUnboxedArray.$C
+GetUBAFree.$C:   DUnboxedArray.$C
+RUBA.$C:         DUnboxedArray.$C
+WUBA.$C:         DUnboxedArray.$C
+UnboxedArray.$C: DUnboxedArray.$C AllocUBA.$C Binary_UBA.$C GetUBAEnd.$C GetUBAFree.$C RUBA.$C WUBA.$C
+BinArray.$C:     UnboxedArray.$C 
 

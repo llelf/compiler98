@@ -18,11 +18,18 @@ described here for the two most recent released versions.
 <ul>
 <li> New:	Updated the Prelude/Libraries to match the newly revised
 		Haskell'98 Report.
+<li> Update:	Default build target is now basic + tracer (was just basic).
+<li> Update:	Building with gcc now builds everything with gcc, including
+		profiling and tracing.  This is much faster.
 <li> Bugfix:	An 'hi' built with just a C compiler segfaulted.
 <li> Bugfix:	Recognise an existing ghc-5 installation.
 <li> Bugfix:	Missing include <errno.h> for Cygwin.
 <li> Bugfix:	Minor filename recognition error in hat-stack and hat-connect.
-</ul
+<li> Bugfix:	Filename extension for time profiling changed to .z.o to
+		avoid Windows conflicts between .T.o and .t.o.  The compiler
+		flags -T and -t are unchanged, -z is a new synonym for -t.
+</ul>
+
 
 <hr>
 <h3>nhc98 1.04 (2001-05-21) features</h3>
@@ -157,7 +164,11 @@ the redex-trail-based tracing and debugging system.
 <h3>Status of various components</h3>
 
 <p>
-<b>The basic, stable, components.</b>
+The basic, stable, components include the compiler itself, the Standard
+Prelude and Libraries, heap profiling facilities, and the tools hmake,
+greencard, and hp2graph.  Relatively recent additions to the system
+are the tracing transformation, trace browsing tools (hat tools),
+time profiler, and common FFI.
 
 <p>
 <center>
@@ -182,22 +193,14 @@ the redex-trail-based tracing and debugging system.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>2001-05-10</td>
-  <td>2001-04-20</td>
+  <td>2001-06-01</td>
   <td>1997</td>
   <td>1996</td>
-  <td>2000-11-23</td>
+  <td>2001-06-01</td>
   <td>2001-02-08</td>
 </tr>
 </table>
-</center>
 
-<p>
-<b>Newer components.</b>
-Relatively recent additions to the compiler are the tracing transformation,
-trace browsing tools (hat tools), time profiler, and common FFI.
-
-<p>
-<center>
 <table border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>component</th>
@@ -219,7 +222,7 @@ trace browsing tools (hat tools), time profiler, and common FFI.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>2001-05-10</td>
-  <td>2001-05-18</td>
+  <td>2001-06-04</td>
   <td>2001-05-18</td>
   <td>2001-03-01</td>
   <td>2000-11-10</td>
@@ -235,7 +238,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.05.18<br>
+This page last modified: 2001.06.04<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

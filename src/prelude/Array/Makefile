@@ -46,23 +46,23 @@ ${OBJDIR}/../List/Difference.$O:
 
 
 # C-files dependencies.
-LowVector.c:  _E.c
-AMap.c:       DArray.c ArrayFun.c AIndex.c Bounds.c
-Accum.c:      DArray.c Replace.c  AIndex.c
-AccumArray.c: DArray.c ArrayFun.c Accum.c
-ArrayFun.c:   DArray.c
-Assocs.c:     DArray.c Indices.c  AIndex.c
-Bounds.c:     DArray.c
-Elems.c:      DArray.c Indices.c  AIndex.c
-Eq_Array.c:   DArray.c Assocs.c Elems.c
-AIndex.c:     DArray.c
-Indices.c:    DArray.c Bounds.c
-IxMap.c:      DArray.c ArrayFun.c AIndex.c
-ListArray.c:  DArray.c ArrayFun.c
-Ord_Array.c:  DArray.c Assocs.c   Eq_Array.c
-Read_Array.c: DArray.c ArrayFun.c
-Replace.c:    DArray.c LowVector.c _E.c
-Show_Array.c: DArray.c Assocs.c   Bounds.c  Elems.c
-../List/Difference.c:
-	cd ../List; ${MAKE} Difference.c
+LowVector.$C:  _E.$C
+AMap.$C:       DArray.$C ArrayFun.$C  AIndex.$C Bounds.$C
+Accum.$C:      DArray.$C Replace.$C   AIndex.$C
+AccumArray.$C: DArray.$C ArrayFun.$C  Accum.$C
+ArrayFun.$C:   DArray.$C
+Assocs.$C:     DArray.$C Indices.$C   AIndex.$C
+Bounds.$C:     DArray.$C
+Elems.$C:      DArray.$C Indices.$C   AIndex.$C
+Eq_Array.$C:   DArray.$C Assocs.$C    Elems.$C
+AIndex.$C:     DArray.$C
+Indices.$C:    DArray.$C Bounds.$C
+IxMap.$C:      DArray.$C ArrayFun.$C  AIndex.$C
+ListArray.$C:  DArray.$C ArrayFun.$C
+Ord_Array.$C:  DArray.$C Assocs.$C    Eq_Array.$C
+Read_Array.$C: DArray.$C ArrayFun.$C
+Replace.$C:    DArray.$C LowVector.$C _E.$C
+Show_Array.$C: DArray.$C Assocs.$C    Bounds.$C  Elems.$C
+../List/Difference.$C:
+	cd ../List; ${MAKE} Difference.$C
 

@@ -19,5 +19,5 @@ include ../Makefile.common
 ${OBJDIR}/MapMaybe.$O: MapMaybe.hs ${OBJDIR}/CatMaybes.$O
 
 # C-files dependencies.
-MapMaybe.c: CatMaybes.c
+MapMaybe.$C: CatMaybes.$C
 

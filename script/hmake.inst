@@ -134,8 +134,8 @@ do
         hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o" ;;
     -p) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=p.o" ;;
-    -t) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=t.o" ;;
+    -t|-z) hcflags=$hcflags" $1";
+        hmflags=$hmflags" -o-suffix=z.o" ;;
 
     # mainly GHC flags
     -package|-syslib) hcflags=$hcflags" $1 $2"; shift ;;

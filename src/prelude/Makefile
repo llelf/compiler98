@@ -5,15 +5,15 @@ PRELUDE = Prelude
 ARFLAGS = cr
 ARCHIVE=${DST}/${PRELUDE}${CFG}.a
 
-ifeq "${CFG}" "p"
-  ifeq "${CFG}" "t" #PHtprof
-    O=p.t.o 
+ifeq "${PROFILING}" "p"
+  ifeq "${TPROF}" "z" #PHtprof
+    O=p.z.o 
   else
     O=p.o
   endif
 else
-  ifeq "${CFG}" "t"
-    O=t.o 
+  ifeq "${TPROF}" "z"
+    O=z.o 
   else
     O=o
   endif
@@ -47,13 +47,11 @@ install: ${ARCHIVE}
 lib:  $(patsubst %,%.make,${LIBSUBDIRS})
 prel: $(patsubst %,%.make,${PRELSUBDIRS})
 boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.$O
 	ranlib ${ARCHIVE}
 objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: ${SUBDIRCFILES}
 fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o
-	ranlib $(ARCHIVE)
 clean: ${SUBDIRCLEAN}
 realclean: clean
 	rm $(ARCHIVE)
@@ -84,11 +82,12 @@ ${OBJDIR}:
 ${OBJDIRS}: ${OBJDIR}/% :
 	mkdir -p $@ || /bin/true
 
+
+ifeq "${TPROF}" ""
+
 relink:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.$O
 	ranlib ${ARCHIVE}
-
-ifeq "${TPROF}" ""
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.$O
@@ -219,6 +218,8 @@ ${TPPREL3}: #Only those lables that are needed more than once
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
 	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
 	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
+relink: ${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+	${INSTALL} ${OBJDIR}/tprofprel?.o ${DST}/
 endif
 
 #newinterface: prelude lib
@@ -281,6 +282,9 @@ NOTYET=	NonStd \
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
 SUBDIRSINSTALL=$(patsubst %,%.install,${SUBDIRS})
 OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
+SUBDIRCFILES=$(patsubst %,%.cfiles,${SUBDIRS})
+SUBDIRFROMC=$(patsubst %,%.fromC,${SUBDIRS})
+SUBDIRCLEANC=$(patsubst %,%.cleanC,${SUBDIRS})
 CLEANDIRS=$(patsubst %,%.clean,${SUBDIRS})
 MKFILES=$(patsubst %,%.mkfiles,${SUBDIRS})
 HICLEAN=$(patsubst %,%.hiclean,${SUBDIRS})
@@ -288,6 +292,10 @@ HICLEAN=$(patsubst %,%.hiclean,${SUBDIRS})
 
 all: ${ARCHIVE}
 install: ${ARCHIVE}
+cfiles: ${SUBDIRCFILES}
+fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o
+	ranlib $(ARCHIVE)
 hiclean: ${HICLEAN}
 clean: ${CLEANDIRS}
 realclean: clean
@@ -296,12 +304,19 @@ mkfiles: ${MKFILES}
 objdir: ${OBJDIR}
 cleanhi:
 	-rm -f */*.T.hi
+cleanC: ${SUBDIRCLEANC}
 
 
 %.mkfiles:
 	rm $(patsubst %.mkfiles,%,$@)/obj
+%.cfiles: 
+	cd $(patsubst %.cfiles,%,$@); ${MAKE} cfiles
+%.fromC: 
+	cd $(patsubst %.fromC,%,$@); $(MAKE) fromC
 %.clean:
 	cd $(patsubst %.clean,%,$@); ${MAKE} clean
+%.cleanC: 
+	cd $(patsubst %.cleanC,%,$@); ${MAKE} cleanC
 %.hiclean:
 	cd $(patsubst %.hiclean,%,$@); ${MAKE} hiclean
 %.subdir:
@@ -320,5 +335,8 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
 	ranlib $@
 
+relink:
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
+	ranlib ${ARCHIVE}
 
 endif

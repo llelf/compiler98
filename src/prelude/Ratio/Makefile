@@ -34,9 +34,9 @@ ${OBJDIR}/Real_Ratio.$O : Real_Ratio.hs
 ${OBJDIR}/Enum_Ratio.$O : Enum_Ratio.hs
 
 
-Fractional_Ratio.c : Fractional_Ratio.hs RatioCon.c
-Num_Ratio.c : Num_Ratio.hs Reduce.c
-RatioCon.c : RatioCon.hs Reduce.c
-Show_Ratio.c : Show_Ratio.hs Prec.c
-Read_Ratio.c : Read_Ratio.hs Prec.c RatioCon.c
+Fractional_Ratio.$C : Fractional_Ratio.hs RatioCon.$C
+Num_Ratio.$C : Num_Ratio.hs Reduce.$C
+RatioCon.$C : RatioCon.hs Reduce.$C
+Show_Ratio.$C : Show_Ratio.hs Prec.$C
+Read_Ratio.$C : Read_Ratio.hs Prec.$C RatioCon.$C
 

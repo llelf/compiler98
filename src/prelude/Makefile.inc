@@ -12,8 +12,8 @@ else
 HC := $(LOCAL)nhc98 -cpp
 endif
 
-ifeq "t" "${TPROF}"
-HC += -t
+ifeq "z" "${TPROF}"
+HC += -z
 endif
 
 ifneq "${TRACING}" "T"

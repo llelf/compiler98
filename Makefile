@@ -58,44 +58,46 @@ PRELUDEB = \
 	src/prelude/Time/Makefile* src/prelude/Time/*.hs \
 	src/prelude/Time/*.gc
 PRELUDEC = \
-	src/prelude/Array/*.c \
-	src/prelude/Bit/*.c \
-	src/prelude/Binary/*.c \
-	src/prelude/BinArray/*.c \
-	src/prelude/CPUTime/*.c \
-	src/prelude/Char/*.c \
-	src/prelude/Complex/*.c \
-	src/prelude/DErrNo.c \
-	src/prelude/Debug/*.c \
-	src/prelude/Directory/*.c \
-	src/prelude/GreenCard/*.c \
-	src/prelude/Haskell/*.c \
-	src/prelude/IO/*.c \
-	src/prelude/IOExtras/*.c \
-	src/prelude/Ix/*.c \
-	src/prelude/List/*.c \
-	src/prelude/Locale/*.c \
-	src/prelude/LowB/*.c \
-	src/prelude/Maybe/*.c \
-	src/prelude/Monad/*.c \
-	src/prelude/NonStd/*.c \
-	src/prelude/Numeric/*.c \
-	src/prelude/Observe/*.c \
-	src/prelude/PackedString/*.c \
-	src/prelude/Prelude/*.c \
-	src/prelude/PreludeIO/*.c \
-	src/prelude/PreludeList/*.c \
-	src/prelude/PreludeText/*.c \
-	src/prelude/Random/*.c \
-	src/prelude/Ratio/*.c \
-	src/prelude/System/*.c \
-	src/prelude/Time/*.c \
-	src/prelude/FFI/*.c
+	src/prelude/Array/*.hc         src/prelude/Array/*.c \
+	src/prelude/Bit/*.hc           src/prelude/Bit/*.c \
+	src/prelude/Binary/*.hc        src/prelude/Binary/*.c \
+	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
+	src/prelude/CPUTime/*.hc       src/prelude/CPUTime/*.c \
+	src/prelude/Char/*.hc          src/prelude/Char/*.c \
+	src/prelude/Complex/*.hc       src/prelude/Complex/*.c \
+	src/prelude/DErrNo.hc          src/prelude/DErrNo.?.c \
+	src/prelude/Debug/*.hc         src/prelude/Debug/*.c \
+	src/prelude/Directory/*.hc     src/prelude/Directory/*.c \
+	src/prelude/GreenCard/*.hc     src/prelude/GreenCard/*.c \
+	src/prelude/Haskell/*.hc       src/prelude/Haskell/*.c \
+	src/prelude/IO/*.hc            src/prelude/IO/*.c \
+	src/prelude/IOExtras/*.hc      src/prelude/IOExtras/*.c \
+	src/prelude/Ix/*.hc            src/prelude/Ix/*.c \
+	src/prelude/List/*.hc          src/prelude/List/*.c \
+	src/prelude/Locale/*.hc        src/prelude/Locale/*.c \
+	src/prelude/LowB/*.hc          src/prelude/LowB/*.c \
+	                               src/prelude/LowT/*.c \
+	src/prelude/Maybe/*.hc         src/prelude/Maybe/*.c \
+	src/prelude/Monad/*.hc         src/prelude/Monad/*.c \
+	src/prelude/NonStd/*.hc        src/prelude/NonStd/*.c \
+	src/prelude/Numeric/*.hc       src/prelude/Numeric/*.c \
+	src/prelude/Observe/*.hc       src/prelude/Observe/*.c \
+	src/prelude/PackedString/*.hc  src/prelude/PackedString/*.c \
+	src/prelude/Prelude/*.hc       src/prelude/Prelude/*.c \
+	                               src/prelude/PreludeDebug/*.c \
+	src/prelude/PreludeIO/*.hc     src/prelude/PreludeIO/*.c \
+	src/prelude/PreludeList/*.hc   src/prelude/PreludeList/*.c \
+	src/prelude/PreludeText/*.hc   src/prelude/PreludeText/*.c \
+	src/prelude/Random/*.hc        src/prelude/Random/*.c \
+	src/prelude/Ratio/*.hc         src/prelude/Ratio/*.c \
+	src/prelude/System/*.hc        src/prelude/System/*.c \
+	src/prelude/Time/*.hc          src/prelude/Time/*.c \
+	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
-COMPILERC = src/compiler98/*.c
+COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/hi.inst script/hat-trail.inst \
@@ -103,16 +105,16 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
 	 script/echo.c script/hood.inst script/tprofprel \
 	 lib/hat-trail.jar lib/hood.jar \
-	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.c
+	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
-GREENCARDC = src/greencard/*.c
+GREENCARDC = src/greencard/*.hc
 HP2GRAPH = src/hp2graph/Makefile* src/hp2graph/README \
 	   src/hp2graph/doc src/hp2graph/*.[hc1]
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
-HMAKEC = src/hmake/*.c src/interpreter/*.c
+HMAKEC = src/hmake/*.hc src/interpreter/*.hc
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
@@ -145,32 +147,34 @@ HATTOOLS= lib/$(MACHINE)/hat-stack lib/$(MACHINE)/hat-connect \
 
 TARGDIR= targets
 TARGETS= runtime prelude greencard hp2graph hattools \
-	 profruntime profprelude \
-	 timeruntime timeprelude \
+	 profruntime profprelude profprelude-$(CC) \
+	 timeruntime timeprelude timeprelude-$(CC) \
 	 timetraceruntime timetraceprelude \
-	 traceruntime traceprelude \
+	 traceruntime traceprelude traceprelude-$(CC) \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
 	 prelude-$(CC) pragma-$(CC)
 
-.PHONY: basic all tracer compiler help config install hattools
+.PHONY: default basic all tracer compiler help config install hattools
 
 
 ##### compiler build + install scripts
 
+default: basic tracer
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
 greencard: greencard-${BUILDCOMP}
 hmake: hmake-${BUILDCOMP}
+tracer: tracer-${BUILDCOMP}
 help:
-	@echo "Default target is:      basic"
-	@echo "Other targets include:  heapprofile timeprofile tracer"
-	@echo "                        all (= basic + heapprofile + timeprofile + tracer)"
-	@echo "                        config install clean realclean"
-	@echo "  (other subtargets:    compiler hmake runtime prelude"
-	@echo "                        hp2graph hattools hoodui)"
+	@echo "Default target is:     basic + tracer"
+	@echo "Main targets include:  basic heapprofile timeprofile tracer"
+	@echo "                       all (= basic + heapprofile + timeprofile + tracer)"
+	@echo "                       config install clean realclean"
+	@echo "  (other subtargets:   compiler hmake runtime prelude"
+	@echo "                       greencard hp2graph hattools hoodui)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -186,12 +190,27 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer hoodui
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer lib/hood.jar
 
-heapprofile: compiler profruntime profprelude hp2graph
-timeprofile: compiler timeruntime timeprelude
-tracer: $(PRAGMA) runtime hmake-$(BUILDCOMP) greencard-$(BUILDCOMP) \
-	compiler-$(BUILDCOMP) traceruntime traceprelude hattools
+heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
+timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
+
+profprelude-nhc: profprelude
+profprelude-ghc: profprelude
+profprelude-hbc: profprelude
+timeprelude-nhc: timeprelude
+timeprelude-ghc: timeprelude
+timeprelude-hbc: timeprelude
+
+tracer-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc \
+		compiler-nhc traceruntime traceprelude hattools
+tracer-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc \
+		compiler-ghc traceruntime traceprelude hattools
+tracer-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc \
+		compiler-hbc traceruntime traceprelude hattools
+tracer-$(CC): runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
+		greencard-$(CC) hmake-$(CC) \
+		traceruntime traceprelude-$(CC) hattools
 timetraceprofile: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
@@ -229,6 +248,7 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
 
+pragma: $(PRAGMA)
 $(PRAGMA): script/hmake-PRAGMA.hs
 	$(BUILDWITH) $(shell echo $(BUILDOPTS)) -cpp -o $@ $<
 
@@ -271,11 +291,11 @@ $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
-	cd src/runtime;        $(MAKE) CFG=tT install
-	cd src/tracer/runtime; $(MAKE) CFG=tT install
+	cd src/runtime;        $(MAKE) CFG=zT install
+	cd src/tracer/runtime; $(MAKE) CFG=zT install
 	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
 $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;	       $(MAKE) CFG=tT install
+	cd src/prelude;	       $(MAKE) CFG=zT install
 	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
 
 
@@ -295,17 +315,36 @@ $(HATTOOLS): $(HATUI)
 
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
-	cd src/runtime;        $(MAKE) CFG=t install
-	cd src/tracer/runtime; $(MAKE) CFG=t install
+	cd src/runtime;        $(MAKE) CFG=z install
+	cd src/tracer/runtime; $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeruntime
 $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) CFG=t install
+	cd src/prelude;        $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 
 
 $(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
-	cd src/prelude;        $(MAKE) fromC 
+	cd src/prelude;        $(MAKE) fromC relink
 	touch $(TARGDIR)/$(MACHINE)/prelude-$(CC)
+	touch $(TARGDIR)/$(MACHINE)/prelude
+$(TARGDIR)/$(MACHINE)/traceprelude-$(CC): $(PRELUDEC)
+	cd src/prelude;        $(MAKE) CFG=T fromC
+	cd src/prelude/$(MACHINE); $(MAKE) CFG=T clean all
+	cd src/prelude;        $(MAKE) CFG=T relink
+	touch $(TARGDIR)/$(MACHINE)/traceprelude-$(CC)
+	touch $(TARGDIR)/$(MACHINE)/traceprelude
+$(TARGDIR)/$(MACHINE)/timeprelude-$(CC): $(PRELUDEC)
+	cd src/prelude;        $(MAKE) CFG=z fromC
+	cd src/prelude/$(MACHINE); $(MAKE) CFG=z clean all
+	cd src/prelude;        $(MAKE) CFG=z relink
+	touch $(TARGDIR)/$(MACHINE)/timeprelude-$(CC)
+	touch $(TARGDIR)/$(MACHINE)/timeprelude
+$(TARGDIR)/$(MACHINE)/profprelude-$(CC): $(PRELUDEC)
+	cd src/prelude;        $(MAKE) CFG=p fromC
+	cd src/prelude/$(MACHINE); $(MAKE) CFG=p clean all
+	cd src/prelude;        $(MAKE) CFG=p relink
+	touch $(TARGDIR)/$(MACHINE)/profprelude-$(CC)
+	touch $(TARGDIR)/$(MACHINE)/profprelude
 $(TARGDIR)/$(MACHINE)/compiler-$(CC): $(COMPILERC)
 	cd src/compiler98;     $(MAKE) fromC
 	cd src/prelude/$(MACHINE); $(MAKE) clean all	# Patch machine-specific parts.
@@ -315,8 +354,8 @@ $(TARGDIR)/$(MACHINE)/compiler-$(CC): $(COMPILERC)
 $(TARGDIR)/$(MACHINE)/greencard-$(CC): $(GREENCARDC)
 	cd src/greencard;      $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-$(CC)
-$(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.c
-	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.c
+$(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.hc
+	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.hc
 	touch $(TARGDIR)/$(MACHINE)/pragma-$(CC)
 $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
@@ -345,7 +384,10 @@ binDist:
 	rm -r nhc98-$(VERSION)
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
 
-srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC $(TARGDIR)/pragmaC nolinks
+srcDist: $(TARGDIR)/tracepreludeC $(TARGDIR)/timepreludeC \
+		$(TARGDIR)/heappreludeC $(TARGDIR)/preludeC \
+		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
+		$(TARGDIR)/pragmaC nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
@@ -378,6 +420,15 @@ nolinks:
 $(TARGDIR)/preludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) cfiles
 	touch $(TARGDIR)/preludeC
+$(TARGDIR)/tracepreludeC: $(PRELUDEA) $(PRELUDEB)
+	cd src/prelude;    $(MAKE) CFG=T cfiles
+	touch $(TARGDIR)/tracepreludeC
+$(TARGDIR)/timepreludeC: $(PRELUDEA) $(PRELUDEB)
+	cd src/prelude;    $(MAKE) CFG=z cfiles
+	touch $(TARGDIR)/timepreludeC
+$(TARGDIR)/heappreludeC: $(PRELUDEA) $(PRELUDEB)
+	cd src/prelude;    $(MAKE) CFG=p cfiles
+	touch $(TARGDIR)/heappreludeC
 $(TARGDIR)/compilerC: $(COMPILER)
 	cd src/compiler98; $(MAKE) cfiles
 	touch $(TARGDIR)/compilerC
@@ -457,13 +508,17 @@ cleanhi:
 	cd src/prelude; $(MAKE) CFG=T cleanhi
 
 cleanC:
-	rm -f src/compiler98/*.c
-	rm -f src/greencard/*.c
-	rm -f src/hmake/*.c
-	rm -f src/interpreter/*.c
-	rm -f script/hmake-PRAGMA.c
-	cd src/prelude;		$(MAKE) cleanC
-	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC
+	rm -f src/compiler98/*.hc
+	rm -f src/greencard/*.hc
+	rm -f src/hmake/*.hc
+	rm -f src/interpreter/*.hc
+	rm -f script/hmake-PRAGMA.hc
+	cd src/prelude;		$(MAKE)       cleanC
+	cd src/prelude;		$(MAKE) CFG=T cleanC
+	cd src/prelude;		$(MAKE) CFG=p cleanC
+	cd src/prelude;		$(MAKE) CFG=z cleanC
+	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
+				tracepreludeC timepreludeC heappreludeC
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean

@@ -28,12 +28,12 @@ ${OBJDIR}/GetClockTime.$O: GetClockTime.gc ${OBJDIR}/DClockTime.$O
 ${OBJDIR}/DCalendarTime.$O: DCalendarTime.gc ${OBJDIR}/DMonth.$O ${OBJDIR}/DDay.$O 
 
 
-FormatCalendarTime.c: DCalendarTime.c 
-CalendarTimeToString.c: DCalendarTime.c FormatCalendarTime.c 
-ToClockTime.c: DClockTime.c DCalendarTime.c 
-ToUTCTime.c: DClockTime.c DCalendarTime.c 
-ToCalendarTime.c: DClockTime.c DCalendarTime.c 
-DiffClockTimes.c: DClockTime.c DTimeDiff.c 
-AddToClockTime.c: DTimeDiff.c DClockTime.c 
-GetClockTime.c: DClockTime.c 
-DCalendarTime.c: DMonth.c DDay.c 
+FormatCalendarTime.$C: DCalendarTime.$C 
+CalendarTimeToString.$C: DCalendarTime.$C FormatCalendarTime.$C 
+ToClockTime.$C: DClockTime.$C DCalendarTime.$C 
+ToUTCTime.$C: DClockTime.$C DCalendarTime.$C 
+ToCalendarTime.$C: DClockTime.$C DCalendarTime.$C 
+DiffClockTimes.$C: DClockTime.$C DTimeDiff.$C 
+AddToClockTime.$C: DTimeDiff.$C DClockTime.$C 
+GetClockTime.$C: DClockTime.$C 
+DCalendarTime.$C: DMonth.$C DDay.$C 

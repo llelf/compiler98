@@ -52,8 +52,8 @@ hPutStrLn h s = hPutStr h s >> hPutChar h '\n'
 
 \begin{code}
 
-processFile :: Target -> Bool -> Bool -> [String] -> String -> IO ()
-processFile target debug verbose path file = do
+processFile :: Target -> Bool -> Bool -> [String] -> String -> String -> IO ()
+processFile target debug verbose path file csuf = do
   mbrawdecls <- tryRead path file
   emit debug (showDecls mbrawdecls)
   disDefs    <- getDISdefs verbose path file
@@ -123,7 +123,7 @@ processFile target debug verbose path file = do
                         )
      NHC ->
       let hfile = (file++"_.hs")
-          cfile = (file++"_.c")
+          cfile = (file++"_."++csuf)
    --     haskell = unlines hs ++ render (vcat hdecls)
    --     c       = unlines cs ++ render (vcat ccode)
       in

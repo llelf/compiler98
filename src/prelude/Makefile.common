@@ -16,29 +16,11 @@
 
 OBJDIR   = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
 SRC_MAIN = ${THISLIB}.hs
-.SUFFIXES: .hi .hs .o .gc .c .T.hi .T.o .p.o .t.o
+.SUFFIXES: .hi .hs .o .gc .c .hc .T.hi .T.o .T.c .p.o .p.c .z.o .z.c
 
 PART_FLAGS = +CTS -part -redefine -CTS $(SEARCH)
 LIB_FLAGS  = +CTS -lib  -redefine -CTS $(SEARCH)
 
-
-ifeq "T" "${TRACING}"
-  HISUFFIX=T.hi
-  O=T.o
-else
-ifeq "p" "${CFG}"
-  HISUFFIX=hi
-  O=p.o
-else
-ifeq "t" "${CFG}"
-  HISUFFIX=hi
-  O=t.o
-else
-  HISUFFIX=hi
-  O=o
-endif
-endif
-endif
 
 
 ifneq "T" "${TRACING}"
@@ -51,12 +33,12 @@ OBJ_MAIN = $(patsubst %.hs, ${OBJDIR}/%.$O, ${SRC_MAIN})
 endif
 OBJS = ${OBJS_HS} ${OBJS_GC} ${OBJS_C}
 
-CFILES_HS  = $(patsubst %.hs, %.c, $(filter %.hs, ${SRCS}))
-CFILES_GC  = $(patsubst %.gc, %.c, $(filter %.gc, ${SRCS}))
-CFILES_XS  = $(patsubst %.gc, %_.c, $(filter %.gc, ${SRCS})) \
+CFILES_HS  = $(patsubst %.hs, %.$C, $(filter %.hs, ${SRCS}))
+CFILES_GC  = $(patsubst %.gc, %.$C, $(filter %.gc, ${SRCS}))
+CFILES_XS  = $(patsubst %.gc, %_.$C, $(filter %.gc, ${SRCS})) \
              $(patsubst %.gc, %_.hs, $(filter %.gc, ${SRCS}))
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-CFILE_MAIN = $(patsubst %.hs, %.c, ${SRC_MAIN})
+CFILE_MAIN = $(patsubst %.hs, %.$C, ${SRC_MAIN})
 endif
 
 CFILES_GEN = ${CFILES_HS} ${CFILES_GC} ${CFILE_MAIN}
@@ -66,8 +48,8 @@ all: ${OBJS} extra ${OBJ_MAIN}
 extra:
 cfiles: extracfiles ${CFILES_GEN}
 extracfiles:
-fromC:
-	$(HC) -c -d $(OBJDIR) $(EXTRA_C_FLAGS) *.c
+fromC: ${OBJS_C}
+	$(HC) -c -d $(OBJDIR) $(EXTRA_C_FLAGS) *.$C
 objdir: ${OBJDIR}
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
@@ -78,7 +60,7 @@ cleanC: cleanExtraC
 clean:	cleanhi cleanC
 	-rm -f ${OBJDIR}/*.$O *.$O
 	-rm -f $(patsubst %.gc, %_.hs, $(filter %.gc, $(SRCS)))
-	-rm -f $(patsubst %.gc, %_.c,  $(filter %.gc, $(SRCS)))
+	-rm -f $(patsubst %.gc, %_.$C,  $(filter %.gc, $(SRCS)))
 cleanExtraC:
 
 # general build rules for making objects from Haskell files
@@ -97,12 +79,12 @@ ${OBJS_C}: ${OBJDIR}/%.$O : %.c
 	$(CC) -c -I$(INCDIR) $(EXTRA_C_FLAGS) -o $@ $<
 
 # general build rules for making C files from Haskell files
-${CFILES_HS}: %.c : %.hs
+${CFILES_HS}: %.$C : %.hs
 	$(HC) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
-${CFILES_GC}: %.c : %.gc
+${CFILES_GC}: %.$C : %.gc
 	$(HC) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
-${CFILE_MAIN}: %.c : %.hs
+${CFILE_MAIN}: %.$C : %.hs
 	$(HC) -C $(LIB_FLAGS)  $(EXTRA_H_FLAGS) $<
 endif
 
@@ -123,14 +105,31 @@ OBJ_MAIN = $(patsubst %.hs, ${OBJDIR}/%.$O, ${SRC_MAIN})
 endif
 OBJS_T = ${OBJS_HS_T} ${OBJS_GC_T} ${OBJS_HS_NT}
 
+CFILES_HS_T  = $(patsubst %.hs, %.$C, $(filter %.hs, ${SRCS_T}))
+CFILES_GC_T  = $(patsubst %.gc, %.$C, $(filter %.gc, ${SRCS_T}))
+CFILES_NT    = $(patsubst %.hs, %.$C, $(filter %.hs, ${SRCS_NT}))
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+CFILE_MAIN_T = $(patsubst %.hs, %.$C, ${SRC_MAIN})
+endif
+
+CFILES_GEN_T = ${CFILES_HS_T} ${CFILES_GC_T} ${CFILES_NT} ${CFILE_MAIN_T}
+
+
 all: ${OBJS_T} extra ${OBJ_MAIN}
 extra:
+cfiles: extracfiles ${CFILES_GEN_T}
+extracfiles:
+fromC:
+	$(HC) -c -T -d $(OBJDIR) $(EXTRA_C_FLAGS) *.$C
 objdir: ${OBJDIR}
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 install: all
 cleanhi:
 	-rm -f *.${HISUFFIX}
+cleanC: cleanExtraC
+	-rm -f ${CFILES_GEN_T}
+cleanExtraC:
 clean:  cleanhi
 	-rm -f ${OBJDIR}/*.$O *.$O
 
@@ -141,11 +140,24 @@ $(OBJS_GC_T): ${OBJDIR}/%.$O: %.gc
 	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 $(OBJS_HS_NT): ${OBJDIR}/%.$O: %.hs
 	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-	mv `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
+	cp `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
 ${OBJ_MAIN}: ${OBJS_T}
 ${OBJ_MAIN}: ${SRC_MAIN}
 	$(TR_COMPILE) -c $(LIB_FLAGS)  $(EXTRA_H_FLAGS) -o $@ $<
+endif
+
+# general build rules for making C files from Haskell files
+${CFILES_HS_T}: %.$C : %.hs
+	$(TR_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
+${CFILES_GC_T}: %.$C : %.gc
+	$(TR_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
+$(CFILES_NT)  : %.$C : %.hs
+	$(X_COMPILE) -C $(PART_FLAGS) $(EXTRA_H_FLAGS) $<
+	mv `basename $< .hs`.hc `basename $< .hs`.$C
+ifneq "${EXCLUDE_THISLIB_HS}" "yes"
+${CFILE_MAIN_T}: %.$C : %.hs
+	$(TR_COMPILE) -C $(LIB_FLAGS)  $(EXTRA_H_FLAGS) $<
 endif
 
 # hack to get round mutual recursion between libraries

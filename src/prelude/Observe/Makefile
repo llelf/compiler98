@@ -10,9 +10,6 @@ SRCS	=
 SRCS_T	=
 LIBSRCS = Observe.lhs
 
-LHCFILES = $(patsubst %.lhs, %.c, $(filter %.lhs, ${LIBSRCS}))
-
-extracfiles: $(LHCFILES)
 
 
 # Here are the main rules.
@@ -20,12 +17,15 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-LHOBJS	= $(patsubst %.lhs, ${OBJDIR}/%.$O, $(filter %.lhs, ${LIBSRCS}))
+LHCFILES = $(patsubst %.lhs, %.$C, $(filter %.lhs, ${LIBSRCS}))
+LHOBJS	 = $(patsubst %.lhs, ${OBJDIR}/%.$O, $(filter %.lhs, ${LIBSRCS}))
 
 extra:	${LHOBJS}
+extracfiles: $(LHCFILES)
+
 ${LHOBJS}: ${OBJDIR}/%.$O : %.lhs
 	$(HC) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-${LHCFILES}: %.c : %.lhs
+${LHCFILES}: %.$C : %.lhs
 	$(HC) -C $(LIB_FLAGS) $<
 
 cleanExtraC:

@@ -24,8 +24,8 @@ ${OBJDIR}/Show_ExitCode.$O: Show_ExitCode.hs ${OBJDIR}/DExitCode.$O
 
 
 # C-files dependencies.
-Eq_ExitCode.c:   DExitCode.c
-Ord_ExitCode.c:  DExitCode.c Eq_ExitCode.c
-Read_ExitCode.c: DExitCode.c
-Show_ExitCode.c: DExitCode.c
+Eq_ExitCode.$C:   DExitCode.$C
+Ord_ExitCode.$C:  DExitCode.$C Eq_ExitCode.$C
+Read_ExitCode.$C: DExitCode.$C
+Show_ExitCode.$C: DExitCode.$C
 

@@ -133,10 +133,10 @@ static char *instr_names[];
 
 void run(NodePtr toplevel)
 {
-  NodePtr *sp,  *fp,  hp;
+  NodePtr *sp,  *fp,  hp;	/* -- shadow globals for efficiency */
+  CodePtr ip;			/* -- shadow globals for efficiency */
   NodePtr vapptr;
   NodePtr nodeptr;
-  CodePtr ip;
   NodePtr *constptr;
 
   TPROF_SETUP

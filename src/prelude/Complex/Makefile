@@ -38,19 +38,19 @@ ${OBJDIR}/Polar.$O: Polar.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/Magnitude.$O  ${OBJ
 
 
 # C-files dependencies.
-Cis.c:        DComplex.c
-Conjugate.c:  DComplex.c
-Eq_Complex.c: DComplex.c
-ImagPart.c:   DComplex.c
-Magnitude.c:  DComplex.c
-MkPolar.c:    DComplex.c
-Phase.c:      DComplex.c
-RealPart.c:   DComplex.c
-Polar.c:      DComplex.c Magnitude.c  Phase.c
+Cis.$C:        DComplex.$C
+Conjugate.$C:  DComplex.$C
+Eq_Complex.$C: DComplex.$C
+ImagPart.$C:   DComplex.$C
+Magnitude.$C:  DComplex.$C
+MkPolar.$C:    DComplex.$C
+Phase.$C:      DComplex.$C
+RealPart.$C:   DComplex.$C
+Polar.$C:      DComplex.$C Magnitude.$C  Phase.$C
 
-Floating_Complex.c:   DComplex.c Magnitude.c Phase.c Fractional_Complex.c Num_Complex.c
-Fractional_Complex.c: DComplex.c Num_Complex.c
-Num_Complex.c:        DComplex.c Magnitude.c Eq_Complex.c Show_Complex.c
-Read_Complex.c:       DComplex.c
-Show_Complex.c:       DComplex.c RealPart.c
+Floating_Complex.$C:   DComplex.$C Magnitude.$C Phase.$C Fractional_Complex.$C Num_Complex.$C
+Fractional_Complex.$C: DComplex.$C Num_Complex.$C
+Num_Complex.$C:        DComplex.$C Magnitude.$C Eq_Complex.$C Show_Complex.$C
+Read_Complex.$C:       DComplex.$C
+Show_Complex.$C:       DComplex.$C RealPart.$C
 

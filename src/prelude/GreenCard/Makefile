@@ -14,18 +14,20 @@ include ../Makefile.common
 
 # Here are some extra rules.
 extra: ${OBJDIR}/${THISLIB}.$O
-extracfiles: ${THISLIB}.c
+extracfiles: ${THISLIB}.$C
 cleanExtraC:
-	rm -f ${THISLIB}.c
+	rm -f ${THISLIB}.$C
 
 ifneq "${TRACING}" "T"
 ${OBJDIR}/${THISLIB}.$O: ${THISLIB}.gc
 	$(HC) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-${THISLIB}.c : ${THISLIB}.gc
+${THISLIB}.$C : ${THISLIB}.gc
 	$(HC) -C $(LIB_FLAGS) $(EXTRA_H_FLAGS) $<
 else
 ${OBJDIR}/${THISLIB}.$O: ${THISLIB}.gc
 	$(TR_COMPILE) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+${THISLIB}.$C : ${THISLIB}.gc
+	$(TR_COMPILE) -C $(LIB_FLAGS) $(EXTRA_H_FLAGS) $<
 endif
 
 

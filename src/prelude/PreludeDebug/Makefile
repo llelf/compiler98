@@ -21,6 +21,9 @@ include ../Makefile.common
 
 # Here are some extra rules.
 extra: ${OBJDIR}/${THISLIB}.$O
+extracfiles: ${THISLIB}.$C HatArchive.$C
+cleanExtraC:
+	rm -f ${THISLIB}.$C HatArchive.$C
 ${OBJDIR}/${THISLIB}.$O: ${THISLIB}.hs ${OBJDIR}/../Prelude/DEither.$O ../PackedString/DPackedString.${HISUFFIX} ${OBJDIR}/HatArchive.$O
 	cp ../Prelude/DEither.T.hi ./DEither.hi
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
@@ -30,11 +33,13 @@ ${OBJDIR}/HatArchive.$O: HatArchive.hs
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
 	cp HatArchive.hi HatArchive.T.hi
 
-HatArchive.c: HatArchive.hs
+HatArchive.$C: HatArchive.hs
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -C $<
+	mv HatArchive.hc HatArchive.$C
 
-PreludeDebug.c: PreludeDebug.hs
+PreludeDebug.$C: PreludeDebug.hs
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -C $<
+	mv PreludeDebug.hc PreludeDebug.$C
 
 ${OBJDIR}/../PreludeIO/DIO.$O:
 	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.$O

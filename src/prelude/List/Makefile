@@ -61,27 +61,27 @@ ${OBJDIR}/../Maybe/ListToMaybe.$O:
 
 
 # C-files dependencies.
-Nub.c:            NubBy.c
-Delete.c:         DeleteBy.c
-Difference.c:     Delete.c
-DeleteFirsts.c:   Difference.c
-DeleteFirstsBy.c: DeleteBy.c
-ElemIndex.c:      ElemIndexBy.c
-Group.c:          GroupBy.c
-NotElemBy.c:      ElemBy.c
-Nub.c:            NubBy.c
-Zip4.c:           ZipWith4.c
-Zip5.c:           ZipWith5.c
-Zip6.c:           ZipWith6.c
-Zip7.c:           ZipWith7.c
-Sort.c:           SortBy.c
-SortBy.c:         InsertBy.c
-ElemIndex.c:      FindIndex.c
-ElemIndices.c:    FindIndices.c
-Find.c:           ../Maybe/ListToMaybe.c
-FindIndex.c:      FindIndices.c ../Maybe/ListToMaybe.c
-GenericReplicate.c: GenericTake.c
-Union.c:          Difference.c
-../Maybe/ListToMaybe.c:
-	cd ../Maybe; ${MAKE} ListToMaybe.c
+Nub.$C:            NubBy.$C
+Delete.$C:         DeleteBy.$C
+Difference.$C:     Delete.$C
+DeleteFirsts.$C:   Difference.$C
+DeleteFirstsBy.$C: DeleteBy.$C
+ElemIndex.$C:      ElemIndexBy.$C
+Group.$C:          GroupBy.$C
+NotElemBy.$C:      ElemBy.$C
+Nub.$C:            NubBy.$C
+Zip4.$C:           ZipWith4.$C
+Zip5.$C:           ZipWith5.$C
+Zip6.$C:           ZipWith6.$C
+Zip7.$C:           ZipWith7.$C
+Sort.$C:           SortBy.$C
+SortBy.$C:         InsertBy.$C
+ElemIndex.$C:      FindIndex.$C
+ElemIndices.$C:    FindIndices.$C
+Find.$C:           ../Maybe/ListToMaybe.$C
+FindIndex.$C:      FindIndices.$C ../Maybe/ListToMaybe.$C
+GenericReplicate.$C: GenericTake.$C
+Union.$C:          Difference.$C
+../Maybe/ListToMaybe.$C:
+	cd ../Maybe; ${MAKE} ListToMaybe.$C
 

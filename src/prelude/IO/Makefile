@@ -61,28 +61,28 @@ ${OBJDIR}/Eq_Handle.$O:      ${OBJDIR}/DHandle.$O
 ${OBJDIR}/Eq_HandlePosn.$O:  ${OBJDIR}/DHandlePosn.$O ${OBJDIR}/Eq_Handle.$O
 
 # C deps.
-NotDoneYet.c: DHandle.c 
-IoeGetFileName.c: DHandle.c HGetFileName.c IoeGetHandle.c 
-IoeGetHandle.c: DHandle.c 
-Bracket_.c: Try.c 
-Bracket.c: Try.c 
-HPutStrLn.c: DHandle.c HPutStr.c HPutChar.c 
-HPutStr.c: DHandle.c HPutChar.c 
-HPutChar.c: DHandle.c 
-HGetContents.c: DHandle.c HGetChar.c 
-HGetChar.c: DHandle.c 
-HGetLine.c: HGetChar.c 
-HSeek.c: SeekMode.c DHandle.c HGetFileName.c 
-HSetPosn.c: DHandle.c DHandlePosn.c HGetFileName.c 
-HGetPosn.c: DHandle.c DHandlePosn.c HGetFileName.c 
-HFlush.c: DHandle.c HGetFileName.c 
-HGetBuffering.c: DHandle.c BufferMode.c 
-HSetBuffering.c: DHandle.c BufferMode.c HGetFileName.c 
-IsEOF.c: DHandle.c HIsEOF.c 
-HIsEOF.c: DHandle.c 
-HGetFileName.c: DHandle.c 
-HFileSize.c: DHandle.c HGetFileName.c 
-OpenFile.c: DHandle.c IOMode.c HClose.c 
-HClose.c: DHandle.c 
-Eq_HandlePosn.c: DHandlePosn.c 
+NotDoneYet.$C: DHandle.$C 
+IoeGetFileName.$C: DHandle.$C HGetFileName.$C IoeGetHandle.$C 
+IoeGetHandle.$C: DHandle.$C 
+Bracket_.$C: Try.$C 
+Bracket.$C: Try.$C 
+HPutStrLn.$C: DHandle.$C HPutStr.$C HPutChar.$C 
+HPutStr.$C: DHandle.$C HPutChar.$C 
+HPutChar.$C: DHandle.$C 
+HGetContents.$C: DHandle.$C HGetChar.$C 
+HGetChar.$C: DHandle.$C 
+HGetLine.$C: HGetChar.$C 
+HSeek.$C: SeekMode.$C DHandle.$C HGetFileName.$C 
+HSetPosn.$C: DHandle.$C DHandlePosn.$C HGetFileName.$C 
+HGetPosn.$C: DHandle.$C DHandlePosn.$C HGetFileName.$C 
+HFlush.$C: DHandle.$C HGetFileName.$C 
+HGetBuffering.$C: DHandle.$C BufferMode.$C 
+HSetBuffering.$C: DHandle.$C BufferMode.$C HGetFileName.$C 
+IsEOF.$C: DHandle.$C HIsEOF.$C 
+HIsEOF.$C: DHandle.$C 
+HGetFileName.$C: DHandle.$C 
+HFileSize.$C: DHandle.$C HGetFileName.$C 
+OpenFile.$C: DHandle.$C IOMode.$C HClose.$C 
+HClose.$C: DHandle.$C 
+Eq_HandlePosn.$C: DHandlePosn.$C 
 

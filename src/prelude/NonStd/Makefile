@@ -14,28 +14,29 @@ LIBSRCS = \
 	Warning.hs \
 	NonStdGetPID.gc
 
-HCFILES = $(patsubst %.hs, %.c, $(filter %.hs, ${LIBSRCS}))
-GCFILES = $(patsubst %.gc, %.c, $(filter %.gc, ${LIBSRCS}))
-
-extracfiles: $(HCFILES) $(GCFILES)
-
 
 # Here are the main rules.
 include ../Makefile.common
 
 
 # Here are some extra rules.
+
+
 HOBJS	= $(patsubst %.hs, ${OBJDIR}/%.$O, $(filter %.hs, ${LIBSRCS}))
 GOBJS	= $(patsubst %.gc, ${OBJDIR}/%.$O, $(filter %.gc, ${LIBSRCS}))
+HCFILES = $(patsubst %.hs, %.$C, $(filter %.hs, ${LIBSRCS}))
+GCFILES = $(patsubst %.gc, %.$C, $(filter %.gc, ${LIBSRCS}))
 
 extra:	${HOBJS} ${GOBJS}
+extracfiles: $(HCFILES) $(GCFILES)
+
 ${HOBJS}: ${OBJDIR}/%.$O : %.hs
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
 ${GOBJS}: ${OBJDIR}/%.$O : %.gc
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
-${HCFILES}: %.c : %.hs
+${HCFILES}: %.$C : %.hs
 	$(HC) -C $(LIB_FLAGS) $<
-${GCFILES}: %.c : %.gc
+${GCFILES}: %.$C : %.gc
 	$(HC) -C $(LIB_FLAGS) $<
 
 cleanExtraC:

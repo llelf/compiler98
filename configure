@@ -354,8 +354,11 @@ main() {
      mkdir src/prelude/$MACHINE
      cp src/prelude/Makefile.machinedepend src/prelude/$MACHINE/Makefile
      cp src/prelude/PreludeIO/Makefile.inc src/prelude/$MACHINE/Makefile.inc
-     cp src/prelude/DErrNo.hs src/prelude/$MACHINE
-     cp src/prelude/DErrNo.c  src/prelude/$MACHINE
+     cp src/prelude/DErrNo.hs   src/prelude/$MACHINE
+     cp src/prelude/DErrNo.hc   src/prelude/$MACHINE
+     cp src/prelude/DErrNo.T.c  src/prelude/$MACHINE
+     cp src/prelude/DErrNo.p.c  src/prelude/$MACHINE
+     cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE
   fi
   $CCC -o errnogen script/errnogen.c && ./errnogen >DErrNo.hs && rm -f ./errnogen
   if diff DErrNo.hs src/prelude/$MACHINE/DErrNo.hs >/dev/null

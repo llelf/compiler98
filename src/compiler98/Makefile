@@ -30,13 +30,13 @@ SRCS = \
 	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs FFITrans.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-GCCFILES = $(patsubst %.gc,%.c,${GCSRCS}) 
-OBJS = $(patsubst %.hs,$(OBJDIR)/%.o,${SRCS})
-GCOBJS = $(patsubst %.gc,$(OBJDIR)/%.o,${GCSRCS}) $(patsubst %.gc,$(OBJDIR)/%_.o,${GCSRCS})
+CFILES = $(patsubst %.hs, %.$C, ${SRCS})
+GCCFILES = $(patsubst %.gc, %.$C, ${GCSRCS}) 
+OBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, ${SRCS})
+GCOBJS = $(patsubst %.gc, $(OBJDIR)/%.$O, ${GCSRCS}) $(patsubst %.gc,$(OBJDIR)/%_.$O,${GCSRCS})
 
 #CPPFILES=FixSyntax STGBuild STGGcode	#GcodeLowC
-#DBGOBJS=$(patsubst %,$(OBJDIR)/%.o,${CPPFILES})
+#DBGOBJS=$(patsubst %, $(OBJDIR)/%.$O, ${CPPFILES})
 
 HC = nhc98
 
@@ -60,18 +60,18 @@ all: ${TARGET}
 install: ${TARGET}
 objdir: ${OBJDIR}
 cfiles:
-	$(LOCAL)hmake -nhc98 -K2M -C Main.hs
+	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -K2M -C Main.hs
 fromC: $(OBJDIR)
-	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.c
-	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
+	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
+	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.$O
 	strip $(TARGET)
 relink:
-	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
+	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.$O
 	strip $(TARGET)
 clean:
-	rm -f $(OBJDIR)/*.o *.o *.hi
+	rm -f $(OBJDIR)/*.$O *.$O *.hi
 realclean: clean
-	rm -f *.c $(TARGET)
+	rm -f *.hc *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS) # $(OBJDIR)/last${TRACING}
 	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) Main
@@ -96,8 +96,8 @@ ghc_floats.c: ghc_floats.c.inst
 
 .SUFFIXES: .hs .o .c .gc
 
-${CFILES}: %.c : %.hs
+${CFILES}: %.$C : %.hs
 	$(HC) -C $(HFLAGS) $<
-${GCCFILES}: %.c : %.gc
+${GCCFILES}: %.$C : %.gc
 	$(HC) -C $(HFLAGS) $<
 

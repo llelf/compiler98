@@ -35,11 +35,11 @@ For the binary release, we assume you have a good C compiler (usually
 For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <em>nhc98</em> without another Haskell compiler, you need 8Mb of memory
-(although you could probably manage with less), and about 27Mb of disk
-space (50Mb if you build for profiling and tracing as well).  If you
+(although you could probably manage with less), and about 50Mb of disk
+space (100Mb if you build for profiling and tracing as well).  If you
 already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
 then building <em>nhc98</em> will require at least 32Mb of memory,
-and 70Mb of free disk space.  If you don't have <em>hbc</em> or
+and 100Mb of free disk space.  If you don't have <em>hbc</em> or
 <em>ghc</em> for your machine, then don't worry, <em>nhc98</em> will
 build quite happily using just a C compiler.  (The basic build is
 much faster, but the resulting compiler will be slower.)  You can
@@ -135,8 +135,8 @@ and <em>tracer</em>.
 <p>
 Then run <em>make</em> with your chosen targets, or <em>make all</em>
 to build all the possible facilities.  (A simple <em>make</em>
-without targets builds only the basic compiler and tools, with no
-support for tracing or profiling.)
+without targets builds the basic compiler and tools and
+support for tracing, but no form of profiling by default.)
 
 <p>
 The time taken to build nhc98 depends on your machine, which compiler
@@ -144,18 +144,18 @@ you are using, and whether you have asked for just the basic system or
 some extra components.  Here are some sample build times in minutes:
 
 <center>
-<table border=1 cellpadding=0><tr>
+<table border=1><tr>
     <th></th>
     <th colspan=3>i686 (500Mhz) Linux</th>
 </tr><tr>
-    <th>build compiler</th>
-    <th>basic</th><th>basic+tracer</th><th>all</th>
+    <th>build<br>compiler</th>
+    <th>basic only</th><th>default<br>(basic+tracer)</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td align=right>5</td><td align=right>168</td><td align=right>262</td>
+    <td>gcc</td><td align=right>5</td><td align=right>14</td><td align=right>20</td>
 </tr><tr>
-    <td>ghc</td><td align=right>21</td><td align=right>50</td><td align=right>69</td>
+    <td>ghc</td><td align=right>21</td><td align=right>50</td><td align=right>72</td>
 </tr><tr>
-    <td>hbc</td><td align=right>23</td><td align=right>70</td><td align=right>110</td>
+    <td>hbc</td><td align=right>23</td><td align=right>70</td><td align=right>121</td>
 </tr><tr>
     <td>nhc98</td><td align=right>50</td><td align=right>213</td><td align=right>288</td>
 </tr></table>
@@ -166,10 +166,11 @@ Finally, when you have built all the components you require, type
 <em>make install</em> to copy the components to their final location.
 (You may need to become root for this step, depending on the final
 location you selected at configure time.)  As an alternative to
-installing in a system-wide location, it is also possible to use
-all the <em>nhc98</em> tools in-place in the build tree by adding the
-<em>script</em> directory to your PATH (if you wish to keep your
-disk usage down, use <em>make clean</em> or <em>make realclean</em>)
+installing in a system-wide location, it is also possible to use all
+the <em>nhc98</em> tools in-place in the build tree by adding the
+<em>script</em> directory to your PATH - if you wish to conserve disk
+space by removing temporary intermediate files from the build tree,
+use <em>make clean</em>.
 
 
 
@@ -205,7 +206,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.05.21<br>
+This page last modified: 2001.06.04<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

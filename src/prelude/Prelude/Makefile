@@ -77,13 +77,20 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-PLOBJS = $(patsubst %.hs, ${OBJDIR}/%.$O, ${PLSRCS})
+PLOBJS   = $(patsubst %.hs, ${OBJDIR}/%.$O, ${PLSRCS})
+PLCFILES = $(patsubst %.hs, %.$C, ${PLSRCS})
 
 ifeq "T" "${TRACING}"
 extra: ${PLOBJS}
+extracfiles: ${PLCFILES}
+cleanExtraC:
+	-rm ${PLCFILES}
 $(PLOBJS): ${OBJDIR}/%.$O: %.hs
 	${HC} -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 	cp `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
+$(PLCFILES): %.$C: %.hs
+	${HC} -C $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+	mv `basename $< .hs`.hc `basename $< .hs`.$C
 endif
 
 
@@ -104,15 +111,15 @@ ${OBJDIR}/_EnumFromTo.$O: _EnumFromTo.hs ${OBJDIR}/_FromEnum.$O ${OBJDIR}/_ToEnu
 
 # And for C-files dependencies:
 
-CEnum.c:           _EnumFromTo.c    _EnumFromThenTo.c  Subtract.c
-Enum_Bool.c:       _EnumFromTo.c    _EnumFromThen.c
-Enum_Char.c:       _EnumFromTo.c    _EnumFromThen.c
-Enum_Ordering.c:   _EnumFromTo.c    _EnumFromThen.c
-_EnumFromThen.c:   _EnumFromToInc.c _EnumFromToDec.c
-_EnumFromThenTo.c: _EnumFromToInc.c _EnumFromToDec.c
-_EnumIndex.c:      _EnumInRange.c
-_EnumRange.c:      _EnumFromTo.c
-_EnumFromTo.c:     _FromEnum.c      _ToEnum.c
+CEnum.$C:           _EnumFromTo.$C    _EnumFromThenTo.$C  Subtract.$C
+Enum_Bool.$C:       _EnumFromTo.$C    _EnumFromThen.$C
+Enum_Char.$C:       _EnumFromTo.$C    _EnumFromThen.$C
+Enum_Ordering.$C:   _EnumFromTo.$C    _EnumFromThen.$C
+_EnumFromThen.$C:   _EnumFromToInc.$C _EnumFromToDec.$C
+_EnumFromThenTo.$C: _EnumFromToInc.$C _EnumFromToDec.$C
+_EnumIndex.$C:      _EnumInRange.$C
+_EnumRange.$C:      _EnumFromTo.$C
+_EnumFromTo.$C:     _FromEnum.$C      _ToEnum.$C
 
 
 

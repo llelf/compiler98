@@ -49,7 +49,7 @@ BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
 DCFG=
 TRACING=$(findstring T,${CFG})
 PROFILING=$(findstring p,${CFG})
-TPROF=$(findstring t,${CFG})
+TPROF=$(findstring z,${CFG})
 
 ifeq "T" "${TRACING}"
 DCFG:=${DCFG} -DTRACE=1 -DDBGTRANS
@@ -59,10 +59,34 @@ ifeq "p" "${PROFILING}"
 DCFG:=${DCFG} -DPROFILE=2
 endif
 
-ifeq "t" "${TPROF}"
+ifeq "z" "${TPROF}"
 DCFG:=${DCFG} -DTPROF
 endif
 
 ifeq "1" "${USINGRTS}"
 NHEAP = +RTS -H8M -RTS
 endif
+
+
+ifeq "T" "${TRACING}"
+  HISUFFIX=T.hi
+  O=T.o
+  C=T.c
+else
+ifeq "p" "${PROFILING}"
+  HISUFFIX=hi
+  O=p.o
+  C=p.c
+else
+ifeq "z" "${TPROF}"
+  HISUFFIX=hi
+  O=z.o
+  C=z.c
+else
+  HISUFFIX=hi
+  O=o
+  C=hc
+endif
+endif
+endif
+

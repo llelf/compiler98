@@ -37,13 +37,13 @@ ${OBJDIR}/ToUpper.$O: ${OBJDIR}/IsLower.$O
 ${OBJDIR}/LexLitChar.$O: ../Numeric/LexDigits.${HISUFFIX}
 ${OBJDIR}/ReadLitChar.$O: ../Numeric/ReadDec.${HISUFFIX} ../Numeric/ReadOct.${HISUFFIX} ../Numeric/ReadHex.${HISUFFIX}
 
-IsAlpha.c : IsAlpha.hs IsUpper.c IsLower.c
-IsAlphaNum.c : IsAlphaNum.hs IsAlpha.c IsDigit.c
-IsPrint.c: IsPrint.hs IsControl.c
-ToLower.c: ToLower.hs IsUpper.c
-ToUpper.c: ToUpper.hs IsLower.c
-LexLitChar.c: LexLitChar.hs ../Numeric/LexDigits.${HISUFFIX}
-ReadLitChar.c: ReadLitChar.hs ../Numeric/ReadDec.${HISUFFIX} ../Numeric/ReadOct.${HISUFFIX} ../Numeric/ReadHex.${HISUFFIX}
+IsAlpha.$C : IsAlpha.hs IsUpper.$C IsLower.$C
+IsAlphaNum.$C : IsAlphaNum.hs IsAlpha.$C IsDigit.$C
+IsPrint.$C: IsPrint.hs IsControl.$C
+ToLower.$C: ToLower.hs IsUpper.$C
+ToUpper.$C: ToUpper.hs IsLower.$C
+LexLitChar.$C: LexLitChar.hs ../Numeric/LexDigits.${HISUFFIX}
+ReadLitChar.$C: ReadLitChar.hs ../Numeric/ReadDec.${HISUFFIX} ../Numeric/ReadOct.${HISUFFIX} ../Numeric/ReadHex.${HISUFFIX}
 
 
 ## Yucky .hi stuff to deal with mutual dependencies.

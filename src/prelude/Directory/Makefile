@@ -49,16 +49,16 @@ ${OBJDIR}/RemoveDirectory.$O: ${OBJDIR}/PatchIOError.$O
 ${OBJDIR}/CreateDirectory.$O: ${OBJDIR}/PatchIOError.$O 
 ${OBJDIR}/GetDirectoryContents.$O: ${OBJDIR}/PatchIOError.$O 
 
-SetPermissions.c: PatchIOError.c DPermissions.c 
-GetPermissions.c: PatchIOError.c DPermissions.c 
-GetModificationTime.c: PatchIOError.c 
-DoesDirectoryExist.c: PatchIOError.c 
-DoesFileExist.c: PatchIOError.c 
-SetCurrentDirectory.c: PatchIOError.c 
-GetCurrentDirectory.c: PatchIOError.c 
-RenameFile.c: RenameDirectory.c 
-RemoveFile.c: PatchIOError.c 
-RenameDirectory.c: PatchIOError.c 
-RemoveDirectory.c: PatchIOError.c 
-CreateDirectory.c: PatchIOError.c 
-GetDirectoryContents.c: PatchIOError.c 
+SetPermissions.$C: PatchIOError.$C DPermissions.$C 
+GetPermissions.$C: PatchIOError.$C DPermissions.$C 
+GetModificationTime.$C: PatchIOError.$C 
+DoesDirectoryExist.$C: PatchIOError.$C 
+DoesFileExist.$C: PatchIOError.$C 
+SetCurrentDirectory.$C: PatchIOError.$C 
+GetCurrentDirectory.$C: PatchIOError.$C 
+RenameFile.$C: RenameDirectory.$C 
+RemoveFile.$C: PatchIOError.$C 
+RenameDirectory.$C: PatchIOError.$C 
+RemoveDirectory.$C: PatchIOError.$C 
+CreateDirectory.$C: PatchIOError.$C 
+GetDirectoryContents.$C: PatchIOError.$C 

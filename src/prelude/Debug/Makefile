@@ -17,13 +17,13 @@ include ../Makefile.common
 
 # Here are some extra rules.
 XOBJS = $(patsubst %.hs, ${OBJDIR}/%.$O, ${XSRCS})
-XCFILES = $(patsubst %.hs, %.c, ${XSRCS})
+XCFILES = $(patsubst %.hs, %.$C, ${XSRCS})
 
 extra: ${XOBJS}
 extracfiles: ${XCFILES}
 ${XOBJS}: ${OBJDIR}/%.$O : %.hs
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
-${XCFILES}: %.c : %.hs
+${XCFILES}: %.$C : %.hs
 	$(HC) -C $(LIB_FLAGS) $<
 
 cleanExtraC:

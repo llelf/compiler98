@@ -71,33 +71,33 @@ ${OBJDIR}/TellBin.$O: TellBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/B
 
 # C-files dependencies.
 
-AlignBin.c:    BinHandle.c
-BinLocation.c: BinIOMode.c
-Bin.c:         BinPtr.c
-CBinary.c:     BinHandle.c Bin.c
-ClearBits.c:   BinHandle.c BinPtr.c
-CloseBin.c:    BinHandle.c
-CompareBin.c:  BinPtr.c BinHandle.c
-CopyBin.c:     BinHandle.c BinLocation.c OpenBin.c SizeBin.c
-CopyBits.c:    BinHandle.c BinPtr.c GetBits.c PutBits.c SeekBin.c
-CopyBytes.c:   BinHandle.c BinPtr.c
-EndBin.c:      BinHandle.c BinPtr.c
-EqualsBin.c:   BinPtr.c BinHandle.c
-FreezeBin.c:   BinHandle.c
-GetAt.c:       CBinary.c BinHandle.c Bin.c SeekBin.c
-GetBitsF.c:    BinHandle.c BinPtr.c
-GetBits.c:     BinHandle.c
-GetFAt.c:      CBinary.c BinHandle.c Bin.c
-IsEOFBin.c:    BinHandle.c
-Instances.c:   BinHandle.c BinPtr.c BinLocation.c Bin.c OpenBin.c TellBin.c AlignBin.c PutBits.c GetBits.c CBinary.c GetBitsF.c LeftLeft.c FreezeBin.c
-OpenBin.c:     BinHandle.c BinIOMode.c BinLocation.c
-PutAt.c:       CBinary.c BinHandle.c Bin.c SeekBin.c
-PutAtEnd.c:    CBinary.c BinHandle.c Bin.c EndBin.c SeekBin.c
-PutBits.c:     BinHandle.c BinPtr.c
-SkipBits.c:    BinHandle.c
-StdMem.c:      BinHandle.c
-SizeBin.c:     BinHandle.c
-SizedBin.c:    BinPtr.c CBinary.c PutBits.c GetBits.c AlignBin.c SizeofBin.c EqualsBin.c CompareBin.c StdMem.c GetFAt.c
-SeekBin.c:     BinHandle.c BinPtr.c
-TellBin.c:     BinHandle.c BinPtr.c
+AlignBin.$C:    BinHandle.$C
+BinLocation.$C: BinIOMode.$C
+Bin.$C:         BinPtr.$C
+CBinary.$C:     BinHandle.$C Bin.$C
+ClearBits.$C:   BinHandle.$C BinPtr.$C
+CloseBin.$C:    BinHandle.$C
+CompareBin.$C:  BinPtr.$C BinHandle.$C
+CopyBin.$C:     BinHandle.$C BinLocation.$C OpenBin.$C SizeBin.$C
+CopyBits.$C:    BinHandle.$C BinPtr.$C GetBits.$C PutBits.$C SeekBin.$C
+CopyBytes.$C:   BinHandle.$C BinPtr.$C
+EndBin.$C:      BinHandle.$C BinPtr.$C
+EqualsBin.$C:   BinPtr.$C BinHandle.$C
+FreezeBin.$C:   BinHandle.$C
+GetAt.$C:       CBinary.$C BinHandle.$C Bin.$C SeekBin.$C
+GetBitsF.$C:    BinHandle.$C BinPtr.$C
+GetBits.$C:     BinHandle.$C
+GetFAt.$C:      CBinary.$C BinHandle.$C Bin.$C
+IsEOFBin.$C:    BinHandle.$C
+Instances.$C:   BinHandle.$C BinPtr.$C BinLocation.$C Bin.$C OpenBin.$C TellBin.$C AlignBin.$C PutBits.$C GetBits.$C CBinary.$C GetBitsF.$C LeftLeft.$C FreezeBin.$C
+OpenBin.$C:     BinHandle.$C BinIOMode.$C BinLocation.$C
+PutAt.$C:       CBinary.$C BinHandle.$C Bin.$C SeekBin.$C
+PutAtEnd.$C:    CBinary.$C BinHandle.$C Bin.$C EndBin.$C SeekBin.$C
+PutBits.$C:     BinHandle.$C BinPtr.$C
+SkipBits.$C:    BinHandle.$C
+StdMem.$C:      BinHandle.$C
+SizeBin.$C:     BinHandle.$C
+SizedBin.$C:    BinPtr.$C CBinary.$C PutBits.$C GetBits.$C AlignBin.$C SizeofBin.$C EqualsBin.$C CompareBin.$C StdMem.$C GetFAt.$C
+SeekBin.$C:     BinHandle.$C BinPtr.$C
+TellBin.$C:     BinHandle.$C BinPtr.$C
 

@@ -16,6 +16,6 @@ include ../Makefile.common
 ${OBJDIR}/DTimeLocale.$O: DTimeLocale.hs
 ${OBJDIR}/DefaultTimeLocale.$O: DefaultTimeLocale.hs ${OBJDIR}/DTimeLocale.$O
 
-DefaultTimeLocale.c: DTimeLocale.c
+DefaultTimeLocale.$C: DTimeLocale.$C
 
 

@@ -50,6 +50,7 @@ CPPFLAGS=${CPPFLAGS-""}
 #OBJDIR=
 HISUFFIX="hi"
 OSUFFIX="o"
+CSUFFIX="hc"
 
 MAINROUTINE=$NHC98LIBDIR/$MACHINE/main
 
@@ -58,7 +59,7 @@ CC=${CC-gcc}" -D__NHC__"
 CPPDEFAULT="${CC} -D__HASKELL__=98 -D__HASKELL_98__ -D__HASKELL98__ -x c -E"
 
 CPPPRE=${CPP-"${CPPDEFAULT} -traditional"}
-CPPAS="${CC} -S"
+CPPAS="${CC} -x c -S"
 CPPASFLAGS=" -I${NHC98INCDIR}/ "
 #CPPASFLAGS=" -I- -I${NHC98INCDIR}/ "
 
@@ -116,6 +117,7 @@ processArgs () {
             GRCC=$GRCC" -DPROFILE"
             CPPASFLAGS=$CPPASFLAGS" -DPROFILE"
             OSUFFIX="p.o"
+            CSUFFIX="p.c"
             ;;
     -S    ) KEEPS=1;;
     -C    ) KEEPC=1;;
@@ -129,13 +131,15 @@ processArgs () {
             LDLAST=$LDLAST$LIBCOMPAT
             HISUFFIX="T.hi"
             OSUFFIX="T.o"
+            CSUFFIX="T.c"
             ;;
-    -t)     TPROF=t
+    -t|-z)  TPROF=z
             TPFLAG=1
             COMPFLAGS=$COMPFLAGS" -tprof"
             GRCC=$GRCC" -DTPROF"
             CPPASFLAGS=$CPPASFLAGS" -DTPROF "
-            OSUFFIX="t.o"
+            OSUFFIX="z.o"
+            CSUFFIX="z.c"
             ;;
     -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
     +rts  ) USINGRTS=1;;
@@ -180,6 +184,7 @@ processArgs () {
                exit 0;;
     -*    ) COMPFLAGS=$COMPFLAGS" "$1;;
     *.s   ) COMPFILES=$COMPFILES" "$1;;
+    *.hc   ) COMPFILES=$COMPFILES" "$1;;
     *.c   ) COMPFILES=$COMPFILES" "$1;;
     *.hs  ) COMPFILES=$COMPFILES" "$1;;
     *.lhs ) COMPFILES=$COMPFILES" "$1;;
@@ -221,6 +226,7 @@ case $GRFILES in
 ""   ) ;;
 *    )
   set $GRFILES
+  GREENCARDOPTS=$GREENCARDOPTS" --c-suffix $CSUFFIX"
   while test $1
   do
     case $1 in
@@ -231,7 +237,7 @@ case $GRFILES in
 
     GRFILE=$DIRNAME/$BASENAME.gc
     HSFILE=$DIRNAME/${BASENAME}_.hs
-    GRCFILE=$DIRNAME/${BASENAME}_.c
+    GRCFILE=$DIRNAME/${BASENAME}_.$CSUFFIX
     GROFILE=$objdir/${BASENAME}_.o
 
     if test $MFLAG -eq 1
@@ -271,9 +277,9 @@ case $GRFILES in
       then
         if test $VFLAG -eq 1
         then
-          echo $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -o $GROFILE $GRCFILE
+          echo $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -x c -o $GROFILE $GRCFILE
         fi
-        $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -o $GROFILE $GRCFILE
+        $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -x c -o $GROFILE $GRCFILE
         if test $? -ne 0
         then
           echo C compilation failed on ${BASENAME}_.c after `basename $GREENCARD`
@@ -301,6 +307,14 @@ case $COMPFILES in
     case $1 in
     *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0;
                               BASENAME=`basename $1 .s`   ;;
+    *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+                              BASENAME=`basename $1 .hc`  ;;
+    *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+                              BASENAME=`basename $1 .T.c`  ;;
+    *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+                              BASENAME=`basename $1 .p.c`  ;;
+    *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+                              BASENAME=`basename $1 .z.c`  ;;
     *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
                               BASENAME=`basename $1 .c`   ;;
     *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
@@ -328,10 +342,10 @@ case $COMPFILES in
 
     TMPCPPPREFILE=$TMP/$BASENAME.$$.hs
 
-    CPPASFILE=$DIRNAME/$BASENAME.c
+    CPPASFILE=$DIRNAME/$BASENAME.$CSUFFIX
     if test $CSRC -eq 0
     then
-      TMPCPPASFILE=$TMP/$BASENAME.$$.c
+      TMPCPPASFILE=$TMP/$BASENAME.$$.$CSUFFIX
     else
       TMPCPPASFILE=$CPPASFILE
     fi

@@ -59,14 +59,14 @@ ${OBJDIR}/_MkIO.$O:        ${OBJDIR}/DIO.$O
 
 
 # And now for C-files dependencies.
-Catch.c:        DIO.c
-Eq_IOError.c:   DIOError.c #DErrNo.c
-IoError.c:      DIO.c
-Monad_IO.c:     DIO.c DIOError.c # ../Prelude/CMonad.hi
-Functor_IO.c:   # ../Prelude/CFunctor.hi
-Show_IOError.c: DIOError.c StrError.c #DErrNo.c 
-UserError.c:    DIOError.c
-DIOError.c:	#DErrNo.c
-ReadLn.c:	ReadIO.c
-_MkIO.c:	DIO.c
+Catch.$C:        DIO.$C
+Eq_IOError.$C:   DIOError.$C #DErrNo.$C
+IoError.$C:      DIO.$C
+Monad_IO.$C:     DIO.$C DIOError.$C # ../Prelude/CMonad.hi
+Functor_IO.$C:   # ../Prelude/CFunctor.hi
+Show_IOError.$C: DIOError.$C StrError.$C #DErrNo.$C 
+UserError.$C:    DIOError.$C
+DIOError.$C:	#DErrNo.$C
+ReadLn.$C:	ReadIO.$C
+_MkIO.$C:	DIO.$C
 

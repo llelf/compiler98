@@ -23,7 +23,7 @@ include ../Makefile.common
 
 
 # C-files dependencies.
-#Ix_2.c: RangeSize.c
-#Ix_3.c: RangeSize.c
-#Ix_4.c: RangeSize.c
+#Ix_2.$C: RangeSize.$C
+#Ix_3.$C: RangeSize.$C
+#Ix_4.$C: RangeSize.$C
 

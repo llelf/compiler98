@@ -52,7 +52,7 @@ greencard opts =
     _        -> putStrLn "<target> must be `Hugs' or `ghc' or `nhc98' or `nhc13'"
  where
     greencard' target fname =
-      processFile target optdebug optverbose ("./" : optincludedirs) (dropSuffix fname ".gc")
+      processFile target optdebug optverbose ("./" : optincludedirs) (dropSuffix fname ".gc") optCsuffix
     
     ver		= name ++ " " ++ version
     usage	= "Usage: green-card [OPTION]... FILE..."
@@ -65,6 +65,7 @@ greencard opts =
     targets     = [t | OptTarget t <- opts ]
     
     optfiles	= [f | OptFile f <- opts]
+    optCsuffix  = head [x | OptCSuffix x <- opts]
     optincludedirs = 
       map ensuredir $ [d | OptIncludeDirs d <- reverse opts]
     --map ensuredir $ concat [split ':' d | OptIncludeDirs d <- reverse opts]
@@ -91,7 +92,8 @@ options =
          "verbose"	-= DumpVerbose,
          "fgc-safe"	-= DumpGCSafe,
 	 "target"       -=== OptTarget,
-         "include-dir"	-=== OptIncludeDirs
+         "include-dir"	-=== OptIncludeDirs,
+         "c-suffix"	-=== OptCSuffix
         ],
       "h"		-= DumpHelp,
       "d"		-= DumpDebug,
@@ -110,6 +112,7 @@ data CLIOptions	= DumpVersion
 		| DumpVerbose
 		| DumpGCSafe
 		| OptTarget String
+		| OptCSuffix String
 		| OptIncludeDirs String
 		| OptFile String deriving Eq
 
