@@ -75,7 +75,7 @@ endif
 
 # general build rule for making objects from C files
 ${OBJS_C}: ${OBJDIR}/%.$O : %.c
-	$(CC) -c -I$(INCDIR) $(EXTRA_C_FLAGS) -o $@ $<
+	$(CC) -c -I$(INCDIR) $(ENDIAN) $(EXTRA_C_FLAGS) -o $@ $<
 
 # general build rules for making C files from Haskell files
 ${CFILES_HS}: %.$C : %.hs
