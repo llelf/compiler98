@@ -15,9 +15,11 @@ if uname >/dev/null 2>&1
 then
   if uname -p >/dev/null 2>&1
   then PROCESSOR=`uname -p`
-       if [ "$PROCESSOR" = "unknown" ]
-       then PROCESSOR=`uname -m`
-       fi
+    case "$PROCESSOR" in
+    unknown|*\ *)
+      PROCESSOR=`uname -m`
+      ;;
+    esac
   else
     if arch >/dev/null 2>&1
     then PROCESSOR=`arch`
