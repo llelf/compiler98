@@ -1,3 +1,7 @@
+{-
+Performs lambda-lifting of the program
+-}
+
 module Lift (liftCode) where
 
 import List
@@ -7,14 +11,14 @@ import SyntaxPos
 import Extra(removeSet,emptySet,unionSet,removeSet,noPos,strPos,Pos(..),dropJust,strace,pair)
 import IntState
 import TokenId
-import Kind
+import IdKind
 import NT
 --------- ===========
 
 data LiftDown =
   LiftDown
     Bool			-- strict
-    ((TokenId,Kind)->Int)	-- tidFun
+    ((TokenId,IdKind)->Int)	-- tidFun
     TokenId		        -- current function
 
 data LiftThread =

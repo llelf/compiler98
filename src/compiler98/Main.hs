@@ -1,3 +1,10 @@
+{- ---------------------------------------------------------------------------
+The function main calls all the transformation phases of the compiler.
+It does lots of head-standing to try to ensure
+that things happen in the right order (due to lazy evaluation), that
+error messages get reported correctly, and to be as space-efficient as
+possible.
+-}
 module Main where
 
 import IO
@@ -30,7 +37,7 @@ import PPSyntax(ppModule,ppDecl,ppDecls,ppImpDecls,ppInterface,ppFun,ppClassCode
 import StrPos(strPCode)
 
 import TokenId(TokenId(..),t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
-import Kind(Kind(..))
+import IdKind(IdKind(..))
 import Lex(Lex,LexAnnot)  -- need show
 
 import Unlit(unlit)

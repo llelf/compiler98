@@ -1,6 +1,6 @@
 module RmClasses(rmClasses) where
 
-import Kind
+import IdKind
 import IntState
 import Syntax
 import Extra(dropJust)

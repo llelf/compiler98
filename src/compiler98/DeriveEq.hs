@@ -2,7 +2,7 @@ module DeriveEq(deriveEq) where
 
 import Syntax
 import IntState
-import Kind
+import IdKind
 import NT
 import State
 import DeriveLib

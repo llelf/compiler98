@@ -9,7 +9,7 @@ import Fixity(fixInfixList)
 import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
 import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
 import State
-import Kind
+import IdKind
 import Extra
 import NT
 import IntState

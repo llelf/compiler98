@@ -4,7 +4,7 @@ import List(partition)
 import TokenId
 import Syntax
 import SyntaxPos
-import Kind
+import IdKind
 import State
 import NT
 import TypeLib

@@ -9,7 +9,7 @@ module Overlap
 -- shared module aliases.		Malcolm.Wallace@cs.york.ac.uk
 
 import TokenId(TokenId)
-import Kind
+import IdKind
 import AssocTree
 import Tree234
 import Extra
@@ -18,7 +18,7 @@ import List (delete)
 --                                       resolved yet?
 --                                                  source alias
 --                                                          other possible aliases
-type Overlap = AssocTree (TokenId,Kind) (Resolution,TokenId,[TokenId])
+type Overlap = AssocTree (TokenId,IdKind) (Resolution,TokenId,[TokenId])
 data Resolution = Unresolved | ResolvedTo | Excluded
 
 -- For every ident that could resolve to more than one qualified ident,
@@ -31,10 +31,10 @@ data Resolution = Unresolved | ResolvedTo | Excluded
 -- renaming (e.g. M.foo ---> C.foo) and exclude the others
 -- (e.g. M.foo -/-> A.foo, M.foo -/-> B.foo)
 
-addOverlap :: TokenId -> Kind -> Overlap -> [TokenId] -> Overlap
-addOverlap atid kind o tids =
+addOverlap :: TokenId -> IdKind -> Overlap -> [TokenId] -> Overlap
+addOverlap atid idKind o tids =
     foldr add o tids
-  where add t o = addAT o sndOf (t,kind) (Unresolved, atid, delete t tids)
+  where add t o = addAT o sndOf (t,idKind) (Unresolved, atid, delete t tids)
 
 
 -- In deAlias, we compute the new, fully-resolved, qualified-renaming function
@@ -43,7 +43,7 @@ addOverlap atid kind o tids =
 deAlias ::
     (TokenId->[TokenId])		-- orig (imprecise) qualified renaming
      -> Overlap				-- table of known overlaps
-     -> AssocTree (TokenId,Kind) (Either [Pos] [Int])	-- idents to be renamed
+     -> AssocTree (TokenId,IdKind) (Either [Pos] [Int])	-- idents to be renamed
      -> ([String], (TokenId->TokenId))	-- errors + new qual-renaming func
 deAlias qf o rt =
     (foldr findUndef err flatrt, newqf)
@@ -77,7 +77,7 @@ deAlias qf o rt =
     buildqf ((tid,_), (Unresolved,_,_))      t = t 
 
 
-resolveOverlaps :: Overlap -> [((TokenId,Kind), Either [Pos] [Int])]
+resolveOverlaps :: Overlap -> [((TokenId,IdKind), Either [Pos] [Int])]
               -> ([String],Overlap)
 resolveOverlaps o rt =
     foldl resolve ([],o) rt

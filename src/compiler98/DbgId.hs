@@ -12,7 +12,7 @@ module DbgId(tTrace, tR, tSR, tSR2, tSR3, tDNum, t_value, tE,
 	     tokenDbg)
  where
 
-import Kind
+import IdKind
 import TokenId
 import PackedString(PackedString, unpackPS, packString)
 

@@ -1,6 +1,6 @@
 module TokenInt where
 
-import Kind
+import IdKind
 import TokenId
 import DbgId
 import AssocTree

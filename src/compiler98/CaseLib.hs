@@ -9,7 +9,7 @@ import State
 import IntState
 import Tree234
 import AssocTree
-import Kind
+import IdKind
 import TokenId
 import NT
 import Bind(identPat)
@@ -24,7 +24,7 @@ type Down = (ExpI -> ExpI
 	    ,ExpI
 	    ,(ExpI,ExpI)
 	    ,ExpI
-	    ,(TokenId,Kind) -> Int
+	    ,(TokenId,IdKind) -> Int
 	    ,PosExp
 	    ,[Char]
 	    , Tree (Int, Int)
@@ -35,7 +35,7 @@ type CaseFun a = Down -> Thread -> (a,Thread)
 
 ----- Low level stuff
 
-addRatioCon :: ((TokenId,Kind) -> Int) -> IntState -> (Int,IntState)
+addRatioCon :: ((TokenId,IdKind) -> Int) -> IntState -> (Int,IntState)
 addRatioCon tidFun state =
  case uniqueIS state of
   (u,state) ->

@@ -4,7 +4,7 @@ import List
 import Syntax
 import MkSyntax(mkInt)
 import IntState
-import Kind
+import IdKind
 import NT
 import State
 import DeriveLib

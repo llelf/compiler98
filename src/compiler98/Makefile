@@ -17,7 +17,7 @@ SRCS = \
 	FSLib.hs FixSyntax.hs Fixity.hs Flags.hs FreeVar.hs Gcode.hs \
 	GcodeFix.hs GcodeLow.hs GcodeLowC.hs GcodeMem.hs GcodeOpt1.hs \
 	GcodeOpt2.hs GcodeRel.hs GcodeSpec.hs HbcOnly.hs IExtract.hs \
-	Import.hs ImportState.hs Info.hs IntState.hs Kind.hs Lex.hs LexLow.hs \
+	Import.hs ImportState.hs Info.hs IntState.hs IdKind.hs Lex.hs LexLow.hs \
 	LexPre.hs LexStr.hs Lexical.hs Lift.hs Machine.hs Main.hs Memo.hs \
 	MergeSort.hs MkSyntax.hs NT.hs Need.hs NeedLib.hs Nice.hs OsOnly.hs \
 	PPLib.hs PPSyntax.hs Parse.hs Parse2.hs ParseCore.hs ParseI.hs \

@@ -2,7 +2,7 @@ module STGBuild(stgExpPush,stgBodyPush) where
 
 import Extra
 import State
-import IntState hiding (Kind)
+import IntState hiding (IdKind)
 import PosCode
 import SyntaxPos
 import Gcode

@@ -10,7 +10,7 @@ import SyntaxPos
 import PackedString(PackedString,packString,unpackPS)
 import Memo
 import Tree234
-import Kind
+import IdKind
 
 ------- (true if bool == Int, true if && || not is primitives,true if )
 

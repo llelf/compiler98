@@ -1,7 +1,7 @@
 module Bind(bindDecls,bindPat,identDecl,identPat) where
 
 import State
-import Kind
+import IdKind
 import Extra(strPos,noPos)
 import TokenId(TokenId)
 import Syntax

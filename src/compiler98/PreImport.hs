@@ -6,7 +6,7 @@ import TokenId(TokenId(..),tPrelude,t_Arrow,ensureM,forceM,dropM,
                rpsPrelude,rpsBinary,t_List)
 import PackedString(PackedString,packString,unpackPS)
 import Syntax
-import Kind
+import IdKind
 import AssocTree
 import Memo
 import Tree234(treeMapList)
@@ -167,7 +167,7 @@ expFun2 rps expAT v q tid kind =
 mkExportAT expdecls =
    expAT
  where
-  expAT :: AssocTree (TokenId,Kind) IE
+  expAT :: AssocTree (TokenId,IdKind) IE
   expAT = foldr exp initAT (map preX expdecls)
 
   exp (key,value) t = addAT t combIE key value

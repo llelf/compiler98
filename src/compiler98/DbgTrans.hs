@@ -1,7 +1,7 @@
 module DbgTrans(debugTrans, dbgAddImport) where
 
 import Extra(Pos, noPos, pair, fromPos, dropJust)
-import Kind
+import IdKind
 import TokenId
 import DbgId
 import Info
@@ -25,7 +25,7 @@ import IOExts (trace)
 
 -- newNameVar, nameArity, hsFromInt, addInt
 
-data Inherited a = Inherited (Exp Int) (Exp Int) ((TokenId, Kind) -> Int) a
+data Inherited a = Inherited (Exp Int) (Exp Int) ((TokenId, IdKind) -> Int) a
 data Threaded = Threaded IntState (Int, [Int]) [(Pos, Int)] -- (AssocTree Int (Exp Int)) -- [(Int, Int)]
 
 dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =

@@ -2,7 +2,7 @@ module IntState(module IntState, module Info, AssocTree(..), Tree) where
 
 import AssocTree
 import NT
-import Kind
+import IdKind
 import TokenId(TokenId,mkQual3,mkQualD,dropM)
 import Extra
 import PackedString(PackedString,packString,unpackPS)

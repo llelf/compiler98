@@ -2,7 +2,7 @@ module DbgDataTrans(dbgDataTrans) where
 
 import Tree234
 import Extra
-import Kind
+import IdKind
 import TokenId
 import DbgId
 import IntState
@@ -25,7 +25,7 @@ import NonStdTrace
 import IOExts (trace)
 #endif
 
-data Inherited = Inherited ((TokenId, Kind) -> Int) [(Int, Int)] Int (Tree (Int, Int)) Bool
+data Inherited = Inherited ((TokenId, IdKind) -> Int) [(Int, Int)] Int (Tree (Int, Int)) Bool
 data Threaded = Threaded IntState [(Int,[(Pos,Int)])] [(Pos, Int)]
 
 dbgDataTrans flags state reptree lookupPrel derived dptopdecls =

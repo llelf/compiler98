@@ -1,7 +1,7 @@
 module FSLib(module FSLib, AssocTree(..), Tree, TokenId) where
 
 import Syntax
-import Kind
+import IdKind
 import Info
 import State
 import AssocTree

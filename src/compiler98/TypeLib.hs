@@ -6,7 +6,7 @@ import TypeEnv(lookupEnv)
 import Extra(assocDef,pair,strPos,Pos(..),noPos,snub,dropJust,isJust,mapSnd)
 import Syntax
 import State(State0(..))
-import Kind
+import IdKind
 import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
 import DbgId(tSR, tR, tTrace)
 import Flags(sDbgTrans)

@@ -12,7 +12,7 @@ import Memo
 import Rename(fixInstance)
 import TypeCtx
 import State
-import Kind
+import IdKind
 import TypeData
 
 --import DeriveEval		-- Removed in Haskell 98
@@ -28,7 +28,7 @@ import DeriveBinary		-- MALCOLM
 
 import DeriveLib
 
-derive :: ((TokenId,Kind) -> Int) ->
+derive :: ((TokenId,IdKind) -> Int) ->
 	  IntState 		->
 	  [(Int,[(Pos,Int)])] 	->
 	  Decls Int 		-> Either [[Char]] (IntState,(Decls Int))

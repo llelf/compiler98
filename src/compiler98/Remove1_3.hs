@@ -8,7 +8,7 @@ import TypeLib(getState,newIdent,getIdent,typeError)
 import SyntaxPos
 import TypeData
 import NT
-import Kind
+import IdKind
 import Extra(strPos,dropJust,isJust,isNothing,mixCommaAnd,noPos,dropRight,isRight)
 import List
 ---- Done before Scc

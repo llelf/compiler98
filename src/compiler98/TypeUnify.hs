@@ -1,7 +1,7 @@
 module TypeUnify(unify,unifyr) where
 
 import NT(NT(..),NewType(..),freeNT,strNT)
-import Kind
+import IdKind
 import TypeSubst
 import TypeUtil
 import TypeData

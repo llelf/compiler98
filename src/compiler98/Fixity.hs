@@ -5,7 +5,7 @@ import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos
 import TokenId(TokenId(..),t_Lambda,t_x)
-import Kind(Kind(..))
+import IdKind(IdKind(..))
 import State
 import AssocTree
 import PreImp
@@ -56,7 +56,7 @@ stackInfix op@(ExpCon _ o) = fixTid Con o >>>= \ fix -> unitS (fix,(op,2::Int))
 
 stackPrefix fix op = (fix,(op,1::Int))
 
---harder :: Pos -> [((InfixClass a,Int),(g,f))] -> Kind -> e 
+--harder :: Pos -> [((InfixClass a,Int),(g,f))] -> IdKind -> e 
 --		-> State (b,(e -> TokenId),c,d) RenameState (Maybe ((((InfixClass a),Int),(g,f)),[((InfixClass a,Int),(g,f))])) RenameState 
 
 harder pos [] kind op' = unitS Nothing

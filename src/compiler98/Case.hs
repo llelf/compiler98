@@ -1,3 +1,7 @@
+{-
+Translates all patterns into case expressions
+-}
+
 module Case(caseTopLevel) where
 
 import Ratio
@@ -10,7 +14,7 @@ import State
 import IntState
 import Tree234
 import AssocTree
-import Kind
+import IdKind
 import TokenId
 import NT
 import Bind(identPat)

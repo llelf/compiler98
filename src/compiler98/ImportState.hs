@@ -2,11 +2,11 @@ module ImportState
 	(module ImportState
 	,module Info 
 --	,PackedString
-	,Memo(..),TokenId,AssocTree(..),Tree,Decl,InfixClass,Kind,NewType,Pos(..)) where
+	,Memo(..),TokenId,AssocTree(..),Tree,Decl,InfixClass,IdKind,NewType,Pos(..)) where
 
 import PackedString(PackedString,packString,unpackPS)
 import NT
-import Kind
+import IdKind
 import Syntax(InfixClass,Decl)
 import AssocTree
 import Memo
@@ -21,9 +21,9 @@ data  ImportState =
 	Int						-- unique
 	PackedString					-- modid of interface file
 	PackedString					-- modid of this section of the interface file
-	(Memo (TokenId,Kind))				-- needI
-	(AssocTree (TokenId,Kind) (Either [Pos] [Int]))	-- rename (name	-> unique)
-	(AssocTree (TokenId,Kind) Info)			-- symboltable (real name -> info)
+	(Memo (TokenId,IdKind))				-- needI
+	(AssocTree (TokenId,IdKind) (Either [Pos] [Int]))	-- rename (name	-> unique)
+	(AssocTree (TokenId,IdKind) Info)			-- symboltable (real name -> info)
 	[(TokenId,TokenId,[Int],[(Pos,TokenId,Int)])]	-- [ (realClass, realData, free , Ctxs) ]
 	(TokenId -> (InfixClass TokenId,Int))		-- fixity information (name -> fixity)
 	[String]					-- errors

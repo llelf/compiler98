@@ -16,7 +16,7 @@ import ImportState
 import IntState(checkNT)
 import IExtract(tvPosTids,tvTids,freeType,fixOne,fixFun)
 import State
-import Kind
+import IdKind
 import PreImp(sExp,sQual,sLG,sFix)
 import PackedString(PackedString,packString,unpackPS)
 import Info
@@ -31,8 +31,8 @@ data RenameState =
         Flags				-- flags
 	Int				-- unique
 	(Int,PackedString)		-- modid
-	[AssocTree (TokenId,Kind) Int]	-- stack of rename (name -> unique)
-	(AssocTree (TokenId,Kind) Int)	-- active rename (name	-> unique)
+	[AssocTree (TokenId,IdKind) Int]	-- stack of rename (name -> unique)
+	(AssocTree (TokenId,IdKind) Int)	-- active rename (name	-> unique)
 	(AssocTree Int Info)		-- symboltable (unique -> info)
 	[(Int,[(Pos,Int)])]		-- derived   [(con,[(pos,cls)])]
 	(Maybe [Int])			-- defaults
@@ -234,7 +234,7 @@ popScope _ (res,RenameState flags unique rps (rt:rts) _ st derived defaults erro
 renameError err r fix (RenameState flags unique rps rst rt st derived defaults errors needCheck) =
  (r, RenameState flags unique rps rst rt st derived defaults (err:errors) needCheck)
 
---lookupAll :: [AssocTree (TokenId,Kind) Int] -> (TokenId,Kind) -> Maybe Int
+--lookupAll :: [AssocTree (TokenId,IdKind) Int] -> (TokenId,IdKind) -> Maybe Int
 lookupAll [] key = Nothing
 lookupAll (t:ts) key =
   case lookupAT t key of

@@ -2,7 +2,7 @@ module FixSyntax(fixSyntax) where
 
 import Extra(Pos(..),noPos,strPos,pair,dropJust)
 import Syntax
-import Kind(Kind(..))
+import IdKind(IdKind(..))
 import State
 import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId

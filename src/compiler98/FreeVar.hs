@@ -5,7 +5,7 @@ import PosCode
 import SyntaxPos
 import Extra(singletonSet,emptySet,unionSet,removeSet,strPos,noPos,Pos(..),pair,dropJust)
 import IntState
-import Kind
+import IdKind
 --------- ===========
 
 data FreeDown =

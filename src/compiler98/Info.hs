@@ -1,6 +1,6 @@
-module Info(module Info, Kind,TokenId,NewType,InfixClass(..),Pos(..),AssocTree(..),Tree{-,PackedString-}) where
+module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos(..),AssocTree(..),Tree{-,PackedString-}) where
 
-import Kind(Kind)
+import IdKind(IdKind)
 import TokenId(TokenId)
 import NT
 import Extra(Pos(..),sndOf,strace)
@@ -30,8 +30,8 @@ data DataKind =  -- Bool tells if type will be unboxed after expension
 
 data Info =
     InfoClear   -- used to remove imported when redefining in mutaly recursive modules and when compiling the prelude
-  | InfoUsed      Int [(Kind,TokenId,PackedString,Pos)]
-  | InfoUsedClass Int [(Kind,TokenId,PackedString,Pos)]  (AssocTree Int ([Int],[(Int,Int)]))  -- the tree does con -> (free,ctxs)
+  | InfoUsed      Int [(IdKind,TokenId,PackedString,Pos)]
+  | InfoUsedClass Int [(IdKind,TokenId,PackedString,Pos)]  (AssocTree Int ([Int],[(Int,Int)]))  -- the tree does con -> (free,ctxs)
 
   | InfoData         Int TokenId IE NewType DataKind 
   | InfoClass        Int TokenId IE NewType [Int] [Int] (AssocTree Int ([Int],[(Int,Int)]))    -- the tree does con -> (free,ctxs)

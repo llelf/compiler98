@@ -3,7 +3,7 @@ module Need(needProg) where
 import Reduce
 import NeedLib
 import Syntax
-import Kind
+import IdKind
 import PreImport
 import TokenId
 import DbgId

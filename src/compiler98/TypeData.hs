@@ -3,7 +3,7 @@ module TypeData where
 import IntState(IntState)
 import TokenId(TokenId)
 import NT(NT)
-import Kind(Kind)
+import IdKind(IdKind)
 import Extra(Pos(..))
 import Syntax (Exp)
 import AssocTree
@@ -12,7 +12,7 @@ import Tree234
 data TypeDown =
       TypeDown
 	[(Int,NT)]		-- env
-	((TokenId,Kind)->Int)	-- tidFun
+	((TokenId,IdKind)->Int)	-- tidFun
 	[Int]			-- defaults
 	[(Int,Exp Int)]		-- ctxDict
 	[(Int,[Exp Int])]	-- envDict

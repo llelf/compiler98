@@ -1,6 +1,6 @@
 module DbgReplacePrelude(dbgReplacePrelude) where
 
-import Kind
+import IdKind
 import TokenId
 import Info
 import ImportState
@@ -35,8 +35,8 @@ readMapFile [x]    dofail = catch (readFile x) dofail
 readMapFile (x:xs) dofail = catch (readFile x) (\ioe -> readMapFile xs dofail) 
 
 {-
-nameFromKindHS (fail s1) getNext Var (mkHS s1) bind
-    where getNext n = nameFromKindHS (fail s2) (wrapEm n) Var (mkHS s2) bind
+nameFromIdKindHS (fail s1) getNext Var (mkHS s1) bind
+    where getNext n = nameFromIdKindHS (fail s2) (wrapEm n) Var (mkHS s2) bind
           wrapEm n1 n2 = treeAdd (error "noway") cmp (getUnique n1, getUnique n2) tree
 	  getUnique (Name _ _ u _ _ _ _ _ _ _) = u
           fail s = error ("Couldn't find " ++ show s)

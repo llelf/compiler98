@@ -10,7 +10,7 @@ module IExtract
 import List
 import TokenId(TokenId(..),t_Arrow,t_Tuple,ensureM,dropM,forceM,rpsPrelude)
 import State
-import Kind
+import IdKind
 import Syntax
 import Extra
 import NeedLib

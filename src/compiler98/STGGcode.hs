@@ -2,7 +2,7 @@ module STGGcode where -- (stgGcode) where
 
 import Extra(strace,pair,isJust,dropJust)
 import State
-import IntState hiding (Kind)
+import IntState hiding (IdKind)
 import DbgId(t_ap)
 import PosCode
 import SyntaxPos
