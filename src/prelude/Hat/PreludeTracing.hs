@@ -5,6 +5,9 @@
 -- confuses it with the original Prelude.
 -- The export list was copied from the Haskell 98 report.
 module Prelude (
+    -- for internal purposes of desugared list comprehensions
+    -- hopefully to disappear soon
+    _filter,_foldr,
     -- module PreludeList:
     map, (++), filter, concat,
     head, last, tail, init, null, length, (!!), 
@@ -25,7 +28,7 @@ module Prelude (
     FilePath, IOError, ioError, userError, catch,
     putChar, putStr, putStrLn, print,
     getChar, getLine, getContents, interact,
-    readFile, writeFile, appendFile, readIO, readLn
+    readFile, writeFile, appendFile, readIO, readLn,
     -- defined here:
     Bool(False, True),
     Maybe(Nothing, Just),

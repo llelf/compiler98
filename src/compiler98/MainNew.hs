@@ -165,9 +165,9 @@ main' args = do
   when (sHatTrans flags) $ do
     let prg = maybeStripOffQual "Prelude" parsedPrg
     toAuxFile flags (sHatAuxFile flags) prg
-    putStr (prettyPrintTokenId flags ppModule prg) -- debug
+    -- putStr (prettyPrintTokenId flags ppModule prg) -- debug
     newprog <- auxLabelSyntaxTree flags prg
-    putStr (prettyPrintTraceId flags ppModule newprog) -- debug
+    -- putStr (prettyPrintTraceId flags ppModule newprog) -- debug
     writeFile (sHatTransFile flags)
       (prettyPrintTokenId flags ppModule 
         (maybeStripOffQual "TPrelude" 

@@ -3,7 +3,9 @@
 -- nhc98's ability to derive instances of [],(,,,) etc).
 -- Has to be transformed into TPreludeBasic.hs
 -- Hand-generated from Haskell 98 language and library reports
-module PreludeBasic where
+module PreludeBasic 
+  (module PreludeBasic, module PreludeBuiltin) 
+  where
 
 -- import PreludeBuiltin  -- Contains all `prim' values
 -- import PreludeList

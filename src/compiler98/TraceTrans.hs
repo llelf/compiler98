@@ -35,7 +35,7 @@ import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual)
-import AuxFile (AuxiliaryInfo)	-- needed only for hbc's broken import mechanism
+import AuxFile (AuxiliaryInfo) -- needed only for hbc's broken import mechanism
 import List (isPrefixOf,union,partition)
 import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
@@ -96,6 +96,7 @@ qualModule = reverse . takeWhile (/= '.') . unpackPS
 -- ----------------------------------------------------------------------------
 -- construct new main function definition
 
+-- main = T.traceIO "artFilename" gmain
 -- main = do
 --  T.openTrace "artFilename"
 --  case omain Prelude.undefined Prelude.undefined of
@@ -104,25 +105,16 @@ qualModule = reverse . takeWhile (/= '.') . unpackPS
 defMain :: String -> Decl TokenId
 
 defMain artFilename =
-  DeclFun noPos tokenmain
-    [Fun [] (Unguarded (ExpDo noPos 
-      [StmtExp (ExpApplication noPos 
-                 [ExpVar noPos tokenOpenTrace
-                 ,ExpLit noPos (LitString Boxed artFilename)])
-      ,StmtExp (ExpCase noPos 
-                 (ExpVar noPos tokenomain)
-                 [Alt (ExpApplication noPos 
-                        [ExpVar noPos tokenR
-                        ,ExpVar noPos tokenValue
-                        ,PatWildcard noPos]) 
-                      (Unguarded (ExpVar noPos tokenValue)) noDecls ])
-      ,StmtExp (ExpVar noPos tokenCloseTrace)
-      ]))
+  DeclFun noPos tokenmain 
+    [Fun [] (Unguarded 
+      (ExpApplication noPos 
+        [ExpVar noPos tokenTraceIO
+        ,ExpLit noPos (LitString Boxed artFilename)
+        ,ExpVar noPos tokengmain]))
       noDecls]
   where
   tokenmain = visible (reverse "main")
-  tokenomain = nameTransVar (mkLambdaBound tmain)
-  tokenValue = visible (reverse "value")
+  tokengmain = nameTransVar (mkLambdaBound tmain)
 
 -- ----------------------------------------------------------------------------
 -- Transform imports and exports
@@ -1532,6 +1524,14 @@ typeModule :: PackedString
 typeModule = packString . reverse $ "TPreludeBuiltinTypes" 
 
 mkTypeToken :: String -> TokenId
+mkTypeToken s@"fromId" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"toId" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"fromIO" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"toIO" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"fromTuple0" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"toTuple0" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"fromTuple2" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"toTuple2" = Qualified tracingModuleShort (packString . reverse $ s)
 mkTypeToken s = Qualified typeModule (packString . reverse $ s)
 
 
@@ -1646,11 +1646,8 @@ tokenFatal = mkTracingToken "fatal"
 
 -- other hardcoded tokens:
 
-tokenOpenTrace :: TokenId
-tokenOpenTrace = mkTracingToken "openTrace"
-
-tokenCloseTrace :: TokenId
-tokenCloseTrace = mkTracingToken "closeTrace"
+tokenTraceIO :: TokenId
+tokenTraceIO = mkTracingToken "traceIO"
 
 tokenSR :: TokenId
 tokenSR = mkTracingToken "SR"

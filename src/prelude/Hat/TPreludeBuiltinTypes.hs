@@ -28,16 +28,9 @@ aFalse = T.mkAtomCon tPrelude 0 3 "False"
 
 type String = List Char
 
-newtype IO a = IO (Prelude.IO (R a))
 
 -- ----------------------------------------------------------------------------
 -- type conversion functions:
-
-toId :: Trace -> R a -> R a
-toId h x = x
-
-fromId :: Trace -> R a -> R a
-fromId h x = x
 
 -- function type is contravariant
 toFun :: (Trace -> c -> R a) -> (Trace -> R b -> d) -> Trace 
@@ -83,20 +76,6 @@ fromString = fromList fromChar
 -- fromPolyList :: Trace -> [R a] -> R (List a)
 -- fromPolyList = fromList (\_ x -> x)
 
-toTuple0 :: Trace -> R T.Tuple0 -> ()
-toTuple0 h (R T.Tuple0 _) = ()
-
-fromTuple0 :: Trace -> () -> R T.Tuple0
-fromTuple0 t () = con0 mkNoSourceRef t T.Tuple0 aTuple0
-
-toTuple2 :: (R a -> c) -> (R b -> d) -> Trace -> R (T.Tuple2 a b) -> (c,d)
-toTuple2 f g h (R (T.Tuple2 x y) _) = (f x,g y)
-
-fromTuple2 :: (Trace -> a -> R c) -> (Trace -> b -> R d) 
-           -> Trace -> (a,b) -> R (T.Tuple2 c d)
-fromTuple2 f g h (x,y) = 
-  con2 mkNoSourceRef h T.Tuple2 aTuple2 
-    (ulazySat (f h x) h) (ulazySat (g h y) h)
 
 toChar :: Trace -> R Char -> Prelude.Char 
 toChar h (R c _) = c
@@ -129,15 +108,9 @@ fromDouble :: Trace -> Double -> R Double
 fromDouble t f = conDouble mkNoSourceRef t f
 
 
-toIO :: (Trace -> R a -> b) -> Trace -> R (IO a) -> Prelude.IO b 
-toIO f h (R (IO io) _) = fmap (f h) io
-
-fromIO :: (Trace -> a -> R b) 
-       -> Trace -> Prelude.IO a -> R (IO b)
-fromIO f t io = R (IO (fmap (f t) io)) t
-
 toIOError :: Trace -> R IOError -> Prelude.IOError
 toIOError h (R e _) = e
 
 fromIOError :: Trace -> Prelude.IOError -> R IOError
 fromIOError h e = R e h
+

@@ -336,7 +336,11 @@ foreign import haskell "Prelude.userError"
 foreign import haskell "Prelude.catch"
   catch ::  IO a -> (IOError -> IO a) -> IO a 
 
-foreign import haskell "Prelude.putChar"
+-- foreign import haskell "Prelude.putChar"
+--   putChar :: Char -> IO ()
+-- HACK!
+foreign import haskell 
+  "(\\_ c -> T.outputTrace kputChar [c] Prelude.>> Prelude.putChar c) Prelude.True"
   putChar :: Char -> IO ()
 
 foreign import haskell "Prelude.getChar"

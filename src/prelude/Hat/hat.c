@@ -1271,6 +1271,7 @@ void
 outputTrace (FileOffset trace, char *output)
 {
   fprintf(HatOutput,"%s",output);  /* copy of output */
+  trace &= hiddenMask;
   while (*output++) {
     fwrite(&trace, sizeof(FileOffset), 1, HatBridge);
 				/* link trace to output */

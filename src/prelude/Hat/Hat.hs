@@ -5,12 +5,15 @@
 module Hat 
   (R(R),mkR,Fun(Fun),SR,Trace,NmType,ModuleTraceInfo
   ,tPrelude
+  ,fromId,toId
+  ,IO,toIO,fromIO
   ,Tuple0(Tuple0),aTuple0,Tuple2(Tuple2),aTuple2,Tuple3(Tuple3),aTuple3
   ,Tuple4(Tuple4),aTuple4,Tuple5(Tuple5),aTuple5,Tuple6(Tuple6),aTuple6
   ,Tuple7(Tuple7),aTuple7,Tuple8(Tuple8),aTuple8,Tuple9(Tuple9),aTuple9
   ,Tuple10(Tuple10),aTuple10,Tuple11(Tuple11),aTuple11
   ,Tuple12(Tuple12),aTuple12,Tuple13(Tuple13),aTuple13
   ,Tuple14(Tuple14),aTuple14,Tuple15(Tuple15),aTuple15
+  ,toTuple0,fromTuple0,toTuple2,fromTuple2
   ,List(Cons,List),aCons,aList
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
@@ -23,8 +26,8 @@ module Hat
   ,fun1,fun2,fun3,fun4,fun5,fun6,fun7,fun8,fun9,fun10,fun11,fun12,fun13
   ,fun14,fun15
   ,ulazySat,hiddenRoot
-  ,uap1,uap2,uap3,uap4
-  ,ufun1,ufun2,ufun3
+  ,uap1,uap2,uap3,uap4,uap5,uap6
+  ,ufun1,ufun2,ufun3,ufun4,ufun5,ufun6
   ,indir
   ,conInt,conChar,conInteger,conFloat,conDouble
   ,conCons
@@ -40,10 +43,13 @@ module Hat
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble,mkNTTuple
   ,mkNTFun,mkNTCase,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard
   ,mkNTContainer,mkNTRational
-  ,openTrace,closeTrace,outputTrace,fatal
+  ,traceIO,openTrace,closeTrace,outputTrace,fatal
   ,Pos,noPos
   ,unsafeIOTrace 
   ) where
+
+import Prelude hiding (IO)
+import qualified Prelude
 
 import Ratio (numerator,denominator)
 #if defined (__GLASGOW_HASKELL__) || defined(__HUGS__)
@@ -71,14 +77,21 @@ noPos = 0
 
 -- ----------------------------------------------------------------------------
 
-openTrace :: String -> IO ()
+openTrace :: String -> Prelude.IO ()
 openTrace progname = withCString progname openTrace'
 
 foreign import "openTrace"
-  openTrace' :: CString -> IO () 
+  openTrace' :: CString -> Prelude.IO () 
 
 foreign import "closeTrace"
-  closeTrace :: IO ()
+  closeTrace :: Prelude.IO ()
+
+traceIO :: String -> R (IO a) -> Prelude.IO ()
+traceIO filename gmain = do
+  openTrace filename
+  toIO toId mkTRoot gmain
+  closeTrace
+
 
 -- fatal cannot be a foreign function directly, because these are not 
 -- allowed to be polymorphic
@@ -131,7 +144,25 @@ showHex = ("0x"++) . map (intToDigit . (`mod` 16)) . reverse . takeWhile (>0)
 -- module name:
 tPrelude = mkModule "Prelude" "Prelude.hs" False
 
+
+toId :: Trace -> R a -> R a
+toId h x = x
+
+fromId :: Trace -> R a -> R a
+fromId h x = x
+
+
 newtype Fun a b = Fun (Trace -> R a -> R b)
+
+newtype IO a = IO (Prelude.IO (R a))
+
+toIO :: (Trace -> R a -> b) -> Trace -> R (IO a) -> Prelude.IO b 
+toIO f h (R (IO io) _) = fmap (f h) io
+
+fromIO :: (Trace -> a -> R b) 
+       -> Trace -> Prelude.IO a -> R (IO b)
+fromIO f t io = R (IO (fmap (f t) io)) t
+
 
 -- type constructors and data constructors need to have same name,
 -- because transformation doesn't distinguish the two
@@ -178,6 +209,21 @@ aTuple12 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,)"
 aTuple13 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,)"
 aTuple14 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,)"
 aTuple15 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,,)"
+toTuple0 :: Trace -> R Tuple0 -> ()
+toTuple0 h (R Tuple0 _) = ()
+
+fromTuple0 :: Trace -> () -> R Tuple0
+fromTuple0 t () = con0 mkNoSourceRef t Tuple0 aTuple0
+
+toTuple2 :: (R a -> c) -> (R b -> d) -> Trace -> R (Tuple2 a b) -> (c,d)
+toTuple2 f g h (R (Tuple2 x y) _) = (f x,g y)
+
+fromTuple2 :: (Trace -> a -> R c) -> (Trace -> b -> R d) 
+           -> Trace -> (a,b) -> R (Tuple2 c d)
+fromTuple2 f g h (x,y) = 
+  con2 mkNoSourceRef h Tuple2 aTuple2 
+    (ulazySat (f h x) h) (ulazySat (g h y) h)
+
 
 data List a = Cons (R a) (R (List a)) | List  
   -- type constructor and empty list constructor need to have same name,
@@ -1450,9 +1496,39 @@ prim15 nm rf sr t =
 -- combinators for untraced code
 
 -- Assure that a trace component exists iff it is demanded
--- first trace is the hidden call of untraced code
--- second trace becomes trace of expression iff the expression is evaluated
--- but has hidden trace (is partial application)
+-- trace argument is the hidden call of untraced code
+
+-- currently identical with lazySatLonely
+
+ulazySat :: R a -> Trace -> R a
+
+ulazySat x h =
+  let sat = mkTSatALonely h
+  in R (mkTSatBLonely sat `Prelude.seq` -- mark entering of evaluation
+          case x of -- create trace for (unevaluated x/v)
+            R v vt ->
+              v `Prelude.seq` -- evaluate v and thus extend trace for v
+              mkTSatCLonely sat vt `Prelude.seq` -- set trace for evaluated v
+              v) -- return value
+       sat
+
+
+{-
+-- Does not work because data structures may be cyclic and then
+-- a Sat is needed as forward reference
+-- e.g.  let xs = True : xs
+
+-- does not work with uLazySat in xs
+main = print (repeat False)
+  where
+  repeat x = xs 
+  xs = True:xs
+
+-- works, even with uLazySat in xs
+main = print xs 
+  where
+  xs = True : xs
+
 
 -- Don't know in which order trace and value are demanded or if at all
 -- Only if trace is demanded first, a Sat is created
@@ -1473,12 +1549,13 @@ ulazySat x h =
           Hidden h -> let sat = mkTSatALonely h 
                       in unsafePerformIO (writeIORef status (Sat sat)) `seq` 
                          sat
-          Eval t -> t)
+          Eval t -> let sat = mkTSatBLonely (mkTSatALonely t)
+                    in mkTSatCLonely sat t `seq` t)
         
 data Status = Hidden Trace  -- neither value nor trace yet demanded
             | Sat Trace     -- trace demanded, value not yet
-            | Eval Trace    -- value demanded, trace not yet
-                            
+            | Eval Trace    -- value demanded, trace not yet      
+-}
 
 hiddenRoot :: Trace
 hiddenRoot = mkTHidden mkTRoot
@@ -1524,6 +1601,28 @@ uap4 sr h f a b c d = ulazySat
                              else tv))
   h
 
+uap5 :: SR -> Trace -> R (Fun a (Fun b (Fun c (Fun d (Fun e r))))) 
+     -> R a -> R b -> R c -> R d -> R e -> R r
+uap5 sr h f a b c d e = ulazySat
+  (case uap4 sr h f a b c d of
+     R (Fun rf) tf -> case rf h e of
+                        R rv tv -> R rv
+                          (if hidden tv
+                             then mkTAp1 h tf (trace e) sr
+                             else tv))
+  h
+
+uap6 :: SR -> Trace -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun i r)))))) 
+     -> R a -> R b -> R c -> R d -> R e -> R i -> R r
+uap6 sr h f a b c d e i = ulazySat
+  (case uap5 sr h f a b c d e of
+     R (Fun rf) tf -> case rf h i of
+                        R rv tv -> R rv
+                          (if hidden tv
+                             then mkTAp1 h tf (trace i) sr
+                             else tv))
+  h
+
 -- combinators for transforming n-ary functions
 
 ufun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace -> R (Fun a r)
@@ -1543,6 +1642,50 @@ ufun3 nm rf sr t =
   R (Fun (\t a ->
     R (Fun (\t b ->
       R (Fun (\t c -> rf (mkTHidden t) a b c))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+ufun4 :: NmType -> (Trace -> R a -> R b -> R c -> R d -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b (Fun c (Fun d r))))
+ufun4 nm rf sr t =
+  R (Fun (\t a ->
+    R (Fun (\t b ->
+      R (Fun (\t c -> 
+        R (Fun (\t d -> rf (mkTHidden t) a b c d))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+ufun5 :: NmType 
+     -> (Trace -> R a -> R b -> R c -> R d -> R e -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b (Fun c (Fun d (Fun e r)))))
+ufun5 nm rf sr t =
+  R (Fun (\t a ->
+    R (Fun (\t b ->
+      R (Fun (\t c -> 
+        R (Fun (\t d -> 
+          R (Fun (\t e -> rf (mkTHidden t) a b c d e))
+            t))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+ufun6 :: NmType 
+     -> (Trace -> R a -> R b -> R c -> R d -> R e -> R f -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun f r))))))
+ufun6 nm rf sr t =
+  R (Fun (\t a ->
+    R (Fun (\t b ->
+      R (Fun (\t c -> 
+        R (Fun (\t d -> 
+          R (Fun (\t e -> 
+            R (Fun (\t f -> rf (mkTHidden t) a b c d e f))
+              t))
+            t))
+          t))
         t))
       t))
     (mkTNm t nm sr)
@@ -1588,11 +1731,11 @@ mkModule unqual filename = (mkModule' `useString` unqual) `useString` filename
 foreign import "primModule"
   mkModule' :: CString -> CString -> Bool -> ModuleTraceInfo
 
-outputTrace :: Trace -> String -> IO ()
+outputTrace :: Trace -> String -> Prelude.IO ()
 outputTrace trace output = withCString output (outputTrace' trace)
 
 foreign import "outputTrace"
-  outputTrace' :: Trace -> CString -> IO ()
+  outputTrace' :: Trace -> CString -> Prelude.IO ()
 
 
 ----
