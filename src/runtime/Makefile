@@ -13,11 +13,8 @@ else
   SUF=.${CFG}
 endif
 
-LD = ld
-LDFLAGS = -r
 TRUE = /bin/true
-CC = gcc
-AR = ar
+LDFLAGS = -r
 ARFLAGS = r
 
 
