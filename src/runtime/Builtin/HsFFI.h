@@ -6,7 +6,7 @@ extern "C" {
 #endif
 
 /* extremely poor autoconf replacement, probably needs some update... */
-#if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_AIX)
 #define HAVE_INTTYPES_H
 #else
 #define HAVE_STDINT_H

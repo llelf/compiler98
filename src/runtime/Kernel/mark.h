@@ -4,7 +4,7 @@
 #if defined(__CYGWIN32__)
 #  include <sys/types.h>
 #else
-#  if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#  if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__) || defined(_AIX)
 #    include <inttypes.h>
 #  else
 #    include <stdint.h>
