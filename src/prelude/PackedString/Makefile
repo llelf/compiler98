@@ -56,7 +56,7 @@ ${OBJDIR}/Tail.o: Tail.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Substr.o ${OBJDIR}
 ${OBJDIR}/Take.o: Take.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Substr.o ${OBJDIR}/Length.o
 ${OBJDIR}/TakeWhile.o: TakeWhile.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o ${OBJDIR}/Index.o ${OBJDIR}/Substr.o
 ${OBJDIR}/Unlines.o: Unlines.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/UnpackPS.o: UnpackPS.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o ${OBJDIR}/Index.o
+${OBJDIR}/UnpackPS.o: UnpackPS.hs ${OBJDIR}/DPackedString.o # ${OBJDIR}/Length.o ${OBJDIR}/Index.o
 ${OBJDIR}/Unwords.o: Unwords.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
 ${OBJDIR}/Words.o: Words.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/DropWhile.o ${OBJDIR}/Null.o ${OBJDIR}/Break.o
 
@@ -88,7 +88,7 @@ Tail.c:       DPackedString.c Substr.c Length.c
 Take.c:       DPackedString.c Substr.c Length.c
 TakeWhile.c:  DPackedString.c Length.c Index.c Substr.c
 Unlines.c:    DPackedString.c PackString.c UnpackPS.c
-UnpackPS.c:   DPackedString.c Length.c Index.c
+UnpackPS.c:   DPackedString.c # Length.c Index.c
 Unwords.c:    DPackedString.c PackString.c UnpackPS.c
 Words.c:      DPackedString.c DropWhile.c Null.c Break.c
 
