@@ -1,7 +1,7 @@
 #include "hp2graph.h"
 #include <ctype.h>
 
-#define LEXBUFFER 4096
+#define LEXBUFFER 8192
 
 static char  lexbuffer[2*LEXBUFFER+1];
 static SharedToken lexpos;
