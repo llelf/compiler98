@@ -171,7 +171,7 @@ transImport :: [ImpDecl TokenId]
 transImport impdecls = impdecls'
   where
   impdecls' =  (sortImport . traverse initAT False)
-                (Import (noPos,tNHCInternal) (Hiding [])
+                (ImportQ (noPos,tNHCInternal) (Hiding [])
 --              :ImportQ (noPos,vis "Ratio") (NoHiding
 --				[EntityConClsAll noPos (vis "Rational")
 --				,EntityConClsAll noPos (vis "Ratio")
