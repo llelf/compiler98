@@ -11,7 +11,7 @@ module NHC.FFI
   ) where
 
 import Addr     (Addr)
-import NHC.Internal (unsafePerformIO)
+import NHC.Internal (unsafePerformIO, _mkIOok1)
 
 data ForeignObj;	-- primitive type known to compiler internals
 

@@ -48,6 +48,7 @@ import DArray
 import Ix
 import LowVector
 import _E
+import NHC.Internal (unsafePerformIO)
 
 array :: (Ix a) => (a,a) -> [(a,b)] -> Array a b
 array b ivs =

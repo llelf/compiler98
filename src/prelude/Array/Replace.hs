@@ -23,6 +23,7 @@ import Ix
 import DArray
 import LowVector
 import _E
+import NHC.Internal (unsafePerformIO)
 
 infixl 9  //
 
