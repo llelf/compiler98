@@ -12,7 +12,7 @@ HMAKEVERSION="3.02 (2002-03-14)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
-	hat-checki hat-port hat-explore hat-view hat-names hat-trail"
+	hat-checki hat-port hat-view hat-names hat-trail"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -570,7 +570,6 @@ else	# [ "$INSTALL" = "yes" ]
       ghc) echo "Installing hat auxiliary files as a ghc package:";
            script/confhat;;
     esac
-    fi
     echo
   else
     echo 'Not (re-)installing interface and include files'
@@ -623,7 +622,7 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hat-trans"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|^HATINCDIR=$|HATINCDIR=`if test -f lib/hat/ghcincdir; then cat $lib/hat/ghcincdir; fi;`|" \
+    sed -e "s|^HATINCDIR=|HATINCDIR=`if test -f lib/hat/ghcincdir; then cat lib/hat/ghcincdir; fi;`|" \
 			>$DESTDIR$BINDIR/hat-trans
     for hattool in $HATTOOLS
     do  echo "	"$hattool
