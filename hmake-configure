@@ -358,7 +358,7 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$BINDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo -n "harch "
+    echo -n "    harch "
     cp script/harch $DESTDIR$BINDIR
     echo -n "hmake "
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
