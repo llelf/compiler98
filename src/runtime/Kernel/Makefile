@@ -30,9 +30,7 @@ OBJS = ${AOBJS} ${OOBJS}
 CFLAGS = ${DCFG} ${BUGFIX} ${ENDIAN} ${OPT} -I${INCDIR} \
          -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
 CPP = $(CC) ${DCFG} ${ENDIAN} -E 
-LD  = ld
 LDFLAGS = -r
-
 AS = $(CC) -c
 
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
