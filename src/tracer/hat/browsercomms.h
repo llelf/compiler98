@@ -22,7 +22,7 @@
 #include <time.h>
 #include <signal.h>
 #include <assert.h>
-#include "hat.h"
+#include "art.h"
 #include "utils.h"
 #include "nodecache.h"
 
