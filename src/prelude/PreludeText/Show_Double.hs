@@ -2,11 +2,10 @@ module Prelude (Show(..)) where
 
 #if 1
 
-import Numeric(showSigned,showFloat)
+import Numeric(showFloat)
 
 instance Show Double where
-  showsPrec = showSigned showFloat
-
+  showsPrec p = showFloat
   showsType a = showString "Double"
 
 #else

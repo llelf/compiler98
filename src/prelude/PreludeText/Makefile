@@ -37,7 +37,7 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/Show_IO.$O: Show_IO.hs ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/Show_IO.$O: Show_IO.hs # ${OBJDIR}/../PreludeIO/DIO.$O
 ${OBJDIR}/_ReadCon0.$O: _ReadCon0.hs ${OBJDIR}/_ReadCon.$O
 
 ${OBJDIR}/../PreludeIO/DIO.$O:
