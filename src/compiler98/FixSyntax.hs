@@ -136,49 +136,59 @@ fsExp (ExpApplication pos (ExpApplication _ xs:ys)) =
 fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType),
                              sr, t, l@(ExpLit p2 (LitInteger b i))]) =
     fsState >>>= \state ->
+    fsTidFun >>>= \tidFun -> 
     if tidIS state fci == t_fromConInteger
     && tidIS state qNum == tNum then
-        fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tInt then
+         -- strace (strPos p++": literal Num expression of type Int\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInt, Var)), sr, t
 	                            ,ExpLit p2 (LitInt b (fromInteger i))])
         else if tidIS state qType == tInteger then
+         -- strace (strPos p++": literal Num expression of type Integer\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInteger, Var))
                                     ,sr, t, l])
         else if tidIS state qType == tFloat then
+         -- strace (strPos p++": literal Num expression of type Float\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)), sr, t
 	                            ,ExpLit p2 (litFloatInteger b i)])
         else if tidIS state qType == tDouble then
+         -- strace (strPos p++": literal Num expression of type Double\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conDouble, Var)), sr, t
 	                            ,ExpLit p2 (LitDouble b (fromInteger i))])
         else if tidIS state qType == tRational then
+         -- strace (strPos p++": literal Num expression of type Rational\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conRational, Var))
                                     ,sr, t
-	                            ,ExpLit p2 (LitRational b (fromInteger i))])
+	                            ,l ,ExpLit p2 (LitInteger b 1)
+                                    ,ExpVar p (tidFun (tRatioCon, Var))])
   --    else
   --	    unitS (ExpApplication p [ExpVar p (tidFun (tfromInteger, Var))
   --                                ,dict, sr, t, l])
   	else error ("fsExp: strange expr(1) at "++ strPos p ++
-                    "\n  ctx is Num, literal on rhs is not Int or Integer")
+                    "\n  ctx is Num, rhs literal not Int/Integer/Float/Double")
     else if tidIS state fci == t_patFromConInteger
          && tidIS state qNum == tNum then
-        fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tInt then
+         -- strace (strPos p++": literal Num pattern of type Int\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,ExpLit p2 (LitInt b (fromInteger i))
                                     ,PatWildcard p])
         else if tidIS state qType == tInteger then
+         -- strace (strPos p++": literal Num pattern of type Integer\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,l, PatWildcard p])
         else if tidIS state qType == tFloat then
+         -- strace (strPos p++": literal Num pattern of type Float\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
-	                            ,ExpLit p2 (LitFloat b (fromInteger i))
+	                            ,ExpLit p2 (litFloatInteger b i)
                                     ,PatWildcard p])
         else if tidIS state qType == tDouble then
+         -- strace (strPos p++": literal Num pattern of type Double\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,ExpLit p2 (LitDouble b (fromInteger i))
                                     ,PatWildcard p])
         else if tidIS state qType == tRational then
+         -- strace (strPos p++": literal Num pattern of type Rational\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,ExpLit p2 (LitRational b (fromInteger i))
                                     ,PatWildcard p])
@@ -198,6 +208,7 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict{-@(ExpVar _ _)-},
         fsTidFun >>>= \tidFun -> 
         --strace ("fixSyntax: fromInteger expression or pattern with dictionary ("
         --      ++showExp state dict++")") $
+        --strace (strPos p++": literal Num expr/pat of unknown type\n") $
 	unitS (ExpApplication p
                  [ExpVar p (tidFun (t_ap 1, Var)), sr, t
                  ,ExpApplication p
@@ -208,15 +219,15 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict{-@(ExpVar _ _)-},
                     ,sr, t, l]])
     else error ("fsExp: strange expr(3) at "++ strPos p ++
                 "\n  variable ctx, neither a lhs pat nor a rhs literal integer")
-  where
-    showExp state (Exp2 _ a b) =
-        "Exp2 "++ show (tidIS state a)++" "++show (tidIS state b)
-    showExp state (ExpApplication _ es) =
-        "ExpAp ["++ concat (intersperse "," (map (showExp state) es)) ++ "]"
-    showExp state (ExpVar _ a) =
-        "ExpVar "++ show (strIS state a)
-    showExp state e =
-        "_"
+--where
+--  showExp state (Exp2 _ a b) =
+--      "Exp2 "++ show (tidIS state a)++" "++show (tidIS state b)
+--  showExp state (ExpApplication _ es) =
+--      "ExpAp ["++ concat (intersperse "," (map (showExp state) es)) ++ "]"
+--  showExp state (ExpVar _ a) =
+--      "ExpVar "++ show (strIS state a)
+--  showExp state e =
+--      "_"
 
 fsExp exp@(ExpApplication p [ExpVar _ fcr
                             ,ExpDict dict@(Exp2 _ qFractional qType)
@@ -226,31 +237,37 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr
     && tidIS state qFractional == tFractional then
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tFloat then
+         -- strace (strPos p++": literal Fract expression of type Float\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)), sr, t
-	                            ,ExpLit p2 (LitFloat b (fromRational i))])
+	                            ,ExpLit p2 (litFloatRational b i)])
         else if tidIS state qType == tDouble then
+         -- strace (strPos p++": literal Fract expression of type Double\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conDouble, Var)), sr, t
 	                            ,ExpLit p2 (LitDouble b (fromRational i))])
         else if tidIS state qType == tRational then
+         -- strace (strPos p++": literal Fract expression of type Rational\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conRational, Var))
-                                    ,sr, t, l])
+                                    ,sr, t
+                                    ,ExpLit p2 (LitInteger b (numerator i))
+                                    ,ExpLit p2 (LitInteger b (denominator i))
+                                    ,ExpVar p (tidFun (tRatioCon, Var))])
   	else error ("fsExp: strange expr(10) at "++ strPos p ++
                     "\n  ctx is Fractional, literal on rhs is not float/double")
     else if tidIS state fcr == t_patFromConRational
          && tidIS state qFractional == tFractional then
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tFloat then
-            --strace ("fixSyntax: Float pattern in Fractional context") $
+         -- strace (strPos p++": literal Fract pattern of type Float\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
-	                            ,ExpLit p2 (LitFloat b (fromRational i))
+	                            ,ExpLit p2 (litFloatRational b i)
                                     ,PatWildcard p])
         else if tidIS state qType == tDouble then
-            --strace ("fixSyntax: Double pattern in Fractional context") $
+         -- strace (strPos p++": literal Fract pattern of type Double\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,ExpLit p2 (LitDouble b (fromRational i))
                                     ,PatWildcard p])
         else if tidIS state qType == tRational then
-            --strace ("fixSyntax: Rational pattern in Fractional context") $
+         -- strace (strPos p++": literal Fract pattern of type Rational\n") $
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
 	                            ,l ,PatWildcard p])
 	else error ("fsExp: strange expr(15) at "++ strPos p ++
@@ -265,8 +282,7 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr, ExpDict dict{-@(ExpVar _ _)-},
     if tidIS state fcr == t_fromConRational
     || tidIS state fcr == t_patFromConRational then
         fsTidFun >>>= \tidFun -> 
-        --strace ("fixSyntax: fromRational expression or pattern with dictionary ("
-        --      ++showExp state dict++")") $
+        strace (strPos p++": literal Fractional expr/pat of unknown type\n") $
 	unitS (ExpApplication p
                  [ExpVar p (tidFun (t_ap 1, Var)), sr, t
                  ,ExpApplication p
@@ -274,7 +290,10 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr, ExpDict dict{-@(ExpVar _ _)-},
                     ,dict, sr, t]
                  ,ExpApplication p
                     [ExpVar p (tidFun (t_conRational, Var))
-                    ,sr, t, l]])
+                    ,sr, t
+                    ,ExpLit p2 (LitInteger b (numerator i))
+                    ,ExpLit p2 (LitInteger b (denominator i))
+                    ,ExpVar p (tidFun (tRatioCon, Var))]])
     else error ("fsExp: strange expr(13) at "++ strPos p ++
                 "\n  variable ctx, neither a lhs pat nor a rhs literal rational")
 #endif
@@ -297,6 +316,7 @@ fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger),(ExpDict v2@(Exp2 _ qNu
 --- fromRational {Float Double Rational} constant
 fsExp (ExpApplication pos [v@(ExpVar _ qfromRational) , (ExpDict v2@(Exp2 _ qFractional qType)) , l@(ExpLit pl (LitRational b i))]) =
   fsState >>>= \ state ->
+ -- strace (strPos pos++": normal literal Rational expr/pat\n") $
     if tidIS state qfromRational == tfromRational && tidIS state qFractional == tFractional
     then     if tidIS state qType == tFloat      then unitS (ExpLit pl (litFloatRational b i))
   	else if tidIS state qType == tFloatHash  then unitS (ExpLit pl (litFloatRational UnBoxed i))

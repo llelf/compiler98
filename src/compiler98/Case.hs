@@ -319,18 +319,17 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
 	    [Alt pat [(true,ExpApplication noPos (ExpCon noPos tupleCon: map (uncurry ExpVar) pis))] (DeclsScc [])] >>>= \ exp ->
          unitS (PosExpLet pos ((tupleId,PosLambda pos [] [] (f exp)) :sels)) =>>> match ces [fun] def
 
+
 -- Ugly hack ought to at least try to group same constant if it is safe
 -- (which it is for Integer,Double and Float, but not for unknown types)
-
 matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
-
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
 -- match (traced) numeric literal in an unresolved context
 matchAltIf v ces (pat@(ExpApplication pos
                          [ap1, sr, t			-- ap_1 sr t
                          ,(ExpApplication _
-                             [ExpVar _ _, dict, _, _])	-- fromInteger/fromRational
+                             [ExpVar _ _, dict, _, _])	-- fromInteger/Rational
                          ,(ExpApplication _
                                  [ExpVar _ con, _, _,	-- (construct an
                                   ExpLit _ lit])	--   (R lit _))
