@@ -2,7 +2,7 @@ include Makefile.inc
 
 ifeq "${TRACING}" "T"
 
-SUBDIRS = runtime prelude ui
+SUBDIRS = runtime ui
 
 SUBDIRTARGETS=$(patsubst %,%.make,${SUBDIRS})
 SUBDIRCLEAN=$(patsubst %,%.clean,${SUBDIRS})
