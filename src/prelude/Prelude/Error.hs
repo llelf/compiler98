@@ -17,6 +17,7 @@ error s = case lookat s of
 error' s = _prim _tprim_error s
 
 lookat [] = ()
+lookat ('a':xs) = lookat xs
 lookat (x:xs) = lookat xs
 
 {-
