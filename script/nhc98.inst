@@ -113,6 +113,11 @@ processArgs () {
   while test "'$1'" != "''" 
   do
     case $1 in
+    --version) echo "$0: $INSTALLVER"
+               echo '  [' $INSTALLINFO ']'
+               exit 0;;
+    -o-suffix=*)  OSUFFIX=`echo $1 | cut -c11-` ;;
+    -hc-suffix=*) CSUFFIX=`echo $1 | cut -c12-` ;;
     -hat  ) HATFLAG=1
             COMPFLAGS=$COMPFLAGS" -hat" ;;
     -p    ) PROF=p
@@ -168,9 +173,15 @@ processArgs () {
 	    done;;
     -o    ) shift; AOUT=$1;;
     -d    ) shift; OBJDIR=$1;;
+    -o-dir=*)   OBJDIR=`echo $1 | cut -c8-` ;;
     -bigEnd)    ENDIAN="-DHIGH_BYTE_FIRST" ;;
     -littleEnd) ENDIAN="-DLOW_BYTE_FIRST"  ;;
     -nomain)    MAINROUTINE="" ;;
+    -noansiC)   CPPAS=${CPPDEFAULT}
+                COMPFLAGS=$COMPFLAGS" "$1;;
+    -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries
+                NHC98INCDIR=$NHC98INCDIR/libraries
+                COMPFLAGS=$COMPFLAGS" "$1;;
     -H*   ) HEAP=`echo $1 | cut -c3-` ;;
     -[Ll]*) EXTRALIB=$EXTRALIB" "$1;;
     -i*   ) LIBDIRS=$LIBDIRS" -I"`echo $1 | cut -c3-` ;;
@@ -180,11 +191,6 @@ processArgs () {
             COMPFLAGS=$COMPFLAGS" "$1;;
     -D*   ) CPPFLAGS=$CPPFLAGS" "$1;;
     -U*   ) CPPFLAGS=$CPPFLAGS" "$1;;
-    -noansiC) CPPAS=${CPPDEFAULT}
-            COMPFLAGS=$COMPFLAGS" "$1;;
-    --version) echo "$0: $INSTALLVER"
-               echo '  [' $INSTALLINFO ']'
-               exit 0;;
     -*    ) COMPFLAGS=$COMPFLAGS" "$1;;
     *.s   ) COMPFILES=$COMPFILES" "$1;;
     *.hc   ) COMPFILES=$COMPFILES" "$1;;
@@ -229,6 +235,19 @@ then OSUFFIX=$TRACE$TPROF".o"
 fi
 
 
+# Define a function for deciding where to place object files.
+findObjDir () {
+    dirname=$1
+    case $dirname in
+      /*) echo ${OBJDIR-$dirname};;
+      *)  if [ -z "$OBJDIR" ]
+          then echo $dirname
+          else echo $OBJDIR/$dirname
+          fi;;
+    esac
+}
+
+
 # Start processing files here, beginning with GreenCard preprocessor.
 case $GRFILES in
 ""   ) ;;
@@ -241,7 +260,7 @@ case $GRFILES in
     *.gc  ) BASENAME=`basename $1 .gc` ;;
     esac
     DIRNAME=`dirname $1`
-    objdir=${OBJDIR-$DIRNAME}
+    objdir=`findObjDir "$DIRNAME"`
 
     GRFILE=$DIRNAME/$BASENAME.gc
     HSFILE=$DIRNAME/${BASENAME}_.hs
@@ -338,7 +357,7 @@ case $COMPFILES in
     esac
 
     DIRNAME=`dirname $1`
-    objdir=${OBJDIR-$DIRNAME}
+    objdir=`findObjDir "$DIRNAME"`
 
     if test $GR -eq 0
     then
