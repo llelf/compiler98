@@ -86,7 +86,7 @@ baseToCType Double       = "double"
 baseToCType PackedString = "char *"
 baseToCType Word         = "unsigned int"
 baseToCType Addr         = "void *"
-baseToCType StablePtr    = "HaskellRef"
+baseToCType StablePtr    = "StablePtr"
 baseToCType (Foreign _)  = "void *"
 
 baseTyToCall :: BaseTy -> String

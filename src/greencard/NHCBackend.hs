@@ -334,7 +334,8 @@ nyi s = error ("Not yet implemented: "++s)
 
 clean :: DIS -> Bool
 clean (Apply d ds)    = clean d && and (map clean ds)
-clean (BaseDIS StablePtr) = True	-- previously False (until 1999-07-07)
+--clean (BaseDIS StablePtr) = True	-- previously False (until 1999-07-07)
+clean (BaseDIS StablePtr) = False	-- back to False again! (1999-11-19)
 clean (BaseDIS b)     = True
 clean (Constructor c) = False
 clean (Declare cty d) = True
