@@ -10,7 +10,7 @@ NodePtr mkCInt(Int i);
 
 extern NodePtr mkHandlePosn(fpos_t *);
 extern fpos_t *getHandlePosn(NodePtr);
-#define sizeHandlePosn (1+EXTRA+(sizeof(fpos_t)+3)/sizeof(Node))
+#define sizeHandlePosn (1+EXTRA+((sizeof(fpos_t)+sizeof(Node)-1)/sizeof(Node)))
 
 extern NodePtr mkSmallIntegerU(Int i);
 #define sizeSmallIntegerU (1+EXTRA+1)
