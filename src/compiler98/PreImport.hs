@@ -3,8 +3,7 @@
 -}
 module PreImport (HideDeclIds,qualRename,preImport) where
 
-import List(partition,nub,intersect,(\\))
-import MergeSort
+import List(partition,sortBy,nub,intersect,(\\))
 import TokenId(TokenId(..),tPrelude,tNHCInternal
 		,t_Arrow,ensureM,forceM,dropM
 		,rpsPrelude,rpsBinary,t_List,isTidCon)
@@ -182,10 +181,14 @@ transImport impdecls = impdecls'
   -- Place imports into order, ensure Prelude is last
   sortImport impdecls =
           ( map snd
-          . mergeSortCmp (error "Fail in PreImport.transImport\n") cmpFst 
+          . sortBy cmp
           . map (\(k,v)-> if k==tPrelude then (Right k,(k,v))
                           else (Left k,(k,v)) )
           ) impdecls
+
+    where cmp (a, _) (b, _) = case compare a b of
+                                EQ -> error "Fail in PreImport.transImport\n"
+                                x  -> x
 
   traverse :: AssocTree TokenId ImportedNamesInScope
            -> Bool	-- have we found an explicit Prelude import yet?

@@ -1,7 +1,6 @@
 module Scc (sccDepend,Depend(..),isRec) where
 
 import List
-import MergeSort(mergeSort)
 --import Extra(Set(..),emptySet,unionSet,singletonSet,listSet)
 import Extra(sndOf)
 import Memo

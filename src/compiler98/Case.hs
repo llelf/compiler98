@@ -4,6 +4,7 @@ Translates all patterns into case expressions
 
 module Case(caseTopLevel) where
 
+import List(sort)
 import Ratio
 import Extra
 import Syntax
@@ -22,7 +23,6 @@ import CaseLib
 import CaseHelp
 import CaseOpt
 import FSLib
-import MergeSort(mergeSort)
 import SyntaxUtil
 import Foreign(ImpExp(..))
 import DbgId(t_rPatBool,t_ap)
@@ -525,7 +525,7 @@ caseCode d@(CodeInstance pos cls typ args exps methods) =
 
 
 forceOrder state is =
-  map snd (mergeSort (map ( \ i -> (tidIS state i,i)) is))
+  map snd (sort (map ( \ i -> (tidIS state i,i)) is))
 
 
 ----------------------

@@ -4,6 +4,7 @@ definitions.
 -}
 module Derive (derive) where
 
+import List(sort)
 import MergeSort(unique)
 import TokenId
 import Extra(pair,triple,noPos,snub,mixCommaAnd,strPos,Pos(..)
@@ -11,7 +12,6 @@ import Extra(pair,triple,noPos,snub,mixCommaAnd,strPos,Pos(..)
 import NT
 import Syntax
 import IntState
-import MergeSort(mergeSort)
 import AssocTree
 import Memo
 import Rename(fixInstance)
@@ -175,7 +175,11 @@ oneStep ::  IntState
 oneStep state given ((cls_con@(cls,con),(free,ctxs)),pos_types@(pos,types)) =
  let (NewType _ _ data_ctxs _) = ntI (dropJust (lookupIS state con))
  in
-  case (mergeSort . ctxsReduce state . (map (mapSnd NTvar) data_ctxs ++) . concatMap (ctxsSimplify state given) . map (\ nt -> TypeDict cls nt [(0,pos)])) types of
+  case ( sort
+       . ctxsReduce state
+       . (map (mapSnd NTvar) data_ctxs ++)
+       . concatMap (ctxsSimplify state given)
+       . map (\ nt -> TypeDict cls nt [(0,pos)])) types of
      ctxs -> ((cls_con,(free,map (mapSnd stripNT) ctxs)),pos_types)
 
 solve intState work =

@@ -1,6 +1,6 @@
 module TypeCtx( buildCtx, buildDefaults, ctxsReduce, ctxsSimplify, initCtxs) where
 
-import MergeSort(mergeSort)
+import List(sort)
 import NT
 import IntState
 import Info
@@ -121,7 +121,7 @@ buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =
     Just i -> ExpVar pos i
     Nothing ->
       let lpis =
-		( mergeSort
+		( sort
 		. map ( \ ((p,i):_) -> (length p,p,i) )
 		. filter (not.null)
 		. map ( \ ((c,ntv),i) -> ( map ( \ (c,p) -> (c:p,i) )
