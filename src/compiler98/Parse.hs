@@ -74,7 +74,7 @@ parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  parseStrict 
 parseForeign =
     k_foreign `revChk`
      ((k_import `revChk` callconv `revChk`
-           ((\(_,LitString _ str) (_,tf) (p,v) t-> DeclForeignImp p str v (calcArity t) tf t)
+           ((\(_,LitString _ str) (_,tf) (p,v) t-> DeclForeignImp p str v (calcArity t) tf t v)
            `parseAp` extfun `ap` unsafe `apCut` varid `chk` coloncolon `ap` parseType))
         `orelse`
       (k_export `revChk` callconv `revChk`
@@ -82,7 +82,7 @@ parseForeign =
            `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
         `orelse`
       (k_cast `revChk` 
-           ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t)
+           ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t v)
            `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where

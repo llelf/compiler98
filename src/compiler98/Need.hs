@@ -204,7 +204,7 @@ needDecl (DeclFun pos hs funs) =
       mapR needFun funs
 needDecl (DeclPrimitive pos hs arity t) =
       needType t
-needDecl (DeclForeignImp pos _ hs arity cast t) =
+needDecl (DeclForeignImp pos _ hs arity cast t _) =
       needType t
 needDecl (DeclForeignExp pos _ hs typ) =
       needTid pos Var hs
@@ -400,7 +400,7 @@ bindDecl (DeclPat (Alt pat@(ExpInfixList pos pats) _ _)) =
 bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  
   -- ^ Also generate need for constructors
 bindDecl (DeclPrimitive pos tid arity t) = bindTid Var tid
-bindDecl (DeclForeignImp pos _ tid arity cast t) = bindTid Var tid
+bindDecl (DeclForeignImp pos _ tid arity cast t _) = bindTid Var tid
 bindDecl (DeclForeignExp pos _ tid t) = unitR
 bindDecl (DeclFun pos tid funs) = bindTid Var tid
 bindDecl d@(DeclIgnore str) = unitR

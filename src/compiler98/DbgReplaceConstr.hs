@@ -35,7 +35,7 @@ dbgDataTrans flags state reptree lookupPrel derived dptopdecls =
   if (sDbgTrans flags) then
       --trace (show derived) $
       case dTopDecls dptopdecls
-		(Inherited lookupPrel [] 0 reptree (sDbg2 flags)) (Threaded state derived) of
+		(Inherited lookupPrel [] 0 reptree (sTraceFns flags)) (Threaded state derived) of
           (decls', Threaded state' derived') -> (decls', derived', state')
   else
       (dptopdecls, derived, state)

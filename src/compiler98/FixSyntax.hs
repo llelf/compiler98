@@ -39,7 +39,7 @@ fsDepend (DeclsRec  ds) = unitS DeclsRec   =>>> mapS fsDecl ds
 
 fsDecl d@(DeclPrimitive pos fun arity t) =
   unitS d
-fsDecl d@(DeclForeignImp pos _ fun arity cast t) =
+fsDecl d@(DeclForeignImp pos _ fun arity cast t _) =
   unitS d
 fsDecl d@(DeclForeignExp pos _ fun t) =
   unitS d

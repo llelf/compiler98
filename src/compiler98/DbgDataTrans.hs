@@ -12,7 +12,7 @@ import IntState
 import Syntax
 import SyntaxPos
 import StrSyntax(StrId,strType,strContexts,strVarsType,strSimple)
-import Flags(Flags(sDbgTrans,sDbg2))
+import Flags(Flags(sDbgTrans,sTraceFns))
 --import Bind
 --import RenameLib
 import State
@@ -52,7 +52,7 @@ dbgDataTrans flags state reptree lookupPrel dptopdecls =
   if (sDbgTrans flags) 
     then
       case dTopDecls dptopdecls
-	     (Inherited lookupPrel [] 0 reptree (sDbg2 flags)) 
+	     (Inherited lookupPrel [] 0 reptree (sTraceFns flags)) 
              (Threaded state []) of
         (decls', Threaded state' constrs) -> 
           (decls', state', Just constrs)
@@ -217,6 +217,18 @@ dDecl d@(DeclPrimitive pos id i ty1) =
 --    lookupNameStr id >>>= \idstr ->
 --    error ("dDecl: DeclPrimitive " ++ show pos ++ " " ++ idstr 
 --           ++ " " ++ show i)
+dDecl d@(DeclForeignImp pos cname id ar cast ty1 _) =
+    lookupName noPos id >>>= \(Just info) ->
+    addNewPrim info >>>= \id' ->	-- copy original prim to new location
+    overwritePrim id >>>		-- write wrapper info over original
+    dType ty1 >>>= \ty2 ->		-- calculate type of wrapper
+    wrapRT pos ty2 >>>= \ty3 ->
+    addD ty3 >>>= \ty4 -> 
+    addSR ty4 >>>= \ty5 ->
+    unitS [ DeclForeignImp pos cname id' ar cast ty1 id
+          , DeclVarsType [(pos,id)] [] ty5]
+--  unitS [d]
+dDecl d@(DeclForeignExp _ _ _ _) = unitS [d]
 dDecl x = error "Hmmm. No match in dbgDataTrans.dDecl"
 
 
@@ -683,5 +695,32 @@ tc c ts = TypeCons noPos c ts
 
 nubEq p [] = []
 nubEq p (x:xs) = x : nubEq p (filter ((p x /=) . p) xs)
+
+-- Malcolm's additions:
+{-
+Create a new primitive identifier with given Info, changing just the
+location in the table (i.e. the lookup key).
+-}
+addNewPrim :: Info -> a -> Threaded -> (Id,Threaded)
+addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
+  \_ (Threaded istate idt) ->
+    case uniqueIS istate of
+      (i, istate') -> 
+        let newNm = Qualified m (packString ('\'':unpackPS nm))
+            info' = InfoVar i newNm fix IEnone NoType ar
+            istate'' = addIS i info' istate'
+        in (i, Threaded istate'' idt)
+
+{-
+Overwrite the original primitive identifier with new Info, reflecting
+the change in type and arity.
+-}
+overwritePrim :: Int -> a -> Threaded -> Threaded
+overwritePrim i = 
+  \_ (Threaded istate idt) ->
+      let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
+      in Threaded (updateIS istate i updI) idt
+
+
 
 {- End Module DbgDataTrans -------------------------------------------------}

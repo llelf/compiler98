@@ -76,7 +76,7 @@ extractDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) =
 extractDecl (DeclPrimitive pos ident arity typ) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]
   in updVarNT pos ident nt >>> updVarArity pos ident arity
-extractDecl (DeclForeignImp pos _ ident arity cast typ) =
+extractDecl (DeclForeignImp pos _ ident arity cast typ _) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]
   in updVarNT pos ident nt >>> updVarArity pos ident arity
 extractDecl (DeclForeignExp pos _ ident typ) =

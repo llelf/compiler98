@@ -93,7 +93,7 @@ data Decl id =
        -- var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
        -- foreign import [callconv] [extfun] [unsafe|cast] var :: type
-     | DeclForeignImp Pos String id Int Bool (Type id)
+     | DeclForeignImp Pos String id Int Bool (Type id) id --lastid=trace wrapper
        -- foreign export  callconv  [extfun]  var :: type
      | DeclForeignExp Pos String id (Type id)
        -- vars :: context => type
@@ -119,7 +119,7 @@ data Annot id = AnnotArity (Pos,id) Int
               | AnnotNeed [[id]]
               | AnnotUnknown
 
---                 lhs pats, guarded exprs,   local defs  ???
+--                 lhs pats, guarded exprs,   local defs
 data Fun id = Fun  [Pat id] [(Exp id,Exp id)] (Decls id)
 
 data Alt id = Alt  (Pat id) [(Exp id,Exp id)] (Decls id)

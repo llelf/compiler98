@@ -4,13 +4,13 @@ for producing traces for debugging.
 -}
 module DbgTrans(debugTrans, dbgAddImport) where
 
-import Extra(Pos, noPos, pair, fromPos, dropJust)
+import Extra(Pos, noPos, pair, fromPos, strPos, dropJust)
 import IdKind(IdKind(Con,Var))
 import TokenId
 import DbgId
 --import Info
 import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
-               ,uniqueIS,uniqueISs,IE(IEnone),ntI
+               ,uniqueIS,uniqueISs,IE(IEnone),ntI,updateIS
                ,Info(InfoVar,InfoClass,InfoMethod,InfoDMethod,InfoIMethod))
 import Syntax
 import SyntaxPos
@@ -186,6 +186,23 @@ dDecl d@(DeclError _) = unitS [d]
 dDecl d@(DeclAnnot _ _) = unitS [d]
 dDecl d@(DeclFixity _) = unitS [d]
 dDecl d@(DeclPrimitive pos id i ty) = unitS [d]
+dDecl d@(DeclForeignImp pos cname id' arity cast typ id) =
+    addId (pos, id) >>>
+    lookupName id' >>>= \(Just info) ->
+--  lookupNameStr id' >>>= \funName ->
+--  trace ("DeclForeignImp: " ++ funName ++", info=\n" ++ show info) $
+--  addNewWrapper info >>>= \id' ->
+--  overwriteOrigName id' >>>
+    -- generate code for the wrapper
+    dPrim pos id id' arity >>>= \code->
+    -- get real cname from primed hname (f'), if needed
+    let (InfoVar _ (Qualified _ f) _ _ _ _) = info
+        cname' = if null cname then reverse (tail (unpackPS f)) else cname
+    in
+    unitS [ DeclForeignImp pos cname' id' arity cast typ id
+          , DeclFun pos id [code] ]
+dDecl d@(DeclForeignExp pos cname id typ) =
+	error ("Can't trace foreign exports yet. "++strPos pos)
 
 dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoD: " ++show info) $
@@ -256,8 +273,7 @@ dCaf pos id cafName fundefs nt =
 	nte = {-ExpIf pos tre redex-} 
               (ExpApplication pos 
 		 [nm, redex, ExpApplication pos 
-                               [ntid, ExpLit pos (LitInt Boxed id)]
-                 ,sr]
+                               [ntid, ExpLit pos (LitInt Boxed id)], sr]
               )
         ce = {-ExpApplication pos 
                  [cSeq, ExpVar pos t', (ExpApplication pos 
@@ -326,7 +342,16 @@ dFun pos id funName arity fundefs nt =
 --				  (DeclsParse [DeclFun pos wrappedfun (fundefs'++[fpclause])])]])
 
 
+{-
+For each clause of the function definition e, return a transformed
+definition e', and possibly declare a new auxiliary function to handle
+failure across guards.
+-}
 dFunClauses funName true otherwise [] = unitS ([], [])
+-- No guards (i.e. guard==True) is the easiest case.
+--     f pat1 pat2 ... = e  where decls
+-- ==>
+--     f t pat1' pat2' ... = e' where decls'
 dFunClauses funName true otherwise (Fun pats [(gd@(ExpCon p cid), e)] decls:fcs)
     | true == cid = 
        getD >>>= \t ->
@@ -335,6 +360,7 @@ dFunClauses funName true otherwise (Fun pats [(gd@(ExpCon p cid), e)] decls:fcs)
        dDecls decls >>>= \decls' ->
        dFunClauses funName true otherwise fcs >>>= \(mfs, nfs) ->
        unitS (Fun (t:pats') [(gd, e')] decls':mfs, nfs)
+-- For the final clause containing > 1 guard:
 dFunClauses funName true otherwise [Fun pats ges decls] =
     normalFail >=>
     if canFail true otherwise ges then
@@ -358,6 +384,7 @@ dFunClauses funName true otherwise [Fun pats ges decls] =
        let fs = [Fun (t:pats') [(ExpCon noPos true, 
 	                         ExpApplication noPos [e, t])] decls'] in
        unitS (fs, [])
+-- For non-final clauses containing > 1 guard:
 dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
     if canFail true otherwise ges then
        mapS namePat pats >>>= \namedpats ->
@@ -382,6 +409,24 @@ dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
        dFunClauses funName true otherwise fcs >>>= \(mfs, nfs) ->
        let fs = Fun (t:pats') [(ExpCon noPos true, ExpApplication noPos [e, t])] decls' in
        unitS (fs:mfs, nfs)
+
+{-
+-- id is the new function we are declaring; id' is the real foreign function
+-}
+dPrim pos id id' arity =
+    lookupVar pos (t_primn arity) >>>= \primn ->
+    lookupCon pos tNTId >>>= \ntid ->
+    setArity 2 id >>>
+    newVar pos >>>= \redex ->
+    newVar pos >>>= \sr ->
+    noGuard >>>= \ng ->
+    unitS (Fun [sr, redex]
+               [( ng
+                , ExpApplication pos 
+                    [ primn
+                    , ExpApplication pos [ntid, ExpLit pos (LitInt Boxed id)]
+                    , ExpVar pos id', sr, redex])]
+               (DeclsParse []))
 
 dGuardedExprs [] = 
     getFail >>>= \fail ->
@@ -841,6 +886,57 @@ addNewName arity addIdNr str nt =
 	let info = mkInfo (if addIdNr then Right i else Left i) str arity nt
 	    istate'' = addIS i info istate'
 	in (i, Threaded istate'' srt idt)
+
+{-
+Create a new primitive identifier with given Info, changing just the
+location in the table (i.e. the lookup key).
+-}
+addNewPrim :: Info -> Inherited a -> Threaded -> (Id,Threaded)
+addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
+  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+    case uniqueIS istate of
+      (i, istate') -> 
+	let newNm = Qualified m (packString (unpackPS nm++"'"))
+            info' = InfoVar i newNm fix IEnone NoType ar
+	    istate'' = addIS i info' istate'
+	in (i, Threaded istate'' srt idt)
+addNewPrim (InfoVar _ nm fix ie nt ar) = 
+  error ("In tracing transformation: foreign import has unqualified name?")
+
+{-
+Create a new identifier for the prim-wrapper, given prim Info, in a fresh
+location in the table
+-}
+addNewWrapper :: Info -> Inherited a -> Threaded -> (Id,Threaded)
+addNewWrapper (InfoVar _ nm fix ie nt ar) = 
+  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+    case uniqueIS istate of
+      (i, istate') -> 
+	let info' = InfoVar i nm fix ie NoType (Just 2)
+	    istate'' = addIS i info' istate'
+	in (i, Threaded istate'' srt idt)
+
+{-
+Overwrite the original primitive identifier with new Info, reflecting
+the change in type and arity.
+-}
+overwritePrim :: Int -> Inherited a -> Threaded -> Threaded
+overwritePrim i = 
+  \_ (Threaded istate srt idt) ->
+      let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
+      in Threaded (updateIS istate i updI) srt idt
+
+{-
+Overwrite the original primitive identifier with new name.
+-}
+overwriteOrigName :: Int -> Inherited a -> Threaded -> Threaded
+overwriteOrigName i = 
+  \_ (Threaded istate srt idt) ->
+      let updI (InfoVar i (Qualified m f) fix ie nt ar) =
+                InfoVar i (Qualified m (packString ('\'': unpackPS f)))
+                                          fix ie nt ar
+      in Threaded (updateIS istate i updI) srt idt
+
 
 
 setD :: Exp Int -> Inherited a -> b -> (Inherited a,b)

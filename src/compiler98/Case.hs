@@ -81,7 +81,7 @@ caseDepends (DeclsRec  ds:r) e = unitS (PosExpLet noPos . concat) =>>> mapS case
 caseDecl :: Decl Int -> CaseFun [(Int,PosLambda)]
 caseDecl d@(DeclPrimitive pos fun arity t) =
   unitS [(fun, PosPrimitive pos fun)]
-caseDecl d@(DeclForeignImp pos str fun arity cast t) =
+caseDecl d@(DeclForeignImp pos str fun arity cast t _) =
   unitS [(fun, PosForeign pos fun str cast Imported)]
 caseDecl d@(DeclForeignExp pos str fun t) =
   unitS [(fun, PosForeign pos fun str False Exported)]
