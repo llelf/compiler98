@@ -7,9 +7,9 @@
 <hr>
 
 <p>
-The latest stable release is 1.06, available in various distribution
+The latest stable release is 1.08, available in various distribution
 formats (listed below).  Important patches for the stable version
-are also provided.  The development tree is at version 1.07,
+are also provided.  The development tree is at version 1.09,
 and is only available by <a href="cvs.html">CVS</a>.  Bugfixes
 and important changes to the system are described in the <a
 href="status.html">release notes</a> for each version.
@@ -30,6 +30,22 @@ instructions</a>.
                     <th>version</th> <th>date</th> <th>size</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.08.tar.gz">
+      Sources (.tar.gz)</a></td>
+  <td>any</td>
+  <td>1.08</td>
+  <td>2001-09-25</td>
+  <td>7.1Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.08-ix86-Linux.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>ix86-Linux</td>
+  <td>1.08</td>
+  <td>2001-09-25</td>
+  <td>4.7Mb</td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.06.tar.gz">
       Sources (.tar.gz)</a></td>
   <td>any</td>
@@ -37,60 +53,12 @@ instructions</a>.
   <td>2001-06-08</td>
   <td>5.7Mb</td></tr>
 
-<tr bgcolor=#ddffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.06-ix86-Linux.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.06</td>
-  <td>2001-06-11</td>
-  <td>4.7Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
+<tr bgcolor=#ffdddd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.04.tar.gz">
       Sources (.tar.gz)</a></td>
   <td>any</td>
   <td>1.04</td>
   <td>2001-05-21</td>
-  <td>3.2Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.04-ix86-Linux.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.04</td>
-  <td>2001-05-21</td>
-  <td>4.8Mb</td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.02.tar.gz">
-      Sources (.tar.gz)</a></td>
-  <td>any</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>3.0Mb</td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-Linux.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>4.7Mb</td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-sparc-solaris2.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>sparc-solaris2</td>
-  <td>1.02</td>
-  <td>2001-02-14</td>
-  <td>5.8Mb</td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-CYGWIN_95-4.0.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-CYGWIN_95-4.0</td>
-  <td>1.02</td>
-  <td>2001-02-16</td>
   <td>3.2Mb</td></tr>
 
 </table>
@@ -180,6 +148,22 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td></td>
+  <td>nhc98 v1.08</td>
+  <td>2001-09-25</td>
+  <td>No patches yet for nhc98-1.08.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-n+k">
+      n+k patterns</a></td>
+  <td>nhc98 v1.06</td>
+  <td>2001-09-14</td>
+  <td>In multiple equations with identical (n+k) patterns, only the first
+      equation was ever matched - the rest were always ignored.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-fields">
       fields</a></td>
   <td>nhc98 v1.06</td>
@@ -188,7 +172,7 @@ be comprehensive, but if you have any problems, please mail
       in the same equation, gave rise to an "Unbound Identifier" error.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-ncurses">
       ncurses</a></td>
   <td>nhc98 v1.06</td>
@@ -196,7 +180,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Link options for ncurses (in src/tracer/hat) were in the wrong order.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-putStr">
       putStr</a></td>
   <td>nhc98 v1.06</td>
@@ -204,107 +188,12 @@ be comprehensive, but if you have any problems, please mail
   <td>Fixes random crashes in primitive implementation of putStr.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-dotc">
       dotc</a></td>
   <td>nhc98 v1.06</td>
   <td>2001-06-11</td>
   <td>Fixes the nhc98 script to accept and compile a plain .c file again.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-java">
-      java</a></td>
-  <td>nhc98 v1.04</td>
-  <td>2001-06-01</td>
-  <td>Fixes a bad interaction between Java and Cygwin (visible in
-      hat-trail and hood browsers) to do with Unix vs. Windows pathnames.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-hattools">
-      hattools</a></td>
-  <td>nhc98 v1.04</td>
-  <td>2001-05-30</td>
-  <td>Fixes an obscure filename-recognition bug in some of the hat-tools,
-      where occasionally some letters from the end of the traced filename
-      were dropped, causing the file not to be found.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-ghc5">
-      ghc5</a></td>
-  <td>nhc98 v1.04</td>
-  <td>2001-05-23</td>
-  <td>Enables the automatic configuration to detect ghc 5.00 properly.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-errno">
-      errno</a></td>
-  <td>nhc98 v1.04</td>
-  <td>2001-05-23</td>
-  <td>Fixes a compile error in <tt>src/runtime/Builtin/cIOExtras.c</tt>
-      on Cygwin - an include for <tt>errno.h</tt> was missing.
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-rdonly">
-      rdonly</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-19<br>2001-04-23</td>
-  <td>A file opened in ReadMode or WriteMode was actually opened in
-      ReadWriteMode, so if the file had strict permissions the
-      correct opening command would fail.  Conversely, opening in
-      ReadWriteMode actually gave ReadMode instead, and file updates
-      silently failed.
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-install">
-      install</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-21</td>
-  <td>On Cygwin, 'make install' reported 'nothing to be done' instead
-      of installing the software.
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-hat">
-      Hat</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-07</td>
-  <td>The Hat trace browser (rtb) occasionally crashed with a Java numeric
-      error (we were sending corrupted textual data to it).
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fixity">
-      fixity</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-13</td>
-  <td>Operator sections suffered from priority inversion, for example
-      (^2*3) was incorrectly parsed as (^(2*3)), even though ^ binds
-      more tightly than *.
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-reexport">
-      reexport</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-22</td>
-  <td>An identifier hidden on import and redefined in the current module,
-      then exported, but also imported qualified and used qualified in the
-      current module, led to an incorrect interface file being generated.
-      </td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-mkdir">
-      mkdir</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-03-27</td>
-  <td>The library function Directory.createDirectory gave strange permissions
-      to the new directory.  (Mode was in hex, but should have been octal!)
       </td></tr>
 
 </table>
@@ -321,7 +210,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.08.17<br>
+This page last modified: 2001.09.24<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -5,6 +5,36 @@
 <center><h1>nhc98 release history</h1></center>
 
 <hr>
+<h3>nhc98 1.08 (2001-09-25) features</h3>
+<ul>
+<li> New:       Tunnels from hat-observe to hat-detect and hat-trail,
+                enabling the user to jump directly to something of interest.
+<li> New:       Prototype version of the portable source-to-source
+                transformation is in progress.
+<li> New:       More updates of the the Prelude/Libraries to match the
+                recent revisions of the Haskell'98 Report.
+<li> Bugfix:    Numerous small bugfixes in hat-observe, hat-detect, and
+                hat-trail.
+<li> Bugfix:    You can now have multiple copies of hat-trail running
+                simultaneously.
+<li> Bugfix:    A module with an explicit null export list previously
+                exported everything - now it correctly exports nothing.
+<li> Bugfix:    In multiple equations with identical (n+k) patterns, only
+                the first equation was ever matched, the rest were
+                previously ignored.
+<li> Bugfix:    A negative literal integer in a pattern caused a compiler
+                error if the (-) function was not also used in an expression.
+<li> Bugfix:    An imported named field, used both as a pattern and a
+                selector in the same equation, gave rise to an
+                "Unbound Identifier" error.
+<li> Bugfix:    Fixes random crashes in primitive implementation of putStr.
+<li> Bugfix:    Link options for ncurses (in src/tracer/hat) were in the
+                wrong order.
+</ul>
+
+
+
+<hr>
 <h3>nhc98 1.06 (2001-06-08) features</h3>
 <ul>
 <li> New:       Updated the Prelude/Libraries to match the newly revised
@@ -397,7 +427,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.02.13<br>
+This page last modified: 2001.09.24<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
