@@ -507,6 +507,7 @@ HATMISC = Makefile.inc Makefile.hat hat-configure \
 HATTRANS = src/compiler98/Makefile* \
 	 $(shell cd src/compiler98; hmake -g HatTrans.hs | cut -d':' -f1 \
 		| sed -e 's/$$/.hs/' | sed -e 's|^|src/compiler98/|' )
+HATMAN = man/hat-*
 
 hatDist:
 	rm -f hat-$(HATVERSION).tar hat-$(HATVERSION).tar.gz
@@ -515,6 +516,7 @@ hatDist:
 	tar rf hat-$(HATVERSION).tar $(HATLIB)
 	tar rf hat-$(HATVERSION).tar $(HATUI)
 	tar rf hat-$(HATVERSION).tar $(HATMISC)
+	tar rf hat-$(HATVERSION).tar $(HATMAN)
 	mkdir hat-$(HATVERSION)
 	cd hat-$(HATVERSION); tar xf ../hat-$(HATVERSION).tar
 	cd hat-$(HATVERSION); mv hat-configure configure
