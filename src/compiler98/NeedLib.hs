@@ -2,16 +2,17 @@
 Basic data type and functions for "need" analysis
 -}
 module NeedLib(initNeed,needit,NeedLib,pushNeed,popNeed,bindTid,needTid
-              ,NeedTable) where
+              ,NeedTable,needQualify) where
 --	      ,TokenId,IdKind,Memo(..),Tree) where
 
 import Memo
-import TokenId(TokenId,t_error,tTrue)
+import TokenId(TokenId(..),t_error,tTrue)
 import TokenInt(tokenAllways,tokenMain)
 import IdKind
 import AssocTree
 import Extra
 import Overlap (Overlap(..),addOverlap)
+import Syntax
 
 -- Added in H98: the overlap table, which allows for later resolution of
 -- shared module aliases.
@@ -98,3 +99,13 @@ needTid pos idKind tid needlib@(NeedLib r m ms o n) =
           Nothing -> NeedLib r (addM m (tid,idKind)) ms o
 					 (addAT n undefined (tid,idKind) [pos])
 
+-- push qualification of identifiers from instance head into method decls
+needQualify :: TokenId -> Decl TokenId -> Decl TokenId
+needQualify (Visible _) decl       = decl
+needQualify (Qualified mod _) decl = q decl
+  where
+    q (DeclFun pos (Visible fun) funs) =
+       DeclFun pos (Qualified mod fun) funs
+    q (DeclPat (Alt (ExpVar pos (Visible fun)) rhs decls)) =
+       DeclPat (Alt (ExpVar pos (Qualified mod fun)) rhs decls)
+    q decl = decl

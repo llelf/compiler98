@@ -8,7 +8,7 @@ import AssocTree
 import Memo
 import Reduce
 import NeedLib(NeedLib,initNeed,needit,popNeed,pushNeed,bindTid,needTid
-              ,NeedTable)
+              ,NeedTable,needQualify)
 import Syntax
 import IdKind
 import PreImport(HideDeclIds,qualRename,preImport)
@@ -171,7 +171,7 @@ needDecl (DeclClass pos tctxs tClass tTVars fundeps (DeclsParse decls)) =
 needDecl (DeclInstance pos ctxs tClass insts (DeclsParse decls)) =
      mapR needCtx ctxs
   >>> mapR needType insts
-  >>> mapR needClassInst decls
+  >>> mapR needClassInst (map (needQualify tClass) decls)
   >>> needTid pos TClass tClass
 
 --        default (type,..)
