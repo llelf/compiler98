@@ -30,6 +30,7 @@ import Maybe(isJust,fromJust)
 import Flags {- import list does not work with nhc 
              (Flags,sShowWidth,sShowQualified,sShowIndent) -}
 import TraceId
+import AuxFile (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
 
 
 prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
