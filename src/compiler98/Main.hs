@@ -181,7 +181,7 @@ nhcNeed flags (parsedProg@(Module pos (Visible modid) e impdecls inf d)) =
             (show (treeMapList (:) need)) 
          profile "imports" $
            nhcImport flags modid qualFun expFun parsedProg'
-                   {-(addPreludeTupleInstances () (initIS need))-} (initIS need)
+                     (addPreludeTupleInstances () (initIS need))
                      overlap imports
 
 
