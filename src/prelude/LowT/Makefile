@@ -9,7 +9,13 @@ SRCS_T	= \
 	PrimExitWith.hs \
 	FFIBuiltin.hs PrimPackString.hs PrimUnpackPS.hs CString.hs \
 	NonStdTrace.hs \
-	LowIO.hs LowSystem.hs LowPS.hs
+	LowIO.hs LowSystem.hs LowPS.hs \
+	PrimIntegerAbs.hs PrimIntegerAdd.hs PrimIntegerAnd.hs \
+	PrimIntegerEq.hs PrimIntegerLe.hs PrimIntegerLt.hs \
+	PrimIntegerGe.hs PrimIntegerGt.hs PrimIntegerNe.hs \
+	PrimIntegerMul.hs PrimIntegerNeg.hs PrimIntegerOr.hs \
+	PrimIntegerQuotRem.hs PrimIntegerSub.hs \
+	PrimIntegerFromInt.hs PrimIntFromIntegerC.hs 
 
 SRCS_NT	= _Driver.hs PrimIntFromInteger.hs 
 OBJS_NT	= $(patsubst %.hs, ${OBJDIR}/%.o, ${SRCS_NT})
