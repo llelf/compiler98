@@ -2,9 +2,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#if !defined(__arm) && !defined(__hppa__) && !defined(__CYGWIN32__)
-#include "localmalloc.h"
-#endif
 #include "node.h"
 /*#include "newmacros.h"  -- already included in node.h */
 /*#include "runtime.h"    -- already included in node.h */
