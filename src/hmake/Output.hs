@@ -22,6 +22,10 @@ hiFile opts path fmodule =
 --       fixFile opts path fmodule ("pp.hs")
 hatFile opts path fmodule  =
        fixFile opts path ('T':fmodule) ("hs")
+hatHiFile opts path fmodule  =
+       fixFile opts path ('T':fmodule) (hiSuffix opts)
+hxFile opts path fmodule  =
+       fixFile opts path fmodule ("hx")
 
 cleanModuleName (Program file)    = file
 cleanModuleName (Object file suf) = file
@@ -33,8 +37,16 @@ qCleano  opts echo graph mod =
 
 qCleanhi opts echo graph mod =
   let allfiles = close graph [] [cleanModuleName mod]
-  in doEcho echo ("rm -f" ++
-         concatMap (\(d,f)-> ' ': hiFile opts d f) allfiles)
+  in if hat opts then
+         doEcho echo ("rm -f" ++
+             concatMap (\(d,f)-> ' ': hatHiFile opts d f) allfiles) ++
+         doEcho echo ("rm -f" ++
+             concatMap (\(d,f)-> ' ': hatFile opts d f) allfiles) ++
+         doEcho echo ("rm -f" ++
+             concatMap (\(d,f)-> ' ': hxFile opts d f) allfiles)
+     else
+         doEcho echo ("rm -f" ++
+             concatMap (\(d,f)-> ' ': hiFile opts d f) allfiles)
 
 qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
   test dep (preprocess++hattrans++compilecmd)
@@ -55,12 +67,13 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
                                                ++[ppOutputFileOption pp pfile]
                                                ++[srcfile]))
   hattrans
-    | hat opts && cpp = doEcho echo $
-                        "gcc -E -traditional -x c "++pfile
-                            ++concatMap doD (defs opts ++ zdefs opts)
-                            ++" -o /tmp/"++pfile
-                            ++"\nhat-trans $HATFLAGS -P. /tmp/"++pfile
-                            ++"\nmv "++hatFile opts "/tmp" m++" "++hfile
+    | hat opts && cpp =
+            doEcho echo ("gcc -E -traditional -x c "++pfile
+                        ++concatMap doD (defs opts ++ zdefs opts)
+                        ++" -o /tmp/"++pfile)
+            ++ doEcho echo ("hat-trans $HATFLAGS -P. /tmp/"++pfile)
+            ++ doEcho echo ("mv "++hatFile opts "/tmp" m++" "++hfile)
+            ++ doEcho echo ("mv "++hxFile opts "/tmp" m++" "++hxFile opts p m)
     | hat opts && not cpp = doEcho echo $
                             "hat-trans $HATFLAGS "++pfile
     | otherwise = ""
