@@ -599,11 +599,14 @@ tDecl scope traced parent (DeclPat (Alt pat rhs decls)) =
             (ExpCase pos (ExpVar pos patId)
               [Alt tuple
                 (Unguarded 
-                  (ExpApplication pos 
-                    [ExpVar pos tokenProjection
-                    ,mkSRExp pos traced
-                    ,ExpVar pos resultTraceId
-                    ,ExpVar pos (nameTransLambdaVar id)])) 
+                  (if isLocal scope && not traced
+                     then ExpVar pos (nameTransLambdaVar id)
+                     else
+                       ExpApplication pos 
+                         [ExpVar pos tokenProjection
+                         ,mkSRExp pos traced
+                         ,ExpVar pos resultTraceId
+                         ,ExpVar pos (nameTransLambdaVar id)]))
                 noDecls])]))
          noDecls]
 
