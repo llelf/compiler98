@@ -129,7 +129,7 @@ parseForeign =
         ((\(_,conv) (_,LitString _ str) (_,tf) (p,v) t -> 
             strace ("Deprecated FFI syntax used at "++strPos p) $
             DeclForeignImp p conv str v (calcArity t) tf t v)
-        `parseAp` (callconv `orelse` conv C) `ap` entity `ap`
+        `parseAp` (callconv `orelse` is C) `ap` entity `ap`
         safety `apCut` varid `chk` coloncolon `ap` parseType))
  -- `orelse`
  --   (k_cast `revChk` 
@@ -137,30 +137,30 @@ parseForeign =
  --     `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where
-  callconv = (k_ccall `revChk` conv C)
+  callconv = (k_ccall `revChk` is C)
                `orelse` 
-             (k_cast `revChk` conv Cast)
+             (k_cast `revChk` is Cast)
                `orelse`
-             (k_noproto `revChk` conv Noproto)
+             (k_noproto `revChk` is Noproto)
                `orelse`
-             (k_haskellcall `revChk` conv Haskell)
+             (k_haskellcall `revChk` is Haskell)
                `orelse` 
-             (k_stdcall `revChk` conv (Other "stdcall"))
+             (k_stdcall `revChk` is (Other "stdcall"))
                `orelse` 
-             (k_cplusplus `revChk` conv (Other "cplusplus"))
+             (k_cplusplus `revChk` is (Other "cplusplus"))
                `orelse` 
-             (k_dotnet `revChk` conv (Other "dotnet"))
+             (k_dotnet `revChk` is (Other "dotnet"))
                `orelse` 
-             (k_jvm `revChk` conv (Other "jvm"))
+             (k_jvm `revChk` is (Other "jvm"))
           --   `orelse` 
-          -- (conv C)  -- previously the default, now the name is mandatory
-  entity   = string `orelse` parse (noPos, LitString UnBoxed "")
-  safety   = (k_unsafe `revChk` conv Unsafe)
+          -- (is C)  -- previously the default, now the name is mandatory
+  is v     = parse (noPos,v)
+  entity   = string `orelse` is (LitString UnBoxed "")
+  safety   = (k_unsafe `revChk` is Unsafe)
                `orelse`
-             (k_safe `revChk` conv Safe)
+             (k_safe `revChk` is Safe)
                `orelse`
-             (parse noPos `revChk` conv Safe)	-- default is Safe
-  conv tf   = parse (noPos,tf)
+             (is Safe) -- default is Safe
   calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
   calcArity _                 | otherwise     = 0
 
