@@ -7,7 +7,6 @@ splitAt		         :: Int -> [a] -> ([a], [a])
 --splitAt n (x:xs) | n>0 = (x:xs',xs'') where (xs',xs'') = splitAt (n-1) xs
 --splitAt _ _            = error "PreludeList.splitAt: negative argument"
 
-#if 1
 splitAt n xs
     | n<=0 = ([],xs)
     | n>0  = splitAt' n xs
@@ -15,12 +14,3 @@ splitAt n xs
         splitAt' n []     = ([],[])
         splitAt' n (x:xs) = (x:xs',xs'') where (xs',xs'') = splitAt' (n-1) xs
 
-#else
-splitAt n xs
-    | n<=0 = ([],xs)
-    | n>0  = splitAt' n xs
-  where splitAt' n xs | n==0  = ([],xs)
-        splitAt' n []         = ([],[])
-        splitAt' n (x:xs)     = (x:xs',xs'') where (xs',xs'') = splitAt' (n-1) xs
-
-#endif

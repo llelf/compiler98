@@ -54,9 +54,7 @@ module NHC.FFI
   , newForeignObj         -- :: Addr -> IO () -> IO ForeignObj
   , makeForeignObj        -- :: Addr -> IO () -> IO ForeignObj  -- OBSOLETE
   , foreignObjToAddr      -- :: ForeignObj -> Addr
-#if !defined(TRACING)
-   ,freeForeignObj        -- :: ForeignObj -> IO ()
-#endif
+  , freeForeignObj        -- :: ForeignObj -> IO ()
   , withForeignObj        -- :: ForeignObj -> (Addr -> IO a) -> IO a
   , touchForeignObj       -- :: ForeignObj -> IO ()
 
@@ -78,14 +76,12 @@ module NHC.FFI
    -------------------------------------------------------------------
    -- `StablePtr a' is a Haskell value passed to the foreign land.
    -------------------------------------------------------------------
-#if !defined(TRACING)
   , StablePtr             -- abstract
   , newStablePtr          -- :: a -> IO (StablePtr a)
   , deRefStablePtr        -- :: StablePtr a -> IO a
   , freeStablePtr         -- :: StablePtr a -> IO ()
   , castStablePtrToPtr    -- :: StablePtr a -> Ptr ()
   , castPtrToStablePtr    -- :: Ptr () -> StablePtr a
-#endif
 
    -------------------------------------------------------------------
    -- `unsafePerformIO' is so commonly used, it should be exported.

@@ -1,3 +1,4 @@
+{-# OPTIONS_COMPILE -cpp #-}
 module IO (hPutStr) where
 
 import DHandle

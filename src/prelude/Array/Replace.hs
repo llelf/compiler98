@@ -1,24 +1,5 @@
 module Array where
 
-#if 0
-
-import Ix
-import DArray
-import ArrayFun
-import Indices
-import Difference
-import AIndex
-import Bounds
-
-infixl 9  //
-
-(//)                  :: (Ix a) => Array a b -> [(a,b)] -> Array a b
-a // us               =  array (bounds a)
-                            ([(i,a!i) | i <- indices a \\ [i | (i,_) <- us]]
-                             ++ us)
-
-#else
-
 import Ix
 import DArray
 import LowVector
@@ -36,5 +17,3 @@ infixl 9  //
                                 us
 			  return (MkArray b v')
 			)
-
-#endif
