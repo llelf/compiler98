@@ -53,12 +53,13 @@ ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 cleanhi:
 	-rm -f *.hi
-cleanC:
+cleanC: cleanExtraC
 	-rm -f ${CFILES_GEN}
 clean:	cleanhi cleanC
 	-rm -f ${OBJDIR}/*.o *.o
 	-rm -f $(patsubst %.gc, %_.hs, $(filter %.gc, $(SRCS)))
 	-rm -f $(patsubst %.gc, %_.c,  $(filter %.gc, $(SRCS)))
+cleanExtraC:
 
 # general build rules for making objects from Haskell files
 ${OBJS_HS}: ${OBJDIR}/%.o : %.hs

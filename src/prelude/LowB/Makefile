@@ -45,6 +45,9 @@ ${OBJS_TRICKY}: ${OBJDIR}/%.o : %.hs
 ${CFILES_TRICKY}: %.c : %.hs
 	$(HC) -C  $(PART_FLAGS) $(LIB_FLAGS) $<
 
+cleanExtraC:
+	rm -f ${CFILES_TRICKY}
+
 
 # Here are the dependencies.
 ${OBJDIR}/PrimError.o: PrimError.hs  ${OBJDIR}/CExitWith.o

@@ -38,6 +38,9 @@ ${HCFILES}: %.c : %.hs
 ${GCFILES}: %.c : %.gc
 	$(HC) -C $(LIB_FLAGS) $<
 
+cleanExtraC:
+	rm -f ${HCFILES} ${GCFILES}
+
 
 
 # Here are the dependencies.

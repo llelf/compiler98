@@ -26,6 +26,8 @@ ${XOBJS}: ${OBJDIR}/%.o : %.hs
 ${XCFILES}: %.c : %.hs
 	$(HC) -C $(LIB_FLAGS) $<
 
+cleanExtraC:
+	rm -f ${XCFILES}
 
 
 # Here are the dependencies.
