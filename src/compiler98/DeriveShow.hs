@@ -39,7 +39,7 @@ deriveShow tidFun cls typ tvs ctxs pos =
   mapS (mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expLessThan expDot pos) constrInfos >>>= \ funs ->
   mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot pos typInfo constrInfos >>>= \ funTs ->
   unitS $
-    DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+    DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
       DeclsParse [DeclFun pos fun funs
 		 ,DeclFun pos funT funTs]
 

@@ -37,8 +37,8 @@ dTopDecls (DeclsParse ds) = unitS DeclsParse =>>> mapS dTopDecl ds
 
 dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
     unitS (DeclClass pos ctx id1 id2) =>>> dDecls decls
-dTopDecl (DeclInstance pos ctx id inst decls) = 
-    unitS (DeclInstance pos ctx id inst) =>>> dDecls decls
+dTopDecl (DeclInstance pos ctx id insts decls) = 
+    unitS (DeclInstance pos ctx id insts) =>>> dDecls decls
 dTopDecl d = dDecl d
 
 dDecls (DeclsParse ds) = unitS DeclsParse =>>> mapS dDecl ds

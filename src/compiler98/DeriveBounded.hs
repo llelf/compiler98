@@ -21,7 +21,7 @@ deriveBounded tidFun cls typ tvs ctxs pos =
   addInstMethod tBounded tidTyp tminBound nt (tidFun (tminBound,Method)) >>>= \ methodMinBound ->
   addInstMethod tBounded tidTyp tmaxBound nt (tidFun (tmaxBound,Method)) >>>= \ methodMaxBound ->
   unitS $
-    DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+    DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
       DeclsParse 
         [mkBound expTrue pos minInfo methodMinBound (tidFun (tminBound,Var))
 	,mkBound expTrue pos maxInfo methodMaxBound (tidFun (tmaxBound,Var))

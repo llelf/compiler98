@@ -554,7 +554,7 @@ uniqueTVar pos al v =
     Nothing -> renameError ("Unbound type variable " ++ show v ++ " at " 
                             ++ strPos pos) 0
 
-transContext al (Context pos cid (vpos,vid)) = 
+transContext al (Context pos cid [(vpos,vid)]) = 
   unitS pair =>>> uniqueTid pos TClass cid =>>> uniqueTVar vpos al vid
 
 

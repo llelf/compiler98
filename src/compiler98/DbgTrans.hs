@@ -145,10 +145,10 @@ dTopDecl trusted root (DeclClass pos ctx id1 id2 (DeclsParse decls)) =
   fixMethodArity (m, d) =
     lookupName d >>>= \(Just (InfoDMethod _ _ _ (Just arity) _)) ->
     setArity 2 {-arity-} m
-dTopDecl trusted root d@(DeclInstance pos ctx id inst (DeclsParse decls)) = 
+dTopDecl trusted root d@(DeclInstance pos ctx id insts (DeclsParse decls)) = 
   mapS ((if trusted then dTrustDecl else dSuspectDecl) True root) decls 
     >>>= \decls' ->
-  unitS (DeclInstance pos ctx id inst (DeclsParse (concatMap fst decls'))
+  unitS (DeclInstance pos ctx id insts (DeclsParse (concatMap fst decls'))
         :concatMap snd decls')
 dTopDecl _ _ d@(DeclType id t) = unitS [d]
 dTopDecl _ _ d@(DeclData mb ctx id contrs tycls) = unitS [d]

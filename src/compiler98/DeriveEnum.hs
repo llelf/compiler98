@@ -34,7 +34,7 @@ deriveEnum tidFun cls typ tvs ctxs pos =
     (unitS (ExpVar pos) =>>> getUnique) >>>= \expG ->
     (unitS (ExpVar pos) =>>> getUnique) >>>= \expH ->
     unitS $
-      DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+      DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	DeclsParse 
           [DeclFun pos funFromEnum
 	    [Fun [expA]

@@ -383,7 +383,7 @@ storeInstance al cls con ctxs _
   let realcls = ensureM rps cls
       realcon = ensureM rps con
       same (realcls',realcon',_,_) = realcls == realcls' && realcon == realcon'
-      trans (Context pos cid (vpos,vid)) =
+      trans (Context pos cid [(vpos,vid)]) =
 	case lookup vid al of
 	  Just tvar -> Right (pos,ensureM rps cid,tvar)
 	  Nothing -> Left ("Unbound type variable "++show vid
@@ -501,7 +501,7 @@ iextractClass  expInfo q pos ctxs tid tvar methods needs =
   let al = tvTids [tvar] 
   in transTypes al (map snd al) ctxs [TypeCons pos tid [TypeVar pos tvar]]
      >>>= \ nt -> 
-     transContext al (Context pos tid (pos,tvar)) >>>= \ctx -> 
+     transContext al (Context pos tid [(pos,tvar)]) >>>= \ctx -> 
      mapS (transMethod q tvar ctx needs) methods >>>= \ms ->
      importClass q tid expInfo nt (concat ms) >>>
      checkInstanceCls tid >>>= \ newinsts ->
@@ -544,7 +544,7 @@ iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
 -- gives a big time saving.
 addPreludeTupleInstances :: () -> ImportState -> ImportState
 addPreludeTupleInstances =
-  let mkCtx c v = Context noPos c (noPos,v)
+  let mkCtx c v = Context noPos c [(noPos,v)]
       tuple cls n = let vars = map (visible.(:[])) (take n ['a'..]) in
                     storeInstance (tvTids vars)
 					cls
@@ -610,7 +610,7 @@ transConstr q al free ctxs needed resType@(NTcons bt _) (Constr pos cid types) =
   unitS c
 transConstr q al free ctxs needed resType@(NTcons bt _) 
                                   (ConstrCtx forall ectxs' pos cid types) = 
-  let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
+  let ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
 -- filter (`notElem` (map fst al)) $ snub $ (ce ++) $ concat
 --                                                $ map (freeType . snd) types
@@ -684,7 +684,7 @@ uniqueTVar pos al v =
 {- transform syntactic context into internal context -}
 transContext :: [(TokenId,Pos)] -> Context TokenId 
              -> () -> ImportState -> ((Id,Id),ImportState)
-transContext al (Context pos cid (vpos,vid)) = 
+transContext al (Context pos cid [(vpos,vid)]) = 
   unitS pair =>>> transTid pos TClass cid =>>> uniqueTVar vpos al vid
 
 

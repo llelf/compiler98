@@ -43,7 +43,7 @@ deriveXML tidFun cls typ tvs ctxs pos =
     mapS (mkShowsFun expTrue expShowsElem expToHType expStagparen expShowConstr expDot expId pos) (zip [0..] constrInfos) >>>= \ funSs ->
     mkHTypeFuns expTrue expToHType expDefined expConstr expCons expNil pos typInfo constrInfos >>>= \ funHs ->
     unitS $
-      DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+      DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
         DeclsParse [DeclFun pos funH funHs
 		   ,DeclFun pos funS funSs]
 

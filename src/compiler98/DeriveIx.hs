@@ -28,7 +28,7 @@ deriveIx tidFun cls typ tvs ctxs pos =
        (unitS (ExpVar pos) =>>> getUnique) >>>= \expD ->
        (unitS (ExpVar pos) =>>> getUnique) >>>= \expE ->
        unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	   DeclsParse 
              [DeclFun pos funRange
 	       [Fun [expA]
@@ -81,7 +81,7 @@ deriveIx tidFun cls typ tvs ctxs pos =
        newArgs pos arity >>>= \ indexI@(headI:tailI) ->
 
        unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	   DeclsParse 
              [DeclFun pos funRange
 	       [Fun 

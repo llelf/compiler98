@@ -27,7 +27,7 @@ type HideDeclDataPrim = ImportState
 type HideDeclClass = ImportState
                      -> [Context TokenId]	-- class contexts
                      -> (Int,TokenId) 		-- class name
-                     -> (Int,TokenId) 		-- type variable
+                     -> [(Int,TokenId)]		-- type variables
                      -> [([((Int,TokenId),Maybe Int)]
                          ,[Context TokenId]
                          ,Type TokenId
@@ -37,7 +37,7 @@ type HideDeclClass = ImportState
 type HideDeclInstance = ImportState
                         -> [Context TokenId]	-- class contexts
                         -> (Int,TokenId) 	-- class name
-                        -> Type TokenId		-- type of this instance
+                        -> [Type TokenId]	-- types of this instance
                         -> ImportState
 type HideDeclVarsType = ImportState
                         -> [((Int,TokenId),Maybe Int)] 

@@ -10,7 +10,7 @@ import Extra(pair,triple)
 import Lex
 import Lexical
 import Syntax
-import MkSyntax(mkDeclClass)
+--import MkSyntax(mkDeclClass)
 import ParseLib
 import ParseLex
 import Parse2
@@ -124,7 +124,7 @@ parseITopDecl st needs hideFuns =
                            `ap` parse needs `apCut` parseDeriving)
       , (L_class, \pos ->
                   hClass hideFuns st `parseAp` parseContexts `ap` aconid
-                            `ap` avarid `apCut`
+                            `ap` some avarid `apCut`
                                  (lit L_where `revChk` lcurl
                                               `revChk` parseICSigns
                                               `chk` optSemi
@@ -134,7 +134,7 @@ parseITopDecl st needs hideFuns =
                             `ap` (parse needs))
       , (L_instance, \pos ->
                      hInstance hideFuns st `parseAp` parseContexts
-                                     `apCut` aconid `apCut` parseInst)
+                                     `apCut` aconid `apCut` some parseInst)
       ]
       (hVarsType hideFuns st
            `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar)

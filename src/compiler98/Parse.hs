@@ -63,14 +63,14 @@ parseTopDecl =
     `orelse`
       (\ simpl -> DeclData (Just False) [] simpl [] []) `parseAp` parseSimple ),
   (L_class, \pos -> 
-    mkDeclClass `parseAp` parseContexts `ap` aconid `ap` avarid `ap` 
+    mkDeclClass `parseAp` parseContexts `ap` aconid `ap` some avarid `ap` 
       (id `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl
        `orelse` 
        parse (DeclsParse [])
       )), 
   (L_instance, \pos->  
     (\ctx (pos',cls) -> DeclInstance pos' ctx cls) `parseAp` 
-      parseContexts `ap` aconid `ap` parseInst `ap` 
+      parseContexts `ap` aconid `ap` some parseInst `ap` 
       (lit L_where `revChk` lcurl `revChk` parseValdefs `chk` rcurl
        `orelse`
        parse (DeclsParse [])

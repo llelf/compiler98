@@ -52,8 +52,8 @@ extractDecls (DeclsParse decls)   =
 
 extractDecl :: Decl Id -> Reduce IntState IntState
 
-extractDecl (DeclInstance pos ctxs cls instanceType@(TypeCons poscon con _) 
-  instmethods) =
+extractDecl (DeclInstance pos ctxs cls [instanceType@(TypeCons poscon con _)]
+                          instmethods) =
   (\ state ->
     if (isJust . depthI . dropJust . lookupIS state) con then
       addError state ("Instance declaration of type synonym is illegal (" 
@@ -73,7 +73,7 @@ extractDecl (DeclInstance pos ctxs cls instanceType@(TypeCons poscon con _)
                       ++ " according to class declaration.")
   ) >>>
   extractDecls instmethods    -- error if we find any type signatures
-extractDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) = 
+extractDecl (DeclClass pos tctxs tClass tTVars (DeclsParse decls)) = 
   mapR extractDecl' decls
 extractDecl (DeclPrimitive pos ident arity typ) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]

@@ -396,8 +396,8 @@ ppContexts info cxs =
 
 
 ppContext :: PPInfo a -> Context a -> Doc
-ppContext info (Context pos c (_,v)) =
-  ppId info c <> space <> ppTyVar info v
+ppContext info (Context pos c vars) =
+  ppId info c <> space <> sep fSpace (map (\(_,v)-> ppTyVar info v) vars)
 
 
 ppDerivings :: PPInfo a -> [(Pos, a)] -> Doc
@@ -479,17 +479,17 @@ ppDecl info (DeclConstrs pos did cs) =
         map (\(ps,field,sel) -> 
                 parens (ppIdAsVar info field <> space <> ppIdAsVar info sel)) 
                        cs))
-ppDecl info (DeclClass pos ctxs cls arg decls) =
+ppDecl info (DeclClass pos ctxs cls args decls) =
   nestS info $
     text "class" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info cls <> space <> 
-      ppTyVar info arg)
+      sep fSpace (map (ppTyVar info) args))
     <> ppWhere info decls
 ppDecl info (DeclInstance pos ctxs tycls insts valdefs) =
   nestS info $
     text "instance" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info tycls <> space <>
-      ppTypePrec info True insts)
+      sep fSpace (map (parens . ppTypePrec info True) insts))
     <> ppWhere info valdefs 
 ppDecl info (DeclDefault ts) =
   groupNestS info $

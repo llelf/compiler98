@@ -114,11 +114,11 @@ data Decl id =
        -- to generate selector funktions
        --       position data/dataprim [(field,selector)]
      | DeclConstrs Pos id [(Pos,id,id)] 
-       -- class context => class where { csign; valdef }
-       -- position, context, class, type variable, declarations in class
-     | DeclClass Pos [Context id] id id (Decls id)
-       -- instance context => tycls inst where { valdef }
-     | DeclInstance Pos [Context id] id (Instance id) (Decls id)
+       -- class context => class where { signatures/valdefs; }
+       -- position, context, class, type variables, declarations in class
+     | DeclClass Pos [Context id] id [id] (Decls id)
+       -- instance context => tycls inst where { valdefs }
+     | DeclInstance Pos [Context id] id [Instance id] (Decls id)
        -- default (type,..)
      | DeclDefault [Type id]
        -- var primitive arity :: type
@@ -191,7 +191,7 @@ simpleToType :: Simple id -> Type id
 simpleToType (Simple pos tcId pargs) = 
   TypeCons pos tcId (map (TypeVar pos . snd) pargs)
 
-data Context id = Context Pos id (Pos,id)
+data Context id = Context Pos id [(Pos,id)]
 
 
 {-

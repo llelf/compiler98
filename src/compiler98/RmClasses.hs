@@ -40,7 +40,7 @@ rmClass :: Decl Id -> RmClassMonad ([ClassCode a Id],[Decl Id])
 rmClass (DeclClass pos ctx cls arg (DeclsParse decls)) =
   mapS fixArity decls >>>= \ decls ->
   unitS ([CodeClass pos cls] ,decls)
-rmClass (DeclInstance pos ctx cls (TypeCons _ typ _) (DeclsParse decls)) =
+rmClass (DeclInstance pos ctx cls [TypeCons _ typ _] (DeclsParse decls)) =
   mapS fixArity decls >>>= \ decls ->
   unitS ([CodeInstance pos cls typ [] [] (concatMap identDecl decls)],decls)
 rmClass decl = unitS ([],[decl])

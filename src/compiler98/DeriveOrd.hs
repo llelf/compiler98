@@ -30,7 +30,7 @@ deriveOrd tidFun cls typ tvs ctxs pos =
   addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iCompare >>>= \ funcompare ->
   if all noArgs constrInfos
   then unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	   DeclsParse [DeclFun pos funle 
 			[Fun [expX,expY]
 			  (Unguarded 
@@ -61,7 +61,7 @@ deriveOrd tidFun cls typ tvs ctxs pos =
        mapS (mkOrdFunCompare expTrue expCompare expLT expEQ expGT tidFun pos) 
          constrInfos >>>= \ funcompares ->
        unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	   DeclsParse 
              [DeclFun pos funle (funles++
 	       [Fun [expX,expY]

@@ -4,7 +4,7 @@ import Syntax
 import IntState
 import NT
 
-syntaxCtxs pos ctxs = map ( \ (c,v) -> Context pos c (pos,v)) ctxs
+syntaxCtxs pos ctxs = map ( \ (c,v) -> Context pos c [(pos,v)]) ctxs
 syntaxType pos typ tvs = TypeCons pos typ (map (TypeVar pos) tvs)
 
 noArgs constrInfo =

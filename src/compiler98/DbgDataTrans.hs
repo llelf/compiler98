@@ -139,7 +139,7 @@ dTopDecl d@(DeclConstrs pos id fieldIds) =
                 " has new type " ++ ntstr) $
 	  updateConstrType constr nt''
       _ -> error ("info = " ++ show info)     
-dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
+dTopDecl d@(DeclClass pos ctx id1 [id2] decls) =
   -- Try to get class method types
   lookupName noPos id1 >>>= \clsinfo@(Just (InfoClass i tid ie nt ms ds at)) ->
   setClassVar id2 >=>
@@ -149,7 +149,7 @@ dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
   dTrace ("*** Class type: " ++ ntstr ++ " ho: " ++ show (or hol)) $
   updateClassType i tid ie nt' ms ds at >>>
   dDecls decls >>>= \decls' ->
-  unitS [DeclClass pos ctx id1 id2 decls']
+  unitS [DeclClass pos ctx id1 [id2] decls']
   where 
   transformMethodType (m, d) =
     lookupName noPos m >>>= \(Just (InfoMethod im _ _ _ _ _ _)) ->
@@ -169,10 +169,10 @@ dTopDecl d@(DeclClass pos ctx id1 id2 decls) =
 	unitS (isHigherOrder id2 nt')
   -- Ignore method starting with '_'
   doTransform = ('_'/=) . last . unpackPS . extractV
-dTopDecl (DeclInstance pos ctx id inst decls) = 
+dTopDecl (DeclInstance pos ctx ids [inst] decls) = 
     dCtxType pos ctx inst >>>= \(_, inst') -> -- Don't change the context!!!
     dDecls decls >>>= \decls' ->
-    unitS [DeclInstance pos ctx id inst' decls']
+    unitS [DeclInstance pos ctx ids [inst'] decls']
 {- supperfluous, because DeclDataPrim is replaced by DeclConstrs by rename
 dTopDecl (DeclDataPrim pos id size) = 
     lookupNameStr id >>>= \idstr ->

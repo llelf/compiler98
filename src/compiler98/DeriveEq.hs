@@ -27,7 +27,7 @@ deriveEq tidFun cls typ tvs ctxs pos =
 	   expEqual = ExpVar pos iEqual
        in
 	unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	    DeclsParse [DeclFun pos fun
 			 [Fun [expX,expY]
 			   (Unguarded
@@ -40,7 +40,7 @@ deriveEq tidFun cls typ tvs ctxs pos =
        getUnique >>>= \x ->
        getUnique >>>= \y ->
        unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
 	   DeclsParse [DeclFun pos fun (funs ++ 
              [Fun [ExpVar pos x,ExpVar pos y] 
                (Unguarded (ExpCon pos (tidFun (tFalse,Con))))

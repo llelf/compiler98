@@ -42,9 +42,9 @@ bindDecl  (DeclDataPrim pos tid size) =
     bindTid pos TCon tid
 bindDecl  (DeclData d ctxs (Simple pos tid tvs) constrs posidents) =
     bindTid pos TCon tid >>> mapS0 bindConstr constrs
-bindDecl  (DeclClass pos ctxs tid tvarIdent methods) =
+bindDecl  (DeclClass pos ctxs tid tvarIdents methods) =
     bindTid pos TClass tid >>> bindMethods methods
-bindDecl  (DeclInstance pos ctx classIdent instanceType methods) =
+bindDecl  (DeclInstance pos ctx classIdent instanceTypes methods) =
     unitS0
 bindDecl  (DeclDefault types) =
     unitS0

@@ -9,7 +9,7 @@ module Rename(ctxs2NT, fixInstance, rename) where
 
 import List
 import Syntax
-import Extra(pair,isJust,dropJust,strace)
+import Extra(pair,isJust,dropJust,strace,strPos)
 import Bind(bindPat,bindDecls,identPat)
 import RenameLib(ImportState,RenameState,RenameToken,RenameMonad
                 ,keepRS,is2rs,renameError
@@ -251,17 +251,23 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
 	else
          unitS) (DeclConstrs pos d (concat fields))
 
-renameDecl (DeclClass pos ctxs tid tvar decls') =
+renameDecl (DeclClass pos ctxs tid [tvar] decls') =
   let al = tvTids [tvar]
       (DeclsParse decls) = groupFun decls'
   in transTypes al (map snd al) ctxs 
                 [TypeCons pos tid [TypeVar pos tvar]] >>>= \nt -> 
-     transContext al (Context pos tid (pos,tvar)) >>>= \ctx@(c,t) -> 
+     transContext al (Context pos tid [(pos,tvar)]) >>>= \ctx@(c,t) -> 
      fixClassMethods tid tvar ctx decls >>>= \declmds ->
      defineClass pos tid nt (map snd declmds) >>> 
-     unitS (DeclClass pos [] c t (DeclsParse (map fst declmds)))
+     unitS (DeclClass pos [] c [t] (DeclsParse (map fst declmds)))
+renameDecl (DeclClass pos ctxs tid (tvar:_) decls') =
+  let al = tvTids [tvar]
+  in transContext al (Context pos tid [(pos,tvar)]) >>>= \ctx@(c,t) -> 
+     renameError ("Multi-parameter type-classes (used at "++strPos pos
+                  ++") are not supported.")
+                 (DeclClass pos [] c [t] (DeclsParse []))
 
-renameDecl (DeclInstance pos ctxs tid instanceType@(TypeCons _ tcon _)
+renameDecl (DeclInstance pos ctxs tid [instanceType@(TypeCons _ tcon _)]
                          instmethods') =
   let al = tvTids (snub (freeType instanceType))
       (DeclsParse instmethods) = groupFun instmethods'
@@ -269,7 +275,12 @@ renameDecl (DeclInstance pos ctxs tid instanceType@(TypeCons _ tcon _)
      uniqueTid pos TClass tid >>>= \ c -> 
      renameType al instanceType >>>= \ typ ->
      mapS (renameInstMethod) instmethods >>>= \ ims ->
-     unitS (DeclInstance pos ctxs c typ (DeclsParse ims))
+     unitS (DeclInstance pos ctxs c [typ] (DeclsParse ims))
+renameDecl (DeclInstance pos ctxs tid (inst:_) instmethods') =
+     uniqueTid pos TClass tid >>>= \ c -> 
+     renameError ("Multi-parameter type-classes (used at "++strPos pos
+                  ++") are not supported.")
+                 (DeclInstance pos [] c [] (DeclsParse []))
 
 renameDecl (DeclDefault types) =
     mapS (renameType []) types >>>= \ types  ->
@@ -506,10 +517,10 @@ renameType al (TypeVar   pos tid)    =
 
 renameCtx :: [(TokenId,Int)] -> Context TokenId -> RenameMonad (Context Id)
 
-renameCtx al (Context pos tid (p,t)) =
+renameCtx al (Context pos tid [(p,t)]) =
     uniqueTid pos TClass tid >>>= \ i ->
     uniqueTVar p al t >>>= \ t ->
-    unitS (Context pos i (p,t))
+    unitS (Context pos i [(p,t)])
 
 
 {- 
@@ -544,7 +555,7 @@ renameConstr typtid al ctxs resType@(NTcons bt _)
 
 renameConstr typtid al ctxs resType@(NTcons bt _) 
                             (ConstrCtx forall ectxs' pos tid fieldtypes) =
-  let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
+  let ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
             -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ 
             -- concat $ map (freeType . snd) fieldtypes
@@ -677,8 +688,8 @@ renameExp (PatNplusK pos tid _ k _ _) =
 
 fixInstance :: Int -> Decl Int -> a -> IntState -> (Decl Int,IntState)
 
-fixInstance iTrue (DeclInstance pos ctxs i instanceType@(TypeCons _ ti tvs) 
-  (DeclsParse instmethods)) =
+fixInstance iTrue (DeclInstance pos ctxs i [instanceType@(TypeCons _ ti tvs)]
+                                (DeclsParse instmethods)) =
     ensureDefaults pos i >>>= \ cinfo ->
     mapS (\(m,d) -> getInfo m >>>= \minfo -> unitS (minfo,d))
          (methodsI cinfo) >>>= \cmds ->
@@ -708,7 +719,7 @@ fixInstance iTrue (DeclInstance pos ctxs i instanceType@(TypeCons _ ti tvs)
            (filter ((`notElem` dms).fst) cmds') >>>= \ fill ->
       mapS0 ((\(im,m) -> updInstMethodNT tidcls tidtyp im nt m) . dropRight)
             upd >>> 
-      unitS (DeclInstance pos ctxs i instanceType
+      unitS (DeclInstance pos ctxs i [instanceType]
                           (DeclsParse (fill++instmethods)))
 fixInstance iTrue d = unitS d
 
@@ -729,7 +740,7 @@ getI (DeclFun pos i funs) = (pos,i)
 
 ctxs2NT ctxs = map ctx2NT ctxs
  where
-   ctx2NT (Context pos c (p,v)) = (c,v)
+   ctx2NT (Context pos c [(p,v)]) = (c,v)
 
 
 ensureDefaults pos i down state =

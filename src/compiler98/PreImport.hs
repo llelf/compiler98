@@ -381,7 +381,7 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
       iextractDataPrim IEnone (\_->True) pos tid size () st
 
   hideDeclClass :: HideDeclClass
-  hideDeclClass st  ctxs (pos,tid) tvar methods needs =
+  hideDeclClass st  ctxs (pos,tid) [tvar] methods needs =
     if imported tid then
       iextractClass (reExport q tid TClass) q pos ctxs tid
                     (snd tvar) methods (safetail (concat needs)) () st
@@ -392,7 +392,7 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
                      | otherwise = tail xs
 
   hideDeclInstance :: HideDeclInstance
-  hideDeclInstance st ctxs (pos,cls) typ =
+  hideDeclInstance st ctxs (pos,cls) [typ] =
     iextractInstance ctxs pos cls typ () st
 		-- instances are always imported, they cannot be hidden.
 

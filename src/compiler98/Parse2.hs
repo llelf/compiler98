@@ -38,20 +38,22 @@ parseImpDecls =
 
 parseImpDecl =
     Importas `parseChk` lit L_import `ap` bigModId
-                    `chk` k_as `ap` aconid `ap` parseImpSpec   -- added in H98
+                    `chk` k_as `ap` bigModId `ap` parseImpSpec   -- added in H98
 	`orelse`
     importas `parseChk` lit L_import `ap` aconid `ap` parseImpSpec
 	`orelse`
     ImportQas `parseChk` lit L_import `chk` k_qualified `ap` bigModId
-                    `chk` k_as `ap` aconid `ap` parseImpSpec
+                    `chk` k_as `ap` bigModId `ap` parseImpSpec
 	`orelse`
     importQas `parseChk` lit L_import `chk` k_qualified
                     `ap` aconid `ap` parseImpSpec     -- impSpec is FAKE
   where
     importas  m@(p,Visible _)     s = Import m s
-    importas  m@(p,Qualified a b) s = Importas (deQualify m) (p,Visible b) s
+    importas  m@(p,Qualified a b) s = Import (deQualify m) s
+ -- importas  m@(p,Qualified a b) s = Importas (deQualify m) (p,Visible b) s
     importQas m@(p,Visible _)     s = ImportQ m s
-    importQas m@(p,Qualified a b) s = ImportQas (deQualify m) (p,Visible b) s
+    importQas m@(p,Qualified a b) s = ImportQ (deQualify m) s
+ -- importQas m@(p,Qualified a b) s = ImportQas (deQualify m) (p,Visible b) s
 
 bigModId = deQualify `parseAp` aconid
 
@@ -153,7 +155,7 @@ parseContexts =
     parse []
 
 parseContext = 
-    (\ (pos,c) pt_t -> Context pos c pt_t)  `parseAp` conid `ap` varid
+    (\ (pos,c) pt_t -> Context pos c pt_t)  `parseAp` conid `ap` some varid
 
 parseSimple =
     (uncurry Simple) `parseAp` conid `ap` many varid

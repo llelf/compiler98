@@ -52,7 +52,7 @@ deriveBinary tidFun cls typ tvs ctxs pos =
     mkFGetFuns expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos >>>= \ funFs ->
     mapS (mkSizeFun sizeC expSize expPlus pos) constrInfos >>>= \ funSs ->
     unitS $
-      DeclInstance pos (syntaxCtxs pos ctxs) cls (syntaxType pos typ tvs) $
+      DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
         DeclsParse [DeclFun pos funP funPs
 		   ,DeclFun pos funG funGs
 		   ,DeclFun pos funF funFs 
