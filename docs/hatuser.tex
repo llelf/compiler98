@@ -55,7 +55,9 @@ Viewing the trace starts with the program output or the expression that led to p
 
 \section{Obtaining the trace of a computation}
 
-Hat consists of the Haskell compiler \texttt{nhc98} and the separate \emph{r}edex \emph{t}rail \emph{b}rowser \texttt{rtb}. To obtain a trace of a computation do the following:
+Hat consists of the Haskell compiler \texttt{nhc98} and the separate
+redex trail browser \texttt{hat-trail}. To obtain a trace of a
+computation do the following:
 
 \begin{enumerate}
 \item
@@ -82,7 +84,7 @@ force halting by keying an interrupt
 At this point the program also states how many reductions have been performed by the computation, and how many of these were calls of trusted functions by trusted functions, trusted functions by suspected functions, suspected functions by trusted functions and suspected functions by suspected functions (see Section~\ref{trusting} about trusting).
 
 \item
-If the browser \texttt{rtb} is not already running, then start it.
+If the browser \texttt{hat-trail} is not already running, then start it.
 
 \item
 With a traced Haskell program in the trace-available

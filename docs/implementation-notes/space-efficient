@@ -33,7 +33,7 @@ on.
 A "cheap" way to reduce the size of the generated code is to use
 bytecode instead of machine code.  This means that nhc98 must include a
 small interpreter in all generated programs, but this is not a huge
-cost.  The saving in spac must however be paid in speed.  A bytecode
+cost.  The saving in space must however be paid in speed.  A bytecode
 interpreter make a lot of jumps whose destinations are decided very
 late, and this is bad behaviour for modern processors which use heavy
 pipelining and branch prediction.  The gain in space is however quite
@@ -93,7 +93,7 @@ parts:
 
   * Export - creates the interface file.
 
-  * Case - simplies pattern bindings and pattern matching.
+  * Case - simplifies pattern bindings and pattern matching.
     The removal of patterns is done without code duplication.  This
     means that some programs might test the same pattern more than once,
     but it saves space.
@@ -105,7 +105,7 @@ parts:
 
   * Code - intermediate code for some small optimisations.
     All applications with known functions are marked as vector
-    applications or constant expressions id the arity is greater than
+    applications or constant expressions if the arity is greater than
     the number of available arguments.  A vector application uses less
     space than a chain of binary apply nodes, the latter using at least
     2 pointers for every argument compared to one pointer/argument for
@@ -190,8 +190,8 @@ observations:
     fp'.
 
   * Mostly true: it is possible to get the constptr from the VAP node
-    pointed at by vapptr.  The problem here is that pat-bin-update might
-    overwrite the VAP node.  THis can be solved by emitting code so that
+    pointed at by vapptr.  The problem here is that pat-bind-update might
+    overwrite the VAP node.  This can be solved by emitting code so that
     the VAP nodes that can be overwritten by pat-bind-update always are
     of the same kind.
 
