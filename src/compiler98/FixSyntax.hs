@@ -449,7 +449,7 @@ fsExp' False (ExpApplication pos [v@(ExpVar _ qfromRational)
 --- negate {Int Integer Float Double Rational} constant
 
 fsExp' False (ExpApplication pos [v@(ExpVar pos3 qnegate) 
-                                 ,(ExpDict v2@(Exp2 _ qNum qType)) 
+                                 ,d@(ExpDict v2@(Exp2 _ qNum qType)) 
                                  ,p]) =
   fsState >>>= \ state ->
   if tidIS state qnegate == tnegate && tidIS state qNum == tNum  then
@@ -460,6 +460,12 @@ fsExp' False (ExpApplication pos [v@(ExpVar pos3 qnegate)
       ExpLit pos (LitFloat b i)    -> unitS (ExpLit pos (LitFloat b (-i)))
       ExpLit pos (LitDouble b i)   -> unitS (ExpLit pos (LitDouble b (-i)))
       ExpLit pos (LitRational b i) -> unitS (ExpLit pos (LitRational b (-i)))
+      -- negate (fromInteger v) in a pattern is a special case:
+      -- If the fromInteger was not elided in the recursive call
+      -- (e.g. instance Num UserType) then we need to keep the dictionary
+      -- for later, when we lookup the (==) method to match the pattern.
+      ExpApplication _ [ExpVar _ _,ExpLit _ _] ->
+          unitS (ExpApplication pos [v,d,p])
       _ -> fsExp' False (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])  -- Will do p once more :-(
    else
      fsExp' False (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])
