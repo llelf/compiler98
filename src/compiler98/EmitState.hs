@@ -5,6 +5,7 @@ module EmitState where
 
 import Char (isLower)
 import GcodeLow (foreignfun)
+import List (nub)
 #if defined(__HASKELL98__)
 import List (isPrefixOf)
 #else
@@ -45,6 +46,11 @@ data Label = Define GL String Int | Use String Int
 data GL = Global | Local
 data Pass = Labels | Code	-- to avoid space leaks, we build the
 	deriving Eq		-- state value in two passes
+
+instance Eq Label where
+    -- only used to eliminate duplicate extern decls, so not real equality.
+    (Use s _) == (Use t _)  = s==t
+    _ == _                  = error "Misuse of equality in compiler/EmitState"
 
 eszero = "0"
 
@@ -152,7 +158,7 @@ emit Labels (ES _ _ _ rlabs _) =
   let labs    = reverse rlabs
       locals  = filter isLocal labs
       uses    = filter isUse labs
-      externs = filter (not . definedLabel) uses
+      externs = nub $ filter (not . definedLabel) uses
       defines = treeFromList min cmp (map defAt (filter isDefine labs))
         where cmp (k, _) (k', _) = compare k k'
               defAt (Define Local  sym _)   = (sym, minBound) -- Before any use
