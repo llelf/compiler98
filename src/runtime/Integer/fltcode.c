@@ -13,14 +13,12 @@
 #if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(bsdi) || defined(__alpha) || defined(__CYGWIN32__) || defined(__OpenBSD__)
 #define IEEE
 #endif
-#if defined(__sgi) || defined(sun) || defined(hp300) || defined(_IBMR2)
-#define BIGENDIAN
-#endif
+
 #include "gmp.h"
 #include "gmp-impl.h"
 #include "flt.h"
 
-#ifdef BIGENDIAN
+#ifdef HIGH_BYTE_FIRST
 #define LL 1
 #define HH 0
 #else
