@@ -48,6 +48,7 @@ knownSuffixes =
   , ("hs.cpp", plain, ppCpp)
   , ("ghs",    plain, ppGH)
   , ("gc",     plain, ppNone)	-- note, for nhc98 only
+  , ("hsc",    plain, ppNone)	-- note, for nhc98 only
   , ("hs",     plain, ppNone)
   , ("lhs",    unlit, ppNone)
   ] 
@@ -70,7 +71,7 @@ ppHsc2hs = PreProcessor
 	{ ppExecutableName = "hsc2hs"
 	, ppDefaultOptions = \d-> map ("-I"++) (pathSrc d)
 	, ppOutputFileOption = \_-> ""
-	, ppSuitable = \hc-> hc `elem` [Ghc,Nhc98]
+	, ppSuitable = \hc-> hc == Ghc
 	}
 ppC2hs = PreProcessor
 	{ ppExecutableName = "c2hs"

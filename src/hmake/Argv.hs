@@ -154,6 +154,7 @@ decode progArgs =
 
   suffixes = [ "lhs"	-- literate Haskell
              , "gc"	-- GreenCard
+             , "hsc"	-- hsc2hs
              , "hs"	-- Haskell
              , "o"	-- object file
              , "hi"	-- interface file
