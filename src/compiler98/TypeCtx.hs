@@ -26,7 +26,7 @@ removeTSyn state tvar = tvar
 
 
 
--- Is   c  a superclass of cstart ?
+-- Is c a superclass of cstart?
 scof :: IntState -> Int -> Int -> Bool
 scof state c cstart =
   case lookupIS state cstart of
@@ -53,7 +53,7 @@ ctxReduce state ctx@(c,nt) ctxs =
 ctxsSimplify state given cls_nt =
   ctxsSimplify' state given cls_nt []
 
---                                                                                                 Only NTvar and NTexist in result
+-- Only NTvar and NTexist in result
 ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))]
                  -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
 ctxsSimplify' state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r

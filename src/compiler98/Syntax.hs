@@ -8,7 +8,7 @@ import Ratio
 import Maybe(isNothing,fromJust)
 
 {-
-Note that that some syntactic constructs contain the syntactic construct 
+Note that some syntactic constructs contain the syntactic construct 
 "Type". However, the rename pass replaces this representation by the internal
 type representation "NewType" and "NT". So the syntactic constructs that
 use "Type" are removed by the renaming pass or the type representation is only
