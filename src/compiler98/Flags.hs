@@ -16,97 +16,100 @@ module Flags where
             ,sArity,sLBound,sLift,sProfile,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
             ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
-            ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile) where
+            ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType) where
 -}
 
 import IO
 import OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
 
 data Flags = FF 
-  {sRealFile :: String
+  {sRealFile   :: String
   ,sSourceFile :: String
-  ,sTypeFile :: String
+  ,sTypeFile   :: String
   ,sObjectFile :: String
-  ,sIncludes :: [String]
-  ,sPreludes :: [String]
+  ,sIncludes   :: [String]
+  ,sPreludes   :: [String]
 
 --v Flags to control compilation
-  ,sRedefine :: Bool	-- allow redefinitions of imported identifiers
-  ,sPart :: Bool	-- compiling part of a lib
-  ,sUnix :: Bool	-- either unix or RiscOS
-  ,sUnlit :: Bool	-- unliterate the source code
+  ,sRedefine   :: Bool	-- allow redefinitions of imported identifiers
+  ,sPart       :: Bool	-- compiling part of a lib
+  ,sUnix       :: Bool	-- either unix or RiscOS
+  ,sUnlit      :: Bool	-- unliterate the source code
 
-  ,nProfile :: Int	-- turn on heap profiling
-  ,sTprof :: Bool	-- turn on time profiling
-  ,sZap :: Bool		-- zap unused args / stack positions
-  ,sPrelude :: Bool	-- keep prelude defns in interface file
-  ,sLib :: Bool		-- compiling a library
-  ,sKeepCase :: Bool	-- don't lift case, we fix those later
+  ,nProfile    :: Int	-- turn on heap profiling
+  ,sTprof      :: Bool	-- turn on time profiling
+  ,sZap        :: Bool	-- zap unused args / stack positions
+  ,sPrelude    :: Bool	-- keep prelude defns in interface file
+  ,sLib        :: Bool	-- compiling a library
+  ,sKeepCase   :: Bool	-- don't lift case, we fix those later
 
 --v Flags to control compilation for tracing
-  ,sDbgTrans :: Bool	-- do tracing transformation
+  ,sDbgTrans   :: Bool	-- do tracing transformation
   ,sDbgPrelude :: Bool	-- use tracing prelude
   ,sDbgTrusted :: Bool	-- trust this module
 
 --v Flags for machine architecture / configuration
-  ,sAnsiC :: Bool	-- generate bytecode via ANSI-C
-  ,s64bit :: Bool	-- generate for a 64-bit machine (not currently used)
-  ,sNplusK :: Bool	-- allow (n+k) patterns
+  ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
+  ,s64bit      :: Bool	-- generate for a 64-bit machine (not currently used)
+  ,sNplusK     :: Bool	-- allow (n+k) patterns
   ,sUnderscore :: Bool	-- force H'98 underscores
-  ,sPuns :: Bool	-- allow named-field puns
+  ,sPuns       :: Bool	-- allow named-field puns
 
 --v debugging flags - show program / import tables (after each compiler phase)
-  ,sLex :: Bool		-- input	after lexing
-  ,sILex :: Bool	-- input	after lexing imported interface files
-  ,sParse :: Bool	-- ast		after parsing
-  ,sIParse :: Bool	-- ast		after parsing imported interface files
-  ,sNeed :: Bool	-- need table	before imports
-  ,sINeed :: Bool	-- need table	after all imports
-  ,sIINeed :: Bool	-- need table	after each import
-  ,sIRename :: Bool	-- rename table	after imports
-  ,sImport :: Bool	-- imported filenames
-  ,sRImport :: Bool	-- imports 	actually used
-  ,sDepend :: Bool	-- imported ids	(not currently used)
-  ,sRename :: Bool	-- ast		after rename
-  ,sDerive :: Bool	-- ast		after deriving
-  ,sTraceData :: Bool	-- ast		after tracing transform (data)
-  ,sTraceFns :: Bool	-- ast		after tracing transform (fns)
-  ,sRemove :: Bool	-- ast		after named-field removal
-  ,sScc :: Bool		-- ast		after strongly-connected-components
-  ,sType :: Bool	-- ast		after type check
-  ,sFixSyntax :: Bool	-- ast		after removing newtypes
-  ,sSTG :: Bool		-- stg tree	after translation from ast
-  ,sLift :: Bool	-- stg tree	after lambda lifting
-  ,sCase :: Bool	-- stg tree	after case pattern simplification
-  ,sPrim :: Bool	-- stg tree	after inserting primitives
-  ,sArity :: Bool	-- stg tree	after arity analysis
-  ,sBCBefore :: Bool	-- stg tree	before conversion to byte code
-  ,sAtom :: Bool	-- stg tree	after only atoms in applications
-  ,sSTGCode :: Bool	-- stg code
-  ,sFree :: Bool	-- stg code	with explicit free variables
+  ,sLex        :: Bool	-- input	after lexing
+  ,sILex       :: Bool	-- input	after lexing imported interface files
+  ,sParse      :: Bool	-- ast		after parsing
+  ,sIParse     :: Bool	-- ast		after parsing imported interface files
+  ,sNeed       :: Bool	-- need table	before imports
+  ,sINeed      :: Bool	-- need table	after all imports
+  ,sIINeed     :: Bool	-- need table	after each import
+  ,sIRename    :: Bool	-- rename table	after imports
+  ,sImport     :: Bool	-- imported filenames
+  ,sRImport    :: Bool	-- imports 	actually used
+  ,sDepend     :: Bool	-- imported ids	(not currently used)
+  ,sRename     :: Bool	-- ast		after rename
+  ,sDerive     :: Bool	-- ast		after deriving
+  ,sTraceData  :: Bool	-- ast		after tracing transform (data)
+  ,sTraceFns   :: Bool	-- ast		after tracing transform (fns)
+  ,sRemove     :: Bool	-- ast		after named-field removal
+  ,sScc        :: Bool		-- ast		after strongly-connected-components
+  ,sType       :: Bool	-- ast		after type check
+  ,sFixSyntax  :: Bool	-- ast		after removing newtypes
+  ,sSTG        :: Bool	-- stg tree	after translation from ast
+  ,sLift       :: Bool	-- stg tree	after lambda lifting
+  ,sCase       :: Bool	-- stg tree	after case pattern simplification
+  ,sPrim       :: Bool	-- stg tree	after inserting primitives
+  ,sArity      :: Bool	-- stg tree	after arity analysis
+  ,sBCBefore   :: Bool	-- stg tree	before conversion to byte code
+  ,sAtom       :: Bool	-- stg tree	after only atoms in applications
+  ,sSTGCode    :: Bool	-- stg code
+  ,sFree       :: Bool	-- stg code	with explicit free variables
 
-  ,sGcode :: Bool	-- g-code
-  ,sGcodeFix :: Bool	-- g-code	after large constant fix
-  ,sGcodeMem :: Bool	-- g-code	after NEEDHEAP analysis
-  ,sGcodeOpt1 :: Bool	-- g-code	after optimisation phase 1
-  ,sGcodeRel :: Bool	-- g-code	after relative offset analysis
-  ,sGcodeOpt2 :: Bool	-- g-code	after optimisation phase 2
+  ,sGcode      :: Bool	-- g-code
+  ,sGcodeFix   :: Bool	-- g-code	after large constant fix
+  ,sGcodeMem   :: Bool	-- g-code	after NEEDHEAP analysis
+  ,sGcodeOpt1  :: Bool	-- g-code	after optimisation phase 1
+  ,sGcodeRel   :: Bool	-- g-code	after relative offset analysis
+  ,sGcodeOpt2  :: Bool	-- g-code	after optimisation phase 2
 
-  ,sFunNames :: Bool	-- insert position and name of functions in the code
+  ,sFunNames   :: Bool	-- insert position and name of functions in the code
   
 
 --v debugging flags - show symbol table (after each compiler phase)
-  ,sIBound :: Bool	-- after imports
-  ,sIIBound :: Bool	-- after each import
-  ,sRBound :: Bool	-- after rename
-  ,sDBound :: Bool	-- after deriving
-  ,sEBound :: Bool	-- after extract
-  ,sTBound :: Bool	-- after type checking
-  ,sFSBound :: Bool	-- after fixsyntax
-  ,sLBound :: Bool	-- after lambda-lifting
-  ,sCBound :: Bool	-- after case
-  ,sPBound :: Bool	-- after inserting prims
-  ,sABound :: Bool	-- after only atoms in applications
+  ,sIBound     :: Bool	-- after imports
+  ,sIIBound    :: Bool	-- after each import
+  ,sRBound     :: Bool	-- after rename
+  ,sDBound     :: Bool	-- after deriving
+  ,sEBound     :: Bool	-- after extract
+  ,sTBound     :: Bool	-- after type checking
+  ,sFSBound    :: Bool	-- after fixsyntax
+  ,sLBound     :: Bool	-- after lambda-lifting
+  ,sCBound     :: Bool	-- after case
+  ,sPBound     :: Bool	-- after inserting prims
+  ,sABound     :: Bool	-- after only atoms in applications
+
+--v miscellaneous flags
+  ,sShowType   :: Bool	-- report type of "main" (for hmake interactive)
 
   }
   deriving Show
@@ -281,6 +284,8 @@ processArgs xs = flags
   , sTraceData = fElem False "tracedata" xs	      	     
   -- ^ show ast after debugging translation for data
   , sTraceFns = fElem False "tracefns" xs  -- ast after transforming functions
+
+  , sShowType = fElem False "showtype" xs  -- report type of "main"
   }
   
   

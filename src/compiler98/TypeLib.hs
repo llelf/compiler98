@@ -9,7 +9,7 @@ import State(State0(..))
 import IdKind
 import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
 import DbgId(tSR, tR, tTrace)
-import Flags(Flags(sDbgTrans))
+import Flags
 import SyntaxPos
 import TypeSubst
 import TypeUnify
@@ -79,28 +79,40 @@ typeOfMain flags tidFun (DeclsScc depends) state =
     Nothing -> hPutStr stderr "Warning: Can not find main in module Main.\n" >>
 	       return state
     Just imain ->
-      case ntIS state imain of
-	(NewType free [] [] [nt],state) ->
-	  let mainIOType = NTcons (tidFun (tIO,TCon)) 
-	                       [NTvar (tidFun (t_Tuple 0,TCon))]
-	      mainType =
-	          if sDbgTrans flags then
-		      NTcons (tidFun (t_Arrow, TCon))
-		          [NTcons (tidFun (tSR, TCon)) [],
-		           NTcons (tidFun (t_Arrow, TCon))
-			      [NTcons (tidFun (tTrace, TCon)) [],
-			       NTcons (tidFun (tR, TCon)) [mainIOType]]]
-		  else
-		      mainIOType
-	  in
-	  case unify state idSubst (nt, mainType) of
-	    Right phi -> return state
-	    Left (phi,str) -> 
-	      hPutStr stderr ("Function main has the type " ++ niceNT Nothing state (mkAL free) nt ++ " instead of IO ().") >>
-	      exit
-	(nt,state) ->
-	  hPutStr stderr ("Function main has the type " ++ niceNewType state nt ++ " instead of IO ().") >>
-	  exit
+      if sShowType flags then
+        case ntIS state imain of
+	  (NewType free [] [] [nt],state) -> do
+	    hPutStr stderr (niceNT Nothing state (mkAL free) nt++"\n")
+            exit
+	  (nt,state) -> do
+	    hPutStr stderr (niceNewType state nt++"\n")
+            exit
+      else
+        case ntIS state imain of
+	  (NewType free [] [] [nt],state) ->
+	    let mainIOType = NTcons (tidFun (tIO,TCon)) 
+	                         [NTvar (tidFun (t_Tuple 0,TCon))]
+	        mainType =
+	            if sDbgTrans flags then
+	  	        NTcons (tidFun (t_Arrow, TCon))
+		            [NTcons (tidFun (tSR, TCon)) [],
+		             NTcons (tidFun (t_Arrow, TCon))
+		  	        [NTcons (tidFun (tTrace, TCon)) [],
+			         NTcons (tidFun (tR, TCon)) [mainIOType]]]
+		    else
+		        mainIOType
+	    in
+	    case unify state idSubst (nt, mainType) of
+	      Right phi -> return state
+	      Left (phi,str) -> 
+	        hPutStr stderr ("Function main has the type "++
+                                niceNT Nothing state (mkAL free) nt ++
+                                " instead of IO ().\n") >>
+	        exit
+	  (nt,state) ->
+	    hPutStr stderr ("Function main has the type "++
+                            niceNewType state nt ++ " instead of IO ().\n") >>
+	    exit
  where
    stripDepend (DeclsNoRec d) = [d]
    stripDepend (DeclsRec ds) = ds
