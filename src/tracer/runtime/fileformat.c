@@ -875,7 +875,10 @@ primSR3 (SrcRef *sr)
         fo = htonl(HatCounter);
         HIDE(fprintf(stderr,"\tprimSR3 -> 0x%x\n",fo);)
         fputc((SR<<5),HatFile);
-        fwrite(&(sr->modinfo->fileoffset), sizeof(FileOffset), 1, HatFile);
+        if (sr->modinfo)
+          fwrite(&(sr->modinfo->fileoffset), sizeof(FileOffset), 1, HatFile);
+        else
+          fwrite(&i                        , sizeof(FileOffset), 1, HatFile);
         i = htonl(sr->posn);
         fwrite(&i, sizeof(int), 1, HatFile);
         sr->fileoffset = fo;
