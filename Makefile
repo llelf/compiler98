@@ -99,7 +99,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/hi.inst script/rtb.inst lib/rtb.jar \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
-	 script/echo.c
+	 script/echo.c script/hood.inst lib/hood.jar
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -131,6 +131,8 @@ RUNTIMET = \
 	src/tracer/runtime/Makefile* \
 	src/tracer/runtime/*.[ch]
 TRACEUI = src/tracer/ui/*
+HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
+	  src/tracer/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/*.gc include/tracer/*.hi
 DOC = docs/*
 MAN = man/*.1
@@ -171,12 +173,12 @@ basic-nhc: runtime hmake-nhc greencard-nhc compiler-nhc prelude
 basic-hbc: runtime hmake-hbc greencard-hbc compiler-hbc prelude
 basic-ghc: runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-gcc: runtime cprelude ccompiler cgreencard chmake
-all-nhc: basic-nhc profile hp2graph cleanhi tracer-nhc   #timeprof
-all-hbc: basic-hbc profile hp2graph cleanhi tracer-hbc   #timeprof
-all-ghc: basic-ghc profile hp2graph cleanhi tracer-ghc   #timeprof
-all-gcc: basic-gcc profile hp2graph cleanhi tracer-nhc   #timeprof
+all-nhc: basic-nhc profile cleanhi tracer-nhc $(TARGDIR)/hood #timeprof
+all-hbc: basic-hbc profile cleanhi tracer-hbc $(TARGDIR)/hood #timeprof
+all-ghc: basic-ghc profile cleanhi tracer-ghc $(TARGDIR)/hood #timeprof
+all-gcc: basic-gcc profile cleanhi tracer-nhc $(TARGDIR)/hood #timeprof
 
-profile: profruntime profprelude
+profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
 tracer-nhc: tracecompiler-nhc traceruntime traceprelude $(TARGDIR)/traceui
 tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
@@ -267,6 +269,10 @@ $(TARGDIR)/traceui: $(TRACEUI)
 	cd src/tracer/ui;      $(MAKE) CFG=T install
 	touch $(TARGDIR)/traceui
 
+$(TARGDIR)/hood: $(HOODUI)
+	cd src/tracer/hoodui;  $(MAKE) install
+	touch $(TARGDIR)/hood
+
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=t install
 	cd src/tracer/runtime; $(MAKE) CFG=t install
@@ -351,6 +357,7 @@ srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDI
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
 	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
+	tar rf nhc98src-$(VERSION).tar $(HOODUI)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
 	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)

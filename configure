@@ -526,6 +526,8 @@ else	# [ "$INSTALL" = "yes" ]
     cp $DESTDIR$HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR/$MACHINE	# patch local config also
     echo -n "rtb.jar "
     cp $BUILDLIBDIR/rtb.jar $DESTDIR$LIBDIR
+    echo -n "hood.jar "
+    cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
     echo
   else
     echo 'Not (re-)installing executables and library files'
@@ -589,6 +591,10 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/rtb.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/rtb
+    echo -n "hood "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hood.inst |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hood
     echo -n "greencard "
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/greencard-nhc98
@@ -603,7 +609,8 @@ else	# [ "$INSTALL" = "yes" ]
     echo
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
-    chmod +x $DESTDIR$BINDIR/hmake $BINDIR/hi $DESTDIR$BINDIR/rtb
+    chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
+    chmod +x $DESTDIR$BINDIR/rtb $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
   fi
