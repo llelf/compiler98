@@ -88,6 +88,7 @@ type Res = Arg
 
 foreignname hname = showString foreignfun . fixStr (show hname)
 localname hname   = showString fun . fixStr (show hname)
+profname hname    = showString "pf_" . fixStr (show hname)
 ----
 
 
@@ -222,7 +223,7 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
           incl .
     (if proto then genProto style cname else id) .
     word "#ifdef PROFILE" . nl .
-    word "static SInfo" . space . word profinfo . space . equals . space .
+    word "static SInfo" . space . profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
                   strquote (shows hname) . comma .
                   strquote (shows res) .
@@ -259,9 +260,9 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
 
     cArg a n = indent . cArgDecl a n
     modname  = (reverse . unpackPS . extractM) hname
+    profinfo = profname hname
     noarg Unit = True
     noarg _    = False
-    profinfo = "pf_"++cname
 
 strForeign f@(Foreign Exported _ _ _ cname hname arity args res) =
     nl . comment (shows f) . nl .
@@ -289,7 +290,7 @@ cArgDefn arg n =
     parens (cTypename arg) . cConvert arg . semi
 
 cResDecl (FunPtr t) = indent . cResType (last t) . parens (star . word "result")
-                      . parens (listsep comma (map cTypename (init t)))
+                      . parens (listsep comma (map cTypename (init t))) . semi
 cResDecl Unit = id
 cResDecl arg  = indent . cTypename arg . space . word "result" . semi
 
@@ -320,7 +321,7 @@ cDynamic arity res =
 
 cFooter profinfo arg =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
-    indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
+    indent . word "INIT_PROFINFO(nodeptr,&" . profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
  
 
