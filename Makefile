@@ -2,15 +2,6 @@
 include Makefile.inc
 .SUFFIXES: 		# To remove default rules like .cpp -> C++
 
-VERSION = 1.09
-# When incrementing the version number, don't forget to change the
-# corresponding version in the configure script!
-#   (odd minor number = CVS version;  even minor number = release version)
-
-HVERSION = 2.02
-# HVERSION is the separate version number for hmake.
-#   (odd/even minor number is irrelevant - all are release versions)
-
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \

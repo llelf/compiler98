@@ -7,6 +7,17 @@ INSTALL = cp
 AR = ar
 LD = ld
 
+
+VERSION = 1.09
+# When incrementing the version number, don't forget to change the
+# corresponding version in the configure script!
+#   (odd minor number = CVS version;  even minor number = release version)
+
+HVERSION = 2.03
+# HVERSION is the separate version number for hmake.
+#   (odd/even minor number is irrelevant - all are release versions)
+
+
 ### End of configurable variables
 
 ifeq "" "${MKDIR}"
