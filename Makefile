@@ -164,7 +164,6 @@ TARGETS= runtime bootprelude prelude greencard hp2graph hat \
 
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
-tracer: tracer-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
 help:
 	@echo "Common targets include:        basic all install config"
@@ -193,10 +192,8 @@ all-gcc: basic-gcc profile tracer-nhc $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
+tracer: compiler traceruntime traceprelude $(TARGDIR)/traceui
 timetraceprof: timetraceruntime timetraceprelude
-tracer-nhc: traceruntime traceprelude $(TARGDIR)/traceui
-tracer-hbc: traceruntime traceprelude $(TARGDIR)/traceui
-tracer-ghc: traceruntime traceprelude $(TARGDIR)/traceui
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
@@ -214,6 +211,7 @@ $(TARGDIR)/$(MACHINE)/compiler-hbc: $(COMPILER)
 $(TARGDIR)/$(MACHINE)/compiler-ghc: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/compiler-ghc
+$(TARGDIR)/$(MACHINE)/compiler-gcc: $(TARGDIR)/$(MACHINE)/ccompiler
 
 #$(TARGDIR)/$(MACHINE)/bootprelude:
 #	cd src/prelude;        $(MAKE) boot
