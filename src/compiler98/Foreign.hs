@@ -45,12 +45,15 @@ data Arg = Int8  | Int16  | Int32  | Int64
          | Addr  | StablePtr | ForeignObj | Unknown | Unit
          deriving Show
 
-data Res = IOResult Arg | IOVoid | Pure Arg
+data Res = IOResult [Arg] | IOVoid | Pure [Arg]
 
 instance Show Res where
-    showsPrec p (IOResult arg) = showString "IO " . shows arg
-    showsPrec p (IOVoid)       = showString "IO ()"
-    showsPrec p (Pure arg)     = shows arg
+    showsPrec p (IOResult [arg]) = showString "IO " . shows arg
+    showsPrec p (IOResult args)  = showString "IO " .
+                                       parens (listsep comma (map shows args))
+    showsPrec p (IOVoid)         = showString "IO ()"
+    showsPrec p (Pure [arg])     = shows arg
+    showsPrec p (Pure args)      = parens (listsep comma (map shows args))
 
 foreignname hname = showString foreignfun . fixStr (show hname)
 localname hname   = showString fun . fixStr (show hname)
@@ -81,13 +84,16 @@ searchType st (arrow,io) info =
 
     toTid (NTcons c nts)  =
       if c==io then
-        (IOResult . dropPure . toTid . head) nts
+        (toIOResult . toTid . head) nts
       else case lookupAT st c of
-        Just i | isRealData i -> Pure (toArg (tidI i))
+        Just i | isRealData i -> let nm = tidI i in
+                                 if isTupleId nm then
+                                     (Pure . map dropPure . map toTid) nts
+                                 else Pure [toArg nm]
                | otherwise    -> toTid (getNT (isRenamingFor st i))
     toTid (NTapp t1 t2)   = toTid t1
     toTid (NTstrict t)    = toTid t
-    toTid t = Pure Unknown  -- error ("Unrecognised NT: "++show t)
+    toTid t = Pure [Unknown]  -- error ("Unrecognised NT: "++show t)
 		-- (Pure Unknown) lets polymorphic heap-values across unmolested
 
     toArg t | t==tInt        = Int32
@@ -115,12 +121,16 @@ searchType st (arrow,io) info =
     getNT (NewType _ _ _ (nt:_)) = nt
     getNT _                    = error ("Unable to retrieve newtype info.")
 
-    dropRes args [IOResult Unit] = (reverse args, IOVoid)
-    dropRes args [res]           = (reverse args, res)
-    dropRes args (x:xs)          = dropRes (dropPure x:args) xs
+    dropRes args [IOResult [Unit]] = (reverse args, IOVoid)
+    dropRes args [res]             = (reverse args, res)
+    dropRes args (x:xs)            = dropRes (dropPure x:args) xs
 
-    dropPure (Pure x) = x
+    dropPure (Pure [x]) = x
+    dropPure (Pure _) = error ("Tuple argument type in foreign import/export.")
     dropPure _        = error ("Impure argument type in foreign import/export.")
+
+    toIOResult (Pure xs) = IOResult xs
+    toIOResult _  = error ("Strange IO return type in foreign import/export.")
 
   in
     (dropRes [] . map toTid . toList . getNT . ntI) info
@@ -131,6 +141,11 @@ ioResult (Foreign _ _ _ _ _ _ res) = ioResult' res
 ioResult' (IOResult _) = True
 ioResult' IOVoid       = True
 ioResult' (Pure _)     = False
+
+isTuple (IOResult [_]) = False
+isTuple IOVoid         = False
+isTuple (Pure [_])     = False
+isTuple _              = True
 
 ----
 type ForeignMemo = (Int,Int)
@@ -160,7 +175,10 @@ strForeign :: Foreign -> ShowS
 strForeign f@(Foreign Imported cast cname hname arity args res) =
     nl . comment (shows f) . nl .
     word "extern" . space . cResType res . space . word realcname .
-      parens (listsep comma (map cTypename args)) . semi .
+      parens (listsep comma ((if isTuple res
+                                 then (word "struct ForeignTuple*":)
+                                 else id) $
+                              map cTypename args)) . semi .
     word "#ifdef PROFILE" . nl .
     word "static SInfo" . space . word profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
@@ -221,18 +239,26 @@ cArgDefn arg n =
     indent . narg n . showString " = " .
     parens (cTypename arg) . cConvert arg . semi
 
-cResDecl (Pure arg) =
+cResDecl (Pure [arg]) =
     indent . cTypename arg . space . word "result" . semi
-cResDecl (IOResult arg) =
+cResDecl (IOResult [arg]) =
     indent . cTypename arg . space . word "result" . semi
 cResDecl (IOVoid) =
     id
+cResDecl (Pure args) =
+    indent . word "struct ForeignTuple" . space . word "result" . semi
+cResDecl (IOResult args) =
+    indent . word "struct ForeignTuple" . space . word "result" . semi
 
-cCall cname arity res =
-    indent . (case res of
-                  IOVoid -> id
-                  _      -> word "result = ") .
-    word cname .  parens (listsep comma (map narg [1..arity])) . semi
+cCall cname arity res
+  | isTuple res =
+      indent . word cname .
+          parens (listsep comma (word "&result": map narg [1..arity])) . semi
+  | otherwise   =
+      indent . (case res of
+                    IOVoid      -> id
+                    _           -> word "result = ") .
+      word cname .  parens (listsep comma (map narg [1..arity])) . semi
 
 cCast arity res =
     if arity /= 1 then
@@ -240,20 +266,40 @@ cCast arity res =
     else
       indent .
       (case res of
-        IOVoid -> error ("\"foreign import cast\" has void return type.")
-        _      -> word "result = " . parens (cResType res) . parens (narg 1) . semi
+        IOResult [_] -> word "result = " . parens (cResType res) .
+                                              parens (narg 1) . semi
+        Pure [_]     -> word "result = " . parens (cResType res) .
+                                              parens (narg 1) . semi
+        IOVoid   -> error ("\"foreign import cast\" has void return type.")
+        _        -> error ("\"foreign import cast\" has tupled return type.")
       )
 
-cFooter profinfo (Pure arg) =
+cFooter profinfo (Pure [arg]) =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
-cFooter profinfo (IOResult arg) =
+cFooter profinfo (IOResult [arg]) =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
 cFooter profinfo IOVoid =
     indent . word "C_RETURN(mkUnit())" . semi
+cFooter profinfo (IOResult args) =
+    indent . word "nodeptr = mkTuple" . shows resarity .
+        parens (listsep comma (zipWith castConvert args
+                                              [ word "result.pos" . shows i
+                                              | i <- [1..resarity] ])) . semi .
+    indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
+    indent . word "C_RETURN(nodeptr)" . semi
+  where resarity = length args
+cFooter profinfo (Pure args) =
+    indent . word "nodeptr = mkTuple" . shows resarity .
+        parens (listsep comma (zipWith castConvert args
+                                              [ word "result.pos" . shows i
+                                              | i <- [1..resarity] ])) . semi .
+    indent . word "INIT_PROFINFO(nodeptr,&" . word profinfo . word ")" . semi .
+    indent . word "C_RETURN(nodeptr)" . semi
+  where resarity = length args
  
 
 ---- foreign export ----
@@ -262,9 +308,11 @@ cCodeDecl cname args res =
     cResType res . space . word cname . space .
       parens (listsep comma (zipWith cArgDecl args [1..]))
 
-cResType (Pure res)     = cTypename res
-cResType (IOResult res) = cTypename res
-cResType (IOVoid)       = cTypename Unit
+cResType (Pure [res])     = cTypename res
+cResType (IOResult [res]) = cTypename res
+cResType (IOVoid)         = cTypename Unit
+cResType (IOResult _)     = word "void"
+cResType (Pure _)         = word "void"
 
 hCall arity hname args isIO =
     indent . word "NodePtr nodeptr, vap, args" . squares (shows arity) . semi .
@@ -293,8 +341,8 @@ hCall arity hname args isIO =
 hResult res =
     indent . word "return" . space . cResult res . semi
   where
-    cResult (Pure arg) = cConvert arg
-    cResult (IOResult arg) = cConvert arg
+    cResult (Pure [arg]) = cConvert arg
+    cResult (IOResult [arg]) = cConvert arg
     cResult (IOVoid) = id
 
 
@@ -368,6 +416,9 @@ hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return F
 --hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
 hConvert Unit         s = word "mkUnit()"
 hConvert Unknown      s = s	-- for passing Haskell heap values untouched
+
+castConvert :: Arg -> ShowS -> ShowS
+castConvert arg s = hConvert arg (parens (cTypename arg) . s)
 
 openparen  = showChar '('
 closeparen = showChar ')'

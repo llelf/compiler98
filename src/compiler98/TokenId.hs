@@ -41,6 +41,11 @@ isTidOp (TupleId s) = False
 isTidOp tid = 
   (isNhcOp . head . dropWhile (=='_') . reverse . unpackPS . extractV) tid
 
+isTupleId (TupleId _)        = True
+isTupleId (Qualified2 _ t)   = isTupleId t
+isTupleId (Qualified3 _ _ t) = isTupleId t
+isTupleId _                  = False
+
 --notPrelude (Qualified tid n) = tid /= rpsDPrelude && tid /= rpsPrelude
 notPrelude (Qualified tid n) = tid /= rpsPrelude
 notPrelude (Qualified2 t1 t2) = notPrelude t1 && notPrelude t2 
