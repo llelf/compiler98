@@ -132,8 +132,9 @@ MAN = man/*.1
 
 TARGDIR= targets
 TARGETS= runtime prelude libraries greencard hp2graph \
-	 profruntime profprelude profprelude-$(CC) proflibraries \
-	 timeruntime timeprelude timeprelude-$(CC) timelibraries \
+	 profruntime profprelude profprelude-$(CC) \
+	 timeruntime timeprelude timeprelude-$(CC) \
+	 proflibraries timelibraries proflibraries-$(CC) timelibraries-$(CC) \
 	 timetraceruntime timetraceprelude \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
@@ -178,9 +179,10 @@ basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 
 all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #hoodui
 
-heapprofile: compiler profruntime profprelude-$(BUILDCOMP) proflibraries \
-								hp2graph
-timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP) timelibraries
+heapprofile: compiler profruntime profprelude-$(BUILDCOMP) \
+		proflibraries-$(BUILDCOMP) hp2graph
+timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP) \
+		timelibraries-$(BUILDCOMP)
 
 profprelude-nhc: profprelude
 profprelude-ghc: profprelude
@@ -188,6 +190,12 @@ profprelude-hbc: profprelude
 timeprelude-nhc: timeprelude
 timeprelude-ghc: timeprelude
 timeprelude-hbc: timeprelude
+proflibraries-nhc: proflibraries
+proflibraries-ghc: proflibraries
+proflibraries-hbc: proflibraries
+timelibraries-nhc: timelibraries
+timelibraries-ghc: timelibraries
+timelibraries-hbc: timelibraries
 timetraceprofile: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
@@ -260,8 +268,9 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 $(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
-	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 CFG=p
-	touch $(TARGDIR)/$(MACHINE)/libraries
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p; ) ;\
+	done && touch $(TARGDIR)/$(MACHINE)/proflibraries
 
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
@@ -279,8 +288,9 @@ $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 $(TARGDIR)/$(MACHINE)/timelibraries: $(LIBRARIES)
-	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 CFG=z
-	touch $(TARGDIR)/$(MACHINE)/libraries
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z; ) ;\
+	done && touch $(TARGDIR)/$(MACHINE)/timelibraries
 
 
 $(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
@@ -319,6 +329,14 @@ $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGES};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
+$(TARGDIR)/$(MACHINE)/proflibraries-$(CC): $(LIBRARIES)
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p fromC; ) ;\
+	done && touch $(TARGDIR)/$(MACHINE)/proflibraries-$(CC)
+$(TARGDIR)/$(MACHINE)/timelibraries-$(CC): $(LIBRARIES)
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z fromC; ) ;\
+	done && touch $(TARGDIR)/$(MACHINE)/timelibraries-$(CC)
 
 
 script/errnogen.c: script/GenerateErrNo.hs
@@ -411,7 +429,10 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	touch $(TARGDIR)/hmakeC
 $(TARGDIR)/librariesC: $(LIBRARIES)
 	for pkg in ${PACKAGES};\
-	do ( cd src/libraries/$$pkg;  $(MAKE) -f Makefile.nhc98 cfiles; ) ;\
+	do ( cd src/libraries/$$pkg;\
+	     $(MAKE) -f Makefile.nhc98 cfiles;\
+	     $(MAKE) CFG=p -f Makefile.nhc98 cfiles;\
+	     $(MAKE) CFG=z -f Makefile.nhc98 cfiles; ) ;\
 	done && touch $(TARGDIR)/librariesC
 
 
@@ -488,6 +509,9 @@ cleanC:
 	cd src/prelude;		$(MAKE) CFG=T cleanC
 	cd src/prelude;		$(MAKE) CFG=p cleanC
 	cd src/prelude;		$(MAKE) CFG=z cleanC
+	cd src/libraries; find -name '*.hc'  -print | xargs rm -f
+	cd src/libraries; find -name '*.p.c' -print | xargs rm -f
+	cd src/libraries; find -name '*.z.c' -print | xargs rm -f
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
 			timepreludeC heappreludeC librariesC
 
