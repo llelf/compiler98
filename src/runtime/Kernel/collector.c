@@ -643,6 +643,9 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
     fprintf(stderr,"Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
     fprintf(stderr,"%d words to next gc.\n",(NodePtr)sp-hp);
     fprintf(stderr,"Max live after gc: %ld words.\n",hpMaxSurvive);
+#if TRACE
+    startDbg(*sp,0/*FALSE*/);
+#endif
     exit(-1);
   }
 
