@@ -36,7 +36,7 @@ import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
 import AuxFile (AuxiliaryInfo) -- needed only for hbc's broken import mechanism
-import List (isPrefixOf,union,partition)
+import List (isPrefixOf,union,partition,nubBy)
 import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
 
@@ -343,12 +343,14 @@ tDecl _ _ (DeclType lhsTy rhsTy) =
   singleDecl $ DeclType (tSimple lhsTy) (tType rhsTy)
 tDecl _ _ (DeclData sort contexts lhsTy constrs derive) = 
   ([DeclData sort (tContexts contexts) (tSimple lhsTy) 
-    (map tConstr constrs) []]   
+    (map tConstr constrs) []] 
     -- "derive" should be empty, because transformed classes cannot be derived
-  ,[]
-  ,foldr (uncurry addCon) emptyModuleConsts (map getCon constrs))
+  ,fieldSelectorDecls
+  ,foldr (uncurry addCon) fieldSelectorConsts (map getCon constrs))
   where
+  (fieldSelectorDecls,fieldSelectorConsts) = mkFieldSelectors constrs
   getCon (Constr pos id _) = (pos,id)
+  getCon (ConstrCtx _ _ pos id _) = (pos,id)
 tDecl _ _ (DeclDataPrim pos id size) = 
   error ("Cannot trace primitive data type (" ++ show id 
     ++ " at position " ++ strPos pos ++ ")")
@@ -576,6 +578,58 @@ tHaskellPrimitive pos hasId fnId arity ty
       where
       (args,res) = decomposeFunType ty2
     decomposeFunType ty = ([],ty)
+
+
+mkFieldSelectors :: [Constr TraceId] -> ([Decl TokenId],ModuleConsts)
+mkFieldSelectors constrs = 
+    foldr combine ([],emptyModuleConsts) . map (uncurry mkFieldSelector) $
+      nonDuplicatePosFields
+  where
+  combine :: (Decl TokenId,ModuleConsts) -> ([Decl TokenId],ModuleConsts) 
+          -> ([Decl TokenId],ModuleConsts)
+  combine (decl1,modConsts1) (decls2,modConsts2) = 
+    (decl1:decls2,modConsts1 `merge` modConsts2)
+  nonDuplicatePosFields :: [(Pos,TraceId)]
+  nonDuplicatePosFields = 
+    nubBy (\(_,id1) (_,id2) -> tokenId id1 == tokenId id2) posFields
+  posFields = 
+    concat [pf | (Just pf,_) <- concatMap getConstrArgumentList constrs]
+  getConstrArgumentList :: Constr id -> [(Maybe [(Pos,id)],Type id)]
+  getConstrArgumentList (Constr _ _ xs) = xs
+  getConstrArgumentList (ConstrCtx _ _ _ _ xs) = xs
+
+-- construct the traced version of a field selector, using the 
+-- normal field selector, i.e. from zname :: T -> R Int construct
+-- gname :: SR -> Trace -> R (Fun T Int)
+-- gname sr p = fun1 "name" hname sr p
+--   where
+--   hname :: Trace -> R T -> R Int
+--   hname p (R v _) = indir p (zname v)
+mkFieldSelector :: Pos -> TraceId -> (Decl TokenId,ModuleConsts)
+mkFieldSelector pos fieldId =
+  (DeclFun pos (nameTransVar fieldId) 
+    [Fun [sr,parent]
+      (Unguarded
+        (ExpApplication pos
+          [combFun pos False 1
+          ,ExpVar pos (nameTraceInfoVar pos fieldId)
+          ,ExpVar pos wrappedId',sr,parent]))
+      (DeclsParse 
+        [DeclFun pos wrappedId' 
+          [Fun [parent,wrapExp pos var (PatWildcard pos)] 
+            (Unguarded 
+              (ExpApplication pos 
+                [ExpVar pos tokenIndir,parent
+                ,ExpApplication pos [ExpVar pos (nameTransField fieldId),var]
+                ])) 
+            noDecls]])]
+  ,addVar pos fieldId emptyModuleConsts)
+  where
+  sr = ExpVar pos (nameSR fieldId)
+  parent = ExpVar pos (nameTrace fieldId)
+  wrappedId' = nameWorker fieldId
+  var = ExpVar pos varId
+  varId:_ = nameArgs fieldId
 
 
 tCaf :: Bool -> Exp TokenId -> Pos -> TraceId -> Rhs TraceId -> Decls TraceId
