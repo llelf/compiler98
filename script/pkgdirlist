@@ -20,6 +20,9 @@ case $1 in
 	echo Text Text/ParserCombinators Text/XML Text/XML/HaXml
 	echo Text/XML/HaXml/Html Text/XML/HaXml/Xtract
 	;;
+  HUnit)
+	echo Test Test/HUnit
+	;;
   Japi) echo Graphics Graphics/UI Graphics/UI/Japi
 	;;
   fgl)	echo Data Data/Graph Data/Graph/Inductive Data/Graph/Inductive/Monad
