@@ -129,24 +129,18 @@ echo -n "  Looking for ghc... "
 if which ghc >/dev/null 2>&1
 then
   whichGHC=`which ghc`
-  up1_GHC=`dirname $whichGHC`
-  up2_GHC=`dirname $up1_GHC`
-  up3_GHC=`dirname $up2_GHC`
-  for ver in 0.26 0.27 0.28 0.29 2.01 2.02 2.03 2.04 2.07 2.08 2.09 2.10 3.00 3.01 3.02 3.03
-  do
-    trydirs ghc-${ver}/lib/imports /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC} ${up3_GHC}
-  done
-  for ver in 4.00 4.01 4.02 4.03 4.04 4.04pl1 4.05 4.06
-  do
-    trydirs ghc-${ver}/imports     /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC} ${up3_GHC}
-  done
+  GHCVER=`${whichGHC} --version 2>&1 | sed 's/^.*version[]*\([0-9.]*\).*/\1/'`
+  GHCDIR=`grep '^\$libdir=' ${whichGHC} | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
+  if [ -d $GHCDIR/imports ]
+  then GHCINCDIR=$GHCDIR/imports
+  elif [ -d $GHCDIR/lib/imports ]
+  then GHCINCDIR=$GHCDIR/lib/imports
+  else GHCDIR=""
+  fi
 fi
-GHCDIR=${DIR}
-GHCEXT=${EXT}
-GHCMETHOD=${METHOD}
 if [ "$GHCDIR" = "" ]
 then  echo "(not found)"
-else  echo "found ${GHCVER} in ${GHCDIR}/`methodtext ${GHCEXT} ${GHCMETHOD}`"
+else  echo "found ${GHCVER} in ${GHCINCDIR}"
 fi
   
   
@@ -225,9 +219,9 @@ cat script/hmakeconfig.inst |\
 ) |\
 ( if [ "$GHCDIR" = "" ];
   then cat
-  else sed -e "s|^ghcincdir=$|ghcincdir=${GHCDIR}/`methodtext ${GHCEXT} ${GHCMETHOD}`|" |\
+  else sed -e "s|^ghcincdir=$|ghcincdir=${GHCINCDIR}|" |\
        sed -e "s|^ghcknown=no$|ghcknown=yes|" |\
-       ( case GHCVER in
+       ( case $GHCVER in
            0.29) sed -e "s|^GHC=0$|GHC=2|"  ;;
            2.*)  sed -e "s|^GHC=0$|GHC=3|"  ;;
            3.*)  sed -e "s|^GHC=0$|GHC=4|"  ;;
