@@ -22,7 +22,7 @@ import NT(NT(..),NewType(..))
 import Reduce(Reduce,mapR,unitR,(>>>))
 import Rename(ctxs2NT)
 import IExtract(freeType)
-import Extra(snub,strPos,mixSpace,isJust,dropJust,mixCommaAnd,isNothing)
+import Extra(snub,strPos,mixLine,isJust,dropJust,mixCommaAnd,isNothing)
 import Bind(identPat)
 import SyntaxPos(Pos,HasPos(getPos))
 import AssocTree(Tree,lookupAT)
@@ -120,7 +120,7 @@ updFunArity pos fun funs =
         then updVarArity pos fun a
         else \ state -> 
            addError state ("Multiple arities for " ++ strIS state fun ++ ": "
- 			   ++ mixSpace (map (\ (pos,a) -> "arity " 
+ 			   ++ mixLine (map (\ (pos,a) -> "    arity " 
                            ++ show a ++ " at " ++ strPos pos) (map fPA funs)))
   where
   fA (Fun args gdexps decls) = (length args)
