@@ -251,8 +251,11 @@ public class TraceFrame extends Frame {
       Object target = evt.getSource();
       if (target instanceof MenuItem) {
 	if (target == exitItem) {
-	  if (serverConnection != null)
+	  if (serverConnection != null) {
 	    mainPanel.outputPanel.disconnected();
+	    serverConnection = null;
+	    mainPanel.viewer.reset();
+	  }
 	  System.exit(0);
 	} else if (target == serverItem) {
 	  ServerDialog sd = new ServerDialog(me, host, port);

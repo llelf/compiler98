@@ -213,6 +213,12 @@ public class ScriptEngine extends Thread {
 	System.err.println("Unhandled script item: " + script);
       }
       f.mainPanel.dbgPanel.repaint();
+      if ( !(script instanceof ScriptMetaMessage)
+	&& ix <= last
+	&& (script = (Script)scriptv.elementAt(ix)) instanceof 
+	    ScriptMetaMessage) {
+	next();
+      }
       //Toolkit.getDefaultToolkit().sync();
     }
   }
