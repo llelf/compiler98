@@ -11,8 +11,9 @@ import List
 import Syntax
 import Extra(pair,isJust,dropJust,strace)
 import Bind(bindPat,bindDecls,identPat)
-import RenameLib(ImportState,RenameState,keepRS,is2rs,renameError,popScope
-                ,pushScope,globalTid,fixFixityRS,localTid,defineType
+import RenameLib(ImportState,RenameState,RenameToken,RenameMonad
+                ,keepRS,is2rs,renameError
+                ,popScope,pushScope,globalTid,fixFixityRS,localTid,defineType
                 ,transTypes,defineDataPrim,uniqueTid,defineDerived,defineData
                 ,defineClass,transContext,defineDefault,defineVar,defineMethod
                 ,transType,defineDefaultMethod,defineInstMethod,uniqueTVar
@@ -32,10 +33,12 @@ import TokenInt
 import PackedString(PackedString,packString,unpackPS)
 import SyntaxPos
 import SyntaxUtil(infixFun)
+import Id(Id)
 
 import StrSyntax(strConstr)
 import Overlap(Overlap)
 import Flags(Flags)
+
 
 {-
 Uniquely rename all identfiers (also patch fixity)
@@ -49,13 +52,13 @@ rename :: Flags
        -> ImportState 
        -> Overlap
        -> Either [String] 
-            (Decls Int -- renamed declarations of program
+            (Decls Id  -- renamed declarations of program
             ,IntState  -- internal state with symbol table
-            ,(TokenId,IdKind) -> Int       -- tidFun
-            ,(TokenId,IdKind) -> Maybe Int -- tidFunSafe
-            ,[(Int,[(Pos,Int)])]           -- derived
-            ,Maybe [Int]                   -- userDefault
-            ,Tree ((TokenId,IdKind),Either [Pos] [Int])  -- rt
+            ,(TokenId,IdKind) -> Id        -- tidFun
+            ,(TokenId,IdKind) -> Maybe Id  -- tidFunSafe
+            ,[(Id,[(Pos,Id)])]             -- derived
+            ,Maybe [Id]                    -- userDefault
+            ,Tree ((TokenId,IdKind),Either [Pos] [Id])  -- rename tree?
             )
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =
@@ -125,14 +128,7 @@ groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
 {-
 Rename statements of a do expression
 -}
-renameStmts :: [Stmt TokenId] 
-            -> (PackedString -> Int -> TokenId -> TokenId
-               ,TokenId -> TokenId
-               ,TokenId -> IdKind -> IE
-               ,TokenId -> (InfixClass TokenId,Int)
-               ) 
-            -> RenameState 
-            -> ([Stmt Int],RenameState)
+renameStmts :: [Stmt TokenId] -> RenameMonad [Stmt Id]
 
 renameStmts (StmtExp exp:[]) = renameExp exp >>>= \ exp -> unitS [StmtExp exp]
 renameStmts (StmtExp exp:r) =
@@ -201,25 +197,21 @@ renameDecls (DeclsParse decls) (_,qualFun,expFun,fixity2) state3 =
         (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
 
 
-renameDecl :: Decl TokenId 
-           -> State (PackedString -> Int -> TokenId -> TokenId
-                    ,TokenId -> TokenId
-                    ,TokenId -> IdKind -> IE
-                    ,TokenId -> (InfixClass TokenId,Int)
-                    ) 
-                    RenameState (Decl Int) RenameState
+renameDecl :: Decl TokenId -> RenameMonad (Decl Id)
 
 renameDecl (DeclType (Simple pos tid tvs) typ) =
   let al = tvPosTids tvs
   in transTypes al (map snd al) [] [typ] >>>= \nt ->
      defineType tid nt >>>  {- = \d -> -}
-     --  gross hack...
+     --  gross hack... just remove definition of type synonym from syntax tree
      unitS (DeclIgnore "Type Synonym")
 --   unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
+
 renameDecl (DeclDataPrim  pos tid size) =
   uniqueTid pos TCon tid >>>= \ i ->
   defineDataPrim tid (NewType [] [] [] [NTcons i []]) size >>>= \ d ->
   unitS (DeclConstrs pos d [])
+
 renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
   let al = tvPosTids tvs 
       free = map snd al
@@ -228,13 +220,19 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
        (map (uncurry TypeVar) tvs 
              ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= 
        \ nt@(NewType free [] ctxs nts) ->
-     mapS (renameConstr tid al free ctxs (last nts)) constrs >>>= \csfields ->
+     {- example:
+        data Num a => Test a b = A a | B b
+        nt = NewType [1,2] [] [(NumId, 1)] 
+               [NTvar 1, NTvar 2, NTcons TestId [NTvar 1, NTvar 2]]
+     -}
+     mapS (renameConstr tid al ctxs (last nts)) constrs >>>= \csfields ->
      let (cs,noargs,fields) = unzip3 csfields 
      in defineData b tid nt cs >>>= \d ->
         renamePosIdents TCon ({-(pos,tEval):-}posidents) >>>= \ posis ->
         defineDerived d posis >>>
         (if b == Just True && length constrs > 1 && not (and noargs) then
-	 renameError ("Unboxed data " ++ show tid ++ " at " ++ strPos pos ++ " is neither an enumeration nor a single constructor data type.")
+	 renameError ("Unboxed data " ++ show tid ++ " at " ++ strPos pos ++ 
+           " is neither an enumeration nor a single constructor data type.")
 	else
          unitS) (DeclConstrs pos d (concat fields))
 
@@ -298,7 +296,22 @@ renameDecl d@(DeclFixity f) = unitS (DeclIgnore "fixity")
 
 
 
----- ========================
+{- ========================
+Functions for renaming parts of a class definition
+-}
+
+{-
+Rename all methods (type declarations and default definitions)
+of a class and make appropriate entries in the symbol table.
+-}
+
+fixClassMethods :: 
+     TokenId        {- type variable of this class definition -}
+  -> (Id,a)         {- this class identifier, type variable identifier -}
+  -> [Decl TokenId] {- declarations of the class definition -}
+  -> RenameMonad [(Decl Id,(Id,Id))]
+     {- returns with each default definition identifier of
+        type declaration and identifier of default definition -}
 
 fixClassMethods tvar ctx decls =
   case partition isSignature decls of
@@ -306,39 +319,101 @@ fixClassMethods tvar ctx decls =
       mapS (renameMethod tvar ctx) sgn >>>= \ ms ->
       mapS renameDefault  (pairDefault (concat ms) def)
 
+
+{- 
+For type declaration of a method:
+Renames identifiers and translates type into internal type.
+Adds respective entries to symboltable.
+Note: the declaration may declare the type of several methods.
+-}
+renameMethod :: TokenId       {- type variable of this class definition -}
+             -> (Id,a)        {- class predicate (class, type variable) -} 
+             -> Decl TokenId  {- type declaration of method(s) -} 
+             -> RenameMonad [(Pos,TokenId,Id)]
+                {- position, token and identifier of each method -}
+
 renameMethod tvar ctx@(c,tv) (DeclVarsType postids ctxs typ) =
-   let al = tvTids (snub (tvar:freeType typ)) -- necessary that type variable for the class contex is the same!
+   let al = tvTids (snub (tvar:freeType typ)) 
+       -- ^ necessary that type variable for the class contex is the same!
        arity = countArrows typ
    in mapS (transContext al) ctxs >>>= \ ctxs ->
       transType al typ >>>= \ typ ->
       let free = map snd al
-          nt = NewType free [] ({-ctx:-}ctxs) [anyNT [head free] typ]   -- The class context is not included in the type
-      in mapS ( \ (pos,tid) -> defineMethod pos tid nt arity c >>>= \ m -> unitS (pos,tid,m)) postids
+          nt = NewType free [] ({-ctx:-}ctxs) [anyNT [head free] typ]   
+          -- ^ The class context is not included in the type
+      in mapS ( \ (pos,tid) -> defineMethod pos tid nt arity c >>>= 
+                  \ m -> unitS (pos,tid,m)) postids
+
+
+renameDefault :: (Decl TokenId,a) -> RenameMonad (Decl Id,(a,Id)) 
+     {- returns with each default definition identifier of
+        type declaration and identifier of default definition -}
 
 renameDefault (DeclFun pos tid funs,s) =
-    defineDefaultMethod  tid >>>= \ i ->
+    defineDefaultMethod tid >>>= \ i ->
     mapS renameFun funs >>>= \ funs ->
     unitS (DeclFun pos i funs,(s,i))
+
+
+{-
+Renames method definition of an instance definition.
+-}
+renameInstMethod :: Decl TokenId -> RenameMonad (Decl Id) 
 
 renameInstMethod  (DeclFun pos tid funs) =
     defineInstMethod  tid >>>= \ i ->
     mapS renameFun funs >>>= \ funs ->
     unitS (DeclFun pos i funs)
 
+
+{- tests if declaration is type declaration -}
+isSignature :: Decl a -> Bool
+
 isSignature (DeclVarsType posidents ctxs typ) = True
 isSignature _ = False
 
+
+{-
+Pair each type declaration of a method (identifier referring to symboltable)
+with its default definition.
+Drop default definition, if no type declaration for it present (warning).
+Make default definition that will abort, if no default definition present. 
+-}
+pairDefault :: [(Pos,TokenId,a)] -> [Decl TokenId] -> [(Decl TokenId,a)]
+
 pairDefault ms [] = map mkDMethod ms
-pairDefault ms (DeclPat alt:r) = error " Sorry no left hand patterns in classes:-("
+pairDefault ms (DeclPat alt:r) = 
+  error " Sorry no left hand patterns in classes:-("
 pairDefault ms (d@(DeclFun pos tid funs):r) =
    case partition ((tid==).snd3) ms of
-     ([],ms) -> strace ("Dropping function " ++ show tid ++ " at " ++ strPos pos ++ " without signature in class.") (pairDefault ms r)
+     ([],ms) -> strace ("Dropping function " ++ show tid ++ " at " 
+                        ++ strPos pos ++ " without signature in class.") 
+                  (pairDefault ms r)
      ([(p,m,i)],ms) -> (d,i) : pairDefault ms r
+     -- covers all cases under assumption of no duplicate type declarations
 pairDefault ms (DeclIgnore str:r) = pairDefault ms r
 
-mkDMethod (pos,tid,i) = (DeclFun pos tid [Fun [] (mkNoDefault pos tid) (DeclsParse [])],i)
 
-mkNoDefault pos tid = [(ExpCon pos tTrue,ExpApplication pos [ExpVar pos t_error, ExpLit pos (LitString Boxed ("No default for " ++ show tid))])]
+{- 
+Make default method out of thin air for given method identifier.
+The default method just calls "error" with suitable string.
+-}
+mkDMethod :: (Pos,TokenId,a) -> (Decl TokenId,a)
+
+mkDMethod (pos,tid,i) = 
+  (DeclFun pos tid [Fun [] (mkNoDefault pos tid) (DeclsParse [])],i)
+
+
+mkNoDefault :: Pos -> TokenId -> [(Exp TokenId,Exp TokenId)]
+
+mkNoDefault pos tid = 
+  [(ExpCon pos tTrue
+   ,ExpApplication pos 
+     [ExpVar pos t_error
+     ,ExpLit pos (LitString Boxed ("No default for " ++ show tid))
+     ]
+   )
+  ]
 
 
 ---- =========================
@@ -386,65 +461,113 @@ renameCaseAlt (Alt  pat guardedExps decls') =
 	renameDecls decls >>>
     popScope
 
+
+renameType :: [(TokenId,Id)] -> Type TokenId -> RenameMonad (Type Id)
+
 renameType al (TypeApp t1 t2) =
    unitS TypeApp =>>> renameType al t1 =>>> renameType al t2
 renameType al (TypeCons  pos tid types) =
-   unitS (TypeCons pos) =>>>   uniqueTid pos TCon tid =>>>   mapS (renameType al) types
+   unitS (TypeCons pos) =>>> 
+   uniqueTid pos TCon tid =>>> 
+   mapS (renameType al) types
 renameType al (TypeVar   pos tid)    =
    unitS (TypeVar pos) =>>> uniqueTVar pos al tid
+
+
+renameCtx :: [(TokenId,Int)] -> Context TokenId -> RenameMonad (Context Id)
 
 renameCtx al (Context pos tid (p,t)) =
     uniqueTid pos TClass tid >>>= \ i ->
     uniqueTVar p al t >>>= \ t ->
     unitS (Context pos i (p,t))
 
-renameConstr typtid al free ctxs resType@(NTcons bt _) c@(Constr pos tid fieldtypes) =
+
+{- 
+For a constructor with type arguments as appearing on rhs of data or newtype:
+Make appropriate entries in symboltable.
+-}
+renameConstr :: TokenId          {- type constructor of data/newtype def. -}
+             -> [(TokenId,Int)]  {- canonically enumerated free type vars -}
+             -> [(Id,Id)]        {- context of the data/newtype def. -} 
+             -> NT               {- defined type (type constructor with vars)-}
+             -> Constr TokenId   {- constructor with type arguments -}
+             -> RenameMonad (Id,Bool,[(Int,Int,Int)]) 
+                  {- constructor id, no arguments, fields -}
+
+renameConstr typtid al ctxs resType@(NTcons bt _) 
+  c@(Constr pos tid fieldtypes) =
   let e =  [] -- no forall if Constr is used
       es = zip e [1 + length al .. ]
   in
     mapS (transFieldType (es++al)) fieldtypes >>>= \ntss ->
-    let all = concat ntss
+    let all = concat (ntss :: [[(Maybe (Int,TokenId,Int),NT)]])
 	nts = map snd all
-	ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+        ifs :: [Maybe Id]
+	ifs = map ( (\v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) 
+                    . fst) all
 	exist = map snd es
     in
-      defineConstr tid (NewType (map snd al ++ exist) exist ctxs (nts++[resType])) ifs bt >>>= \ c ->
+      defineConstr tid (NewType (map snd al ++ exist) exist ctxs 
+        (nts++[resType])) ifs bt >>>= \ c ->
       mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
       unitS (c,null nts,map dropJust (filter isJust fs))
 
-renameConstr typtid al free ctxs resType@(NTcons bt _) (ConstrCtx forall ectxs' pos tid fieldtypes) =
+renameConstr typtid al ctxs resType@(NTcons bt _) 
+  (ConstrCtx forall ectxs' pos tid fieldtypes) =
   let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
-      e =  map snd forall -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ concat $ map (freeType . snd) fieldtypes
+      e =  map snd forall 
+            -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ 
+            -- concat $ map (freeType . snd) fieldtypes
       es = zip e [1 + length al .. ]
   in
     mapS (transFieldType (es++al)) fieldtypes >>>= \ntss ->
     let all = concat ntss
         nts = map snd all
-        ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+        ifs = map ( (\v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing)
+                    . fst) all
 	exist = map snd es
     in
       mapS (transContext (es++al)) ectxs' >>>= \ ectxs ->
-      defineConstr tid (NewType (map snd al ++ exist) exist ctxs  (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) ifs bt >>>= \ c ->
+      defineConstr tid (NewType (map snd al ++ exist) exist ctxs  
+        (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) 
+        ifs bt >>>= \ c ->
       mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
       unitS (c,null nts,map dropJust (filter isJust fs))
 
 
-transFieldType al (Nothing,typ) =				-- nearly identical to transFieldType in IExtract!!!
+{-
+For a type in the right hand side of a data/newtype definition with
+possibly several field names:
+translate type into internal type NT
+-}
+transFieldType :: [(TokenId,Id)]   {- canonically ided free variables -} 
+               -> (Maybe [(Pos,TokenId)],Type TokenId) 
+                  {- possibly several field names with a given type -}
+               -> RenameMonad [(Maybe (Pos,TokenId,Id),NT)]
+                  {- possibly several field names with a given type -}
+
+transFieldType al (Nothing,typ) =				
+  -- nearly identical to transFieldType in IExtract!!!
   transType al typ >>>= \ typ -> unitS [(Nothing,typ)]
 transFieldType al (Just posidents,typ) =
   transType al typ >>>= \ typ ->
-  mapS ( \ (p,v) -> uniqueTid p Field v >>>= \ i -> unitS (Just (p,v,i),typ))  posidents
+  mapS ( \ (p,v) -> uniqueTid p Field v >>>= \ i -> 
+                    unitS (Just (p,v,i),typ))  
+    posidents
 
-renameField (FieldExp pos tid exp) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> renameExp exp
-renameField (FieldPun pos tid) = checkPuns pos >>> unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid)
+
+renameField :: Field TokenId -> RenameMonad (Field Id) 
+
+renameField (FieldExp pos tid exp) = 
+  unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> renameExp exp
+renameField (FieldPun pos tid) = 
+  checkPuns pos >>> 
+  unitS (FieldExp pos) =>>> 
+  uniqueTid pos Field tid =>>> 
+  (unitS (ExpVar pos) =>>> uniqueTid pos Var tid)
 
 
-renameExp :: Exp TokenId 
-          -> State ( PackedString -> Int -> TokenId -> TokenId
-                   , TokenId -> TokenId
-                   , TokenId -> IdKind -> IE
-                   , TokenId -> (InfixClass TokenId,Int)) 
-                   RenameState (Exp Int) RenameState
+renameExp :: Exp TokenId -> RenameMonad (Exp Id)
 
 renameExp (ExpScc            str exp) = unitS (ExpScc str) =>>> renameExp exp
 renameExp (ExpLambda         pos pats exp) =
@@ -455,7 +578,8 @@ renameExp (ExpLambda         pos pats exp) =
 	renameExp exp >>>
     popScope
 renameExp (ExpDo pos stmts) = unitS (ExpDo pos) =>>> renameStmts stmts
-renameExp (ExpRecord exp fields) = unitS ExpRecord =>>> renameExp exp =>>> mapS renameField fields
+renameExp (ExpRecord exp fields) = 
+  unitS ExpRecord =>>> renameExp exp =>>> mapS renameField fields
 renameExp (ExpLet            pos decls' exp) =
   let decls = groupFun decls'
   in pushScope >>>

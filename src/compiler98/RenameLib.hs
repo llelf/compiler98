@@ -47,6 +47,16 @@ data RenameState =
 --- The selectors for (qualFun,expFun,fixity) are defined
 --- in PreImp and used here and in Fixity
 
+{- Used several times: -}
+
+type RenameToken = (PackedString -> Int -> TokenId -> TokenId
+                   ,TokenId -> TokenId
+                   ,TokenId -> IdKind -> IE
+                   ,TokenId -> (InfixClass TokenId,Int)
+                   ) 
+
+type RenameMonad a = State RenameToken RenameState a RenameState
+
 {-
 Destruct rename state to obtain all its elements we are interested in.
 Additionally checks some properties of types.
@@ -184,6 +194,7 @@ thisModule rps (Qualified rps' _) = rps == rps'
 thisModule rps (Qualified2 _ _) = False		
 thisModule rps (Qualified3 _ _ _) = False
 
+
 {-
 Basically transform the importState into a renameState
 -}
@@ -200,7 +211,8 @@ is2rs :: Flags
                 ,Tree ((TokenId,IdKind),Either [Pos] [Int])
                 )
 
-is2rs flags mrps qualFun expFun overlap (ImportState visible unique orps rps needI irt st insts fixity errors) =
+is2rs flags mrps qualFun expFun overlap 
+  (ImportState visible unique orps rps needI irt st insts fixity errors) =
 --case treeMapList undef irt of
 --  [] ->
 --    case foldls reorderFun (treeMap ( \ (k,Right (v:_)) -> (k,v)) irt,addAT initAT ignore unique minfo) (listAT st) of
@@ -209,11 +221,17 @@ is2rs flags mrps qualFun expFun overlap (ImportState visible unique orps rps nee
 --  xs -> Left (map err1 xs)
   case deAlias qualFun overlap irt of
     ([],qf) ->
-      case foldls reorderFun (treeMap deRight irt,addAT initAT ignore unique minfo) (listAT st) of
+      case foldls reorderFun 
+             (treeMap deRight irt,addAT initAT ignore unique minfo) 
+             (listAT st) of
         (rt,ts) ->
-            Right (qf,expFun True True,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] Nothing errors [],irt)
+            Right (qf
+                  ,expFun True True
+                  ,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] 
+                     Nothing errors []
+                  ,irt)
     (xs,_) -> Left xs
- where
+  where
   deRight (k,Right (v:_)) = (k,v)
   deRight (k,Left _)      = (k,error ("Tripped over aliased identifier"))
   pmrps = if (isPrelude . reverse . unpackPS) mrps then rpsPrelude else mrps
@@ -266,47 +284,98 @@ fixFixityRS oldfix (RenameState flags unique  irps@(_,rps) rts rt st derived def
 
 --------------------  End duplication
 
-getSymbolTableRS (RenameState flags unique rps rts rt st derived defaults errors needCheck) = st
-getErrorsRS (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
- (RenameState flags unique rps rts rt st derived defaults [] needCheck,errors)
 
-pushScope _ (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
- RenameState flags unique rps (rt:rts) initAT st derived defaults errors needCheck
-popScope _ (res,RenameState flags unique rps (rt:rts) _ st derived defaults errors needCheck) =
- (res,RenameState flags unique rps rts rt st derived defaults errors needCheck)
+getSymbolTableRS :: RenameState -> Tree (Id,Info)
 
-renameError err r fix (RenameState flags unique rps rst rt st derived defaults errors needCheck) =
- (r, RenameState flags unique rps rst rt st derived defaults (err:errors) needCheck)
+getSymbolTableRS 
+  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+  st
 
---lookupAll :: [AssocTree (TokenId,IdKind) Int] -> (TokenId,IdKind) -> Maybe Int
+
+getErrorsRS :: RenameState -> (RenameState,[String])
+
+getErrorsRS 
+  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+  (RenameState flags unique rps rts rt st derived defaults [] needCheck,errors)
+
+
+pushScope :: a -> RenameState -> RenameState
+
+pushScope _ 
+  (RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+  RenameState flags unique rps (rt:rts) initAT st derived defaults errors 
+    needCheck
+
+
+popScope :: a -> (b,RenameState) -> (b,RenameState)
+
+popScope _ 
+  (res,RenameState flags unique rps (rt:rts) _ st derived defaults errors 
+         needCheck) =
+  (res
+  ,RenameState flags unique rps rts rt st derived defaults errors needCheck)
+
+
+renameError :: String -> a -> b -> RenameState -> (a,RenameState)
+
+renameError err r fix 
+  (RenameState flags unique rps rst rt st derived defaults errors needCheck) =
+  (r,RenameState flags unique rps rst rt st derived defaults (err:errors) 
+       needCheck)
+
+
+{-
+Looks up identifier (given as token,kind) in list of trees.
+Returns first entry found.
+-}
+lookupAll :: [AssocTree (TokenId,IdKind) Id] -> (TokenId,IdKind) -> Maybe Id
+
 lookupAll [] key = Nothing
 lookupAll (t:ts) key =
   case lookupAT t key of
     Nothing -> lookupAll ts key
     just -> just
 
-uniqueTid pos kind tid down renameState@(RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+
+{-
+Looks up id in rename table for identifier given through its kind and token.
+If no entry exists, new id is created but appropriate error message added to
+rename state.
+-}
+uniqueTid :: Pos -> IdKind -> TokenId -> RenameMonad Id
+
+uniqueTid pos kind tid down 
+  renameState@(RenameState flags unique rps rts rt st derived defaults 
+    errors needCheck) =
   let key =  (sQual down tid,kind)
   in case lookupAll (rt:rts) key of 
        Just u -> (u,renameState)
        Nothing -> (unique, RenameState flags (unique+1) rps rts
-					(addAT rt sndOf key unique)
-					st derived defaults
-					(("Unbound " ++ show kind ++ " " ++ show tid ++ " at " ++ strPos pos ++ "\n\n" ++ show (rt:rts)) : errors)
-					needCheck)
+			     (addAT rt sndOf key unique)
+			     st derived defaults
+			     (("Unbound " ++ show kind ++ " " ++ show tid ++ 
+                               " at " ++ strPos pos ++ "\n\n" ++ 
+                               show (rt:rts)) : errors)
+			     needCheck)
 
-fixTid kind tid down renameState@(RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+
+fixTid :: IdKind -> TokenId -> RenameMonad (InfixClass TokenId,Id)
+
+fixTid kind tid down 
+  renameState@(RenameState flags unique rps rts rt st derived defaults 
+    errors needCheck) =
   let key =  (sQual down tid,kind)  --- !!! check if real name !!!
   in case lookupAll (rt:rts) key of
        Just u ->
 	 case lookupAT st u of
 	   Nothing ->
                (sFix down (ensureM (snd rps) (fst key)),renameState) -- hack
--- old code    ((InfixL,9::Int),renameState) -- It's an argument, and I have lost the fixity information :-(
+               -- old code    ((InfixL,9::Int),renameState) 
+               -- It's an argument, and I have lost the fixity information :-(
 	   Just info ->  (fixityI info,renameState)
        Nothing   ->
                (sFix down (ensureM (snd rps) (fst key)),renameState) -- hack
--- old code    ((InfixL,9::Int),renameState)
+               -- old code    ((InfixL,9::Int),renameState)
 	
 
 {-
@@ -406,14 +475,14 @@ checkTid pos kind tid _
 
 ---- =================
 
+{-
+This function makes use of the ability of NewType to contain several types.
+-}
 transTypes :: [(TokenId,Int)] 
-           -> [Int] 
+           -> [Id] 
            -> [Context TokenId] 
-           -> [Type TokenId] 
-           -> (PackedString -> Int -> TokenId -> TokenId,TokenId -> TokenId
-              ,TokenId -> IdKind -> IE,TokenId -> (InfixClass TokenId,Int)) 
-           -> RenameState 
-           -> (NewType,RenameState)
+           -> [Type TokenId]
+           -> State RenameToken RenameState NewType RenameState 
 
 transTypes al free ctxs ts =
   unitS (NewType free []) =>>> 
@@ -426,9 +495,11 @@ transTVar pos al v =
 uniqueTVar pos al v =
   case lookup v al of
     Just v -> unitS v
-    Nothing -> renameError ("Unbound type variable " ++ show v ++ " at " ++ strPos pos) 0
+    Nothing -> renameError ("Unbound type variable " ++ show v ++ " at " 
+                            ++ strPos pos) 0
 
-transContext al (Context pos cid (vpos,vid)) = unitS pair =>>> uniqueTid pos TClass cid =>>> uniqueTVar vpos al vid
+transContext al (Context pos cid (vpos,vid)) = 
+  unitS pair =>>> uniqueTid pos TClass cid =>>> uniqueTVar vpos al vid
 
 
 transType :: [(TokenId,Int)] 
@@ -438,15 +509,22 @@ transType :: [(TokenId,Int)]
           -> RenameState 
           -> (NT,RenameState)
 
-transType al (TypeApp  t1 t2) = unitS NTapp =>>> transType al t1 =>>> transType al t2
-transType al (TypeCons  pos hs types) = unitS NTcons =>>> uniqueTid pos TCon hs =>>> mapS (transType al) types
-transType al (TypeVar   pos v)       = transTVar pos al v
-transType al (TypeStrict pos t)       = unitS NTstrict =>>> transType al t
+transType al (TypeApp  t1 t2) = 
+  unitS NTapp =>>> transType al t1 =>>> transType al t2
+transType al (TypeCons  pos hs types) = 
+  unitS NTcons =>>> uniqueTid pos TCon hs =>>> mapS (transType al) types
+transType al (TypeVar   pos v) = transTVar pos al v
+transType al (TypeStrict pos t) = unitS NTstrict =>>> transType al t
 
 ----- ==================================
 
+{-
+Adds list of default types to RenameState.
+Checks for illegal types and redefinition, 
+extending error messages appropriately.
+-}
 
-defineDefault :: [Type Int] -> a -> RenameState -> RenameState
+defineDefault :: [Type Id] -> a -> RenameState -> RenameState
 
 defineDefault types down  
   (RenameState flags unique rps rts rt st derived Nothing errors needCheck) =
@@ -465,9 +543,13 @@ defineDefault types down
       (("Redefinition of defaults at " ++ strPos (getPos types)) :errors) 
       needCheck
 
-defineType :: TokenId 
-           -> NewType 
-           -> (a,b,TokenId -> IdKind -> IE,c) 
+{-
+Add a type synonym to symboltabe. (It must be already in renaming table.)
+-}
+
+defineType :: TokenId      {- type synonym -}
+           -> NewType      {- the type it is defined to denote -}
+           -> RenameToken
            -> RenameState 
            -> RenameState
 
@@ -478,15 +560,24 @@ defineType tid nt down
       key = (tid,TSyn)
   in case lookupAT rt key of
        Just u -> RenameState flags unique irps rts rt
-			 (addAT st combInfo u {-(realtid,TSyn)-} (InfoData u realtid (sExp down tid TSyn) nt (DataTypeSynonym False 0)))
-			 derived defaults errors (u:needCheck)
+		   (addAT st combInfo u {-(realtid,TSyn)-} 
+                      (InfoData u realtid (sExp down tid TSyn) nt 
+                         (DataTypeSynonym False 0)))
+		   derived defaults errors (u:needCheck)
 
 
-defineClass :: Int 
+{- 
+Add a class to symboltable. 
+(It must be already in renaming table.)
+Also checks for duplicate predicates in context (=> extend error messages)
+-}
+
+defineClass :: Pos
             -> TokenId 
-            -> NewType 
-            -> [(Int,Int)] 
-            -> (a,b,TokenId -> IdKind -> IE,c) 
+            -> NewType  {- pseudo type built from class and type variable
+                           (type of dictionary?) -}
+            -> [(Id,Id)] {- (type info for method, default info for method) -}
+            -> RenameToken
             -> RenameState 
             -> RenameState
 
@@ -509,16 +600,35 @@ defineClass pos tid nt mds down
                (err:errors) needCheck
 
 
-defineDataPrim tid nt size down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck)  =
+defineDataPrim :: TokenId -> NewType -> Int 
+               -> State RenameToken RenameState Id RenameState
+
+defineDataPrim tid nt size down 
+  (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
+     needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TCon)
   in case lookupAT rt key of
        Just u -> (u,RenameState flags unique irps rts rt 
-			(addAT st combInfo u {-(realtid,TCon)-} (InfoData u realtid (sExp down tid TCon) nt (DataPrimitive size)))
-			 derived defaults errors needCheck
+		      (addAT st combInfo u {-(realtid,TCon)-} 
+                         (InfoData u realtid (sExp down tid TCon) nt 
+                            (DataPrimitive size)))
+		      derived defaults errors needCheck
                  )
 
-defineData d tid nt cs   down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck)  =
+{-
+Add entry for data or newtype declaration to symboltable.
+-}
+defineData :: Maybe Bool {- Nothing: newtype, Just False: data unboxed,
+                            Just True: data (boxed) -}
+           -> TokenId    {- type constructor -}
+           -> NewType 
+           -> [Id]       {- data constructors -} 
+           -> State RenameToken RenameState Id RenameState
+
+defineData d tid nt cs down 
+  (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
+     needCheck)  =
   let realtid = ensureM rps tid
       key = (tid,TCon)
   in case lookupAT rt key of
@@ -526,28 +636,53 @@ defineData d tid nt cs   down (RenameState flags unique irps@(_,rps) rts rt st d
          let (needCheck',dk) =
 		case d of
 		  Just unboxed -> (needCheck,Data unboxed cs)
-		  Nothing -> (u:needCheck,DataNewType False cs) -- unboxed fixed by keepRS
+		  Nothing -> (u:needCheck,DataNewType False cs) 
+                              -- unboxed fixed by keepRS
 	 in (u,RenameState flags unique irps rts rt 
-			(addAT st combInfo u {-(realtid,TCon)-} (InfoData u realtid (sExp down tid TCon) nt dk))
-			 derived defaults errors needCheck')
+		 (addAT st combInfo u {-(realtid,TCon)-} 
+                    (InfoData u realtid (sExp down tid TCon) nt dk))
+		 derived defaults errors needCheck')
 
-defineMethod  pos tid nt arity c down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
+
+{-
+Adds entry for type declaration of given method to symboltable.
+Returns identifier for this entry.
+-}
+defineMethod :: Pos {- position of type declaration -}
+             -> TokenId {- method id -} 
+             -> NewType {- method type -}
+             -> Int {- method arity -} 
+             -> Id {- class to which method belongs -} 
+             -> State RenameToken RenameState Id RenameState
+
+defineMethod  pos tid nt arity classId down 
+  (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
+     errors needCheck) =
   let realtid = ensureM rps tid
       key = (tid,Method)
   in case lookupAT rt key of
        Just u ->
-         let newst = addAT st combInfo u {-(realtid,Method)-} (InfoMethod  u realtid (sFix down realtid) nt (Just arity) c)
-         in case checkMNT c nt of
+         let newst = addAT st combInfo u {-(realtid,Method)-} 
+                       (InfoMethod u realtid (sFix down realtid) nt 
+                         (Just arity) classId)
+         in case checkMNT nt of
               Nothing ->
-                (u,RenameState flags unique irps rts rt newst derived defaults errors needCheck)
+                (u,RenameState flags unique irps rts rt newst derived defaults
+                     errors needCheck)
               Just err ->
-                (u,RenameState flags unique irps rts rt newst derived defaults (err:errors) needCheck)
- where
-  checkMNT c nt@(NewType free@(cv:_) [] ctxs nts) =
+                (u,RenameState flags unique irps rts rt newst derived defaults
+                     (err:errors) needCheck)
+  where
+  checkMNT nt@(NewType free@(cv:_) [] ctxs nts) =
     case filter ((cv==) . snd) ctxs of
       [] -> checkNT pos (strAT st) nt
-      [x] -> Just ("Illegal restriction " ++ strAT st (fst x) ++ " for type variable in type signature at " ++ strPos pos)
-      xs -> Just ("Illegal restriction " ++ mixCommaAnd (map (strAT st . fst) xs) ++ " for type variable in type signature at " ++ strPos pos)
+      [x] -> Just ("Illegal restriction " ++ strAT st (fst x) ++ 
+                   " for type variable in type signature at " ++ strPos pos)
+      xs -> Just ("Illegal restriction " ++ 
+                  mixCommaAnd (map (strAT st . fst) xs) ++ 
+                  " for type variable in type signature at " ++ strPos pos)
+
+
 
 defineConstr  tid nt fields bt  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let realtid = ensureM rps tid

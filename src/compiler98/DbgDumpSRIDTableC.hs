@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+Write SRIDTable into C array declarations.
+-}
 module DbgDumpSRIDTableC(dbgDumpSRIDTableC) where
 
 import Char
@@ -10,12 +13,15 @@ import Flags
 import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
 import EmitState
+import DbgTrans(SRIDTable)
 
 #if defined(__HASKELL98__)
 #define isAlphanum isAlphaNum
 #endif
 
-dbgDumpSRIDTableC :: Handle -> IntState -> Flags -> Maybe ((Int, [Int]), [(Pos, Int)], [ImpDecl TokenId], String) -> EmitState -> EmitState
+dbgDumpSRIDTableC :: Handle -> IntState -> Flags -> SRIDTable 
+                  -> EmitState -> EmitState
+
 dbgDumpSRIDTableC handle state flags Nothing = id
 dbgDumpSRIDTableC handle state flags (Just ((_, srs), idt, impdecls, modid)) = 
     -- Sourcefile name
@@ -142,3 +148,5 @@ untoken (Visible ps) = reverse (unpackPS ps)
 untoken (Qualified _ ps) = reverse (unpackPS ps)
 untoken (Qualified2 _ tid) = untoken tid
 untoken (Qualified3 _ _ tid) = untoken tid
+
+{- --------------------------------------------------------------------------}

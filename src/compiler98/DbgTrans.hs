@@ -2,7 +2,7 @@
 Transforms all value definitions of a program 
 for producing traces for debugging.
 -}
-module DbgTrans(debugTrans, dbgAddImport) where
+module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
 
 import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var))
@@ -20,11 +20,29 @@ import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
 
+
+{- table for source references and identifiers refered to from the trace -}
+type SRIDTable = Maybe ((Int,[Int])        -- source reference table
+                       ,[(Pos,Id)]         -- identifier table
+                       ,[ImpDecl TokenId]  -- import declarations
+                       ,String)            -- module name
+
+
 -- newNameVar, nameArity, hsFromInt, addInt
 
-data Inherited a = Inherited (Exp Int) (Exp Int) ((TokenId, IdKind) -> Int) a
-data Threaded = Threaded IntState (Int, [Int]) [(Pos, Int)] 
-                -- (AssocTree Int (Exp Int)) -- [(Int, Int)]
+data Inherited = Inherited 
+                   (Exp Id) 
+                   (Exp Id) 
+                   ((TokenId, IdKind) -> Id) -- lookupPrel
+
+data Threaded = Threaded 
+                  IntState 
+                  (Id, [Id])   -- source reference table
+                  [(Pos, Id)]  -- identifier table
+                -- (AssocTree Int (Exp Int)) -- [(Int, Int)]  ??
+
+
+type DbgTransMonad a = State Inherited Threaded a Threaded
 
 
 {-
@@ -47,38 +65,44 @@ dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
 {-
 Transforms all value definitions for producing traces for debugging.
 -}
+{-
 debugTrans :: a 
            -> IntState 
-           -> ((TokenId,IdKind) -> Int) 
+           -> ((TokenId,IdKind) -> Id) 
            -> PackedString 
            -> b 
-           -> c {- [ImpDecl TokenId] -} 
-           -> Decls Int 
+           -> [ImpDecl TokenId]  
+           -> Decls Id 
            -> Maybe [(Pos,Int)] 
-           -> (Decls Int,IntState,Maybe ((Int,[Int]),[(Pos,Int)],c,[Char]))
+           -> (Decls Id              -- transformed declarations
+              ,IntState
+              ,SRIDTable)
+-}
 
 debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
   initDebugTranslate (dTopDecls decls) istate lookupPrel
   where 
   initDebugTranslate f istate lookupPrel = 
-    case f (Inherited start_d fatal lookupPrel modid) 
+    case f (Inherited start_d fatal lookupPrel) 
            (Threaded istate (1, [0]) constrs) of
       (decls', Threaded istate' srt idt) -> 
         (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
-  start_d :: Exp Int
-  start_d = ExpCon noPos (lookupPrel (t_Root, Con))
-  fatal :: Exp Int
+  start_d :: Exp Id
+  start_d = ExpCon noPos (lookupPrel (t_Root, Con)) 
+            -- data constructor Root of the R type 
+  fatal :: Exp Id
   fatal = ExpCon noPos (lookupPrel (t_fatal, Var))
+          -- variable ? fatal
 
 
-dTopDecls :: Decls Int -> Inherited a -> Threaded -> (Decls Int,Threaded)
+dTopDecls :: Decls Int -> DbgTransMonad (Decls Int)
 
 dTopDecls (DeclsParse ds) = 
     mapS dTopDecl ds >>>= \dss -> 
        unitS (DeclsParse (concat dss))
 
 
-dTopDecl :: Decl Int -> Inherited a -> Threaded -> ([Decl Int],Threaded)
+dTopDecl :: Decl Int -> DbgTransMonad [Decl Int]
 
 dTopDecl d@(DeclType id t) = unitS [d]
 dTopDecl d@(DeclData mb ctx id contrs tycls) = unitS [d]
@@ -105,12 +129,15 @@ dTopDecl d@(DeclInstance pos ctx id inst decls) =
         unitS  ((:[]) . DeclInstance pos ctx id inst) =>>> dDecls decls
 dTopDecl d = dDecl d
 
+
+dDecls :: Decls Id -> DbgTransMonad (Decls Id)
+
 dDecls (DeclsParse ds) = 
     mapS dDecl ds >>>= \dss -> 
     unitS (DeclsParse (concat dss))
 
 
-dDecl :: Decl Id -> State (Inherited a) Threaded [Decl Id] Threaded
+dDecl :: Decl Id -> DbgTransMonad [Decl Id]
 
 dDecl d@(DeclDefault tys) = unitS [d]
 dDecl d@(DeclVarsType vars ctx ty) = unitS [d] 
@@ -234,11 +261,14 @@ dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs =
 				      (DeclsParse [])]]
 	   _ -> dFun pos id funName (getArity fundefs) fundefs NoType--(unwrapNT False nt)
 
+
+
+doTransform :: TokenId -> Bool
+
 doTransform = ('_'/=) . last . unpackPS . extractV
 
 
-dCaf :: Pos -> Id -> String -> [Fun Id] -> NewType 
-     -> Inherited a -> Threaded -> ([Decl Id],Threaded)
+dCaf :: Pos -> Id -> String -> [Fun Id] -> NewType -> DbgTransMonad [Decl Id]
 
 dCaf pos id cafName fundefs nt =
     lookupCon pos tNTId >>>= \ntid ->
@@ -296,7 +326,10 @@ dCaf pos id cafName fundefs nt =
            ]
         ]
 
-	   
+
+dFun :: Pos -> Id -> String -> Int -> [Fun Id] -> NewType
+     -> DbgTransMonad [Decl Int]
+   
 dFun pos id funName arity fundefs nt =
     lookupVar pos (t_fun arity) >>>= \fun ->
     lookupCon pos tNTId >>>= \ntid ->
@@ -337,12 +370,16 @@ For each clause of the function definition e, return a transformed
 definition e', and possibly declare a new auxiliary function to handle
 failure across guards.
 -}
+dFunClauses :: String -> Id -> Id -> [Fun Id] 
+            -> DbgTransMonad ([Fun Int],[Decl Int])
+
 dFunClauses funName true otherwise [] = unitS ([], [])
 -- No guards (i.e. guard==True) is the easiest case.
 --     f pat1 pat2 ... = e  where decls
 -- ==>
 --     f t pat1' pat2' ... = e' where decls'
-dFunClauses funName true otherwise (Fun pats [(gd@(ExpCon p cid), e)] decls:fcs)
+dFunClauses funName true otherwise 
+  (Fun pats [(gd@(ExpCon p cid), e)] decls:fcs)
     | true == cid = 
        getD >>>= \t ->
        dPats pats >>>= \pats' ->
@@ -403,6 +440,8 @@ dFunClauses funName true otherwise (Fun pats ges decls:fcs) =
 {-
 -- id is the new function we are declaring; id' is the real foreign function
 -}
+dPrim :: Pos -> Id -> Id -> Int -> DbgTransMonad (Fun Id)
+
 dPrim pos id id' arity =
     lookupVar pos (t_primn arity) >>>= \primn ->
     lookupCon pos tNTId >>>= \ntid ->
@@ -441,12 +480,20 @@ namePat e@(PatAs p v pat) = unitS (ExpVar p v, e)
 namePat pat = 
     newVar noPos >>>= \e@(ExpVar _ v) -> unitS (e, PatAs noPos v pat)
 
-canFail :: Int -> Int -> [(Exp Int, Exp Int)] -> Bool
+
+{-
+Returns False only if the one of the guards definitely has value True.
+-}
+canFail :: Id  -- of constructor True
+        -> Id  -- of variable otherwise
+        -> [(Exp Id, Exp Id)] -- guarded expressions
+        -> Bool
+
 canFail true otherwise [] = True
 canFail true otherwise ((ExpCon _ cid, _):gdes) = 
-    not (true == cid) && canFail true otherwise gdes
+    (true /= cid) && canFail true otherwise gdes
 canFail true otherwise ((ExpVar _ cid, _):gdes) = 
-    not (otherwise == cid) && canFail true otherwise gdes
+    (otherwise /= cid) && canFail true otherwise gdes
 canFail true otherwise (_:gdes) = canFail true otherwise gdes
 
 checkPrimitive [Fun ps [(gd, ExpApplication pos (ExpVar p id:f:es))] decls] =
@@ -482,7 +529,7 @@ dExps cr es = mapS (dExp cr) es
 {-
 
 -}
-dExp :: Bool -> Exp Int -> Inherited a -> Threaded -> (Exp Int,Threaded)
+dExp :: Bool -> Exp Id -> DbgTransMonad (Exp Id)
 
 dExp cr (ExpLambda pos pats e) = 
     newVar pos >>>= \redex ->
@@ -618,14 +665,17 @@ dExp cr e@(ExpLit pos lit) = 	-- at a guess, this clause is obsolete.
 	  dLit (LitDouble _ _) = lookupVar pos t_conDouble
 	  dLit (LitFloat _ _) = lookupVar pos t_conFloat
 
-dExp cr (ExpList pos [])            = lookupCon pos t_List >>>= \nil-> wrapConst nil []
-dExp cr (ExpList pos es)            = 
+dExp cr (ExpList pos []) = lookupCon pos t_List >>>= \nil-> wrapConst nil []
+dExp cr (ExpList pos es) = 
     lookupCon pos t_Colon >>>= \consid ->
     dExps True es >>>= \es' ->
     foldS 
         (\e es -> wrapConst consid [e, es])
         (lookupCon pos t_List >>>= \nil -> wrapConst nil []) es'
 dExp cr e                           = error ("dExp: no match")
+
+
+saturateConstr :: Exp Id -> [Exp Id] -> DbgTransMonad (Exp Int)
 
 saturateConstr c@(ExpCon pos id) args =
     --trace ("<<< " ++ show id' ++ " -> " ++ show id) $
@@ -649,11 +699,17 @@ saturateConstr c@(ExpCon pos id) args =
     else
 	wrapConst c args'
 
+
+dGuard :: Exp Id -> DbgTransMonad (Exp Id)
+
 dGuard e@(ExpCon p conid) = unitS e -- Must be the constant True
 dGuard e = 
     lookupVar noPos t_value >>>= \value ->
     dExp False e >>>= \e' ->
     unitS (ExpApplication noPos [value, e'])
+
+
+wrapConst :: Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
 
 wrapConst c@(ExpCon pos cid) args =
     getD >>>= \d ->
@@ -696,10 +752,19 @@ dAlts pos alts =
 dAlt (Alt pat gdexps decls) =
     unitS Alt =>>> dPat pat =>>> mapS dGdEs gdexps =>>> dDecls decls
 
+
+dPats :: [Pat Id] -> DbgTransMonad [Pat Id] 
+
 dPats ps = mapS dPat ps
 
-dPat (ExpApplication pos (c:ps)) = wrapR pos =>>> (unitS (ExpApplication pos) =>>> 
-                                                         (unitS (c:) =>>> dPats ps))
+
+dPat :: Pat Id -> State Inherited Threaded (Pat Id) Threaded
+--dPat :: Pat Id -> DbgTransMonad (Pat Id)
+-- Hugs doesn't like it. 
+
+dPat (ExpApplication pos (c:ps)) = 
+  wrapR pos =>>> 
+  (unitS (ExpApplication pos) =>>> (unitS (c:) =>>> dPats ps))
 dPat p@(ExpCon pos id)              = wrapR pos =>>> unitS p
 dPat p@(ExpVar pos id)              = unitS p 
 dPat p@(ExpLit pos (LitInteger b i))= 
@@ -729,12 +794,18 @@ foldS f z []     = z
 foldS f z (x:xs) = foldS f z xs >>>= f x 
 ---f x =>>> foldS f z xs
 
+
+foldPatList :: Pos -> [Exp Id] -> DbgTransMonad (Exp Id)
+
 foldPatList pos [] =  wrapR pos =>>> lookupCon pos t_List
 foldPatList pos (p:ps) = 
     lookupCon pos t_Colon >>>= \consid ->
     wrapR pos =>>> 
     (unitS (\c cs -> ExpApplication pos [consid, c, cs]) 
            =>>> dPat p =>>> foldPatList pos ps) 
+
+
+wrapR :: Pos -> DbgTransMonad (Exp Id -> Exp Id)
 
 wrapR pos =
     lookupCon pos tR >>>= \r ->
@@ -806,11 +877,11 @@ noGuard =
     unitS (ExpCon noPos) =>>> lookupId Con tTrue
 
 lookupId kind ident = 
-  \(Inherited _ _ lookupPrel _) s -> (lookupPrel (ident, kind), s)
+  \(Inherited _ _ lookupPrel) s -> (lookupPrel (ident, kind), s)
 lookupVar pos ident =  
-  \(Inherited _ _ lookupPrel _) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
+  \(Inherited _ _ lookupPrel) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
 lookupCon pos ident =  
-  \(Inherited _ _ lookupPrel _) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
+  \(Inherited _ _ lookupPrel) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
 lookupName ident = 
   \_ s@(Threaded istate _ _) -> (lookupIS istate ident, s)
 lookupNameStr ident = 
@@ -818,7 +889,7 @@ lookupNameStr ident =
 
 
 {- Create a new variable with given position -}
-newVar :: Pos -> a -> Threaded -> (Exp Int,Threaded)
+newVar :: Pos -> DbgTransMonad (Exp Id)
 
 newVar pos = \_ (Threaded istate srt idt) ->
                  case uniqueIS istate of
@@ -826,7 +897,7 @@ newVar pos = \_ (Threaded istate srt idt) ->
 
 
 {- Create a list of n new variables, all with the same given position -}
-newVars :: Pos -> Int -> a -> Threaded -> ([Exp Int],Threaded)
+newVars :: Pos -> Int -> DbgTransMonad [Exp Id]
 
 newVars pos n = \_ (Threaded istate srt idt) ->
                     case uniqueISs istate [1..n] of
@@ -878,11 +949,10 @@ unwrapNT arity isCaf nt = error ("unwrapNT: strange type: " ++ show nt)
 Create a new identifier with given arity, name and type.
 Boolean argument decides if Id is appended to name.
 -}
-addNewName :: Int -> Bool -> String -> NewType 
-           -> Inherited a -> Threaded -> (Id,Threaded)
+addNewName :: Int -> Bool -> String -> NewType -> DbgTransMonad Id
 
 addNewName arity addIdNr str nt = 
-  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+  \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
       (i, istate') -> 
 	let info = mkInfo (if addIdNr then Right i else Left i) str arity nt
@@ -893,9 +963,10 @@ addNewName arity addIdNr str nt =
 Create a new primitive identifier with given Info, changing just the
 location in the table (i.e. the lookup key).
 -}
-addNewPrim :: Info -> Inherited a -> Threaded -> (Id,Threaded)
+addNewPrim :: Info -> DbgTransMonad Id
+
 addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
-  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+  \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
       (i, istate') -> 
 	let newNm = Qualified m (packString (unpackPS nm++"'"))
@@ -909,9 +980,10 @@ addNewPrim (InfoVar _ nm fix ie nt ar) =
 Create a new identifier for the prim-wrapper, given prim Info, in a fresh
 location in the table
 -}
-addNewWrapper :: Info -> Inherited a -> Threaded -> (Id,Threaded)
+addNewWrapper :: Info -> DbgTransMonad Id
+
 addNewWrapper (InfoVar _ nm fix ie nt ar) = 
-  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+  \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
       (i, istate') -> 
 	let info' = InfoVar i nm fix ie NoType (Just 2)
@@ -922,7 +994,8 @@ addNewWrapper (InfoVar _ nm fix ie nt ar) =
 Overwrite the original primitive identifier with new Info, reflecting
 the change in type and arity.
 -}
-overwritePrim :: Int -> Inherited a -> Threaded -> Threaded
+overwritePrim :: Id -> Inherited -> Threaded -> Threaded
+
 overwritePrim i = 
   \_ (Threaded istate srt idt) ->
       let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
@@ -931,7 +1004,7 @@ overwritePrim i =
 {-
 Overwrite the original primitive identifier with new name.
 -}
-overwriteOrigName :: Int -> Inherited a -> Threaded -> Threaded
+overwriteOrigName :: Id -> Inherited -> Threaded -> Threaded
 overwriteOrigName i = 
   \_ (Threaded istate srt idt) ->
       let updI (InfoVar i (Qualified m f) fix ie nt ar) =
@@ -941,26 +1014,32 @@ overwriteOrigName i =
 
 
 
-setD :: Exp Int -> Inherited a -> b -> (Inherited a,b)
-setD d = \(Inherited _ f lookupPrel modstr) s -> 
-           (Inherited d f lookupPrel modstr, s) 
+setD :: Exp Id -> DbgTransMonad Inherited
+
+setD d = \(Inherited _ f lookupPrel) s -> 
+           (Inherited d f lookupPrel, s) 
 
 
-getD :: Inherited a -> b -> (Exp Int,b)
-getD = \(Inherited d _ _ _) s -> (d, s)
+getD :: DbgTransMonad (Exp Id)
+
+getD = \(Inherited d _ _) s -> (d, s)
 
 
 normalFail = 
     lookupVar noPos t_fatal >>>= \fail ->
     setFail fail
 
-setFail fail = \(Inherited d _ lookupPrel modstr) s -> 
-                 (Inherited d fail lookupPrel modstr, s) 
+setFail fail = \(Inherited d _ lookupPrel) s -> 
+                 (Inherited d fail lookupPrel, s) 
 
-getFail = \(Inherited _ fail _ _) s -> (fail, s)
+getFail = \(Inherited _ fail _) s -> (fail, s)
 
+
+{- old, were not used anywhere
 getModStr = \(Inherited _ _ _ modstr) s@(Threaded istate _ _) -> (modstr, s)
 setModStr modstr = \(Inherited d f lp _) s -> (Inherited d f lp modstr, s)
+-}
+
 
 getConArity id = \_ s@(Threaded istate _ _) -> (arityIS istate id, s)
 
@@ -997,7 +1076,7 @@ setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
        srt idt
 
 
-getPositions :: a -> Threaded -> ((Int,[Int]),Threaded)
+getPositions :: DbgTransMonad (Int,[Int])
 getPositions = \_ s@(Threaded _ srt _) -> (srt, s)
 
 
@@ -1005,9 +1084,9 @@ setPositions :: (Int,[Int]) -> a -> Threaded -> Threaded
 setPositions srt = \_ s@(Threaded istate _ idt) -> Threaded istate srt idt
 
 
-makeSourceRef :: Int -> Inherited a -> Threaded -> (Exp Int,Threaded)
+makeSourceRef :: Pos -> DbgTransMonad (Exp Id)
 
-makeSourceRef p (Inherited _ _ lookupPrel _) s@(Threaded is (nsr, srs) idt) =
+makeSourceRef p (Inherited _ _ lookupPrel) s@(Threaded is (nsr, srs) idt) =
   if rowcol == head srs then
     (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr)], s)
   else
@@ -1020,7 +1099,7 @@ makeSourceRef p (Inherited _ _ lookupPrel _) s@(Threaded is (nsr, srs) idt) =
   sr3 = lookupPrel (tSR3, Con)
 
 
-addId :: (Pos,Int) -> a -> Threaded -> Threaded
+addId :: (Pos,Id) -> a -> Threaded -> Threaded
 
 addId pid inh (Threaded is srt idt) = Threaded is srt (pid:idt)
 

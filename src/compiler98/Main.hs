@@ -63,9 +63,9 @@ import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS)
 import Rename(rename)
 import DbgDataTrans(dbgDataTrans)
-import DbgTrans(debugTrans,dbgAddImport)
-import DbgDumpSRIDTable
-import DbgDumpSRIDTableC
+import DbgTrans(SRIDTable,debugTrans,dbgAddImport)
+import DbgDumpSRIDTable(dbgDumpSRIDTable)
+import DbgDumpSRIDTableC(dbgDumpSRIDTableC)
 import EmitState
 import Derive(derive)
 import Extract(extract)
@@ -394,8 +394,9 @@ nhcRemove :: Flags
           -> Maybe [Id] 
           -> ((TokenId,IdKind) -> Id) 
           -> c 
-          -> (Decls Int,IntState,Maybe ((Int,[Int]),[(Pos,Int)]
-                                       ,[ImpDecl TokenId],String)) 
+          -> (Decls Id
+             ,IntState
+             ,SRIDTable) -- passes: table for source refs and ids for tracing
           -> IO () 
 
 nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe 
@@ -417,7 +418,7 @@ nhcScc :: Flags
        -> Maybe [Id] 
        -> ((TokenId,IdKind) -> Id) 
        -> c 
-       -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+       -> SRIDTable -- passes: table for source refs and ids for tracing
        -> (Decls Id,[Int],IntState) 
        -> IO ()
 
@@ -450,7 +451,7 @@ nhcType :: Flags
         -> c 
         -> IntState 
         -> [ClassCode (Exp Int) Int] 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing
         -> Decls Id
         -> IO ()
 
@@ -474,7 +475,7 @@ nhcInterface :: Flags
              -> b 
              -> ((TokenId,IdKind) -> Int) 
              -> c 
-             -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+             -> SRIDTable -- passes: table for source refs and ids for tracing 
              -> ([ClassCode (Exp Int) Int],Decls Int,IntState) 
              -> IO ()
 
@@ -530,7 +531,7 @@ nhcFixSyntax :: Flags
              -> [Int] 
              -> ((TokenId,IdKind) -> Id) 
              -> [ClassCode (Exp Int) Int] 
-             -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+             -> SRIDTable -- passes: table for source refs and ids for tracing
              -> ([Decl Id],IntState,Tree (TokenId,Int)) 
              -> IO ()
 
@@ -554,7 +555,7 @@ Remove pattern matching: Change all pattern matches to case expressions.
 nhcCase :: Flags 
         -> [Int] 
         -> ((TokenId,IdKind) -> Id) 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
@@ -577,7 +578,7 @@ Expand primitives ?
 nhcPrim :: Flags 
         -> ((TokenId,IdKind) -> Id) 
         -> [Int] 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
@@ -597,7 +598,7 @@ Determine free variables (for lambda lifting)
 nhcFree :: Flags 
         -> ((TokenId,IdKind) -> Id) 
         -> [Int] 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
@@ -615,7 +616,7 @@ Do arity grouping on declarations (for lambda lifting)
 nhcCode1a :: Flags 
           -> ((TokenId,IdKind) -> Int) 
           -> [Int] 
-          -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+          -> SRIDTable -- passes: table for source refs and ids for tracing
           -> ([(Int,PosLambda)],IntState) 
           -> IO ()
 
@@ -631,7 +632,7 @@ Lambda lift
 nhcLift :: Flags 
         -> a 
         -> [Int] 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing 
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
@@ -650,7 +651,7 @@ Do arity grouping again
 nhcCode1b :: Flags 
           -> a 
           -> [Int] 
-          -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+          -> SRIDTable -- passes: table for source refs and ids for tracing
           -> ([(Int,PosLambda)],IntState) 
           -> IO ()
 
@@ -666,7 +667,7 @@ Pos Atom (not sure what this does!)
 -}
 nhcAtom :: Flags 
         -> [Int] 
-        -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+        -> SRIDTable -- passes: table for source refs and ids for tracing
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
@@ -680,12 +681,13 @@ nhcAtom flags zcon sridt (decls,state) =
 
 {-
 Dump zero-arity constructors to object file (as Gcode)
+Also dump source references and ids table for tracing to object file.
 (actually done by preceding function)
 -}
 dumpZCon :: Flags 
          -> IntState 
          -> [[Gcode]] 
-         -> Maybe ((Int,[Int]),[(Pos,Int)],[ImpDecl TokenId],String) 
+         -> SRIDTable -- table for source refs and ids for tracing
          -> [(Int,PosLambda)] 
          -> IO ()
 

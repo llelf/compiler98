@@ -592,14 +592,14 @@ showNT (NewType free exist ctxs nts)  =
   arg = mkAL free
 
 
-getArity :: Int -> Inherited -> a -> (Int,a)
+getArity :: Id -> Inherited -> a -> (Id,a)
 
 getArity id = \(Inherited _ alist _ _ _) s -> (assocDef alist (-1) id, s)
 --  (assocDef alist (error ("Internal error: Can't find arity for id #" 
 --                          ++ show id)) id, s)
 
 
-getArities :: [Decl Int] -> Inherited -> a -> (Inherited,a)
+getArities :: [Decl Id] -> Inherited -> a -> (Inherited,a)
 
 getArities ds = \(Inherited lookupPrel _ cv reptree ot) s ->
     let ga (DeclFun pos id (Fun pat _ _:_)) = [(id, length pat)]
@@ -607,7 +607,7 @@ getArities ds = \(Inherited lookupPrel _ cv reptree ot) s ->
     in  (Inherited lookupPrel (concat (map ga ds)) cv reptree ot, s)
 
 
-updateMethodType :: Int -> Int -> NewType -> a -> Threaded -> Threaded
+updateMethodType :: Id -> Id -> NewType -> a -> Threaded -> Threaded
 
 updateMethodType im id nt = 
   \inh (Threaded (IntState unique rps st errors) constrs) ->
@@ -625,8 +625,8 @@ updateClassType :: Id
                 -> TokenId 
                 -> IE 
                 -> NewType 
-                -> [Int] 
-                -> [Int] 
+                -> [Id] 
+                -> [Id] 
                 -> Tree (Int,([Int],[(Int,Int)])) 
                 -> a 
                 -> Threaded -> Threaded

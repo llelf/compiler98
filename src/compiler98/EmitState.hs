@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+Mini-interpreter for pretty-printing bytecodes into C array declarations 
+-}
 module EmitState where
 
 import Char (isLower)
@@ -12,7 +15,6 @@ import IsPrefixOf
 --  , emitState
 --  , startEmitState
 
--- Mini-interpreter for pretty-printing bytecodes into C array declarations --
 -- accumulators:
 --   (1) current absolute word offset
 --   (2) current relative byte offset
@@ -145,3 +147,4 @@ emitState es =
   in
   (foldr (.) (foldr (.) endcode (map doExtern externs)) (map doLocal locals)
   ) ""
+{- End EmitState -------------------------------------------------------------}

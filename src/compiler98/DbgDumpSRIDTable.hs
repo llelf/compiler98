@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+Write SRIDTable into assembler file.
+-}
 module DbgDumpSRIDTable(dbgDumpSRIDTable) where
 
 import Char
@@ -9,12 +12,14 @@ import Extra(strStr, dropJust, trace)
 import Flags
 import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
+import DbgTrans(SRIDTable)
 
 #if defined(__HASKELL98__)
 #define isAlphanum isAlphaNum
 #endif
 
-dbgDumpSRIDTable :: Handle -> IntState -> Flags -> Maybe ((Int, [Int]), [(Pos, Int)], [ImpDecl TokenId], String) -> IO ()
+dbgDumpSRIDTable :: Handle -> IntState -> Flags -> SRIDTable -> IO ()
+
 dbgDumpSRIDTable handle state flags Nothing = return ()
 dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) = 
     output (showString "DL(" . showString modpre . showString ")\n" . 
@@ -110,7 +115,7 @@ dumpImport output impdecl =
         return ()
     else
 -}
-        output (showString "  DW L(NMOD_" .  showString modname . showString ")\n")
+    output (showString "  DW L(NMOD_" .  showString modname . showString ")\n")
     where modname = untoken (imptokid impdecl)
           imptokid (Import (_,i) _) = i
           imptokid (ImportQ (_,i) _) = i
@@ -130,3 +135,4 @@ chopString x  =
         (x,xs) -> showString "  DS " . showString (strStr x) . 
 	          showString "\n" . chopString xs
 
+{- End DbgDumpSRIDTable ------------------------------------------------------}

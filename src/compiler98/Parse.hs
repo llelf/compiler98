@@ -1,10 +1,19 @@
+{- ---------------------------------------------------------------------------
+Parser for Haskell 98 Syntax
+-}
 module Parse(parseProg) where
 
 import Extra(pair,triple,noPos,Pos(..),isJust)
 import Lex
 import Lexical(PosTokenPre(..),LexState(..),PosToken(..))
 import Syntax
-import MkSyntax
+import MkSyntax	( mkAppExp, mkAppInst, mkCase, mkDeclClass
+	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
+	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
+	, mkExpListComp, mkGdExp, mkIf, mkInfixList
+	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
+	, mkTypeList, mkPatNplusK
+	)
 import Parse2
 import ParseLib
 import ParseLex
@@ -15,8 +24,13 @@ optSemi = () `parseChk` semi
                 `orelse`
            parse ()
 
+
 parseProg :: Parser (Module TokenId) [PosToken] a
+
 parseProg = parseModule `chkCut` eof
+
+
+parseModule :: Parser (Module TokenId) [PosToken] a
 
 parseModule =
     (uncurry Module) `parseChk` lit L_module `apCut` aconid `ap` parseExports
@@ -27,77 +41,96 @@ parseModule =
                 `chk` optSemi `chk` rcurl
 
 
+parseTopDecls :: Parser (Decls TokenId) [PosToken] a
+
 parseTopDecls =
-        semi `revChk` parseTopDecls
-             `orelse`
-        DeclsParse `parseAp` manysSep semi parseTopDecl
+  semi `revChk` parseTopDecls
+    `orelse`
+  DeclsParse `parseAp` manysSep semi parseTopDecl
+
+
+parseTopDecl :: Parser (Decl TokenId) [PosToken] a
 
 parseTopDecl =
-        cases [
-        (L_type,  \pos -> DeclType `parseAp` parseSimple `chk` equal `ap` parseType),
-        (L_newtype,  \pos -> DeclData Nothing `parseAp` parseContexts `ap` parseSimple `chk` equal
-                                         `apCut` ( (:[]) `parseAp` parseConstr)
-                                 `apCut` parseDeriving),
-        (L_data,  \pos -> 
-		(\ (pos,conid) size -> DeclDataPrim pos conid size) `parseChk` k_primitive 
-					`ap` conid `chk` equal
-                                        `apCut` intPrim
-			`orelse`
-		(DeclData . Just) `parseAp` unboxed `ap` parseContexts `ap` parseSimple `chk` equal
-                                         `apCut` someSep pipe parseConstr
-                                 `apCut` parseDeriving),
+  cases [
+  (L_type, \pos -> DeclType `parseAp` parseSimple `chk` equal `ap` parseType),
+  (L_newtype, \pos -> 
+    DeclData Nothing `parseAp` parseContexts `ap` parseSimple `chk` 
+      equal `apCut` ( (:[]) `parseAp` parseConstr) `apCut` parseDeriving),
+  (L_data, \pos -> 
+    (\ (pos,conid) size -> DeclDataPrim pos conid size) `parseChk` 
+      k_primitive `ap` conid `chk` equal `apCut` intPrim
+    `orelse`
+      (DeclData . Just) `parseAp` unboxed `ap` parseContexts `ap` 
+        parseSimple `chk` equal `apCut` 
+        someSep pipe parseConstr `apCut` parseDeriving),
+  (L_class, \pos -> 
+    mkDeclClass `parseAp` parseContexts `ap` aconid `ap` avarid `ap` 
+      (id `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl
+       `orelse` 
+       parse (DeclsParse [])
+      )), 
+  (L_instance, \pos->  
+    (\ctx (pos',cls) -> DeclInstance pos' ctx cls) `parseAp` 
+      parseContexts `ap` aconid `ap` parseInst `ap` 
+      (lit L_where `revChk` lcurl `revChk` parseValdefs `chk` rcurl
+       `orelse`
+       parse (DeclsParse [])
+      )),
+  (L_default, \pos -> 
+    DeclDefault `parseChk` lpar `apCut` 
+      manySep comma parseType `chk` rpar
+    `orelse`
+    (\x->DeclDefault [x]) `parseAp` parseType)
+  ]
+  (uncurry DeclPrimitive `parseAp` varid `chk` k_primitive `apCut` 
+     intPrim `chk` coloncolon `ap` parseType
+   `orelse`
+   parseForeign
+   `orelse`
+   parseDecl)
 
-        (L_class, \pos -> mkDeclClass `parseAp` parseContexts `ap` aconid `ap` avarid 
-                        --              `ap` (pair `parseChk` lit L_where `chk` lcurl `ap` parseCSigns `ap` parseValdefs `chk` rcurl
-			--		          `orelse`
-			--		      parse (DeclsParse [],DeclsParse []))),
-                                        `ap` (id   `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl	-- H98 changed
-					          `orelse`						-- H98 changed
-					      parse (DeclsParse []))),					-- H98 changed
-        (L_instance, \pos->  (\ctx (pos',cls) -> DeclInstance pos' ctx cls) `parseAp` parseContexts `ap` aconid `ap` parseInst
-                                        `ap` (lit L_where `revChk` lcurl `revChk` parseValdefs `chk` rcurl
-                                                 `orelse`
-                                              parse (DeclsParse []))),
-        (L_default,  \pos ->  DeclDefault `parseChk` lpar `apCut` manySep comma parseType `chk` rpar
-                        `orelse`
-                        (\x->DeclDefault [x]) `parseAp` parseType)
-        ]
-        (uncurry DeclPrimitive `parseAp` varid `chk` k_primitive `apCut` intPrim `chk` coloncolon `ap` parseType
-	  `orelse`
-        parseForeign
-	  `orelse`
-        parseDecl)
 
-parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  parseStrict parseType
+parseSig :: Parser (Sig TokenId) [PosToken] a 
 
+parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  
+  parseStrict parseType
+
+
+parseForeign :: Parser (Decl TokenId) [PosToken] a
 
 parseForeign =
-    k_foreign `revChk`
-     ((k_import `revChk` callconv `revChk`
-           ((\(_,LitString _ str) (_,tf) (p,v) t-> DeclForeignImp p str v (calcArity t) tf t v)
-           `parseAp` extfun `ap` unsafe `apCut` varid `chk` coloncolon `ap` parseType))
-        `orelse`
-      (k_export `revChk` callconv `revChk`
-           ((\(_,LitString _ str) (p,v) t-> DeclForeignExp p str v t)
-           `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
-        `orelse`
+  k_foreign `revChk`
+    ((k_import `revChk` callconv `revChk`
+        ((\(_,LitString _ str) (_,tf) (p,v) t -> 
+            DeclForeignImp p str v (calcArity t) tf t v)
+        `parseAp` extfun `ap` unsafe `apCut` varid `chk` 
+        coloncolon `ap` parseType))
+    `orelse`
+    (k_export `revChk` callconv `revChk`
+      ((\(_,LitString _ str) (p,v) t-> DeclForeignExp p str v t)
+      `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
+    `orelse`
       (k_cast `revChk` 
-           ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t v)
-           `parseAp` varid `chk` coloncolon `ap` parseType))
+        ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t v)
+        `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where
-    callconv = k_ccall `orelse` k_stdcall `orelse` parse noPos
-    extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
-    unsafe   = (k_cast `revChk` cast True)
-                 `orelse`
-               ((k_unsafe `orelse` parse noPos) `revChk` cast False)
-    cast tf  = parse (noPos,tf)
-    calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
-    calcArity _                 | otherwise     = 0
+  callconv = k_ccall `orelse` k_stdcall `orelse` parse noPos
+  extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
+  unsafe   = (k_cast `revChk` cast True)
+             `orelse`
+             ((k_unsafe `orelse` parse noPos) `revChk` cast False)
+  cast tf  = parse (noPos,tf)
+  calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
+  calcArity _                 | otherwise     = 0
 
+
+parseVarsType :: Parser (Decl TokenId) [PosToken] a
 
 parseVarsType =
-    DeclVarsType `parseAp` someSep comma varid `chk` coloncolon `ap` parseContexts `ap` parseType
+  DeclVarsType `parseAp` someSep comma varid `chk` coloncolon `ap` 
+    parseContexts `ap` parseType
 
 {-
 parseNewConstr =
@@ -108,20 +141,34 @@ parseNewConstr =
 -- parseCSigns = DeclsParse `parseAp` manySep semi parseCSign
 -- parseCSign = parseVarsType
 
+parseCDecls :: Parser (Decls TokenId) [PosToken] a 
 parseCDecls = DeclsParse `parseAp` (manysSep semi parseCDecl)	-- H98 added
+
+parseCDecl :: Parser (Decl TokenId) [PosToken] a
 parseCDecl = parseVarsType `orelse` parseValdef -- `orelse` parseInfixDecl
 
+
+parseValdefs :: Parser (Decls TokenId) [PosToken] a
+
 parseValdefs =
-    semi `revChk` parseValdefs
-        `orelse`
-    DeclsParse `parseAp` manysSep semi parseValdef
+  semi `revChk` parseValdefs
+  `orelse`
+  DeclsParse `parseAp` manysSep semi parseValdef
+
+
+parseValdef :: Parser (Decl TokenId) [PosToken] a
 
 parseValdef =
-   mkDeclPat `parseAp` varid `ap` anyop `ap` parsePat `ap` parseRhs equal `apCut` parseWhere
-	`orelse` 
-   mkDeclFun `parseAp` varid `ap` parsePats `ap` parseRhs equal `apCut` parseWhere
-	`orelse` 
-   mkDeclPatFun `parseAp` parseAlt equal
+ mkDeclPat `parseAp` varid `ap` anyop `ap` parsePat `ap` 
+   parseRhs equal `apCut` parseWhere
+ `orelse` 
+ mkDeclFun `parseAp` varid `ap` parsePats `ap` parseRhs equal `apCut` 
+   parseWhere
+ `orelse` 
+ mkDeclPatFun `parseAp` parseAlt equal
+
+
+parseWhere :: Parser (Decls TokenId) [PosToken] a
 
 parseWhere =
     lit L_where `revChk` lcurl `revChk` parseDecls `chk` rcurl
@@ -137,6 +184,8 @@ parseDecl =
         `orelse`			-- added in H98
     DeclFixity `parseAp` parseFixDecl	-- added in H98
 
+
+parseExp :: Parser (Exp TokenId) [PosToken] a
 
 parseExp =
     parseExp0 `revAp` parseExpType
@@ -306,3 +355,5 @@ parseAPat2 =
     PatIrrefutable `parseAp` lit L_Tidle `ap` parseAPat
         `orelse`
     (uncurry ExpLit `parseAp` (integer `orelse` rational `orelse` char `orelse` string))
+
+{- End Module Parse ---------------------------------------------------------}

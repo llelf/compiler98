@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+Make parts of Haskell syntax tree
+-}
 module MkSyntax
 	( mkAppExp, mkAppInst, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
@@ -10,38 +13,56 @@ module MkSyntax
 import Extra(Pos(..),noPos,strPos)
 import TokenId
 import Syntax
-import SyntaxPos
+import SyntaxPos(HasPos(getPos))
+
+
+mkParType :: Pos -> [Type TokenId] -> Type TokenId
 
 mkParType p [t] = t
 mkParType p ts  = TypeCons p (t_Tuple (length ts)) ts
 
+
+mkAppInst :: (Pos,a) -> [(Pos,a)] -> Type a
+
 mkAppInst (p,c) ts = TypeCons p c (map (uncurry TypeVar) ts)
+
 
 mkInfixList [e] = e
 mkInfixList es = ExpInfixList (getPos es) es
 
+
 mkParInst p [t] = error ("mkParInst on singleton list")
 mkParInst p ts  = TypeCons p (t_Tuple (length ts)) (map (uncurry TypeVar) ts)
 
+
 mkInstList p id = TypeCons p t_List [TypeVar p id]
+
+
+mkDeclPat :: (Pos,a) -> Exp a -> Exp a -> [(Exp a,Exp a)] -> Decls a -> Decl a
 
 mkDeclPat (pv,var) op (ExpInfixList pos es) gdexps w =
 	DeclPat (Alt (ExpInfixList pos (ExpVar pv var:op:es)) gdexps w)
 mkDeclPat (pv,var) op e gdexps w =
 	DeclPat (Alt (ExpInfixList pv [ExpVar pv var,op,e]) gdexps w)
 
+
+mkDeclFun :: (Pos,a) -> [Pat a] -> [(Exp a,Exp a)] -> Decls a -> Decl a
+
 --mkDeclFun (pv,var) [] gdexps w =
 --	DeclPat (Alt (ExpVar pv var) gdexps w)
 mkDeclFun (pv,var) pats gdexps w =
         DeclFun pv var [Fun pats gdexps w]
 
+
+mkDeclPatFun :: Alt a -> Decl a
+
 mkDeclPatFun  (Alt (ExpVar pos fun) gdexps w) =
         DeclFun pos fun [Fun [] gdexps w]
 --        DeclPat (Alt (ExpVar pos fun) gdexps w)
 mkDeclPatFun  (Alt (ExpInfixList _ [ExpVar pos fun]) gdexps w) =
-        DeclFun pos fun [Fun [] gdexps w]
-mkDeclPatFun  (Alt (ExpInfixList _ (ExpVar pos fun:qop:args)) gdexps w) | notOp qop =
-        DeclFun pos fun [Fun (qop:args) gdexps w]
+  DeclFun pos fun [Fun [] gdexps w]
+mkDeclPatFun  (Alt (ExpInfixList _ (ExpVar pos fun:qop:args)) gdexps w) 
+  | notOp qop = DeclFun pos fun [Fun (qop:args) gdexps w]
 mkDeclPatFun alt = DeclPat alt
 
 notOp (ExpConOp _ _) = False
@@ -52,10 +73,13 @@ notOp _ = True
 mkTypeArrow a p b = TypeCons p t_Arrow [a,b]
 mkTypeList p t = TypeCons p t_List [t]
 
+
 mkExpTrue :: Exp TokenId
 mkExpTrue  = ExpCon noPos tTrue
+
 mkExpFalse :: Exp TokenId
 mkExpFalse = ExpCon noPos tFalse
+
 
 mkIf pos c e1 e2 = ExpIf pos c e1 e2
 mkCase pos exp alts = ExpCase pos exp alts 
@@ -93,8 +117,10 @@ mkDeclClass ctx (pos,cls) (_,arg) cdecls = DeclClass pos ctx cls arg cdecls
 
 mkExp_Colon :: Pos -> Exp TokenId
 mkExp_Colon pos  = ExpCon pos t_Colon
+
 mkExp_filter :: Pos -> Exp TokenId
 mkExp_filter pos  = ExpVar pos t_filter
+
 mkExp_foldr :: Pos -> Exp TokenId
 mkExp_foldr pos  = ExpVar pos t_foldr
 
@@ -147,3 +173,5 @@ mkPatNplusK (pos,tid) (posi,integer) =
 --  let k = ExpLit posi integer in
 --  PatNplusK pos tid undefined k (ExpApplication pos [t_lessequal,k])
 --                                (ExpApplication pos [t_subtract,k])
+
+{- End Module MkSyntax ------------------------------------------------------}

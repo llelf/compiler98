@@ -93,7 +93,8 @@ data Decl id =
        -- var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
        -- foreign import [callconv] [extfun] [unsafe|cast] var :: type
-     | DeclForeignImp Pos String id Int Bool (Type id) id --lastid=trace wrapper
+     | DeclForeignImp Pos String id Int Bool (Type id) id 
+       -- ^ lastid=trace wrapper
        -- foreign export  callconv  [extfun]  var :: type
      | DeclForeignExp Pos String id (Type id)
        -- vars :: context => type
@@ -108,6 +109,7 @@ data Decl id =
      | DeclAnnot (Decl id) [Annot id]
      -- infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
+
 
 data ClassCode ctx id =
    CodeClass Pos id 		   -- cls
@@ -136,12 +138,26 @@ data Simple id = Simple Pos id [(Pos,id)]
 
 data Context id = Context Pos id (Pos,id)
 
+
+{-
+Data constructor applied to type variables, possibly with field names.
+As appearing on right hand side of data or newtype definition.
+-}
 -- ConstrCtx is always used if forall is specified
 -- the intention is to remove Constr completely when all of nhc13 
 -- have been updated 
---                          forall      context     constructor   argumentlist with fields if any
-data Constr id = Constr                             Pos id        [(Maybe [(Pos,id)],Type id)]
-               | ConstrCtx  [(Pos,id)] [Context id] Pos id        [(Maybe [(Pos,id)],Type id)]
+data Constr id = Constr 
+                   Pos       -- position of data constructor
+                   id        -- data constructor
+                   [(Maybe [(Pos,id)],Type id)]
+                   -- argumentlist with field labels if any
+                   -- (many field labes with same type possible)
+               | ConstrCtx  
+                   [(Pos,id)]     -- type variabes from forall
+                   [Context id]   -- context of data constructor
+                   Pos 
+                   id        
+                   [(Maybe [(Pos,id)],Type id)]
 
 type Instance id = Type id  -- Not TypeVar
 
@@ -159,12 +175,14 @@ data Exp id =
     | ExpCase           Pos (Exp id) [Alt id]    -- case exp of { alts; }
     | ExpFatbar         (Exp id) (Exp id)
     | ExpFail
-    | ExpIf             Pos (Exp id) (Exp id) (Exp id) 	-- if exp then exp else exp
-    | ExpType           Pos (Exp id) [Context id] (Type id)     		-- exp :: context => type
+    | ExpIf             Pos (Exp id) (Exp id) (Exp id) 	
+                        -- if exp then exp else exp
+    | ExpType           Pos (Exp id) [Context id] (Type id)
+                        -- exp :: context => type
 --- Above only in expressions
     | ExpRecord	        (Exp id) [Field id]
     | ExpApplication    Pos [Exp id]
-    | ExpInfixList      Pos [Exp id]                            		-- Temporary removed during rename
+    | ExpInfixList      Pos [Exp id] -- Temporary removed during rename
     | ExpVar            Pos id
     | ExpCon            Pos id
     | ExpVarOp          Pos id
@@ -172,7 +190,7 @@ data Exp id =
     | ExpLit            Pos (Lit Boxed)
     | ExpList           Pos [Exp id]
 --- after typechecker
-    | Exp2              Pos id id						-- e.g.   Ord.Eq      or Eq.Int
+    | Exp2              Pos id id  -- e.g.   Ord.Eq      or Eq.Int
 --- Below only in patterns
     | PatAs             Pos id (Pat id)
     | PatWildcard       Pos
@@ -181,7 +199,7 @@ data Exp id =
     | PatNplusK		Pos id id (Exp id) (Exp id) (Exp id)
 
 data Field id = FieldExp  Pos id (Exp id)
-              | FieldPun  Pos id	-- H98 removes (retained for error msgs)
+              | FieldPun  Pos id     -- H98 removes (retained for error msgs)
 
 data Boxed = Boxed | UnBoxed
 

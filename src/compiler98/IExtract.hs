@@ -21,6 +21,7 @@ import NT
 import Syntax
 import OsOnly(isPrelude)
 import ImportState
+import Id(Id)
 
 -- The spike doesn't disappear if rt' is forced, instead memory usage increases!
 
@@ -416,10 +417,21 @@ transType free (TypeStrict pos typ)    = unitS NTstrict =>>>  transType free typ
 
 -----
 
+{- Number identifiers, beginning with 1. First drop positions. -}
+tvPosTids :: [(Pos,TokenId)] -> [(TokenId,Int)]
+
 tvPosTids tv = tvTids (map snd tv)
+
+
+{- Number identifiers, beginning with 1. -}
+tvTids :: [TokenId] -> [(TokenId,Int)]
+
 tvTids tv = zip tv [1..] 
 
 -----
+
+{- Return list of type variables occurring in type. -}
+freeType :: Type a -> [a]
 
 freeType (TypeApp  t1 t2) =  freeType t1 ++ freeType t2
 freeType (TypeCons  pos hs types) = concatMap freeType types

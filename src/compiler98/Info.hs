@@ -12,6 +12,7 @@ import PackedString(PackedString)
 import Tree234
 import AssocTree
 import Syntax(InfixClass(..))
+import Id(Id)
 
 -- Guess: this is "Interface Exports"?
 data IE = IEnone | IEsel | IEabs | IEall deriving (Eq,Show) 
@@ -31,20 +32,23 @@ combIE _ IEall  = IEall
 combIE i IEnone = i
 combIE _      i = i
 
-data DataKind =  -- Bool tells if type will be unboxed after expansion
-    DataTypeSynonym Bool Int   -- depth (used to determine 
-                               -- which type synonym to expand)
-  | DataNewType	    Bool [Int]    -- constructor(one or zero) 
-  | Data 	    Bool [Int]    -- constructors
-  | DataPrimitive   Int	          -- size
+data DataKind = 
+    DataTypeSynonym Bool  -- True <-> unboxed after expansion
+                    Int   -- depth (used to determine 
+                          -- which type synonym to expand)
+  | DataNewType	    Bool  -- always False
+                    [Id]  -- constructor(one or zero) 
+  | Data 	    Bool  -- True <-> unboxed
+                    [Id]  -- constructors
+  | DataPrimitive   Int	  -- size
   deriving (Show)
 
 data Info =
     InfoClear   -- used to remove imported when redefining in mutally 
                 -- recursive modules and when compiling the prelude
-  | InfoUsed      Int      -- unique
+  | InfoUsed      Id       -- unique
                   [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
-  | InfoUsedClass Int      -- unique
+  | InfoUsedClass Id       -- unique
                   [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
                   (AssocTree Int ([Int],[(Int,Int)]))  
                   -- instances of the class
@@ -52,17 +56,20 @@ data Info =
                   -- the free variables and the superclass context 
                   -- of an instance
   | InfoData      -- data type (algebraic, type synonym, ...)
-                  Int      -- unique
+                  Id       -- unique
                   TokenId  -- token of data type name
                   IE 
-                  NewType  
+                  NewType  -- case type synonym: type it is defined to be
                   DataKind -- kind of data type 
   | InfoClass     Int      -- unique
                   TokenId  -- token of class name
                   IE 
-                  NewType 
-                  [Int]    -- ms this and
-                  [Int]    -- ns this together describe class methods
+                  NewType  -- pseudo type built from class and type variable
+                           -- (type of dictionary?)
+                  [Id]     -- method ids refering to type declaration
+                  [Id]     -- method ids refering to default definition
+                           -- ids in same position refer to same method
+                           -- => lists have same lengths
                   (AssocTree Int ([Int],[(Int,Int)]))    
                   -- instances of the class
                   -- the tree associates a type constructor with
@@ -83,35 +90,38 @@ data Info =
                   [Maybe Int]  -- field names (if they exist) 
                   Int          -- data type to which constructor belongs
   | InfoField     -- field name
-                  Int          -- unique
+                  Id           -- unique
                   TokenId      -- token for name
-                  [(Int,Int)]  -- icon_offs
-                  Int          -- iData
-                  Int          -- iSel	
+                  [(Id,Int)]   -- icon_offs
+                  Id           -- iData
+                  Id           -- iSel	
                   -- unique tid [(constructor,offset)] type selector
-  | InfoMethod    Int          -- unique 
-                  TokenId      -- token for name
+  | InfoMethod    -- for type declaration of method in a class definition
+                  Id           -- unique 
+                  TokenId      -- token for method name
                   (InfixClass TokenId,Int) -- fixity
                   NewType 
-                  (Maybe Int)  -- arity (if available)
-                  Int          -- unique of class to which method belongs
-  | InfoIMethod   Int          -- unique 
+                  (Maybe Int)  -- arity (if available; here bogus)
+                  Id           -- unique of class to which method belongs
+  | InfoIMethod   -- for definition in instance definition
+                  Id           -- unique 
                   TokenId      -- token for name
                   NewType 
                   (Maybe Int)  -- arity (if available) 
-                  Int          -- iMethod
+                  Id           -- iMethod (0 after renaming)
                   -- The type is NewType free instancs_ctx instance_type, 
-                  -- for real type follow int
-  | InfoDMethod   Int          -- unique
-                  TokenId      -- token for name
+                  -- for real type follow iMethod
+  | InfoDMethod   -- for default definition in class definition
+                  Id           -- unique
+                  TokenId      -- token for method name
                   NewType 
                   (Maybe Int)  -- arity (if available) 
-                  Int
+                  Id           -- class to which method belongs
   | InfoInstance  -- Only used in Export
-                  Int          -- unique
+                  Id           -- unique
                   NewType 
-                  Int	       -- unique of class (of which this is instance)
-  | InfoName      Int          -- unique
+                  Id 	       -- unique of class (of which this is instance)
+  | InfoName      Id           -- unique
                   TokenId      -- token for name
                   Int          -- arity
                   TokenId      
