@@ -44,6 +44,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   while (currentOffset != 0) {
     ExprNode* a=buildExpr(handle,currentOffset,verboseMode,precision);
     arity = getExprArity(a);
+    maxarity=-1;
     if (arity>=maxarity) {
       if ((arity>maxarity)&&(maxarity!=-1)) {
 	arityProblem=found;

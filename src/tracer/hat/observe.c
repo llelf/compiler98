@@ -46,12 +46,13 @@ ObserveQuery newObserveQuery(int handle,
   _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
   newQ->handle = handle;
   newQ->htable = newHashTable(80000);
+  addToHashTable(newQ->htable,identifierNode);
   newQ->identifierNode = identifierNode;
   newQ->topIdentifierNode = topIdentifierNode;
   newQ->recursiveMode = recursiveMode;
   newQ->showProgress = showProgress;
-  newQ->currentOffset = identifierNode;
-  if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
+  newQ->currentOffset = hatSeqFirst(handle);// identifierNode;
+  //if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
   newQ->fsz = hatFileSize(handle)/1000;
   if (newQ->fsz==0) newQ->fsz = 1;
   //if (newQ->fsz<20000) newQ->lsz=200;
@@ -115,7 +116,7 @@ ObserveQuery newObserveQuerySource(int handle,
   } else {
     newQ->moduleRef = findModule(handle,moduleName,showProgress);
   }
-  newQ->currentOffset = newQ->moduleRef;
+  newQ->currentOffset = hatSeqFirst(handle); //newQ->moduleRef;
   newQ->fsz = hatFileSize(handle)/1000;
   if (newQ->fsz==0) newQ->fsz = 1;
   return ((ObserveQuery) newQ);
@@ -264,6 +265,10 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	//bufferMiss = 0;
 	p = hatFollowSATs(handle,getAppFun());         // fileoffset of Function-trace
 	//if (bufferMiss>0) bufferMisses++;else bufferHits++;
+	if (p>currentOffset) { // whoo! The function which is applied here is forward
+	  // in the file! We haven't been there yet: so we need to check it!
+	  p = hatLMO(handle,p); // follow to the leftmost outermost identifier
+	}
 	if (isInHashTable(htable,p)) {
 	  filepointer satc = getResult(handle,currentOffset);  // find SATC for the application!	  
 	  addToHashTable(htable,currentOffset);
