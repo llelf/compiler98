@@ -87,7 +87,8 @@ endif
 # hack to get round mutual recursion between libraries
 HIFILES = $(patsubst %.hs,../${THISLIB}/%.${HISUFFIX},$(filter %.hs, ${SRCS}))
 ${HIFILES}: ../${THISLIB}/%.${HISUFFIX} : %.hs
-	$(HC) -c $(PART_FLAGS) -o /dev/null $<
+	$(HC) -c $(PART_FLAGS) -o tmp $<
+	rm tmp
 
 
 # The importing Makefile should now define individual dependencies
