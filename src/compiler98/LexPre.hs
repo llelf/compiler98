@@ -39,11 +39,17 @@ iPreLex u file r c ('-':'-':xs)
 		skipline cont ('\n':r) = cont r
 		skipline cont (_:r) = skipline cont r
 iPreLex u file r c ('{':'-':'#':xs) =
-                let pragmaName = head (words xs)
-                in
-                if pragmaName `elem` recognisedPragmas then
-                     (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
-                else skipcomment u file 0 r (c+3) xs
+                case words xs of
+                  ("LINE":lineno:newfile:"#-}":_) | all isDigit lineno ->
+                          case lexInteger 10 0 lineno of
+                            (_,newr,_) ->
+                               iPreLex u (packString newfile)
+                                         (fromInteger newr) 1
+                                         (tail (dropWhile (/='\n') xs))
+                  (name:_) | name `elem` recognisedPragmas
+                           || all isDigit name ->	-- e.g. fn arity
+                          (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
+                  _ ->    skipcomment u file 0 r (c+3) xs
 iPreLex u file r c ('#':'-':'}':xs) =
                 (file,r,c,L_RANNOT): iPreLex u file r (c+3) xs
 
@@ -84,9 +90,9 @@ iPreLex u file r c ('#':xs) | c == 1 =
                   (_,r,_) ->
                       iPreLex u (packString file) (fromInteger r) 1 (tail xs)
               _ -> error ("Unknown preprocessor directive at line " ++ show r
-                         ++ ( case show file of
+                         ++ ( case show file of {
                                 "\"\"" -> [];
-                                file   -> " in file " ++ file )
+                                file   -> " in file " ++ file } )
                          ++ "\n" ++ line ++ "\n")
 iPreLex u file r c ('"':xs) = (file,r,c,L_STRING st): iPreLex u file r' c' xs'
 	where (r',c',st,xs') = lexStr r (c+1) xs
@@ -115,7 +121,7 @@ iPreLex u file r c (xs@(x:s))=
 recognisedPragmas =
     "NEED":		-- NEED is found in interface files
     "#-}":		-- an empty pragma is acceptable
-    map show [0..30]	-- arities are recorded in .hi files as pragmas
+    []
 
 
 -- Auxiliary used by more than one clause of iPreLex (originally a local defn)
