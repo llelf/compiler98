@@ -10,4 +10,4 @@ length (_:xs) = ll 1 xs
   where
     ll :: Int -> [a] -> Int
     ll a [] = a
-    ll a (_:xs) = ll (a+1) xs
+    ll a (_:xs) = let a1 = a+1 in a1 `seq` ll a1 xs
