@@ -85,7 +85,7 @@ public class TraceFrame extends Frame {
     // optionMenu.add(createCheckboxMenuItem(Options.memoise, false));
     
     // optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
-    // optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
+    optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
     // optionMenu.add(createCheckboxMenuItem(Options.highshare, true));
     // optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
     

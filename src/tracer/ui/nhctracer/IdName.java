@@ -34,7 +34,8 @@ public class IdName extends EDTNode {
     this.defpos = defpos;
     this.pri = pri;
 
-    int c = this.name.charAt(0);
+    int c;
+    if (name.equals("")) c=' '; else c = this.name.charAt(0);
     infix = !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 	      (c >= '0' && c <= '9') || c == '(' || c == '[' || 
 	      c == '\'' || c == ',' || c == '_' || this.name == "\\");
