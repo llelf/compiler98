@@ -5,4 +5,4 @@ import PackedString(PackedString,unpackPS,packString)
 type CString = PackedString
 
 toCString str = packString (str ++ ['\0'])
-fromCString str = init (unpackPS str)
+fromCString str = unpackPS str
