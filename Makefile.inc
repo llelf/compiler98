@@ -2,7 +2,7 @@
 
 OPT = -O3
 
-CC = gcc
+# CC = actually sourced from LIBDIR/MACHINE/config
 INSTALL = cp
 AR = ar
 LD = ld
@@ -50,14 +50,14 @@ LIBDIR=${TOPDIR}/lib
 DST=${LIBDIR}/${MACHINE}
 
 ### This is a very important step: get the local configuration
-
 include ${DST}/config
 
 ###
 
 BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
+CPP = $(CC) -E -x c
 
-DCFG=
+DCFG:=
 TRACING=$(findstring T,${CFG})
 PROFILING=$(findstring p,${CFG})
 TPROF=$(findstring z,${CFG})
