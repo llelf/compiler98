@@ -3,8 +3,8 @@
  *
  * Copyright 2000 Andy Gill
  *
- * $Revision: 1.1 $
- * $Date: 2000/09/15 16:14:17 $
+ * $Revision: 1.2 $
+ * $Date: 2001/05/17 10:41:19 $
  */
 
 import com.microstar.xml.XmlParser;
@@ -28,7 +28,7 @@ import java.net.URL;
 
 public class HoodTopLevel implements ActionListener {
     private AllCDS cds;
-    private List list;
+    private java.awt.List list;
     private Hashtable listHt;
     private Panel reload;
     private TextField textfield;
@@ -87,7 +87,7 @@ public class HoodTopLevel implements ActionListener {
 	//---------------------------------------------------
 	// The main listbox
 
-	list = new List(10,true);
+	list = new java.awt.List(10,true);
 
 	setGBC(0,1,2,6,c);
 	c.weightx = c.weighty = 1.0;
