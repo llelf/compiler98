@@ -1,0 +1,52 @@
+<html><head><title>nhc98 to-do list</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>nhc98 to-do list</h1></center>
+
+<hr>
+
+<p>
+Our plans for <b>nhc98</b> include the following.
+
+<ul>
+<li>The <em>Fudgets</em> GUI library was once available for nhc13:
+    now that nhc98 has existential types, we can now support Fudgets
+    once again.
+<li>The implementation of <em>GreenCard</em> should be finished.
+    Remaining unimplemented features include named field syntax
+    and failure specifications.
+<li>It would be very useful to have a set of simple regression tests
+    (with an automated interface) to check whether anything breaks on
+    a new machine architecture, or after modifying a part of the compiler.
+    (We have a set of tests for the binary libraries, and they have
+    definitely proved their worth!)
+<li>As part of the cross-compilation idea, it might be important to
+    be able to pass the word-size of the target machine into the compiler
+    at compile-time.  (It is currently hard-coded in.)
+<li>We would like to replace the current textual format of interface files
+    with a binary format.  (We conjecture a big speed gain during compilation.)
+    One difficulty is that nhc98 is often built with hbc, which
+    does not yet support Binary.  However, it would be of even greater
+    interest to obtain a speed gain when using an nhc98 built with nhc98!
+<li>We hope to continue to improve the tracer, supporting some of the more
+    tricky language features, and eventually adding a meta-tracer for
+    defining and using trace <em>strategies</em>.
+</ul>
+
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+1999.01.26<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+

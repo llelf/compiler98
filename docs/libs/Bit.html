@@ -1,0 +1,55 @@
+<html><head><title>The Haskell Bit library</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>The Haskell Bit library in nhc13</h1></center>
+
+<hr>
+This document describes the interface to the Bit library.
+
+<hr>
+<pre>
+  module Bit where
+
+  infixl  7 ^&
+  infixl  6 ^|
+  infixl  5 `xor`
+  infixl  8 ^<<
+  infixl  8 ^>>
+  infixl  8 `asr`
+  infixl  8 `rol`
+  infixl  8 `ror`
+
+  class Integral a => Bits a where
+      (^&)    :: a -> a -> a		-- bit-wise and
+      (^|)    :: a -> a -> a		-- bit-wise or
+      xor     :: a -> a -> a		-- bit-wise xor
+      compl   :: a -> a			-- bit-wise complement
+      (^<<)   :: a -> Int -> a		-- left shift
+      (^>>)   :: a -> Int -> a		-- right shift
+      asr     :: a -> Int -> a		-- arithmetic right shift
+      rol     :: a -> Int -> a		-- rotate left
+      ror     :: a -> Int -> a		-- rotate right
+      test    :: Int -> a -> Bool	-- report n'th bit
+      set     :: Int -> a -> a		-- set n'th bit
+      clear   :: Int -> a -> a		-- clean n'th bit
+      bitSize :: a -> Int		-- bit-width of type (not value)
+
+  instance Bits Int where ...
+</pre>
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc13/">
+<tt>http://www.cs.york.ac.uk/fp/nhc13/</tt></a>
+
+<p>
+1998.03.26<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm Wallace <Malcolm.Wallace@cs.york.ac.uk>
+
+</td></tr></table>
+</body></html>
+

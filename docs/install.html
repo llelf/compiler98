@@ -1,0 +1,251 @@
+<html><head><title>Installing nhc98</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center><h1>Installing nhc98</h1></center>
+
+<hr>
+
+<h3>System Requirements</h3>
+<p>
+Users of Windows 95/98 or NT, please see these <a href="windows.html">special
+instructions</a> first.
+
+<p>
+For the binary release,
+we assume you have a good C compiler (usually <em>gcc</em>), and a
+<em>sh</em> compatible with the Bourne shell.
+If you want to use the trace browser, you will need to have Java on your
+PATH.
+
+<p>
+For the C source release, in addition you need the usual C compilation
+management tools (<em>ar</em>, GNU <em>make</em>, etc.).  To build
+<b>nhc98</b> from C you need 8Mb of memory (although you could
+probably manage with less), and about 17Mb of disk space (40Mb if you
+build for profiling and tracing as well).
+
+<p>
+For the Haskell source release, you also need another Haskell compiler.
+If you already have <em>hbc</em> or <em>ghc</em>, building <b>nhc98</b>
+will require at least 32Mb of memory, and 50Mb of free disk space.
+If you already have an earlier version of <em>nhc98</em>, you will need
+at least 8Mb of memory and 30Mb of free disk space.  If
+you cannot obtain <em>hbc</em> or <em>ghc</em> for your machine, then
+don't worry, just build <b>nhc98</b> using a C compiler.  (The build is
+faster and needs much less memory, but the resulting compiler will be
+slower.)
+
+<h3>Download it</h3>
+<p>
+You have the option of building <b>nhc98</b> from a boot-strapping C
+source tree, from the Haskell-only source tree, or installing a
+binary-only distribution.  You only need to collect the single package
+you require.
+
+<p>
+The current distribution packages (and their release status) can be found at
+<pre>
+    <a href="http://www.cs.york.ac.uk/fp/nhc98/status.html">http://www.cs.york.ac.uk/fp/nhc98/status.html</a>
+</pre>
+Using <em>tar</em> and <em>gunzip</em>, unpack your chosen package, and
+<em>cd</em> to the base directory (called nhc98-x.x, where the x's are the
+version number).  Note that all the documentation available on the web
+is also included in all packages, although the web versions will of course
+be more up-to-date.  Your local copy of the release notes is
+in <a href="status.html">docs/status.html</a>.
+
+<h3>Configuration</h3>
+<p>
+An automatic configuration utility is supplied, called
+<em>nhc98config</em>.  In brief, the default behaviour is to build under
+the current directory, in <tt>targets</tt>,
+and to install various components under
+<tt>/usr/local</tt>, in the subdirectories <tt>bin</tt>,
+<tt>lib/nhc98</tt>, <tt>include/nhc98</tt>, and <tt>man/man1</tt>.
+The config script has several useful options to override the default
+build and installation behaviours.  Use the <tt>--help</tt> option for
+brief details, and see the page about <a href=config.html>configuration
+options</a> for full details.
+
+<p>
+<b>Important:</b> The config script no longer configures <em>hmake</em>
+for use with other Haskell compilers.  If <em>nhc98</em> is the only
+compiler you've got, then there's nothing to worry about.  If however
+you intend to build <em>nhc98</em> using <em>hbc</em> or <em>ghc</em>
+(or you happen to have them anyway and would like to use <em>hmake</em>
+with those compilers), please follow these instructions.  <em>Before</em>
+running <tt>nhc98config</tt> with either of the <tt>--build</tt> or
+<tt>--install</tt> options, you must edit the file
+<tt>script/hmakeconfig.inst</tt>.  This file has its own instructions.
+You are likely to need to change either or both of the definitions for
+LMLDIR and GHCINCDIR.
+
+
+<h3>Installing from a binary distribution</h3>
+<p>
+Simply run
+<pre>
+    ./nhc98config -rts --install
+</pre>
+to install <b>nhc98</b>.  The default location is under <tt>/usr/local</tt>,
+but you may alter the installation location using other
+<a href=config.html>configuration options</a>.  (The use of the
+<tt>-rts</tt> flag indicates that <em>nhc98comp</em> (the compiler
+proper) was built with <em>hbc</em>, rather than bootstrapped with
+<b>nhc98</b> itself or <em>ghc</em>.)
+
+
+<h3>Building and installing from any sources</h3>
+<p>
+Note that all object files are created in a separate directory tree
+from the sources.  This means it is possible to build concurrently
+for different machines from the same shared source tree.  You can also
+build the heap profiling, time profiling, and tracing versions of the
+prelude and runtime system concurrently if you wish.
+
+
+<h3>Building and installing from C sources</h3>
+<p>
+The current C distribution of the compiler will build for any machine
+with 32-bit words.  All questions of machine endian-ness 
+are handled automatically during configuration.
+If you are not using <em>gcc</em> as your C compiler, please
+ensure that your <tt>CC</tt> environment variable is set appropriately
+at the configuration stage.
+<p>
+To build <b>nhc98</b> using just a C compiler, follow these
+instructions:
+<ul>
+<li>
+  Run <tt>./nhc98config</tt> with any <a href=config.html>options</a>
+  you require.  (You should supply installation directory options at
+  this stage.)
+<li>
+  From the top directory, type <tt>make fromC</tt>.  This will build
+  components in the following order:
+<dl>
+<dd> the runtime system built with <em>gcc</em>,
+<dd> the standard prelude and libraries (including Binary) built with <em>gcc</em>,
+<dd> the <em>nhc98comp</em> compiler built with <em>gcc</em>,
+<dd> the <em>GreenCard</em> preprocessor built with <em>gcc</em>,
+<dd> the <em>hp2graph</em> profiling visualisation tool built with <em>gcc</em>,
+<dd> the <em>hmake</em> compilation tool built with <em>gcc</em>.
+</dl>
+  It takes 10 minutes for a complete build on a 150Mhz Pentium.
+
+<li>
+  If you wish to use the extensive heap profiling abilities of <b>nhc98</b>,
+  you now need to recompile for heap profiling (with the fresh <b>nhc98</b>)
+  the runtime system, standard prelude, and libraries, by typing
+  <tt>make profile</tt>.  Please note that this stage will be by far the
+  slowest of the entire build sequence - there are at least 600 Haskell
+  modules to compile.
+
+<li>
+  Also, if you wish to use the <b>nhc98</b> tracer or time profiling,
+  you now need to recompile various components for tracing by typing
+  <tt>make tracer</tt> and/or <tt>make timeprof</tt>.  These stages are
+  slow too.
+
+<li>
+  Finally, when you have built all the components you require,
+  type <tt>make install</tt>.  If you wish to keep your
+  disk usage down, use <tt>make clean</tt>, <tt>make realclean</tt>,
+  or simply delete the entire directory tree.
+</ul>
+
+
+<h3>Building and installing from Haskell sources</h3>
+<p>
+The compiler will build by default for a machine with 32-bit words.
+It is possible to build for a 64-bit machine (e.g. the DEC Alpha), but
+this is not yet handled automatically by the configuration script.
+<p>
+To build from scratch, you will need another Haskell compiler e.g.
+<em>hbc</em> or <em>ghc</em>.  The Makefiles assume you have this
+other compiler on your <tt>PATH</tt>
+<p>
+For building with <em>hbc</em>,
+from the top directory, first run <tt>./nhc98config -rts</tt> with any other
+<a href=config.html>configuration options</a> you require.
+For building with <em>ghc</em>,
+from the top directory, first run <tt>./nhc98config +rts</tt> with any other
+<a href=config.html>configuration options</a> you require.
+Then type <tt>make withHBC</tt> or <tt>make withGHC</tt>.
+This will build components in the following order:
+<dl>
+<dd> the <b>hmake</b> compilation tool built with <em>hbc</em> or <em>ghc</em>,
+<dd> the <b>nhc98</b> compiler built with <em>hmake</em> and <em>hbc</em> or <em>ghc</em>,
+<dd> the runtime system built with <em>gcc</em>,
+<dd> the standard prelude and libraries built with the fresh <b>nhc98</b>,
+<dd> the <em>GreenCard</em> preprocessor built with <b>nhc98</b>,
+<dd> the York binary libraries built with <b>nhc98</b> and <em>GreenCard</em>,
+<dd> the <em>hp2graph</em> profiling visualisation tool built with <em>gcc</em>.
+</dl>
+<p>
+  If you wish to use the extensive heap profiling abilities of <b>nhc98</b>,
+  you now need to recompile for heap profiling (with the fresh <b>nhc98</b>)
+  the runtime system, standard prelude, and libraries, by typing
+  <tt>make profile</tt>.
+<p>
+  Also, if you wish to use the <b>nhc98</b> tracer or time profiling,
+  you now need to recompile various components for tracing by typing
+  <tt>make tracer_b</tt> (if building with <em>hbc</em>),
+  <tt>make tracer_g</tt> (if building with <em>ghc</em>),
+  and/or <tt>make timeprof</tt> (no compiler differences).
+<p>
+The whole sequence (including the profiling and tracing versions) takes
+a long time - sample times are from 3.5 hours on a 150MHz Pentium under
+Linux 2.0.29, to 15 hours on an old 50MHz microSparc under SunOS 4.1.3_U1.
+The time taken also depends on which compiler you use - <em>ghc</em> is
+much slower than <em>hbc</em> in the early stages, but slightly faster
+once the <em>nhc98comp</em> compiler has been built.
+
+<p>
+Finally type <tt>make install</tt>, and if you worry about disk usage,
+<tt>make clean</tt>, <tt>make realclean</tt>, or simply delete the
+entire source tree.
+
+
+<h3>Problems?</h3>
+<p>
+Ok, so now you should have all the components of a working compiler.
+If you have any problems, mail
+<a href="mailto:Malcolm.Wallace@cs.york.ac.uk?subject=nhc98">
+<tt>Malcolm.Wallace@cs.york.ac.uk</tt></a> with a description (and a
+bugfix if you have one!).
+
+<h3>Can you help us?</h3>
+<p>
+If you have built <b>nhc98</b> for a machine not currently listed on the
+<a href=status.html>release status page</a> and would like to contribute
+it as a binary package for others to download, it is very easy to do.
+After building and installing, type `<tt>make binDist</tt>' <em>before</em>
+you tidy up with `<tt>make clean</tt>'.  Then upload the resulting tarfile
+by ftp to
+<pre>
+    ftp://ftp.cs.york.ac.uk/pub/haskell/incoming/
+</pre>
+and send me an email to let me know it's there.
+
+<h3>Keeping up-to-date</h3>
+<p>
+If you use <b>nhc98</b> regularly, please join the <a href="maillist.html">
+nhc-users</a> mailing list for discussion of features, bugfixes, and so on.
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+1999.09.16<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+Malcolm.Wallace@cs.york.ac.uk
+
+</td></tr></table>
+</body></html>
+
