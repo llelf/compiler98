@@ -5,7 +5,7 @@ a structured document for pretty printing.
 
 module PrettySyntax
   ( PPInfo(..)
-  , prettyPrintTokenId, prettyPrintId, simplePrintId
+  , prettyPrintTokenId, prettyPrintId, simplePrintId, prettyPrintTraceId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
@@ -28,7 +28,33 @@ import Char(isAlphaNum)
 import Maybe(isJust,fromJust)
 import Flags {- import list does not work with nhc 
              (Flags,sShowWidth,sShowQualified,sShowIndent) -}
+import TraceId
 
+
+prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
+
+prettyPrintTraceId flags pp =
+  pretty (sShowWidth flags) . 
+  pp PPInfo{withPositions = False
+           ,indent = sShowIndent flags
+           ,id2str = id2strTraceId
+           ,tyVar2str = show
+           ,isFunctionArrow = (\tr-> tokenId tr == t_Arrow)
+           ,isList = (\tr-> tokenId tr == t_List)
+           ,maybeTuple = maybeTupleTraceId}
+  where
+  id2strTraceId t = ( if sShowQualified flags
+                      then show (tokenId t)
+                      else (reverse . unpackPS . extractV) (tokenId t)
+                    ) ++
+                    ( case t of
+                        (_,Nothing) -> ""
+                        _           -> "{-"++ show (arity t) ++"/"++
+			        ( if isLambdaBound t then "lam-}" else "let-}" )
+                    )
+  maybeTupleTraceId t = case tokenId t of
+                          TupleId n -> Just n
+                          _         -> Nothing
 
 prettyPrintTokenId :: Flags -> (PPInfo TokenId -> a -> Doc) -> a -> String
 
@@ -483,7 +509,7 @@ ppDecl info (DeclPrimitive pos ident arity t) =
 ppDecl info (DeclForeignImp pos str ident arity cast t _) =
   groupNestS info $
     text "foreign import" <> fSpace <> string str <> fSpace <>
-    text (show cast) <> ppId info ident <> text " ::" <> dSpace <> 
+    text (show cast) <> fSpace <> ppId info ident <> text " ::" <> dSpace <> 
     ppType info t
 
 ppDecl info (DeclForeignExp pos str ident t) =
@@ -810,23 +836,20 @@ ppTyVar info = text . tyVar2str info
 
 {- Test if declaration list empty -}
 noDecls :: Decls id -> Bool
-
 noDecls (DeclsParse decls) = null decls
 noDecls (DeclsScc decls) = null decls
 
 
 {- Test if id is an operator -}
 idIsOperator :: PPInfo a -> a -> Bool
-
 idIsOperator info id = isOperator (id2str info id)
 
 
 {- Test if name is an operator -}
 isOperator :: String -> Bool  
-
-isOperator = not . isVarChar . last
+isOperator = not . isVarChar . head
   where
-  isVarChar c = isAlphaNum c || c == '\''
+  isVarChar c = isAlphaNum c || c == '_'
 
 
 {- End PrettySyntax -------------------------------------------------------- -}

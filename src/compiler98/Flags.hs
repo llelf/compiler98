@@ -21,7 +21,7 @@ module Flags where
 -}
 
 import IO
-import OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
+import OsOnly(fixRootDir,fixTypeFile,fixObjectFile,fixAuxFile)
 import List(isPrefixOf)
 import Char(isDigit)
 
@@ -31,6 +31,7 @@ data Flags = FF
   ,sSourceFile :: String
   ,sTypeFile   :: String
   ,sObjectFile :: String
+  ,sAuxFile    :: String
   ,sIncludes   :: [String]
   ,sPreludes   :: [String]
 
@@ -52,6 +53,7 @@ data Flags = FF
   ,sDbgTrans   :: Bool	-- do tracing transformation
   ,sDbgPrelude :: Bool	-- use tracing prelude
   ,sDbgTrusted :: Bool	-- trust this module
+  ,sHatAuxFile :: Bool	-- write/read auxiliary information files
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
@@ -174,6 +176,7 @@ processArgs xs = flags
   , sSourceFile=sourcefile
   , sTypeFile=typefile
   , sObjectFile=cfile
+  , sAuxFile=fixAuxFile isUnix rootdir filename
   , sIncludes=rootdir:getIncludes xs
   , sPreludes=getPreludes xs
 
@@ -202,15 +205,15 @@ processArgs xs = flags
 
   , sDbgTrans = fElem False "dbgtrans" xs     -- perform debugging translation
   , sDbgPrelude = fElem False "dbgprelude" xs -- use the debugging prelude
-  , sDbgTrusted = fElem False "trusted" xs    
-  -- ^ A "trusted" module (don't trace)
+  , sDbgTrusted = fElem False "trusted" xs    -- "trusted" module (don't trace)
+  , sHatAuxFile = fElem False "hx" xs         -- generate/read aux info files
 
   , sAnsiC = fElem True  "ansiC" xs    -- Generate bytecode as ANSI C file
   , s64bit = fElem False "64bit" xs    -- 32bit/64bit word size (ignored)
   , sNplusK = fElem False "nkpat" xs   -- Enable (n+k) patterns
   , sUnderscore = fElem False "underscore" xs 
   -- ^ Enable H'98 underscore-is-lower-case
-  , sPuns  = fElem True  "puns" xs      -- Enable pre-98 named-field puns
+  , sPuns  = fElem True  "puns" xs     -- Enable pre-98 named-field puns
 
 
   , sLex = fElem False "lex" xs         -- show lexical input

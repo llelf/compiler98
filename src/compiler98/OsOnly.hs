@@ -1,6 +1,7 @@
 module OsOnly
   (isPrelude
   , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
+  , fixAuxFile
   ) where
 
 isPrelude str = {-take (7::Int)-} str == "Prelude"
@@ -38,6 +39,7 @@ fixDir isUnix dir
 fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hit"
 fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "c"
 fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
+fixAuxFile    isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
 
 fixFile isUnix file suf =
 {-

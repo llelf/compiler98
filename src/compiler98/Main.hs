@@ -44,7 +44,7 @@ import Flags
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
 -}
 import SyntaxPos	-- DW
-import PrettySyntax(prettyPrintTokenId,prettyPrintId
+import PrettySyntax(prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
                    ,ppModule,ppTopDecls,ppClassCodes)
 import StrPos(strPCode)
 
@@ -98,6 +98,8 @@ import PackedString(PackedString, unpackPS)
 
 import Foreign (Foreign,strForeign)
 import ReportImports
+import AuxFile
+import AuxLabelAST
 
 
 --import NonStdProfile
@@ -125,7 +127,6 @@ main' args = nhcLexParse flags (sRealFile flags)
 
 {- lex and parse source code -}
 nhcLexParse :: Flags -> String -> IO () 
-
 nhcLexParse flags filename =
   profile "parse" $ do
   mainChar <- catch (readFile filename) (can'tOpen filename) 
@@ -135,22 +136,37 @@ nhcLexParse flags filename =
                      else mainChar)
   pF (sLex flags) "Lexical" 
      (mixSpace (map (\ (p,l,_,_) -> strPos p ++ ':':show l) lexdata)) 
-  nhcNeed flags (parseit parseProg lexdata)
+  nhcAux flags (parseit parseProg lexdata)
+
+
+{-
+-- Read and write auxiliary information files (for tracing).
+-- Then relabel the syntax tree with the auxiliary information.
+-- Eventually, the tracing transformation itself will also be in this
+-- phase of the compiler.
+-}
+nhcAux :: Flags -> Either (Pos,String,[String]) (Module TokenId) -> IO () 
+nhcAux flags (Left err) = errorMsg (sSourceFile flags) (showErr err)
+nhcAux flags (Right parsedProg) = do
+    if sHatAuxFile flags
+      then do toAuxFile flags (sAuxFile flags) parsedProg
+            --putStrLn (prettyPrintTokenId flags ppModule parsedProg)
+              newprog <- auxLabelSyntaxTree flags parsedProg
+              putStrLn (prettyPrintTraceId flags ppModule newprog)
+              exitWith (ExitSuccess)
+      else return ()
+    nhcNeed flags parsedProg
 
 
 {- 
-Perform "need" analysis (what imported entities are required?) 
-Second argument may contain error message or parse tree
-Creates ImportState for next pass.
+-- Perform "need" analysis (what imported entities are required?) 
+-- Second argument may contain error message or parse tree
+-- Creates ImportState for next pass.
 -}
-nhcNeed :: Flags -> Either (Pos,String,[String]) (Module TokenId) -> IO () 
-
-nhcNeed flags 
-        (Left err) = errorMsg (sSourceFile flags) (showErr err)
-nhcNeed flags 
-        (Right (parsedProg@(Module pos (Visible modid) e impdecls inf d))) =
-  -- Insert check that sPart flags or modid == sourcefile
-{-profile "need" $-}  do
+nhcNeed :: Flags -> (Module TokenId) -> IO () 
+nhcNeed flags (parsedProg@(Module pos (Visible modid) e impdecls inf d)) =
+    -- Insert check that sPart flags or modid == sourcefile
+    {-profile "need" $-}  do
     pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedProg) 
     let parsedProg' = 
           dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedProg 
