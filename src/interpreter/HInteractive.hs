@@ -214,8 +214,15 @@ commands ws state = let target = tail ws in do
                putStrLn ("Current compiler: "++show (compiler state))
       )
   command "trace"
-      (let newopts = ((options state) \\ defaultOptions (compiler state))
-                                      ++ defaultOptions Nhc98 ++ ["-T"]
+      (if null target || head target `notElem` ["on","off"] then do
+           putStr ("Tracing currently: ")
+           putStrLn (if "-T" `elem` options state then "on" else "off")
+       else
+       let newopts =
+             case head target of
+               "on" -> ((options state) \\ defaultOptions (compiler state))
+                                        ++ defaultOptions Nhc98 ++ ["-T"]
+               "off" -> (options state) \\ ["-T"]
        in do
             makeclean ".o" (modules state)
             makeclean ".hi" (modules state)
@@ -337,6 +344,8 @@ help = "\
   :hc compiler		set Haskell compiler to use
   :set options		set hmake/compiler options
   :unset options	remove hmake/compiler options
+  :observe name		debug function 'name' with 'Hood' [coming soon]
+  :trace [on|off]	switch on/off debugging with 'Hat' [nhc98 only]
   :!command 		shell escape
   :?	 		display this list of commands"
 #endif
