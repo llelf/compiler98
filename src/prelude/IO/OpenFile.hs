@@ -4,22 +4,27 @@ import DHandle (Handle(..))
 import IOMode
 import FFI
 
-foreign import openFileC :: CString -> Int -> IO Addr
-#if !defined(TRACING)
-foreign import "addrToHandle" addrToHandle :: Addr -> IO Handle
-#else
-foreign import "addrToHandle" addrToFO :: Addr -> IO ForeignObj
-addrToHandle a = addrToFO a >>= return . Handle
-#endif
+{-  All this was incorrect.  It opened a small gap between the
+    allocation of the ForeignObj, and its attachment into the program
+    graph with addrToFO.  Hence occasionally, depending on exact
+    GC time, we got seg-faults.
 
-openFile              :: FilePath -> IOMode -> IO Handle
-openFile fp iomode = do
-    a <- openFileC (toCString fp) (fromEnum iomode)
-    if a==nullAddr then do 
-        errno <- getErrNo
-        throwIOError ("openFile "++show iomode) (Just fp) Nothing errno
-      else do
-        addrToHandle a
+-- foreign import openFileC :: CString -> Int -> IO Addr
+-- #if !defined(TRACING)
+-- foreign import "addrToHandle" addrToHandle :: Addr -> IO Handle
+-- #else
+-- foreign import "addrToHandle" addrToFO :: Addr -> IO ForeignObj
+-- addrToHandle a = addrToFO a >>= return . Handle
+-- #endif
+
+-- openFile              :: FilePath -> IOMode -> IO Handle
+-- openFile fp iomode = do
+--     a <- openFileC (toCString fp) (fromEnum iomode)
+--     if a==nullAddr then do 
+--         errno <- getErrNo
+--         throwIOError ("openFile "++show iomode) (Just fp) Nothing errno
+--       else do
+--         addrToHandle a
 
 -- Note: the primitive openFileC returns an Addr that is in fact a
 -- pointer to the C structure representing a ForeignObj.  This is
@@ -34,3 +39,15 @@ openFile fp iomode = do
 -- Unfortunately, we haven't got finalisers of type IO () working yet,
 -- so the finaliser has to be attached in the C world rather than
 -- the Haskell world for the moment.
+
+-}
+
+foreign import openFileC :: CString -> Int -> IO ForeignObj
+
+openFile              :: FilePath -> IOMode -> IO Handle
+openFile fp iomode = do
+    fo <- openFileC (toCString fp) (fromEnum iomode)
+    if (foreignObjToAddr fo)==nullAddr then do 
+        errno <- getErrNo
+        throwIOError ("openFile "++show iomode) (Just fp) Nothing errno
+      else return (Handle fo)

@@ -67,17 +67,18 @@ ForeignObj* allocForeignObj(void* arg, gcCval finalCV, gcFO finalFO)
       foreign[i].cval = arg;
       foreign[i].gc   = finalCV;
       foreign[i].gcf  = finalFO;
-      /*printf("allocForeignObj: allocated %d (gcCval %x, gcFO %x)\n",i,finalCV,finalFO);*/
+      /*fprintf(stderr,"allocForeignObj: allocated %d (0x%x) (gcCval %x, gcFO %x)\n",i,&foreign[i],finalCV,finalFO);*/
       return &foreign[i];
     }
   }
-  fprintf(stderr,"Warning: allocation limit exceeded for ForeignObj\n");
+  fprintf(stderr,"Warning: allocation limit (%d) exceeded for ForeignObj\n"
+         ,MAX_FOREIGNOBJ);
   return 0;
 }
 
 void freeForeignObj(ForeignObj *cd)
 {
-  /*printf("freeForeignObj: releasing %d\n",((int)cd-(int)foreign)/sizeof(ForeignObj));*/
+  /*fprintf(stderr,"freeForeignObj: releasing %d\n",((int)cd-(int)foreign)/sizeof(ForeignObj));*/
   if (cd->gcf)
     cd->gcf(cd);
   else
@@ -94,12 +95,14 @@ void *derefForeignObj(ForeignObj *cd)
 void clearForeignObjs(void)
 {
   int i;
+  /*fprintf(stderr,"clearForeignObjs\n");*/
   for(i=0; i<MAX_FOREIGNOBJ; i++)
     foreign[i].used = 0;
 }
 
 void markForeignObj(ForeignObj *cd)
 {
+  /*fprintf(stderr,"markForeignObj 0x%x used=%d\n",cd,cd->used);*/
   cd->used++;
 }
 
@@ -111,7 +114,7 @@ void gcForeignObjs(void)
         printf("gcForeignObjs: could reclaim %d (gcFO %x)\n",i,foreign[i].gcf);
       } */
     if(foreign[i].used == 0 && foreign[i].gcf) {
-    /*printf("gcForeignObjs: reclaiming %d\n",i);*/
+    /*fprintf(stderr,"gcForeignObjs: reclaiming %d (0x%x)\n",i,&foreign[i]);*/
       foreign[i].gcf(&foreign[i]);  /* Call first-stage garbage collector */
       foreign[i].gcf  = NULL;
     } 
@@ -143,7 +146,8 @@ void gcFile(void *c)	/* This is a possible second-stage GC */
 #ifdef PROFILE
   if(!replay)
 #endif
-    fclose(a->fp);
+    if (a->fp)			/* FILE* might have been hClose'd */
+      fclose(a->fp);
   /*if (a->path) free(a->path);*/
   /*free(a);	-- free'ing causes a seg-fault! don't know why */
 }
@@ -200,17 +204,21 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   NodePtr finalise;
   finalise = GET_POINTER_ARG1(fbox,1);
   fo = allocForeignObj(addr, (gcCval)makeStablePtr(finalise), gcLater);
+/*fprintf(stderr,"primForeignObjC: addr=0x%x finaliser=0x%x\n",addr,finalise);*/
   return mkCInt((int)fo);
 }
 
+#if 0
 /* 'addrToHandle' is very tricky!  The Addr *must* be a pointer to   */
 /* a ForeignObj that has already been allocated in C-land.  This     */
 /* function just changes the types around for Haskell-land.          */
 void *
 addrToHandle (void* addr)
 {
+  fprintf(stderr,"addrToHandle: addr=0x%x\n",addr);
   return mkCInt((int)addr);
 }
+#endif
 
 /* The following function is also visible to the Haskell world.       */
 /* It _must_ be a primitive, not a foreign import, because the latter */
@@ -226,7 +234,7 @@ C_HEADER(reallyFreeForeignObj)
   IND_REMOVE(nodeptr);
   fo = (void*)GET_INT_VALUE(nodeptr);
 
-  /*printf("reallyFreeForeignObj: releasing %d\n",((int)fo-(int)foreign)/sizeof(ForeignObj));*/
+  printf("reallyFreeForeignObj: releasing %d (0x%x)\n",((int)fo-(int)foreign)/sizeof(ForeignObj),fo);
   freeForeignObj(fo);
   C_RETURN(mkUnit());
 }

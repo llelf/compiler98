@@ -87,15 +87,16 @@ C_HEADER(cOpen)
 
 #endif
 
-/* foreign import openFileC :: CString -> IOMode -> IO Addr */
-/*   Note: the return Addr is not an ordinary Addr - it is actually
- *   a ForeignObj: we must later (in Haskell) cast it to the right
- *   type (ForeignObj), and then wrap it up as a Handle.
+/* foreign import openFileC :: CString -> IOMode -> IO ForeignObj */
+/*   Note: the return value is a ForeignObj, which is not strictly
+ *   legal by the FFI standard.  However, it makes sense here, because
+ *   the finaliser is in C, not in Haskell.
  */
 void* openFileC (char* filename, int iom)
 {
   char *type;
   FILE *fp;
+  ForeignObj *fo;
 
   switch (iom) {
     case ReadMode:      type = "r";  break;
@@ -108,7 +109,6 @@ void* openFileC (char* filename, int iom)
   fp = fopen(filename,type);
   if(fp) {
     FileDesc *a;
-    ForeignObj *fo;
     /*fprintf(stderr,"fopen: succeeded\n");*/
     a = (FileDesc *)malloc(sizeof(FileDesc));
     a->fp = fp;
@@ -117,9 +117,9 @@ void* openFileC (char* filename, int iom)
     a->path = strdup(filename);
     fo = allocForeignObj(a,gcFile,gcNow);
     /*fprintf(stderr,"[openFileC: succeeded %x %x]\n",a,a->fp);*/
-    return (void*)fo;
   } else {
+    fo = allocForeignObj((void*)0,(void*)0,gcNone);
     /*fprintf(stderr,"fopen: failed to open file %s for %s\n",filename,type);*/
-    return (void*)0;
   }
+  return (void*)mkCInt((int)fo);
 }
