@@ -35,6 +35,8 @@ OBJS = ${OBJS_HS} ${OBJS_GC} ${OBJS_C}
 
 CFILES_HS  = $(patsubst %.hs, %.c, $(filter %.hs, ${SRCS}))
 CFILES_GC  = $(patsubst %.gc, %.c, $(filter %.gc, ${SRCS}))
+CFILES_XS  = $(patsubst %.gc, %_.c, $(filter %.gc, ${SRCS})) \
+             $(patsubst %.gc, %_.hs, $(filter %.gc, ${SRCS}))
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
 CFILE_MAIN = $(patsubst %.hs, %.c, ${SRC_MAIN})
 endif
@@ -54,7 +56,7 @@ ${OBJDIR}:
 cleanhi:
 	-rm -f *.hi
 cleanC: cleanExtraC
-	-rm -f ${CFILES_GEN}
+	-rm -f ${CFILES_GEN} ${CFILES_XS}
 clean:	cleanhi cleanC
 	-rm -f ${OBJDIR}/*.o *.o
 	-rm -f $(patsubst %.gc, %_.hs, $(filter %.gc, $(SRCS)))
