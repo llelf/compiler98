@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.1 1999/12/16 11:01:45 malcolm Exp $
+   $Id: FFI.hs,v 1.2 2000/01/28 15:37:32 malcolm Exp $
 -}
 
 module FFI
@@ -58,8 +58,8 @@ module FFI
 import Addr		-- new
 import ForeignObj	-- new, note: type of finalizers is still wrong.
 import StablePtr	-- new
-import FixIO (fixIO)	-- eventually to be part of IOExts
-import Monad(when)
+import FixIO (fixIO)	-- part of IOExts, but IOExts depends on FFI.
+import Monad (when)
 
 ----------------------------------------------------------------------
 -- primitive marshaling
@@ -144,50 +144,50 @@ instance Storable Double where
 instance Storable Word8 where
    sizeOf        = const 1
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readWord8OffAddr
-   pokeElemOffset  = writeWord8OffAddr
+   peek          = readWord8OffAddr
+   poke          = writeWord8OffAddr
 
 instance Storable Word16 where
    sizeOf        = const 2
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readWord16OffAddr
-   pokeElemOffset  = writeWord16OffAddr
+   peek          = readWord16OffAddr
+   poke          = writeWord16OffAddr
 
 instance Storable Word32 where
    sizeOf        = const 4
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readWord32OffAddr
-   pokeElemOffset  = writeWord32OffAddr
+   peek          = readWord32OffAddr
+   poke          = writeWord32OffAddr
 
 instance Storable Word64 where
    sizeOf        = const 8
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readWord64OffAddr
-   pokeElemOffset  = writeWord64OffAddr
+   peek          = readWord64OffAddr
+   poke          = writeWord64OffAddr
 
 instance Storable Int8 where
    sizeOf        = const 1
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readInt8OffAddr
-   pokeElemOffset  = writeInt8OffAddr
+   peek          = readInt8OffAddr
+   poke          = writeInt8OffAddr
 
 instance Storable Int16 where
    sizeOf        = const 2
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readInt16OffAddr
-   pokeElemOffset  = writeInt16OffAddr
+   peek          = readInt16OffAddr
+   poke          = writeInt16OffAddr
 
 instance Storable Int32 where
    sizeOf        = const 4
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readInt32OffAddr
-   pokeElemOffset  = writeInt32OffAddr
+   peek          = readInt32OffAddr
+   poke          = writeInt32OffAddr
 
 instance Storable Int64 where
    sizeOf        = const 8
    alignment     = sizeOf   -- not sure about this
-   peekElemOffset  = readInt64OffAddr
-   pokeElemOffset  = writeInt64OffAddr
+   peek          = readInt64OffAddr
+   poke          = writeInt64OffAddr
 -}
 
 ---------------------------------------------------------------------------
