@@ -6,6 +6,7 @@ include Makefile.inc
 
 OBJDIR = ${BUILDDIR}/obj/compiler98
 TARGET = ${DST}/nhc98comp${EXE}
+HATTRANS = ${DST}/hat-trans
 
 SRCS = \
 	AssocTree.hs Bind.hs Case.hs CaseHelp.hs CaseLib.hs CaseOpt.hs \
@@ -17,7 +18,7 @@ SRCS = \
 	FSLib.hs FixSyntax.hs Fixity.hs Flags.hs FreeVar.hs Gcode.hs \
 	GcodeFix.hs GcodeLow.hs GcodeLowC.hs GcodeMem.hs GcodeOpt1.hs \
 	GcodeOpt2.hs GcodeRel.hs GcodeSpec.hs HbcOnly.hs IExtract.hs \
-	Import.hs ImportState.hs Info.hs IntState.hs IdKind.hs Lex.hs LexLow.hs \
+	Import.hs ImportState.hs Info.hs IntState.hs IdKind.hs Lex.hs LexLow.hs\
 	LexPre.hs LexStr.hs Lexical.hs Lift.hs Machine.hs Memo.hs \
 	MergeSort.hs MkSyntax.hs NT.hs Need.hs NeedLib.hs Nice.hs OsOnly.hs \
 	PrettyLib.hs PrettySyntax.hs Parse.hs Parse2.hs ParseCore.hs ParseI.hs \
@@ -58,27 +59,31 @@ endif
 HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
 
 
-all: ${TARGET}
-install: ${TARGET}
+all: ${TARGET} ${HATTRANS}
+install: ${TARGET} ${HATTRANS}
 objdir: ${OBJDIR}
 cfiles: $(OBJDIR)/$(HC)
-	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
+	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
-	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.$O
+	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
 	strip $(TARGET)
 relink:
-	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.$O
+	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
 	strip $(TARGET)
 clean:
-	rm -f $(OBJDIR)/*.$O *.$O *.hi
+	rm -f $(OBJDIR)/*.$O *.$O *.hi *.hc
 realclean: clean
 	rm -f *.hc *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS) # $(OBJDIR)/last${TRACING}
-	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
+	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	strip $(TARGET)
+$(HATTRANS): $(TARGET)
+	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
+	mv $(OBJDIR)/HatTrans$(EXE) $(HATTRANS)
+	strip $(HATTRANS)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):
