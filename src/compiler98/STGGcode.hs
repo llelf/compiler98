@@ -7,7 +7,7 @@ import Gcode
 import GcodeLow(con0,cap0,caf)
 import STGState
 import STGBuild
-import Foreign(ImpExp(..))
+import ForeignCode(ImpExp(..))
 
 stgGcode prof state code = 
   case {- mapS -} gBindingTop code () (Thread prof 0 0 [] state [] [] 0 0 [] ([],Nothing)) of

@@ -3,7 +3,7 @@ module STGState where
 import Extra(dropJust)
 import IntState
 import Gcode
-import Foreign
+import ForeignCode
 
 data Where = Arg Int | Stack Int | Heap Int | HeapLate | Direct Gcode
 

@@ -77,7 +77,7 @@ import GcodeSpec(gcodeZCon)
 import Depend(depend)
 import SysDeps(PackedString, unpackPS)
 
-import Foreign(Foreign,strForeign)
+import ForeignCode(Foreign,strForeign)
 import ReportImports(reportFnImports)
 
 

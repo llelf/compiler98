@@ -6,7 +6,7 @@ module StrPos(strPCode,strPExp) where
 import Extra(mixLine,mixSpace)
 import PosCode
 #if defined(__HBC__)
-import Foreign -- for ImpExp's Show instance
+import ForeignCode -- for ImpExp's Show instance
 import Syntax  -- for CallConv's Show instance
 #endif
 

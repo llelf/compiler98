@@ -22,7 +22,7 @@ import CaseHelp
 import CaseOpt
 import FSLib
 import SyntaxUtil
-import Foreign(ImpExp(..))
+import ForeignCode(ImpExp(..))
 import Id(Id)
 
 

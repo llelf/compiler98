@@ -2,7 +2,7 @@ module PosCode(module Prim, module PosCode, Pos) where
 
 import Extra(noPos)
 import Prim
-import Foreign (ImpExp)
+import ForeignCode (ImpExp)
 import Syntax (CallConv)
 import SyntaxPos
 	 

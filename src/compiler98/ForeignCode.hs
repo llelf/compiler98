@@ -1,4 +1,4 @@
-module Foreign
+module ForeignCode
   ( Foreign, toForeign, strForeign
   , ForeignMemo, foreignMemo
   , ImpExp(..)
