@@ -69,6 +69,7 @@ leximports fp =
     endstring []       = []
     stringgap ('\\':cs) = endstring cs
     stringgap (c:cs)    = stringgap cs
+    stringgap []        = []	-- source file is corrupt
 
     getmodnames (x:xs)
       | null x || all isSpace x  = getmodnames xs
