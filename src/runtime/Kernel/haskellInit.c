@@ -149,7 +149,7 @@ void haskellInit (int argc, char **argv)
 	if(!strcmp(argv[i],"-RTS")) {
 	  break;
 	} else if(argv[i][0] != '-') {
-	  fprintf(stderr,"Warning illegal runt-time argument %s ignored.\n",argv[i]);
+	  fprintf(stderr,"Warning: unknown runtime argument %s ignored.\n",argv[i]);
 	} else {
 	  switch(argv[i][1]) {
 	  case 's':
