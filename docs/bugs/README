@@ -30,3 +30,11 @@ STILL TO FIX:
 16? Importing qualified Prelude and then using an unqualified Prelude entity.
 17: Contexts required in let-bindings.
 18: Latin-ISO-8859-1 character set not fully supported.
+19: Nhc performs no kind check in type definitions.
+20: Nhc is too restrictive in rhs of newtype definitions.
+21: Same problem as above
+22: Nhc does not handle data types with arguments of kind *->* correctly
+
+
+
+
