@@ -1,7 +1,7 @@
 module DbgId(tTrace, tR, tSR, tSR2, tSR3, tDNum, t_value, tE,
              t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden,
              t_ap, t_rap, t_patvar, t_caf, t_fun, t_primn, t_guard, t_if,
-	     t_c, t_cn, t_pa, t_con, t_trust,
+	     t_c, t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
 	     t_indir,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
@@ -38,6 +38,7 @@ t_if		= qualImp "tif"
 t_fun n		= qualImp ("fun" ++ show n)
 t_ap n		= qualImp ("ap" ++ show n)
 t_rap n		= qualImp ("rap" ++ show n)
+t_pap n		= qualImp ("pap" ++ show n)
 t_c n		= qualImp ("c" ++ show n)
 t_cn n		= qualImp ("cn" ++ show n)
 t_pa n		= qualImp ("pa" ++ show n)
@@ -52,6 +53,7 @@ t_conDouble	= qualImp "conDouble"
 t_conFloat	= qualImp "conFloat"
 t_fromConInteger= qualImp "fromConInteger"
 t_patFromConInteger = qualImp "patFromConInteger"
+t_rPatBool      = qualImp "rPatBool"
 t_fatal		= qualImp "fatal"
 t_dbgerror     	= qualImp "_error"
 t_debugger	= qualImp "debugger"
@@ -108,6 +110,7 @@ tokenDbg = [(TCon, tTrace),
 	    (Var, t_conDouble),
 	    (Var, t_fromConInteger),
 	    (Var, t_patFromConInteger),
+	    (Var, t_rPatBool),
 	    (Var, t_caf), 
 	    (Var, t_patvar),
 	    (Var, t_fatal), 
@@ -137,6 +140,7 @@ tokenDbg = [(TCon, tTrace),
            ++ [(Var,  t_fun n)   | n <- [0..12]]
 	   ++ [(Var,  t_ap n)    | n <- [1..12]]
 	   ++ [(Var,  t_rap n)   | n <- [1..12]]
+	   ++ [(Var,  t_pap n)   | n <- [1..10]]
 	   ++ [(Var,  t_c n)     | n <- [1..12]]
 	   ++ [(Var,  t_cn n)    | n <- [1..8]]
 	   ++ [(Var,  t_pa n)    | n <- [0..4]]

@@ -1,6 +1,7 @@
 module FixSyntax(fixSyntax) where
 
-import Extra(Pos(..),noPos,strPos,pair,dropJust)
+import List(intersperse)
+import Extra(Pos(..),noPos,strPos,pair,dropJust,strace)
 import Syntax
 import IdKind(IdKind(..))
 import State
@@ -86,46 +87,88 @@ fsExp (ExpApplication pos (ExpApplication _ xs:ys)) =
   fsExp (ExpApplication pos (xs++ys))
 
 #ifdef DBGTRANS
-fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType), sr, t, l@(ExpLit p2 (LitInteger b i))]) =
+fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType),
+                             sr, t, l@(ExpLit p2 (LitInteger b i))]) =
     fsState >>>= \state ->
     if tidIS state fci == t_fromConInteger && tidIS state qNum == tNum then
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tInt then
-	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInt, Var)), sr, t,
-	                             ExpLit p (LitInt b (fromInteger i))])
+            --strace ("fixSyntax: Int expression in Num context") $
+	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInt, Var)), sr, t
+	                            ,ExpLit p (LitInt b (fromInteger i))])
         else if tidIS state qType == tInteger then
-	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInteger, Var)), sr, t, l])
-	else error ("fsExp: strange expr(1) at "++ strPos p ++
+            --strace ("fixSyntax: Integer expression in Num context") $
+	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInteger, Var))
+                                    ,sr, t, l])
+  --    else
+  --	    unitS (ExpApplication p [ExpVar p (tidFun (tfromInteger, Var))
+  --                                ,dict, sr, t, l])
+  	else error ("fsExp: strange expr(1) at "++ strPos p ++
                     "\n  ctx is Num, literal on rhs is not Int or Integer")
-    else if tidIS state fci == t_patFromConInteger then
+    else if tidIS state fci == t_patFromConInteger
+         && tidIS state qNum==tNum then
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tInt then
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con)), 
-	                             ExpLit p (LitInt b (fromInteger i)), t])
+            --strace ("fixSyntax: Int pattern in Num context") $
+	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	                            ,ExpLit p2 (LitInt b (fromInteger i))
+                                    ,PatWildcard p])
         else if tidIS state qType == tInteger then
-	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con)), l, t])
+            --strace ("fixSyntax: Integer pattern in Num context") $
+	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con))
+	                            ,l, PatWildcard p])
 	else error ("fsExp: strange expr(5) at "++ strPos p ++
                     "\n  definite ctx, pat on lhs is not Int or Integer")
     else error ("fsExp: strange expr(2) at " ++ strPos p ++
-                "\n  definite ctx, neither a lhs pat nor a rhs literal" ++
+                "\n  ctx not Num?  neither a lhs pat nor a rhs literal?" ++
                 "\n  fci=" ++ show t_fromConInteger ++
                 "\n  pfci=" ++ show t_patFromConInteger ++
                 "\n  ?=" ++ show(tidIS state fci))
-fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(ExpVar _ _), sr, t, l@(ExpLit p2 (LitInteger b i))]) =
-    fsState >>>= \state ->
+
+fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict{-@(ExpVar _ _)-},
+                             sr, t, l@(ExpLit p2 (LitInteger b i))]) =
+  fsState >>>= \state ->
     if tidIS state fci == t_fromConInteger then
         fsTidFun >>>= \tidFun -> 
-	unitS (ExpApplication p [ExpVar p (tidFun (t_ap 1, Var)),
-	                         sr, t, ExpApplication p [ExpVar p (tidFun (tfromInteger, Var)),
-				                          dict, sr, t],
-				 ExpApplication p [ExpVar p (tidFun (t_conInteger, Var)), 
-				                   sr, t, l]])
+        --strace ("fixSyntax: fromInteger expression with dictionary ("
+        --      ++showExp state dict++")") $
+	unitS (ExpApplication p
+                 [ExpVar p (tidFun (t_ap 1, Var)), sr, t
+                 ,ExpApplication p
+                    [ExpVar p (tidFun (tfromInteger, Var))
+                    ,dict, sr, t]
+                 ,ExpApplication p
+                    [ExpVar p (tidFun (t_conInteger, Var))
+                    ,sr, t, l]])
     else if tidIS state fci == t_patFromConInteger then
-         error ("fsExp: strange expr(4) at "++strPos p ++
-                "\n  variable ctx, pat on lhs is Integer (tough!)")
+        fsTidFun >>>= \tidFun -> 
+        --strace ("fixSyntax: fromInteger pattern with dictionary ("
+        --      ++showExp state dict++")") $
+        let dict' = case dict of
+                      e@(ExpVar _ _) -> dict
+                      e@(ExpApplication _ exps) -> dict
+        in
+	unitS (ExpApplication p
+                 [ExpVar p (tidFun (t_ap 1, Var)), sr, t
+                 ,ExpApplication p
+                    [ExpVar p (tidFun (tfromInteger, Var))
+                    ,dict, sr, t]
+                 ,ExpApplication p
+                    [ExpVar p (tidFun (t_conInteger, Var))
+                    ,sr, t, l]])
     else error ("fsExp: strange expr(3) at "++ strPos p ++
-                "\n  variable ctx, neither a lhs pat nor a rhs literal")
+                "\n  variable ctx, neither a lhs pat nor a rhs literal integer")
+  where
+    showExp state (Exp2 _ a b) =
+        "Exp2 "++ show (tidIS state a)++" "++show (tidIS state b)
+    showExp state (ExpApplication _ es) =
+        "ExpAp ["++ concat (intersperse ":" (map (showExp state) es)) ++ "]"
+    showExp state (ExpVar _ a) =
+        "ExpVar "++ show (strIS state a)
+    showExp state e =
+        "_"
 #endif
+
 --- fromInteger {Int Integer Float Double} constant
 fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger),(ExpDict v2@(Exp2 _ qNum qType)),l@(ExpLit pl (LitInteger b i))]) =
   fsState >>>= \ state ->

@@ -27,6 +27,8 @@ import MergeSort(mergeSort)
 import SyntaxUtil
 import Foreign(ImpExp(..))
 
+import DbgId
+
 caseTopLevel modstr t2i code topdecls state tidFun =
     let
 	down =
@@ -324,14 +326,47 @@ matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
 
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
-matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]),fun) =
+-- match (traced) numeric literal in an unresolved context
+matchAltIf v ces (pat@(ExpApplication pos
+                         [ap1, sr, t			-- ap_1 sr t
+                         ,(ExpApplication _
+                             [ExpVar _ _, dict, _, _])	-- fromInteger
+                         ,(ExpApplication _
+                                 [ExpVar _ ci, _, _,
+                                  ExpLit _ (LitInteger _ lit)])	-- (R lit _)
+                         ]), fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
+  caseTidFun >>>= \ tidFun ->
+  strace ("Warning: numeric literal pattern in an overloaded context at "++
+          strPos pos++"\n"++
+          "    Compiled code _will_ give wrong result.\n"++
+          "    To fix, resolve to Int or Integer with a type signature.\n") $
+  --strace ("case: matchAltIf: trace numeric literal in unresolved context") $
+  unitS (PosExpIf pos) =>>>
+	caseExp (ExpApplication pos
+                   [ExpVar pos (tidFun (t_rPatBool,Var))
+	           ,ExpApplication pos
+                      [ --ExpVar pos (tidFun (t_apply4,Var)),
+                       equalNumEq dict, sr, t
+                      ,ExpVar pos v
+              --      ,ExpApplication pos
+              --         [ExpCon pos (tidFun (tR,Con))
+              --         ,ExpVar pos v, t]
+                      ,pat]]) =>>>
+	match ces [fun] (unitS PosExpFail) =>>>
+          (unitS PosExpFail)
+-- match (untraced) numeric literal in an unresolved context
+matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]), fun) =
+  caseEqualNumEq >>>= \ equalNumEq ->
+  --strace ("case: matchAltIf: untraced numeric literal in unresolved context")$
   unitS (PosExpIf pos) =>>>
 	caseExp (ExpApplication pos [equalNumEq dict,ExpVar pos v,pat]) =>>>
 	match ces [fun] (unitS PosExpFail) =>>>
           (unitS PosExpFail)
+-- match numeric literals (traced or untraced) in resolved contexts
 matchAltIf v ces (pat@(ExpLit pos (LitInteger _ a)),fun) =
   caseEqInteger >>>= \ equal ->
+  --strace ("case: matchAltIf: numeric literal Integer") $
   mkIfLit v ces pos pat fun equal
 matchAltIf v ces (pat@(ExpLit pos (LitFloat _ a)),fun) =
   caseEqFloat >>>= \ equal ->
@@ -340,8 +375,8 @@ matchAltIf v ces (pat@(ExpLit pos (LitDouble _ a)),fun) =
   caseEqDouble >>>= \ equal ->
   mkIfLit v ces pos pat fun equal
 
-
 matchAltIf v ces pat = error ("What? matchAltIf at " ++ strPos (getPos pat) ++ "\n")
+
 
 mkIfLit :: Int -> [PosExp] -> Pos -> ExpI -> Fun Int -> ExpI -> CaseFun PosExp
 mkIfLit v ces pos pat fun equal =  
