@@ -122,7 +122,6 @@ assocDef []          d a = d
 assocDef ((k,v):kvs) d a = if a == k then v
                            else assocDef kvs d a
 
-flatten xs = foldr (++) [] xs
 -------------------
 
 type Pos = Int

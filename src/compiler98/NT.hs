@@ -6,7 +6,7 @@ module NT ( NT(..), NewType(..)
 
 
 import Id(Id)
-import Extra(mixComma,mixSpace,mix,snub,flatten)
+import Extra(mixComma,mixSpace,mix)
 import Char
 
 data NewType = NoType
