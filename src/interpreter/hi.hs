@@ -104,6 +104,8 @@ commands ws options compiler modules =
        else catch (setCurrentDirectory (head target)) print
       )
   command "dir" (getDirectoryContents "." >>= indent)
+  command "ls" (getDirectoryContents "." >>= indent)
+  command "pwd" (getCurrentDirectory >>= putStrLn)
   command "set"
       (do putStrLn ("Current settings:\n  "++concat (intersperse " " (options++target)))
           toplevel (options++target) compiler modules)

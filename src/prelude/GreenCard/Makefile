@@ -14,6 +14,7 @@ include ../Makefile.common
 
 # Here are some extra rules.
 extra: ${OBJDIR}/${THISLIB}.o
+extracfiles: ${THISLIB}.c
 
 ifneq "${TRACING}" "T"
 ${OBJDIR}/${THISLIB}.o: ${THISLIB}.gc

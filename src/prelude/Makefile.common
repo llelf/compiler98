@@ -44,7 +44,8 @@ CFILES_GEN = ${CFILES_HS} ${CFILES_GC} ${CFILE_MAIN}
 
 all: ${OBJS} extra ${OBJ_MAIN}
 extra:
-cfiles: ${CFILES_GEN}
+cfiles: extracfiles ${CFILES_GEN}
+extracfiles:
 fromC:
 	$(HC) -c -d $(OBJDIR) $(EXTRA_C_FLAGS) *.c
 objdir: ${OBJDIR}
