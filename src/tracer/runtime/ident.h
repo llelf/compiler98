@@ -1,7 +1,7 @@
 #ifndef _IDENT_H
 #define _IDENT_H
 
-typedef unsigned long FileOffset;
+#include "hat.h"
 
 typedef struct _IdEntry {
     int constr;
