@@ -1,7 +1,7 @@
 #include <string.h>
 #include "haskell2c.h"
 
-/* primIndex :: Vector -> Int -> a */
+/* primIndex :: Vector a -> Int -> a */
 /* The index must be evaluated before calling cPrimVector */
 /* Index must be in range */
 
@@ -29,6 +29,10 @@ C_HEADER(primIndex)
 }	
 
 
-
+/* foreign import primIndexC :: Vector a -> Int -> a */
+NodePtr primIndexC (int i, NodePtr vec)
+{
+  return (NodePtr)vec[1+EXTRA+i];
+}
 
 
