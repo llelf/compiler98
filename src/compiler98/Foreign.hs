@@ -114,7 +114,7 @@ searchType st (arrow,io) info =
             | t==tWord32     = Word32
             | t==tWord64     = Word64
             | t==tPackedString  = PackedString
-            | otherwise      = trace ("Warning: foreign import/export has non-primitive type: "++show t) Unknown
+            | otherwise      = trace ("Warning: foreign import/export has non-primitive type: "++show t++"\n") Unknown
 
     getNT (NewType _ _ _ [nt]) = nt
     getNT (NewType _ _ _ (nt:_)) = nt
@@ -357,7 +357,7 @@ hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 --hConvert StablePtr  s = word "mkStablePtr" . parens (word "stableRef" . parens s)
 {- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
-hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return ForeignObj type.") $
+hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return ForeignObj type.\n") $
                           word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 --hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
 hConvert Unit         s = word "mkUnit()"
