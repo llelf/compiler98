@@ -2,7 +2,6 @@ module ForeignObj
   ( ForeignObj			-- abstract, instance of: Eq
   , makeForeignObj		-- :: Addr -> IO () -> IO ForeignObj
   , foreignObjToAddr		-- :: ForeignObj -> Addr
---, addrToForeignObj		-- :: Addr -> ForeignObj -- no finalizer!
   , withForeignObj		-- :: ForeignObj -> (Addr -> IO a) -> IO a
   , touchForeignObj		-- :: ForeignObj -> IO ()
   ) where
@@ -17,8 +16,14 @@ import IOExtras (unsafePerformIO)
 
 data _E a = _E a	-- just a box to protect arg from evaluation
 
+
+-- The only way to create a ForeignObj.
 makeForeignObj			:: Addr -> IO () -> IO ForeignObj
 makeForeignObj a f		 = primForeignObjC a (_E (unsafePerformIO f))
+
+-- A different name for the same thing.
+newForeignObj			:: Addr -> IO () -> IO ForeignObj
+newForeignObj = makeForeignObj
 
 
 -- Note that `primForeignObjC' does not strictly conform to the FFI
@@ -29,12 +34,16 @@ makeForeignObj a f		 = primForeignObjC a (_E (unsafePerformIO f))
 -- of returning a ForeignObj, and this is it.  ***Do not do it elsewhere!
 foreign import primForeignObjC  :: Addr -> a -> IO ForeignObj
 
+
+-- Get the hidden Addr out of a ForeignObj.
 foreign cast foreignObjToAddr	:: ForeignObj -> Addr
---foreign cast addrToForeignObj	:: Addr       -> ForeignObj
+
+-- But it is impossible to do the opposite!
+--foreign cast addrToForeignObj	:: Addr       -> ForeignObj	-- WRONG!
 
 
--- New operation suggested by Marcin Kowalcsycz and incorporated into GHC.
--- It is a safer way to use the old unsafe `foreignObjToAddr'.
+-- New operation suggested by Marcin Kowalcsycz.
+-- It is a safer way to use the older, less safe, `foreignObjToAddr'.
 withForeignObj  :: ForeignObj -> (Addr -> IO a) -> IO a
 withForeignObj fo action = action (foreignObjToAddr fo)
 {- Note that GHC probably requires the following implementation:
@@ -44,7 +53,8 @@ withForeignObj fo action = action (foreignObjToAddr fo)
     return res
 -}
 
--- `Touching' a foreignObj is just intended to keep it alive in GHC across
--- calls which might otherwise allow it to be GC'ed.
+-- `Touching' a foreignObj is just intended to keep it alive across
+-- calls which might otherwise allow it to be GC'ed.  Only really
+-- an issue in GHC - for nhc98 a null-op is sufficient.
 touchForeignObj :: ForeignObj -> IO ()
 touchForeignObj fo = return ()
