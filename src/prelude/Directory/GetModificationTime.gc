@@ -1,0 +1,15 @@
+module Directory where
+
+import GreenCard
+import DClockTime ({-type-}ClockTime(..))
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun getModificationTime :: FilePath -> IO ClockTime
+%call (filePath fp)
+%code
+%  struct stat st;
+%  stat(fp,&st);
+%result (clockTime "st.st_mtime")
+

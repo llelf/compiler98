@@ -1,0 +1,14 @@
+module BinArray
+  ( getUBAFree
+  ) where
+
+import GreenCard
+import DUnboxedArray ({-type-}UnboxedArray(..))
+
+%-#include "cLowUnboxedArray.h"
+
+%fun getUBAFree :: UnboxedArray -> IO Int
+%call (unboxedArray uba)
+%code
+%result (int "uba->free")
+

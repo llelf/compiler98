@@ -1,0 +1,10 @@
+module BinArray
+  ( {-type-} UnboxedArray(..)
+  ) where
+
+import GreenCard
+
+newtype UnboxedArray = UBA ForeignObj
+%dis unboxedArray uba = declare "UBA" uba in 
+%                       UBA (foreign "finaliseUBA" uba)
+
