@@ -1,6 +1,6 @@
 #!/bin/sh
 #	fixghc:  a small script to patch up the -syslib changes between
-#		versions 4.04, 4.06, and 4.08 of ghc.
+#		versions 4.04, 4.06, 4.08, and 5.xx of ghc.
 
 case $# in
   0) exit 1;;
@@ -19,7 +19,7 @@ case `echo -n hello | wc -c | ( read n ; echo $n )` in
 esac
 
 
-# We permit arguments to arrive in any format (4.04, 4.06, or 4.08),
+# We permit arguments to arrive in any format (4.04, 4.06, 4.08, 5.00, 5.04),
 # and translate to the format specified by the first arg.
 
 if [ $ghcversion -le 405 ]
