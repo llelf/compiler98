@@ -512,6 +512,20 @@ void showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri
 	*pmodule = strdup("Prelude");
 	*pname = strdup(str);
 	break;
+    case NTFloat:
+	np = GET_POINTER_ARG1(t, 1);
+	IND_REMOVE(np);
+	sprintf(&str[0], "%.6f", (double)get_float_value(np));
+	*pmodule = strdup("Prelude");
+	*pname = strdup(str);
+	break;
+    case NTDouble:
+	np = GET_POINTER_ARG1(t, 1);
+	IND_REMOVE(np);
+	sprintf(&str[0], "%.15f", get_double_value(np));
+	*pmodule = strdup("Prelude");
+	*pname = strdup(str);
+	break;
 #if 0
     case NTFun:
 	return showProfString((char *)GET_INT_VALUE(t));
