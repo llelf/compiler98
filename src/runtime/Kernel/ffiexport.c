@@ -89,12 +89,12 @@ NodePtr buildExportClosure (int args, NodePtr* buffer)
 NodePtr evalExport(NodePtr x)
 {
   CodePtr IP=Ip;		/* save global instruction pointer */
-  StablePtr p = stableInsert(x);
+  StablePtr p = makeStablePtr(x);
   C_PUSH(x);
   C_EVALTOS(x);
   C_POP();
   Ip=IP;			/* restore instruction pointer */
-  x = stableRef(p);
-  stableRelease(p);
+  x = derefStablePtr(p);
+  freeStablePtr(p);
   return x;
 }

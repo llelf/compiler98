@@ -183,7 +183,7 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   ForeignObj *fo;
   NodePtr finalise;
   finalise = GET_POINTER_ARG1(fbox,1);
-  fo = allocForeignObj(addr, (gcCval)mkStablePtr(finalise), gcLater);
+  fo = allocForeignObj(addr, (gcCval)makeStablePtr(finalise), gcLater);
   return (void*)fo;
 }
 
@@ -204,6 +204,9 @@ void runDeferredGCs (void)
   int i;
   NodePtr n;
   CodePtr IP=Ip;		/* save global instruction pointer */
+  NodePtr *SP=Sp;		/*                   stack pointer */
+  NodePtr *FP=Fp;		/*                   frame pointer */
+
   static int alreadyRunning=0;	/* need lock in case a finaliser triggers GC! */
 
   if (alreadyRunning) {
@@ -214,14 +217,16 @@ void runDeferredGCs (void)
   fprintf(stderr,"runDeferredGCs: %d finalisers to process\n",pendingIdx);
 
   for (i=1; i<=pendingIdx; i++) {/* traverse the queue */
-    n = stableRef(pending[i]);
+    n = derefStablePtr(pending[i]);
     C_PUSH(n);
     C_EVALTOS(n); 		/* .. run each finaliser, discarding result */
     C_POP();
-    stableRelease(pending[i]);	/* .. then permit GC of finaliser itself */
+    freeStablePtr(pending[i]);	/* .. then permit GC of finaliser itself */
     pending[i] = NULL;
   }
   Ip=IP;			/* restore global instruction pointer */
+  Sp=SP;			/*                      stack pointer */
+  Fp=FP;			/*                      frame pointer */
   pendingIdx = 0;		/* finally, reset the queue */
   alreadyRunning = 0;		/* and release the mutex lock */
 }

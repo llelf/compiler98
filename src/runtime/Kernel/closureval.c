@@ -1,5 +1,6 @@
 #include "haskell2c.h"
 #include "newmacros.h"
+#include "stableptr.h"
 
 #ifdef PROFILE
 static SInfo apply1ProfInfo = { "Runtime","buildClosure","<APPLY.VAP>"};
@@ -7,11 +8,9 @@ static SInfo apply2ProfInfo = { "Runtime","buildClosure","<APPLY.$>"};
 static SInfo apply3ProfInfo = { "Runtime","buildClosure","<APPLY.CAP>"};
 #endif
 
-extern  HaskellRef       stableInsert (NodePtr);
-extern  NodePtr   stableRef (HaskellRef);
-#define getNode() stableRef(*block++)
+#define getNode() derefStablePtr(*block++)
 
-HaskellRef buildClosure (int args, HaskellRef* block)
+StablePtr buildClosure (int args, StablePtr* block)
 {
     int need, size;
     Cinfo cinfo;
@@ -84,63 +83,63 @@ HaskellRef buildClosure (int args, HaskellRef* block)
         while(args-->0)
             *Hp++ = (Node)getNode();
     }
-    return stableInsert(vap);
+    return makeStablePtr(vap);
 }
 
-void eval(HaskellRef x)
+void eval(StablePtr x)
 {
   CodePtr IP=Ip;		/* save global instruction pointer */
-  C_PUSH(stableRef(x));
-  C_EVALTOS(stableRef(x));
+  C_PUSH(derefStablePtr(x));
+  C_EVALTOS(derefStablePtr(x));
   C_POP();
   Ip=IP;			/* restore instruction pointer */
 }
 
-HaskellRef makeInt (int x) { return stableInsert(mkInt(x)); }
-int unmakeInt (HaskellRef x)
+StablePtr makeInt (int x) { return makeStablePtr(mkInt(x)); }
+int unmakeInt (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_INT_VALUE(n);
 }
 
-HaskellRef makeChar (char x) { return stableInsert(mkChar(x)); }
-char unmakeChar (HaskellRef x)
+StablePtr makeChar (char x) { return makeStablePtr(mkChar(x)); }
+char unmakeChar (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_CHAR_VALUE(n);
 }
 
-HaskellRef makeBool (int x) { return stableInsert(mkBool(x)); }
-int unmakeBool (HaskellRef x)
+StablePtr makeBool (int x) { return makeStablePtr(mkBool(x)); }
+int unmakeBool (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_BOOL_VALUE(n);
 }
 
 /* ***********************************************************
-HaskellRef makeFloat (float x) { return stableInsert(mkFloat(x)); }
-float unmakeFloat (HaskellRef x)
+StablePtr makeFloat (float x) { return makeStablePtr(mkFloat(x)); }
+float unmakeFloat (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_FLOAT_VALUE(n);
 }
 
-HaskellRef makeDouble (double x) { return stableInsert(mkDouble(x)); }
-double unmakeDouble (HaskellRef x)
+StablePtr makeDouble (double x) { return makeStablePtr(mkDouble(x)); }
+double unmakeDouble (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_DOUBLE_VALUE(n);
 }
 
-HaskellRef makePackedString (char* x) { return stableInsert(mkString(x)); }
-char* unmakePackedString (HaskellRef x)
+StablePtr makePackedString (char* x) { return makeStablePtr(mkString(x)); }
+char* unmakePackedString (StablePtr x)
 {
-  NodePtr n = stableRef(x);
+  NodePtr n = derefStablePtr(x);
   IND_REMOVE(n);
   return GET_STRING_VALUE(n);
 }

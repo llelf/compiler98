@@ -9,9 +9,9 @@ module StablePtr
 
 import FFIBuiltin (StablePtr,Addr)
 
-foreign import "stableInsert"  makeStablePtr  :: a -> IO (StablePtr a)
-foreign import "stableRef"     deRefStablePtr :: StablePtr a -> IO a
-foreign import "stableRelease" freeStablePtr  :: StablePtr a -> IO ()
+foreign import "makeStablePtr"  makeStablePtr  :: a -> IO (StablePtr a)
+foreign import "derefStablePtr" deRefStablePtr :: StablePtr a -> IO a
+foreign import "freeStablePtr"  freeStablePtr  :: StablePtr a -> IO ()
 
 foreign cast stablePtrToAddr :: StablePtr a -> Addr
 foreign cast addrToStablePtr :: Addr -> StablePtr a

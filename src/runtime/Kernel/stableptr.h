@@ -3,12 +3,16 @@
 
 typedef void* StablePtr;
 
-extern  StablePtr      stableInsert (unsigned long*);
-extern  unsigned long *stableRef (StablePtr);
-extern  void           stableRelease (StablePtr);
-extern  void           stableCopy (StablePtr,StablePtr);
+extern  StablePtr      makeStablePtr  (unsigned long*);
+extern  unsigned long *derefStablePtr (StablePtr);
+extern  void           freeStablePtr  (StablePtr);
+extern  void           copyStablePtr  (StablePtr,StablePtr);
 
-/* for backward compatibility */
+/* for backwards compatibility: */
 typedef StablePtr HaskellRef;
+#define stableRef(x)		derefStablePtr(x)
+#define stableInsert(x)		makeStablePtr(x)
+#define stableRelease(x)	freeStablePtr(x)
+#define stableCopy(x,y)		copyStablePtr(x)
 
 #endif

@@ -15,9 +15,11 @@ extern void mark(NodePtr*);
 extern void flip(NodePtr*);
 
 /* Whenever we get a stable ptr, it is given a reference number and placed in 
- * a table, the StableTable, using stableInsert(NodePtr np).  Nodes are
- * looked up in the table using stableRef(StablePtr ref). If it returns zero,
- * the node is not in the table.
+ * a table, the StableTable, using makeStablePtr(NodePtr np).  (For
+ * convenience of testing, we never use the zero index in the table.)
+ *
+ * Nodes are looked up in the table using derefStablePtr(StablePtr ref).
+ * If it returns zero, the node is not in the table.
  */
 
 static long STABLE_ALLOCSIZE = 1024;
@@ -27,12 +29,12 @@ static NodePtr *StableTable;
 static long StableFree;
 static long StableRefNr;
 
-NodePtr stableRef(StablePtr ref)
+NodePtr derefStablePtr(StablePtr ref)
 {
     return StableTable[(long)ref];
 }
 
-void stableMap(void (*f)(NodePtr*))
+void mapStablePtrs(void (*f)(NodePtr*))
 {
   long i;
   for(i=0; i < STABLE_ALLOCSIZE; i++) {
@@ -42,7 +44,7 @@ void stableMap(void (*f)(NodePtr*))
   }    
 }
 
-StablePtr stableInsert(NodePtr np) 
+StablePtr makeStablePtr(NodePtr np) 
 {
     if (--StableFree == 0) {
         long i = STABLE_ALLOCSIZE;
@@ -57,13 +59,13 @@ StablePtr stableInsert(NodePtr np)
     }
     while (StableTable[StableRefNr]) {
         if (++StableRefNr == STABLE_ALLOCSIZE)
-            StableRefNr = 0;
+            StableRefNr = 1;
     }
     StableTable[StableRefNr] = np;
     return (StablePtr)StableRefNr;
 }
 
-void stableRelease(StablePtr i)
+void freeStablePtr(StablePtr i)
 {
     StableTable[(long)i] = (NodePtr)0;
     StableFree++;
@@ -72,12 +74,12 @@ void stableRelease(StablePtr i)
 /* Called by the garbage collector */
 void stableMark()
 {
-  stableMap(mark);
+  mapStablePtrs(mark);
 }
 
 void stableFlip()
 {
-  stableMap(flip);
+  mapStablePtrs(flip);
 }
 
 int stableInit() {
@@ -89,11 +91,11 @@ int stableInit() {
     }
     for (i=0; i<STABLE_ALLOCSIZE; i++)
         StableTable[i] = (NodePtr)0;
-    StableFree = STABLE_ALLOCSIZE;
-    StableRefNr = 0;
+    StableFree = STABLE_ALLOCSIZE-1;
+    StableRefNr = 1;
     add_user_gc(stableMark,stableFlip);
 }
 
-void stableCopy(StablePtr i, StablePtr v) {
+void copyStablePtr(StablePtr i, StablePtr v) {
     StableTable[(long)i] = StableTable[(long)v];
 }
