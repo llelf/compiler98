@@ -522,7 +522,10 @@ newInstance (realcls,realcon,free,ctxs) =
 iextractInstance :: [Context TokenId] -> a -> TokenId -> Type TokenId 
                  -> () -> ImportState -> ImportState
 
-iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
+-- iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
+iextractInstance ctxs pos cls typ =
+  let con = case typ of (TypeCons _ con _) -> con; (TypeVar _ con) -> con
+  in
   existTid TClass cls >>>= \qcls ->
   existTid TCon con >>>= \qcon ->
   let al = tvTids (snub (freeType typ))
