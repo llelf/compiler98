@@ -12,8 +12,8 @@ module TraceId
   , fixPriority		-- :: TraceId -> Int
   , getUnqualified      -- :: TraceId -> String
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
-  ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus,
-  ,tTokenTrue,tTokenFalse -- :: TraceId
+  , tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus
+  , tTokenTrue,tTokenFalse -- :: TraceId
   ) where
 
 import TokenId (TokenId,extractV,dropM,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
