@@ -1,0 +1,17 @@
+module Directory (removeDirectory) where
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun rmdir :: FilePath -> IO Int
+%call (filePath fp)
+%code
+%  err = rmdir(fp);
+%result (int err)
+
+removeDirectory :: FilePath -> IO ()
+removeDirectory fp = patchIOError (rmdir fp)
+

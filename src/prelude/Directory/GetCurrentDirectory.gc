@@ -1,0 +1,19 @@
+module Directory (getCurrentDirectory) where
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun getcwd :: () -> IO (Int,FilePath)
+%call ()
+%code
+%  char buf[1024];
+%  fp = getcwd(buf,1024);
+%  if (fp==NULL) err=-1; else err=0;
+%result (int err, filePath fp)
+
+getCurrentDirectory :: IO FilePath
+getCurrentDirectory = patchIOErrorVal (getcwd ())
+

@@ -1,0 +1,17 @@
+module Directory (removeFile) where
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun unlink :: FilePath -> IO Int
+%call (filePath fp)
+%code
+%  err = unlink(fp);
+%result (int err)
+
+removeFile :: FilePath -> IO ()
+removeFile fp = patchIOError (unlink fp)
+

@@ -1,0 +1,35 @@
+module Directory (doesFileExist) where
+
+{-
+import IO
+import DIO
+import CString
+
+doesFileExist              :: FilePath -> IO Bool
+doesFileExist fp =
+  IO (\world -> cDoesFileExist (toCString fp))
+
+cDoesFileExist primitive 1 :: PackedString -> Either IOError Bool
+-}
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/types.h>
+%-#include <sys/stat.h>
+
+%-#define TRUE  1
+%-#define FALSE 0
+
+%fun primDoesFileExist :: FilePath -> IO (Int,Bool)
+%call (filePath fp)
+%code
+%  struct stat st;
+%  err = stat(fp,&st);
+%  if ((err==0) && S_ISREG(st.st_mode)) b=TRUE;
+%  else b=FALSE;
+%result (int err, bool b)
+
+doesFileExist :: FilePath -> IO Bool
+doesFileExist fp = patchIOErrorVal (primDoesFileExist fp)
+

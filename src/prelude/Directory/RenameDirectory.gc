@@ -1,0 +1,17 @@
+module Directory (renameDirectory) where
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun rename :: FilePath -> FilePath -> IO Int
+%call (filePath fp1) (filePath fp2)
+%code
+%  err = rename(fp1,fp2);
+%result (int err)
+
+renameDirectory :: FilePath -> FilePath -> IO ()
+renameDirectory fp1 fp2 = patchIOError (rename fp1 fp2)
+

@@ -1,0 +1,18 @@
+module Directory (createDirectory) where
+
+import GreenCard
+import PatchIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+
+%fun mkdir :: FilePath -> IO Int
+%call (filePath fp)
+%code
+%  mode_t m = 0x755;
+%  err = mkdir(fp,m);
+%result (int err)
+
+createDirectory :: FilePath -> IO ()
+createDirectory fp = patchIOError (mkdir fp)
+

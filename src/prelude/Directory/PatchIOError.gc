@@ -1,0 +1,29 @@
+module Directory (patchIOError, patchIOErrorVal) where
+
+import GreenCard
+import DErrNo
+import DIOError
+
+%-#include <sys/stat.h>
+%-#include <unistd.h>
+%-extern int errno;
+
+%fun readErrNo :: () -> IO ErrNo
+%call ()
+%code
+%result (<fromEnum/toEnum> (int "errno"))
+
+returnEither :: Int -> a -> IO a
+returnEither err val =
+  if err == -1 then readErrNo () >>= ioError . IOErrorC 
+               else return val
+
+patchIOError :: IO Int -> IO ()
+patchIOError comp = do
+  err <- comp
+  returnEither err ()
+
+patchIOErrorVal :: IO (Int,a) -> IO a
+patchIOErrorVal comp = do
+  (err,val) <- comp
+  returnEither err val
