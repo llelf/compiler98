@@ -80,7 +80,8 @@ public class TraceFrame extends Frame {
 
     fontItem = createMenuItem("Select font", optionMenu, handler, true, null);
 
-    // optionMenu.add(createCheckboxMenuItem(Options.memoise, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.memoise, false));
+    
     // optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
     // optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
     // optionMenu.add(createCheckboxMenuItem(Options.dumprefs, true));

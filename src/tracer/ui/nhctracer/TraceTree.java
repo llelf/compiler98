@@ -19,9 +19,16 @@ public class TraceTree extends Object {
   }
 
   public void addTrace(Trace trace) {
-    //trace.color = colors[traces.size()];
     trace.index = traces.size();
     traces.addElement(trace);
+  }
+  
+  public void delTrace(Trace trace) {
+    traces.removeElementAt(trace.index);
+    for (int i = trace.index; i < traces.size(); i++) {
+      Trace t = (Trace)traces.elementAt(i);
+      t.index--;
+    }
   }
 
   public void childLayers(int layers) {
@@ -34,12 +41,13 @@ public class TraceTree extends Object {
   }
 
   public Trace inTrace(int trefnr) {
+    // System.err.println("inTrace(iortrefnnr = "+trefnr+")");
     if (traces != null) {
       for (int i = 0; i < traces.size(); i++) {
 	Trace trace = (Trace)traces.elementAt(i);
 	TraceTree tree = (TraceTree)trace.trees.elementAt(0);
-	if (tree.node.refnr == trefnr)
-	  return trace;
+	// System.err.println("  comparing with "+tree.node.refnr);
+	if (tree.node.refnr == trefnr) return trace;
       }
     }
     return null;
@@ -53,6 +61,8 @@ public class TraceTree extends Object {
     if (y <= cy)
       return node.inside(ui, x, y, x0, y0);
     // component traces are displayed last to first
+    // so that each newly requested trace is shown just
+    // below the selected expression
     for (int i = traces.size()-1; i >= 0; i--) {
       Trace trace = (Trace)traces.elementAt(i);
       h = trace.height;
@@ -64,7 +74,8 @@ public class TraceTree extends Object {
     return null;
   }
 
-  public Dimension paint(Graphics g, UI ui, int x, int y, int refnr, int trefnr, int irefnr) {
+  public Dimension paint(Graphics g, UI ui, int x, int y,
+                         int refnr, int trefnr, int irefnr) {
     int i;
     int y0 = y, cy = y;
     int maxw;
@@ -74,6 +85,8 @@ public class TraceTree extends Object {
     maxw = x + node.paint(g, ui, x, y, refnr, trefnr, irefnr);
     cy += ui.normalfm.getHeight() + 2*layers + 4;
     // component traces are displayed last to first
+    // so that each newly requested trace is shown just
+    // below the selected expression
     for (i = traces.size()-1; i >= 0; i--) {
       Trace trace = (Trace)traces.elementAt(i);
       if (!trace.hidden) {

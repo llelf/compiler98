@@ -126,12 +126,6 @@ public abstract class EDTNode extends Object {
 	       width+6, baseline-topline-2);	    
     g.drawRect(x0-2-ui.dx, topline-ui.dy, 
 	       width+4, baseline-topline);	          
-    /*
-      g.drawRect(x0-ui.normalfm.charWidth(' ')/2-ui.dx, topline+1-ui.dy, 
-      width+2, baseline-topline-2);	    
-      g.drawRect(x0-ui.normalfm.charWidth(' ')/2+1-ui.dx, topline-ui.dy, 
-      width, baseline-topline);	          
-    */
   }
 
   /**
@@ -163,8 +157,12 @@ public abstract class EDTNode extends Object {
   /**
    * Highlight background if we are the immediate ancestor to the current node.
    */
-  void check_ancestor(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
-    if (this.refnr == trefnr && !ui.highlighting()) {
+  void check_ancestor(Graphics g, UI ui, int x0, int y0,
+                      int refnr, int trefnr, int irefnr) {
+    int iortrefnr = ( irefnr > 0 ? irefnr
+                    : trefnr > 0 ? trefnr
+		    : 0 );
+    if (this.refnr == iortrefnr && !ui.highlighting()) {
       ui.setHighlighting();
       // Paint background yellow, then paint our self again
       g.setColor(Color.yellow);
@@ -179,7 +177,8 @@ public abstract class EDTNode extends Object {
    * Draw something looking like a mouse cursor over the object. 
    * Used when printing sceen dumps.
    */
-  public void check_selected(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
+  public void check_selected(Graphics g, UI ui, int x0, int y0,
+                             int refnr, int trefnr, int irefnr) {
     if (selected) {
       g.setColor(Color.black);
       int h = 8, w = 4;

@@ -271,9 +271,12 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  }
 	} else if ((modifiers & InputEvent.BUTTON1_MASK) != 0) {
 	  /* left click */
+	  int iortrefnr = ( selectedNode.irefnr > 0 ? selectedNode.irefnr
+	                  : selectedNode.trefnr > 0 ? selectedNode.trefnr
+			  : 0 );
 	  if (selectedNode.trace != null) {
 	    selectedNode.trace.hidden = !selectedNode.trace.hidden;
-	  } else if ((t = selectedNode.tree.inTrace(selectedNode.trefnr))
+	  } else if ((t = selectedNode.tree.inTrace(iortrefnr))
 	                != null) {
 	    selectedNode.setTrace(t);
 	    status.setText("");
@@ -289,28 +292,24 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
 	      EDTNode n = parser.parseEDTNode(cot.parent, cot.tree, cot.index);
 	      cot.parent.args.setElementAt(n, cot.index);
+	    } else if (selectedNode.irefnr > 0) {
+	      serverConnection.out.println("In 5");
+	      serverConnection.out.println(""+selectedNode.irefnr);
+	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
+	      t = parser.parseTrace(selectedNode.tree);
+	      selectedNode.setTrace(t);
+	      selectedNode.tree.addTrace(t);
+	      status.setText("");
+	    } else if (selectedNode.trefnr > 0) {
+	      serverConnection.out.println("Gn 5");
+	      serverConnection.out.println(""+selectedNode.trefnr);
+	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
+	      t = parser.parseTrace(selectedNode.tree);
+	      selectedNode.setTrace(t);
+	      selectedNode.tree.addTrace(t);
+	      status.setText("");
 	    } else {
-	      if (selectedNode.irefnr == 0) {
-	        if (selectedNode.trefnr == 0) {
-		  status.setText("The selected component has no trace");
-	        } else {
-		  serverConnection.out.println("Gn 5");
-		  serverConnection.out.println(""+selectedNode.trefnr);
-		  EDTParser parser = new EDTParser(serverConnection, nodeTable);
-		  t = parser.parseTrace(selectedNode.tree);
-		  selectedNode.setTrace(t);
-		  selectedNode.tree.addTrace(t);
-		  status.setText("");
-		} 
-              } else {
-		serverConnection.out.println("In 5");
-		serverConnection.out.println(""+selectedNode.irefnr);
-		EDTParser parser = new EDTParser(serverConnection, nodeTable);
-		t = parser.parseTrace(selectedNode.tree);
-		selectedNode.setTrace(t);
-		selectedNode.tree.addTrace(t);
-		status.setText("");
-	      }
+              status.setText("The selected component has no trace");
 	    }
 	  }
 	  status.normalCursor();
