@@ -30,7 +30,7 @@ void copyPackedString(int length, NodePtr dst, char *src);
 NodePtr mkPackedString(int length, char *str);
 char *getPackedString(NodePtr n);
 
-#define mkString(s)   mkPackedString((s==(char*)0?1:strlen(s)+1),s)	/* MW */
+#define mkString(s)   mkPackedString((s==(char*)0?1:strlen(s)),s)	/* MW */
 extern NodePtr mkForeign(void *x, gcCval f);		/* MW */
 extern NodePtr mkStablePtr(NodePtr x);			/* MW */
 extern NodePtr getStablePtr(NodePtr x);			/* MW */
