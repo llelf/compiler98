@@ -1,4 +1,8 @@
 module Prelude where
 
 or		:: [Bool] -> Bool 
-or		= foldr (||) False 
+#if !defined(TRACING)
+or		= foldr (||) False
+#else
+or x		= foldr (||) False x
+#endif

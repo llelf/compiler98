@@ -1,4 +1,8 @@
 module Prelude where
 
 concat          :: [[a]] -> [a]
-concat          =  foldr (++) []
+#if !defined(TRACING)
+concat           =  foldr (++) []
+#else
+concat x         =  foldr (++) [] x
+#endif
