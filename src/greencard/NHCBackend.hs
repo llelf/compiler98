@@ -6,10 +6,10 @@ module NHCBackend
 
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
+#elif __GLASGOW_HASKELL__ >= 502
+import Debug.Trace (trace)
 #else
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#endif
+import IOExts      (trace)
 #endif
 import Pretty
 import PrettyUtils (textline,vcatMap,vsepMap,vsep,commaList,ppList)
