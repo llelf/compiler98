@@ -394,14 +394,15 @@ _tprim_setOutputContext primitive 2 :: Trace -> E (R a) -> R a
 
 {- Mark trace as incomplete due to trusting. -}
 hide :: Trace -> Trace
-
 hide t = if hidden t then t else mkTHidden t
 
 
 {- Check if function and application trace are trusted. -}
 trusted :: Trace -> Trace -> Bool
+trusted t tf = trustedFun tf `tand` trustedFun t
 
-trusted t tf = trustedFun tf && trustedFun t
+True  `tand` x = x
+False `tand` _ = False
 
 
 {- combinators for n-ary application in a non-projective context. -}
