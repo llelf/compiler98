@@ -14,7 +14,8 @@ oFile,hiFile,hatFile :: DecodedArgs -> String -> String -> String
 oFile opts path fmodule =
     let g    = goalDir opts
         gDir = if null g then path else g
-    in fixFile opts gDir fmodule (oSuffix opts)
+        tmod = if hat opts then ('T':) else id
+    in fixFile opts gDir (tmod fmodule) (oSuffix opts)
 hiFile opts path fmodule =
        fixFile opts path fmodule (hiSuffix opts)
 --iFile opts path fmodule =
@@ -49,16 +50,18 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
   preprocess
     | null (ppExecutableName pp) = ""
     | otherwise = doEcho echo $
-                  ppExecutableName pp++" "++srcfile
-                    ++concat (intersperse " " (ppDefaultOptions pp opts))++"\n"
+                  ppExecutableName pp++" "
+                    ++concat (intersperse " " (ppDefaultOptions pp opts
+                                               ++[ppOutputFileOption pp pfile]
+                                               ++[srcfile]))
   hattrans
     | hat opts && cpp = doEcho echo $
                         "gcc -E -x c "++concatMap doD (defs opts ++ zdefs opts)
                             ++" -o /tmp/"++pfile
-                            ++"\nhat-trans /tmp/"++pfile
-                            ++"\nmv "++hatFile opts "/tmp" m++" "++hfile++"\n"
+                            ++"\nhat-trans $HATFLAGS /tmp/"++pfile
+                            ++"\nmv "++hatFile opts "/tmp" m++" "++hfile
     | hat opts && not cpp = doEcho echo $
-                            "hat-trans "++pfile++"\n"
+                            "hat-trans $HATFLAGS "++pfile
     | otherwise = ""
   compilecmd = doEcho echo $
     hc ++ "-c " ++ cppcmd ++
@@ -89,9 +92,10 @@ qLink opts echo graph (Program file)     =
  where
   goaldir = goalDir opts
   goal = if null goaldir then "." else goaldir
+  tmod = if hat opts then ('T':) else id
   mkOfile path f = if (dflag opts) then
-                        fixFile opts ""   f (oSuffix opts)
-                   else fixFile opts path f (oSuffix opts)
+                        fixFile opts ""   (tmod f) (oSuffix opts)
+                   else fixFile opts path (tmod f) (oSuffix opts)
   objfiles = close graph [] [file]
   hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
      | otherwise   = compilerPath (compiler opts)
@@ -101,15 +105,16 @@ qLink opts echo graph (Program file)     =
 	    let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
 	     ++ doEcho echo (hc ++ " -o "++file++objs++" ${LDFLAGS}")
-	     ++ "\nfi\n"
+	     ++ "fi\n"
           else
 	    let objs = lconcatMap (\(d,f) -> ' ':
-                                   fixFile opts "" f (oSuffix opts)) objfiles in
+                                      fixFile opts "" (tmod f) (oSuffix opts))
+                                  objfiles in
 	    "if ( cd "++goaldir++" && [ `$OLDER "
              ++     file ++ " "++objs++"` = 1 ] )\nthen\n"
 	     ++ doEcho echo ("cd "++goal++" && "++hc++" -o "
                              ++file++objs++" ${LDFLAGS}")
-	     ++ "\nfi\n"
+	     ++ "fi\n"
       | otherwise =
           if length objfiles > 3 then
              "exfile <Wimp$ScrapDir>.nhcmk_via STOP\n"
