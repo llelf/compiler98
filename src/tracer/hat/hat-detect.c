@@ -198,7 +198,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
     else printf("   (Y/?/N): ");
     if (getline(answer,50)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YNQT?HVUMGOC*0123456789+-",c)==NULL) { // was answer a valid character?
+      if (strchr("YARNQT?HVUMGOC*0123456789+-",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
 	switch(c) {
@@ -213,11 +213,16 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	    FunTable results;
 	    ObserveQuery query;
 	    if (strlen(answer)>2) {
-	      char* ans = newStr(answer+2);
+	      int rek=0;
+	      char* ans = answer+2;
+	      if ((strlen(ans)>2)&&(*ans=='-')&&(*(ans+1)=='r')) {
+		rek = 1;
+		ans=ans+3;
+	      }
 	      printf("looking for %s\n",ans);
 	      query = newObserveQueryIdent(filehandle,
 					   ans,
-					   NULL,0,1);
+					   NULL,rek,1);
 	    } else {
 	      query = newObserveQuery(filehandle,lmost,0,0,1);
 	    }

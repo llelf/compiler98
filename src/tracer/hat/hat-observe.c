@@ -51,6 +51,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
 	printf("------------------------------------------------------\n");
       }
       maxarity = arity;
+      //fprintf(stderr,"\b\b\b\b");
 #ifdef showNodeInfo
       printf("(%u) ",currentOffset);
 #endif

@@ -79,6 +79,13 @@ HatFile observeHatFile(ObserveQuery query) {
   return ((_ObserveQuery*) query)->handle;
 }
 
+void queryCleanOutput(ObserveQuery query) {
+  if (((_ObserveQuery*) query)->showProgress) {
+    fprintf(stderr,"\b\b\b\b");
+    //fflush(stderr);
+  }
+}
+
 filepointer nextObserveQueryNode(ObserveQuery query) {
   unsigned long p,currentOffset;
   char nodeType;
@@ -89,7 +96,9 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
   int handle = ((_ObserveQuery*) query)->handle;
 
   currentOffset = hatSeqNext(handle,((_ObserveQuery*) query)->currentOffset);
-
+  if (((_ObserveQuery*) query)->showProgress) {
+    fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
+  }
   while (!hatSeqEOF(handle,currentOffset)) {
 
     if ((((_ObserveQuery*) query)->showProgress)&&
@@ -121,6 +130,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 		   (isDirectDescendantOf(handle,apptrace,topIdentifierNode)))) {
 		((_ObserveQuery*) query)->currentOffset = currentOffset;
 		((_ObserveQuery*) query)->found++;
+		queryCleanOutput(query);
 		return currentOffset;
 	      }
 	    }
@@ -142,6 +152,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	  } else {  // makes no sense to print equation of form "identifier = identifier"
 	    ((_ObserveQuery*) query)->currentOffset = currentOffset;
 	    ((_ObserveQuery*) query)->found++;
+	    queryCleanOutput(query);
 	    return currentOffset;
 	  }
 	  currentOffset = hatSeqNext(handle,satc); // skip the satc node
@@ -153,10 +164,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     }
   }
   ((_ObserveQuery*) query)->finished = 1;
-  if ((((_ObserveQuery*) query)->showProgress)&&(((_ObserveQuery*) query)->lsz<200)) {
-    fprintf(stderr,"\b\b\b\b");
-    fflush(stderr);
-  }
+  queryCleanOutput(query);
   return 0;
 }
 
@@ -208,6 +216,7 @@ void findNodes(HatFile handle,
   }
   *identNode=identifierNode;
   *topIdentNode=topIdentifierNode;
+  if (showProgress) fprintf(stderr,"\b\b\b\b");
 }
 
 ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,

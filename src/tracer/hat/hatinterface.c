@@ -1041,7 +1041,7 @@ char getNodeType(HatFile h,filepointer nodenumber) {
   char nodeType;
   hatSeekNode(h,nodenumber);
   nodeType=seenextbyte();
-  if (nodeType&240==0) nodeType=nodeType & 247;
+  if ((nodeType&240)==0) nodeType=nodeType & 247;
   return (nodeType == MDTRUSTED ? HatModule : nodeType);
 }
 

@@ -105,13 +105,20 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   return 0;
 }
 
-//#define DebuggetChildrenFor
+// #define DebuggedtChildrenFor
+
+#ifdef DebuggedtChildrenFor
+int debugLines = 0;
+#endif
+
 void getChildrenFor(HatFile handle,
 		    NodeList* nl,unsigned long parentTrace,unsigned long current,
 		    HashTable* hash) {
   char nodeType;
   unsigned long satc=0,result,orig_current=current;
   {
+    if (current==parentTrace) return; // GUARD expressions: parent is an argument at the
+    // same time: avoid loops!
     if (isInHashTable(hash,current)) return;
     if (current==0) return;
     addToHashTable(hash,current);
@@ -119,15 +126,23 @@ void getChildrenFor(HatFile handle,
     result=getResult(handle,current);
 
     nodeType = getNodeType(handle,current);
-#ifdef DebuggetChildrenFor
-    printf("nodeType at %u is %i, searching %u, resulting %u\n",current,nodeType,
+#ifdef DebuggedtChildrenFor
+    printf("nodeType at 0x%x is %i, searching 0x%x, resulting 0x%x\n",current,nodeType,
 	   parentTrace,result);
+    debugLines++;
+    if (debugLines > 20) {
+      char c;
+      fflush(stdout);
+      c=getchar();
+      while ((c!=EOF)&&(c!='\n')) c=getchar();
+      debugLines = 0;
+    }
 #endif
     switch (nodeType) {
     case HatApplication:
       {
 	unsigned long srcref,p,funTrace,appTrace;
-	int arity,isChild;
+	int arity,isChild,isIForGUARD;
 	arity     = getAppArity();
 	appTrace  = getParent();            // fileoffset of App-trace
 	funTrace  = getAppFun();            // function-trace
@@ -135,22 +150,37 @@ void getChildrenFor(HatFile handle,
 	appTrace  = hatFollowHidden(handle,
 				    appTrace); // follow along hidden to find parent
 	
-	isChild   = isChildOf(handle,current,parentTrace);
-	if ((appTrace==parentTrace)&&(isChild==0)) {
-	  printf("That's odd: %u %u %u\n",current,parentTrace,appTrace);
-	  printf("AppTrace: %u\n",getParent());
-	  printf("AppTrace: %u\n",getParent());
-	  //isChild = 1;
+	switch (getNodeType(handle,funTrace)) {
+	case HatIf:
+	case HatGuard:isIForGUARD = 1;arity=1; // reduce arity to 1 (2nd value is parent!)
+	default:isIForGUARD = 0;
 	}
 
-	if (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself
+	isChild   = isChildOf(handle,current,parentTrace);
+	/* if ((appTrace==parentTrace)&&(isChild==0)) {
+	  printf("That's odd: 0x%x 0x%x 0x%x\n",current,parentTrace,appTrace);
+	  printf("AppTrace: 0x%x\n",getParent());
+	  printf("AppTrace: 0x%x\n",getParent());
+	  }*/
+#ifdef DebuggedtChildrenFor
+	if (isChild) {
+	  printf("APP at 0x%x is child of 0x%x\n",current,parentTrace);debugLines++;
+	}
+#endif
+	if ((isChild==0)||(isIForGUARD)) {
+	  // isChild check is not enough, 'cause then and else clauses 
+	  // of IF's (and GUARDs) are at the parent...
+	  // (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself
+#ifdef DebuggedtChildrenFor
+	  printf("checking parent of 0x%x\n",current);debugLines++;
+#endif
 	  getChildrenFor(handle,nl,parentTrace,appTrace,hash);
 	}
 	if (isChild) { //(appTrace==parentTrace) {
 	  int i=0;
 	  while (i++<arity) {
-#ifdef DebuggetChildrenFor
-	    printf("checking arg %i of %u\n",i,current);
+#ifdef DebuggedtChildrenFor
+	    printf("checking arg %i of 0x%x\n",i,current);debugLines++;
 #endif
 	    hatSeekNode(handle,current);
 	    p = getAppArgument(i-1);
@@ -160,17 +190,18 @@ void getChildrenFor(HatFile handle,
 	
 	if ((isChild)||(appTrace==0)) {
 	  //((appTrace==parentTrace)||(appTrace==0)) {
-#ifdef DebuggetChildrenFor
-	  printf("APP at %u is child!\n",current);
+#ifdef DebuggedtChildrenFor
+	  //printf("APP at 0x%x is child!\n",current);debugLines++;
+	  printf("back at APP at 0x%x\n",current);debugLines++;
 #endif
 	  satc=hatFollowSATs(handle,result);
 	  { 
 	    int trusted = isTrusted(handle,funTrace);
 	    int toplevel = isTopLevel(handle,funTrace);
 	    if ((trusted==0)&&(toplevel)) {
-#ifdef DebuggetChildrenFor
-	      printf("Function at %u is not trusted.\n",funTrace);
-	      printf("Toplevel: %i\n",toplevel);
+#ifdef DebuggedtChildrenFor
+	      printf("Function at 0x%x is not trusted.\n",funTrace);debugLines++;
+	      printf("Toplevel: %i\n",toplevel);debugLines++;
 #endif
 	      if ((satc!=current)&&(!isInList(nl,current))) {
 		insertInList(nl,current);

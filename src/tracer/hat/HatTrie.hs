@@ -107,7 +107,7 @@ insertTrie ((TIdent s1 trie):a) x@((LIdent s2):r) =
  if (s1==s2) then ((TIdent s1 (insertTrie trie r)):a) else
   (TIdent s1 trie):(insertTrie a x) 
 insertTrie ((TSATA trie):a) (LSATA:r) = ((TSATA (insertTrie trie r)):a)
-insertTrie ((TSATB trie):a) (LSATB:r) = ((TSATB (insertTrie trie r)):a)
+-- insertTrie ((TSATB trie):a) (LSATB:r) = ((TSATB (insertTrie trie r)):a)
 insertTrie ((THidden trie):a) (LHidden:r) = (THidden (insertTrie trie r):a)
 insertTrie ((TCase trie):a) (LCase:r) = ((TCase (insertTrie trie r)):a)
 insertTrie ((TLambda trie):a) (LLambda:r) = ((TLambda (insertTrie trie r)):a)
@@ -138,7 +138,114 @@ insertTrie ((TContainer trie):a) (LContainer:r) = ((TContainer (insertTrie trie 
 insertTrie ((TFirstArg trie):a) (LFirstArg:r) = ((TFirstArg (insertTrie trie r)):a)
 insertTrie ((TLastArg trie):a) (LLastArg:r) = ((TLastArg (insertTrie trie r)):a)
 insertTrie x@((TNodeAdr adr1):_) (LNodeAdr adr2:[]) = x
+
+insertTrie trie@((TSATA _):_) linexpr =
+  mostGeneralTrie trie linexpr
+
+insertTrie trie linexpr@(LSATA:_) =
+  mostGeneralTrie trie linexpr
+
 insertTrie (x:a) e = x:(insertTrie a e)
+
+data CompareState = NoState | SmallState | BigState | UncompState deriving Eq
+
+mostGeneralTrie trielist linexpr@(LSATA:l) =
+ let (state,ntrie) = dropTrieArgument trielist l in
+   if ((state==NoState)||(state==BigState)) then trielist else
+      (TSATA (insertTrie [] l)):ntrie
+
+mostGeneralTrie trielist@((TSATA t):r) linexpr =
+ let (state,trie) = compareTrie NoState trielist linexpr in
+   if ((state==NoState)||(state==BigState)) then trie else
+      (TSATA t):(insertTrie r linexpr)
+
+dropTrieArgument :: [Trie] -> [LinExpr] -> (CompareState,[Trie])
+dropTrieArgument l expr = dropOne' l 0 0 expr
+-- where
+dropOne' [] _ _ _ = (NoState,[])
+dropOne' (a:tlist) i dropped expr =
+    let (fstate,first) = dropTrieArgument' a i dropped expr;
+        (rstate,rest)  = dropOne' tlist i dropped expr in
+        if (null first) then (rstate,rest) else
+         let sstate = if ((fstate == SmallState)||(rstate==SmallState)) then SmallState 
+		      else  UncompState in
+          (sstate,first++rest)
+
+dropTrieArgument' (TLastArg t) i dropped expr = 
+      if (i>0) then 
+        let (nstate,ntrie) = dropOne' t (i-1) 1 expr in
+         if (null ntrie) then (nstate,[]) else (nstate,[TLastArg ntrie])
+       else
+        if (dropped==0) then (UncompState,[TLastArg t]) else
+	   makeComp' [(TLastArg t)] expr
+
+dropTrieArgument' (TAppl t) i _ expr =
+    let (nstate,ntrie) =  dropOne' t (i+1) 1 expr in
+     if (null ntrie) then (nstate,[]) else (nstate,[TAppl ntrie])
+
+dropTrieArgument' e i _ expr | i==0 =
+  let (nstate,ntrie) = makeComp' (typesTrie e) expr in
+   if (null ntrie) then (nstate,[]) else (nstate,[((typesT e) ntrie)])
+		             | otherwise = dropOne' (typesTrie e) i 1 expr
+makeComp' e expr =
+     let (nstate,newt)=compareTrie SmallState e expr in
+         (nstate,newt)
+
+-- compareTrie's states: BigState: new element is bigger (= less general) (so far) than
+--                         the ones in the trie
+--                       SmallState: new element is smaller (= more general) (so far)
+--                         than the ones in the trie
+--                       UncompState: new element is not comparable to trie, neither
+--                         less general nor more general
+--                       NoState: No comparison so far
+
+compState :: CompareState -> CompareState -> CompareState
+compState SmallState _ = SmallState
+compState _ SmallState = SmallState
+compState NoState _ = NoState
+compState _ NoState = NoState
+compState BigState _ = BigState
+compState _ BigState = BigState
+compState _ _        = UncompState
+
+smallOrEqual :: CompareState -> Bool
+smallOrEqual SmallState = True
+smallOrEqual NoState = True
+smallOrEqual _ = False
+
+bigOrEqual :: CompareState -> Bool
+bigOrEqual BigState = True
+bigOrEqual NoState = True
+bigOrEqual _ = False
+
+
+compareTrie state [] [] = (state,[])
+compareTrie state [] (LNodeAdr _:[]) = (state,[])
+compareTrie _     [] _  = (UncompState,[])
+compareTrie _     t  [] = (UncompState,t)
+compareTrie state all@(e1:t) linexp@(e2:r) | (sameType e1 e2) =
+  let trie = typesTrie e1;
+      (nstate,newt) = if (null trie) then (state,[]) else compareTrie state trie r in
+      if (bigOrEqual nstate) then (state,all) else
+	    let (s2,t2) = compareTrie state t linexp in
+			  ((compState nstate s2),
+			   if (smallOrEqual nstate) then t2 else e1:t2)
+
+compareTrie state all@(TSATA trie:t) linexp | state /= SmallState =
+    let l = dropArgument linexp in
+     if (isNothing l) then
+       let (nstate,newt) = compareTrie state t linexp in (nstate,(TSATA trie):newt)
+      else
+        let (nstate,newt) = compareTrie BigState trie (fromJust l) in
+          if (nstate==BigState) then (BigState,all) else
+	    let (nstate,newt) = compareTrie state t linexp in (nstate,(TSATA trie):newt)
+
+compareTrie state all linexp@(LSATA:l) | state /= BigState =
+  (state,all)
+
+compareTrie state (t:trie) linexpr =
+  let (nstate,newt) = compareTrie state trie linexpr in
+    (nstate,t:newt)
 
 -- data DummyHatExpression = 
 --     HatApplication {ref::HatNode,parent::HatExpression,
@@ -315,6 +422,7 @@ compareExpr (LFirstArg:r1) (LFirstArg:r2) = compareExpr r1 r2
 compareExpr (LLastArg:r1) (LLastArg:r2) = compareExpr r1 r2
 compareExpr (LNodeAdr _:r1) (LNodeAdr _:r2) = True
 compareExpr (LNodeAdr _:[]) [] = True
+compareExpr _ (LLastArg:[]) = True
 compareExpr [] [] = True
 compareExpr a b = False -- error ("\n\n\nERROR ERROR False: "++(showLinList a)++", "++(showLinList b))
 
@@ -336,6 +444,7 @@ numValue (LInt i) = (toRational i)
 numValue (LInteger i) = (toRational i)
 numValue (LFloat f) = (toRational f)
 numValue (LDouble d) = (toRational d)
+numValue _ = error "numValue not fully implemented!"
 
 data ReadMode = NoMode | AlphaMode | SpecialMode | StringMode deriving Eq
 
@@ -418,8 +527,8 @@ stringLinExpr s =
     makeString [] = LConstr "[]":[]
     makeString "\"" = LConstr "[]":[]
     makeString (c:r) = (LAppl:LConstr ":":LFirstArg:LChar c:(makeString r))++(LLastArg:[])
-   
-    
+
+
 
 convertToRational :: String -> Double
 convertToRational s = (read s)
@@ -428,5 +537,76 @@ lmoFun :: [LinExpr] -> String
 lmoFun [] = []
 lmoFun (LConstr s:_) = s
 lmoFun (_:r) = lmoFun r
+
+sameType (TAppl _)  LAppl  = True
+sameType (TConst _) LConst = True
+sameType (TConstr s1 _) (LConstr s2) = s1==s2
+sameType (TIdent s1 _) (LIdent s2) = s1==s2
+sameType (TSATA _) LSATA = True
+sameType (TSATB _) LSATB = True
+sameType (THidden _) LHidden = True
+sameType (TCase _)   LCase = True
+sameType (TLambda _) LLambda = True
+sameType (TInt i1 _) (LInt i2) = i1==i2
+sameType (TInteger i1 _) (LInteger i2) = i1==i2
+sameType (TChar c1 _) (LChar c2) = c1==c2
+sameType (TRational r1 _) (LRational r2) = r1==r2
+sameType (TFloat f1 _) (LFloat f2) = f1==f2
+sameType (TDouble d1 _) (LDouble d2) = d1==d2
+sameType (TString s1 _) (LString s2) = s1==s2
+sameType (TIf _) LIf = True
+sameType (TGuard _) LGuard = True
+sameType (TContainer _) LContainer = True
+sameType (TFirstArg _) LFirstArg = True
+sameType (TLastArg _) LLastArg = True
+sameType (TNodeAdr _) (LNodeAdr _) = True
+sameType _ _ = False
+
+
+typesTrie (TAppl t)   = t
+typesTrie (TConst t)  = t
+typesTrie (TConstr _ t) = t
+typesTrie (TIdent _ t)  = t
+typesTrie (TSATA t)   = t
+typesTrie (TSATB t)     = t
+typesTrie (THidden t)   = t
+typesTrie (TCase t)     = t
+typesTrie (TLambda t)   = t
+typesTrie (TInt _ t)    = t
+typesTrie (TInteger _ t)= t
+typesTrie (TChar _ t)   = t
+typesTrie (TRational _ t)= t
+typesTrie (TFloat _ t)  = t
+typesTrie (TDouble _ t) = t
+typesTrie (TString _ t) = t
+typesTrie (TIf t)       = t
+typesTrie (TGuard t)    = t
+typesTrie (TContainer t)= t
+typesTrie (TFirstArg t) = t
+typesTrie (TLastArg t)  = t
+typesTrie _             = []
+
+typesT  (TAppl t)   = TAppl
+typesT (TConst t)  = TConst
+typesT (TConstr s t) = TConstr s
+typesT (TIdent s t)  = TIdent s
+typesT (TSATA t)   = TSATA
+typesT (TSATB t)     = TSATB
+typesT (THidden t)   = THidden
+typesT (TCase t)     = TCase
+typesT (TLambda t)   = TLambda
+typesT (TInt i t)    = TInt i
+typesT (TInteger i t)= TInteger i
+typesT (TChar c t)   = TChar c
+typesT (TRational r t)= TRational r
+typesT (TFloat f t)  = TFloat f
+typesT (TDouble d t) = TDouble d
+typesT (TString s t) = TString s
+typesT (TIf t)       = TIf
+typesT (TGuard t)    = TGuard
+typesT (TContainer t)= TContainer
+typesT (TFirstArg t) = TFirstArg
+typesT (TLastArg t)  = TLastArg
+
 
 
