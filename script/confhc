@@ -3,7 +3,7 @@
 #	author:   Malcolm.Wallace@cs.york.ac.uk, Sept 1999
 #			added "hmake interactive" config, May 2000
 
-VERSION=${HMAKEVERSION-"1.8 or better"}
+VERSION=${HMAKEVERSION-"1.8"}
 
 echo "  (hmake configuration is done once only.)"
 echo "First we look for already-installed Haskell compilers:"
@@ -279,7 +279,7 @@ echo >>$CONFIGHS "ghclang = \
            4.*)  echo 5 ;;
            *)    echo 6 ;;
      esac`"
-echo >>$CONFIGHS "defaultHc = builtby"
+echo >>$CONFIGHS "defaultHc = builtby -- \"nhc98\""
 
 echo
 echo "If I got something wrong, you can edit"
