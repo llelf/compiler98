@@ -463,7 +463,7 @@ fixityI (InfoMethod  unique tid ie fix nt annot iClass) = fix
 fixityI _ = (InfixDef,9::Int)
 
 
-belongstoI :: Info -> Int
+belongstoI :: Info -> Id
 belongstoI (InfoConstr  unique tid ie fix nt fields iType)  = iType
 belongstoI (InfoField   unique tid ie icon_offs iData iSel) = iData
 belongstoI (InfoMethod  unique tid ie fix nt annot iClass)  = iClass

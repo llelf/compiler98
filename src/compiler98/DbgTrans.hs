@@ -30,13 +30,13 @@ import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
-import Info(typeSynonymBodyI,IE(IEsel))
+import Info(typeSynonymBodyI,IE(IEsel),belongstoI,isRealData)
 import TypeSubst(substNT)
 import Nice(niceNewType)
 import Remove1_3(mkSel,translateExpRecord) -- for records
 import Flags(Flags(sDbgTrusted))
 import Remove1_3(mkSel)
-import List  -- (zipWith3)
+import Extra (mapSnd)
 
 
 {- table for source references and identifiers refered to from the trace -}
@@ -228,9 +228,9 @@ dTopDecl True root (DeclPat (Alt pat rhs decls)) =
   mapS0 addTopId bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
+  dPat False root pat' >>>= \(pat'',patDecls) ->
+  dTrustDecls False root (addDecls patDecls decls) >>>= \decls' ->
   dTrustRhs True root root true otherw rhs >>>= \rhs' ->
-  dPat root pat' >>>= \pat'' ->
-  dTrustDecls False root decls >>>= \decls' ->
   mkFailExpr pos root >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -312,10 +312,10 @@ dSuspectDecl toplevel parent (DeclPat (Alt pat rhs decls)) =
   mapS0 (setArity 2) bvsids >>>  
   mapS0 (if toplevel then addTopId else addId) bvsposids >>>
   mapS makeSourceRef bvspos >>>= \srs ->
-  dSuspectRhs True parent rhs failContinuation >>>= \rhs' ->
-  dPat parent pat' >>>= \pat'' ->
+  dPat False parent pat' >>>= \(pat'',patDecls) ->
   let ExpApplication _ [r,_,tresult] = pat'' in
-  dSuspectDecls False parent decls >>>= \decls' ->
+  dSuspectDecls False parent (addDecls patDecls decls) >>>= \decls' ->
+  dSuspectRhs True parent rhs failContinuation >>>= \rhs' ->
   mkFailExpr pos parent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -390,9 +390,9 @@ dTrustDecl toplevel hidParent (DeclPat (Alt pat rhs decls)) =
   mapS0 (if toplevel then addTopId else addId) bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
+  dPat False hidParent pat' >>>= \(pat'',patDecls) ->
+  dTrustDecls False hidParent (addDecls patDecls decls) >>>= \decls' ->
   dTrustRhs True hidParent hidParent true otherw rhs >>>= \rhs' ->
-  dPat hidParent pat' >>>= \pat'' ->
-  dTrustDecls False hidParent decls >>>= \decls' ->
   mkFailExpr pos hidParent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -663,9 +663,9 @@ dTrustFunClauses parent hidParent arity true otherw funs =
   unitS (funs' ++ [Fun vars (Unguarded fpexp) (DeclsParse [])])
   where
   dTrustFun (Fun pats rhs decls) =
-    dPats hidParent pats >>>= \pats' ->
+    dPats True hidParent pats >>>= \(pats',patDecls) ->
+    dTrustDecls False hidParent (addDecls patDecls decls) >>>= \decls' ->
     dTrustRhs False parent hidParent true otherw rhs >>>= \rhs' ->
-    dTrustDecls False hidParent decls >>>= \decls' ->
     unitS (Fun (parent:hidParent:pats') rhs' decls') 
 
 
@@ -689,9 +689,9 @@ dSuspectFunClauses parent funName arity true otherw [] =
 --     f t pat1' pat2' ... = e' where decls'
 dSuspectFunClauses parent funName arity true otherw
   (Fun pats (Unguarded e) decls : fcs) =
-    dPats parent pats >>>= \pats' ->
+    dPats True parent pats >>>= \(pats',patDecls) ->
+    dSuspectDecls False parent (addDecls patDecls decls) >>>= \decls' ->
     dSuspectExp False parent e >>>= \e' ->
-    dSuspectDecls False parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs 
       >>>= \(mfs, nfs) ->
     unitS (Fun (parent:pats') (Unguarded e') decls' : mfs, nfs)
@@ -706,11 +706,11 @@ dSuspectFunClauses parent funName arity true otherw
     let (patnames, pats') = unzip namedpats in
     addNewName (arity + 1) True funName NoType >>>= \f ->
     newVar noPos >>>= \newParent ->
-    dPats newParent pats' >>>= \pats'' ->
+    dPats True newParent pats' >>>= \(pats'',patDecls) ->
     let continuation = functionContinuation f patnames in
     continuationToExp continuation newParent >>>= \contExp ->
+    dSuspectDecls False newParent (addDecls patDecls decls) >>>= \decls' ->
     dSuspectGuardedExprs False newParent ges continuation >>>= \expr ->
-    dSuspectDecls False newParent decls >>>= \decls' ->
     let failclause = Fun (newParent:patnames) (Unguarded contExp) 
                          (DeclsParse []) in
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
@@ -720,9 +720,9 @@ dSuspectFunClauses parent funName arity true otherw
           , DeclFun noPos f mfs:nfs)
   | otherwise =
     -- guards cannot fail or last clause
-    dPats parent pats >>>= \pats' ->
+    dPats True parent pats >>>= \(pats',patDecls) ->
+    dSuspectDecls False parent (addDecls patDecls decls) >>>= \decls' ->
     dSuspectGuardedExprs False parent ges failContinuation >>>= \e ->
-    dSuspectDecls False parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
     let fs = Fun (parent:pats') 
                (Unguarded e) decls' in
@@ -927,10 +927,11 @@ dSuspectExp :: Bool -> Exp Id -> Exp Id -> DbgTransMonad (Exp Id)
 dSuspectExp cr parent (ExpLambda pos pats e) = 
   newVar pos >>>= \lambdaParent ->
   newVars pos (length pats) >>>= \npats ->
+  dPats True lambdaParent pats >>>= \(pats',patDecls) ->
+  dSuspectDecls False lambdaParent (DeclsParse patDecls) >>>= \patDecls' ->
   dSuspectExp False lambdaParent e >>>= \e' ->
   lookupVar pos (t_fun (length pats)) >>>= \fun ->
   makeNTLambda pos >>>= \lambda ->
-  dPats lambdaParent pats >>>= \pats' ->
   newVar pos >>>= \fpat ->
   mkFailExpr pos lambdaParent
     {-Wrong or misleading error message -} >>>= \fpexp ->
@@ -941,7 +942,7 @@ dSuspectExp cr parent (ExpLambda pos pats e) =
         if neverFailingPats pats 
           then ExpLambda pos (lambdaParent:pats') e'
           else ExpLambda pos (lambdaParent:npats) (ExpCase pos npatstup alts)
-      alts = [Alt patstup (Unguarded e') (DeclsParse []),
+      alts = [Alt patstup (Unguarded e') patDecls',
               Alt fpat (Unguarded fpexp) (DeclsParse [])] 
   in unitS (ExpApplication pos [fun, lambda, lamexp, sr, parent])
 dSuspectExp cr parent (ExpLet pos decls e) = 
@@ -1118,10 +1119,11 @@ dTrustExp cr parent hidParent (ExpLambda pos pats e) =
   newVar pos >>>= \lambdaParent ->
   newVar pos >>>= \lambdaHidParent ->
   newVars pos (length pats) >>>= \npats ->
+  dPats True lambdaHidParent pats >>>= \(pats',patDecls) ->
+  dTrustDecls False lambdaHidParent (DeclsParse patDecls) >>>= \patDecls' ->
   dTrustExp False lambdaParent lambdaHidParent e >>>= \e' ->
   lookupVar pos (t_tfun (length pats)) >>>= \fun ->
   makeNTLambda pos >>>= \lambda ->
-  dPats lambdaHidParent pats >>>= \pats' ->
   newVar pos >>>= \fpat ->
   mkFailExpr pos lambdaParent 
     {-Wrong or misleading error message -} >>>= \fpexp ->
@@ -1133,7 +1135,7 @@ dTrustExp cr parent hidParent (ExpLambda pos pats e) =
           then ExpLambda pos (lambdaParent:lambdaHidParent:pats') e'
           else ExpLambda pos (lambdaParent:lambdaHidParent:npats) 
                  (ExpCase pos npatstup alts)
-      alts = [Alt patstup (Unguarded e') (DeclsParse []),
+      alts = [Alt patstup (Unguarded e') patDecls',
               Alt fpat (Unguarded fpexp) (DeclsParse [])] 
   in unitS (ExpApplication pos [fun, lambda, lamexp, sr
                                ,if cr then hidParent else parent])
@@ -1274,9 +1276,9 @@ dTrustAlt :: Bool -> Exp Id -> Exp Id -> Id -> Id -> Alt Id
                 -> DbgTransMonad (Alt Id)
 
 dTrustAlt cr parent hidParent true otherw (Alt pat rhs decls) =
-  dPat hidParent pat >>>= \pat' ->
+  dPat True hidParent pat >>>= \(pat',patDecls) ->
+  dTrustDecls False hidParent (addDecls patDecls decls) >>>= \decls' ->
   dTrustRhs cr parent hidParent true otherw rhs >>>= \rhs' ->
-  dTrustDecls False hidParent decls >>>= \decls' ->
   unitS (Alt pat' rhs' decls')
 
 
@@ -1381,59 +1383,146 @@ mkLitString pos s =
 -}
 
 
-dPats :: Exp Id -> [Pat Id] -> DbgTransMonad [Pat Id] 
-dPats parent ps = mapS (dPat parent) ps
+dPats :: Bool -> Exp Id -> [Pat Id] -> DbgTransMonad ([Pat Id],[Decl Id]) 
+dPats refutable parent ps = mapS2 (dPat refutable parent) ps 
 
-
-dPat :: Exp Id -> Pat Id -> DbgTransMonad (Pat Id)
-dPat parent (ExpApplication pos (c:ps)) = 
-  wrapR pos =>>> 
-  (unitS (ExpApplication pos) =>>> (unitS (c:) =>>> dPats parent ps))
-dPat _ p@(ExpCon pos id)              = wrapR pos =>>> unitS p
-dPat _ p@(ExpVar pos id)              = unitS p 
-dPat parent p@(ExpLit pos (LitInteger b i))= 
+-- the first argument states if the pattern as a whole is refutable
+-- it is irrefutable if it is part of a pattern binding
+dPat :: Bool -> Exp Id -> Pat Id -> DbgTransMonad (Pat Id,[Decl Id])
+dPat refutable parent pat@(ExpApplication pos (c:ps)) = 
+  isIrrefutablePat pat >>>= \b ->
+  if refutable && b && not (null (collectPatVars pat)) then
+      newPatBinding pos pat
+    else
+      dPats refutable parent ps >>>= \(ps',decls) ->
+      wrapR pos >>>= \wrap ->
+      unitS (wrap (ExpApplication pos (c:ps')),decls)
+dPat _ _ p@(ExpCon pos id) = -- without argument even newtype con just wrapped
+  wrapR pos >>>= \wrap ->
+  unitS (wrap p,[])
+dPat _ _ p@(ExpVar pos id) = unitS (p,[]) 
+dPat _ parent p@(ExpLit pos (LitInteger b i))= 
     -- Remove this after typechecking
     lookupVar pos t_patFromConInteger >>>= \pfci ->
     makeSourceRef pos >>>= \sr -> 
-    unitS (ExpApplication pos [pfci, sr, parent, p])
-dPat parent p@(ExpLit pos (LitRational b i))= 
+    unitS (ExpApplication pos [pfci, sr, parent, p],[])
+dPat _ parent p@(ExpLit pos (LitRational b i))= 
     -- Remove this after typechecking
     lookupVar pos t_patFromConRational >>>= \pfcr ->
     makeSourceRef pos >>>= \sr -> 
-    unitS (ExpApplication pos [pfcr, sr, parent, p])
-dPat parent p@(ExpLit pos (LitString _ s)) = 
-    foldPatList parent pos (map (ExpLit pos . LitChar Boxed) s)
-dPat _ p@(ExpLit pos lit)           = wrapR pos =>>> unitS p
-dPat _ p@(ExpList pos [])           = wrapR pos =>>> unitS p
-dPat parent (ExpList pos ps)        = foldPatList parent pos ps
-dPat parent (PatAs pos id p)        = unitS (PatAs pos id) =>>> dPat parent p
-dPat _ p@(PatWildcard pos)          = unitS p 
-dPat parent (PatIrrefutable pos p)  = 
-  dPat parent p >>>= \(ExpApplication pos' [r,p',t']) ->
-  unitS (ExpApplication pos' [r, PatIrrefutable pos p', t'])
-dPat parent (ExpRecord con@(ExpCon pos id) fieldPats) =
-  wrapR pos =>>> (unitS (ExpRecord con) =>>> mapS dField fieldPats)
+    unitS (ExpApplication pos [pfcr, sr, parent, p],[])
+dPat refutable parent p@(ExpLit pos (LitString _ s)) = 
+    foldPatList refutable parent pos (map (ExpLit pos . LitChar Boxed) s)
+dPat _ _ p@(ExpLit pos lit) = 
+    wrapR pos >>>= \wrap ->
+    unitS (wrap p,[])
+dPat _ _ p@(ExpList pos []) = 
+    wrapR pos >>>= \wrap ->
+    unitS (wrap p,[])
+dPat refutable parent (ExpList pos ps) = foldPatList refutable parent pos ps
+dPat refutable parent (PatAs pos id p) = 
+    dPat refutable parent p >>>= \(p',pDecl) ->
+    unitS (PatAs pos id p',pDecl)
+dPat _ _ p@(PatWildcard pos) = unitS (p,[]) 
+dPat refutable parent (PatIrrefutable pos p) = 
+  if refutable then
+      newPatBinding pos p
+    else
+      dPat refutable parent p >>>= \(p',pDecl) ->
+      unitS (PatIrrefutable pos p',pDecl)
+dPat refutable parent (ExpRecord con@(ExpCon pos id) fieldPats) =
+  mapS2 dField fieldPats >>>= \(fieldPats',decls) ->
+  wrapR pos >>>= \wrap ->
+  unitS (wrap (ExpRecord con fieldPats'),decls)
   where
-  dField :: Field Id -> DbgTransMonad (Field Id)
-  dField (FieldExp pos id pat) = unitS (FieldExp pos id) =>>> dPat parent pat
-dPat _ e                            = error ("dPat: no match ")
+  dField :: Field Id -> DbgTransMonad (Field Id,[Decl Id])
+  dField (FieldExp pos id pat) = 
+    dPat refutable parent pat >>>= \(pat',decls) ->
+    unitS (FieldExp pos id pat',decls)
+dPat _ _ e = error ("dPat: no match ")
 
 foldS f z []     = z 
 foldS f z (x:xs) = foldS f z xs >>>= f x 
 ---f x =>>> foldS f z xs
+
+mapS2 :: (a->State d s (b,[c]) s) -> [a] -> State d s ([b],[c]) s
+mapS2 f xs = mapS f xs >>>= \com -> unitS (mapSnd concat (unzip com))
+
+-- turn a pattern into a pattern binding
+newPatBinding :: Pos -> Pat Id -> DbgTransMonad (Pat Id,[Decl Id])
+newPatBinding pos p = 
+  newVar pos >>>= \patVar ->
+  mapS0 turnIntoLetVar (collectPatVars p) >>> 
+  unitS (patVar, [DeclPat (Alt p (Unguarded patVar) noDecls)])
+
+
+turnIntoLetVar :: Id -> a -> Threaded -> Threaded
+turnIntoLetVar id = \_ (Threaded istate srt idt) ->
+  let info = InfoVar id (visible (reverse ("irrefutableDummy"++show id))) 
+               IEnone (InfixDef,0) NoType Nothing
+      istate' = addIS id info istate
+  in Threaded istate' srt idt
+  
+
+
+-- collect all variable ids that occur in pattern
+collectPatVars :: Pat Id -> [Id]
+collectPatVars (ExpRecord c fieldPats) = 
+  concat . map collectFieldVars $ fieldPats
+  where
+  collectFieldVars (FieldExp _ _ pat) = collectPatVars pat
+collectPatVars (ExpApplication _ pats) =
+  concat . map collectPatVars $ pats
+collectPatVars (ExpVar _ id) = [id]
+collectPatVars (ExpList _ pats) = concat . map collectPatVars $ pats
+collectPatVars (PatAs _ id pat) = id : collectPatVars pat
+collectPatVars (PatIrrefutable _ pat) = collectPatVars pat
+collectPatVars _ = []
+
+
+addDecls :: [Decl id] -> Decls id -> Decls id
+addDecls ds (DeclsParse d2s) = DeclsParse (ds++d2s)
+
+
+isIrrefutablePat :: Pat Id -> DbgTransMonad Bool
+isIrrefutablePat (ExpApplication pos pats) = 
+  mapS isIrrefutablePat pats >>>= \bs ->
+  unitS (and bs)
+isIrrefutablePat (ExpCon _ id) = isNewTypeDataCon id
+isIrrefutablePat (ExpVar _ _) = unitS True
+isIrrefutablePat (PatAs _ _ pat) = isIrrefutablePat pat
+isIrrefutablePat (PatIrrefutable _ _) = unitS True
+isIrrefutablePat (ExpRecord (ExpCon pos id) fieldPats) =
+  isNewTypeDataCon id >>>= \newTy ->
+  if newTy then mapS isIrrefutableField fieldPats >>>= unitS . and
+           else unitS False
+  where
+  isIrrefutableField (FieldExp _ _ pat) = isIrrefutablePat pat
+isIrrefutablePat _ = unitS False
+
+isNewTypeDataCon :: Id -> DbgTransMonad Bool
+isNewTypeDataCon conId =
+  lookupName conId >>>= \(Just conInfo) ->
+  lookupName (belongstoI conInfo) >>>= \(Just tyInfo) ->
+  unitS (not (isRealData tyInfo))
 
 
 {- 
 -- Replace all list constructors in a list expression
 -- by the constructors of the wrapped list and wrap it.
 -}
-foldPatList :: Exp Id -> Pos -> [Exp Id] -> DbgTransMonad (Exp Id)
-foldPatList _ pos [] =  wrapR pos =>>> lookupCon pos t_List
-foldPatList parent pos (p:ps) = 
+foldPatList :: Bool -> Exp Id -> Pos -> [Pat Id] 
+            -> DbgTransMonad (Pat Id,[Decl Id])
+foldPatList _ _ pos [] =  
+  lookupCon pos t_List >>>= \nil ->
+  wrapR pos >>>= \wrap ->
+  unitS (wrap nil,[])
+foldPatList refutable parent pos (p:ps) = 
   lookupCon pos t_Colon >>>= \cons ->
-  wrapR pos =>>> 
-  (unitS (\c cs -> ExpApplication pos [cons, c, cs]) 
-         =>>> dPat parent p =>>> foldPatList parent pos ps) 
+  dPat refutable parent p >>>= \(p',pDecls) ->
+  foldPatList refutable parent pos ps >>>= \(ps',psDecls) ->
+  wrapR pos >>>= \wrap ->
+  unitS (wrap (ExpApplication pos [cons, p', ps']),pDecls++psDecls)
 
 
 {- Wrap a pattern with R constructor and new variable as trace argument -}
@@ -1471,10 +1560,10 @@ unzipConc f ps =
     in unitS (f ps', concat vss)
 
 
+-- yields True just for simple irrefutable ones
 neverFailingPat :: Pat Id -> Bool
 neverFailingPat (ExpVar _ _) = True
 neverFailingPat (PatAs _ _ pat) = neverFailingPat pat
-neverFailingPat (PatIrrefutable _ _) = True
 neverFailingPat (PatWildcard _ ) = True
 neverFailingPat _ = False
 
