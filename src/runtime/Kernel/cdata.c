@@ -71,7 +71,7 @@ ForeignObj* allocForeignObj(void* arg, gcCval finalCV, gcFO finalFO)
       return &foreign[i];
     }
   }
-  fprintf(stderr,"Warning: allocation limit (%d) exceeded for ForeignObj\n"
+  fprintf(stderr,"Error: allocation limit (%d) exceeded for Foreign(Obj/Ptr)\n"
          ,MAX_FOREIGNOBJ);
   return 0;
 }
@@ -266,31 +266,31 @@ void runDeferredGCs (void)
   static int alreadyRunning=0;	/* need lock in case a finaliser triggers GC! */
 
   if (alreadyRunning) {
-    fprintf(stderr,"Warning: running ForeignObj finalisers has triggered another GC!\n");
+    /*fprintf(stderr,"Warning: running ForeignObj finalisers has triggered another GC!\n");*/
     return;
   } else alreadyRunning=1;	/* grab mutex lock before entering */
 
   {
-  int i;
-  NodePtr n;
-  CodePtr IP=Ip;		/* save global instruction pointer */
-  NodePtr *SP=Sp;		/*                   stack pointer */
-  NodePtr *FP=Fp;		/*                   frame pointer */
+    int i;
+    NodePtr n;
+    CodePtr IP=Ip;		/* save global instruction pointer */
+    NodePtr *SP=Sp;		/*                   stack pointer */
+    NodePtr *FP=Fp;		/*                   frame pointer */
 
-  fprintf(stderr,"runDeferredGCs: %d finalisers to process\n",pendingIdx);
+    /*fprintf(stderr,"runDeferredGCs: %d finalisers to process\n",pendingIdx);*/
 
-  for (i=1; i<=pendingIdx; i++) {/* traverse the queue */
-    n = derefStablePtr(pending[i]);
-    C_PUSH(n);
-    C_EVALTOS(n); 		/* .. run each finaliser, discarding result */
-    C_POP();
-    freeStablePtr(pending[i]);	/* .. then permit GC of finaliser itself */
-    pending[i] = NULL;
-  }
-  Ip=IP;			/* restore global instruction pointer */
-  Sp=SP;			/*                      stack pointer */
-  Fp=FP;			/*                      frame pointer */
-  pendingIdx = 0;		/* finally, reset the queue */
+    for (i=1; i<=pendingIdx; i++) {/* traverse the queue */
+      n = derefStablePtr(pending[i]);
+      C_PUSH(n);
+      C_EVALTOS(n); 		/* .. run each finaliser, discarding result */
+      C_POP();
+      freeStablePtr(pending[i]);/* .. then permit GC of finaliser itself */
+      pending[i] = NULL;
+    }
+    Ip=IP;			/* restore global instruction pointer */
+    Sp=SP;			/*                      stack pointer */
+    Fp=FP;			/*                      frame pointer */
+    pendingIdx = 0;		/* finally, reset the queue */
   }
   alreadyRunning = 0;		/* and release the mutex lock */
 }
