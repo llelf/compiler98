@@ -132,7 +132,7 @@ RUNTIMET = \
 	src/tracer/runtime/Makefile* \
 	src/tracer/runtime/*.[ch]
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
-TRACEUI = src/tracer/ui/*
+TRACEUI = src/tracer/ui/Makefile* src/tracer/ui/nhctracer/*
 HATUI	= src/tracer/hat/Makefile* src/tracer/hat/*.[ch]
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
