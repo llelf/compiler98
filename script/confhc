@@ -183,7 +183,7 @@ then
   whichNHC=`which nhc98`
   up1_NHC=`dirname ${whichNHC}`
   up2_NHC=`dirname ${up1_NHC}`
-  NHC98DIR=`grep NHC98INCDIR ${whichNHC} | grep nhc98 | cut -c27- | cut -d'}' -f1`
+  NHC98DIR=`grep NHC98INCDIR ${whichNHC} | grep nhc | cut -c27- | cut -d'}' -f1`
 fi
 if [ "$NHC98DIR" = "" ]
 then  echo "(not found)"

@@ -26,7 +26,7 @@ fi
 #then echo -n "" ;
 #else
   which () {
-    ( for path in `echo \"$PATH\" | sed -e 's/:/\" \"/g'`
+    ( for path in `echo \":$PATH\" | sed -e 's/:/\" \"/g'`
       do
         thefile=`echo $path | tr -d "\""`/$1
         if [ -f "$thefile" -a -x "$thefile" ]
