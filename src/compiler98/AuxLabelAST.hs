@@ -5,7 +5,7 @@ module AuxLabelAST
 
 import List (nubBy)
 import Char (isUpper)
-import AuxTypes(Environment,mkIdentMap,useIdentMap,letBound)
+import AuxTypes(Environment,mkIdentMap,useIdentMap,AuxiliaryInfo(letBound))
 import AuxFile(Visibility,PatSort(Refutable,Irrefutable)
               ,extendEnv,getImports,addPat,foldrPat)
 import AuxFixity(fixInfixList)
