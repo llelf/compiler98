@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.0 pre-release 19 (date 000605)"
-HMAKEVERSION="1.8 (000605)" export HMAKEVERSION
+CONFIGVERSION="v1.0 pre-release 19+ (date 000623)"
+HMAKEVERSION="1.8+ (000623)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -465,12 +465,15 @@ then
     echo -n "hmake "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
+    echo -n "hi "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
     echo -n "greencard "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir |$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard
     echo
-    chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard
+    chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard $BUILDBINDIR/hi
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
   fi
@@ -517,7 +520,7 @@ else	# [ "$INSTALL" = "yes" ]
       if [ -f $file ]; then cp -p $file $LIBDIR/$VERSION; fi
     done
     if [ $HLIBDIR != $LIBDIR ]
-    then ( cd $LIBDIR/$VERSION; mv MkProg$EXE Older$EXE hi$EXE $HLIBDIR/$VERSION )
+    then ( cd $LIBDIR/$VERSION; mv MkProg$EXE Older$EXE HInteractive$EXE $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
