@@ -1,20 +1,26 @@
 module Output(qCompile,qLink,qCleano,qCleanhi) where
+
 import ListUtil -- (lconcatMap)
 import FileName
-import ListUtil
+import List (intersperse)
 import Argv
---import Maybe
+import PreProcessor
+import Config
 
 doEcho True cmd = "echo \"" ++ cmd ++ "\"\n" ++ cmd ++ "\n"
 doEcho False cmd = cmd ++ "\n"
 
-oFile,hiFile :: DecodedArgs -> String -> String -> String
-oFile opts path mod =
+oFile,hiFile,hatFile :: DecodedArgs -> String -> String -> String
+oFile opts path fmodule =
     let g    = goalDir opts
         gDir = if null g then path else g
-    in fixFile opts gDir mod (oSuffix opts)
-hiFile opts path mod  =
-       fixFile opts path mod (hiSuffix opts)
+    in fixFile opts gDir fmodule (oSuffix opts)
+hiFile opts path fmodule =
+       fixFile opts path fmodule (hiSuffix opts)
+--iFile opts path fmodule =
+--       fixFile opts path fmodule ("pp.hs")
+hatFile opts path fmodule  =
+       fixFile opts path ('T':fmodule) ("hs")
 
 cleanModuleName (Program file)    = file
 cleanModuleName (Object file suf) = file
@@ -29,35 +35,52 @@ qCleanhi opts echo graph mod =
   in doEcho echo ("rm -f" ++
          concatMap (\(d,f)-> ' ': hiFile opts d f) allfiles)
 
-qCompile opts echo (dep,(p,m,source,cpp)) =
-  if null dep
-  then doEcho echo compilecmd
-  else test m dep compilecmd
+qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
+  test dep (preprocess++hattrans++compilecmd)
  where
+  -- srcfile (preprocess)-> pfile (hattrans)-> hfile (compile)-> ofile
   ofile = oFile opts p m
-  compilecmd =
-    compiler ++ "-c " ++ cppcmd ++
+  pfile
+    | null (ppExecutableName pp) = srcfile
+    | otherwise = fixFile opts p m "hs"
+  hfile
+    | hat opts  = hatFile opts p m
+    | otherwise = pfile
+  preprocess
+    | null (ppExecutableName pp) = ""
+    | otherwise = doEcho echo $
+                  ppExecutableName pp++" "++srcfile
+                    ++concat (intersperse " " (ppDefaultOptions pp opts))++"\n"
+  hattrans
+    | hat opts && cpp = doEcho echo $
+                        "gcc -E -x c "++concatMap doD (defs opts ++ zdefs opts)
+                            ++" -o /tmp/"++pfile
+                            ++"\nhat-trans /tmp/"++pfile
+                            ++"\nmv "++hatFile opts "/tmp" m++" "++hfile++"\n"
+    | hat opts && not cpp = doEcho echo $
+                            "hat-trans "++pfile++"\n"
+    | otherwise = ""
+  compilecmd = doEcho echo $
+    hc ++ "-c " ++ cppcmd ++
     (if (dflag opts) then "-d "++(goalDir opts) else "-o "++ofile) ++
-    " " ++ source
+    " " ++ hfile
 
-  compiler = if (isUnix opts) then "${HC} ${HFLAGS} " else "nhc98 "
-  cppcmd = if cpp then "-cpp"++concat (map doD (defs opts))++" " else ""
+  hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
+     | otherwise   = compilerPath (compiler opts)
+  cppcmd = if cpp then "-cpp"++concatMap doD (defs opts)++" " else ""
   doD s = " -D"++s
 
-  test = if (isUnix opts)
-         then (\m dep comp ->
-               "if [ `$OLDER " ++ ofile
-		++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
-	        ++"` = 1 ]\nthen\n"
-	        ++ doEcho echo compilecmd
- 	        ++ "fi\n")
-         else (\m dep comp ->
-               "older " ++ ofile
-                        ++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
-                ++ "\nset Nhc$ReturnCode <Sys$ReturnCode>\n"
-           --   ++ (if echo then "IF <Nhc$ReturnCode> THEN echo " ++ compilecmd
-           --               else [])
-                ++ "IF <Nhc$ReturnCode> THEN " ++ compilecmd)
+  test []  comp = comp
+  test dep comp
+    | isUnix opts = "if [ `$OLDER " ++ ofile
+                    ++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
+                    ++"` = 1 ]\nthen\n"
+                    ++ comp
+                    ++ "\nfi\n"
+    | otherwise = "older " ++ ofile
+                           ++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
+                   ++ "\nset Nhc$ReturnCode <Sys$ReturnCode>\n"
+                   ++ "IF <Nhc$ReturnCode> THEN " ++ comp
 
 
 qLink opts echo graph (Object  file suf) = ""
@@ -70,19 +93,20 @@ qLink opts echo graph (Program file)     =
                         fixFile opts ""   f (oSuffix opts)
                    else fixFile opts path f (oSuffix opts)
   objfiles = close graph [] [file]
+  hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
+     | otherwise   = compilerPath (compiler opts)
   cmd | isUnix opts =
 	  let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
           if null goaldir then
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
-	     ++ doEcho echo ("${HC} ${HFLAGS}"++" -o "
-                             ++file++objs++" ${LDFLAGS}")
-	     ++ "fi\n"
+	     ++ doEcho echo (hc ++ " -o "++file++objs++" ${LDFLAGS}")
+	     ++ "\nfi\n"
           else
 	    "if ( cd "++goaldir++" && [ `$OLDER "
-             ++ file ++ " "++objs++"` = 1 ] )\nthen\n"
-	     ++ doEcho echo ("cd "++goal++" && ${HC} ${HFLAGS}"++" -o "
+             ++     file ++ " "++objs++"` = 1 ] )\nthen\n"
+	     ++ doEcho echo ("cd "++goal++" && "++hc++" -o "
                              ++file++objs++" ${LDFLAGS}")
-	     ++ "fi\n"
+	     ++ "\nfi\n"
       | otherwise =
           if length objfiles > 3 then
              "exfile <Wimp$ScrapDir>.nhcmk_via STOP\n"
@@ -110,7 +134,7 @@ close graph acc (f:fs)  =
       close graph acc fs
     else
       case assocDef graph (error "Use?") f of
-        ((tps,d,s,_),new) -> 
+        ((tps,d,s,_,_),new) -> 
           close graph ((d,f):acc) (fs ++ new)
 
 

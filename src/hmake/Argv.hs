@@ -1,5 +1,9 @@
 module Argv(Goal(..),DecodedArgs(..),decode,stripGoal) where
-import ListUtil(lconcatMap)
+
+import ListUtil (lconcatMap)
+import Compiler
+import Config
+
 #if !defined(__HBC__)
 import List (isPrefixOf)
 import IO (hPutStrLn,stderr)
@@ -36,12 +40,15 @@ data DecodedArgs =
 	, quiet    :: Bool		-- option -q for quiet
 	, keepPrel :: Bool		-- option -keepPrelude
 	, isUnix   :: Bool		-- Unix or RiscOS (!)
+	, hat      :: Bool		-- do we perform hat transformation?
 	, debug    :: (String->IO ())	-- debugging printf function
 	, ifnotopt :: ([String]->String->String)  -- conditional (option unset)
 	, ifopt    :: ([String]->String->String)  -- conditional (option set)
 	, goalDir  :: String		-- goal Directory for .o files
-	, hiSuffix :: String		-- .hi / .T_hi
-	, oSuffix  :: String		-- .o  / .T_o / .p_o / .t_o
+	, hiSuffix :: String		-- .hi / .T.hi
+	, oSuffix  :: String		-- .o  / .T.o / .p.o / .z.o
+        , config   :: HmakeConfig	-- read from file (via optional -ffile)
+        , compiler :: CompilerConfig	-- chosen compiler
 	}
 
 decode :: [String] -> DecodedArgs
@@ -51,26 +58,37 @@ decode progArgs =
     , pathSrc  = (map tail . filter (\v -> head v == 'I')) flags ++
                  (map tail . filter (\v -> head v == 'i')) flags ++
                  if isopt "keepPrelude" then pathPrel d else []
-    , pathPrel = (map tail . filter (\v -> head v == 'P')) flags
-    , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags
+    , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
+                 includePaths (compiler d)
+    , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
+                 cppSymbols (compiler d)
     , defs     = (map tail . filter (\v -> head v == 'D')) flags
     , ignoreHi = (map tail . filter (\v -> head v == 'N')) flags
     , dflag    = isopt "od"
     , quiet    = isopt "q"
     , keepPrel = isopt "keepPrelude"
     , isUnix   = True			-- not (isopt "RiscOS")
+    , hat      = isopt "hat"
     , debug    = if isopt "watch" then (\s->hPutStrLn stderr s)
                  else (\s->return ())
     , ifnotopt = \opts s -> if not (or (map isopt opts)) then s else ""
     , ifopt    = \opts s -> if any isopt opts then s else ""
-    , goalDir  = case filter (\v -> head v == 'd') flags of
-                     []  -> ""
-                     [x] -> tail x
-                     _   -> error "Only one -dobjdir allowed!\n" 
+    , goalDir  = case filter (\v-> head v == 'd') flags of
+                   []  -> ""
+                   [x] -> tail x
+                   _   -> error "hmake: only one -dobjdir option allowed\n" 
     , hiSuffix = (withDefault "hi" (drop 10 . last)
                      . filter ("hi-suffix=" `isPrefixOf`)) flags
     , oSuffix  = (withDefault "o"  (drop  9 . last)
                      . filter ("o-suffix="  `isPrefixOf`)) flags
+    , config   = case filter (\v-> head v == 'f') flags of
+                   []  -> readConfig defaultConfigLocation
+                   [x] -> readConfig (tail x)
+                   _   -> error "hmake: only one -fconfigfile option allowed\n" 
+    , compiler = case filter (\v-> "hc=" `isPrefixOf` v) flags of
+                   []  -> usualCompiler (config d)
+                   [x] -> matchCompiler (drop 3 x) (config d)
+                   _   -> error "hmake: only one -hc=compiler option allowed\n" 
     }
   in d
 
@@ -96,7 +114,7 @@ decode progArgs =
                             Just y  -> y
                             Nothing -> findFirst f z xs
 
-  withDefault :: a -> ([a]->a) -> ([a]->a)
+  withDefault :: a -> ([b]->a) -> ([b]->a)
   withDefault s f [] = s
   withDefault s f xs = f xs
 
@@ -105,8 +123,8 @@ decode progArgs =
              , "hs"	-- Haskell
              , "o"	-- object file
              , "hi"	-- interface file
-             , "T_o"	-- tracing object file
-             , "p_o"	-- heap-profiling object file
-             , "t_o"	-- time-profiling object file
-             , "T_hi"	-- tracing interface file
+             , "T.o"	-- tracing object file
+             , "p.o"	-- heap-profiling object file
+             , "z.o"	-- time-profiling object file
+             , "T.hi"	-- tracing interface file
              ]

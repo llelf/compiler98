@@ -1,5 +1,5 @@
-module Getmodtime(isOld, show_When, When(..)) where
---import Either
+module Getmodtime(isOlder, show_When, When(..)) where
+
 import Time
 
 data When = Never | At ClockTime  deriving (Eq, Ord)
@@ -11,7 +11,7 @@ instance Show When where
 show_When Never = "never"
 show_When (At t) = show t
 
-isOld Never _ = True
-isOld _ Never = False
-isOld (At t1) (At t2) = t1 < t2
+isOlder Never _ = True
+isOlder _ Never = False
+isOlder (At t1) (At t2) = t1 < t2
 

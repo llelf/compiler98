@@ -1,4 +1,5 @@
 module Main(main) where
+
 import System
 import Time
 #ifdef __HBC__
@@ -14,7 +15,7 @@ main = getArgs >>= \ args ->
        case args of
              [] -> error "Usage: older file.o file1.t ... filen.t"
              fs -> filemodtime [] fs >>= \ (tobj : ts) ->
-                   putStr (if or (map (isOld tobj) ts) then "1\n" else "0\n")
+                   putStr (if or (map (isOlder tobj) ts) then "1\n" else "0\n")
 
 
 filemodtime acc []     = return (reverse acc)
@@ -43,6 +44,6 @@ readTime f =
 -- mtime (dev,inode,mode,uid,size,atime,time) = time
 -- readTime f ok = statFile f (\_ -> ok Never) (\sf -> ok (At (mtime sf)))
 
-isOld Never _ = True
-isOld _ Never = False
-isOld (At t1) (At t2) = t1 < t2
+isOlder Never _ = True
+isOlder _ Never = False
+isOlder (At t1) (At t2) = t1 < t2

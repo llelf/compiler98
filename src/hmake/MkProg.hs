@@ -1,7 +1,7 @@
 module Main(main) where
 import Argv
 import GetDep
-import Getmodtime(isOld,When,show_When)
+import Getmodtime(isOlder,When,show_When)
 import ListUtil(lconcatMap,assocDef,pair)
 import Order
 import Output
@@ -15,66 +15,66 @@ main =
   d = decode args
   echo = not (quiet d)
 
-  order' g = (scctsort . map (\(f,(tps,i)) -> (f,i))) g
-  fdeps  g = map (\(f,((t,p,s,c),is)) ->
+  order g = (scctsort . map (\(f,(tps,i)) -> (f,i))) g
+  fdeps g = map (\(f,((t,p,s,c,pp),is)) ->
                      ((f,p,s)
                      , map (\i->(i, path (assocDef g (undefModule i) i))) is
                      )
-                 ) g
-     where path ((t,p,s,cpp),i) = p
+                ) g
+     where path ((t,p,s,cpp,pp),i) = p
 
   build_graph mods =
 	-- First, get a list of all the important info about every file
 	-- that might be touched.
-    dependency d [] (map (\m->(stripGoal m,"commandline")) mods) >>= \nhcgOrg ->
-	-- 'nhcgOrg' is a list of (file, (timestamps,imports))
-      let	-- 'src' is the simple list of source files.
-          src = map fst nhcgOrg
-		-- 'nhcg' removes prelude imports from the import lists
-          nhcg = map (\(f,(tpsc,i)) -> (f,(tpsc,filter (`elem` src) i))) nhcgOrg
-		-- 'cnhcg'' removes timestamps, finds strongly connected
+    dependency d [] (map (\m->(stripGoal m,"commandline")) mods) >>= \infos ->
+	-- infos is a list of (file, (timestamps,imports))
+      let	-- srcs is the simple list of source files.
+          srcs = map fst infos
+		-- localdeps removes prelude imports from the import lists
+          localdeps = map (\(f,(x,i))-> (f,(x,filter (`elem` srcs) i))) infos
+		-- sorted removes timestamps, finds strongly connected
 		-- components, and orders them.
-          cnhcg' =  order' nhcg
-		-- 'cycles' identifies cyclic dependencies
-          cycles = filter ((1 /=) . length) cnhcg'
-		-- 'nhcg'' is the flattened scc list
-          nhcg' = concat cnhcg'
-		-- 'hsT' and 'hiT' build assoc-lists of static timestamps
-          hsT = hsTimes nhcg nhcg'
-          hiT = hiTimes nhcg nhcg'
-          hiP = hiPaths nhcg nhcg'
-		-- 'graph' calculates which files definitely need to be
+          sorted = order localdeps
+		-- sorted' is the flattened scc list
+          sorted' = concat sorted
+		-- cycles identifies cyclic dependencies
+          cycles = filter ((1 /=) . length) sorted
+		-- hsT and hiT are assoc-lists of static timestamps
+          hsT = hsTimes localdeps sorted'
+          hiT = hiTimes localdeps sorted'
+          hiP = hiPaths localdeps sorted'
+		-- graph calculates which files definitely need to be
 		-- compiled based on initial timestamps, and which ones
 		-- might need to be compiled, depending on whether some
 		-- imported modules' .hi files changed or not.
-          graph = makeGraph hsT [] hiT hiP
+          graph = makeGraph [] hiT hiP hsT
       in
-        return (cycles,graph,nhcg,fdeps nhcg)
+        return (cycles, graph, localdeps, fdeps localdeps)
 
-  makeGraph []                 hiT' hiT hiP = []
-  makeGraph ((hs,(st,ot,p,s,cpp,dep)):hsT) hiT' hiT hiP = 
+  makeGraph seen hiT hiP [] = []
+  makeGraph seen hiT hiP ((hs,(src,obj,p,s,cpp,pp,dep)):hsT) = 
 	-- If at least one of the imported .hi files or the source file
 	-- is younger than the object file, then we definitely recompile.
-      if or (map (isOld ot) (st:map (assocDef hiT (undefModule "??")) dep)) then
-        ([],(p,hs,s,cpp)): makeGraph hsT (hs:hiT') hiT hiP
+      if or (map (isOlder obj) (src: map (assocDef hiT (undefModule "??")) dep))
+      then ([],(p,hs,s,cpp,pp)): makeGraph (hs:seen) hiT hiP hsT
       else
 	-- Otherwise, we need to build a dynamic dependency on those .hi files
 	-- which might change (due to cycles).  But if all the imported .hi's
 	-- have already been seen, we leave this one alone.
-        case filter (`elem` hiT') dep of
-            [] -> makeGraph hsT hiT' hiT hiP
-            xs -> (map impPath xs, (p,hs,s,cpp)):
-                  makeGraph hsT (hs:hiT') hiT hiP
+        case filter (`elem` seen) dep of
+            [] -> makeGraph seen hiT hiP hsT
+            xs -> (map impPath xs, (p,hs,s,cpp,pp)):
+                  makeGraph (hs:seen) hiT hiP hsT
     where impPath x = (x, assocDef hiP (undefModule x) x)
 
   hsTimes g m = map (\v-> (v, hsTime (assocDef g (undefModule v) v))) m
-     where hsTime (((hsT,_,oT),p,s,cpp),i) = (hsT,oT,p,s,cpp,i)
+     where hsTime (((ppT,hsT,hiT,oT),p,s,cpp,pp),i) = (hsT,oT,p,s,cpp,pp,i)
 
   hiTimes g m = map (\v-> (v, hiTime (assocDef g (undefModule v) v))) m
-     where hiTime (((_,hiT,_),p,s,cpp),i) = hiT
+     where hiTime (((_,_,hiT,_),p,s,cpp,pp),i) = hiT
 
   hiPaths g m = map (\v-> (v, hiPath (assocDef g (undefModule v) v))) m
-     where hiPath (((_,_,_),p,s,cpp),i) = p
+     where hiPath (((_,_,_,_),p,s,cpp,pp),i) = p
 
   undefModule m = error ("undefined module "++show m++"\n")
 
@@ -82,30 +82,22 @@ main =
   if null (modules d) then
       hPutStr stderr ("Usage: MkProg [-q] [-dobjdir] [-g] [-M] target ...\n"
                      ++"    [must have at least one target]\n")
-  else
-      build_graph (modules d) >>= \(cycles,build,nhcg,fdep)->
-      let objcmds = lconcatMap (qCompile d echo)      build
-          execmds = lconcatMap (qLink    d echo nhcg) (modules d)
-          cleano  = lconcatMap (qCleano  d echo nhcg) (modules d)
-          cleanhi = lconcatMap (qCleanhi d echo nhcg) (modules d)
-      in do
-         hPutStr stderr
-             (if null cycles then ""
-              else "Cycles:\n" ++ lconcatMap ((++ "\n") . show) cycles)
-         putStr (
-           ifopt d ["g"] (lconcatMap showdep nhcg))
-         putStr (
-           ifopt d ["M"]
-                   ("# dependencies generated by hmake -M:\n" ++
-                    lconcatMap (showmake d (goalDir d)) fdep))
-         putStr (
-           ifopt d ["Md"]
-                   ("# dependencies generated by hmake -Md:\n" ++
-                    "OBJDIR=" ++ (goalDir d) ++ "\n" ++
-                    lconcatMap (showmake d "${OBJDIR}") fdep))
-         putStr (
-           ifopt d ["clean","realclean"] cleano ++
-           ifopt d ["realclean"] cleanhi)
-         putStr (
-           ifnotopt d ["g", "M", "Md", "clean", "realclean"]
-                      (objcmds ++ execmds))
+  else do
+      (cycles, build, localdeps, fdep) <- build_graph (modules d)
+      let objcmds = lconcatMap (qCompile d echo) build
+          execmds = lconcatMap (qLink    d echo localdeps) (modules d)
+          cleano  = lconcatMap (qCleano  d echo localdeps) (modules d)
+          cleanhi = lconcatMap (qCleanhi d echo localdeps) (modules d)
+      hPutStr stderr (if null cycles then ""
+                      else "Cycles:\n"++lconcatMap ((++"\n") . show) cycles)
+      putStr (ifopt d ["g"] (lconcatMap showdep localdeps))
+      putStr (ifopt d ["M"] ("# dependencies generated by hmake -M:\n"
+                             ++lconcatMap (showmake d (goalDir d)) fdep))
+      putStr (ifopt d ["Md"] ("# dependencies generated by hmake -Md:\n"
+                              ++"OBJDIR=" ++ (goalDir d) ++ "\n"
+                              ++lconcatMap (showmake d "${OBJDIR}") fdep))
+      putStr (ifopt d ["clean", "realclean"] cleano)
+      putStr (ifopt d ["realclean"] cleanhi)
+      putStr (ifnotopt d ["g", "M", "Md", "clean", "realclean"]
+                             (objcmds ++ execmds))
+

@@ -5,6 +5,8 @@ import Imports(getImports)
 import FileName
 import Unlit(unlit)
 import Argv
+import PreProcessor
+import Config
 
 #ifdef __HBC__
 import FileStat
@@ -26,7 +28,7 @@ showdep (f,(((ths,thi,tobj),p,s,cpp),i)) =
   in show f ++ cppflag:'(': show ths ++ ':': show thi ++ ':': show tobj ++ ") "
      ++ show p ++ '(':show s++ ") : " ++ show i ++ "\n"
 -}
-showdep (f,(((ths,thi,tobj),p,s,cpp),i)) =
+showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
   f ++ ": " ++ mix i ++ "\n"
   where mix = foldr (\a b-> a++' ':b) ""
 
@@ -42,50 +44,57 @@ showmake opts goaldir ((f,p,s),i) =
           if (dflag opts) then fixFile opts goaldir f (oSuffix opts)
                           else fixFile opts p       f (oSuffix opts)
 
+type FileInfo = ( (When,When,When,When)	-- file timestamps
+                , FilePath		-- directory path to file
+                , FilePath		-- source file name, inc path
+                , Bool			-- cpp required?
+                , PreProcessor)		-- applicable preprocessor
 
-dependency opts done [] =
-  return done
-dependency opts done ((f,dm):fs) =
+dependency :: DecodedArgs
+              -> [( String		-- module name
+                  , ( FileInfo		-- timestamps, filepaths, cpp, etc
+                    , [String]		-- imports
+                    )
+                  )]	-- (accumulator)
+              -> [(String,FilePath)]	-- (module, imported by which file?)
+              -> IO [( String		-- module name
+                     , ( FileInfo	-- timestamps, filepaths, cpp, etc
+                       , [String]	-- imports
+                       )
+                     )]
+dependency opts done [] = return done
+dependency opts done ((f,demand):fs) =
   if f `elem` (ignoreHi opts) || f `elem` (map fst done)
    then dependency opts done fs
-   else readFirst opts f dm >>= \res ->
+   else readFirst opts f demand >>= \res ->
          case res of 
-           Left _ -> dependency opts done fs	-- a Prelude/StdLib file
-           Right (t,p,file,source) ->
-               readFile source >>= \content->
-               let i = filter (`notElem` (ignoreHi opts))
-                              (getImports source (zdefs opts ++ defs opts) file)
-                                    -- previously (haskellImport kp file)
+           Nothing -> dependency opts done fs	-- a Prelude/StdLib file
+           Just (times,path,source,preproc,plainfile,unlitfile) ->
+               let
+                   cpp = hash ('\n':plainfile)
                    hash ('\n':'#':_) = True
-               --  hash ('\n':'%':_) = True	-- why '%'?  for GreenCard?
-                   hash (_:xs)  = hash xs
-                   hash  []     = False
-                   cpp = hash ('\n':content)
-                   moredone = (f,((t,p,source,cpp),i)):done
-                   newms = map (\x->(x,source)) i
+                   hash (_:xs)       = hash xs
+                   hash  []          = False
+                   i = filter (`notElem` (ignoreHi opts))
+                              (getImports source (zdefs opts ++ defs opts)
+                                          unlitfile)
+                   moredone = (f,((times,path,source,cpp,preproc),i)):done
+                   needed = map (\x->(x,source)) i
                in
 {- Originally, the next line was #ifdef sun, but apparently FreeBSD doesn't
    like too many open files either. -}
-                  cpp `seq`
-                  dependency opts moredone (newms ++ fs)
-
---mtime = itos 0 . head . drop (10::Int) . words
--- where
---   itos a (x:xs) | isDigit x = itos (a*10+ord x - ord '0') xs
---   itos a _ = a
-
-#ifdef __HBC__
-readTime f = catch (getFileStat f >>= \sf -> return (At ((st_mtime sf)::ClockTime)))
-                   (\_ -> return Never)
-#endif
-#if defined(__NHC__) || defined (__GLASGOW_HASKELL__)
-readTime f = --hPutStr stderr ("readTime "++f++"\n") >>
-             doesFileExist f >>= \so->
-             if so then getModificationTime f >>= \mt -> return (At mt)
-             else return Never
-#endif
+                  cpp `seq`	-- force read and discard of plainfile
+                  dependency opts moredone (needed ++ fs)
 
 
+readFirst :: DecodedArgs -> String -> String
+             -> IO (Maybe ( (When,When,When,When)	-- file timestamps
+                          , FilePath		-- directory path to file
+                          , FilePath		-- source file name, inc path
+                          , PreProcessor	-- applicable pre-processor
+                          , String		-- plain file contents
+                          , String		-- unliterated file contents
+                          ))
 readFirst opts name demand =
   watch ("readFirst " ++ show (pathSrc opts) ++
               "\n   " ++ show (pathPrel opts)) >>
@@ -100,15 +109,15 @@ readFirst opts name demand =
     let source = fixFile opts p ff "gc"
     in watch ("Trying (N)" ++ source) >>
        catch
-         (readFile source >>= \file-> readData p source file)
+         (readFile source >>= \file-> readData p source file ppNone)
          (\_-> let source = fixFile opts p ff "hs"
                in watch ("Trying (N)" ++ source) >>
                   catch
-                    (readFile source >>= \file -> readData p source file)
+                    (readFile source >>= \file -> readData p source file ppNone)
                     (\_ -> let source = fixFile opts p ff "lhs"
 	                   in watch ("Trying (N)" ++ source) >>
                               catch (readFile source >>= \file ->
-                                     readData p source (unlit name file))
+                                     readData p source (unlit name file) ppNone)
                                     (\_ -> rN ps)))
 
   rP [] = error ("Can't find module "++name++" in\n\t"++
@@ -120,22 +129,25 @@ readFirst opts name demand =
   rP (p:ps) =
      let source = fixFile opts p ff (hiSuffix opts)
      in watch ("Trying (P)" ++ source) >>
-        catch (readFile source >>= \file ->  return (Left file))
+        catch (readFile source >>= \file -> return Nothing)
               (\_ -> rP ps)
 #endif
 #if defined(__NHC__) || defined(__GLASGOW_HASKELL__)
   rN [] = rP (pathPrel opts) 
-  rN (p:ps) =
-    let try  []        = rN ps
-        try ((s,f):xs) = watch ("Trying (N)" ++ s) >>
-                         doesFileExist s >>= \so->
-                         if so then
-                             watch ("Got (N)" ++ s) >>
-                             readFile s >>= \file-> readData p s (f file)
-                         else try xs
-    in try [ (fixFile opts p ff "gc",  id),
-             (fixFile opts p ff "hs",  id),
-             (fixFile opts p ff "lhs", (unlit name))]
+  rN (p:ps) = try PreProcessor.knownSuffixes
+    where try  []  = rN ps
+          try ((suf,lit,pp):xs) = do
+            let src = fixFile opts p ff suf
+            watch ("Trying (N)" ++ src)
+            if ppSuitable pp (compilerStyle (compiler opts))
+              then do
+                ok <- doesFileExist src
+                if ok
+                  then do
+                    watch ("Got (N)" ++ src)
+                    readData p src pp (lit name)
+                  else try xs
+              else try xs
 
   rP [] = error ("Can't find module "++name++" in\n\t"++
                  concat (intersperse "\n\t" (".":pathSrc opts))++
@@ -143,21 +155,45 @@ readFirst opts name demand =
                  concat (intersperse "\n\t" (pathPrel opts))++
                  "\n  Asked for by: "++demand++
                  "\n[Check settings of -I or -P flags?]\n")
-  rP (p:ps) =
-     let source = fixFile opts p ff (hiSuffix opts)
-     in watch ("Trying (P)" ++ source) >>
-        doesFileExist source >>= \so->
-        if so then
-            watch ("Got (P)" ++ source) >>
-            return (Left [])
-        else rP ps
+  rP (p:ps) = do
+     let interface = fixFile opts p ff (hiSuffix opts)
+     watch ("Trying (P)" ++ interface)
+     ok <- doesFileExist interface
+     if ok then do
+         watch ("Got (P)" ++ interface)
+         return Nothing
+       else rP ps
 
 #endif
 
-  readData path source file =
-     readTime source >>= \ths ->
-     readTime (fixFile opts path  ff (hiSuffix opts)) >>= \thi ->
-     readTime (fixFile opts opath ff (oSuffix  opts)) >>= \tobj ->
-     return (Right  ((ths,thi,tobj),path,file,source))
+  readData :: FilePath -> FilePath -> PreProcessor -> (String->String)
+              -> IO (Maybe ( (When,When,When,When)	-- file timestamps
+                           , FilePath		-- directory path to file
+                           , FilePath		-- source file name, inc path
+                           , PreProcessor	-- applicable pre-processor
+                           , String		-- plain file contents
+                           , String		-- unliterated file contents
+                           ))
+  readData path source pp lit = do
+     tpp  <- readTime source	-- in many cases, identical to `ths' below
+     ths  <- readTime (fixFile opts path  ff "hs")
+     thi  <- readTime (fixFile opts path  ff (hiSuffix opts))
+     tobj <- readTime (fixFile opts opath ff (oSuffix  opts))
+     file <- readFile source
+     return (Just ((tpp,ths,thi,tobj),path,source,pp,file,lit file))
    where opath = if null (goalDir opts) then path else (goalDir opts)
+
+
+readTime :: FilePath -> IO When
+#ifdef __HBC__
+readTime f = catch (getFileStat f >>= \sf->
+                    return (At ((st_mtime sf)::ClockTime)))
+                   (\_ -> return Never)
+#endif
+#if defined(__NHC__) || defined (__GLASGOW_HASKELL__)
+readTime f = --hPutStr stderr ("readTime "++f++"\n") >>
+             doesFileExist f >>= \so->
+             if so then getModificationTime f >>= \mt -> return (At mt)
+             else return Never
+#endif
 
