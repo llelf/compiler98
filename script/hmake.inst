@@ -271,8 +271,8 @@ esac
 	#       because they are only needed if cpp is called, so to
 	#       reduce screen clutter, hmake controls their addition
 case $IMPORTOPTIONSTYLE in
-  minusi) hmflags="$hmflags $cppflags `echo $importflags | sed 's/ -i/ -I/g'`"
-          hcflags="$hcflags `echo $importflags | sed 's/ -[IP]/ -i/g'`"
+  minusi) hmflags="$hmflags $cppflags `echo \"$importflags\"|sed 's/ -i/ -I/g'`"
+          hcflags="$hcflags `echo \"$importflags\" | sed 's/ -[IP]/ -i/g'`"
           ;;
   minusP) hmflags="$hmflags $cppflags $importflags"
           hcflags="$hcflags $importflags"
