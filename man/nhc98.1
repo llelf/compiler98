@@ -20,10 +20,11 @@ accepts several types of arguments:
 .br
 Arguments whose names end in `.hs' are taken to be Haskell source,
 names ending in `.lhs' are taken to be literate Haskell source,
-names ending in `.gc' are taken to be Green Card source,
-names ending in `.c' are taken to be either straight C code or
+names ending in `.gc' are taken to be GreenCard source,
+names ending in `.hc' are taken to be
 .I nhc98
 bytecode,
+names ending in `.c' are taken to be straight C code,
 names ending in `.s' are taken to be assembler programs
 and `.o' are object files.
 .PP
@@ -120,7 +121,7 @@ set the heapsize to
 .IR size .
 Default is 400kbyte.
 .TP 10
-.BI \-Ssize
+.BI \-Ksize
 set the stacksize to
 .IR size .
 Default is 80kbyte.
@@ -179,7 +180,7 @@ various files used by the compiler.  The default values are
 /usr/local/lib/nhc98 and /usr/local/include/nhc98.  The variable $MACHINE
 is used to select the correct executables and libraries for your architecture.
 It is determined using the script
-.I nhc98arch
+.I harch
 .SH FILES
 .TP 25
 .B $NHC98LIBDIR/$MACHINE/nhc98comp
@@ -199,7 +200,7 @@ the standard prelude and libraries.
 .SH DIAGNOSTICS
 Could be better, could be worse.
 .SH "SEE ALSO"
-hmake(1), hp2graph(1), nhc98arch(1), nhc13(1)
+hmake(1), hp2graph(1), harch(1)
 .SH BUGS
 Probably.
 .br

@@ -35,7 +35,7 @@ then the object file for that module is generated.
 allows several programs to reside in the same directory.  Modules can be
 shared between several programs.  Modules can also reside in different
 directories.  Directories to search for modules can be specified with
-the -I flag, in the same way as for Haskell compilers.
+the -I or -i flag, in the same way as for Haskell compilers.
 
 .I hmake
 correctly handles the fact that Haskell compilers generate two files,
@@ -85,7 +85,8 @@ to the search path for prelude/stdlib modules.  Only interface files
 in that directory are checked - it is assumed that the modules are already
 compiled.  If more than one
 .I \-P
-is specified, the directories are searched in order.
+is specified, the directories are searched in order.  Modules found in these
+directories are not added to any linking step.
 .TP
 .B \-keepPrelude
 Calculate dependencies also for Prelude modules that are explicitly imported.
