@@ -389,7 +389,8 @@ tDecl parent (DeclPat (Alt pat rhs decls)) =
           ]))
       decls']
    :map (uncurry (mkConstDecl parent)) patPosIds
-  ,foldr (uncurry addVar) (declsConsts `withLocal` rhsConsts) patPosIds)
+  ,foldr (uncurry addVar) 
+    (emptyModuleConsts `withLocal` (declsConsts `merge` rhsConsts)) patPosIds)
   where
   firstId = snd . head $ patPosIds
   patId = nameShare firstId
@@ -502,7 +503,7 @@ tFun pos id funs =
        noDecls]]
   ,DeclFun pos wrappedId' funs' : newDecls'  
    -- in same scope as possible type decl (which hasn't been implemented)
-  ,addVar pos id funConsts)
+  ,addVar pos id (emptyModuleConsts `withLocal` funConsts))
   where
   funArity = case funs of (Fun pats _ _ : _) -> length pats
   sr = ExpVar pos (nameSR id)

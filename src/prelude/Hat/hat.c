@@ -1307,7 +1307,7 @@ primAtomIdToplevel (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
   int tracePos = htonl (pos);
   FileOffset fo = htonl(HatCounter);
   HIDE(fprintf(stderr,"\tprimAtomId \"%s\" -> 0x%x\n",name,fo);)
-  fputc(((NmType<<5) | NTToplevelId),HatFile);
+  fputc(((NmType<<5) | NTToplevelId),HatFile); 
   fprintf(HatFile,"%s",name);
   fputc(0x0,HatFile);
   fwrite(&moduleTraceInfo, sizeof(FileOffset), 1, HatFile);

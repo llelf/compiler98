@@ -18,7 +18,7 @@ SRCS = \
 	GcodeFix.hs GcodeLow.hs GcodeLowC.hs GcodeMem.hs GcodeOpt1.hs \
 	GcodeOpt2.hs GcodeRel.hs GcodeSpec.hs HbcOnly.hs IExtract.hs \
 	Import.hs ImportState.hs Info.hs IntState.hs IdKind.hs Lex.hs LexLow.hs \
-	LexPre.hs LexStr.hs Lexical.hs Lift.hs Machine.hs Main.hs Memo.hs \
+	LexPre.hs LexStr.hs Lexical.hs Lift.hs Machine.hs Memo.hs \
 	MergeSort.hs MkSyntax.hs NT.hs Need.hs NeedLib.hs Nice.hs OsOnly.hs \
 	PrettyLib.hs PrettySyntax.hs Parse.hs Parse2.hs ParseCore.hs ParseI.hs \
 	ParseLex.hs ParseLib.hs PosAtom.hs PosCode.hs PreImp.hs PreImport.hs \
@@ -29,7 +29,7 @@ SRCS = \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
 	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs FFITrans.hs \
 	ReportImports.hs AuxFile.hs AuxLabelAST.hs TraceId.hs AuxFixity.hs \
-	MainNew.hs
+	TraceTrans.hs MainNew.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})

@@ -88,7 +88,7 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 			     (Found []) in
               if (ident1=="") then
                do
-	 	  dummy <- interactive (file,hattrace) ([],False,1,0,50,
+	 	  dummy <- interactive (file,hattrace) ([],False,10,0,50,
 							observableIdents hattrace,
 							False,False)
 		  return ()
