@@ -4,7 +4,7 @@ OBJDIR = ${BUILDDIR}/obj/interpreter
 TARGET = ${DST}/HInteractive$(EXE)
 
 SRCS   = HInteractive.hs HiConfig.hs SimpleLineEditor.hs LexModule.hs
-OTHERS = Unlit.hs Compiler.hs Config.hs	# from src/hmake
+OTHERS = Unlit.hs Compiler.hs Config.hs	Platform.hs # from src/hmake
 
 CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 

@@ -119,7 +119,8 @@ showtype expr ("main":args) state =
         f <- openFile (tmpfile++".hs") WriteMode
         hPutStr f (fromJust (scopeText state) ++ "\nmain = _ain\n")
         hClose f
-        compile False tmpfile (state{options=(options state)++["-showtype"]}) done
+        compile False tmpfile
+                (state{options=(options state)++["-showtype"]}) done
 showtype expr _ state = do
   let modtext = fromMaybe "" (scopeText state)
   let scopem  = maybeToList (scope state)
@@ -129,7 +130,8 @@ showtype expr _ state = do
     concatMap (\m-> "import "++m++"\n") (modules state \\ scopem) ++
     modtext ++ "\nmain = "++ expr ++ "\n")
   hClose f
-  compile False tmpfile (state{options=(options state)++["-showtype"]}) done
+  compile False tmpfile
+          (state{options=(options state)++["-showtype"]}) done
 
 
 compile flag file state continue = do

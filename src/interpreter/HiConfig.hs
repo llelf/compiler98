@@ -1,4 +1,3 @@
-{-# OPTIONS -fglasgow-exts #-}
 -- Known Haskell compilers and their locations are all stored in an
 -- hmakerc file which is maintained with the hmake-config utility.
 -- This module no longer deals with that side of things.
@@ -11,35 +10,19 @@ module HiConfig where
 
 import Compiler
 import Config
-
+import Platform (getProcessID,unsafePerformIO,withDefault,windows)
 import System
-#ifdef __HBC__
-import UnsafePerformIO
-#ifdef __HASKELL98__
-import GetPid
-getProcessID = getPid
-#else
-getProcessID = return 3154	-- arbitrary number
-#endif
-#endif
-#ifdef __NHC__
-import NHC.IOExtras (unsafePerformIO)
-foreign import ccall "getpid" getProcessID :: IO Int
-#endif
-#ifdef __GLASGOW_HASKELL__
-import IOExts (unsafePerformIO)
-foreign import ccall "getpid" getProcessID :: IO Int
-#endif
 
--- Generate a temporary filename unique to this invocation.
-tmpfile = unsafePerformIO $ do p <- getProcessID
-                               return ("/tmp/Main"++show p)
+-- Generate a temporary filename unique to this process.
+tmpfile :: String
+tmpfile =
+    let tmp = "TEMP" `withDefault` "/tmp" in
+    if windows
+      then (tmp++"\\Main")
+      else unsafePerformIO $ do
+             p <- getProcessID
+             return (tmp++"/Main"++show p)
 
--- Get an environment variable if it exists, or default to given string
-withDefault name def = unsafePerformIO $
-   catch (do val <- getEnv name
-             if null val then return def else return val)
-         (\e-> return def)
 
 -- Ensure that a string has a fixed length by truncating or padding with space
 fixlength n s | len > n   = take n s
@@ -57,7 +40,9 @@ hmake = unsafePerformIO $ do script <- getEnv "SCRIPTDIR"
 nonstdCoerceImport c  = case c of
     Nhc98 -> "import NonStdUnsafeCoerce"
     Hbc   -> ""
-    Ghc   -> "import GHC.Base(unsafeCoerce#)"
+    Ghc   -> "#if __GLASGOW_HASKELL__ <= 502\n\
+             \import PrelGHC (unsafeCoerce#)\n#else\n\
+             \import GHC.Base(unsafeCoerce#)\n#endif"
     _     -> ""
 nonstdCoerce c  = case c of
     Nhc98 -> "\ncoerce=unsafeCoerce\n"
@@ -79,6 +64,6 @@ nonstdShowsType c  = case c of
 extraHiOptions c = case compilerStyle c of
     Nhc98 -> extraCompilerFlags c
     Hbc   -> extraCompilerFlags c
-    Ghc   -> "-fglasgow-exts": extraCompilerFlags c
+    Ghc   -> "-fglasgow-exts": "-package lang": extraCompilerFlags c
     _     -> []
 
