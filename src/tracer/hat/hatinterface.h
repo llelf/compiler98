@@ -60,7 +60,7 @@ char          getInfixPrio    ();     // get infix priority of constr/ident node
 
 filepointer   getNameType     ();     // get type reference of a name node
 
-filepointer   getProjTrace    ();     // get value trace of an indirection (projection)
+filepointer   getProjValue    ();     // get value of a projection or SAT node
 
 filepointer   getSrcRef       ();     // get pointer to source reference
 

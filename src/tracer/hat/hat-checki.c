@@ -172,7 +172,7 @@ filepointer printNode(unsigned long offset) {
     case IND:
       printf(" Indirection: ");
       printf("TR 0x%x, ", getParent());
-      printf("TR 0x%x ", getProjTrace());
+      printf("TR 0x%x ", getProjValue());
       break;
     case HIDDEN:
       showAble = 1;

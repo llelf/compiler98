@@ -273,7 +273,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       fileoffset=getNameType(); // read NmType -> follow this link to build 
       break;
     case HatProjection: //  Indirection
-      fileoffset=getProjTrace(); // follow this link for prettyPrint
+      fileoffset=getProjValue(); // follow the value link for prettyPrint
       break;
     case HatInt:
       exp = newExprNode(b);
@@ -320,7 +320,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       }
     case HatSATA: // unevaluated expression
       if (verbose) {
-	p = getParent();
+	p = getProjValue();
 	exp = newExprNode(b);
 	exp->v.expr = buildExprRek(handle,p,verbose,precision,hash,cycles);
 	return exp;

@@ -400,11 +400,9 @@ filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
     switch (nodeType) {
     case TRNAM:
     case TRIND: //  Indirection
-      fileoffset=getProjTrace();
-      break;
     case TRSATCIS:
     case TRSATC:
-      fileoffset=getParent(); // follow link...
+      fileoffset=getProjValue();
       break;
     default:
       return fileoffset;
@@ -435,7 +433,7 @@ filepointer hatFollowSATs(HatFile handle,filepointer fileoffset) {
     switch (nodeType) {
       //case TRSATCIS:
     case TRSATC:
-      fileoffset=getParent(); // follow link...
+      fileoffset=getProjValue(); // follow link...
       break;
     default:
       return fileoffset;
@@ -603,6 +601,8 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
     case HatSATA:
     case HatSATB:
     case HatSATC:
+      srcref = getProjValue();
+      break;
     case HatSrcRef:
       srcref = getParent();
       break;
@@ -679,7 +679,7 @@ int isTopLevel(HatFile handle,filepointer srcref) {
     case TRSATAIS:
     case TRSATBIS:
     case TRSATCIS:
-      srcref=getParent();
+      srcref=getProjValue();
       break;
     case TRNAM:
       srcref=getNameType(); // follow nmType
@@ -722,7 +722,7 @@ filepointer hatLMO(HatFile handle,filepointer fileoffset) {
       return 0;
     case TRSATC:
     case TRSATCIS:
-      fileoffset=getParent();
+      fileoffset=getProjValue();
       break;
     case TRNAM:
       fileoffset=getNameType(); // follow nmType
@@ -752,7 +752,7 @@ filepointer hatLMOName(HatFile handle,filepointer fileoffset) {
       return 0;
     case TRSATC:
     case TRSATCIS:
-      fileoffset=getParent();
+      fileoffset=getProjValue();
       break;
     case TRNAM:
       return fileoffset;
@@ -778,14 +778,15 @@ filepointer hatInitialCAF(HatFile handle,filepointer fileoffset) {
     prev = fileoffset;
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
-    case HatHidden:
     case HatSATC:
     case HatProjection:
+      fileoffset = getProjValue();
+      break;
+    case HatHidden:
     case TRNAM:
-    case HatApplication:{
+    case HatApplication:
       fileoffset = getParent();
       break;
-    }
     default:
       hatSeekNode(handle,old);
       return 0;
@@ -814,11 +815,11 @@ int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case HatHidden:
-    case HatSATC:
-      fileoffset=getParent();
-      break;
     case HatProjection:
       fileoffset=getParent();
+      break;
+    case HatSATC:
+      fileoffset=getProjValue();
       break;
     case HatName:
       if (getNameType()==parent) {
@@ -867,13 +868,15 @@ int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer paren
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case HatHidden:
+      fileoffset=getParent();
+      break;
     case HatSATA:
     case HatSATB:
     case HatSATC:
-      fileoffset=getParent();
+      fileoffset=getProjValue();
       break;
     case HatProjection:
-      fileoffset=getParent(); //getProjTrace(); // right implementation?
+      fileoffset=getParent();
       break;
     case HatName:
       if (getNameType()==parent) {
@@ -1216,7 +1219,7 @@ char getInfixPrio() {
   return (_getInfix() / 4);
 }
 
-filepointer getProjTrace() {
+filepointer getProjValue() {
   unsigned int lbuf;
   filepointer trace;
   prepareBuffer(8);  

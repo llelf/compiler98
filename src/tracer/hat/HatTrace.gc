@@ -435,7 +435,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
 %     switch(newnode) {
 %       case HatProjection:case HatSATA:case HatSATB:case HatSATC:
-%         newnode=getProjTrace();
+%         newnode=getProjValue();
 %       default:newnode=0;
 %     }
 %result (int newnode)
