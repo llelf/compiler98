@@ -10,7 +10,7 @@ module PreludeBuiltin (
   ,seq,error 
   -- char 
   ,Char,Bool
-  ,isAscii,isControl,isPrint,isSpace,isUpper,isLower,isAlpha,isDigit
+  ,isAscii,isLatin1,isControl,isPrint,isSpace,isUpper,isLower,isAlpha,isDigit
   ,isOctDigit,isHexDigit,isAlphaNum,toUpper,toLower
   ,primIntToChar,primCharToInt,primUnicodeMaxBound 
   -- numeric
@@ -68,6 +68,8 @@ foreign import haskell "Prelude.error"
 
 foreign import haskell "Char.isAscii"
   isAscii :: Char -> Bool
+foreign import haskell "Char.isLatin1"
+  isLatin1 :: Char -> Bool
 foreign import haskell "Char.isControl"
   isControl :: Char -> Bool
 foreign import haskell "Char.isPrint"
