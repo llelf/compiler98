@@ -112,10 +112,11 @@ public class EDTParser {
 	    srcref = parseSR();
 	    String module = parseIdent();
 	    String constr = parseIdent();
+	    int isIdentifier = parseNr();
 	    int defpos = parseNr();
 	    int pri = parseNr();
 	    result = new IdName(parent, tree, index, srcref, 
-				refnr, module, constr, defpos, pri);
+				refnr, module, constr, isIdentifier, defpos, pri);
 	    trefnr = parseNr();
 	    irefnr = parseNr();
 	    drefnr = parseNr();

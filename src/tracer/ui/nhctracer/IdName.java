@@ -5,7 +5,7 @@ import java.awt.*;
 public class IdName extends EDTNode {
   String module;
   String name;
-  int defpos, pri;
+  int defpos, pri, isIdentifier;
   int tupleConsArity;/* if this is a tuple constructor, its arity, or -1 */
   int arithSeqArity; /* if this is an enumFrom... function, its arity, or -1 */
   int arithSeqKind;  /* ditto its kind:
@@ -21,7 +21,7 @@ public class IdName extends EDTNode {
 
   public IdName(EDTStructuredNode parent, TraceTree tree, int index,
                 SourceRef sr, int refnr, String module, String name,
-	        int defpos, int pri) {
+	        int isIdent,int defpos, int pri) {
     this.parent = parent;
     this.tree = tree;
     this.index = index;
@@ -31,6 +31,7 @@ public class IdName extends EDTNode {
 	
     this.module = module;
     this.name = name;
+    this.isIdentifier = isIdent;
     this.defpos = defpos;
     this.pri = pri;
 
@@ -66,6 +67,7 @@ public class IdName extends EDTNode {
     idName.irefnr = irefnr;
     idName.drefnr = drefnr;
     idName.name = name;
+    idName.isIdentifier = isIdentifier;
     idName.module = module;
     idName.defpos = defpos;
     idName.pri = pri;

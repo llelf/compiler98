@@ -234,8 +234,12 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	     try {
               IdName name = (IdName) selectedNode;
               String[] l={"xterm","-e","hat-observe",fileName,"-remote",name.name};
-              status.setText("Observing \""+name.name+"\" in separate window");
-              Process process=Runtime.getRuntime().exec(l);
+	      if (name.isIdentifier==1) {
+                status.setText("Observing \""+name.name+"\" in separate window.");
+                Process process=Runtime.getRuntime().exec(l);
+	      } else {
+		status.setText("Please choose an IDENTIFIER to start the Observational Debugging!");
+	      }
              } catch (IOException e) {
                status.setText("ERROR: Unable to start observation tool!");
              }
@@ -245,12 +249,16 @@ public class DbgPanel extends Panel /* implements Runnable */ {
             if (selectedNode==lastClicked) {
              try {
               Redex redex = (Redex) selectedNode;
-              int fo = serverConnection.lookupAdr(redex.refnr);
-              String[] l={"xterm","-e","hat-detect",fileName," -remote ",
-			  ""+fo};
-              status.setText("Algorithmic Debugging session in separate window: "+fo+" "+redex.refnr);
-	      Process process=null;
-              if (fo>0) process=Runtime.getRuntime().exec(l);
+	      if (redex.index==-1) {
+                int fo = serverConnection.lookupAdr(redex.refnr);
+                String[] l={"xterm","-e","hat-detect",fileName," -remote ",
+			    ""+fo};
+                status.setText("Algorithmic Debugging session in separate window.");
+	        Process process=null;
+                if (fo>0) process=Runtime.getRuntime().exec(l);
+	      } else {
+                status.setText("Please choose a REDEX to start Algorithmic Debugging!");
+              }
              } catch (IOException e) {
                status.setText("ERROR: Unable to start Algorithmic Debugging tool!");
              }
