@@ -7,7 +7,7 @@ import System
 import Char(isDigit,digitToInt,toUpper)
 import IO(hFlush,stdout)
 
-spawnObserveCmd = "gnome-terminal -e \"hat-observe "
+spawnObserveCmd = "xterm -e \"hat-observe "
 spawnObserveEnd = "\"&"
 spawnTraceCmd = "hat-trail "
 spawnTraceEnd = "&"
@@ -20,11 +20,13 @@ spawnTraceEnd = "&"
 stringToInt :: String -> Maybe Int
 stringToInt s = stringToInt' True 0 s
  where
-  stringToInt' True _ (c:r) | (isDigit c)==False = stringToInt' True 0 r -- skip alphas at beginning
---  stringToInt' False i (' ':r) = Just i
+  stringToInt' True _ (c:r)
+      | (isDigit c)==False = stringToInt' True 0 r -- skip alphas at beginning
+--stringToInt' False i (' ':r) = Just i
   stringToInt' first i [] = if first then Nothing else  Just i
-  stringToInt' _ i (c:r) | (isDigit c) = stringToInt' False (i*10+(digitToInt c)) r
-		         | otherwise = Nothing
+  stringToInt' _ i (c:r)
+      | (isDigit c) = stringToInt' False (i*10+(digitToInt c)) r
+      | otherwise = Nothing
 
 checkArguments :: [String] -> Bool
 checkArguments arguments =
@@ -49,29 +51,35 @@ upStr :: String -> String
 upStr = map toUpper
 
 main = do
-         arguments <- getArgs
-         if (checkArguments arguments)==False then
-	    showHelp
-	  else
-	  let file = (head arguments) in -- first argument is file name
-	   do
-             maybehattrace <- openTrace file -- open Redex Trail file
-	     if (isNothing maybehattrace) then
-		putStrLn ("hat-detect\n\nError: Unable open file \""++file++"\".")
-	      else
-	       let hattrace = (fromJust maybehattrace);
-		   startReduction = (getStartReduction hattrace arguments) in
-		 do
-	          putStrLn "\nWelcome to hat-detect (20/09/01)"
-                  (b,e,newstate) <- interactive (file,hattrace) ([startReduction],[],
-								 [],[],
-								 1,50,False,True,False)
-		  if (b&&(e>(-1))) then putStrLn "Ok, no error found." else return ()
-		  return ()
+    arguments <- getArgs
+    if (checkArguments arguments)==False then
+        showHelp
+      else do
+        let file = (head arguments)  -- first argument is file name
+        maybehattrace <- openTrace file -- open Redex Trail file
+        if (isNothing maybehattrace) then
+	    putStrLn ("hat-detect\n\nError: Unable open file \""++file++"\".")
+	  else do
+	    let hattrace = (fromJust maybehattrace);
+	    let startReduction = (getStartReduction hattrace arguments)
+	    putStrLn "\nWelcome to hat-detect (20/09/01)"
+            (b,e,newstate) <- interactive (file,hattrace)
+                                          ([startReduction], [], [], []
+                                          ,1, 50, False, True, False)
+            if (b&&(e>(-1))) then putStrLn "Ok, no error found." else return ()
+	    return ()
 
-type StateType = ([HatNode],[(HatNode,LinExpr,Bool)], -- type for state of session
-		  [HatNode],[(Int,HatNode)],
-		  Int,Int,Bool,Bool,Bool)
+-- type for state of session
+type StateType = ( [HatNode]			-- ??
+                 , [(HatNode, LinExpr, Bool)]	-- ??
+		 , [HatNode]			-- ??
+                 , [(Int,HatNode)]		-- ??
+		 , Int				-- ??
+                 , Int				-- ??
+                 , Bool				-- ??
+                 , Bool				-- ??
+                 , Bool				-- ??
+                 )
 
 showIdent :: HatNode -> String
 showIdent node = hatCExpressionStr False 10 node
@@ -89,9 +97,12 @@ showRed verboseMode precision node =
           (prettyPrint precision verboseMode node)++" = "++
 	    (prettyPrint precision verboseMode res)
 
--- add new node to the list of recent nodes. List holds node, linear representaion of it,
--- and the value of the users answer (Yes=True, No=False)
-addToRecentNodes :: [(HatNode,LinExpr,Bool)] -> HatNode -> Bool -> [(HatNode,LinExpr,Bool)]
+
+-- add new node to the list of recent nodes. List holds node, linear
+-- representation of it, and the value of the users answer (Yes=True, No=False)
+addToRecentNodes :: [(HatNode,LinExpr,Bool)] -> HatNode -> Bool
+                    -> [(HatNode,LinExpr,Bool)]
+
 addToRecentNodes recentNodes node answerYes =
     (node,linearizeExpr (toHatExpressionTree 100 node),answerYes):recentNodes
 
@@ -106,18 +117,23 @@ memoizeCheck recentNodes node = (memoizeCheck' recentNodes
 	  memoizeCheck' recentNodes expr1
 
 interactive :: (String,HatTrace) -> StateType -> IO(Bool,Int,StateType)
-interactive _ state@([],_,_,[],_,_,_,_,_) = return (True,0,state) -- nothing else to do
-interactive hatfile state@([],recentNodes,trusted,((qn,node):postponed),questnumber,
-			   precision,verboseMode,memoMode,reconsider) =
- interactive hatfile ([node],  -- take one postponed question as new current question
-		      recentNodes,trusted,postponed,qn,precision,
-		      verboseMode,memoMode,False)
-interactive hatfile state@((node:children),recentNodes,trusted,postponed,questnumber,
-			   precision,verboseMode,memoMode,reconsider) =
+interactive _ state@([],_,_,[],_,_,_,_,_) = return (True,0,state)
+							 -- nothing else to do
+interactive hatfile state@([],recentNodes,trusted,((qn,node):postponed)
+                          ,questnumber,precision,verboseMode,memoMode
+                          ,reconsider) =
+  interactive hatfile ([node]   -- take one postponed question as new
+				-- current question
+		      ,recentNodes,trusted,postponed,qn,precision
+		      ,verboseMode,memoMode,False)
+interactive hatfile state@((node:children),recentNodes,trusted,postponed
+                          ,questnumber,precision,verboseMode,memoMode
+                          ,reconsider) =
   -- ask about correctness of "node"
   let answer = (memoizeCheck recentNodes node) in
-   if ((node `elem` (map (\(a,_,_)->a) recentNodes))|| -- don't ask about identical(!) node
-      ((memoMode)&&((isJust answer)))) then -- in memoizemode
+   if ((node `elem` (map (\(a,_,_)->a) recentNodes))
+					 -- don't ask about identical(!) node
+      || ((memoMode)&&((isJust answer)))) then -- in memoizemode
      if (fromJust answer) then
        doCommand "YES" "YES" hatfile state -- pretend user answered "YES"
       else
@@ -139,7 +155,8 @@ interactive hatfile state@((node:children),recentNodes,trusted,postponed,questnu
         (showReduction verboseMode precision node 
            (show questnumber++"> ")
            (if reconsider then "(Y/?Y/N): " else "(Y/?Y/?N/N): "))
---       if (reconsider) then putStr "  (Y/?Y/N): " else putStr "  (Y/?Y/?N/N): "
+--       if (reconsider) then putStr "  (Y/?Y/N): "
+--                       else putStr "  (Y/?Y/?N/N): "
        hFlush stdout
        s <- getLine
        let w = words s;
@@ -164,27 +181,30 @@ getNumberParam cmd pattern1 pattern2 =
 	     else
               Nothing
 
-doCommand :: String -> String -> (String,HatTrace) -> StateType -> IO(Bool,Int,StateType)
-doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,postponed,
-					questnumber,precision,verboseMode,memoMode,
-					reconsider)
+doCommand :: String -> String -> (String,HatTrace) -> StateType
+             -> IO (Bool,Int,StateType)
+doCommand cmd s hatfile@(file,_)
+                state@((child:children),recentNodes,trusted,postponed
+                      ,questnumber,precision,verboseMode,memoMode,reconsider)
     | (cmd=="Q")||(cmd=="QUIT")||(cmd=="EXIT") =
 	(putStrLn "Goodbye!\n") >> return (True,-1,state)
-    | (cmd=="H")||(cmd=="HELP") = interactiveHelp True >> interactive hatfile state
+    | (cmd=="H")||(cmd=="HELP") = interactiveHelp True >>
+                                  interactive hatfile state
 
     -- toggle modes: verbose and memorize
     | (cmd=="V")||(cmd=="VERBOSE") = 
 	putStrLn ("   verbose mode is now "++
 		  if verboseMode then "OFF" else "ON")
         >>
-        interactive hatfile ((child:children),recentNodes,trusted,postponed,
-			     questnumber,precision,(not verboseMode),memoMode,reconsider)
+        interactive hatfile ((child:children),recentNodes,trusted,postponed
+			    ,questnumber,precision,(not verboseMode),memoMode
+                            ,reconsider)
     | (cmd=="M")||(cmd=="MEMORIZE") = 
-	putStrLn ("   memorize mode is now "++
-		  if memoMode then "OFF" else "ON")
+	putStrLn ("   memorize mode is now "++ if memoMode then "OFF" else "ON")
         >>
-        interactive hatfile ((child:children),recentNodes,trusted,postponed,
-			     questnumber,precision,verboseMode,(not memoMode),reconsider)
+        interactive hatfile ((child:children),recentNodes,trusted,postponed
+			    ,questnumber,precision,verboseMode,(not memoMode)
+                            ,reconsider)
 
     -- user defined function trusting
     | (cmd=="T")||(cmd=="TRUST") =
@@ -200,15 +220,17 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 				verboseMode,memoMode,False))
 	    if (q==questnumber) then
 	       let (_,_,_,_,_,newprec,nverbose,nmemo,_) = newstate in
-                 interactive hatfile ((child:children),recentNodes,trusted,postponed,
-				      questnumber,newprec,nverbose,nmemo,False)
+                 interactive hatfile ((child:children),recentNodes,trusted
+                                     ,postponed,questnumber,newprec,nverbose
+                                     ,nmemo,False)
              else
                return (b,q,newstate)
     | (cmd=="U")||(cmd=="UNTRUST") =
         do
 	  putStrLn "Ok, all functions are untrusted now."
-	  interactive hatfile (child:children,recentNodes,[],postponed,
-			       questnumber,precision,verboseMode,memoMode,reconsider)
+	  interactive hatfile (child:children,recentNodes,[],postponed
+			      ,questnumber,precision,verboseMode,memoMode
+                              ,reconsider)
 
     -- answering the question: yes, no, ?yes and ?no
     | (cmd=="Y")||(cmd=="YES") =
@@ -221,25 +243,27 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 			      verboseMode,memoMode,False))
 	  if (q==questnumber) then
 	     let (_,_,_,_,_,newprec,nverbose,nmemo,_) = newstate in
-	       interactive hatfile ((child:children),recentNodes,trusted,postponed,
-				    questnumber,newprec,nverbose,nmemo,False) 
+	       interactive hatfile ((child:children),recentNodes,trusted
+                                   ,postponed,questnumber,newprec,nverbose
+                                   ,nmemo,False) 
            else
              return (b,q,newstate)
     | (cmd=="?Y")||(cmd=="?YES")||(cmd=="Y?")||(cmd=="YES?") =
 	do
-          (b,q,newstate) <- interactive hatfile (children,recentNodes,
-						 trusted,
-						 (postponed++[(questnumber,child)]),
-						 questnumber+1,precision,
-						 verboseMode,memoMode,False)
+          (b,q,newstate) <- interactive hatfile
+                                        ( children, recentNodes, trusted
+					, (postponed++[(questnumber,child)])
+					, questnumber+1, precision
+					, verboseMode, memoMode, False)
 	  if (q==questnumber) then
 	     let (_,_,_,_,_,newprec,nverbose,nmemo,_) = newstate in
-	       interactive hatfile ((child:children),recentNodes,trusted,postponed,
-				    questnumber,newprec,nverbose,nmemo,False) 
+	       interactive hatfile ((child:children),recentNodes,trusted
+                                   ,postponed,questnumber,newprec,nverbose
+                                   ,nmemo,False) 
            else
              return (b,q,newstate)
-    | (cmd=="N")||(cmd=="NO")||
-      ((not reconsider)&&((cmd=="?N")||(cmd=="?NO")||(cmd=="N?")||(cmd=="NO?"))) =
+    | cmd=="N" || cmd=="NO" ||
+      (not reconsider && (cmd=="?N" || cmd=="?NO" || cmd=="N?" || cmd=="NO?")) =
 	let newchildren = detect child in
 	    do
               (b,q,newstate) <- interactive hatfile 
@@ -250,14 +274,15 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 				 verboseMode,memoMode,False)
               let (_,_,ntrusted,_,_,newprec,nverbose,nmemo,_) = newstate in
                if (q==questnumber) then
-              	  interactive hatfile ((child:children),recentNodes,trusted,postponed,
-				       questnumber,newprec,nverbose,nmemo,False)
+              	  interactive hatfile ((child:children),recentNodes,trusted
+                                      ,postponed,questnumber,newprec,nverbose
+                                      ,nmemo,False)
                 else
                  if (b&&(q==0)) then
                   if ('?' `elem` cmd) then
-                     interactive hatfile ((child:children),recentNodes,ntrusted,
-					  postponed,
-					  questnumber,newprec,nverbose,nmemo,True)
+                     interactive hatfile ((child:children),recentNodes,ntrusted
+					 ,postponed,questnumber,newprec
+                                         ,nverbose,nmemo,True)
                    else
                     let lmo = hatLeftmost child;
 			src = if (isInvalidNode lmo) then HatNoSourceRef else
@@ -274,8 +299,8 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 			       " in module \""++(moduleName src)++
 			       "\", file: \""++(moduleFile src)++
 			       "\"\n")
-		     putStr ("Press 'q' to quit, any other key to go back to question "++
-			     (show questnumber)++": ")
+		     putStr ("Press 'q' to quit, any other key to go back"++
+                             " to question "++ show questnumber ++": ")
 		     s <- getLine
 		     if ((upStr s) `elem` ["Q","QUIT"]) then
                        return (False,-1,newstate)
@@ -291,7 +316,8 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
         let number = (fromJust (getNumberParam s "G" "GO")) in
          do
           if (number>0)&&(number<questnumber) then
-	     return (False,number,state)  -- return "number", and ask question again
+	     return (False,number,state)
+				  -- return "number", and ask question again
            else
 	      (putStrLn "No question with this number!")>>
 	      interactive hatfile state
