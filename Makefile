@@ -146,8 +146,7 @@ TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC) cpphs-$(CC) \
-	 $(PACKAGES)
+	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC) cpphs-$(CC)
 
 .PHONY: default basic all compiler help config install
 
@@ -237,9 +236,8 @@ $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
 
-$(patsubst %,${TARGDIR}/${MACHINE}/%,${PACKAGES}):
+${PACKAGES}:
 	cd src/libraries/`basename $@`; $(MAKE) -f Makefile.nhc98
-	touch $@
 
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
