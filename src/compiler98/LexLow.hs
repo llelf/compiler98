@@ -1,4 +1,4 @@
-module LexLow(lexId,isLexId
+module LexLow(lexId,isLexId,isNhcId
              ,lexNum,lexInteger
              ) where
 

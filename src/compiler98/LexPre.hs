@@ -104,7 +104,7 @@ iPreLex u file r c ('\'':xs)= (file,r,c,L_CHAR ch)  : iPreLex u file r' c' xs'
 
 iPreLex u file r c ('_':[]) = (file,r,c,L_Underscore): iPreLex u file r (c+1) []
 iPreLex u file r c xxs@('_':xs@(x:_)) =
-	if isAlpha x 
+	if isNhcId x
 	then case lexId u r c xxs of
 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex u file r c' xs
 	else
