@@ -1,0 +1,60 @@
+module TypeUtil (cvi2typedict, ntIS, unboxedIS)  where
+
+import NT
+import TypeSubst
+import TypeData
+import PackedString(PackedString,packString,unpackPS)
+import Info
+import IntState
+import Extra(assocDef,snub)
+import Syntax
+
+-- ntIS returns NoType if identifier doesn't exist
+
+ntIS state i =
+  case lookupIS state i of
+    Just (InfoData   unique tid exp nt dk) -> fresh nt state
+    Just (InfoVar     unique tid fix exp nt annot) -> fresh nt state
+    Just (InfoConstr  unique tid fix nt fields iType) -> fresh nt state
+    Just (InfoMethod  unique tid fix nt  annot iClass) ->
+      case fresh nt state of
+        (NewType free@(a:_) [] ctx nts,state) -> (NewType free [] ((iClass,a):ctx) nts,state)
+    Just (InfoDMethod  unique tid nt annot iClass) ->
+      case fresh nt state of
+        (NewType free@(a:_) [] ctx nts,state) -> (NewType free [] ((iClass,a):ctx) nts,state)
+
+    Just (InfoIMethod uI tidI (NewType freeI [] ctxI [ntI]) annotsI iMethod) ->
+      case lookupIS state iMethod of
+        Just (InfoMethod uM tidM fixM ntM annotM iClass) ->
+	  case fresh ntM state of
+            (NewType (a:free) [] ctxM [ntM],state) ->
+   	      let phi = addSubst idSubst a ntI
+	          nt' = subst phi ntM
+	      in  fresh (NewType (snub (freeNT nt')) [] (ctxI++ctxM) [nt']) state
+
+    Just info -> error ("ntIS Just (" ++ show info ++") " ++ show i) 
+    Nothing -> (NoType,state) 
+
+-- NOTE add fake constructors
+
+fresh NoType state = (NoType,state)
+fresh nt@(NewType free exist ctx nts) state =
+  case uniqueISs state free of
+    (assoclist,state) ->
+      let tv v =  assocDef assoclist v v -- If it's not in the list, then it isn't free!
+          free' = map snd assoclist
+          exist' = map tv exist
+          ctxs' = transCtxs tv id ctx
+	  nts' = map (freshNT tv) nts
+      in {- forceList free' -} (NewType free' exist' ctxs' nts' ,state)
+
+cvi2typedict pos exist ctxsi =
+    map ( \ ((c,nt),i) -> (i,TypeDict c nt [(i,pos)])) ctxsi
+
+
+-------
+
+unboxedIS state c =
+  case lookupIS state c of
+    Just info ->
+      isDataUnBoxed info 

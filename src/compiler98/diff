@@ -1,0 +1,3459 @@
+diff --exclude=*.hi ./AssocTree.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/AssocTree.hs
+32d31
+< 
+diff --exclude=*.hi ./Bind.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Bind.hs
+35,36d34
+< bindDecl  (DeclFixity fix) =
+<     unitS0
+43c41
+< ---- =====
+---
+> ----=====
+54,55c52
+< bindConstr (Constr                pos tid fieldtypes) = bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
+< bindConstr (ConstrCtx forall ctxs pos tid fieldtypes) = bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
+---
+> bindConstr (Constr pos tid fieldtypes) = bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
+87d83
+< bindPat kind (PatNplusK         pos tid tid' int _ _) = bindTid pos kind tid
+90c86
+< --bindField (FieldPun pos tid) = bindTid pos Var tid	-- H98 removes
+---
+> bindField (FieldPun pos tid) = bindTid pos Var tid
+131d126
+< identPat' (PatNplusK         pos n n' k _ _) = addIdent pos n >>> addIdent pos n'
+136c131
+< --identField (FieldPun  pos ident) = addIdent pos ident	-- H98 removes
+---
+> identField (FieldPun  pos ident) = addIdent pos ident
+diff --exclude=*.hi ./Case.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Case.hs
+82c82
+<   caseDeclPatAs pat gdexps decls
+---
+>   caseDeclPat [] pat gdexps decls
+84,85c84,85
+< caseDeclPatAs (PatAs p v pat) gdexps decls = caseDeclPatFix (p,v) pat gdexps decls
+< caseDeclPatAs pat gdexps decls =
+---
+> caseDeclPat acc (PatAs p v pat) gdexps decls = caseDeclPat ((p,v):acc) pat gdexps decls
+> caseDeclPat [] pat gdexps decls = -- Better name would be nice !!!
+89c89,91
+<    caseDeclPatFix (getPos pat,tupleId) pat gdexps decls
+---
+>    caseDeclPatFix [(getPos pat,tupleId)] pat gdexps decls
+> caseDeclPat acc pat gdexps decls =
+>    caseDeclPatFix acc pat gdexps decls
+91c93
+< caseDeclPatFix (pos,tupleId) pat gdexps decls =
+---
+> caseDeclPatFix ((pos,tupleId):rest) pat gdexps decls =
+98c100,101
+<        unitS ((tupleId,PosLambda pos [] [] exp) : sels)
+---
+>        mapS (oneId (PosVar pos tupleId)) rest >>>= \ ids ->
+>        unitS ((tupleId,PosLambda pos [] [] exp) : ids ++ sels)
+106c109,110
+<          unitS ((tupleId,PosLambda pos [] [] exp) : sels)
+---
+>          mapS (oneId (PosVar pos tupleId)) rest >>>= \ ids ->
+>          unitS ((tupleId,PosLambda pos [] [] exp) : ids ++ sels)
+141,142d144
+< 
+< 
+147a150
+> 
+168c171
+< caseExp e  =  error ("caseExp " ++ strPos (getPos e))
+---
+> caseExp e                         = error ("caseExp " ++ strPos (getPos e))
+174c177
+<   caseNoMatch ("Pattern match failure in function at " ++ strPos pos) pos >>>= \ nomatch ->
+---
+>   caseNoMatch ("No match in function at " ++ strPos pos) pos >>>= \ nomatch ->
+185c188
+<   caseNoMatch ("Pattern match failure in lambda at " ++ strPos pos) pos >>>= \ nomatch ->
+---
+>   caseNoMatch ("No match in lambda at " ++ strPos pos) pos >>>= \ nomatch ->
+192c195
+<  caseNoMatch ("No matching alternative in case expression at " ++ strPos pos) pos >>>= \ nomatch ->
+---
+>  caseNoMatch ("No match in case expression at " ++ strPos pos) pos >>>= \ nomatch ->
+264,269d266
+< matchOne (ce:ces) (PatternNK x) def =
+<   varExp ce >>>= \ (v,f,ce) ->
+<   caseTranslate v (concatMap (getTrans.fst) x) >=>
+<   mapS (matchNK v ces) x >>>= \ nks ->
+<   def >>>= \ e2 ->
+<   optFatBar (f (foldr ($) PosExpFail nks)) e2
+335,343d331
+< 
+< matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun (PosExp->PosExp)
+< matchNK v ces (PatNplusK pos n n' k kle ksub, fun) =
+<   caseTrue >>>= \ true ->
+<   match ces [fun] (unitS PosExpFail) >>>= \ exp ->
+<   caseDecl (DeclFun pos n' [Fun [] [(true, ExpVar pos v)] (DeclsScc [])]) >>>= \ local ->
+<   caseExp kle >>>= \ cond ->
+<   caseDecl (DeclFun pos n [Fun [] [(true, ksub)] (DeclsScc [])]) >>>= \ binding ->
+<   unitS (\f-> PosExpLet pos local (PosExpIf pos cond (PosExpLet pos binding exp) f))
+diff --exclude=*.hi ./CaseHelp.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/CaseHelp.hs
+49a50
+> 
+51c52
+< isIf p = not (isVar p || isCon p || isExpInt p || isNK p || isExpIrr p)
+---
+> isIf p = not (isVar p || isCon p || isExpInt p || isExpIrr p)
+57d57
+<   | PatternNK  [(Exp Int,Fun Int)]
+66d65
+< 	,(isNK,(:[]).PatternNK)
+96,97d94
+< simplifyPat list state (ExpApplication pos (ExpApplication _ es':es)) = ExpApplication pos  (map (simplifyPat list state) (es'++es))
+< simplifyPat list state (ExpDict pat) = simplifyPat list state pat
+130d126
+< needLet (PatternNK   patfuns) = any (not . null . getTrans . fst) patfuns
+diff --exclude=*.hi ./CaseLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/CaseLib.hs
+50c50
+< 				    (NewType [1] [] [{- !!! Integral 1 -}] [tvar,tvar,NTcons ratio [tvar]])
+---
+> 				    (NewType [1] [{- !!! Integral 1 -}] [tvar,tvar,NTcons ratio [tvar]])
+diff --exclude=*.hi ./DbgDataTrans.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgDataTrans.hs
+15a16
+> import NonStdTrace
+21,26d21
+< #if defined(__NHC__) || defined(__HBC__)
+< import NonStdTrace
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+166d160
+< dDecl d@(DeclFixity _) = unitS [d]
+300c294
+< dMethodNewType isCaf (NewType free exist ctxs [nt]) =
+---
+> dMethodNewType isCaf (NewType free ctxs [nt]) =
+310c304
+<     unitS  (NewType free exist (ctxs ++ newctxs) [nt''])   
+---
+>     unitS  (NewType free (ctxs ++ newctxs) [nt''])   
+312c306
+< dNewType (NewType free exist ctxs nts) =
+---
+> dNewType (NewType free ctxs nts) =
+314c308
+<     unitS  (NewType free exist ctxs nts')
+---
+>     unitS  (NewType free ctxs nts')
+344c338
+< wrapRNewType (NewType free exist ctxs ts) =
+---
+> wrapRNewType (NewType free ctxs ts) =
+347c341
+<     unitS (NewType free exist ctxs (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
+---
+>     unitS (NewType free ctxs (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
+378c372
+< isHigherOrder cvar (NewType free exist ctxs ts) = trace ("+++ " ++ concat (map snt ts)) $ or (map (isHO False) ts)
+---
+> isHigherOrder cvar (NewType free ctxs ts) = trace ("+++ " ++ concat (map snt ts)) $ or (map (isHO False) ts)
+401,402c395,396
+< showNT (NewType free exist ctxs nts)  = \(Inherited lookupPrel _ cv reptree ot) s@(Threaded state _ _) -> 
+<     (niceCtxs Nothing state al ctxs ++ mixSpace (map (niceNT Nothing state al) nts), s)
+---
+> showNT (NewType free ctxs nts)  = \(Inherited lookupPrel _ cv reptree ot) s@(Threaded state _ _) -> 
+>     (niceCtxs state al ctxs ++ mixSpace (map (niceNT state al) nts), s)
+diff --exclude=*.hi ./DbgDumpSRIDTable.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgDumpSRIDTable.hs
+12d11
+< #if defined(__NHC__) || defined(__HBC__)
+14,21d12
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+< 
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+121,123c112,113
+<           imptokid (ImportQ (_,i) _) = i
+< 	  imptokid (ImportQas (_,i) _ _) = i
+< 	  imptokid (Importas (_,i) _ _) = i
+---
+>           imptokid (ImportQ (_,i)) = i
+> 	  imptokid (ImportQas (_,i) _) = i
+diff --exclude=*.hi ./DbgDumpSRIDTableC.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgDumpSRIDTableC.hs
+12,13d11
+< import EmitState
+< #if defined(__NHC__) || defined(__HBC__)
+15,22c13
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+< 
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+---
+> import EmitState
+140,142c131,132
+< 		    imptokid (ImportQ (_,i) _) = i
+< 		    imptokid (ImportQas (_,i) _ _) = i
+< 		    imptokid (Importas (_,i) _ _) = i
+---
+> 		    imptokid (ImportQ (_,i)) = i
+> 		    imptokid (ImportQas (_,i) _) = i
+diff --exclude=*.hi ./DbgReplaceConstr.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgReplaceConstr.hs
+15a16
+> import NonStdTrace
+21,26d21
+< #if defined(__NHC__) || defined(__HBC__)
+< import NonStdTrace
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+129c124
+< dMethodNewType isCaf (NewType all exist ctxs [nt]) =
+---
+> dMethodNewType isCaf (NewType free ctxs [nt]) =
+135c130
+< --Y                  [(dispid, tid) | tid <- tail (all+exit), tid `notElem` map snd ctxs] 
+---
+> --Y                  [(dispid, tid) | tid <- tail free, tid `notElem` map snd ctxs] 
+139c134
+<     unitS  (NewType all exist (ctxs ++ newctxs) [nt''])   
+---
+>     unitS  (NewType free (ctxs ++ newctxs) [nt''])   
+141c136
+< dClassType isho clsvar (NewType all exist ctxs nts) =
+---
+> dClassType isho clsvar (NewType free ctxs nts) =
+144c139
+< --Y        newctxs = [ (dispid, tid) | tid <- all++exist, tid `notElem` ctxsvars] in
+---
+> --Y        newctxs = [ (dispid, tid) | tid <- free, tid `notElem` ctxsvars] in
+146c141
+<     unitS  (NewType all exist (ctxs {- ++ newctxs-}) nts')   --Y
+---
+>     unitS  (NewType free (ctxs {- ++ newctxs-}) nts')   --Y
+148c143
+< dNewType (NewType all exist ctxs nts) =
+---
+> dNewType (NewType free ctxs nts) =
+150c145
+< --Y    let newctxs = [ (dispid, tid) | tid <- all++exist, tid `notElem` map snd ctxs] in
+---
+> --Y    let newctxs = [ (dispid, tid) | tid <- free, tid `notElem` map snd ctxs] in
+152c147
+<     unitS  (NewType all exist (ctxs {- ++ newctxs-}) nts')   --Y
+---
+>     unitS  (NewType free (ctxs {- ++ newctxs-}) nts')   --Y
+188c183
+< wrapRNewType (NewType all exist ctxs ts) =
+---
+> wrapRNewType (NewType free ctxs ts) =
+191c186
+<     unitS (NewType all exist ctxs (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
+---
+>     unitS (NewType free ctxs (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
+253c248
+< isHigherOrder cvar (NewType all exist ctxs ts) = trace ("+++ " ++ concat (map snt ts)) $ or (map (isHO False) ts)
+---
+> isHigherOrder cvar (NewType free ctxs ts) = trace ("+++ " ++ concat (map snt ts)) $ or (map (isHO False) ts)
+276,277c271,272
+< showNT (NewType all exist ctxs nts)  = \(Inherited lookupPrel _ cv reptree ot) s@(Threaded state d) -> 
+<     (niceCtxs Nothing state al ctxs ++ mixSpace (map (niceNT Nothing state al) nts), s)
+---
+> showNT (NewType free ctxs nts)  = \(Inherited lookupPrel _ cv reptree ot) s@(Threaded state d) -> 
+>     (niceCtxs state al ctxs ++ mixSpace (map (niceNT state al) nts), s)
+279c274
+<           arg = mkAL (all ++ exist)
+---
+>           arg = mkAL free
+diff --exclude=*.hi ./DbgReplaceListInsts.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgReplaceListInsts.hs
+6d5
+< #if defined(__NHC__) || defined(__HBC__)
+8,11d6
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+diff --exclude=*.hi ./DbgTrans.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DbgTrans.hs
+18,19d17
+< import PackedString(PackedString, unpackPS, packString)
+< #if defined(__NHC__) || defined(__HBC__)
+21,24c19
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+---
+> import PackedString(PackedString, unpackPS, packString)
+34c29
+<               {-ImportQ (noPos, tDbgPrelude) (Hiding []) :-} impdecls
+---
+>               {-ImportQ (noPos, tDbgPrelude) :-} impdecls
+37c32
+< 	      {-ImportQ (noPos, tDbgPreludeCore) (Hiding []) :-} impdecls
+---
+> 	      {-ImportQ (noPos, tDbgPreludeCore) :-} impdecls
+138d132
+< dDecl d@(DeclFixity _) = unitS [d]
+705,706c699,700
+< unwrapNT arity isCaf (NewType free exist ctxs [NTcons arrow [sr, NTcons _ [t, rt]]]) = 
+<     NewType free exist ctxs (if isCaf then [dStripR arity rt] else [NTcons arrow [t, dStripR arity rt]])
+---
+> unwrapNT arity isCaf (NewType free ctxs [NTcons arrow [sr, NTcons _ [t, rt]]]) = 
+>     NewType free ctxs (if isCaf then [dStripR arity rt] else [NTcons arrow [t, dStripR arity rt]])
+diff --exclude=*.hi ./Depend.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Depend.hs
+16c16
+<       isUnix = sUnix flags
+---
+>       unix = sUnix flags
+18,19c18,19
+<       (rootdir,filename) = fixRootDir isUnix sourcefile
+<     in writeFile (fixDependFile isUnix rootdir filename)
+---
+>       (rootdir,filename) = fixRootDir unix sourcefile
+>     in writeFile (fixDependFile unix rootdir filename)
+diff --exclude=*.hi ./Derive.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Derive.hs
+5c5
+< import Extra(pair,triple,noPos,snub,mixCommaAnd,strPos,Pos(..),isNothing,dropJust,mapSnd)
+---
+> import Extra(pair,triple,noPos,snub,mixCommaAnd,strPos,Pos(..),isNothing,dropJust)
+18c18
+< --import DeriveEval		-- Removed in Haskell 98
+---
+> import DeriveEval
+71,72c71,72
+< --deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) | checkClass state cls tEval =
+< --  deriveEval tidFun cls typ tvs ctxs pos
+---
+> deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types)) | checkClass state cls tEval =
+>   deriveEval tidFun cls typ tvs ctxs pos
+101,105c101,105
+< --startDeriving tidFun state (con,(pos,cls)) | checkClass state cls tEval =
+< --  case lookupIS state con of
+< --    Just conInfo -> 
+< --      let (NewType free exist ctx nt) = ntI conInfo
+< --      in (((cls,con),(free,[])),(pos,[]))
+---
+> startDeriving tidFun state (con,(pos,cls)) | checkClass state cls tEval =
+>   case lookupIS state con of
+>     Just conInfo -> 
+>       let (NewType free ctx nt) = ntI conInfo
+>       in (((cls,con),(free,[])),(pos,[]))
+109c109
+<       let (NewType free [] ctx nt) = ntI conInfo
+---
+>       let (NewType free ctx nt) = ntI conInfo
+113c113
+<           types = (snub . concatMap ( ( \ (NewType free [] ctxs nts) -> init nts) . ( \ (Just info) -> ntI info) .  lookupIS state) . fstAndlst . constrsI) conInfo
+---
+>           types = (snub . concatMap ( ( \ (NewType free ctxs nts) -> init nts) . ( \ (Just info) -> ntI info) .  lookupIS state) . fstAndlst . constrsI) conInfo
+119,120c119,120
+<       let (NewType free [] ctx nt) = ntI conInfo
+<           types = (snub . concatMap ( ( \ (NewType free [] ctxs nts) -> init nts) . ( \ (Just info) -> ntI info) .  lookupIS state) . constrsI) conInfo
+---
+>       let (NewType free ctx nt) = ntI conInfo
+>           types = (snub . concatMap ( ( \ (NewType free ctxs nts) -> init nts) . ( \ (Just info) -> ntI info) .  lookupIS state) . constrsI) conInfo
+129c129
+<  let (NewType _ _ data_ctxs _) = ntI (dropJust (lookupIS state con))
+---
+>  let (NewType _ data_ctxs _) = ntI (dropJust (lookupIS state con))
+131,132c131,132
+<   case (mergeSort . ctxsReduce state . (map (mapSnd NTvar) data_ctxs ++) . concatMap (ctxsSimplify state given) . map (\ nt -> TypeDict cls nt [(0,pos)])) types of
+<      ctxs -> ((cls_con,(free,map (mapSnd stripNT) ctxs)),pos_types)
+---
+>   case (mergeSort . ctxsReduce state . (data_ctxs++) . concatMap (ctxsSimplify state given) . map (\ nt -> TypeDict cls nt [(0,pos)])) types of
+>      ctxs -> ((cls_con,(free,ctxs)),pos_types)
+Only in /home/local/sparud/tracer/new/nhc13/src/compiler13: DeriveBinIO.hs
+diff --exclude=*.hi ./DeriveBinary.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveBinary.hs
+47,50c47,50
+<     addInstMethod tBinary (tidI typInfo) t_put (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iPut >>>= \ funP ->
+<     addInstMethod tBinary (tidI typInfo) t_get (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iGet >>>= \ funG ->
+<     addInstMethod tBinary (tidI typInfo) t_getF (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iFGet >>>= \ funF ->
+<     addInstMethod tBinary (tidI typInfo) t_sizeOf (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iSize >>>= \ funS ->
+---
+>     addInstMethod tBinary (tidI typInfo) t_put (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iPut >>>= \ funP ->
+>     addInstMethod tBinary (tidI typInfo) t_get (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iGet >>>= \ funG ->
+>     addInstMethod tBinary (tidI typInfo) t_getF (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iFGet >>>= \ funF ->
+>     addInstMethod tBinary (tidI typInfo) t_sizeOf (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iSize >>>= \ funS ->
+72c72
+<      NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>      NewType _ _ [nt] -> -- This constructor has no arguments
+74c74
+<      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>      NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+124c124
+<            NewType _ _ _ (_:nts) ->
+---
+>            NewType _ _ (_:nts) ->
+168c168
+<      NewType _ _ _ (_:nts) ->
+---
+>      NewType _ _ (_:nts) ->
+diff --exclude=*.hi ./DeriveBounded.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveBounded.hs
+17c17
+<      nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+---
+>      nt = NewType tvs ctxs [NTcons typ (map NTvar tvs)]
+33c33
+<      NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>      NewType _ _ [nt] -> -- This constructor has no arguments
+38c38
+<      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>      NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+Only in /home/local/sparud/tracer/new/nhc13/src/compiler13: DeriveCompress.hs
+diff --exclude=*.hi ./DeriveEnum.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveEnum.hs
+21c21
+<         nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+---
+>         nt = NewType tvs ctxs [NTcons typ (map NTvar tvs)]
+diff --exclude=*.hi ./DeriveEq.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveEq.hs
+21c21
+<   addInstMethod tEq (tidI typInfo) t_equalequal (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iEqual >>>= \ fun ->
+---
+>   addInstMethod tEq (tidI typInfo) t_equalequal (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iEqual >>>= \ fun ->
+43c43
+<      NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>      NewType _ _ [nt] -> -- This constructor has no arguments
+45c45
+<      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>      NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+diff --exclude=*.hi ./DeriveIx.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveIx.hs
+20c20
+<         nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+---
+>         nt = NewType tvs ctxs [NTcons typ (map NTvar tvs)]
+59c59
+<         nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+---
+>         nt = NewType tvs ctxs [NTcons typ (map NTvar tvs)]
+diff --exclude=*.hi ./DeriveLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveLib.hs
+12c12
+<     (NewType _ _ _ [nt]) -> True
+---
+>     (NewType _ _ [nt]) -> True
+diff --exclude=*.hi ./DeriveOrd.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveOrd.hs
+29,30c29,30
+<   addInstMethod tOrd (tidI typInfo) t_lessequal (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iLessEqual >>>= \ funle ->
+<   addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iCompare >>>= \ funcompare ->
+---
+>   addInstMethod tOrd (tidI typInfo) t_lessequal (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iLessEqual >>>= \ funle ->
+>   addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) iCompare >>>= \ funcompare ->
+70c70
+<      NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>      NewType _ _ [nt] -> -- This constructor has no arguments
+72c72
+<      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>      NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+94c94
+<      NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>      NewType _ _ [nt] -> -- This constructor has no arguments
+96c96
+<      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>      NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+diff --exclude=*.hi ./DeriveRead.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveRead.hs
+10c10
+< import TokenId(TokenId,tFalse,tTrue,tRead,treadParen,treadsPrec,t_greater,t_append,t_readCon0,t_readCon,t_readConArg,t_readConInfix,isTidOp,dropM)
+---
+> import TokenId(TokenId,tFalse,tTrue,tRead,treadParen,treadsPrec,t_lessequal,t_append,t_readCon0,t_readCon,t_readConArg,t_readConInfix,isTidOp,dropM)
+24c24
+<   addInstMethod tRead (tidI typInfo) treadsPrec (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ireadsPrec >>>= \ fun ->
+---
+>   addInstMethod tRead (tidI typInfo) treadsPrec (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) ireadsPrec >>>= \ fun ->
+47c47
+< 	  NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+> 	  NewType _ _ [nt] -> -- This constructor has no arguments
+49c49
+< 	  NewType _ _ _ [a,b,r] -> -- Infix constructor with two arguments
+---
+> 	  NewType _ _ [a,b,r] -> -- Infix constructor with two arguments
+51c51
+< 			       (Infix,p)  -> (p,p+1,p+1)
+---
+> 			       (Infix,p)  -> (p,p,p)
+55c55
+< 	  NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+> 	  NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+59c59
+< 				      ,ExpApplication pos [ExpVar pos (tidFun (t_greater,Var)), expD, mkInt pos 9]
+---
+> 				      ,ExpApplication pos [ExpVar pos (tidFun (t_lessequal,Var)), mkInt pos 9, expD]
+70c70
+< 	  NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+> 	  NewType _ _ [nt] -> -- This constructor has no arguments
+72c72
+< 	  NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+> 	  NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+76c76
+< 				      ,ExpApplication pos [ExpVar pos (tidFun (t_greater,Var)), expD, mkInt pos 9]
+---
+> 				      ,ExpApplication pos [ExpVar pos (tidFun (t_lessequal,Var)), mkInt pos 9, expD]
+diff --exclude=*.hi ./DeriveShow.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/DeriveShow.hs
+32,33c32,33
+<   addInstMethod tShow (tidI typInfo) tshowsPrec (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ishowsPrec >>>= \ fun ->
+<   addInstMethod tShow (tidI typInfo) tshowsType (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ishowsType >>>= \ funT ->
+---
+>   addInstMethod tShow (tidI typInfo) tshowsPrec (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) ishowsPrec >>>= \ fun ->
+>   addInstMethod tShow (tidI typInfo) tshowsType (NewType tvs ctxs [NTcons typ (map NTvar tvs)]) ishowsType >>>= \ funT ->
+50c50
+<     NewType _ _ _ [nt] -> -- This constructor has no arguments
+---
+>     NewType _ _ [nt] -> -- This constructor has no arguments
+53c53
+<     NewType _ _ _ [a,b,r] | isTidOp conTid -> -- Infix constructor with two arguments
+---
+>     NewType _ _ [a,b,r] | isTidOp conTid -> -- Infix constructor with two arguments
+81c81
+<     NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+---
+>     NewType _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
+100c100
+<       NewType [] [] [] _  ->
+---
+>       NewType [] [] _  ->
+104c104
+<       NewType free exist _ _ ->
+---
+>       NewType free _ _ ->
+130c130
+<     NewType free exist ctxs nts ->
+---
+>     NewType free ctxs nts ->
+143a144,171
+> 
+> {-
+> 
+> 
+> 
+> patConstrs phi i ie ret (info:infos) =
+>   case patNTs phi
+> 
+> 
+> 
+> patNT i ie ret (NTany i') = 
+>   if i == i' then Just (ret ie) else Nothing
+> patNT i ie ret (NTvar i') =
+>   if i == i' then Just (ret ie) else Nothing
+> patNT i ie ret (NTstrict nt) =
+>   patNT i ie ret nt
+> patNT i ie ret (NTapp nt1 nt2) =  -- Might be possible to do something better
+>   Nothing
+> patNT i ie ret (NTcons c nts) =
+>   patType i ie ret c nts
+> 
+> patType i ie ret c nts =
+>   getInfo c >>>= \ typeInfo ->
+>   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
+>   case ntI typeInfo of
+>     (NewType free _ _) -> patConstrs (list2phi zip free nts) i ie ret constrInfos
+> 
+> -}
+\ No newline at end of file
+Only in .: DeriveXML.hs
+diff --exclude=*.hi ./EmitState.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/EmitState.hs
+22,23d21
+< eszero = showString "0"
+< 
+25c23,24
+< empty = (eszero,eszero,eszero,eszero)
+---
+> empty = let zero = showString "0"
+>         in (zero,zero,zero,zero)
+28c27,28
+< first x = (x,eszero,eszero,eszero)
+---
+> first x = let zero = showString "0"
+>           in (x,zero,zero,zero)
+diff --exclude=*.hi ./Export.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Export.hs
+98c98
+<     (unique,NewType free [] ctxs [NTcons con (map NTvar free)],snub (con:map fst ctxs)):r
+---
+>     (unique,NewType free ctxs [NTcons con (map NTvar free)],snub (con:map fst ctxs)):r
+123c123
+< useNewType (NewType free exist ctxs nts) = snub (map fst ctxs ++ (concatMap useNT nts))
+---
+> useNewType (NewType free ctxs nts) = snub (map fst ctxs ++ (concatMap useNT nts))
+188c188
+<   showsInfo mrps (InfoData   unique (TupleId nargs) exp nt@(NewType free exist ctxs nts) dk) =
+---
+>   showsInfo mrps (InfoData   unique (TupleId nargs) exp nt@(NewType free ctxs nts) dk) =
+191c191
+< 	  strNewType = niceCtxs Nothing state al ctxs ++ mixSpace (map (niceNT Nothing state al) nts)
+---
+> 	  strNewType = niceCtxs state al ctxs ++ mixSpace (map (niceNT state al) nts)
+202c202
+< 		. showString (niceCtxs Nothing state al ctxs)
+---
+> 		. showString (niceCtxs state al ctxs)
+213c213
+< 	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs (Just mrps) state al ctxs) . 
+---
+> 	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs state al ctxs) . 
+218c218
+<   showsInfo mrps (InfoData   unique tid exp nt@(NewType free exist ctxs nts) dk) =
+---
+>   showsInfo mrps (InfoData   unique tid exp nt@(NewType free ctxs nts) dk) =
+221c221
+< 	  strNewType = niceCtxs (Just mrps) state al ctxs ++ mixSpace (map (niceNT (Just mrps) state al) nts)
+---
+> 	  strNewType = niceCtxs state al ctxs ++ mixSpace (map (niceNT state al) nts)
+230c230
+< 		. showString (niceCtxs Nothing state al ctxs) . showsVar (fixTid mrps tid) . showString strArgs
+---
+> 		. showString (niceCtxs state al ctxs) . showsVar (fixTid mrps tid) . showString strArgs
+237c237
+< 	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs (Just mrps) state al ctxs) . showsVar (fixTid mrps tid) 
+---
+> 	    showString ("data " ++ (if unboxed then "unboxed " else "") ++ niceCtxs state al ctxs) . showsVar (fixTid mrps tid) 
+243c243
+<   showsInfo mrps (InfoClass  unique tid exp (NewType free exist ctxs nts)  ms ds insts) = 
+---
+>   showsInfo mrps (InfoClass  unique tid exp (NewType free ctxs nts)  ms ds insts) = 
+245c245
+<     in showString "class " . showString (niceCtxs Nothing state al ctxs) . showsVar (fixTid mrps tid)
+---
+>     in showString "class " . showString (niceCtxs state al ctxs) . showsVar (fixTid mrps tid)
+253c253
+<   showsInfo mrps (InfoInstance unique (NewType free exist ctxs [nt]) iClass) =
+---
+>   showsInfo mrps (InfoInstance unique (NewType free ctxs [nt]) iClass) =
+255c255
+< 	in showString "instance " . showString (niceCtxs Nothing state al ctxs) . niceInt Nothing state iClass .  showChar ' ' . showString (niceNT Nothing state al nt) . showString ";\n"
+---
+> 	in showString "instance " . showString (niceCtxs state al ctxs) . niceInt state iClass .  showChar ' ' . showString (niceNT state al nt) . showString ";\n"
+260,272c260,263
+<   expConstr mrps al (Just (InfoConstr  unique (TupleId nargs) fix (NewType free exist ctxs nts) field iType)) =
+<        (showString ( if nargs > 0 then take nargs ('(':repeat ',') ++ ") " else "()"))  (mixSpace (map (niceField state al) (zip field (init nts))))
+<   expConstr mrps al (Just (InfoConstr  unique tid fix (NewType free exist ctxs ectxs_nts) field iType)) =
+< 	-- al contains type variables to string mapping
+< 	-- exist contains existential type variables not in al
+<      let exist' = zip exist (map (:"_fa") ['a'..'z']) -- a-z is to short!
+< 	 al' = al ++ exist'
+<          ectxs = map ntContext2Pair (filter contextNT ectxs_nts)
+<          nts = filter (not . contextNT) ectxs_nts
+<      in
+< 	  (if null exist then "" else "forall " ++ mixSpace (map snd exist') ++ " . ") ++
+<           niceCtxs Nothing state al' ectxs ++
+<           (showsVar (fixTid mrps tid) . showChar ' ')  (mixSpace (map (niceField state al') (zip field (init nts))))
+---
+>   expConstr mrps al (Just (InfoConstr  unique (TupleId nargs) fix (NewType free ctxs nts) field iType)) =
+>          (showString ( if nargs > 0 then take nargs ('(':repeat ',') ++ ") " else "()"))  (mixSpace (map (niceField state al) (zip field (init nts))))
+>   expConstr mrps al (Just (InfoConstr  unique tid fix (NewType free ctxs nts) field iType)) =
+> 	 (showsVar (fixTid mrps tid) . showChar ' ')  (mixSpace (map (niceField state al) (zip field (init nts))))
+diff --exclude=*.hi ./Extra.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Extra.hs
+3a4
+> import NonStdTrace
+7,12d7
+< #if defined(__NHC__) || defined(__HBC__)
+< import NonStdTrace
+< #endif
+< #if defined (__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+32d26
+< #if !defined(__HASKELL98__)
+35c29
+< #endif
+---
+> 
+53,54d46
+< mapFst  f   (x,y) = (f x,  y)
+< mapSnd    g (x,y) = (  x,g y)
+199,200c191,192
+<   		                                   [x] -> " but expected a " ++ x
+< 						   xs  -> " but expected one of " ++ mix " " xs)
+---
+>   		                                   [x] -> " expect " ++ x
+> 						   xs  -> " expect one of " ++ mix " " xs)
+diff --exclude=*.hi ./Extract.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Extract.hs
+42c42
+<   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]
+---
+>   let nt = NewType (snub (freeType typ)) [] [type2NT typ]
+45c45
+<   let nt = NewType (snub (freeType typ)) [] (ctxs2NT ctxs) [type2NT typ]
+---
+>   let nt = NewType (snub (freeType typ)) (ctxs2NT ctxs) [type2NT typ]
+diff --exclude=*.hi ./FixSyntax.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/FixSyntax.hs
+5c5
+< import Kind(Kind)
+---
+> import Kind
+diff --exclude=*.hi ./Flags.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Flags.hs
+12c12
+< 	,(Bool, Bool, Bool, Bool, Bool, (),   ()  )
+---
+> 	,(Bool, Bool, Bool, (),   (),   (),   ()  )
+49,50c49,50
+<   ,fElem False "nkpat" xs		-- Enable (n+k) patterns
+<   ,fElem False "underscore" xs		-- Enable H'98 underscore-is-lower-case
+---
+>   ,()
+>   ,()
+150,151c150,151
+< sNplusK    (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = d
+< sUnderscore(_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = e
+---
+> --FREE     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = d
+> --FREE     (_,(_,(a,b,c,d,e,f,g),_,_,_,_,_,_,_,_)) = e
+diff --exclude=*.hi ./FreeVar.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/FreeVar.hs
+9c9
+< --------- ===========
+---
+> ---------===========
+diff --exclude=*.hi ./GcodeFix.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/GcodeFix.hs
+7,8c7
+< import TokenId (TokenId(..))
+< import PackedString (PackedString)
+---
+> import TokenId (TokenId(..),PackedString)
+178c177
+<                          let fill = align 8 (wsize * (-nbs)) `div` wsize
+---
+>                          let fill = align 8 (wsize * -nbs) `div` wsize
+diff --exclude=*.hi ./GcodeLow.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/GcodeLow.hs
+15,19c15
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+< 
+< extra = 4::Int	-- make room for largest profile info
+---
+> extra = 4	-- make room for largest profile info
+diff --exclude=*.hi ./GcodeLowC.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/GcodeLowC.hs
+15c15
+< #if defined(__HBC__) || defined(__GLASGOW_HASKELL__)
+---
+> #if defined(__HBC__)
+21,24d20
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+< 
+339c335
+< #if defined(__HBC__) || defined(__GLASGOW_HASKELL__)
+---
+> #if defined(__HBC__)
+diff --exclude=*.hi ./IExtract.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/IExtract.hs
+2c2
+< 	( countArrows, defFixity, defFixFun, fixFun, fixOne, freeType
+---
+> 	( countArrows, defFixity, fixFun, fixOne, freeType
+27c27
+< --- ===========================
+---
+> ---===========================
+31c31
+< 	 ImportState visible unique orpsl rpsl needI rt st insts (fixFun fixAT defFixFun) (err++errors)
+---
+> 	 ImportState visible unique orpsl rpsl needI rt st insts (fixFun fixAT) (err++errors)
+34,44c34,35
+< ---- fixFun :: AssocTree TokenId (InfixClass TokenId,Int) -> (TokenId -> (InfixClass TokenId,Int))
+< --fixFun fixAT key =  -- ensureM also done in fixOne dine
+< --  case lookupAT fixAT key of
+< --    Just fix -> fix
+< --    Nothing  -> defFixity
+< 
+< -- Changed in H98 to:
+< -- fixFun :: AssocTree TokenId (InfixClass TokenId,Int) ->
+< --                (TokenId -> (InfixClass TokenId,Int)) ->
+< --                (TokenId -> (InfixClass TokenId,Int))
+< fixFun fixAT f key =
+---
+> -- fixFun :: AssocTree TokenId (InfixClass TokenId,Int) -> (TokenId -> (InfixClass TokenId,Int))
+> fixFun fixAT key =  -- ensureM also done in fixOne dine
+47c38
+<     Nothing  -> f key
+---
+>     Nothing  -> defFixity
+49d39
+< defFixFun key = defFixity
+52d41
+< 
+78c67
+< ---- ===========================
+---
+> ----===========================
+150c139
+< 					     		(InfoVar  unique realtid (fixity realtid) IEnone (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
+---
+> 					     		(InfoVar  unique realtid (fixity realtid) IEnone (NewType free ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
+162c151
+< 					     (InfoVar  (unique+1) realtid (fixity realtid) IEnone (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
+---
+> 					     (InfoVar  (unique+1) realtid (fixity realtid) IEnone (NewType free ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
+284c273
+< ---- ==================================================
+---
+> ----==================================================
+295c284
+<   in transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free [] ctxs nts) ->
+---
+>   in transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free ctxs nts) ->
+308c297
+<      importData v q tid expInfo (NewType [] [] [] [NTcons i []]) (DataPrimitive size) >>>
+---
+>      importData v q tid expInfo (NewType [] [] [NTcons i []]) (DataPrimitive size) >>>
+334c323
+<       transTypes al (map snd al) ctxs [typ] >>>= \ (NewType free [] ctxs [NTcons c nts]) ->
+---
+>       transTypes al (map snd al) ctxs [typ] >>>= \ (NewType free ctxs [NTcons c nts]) ->
+355c344
+< 	  nt = NewType free [] ctxs [anyNT [head free] typ]  -- The class context is not included in the type
+---
+> 	  nt = NewType free ctxs [anyNT [head free] typ]  -- The class context is not included in the type
+367,382c356
+<     importConstr v q cid (NewType free [] ctxs (nts++[resType])) ifs bt >>>= \ c ->
+<     mapS0 (importField v q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
+<     unitS c
+< transConstr v q al free ctxs resType@(NTcons bt _) (ConstrCtx forall ectxs' pos cid types) = 
+<  let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
+<      e =  map snd forall -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ concat $ map (freeType . snd) types
+<      es = zip e [1 + length al .. ]
+<  in
+<   mapS (transFieldType (es++al)) types >>>= \ntss ->
+<   let all = concat ntss
+<       nts = map snd all
+<       ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+<       exist = map snd es
+<   in
+<     mapS (transContext (es++al)) ectxs' >>>= \ ectxs ->
+<     importConstr v q cid (NewType (map snd al ++ exist) exist ctxs (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) ifs bt >>>= \ c ->
+---
+>     importConstr v q cid (NewType free ctxs (nts++[resType])) ifs bt >>>= \ c ->
+394c368
+<   unitS (NewType free []) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+---
+>   unitS (NewType free) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+430c404
+< ----- ==================================
+---
+> -----==================================
+diff --exclude=*.hi ./Import.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Import.hs
+22,25d21
+< #if !defined(__HASKELL98__)
+< #define ioError fail
+< #endif
+< 
+32c28
+<        (\ err -> ioError (userError (can'tOpenStr mstr filenames err)))
+---
+>        (\ err -> fail (userError (can'tOpenStr mstr filenames err)))
+34c30
+<    isUnix = sUnix flags
+---
+>    unix = sUnix flags
+38c34
+<    filenames = fixImportNames isUnix mstr (if isPrelude mstr then preludes else includes) 
+---
+>    filenames = fixImportNames unix mstr (if isPrelude mstr then preludes else includes) 
+53c49
+<   let lexdata = lexical (sUnderscore flags) fstr finput
+---
+>   let lexdata = lexical fstr finput
+97c93
+< parseIError filename err = (ioError . userError . errorStr filename . showErr) err
+---
+> parseIError filename err = (fail . userError . errorStr filename . showErr) err
+diff --exclude=*.hi ./ImportState.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/ImportState.hs
+4c4
+< --	,PackedString
+---
+> 	,PackedString
+diff --exclude=*.hi ./Info.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Info.hs
+1c1
+< module Info(module Info, Kind,TokenId,NewType,InfixClass(..),Pos(..),AssocTree(..),Tree{-,PackedString-}) where
+---
+> module Info(module Info, Kind,TokenId,NewType,InfixClass(..),Pos(..),AssocTree(..),Tree,PackedString) where
+131c131
+< strictI (InfoConstr  unique tid fix (NewType free [] ctx nts) fields iType) = map strictNT (init nts)
+---
+> strictI (InfoConstr  unique tid fix (NewType free ctx nts) fields iType) = map strictNT (init nts)
+166c166
+< superclassesI (InfoClass u tid e (NewType free [] ctxs nts) ms ds inst) = map fst ctxs
+---
+> superclassesI (InfoClass u tid e (NewType free ctxs nts) ms ds inst) = map fst ctxs
+233c233
+< arityVI (InfoConstr  unique tid fix (NewType _ _ _ nts) fields iType) = length nts - 1
+---
+> arityVI (InfoConstr  unique tid fix (NewType _ _ nts) fields iType) = length nts - 1
+240c240
+< arityI (InfoVar     unique tid fix exp (NewType _ _ ctxs _) (Just arity)) =  length ctxs + arity
+---
+> arityI (InfoVar     unique tid fix exp (NewType _ ctxs _) (Just arity)) =  length ctxs + arity
+242c242
+< arityI (InfoConstr  unique tid fix (NewType _ _ _ nts) fields iType) = length nts - 1
+---
+> arityI (InfoConstr  unique tid fix (NewType _ _ nts) fields iType) = length nts - 1
+244,245c244,245
+< -- Wrong !!! -- arityI (InfoIMethod unique tid (NewType _ _ ctxs _) (Just arity) iMethod) = length ctxs + arity
+< arityI (InfoDMethod  unique tid  (NewType _ _ ctxs _) (Just arity) iClass) = length ctxs + arity + 1  {- 1 is for the dictionary -}
+---
+> -- Wrong !!! -- arityI (InfoIMethod unique tid (NewType _ ctxs _) (Just arity) iMethod) = length ctxs + arity
+> arityI (InfoDMethod  unique tid  (NewType _ ctxs _) (Just arity) iClass) = length ctxs + arity + 1  {- 1 is for the dictionary -}
+249c249
+< arityIM (InfoMethod  unique tid fix (NewType _ _ ctx _) (Just arity) iClass) = length ctx + arity
+---
+> arityIM (InfoMethod  unique tid fix (NewType _ ctx _) (Just arity) iClass) = length ctx + arity
+diff --exclude=*.hi ./IntState.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/IntState.hs
+21c21
+< -- -===== State
+---
+> ---===== State
+40c40
+< -- -====== State0
+---
+> ---====== State0
+57c57
+< -- -==== Reduce
+---
+> ---==== Reduce
+74c74
+< -- -==== Stand alone
+---
+> ---==== Stand alone
+112c112
+< 	    (NewType ctx free [] (NTcons con _:_)) -> con
+---
+> 	    (NewType ctx free (NTcons con _:_)) -> con
+137c137
+<     Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _]) (Just arity) iMethod) ->
+---
+>     Just (InfoIMethod  unique tid (NewType _ ctxs [NTcons tcon _]) (Just arity) iMethod) ->
+139c139
+< 	  Just (InfoMethod  unique tid fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
+---
+> 	  Just (InfoMethod  unique tid fix (NewType _ ictxs _) (Just iarity) iClass) ->
+151c151
+< checkNT pos strFun (NewType free [] ctxs nts) =
+---
+> checkNT pos strFun (NewType free ctxs nts) =
+diff --exclude=*.hi ./Lex.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Lex.hs
+167,168c167,168
+<   showsPrec d (L_LCURL' )   = showString  "{-start-of-group-}"
+<   showsPrec d (L_RCURL' )   = showString  "{-end-of-group-}"
+---
+>   showsPrec d (L_LCURL' )   = showString  "{'"
+>   showsPrec d (L_RCURL' )   = showString  "}'"
+174c174
+<   showsPrec d (L_SEMI' )    = showString  "{-end-of-definition-}"
+---
+>   showsPrec d (L_SEMI' )    = showString  ";'"
+diff --exclude=*.hi ./LexLow.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/LexLow.hs
+14,17d13
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+< 
+30,31c26,27
+< lexId u r c xs =
+<   case lexOne u xs of
+---
+> lexId r c xs =
+>   case lexOne xs of
+40c36
+<       in case lexOne u xs of
+---
+>       in case lexOne xs of
+52,53c48
+< -- first arg is whether underscores are treated as lowercase (=True)
+< lexOne False xs@('_':':':_) =
+---
+> lexOne xs@('_':':':_) =
+56c51
+< lexOne False xs@('_':x:_) =
+---
+> lexOne xs@('_':x:_) =
+67,72c62
+< 
+< lexOne True xs@('_':_) =
+<   case splitWhile isNhcId [] xs of
+<   (var,xs) -> LEX_VARID var xs
+< 
+< lexOne u xs@(':':_) =
+---
+> lexOne xs@(':':_) =
+75c65
+< lexOne u xs@(x:_) =
+---
+> lexOne xs@(x:_) =
+164,165d153
+<   else if i == '_' && null d
+<   then (r,c,L_Underscore,xs)
+diff --exclude=*.hi ./LexPre.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/LexPre.hs
+13,16d12
+< #if defined(__HASKELL98__)
+< #define isAlphanum isAlphaNum
+< #endif
+< 
+19,20c15,16
+< lexPre :: Bool -> PackedString -> String -> [PosTokenPre]
+< lexPre u file l = iPreLex u file 1 1 l
+---
+> lexPre :: PackedString -> String -> [PosTokenPre]
+> lexPre file l = iPreLex file 1 1 l
+24,31c20,25
+< iPreLex :: Bool -> PackedString -> Int -> Int -> String -> [PosTokenPre]
+< iPreLex u file r c []      = [(file,r,0,L_EOF)]
+< iPreLex u file r c ('\n':xs) = iPreLex u file (r+1) 1 xs
+< iPreLex u file r c (' ':xs)  = iPreLex u file r (c+1) xs
+< iPreLex u file r c ('\t':xs) = iPreLex u file r (tab c) xs
+< iPreLex u file r c ('-':'-':xs)
+<   | null munch || isSpace nextchr || nextchr `elem` ",()[]{};\"'`"
+<      || isAlphanum nextchr = skipline (iPreLex u file (r+1) 1) xs
+---
+> iPreLex :: PackedString -> Int -> Int -> String -> [PosTokenPre]
+> iPreLex file r c []      = [(file,r,0,L_EOF)]
+> iPreLex file r c ('\n':xs) = iPreLex file (r+1) 1 xs
+> iPreLex file r c (' ':xs)  = iPreLex file r (c+1) xs
+> iPreLex file r c ('\t':xs) = iPreLex file r (tab c) xs
+> iPreLex file r c ('-':'-':xs) = skipline (iPreLex file (r+1) 1) xs
+33,34d26
+< 		munch = dropWhile (=='-') xs
+<                 nextchr = head munch
+39,40c31,32
+< iPreLex u file r c ('{':'-':'#':xs) = (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
+< iPreLex u file r c ('#':'-':'}':xs) = (file,r,c,L_RANNOT) :iPreLex u file r (c+3) xs
+---
+> iPreLex file r c ('{':'-':'#':xs) = (file,r,c,L_LANNOT) :iPreLex file r (c+3) xs
+> iPreLex file r c ('#':'-':'}':xs) = (file,r,c,L_RANNOT) :iPreLex file r (c+3) xs
+42c34
+< iPreLex u file r c ('{':'-':xs) = skipcomment 0 r (c+2) xs
+---
+> iPreLex file r c ('{':'-':xs) = skipcomment 0 r (c+2) xs
+46c38
+< 		skipcomment n r c []	       = iPreLex u file r c []
+---
+> 		skipcomment n r c []	       = iPreLex file r c []
+49c41
+< 						 else iPreLex u file r (c+2) xs
+---
+> 						 else iPreLex file r (c+2) xs
+54c46
+< iPreLex u file r c ('(':xs) | isTupleId xs =
+---
+> iPreLex file r c ('(':xs) | isTupleId xs =
+58,59c50,51
+< 	  0 -> (file,r,c,L_ACONID (t_Tuple 0)) :  iPreLex u file r (c+3) xs -- unit ()
+< 	  n -> (file,r,c,L_ACONID (t_Tuple (n+1))) :  iPreLex u file r (c+n+2) xs -- (n+1)-tuple 
+---
+> 	  0 -> (file,r,c,L_ACONID (t_Tuple 0)) :  iPreLex file r (c+3) xs -- unit ()
+> 	  n -> (file,r,c,L_ACONID (t_Tuple (n+1))) :  iPreLex file r (c+n+2) xs -- (n+1)-tuple 
+66,77c58,69
+< iPreLex u file r c ('(':'-':'>':')':xs) = (file,r,c,L_ACONID t_Arrow) :  iPreLex u file r (c+4) xs
+< iPreLex u file r c ('(':xs) = (file,r,c,L_LPAR)      :  iPreLex u file r (c+1) xs
+< iPreLex u file r c (')':xs) = (file,r,c,L_RPAR)      :  iPreLex u file r (c+1) xs
+< iPreLex u file r c (',':xs) = (file,r,c,L_COMMA)     :  iPreLex u file r (c+1) xs
+< iPreLex u file r c ('{':xs) = (file,r,c,L_LCURL)     :  iPreLex u file r (c+1) xs
+< iPreLex u file r c ('}':xs) = (file,r,c,L_RCURL)     :  iPreLex u file r (c+1) xs
+< iPreLex u file r c ('[':']':xs) = (file,r,c,L_ACONID t_List)    :  iPreLex u file r (c+2) xs
+< iPreLex u file r c ('[':xs) = (file,r,c,L_LBRACK)    :  iPreLex u file r (c+1) xs
+< iPreLex u file r c (']':xs) = (file,r,c,L_RBRACK)    :  iPreLex u file r (c+1) xs
+< iPreLex u file r c ('`':xs) = (file,r,c,L_BACKTICK)  :  iPreLex u file r (c+1) xs
+< iPreLex u file r c (';':xs) = (file,r,c,L_SEMI)      :  iPreLex u file r (c+1) xs
+< iPreLex u file r c ('#':xs) | c == 1 =
+---
+> iPreLex file r c ('(':'-':'>':')':xs) = (file,r,c,L_ACONID t_Arrow) :  iPreLex file r (c+4) xs
+> iPreLex file r c ('(':xs) = (file,r,c,L_LPAR)      :  iPreLex file r (c+1) xs
+> iPreLex file r c (')':xs) = (file,r,c,L_RPAR)      :  iPreLex file r (c+1) xs
+> iPreLex file r c (',':xs) = (file,r,c,L_COMMA)     :  iPreLex file r (c+1) xs
+> iPreLex file r c ('{':xs) = (file,r,c,L_LCURL)     :  iPreLex file r (c+1) xs
+> iPreLex file r c ('}':xs) = (file,r,c,L_RCURL)     :  iPreLex file r (c+1) xs
+> iPreLex file r c ('[':']':xs) = (file,r,c,L_ACONID t_List)    :  iPreLex file r (c+2) xs
+> iPreLex file r c ('[':xs) = (file,r,c,L_LBRACK)    :  iPreLex file r (c+1) xs
+> iPreLex file r c (']':xs) = (file,r,c,L_RBRACK)    :  iPreLex file r (c+1) xs
+> iPreLex file r c ('`':xs) = (file,r,c,L_BACKTICK)  :  iPreLex file r (c+1) xs
+> iPreLex file r c (';':xs) = (file,r,c,L_SEMI)      :  iPreLex file r (c+1) xs
+> iPreLex file r c ('#':xs) | c == 1 =
+81c73
+< 			                                      (_,r,_) -> iPreLex u (packString file) (fromInteger r) 1 (tail xs)
+---
+> 			                                      (_,r,_) -> iPreLex (packString file) (fromInteger r) 1 (tail xs)
+84c76
+< iPreLex u file r c ('"':xs) = (file,r,c,L_STRING st) :  iPreLex u file r' c' xs'
+---
+> iPreLex file r c ('"':xs) = (file,r,c,L_STRING st) :  iPreLex file r' c' xs'
+87c79
+< iPreLex u file r c ('\'':xs)= (file,r,c,L_CHAR ch)    :  iPreLex u file r' c' xs'
+---
+> iPreLex file r c ('\'':xs)= (file,r,c,L_CHAR ch)    :  iPreLex file r' c' xs'
+91,92c83,84
+< iPreLex u file r c ('_':[]) = (file,r,c,L_Underscore) :  iPreLex u file r (c+1) []
+< iPreLex u file r c xxs@('_':xs@(x:_)) =
+---
+> iPreLex file r c ('_':[]) = (file,r,c,L_Underscore) :  iPreLex file r (c+1) []
+> iPreLex file r c xxs@('_':xs@(x:_)) =
+94,95c86,87
+< 	then case lexId u r c xxs of
+< 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex u file r c' xs
+---
+> 	then case lexId r c xxs of
+> 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex file r c' xs
+97,98c89,90
+< 	   (file,r,c,L_Underscore) :  iPreLex u file r (c+1) xs
+< iPreLex u file r c (xs@(x:s))=
+---
+> 	   (file,r,c,L_Underscore) :  iPreLex file r (c+1) xs
+> iPreLex file r c (xs@(x:s))=
+100,101c92,93
+< 	then case lexId u r c xs of
+< 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex u file r c' xs
+---
+> 	then case lexId r c xs of
+> 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex file r c' xs
+104c96
+< 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex u file r c' xs
+---
+> 	        (r,c',lex,xs) -> (file,r,c,lex) : iPreLex file r c' xs
+106c98
+<           (file,r,c,L_ERROR x) :  iPreLex u file r c s
+---
+>           (file,r,c,L_ERROR x) :  iPreLex file r c s
+diff --exclude=*.hi ./Lexical.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Lexical.hs
+1,2c1,2
+< module Lexical(lexical,lexicalCont,Lex{-,PackedString-}
+<                 ,LexState(..),PosToken(..),PosTokenPre(..),Pos(..)) where
+---
+> module Lexical(lexical,lexicalCont,Lex,PackedString
+>                ,LexState(..),PosToken(..),PosTokenPre(..),Pos(..)) where
+13c13,14
+< -- 0 : no active indentation (explicit layout)
+---
+> -- -10 : no active indentation because of {
+> --  -9 : no active indentation because of no let where or of
+15,22c16,22
+< lexical :: Bool -> [Char] -> [Char] -> [PosToken]
+< lexical u file l =
+<     case packString file of
+<         file' -> 
+<             case lexPre u file' l of
+<                 lp@((f,r,c,L_module):_) ->  iLex [0] 0 lp
+<                 lp@((f,r,c,L_interface):_) ->  iLex [0] 0 lp
+<                 lp ->  iLex [0] 0 ((file',1,0,L_module):(file',1,0,L_ACONID tMain):(file',1,0,L_where):lp)
+---
+> lexical :: [Char] -> [Char] -> [PosToken]
+> lexical file l = case packString file of
+>                   file' -> 
+> 		    case lexPre file' l of
+>                        lp@((f,r,c,L_module):_) ->  iLex [-9] (-9) lp
+>                        lp@((f,r,c,L_interface):_) ->  iLex [-9] (-9) lp
+>                        lp ->  iLex [-9] (-9) ((file',1,1,L_module):(file',1,0,L_ACONID tMain):(file',1,0,L_where):lp)
+26c26
+<                 if i > 0
+---
+>                 if i >= -2
+39c39
+<   else if c == i && i /= 0 && t /= L_in then
+---
+>   else if c == i && t /= L_in then
+41,42d40
+<   else if c == 0 && i == 0 then
+<     piLex f s i p t pt
+50,67c48,84
+<     piLex file s i p tok tr@((f,r,c,t'):pt)
+<       | tok `elem` [L_let, L_where, L_of, L_do] =
+<           (p,tok,s,tr)
+<           : if t' == L_LCURL then
+<                 let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
+<                 : iLex (0:s) 0 pt 
+<             else
+<                 (p, L_LCURL',s,tr)
+<                 : if c > i then
+<                     let p' = toPos r c in seq p' $ piLex f (c:s) c p' t' pt
+<                   else
+<                     (p, L_RCURL',s,tr)
+<                     : iLex s i tr
+<     piLex file s i p L_LCURL  pt =
+<           (p,L_LCURL,s,pt)
+<           : iLex (0:s) 0 pt
+<     piLex file s i p L_RCURL  pt = 
+<       if i == 0
+---
+>     piLex file s i p L_where tr@((f,r,c,L_LCURL):pt)  =
+>       (p,L_where,s,tr)
+>       :let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
+>       :iLex (-10:s) (-10) pt 
+>     piLex file s i p L_where tr@((f,r,c,t'):pt)       =
+>       (p,L_where,s,tr)
+>       :(p,   L_LCURL',s,pt)
+>       :let p' = toPos r c in seq p' (piLex f (c:s) c p' t' pt)
+>     piLex file s i p L_of    tr@((f,r,c,L_LCURL):pt)  =
+>       (p,L_of,   s,tr)
+>       :let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
+>       :iLex (-10:s) (-10) pt 
+>     piLex file s i p L_of    tr@((f,r,c,t'):pt)       =
+>       (p,L_of,   s,tr)
+>       :(p   ,L_LCURL',s,pt)
+>       :let p' = toPos r c in seq p' (piLex f (c:s) c p' t' pt)
+>     piLex file s i p L_let   tr@((f,r,c,L_LCURL):pt)  =
+>       (p,L_let,  s,tr)
+>       :let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
+>       :iLex (-10:s) (-10) pt 
+>     piLex file s i p L_let   tr@((f,r,c,t'):pt)       =
+>       (p,L_let,  s,tr)
+>       :(p ,  L_LCURL',s,pt)
+>       :let p' = toPos r c in seq p' (piLex f (c:s) c p' t' pt)
+>     piLex file s i p L_do   tr@((f,r,c,L_LCURL):pt)  =
+>       (p,L_do,  s,tr)
+>       :let p' = toPos r c in seq p' (p',L_LCURL, s,pt)
+>       :iLex (-10:s) (-10) pt 
+>     piLex file s i p L_do   tr@((f,r,c,t'):pt)       =
+>       (p,L_do,  s,tr)
+>       :(p ,  L_LCURL',s,pt)
+>       :let p' = toPos r c in seq p' (piLex f (c:s) c p' t' pt)
+>     piLex file s i p L_LCURL          pt            =
+>       (p,L_LCURL,s,pt)
+>       :iLex ((-9):s) (-9) pt
+>     piLex file s i p L_RCURL          pt            = 
+>       if i < 0 -- i == -10
+72,74c89
+<     piLex file s i p t pt  =
+<           (p,t,s,pt)
+<           : iLex s i pt
+---
+>     piLex file s i p t                pt            = (p,t,      s,pt) :  iLex s i pt
+diff --exclude=*.hi ./Lift.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Lift.hs
+12c12
+< --------- ===========
+---
+> ---------===========
+diff --exclude=*.hi ./Main.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Main.hs
+76d75
+< #if defined(__NHC__) || defined(__HBC__)
+78,82d76
+< #endif
+< #if defined(__GLASGOW_HASKELL__)
+< import IOExts (trace)
+< #endif
+< 
+100c94
+<   let  (rootdir,filename) = fixRootDir isUnix sourcefile
+---
+>   let  (rootdir,filename) = fixRootDir unix sourcefile
+102c96
+<        isUnix = sUnix ((),flags)
+---
+>        unix = sUnix ((),flags)
+105c99
+<                 [sourcefile] -> (sourcefile,sourcefile,fixTypeFile isUnix rootdir filename,fixObjectFile isUnix rootdir filename)
+---
+>                 [sourcefile] -> (sourcefile,sourcefile,fixTypeFile unix rootdir filename,fixObjectFile unix rootdir filename)
+108c102,104
+<                 _      -> error ("\nusage: nhc98comp file.hs\n       nhc98comp sourcefile interfacefile C-file\n       nhc98comp sourcefile sourcename interface C-file\n")
+---
+>                 _      -> error ("\nusage: nhc13comp file.hs\n\
+>                                    \       nhc13comp sourcefile interfacefile C-file\n\
+>                                    \       nhc13comp sourcefile sourcename interface C-file\n")
+116,118c112
+<     let lexdata = lexical (sUnderscore flags)
+<                           (sSourceFile flags)
+<                           (if sUnlit flags then unlit (sSourceFile flags) mainChar else mainChar)
+---
+>     let lexdata = lexical (sSourceFile flags) (if sUnlit flags then unlit (sSourceFile flags) mainChar else mainChar)
+129,130c123,124
+<        (need,qualFun,overlap,Left err) -> errorMsg (sSourceFile flags) err
+<        (need,qualFun,overlap,Right (expFun,imports)) ->
+---
+>        (need,qualFun,Left err) -> errorMsg (sSourceFile flags) err
+>        (need,qualFun,Right (expFun,imports)) ->
+132c126
+<          nhcImport flags modid qualFun expFun parsedProg' (initIS need) overlap imports
+---
+>          nhcImport flags modid qualFun expFun parsedProg' (initIS need) imports
+135c129
+< nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
+---
+> nhcImport flags modidl qualFun expFun parseProg importState [] =
+144c138
+< 		nhcRename flags modidl qualFun expFun parseProg importState overlap
+---
+> 		nhcRename flags modidl qualFun expFun parseProg importState  
+152c146
+< nhcImport flags modidl qualFun expFun parseProg importState overlap (x:xs) = 
+---
+> nhcImport flags modidl qualFun expFun parseProg importState (x:xs) = 
+160c154
+<     nhcImport flags modidl qualFun expFun parseProg importState overlap xs
+---
+>     nhcImport flags modidl qualFun expFun parseProg importState xs
+162c156
+< nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e impdecls inf decls) importState overlap =
+---
+> nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e impdecls inf decls) importState =
+164c158
+<   case rename flags mrps qualFun expFun inf decls importState overlap of
+---
+>   case rename flags mrps qualFun expFun inf decls importState of
+317d310
+<      profile "dump code" $
+324c317
+<   -- profile "dump code" $
+---
+>   profile "dump code" $
+diff --exclude=*.hi ./Makefile /home/local/sparud/tracer/new/nhc13/src/compiler13/Makefile
+7,8c7,8
+< OBJDIR = ${BUILDDIR}/obj/compiler98
+< TARGET = ${DST}/nhc98comp${TRACING}${EXE}
+---
+> OBJDIR = ${BUILDDIR}/obj/compiler13
+> TARGET = ${DST}/nhc13comp${TRACING}${EXE}
+41c41
+< HC = nhc98
+---
+> HC = nhc13
+44,47c44,46
+< HMAKEFLAGS = -H32M
+< endif
+< ifeq "ghc" "${HC}"
+< HMAKEFLAGS = +CTS -syslib exts -syslib misc -CTS
+---
+> HMAKEFLAGS = -H24M
+> else
+> HMAKEFLAGS = +CTS -H8M -CTS
+55c54
+< 	$(LOCAL)hmake -nhc98 -C Main.hs
+---
+> 	hmake -nhc13 -C Main.hs
+57,58c56,57
+< 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.c
+< 	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
+---
+> 	$(HC) -c -d $(OBJDIR) *.c
+> 	cd $(OBJDIR); $(HC) -H8M -o $(TARGET) *.o
+66c65
+< 	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main
+---
+> 	hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main
+72c71
+< 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc
+---
+> 	rm -f $(OBJDIR)/nhc13 $(OBJDIR)/hbc $(OBJDIR)/ghc
+74c73
+< 	touch "$(OBJDIR)/$(HC)"
+---
+> 	touch $(OBJDIR)/$(HC)
+diff --exclude=*.hi ./MkSyntax.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/MkSyntax.hs
+7c7
+< 	, mkTypeList, mkPatNplusK
+---
+> 	, mkTypeList
+10c10
+< import Extra(Pos(..),noPos,strPos)
+---
+> import Extra(Pos(..),noPos)
+23c23
+< mkParInst p [t] = error ("mkParInst on singleton list")
+---
+> mkParInst p [t] = error ("mkParInst on sigelton list")
+36c36
+<         DeclFun pv var [Fun pats gdexps w]
+---
+> 	DeclFun pv var [Fun pats gdexps w]
+85,88c85
+< -- combineGroups (DeclsParse d1) (DeclsParse d2) = DeclsParse (d1++d2)
+< -- 
+< -- mkDeclClass ctx (pos,cls) (_,arg) (csigns,valdefs) =
+< --             DeclClass pos ctx cls arg (combineGroups csigns valdefs)
+---
+> combineGroups (DeclsParse d1) (DeclsParse d2) = DeclsParse (d1++d2)
+90,91c87,88
+< -- changed in H98 to:
+< mkDeclClass ctx (pos,cls) (_,arg) cdecls = DeclClass pos ctx cls arg cdecls
+---
+> mkDeclClass ctx (pos,cls) (_,arg) (csigns,valdefs) =
+>             DeclClass pos ctx cls arg (combineGroups csigns valdefs)
+141,149d137
+< 
+< mkPatNplusK (pos,tid) (posi,integer) =
+<     PatNplusK pos tid undefined (ExpLit posi integer) undefined undefined
+< -- While parsing (n+k), can't choose a unique replacement identifier n',
+< -- so leave some fields to be filled in later.
+< 
+< --  let k = ExpLit posi integer in
+< --  PatNplusK pos tid undefined k (ExpApplication pos [t_lessequal,k])
+< --                                (ExpApplication pos [t_subtract,k])
+diff --exclude=*.hi ./NT.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/NT.hs
+4d3
+< 	, contextNT, ntContext2Pair, stripNT
+12c11
+<              | NewType [Int] [Int] [(Int,Int)] [NT] deriving (Eq)
+---
+>              | NewType [Int] [(Int,Int)] [NT] deriving (Eq)
+16c15
+<   showsPrec d (NewType free exist ctxs nts) = showString (strTVarsCtxsNTs free ctxs nts)
+---
+>   showsPrec d (NewType free ctxs nts) = showString (strTVarsCtxsNTs free ctxs nts)
+20d18
+<         | NTexist Int
+23,31c21
+<         | NTcons  Int [NT] 
+<         | NTcontext Int Int
+<          deriving (Eq,Ord)
+< 
+< stripNT (NTany   v) = v
+< stripNT (NTvar   v) = v
+< stripNT (NTexist v) = v
+< stripNT (NTapp (NTvar v) nt ) = v
+< stripNT nt = error ("stripNT on " ++ show nt)
+---
+>         | NTcons  Int [NT]  deriving (Eq,Ord)
+36,40d25
+< ntContext2Pair (NTcontext c a) = (c,a)
+< 
+< contextNT (NTcontext _ _) = True
+< contextNT  _ = False
+< 
+51d35
+< useNT (NTexist a) = []
+55d38
+< useNT (NTcontext c v) =  [c]
+59d41
+< freeNT (NTexist a) = [a]
+66d47
+< freshNT tv t@(NTexist  a) = t
+70d50
+< freshNT tv (NTcontext c v) =  NTcontext c (tv v)
+74d53
+< anyNT av t@(NTexist a) = t
+81d59
+< polyNT fv t@(NTexist a) = t
+90d67
+< strNT c p (NTexist a) = p a++"?"
+95d71
+< strNT c p (NTcontext a v) = "(" ++ c a ++ " " ++ p a ++ ") => "
+diff --exclude=*.hi ./Need.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Need.hs
+20c20
+<        (need,overlap) -> (need,qualFun,overlap,preImport flags modidl (treeMap fst need) exports impdecls)
+---
+>        need -> (need,qualFun,preImport flags modidl (treeMap fst need) exports impdecls)
+61,70c61,66
+< --needImport (Import (pos,tid) impspec) =
+< --    {- needTid pos Modid tid >>> -} needImpSpec impspec
+< --needImport (ImportQ (pos,tid)) =
+< --    unitR -- needTid pos Modid tid
+< --needImport (ImportQas (pos,tid) (pos2,tid2)) =
+< --    unitR -- needTid pos Modid tid
+< needImport (Import (pos,tid) impspec) = needImpSpec impspec
+< needImport (ImportQ (pos,tid) impspec) = needImpSpec impspec
+< needImport (ImportQas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
+< needImport (Importas (pos,tid) (pos2,tid2) impspec) = needImpSpec impspec
+---
+> needImport (Import (pos,tid) impspec) =
+>     {- needTid pos Modid tid >>> -} needImpSpec impspec
+> needImport (ImportQ (pos,tid)) =
+>     unitR -- needTid pos Modid tid
+> needImport (ImportQas (pos,tid) (pos2,tid2)) =
+>     unitR -- needTid pos Modid tid
+105c101
+<   >>> unitR		-- needTids (getPos simple) tokenEval
+---
+>   >>> needTids (getPos simple) tokenEval
+152,153d147
+< needDecl (DeclFixity f) =
+<       needFixDecl f
+170c164
+<   	| True = strace ("Warning: Don't know what is needed to derive "
+---
+>   	| True = strace ("Warning: Need don't know what is needed to derive "
+233,234c227
+< needConstr (Constr                pos hs types) = mapR needFieldType types
+< needConstr (ConstrCtx forall ctxs pos hs types) = mapR needCtx ctxs >>> mapR needFieldType types
+---
+> needConstr (Constr pos hs types) = mapR needFieldType types
+245c238
+< --needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var -- H98 removes
+---
+> needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var
+274,275d266
+< needExp (PatNplusK        pos tid _ _ _ _) = needTid pos Var tid >>>
+<                                              needTids pos tokenNplusK
+278c269
+< ----------- ========================
+---
+> -----------========================
+282c273
+< bindImport (ImportQ (pos,tid) impspec) =
+---
+> bindImport (ImportQ (pos,tid)) =
+284,286c275
+< bindImport (ImportQas (pos,tid) (pos2,tid2) impspec) =
+<     bindTid Modid tid >>> bindTid Modid tid2
+< bindImport (Importas (pos,tid) (pos2,tid2) impspec) =
+---
+> bindImport (ImportQas (pos,tid) (pos2,tid2)) =
+318d306
+< bindDecl (DeclFixity f) = unitR
+320,321c308
+< bindConstr (Constr                pos hs ftypes) = bindTid Con hs >>> mapR bindFieldType ftypes
+< bindConstr (ConstrCtx forall ctxs pos hs ftypes) = bindTid Con hs >>> mapR bindFieldType ftypes
+---
+> bindConstr (Constr pos hs ftypes) = bindTid Con hs >>> mapR bindFieldType ftypes
+330c317
+< --bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var -- H98 removes
+---
+> bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
+350,352c337
+< bindPat (PatIrrefutable   pos pat)    = bindPat pat
+< bindPat (PatNplusK        pos tid _ _ _ _) = bindTid Var tid >>>
+<                                              needTids pos tokenNplusK
+---
+> bindPat (PatIrrefutable    pos pat)   = bindPat pat
+diff --exclude=*.hi ./NeedLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/NeedLib.hs
+11d10
+< import List (delete)
+13,20c12
+< -- Added in H98: the overlap table, which allows for later resolution of
+< -- shared module aliases.
+< 
+< data NeedLib = NeedLib (TokenId -> [TokenId])		-- qualified renaming
+<                        (Memo (TokenId,Kind))		-- tids already seen
+<                        [Memo (TokenId,Kind)]		-- stack of memos
+<                        (AssocTree (TokenId,Kind) (Bool,TokenId,[TokenId])) -- overlap table
+<                        (AssocTree (TokenId,Kind) [Pos])	-- final need-table
+---
+> data NeedLib = NeedLib (TokenId -> TokenId) (Memo (TokenId,Kind)) [Memo (TokenId,Kind)] (AssocTree (TokenId,Kind) [Pos])
+28,32c20,21
+<   case n (NeedLib r initM [] initAT iNeed) of
+<     (NeedLib r m [] o n) -> (n,o)
+< 
+< pushNeed (NeedLib r m ms o n) = NeedLib r m (m:ms) o n
+< popNeed  (NeedLib r _ (m:ms) o n) = NeedLib r m ms o n
+---
+>   case n (NeedLib r initM [] iNeed) of
+>     (NeedLib r m [] n) -> n
+34c23,24
+< --bindTid kind tid (NeedLib r m ms o n) = NeedLib r (addM m (r tid,kind)) ms o n
+---
+> pushNeed (NeedLib r m ms n) = NeedLib r m (m:ms) n
+> popNeed  (NeedLib r _ (m:ms) n) = NeedLib r m ms n
+36,58c26
+< bindTid :: Kind -> TokenId -> NeedLib -> NeedLib
+< bindTid kind tid (NeedLib r m ms o n) =
+<     NeedLib r (foldr memoise m (r tid)) ms o n
+<   where
+<     memoise :: TokenId -> Memo (TokenId,Kind) -> Memo (TokenId,Kind)
+<     memoise tid m = addM m (tid,kind)
+< 
+< --needTid pos kind tid needlib@(NeedLib r m ms o n) =
+< --  case r tid of
+< --    [tid] ->
+< --      case lookupM m (tid,kind) of
+< --	Just _ -> needlib
+< --	Nothing ->
+< --	  case lookupAT n (tid,kind) of -- mostly to evaluate n now and then :-)
+< --	    Just _ ->  NeedLib r (addM m (tid,kind)) ms o (updateAT n (tid,kind) (pos:))
+< --	    Nothing -> NeedLib r (addM m (tid,kind)) ms o (addAT n undefined (tid,kind) [pos])
+< ----  tids -> 
+< ----    case lookupM m (tids,kind) of
+< ----	Just _ -> needlib
+< ----	Nothing ->
+< ----	  case lookupAT n (tids,kind) of -- mostly to evaluate n now and then :-)
+< ----	    Just _ ->  NeedLib r (addM m (tids,kind)) ms (updateAT n (tids,kind) (pos:))
+< ----	    Nothing -> NeedLib r (addM m (tids,kind)) ms (addAT n undefined (tids,kind) [pos])
+---
+> bindTid kind tid (NeedLib r m ms n) = NeedLib r (addM m (r tid,kind)) ms n
+60c28
+< needTid pos kind tid needlib@(NeedLib r m ms o n) =
+---
+> needTid pos kind tid needlib@(NeedLib r m ms n) =
+62,78c30,36
+<     []    -> error ("qualified renaming of "++show tid++" produced no results!")
+<     [tid] -> record tid needlib
+<     tids  -> foldr record (NeedLib r m ms (addOverlap tid kind o tids) n) tids
+<  where
+<   record tid needlib@(NeedLib r m ms o n) =
+<     case lookupM m (tid,kind) of 
+<       (Just _) -> needlib
+<       Nothing ->
+<         case lookupAT n (tid,kind) of -- mostly to evaluate n now and then :-)
+<           Just _ ->  NeedLib r (addM m (tid,kind)) ms o (updateAT n (tid,kind) (pos:))
+<           Nothing -> NeedLib r (addM m (tid,kind)) ms o (addAT n undefined (tid,kind) [pos])
+< 
+< addOverlap atid kind o tids =
+<     foldr add o tids
+<   where add t o = addAT o sndOf (t,kind) (True, atid, delete t tids)
+< 
+<     
+---
+>     tid -> 
+>       case lookupM m (tid,kind) of
+> 	Just _ -> needlib
+> 	Nothing ->
+> 	  case lookupAT n (tid,kind) of -- mostly to evaluate n now and then :-)
+> 	    Just _ ->  NeedLib r (addM m (tid,kind)) ms (updateAT n (tid,kind) (pos:))
+> 	    Nothing -> NeedLib r (addM m (tid,kind)) ms (addAT n undefined (tid,kind) [pos])
+diff --exclude=*.hi ./Nice.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Nice.hs
+8,9c8
+< import Extra(dropJust,mixComma,mixSpace,assocDef,snub,strace)
+< import PackedString()
+---
+> import Extra(dropJust,mixComma,mixSpace,assoc,snub)
+12,19c11,17
+< niceNT _ state al (NTany  a) = assocDef al ('?':show a ++ "?") a
+< niceNT _ state al (NTvar  a) = assocDef al ('?':show a ++ "?") a
+< niceNT _ state al (NTexist a) = assocDef al ('?':show a ++ "?") a
+< niceNT m state al (NTstrict t) = "!" ++ niceNT m state al t
+< niceNT m state al (NTapp t1 t2) = 
+<    '(':  niceNT m state al t1 ++ ' ': niceNT m state al t2 ++ ")"
+< niceNT m state al (NTcons a []) = niceInt m state a ""
+< niceNT m state al (NTcons a tas) =
+---
+> niceNT state al (NTany  a) = assoc a al
+> niceNT state al (NTvar  a) = assoc a al
+> niceNT state al (NTstrict t) = "!" ++ niceNT state al t
+> niceNT state al (NTapp t1 t2) = 
+>    '(':  niceNT state al t1 ++ ' ': niceNT state al t2 ++ ")"
+> niceNT state al (NTcons a []) = niceInt state a ""
+> niceNT state al (NTcons a tas) =
+21c19
+< 	  TupleId _ -> '(' : mixComma (map (niceNT m state al) tas) ++ ")"
+---
+> 	  TupleId _ -> '(' : mixComma (map (niceNT state al) tas) ++ ")"
+25,32c23,26
+< 		 [t1] -> "( (->) " ++ niceNT m state al t1 ++ ")"
+< 		 [t1,t2] -> '(':niceNT m state al t1 ++ " -> " ++ niceNT m state al t2++")"
+< 	  v | v == t_List  -> "[" ++ (case tas of [] -> ""; [t] -> niceNT m state al t) ++ "]"
+< 	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': mixSpace (map (niceNT m state al) tas) ++ ")"
+< niceNT m state al (NTcontext c a) =
+<         case (tidI . dropJust .  lookupIS state) c of
+< 	  TupleId _ -> '(' : niceNT m state al (NTvar a) ++ ")"
+< 	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': niceNT m state al (NTvar a) ++ ")"
+---
+> 		 [t1] -> "( (->) " ++ niceNT state al t1 ++ ")"
+> 		 [t1,t2] -> '(':niceNT state al t1 ++ " -> " ++ niceNT state al t2++")"
+> 	  v | v == t_List  -> "[" ++ (case tas of [] -> ""; [t] -> niceNT state al t) ++ "]"
+> 	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': mixSpace (map (niceNT state al) tas) ++ ")"
+35,36c29,30
+< niceCtxs mmrps state al [] = ""
+< niceCtxs mmrps state al ctxs = "(" ++ mixComma (map ( \ (c,v) -> niceInt mmrps state c  (' ':assocDef al (error "niceCtx") v)) ctxs) ++ ") => "
+---
+> niceCtxs state al [] = ""
+> niceCtxs state al ctxs = "(" ++ mixComma (map ( \ (c,v) -> niceInt state c  (' ':assoc v al)) ctxs) ++ ") => "
+38,39c32
+< niceInt Nothing state i     = (niceInfo (mrpsIS state) . dropJust . lookupIS state) i
+< niceInt (Just mrps) state i = (niceInfo  mrps          . dropJust . lookupIS state) i
+---
+> niceInt state i = (niceInfo (mrpsIS state) . dropJust . lookupIS state) i
+56c49
+< niceNewType state (NewType free exist ctx nts) =
+---
+> niceNewType state (NewType free ctx nts) =
+59c52
+<     in niceCtxs Nothing state al ctx ++ mixSpace (map (niceNT Nothing state al) nts)
+---
+>     in niceCtxs state al ctx ++ mixSpace (map (niceNT state al) nts)
+73,75c66,67
+< 				 (niceNT Nothing state al nt ++ "}")
+< niceField state al (Nothing,nt) =
+<    niceNT Nothing state al nt
+---
+> 				 (niceNT state al nt ++ "}")
+> niceField state al (Nothing,nt) = niceNT state al nt
+Only in .: NplusK.hs
+diff --exclude=*.hi ./OsOnly.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/OsOnly.hs
+5c5
+< fixRootDir isUnix s =
+---
+> fixRootDir unix s =
+8c8
+<   if isUnix
+---
+>   if unix
+24,25c24,25
+< fixImportNames isUnix file rootdirs =
+<   map (\dir-> fixDir isUnix dir ++ (fixFile isUnix file "hi")) rootdirs
+---
+> fixImportNames unix file rootdirs =
+>   map (++ (fixFile unix file "hi")) rootdirs
+26a27,29
+> fixTypeFile   unix rootdir s = rootdir ++ fixFile unix s "hit"
+> fixObjectFile unix rootdir s = rootdir ++ fixFile unix s "c"
+> fixDependFile unix rootdir s = rootdir ++ fixFile unix s "dep"
+28,39c31
+< fixDir isUnix dir
+<   | isUnix    = case (dir,last dir) of
+<                     ("",_)  -> ""
+<                     (_,'/') -> dir
+<                     (_,_)   -> dir ++ "/"
+<   | otherwise = dir
+< 
+< fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hit"
+< fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "c"
+< fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
+< 
+< fixFile isUnix file suf =
+---
+> fixFile unix file suf =
+46c38
+<     if isUnix
+---
+>     if unix
+Only in .: Overlap.hs
+diff --exclude=*.hi ./PPSyntax.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/PPSyntax.hs
+1c1
+< module PPSyntax(ppModule,ppInterface,ppFun,ppDecl,ppImpDecls,ppDecls,ppClassCodes,ppExp) where 
+---
+> module PPSyntax(ppModule,ppInterface,ppFun,ppDecl,ppImpDecls,ppDecls,ppClassCodes) where 
+23,30c23,26
+< ppImpDecl d p (ImportQ (pos1,id1) impspec) =
+<         pp ("import qualified " ++ (pStd p) id1 ++ strImpSpec d p impspec)
+< ppImpDecl d p (ImportQas (pos1,id1) (pos2,id2) impspec) =
+<         pp ("import qualified " ++ (pStd p) id1 ++ " as " ++ (pStd p) id2
+<             ++ strImpSpec d p impspec)
+< ppImpDecl d p (Importas (pos1,id1) (pos2,id2) impspec) =
+<         pp ("import " ++ (pStd p) id1 ++ " as " ++ (pStd p) id2
+<             ++ strImpSpec d p impspec)
+---
+> ppImpDecl d p (ImportQ (pos1,id1)) =
+>         pp ("import qualified " ++ (pStd p) id1)
+> ppImpDecl d p (ImportQas (pos1,id1) (pos2,id2)) =
+>         pp ("import qualified " ++ (pStd p) id1 ++ " as " ++ (pStd p) id2)
+92,93d87
+< ppDecl d p (DeclFixity f) =
+<         pp (strFixDecl d p f)
+175c169
+< ppExp d p (ExpCon               pos id) = pp (ppPos d pos ++ "{-C-}"++(pStd p) id)
+---
+> ppExp d p (ExpCon               pos id) = pp (ppPos d pos ++ "c "++(pStd p) id)
+189,190d182
+< ppExp d p (PatNplusK pos n n' k _ _) = 
+<         pp (ppPos d pos ++ "{-N+K-}(" ++ (pStd p) n ++ "+")  `cl`  ppExp d p k  `cl`  pp ")"
+195,196c187,188
+< --ppField d p (FieldPun pos var) =		-- H98 removes
+< --	pp (ppPos d pos ++ " " ++ pStd p var)	-- H98 removes
+---
+> ppField d p (FieldPun pos var) =
+> 	pp (ppPos d pos ++ " " ++ pStd p var)
+diff --exclude=*.hi ./Parse.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Parse.hs
+12d11
+< import TokenId (t_nplusk)
+27c26
+<                 `chk` optSemi `chk` rcurl
+---
+>                 `chk` rcurl
+33c32
+<         DeclsParse `parseAp` manysSep semi parseTopDecl
+---
+>         DeclsParse `parseAp` manySep semi parseTopDecl
+51,56c50,52
+<                         --              `ap` (pair `parseChk` lit L_where `chk` lcurl `ap` parseCSigns `ap` parseValdefs `chk` rcurl
+< 			--		          `orelse`
+< 			--		      parse (DeclsParse [],DeclsParse []))),
+<                                         `ap` (id   `parseChk` lit L_where `chk` lcurl `ap` parseCDecls `chk` rcurl	-- H98 changed
+< 					          `orelse`						-- H98 changed
+< 					      parse (DeclsParse []))),					-- H98 changed
+---
+>                                         `ap` (pair `parseChk` lit L_where `chk` lcurl `ap` parseCSigns `ap` parseValdefs `chk` rcurl
+> 					          `orelse`
+> 					      parse (DeclsParse [],DeclsParse []))),
+71a68,77
+> parseDecl =
+>     parseVarsType
+>         `orelse`
+>     parseValdef
+> 
+> 
+> 
+> 
+> parseCSign = parseVarsType
+> 
+74a81,82
+> 
+> 
+81,85c89
+< -- parseCSigns = DeclsParse `parseAp` manySep semi parseCSign
+< -- parseCSign = parseVarsType
+< 
+< parseCDecls = DeclsParse `parseAp` (manysSep semi parseCDecl)	-- H98 added
+< parseCDecl = parseVarsType `orelse` parseValdef -- `orelse` parseInfixDecl
+---
+> parseCSigns = DeclsParse `parseAp` manySep semi parseCSign
+90c94
+<     DeclsParse `parseAp` manysSep semi parseValdef
+---
+>     DeclsParse `parseAp` manySep semi parseValdef
+104,112c108
+< parseDecls = DeclsParse `parseAp` (manysSep semi parseDecl)
+< 
+< parseDecl =
+<     parseVarsType
+<         `orelse`
+<     parseValdef
+<         `orelse`			-- added in H98
+<     DeclFixity `parseAp` parseFixDecl	-- added in H98
+< 
+---
+> parseDecls = DeclsParse `parseAp` (manySep semi parseDecl)
+141c137
+<                                         `ap` somesSep semi parseStmt
+---
+>                                         `ap` someSep semi parseStmt
+147c143
+<                                         `ap` (somesSep semi (parseAlt rarrow)) 
+---
+>                                         `ap` (someSep semi (parseAlt rarrow)) 
+172,174c168,169
+< 			--		`orelse`		-- H98 removes
+< 			--	   parse (FieldPun pos ident)	-- H98 removes
+<                  )
+---
+> 					`orelse`
+> 				   parse (FieldPun pos ident))
+186c181
+<     mkExpListComp pos `parseChk` pipe `ap` somesSep comma parseQual `chk` rbrack
+---
+>     mkExpListComp pos `parseChk` pipe `ap` someSep comma parseQual `chk` rbrack
+238,239d232
+<     mkPatNplusK `parseAp` varid `chk` literal (L_AVAROP t_nplusk) `ap` integer
+<         `orelse`
+255,257c248,249
+< 			--		`orelse`		-- H98 removes
+< 			--	   parse (FieldPun pos ident)	-- H98 removes
+<                  )
+---
+> 					`orelse`
+> 				   parse (FieldPun pos ident))
+diff --exclude=*.hi ./Parse2.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Parse2.hs
+2c2
+<              ,parseFixDecl,parseImpDecls, parseInst, parseSimple, parseType
+---
+>              ,parseImpDecls, parseInst, parseSimple, parseType
+27c27
+<     manysSep semi parseImpDecl
+---
+>     manySep semi parseImpDecl
+30,31d29
+<     Importas `parseChk` lit L_import `ap` aconid `chk` k_as `ap` aconid `ap` parseImpSpec -- added in H98
+< 	`orelse`
+34c32
+<     ImportQas `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `chk` k_as `ap` aconid `ap` parseImpSpec -- No longer FAKE
+---
+>     ImportQas `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `chk` k_as `ap` aconid `chk` parseImpSpec -- FAKE
+36c34
+<     ImportQ `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `ap` parseImpSpec -- FAKE
+---
+>     ImportQ `parseChk` lit L_import `chk` lit L_qualified `ap` aconid `chk` parseImpSpec -- FAKE
+65c63
+<     manysSep semi parseFixDecl
+---
+>     manySep semi parseFixDecl
+118c116
+<     lpar `revChk` manySep comma parseContext `chk` rpar `chk` impl
+---
+>     lpar `revChk` someSep comma parseContext `chk` rpar `chk` impl
+131,147c129,131
+< 	(k_forall `revChk` some varid `into` \ free -> k_dot `revChk` parseConstr' free)
+< 	  `orelse`
+< 	parseConstr' []
+< 
+< parseConstr' free =
+<     (\a (pos,op) b -> (if null free 
+< 		       then Constr pos op [a,b]
+< 		       else ConstrCtx free [] pos op [a,b]))
+< 			 `parseAp` parseOneFieldType `ap` conop `ap` parseOneFieldType
+<         `orelse`
+<     (\ctxs (pos,op) a ->
+< 	case ctxs of
+< 	   [] ->  (if null free 
+< 		   then Constr            pos op (concat a)
+< 		   else ConstrCtx free [] pos op (concat a))
+<            _  ->  ConstrCtx free ctxs pos op (concat a)) `parseAp` parseContexts 
+<  				                         `ap` conid `ap` many parseManyFieldType
+---
+>     (\a (pos,op) b -> Constr pos op [a,b]) `parseAp` parseOneFieldType `ap` conop `ap` parseOneFieldType
+>         `orelse`
+>     (\ (pos,op) a ->  Constr pos op (concat a)) `parseAp` conid `ap` many parseManyFieldType
+156c140
+<      lcurl `into` (\ _ -> manySep comma parseManyFieldType' `chk` rcurl)  -- { v1,...,v2::typeN , ...  w1,...,wN::typeN } 
+---
+>      lcurl `into` (\ _ -> someSep comma parseManyFieldType' `chk` rcurl)  -- { v1,...,v2::typeN , ...  w1,...,wN::typeN } 
+diff --exclude=*.hi ./ParseCore.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/ParseCore.hs
+16,21d15
+< #if defined(__HASKELL98__)
+< #define EVAL(b)
+< #else
+< #define EVAL(b) (Eval b) =>
+< #endif
+< 
+50c44
+< ap :: EVAL(b)  Parser (a->b) i c -> Parser a i c -> Parser b i c
+---
+> ap :: (Eval b) => Parser (a->b) i c -> Parser a i c -> Parser b i c
+diff --exclude=*.hi ./ParseLex.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/ParseLex.hs
+7c7
+< import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple,tforall,tdot)
+---
+> import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple)
+44,45d43
+< k_forall = lvarid tforall "forall"
+< k_dot = lvarop tdot "dot"
+diff --exclude=*.hi ./ParseLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/ParseLib.hs
+18d17
+<                ,manysSep,somesSep               -- Zero/one or more items with one or more separators. Cut after each item.
+24,25c23
+< import Lexical(PosToken(..),lexicalCont,PosTokenPre(..),LexState(..))
+< import PackedString(PackedString)
+---
+> import Lexical(PosToken(..),lexicalCont,PosTokenPre(..),LexState(..),PackedString)
+35,42c33
+< #if defined(__HASKELL98__)
+< #define EVAL(b)
+< #else
+< #define EVAL(b) (Eval b) =>
+< #endif
+< 
+< 
+< revAp :: EVAL(b)  Parser a i c -> Parser (a->b) i c -> Parser b i c
+---
+> revAp :: (Eval b) => Parser a i c -> Parser (a->b) i c -> Parser b i c
+93c84
+< parseAp :: EVAL(b)  (a->b) -> Parser a i c -> Parser b i c
+---
+> parseAp :: (Eval b) => (a->b) -> Parser a i c -> Parser b i c
+101c92
+< apCut :: EVAL(b)  Parser (a->b) i c -> Parser a i c -> Parser b i c
+---
+> apCut :: (Eval b) => Parser (a->b) i c -> Parser a i c -> Parser b i c
+132,138d122
+< someSep s p = (:) `parseAp` p `apCut` manySep' s p
+< 
+< manysSep' s p = many s `revChk` somesSep s p
+<                   `orelse`
+<                 parse []
+< manysSep s p = somesSep s p `orelse` parse []
+< somesSep s p = (:) `parseAp` p `apCut` manysSep' s p
+139a124
+> someSep s p = (:) `parseAp` p `apCut` manySep' s p
+diff --exclude=*.hi ./PreImport.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/PreImport.hs
+5,6c5
+< import TokenId(TokenId(..),tPrelude,t_Arrow,ensureM,forceM,dropM,
+<                rpsPrelude,rpsBinary,t_List)
+---
+> import TokenId(TokenId(..),tPrelude, t_Arrow, ensureM,forceM,dropM,rpsPrelude,rpsBinary,t_List)
+28,30c27,29
+< 	Nothing -> [q]
+< 	Just ts -> map (\t'-> Qualified t' t2) ts
+<   qualRename' t v = [v]
+---
+> 	Nothing -> q
+> 	Just t' -> Qualified t' t2
+>   qualRename' t v = v
+33a33,34
+>   qualR (ImportQ   _)                     t = t
+>   qualR (ImportQas (pos,Visible tid) (pos',Visible tid')) t = addAT t sndOf tid' tid
+35,37d35
+<   qualR (ImportQ   _ _)                   t = t
+<   qualR (ImportQas (pos,Visible tid) (pos',Visible tid') _) t = addAT t (++) tid' [tid]
+<   qualR (Importas  (pos,Visible tid) (pos',Visible tid') _) t = addAT t (++) tid' [tid]
+40c38
+< ---- ===================================
+---
+> ----===================================
+63,66c61,63
+< --  [] -> case checkForMultipleImport impdecls2 of	-- removed in H98
+< --          err@(_:_) -> Left (unlines err)		-- removed in H98
+< --          [] ->  Right (map finalTouch impdecls2)	-- removed in H98
+<     [] ->  Right (map finalTouch impdecls2)
+---
+>     [] -> case checkForMultipleImport impdecls2 of
+> 	   err@(_:_) -> Left (unlines err)
+> 	   [] ->  Right (map finalTouch impdecls2)
+70,75c67
+<   impdecls2 =  (sortImport . traverse initAT False)
+<                      (ImportQ (noPos,tPrelude) (Hiding []) :
+<                         ImportQ (noPos,Visible rpsBinary) (Hiding []) :
+<                           ImportQ (noPos,vis "PrelRatio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityVar noPos (vis "%")]) :
+<                             impdecls)
+<   vis = Visible . packString . reverse
+---
+>   impdecls2 =  (sortImport . traverse initAT False) (ImportQ (noPos,tPrelude) : ImportQ (noPos,Visible rpsBinary) : impdecls)
+99,105c91,94
+<   extractImp prel (ImportQ  (pos,tid) impspec)  = (prel,tid,(False,Just [], [(pos,extractSpec impspec)]))
+<   extractImp prel (ImportQas (pos,tid) (apos,atid) impspec) =
+<                                                   (prel,tid,(False,Just [atid],[(pos,extractSpec impspec)]))
+<   extractImp prel (Import (pos,tid) impspec)    = (prel || tid == tPrelude
+< 						      ,tid,(True, Nothing, [(pos,extractSpec impspec)]))
+<   extractImp prel (Importas (pos,tid) (apos,atid) impspec) =
+<                                                   (prel,tid,(True,Just [atid],[(pos,extractSpec impspec)]))
+---
+>   extractImp prel (ImportQ  (pos,tid))              = (prel,tid,(False,Just [],    []))
+>   extractImp prel (ImportQas (pos,tid) (apos,atid)) = (prel,tid,(False,Just [atid],[]))
+>   extractImp prel (Import (pos,tid) impspec)        = (prel || tid == tPrelude
+> 						      ,tid,(True, Nothing,    [(pos,extractSpec impspec)]))
+diff --exclude=*.hi ./PrimCode.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/PrimCode.hs
+1c1
+< module PrimCode(primCode{-,rpsEval-},rpsseq) where
+---
+> module PrimCode(primCode,rpsEval,rpsseq) where
+159,162c159,162
+<      -- else if cls == rpsEval then
+<      --   case (evalPrim met) of
+<      --     (Just prim) -> primPrimitive pos prim 2 es
+<      --     _ -> primApp pos fun es
+---
+>         else if cls == rpsEval then
+> 	  case (evalPrim met) of
+> 	    (Just prim) -> primPrimitive pos prim 2 es
+>             _ -> primApp pos fun es
+170,172c170,172
+<   --  (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
+<   --      | modcls == rpsPrelude && cls == rpsEval && met == rpsseq ->
+<   --    primPrimitive pos SEQ 2 (dropDicts es)
+---
+>       (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
+>           | modcls == rpsPrelude && cls == rpsEval && met == rpsseq ->
+> 	  primPrimitive pos SEQ 2 (dropDicts es)
+231c231
+< -- =============================================================
+---
+> --=============================================================
+244c244
+< --rpsEval = impRev "Eval"		-- Removed in Haskell 98
+---
+> rpsEval = impRev "Eval"
+381c381
+< ---- ======================================================
+---
+> ----======================================================
+diff --exclude=*.hi ./Remove1_3.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Remove1_3.hs
+77c77
+<       getIdent (t_zero,Var) >>>= \ zero ->	-- In H98, this is `fail'
+---
+>       getIdent (t_zero,Var) >>>= \ zero ->
+82,83d81
+<           eFail = ExpApplication pos [ExpVar pos zero
+<                                      ,ExpLit pos (LitString Boxed "pattern-match failure in do expression")]
+86,88c84,86
+< 				   ,ExpLambda pos [eX] (ExpCase pos eX [Alt pat               [(eTrue,exp2)]  (DeclsScc [])
+< 								       ,Alt (PatWildcard pos) [(eTrue,eFail)] (DeclsScc [])
+< 								       ])])
+---
+> 				   ,ExpLambda pos [eX] (ExpCase pos eX [Alt pat               [(eTrue,exp2)]            (DeclsScc [])
+> 								     ,Alt (PatWildcard pos) [(eTrue,ExpVar pos zero)] (DeclsScc [])
+> 								    ])])
+173c171
+< 	      ++ " do(es) not belong to constructor " ++ show (tidIS state con) ++ " used at " ++ strPos pos ++ "."
+---
+> 	      ++ " does not belong to constructor " ++ show (tidIS state con) ++ " used at " ++ strPos pos ++ "."
+178c176
+< 	      ++ " do not belong to the same type."
+---
+> 	      ++ " does not belong to the same type."
+183c181
+< 	      ++ " do not belong to the same constructor."
+---
+> 	      ++ " does not belong to the same constructor."
+186,187c184
+<    "The update of the expression at " ++ strPos pos ++ " uses an empty list of fields."
+< 
+---
+>    "The update of the expression at " ++ strPos pos ++ " use an empty list of fields."
+diff --exclude=*.hi ./Rename.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Rename.hs
+9,10c9,10
+< import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
+< import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
+---
+> import IExtract(tvPosTids,freeType,tvTids,countArrows)
+> import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt,t_gtgteq,tEval)
+23,26c23,24
+< import StrSyntax(strConstr)
+< 
+< rename flags mrps qualFun expFun inf topdecls importState overlap =
+<   case is2rs flags mrps qualFun expFun overlap importState of
+---
+> rename flags mrps qualFun expFun inf topdecls importState =
+>   case is2rs flags mrps qualFun expFun importState of
+37c35
+< ---- ===============================
+---
+> ----===============================
+91c89
+< ---- ==============================
+---
+> ----==============================
+95d92
+<      fixdecls = sepFixDecls topdecls'
+100c97
+<      (fixity,state3) = fixFixityRS defFixFun state2 (inf++fixdecls)
+---
+>      (fixity,state3) = fixFixityRS state2 inf
+107,109d103
+< sepFixDecls = concatMap (\decl-> case decl of
+<                                   DeclFixity f -> [f]
+<                                   _ -> [])
+112,113c106
+<     let (fixity3,state4) = fixFixityRS fixity2 state3 (sepFixDecls decls) in
+<     (unitS DeclsParse =>>> mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity3) state4
+---
+>     (unitS DeclsParse =>>> mapS renameDecl decls) (localTid,qualFun,\ _ _ -> IEnone,fixity2) state3
+118c111
+<      defineType tid nt >>>  {- = \d -> -}
+---
+>      defineType tid nt >>>= \d -> 
+120,121c113,114
+<      unitS (DeclIgnore "Type Synonym")
+< --   unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
+---
+> --     unitS (DeclIgnore "Type Synonym")
+>    unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
+125c118
+<   defineDataPrim tid (NewType [] [] [] [NTcons i []]) size >>>= \ d ->
+---
+>   defineDataPrim tid (NewType [] [] [NTcons i []]) size >>>= \ d ->
+131c124
+<      transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free [] ctxs nts) ->
+---
+>      transTypes al free ctxs (map (uncurry TypeVar) tvs ++ [TypeCons pos tid (map (uncurry TypeVar) tvs)]) >>>= \ nt@(NewType free ctxs nts) ->
+135c128
+<         renamePosIdents TCon ({-(pos,tEval):-}posidents) >>>= \ posis ->
+---
+>         renamePosIdents TCon ((pos,tEval):posidents) >>>= \ posis ->
+188d180
+< renameDecl d@(DeclFixity f) = unitS (DeclIgnore "fixity")
+192c184
+< ---- ========================
+---
+> ----========================
+206c198
+<           nt = NewType free [] ({-ctx:-}ctxs) [anyNT [head free] typ]   -- The class context is not included in the type
+---
+>           nt = NewType free ({-ctx:-}ctxs) [anyNT [head free] typ]   -- The class context is not included in the type
+235c227
+< ---- =========================
+---
+> ----=========================
+292,309c284,288
+< renameConstr typtid al free ctxs resType@(NTcons bt _) c@(Constr pos tid fieldtypes) =
+<   let e =  [] -- no forall if Constr is used
+<       es = zip e [1 + length al .. ]
+<   in
+<     mapS (transFieldType (es++al)) fieldtypes >>>= \ntss ->
+<     let all = concat ntss
+< 	nts = map snd all
+< 	ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+< 	exist = map snd es
+<     in
+<       defineConstr tid (NewType (map snd al ++ exist) exist ctxs (nts++[resType])) ifs bt >>>= \ c ->
+<       mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
+<       unitS (c,null nts,map dropJust (filter isJust fs))
+< 
+< renameConstr typtid al free ctxs resType@(NTcons bt _) (ConstrCtx forall ectxs' pos tid fieldtypes) =
+<   let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
+<       e =  map snd forall -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ concat $ map (freeType . snd) fieldtypes
+<       es = zip e [1 + length al .. ]
+---
+> renameConstr typtid al free ctxs resType@(NTcons bt _) (Constr pos tid fieldtypes) =
+>   mapS (transFieldType al) fieldtypes >>>= \ntss ->
+>   let all = concat ntss
+>       nts = map snd all
+>       ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+311,321c290,292
+<     mapS (transFieldType (es++al)) fieldtypes >>>= \ntss ->
+<     let all = concat ntss
+<         nts = map snd all
+<         ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+< 	exist = map snd es
+<     in
+<       mapS (transContext (es++al)) ectxs' >>>= \ ectxs ->
+<       defineConstr tid (NewType (map snd al ++ exist) exist ctxs  (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) ifs bt >>>= \ c ->
+<       mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
+<       unitS (c,null nts,map dropJust (filter isJust fs))
+< 
+---
+>     defineConstr tid (NewType free ctxs (nts++[resType])) ifs bt >>>= \ c ->
+>     mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
+>     unitS (c,null nts,map dropJust (filter isJust fs))
+330c301
+< --renameField (FieldPun pos tid) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid) -- H98 removes
+---
+> renameField (FieldPun pos tid) = unitS (FieldExp pos) =>>> uniqueTid pos Field tid =>>> (unitS (ExpVar pos) =>>> uniqueTid pos Var tid)
+375,376c346,347
+< --renameExp (ExpTuple         pos exps)  =
+< --    unitS (ExpTuple pos) =>>> mapS renameExp exps
+---
+> -- renameExp (ExpTuple         pos exps)  =
+> --     unitS (ExpTuple pos) =>>> mapS renameExp exps
+386,398d356
+< renameExp (PatNplusK        pos tid _ k _ _) =
+<     bindNK pos >>>= \ tid' ->
+<     let leq = ExpVar pos t_lessequal
+<         sub = ExpVar pos t_subtract
+<         n'  = ExpVar pos tid'
+<         n   = ExpVar pos tid 
+<     in
+<     unitS (PatNplusK pos) =>>>
+<       uniqueTid pos Var tid =>>>
+<       uniqueTid pos Var tid' =>>>
+<       renameExp k =>>>
+<       renameExp (ExpApplication pos [leq,k,n']) =>>>
+<       renameExp (ExpApplication pos [sub,k,n'])
+403c361
+< ----- ===================
+---
+> -----===================
+413c371
+<       nt = NewType free [] ctxsNT [NTcons ti (map NTvar free)]
+---
+>       nt = NewType free ctxsNT [NTcons ti (map NTvar free)]
+469c427
+< ------ ===================
+---
+> ------===================
+diff --exclude=*.hi ./RenameLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/RenameLib.hs
+27d26
+< import Overlap		-- added in H98
+64c63
+< 				  Nothing -> (updateAT st u (updNewType False), ("Newtype " ++ (show . tidI . dropJust . lookupAT st) u ++ " is circular.") : err)
+---
+> 				  Nothing -> (updateAT st u (updNewType False), ("Newtype " ++ (show . tidI . dropJust . lookupAT st) u ++ " is circulare.") : err)
+76c75
+<       (NewType _ [] _ [nt]) ->
+---
+>       (NewType _ _ [nt]) ->
+97c96
+< 		(NewType free [] ctx [NTcons u' _]) ->
+---
+> 		(NewType free ctx [NTcons u' _]) ->
+102,109c101
+< 		Nothing -> -- error ("nhc98 needs a fix here, but I don't know how")
+<                   case constrsI info of
+<                     (coni:_) ->
+<                       case (ntI . dropJust . lookupAT st) coni of
+<                         (NewType _ _ _ [NTcons u' _,_]) ->
+<                           isUnBoxedNT st nt (u:ac) u'
+<                         _ -> error ("when renaming: newtype of imported newtype")
+<                     [] -> error ("when renaming: newtype of imported newtype without constructor")
+---
+> 		Nothing -> error ("nhc13 needs a fix here, but I don't know how")
+111c103
+<   isUnBoxedTS st u = -- Not circular dependency when this function is called
+---
+>   isUnBoxedTS st u = -- Not circulare dependency when this function is called
+119c111
+< 	      (NewType free [] ctx [NTcons u' _]) ->
+---
+> 	      (NewType free ctx [NTcons u' _]) ->
+132c124
+< 	      (NewType _ [] _ [nt]) ->
+---
+> 	      (NewType _ _ [nt]) ->
+138c130
+<   	            (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
+---
+>   	            (NewType _ _ [NTcons c _,res]) -> (synType,(u,c):newType)
+141,142c133,134
+<   err2 ts (Rec [x]) = "Circular type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
+<   err2 ts (Rec (x:xs)) = "Circular dependency between the type synonyms "
+---
+>   err2 ts (Rec [x]) = "Circulare type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
+>   err2 ts (Rec (x:xs)) = "Circulare dependency between the type synonyms "
+153,162c145,148
+< is2rs flags mrps qualFun expFun overlap (ImportState visible unique orps rps needI irt st insts fixity errors) =
+< --case treeMapList undef irt of
+< --  [] ->
+< --    case foldls reorderFun (treeMap ( \ (k,Right (v:_)) -> (k,v)) irt,addAT initAT ignore unique minfo) (listAT st) of
+< --      (rt,ts) ->
+< --          Right (qualFun,expFun True True,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] Nothing errors [],irt)
+< --  xs -> Left (map err1 xs)
+<   case deAlias qualFun overlap irt of
+<     ([],qf) ->
+<       case foldls reorderFun (treeMap deRight irt,addAT initAT ignore unique minfo) (listAT st) of
+---
+> is2rs flags mrps qualFun expFun (ImportState visible unique orps rps needI irt st insts fixity errors) =
+>   case treeMapList undef irt of
+>     [] ->
+>       case foldls reorderFun (treeMap ( \ (k,Right (v:_)) -> (k,v)) irt,addAT initAT ignore unique minfo) (listAT st) of
+164,165c150,151
+<             Right (qf,expFun True True,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] Nothing errors [],irt)
+<     (xs,_) -> Left xs
+---
+> 	      Right (qualFun,expFun True True,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] Nothing errors [],irt)
+>     xs -> Left (map err1 xs)
+167,168d152
+<   deRight (k,Right (v:_)) = (k,v)
+<   deRight (k,Left _)      = (k,error ("Tripped over aliased identifier"))
+181c165
+<   ignore a b = b  -- Happens due to mutally recursive modules
+---
+>   ignore a b = b  -- Happens due to mutaly recursive modules
+183,203c167,177
+< --  undef (key,Left poss) err = Left (key,poss) : err
+< --  undef (key,Right [x]) err = err
+< --  undef (key,Right (x:xs)) err =
+< --	if all (x==) xs then  --- Tuples are entered twice
+< --	    err
+< --	else
+< --	  Right (key,x:xs) : err
+< --
+< --  err1 (Left ((tid,Method),poss)) = "The identifier " ++ show tid ++ " instantiated at " ++ mix "," (map strPos poss) ++ " does not belong to this class."
+< --  err1 (Left ((tid,kind),poss)) = show kind ++ ' ':show tid ++ " used at " ++ mix "," (map strPos poss) ++ " is not defined."
+< --  err1 (Right ((tid,kind),xs)) = show kind ++ ' ':show tid ++ " defined " ++ show (length xs) ++ " times."
+< 
+< 
+< --fixFixityRS ::
+< --    RenameState ->
+< --    [(InfixClass TokenId, Int, [FixId TokenId])] ->
+< --    (TokenId -> (InfixClass TokenId, Int), RenameState)
+< --
+< --fixFixityRS (RenameState flags unique  irps@(_,rps) rts rt st derived defaults errors needCheck) fixdecls =
+< -- case foldr (fixOne rps) (initAT,[]) fixdecls of
+< --  (fixAT,err) -> (fixFun fixAT,RenameState flags unique  irps rts rt st derived defaults (err++errors) needCheck)
+---
+>   undef (key,Left poss) err = Left (key,poss) : err
+>   undef (key,Right [x]) err = err
+>   undef (key,Right (x:xs)) err =
+> 	if all (x==) xs then  --- Tuples are entered twice
+> 	    err
+> 	else
+> 	  Right (key,x:xs) : err
+> 
+>   err1 (Left ((tid,Method),poss)) = "The identifier " ++ show tid ++ " instantiated at " ++ mix "," (map strPos poss) ++ " does not belong to this class."
+>   err1 (Left ((tid,kind),poss)) = show kind ++ ' ':show tid ++ " used at " ++ mix "," (map strPos poss) ++ " is not defined."
+>   err1 (Right ((tid,kind),xs)) = show kind ++ ' ':show tid ++ " defined " ++ show (length xs) ++ " times."
+205d178
+< -- Changed in H98 to:
+207d179
+<     (TokenId -> (InfixClass TokenId, Int)) ->
+212,213c184
+< fixFixityRS oldfix rs [] = (oldfix,rs)
+< fixFixityRS oldfix (RenameState flags unique  irps@(_,rps) rts rt st derived defaults errors needCheck) fixdecls =
+---
+> fixFixityRS (RenameState flags unique  irps@(_,rps) rts rt st derived defaults errors needCheck) fixdecls =
+215c186
+<   (fixAT,err) -> (fixFun fixAT oldfix,RenameState flags unique  irps rts rt st derived defaults (err++errors) needCheck)
+---
+>   (fixAT,err) -> (fixFun fixAT,RenameState flags unique  irps rts rt st derived defaults (err++errors) needCheck)
+289,313d259
+< bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
+<   let tid = visible (show unique)
+<       key = (tid,Var)
+<   in if sNplusK flags then
+<        case lookupAll (rt:rts) key of
+<          Nothing-> (tid, RenameState flags (unique+1) irps rts
+< 					(addAT rt sndOf key unique)
+<                                         st
+< 					-- (addAT st (\a b->b) unique (InfoUsed unique [(Var,tid,rps,pos)]))
+< 					-- (addAT st (\a b->b) unique (InfoName unique tid 0 tid))
+< 					-- (addAT st (\a b->b) unique (InfoVar unique tid (InfixDef,9) IEall (NewType [] [] [] [NTany 0]) (Just 0)))
+<                                         derived defaults
+<                                         errors
+< 					needCheck)
+<          Just u -> (tid, RenameState flags (unique+1) irps rts
+< 					(addAT rt sndOf key unique)
+< 					st derived defaults
+<                                         (("Binding (n+k) pattern to new unique identifier at "++strPos pos): errors)
+< 					needCheck)
+<      else (tid, RenameState flags (unique+1) irps rts
+< 					(addAT rt sndOf key unique)
+< 					st derived defaults
+<                                         (("(n+k) patterns are disabled - pattern at "++strPos pos): errors)
+< 					needCheck)
+< 
+322c268
+< ---- =================
+---
+> ----=================
+325c271
+<   unitS (NewType free []) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+---
+>   unitS (NewType free) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+342c288
+< ----- ==================================
+---
+> -----==================================
+360c306
+<        Just u -> RenameState flags unique irps rts rt
+---
+>        Just u -> (u, RenameState flags unique irps rts rt
+362c308
+< 			 derived defaults errors (u:needCheck)
+---
+> 			 derived defaults errors (u:needCheck))
+411c357
+<   checkMNT c nt@(NewType free@(cv:_) [] ctxs nts) =
+---
+>   checkMNT c nt@(NewType free@(cv:_) ctxs nts) =
+diff --exclude=*.hi ./STGState.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/STGState.hs
+69c69
+<    strace ("nhc98 is in deep trouble and might produce faulty code for "++show i++" \n  fun= " ++ show fun ++ "  e = " ++ show e ++ "\n") $ up
+---
+>    strace ("nhc13 is in deep trouble and might produce faulty code for "++show i++" \n  fun= " ++ show fun ++ "  e = " ++ show e ++ "\n") $ up
+diff --exclude=*.hi ./SccModule.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/SccModule.hs
+62d61
+< map_sDecl (DeclFixity f: r)   = map_sDecl r
+145d143
+< sExp (PatNplusK pos n n' k le nk)= sUnit (PatNplusK pos) `sAdd` sId n `sAdd` sId n' `sAdd` sExp k `sAdd` sExp le `sAdd` sExp nk
+diff --exclude=*.hi ./State.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/State.hs
+5,10d4
+< #if defined(__HASKELL98__)
+< #define  EVAL(b)
+< #else
+< #define  EVAL(b) (Eval b) =>
+< #endif
+< 
+28c22
+< (=>>>) :: EVAL(b)  State d s (a->b) s' -> State d s' a s'' -> State d s b s''
+---
+> (=>>>) :: (Eval b) => State d s (a->b) s' -> State d s' a s'' -> State d s b s''
+diff --exclude=*.hi ./StrSyntax.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/StrSyntax.hs
+8d7
+< import PackedString()
+80,83d78
+< strConstr d p (ConstrCtx [] ctxs pos c cs) =
+<         strContexts d p ctxs ++ (pStd p) c ++ " " ++ mixSpace (map (strFieldType d p) cs)
+< strConstr d p (ConstrCtx forall ctxs pos c cs) =
+<         "forall " ++ mixSpace (map (show . snd) forall) ++ "." ++ strContexts d p ctxs ++ (pStd p) c ++ " " ++ mixSpace (map (strFieldType d p) cs)
+diff --exclude=*.hi ./Syntax.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Syntax.hs
+1c1
+< module Syntax(module Syntax, Pos(..){-,PackedString-},TokenId) where
+---
+> module Syntax(module Syntax, Pos(..),PackedString,TokenId) where
+17c17
+< --     import modid (import,..) ?as modid? ?hiding (import,..)?
+---
+> --     import modid ?hiding(import,..)
+19,21c19,20
+<      | ImportQ   (Pos,id) (ImpSpec id)
+<      | ImportQas (Pos,id) (Pos,id) (ImpSpec id)
+<      | Importas  (Pos,id) (Pos,id) (ImpSpec id)
+---
+>      | ImportQ   (Pos,id)
+>      | ImportQas (Pos,id) (Pos,id)
+89d87
+<      | DeclPrimitive Pos id Int (Type id)
+90a89
+>      | DeclPrimitive Pos id Int (Type id)
+99,100d97
+< --     infix[rl] int id,..,id
+<      | DeclFixity (FixDecl id)
+112d108
+< --                 lhs pats, guarded exprs,   local defs  ???
+129,133c125
+< -- ConstrCtx is always used if forall is specified
+< -- the intention is to remove Constr completely when all of nhc13 have been updated 
+< --                          forall      context     constructor   argumentlist with fields if any
+< data Constr id = Constr                             Pos id        [(Maybe [(Pos,id)],Type id)]
+<                | ConstrCtx  [(Pos,id)] [Context id] Pos id        [(Maybe [(Pos,id)],Type id)]
+---
+> data Constr id = Constr Pos id [(Maybe [(Pos,id)],Type id)]
+145,148c137,140
+<     | ExpLambda         Pos [(Pat id)] (Exp id)  -- \ pat ... pat -> exp
+<     | ExpLet            Pos (Decls id) (Exp id)  -- let { decls ; } in exp
+<     | ExpDo             Pos [Stmt id]            -- do { stmts ; }
+<     | ExpCase           Pos (Exp id) [Alt id]    -- case exp of { alts; }
+---
+>     | ExpLambda         Pos [(Pat id)] (Exp id)           		-- \ pat ... pat -> exp
+>     | ExpLet            Pos (Decls id) (Exp id)                      		-- let { decls ; } in exp
+>     | ExpDo             Pos [Stmt id]                           		-- do { stmts ; }
+>     | ExpCase           Pos (Exp id) [Alt id]             		-- case exp of { alts; }
+169,170d160
+< -- (n+k) pattern - store:   n  n' (k<=n')  (n'-k)
+<     | PatNplusK		Pos id id (Exp id) (Exp id) (Exp id)
+173c163
+<           --  | FieldPun  Pos id	-- H98 removes
+---
+>               | FieldPun  Pos id
+diff --exclude=*.hi ./SyntaxPos.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/SyntaxPos.hs
+108d107
+< getPosExp (PatNplusK            pos _ _ _ _ _) = pos
+diff --exclude=*.hi ./SyntaxUtil.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/SyntaxUtil.hs
+2c2
+< 	, isExpInt, isExpIrr, isExpVar, isVar, isNK
+---
+> 	, isExpInt, isExpIrr, isExpVar, isVar
+21,22d20
+< isNK (PatNplusK _ _ _ _ _ _) = True
+< isNK _ = False
+diff --exclude=*.hi ./TokenId.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TokenId.hs
+1c1
+< module TokenId(module TokenId {-,PackedString-}) where
+---
+> module TokenId(module TokenId, PackedString) where
+76d75
+< qualImpRat = Qualified rpsRatio   . packString . reverse
+81d79
+< rpsRatio        = (packString . reverse ) "PrelRatio"
+99,100d96
+< tforall	 	= visImpRev "forall"
+< tdot	 	= visImpRev "."        -- an unqualified dot, used in types, e.g., "forall a . [a]"
+107c103
+< t_zero	        = qualImpRev  "fail"
+---
+> t_zero	        = qualImpRev  "zero"
+137,141c133,137
+< t_equalstring	= qualImpRev  "_equalstring"
+< t_guardstring	= qualImpRev  "_guardstring"
+< t_fail		= qualImpRev  "_fail"
+< t_fatbar	= qualImpRev  "_fatbar"
+< t_select	= qualImpRev  "_select"
+---
+> t_equalstring	 = qualImpRev  "_equalstring"
+> t_guardstring	 = qualImpRev  "_guardstring"
+> t_fail		 = qualImpRev  "_fail"
+> t_fatbar	 = qualImpRev  "_fatbar"
+> t_select	 = qualImpRev  "_select"
+144,149c140,145
+< tDialogue       = qualImpRev  "Dialogue"
+< t_apply1        = qualImpRev  "_apply1"
+< t_apply2        = qualImpRev  "_apply2"
+< t_apply3        = qualImpRev  "_apply3"
+< t_apply4        = qualImpRev  "_apply4"
+< t_used          = qualImpRev  "used!"
+---
+> tDialogue      = qualImpRev  "Dialogue"
+> t_apply1         = qualImpRev  "_apply1"
+> t_apply2         = qualImpRev  "_apply2"
+> t_apply3         = qualImpRev  "_apply3"
+> t_apply4         = qualImpRev  "_apply4"
+> t_used           = qualImpRev  "used!"
+154,156c150,152
+< t_equalinteger	= qualImpRev  "_equalinteger"
+< t_guardinteger	= qualImpRev  "_guardinteger"
+< t_nopos 	= qualImpRev  "<no pos>"
+---
+> t_equalinteger	 = qualImpRev  "_equalinteger"
+> t_guardinteger	 = qualImpRev  "_guardinteger"
+> t_nopos 	 = qualImpRev  "<no pos>"
+159c155
+< --tEval           = qualImpRev  "Eval"		-- Removed in Haskell 98
+---
+> tEval           = qualImpRev  "Eval"
+165a162
+> --tBinary         = qualImpRev  "Binary"
+175d171
+< t_greater       = qualImpRev  ">"
+216,221c212,217
+< tRational       = qualImpRat  "Rational"	-- Changed in Haskell 98
+< tRatio          = qualImpRat  "Ratio"		-- Changed in Haskell 98
+< tRatioCon       = qualImpRat  ":%"		-- Changed in Haskell 98
+< tPRIMITIVE      = visImpRev "PRIMITIVE"
+< tNEED           = visImpRev "NEED"
+< t_primitive     = visImpRev "primitive"
+---
+> tRational       = qualImpRev  "Rational"
+> tRatio          = qualImpRev  "Ratio"
+> tRatioCon       = qualImpRev  ":%"
+> tPRIMITIVE      = visImpRev  "PRIMITIVE"
+> tNEED           = visImpRev  "NEED"
+> t_primitive     = visImpRev  "primitive"
+223,226c219,222
+< t_eqInteger     = qualImpRev  "_eqInteger"
+< t_eqDouble      = qualImpRev  "_eqDouble"
+< t_eqFloat       = qualImpRev  "_eqFloat"
+< t_otherwise	= qualImpRev  "otherwise"
+---
+> t_eqInteger     = qualImpRev "_eqInteger"
+> t_eqDouble      = qualImpRev "_eqDouble"
+> t_eqFloat       = qualImpRev "_eqFloat"
+> t_otherwise	= qualImpRev "otherwise"
+229,239c225,235
+< tBinary		= qualImpBin  "Binary"
+< t_put	        = qualImpBin  "put"
+< t_get           = qualImpBin  "get"
+< t_getF          = qualImpBin  "getF"
+< t_sizeOf        = qualImpBin  "sizeOf"
+< t_putBits       = qualImpBin  "putBits"
+< t_getBits       = qualImpBin  "getBits"
+< t_getBitsF      = qualImpBin  "getBitsF"
+< t_ltlt          = qualImpBin  "<<"
+< t_return        = qualImpRev  "return"
+< t_plus          = qualImpRev  "+"
+---
+> tBinary		= qualImpBin "Binary"
+> t_put	        = qualImpBin "put"
+> t_get           = qualImpBin "get"
+> t_getF          = qualImpBin "getF"
+> t_sizeOf        = qualImpBin "sizeOf"
+> t_putBits       = qualImpBin "putBits"
+> t_getBits       = qualImpBin "getBits"
+> t_getBitsF      = qualImpBin "getBitsF"
+> t_ltlt          = qualImpBin "<<"
+> t_return        = qualImpRev "return"
+> t_plus          = qualImpRev "+"
+241,242d236
+< t_nplusk        = visImpRev "+"
+< t_subtract      = qualImpRev  "subtract"
+diff --exclude=*.hi ./TokenInt.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TokenInt.hs
+21c21
+<                 ++ tokenBinary ++ tokenNplusK)		--MALCOLM modified
+---
+>                 ++ tokenBinary)		--MALCOLM modified
+54c54
+< tokenEval =	[(Var,tseq)]  -- seq is now standalone, without class Eval
+---
+> tokenEval =	[(TClass,tEval),(Var,tseq)]  -- seq is needed so that Eval doesn't get imported abstractly
+62c62
+< 		,(Var,treadsPrec),(Var,treadParen),(Var,t_append),(Var,t_greater)
+---
+> 		,(Var,treadsPrec),(Var,treadParen),(Var,t_append),(Var,t_lessequal)
+73d72
+< tokenNplusK = 	[(Var,t_lessequal),(Var,t_subtract)]
+diff --exclude=*.hi ./Type.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/Type.hs
+1c1
+< module Type(typeTopDecls,bindType) where
+---
+> module Type(typeTopDecls) where
+29,31d28
+< --import PPSyntax		-- just for debugging
+< --import StrSyntax	-- just for debugging
+< 
+35c32
+< 	  Nothing -> [tidFun (tInteger,TCon),tidFun (tDouble,TCon)]
+---
+> 	  Nothing -> [tidFun (tInt,TCon),tidFun (tDouble,TCon)]
+53c50
+< 	     (map (buildCtx state noPos (map (mapFst (mapSnd NTvar)) ctxsi) . ( \ cls -> TypeDict cls (NTcons typ (map NTvar free)) [(0,pos)])) sc) ms
+---
+> 	     (map (buildCtx state noPos ctxsi . ( \ cls -> TypeDict cls (NTcons typ (map NTvar free)) [(0,pos)])) sc) ms
+58,59c55,56
+<      case mapS typeDepend xs (TypeDown initEnv tidFun defaults [] [] dbgtrans) (TypeState state idSubst initCtxs []) of
+< 	(xs,TypeState state phi ctxs ectxsi) -> (DeclsScc (concat xs),state)
+---
+>      case mapS typeDepend xs (TypeDown initEnv tidFun defaults [] [] dbgtrans) (TypeState state idSubst initCtxs) of
+> 	(xs,TypeState state phi ctxs) -> (DeclsScc (concat xs),state)
+77c74
+< --- ======== The hairy part
+---
+> ---======== The hairy part
+79c76
+< typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(TypeState state phi inCtxs ectxsi) = 
+---
+> typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(TypeState state phi inCtxs) = 
+81d77
+<       trueExp :: Exp Int
+84d79
+<       nextTvar :: Int
+87,89c82,83
+<       envHere :: [(Int, NT)]
+<       (envHere,up'@(TypeState state' phi' ctxs' ectxsi')) =
+< 		envDecls decls () (TypeState state phi initCtxs [])
+---
+>       (envHere,up'@(TypeState state' phi' ctxs')) =
+> 		envDecls decls () (TypeState state phi initCtxs)
+91,92c85
+<       decls' :: [Decl Int]
+<       (decls',up''@(TypeState state'' phi'' ctxs'' existCtxsi)) =
+---
+>       (decls',up''@(TypeState state'' phi'' ctxs'')) =
+95d87
+<       phiEnv :: [(Int,NT)]
+97d88
+<       phiEnvHere :: [(Int,NT)]
+99d89
+<       phiCtxs :: [TypeDict]
+102d91
+<       globalTVars :: [Int]
+105d93
+<       uniqueCtxs :: [TypeDict]
+111,117c99,100
+<       existCtxs :: [(Int,NT)]
+<       existCtxs = map fst existCtxsi
+< 
+<       globalCtxs :: [(Int,NT)]
+<       localCtxs0 :: [(Int,NT)]
+<       (globalCtxs,localCtxs0) =   -- These are the simplified context that are needed
+< 		( partition  ( \ (c,nt) -> stripNT nt `elem` globalTVars)
+---
+>       (globalCtxs,localCtxs) =   -- These are the simplified context that are needed
+> 		( partition  ( \ (c,v) -> v `elem` globalTVars)
+123,126d105
+<       localCtxs :: [(Int,NT)]
+<       localCtxs = filter (`notElem` existCtxs) localCtxs0
+< 
+< 
+129d107
+<       globalCtxsi :: [((Int,NT),Int)]
+132d109
+<       localCtxsi :: [((Int,NT),Int)]
+137,138c114,115
+<       outCtxs :: [TypeDict]
+<       outCtxs = map ( \ ((c,nt),i) -> TypeDict c nt [(i,noPos)]) globalCtxsi
+---
+>       outCtxs = map ( \ ((c,v),i) -> TypeDict c (NTvar v) [(i,noPos)]) globalCtxsi
+> 
+142,144c119
+<       derivedArgs :: [(Int,Exp Int)]
+<       derivedArgs = map ( \ ((c,nt),i) -> (stripNT nt,ExpVar noPos i)) localCtxsi
+<       derivedDict :: [(Int,[Exp Int])]
+---
+>       derivedArgs = map ( \ ((c,v),i) -> (v,ExpVar noPos i)) localCtxsi
+149,150c124
+<       usedCtx :: [(Int,Exp Int)]
+<       usedCtx = concatMap ( \ (TypeDict c nt ips) -> let dict = buildCtx state noPos (existCtxsi++localCtxsi++globalCtxsi) (TypeDict c nt ips)
+---
+>       usedCtx = concatMap ( \ (TypeDict c nt ips) -> let dict = buildCtx state noPos (localCtxsi++globalCtxsi) (TypeDict c nt ips)
+156d129
+<       declsDict :: [Decl Int]
+163,171c136
+< --	strace ("usedCtx = " ++ show (map fst usedCtx)) $
+< --	strace ("globalCtxs = " ++ show globalCtxs) $
+< --	strace ("localCtxs0 = " ++ show localCtxs0) $
+< --	strace ("existCtxs = " ++ show existCtxs) $
+< --	strace ("phi'' = " ++ show phi'') $
+< --	strace ("ctxs'' = " ++ show ctxs'') $
+< --	strace ("phiCtxs = " ++ show phiCtxs) $
+< 
+<      ((declsDict,decls''),TypeState state3 (stripSubst phi'' nextTvar) (outCtxs++inCtxs) existCtxsi)
+---
+>      ((declsDict,decls''),TypeState state3 (stripSubst phi'' nextTvar) (outCtxs++inCtxs))
+176,178d140
+< isExist (NTexist _) = True
+< isExist _           = False
+< 
+180d141
+< bindType :: Decl Int -> ([Int], Exp Int, [((Int, NT), Int)], [(Int, NT)], [Int]) -> IntState -> (Decl Int, IntState)
+192,193c153,154
+< 	      updateIS state ident (newNT (NewType derivedFree [] [] [polyNT derivedFree derivedNT]))
+<             (given@(NewType givenFree [] givenCtx [givenNT]),state) -> 
+---
+> 	      updateIS state ident (newNT (NewType derivedFree [] [polyNT derivedFree derivedNT]))
+>             (given@(NewType givenFree givenCtx [givenNT]),state) -> 
+195c156
+< 	      then addError state ("Derived type " ++ show derivedFree ++ niceNT Nothing state (mkALNT derivedNT) derivedNT ++ " is not an instance of " 
+---
+> 	      then addError state ("Derived type " ++ show derivedFree ++ niceNT state (mkALNT derivedNT) derivedNT ++ " is not an instance of " 
+197c158
+< 				       ++  niceNT Nothing state (mkAL givenFree) givenNT ++ " at " ++ strPos pos)
+---
+> 				       ++  niceNT state (mkAL givenFree) givenNT ++ " at " ++ strPos pos)
+205c166
+<   nt = NewType [1] [] [] [NTvar 1]   -- Used instead of derived type, not sure if it is any idea
+---
+>   nt = NewType [1] [] [NTvar 1]   -- Used instead of derived type, not sure if it is any idea
+215,229c176,182
+< 	  derivedCtxi :: [((Int,NT),Int)]
+< 	  defaultCtxi :: [((Int,NT),Int)]
+< 	  (derivedCtxi,defaultCtxi) = partition ((`elem` derivedFree) . stripNT . snd . fst) localCtxi
+<       in  case filter (isExist . snd . fst) defaultCtxi of
+< 	    [] -> 
+<                case buildDefaults pos defaultCtxi trueExp defaults state of
+< 	         (defaultDecls,state) ->
+< 	            (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) derivedCtxi) (map DeclsNoRec defaultDecls))  funs)
+< 	            ,updateIS state fun (newNT (NewType derivedFree [] (map (mapSnd stripNT . fst) derivedCtxi) [polyNT derivedFree derivedNT]))
+< 	            )
+< 	    er -> (decl
+< 	  	  ,addError state ("Dictionary can not be found for existential types, error detected at " ++ strPos pos)
+< 	  	  )
+< 
+<     (given@(NewType givenFree [] givenCtx [givenNT]),state) -> 
+---
+> 	  (derivedCtxi,defaultCtxi) = partition ((`elem` derivedFree) . snd . fst) localCtxi
+>       in case buildDefaults pos defaultCtxi trueExp defaults state of
+> 	  (defaultDecls,state) ->
+> 	    (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) derivedCtxi) (map DeclsNoRec defaultDecls))  funs)
+> 	    ,updateIS state fun (newNT (NewType derivedFree (map fst derivedCtxi) [polyNT derivedFree derivedNT]))
+> 	    )
+>     (given@(NewType givenFree givenCtx [givenNT]),state) -> 
+236,237c189,190
+<                                        ++ "\nDerived:" ++ niceNT Nothing state (mkALNT derivedNT) derivedNT
+<                                        ++ "\nGiven  :" ++ niceNT Nothing state (mkAL givenFree) givenNT))
+---
+>                                        ++ "\nDerived:" ++ niceNT state (mkALNT derivedNT) derivedNT
+>                                        ++ "\nGiven  :" ++ niceNT state (mkAL givenFree) givenNT))
+261d213
+< 
+266,270d217
+< 		    sameNT (NTany _) v   = NTany v
+< 		    sameNT (NTvar _) v   = NTvar v
+< 		    sameNT (NTexist _) v = NTexist v
+< 
+< 
+273,274c220,221
+<                                  . map ( \ ((c,nt),i) -> case safePhi phis (stripNT nt) of
+< 						          Just v -> Just ((c,sameNT nt v),i)
+---
+>                                  . map ( \ ((c,v),i) -> case safePhi phis v of
+> 						          Just v -> Just ((c,v),i)
+277,278c224
+< 		    (derivedCtxi,defaultCtxi) = partition ((`elem` givenFree) . stripNT . snd . fst) localCtxi'
+< 		    derivedIntPairI = map (mapFst (mapSnd stripNT)) derivedCtxi
+---
+> 		    (derivedCtxi,defaultCtxi) = partition ((`elem` givenFree) . snd . fst) localCtxi'
+282c228
+<                 in case (one2many phis,freebound phis,ctxcheck derivedIntPairI) of
+---
+>                 in case (one2many phis,freebound phis,ctxcheck derivedCtxi) of
+284,285c230
+< 		    let 
+<                         (mGivenCtxi',state2) = (uniqueISs state . zip givenCtx . map (\ cv -> lookup cv derivedIntPairI)) givenCtx
+---
+> 		    let (mGivenCtxi',state2) = (uniqueISs state . zip givenCtx . map (\ cv -> lookup cv derivedCtxi)) givenCtx
+289,299c234,238
+<                     in  case filter (isExist . snd . fst) defaultCtxi of
+< 	               [] -> 
+< 		          case buildDefaults pos defaultCtxi trueExp defaults state2 of
+< 		             (defaultDecls,state3) ->
+< 		               (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) givenCtxi') (map DeclsNoRec defaultDecls))  funs)
+<                                ,state3
+< 		               )
+<  	               er ->
+< 			(decl
+< 			,addError state ("Dictionary can not be found for existential types, error detected at " ++ strPos pos 
+< 					     ++ " (signature given)"))
+---
+> 		    in case buildDefaults pos defaultCtxi trueExp defaults state2 of
+> 		         (defaultDecls,state3) ->
+> 		           (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) givenCtxi') (map DeclsNoRec defaultDecls))  funs)
+>                            ,state3
+> 		           )
+301,302c240,241
+<                     let sOne2Many xs = concatMap ( \ (v,nts) -> "\n    type variable " ++ niceNT Nothing state al (NTvar v) ++ " bound to "
+< 						             ++ mixCommaAnd (map (niceNT Nothing state al) nts)) xs
+---
+>                     let sOne2Many xs = concatMap ( \ (v,nts) -> "\n    type variable " ++ niceNT state al (NTvar v) ++ " bound to "
+> 						             ++ mixCommaAnd (map (niceNT state al) nts)) xs
+304,307c243,246
+<                         sFreeBound [(v,t)] = "\n    given free variable " ++ niceNT Nothing state al (NTvar v)
+<                                               ++ " is bound to " ++ niceNT Nothing state al (head t)
+<                         sFreeBound xs = "\n    given free variables " ++ mixCommaAnd (map (niceNT Nothing state al . NTvar . fst) xs)
+<                                      ++ " are bound to " ++ mixCommaAnd (map (niceNT Nothing state al . head . snd) xs)
+---
+>                         sFreeBound [(v,t)] = "\n    given free variable " ++ niceNT state al (NTvar v)
+>                                               ++ " is bound to " ++ niceNT state al (head t)
+>                         sFreeBound xs = "\n    given free variables " ++ mixCommaAnd (map (niceNT state al . NTvar . fst) xs)
+>                                      ++ " are bound to " ++ mixCommaAnd (map (niceNT state al . head . snd) xs)
+315,316c254,255
+<                                        ++ "\nDerived:" ++ niceCtxs Nothing state al (map fst derivedIntPairI) ++ niceNT Nothing state al derivedNT
+<                                        ++ "\nGiven  :" ++ niceCtxs Nothing state al givenCtx ++ niceNT Nothing state al givenNT))
+---
+>                                        ++ "\nDerived:" ++ niceCtxs state al (map fst derivedCtxi) ++ niceNT state al derivedNT
+>                                        ++ "\nGiven  :" ++ niceCtxs state al givenCtx ++ niceNT state al givenNT))
+330c269
+<   typePat pat        >>>= \(pat,patT,eTVar) ->
+---
+>   typeExp pat        >>>= \(pat,patT) ->
+334d272
+< --  checkExist [] eTVar >>> 
+340c278
+<   mapS (typeFun fun arrow funT retT) funs        >>>= \funs ->
+---
+>   mapS (typeFun arrow funT retT) funs        >>>= \funs ->
+343c281
+< typeFun fun arrow funT retT (Fun args13 gdexps decls) =
+---
+> typeFun arrow funT retT (Fun args13 gdexps decls) =
+346d283
+<   getEnv	     >>>= \ oldEnv ->
+348,350c285,287
+<   mapS typePat args  >>>= \args ->
+<   case unzip3 args of
+<     (args,argsT,eTVar) -> 
+---
+>   mapS typeExp args  >>>= \args ->
+>   case unzip args of
+>     (args,argsT) -> 
+355d291
+<        checkExist oldEnv (concat eTVar) >>> 
+402d337
+<   getEnv	     >>>= \ oldEnv ->
+404c339
+<   typePat pat               >>>= \ (pat,patT,eTVar) ->
+---
+>   typeExp pat               >>>= \ (pat,patT) ->
+407d341
+<   checkExist oldEnv eTVar >>> 
+410d343
+< 
+442a376
+> 
+444c378
+<   typeExpCon pos ident
+---
+>   typeIdent (ExpCon pos) pos ident
+463d396
+<   getEnv	     >>>= \ oldEnv ->
+465c398
+<   mapS typePat pats   >>>= \ pats ->
+---
+>   mapS typeExp pats   >>>= \ pats ->
+468,470c401,402
+<   case unzip3 pats of
+<      (pats,patsT,eTVar) -> -- phiPrune2 "Lambda" patsE (funType arrow (patsT++[expT])) >>>= \ t ->
+< 		     checkExist oldEnv (concat eTVar) >>> 
+---
+>   case unzip pats of
+>      (pats,patsT) -> -- phiPrune2 "Lambda" patsE (funType arrow (patsT++[expT])) >>>= \ t ->
+491,544c423
+< typeExp (PatWildcard pos) =
+<   typeNewTVar >>>= \tvar ->
+<   unitS (PatWildcard pos,tvar)
+< 
+< typeExp e =
+<   getTypeErrors >>>= \errs->
+<   error ("when typing expression at " ++ strPos (getPos e) ++ "\n"++
+<          unlines errs)  --  ++ "\n" ++ ppExp False dummyIntState e 0)
+< 
+< 
+< -------------------
+< 
+< typePat (ExpApplication pos es)   =
+<   mapS typePat es >>>= \es ->
+<   case unzip3 es of
+<     (es,esT,eTVar) -> 
+<       typeUnifyApply (msgApply es) esT >>>= \ t ->
+<       unitS (ExpApplication pos es,t,concat eTVar)
+< 
+< typePat e@(ExpVar pos ident)        =
+<   typeIdentDict (ExpVar pos) pos ident >>>= \ (e,t) ->
+<   unitS (e,t,[])
+< 
+< typePat (ExpCon pos ident)        =
+<   typePatCon pos ident
+< 
+< typePat e@(ExpLit pos lit)        =
+<   typeLit e >>>= \ (e,t) ->
+<   unitS (e,t,[])
+< 
+< typePat (ExpList  pos es)         =
+<   mapS typePat es            >>>= \es ->
+<   case unzip3 es of
+<    (es,esT,eTVar) -> 
+<      typeUnifyMany (msgList es) esT >>>= \t ->
+<      getIdent (t_List,TCon)     >>>= \tcon ->
+<      unitS (ExpList pos es,NTcons tcon [t],concat eTVar)
+<  where
+<   mapL = map :: ((a->b) -> [a] -> [b])
+< 
+< typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the free variables really are free !!!
+<   (if not (null ctxs) 
+<   then strace ("Context at " ++ strPos (getPos ctxs) ++ " in typed expression is ignored :-(")
+<   else id) $
+<   typePat exp >>>= \ (exp,expT,eTVar) ->
+<   let nt = type2NT t
+<       free = snub (freeNT nt)
+<   in 
+<     mapS (\ _ -> typeNewTVar) free >>>= \ free' -> 
+<     let phi = list2Subst (zip free (map ( \ (NTany a) -> NTvar a) free')) 
+<     in typeUnify (msgExpType pos) (subst phi nt) expT >>>= \ expT ->
+<        unitS (exp,expT,eTVar)
+< 
+< typePat (PatAs             pos ident pat) =
+---
+> typeExp (PatAs             pos ident pat) =
+546c425
+<   typePat pat     >>>= \ (pat,patT,eTVar) ->
+---
+>   typeExp pat     >>>= \ (pat,patT) ->
+548c427
+<   unitS (patas pat,t,eTVar)
+---
+>   unitS (patas pat,t)
+550c429
+< typePat e@(PatWildcard       pos) = 
+---
+> typeExp e@(PatWildcard       pos) = 
+552,567c431,434
+<   unitS (e,tvar,[])
+< typePat (PatIrrefutable    pos pat) =
+<   typePat pat >>>= \ (pat,patT,eTVar) ->
+<   unitS (PatIrrefutable pos pat,patT,eTVar)
+< 
+< typePat (PatNplusK         pos n n' k le sub) =
+<   typeIdentDict (ExpVar pos) pos n  >>>= \ (ExpVar _ n, typN) ->
+<   typeIdentDict (ExpVar pos) pos n' >>>= \ (ExpVar _ n', typN') ->
+<   typeExp k                         >>>= \ (k,typK) ->
+<   typeExp le                        >>>= \ (le,typLE) ->
+<   typeUnifyBool le typLE            >>>= \ _ ->
+<   typeExp sub                       >>>= \ (sub,typSUB) ->
+<   typeUnify (msgNK pos) typK typN   >>>= \ t ->
+<   typeUnify (msgNK pos) typN' typN  >>>= \ t ->
+<   typeUnify (msgNK pos) typSUB typN >>>= \ t ->
+<   unitS (PatNplusK pos n n' k le sub,t,[])
+---
+>   unitS (e,tvar)
+> typeExp (PatIrrefutable    pos pat) =
+>   typeExp pat >>>= \ (pat,patT) ->
+>   unitS (PatIrrefutable pos pat,patT)
+569c436
+< typePat e                         = error ("typePat " ++ strPos (getPos e))
+---
+> typeExp e                         = error ("typeExp " ++ strPos (getPos e))
+diff --exclude=*.hi ./TypeCtx.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeCtx.hs
+20c20
+<     Just (InfoData u tid exp (NewType free [] _ [nt]) (DataTypeSynonym uboxed depth)) -> -- No contex in type synonyms
+---
+>     Just (InfoData u tid exp (NewType free _ [nt]) (DataTypeSynonym uboxed depth)) -> -- No contex in type synonyms
+35,36c35
+< -- ctxsReduce only works on NTvar and NTexist
+< ctxsReduce ::  IntState -> [(Int,NT)] -> [(Int,NT)]
+---
+> ctxsReduce ::  IntState -> [(Int,Int)] -> [(Int,Int)]
+41,48c40,46
+< ctxReduce ::  IntState -> (Int,NT) -> [(Int,NT)] -> [(Int,NT)]
+< ctxReduce state ctx@(c,nt) ctxs =
+<   let v = stripNT nt
+<   in if ctx `elem` ctxs then ctxs
+<      else let sametvar = filter ((v==) . stripNT . snd) ctxs
+<           in if (any (scof state c) . map fst) sametvar
+< 	     then ctxs
+<              else ctx: ctxs
+---
+> ctxReduce ::  IntState -> (Int,Int) -> [(Int,Int)] -> [(Int,Int)]
+> ctxReduce state ctx@(c,v) ctxs =
+>   if ctx `elem` ctxs then ctxs
+>   else let sametvar = filter ((v==).snd) ctxs
+>        in if (any (scof state c) . map fst) sametvar
+> 	  then ctxs
+>           else ctx: ctxs
+54,58c52,54
+< --                                                                                                 Only NTvar and NTexist in result
+< ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))] -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
+< ctxsSimplify' state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r
+< ctxsSimplify' state given (TypeDict cls (NTvar v) ipos) r = (cls,NTvar v):r
+< ctxsSimplify' state given (TypeDict cls (NTexist v) ipos) r = (cls,NTexist v):r
+---
+> ctxsSimplify' :: IntState -> [((Int,Int),([Int],[(Int,Int)]))] -> TypeDict -> [(Int,Int)] -> [(Int,Int)]
+> ctxsSimplify' state given (TypeDict cls (NTany v) ipos) r = (cls,v):r
+> ctxsSimplify' state given (TypeDict cls (NTvar v) ipos) r = (cls,v):r
+63,65c59,60
+<     (NTvar v) ->  (cls,NTvar v):r
+<     (NTany v) ->  (cls,NTvar v):r
+<     (NTexist v) ->  (cls,NTexist v):r
+---
+>     (NTvar v) ->  (cls,v):r
+>     (NTany v) ->  (cls,v):r
+81,84d75
+< --  (NTapp (NTvar v) nt2) -> 
+< --              (cls,NTapp (NTvar v) nt2):r
+< --  (NTapp (NTany v) nt2) -> 
+< --              (cls,NTapp (NTvar v) nt2):r
+101c92
+< --- ===================================
+---
+> ---===================================
+103,107d93
+< isVar (NTvar v) = True
+< isVar (NTexist v) = True
+< isVar _ = False
+< 
+< buildCtx :: IntState -> Int -> [((Int, NT), Int)] -> TypeDict -> Exp Int
+110,111c96,97
+< buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =
+<   case lookup (cls,nt) given of
+---
+> buildCtx state pos given (TypeDict cls (NTvar tvar) ipos) =
+>   case lookup (cls,tvar) given of
+118c104
+< 		. map ( \ ((c,ntv),i) ->  ( map ( \ (c,p) -> (c:p,i) )
+---
+> 		. map ( \ ((c,v),i) ->  ( map ( \ (c,p) -> (c:p,i) )
+122,123c108,109
+< 		. filter ((nt==).snd.fst)
+< 		) (given::[((Int,NT),Int)])
+---
+> 		. filter ((tvar==).snd.fst)
+> 		) (given::[((Int,Int),Int)])
+181c167
+< -- buildDefaults::Pos -> [((Int,NT),Int)] -> Exp Int -> [Int] -> IntState -> ([(Decl Int)],IntState)
+---
+> -- buildDefaults::Pos -> [((Int,Int),Int)] -> Exp Int -> [Int] -> IntState -> ([(Decl Int)],IntState)
+183c169
+<   let setup = treeMapList (:) (foldr ( \ ((c,nt),i) t -> addAT t (++) (stripNT nt)  [(c,i)]) initAT defaultCtxsi)
+---
+>   let setup = treeMapList (:) (foldr ( \ ((c,v),i) t -> addAT t (++) v [(c,i)]) initAT defaultCtxsi)
+diff --exclude=*.hi ./TypeData.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeData.hs
+26d25
+< 	[((Int,NT),Int)]	-- ctxs introduced due to pattern matching on existential NT is either NTvar or NTexist
+diff --exclude=*.hi ./TypeEnv.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeEnv.hs
+10d9
+< import Extra(mapSnd)
+18c17
+< envDecls decls  _ (TypeState state phi ctxs ectxsi) =
+---
+> envDecls decls  _ (TypeState state phi ctxs) =
+20c19
+<     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs) ectxsi)
+---
+>     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs))
+28c27
+< envPats pats _ (TypeState state phi ctxs ectxsi ) =
+---
+> envPats pats _ (TypeState state phi ctxs) =
+30c29
+<     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs) ectxsi)
+---
+>     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs))
+32c31
+< envPat pat _ (TypeState state phi ctxs ectxsi) =
+---
+> envPat pat _ (TypeState state phi ctxs) =
+34c33
+<     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs) ectxsi)
+---
+>     (env,ctxs',state) ->  (env,TypeState state phi (ctxs'++ctxs))
+41,42c40,41
+<     ((NewType free' exist' ctxs' [nt']),state) -> -- no constructors here!
+<       case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist' then NTexist v else NTvar v)) ctxs') of
+---
+>     ((NewType free' ctxs' [nt']),state) -> -- no constructors here!
+>       case uniqueISs state ctxs' of
+44c43
+< 	  ((ident,nt'):env,map snd (cvi2typedict pos exist' ctxsi') ++ctxs,state)
+---
+> 	  ((ident,nt'):env,map snd (cvi2typedict pos ctxsi') ++ctxs,state)
+diff --exclude=*.hi ./TypeLib.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeLib.hs
+6c6
+< import Extra(assocDef,pair,strPos,Pos(..),noPos,snub,dropJust,isJust,mapSnd)
+---
+> import Extra(assocDef,pair,strPos,Pos(..),noPos)
+25c25
+< import PrimCode({-rpsEval,-}rpsseq)
+---
+> import PrimCode(rpsEval,rpsseq)
+60,65c60
+< 	++ showEnum no ++ " argument at " ++ (strPos . getPos . (es !!)) no ++ ".\n"
+< 
+< showEnum 1 = "1:st"
+< showEnum 2 = "2:nd"
+< showEnum 3 = "3:rd"
+< showEnum n = show n ++ ":th"
+---
+> 	++ show no ++ " argument at " ++ (strPos . getPos . (es !!)) no ++ ".\n"
+73,75d67
+< msgNK pos err =
+<   "Type error " ++ err ++ "\nwhen trying to check (n+k) pattern at " ++ strPos pos ++ ".\n"
+< 
+83c75
+< 	(NewType free [] [] [nt],state) ->
+---
+> 	(NewType free [] [nt],state) ->
+99c91
+< 	      hPutStr stderr ("Function main has the type " ++ niceNT Nothing state (mkAL free) nt ++ " instead of IO ().") >>
+---
+> 	      hPutStr stderr ("Function main has the type " ++ niceNT state (mkAL free) nt ++ " instead of IO ().") >>
+113c105
+< typeUnify errFun t1 t2  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+> typeUnify errFun t1 t2  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+115c107
+<         Right phi -> let t1' = subst phi t1 in seq t1' (t1',TypeState state phi ctxs ectxsi)
+---
+>         Right phi -> let t1' = subst phi t1 in seq t1' (t1',TypeState state phi ctxs)
+118c110
+<             (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs ectxsi)
+---
+>             (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs)
+120c112
+< typeUnifyMany errFun []  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+> typeUnifyMany errFun []  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+122,123c114,115
+<     (unique,state) -> (NTany unique,TypeState state phi ctxs ectxsi)
+< typeUnifyMany errFun ts@(t:_) down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+>     (unique,state) -> (NTany unique,TypeState state phi ctxs)
+> typeUnifyMany errFun ts@(t:_) down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+125c117
+<         Right phi -> let t' = subst phi t in seq t'  (t',TypeState state phi ctxs ectxsi)
+---
+>         Right phi -> let t' = subst phi t in seq t'  (t',TypeState state phi ctxs)
+128c120
+<             (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs ectxsi)
+---
+>             (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs)
+130c122
+< typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+> typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+139c131
+<       in seq f' (f',TypeState state phi ctxs ectxsi)
+---
+>       in seq f' (f',TypeState state phi ctxs)
+147c139
+<               (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs ectxsi)
+---
+>               (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs)
+159c151
+<               		  (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs ectxsi)
+---
+>               		  (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs)
+162c154
+<                       (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs ectxsi)
+---
+>                       (unique,state) -> (NTany unique,TypeState (addError state (errFun str no)) phi ctxs)
+164c156
+< typeNewTVar down up@(TypeState state phi ctxs ectxsi) = 
+---
+> typeNewTVar down up@(TypeState state phi ctxs) = 
+166c158
+<     (unique,state) -> (NTany unique,TypeState state phi ctxs ectxsi)
+---
+>     (unique,state) -> (NTany unique,TypeState state phi ctxs)
+168c160
+< newIdent down up@(TypeState state phi ctxs ectxsi) = 
+---
+> newIdent down up@(TypeState state phi ctxs) = 
+170c162
+<     (unique,state) -> (unique,TypeState state phi ctxs ectxsi)
+---
+>     (unique,state) -> (unique,TypeState state phi ctxs)
+172c164
+< getState down up@(TypeState state phi ctxs ectxsi) = 
+---
+> getState down up@(TypeState state phi ctxs) = 
+178,180d169
+< getEnv down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up =
+<   (env,up)
+< 
+190c179
+< typeIdentDef convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+> typeIdentDef convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+197,249c186,188
+< typeExpCon pos ident down up@(TypeState state phi ctxs ectxsi) = 
+<   case typeExpCon' pos ident down up of
+<     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,expT),up)
+< 
+< typeExpCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+<   case ntIS state ident of  -- Be strict!
+<     (NoType,state) -> -- Not possible for constructors!
+< 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
+<             (u,state) -> ((ExpCon pos ident,NTvar u,[],[]),TypeState state phi ctxs ectxsi)
+<     (nt''@(NewType _ eTVar _ _),state) -> 
+<      case extractCtxs nt'' of
+<       (nt',ctxs'') ->
+<       	case dictAndArrows (tidFun (t_Arrow,TCon)) pos state ctxs'' nt' of
+< 	    (ictxs,nt,state) -> 
+< 	      let ctxsStripped' = map snd ictxs
+< 		  is = map fst $ filter ((`elem` eTVar) . ( \ (TypeDict i nt intpos) -> stripNT nt) . snd) ictxs
+< 	          ctxs' = map ( \ (TypeDict i nt intpos) -> TypeDict i (NTvar (stripNT nt)) intpos) ctxsStripped'
+< 	          nt' = subst phi nt
+< 	      in seq nt' ((ExpCon pos ident,nt',map (\ i -> assocDef ctxDict 
+< 								  (error "TypeLib:204")
+< 								  i) is,eTVar),TypeState state phi (ctxs'++ctxs) ectxsi)
+< 
+< 
+< 
+< typePatCon pos ident down up@(TypeState state phi ctxs ectxsi) = 
+<   case typePatCon' pos ident down up of
+<     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,existNT eTVar expT,eTVar),up)
+< 
+< typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs inEctxsi) =
+<   case ntIS state ident of  -- Be strict!
+<     (NoType,state) -> -- Not possible for constructors!
+< 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
+<             (u,state) -> ((ExpCon pos ident,NTvar u,[],[]),TypeState state phi ctxs inEctxsi)
+<     (nt''@(NewType _ exist _ _),state) -> 
+<      case extractCtxs nt'' of
+<       (nt',ectxs') ->
+<        case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then NTexist v else NTvar v)) ectxs') of
+<          (ectxsi,state) ->
+< 	   let eictxs = cvi2typedict pos exist ectxsi
+<       	   in
+<              case dictAndArrows (tidFun (t_Arrow,TCon)) pos state [] nt' of
+< 	       (ictxs,nt,state) -> 
+< 	          let (is,ctxs') = unzip (ictxs ++ eictxs)
+< 	              nt' = subst phi nt
+< 	          in seq nt' ((ExpCon pos ident,nt',map (ExpVar pos . fst) eictxs,exist),TypeState state phi (ctxs'++ctxs) (ectxsi ++ inEctxsi))
+< 
+< existNT tv t@(NTany  a) = t
+< existNT tv t@(NTvar  a) = if a `elem` tv then NTexist a else t
+< existNT tv t@(NTexist  a) = t
+< existNT tv (NTstrict t) = NTstrict (existNT tv t)
+< existNT tv (NTapp t1 t2) =  NTapp (existNT tv t1) (existNT tv t2)
+< existNT tv (NTcons a tas) =  NTcons a (map (existNT tv) tas)
+< 
+---
+> typeIdent convar pos ident down up = 
+>   case typeIdentDict' convar pos ident down up of
+>     ((exp,expT,ctxs),up) -> ((exp,expT),up)
+251c190
+< typeIdentDict convar pos ident down up@(TypeState state phi ctxs ectxsi) = 
+---
+> typeIdentDict convar pos ident down up@(TypeState state phi ctxs) = 
+253c192
+<     ((exp,expT,ctxs,eTVar),up) -> ((qDict state exp ctxs,expT),up)
+---
+>     ((exp,expT,ctxs),up) -> ((qDict state exp ctxs,expT),up)
+255c194,195
+< typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
+---
+> 
+> typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs) =
+261c201
+<           in seq t' ((convar ident,t',assocDef envDict [] ident,[]),up)  -- Only let-bound identifiers in envDict
+---
+>           in seq t' ((convar ident,t',assocDef envDict [] ident),up)  -- Only let-bound identifiers in envDict
+264,266c204,206
+<             (u,state) -> ((convar ident,NTvar u,[],[]),TypeState state phi ctxs ectxsi)
+<     (nt'@(NewType _ eTVar _ _),state) -> 
+<       	case dictAndArrows (tidFun (t_Arrow,TCon)) pos state [] nt' of
+---
+>             (u,state) -> ((convar ident,NTvar u,[]),TypeState state phi ctxs)
+>     (nt',state) -> 
+>       	  case dictAndArrows (tidFun (t_Arrow,TCon)) pos state nt' of
+272c212
+< 								  i) is,eTVar),TypeState state phi (ctxs'++ctxs) ectxsi)
+---
+> 								  i) is),TypeState state phi (ctxs'++ctxs))
+276a217
+> ----======
+278,295d218
+< checkExist oldEnv eTVars down up@(TypeState state phi ctxs ectxsi) =
+<  case foldr (cE phi eTVars) state oldEnv of
+<    state -> TypeState state phi ctxs ectxsi
+<  where
+<    cE phi eTVars (v,nt) state =
+<       let tvars =  (snub . freeNT . subst phi) nt
+<       in case filter (`elem` eTVars) tvars of
+< 	[] -> state
+<         _  -> case lookupIS state v of
+< 	         Just info -> addError state ("Existential type escaped with " ++ show (tidI info))
+< 		 Nothing ->   addError state ("Existential type escaped (internal name " ++ show v ++ ")")
+< 
+<       
+< 
+< ---- ======
+< 
+< extractCtxs (NewType free exist ctxs nts) = 
+<   (NewType free exist ctxs (filter (not . contextNT) nts), map ntContext2Pair (filter contextNT nts))
+297,299c220,221
+< 
+< dictAndArrows arrow pos state ectxs (NewType free exist ctxs nts) = 
+<   case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then NTexist v else NTvar v)) (ctxs ++ ectxs)) of
+---
+> dictAndArrows arrow pos state (NewType free ctxs nts) = 
+>   case uniqueISs state ctxs of
+301c223
+< 	    (cvi2typedict pos exist ctxsi
+---
+> 	    (cvi2typedict pos ctxsi
+306d227
+< 
+311,317c232,233
+< typeError err down  up@(TypeState state phi ctxs ectxsi) =
+<    error err
+< -- (PatWildcard noPos,TypeState (addError state err) phi ctxs ectxsi) 
+< 
+< getTypeErrors down  up@(TypeState state phi ctxs ectxsi) =
+<    let (st,errs) = getErrors state in
+<    (errs, TypeState st phi ctxs ectxsi) 
+---
+> typeError err down  up@(TypeState state phi ctxs) =
+>    (PatWildcard noPos,TypeState (addError state err) phi ctxs) 
+diff --exclude=*.hi ./TypeSubst.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeSubst.hs
+26,27d25
+<   subst phi nt@(NTexist v)    =
+<       nt
+39d36
+<   subst phi nt@(NTcontext con v) = nt
+42c39
+<   subst phi (NewType free [] ctxs ts) =
+---
+>   subst phi (NewType free ctxs ts) =
+44c41
+<     in forceList ts' (NewType free [] ctxs ts')
+---
+>     in forceList ts' (NewType free ctxs ts')
+70c67
+< stripSubst phi tvar = phi -- nhc98 doesn't strip substitutions
+---
+> stripSubst phi tvar = phi -- nhc13 doesn't strip substitutions
+84d80
+< substNT tv t@(NTexist a) = t
+diff --exclude=*.hi ./TypeUnify.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeUnify.hs
+93,125c93,98
+< unify state phi (t1@(NTexist tvn1),(NTexist tvn2)) =
+<   if tvn1 == tvn2 then
+<     Right phi
+<   else
+<    Left (phi,"type clash between existential types")
+< 
+< unify state phi ((NTexist _),(NTcons c _)) =
+<   case lookupIS state c of
+<     Just info ->
+<       Left (phi, "type clash between " ++ show (tidI info) ++ " and existential type ")
+< 
+< unify state phi ((NTcons c _),(NTexist _)) =
+<   case lookupIS state c of
+<     Just info ->
+<       Left (phi, "type clash between " ++ show (tidI info) ++ " and existential type ")
+< 
+< unify state phi ((NTexist _),(NTapp _ _)) =
+<    Left (phi,"type clash between existential type and type application")
+< 
+< unify state phi ((NTapp _ _),(NTexist _)) =
+<    Left (phi,"type clash between existential type and type application")
+< 
+< unify state phi (t1@(NTexist e),t2@(NTany tvn2)) =
+< -- strace ("unify exist " ++ show e ++ " any " ++ show tvn2) $ 
+<   case applySubst phi tvn2 of
+<     Nothing     -> extend phi tvn2 (subst phi t1)
+<     Just phitvn -> unify state phi (phitvn,subst phi t1)
+< 
+< unify state phi (t1@(NTexist e),t2@(NTvar tvn2)) =
+< -- strace ("unify exist " ++ show e ++ " var " ++ show tvn2) $ 
+<   case applySubst phi tvn2 of
+<     Nothing     -> extendV state phi tvn2 (subst phi t1)
+<     Just phitvn -> unify state phi (phitvn,subst phi t1)
+---
+> 
+> 
+> 
+>   
+> 
+> 
+159c132
+< expand (NewType free [] ctxs [nt]) ts = subst (list2Subst (zip free ts)) nt
+---
+> expand (NewType free ctxs [nt]) ts = subst (list2Subst (zip free ts)) nt
+diff --exclude=*.hi ./TypeUtil.hs /home/local/sparud/tracer/new/nhc13/src/compiler13/TypeUtil.hs
+21c21
+<         (NewType free@(a:_) [] ctx nts,state) -> (NewType free [] ((iClass,a):ctx) nts,state)
+---
+>         (NewType free@(a:_) ctx nts,state) -> (NewType free ((iClass,a):ctx) nts,state)
+24c24
+<         (NewType free@(a:_) [] ctx nts,state) -> (NewType free [] ((iClass,a):ctx) nts,state)
+---
+>         (NewType free@(a:_) ctx nts,state) -> (NewType free ((iClass,a):ctx) nts,state)
+26c26
+<     Just (InfoIMethod uI tidI (NewType freeI [] ctxI [ntI]) annotsI iMethod) ->
+---
+>     Just (InfoIMethod uI tidI (NewType freeI ctxI [ntI]) annotsI iMethod) ->
+30c30
+<             (NewType (a:free) [] ctxM [ntM],state) ->
+---
+>             (NewType (a:free) ctxM [ntM],state) ->
+33c33
+< 	      in  fresh (NewType (snub (freeNT nt')) [] (ctxI++ctxM) [nt']) state
+---
+> 	      in  fresh (NewType (snub (freeNT nt')) (ctxI++ctxM) [nt']) state
+38,39d37
+< -- NOTE add fake constructors
+< 
+41c39
+< fresh nt@(NewType free exist ctx nts) state =
+---
+> fresh nt@(NewType free ctx nts) state =
+46d43
+<           exist' = map tv exist
+49c46,47
+<       in {- forceList free' -} (NewType free' exist' ctxs' nts' ,state)
+---
+>       in {- forceList free' -} (NewType free' ctxs' nts' ,state)
+> 
+51,52d48
+< cvi2typedict pos exist ctxsi =
+<     map ( \ ((c,nt),i) -> (i,TypeDict c nt [(i,pos)])) ctxsi
+53a50
+> cvi2typedict pos ctxsi = map ( \ ((c,v),i) -> (i,TypeDict c (NTvar v) [(i,pos)])) ctxsi
+Only in .: diff
+Only in .: files
