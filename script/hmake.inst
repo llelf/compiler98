@@ -109,7 +109,7 @@ do
 
     # Run-time flags to hmake itself
     +RTS) shift
-          while [ "$1" != "-RTS" ]
+          while [ -n "$1" -a "$1" != "-RTS" ]
           do hmrtflags=$hmrtflags" $1"
              shift
           done ;;
