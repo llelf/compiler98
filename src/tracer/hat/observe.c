@@ -198,7 +198,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 		if (result!=0) {
 		  query->currentOffset = currentOffset;
 		  query->found++;
-		  queryCleanOutput(query);
+		  queryCleanOutput((ObserveQuery)query);
 		  return currentOffset; //result;
 		}
 	      }
@@ -207,7 +207,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 	    if (lmoType==HatConstructor) {
 	      query->currentOffset = currentOffset;
 	      query->found++;
-	      queryCleanOutput(query);
+	      queryCleanOutput((ObserveQuery)query);
 	      return currentOffset;
 	    }
 	}
@@ -219,7 +219,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
     }
   }
   ((_ObserveQuery*) query)->finished = 1;
-  queryCleanOutput(query);
+  queryCleanOutput((ObserveQuery)query);
   return 0;
 }
 
