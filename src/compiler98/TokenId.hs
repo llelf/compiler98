@@ -160,6 +160,7 @@ rpsFFI          = (packString . reverse ) "NHC.FFI"
 rpsPS           = (packString . reverse ) "NHC.PackedString"
 rpsIOE          = (packString . reverse ) "NHC.IOExtras"
 rpsBinary       = (packString . reverse ) "NHC.Binary"
+rpsHatHack      = (packString . reverse ) "Hat.Hack"
 
 
 isUnit (TupleId 0) = True
@@ -174,6 +175,7 @@ t_Tuple  size   = TupleId size
 tmain = Qualified (packString (reverse "Main")) (packString (reverse "main"))
 
 tPrelude        = Visible rpsPrelude
+tHatHack        = Visible rpsHatHack
 tNHCInternal    = Visible rpsInternal
 t_underscore    = visImport "_"
 t_Bang		= visImport "!"
@@ -218,12 +220,14 @@ tFloatHash      = qualImpPrel  "Float#"
 tFloat          = qualImpPrel  "Float"
 tChar           = qualImpPrel  "Char"
 t_List          = qualImpPrel  "[]"
+t_ListNQ        = visImport    "[]"
 t_Arrow         = qualImpPrel  "->"
 t_Pair          = qualImpPrel  "(,"
 tString         = qualImpPrel  "String"
 t_filter        = qualImpPrel  "_filter" 
 t_foldr         = qualImpPrel  "_foldr" -- be careful, non-standard signature 
 t_Colon         = qualImpPrel  ":"
+t_ColonNQ       = visImport    ":"
 t_x             = visImport    "_x"
 t_y             = visImport    "_y"
 t_equalstring	= qualImpPrel  "_equalstring"
