@@ -3,7 +3,7 @@ module NhcFloats
   , doubleToInts
   ) where
 
-import GreenCard
+import NHC.GreenCard
 
 %fun floatToInt :: Float -> Int
 %call (float fl)

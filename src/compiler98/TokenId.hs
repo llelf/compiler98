@@ -63,7 +63,7 @@ isTupleId (Qualified3 _ _ t) = isTupleId t
 isTupleId _                  = False
 
 --notPrelude (Qualified tid n) = tid /= rpsDPrelude && tid /= rpsPrelude
-notPrelude (Qualified tid n) = tid /= rpsPrelude
+notPrelude (Qualified tid n) = (tid /= rpsPrelude) && (tid /= rpsInternal)
 notPrelude (Qualified2 t1 t2) = notPrelude t1 && notPrelude t2 
 notPrelude (Qualified3 t1 t2 t3) = notPrelude t1 && notPrelude t2 
 notPrelude (TupleId _) = False
@@ -144,6 +144,7 @@ add2M str (Qualified m v) =
 
 visImport = Visible . packString . reverse
 qualImpPrel = Qualified rpsPrelude . packString . reverse
+qualImpNHC = Qualified rpsInternal . packString . reverse
 qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
 qualImpIx  = Qualified rpsIx      . packString . reverse
@@ -152,12 +153,13 @@ qualImpPS  = Qualified rpsPS      . packString . reverse
 qualImpIOE = Qualified rpsIOE     . packString . reverse
 
 rpsPrelude      = (packString . reverse ) "Prelude"
-rpsBinary       = (packString . reverse ) "Binary"
+rpsInternal     = (packString . reverse ) "NHC.Internal"
 rpsRatio        = (packString . reverse ) "Ratio"
 rpsIx           = (packString . reverse ) "Ix"
-rpsFFI          = (packString . reverse ) "FFI"
-rpsPS           = (packString . reverse ) "PackedString"
-rpsIOE          = (packString . reverse ) "IOExtras"
+rpsFFI          = (packString . reverse ) "NHC.FFI"
+rpsPS           = (packString . reverse ) "NHC.PackedString"
+rpsIOE          = (packString . reverse ) "NHC.IOExtras"
+rpsBinary       = (packString . reverse ) "NHC.Binary"
 
 
 isUnit (TupleId 0) = True
@@ -172,7 +174,8 @@ t_Tuple  size   = TupleId size
 tmain = Qualified (packString (reverse "Main")) (packString (reverse "main"))
 
 tPrelude        = Visible rpsPrelude
-t_underscore    = visImport  "_"
+tNHCInternal    = Visible rpsInternal
+t_underscore    = visImport "_"
 t_Bang		= visImport "!"
 t_Assign	= visImport ":="
 tprefix	 	= visImport "prefix"
@@ -209,7 +212,7 @@ tTrue           = qualImpPrel  "True"
 tFalse          = qualImpPrel  "False"
 tunknown        = visImport    "Unknown.variable"
 terror          = qualImpPrel  "error"
-tIO             = qualImpPrel  "IO"
+tIO             = qualImpNHC   "IO"
 tBool           = qualImpPrel  "Bool"
 tFloatHash      = qualImpPrel  "Float#"
 tFloat          = qualImpPrel  "Float"
@@ -231,10 +234,10 @@ t_select	= qualImpPrel  "_select"
 t_patbindupdate = qualImpPrel  "_patbindupdate"
 t_callpatbindupdate = qualImpPrel  "_callpatbindupdate"
 tDialogue       = qualImpPrel  "Dialogue"
-t_apply1        = qualImpPrel  "_apply1"
-t_apply2        = qualImpPrel  "_apply2"
-t_apply3        = qualImpPrel  "_apply3"
-t_apply4        = qualImpPrel  "_apply4"
+t_apply1        = qualImpNHC  "_apply1"
+t_apply2        = qualImpNHC  "_apply2"
+t_apply3        = qualImpNHC  "_apply3"
+t_apply4        = qualImpNHC  "_apply4"
 t_used          = qualImpPrel  "used!"
 tInteger        = qualImpPrel  "Integer"
 tDouble         = qualImpPrel  "Double"
@@ -305,19 +308,19 @@ tshowChar       = qualImpPrel  "showChar"
 tshowParen      = qualImpPrel  "showParen"
 treadParen      = qualImpPrel  "readParen"
 tFractional     = qualImpPrel  "Fractional"
-tRational       = qualImpPrel  "Rational"	-- Changed in Haskell 98
-tRatio          = qualImpRat  "Ratio"		-- Changed in Haskell 98
-tRatioCon       = qualImpRat  "%"		-- Changed in Haskell 98
+tRational       = visImport  "Rational"	-- Changed in Haskell 98
+tRatio          = visImport  "Ratio"		-- Changed in Haskell 98
+tRatioCon       = visImport  "%"		-- Changed in Haskell 98
 tPRIMITIVE      = visImport "PRIMITIVE"
 tNEED           = visImport "NEED"
 t_primitive     = visImport "primitive"
 t_Lambda        = qualImpPrel  "\\"
-t_eqInteger     = qualImpPrel  "_eqInteger"
-t_eqDouble      = qualImpPrel  "_eqDouble"
-t_eqFloat       = qualImpPrel  "_eqFloat"
-t_otherwise	= qualImpPrel  "otherwise"
+t_eqInteger     = qualImpNHC  "_eqInteger"
+t_eqDouble      = qualImpNHC  "_eqDouble"
+t_eqFloat       = qualImpNHC  "_eqFloat"
+t_otherwise	= tTrue
 
-t_id            = qualImpPrel  "_id"   
+t_id            = qualImpNHC  "_id"   
   -- identity function that is not modified by the tracing transformation
 
 
@@ -370,10 +373,9 @@ tWord16		= qualImpFFI  "Word16"
 tWord32		= qualImpFFI  "Word32"
 tWord64		= qualImpFFI  "Word64"
 tPackedString	= qualImpPS   "PackedString"
-tunsafePerformIO= visImport   "unsafePerformIO"
+tunsafePerformIO= qualImpNHC  "unsafePerformIO"
 
 {- more FFI -}
-t_mkIOok n      = visImport   ("_mkIOok"++show (n::Int))
-t_mkIOwf n      = visImport   ("_mkIOwf"++show (n::Int))
+t_mkIOok n      = qualImpNHC  ("_mkIOok"++show (n::Int))
 
 {- End TokenId -------------------------------------------------------------}

@@ -69,9 +69,10 @@ tokenAllways = 	[(Var,t_undef)
 	        ,(TCon,tInt),(TCon,tInteger),(TCon,tFloat),(TCon,tDouble)
 	        ,(TCon,tChar),(TCon,tString)
 	        ,(TCon,t_List),(Con,t_Colon),(Con,t_List)
-	        ,(TCon,t_Arrow),(Con,t_Tuple 2),(Con,t_Tuple 0)
+	        ,(TCon,t_Arrow),(TCon,t_Tuple 2),(Con,t_Tuple 2)
+                ,(TCon,t_Tuple 0),(Con,t_Tuple 0),(TCon,tIO)
 	        ,(Var,t_eqInteger),(Var,t_eqFloat),(Var,t_eqDouble)
-		,(Var,t_otherwise)
+		,(Con,t_otherwise)	-- actually `True', not `otherwise'
 	        ,(Var,terror),(Var,tident)
                 ,(Var,t_apply1),(Var,t_apply2),(Var,t_apply3),(Var,t_apply4)
                 ,(Var,t_id),(Var,t_flip)]

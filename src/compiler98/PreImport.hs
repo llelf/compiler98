@@ -5,8 +5,9 @@ module PreImport (HideDeclIds,qualRename,preImport) where
 
 import List(partition,nub,intersect,(\\))
 import MergeSort
-import TokenId(TokenId(..),tPrelude,t_Arrow,ensureM,forceM,dropM,
-               rpsPrelude,rpsBinary,t_List,isTidCon)
+import TokenId(TokenId(..),tPrelude,tNHCInternal
+		,t_Arrow,ensureM,forceM,dropM
+		,rpsPrelude,rpsBinary,t_List,isTidCon)
 import PackedString(PackedString,packString,unpackPS)
 import Syntax
 import IdKind
@@ -170,12 +171,12 @@ transImport :: [ImpDecl TokenId]
 transImport impdecls = impdecls'
   where
   impdecls' =  (sortImport . traverse initAT False)
-              -- (ImportQ (noPos,tPrelude) (Hiding []) :
-                  (ImportQ (noPos,vis "Ratio") (NoHiding
-				[EntityConClsAll noPos (vis "Rational")
-				,EntityConClsAll noPos (vis "Ratio")
-				,EntityVar noPos (vis "%")]) :
-                     impdecls)
+                (Import (noPos,tNHCInternal) (Hiding [])
+--              :ImportQ (noPos,vis "Ratio") (NoHiding
+--				[EntityConClsAll noPos (vis "Rational")
+--				,EntityConClsAll noPos (vis "Ratio")
+--				,EntityVar noPos (vis "%")])
+                :impdecls)
   vis = Visible . packString . reverse
 
   -- Place imports into order, ensure Prelude is last
