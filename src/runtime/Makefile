@@ -1,8 +1,4 @@
 include Makefile.inc
-#MACHINE = `uname -s`-`uname -r`
-#LIBDIR = ../../lib
-#INCDIR = ../../include
-
 
 OBJDIR=${BUILDDIR}/${OBJ}/runtime
 

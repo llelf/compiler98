@@ -2,8 +2,8 @@ include Makefile.inc
 
 THISLIB = LowB
 
-SRCS_MISC_PART = PrimError.hs Blackhole.hs CString.hs
-SRCS_MISC = _Driver.hs
+SRCS_MISC_PART = PrimError.hs Blackhole.hs
+SRCS_MISC = _Driver.hs CString.hs
 
 SRCS_SYSTEM = CExitWith.hs PrimExitWith.hs PrimSystem.hs PrimGetArgs.hs PrimGetEnv.hs PrimGetProgName.hs
 

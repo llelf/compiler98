@@ -5,8 +5,8 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 10x (date 991008)"
-HMAKEVERSION="v1.4 (date 990831)"
+CONFIGVERSION="v1.0 pre-release 10x (date 991018)"
+HMAKEVERSION="v1.5 (date 991005)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -17,8 +17,11 @@ USER=${USER-`whoami`}
 MACHINE=`script/harch`
 VERSION=$MACHINE
 CCC=${CC-gcc}
-PWD=`pwd`
 INSTALLDIR=/usr/local
+PWD=`pwd`
+case $PWD in	# path mangling required for CYGWIN
+  file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
+esac
 
 #RTSMESSAGE='(default)'
 #RTSFLAG=yes
@@ -200,50 +203,57 @@ then
   else
     echo "Html documents:       (none)"
   fi
-  
-  echo
-  echo "Now we check/create your build directories:"
-  echo "Build directory root:  $BUILDDIR"
-  echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
-  if [ ! -d $BUILDTARGDIR/$MACHINE ]
-  then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
-  else echo ' (exists)'
-  fi
-  echo -n "Object files build in: $BUILDDIR/$MACHINE"
-  if [ ! -d $BUILDDIR/$MACHINE ]
-  then mkdir -p $BUILDDIR/$MACHINE;  echo ' (created)'
-  else echo ' (exists)'
-  fi
-  echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
-  if [ ! -d $BUILDLIBDIR/$MACHINE ]
-  then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
-  else echo ' (exists)'
+
+  if [ -d src ]		# Don't bother with these if doing a binary distribution
+  then
+    echo
+    echo "Now we check/create your build directories:"
+    echo "Build directory root:  $BUILDDIR"
+    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
+    if [ ! -d $BUILDTARGDIR/$MACHINE ]
+    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "Object files build in: $BUILDDIR/$MACHINE"
+    if [ ! -d $BUILDDIR/$MACHINE ]
+    then mkdir -p $BUILDDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
+    if [ ! -d $BUILDLIBDIR/$MACHINE ]
+    then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
   fi
 fi
 
 echo
-BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
-echo "I am guessing that you will want to build nhc98 with $BUILDWITH"
-case $BUILDWITH in
-  hbc|xtc)  RTSFLAG=no;;
-  ghc|nhc)  RTSFLAG=yes;;
-  gcc)      RTSFLAG=yes;;
-esac
-if [ "$RTSFLAG" = "yes" ]
-then echo "  so nhc98comp uses RTS delimiters."
-else echo "  so nhc98comp does not use RTS delimiters."
-fi
-# echo $RTSMESSAGE
 
-if [ "$EXE" = "" ]
-then echo "Executables do not have .exe suffix (detected)"
-else echo "Executables need .exe suffix (detected)"
-fi
-
-echo -n "This machine's endian-ness is: "
-if [ "$ENDIAN" = "" ]
+# The following tests are unnecessary in a binary (src-less) distribution.
+if [ -d src ]
 then
-  cat >endian.c <<!!!
+  BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+  echo "I am guessing that you will want to build nhc98 with $BUILDWITH"
+  case $BUILDWITH in
+    hbc|xtc)  RTSFLAG=no;;
+    ghc|nhc)  RTSFLAG=yes;;
+    gcc)      RTSFLAG=yes;;
+  esac
+  if [ "$RTSFLAG" = "yes" ]
+  then echo "  so nhc98comp uses RTS delimiters."
+  else echo "  so nhc98comp does not use RTS delimiters."
+  fi
+  # echo $RTSMESSAGE
+
+  if [ "$EXE" = "" ]
+  then echo "Executables do not have .exe suffix (detected)"
+  else echo "Executables need .exe suffix (detected)"
+  fi
+
+  echo -n "This machine's endian-ness is: "
+  if [ "$ENDIAN" = "" ]
+  then
+    cat >endian.c <<!!!
 main() {
   union {
     unsigned i;
@@ -257,14 +267,24 @@ main() {
   }
 }
 !!!
-  $CCC -o endian endian.c
-  ENDIAN=`./endian`
-  rm -f endian endian.c
-  echo -n "$ENDIAN "
-  echo '(detected) '
+    $CCC -o endian endian.c
+    ENDIAN=`./endian`
+    rm -f endian endian.c
+    echo -n "$ENDIAN "
+    echo '(detected) '
+  else
+    echo -n "$ENDIAN "
+    echo '(cached) '
+  fi
 else
-  echo -n "$ENDIAN "
-  echo '(cached) '
+  if [ -f lib/$MACHINE/config ]
+  then
+    . lib/$MACHINE/config
+    echo "Your binary distribution of nhc98 was built by $BUILDWITH."
+  else
+    echo "ERROR: Your distribution of nhc98 has no sources and no executables!"
+    exit 1
+  fi
 fi
 
 echo -n "Default heap for compiled programs is: "
@@ -327,42 +347,44 @@ echo
 
 if [ "$INSTALL" = "no" ]
 then
+  if [ -d src ]		# Don't overwrite config if doing binary distribution!
+  then
+    echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
+    ( echo "ENDIAN=$ENDIAN";
+      echo "BUILDWITH=$BUILDWITH";
+      case $RTSFLAG in
+        no)  echo "USINGRTS=0" ;;
+        yes) echo "USINGRTS=1" ;;
+      esac;
+      echo "INSTALLVER=\"$CONFIGVERSION\"";
+      echo "INSTALLINFO=\"$INSTALLINFO\"";
+      echo "BUILDBASEDIR=$BUILDDIR";
+      echo "LIBCOMPAT=\"$LIBCOMPAT\"";
+      echo "EXE=$EXE";
+      echo "CC=$CCC";
+    ) >$BUILDLIBDIR/$MACHINE/config
 
-  echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
-  ( echo "ENDIAN=$ENDIAN";
-    echo "BUILDWITH=$BUILDWITH";
-    case $RTSFLAG in
-      no)  echo "USINGRTS=0" ;;
-      yes) echo "USINGRTS=1" ;;
-    esac;
-    echo "INSTALLVER=\"$CONFIGVERSION\"";
-    echo "INSTALLINFO=\"$INSTALLINFO\"";
-   #echo "HEAP=\"-DHEAPSIZE=$HEAP\"";
-    echo "BUILDBASEDIR=$BUILDDIR";
-    echo "EXE=$EXE";
-    echo "CC=$CCC";
-  ) >$BUILDLIBDIR/$MACHINE/config
+    echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
 
-  echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
-  sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
-
-  echo -n "Adding build scripts to $BUILDBINDIR...    "
-  echo -n "nhc98 "
-  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
-  ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
-  sed -e "s|ArchDir |$BUILDBINDIR/|" |\
-  sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
-  echo -n "hmake "
-  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
-  sed -e "s|ArchDir |$BUILDBINDIR/|"   >$BUILDBINDIR/hmake
-  echo -n "greencard "
-  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
-  sed -e "s|ArchDir |$BUILDBINDIR/|" |\
-  sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard
-  echo
-  chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard
-  echo "Creating src/runtime/nhc98heap.c ..."
-  sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
+    echo -n "Adding build scripts to $BUILDBINDIR...    "
+    echo -n "nhc98 "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
+    ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
+    sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
+    echo -n "hmake "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+    sed -e "s|ArchDir |$BUILDBINDIR/|"   >$BUILDBINDIR/hmake
+    echo -n "greencard "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
+    sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard
+    echo
+    chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard
+    echo "Creating src/runtime/nhc98heap.c ..."
+    sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
+  fi
 
 else	# [ "$INSTALL" = "yes" ]
 
@@ -399,26 +421,31 @@ else	# [ "$INSTALL" = "yes" ]
       ln -sf $HLIBDIR/$VERSION $HLIBDIR/$MACHINE
     fi
     echo -n "    "
-    ( cd $BUILDLIBDIR/$VERSION; tar cf - . ) | ( cd $LIBDIR/$VERSION; tar xvf - )
+    #cp -p $BUILDLIBDIR/$VERSION/ tar cf - . ) | ( cd $LIBDIR/$VERSION; tar xvf - )
+    for file in $BUILDLIBDIR/$VERSION/*
+    do
+      echo -n "`basename $file` "
+      if [ -f $file ]; then cp -p $file $LIBDIR/$VERSION; fi
+    done
     if [ $HLIBDIR != $LIBDIR ]
     then ( cd $LIBDIR/$VERSION; mv MkProg Older $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
-    echo -n "config "
-    ( echo "ENDIAN=$ENDIAN";
-      case $RTSFLAG in
-        no)  echo "USINGRTS=0" ;;
-        yes) echo "USINGRTS=1" ;;
-      esac;
-      echo "INSTALLVER=\"$CONFIGVERSION\"";
-      echo "INSTALLINFO=\"$INSTALLINFO\"";
-      echo "LIBCOMPAT=\"$LIBCOMPAT\"";
-      echo "EXE=$EXE";
-      echo "CC=$CCC";
-    ) >$LIBDIR/$VERSION/config
+    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
+    #echo -n "config "	# Now simply re-use build config.
+    #( echo "ENDIAN=$ENDIAN";
+    #  case $RTSFLAG in
+    #    no)  echo "USINGRTS=0" ;;
+    #    yes) echo "USINGRTS=1" ;;
+    #  esac;
+    #  echo "INSTALLVER=\"$CONFIGVERSION\"";
+    #  echo "INSTALLINFO=\"$INSTALLINFO\"";
+    #  echo "LIBCOMPAT=\"$LIBCOMPAT\"";
+    #  echo "EXE=$EXE";
+    #  echo "CC=$CCC";
+    #) >$LIBDIR/$VERSION/config
     echo -n "nhctracer.jar "
     cp $BUILDLIBDIR/nhctracer.jar $LIBDIR
     echo
@@ -474,6 +501,10 @@ else	# [ "$INSTALL" = "yes" ]
     echo -n "hmake "
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
     sed -e "s|ArchDir ||"  >$BINDIR/hmake
+    echo -n "hmake.config "
+    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
+    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
     echo -n "nhc98tracer "
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98tracer.inst |\
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98tracer

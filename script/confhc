@@ -13,6 +13,21 @@ NHC98DIR=
 # ToDo: If any of these variables are already set, we should skip the tests
 # for that compiler.
 
+# We need a working `which' command: CYGWIN at least doesn't have it.
+if which which >/dev/null 2>&1
+then ;
+else
+  echo "No builtin `which' command - attempting to emulate it."
+  which () {
+    ( for path in `echo $PATH | tr ":" " "`
+      do
+        if [ -f $path/$1 ]
+        then echo $path/$1
+        fi
+      done ) | cut -d' ' -f1
+  }
+fi
+
 # There are a variety of possible schemes for distinguishing
 # architecture-specific files across a shared heterogeneous network.
 # We try most of them here while looking for existing compilers.
@@ -80,95 +95,86 @@ trydirs () {
 }
 
 
-# If the 'which' command is not available, it is somewhat pointless
-# trying to discover where the existing Haskell compilers are!
-if which which >/dev/null 2>&1
+# Ok, so first look for HBC
+DIR=
+EXT=
+METHOD=
+echo -n "  Looking for hbc... "
+if which hbc >/dev/null 2>&1
 then
-
-  # Ok, so first look for HBC
-  DIR=
-  EXT=
-  METHOD=
-  echo -n "  Looking for hbc... "
-  if which hbc >/dev/null 2>&1
-  then
-    HBCVERSION=`hbc -v 2>&1 | cut -c20`
-    whichHBC=`which hbc`
-    up1_HBC=`dirname $whichHBC`
-    up2_HBC=`dirname $up1_HBC`
-    trydirs lib/lmlc /usr/local /usr ${up1_HBC} ${up2_HBC}
-  fi
-  HBCDIR=${DIR}
-  HBCEXT=${EXT}
-  HBCMETHOD=${METHOD}
-  if [ "$HBCDIR" = "" ]
-  then
-    echo "(not found)"
-  else
-    echo "found 0.9999.${HBCVERSION} in ${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`"
-  fi
-  
-  
-  # Now look for GHC.  Determining the version number is a bit trickier here.
-  DIR=
-  EXT=
-  METHOD=
-  echo -n "  Looking for ghc... "
-  if which ghc >/dev/null 2>&1
-  then
-    whichGHC=`which ghc`
-    up1_GHC=`dirname $whichGHC`
-    up2_GHC=`dirname $up1_GHC`
-    up3_GHC=`dirname $up3_GHC`
-    for ver in 0.29 2.01 2.02 2.03 2.04 2.07 2.08 2.09 2.10 3.00 3.01 3.02 3.03
-    do
-      trydirs ghc-${ver}/lib/imports /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
-    done
-    for ver in 4.01 4.02 4.04 4.04-1 4.05 4.06
-    do
-      trydirs ghc-${ver}/imports     /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
-    done
-  fi
-  GHCDIR=${DIR}
-  GHCEXT=${EXT}
-  GHCMETHOD=${METHOD}
-  if [ "$GHCDIR" = "" ]
-  then  echo "(not found)"
-  else  echo "found ${GHCVER} in ${GHCDIR}/`methodtext ${GHCEXT} ${GHCMETHOD}`"
-  fi
-  
-  
-  # Finally, check for previous installations of nhc13 and nhc98.
-  echo -n "  Looking for nhc13... "
-  if which nhc13 >/dev/null 2>&1
-  then
-    whichNHC=`which nhc13`
-    up1_NHC=`dirname ${whichNHC}`
-    up2_NHC=`dirname ${up1_NHC}`
-    NHC13DIR=`grep NHC13INCDIR ${whichNHC} | grep ${up2_NHC} | cut -c27- | cut -d'}' -f1`
-  fi
-  if [ "$NHC13DIR" = "" ]
-  then  echo "(not found)"
-  else  echo "found in $NHC13DIR"
-  fi
-  
-  echo -n "  Looking for nhc98... "
-  if which nhc98 >/dev/null 2>&1
-  then
-    whichNHC=`which nhc98`
-    up1_NHC=`dirname ${whichNHC}`
-    up2_NHC=`dirname ${up1_NHC}`
-    NHC98DIR=`grep NHC98INCDIR ${whichNHC} | grep ${up2_NHC} | cut -c27- | cut -d'}' -f1`
-  fi
-  if [ "$NHC98DIR" = "" ]
-  then  echo "(not found)"
-  else  echo "found in $NHC98DIR"
-  fi
-
-else
-  echo "Oh dear, you don't appear to have the 'which' command."
-  echo "I am giving up on detecting your Haskell compilers (it is too difficult)."
+  HBCVERSION=`hbc -v 2>&1 | cut -c20`
+  whichHBC=`which hbc`
+  up1_HBC=`dirname $whichHBC`
+  up2_HBC=`dirname $up1_HBC`
+  trydirs lib/lmlc /usr/local /usr ${up1_HBC} ${up2_HBC}
 fi
+HBCDIR=${DIR}
+HBCEXT=${EXT}
+HBCMETHOD=${METHOD}
+if [ "$HBCDIR" = "" ]
+then
+  echo "(not found)"
+else
+  echo "found 0.9999.${HBCVERSION} in ${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`"
+fi
+  
+  
+# Now look for GHC.  Determining the version number is a bit trickier here.
+DIR=
+EXT=
+METHOD=
+echo -n "  Looking for ghc... "
+if which ghc >/dev/null 2>&1
+then
+  whichGHC=`which ghc`
+  up1_GHC=`dirname $whichGHC`
+  up2_GHC=`dirname $up1_GHC`
+  up3_GHC=`dirname $up3_GHC`
+  for ver in 0.29 2.01 2.02 2.03 2.04 2.07 2.08 2.09 2.10 3.00 3.01 3.02 3.03
+  do
+    trydirs ghc-${ver}/lib/imports /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
+  done
+  for ver in 4.01 4.02 4.04 4.04pl1 4.05 4.06
+  do
+    trydirs ghc-${ver}/imports     /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
+  done
+fi
+GHCDIR=${DIR}
+GHCEXT=${EXT}
+GHCMETHOD=${METHOD}
+if [ "$GHCDIR" = "" ]
+then  echo "(not found)"
+else  echo "found ${GHCVER} in ${GHCDIR}/`methodtext ${GHCEXT} ${GHCMETHOD}`"
+fi
+  
+  
+# Finally, check for previous installations of nhc13 and nhc98.
+echo -n "  Looking for nhc13... "
+if which nhc13 >/dev/null 2>&1
+then
+  whichNHC=`which nhc13`
+  up1_NHC=`dirname ${whichNHC}`
+  up2_NHC=`dirname ${up1_NHC}`
+  NHC13DIR=`grep NHC13INCDIR ${whichNHC} | grep ${up2_NHC} | cut -c27- | cut -d'}' -f1`
+fi
+if [ "$NHC13DIR" = "" ]
+then  echo "(not found)"
+else  echo "found in $NHC13DIR"
+fi
+
+echo -n "  Looking for nhc98... "
+if which nhc98 >/dev/null 2>&1
+then
+  whichNHC=`which nhc98`
+  up1_NHC=`dirname ${whichNHC}`
+  up2_NHC=`dirname ${up1_NHC}`
+  NHC98DIR=`grep NHC98INCDIR ${whichNHC} | grep ${up2_NHC} | cut -c27- | cut -d'}' -f1`
+fi
+if [ "$NHC98DIR" = "" ]
+then  echo "(not found)"
+else  echo "found in $NHC98DIR"
+fi
+
 
 BUILDHMAKE=
 echo -n "I am guessing that you will want to use "
