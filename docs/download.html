@@ -155,14 +155,40 @@ be comprehensive, but if you have any problems, please mail
 <tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
                     <th>date</th> <th>fixes what problem?</th></tr>
 
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fpos_t">
-      fpos_t</a></td>
-  <td>nhc98 v1.02</td>
-  <td>2001-02-16</td>
-  <td>fixes a compile error in <tt>src/tracer/runtime/ident.c</tt>
-      on RedHat 7 and other systems using the new ISO C standard
-      for <tt>fpos_t</tt>.
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-java">
+      java</a></td>
+  <td>nhc98 v1.04</td>
+  <td>2001-06-01</td>
+  <td>Fixes a bad interaction between Java and Cygwin (visible in
+      hat-trail and hood browsers) to do with Unix vs. Windows pathnames.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-hattools">
+      hattools</a></td>
+  <td>nhc98 v1.04</td>
+  <td>2001-05-30</td>
+  <td>Fixes an obscure filename-recognition bug in some of the hat-tools,
+      where occasionally some letters from the end of the traced filename
+      were dropped, causing the file not to be found.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-ghc5">
+      ghc5</a></td>
+  <td>nhc98 v1.04</td>
+  <td>2001-05-23</td>
+  <td>Enables the automatic configuration to detect ghc 5.00 properly.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-errno">
+      errno</a></td>
+  <td>nhc98 v1.04</td>
+  <td>2001-05-23</td>
+  <td>Fixes a compile error in <tt>src/runtime/Builtin/cIOExtras.c</tt>
+      on Cygwin - an include for <tt>errno.h</tt> was missing.
       </td></tr>
 
 <tr bgcolor=#ffffdd>
@@ -238,7 +264,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.05.21<br>
+This page last modified: 2001.06.01<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
