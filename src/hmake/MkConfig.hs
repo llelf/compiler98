@@ -89,7 +89,10 @@ main = do
                         hPutStrLn stderr ("hmake-config: Copying from\n  '"
                                           ++global++"'.")
                         catch (do config <- safeReadConfig global
-                                  writeFile path (show config)
+                                  catch (writeFile path (show config))
+                                        (\e-> hPutStrLn stderr
+                                                ("hmake-config: Cannot create "
+                                                ++"file "++path))
                                   return config)
                               (\e-> if isDoesNotExistError e
                                     then do
