@@ -506,7 +506,7 @@ case $COMPFILES in
 	fi
       fi
     fi
-    )
+    ) || exit 1;
     if test $KEEPC -ne 1  -a  $KEEPS -ne 1
     then LDFILES=$OFILE" "$LDFILES	# patch in from subshell - see above
     fi
