@@ -46,8 +46,9 @@ fromC: $(OBJDIR)
 	strip $(MKPROG) $(OLDER) $(MKCONFIG)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
-	rm -f *.hi *.hc *.c
+	rm -f *.hi
 realclean: clean
+	rm -f *.hc *.c
 	rm -f $(TARGETS)
 package:
 	tar zcvf hmake.tar.gz $(SRCS) $(GCSRCS) $(CPPSRCS) Older.hs MkConfig.hs $(AUX)
