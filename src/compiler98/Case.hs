@@ -113,27 +113,35 @@ caseDecl (DeclFun pos fun funs) =
 caseDecl (DeclPat (Alt pat gdexps decls)) =
   caseDeclPatAs pat gdexps decls
 
-caseDeclPatAs (PatAs p v pat) gdexps decls = 
-  caseDeclPatFix (p,v) pat gdexps decls
-caseDeclPatAs pat gdexps decls =
-  caseUnique >>>= \ tupleId ->
+caseDeclPatAs (PatAs p v pat) gdexps decls =
+  caseUnique >>>= \ newId ->
   caseState >>>= \ state ->
   caseAdd 
-    (InfoName tupleId ((forceM (mrpsIS state) . visible . strPos) 
+    (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
       (getPos pat)) 0  tunknown) >>>
-  caseDeclPatFix (getPos pat,tupleId) pat gdexps decls
+  caseDeclPatFix (getPos pat,newId) pat (Unguarded (ExpVar p v)) decls
+        >>>= \ innerpats->
+  caseDecls decls (onePat p pat Nothing gdexps) >>>= \ exp ->
+  unitS ((v,PosLambda p [] [] exp) : innerpats)
+caseDeclPatAs pat gdexps decls =
+  caseUnique >>>= \ newId ->
+  caseState >>>= \ state ->
+  caseAdd 
+    (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
+      (getPos pat)) 0  tunknown) >>>
+  caseDeclPatFix (getPos pat,newId) pat gdexps decls
 
 
-caseDeclPatFix (pos,tupleId) pat rhs decls =
+caseDeclPatFix (pos,topPatId) pat rhs decls =
   singleVars pat >>>= \ easy ->
   case easy of
     Just pis ->
        caseTuple (length pis) >>>= \ tupleCon ->
        caseDecls decls (onePat pos pat Nothing rhs) >>>= \ exp ->
-       mapS (oneSel (PosVar pos tupleId) tupleCon pis) 
+       mapS (oneSel (PosVar pos topPatId) tupleCon pis) 
          (map ( \ (Just p,i) -> (p,i) ) (filter (isJust.fst) (zip pis [1..])))
          >>>= \ sels ->
-       unitS ((tupleId,PosLambda pos [] [] exp) : sels)
+       unitS ((topPatId,PosLambda pos [] [] exp) : sels)
 
     Nothing ->
       let pis :: [(Pos,Int)]
@@ -147,9 +155,9 @@ caseDeclPatFix (pos,tupleId) pat rhs decls =
                )
              )  
            rhs) >>>= \ exp ->
-         mapS (oneSel (PosVar pos tupleId) tupleCon pis) 
+         mapS (oneSel (PosVar pos topPatId) tupleCon pis) 
            (zip pis [1..]) >>>= \ sels ->
-         unitS ((tupleId,PosLambda pos [] [] exp) : sels)
+         unitS ((topPatId,PosLambda pos [] [] exp) : sels)
 
 
 oneSel :: PosExp -> Int -> [a] -> ((Pos,Int),Int) -> CaseFun (Int,PosLambda)
