@@ -19,14 +19,10 @@ instance  RealFloat Double  where
     encodeFloat x y = primEncodeDoubleC x y
 #endif
 
-    isNaN x 	     = isnan x /= 0
-    isInfinite x     = isinf x /= 0
-
     -- TODO
+    isNaN x 	     = False
+    isInfinite x     = False
     isDenormalized x = False
     isNegativeZero x = False
     isIEEE x         = False
 
-
-foreign import "isinf" isinf :: Double -> Int
-foreign import "isnan" isnan :: Double -> Int
