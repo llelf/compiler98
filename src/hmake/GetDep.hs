@@ -1,4 +1,4 @@
-module GetDep(showdep,showmake,dependency,When) where
+module GetDep(showdep,showdebug,showmake,dependency,When) where
 
 import Getmodtime(When(..))
 import Imports(getImports)
@@ -8,10 +8,10 @@ import Argv
 import PreProcessor
 import Config
 
-#ifdef __HBC__
+#if defined(__HBC__)
 import FileStat
 #endif
-#if defined(__NHC__) || defined(__GLASGOW_HASKELL__)
+#if defined(__HASKELL98__)
 import Directory
 #endif
 import IO
@@ -22,12 +22,17 @@ import List (intersperse)
 #define ioError fail
 #endif
 
-{-
-showdep (f,(((ths,thi,tobj),p,s,cpp),i)) =
-  let cppflag = if cpp then '*' else ' '
-  in show f ++ cppflag:'(': show ths ++ ':': show thi ++ ':': show tobj ++ ") "
-     ++ show p ++ '(':show s++ ") : " ++ show i ++ "\n"
--}
+showdebug (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
+  let cppflag = if cpp then "*" else ""
+  in show f ++ cppflag ++ "\n  ppTime= " ++ show tpp
+                       ++ "\n  hsTime= " ++ show ths
+                       ++ "\n  hiTime= " ++ show thi
+                       ++ "\n  oTime=  " ++ show tobj
+     ++ "\n  p= " ++ show p
+     ++ "\n  srcfile= " ++ show s
+     ++ "\n  imports= " ++ show i
+     ++ "\n  preproc= " ++ show (ppExecutableName pp) ++ "\n"
+
 showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
   f ++ ": " ++ mix i ++ "\n"
   where mix = foldr (\a b-> a++' ':b) ""
@@ -40,9 +45,10 @@ showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
 showmake opts goaldir ((f,p,s),i) =
   dotO p f ++ ": " ++ s ++ " " ++ mix i
   where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
+        tmod = if hat opts then ('T':) else id
         dotO p f =
-          if (dflag opts) then fixFile opts goaldir f (oSuffix opts)
-                          else fixFile opts p       f (oSuffix opts)
+          if (dflag opts) then fixFile opts goaldir (tmod f) (oSuffix opts)
+                          else fixFile opts p       (tmod f) (oSuffix opts)
 
 type FileInfo = ( (When,When,When,When)	-- file timestamps
                 , FilePath		-- directory path to file
@@ -103,7 +109,9 @@ readFirst opts name demand =
   ff = fixFileName name
   watch = debug opts
 
-#ifdef __HBC__
+#if defined(__HBC__) && !defined(__HASKELL98__)
+  -- this code is obsolete
+  -- various changes to hmake have not been tracked here
   rN [] = rP (pathPrel opts) 
   rN (p:ps) =
     let source = fixFile opts p ff "gc"
@@ -131,8 +139,7 @@ readFirst opts name demand =
      in watch ("Trying (P)" ++ source) >>
         catch (readFile source >>= \file -> return Nothing)
               (\_ -> rP ps)
-#endif
-#if defined(__NHC__) || defined(__GLASGOW_HASKELL__)
+#else
   rN [] = rP (pathPrel opts) 
   rN (p:ps) = try PreProcessor.knownSuffixes
     where try  []  = rN ps
@@ -156,11 +163,11 @@ readFirst opts name demand =
                  "\n  Asked for by: "++demand++
                  "\n[Check settings of -I or -P flags?]\n")
   rP (p:ps) = do
-     let interface = fixFile opts p ff (hiSuffix opts)
-     watch ("Trying (P)" ++ interface)
-     ok <- doesFileExist interface
+     let hinterface = fixFile opts p ff (hiSuffix opts)
+     watch ("Trying (P)" ++ hinterface)
+     ok <- doesFileExist hinterface
      if ok then do
-         watch ("Got (P)" ++ interface)
+         watch ("Got (P)" ++ hinterface)
          return Nothing
        else rP ps
 
@@ -176,12 +183,13 @@ readFirst opts name demand =
                            ))
   readData path source pp lit = do
      tpp  <- readTime source	-- in many cases, identical to `ths' below
-     ths  <- readTime (fixFile opts path  ff "hs")
-     thi  <- readTime (fixFile opts path  ff (hiSuffix opts))
-     tobj <- readTime (fixFile opts opath ff (oSuffix  opts))
+     ths  <- readTime (fixFile opts path  (tmod ff) "hs")
+     thi  <- readTime (fixFile opts path  (tmod ff) (hiSuffix opts))
+     tobj <- readTime (fixFile opts opath (tmod ff) (oSuffix  opts))
      file <- readFile source
      return (Just ((tpp,ths,thi,tobj),path,source,pp,file,lit file))
    where opath = if null (goalDir opts) then path else (goalDir opts)
+         tmod = if hat opts then ('T':) else id
 
 
 readTime :: FilePath -> IO When
