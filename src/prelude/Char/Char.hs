@@ -20,6 +20,8 @@ module Char
     ,module ReadLitChar
     ,module ShowLitChar
     ,module LexLitChar
+    -- ... and what the Prelude exports
+    ,Char, String
     ) where
 
 import IsAlpha
