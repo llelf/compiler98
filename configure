@@ -503,6 +503,7 @@ then
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
     echo -n "hi "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hi
     echo -n "greencard "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
@@ -602,6 +603,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo "	hi"
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo "	hood"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hood.inst |\
@@ -666,6 +668,8 @@ else	# [ "$INSTALL" = "yes" ]
     then
       echo "	Adjusting... hmakerc"
       $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc add $BINDIR/nhc98
+      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc add nhc98 ||\
+          echo "(This error message is harmless)"
       $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc default $BINDIR/nhc98
       if [ -d src ]	# remove temporary build version of nhc98 from config
       then $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc \
