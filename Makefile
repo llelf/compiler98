@@ -94,12 +94,11 @@ COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/hmake-config.inst script/hi.inst script/config-errno.c \
-         script/nhc98heap.c script/harch script/confhc script/confhat \
+         script/nhc98heap.c script/harch script/confhc \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
-	 lib/hood.jar script/hat-trans.inst script/hat-graph \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
-	 hmake.spec nhc98.spec script/pkgdirlist
+	 hmake.spec nhc98.spec script/pkgdirlist lib/hood.jar 
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.hc
@@ -123,51 +122,25 @@ RUNTIME = \
 	src/runtime/Mk/Makefile* \
 	src/runtime/Mk/*.c
 
-RUNTIMET = \
-	src/hat/Makefile* \
-	src/hat/runtime/Makefile* \
-	src/hat/runtime/*.[ch]
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
-HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
-	  src/hat/lib/*.hs      src/hat/lib/*.hx \
-	  src/hat/lib/Hat/*.hs	src/hat/lib/hat-package.conf \
-	  src/hat/lib/Data/*.h[sx] src/hat/lib/Hat/Data/*.hs \
-	  src/hat/lib/Control/*.hs src/hat/lib/Control/Monad/*.hs \
-	  src/hat/lib/System/*.hs src/hat/lib/System/IO/*.hs \
-	  src/hat/lib/System/Console/*.hs src/hat/lib/Debug/*.hs \
-	  src/hat/lib/Text/*.hs src/hat/lib/Text/PrettyPrint/*.hs \
-	  src/hat/lib/Text/ParserCombinators/*.hs \
-	  src/hat/lib/Text/ParserCombinators/Parsec/*.hs \
-	  src/hat/lib/Foreign/*.h[sx] src/hat/lib/Hat/Foreign/*.hs \
-	  src/hat/lib/Foreign/Marshal/*.hs #src/hat/lib/Foreign/C/*.hs
-HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
-	  src/hat/oldtools/Makefile* src/hat/oldtools/*.[ch] \
-	  src/hat/oldtools/*.hs src/hat/oldtools/*.gc
-TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc \
 	  include/base
 DOC = docs/*
 MAN = man/*.1
-HATTOOLSET= hat-stack hat-check hat-detect hat-observe hat-trail hat-view 
-HATTOOLS= $(patsubst %, lib/$(MACHINE)/%, $(HATTOOLSET))
 
 TARGDIR= targets
-TARGETS= runtime prelude libraries greencard hp2graph hattools \
+TARGETS= runtime prelude libraries greencard hp2graph \
 	 profruntime profprelude profprelude-$(CC) \
 	 timeruntime timeprelude timeprelude-$(CC) \
 	 timetraceruntime timetraceprelude \
-	 traceruntime traceprelude traceprelude-$(CC) \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 prelude-$(CC) pragma-$(CC) libraries-$(CC) \
-	 hat-nhc hat-ghc hat-trans-ghc hat-trans-nhc hat-lib-ghc hat-lib-nhc \
-	 hat-tools-ghc hat-tools-nhc
+	 prelude-$(CC) pragma-$(CC) libraries-$(CC)
 
-.PHONY: default basic all tracer compiler help config install \
-	hat hat-trans hat-lib hat-tools
+.PHONY: default basic all compiler help config install
 
 
 ##### compiler build + install scripts
@@ -178,16 +151,13 @@ all:   all-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
 greencard: greencard-${BUILDCOMP}
 hmake: hmake-${BUILDCOMP}
-tracer: tracer-${BUILDCOMP}
-hat: hat-${BUILDCOMP}
 help:
 	@echo "Default target is:     basic + heapprofile + timeprofile"
-	@echo "Main targets include:  basic heapprofile timeprofile tracer"
+	@echo "Main targets include:  basic heapprofile timeprofile"
 	@echo "                       all (= basic + heapprofile + timeprofile)"
-	@echo "                       hat config install clean realclean"
+	@echo "                       config install clean realclean"
 	@echo "  (other subtargets:   compiler hmake runtime prelude libraries"
-	@echo "                       greencard hp2graph hattools hoodui"
-	@echo "                       hat-trans hat-lib hat-tools)"
+	@echo "                       greencard hp2graph hoodui)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -206,7 +176,7 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude \
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC) libraries-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #tracer #hoodui
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #hoodui
 
 heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
 timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
@@ -217,23 +187,12 @@ profprelude-hbc: profprelude
 timeprelude-nhc: timeprelude
 timeprelude-ghc: timeprelude
 timeprelude-hbc: timeprelude
-
-tracer-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc \
-		compiler-nhc traceruntime traceprelude hattools
-tracer-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc \
-		compiler-ghc traceruntime traceprelude hattools hat-ghc
-tracer-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc \
-		compiler-hbc traceruntime traceprelude hattools
-tracer-$(CC): runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
-		greencard-$(CC) hmake-$(CC) \
-		traceruntime traceprelude-$(CC) hattools
 timetraceprofile: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
-	#cd src/hat/runtime;    $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
 
 
@@ -294,25 +253,14 @@ $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
 
 $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=p install
-	#cd src/hat/runtime;    $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profruntime
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
 
-$(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
-	cd src/runtime;        $(MAKE) CFG=T install
-	#cd src/hat/runtime;    $(MAKE) CFG=T install
-	touch $(TARGDIR)/$(MACHINE)/traceruntime
-$(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;	       $(MAKE) CFG=T install
-	touch $(TARGDIR)/$(MACHINE)/traceprelude
-
-
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=Tz install
-	#cd src/hat/runtime;    $(MAKE) CFG=Tz install
 	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
 $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=Tz install
@@ -321,7 +269,6 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=z install
-	#cd src/hat/runtime;    $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeruntime
 $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=z install
@@ -332,12 +279,6 @@ $(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) fromC relink
 	touch $(TARGDIR)/$(MACHINE)/prelude-$(CC)
 	touch $(TARGDIR)/$(MACHINE)/prelude
-$(TARGDIR)/$(MACHINE)/traceprelude-$(CC): $(PRELUDEC)
-	cd src/prelude;        $(MAKE) CFG=T fromC
-	cd src/prelude/$(MACHINE)/NHC; $(MAKE) CFG=T clean all
-	cd src/prelude;        $(MAKE) CFG=T relink
-	touch $(TARGDIR)/$(MACHINE)/traceprelude-$(CC)
-	touch $(TARGDIR)/$(MACHINE)/traceprelude
 $(TARGDIR)/$(MACHINE)/timeprelude-$(CC): $(PRELUDEC)
 	cd src/prelude;        $(MAKE) CFG=z fromC
 	cd src/prelude/$(MACHINE)/NHC; $(MAKE) CFG=z clean all
@@ -385,43 +326,12 @@ lib/hood.jar: $(HOODUI)
 	cd src/hoodui;         $(MAKE) install
 
 
-######### tracing with Hat
-hat-trans: hat-trans-$(BUILDCOMP)
-hat-lib:   hat-lib-$(BUILDCOMP)
-hat-tools: hat-tools-$(BUILDCOMP)
-$(TARGDIR)/$(MACHINE)/hat-$(BUILDCOMP): hat-trans-$(BUILDCOMP) \
-			hat-lib-$(BUILDCOMP) hat-tools-$(BUILDCOMP)
-	touch $@
-
-$(TARGDIR)/$(MACHINE)/hat-trans-ghc: src/hat/trans/*.hs src/compiler98/*.hs
-	cd src/hat/trans;	$(MAKE) HC=$(BUILDWITH) all
-	touch $@
-$(TARGDIR)/$(MACHINE)/hat-trans-nhc: src/hat/trans/*.hs src/compiler98/*.hs
-	cd src/hat/trans;	$(MAKE) HC=$(BUILDWITH) all
-	touch $@
-$(TARGDIR)/$(MACHINE)/hat-lib-ghc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=$(BUILDWITH) all
-	touch $@
-$(TARGDIR)/$(MACHINE)/hat-lib-nhc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=$(BUILDWITH) all
-	touch $@
-$(TARGDIR)/$(MACHINE)/hat-tools-ghc: $(HATUI)
-	cd src/hat/tools;      $(MAKE) HC=$(BUILDWITH) install
-	#cd src/hat/oldtools;   $(MAKE) install
-	touch $@
-$(TARGDIR)/$(MACHINE)/hat-tools-nhc: $(HATUI)
-	cd src/hat/tools;      $(MAKE) HC=$(BUILDWITH) install
-	#cd src/hat/oldtools;   $(MAKE) install
-	touch $@
-
-
 ##### scripts for packaging various distribution formats
 
 binDist:
 	rm -f nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)-$(MACHINE).tar.gz
 	tar cf nhc98-$(VERSION)-$(MACHINE).tar $(BASIC)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar lib/$(MACHINE)
-	#tar rf nhc98-$(VERSION)-$(MACHINE).tar include/hat
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(SCRIPT)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(MAN)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(INCLUDE)
@@ -471,9 +381,6 @@ nolinks:
 $(TARGDIR)/preludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) cfiles
 	touch $(TARGDIR)/preludeC
-$(TARGDIR)/tracepreludeC: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;    $(MAKE) CFG=T cfiles
-	touch $(TARGDIR)/tracepreludeC
 $(TARGDIR)/timepreludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) CFG=z cfiles
 	touch $(TARGDIR)/timepreludeC
@@ -544,39 +451,6 @@ hmakeBinDist:
 	gzip hmake-$(HMAKEVERSION)-$(MACHINE).tar
 
 
-##### package up hat separately
-
-HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
-		script/echo.c script/confhat script/confhc-hat script/fixghc \
-		script/hat-graph script/pkgdirlist
-HATMISC = Makefile.inc Makefile.hat hat-configure \
-	  src/Makefile.inc src/hat/Makefile* include/art.h
-HATTRANS = src/hat/trans/Makefile* \
-	 $(shell hmake -package lang -M HatTrans.hs \
-		-Isrc/hat/trans -Isrc/compiler98 \
-		| cut -d':' -f1 | sed -e 's/\.o$$/.hs/' | sed -e '/^. /d' )
-HATMAN  = man/hat-*
-HATDOCS = docs/hat/*
-
-hatDist:
-	rm -f hat-$(HATVERSION).tar hat-$(HATVERSION).tar.gz
-	tar cf hat-$(HATVERSION).tar $(HATSCRIPT)
-	tar rf hat-$(HATVERSION).tar $(HATTRANS)
-	tar rf hat-$(HATVERSION).tar $(HATLIB)
-	tar rf hat-$(HATVERSION).tar $(HATUI)
-	tar rf hat-$(HATVERSION).tar $(HATMISC)
-	tar rf hat-$(HATVERSION).tar $(HATMAN)
-	tar rf hat-$(HATVERSION).tar $(HATDOCS)
-	mkdir hat-$(HATVERSION)
-	cd hat-$(HATVERSION); tar xf ../hat-$(HATVERSION).tar
-	cd hat-$(HATVERSION); mv hat-configure configure
-	cd hat-$(HATVERSION); mv Makefile.hat Makefile
-	#cd hat-$(HATVERSION)/src/compiler98; mv Makefile.hat Makefile
-	tar cf hat-$(HATVERSION).tar hat-$(HATVERSION)
-	rm -r hat-$(HATVERSION)
-	gzip hat-$(HATVERSION).tar
-
-
 ##### cleanup
 
 clean: cleanhi
@@ -586,7 +460,6 @@ clean: cleanhi
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
-	-cd src/hat/tools &&    $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(BUILDDIR)/obj*			# all object files
 
@@ -606,7 +479,7 @@ cleanC:
 	cd src/prelude;		$(MAKE) CFG=p cleanC
 	cd src/prelude;		$(MAKE) CFG=z cleanC
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
-			tracepreludeC timepreludeC heappreludeC librariesC
+			timepreludeC heappreludeC librariesC
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
