@@ -1,11 +1,5 @@
-module PackedString (primComparePS) where
+module PackedString where
 
-import PackedString (PackedString)
+import FFIBuiltin(PackedString)
 
-foreign import primComparePSC :: PackedString -> PackedString -> Int
-
-primComparePS :: PackedString -> PackedString -> Ordering
-primComparePS ps1 ps2 = case primComparePSC ps1 ps2 of
-				(-1) -> LT
-				0    -> EQ
-				1    -> GT
+primComparePS primitive 2 :: PackedString -> PackedString -> Ordering
