@@ -642,7 +642,7 @@ main (int argc, char** argv)
     }
     fprintf(stderr, "Haskell redex trail browser connected\n");
 
-    if (errorRoot) {
+    if (errorRoot&&!ignoreErrors) {
       ToBrowser(sock, "Error\n");
       dumpTraceToBrowser(sock, errorRoot);
       loop(sock, errorRoot);

@@ -15,6 +15,7 @@
 
 FILE *HatFile, *OutputFile, *BridgeFile;
 FileOffset errorRoot, errorMsg;
+int ignoreErrors=False;
 unsigned filesize=0, outputsize=0;
 char* progname;
 
@@ -29,26 +30,33 @@ initialise (int argc, char **argv)
 {
   int err;
   char header[8];
+  char *arg;
 
-  if (argc!=2) {
-    fprintf(stderr,"Usage: %s program\n",argv[0]);
+  if ((argc!=2)&&(argc!=3)) {
+    fprintf(stderr,"Usage: %s [-o] program\n",argv[0]);
     exit(1);
   }
+  if ((argc==3)&&!strcmp(argv[1],"-o")) {
+    ignoreErrors=True;
+    arg=argv[2];
+  } else {
+    arg=argv[1];
+  }
   progname   = argv[0];	/* for error messages - not the prog being debugged */
-  filesize   = sizeFile(argv[1],".hat");
-  outputsize = sizeFile(argv[1],".hat.output");
-  HatFile    = openFile(argv[1],".hat");
-  OutputFile = openFile(argv[1],".hat.output");
-  BridgeFile = openFile(argv[1],".hat.bridge");
+  filesize   = sizeFile(arg,".hat");
+  outputsize = sizeFile(arg,".hat.output");
+  HatFile    = openFile(arg,".hat");
+  OutputFile = openFile(arg,".hat.output");
+  BridgeFile = openFile(arg,".hat.bridge");
 
   err = fread(header,sizeof(char),8,HatFile);
   if (err!=8) {
-    fprintf(stderr,"%s: file %s is too short\n",progname,argv[1]);
+    fprintf(stderr,"%s: file %s is too short\n",progname,arg);
     exit(1);
   }
   if (strncmp(header,"Hat v01",7)) {
     fprintf(stderr,"%s: file %s does not appear to be a Hat archive\n"
-                  ,progname,argv[1]);
+                  ,progname,arg);
     exit(1);
   }
   errorRoot = readFO();
