@@ -1,0 +1,15 @@
+module CPUTime(getCPUTime) where
+
+import GreenCard
+import CpuTimePrecision
+
+getCPUTime :: IO Integer
+getCPUTime = do
+  i <- clock ()
+  return (toInteger i * cpuTimePrecision)
+
+%fun clock :: () -> IO Int
+%call ()
+%code
+%  i = clock();
+%result (declare "clock_t" i in int i)
