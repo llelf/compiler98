@@ -138,7 +138,7 @@ do
         hmflags=$hmflags" -o-suffix=z.o" ;;
 
     # mainly GHC flags
-    -package|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
+    -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
 
     # Any other compiler flags
     -*) hcflags=$hcflags" $1" ;;
