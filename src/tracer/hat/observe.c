@@ -15,71 +15,10 @@
 #include "hashtable.h"
 
 // optional switch
-#define showNodeInfo // show additional information about file offsets
 
 
-int isDescendantOf(unsigned long fileoffset,unsigned long parent) {
-  char nodeType;
-  if (parent==0) return 0;
-  while (fileoffset!=0) {
-    seek(fileoffset);
-    nodeType=nextbyte();
-    switch(nodeType) {
-    case TRHIDDEN:
-    case TRSATA:
-    case TRSATB:
-    case TRSATC:
-    case TRSATCIS:
-    case TRSATBIS:
-    case TRSATAIS:
-      fileoffset=readpointer();
-      break;
-    case TRAPP:{
-      unsigned long newoffs;
-      skipbytes(1);
-      newoffs = readpointer();
-      if (leftmostOutermost(fileoffset)==parent) return 1;
-      fileoffset = newoffs;
-      break;
-    }
-    default:
-      return 0;
-    }
-  }
-  return 0;
-}
+//#define showNodeInfo // show additional information about file offsets
 
-int isDirectDescendantOf(unsigned long fileoffset,unsigned long parent) {
-  char nodeType;
-  if (parent==0) return 0;
-  while (fileoffset!=0) {
-    seek(fileoffset);
-    nodeType=nextbyte();
-    switch(nodeType) {
-    case TRHIDDEN:
-    case TRSATA:
-    case TRSATB:
-    case TRSATC:
-    case TRSATCIS:
-    case TRSATBIS:
-    case TRSATAIS:
-      fileoffset=readpointer();
-      break;
-    case TRAPP:{
-      unsigned long newoffs,lmo;
-      skipbytes(1);
-      newoffs = readpointer();
-      if ((lmo=leftmostOutermost(fileoffset))==parent) return 1;
-      if (isTopLevel(fileoffset)) return 0;
-      fileoffset = newoffs;
-      break;
-    }
-    default:
-      return 0;
-    }
-  }
-  return 0;
-}
 
 void checkNodes(unsigned long identifierNode,
 		unsigned long topIdentifierNode,
@@ -104,19 +43,18 @@ void checkNodes(unsigned long identifierNode,
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
     }
-    nodeType = nextbyte();
+    nodeType = getNodeType();
     switch (nodeType) {
     case TRAPP:
       {
-	int arity = readarity();
+	int arity = getAppArity();
 	unsigned long apptrace;
-	apptrace = readpointer();  // fileoffset of App-trace
-	p = readpointer();         // fileoffset of Function-trace
-	skipbytes(4*(arity+1));
+	apptrace = getTrace();  // fileoffset of App-trace
+	p = getFunTrace();      // fileoffset of Function-trace
 	if (isInHashTable(htable,p)) {
-	  unsigned long old = byteoffset();
-	  unsigned long satc=findAppSAT(currentOffset);  // find SATC for the application!	  
-	  if (isSAT()) {
+	  unsigned long old  = byteoffset();
+	  unsigned long satc = findAppSAT(currentOffset);  // find SATC for the application!	  
+	  if (isSAT(satc)) {
 	    if (followSATs(satc)==currentOffset) {
 	      addToHashTable(htable,currentOffset); // remember partial application
 	      addToHashTable(htable,satc);
@@ -128,7 +66,7 @@ void checkNodes(unsigned long identifierNode,
 		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
 		  ExprNode* r=buildExpr(satc,verboseMode);
 		  ExprNode* a=buildExpr(currentOffset,verboseMode);
-		  arity = getArity(a);
+		  arity = getExprArity(a);
 		  if (arity>=maxarity) {
 		    addToFunTable(result,a,r,currentOffset);
 		    maxarity=arity;
@@ -143,7 +81,7 @@ void checkNodes(unsigned long identifierNode,
 		    ((topIdentifierNode==0)||
 		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
 		  ExprNode* a=buildExpr(currentOffset,verboseMode);
-		  arity = getArity(a);
+		  arity = getExprArity(a);
 		  if (arity>=maxarity) {
 		    if ((arity>maxarity)&&(maxarity!=-1)) {
 		      arityProblem=found;
@@ -164,14 +102,14 @@ void checkNodes(unsigned long identifierNode,
 	  seek(old);
 	}
       }
+      nextNode();
       break;
     case TRNAM: // Name
-      skippointer(); // continue now as SATC
-      if ((readpointer()==identifierNode)&&(identifierNode!=0)) {
+      if ((getNmType()==identifierNode)&&(identifierNode!=0)) {
 	//printf("found name reference for identifier at: %u\n",p);
 	addToHashTable(htable,currentOffset);
-	skippointer();
-	if (isSAT()) {  // SATC behind TRNAM?
+	nextNode();
+	if (isSAT(byteoffset())) {  // SATC behind TRNAM?
 	  // found a CAF!
 	  unsigned long satc = byteoffset();
 	  if (uniqueMode) {
@@ -183,32 +121,10 @@ void checkNodes(unsigned long identifierNode,
 	  }
 	  seek(satc);
 	}
-      } else skippointer();
+      } else nextNode();
       break;
-      /*    case NTIDENTIFIER:
-      if ((identifierNode==0)||((topIdentifier!=NULL)&&(topIdentifierNode==0))) {
-	if (isTopLevel(currentOffset)) {
-	  // search for identifier
-	  unsigned long offset = byteoffset()-1;
-	  char *currentIdent = readstring(); // name of current identifier
-	  //printf("identifier '%s'\n",currentIdent);
-	  if ((identifierNode==0)&&(strcmp(currentIdent,identifier)==0)) { // found?
-	    //printf("FOUND Identifier at: %u!\n",offset);
-	    identifierNode = offset;
-	    if ((topIdentifier!=NULL)&&(strcmp(identifier,topIdentifier)==0))
-	      topIdentifierNode=offset; // both identifier are the same!
-	  } else
-	    if ((topIdentifier!=NULL)&&(strcmp(currentIdent,topIdentifier)==0))
-	      topIdentifierNode=offset;
-	} else {
-	  skipstring();  // simply read string
-	}
-      } else skipstring();
-      skipbytes(4+1+4);
-      break; */
     default:
-      skipNode(nodeType);
-      break;
+      nextNode();
     }
   }
   if ((uniqueMode)&&(lsz<200)) {
@@ -245,30 +161,25 @@ void findNodes(char* identifier,
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
     }
-    nodeType = nextbyte();
+    nodeType = getNodeType();
     if (nodeType==NTIDENTIFIER) {
       if ((identifierNode==0)||((topIdentifier!=NULL)&&(topIdentifierNode==0))) {
 	if (isTopLevel(currentOffset)) {
 	  // search for identifier
-	  unsigned long offset = byteoffset()-1;
-	  char *currentIdent = readstring(); // name of current identifier
+	  char *currentIdent = getName(); // name of current identifier
 	  //printf("identifier '%s'\n",currentIdent);
 	  if ((identifierNode==0)&&(strcmp(currentIdent,identifier)==0)) { // found?
-	    //printf("FOUND Identifier at: %u!\n",offset);
-	    identifierNode = offset;
+	    //printf("FOUND Identifier at: %u!\n",currentOffset);
+	    identifierNode = currentOffset;
 	    if ((topIdentifier!=NULL)&&(strcmp(identifier,topIdentifier)==0))
-	      topIdentifierNode=offset; // both identifier are the same!
+	      topIdentifierNode=currentOffset; // both identifier are the same!
 	  } else
 	    if ((topIdentifier!=NULL)&&(strcmp(currentIdent,topIdentifier)==0))
-	      topIdentifierNode=offset;
-	} else {
-	  skipstring();  // simply read string
+	      topIdentifierNode=currentOffset;
 	}
-      } else skipstring();
-      skipbytes(4+1+4);
-    } else {
-      skipNode(nodeType);
+      }
     }
+    nextNode();
   }
   *identNode=identifierNode;
   *topIdentNode=topIdentifierNode;
@@ -302,3 +213,4 @@ void observeIdentifier(char* ident,char* topIdent,
   observeNode(identifierNode,topIdentifierNode,verbosemode,uniqueMode,recursivemode,
 	      interactmode);
 }
+

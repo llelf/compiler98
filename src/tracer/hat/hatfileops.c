@@ -1,3 +1,9 @@
+/**************************************************************************/
+/* hatfileops.c: general operations on hat files                          */
+/*                                                                        */
+/* Thorsten Brehm, 4/2001                                                 */
+/**************************************************************************/
+
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
@@ -10,13 +16,20 @@
 
 int f;                  /* file descriptor for archive */
 #define MAXBUFSIZE 16384
-int bufsize=MAXBUFSIZE; /* buffersize can be reduced when only seeking through the file! */
+int bufsize=MAXBUFSIZE; /* buffersize */
 char buf[MAXBUFSIZE];   /* input buffer */
 unsigned int buf_n;     /* buf[0..buf_n-1] filled */
 unsigned int boff;      /* if buf_n>0, boff in 0..buf_n-1 and buf[boff] is current */
 unsigned long foff;     /* if buf_n>0, this is offset in f of buf[0] */
 
-unsigned _filesize = 0;
+unsigned long _filesize = 0;
+
+struct stat hatStatBuf;
+
+typedef union {char byte[4];
+               unsigned long ptrval;
+	       long intval;
+	       float floatval;} fourbytes;
 
 int checkParameters(char* str,char* allowed) {
   if (*str!='-') return 1; // bad parameter syntax
@@ -101,13 +114,6 @@ int more() {
   }
 }
 
-/* reset the buffer size. useful for different scanning modes.
-   large buffer for sequential scan through the file, small values
-   for seeking only */
-void resetbuffersize(int size) {
-  if ((size>100)&&(size<=MAXBUFSIZE)) bufsize=size;
-}
-
 /* return position in file */
 unsigned long byteoffset() {
   return foff + boff;
@@ -153,9 +159,7 @@ char *readstring() {
   return stringbuf;
 }
 
-/* skip one string in file
-   don't bother about its value
-*/
+/* skip one string in file */
 void skipstring() {
   do {
     if (boff>=buf_n) {
@@ -191,28 +195,15 @@ void skipbytes(int bytes) { boff+=bytes; }
 #define POSNMAX 30
 char posnbuf[POSNMAX+1];
 
-char *readposn() {
-  unsigned long posn = readfourbytes().ptrval;
-  sprintf(posnbuf, "line %u, column %u", posn/10000, posn%10000);
-  return posnbuf;
-}
-
-void skipposn() { skipbytes(4); }
-
 unsigned long readpointer() {
   return readfourbytes().ptrval;
 }
 
 void skippointer() {skipbytes(4);}
 
-char readchar() {
-  return nextbyte();
-}
-
 int readint() {
   return readfourbytes().intval;
 }
-void skipint() { skipbytes(4); }
 
 #define INTEGERMAX 30
 char integerbuf[INTEGERMAX+1];
@@ -227,22 +218,17 @@ int readinteger() { // int for now!
 }
 
 void skipinteger() {
-  int n = (int) (nextbyte());
+  int n = (signed char) (nextbyte());
+  if (n<0) n=-n;
   skipbytes(n*4);
 }
 
 #define RATMAX (2*INTEGERMAX+2)
 char ratbuf[RATMAX+1];
 
-char *readrational() {
-  sprintf(ratbuf, "%i:%% %i",readinteger(),readinteger());
-  return ratbuf;
-}
-
-float readfloat() {
-  fourbytes a = readfourbytes();
-  a.ptrval = htonl(a.ptrval);
-  return a.floatval;
+void skiprational() {
+  skipinteger();
+  skipinteger();
 }
 
 typedef union {
@@ -250,14 +236,14 @@ typedef union {
   fourbytes a[2];
 } eightbytes;
 
-double readdouble() {
+/* double readdouble() {
   eightbytes v;
   v.a[0] = readfourbytes();
   v.a[1] = readfourbytes();
   v.a[1].ptrval = htonl(v.a[1].ptrval);
   v.a[0].ptrval = htonl(v.a[0].ptrval);
   return v.d;
-}
+  }*/
 
 int hi3(char b) {
   return (int)(b>>5);
@@ -294,14 +280,19 @@ int testheader() {
     fprintf(stderr,"ERROR: File is not a hat file or version is not supported.\nAborted.\n\n");
     return 0;
   } else {
-    skippointer();
-    skippointer();
+    skipbytes(8);
     return 1;
   }
 }
 
-int isSAT() {
-  char c = seenextbyte();
+int isSAT(unsigned long fileoffset) {
+  char c;
+  unsigned long old = byteoffset();
+  
+  seek(fileoffset);
+  c = seenextbyte();
+  seek(old);
+
   return ((c==TRSATC)||(c==TRSATB)||(c==TRSATA));
 }
 
@@ -343,16 +334,16 @@ void skipNode(char nodeType) {
   case NT:
     switch (lo5(nodeType)) {
     case INT:
-      skipint();
+      skipbytes(4);
       break;
     case CHAR:
-      readchar();
+      skipbytes(1);
       break;
     case INTEGER:
       skipinteger();
       break;       
     case RATIONAL:
-      readrational();
+      skiprational();
       break;
     case FLOAT:
       skipbytes(4);
@@ -408,7 +399,7 @@ unsigned long followTrace(unsigned long fileoffset) {
     case TRNAM:
     case TRIND: //  Indirection
       skippointer();
-      fileoffset=readpointer(); // follow this link for prettyPrint
+      fileoffset=readpointer();
       break;
     case TRSATCIS:
     case TRSATC:
@@ -462,38 +453,36 @@ unsigned long followSATs(unsigned long fileoffset) {
 /* return value 0: no SAT found, otherwise: offset for SAT */
 unsigned long findAppSAT(unsigned long fileoffset) {
   char nodeType;
-  unsigned long p;
+  unsigned long p,satc;
 
   while (1) {
     //printf("searching for App SAT... %u\n",fileoffset);
     seek(fileoffset);
-    nodeType = nextbyte();
+    nodeType = getNodeType();
     //printf("node type: %i\n",nodeType);
     switch (nodeType) {
     case TRAPP: // Application
-      {
-	int arity = readarity();
-	p = readpointer();  // fileoffset of App-trace
-	skippointer();  // fileoffset of Function-trace
-	skipbytes(4*(arity+1));
-      }
-      if (isSAT()) { // success! found the SATC!
- 	return byteoffset();
+      p = getTrace();
+      nextNode();
+      satc = byteoffset();
+      if (isSAT(satc)) { // success! found the SATC!
+ 	return satc;
       }
       else fileoffset = p; // follow parent!
       break;
     case TRNAM:   // for finding CAFs. SATc should be behind the TRNAM
-      p=readpointer();
-      skipbytes(4*2);
-      if (p==0) { // found CAF!
-	if (isSAT()) return byteoffset();
-      }
+      p=getTrace();
+      //if (p==0) { // found CAF!
+      nextNode();
+      satc = byteoffset();
+      if (isSAT(satc)) return satc;
+      //}
       fileoffset=p;
       break;
     default: {
 	unsigned long newfileoffset=followTrace(fileoffset);
 	if (newfileoffset == fileoffset) {
-	  if (isSAT()) return fileoffset;
+	  if (isSAT(newfileoffset)) return fileoffset;
 	  else return 0;
 	} else
 	  fileoffset = newfileoffset;
@@ -515,7 +504,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
     printf("building expression... %u\n",fileoffset);
 #endif
     fileoffset=followTrace(fileoffset); // follow the trace along all SATs and indirections
-    b = nextbyte();
+    b = getNodeType();
 #ifdef DebugbuildExpr
     printf("node type: %i\n",b);
 #endif
@@ -526,22 +515,20 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	AppNode* apn;
 	ExprNode* fun;
 	unsigned long localoffset,functionOffset;
-	arity=readarity();
+	arity=getAppArity();
 	apn=newAppNode(arity);
 
 	exp = newExprNode(TRAPP);
 	exp->v.appval = apn;
 
-	skippointer();  // fileoffset of App-trace
-	functionOffset = readpointer();
+	functionOffset = getFunTrace();
 #ifdef DebugbuildExpr
 	printf("Found application of arity: %i\n",arity);
 #endif
 	while (i++<arity) {  // now read all argument pointers into memory
-	  setAppNodeArg(apn,i-1,(ExprNode*) readpointer()); // do something nasty
+	  setAppNodeArg(apn,i-1,(ExprNode*) getAppArgument(i-1)); // do something nasty
 	  // abuse pointers for storing the fileoffsets temporarily
 	}
-	localoffset = byteoffset();
 	// build function
 	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose));
 	i=0;
@@ -553,16 +540,14 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	  setAppNodeArg(apn,i-1,buildExprRek((unsigned long) getAppNodeArg(apn,i-1),
 					     verbose));
 	}
-	seek(localoffset);   // back to correct position
 	return exp;
 	}
     case NTIDENTIFIER:
     case NTCONSTRUCTOR: {
       int infix,infixprio;
       exp = newExprNode(b);
-      s=readstring();
-      skippointer();            // skip modinfo
-      infix=nextbyte();
+      s=getName();
+      infix=getInfixPrio();
       infixprio = infix / 4;
       infix = infix % 4;
       if (strcmp(s,",")==0) {
@@ -576,35 +561,32 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
       return exp;
     }
     case TRNAM: // Name
-      skippointer();
-      fileoffset=readpointer(); // read NmType -> follow this link to build 
-      // skippointer();
+      fileoffset=getNmType(); // read NmType -> follow this link to build 
       break;
     case TRIND: //  Indirection
-      skippointer();
-      fileoffset=readpointer(); // follow this link for prettyPrint
+      fileoffset=getValueTrace(); // follow this link for prettyPrint
       break;
     case NTINT:
       exp = newExprNode(b);
-      exp->v.intval = readint();
+      exp->v.intval = getIntValue();
       return exp;
     case NTCHAR:
       exp = newExprNode(b);
-      exp->v.charval = readchar();
+      exp->v.charval = getCharValue();
       return exp;
     case NTDOUBLE:
       exp = newExprNode(b);
       exp->v.doubleval = (double*) malloc(1,sizeof(double));
-      *(exp->v.doubleval) = readdouble();
+      *(exp->v.doubleval) = getDoubleValue();
       return exp;
     case NTRATIONAL:
     case NTINTEGER:
       exp = newExprNode(b);
-      exp->v.intval = readinteger();
+      exp->v.intval = getIntegerValue();
       return exp;
     case NTFLOAT:
       exp = newExprNode(b);
-      exp->v.floatval = readfloat();
+      exp->v.floatval = getFloatValue();
       return exp;
     case NTTUPLE:
     case NTFUN:
@@ -625,7 +607,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
     case TRSATAIS:
     case TRSATA: // unevaluated expression
       if (verbose) {
-	p = readpointer();
+	p = getTrace();
 	exp = newExprNode(TRSATA);
 	exp->v.expr = buildExprRek(p,verbose);
 	return exp;
@@ -634,7 +616,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
     case TRSATBIS:
     case TRSATB:
       exp = newExprNode(b);
-      exp->v.intval = readpointer();
+      exp->v.intval = getTrace();
       return exp;
     default:
       fprintf(stderr, "strange tag %d in %u\n",
@@ -651,116 +633,6 @@ ExprNode* buildExpr(unsigned long fileoffset,int buildUnevaldepth) {
 }
 
 /*********************************************************************/
-/* list datastructure, keeping a list of file offsets                */
-/*                                                                   */
-/*********************************************************************/
-
-NodeList* newList() {
-  int sz = sizeof(NodeList);
-  NodeList* e = (NodeList*) calloc(1,sz); // sets both pointers to NULL!
-}
-
-void appendToList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr e = (NodePtr) calloc(1,sz);
-  if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
-    fprintf(stderr,"ERROR: No more space in heap!\n\n");
-    exit(1);
-  }
-  e->fileoffset = foffset;
-  if (nl->last==NULL) {
-    nl->first = e;
-    nl->last = e;
-  } else {
-    nl->last->next = e;
-    nl->last = e;
-  }
-}
-
-void addBeforeList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr e = (NodePtr) calloc(1,sz);
-  if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
-    fprintf(stderr,"ERROR: No more space in heap!\n\n");
-    exit(1);
-  }
-  e->fileoffset = foffset;
-  e->next=nl->first;
-  nl->first = e;
-  if (nl->last==NULL) nl->last=e;
-}
-
-void insertInList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr l,e = (NodePtr) calloc(1,sz);
-  if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
-    fprintf(stderr,"ERROR: No more space in heap!\n\n");
-    exit(1);
-  }
-  e->fileoffset = foffset;
-  l=nl->first;
-  if ((l==NULL)||(l->fileoffset>=foffset)) {
-    e->fileoffset=foffset;
-    e->next = nl->first;
-    nl->first = e;
-    if (nl->last==NULL) nl->last = e;
-    return;
-  }
-  while ((l->next!=NULL)&&(l->next->fileoffset<foffset)) l=l->next;
-  e->next=l->next;
-  l->next = e;
-  if (e->next==NULL) nl->last=e;
-}
-
-int isInList(NodeList *nl,unsigned long foffset) {
-  NodePtr e;
-  if (nl->first==NULL) return 0; // list empty! => not in list!
-  if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
-    return 0;  // foffset without range of stored values => not in list!
-  e = nl->first;
-  while ((e!=NULL)&&(e->fileoffset!=foffset)) e=e->next;
-  return (e!=NULL);
-}
-
-void showList(NodeList *nl) {
-  NodePtr e;
-  e = nl->first;
-  if (e==NULL) printf("EMPTY\n"); else
-    {
-      while (e!=NULL) {
-	printf("element: %u\n",e->fileoffset);
-	e=e->next;
-      }
-    }
-}
-
-unsigned long listLength(NodeList *nl) {
-  NodePtr e;
-  unsigned long l = 0;
-  e = nl->first;
-  while (e!=NULL) {
-    e=e->next;
-    l++;
-  }
-  return l;
-}
-
-void freeList(NodeList *nl) {
-  NodePtr e,f;
-  e = nl->first;
-  while (e!=NULL) {
-    f=e;
-    e=e->next;
-    free(f);
-  }
-  nl->first=NULL;
-  nl->last=NULL;
-}
-
-/*********************************************************************/
 
 /* show location in source file of this application/symbol */
 void showLocation(unsigned long fileoffset) {
@@ -769,34 +641,31 @@ void showLocation(unsigned long fileoffset) {
   unsigned long old = byteoffset(),posn;
   while (1) {
     seek(fileoffset);
-    nodeType=nextbyte();
+    nodeType=getNodeType();
     switch(nodeType) {
     case SRCREF:
-      fileoffset = readpointer();
-      s = readposn();
+      fileoffset = getModInfo();
+      s = getPosnStr();
       showLocation(fileoffset);
       printf(", %s\n",s);
       seek(old);
       return;
     case MDSUSPECT:
     case MDTRUSTED:
-      s = readstring();
+      s = getName();
 
       printf("module \"%s\", ",s);
-      s = readstring();
+      s = getSrcName();
       printf("file \"%s\"",s);
       seek(old);
       return;
     case TRAPP:
       {
-	int arity=nextbyte();
-	skipbytes(4*(1+1+arity));
-	fileoffset = readpointer();
+	fileoffset = getSrcRef();
 	break;
       }
     case TRNAM:
-      skipbytes(8);
-      fileoffset = readpointer();
+      fileoffset = getSrcRef();
       break;
     default:
       seek(old);
@@ -813,44 +682,39 @@ void showFunLocation(unsigned long fileoffset) {
   while (1) {
     fileoffset = followSATs(fileoffset);
     seek(fileoffset);
-    nodeType=nextbyte();
+    nodeType=getNodeType();
     switch(nodeType) {
     case NTIDENTIFIER:
     case NTCONSTRUCTOR:
-      skipstring(); // skip one string and handle like a SRCREF
-      fileoffset = readpointer();
-      skipbyte();
-      s = readposn();
+      fileoffset = getTrace();
+      s = getPosnStr();
       showLocation(fileoffset);
       printf(", %s\n",s);
       seek(old);
       return;
     case SRCREF:
-      fileoffset = readpointer();
-      s = readposn();
+      fileoffset = getModInfo();
+      s = getPosnStr();
       showLocation(fileoffset);
       printf(", %s\n",s);
       seek(old);
       return;
     case MDSUSPECT:
     case MDTRUSTED:
-      s = readstring();
+      s = getName();
 
       printf("module \"%s\", ",s);
-      s = readstring();
+      s = getSrcName();
       printf("file \"%s\"",s);
       seek(old);
       return;
     case TRAPP:
       {
-	//int arity=nextbyte();
-	skipbytes(1+4);
-	fileoffset = readpointer();
+	fileoffset = getFunTrace();
 	break;
       }
     case TRNAM:
-      skipbytes(4); // follow the NT
-      fileoffset = readpointer();
+      fileoffset = getNmType();
       break;
     default:
       printf("no location at offset: %u\n",fileoffset);
@@ -884,7 +748,7 @@ unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode) {
 
   satc = findAppSAT(fileoffset);  // find SATC for the application!
 
-  if (isSAT()) {
+  if (satc!=0) {
 #ifdef showAppNode
     printf("(%u): ",fileoffset);
 #endif
@@ -900,40 +764,15 @@ unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode) {
   return satc;
 }
 
-void showPretty(NodeList *nl,int verboseMode) {
-  NodePtr e;
-  FunTable* results = newFunTable();
-  e = nl->first;
-
-  if (e==NULL) printf("FUNCTION TABLE EMPTY\n"); else
-    {
-      unsigned long lngth = listLength(nl);
-      unsigned long satc,lsz = 0,built = 0;
-      while (e!=NULL) {
-	satc=findAppSAT(e->fileoffset);  // find SATC for the application!
-	if (isSAT()) {
-	  ExprNode* r=buildExpr(satc,verboseMode);
-	  ExprNode* a=buildExpr(e->fileoffset,verboseMode);
-	  addToFunTable(results,a,r,e->fileoffset);
-	}
-	e=e->next;
-      }
-    }
-  fflush(stderr);
-  showFunTable(results);
-  freeFunTable(results);
-}
-
 int isTrusted(unsigned long srcref) {
   char nodeType;
   unsigned long old = byteoffset();
   while (1) {
     seek(srcref);
-    nodeType=nextbyte();
+    nodeType=getNodeType();
     switch(nodeType) {
     case TRAPP:
-      skipbytes(5);
-      srcref=readpointer();
+      srcref=getFunTrace();
       break;
     case TRSATA:
     case TRSATB:
@@ -942,7 +781,7 @@ int isTrusted(unsigned long srcref) {
     case TRSATBIS:
     case TRSATAIS:
     case SRCREF:
-      srcref = readpointer();
+      srcref = getTrace();
       break;
     case MDSUSPECT:
       seek(old);
@@ -952,11 +791,10 @@ int isTrusted(unsigned long srcref) {
       return 1;
     case TRNAM:{
       unsigned long nmtype;
-      skippointer();
-      nmtype=readpointer(); // follow nmType by default
-      srcref=readpointer(); // use srcref if nmType is lambda
+      nmtype=getNmType(); // follow nmType by default
+      srcref=getSrcRef(); // use srcref if nmType is lambda
       seek(nmtype);
-      if (seenextbyte()!=NTLAMBDA) srcref=nmtype;
+      if (getNodeType()!=NTLAMBDA) srcref=nmtype;
       break;
     }
     case NTGUARD:
@@ -967,8 +805,7 @@ int isTrusted(unsigned long srcref) {
       seek(old);
       return 1;
     case NTIDENTIFIER:
-      skipstring();
-      srcref=readpointer(); // follow module info
+      srcref=getModInfo(); // follow module info
       break;
     default:
       seek(old);
@@ -981,7 +818,8 @@ int isCAF(unsigned long fileoffset) {
   char nodeType,i;
   unsigned long old = byteoffset();
   seek(fileoffset);
-  nodeType=nextbyte();
+  nodeType=getNodeType();
+  seek(old);
   switch(nodeType) {
   case TRNAM:
     return 1;
@@ -994,15 +832,12 @@ int isTopLevel(unsigned long srcref) {
   char nodeType,i;
   unsigned long old = byteoffset();
   while (1) {
-    //fprintf(stderr,"%u ",srcref);
     seek(srcref);
-    nodeType=nextbyte();
+    nodeType=getNodeType();
     switch(nodeType) {
     case SRCREF:
-      skippointer;
-      i=(readfourbytes().ptrval % 10000)==1;
+      i=(getPosn() % 10000)==1;
       seek(old);
-      //fprintf(stderr,"returning %i ",i);
       return i;
     case TRSATA:
     case TRSATB:
@@ -1010,22 +845,17 @@ int isTopLevel(unsigned long srcref) {
     case TRSATAIS:
     case TRSATBIS:
     case TRSATCIS:
-      srcref=readpointer();
+      srcref=getTrace();
       break;
     case TRNAM:
-      skippointer();
-      srcref=readpointer(); // follow nmType
+      srcref=getNmType(); // follow nmType
       break;
     case NTIDENTIFIER:
-      skipstring();
-      skipbytes(4+1);
-      i=(readfourbytes().ptrval % 10000)==1;
+      i=(getPosn() % 10000)==1;
       seek(old);
-      //fprintf(stderr,"returning %i ",i);
       return i;
     case TRAPP:
-      skipbytes(1+4);
-      srcref = readpointer();
+      srcref = getFunTrace();
       break;
     case NTCASE:
     case NTIF:
@@ -1039,17 +869,135 @@ int isTopLevel(unsigned long srcref) {
       return 0; // not toplevel (necessary for hat-observe funA in funA!)
     default:
       seek(old);
-      //fprintf(stderr,"returning 1 (unknown type) ");
       return 1;
     }
   }
+}
+
+int isDescendantOf(unsigned long fileoffset,unsigned long parent) {
+  char nodeType;
+  unsigned long old = byteoffset();
+
+  if (parent==0) return 0;
+  while (fileoffset!=0) {
+    seek(fileoffset);
+    nodeType=getNodeType();
+    switch(nodeType) {
+    case TRHIDDEN:
+      //case TRSATA:
+      //case TRSATB:
+    case TRSATC:
+    case TRSATCIS:
+      //case TRSATBIS:
+      //case TRSATAIS:
+      fileoffset=getTrace();
+      break;
+    case TRNAM:
+    case TRAPP:{
+      unsigned long newoffs;
+      newoffs = getTrace();
+      if (leftmostOutermost(fileoffset)==parent) {
+	seek(old);
+	return 1;
+      }
+      fileoffset = newoffs;
+      break;
+    }
+    default:
+      seek(old);
+      return 0;
+    }
+  }
+  seek(old);
+  return 0;
+}
+
+int isDirectDescendantOf(unsigned long fileoffset,unsigned long parent) {
+  char nodeType;
+  unsigned long old = byteoffset();
+
+  if (parent==0) return 0;
+  while (fileoffset!=0) {
+    seek(fileoffset);
+    nodeType=getNodeType();
+    switch(nodeType) {
+    case TRHIDDEN:
+    case TRSATA:
+    case TRSATB:
+    case TRSATC:
+    case TRSATCIS:
+    case TRSATBIS:
+    case TRSATAIS:
+      fileoffset=getTrace();
+      break;
+    case TRAPP:{
+      unsigned long newoffs,lmo;
+      newoffs = getTrace();
+      if ((lmo=leftmostOutermost(fileoffset))==parent) {
+	seek(old);
+	return 1;
+      }
+      if (isTopLevel(fileoffset)) {
+	seek(old);
+	return 0;
+      }
+      fileoffset = newoffs;
+      break;
+    }
+    default:
+      seek(old);
+      return 0;
+    }
+  }
+  seek(old);
+  return 0;
+}
+
+int isChildOf(unsigned long fileoffset,unsigned long parent) {
+  char nodeType;
+  unsigned long old = byteoffset();
+
+  if (parent==0) return 0;
+  while (fileoffset!=0) {
+    seek(fileoffset);
+    nodeType=getNodeType();
+    switch(nodeType) {
+    case TRHIDDEN:
+    case TRSATA:
+    case TRSATB:
+    case TRSATC:
+    case TRSATCIS:
+    case TRSATBIS:
+    case TRSATAIS:
+      fileoffset=getTrace();
+      break;
+    case TRNAM:
+    case TRAPP:{
+      fileoffset = getTrace();
+      if (fileoffset==parent) {
+	seek(old);
+	return 1;
+      }
+      if (isTopLevel(fileoffset)) {
+	seek(old);
+	return 0;
+      }
+      break;
+    }
+    default:
+      seek(old);
+      return 0;
+    }
+  }
+  seek(old);
+  return 0;
 }
 
 unsigned long leftmostOutermost(unsigned long fileoffset) {
   char nodeType;
   while (1) {
     seek(fileoffset);
-    nodeType=nextbyte();
+    nodeType=getNodeType();
     switch(nodeType) {
     case TRSATA:
     case TRSATB:
@@ -1058,17 +1006,15 @@ unsigned long leftmostOutermost(unsigned long fileoffset) {
       return 0;
     case TRSATC:
     case TRSATCIS:
-      fileoffset=readpointer();
+      fileoffset=getTrace();
       break;
     case TRNAM:
-      skippointer();
-      fileoffset=readpointer(); // follow nmType
+      fileoffset=getNmType(); // follow nmType
       break;
     case NTIDENTIFIER:
       return fileoffset;
     case TRAPP:
-      skipbytes(1+4);
-      fileoffset = readpointer();
+      fileoffset = getFunTrace();
       break;
     default:
       return 0;
@@ -1077,22 +1023,331 @@ unsigned long leftmostOutermost(unsigned long fileoffset) {
 }
 
 
+/* set beginning of internal buffer to current position in file */
+void resetFilepointer() {
+  foff += boff;    // make position in buffer new file offset
+  boff = 0;
+  lseek(f,foff,0); // set filepointer
+  buf_n = read(f,buf,bufsize); // read data
+}
+
+/* make sure, next <bytes> are in buffer */
+void prepareBuffer(int bytes) {
+  if (boff+bytes>=buf_n) {
+    resetFilepointer();
+  }
+}
+
+int getAppArity() {
+  char c;
+  prepareBuffer(1);
+  return buf[boff+1];
+}
+
+filepointer getTrace() {
+  unsigned int lbuf;
+  filepointer fp;
+
+  prepareBuffer(5); // need 5 bytes after current position
+  lbuf = boff;
+
+  if (nextbyte()==TRAPP) {
+    skipbyte(); // skip one byte in applications
+  }
+  fp = readpointer();
+  boff = lbuf;
+  return fp;
+}
+
+filepointer getNmType() {
+  unsigned int lbuf;
+  filepointer fp;
+
+  prepareBuffer(8);
+  lbuf = boff;
+
+  skipbytes(5);
+  fp = readpointer();
+
+  boff = lbuf;
+  return fp;  
+}
+
+filepointer getSrcRef() {
+  int arity;
+  unsigned int lbuf;
+  filepointer fp;
+
+  prepareBuffer(4);
+  lbuf = boff;
+
+  switch(nextbyte()) {
+  case TRAPP:
+    arity = nextbyte();
+    boff = lbuf;
+    prepareBuffer((arity+3)*4+1);
+    lbuf = boff;
+    skipbytes((arity+2)*4+2);
+    fp = readpointer();
+    break;
+  case TRNAM:
+    prepareBuffer(12);
+    skipbytes(8);
+    fp = readpointer();
+    break;
+  }
+  
+  boff = lbuf;
+  return fp;
+}
+
+filepointer getAppArgument(int i) {
+  unsigned int lbuf;
+  filepointer fp;
+  prepareBuffer((i+3)*4+1);
+  lbuf = boff;
+  
+  skipbytes((i+2)*4+2);
+  fp = readpointer();
+
+  boff = lbuf;
+  return fp;
+}
+
+filepointer getFunTrace() {
+  unsigned int lbuf;
+  filepointer fp;
+  prepareBuffer(9);
+  lbuf = boff;
+
+  skipbytes(6);
+  fp = readpointer();
+
+  boff = lbuf;
+  return fp;
+  
+}
+
+char getCharValue() {
+  unsigned int lbuf;
+  char c;
+
+  prepareBuffer(2);
+  lbuf = boff;
+
+  skipbyte();
+  c=seenextbyte();
+  
+  boff=lbuf;
+  return c;
+}
+
+int getIntValue() {
+  int i;
+  unsigned int lbuf;
+
+  prepareBuffer(4);
+  lbuf = boff;
+
+  skipbyte();
+  i = readfourbytes().intval;
+
+  boff=lbuf;
+  return i;
+}
 
 
+int getIntegerValue() { // int for now!
+  int n;
+  int i;
+  int res=0;
+  unsigned int lbuf;
 
+  prepareBuffer(5);
+  lbuf = boff;
 
+  skipbyte();
+  n = (signed char) nextbyte();
+  i = n;
+  
+  boff = lbuf;
+  if (n==0) return 0;
+  prepareBuffer(2+(n*4));
+  lbuf = boff;
+  skipbytes(2);
+  
+  // ATTENTION: |n| is number of bytes - mind the sign!
+  //            n==0: value is 0!
 
+  if (n==1) res = readint();else
+    if (n==-1) res = - readint();
+  // missing implementation for integers with more than 4 bytes!
+  //while (i-- > 0) (void)(readfourbytes());
 
+  boff = lbuf;
+  return res;
+}
 
+char *getRationalValue() {
+  filepointer fp;
 
+  fp = foff;
+  skipbyte();
+  sprintf(ratbuf, "%i:%% %i",readinteger(),readinteger());
+  foff = fp;
+  buf_n=0;
+  return ratbuf;
+}
 
+float getFloatValue() {
+  unsigned int lbuf;
+  fourbytes a;
 
+  prepareBuffer(5);
+  lbuf = boff;
 
+  skipbyte();
+  a = readfourbytes();
+  a.ptrval = htonl(a.ptrval);
+  
+  boff = lbuf;
+  return a.floatval;
+}
 
+double getDoubleValue() {
+  unsigned int lbuf;
+  eightbytes v;
+  prepareBuffer(8);
+  lbuf = boff;
 
+  v.a[0] = readfourbytes();
+  v.a[1] = readfourbytes();
+  v.a[1].ptrval = htonl(v.a[1].ptrval);
+  v.a[0].ptrval = htonl(v.a[0].ptrval);
 
+  boff = lbuf;
+  return v.d;
+}
 
+char getNodeType() {
+  return seenextbyte();
+}
 
+void nextNode() {
+  skipNode(nextbyte());
+}
 
+char* getName() { // get module, constructor or identifier name
+  filepointer fp=foff;
+  unsigned int lbuf=boff;
+  char* s;
+  
+  skipbyte();
+  s = readstring();
+  
+  if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
+  else {
+    foff = fp; // set filepointer and make buffer invalid
+    buf_n = 0;
+  }
+
+  return s;
+}
+
+int getInfixPrio() {
+  filepointer fp=foff;
+  unsigned int lbuf=boff;
+  char c;
+
+  skipstring();
+  skippointer();
+  c = seenextbyte();
+
+  if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
+  else {
+    foff = fp;             // set filepointer and make buffer invalid
+    buf_n = 0;
+  }
+
+  return c;
+}
+
+filepointer getValueTrace() {
+  unsigned int lbuf;
+  filepointer trace;
+  prepareBuffer(8);
+  skipbytes(5);
+  trace = readpointer();
+  
+  lbuf = boff;
+  boff = lbuf;
+  return trace;
+}
+
+char* getSrcName() {
+  filepointer fp=foff;
+  unsigned int lbuf=boff;
+  char* s;
+  
+  skipbyte();
+  skipstring();
+  s = readstring();
+  
+  if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
+  else {
+    foff = fp; // set filepointer and make buffer invalid
+    buf_n = 0;
+  }
+
+  return s;
+}
+
+filepointer getModInfo() {
+  filepointer fp=foff;
+  unsigned int lbuf=boff;
+  filepointer res;
+  
+  if (nextbyte()!=SRCREF) {
+    skipstring();  // skip string for NTIdentifier and NTConstructor
+  }
+  res = readpointer();
+  
+  if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
+  else {
+    foff = fp; // set filepointer and make buffer invalid
+    buf_n = 0;
+  }
+
+  return res;
+}
+
+unsigned long getPosn() {
+  filepointer fp=foff;
+  unsigned int lbuf=boff;
+  filepointer res;
+  
+  if (nextbyte()==SRCREF) {
+    skipbytes(4);
+  } else {
+    skipstring(); // for NTCONST, NTIDENT
+    skipbytes(5);
+  }
+  res = readpointer();
+  
+  if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
+  else {
+    foff = fp; // set filepointer and make buffer invalid
+    buf_n = 0;
+  }
+
+  return res;
+}
+
+char* getPosnStr() {
+  unsigned long posn = getPosn();
+  
+  sprintf(posnbuf, "line %u, column %u", posn/10000, posn%10000);
+  return posnbuf;
+}
 
 

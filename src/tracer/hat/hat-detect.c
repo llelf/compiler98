@@ -13,10 +13,11 @@
 #include "Expressions.h"
 #include "hatfileops.h"
 #include "FunTable.h"
+#include "nodelist.h"
 
 void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current);
 
-void checkCAFs();
+void checkmainCAF();
 
 char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
@@ -41,7 +42,7 @@ main (int argc, char *argv[])
     CAFList = newList();
     memorizedFunsYes = newFunTable();
     memorizedFunsNo = newFunTable();
-    checkCAFs();
+    checkmainCAF();
 
   }
   closefile();
@@ -275,6 +276,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
   return retval;
 }
 
+/*
 int readCAFsFromFile(NodeList* nl) {
   int n,f;
   unsigned long b;
@@ -313,17 +315,18 @@ void writeCAFsToFile(NodeList* nl) {
     e=e->next;
   }
   close(f);
-}
+  } */
 
-void findCAFs(NodeList* nl) {
-  unsigned long currentOffset,srcref,fsz,lsz=0;
+void findmainCAF(NodeList* nl) {
+  unsigned long currentOffset,srcref,fsz,lsz=0,satc;
   char nodeType;
   int bigFileMode = 0;
   
   /*
     if (readCAFsFromFile(nl)==1) {
     return; // ok, read simply read them from disk!
-    }*/
+    }
+  */
 
   fsz = filesize()/1000;
   
@@ -348,34 +351,35 @@ void findCAFs(NodeList* nl) {
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
     }
-
-    nodeType = nextbyte();
+    nodeType = getNodeType();
     switch (nodeType) {
     case TRNAM: // Name
-      if (readpointer()==0) { // is parent 0?
-	skippointer();
-
-	srcref = readpointer();
-	if ((srcref!=0)&&(isSAT())) {  // SATC behind TRNAM?
+      if (getTrace()==0) { // is parent 0?
+	srcref = getSrcRef();
+	nextNode();
+	satc = byteoffset();
+	if ((srcref!=0)&&(isSAT(satc))) {  // SATC behind TRNAM?
 	  // found a CAF!
-	  if ((isSAT())&&(isTrusted(srcref)==0)&&
+	  if (isTrusted(srcref)) printf("isTrusted\n");
+	  if (isTopLevel(currentOffset)==0) printf("not top-level!\n");
+	  if ((isTrusted(srcref)==0)&&
 	      (isTopLevel(currentOffset))) {
 	    // only search for "main" (new!)
 	    unsigned long lmo = leftmostOutermost(currentOffset);
 	    seek(lmo);
-	    if ((lmo!=0)&&(nextbyte()==NTIDENTIFIER)&&(strcmp(readstring(),"main")==0)) {
-	      
+	    if ((lmo!=0)&&(getNodeType()==NTIDENTIFIER)&&
+		(strcmp(getName(),"main")==0)) {
 	      addBeforeList(nl,currentOffset);
 	      
 	      return;
 	    }
+	    seek(satc);
 	  }
 	}
-      }
-      seek(currentOffset+1+4*3);
+      } else nextNode();
       break;
     default:
-      skipNode(nodeType);
+      nextNode();
       break;
     }
   }
@@ -402,7 +406,7 @@ void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
     result=findAppSAT(current);
 
     seek(current);
-    nodeType = nextbyte();
+    nodeType = getNodeType();
 #ifdef DebugFindAppsFor
     printf("nodeType at %u is %i, searching %u, resulting %u\n",current,nodeType,
 	   parentTrace,result);
@@ -411,29 +415,35 @@ void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
     case TRAPP:
       {
 	unsigned long srcref,p,funTrace,appTrace;
-	int arity = readarity();
-	appTrace = readpointer();         // fileoffset of App-trace
-	funTrace = readpointer();         // skip function-trace
-	skipbytes(4*(arity));
-	srcref = readpointer(); // read srcref
-	appTrace = followHidden(appTrace); // follow along hidden to find parent
+	int arity,isChild;
+	arity     = getAppArity();
+	appTrace  = getTrace();             // fileoffset of App-trace
+	funTrace  = getFunTrace();          // function-trace
+	srcref    = getSrcRef();            // get srcref
+	appTrace  = followHidden(appTrace); // follow along hidden to find parent
+	
+	isChild   = isChildOf(current,parentTrace);
+	if ((appTrace==parentTrace)&&(isChild==0)) {
+	  printf("That's odd: %u %u %u\n",current,parentTrace,appTrace);
+	}
 
-	if (appTrace!=parentTrace) {
+	if (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself
 	  findAppsFor(nl,parentTrace,appTrace);
 	}
-	if (appTrace==parentTrace) {
+	if (isChild) { //(appTrace==parentTrace) {
 	  int i=0;
 	  while (i++<arity) {
 #ifdef DebugFindAppsFor
 	    printf("checking arg %i of %u\n",i,current);
 #endif
-	    seek(current+2+4+i*4);
-	    p = readpointer();
+	    seek(current);
+	    p = getAppArgument(i-1);
 	    findAppsFor(nl,parentTrace,p);
 	  }
 	}
 	
-	if ((appTrace==parentTrace)||(appTrace==0)) {
+	if ((isChild)||(appTrace==0)) {
+	  //((appTrace==parentTrace)||(appTrace==0)) {
 #ifdef DebugFindAppsFor
 	  printf("APP at %u is child!\n",current);
 #endif
@@ -456,15 +466,13 @@ void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
 	    }
 	  }
 	}
-	seek(current+2+4+arity*4);
       }
       return;
     case TRNAM: {
-      unsigned long p = readpointer();
-      unsigned long srcref;
+      unsigned long p = getTrace();
+      unsigned long srcref = getSrcRef();
       unsigned long newcurrent;
-      skippointer();
-      srcref = readpointer();
+
       if ((p==parentTrace)||(p==0)) {
 	if (p==0) {  // CAF found
 	  unsigned long lmo = leftmostOutermost(current);
@@ -483,12 +491,14 @@ void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
     }
     break;
     case TRIND:
-      current = readpointer();
+      current = getTrace();
       break;
     case TRHIDDEN:
     case TRSATA: // not evaluated expression
+    case TRSATAIS:
     case TRSATB:
-      current = readpointer();
+    case TRSATBIS:
+      current = getTrace();
       break;
     default: {
 	unsigned long newcurrent = followSATs(current);
@@ -582,10 +592,10 @@ int askNodeList(int question,NodeList* results,int isTopSession) {
   return success;
 }
 
-void checkCAFs() {
+void checkmainCAF() {
   int success;
   NodeList* results=newList();
-  findCAFs(results);
+  findmainCAF(results);
   askNodeList(0,results,2);
   quit();
 }

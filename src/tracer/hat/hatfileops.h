@@ -1,58 +1,55 @@
-/* hatfileops.h
-   Thorsten Brehm, 4/2001
-   definitions and operations on hat files
-*/
+/**************************************************************************/
+/* hatfileops.h: general operations on hat files                          */
+/*                                                                        */
+/* Thorsten Brehm, 4/2001                                                 */
+/**************************************************************************/
 
 /* include constants for tags in hat files */
 #include "hatfile.h"
 
+
 int getline(char s[], int max); /* read string from keyboard */
 
-char* filename(char* name);  /* make proper file extension, if missing */
-int   openfile(char* name);  /* open file for reading, save descriptor internally */
-void  closefile();           /* close file in internal file descriptor */
-void  seek(unsigned long ofs);/* set new file position */
-int   more();                 /* check for more data in file */
-unsigned long byteoffset();   /* return position in file */
+char*         filename(char* name);   /* make proper file extension, if missing */
+int           openfile(char* name);   /* open file for reading, save descriptor */
+void          closefile();            /* close file in internal file descriptor */
+void          seek(unsigned long ofs);/* set new file position */
+int           more();                 /* check for more data in file */
+unsigned long byteoffset();           /* return position in file */
+int           testheader();            /* reading and checking header information */
+
 
 
 /*********************************************************************/
 /* Routines to extract values encoded as one or more bytes.          */
 /*                                                                   */
 /*********************************************************************/
-typedef union {char byte[4];
-               unsigned long ptrval;
-	       long intval;
-	       float floatval;} fourbytes;
 
-char nextbyte();    /* read one byte from file */
-char seenextbyte(); /* get the next byte without moving the file pointer */
-void skipbyte();    /* just skip one byte in file - don't care to read it */
-char *readstring(); /* read a string */
-void skipstring();  /* skip one string in file, don't bother about its value */
-fourbytes readfourbytes(); /* read four bytes from file */
-void skipbytes(int bytes); /* skip number of bytes in buffer */
-char *readposn();   /* read source position, return as pretty print */
-void skipposn();    /* skip position value */
-unsigned long readpointer();
-void skippointer();
-char readchar();
-int readint();
-void skipint();
-int readinteger();
-void skipinteger();
-char *readrational();
-float readfloat();
-double readdouble();
-int readarity();
-int readfixpri();
-void skipNode(char nodeType); /* skip entire node of given type */
+typedef unsigned long filepointer;
 
-int tagat(unsigned long offset);
-int hi3(char b);
-int lo5(char b);
+/* abstracting interface below */
 
-int testheader(); /* reading and checking header information */
+char          getNodeType();         // get type of node
+void          nextNode();            // jump to next node
+filepointer   getTrace();            // get trace to node's parent
+int           getAppArity();         // get arity of an application node
+filepointer   getAppArgument(int i); // get argument of an application node
+filepointer   getFunTrace();         // get function's trace of an application node
+int           getInfixPrio();        // get infix priority of an application node
+filepointer   getNmType();           // get NameType
+filepointer   getSrcRef();           // get pointer to source reference
+char          getCharValue();        // get value of a char node
+int           getIntValue();         // get value of an int node
+int           getIntegerValue();     // get value of an integer node
+char*         getRationalValue();   // get value of a rational node
+float         getFloatValue();       // get value of a float node
+double        getDoubleValue();      // get value of a double node
+char*         getName();             // get constructor, identifier or module name
+char*         getSrcName();          // get name of source of an module node
+filepointer   getValueTrace();       // get value trace of an indirection (projection)
+filepointer   getModInfo();          // get module info
+unsigned long getPosn();             // get position in source
+char*         getPosnStr();          // get position in source as a formatted string
 
 
 unsigned long followHidden(unsigned long fileoffset); /* follow Hidden traces */
@@ -64,45 +61,25 @@ unsigned long followTrace(unsigned long fileoffset);
 unsigned long findAppSAT(unsigned long fileoffset);
 
 
+unsigned long leftmostOutermost(unsigned long fileoffset);
+int           isDirectDescendantOf(unsigned long fileoffset,unsigned long parent);
+int           isDescendantOf(unsigned long fileoffset,unsigned long parent);
+int           isChildOf(unsigned long fileoffset,unsigned long parent);
+int           isCAF(unsigned long fileoffset);
+int           isTopLevel(unsigned long srcref);
+
 /* show location in source file of this application/symbol */
-void showLocation(unsigned long fileoffset);
+void          showLocation(unsigned long fileoffset);
 /* show location where function was defined */
-void showFunLocation(unsigned long fileoffset);
+void          showFunLocation(unsigned long fileoffset);
 
 
 /* read whole expression to memory */
-ExprNode* buildExpr(unsigned long fileoffset,int buildUnevaldepth);
+ExprNode*     buildExpr(unsigned long fileoffset,int buildUnevaldepth);
 
 
-/*********************************************************************/
-/* list data structure: keep a list of file offsets in memory        */
-/*                                                                   */
-/*********************************************************************/
-
-typedef struct tnode* NodePtr;
-
-typedef struct tnode {
-  unsigned long fileoffset;
-  NodePtr next;
-} NodeElement;
-
-typedef struct {
-  NodePtr first;
-  NodePtr last;
-} NodeList;
 
 
-NodeList* newList(); /* new, empty list */
-void      appendToList(NodeList *nl,unsigned long foffset);
-void      insertInList(NodeList *nl,unsigned long foffset);
-void      addBeforeList(NodeList *nl,unsigned long foffset);
-int       isInList(NodeList *nl,unsigned long foffset);
-void      showList(NodeList *nl);
-void      showPretty(NodeList *nl,int verbosemode);
-void      freeList(NodeList *nl);
-unsigned long listLength(NodeList *nl);
-
-struct stat hatStatBuf;
 
 
 

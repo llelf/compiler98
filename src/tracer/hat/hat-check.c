@@ -346,7 +346,8 @@ int readint() {
 char integerbuf[INTEGERMAX+1];
 
 char *readinteger() {
-  int n = (int)(nextbyte());
+  int n = (signed char)(nextbyte());
+  if (n<0) n=-n; // negative sign of value is signalled by negative number of bytes
   while (n-- > 0) (void)(readfourbytes());
   return "<integer>";  /* DUMMY FOR NOW */
 }

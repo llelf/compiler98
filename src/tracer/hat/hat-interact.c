@@ -87,8 +87,8 @@ int isCmd(char* s,char* s1,char* s2) {
 #define FIXPRIMAX 8
 char fixpribuf[FIXPRIMAX+1];
 
-char *readfixpriStr() {
-  int b = (int)(nextbyte());
+char *getfixpriStr() {
+  int b = (int)(getInfixPrio());
   switch (b % 4) {
   case 0:
     sprintf(fixpribuf, "infix %d", b/4);
@@ -110,72 +110,73 @@ unsigned long printNode(unsigned long offset) {
   char b,showAble=0;
   unsigned long next;
   seek(offset);
-  b = nextbyte();
+  b = getNodeType();
   switch (hi3(b)) {
   case TR:
     printf("TR %u: ", offset);
     switch (lo5(b)) {
     case APP:
       { 
-	int arity = readarity();
+	int i=0;
+	int arity = getAppArity();
 	showAble = 1;
 	printf("Application: ");
-	printf("AppTrace %u, ",readpointer());
-	printf("AppFun %u, ",readpointer());
+	printf("AppTrace %u, ",getTrace());
+	printf("AppFun %u, ",getFunTrace());
 	printf("Arguments [");
-	for (; arity-- > 0;) {
-	  printf("TR %u",readpointer());
-	  if (arity>0) printf(",");
+	while (i++<arity) {
+	  printf("TR %u",getAppArgument(i-1));
+	  if (i<arity) printf(",");
 	}
-	printf("], SRCREF %u",readpointer());
+	printf("], SRCREF %u",getSrcRef());
 	break;
       }
     case NAM:
       showAble = 1;
       printf(" Name: ");
-      printf("TR %u, ", readpointer());
-      printf("NT %u, ", readpointer());
-      printf("SR %u ", readpointer());
+      printf("TR %u, ", getTrace());
+      printf("NT %u, ", getNmType());
+      printf("SR %u ", getSrcRef());
       break;
     case IND:
       printf(" Indirection: ");
-      printf("TR %u, ", readpointer());
-      printf("TR %u ", readpointer());
+      printf("TR %u, ", getTrace());
+      printf("TR %u ", getValueTrace());
       break;
     case HIDDEN:
       showAble = 1;
       printf(" Hidden: ");
-      printf("TR %u", readpointer());
+      printf("TR %u", getTrace());
       break;
     case SATA:
       showAble = 1;
       printf(" SAT(A): ");
-      printf("TR %u", readpointer());
+      printf("TR %u", getTrace());
       break;
     case SATAIS:
       showAble = 1;
       printf(" isolated SAT(A): ");
-      printf("TR %u", readpointer());
+      printf("TR %u", getTrace());
       break;
     case SATB:
       showAble = 1;
       printf(" SAT(B): ");
-      printf("TR %u\t", readpointer());
+      printf("TR %u\t", getTrace());
       break;
     case SATBIS:
       showAble = 1;
       printf(" isolated SAT(B): ");
-      printf("TR %u\t", readpointer());
+      printf("TR %u\t", getTrace());
       break;
     case SATC:
       showAble = 1;
       printf(" SAT(C): ");
-      printf("TR %u", readpointer());
+      printf("TR %u", getTrace());
       break;
     case SATCIS:
       showAble = 1;
       printf(" isolated SAT(C): ");
-      printf("TR %u", readpointer());
+      printf("TR %u", getTrace());
       break;
     default:
       printf("strange low-bits tag %d in TR %u\n",
@@ -189,48 +190,48 @@ unsigned long printNode(unsigned long offset) {
     case TRUSTED: printf("module (trusted), "); break;
     default: printf("WRONG, "); break;
     }
-    printf("%s, ", readstring());
-    printf("\"%s\"", readstring());
+    printf("%s, ", getName());
+    printf("\"%s\"", getSrcName());
     break;
   case NT:
     printf("NT %u:  ", offset);
     switch (lo5(b)) {
     case INT:
-      printf("INT %d", readint());
+      printf("INT %d", getIntValue());
       break;
     case CHAR:
-      printf("CHAR '%c'", readchar());
+      printf("CHAR '%c'", getCharValue());
       break;
     case INTEGER:
-      printf("INTEGER %i", readinteger());
+      printf("INTEGER %i", getIntegerValue());
       break;       
     case RATIONAL:
-      printf("RATIONAL %s", readrational());
+      printf("RATIONAL %s", getRationalValue());
       break;
     case FLOAT:
-      printf("FLOAT %f", readfloat());
+      printf("FLOAT %f", getFloatValue());
       break;
     case DOUBLE:
-      printf("DOUBLE %f", readdouble());
+      printf("DOUBLE %f", getDoubleValue());
       break;
     case IDENTIFIER:
-      printf("identifier: %s ", readstring());
+      printf("identifier: %s ", getName());
       {
-	unsigned long modinfo = readpointer();
-	char *fp = readfixpriStr();
+	unsigned long modinfo = getModInfo();
+	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
 	printf("MD %u, ", modinfo);
-	printf(" %s", readposn());
+	printf(" %s", getPosnStr());
       }
       break; 
     case CONSTRUCTOR:
-      printf("constructor\t\t%s ", readstring());
+      printf("constructor\t\t%s ", getName());
       { 
-	unsigned long modinfo = readpointer();
-	char *fp = readfixpriStr();
+	unsigned long modinfo = getModInfo();
+	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
 	printf("MD %u, ", modinfo);
-	printf(" %s", readposn());
+	printf(" %s", getPosnStr());
       }
       break; 
     case TUPLE:
@@ -249,7 +250,7 @@ unsigned long printNode(unsigned long offset) {
       printf("DUMMY");
       break;
     case CSTRING:
-      printf("CSTRING \"%s\"", readstring());
+      printf("CSTRING \"%s\"", getName());
       break;
     case IF:
       printf("IF");
@@ -267,14 +268,15 @@ unsigned long printNode(unsigned long offset) {
     break;
   case SR:
     printf("SR %u:  Source reference\t", offset);
-    printf("MD %u\t", readpointer());
-    printf(" %s", readposn());
+    printf("MD %u\t", getModInfo());
+    printf(" %s", getPosnStr());
     break;
   default:
     printf("strange high-bits tag %d at byte offset %u\n",
 	   hi3(b), offset);
   }
   printf("\n");
+  nextNode();
   next = byteoffset();
 
   if (showAble) {
@@ -287,7 +289,7 @@ unsigned long printNode(unsigned long offset) {
     
     satc = findAppSAT(followSATs(offset));
     seek(satc);
-    if ((isSAT())&&(satc!=offset)) {
+    if ((isSAT(satc))&&(satc!=offset)) {
       printf("corresponding SAT at: %u\n\n",satc);
       printf("reduction: %s = ",appstr);
       freeStr(appstr);

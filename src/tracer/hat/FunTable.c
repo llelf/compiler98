@@ -196,7 +196,7 @@ void checkArities(FunTable* ftable) {
 
   p=ftable;
   while (p->next!=NULL) {
-    arity = getArity(p->next->funAppl);
+    arity = getExprArity(p->next->funAppl);
     if (arity>maxarity) maxarity = arity;
     if (arity<maxarity) {
       h=p->next;
@@ -207,7 +207,7 @@ void checkArities(FunTable* ftable) {
   }
   p=ftable;
   while (p->next!=NULL) { // now make sure to clear all smaller arities
-    if (getArity(p->next->funAppl)<maxarity) {
+    if (getExprArity(p->next->funAppl)<maxarity) {
       h=p->next;
       p->next =  p->next->next;
       h->next = NULL;

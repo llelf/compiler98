@@ -59,8 +59,8 @@ void       freeExprNode(ExprNode* e); /* free a single node */
 
 void       freeExpr(ExprNode* e); /* free the entire structure */
 
-int        getArity(ExprNode* e);
-int        getInfixPrio(ExprNode* e);
+int        getExprArity(ExprNode* e);
+int        getExprInfixPrio(ExprNode* e);
 
 /* return pretty print of the expression */
 char*      prettyPrintExpr(ExprNode* exp,int verboseMode);

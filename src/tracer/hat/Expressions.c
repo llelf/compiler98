@@ -139,25 +139,25 @@ void freeExpr(ExprNode* e) {
   }
 }
 
-int getArity(ExprNode* e) {
+int getExprArity(ExprNode* e) {
   if (e==NULL) return 0;
   switch(e->type) {
   case TRAPP:
-    return getArity(e->v.appval->fun)+e->v.appval->arity;
+    return getExprArity(e->v.appval->fun)+e->v.appval->arity;
   case TRSATA:
-    return getArity(e->v.expr);
+    return getExprArity(e->v.expr);
   default:
     return 0;
   }
 }
 
-int getInfixPrio(ExprNode* e) {
+int getExprInfixPrio(ExprNode* e) {
   if (e==NULL) return 0;
   switch(e->type) {
   case TRAPP:
-    return getInfixPrio(e->v.appval->fun);
+    return getExprInfixPrio(e->v.appval->fun);
   case TRSATA:
-    return getInfixPrio(e->v.expr);
+    return getExprInfixPrio(e->v.expr);
   case NTIDENTIFIER:
   case NTCONSTRUCTOR:
     return e->v.identval->infixpriority;
@@ -297,7 +297,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 	    int len=0;
 	    // note: functionDepth is not increased in this recursion!
 	    s1=printRekExpr(apn->fun,verbose,0);
-	    infixprio = getInfixPrio(apn->fun);
+	    infixprio = getExprInfixPrio(apn->fun);
 	    len = strlen(s1);
 	    if ((s1!=NULL)&&(len>0)) last = s1[len-1];
 	    if (((last>='*')&&(last<='.'))||((last>=':')&&(last<='>'))) nospace=1; 
@@ -477,6 +477,9 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
   case NTDOUBLE:
     if (*(e1->v.doubleval)==*(e2->v.doubleval)) return 0;
     else return 2;
+  case TRSATA: // both are unevaluated!
+  case TRSATB: // both are bottom!
+    return 0;
   default:
     return 2;
   }
@@ -663,7 +666,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 		}
 	      }
 	    }
-	    infixprio = getInfixPrio(apn->fun);
+	    infixprio = getExprInfixPrio(apn->fun);
 	    len = strlen(fun);
 	    if ((fun!=NULL)&&(len>0)) last = fun[len-1];
 	    if (((last>='*')&&(last<='.'))||((last>=':')&&(last<='>'))) nospace=1; 
