@@ -18,7 +18,7 @@
 #include "observe.h"
 #include "hatgeneral.h"
 #include "detect.h"
-#include "menu.h"
+//  #include "menu.h"
 
 void startSession(HatFile handle,filepointer nodeAddress);
 int askNodeList(HatFile handle,int question,NodeList* results,
@@ -30,7 +30,7 @@ FunTable memorizedFunsYes = NULL;
 FunTable memorizedFunsNo = NULL;
 NodeList* CAFList = NULL;
 unsigned int precision = 200;
-int filehandle;
+HatFile filehandle;
 filepointer mainCAF;
 
 int main (int argc, char *argv[])
@@ -41,7 +41,7 @@ int main (int argc, char *argv[])
   if (argc!=2) {
     if (argc!=4) err=1; else {
       if (strcmp(argv[2],"-remote")!=0) err=1;else {
-	startAddr = atoi(argv[3]);
+	startAddr = (filepointer) atoi(argv[3]);
       }
     }
   }
@@ -53,11 +53,11 @@ int main (int argc, char *argv[])
     exit(1);
   }
   traceFileName = hatFileExtension(argv[1]);
-  if ((filehandle=hatOpenFile(traceFileName))==-1) {
+  if ((filehandle=hatOpenFile(traceFileName))==HatFileNotFound) {
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
   }
-  if (filehandle==-2) {
+  if (filehandle==HatFileBadVersion) {
     fprintf(stderr, "format of file unknwon/not supported %s\n\n",traceFileName);
     exit(1);
   }
@@ -121,11 +121,11 @@ void untrustAll() {
   freeList(userTrustedList);
 }
 
-void userTrustsFunction(unsigned long fileoffset) {
+void userTrustsFunction(filepointer fileoffset) {
   insertInList(userTrustedList,fileoffset);
 }
 
-int isUserTrusted(unsigned long fileoffset) {
+int isUserTrusted(filepointer fileoffset) {
   return isInList(userTrustedList,fileoffset);
 }
 
@@ -166,8 +166,10 @@ char* getFunTableStr(int i) {
 long showFunTablePaged(FunTable l,unsigned int precision) {
   currentFTable=l;
   gPrecision = precision;
-  return menu("choose any equation and press <RETURN> or <Q> to cancel",
-	      FunTableLength(l),&getFunTableStr);  
+  printf("Not supported in development tool. Use new version of hat-detect!\n");
+  return 0;
+  //  return menu("choose any equation and press <RETURN> or <Q> to cancel",
+  //	      FunTableLength(l),&getFunTableStr);  
 }
 
 /***********************************************************************/
@@ -179,14 +181,14 @@ int memorizeMode = 1;
 #define MAYBENO  2
 
 /* returns 1 for yes, 0 for no, 2 for n?, 3 for y? */
-int askForApp(HatFile handle,int *question,unsigned long appofs,
-	      unsigned long resofs,int reconsider) {
+int askForApp(HatFile handle,int *question,filepointer appofs,
+	      filepointer resofs,int reconsider) {
   char answer[51];
   int c,err,retval=-1;
   ExprNode *appNode,*resNode;
   char *pp1,*pp2;
   char isCAF=0;
-  unsigned long lmost = hatOutermostSymbol(handle,appofs);
+  filepointer lmost = hatOutermostSymbol(handle,appofs);
 
   if (isUserTrusted(lmost)) return 1;
   isCAF = (resofs == 0);
@@ -232,7 +234,8 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  break;
 	case 'O': 
 	  {
-	    unsigned long newAdr,selected;
+	    filepointer newAdr;
+	    long selected;
 	    FunTable results;
 	    ObserveQuery query;
 	    if (strlen(answer)>2) {
@@ -434,6 +437,14 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
   return retval;
 }
 
+void getChildrenFor(HatFile handle,NodeList* children,filepointer parent) {
+  EDTQuery q = newEDTQuery(handle,parent);
+  filepointer f;
+  while ((f=nextEDTQueryNode(q))!=InvalidFilePointer) {
+    insertInList(children,f);
+  }
+}
+
 int askNodeList(HatFile handle,int question,NodeList* results,
 		int isTopSession) {
   int success,askAgain,question_old,first_question,postponeMode=0;
@@ -455,7 +466,7 @@ int askNodeList(HatFile handle,int question,NodeList* results,
       } else answer=1;
       if (answer==3) { // y? => postpone the question
 	//printf("postponeing question %i %u\n",question_old+1,e->fileoffset);
-	insertInList(postList,question_old+1); // add the question number to postponed
+	insertInList(postList,(filepointer) (question_old+1)); // add the question number to postponed
       }
       if ((answer!=1)&&(answer!=3)&&(answer<10)){
 	children = newList();
@@ -467,7 +478,7 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	  question = question_old;
 	  answer = askForApp(handle,&question,e->fileoffset,0,1);
 	  if (answer==3) {
-	    insertInList(postList,question_old+1); // add question number to postponed
+	    insertInList(postList,(filepointer) (question_old+1)); // add question number to postponed
 	    //printf("postponing question %i %i\n",question_old+1,e->fileoffset);
 	  }
 	}
@@ -495,7 +506,7 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	if (answer / 10 > first_question) {
           int i=answer/10;
 	  // remove all postponed questions between new position and current position
-	  while (i<=question) removeFromList(postList,i++);
+	  while (i<=question) removeFromList(postList,(filepointer) (i++));
 	  postponeMode = 0;
 	  e=results->first;
 	  question = first_question;
@@ -517,10 +528,11 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	  }
 	}
 	if (postponeMode) { // may now be active...
-	  int i=first_question,q = firstBigger(postList,question_old+1);
-	  if (q==0) q=firstElement(postList);
+	  int i=first_question, q = (int) firstBigger(postList,
+						      (filepointer) (question_old+1));
+	  if (q==0) q=(int) firstElement(postList);
 	  if (q==0) e=NULL; else {
-	    removeFromList(postList,q);
+	    removeFromList(postList,(filepointer) q);
 	    e=results->first;
 	    while (++i<q) if (e->next!=NULL) e=e->next;
 	    question = q-1;

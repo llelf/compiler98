@@ -87,7 +87,7 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
         let hattrace = (fromJust maybehattrace) in
 	  do
             if ((remote)||(ident1=="")) then do
-                  putStrLn "Welcome to hat-observe 1.10"
+                  putStrLn ("Welcome to hat-observe "++hatVersionNumber)
                   putStrLn "Type 'help' for list of commands"
              else return ()
             let observed = if ((remote)||(ident1/="")) then

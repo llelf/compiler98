@@ -39,15 +39,15 @@ typedef struct {
   unsigned long line,column;
   filepointer moduleRef;
   int recursiveMode;
-  unsigned long fsz,lsz;
+  int lsz;
   int searchMode;
   int found;
   int finished;
   int showProgress;
-  int handle;
+  HatFile handle;
 } _ObserveQuery;
 
-
+// type hiddenObserveQuery _ObserveQuery; 
 
 int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
   char nodeType;
@@ -74,8 +74,8 @@ int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
     case HatSATC:
       fileoffset=getProjValue();
       break;
-    case HatName:
-      if (getNameType()==parent) {
+    case HatConstant:
+      if (getAtom()==parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
@@ -131,8 +131,8 @@ int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer paren
     case HatProjection:
       fileoffset=getParent();
       break;
-    case HatName:
-      if (getNameType()==parent) {
+    case HatConstant:
+      if (getAtom()==parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
@@ -164,7 +164,7 @@ int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer paren
 
 
 // new query to observe all applications of identifierNode within the trace file
-ObserveQuery newObserveQuery(int handle,
+ObserveQuery newObserveQuery(HatFile handle,
 		       filepointer identifierNode,
 		       filepointer topIdentifierNode,
 		       BOOL recursiveMode,
@@ -180,43 +180,36 @@ ObserveQuery newObserveQuery(int handle,
   newQ->currentOffset = hatSeqFirst(handle);// identifierNode;
   newQ->searchMode = IDENTMODE;
   //if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
-  newQ->fsz = hatFileSize(handle)/1000;
-  if (newQ->fsz==0) newQ->fsz = 1;
-  //if (newQ->fsz<20000) newQ->lsz=200;
   //printf("new query: %u\n",identifierNode);
   return ((ObserveQuery) newQ);
 }
 
 // new query to observe all observable identifiers/modules in the trace file
-ObserveQuery newObservableQuery(int handle,BOOL showProgress) {
+ObserveQuery newObservableQuery(HatFile handle,BOOL showProgress) {
   _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
   newQ->handle = handle;
   newQ->htable = NULL;
   newQ->showProgress = showProgress;
   newQ->currentOffset = hatSeqFirst(handle);
   newQ->searchMode = OBSERVABLEMODE;
-  newQ->fsz = hatFileSize(handle)/1000;
-  if (newQ->fsz==0) newQ->fsz = 1;
   return ((ObserveQuery) newQ);
 }
 
 filepointer hatfindModule(HatFile handle,
 		       char* moduleName,
 		       BOOL showProgress) {
-  unsigned long currentOffset,fsz,lsz=0;
+  filepointer currentOffset;
+  unsigned long lsz=0;
   char nodeType;
   filepointer moduleRef=0;
-  fsz = hatFileSize(handle)/1000;
-  if (fsz<20000) lsz=200;
-  else if (showProgress) {
+  if (showProgress) {
     fprintf(stderr,"  0%%");
     fflush(stderr); // force printing to screen, even though LF is still missing...
   }
-  if (fsz==0) fsz=1;
   currentOffset = hatSeqFirst(handle);
   while ((!hatSeqEOF(handle,currentOffset))&&(moduleRef==0)) {
-    if ((showProgress)&&((currentOffset/10)/fsz>lsz)) {
-      lsz = (currentOffset/10)/fsz;
+    if ((showProgress)&&(perProgress(handle,currentOffset)>lsz)) {
+      lsz = perProgress(handle,currentOffset);
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
     }
@@ -233,7 +226,7 @@ filepointer hatfindModule(HatFile handle,
   return moduleRef;
 }
 
-ObserveQuery newObserveQuerySource(int handle,
+ObserveQuery newObserveQuerySource(HatFile handle,
 				   char* moduleName,
 				   unsigned long line,unsigned long column,
 				   BOOL showProgress) {
@@ -248,7 +241,7 @@ ObserveQuery newObserveQuerySource(int handle,
     filepointer p = hatMainCAF(handle);
     if (p!=0) {
       getNodeType(handle,p); // go to main CAF
-      p = getNameType();
+      p = getAtom();
       if (getNodeType(handle,p)==HatIdentifier) {
 	newQ->moduleRef = getModInfo();
       }
@@ -257,8 +250,6 @@ ObserveQuery newObserveQuerySource(int handle,
     newQ->moduleRef = hatfindModule(handle,moduleName,showProgress);
   }
   newQ->currentOffset = hatSeqFirst(handle); //newQ->moduleRef;
-  newQ->fsz = hatFileSize(handle)/1000;
-  if (newQ->fsz==0) newQ->fsz = 1;
   return ((ObserveQuery) newQ);
 }
 
@@ -294,21 +285,22 @@ void queryCleanProgress(ObserveQuery query) {
 
 void updateProgress(_ObserveQuery* query,filepointer currentOffset) {
   if ((query->showProgress)&&
-      ((currentOffset/10)/((_ObserveQuery*) query)->fsz > 
+      (perProgress(((_ObserveQuery*) query)->handle,currentOffset)>
        ((_ObserveQuery*) query)->lsz)) {
-    ((_ObserveQuery*) query)->lsz = (currentOffset/10)/((_ObserveQuery*) query)->fsz;
+    ((_ObserveQuery*) query)->lsz =
+      perProgress(((_ObserveQuery*) query)->handle,currentOffset);
     fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
     fflush(stderr);
   }
 }
 
 filepointer nextObserveSrcMode(_ObserveQuery* query) {
-  unsigned long p,currentOffset;
+  filepointer p,currentOffset;
   char nodeType;
   HashTable* htable = query->htable;
   filepointer moduleRef = query->moduleRef;
   unsigned long column = query->column,line = query->line;
-  int handle = query->handle;
+  HatFile handle = query->handle;
 
   currentOffset = hatSeqNext(handle,query->currentOffset);
   if (query->showProgress) {
@@ -325,7 +317,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
       currentOffset = hatSeqNext(handle,currentOffset);
       break;
     case HatApplication:
-    case HatName:
+    case HatConstant:
       {
 	filepointer apptrace;
 	filepointer src = getSrcRef();
@@ -342,8 +334,8 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 	    if (fun!=0) lmoType = getNodeType(handle,fun);
 	    if (lmoType==HatIdentifier) {
 	      filepointer result = hatResult(handle,currentOffset);
-	      if ((result!=0)&&(isSAT(handle,result))&&
-		  (getNodeType(handle,result)!=HatSATA)) { // make sure, result is available!
+	      if ((result!=0)&&(getNodeType(handle,result)==HatSATC)) {
+		// make sure, result is available!
 		result = hatFollowSATCs(handle,result);
 		if (result!=currentOffset) { // no partial applications!
 		  if (result!=0) {
@@ -377,9 +369,9 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 
 // find all observable identifiers and all Modules within the TraceFile
 filepointer nextObservable(_ObserveQuery* query) {
-  unsigned long p,currentOffset;
+  filepointer p,currentOffset;
   char nodeType;
-  int handle = query->handle;
+  HatFile handle = query->handle;
 
   currentOffset = hatSeqNext(handle,query->currentOffset);
   if (query->showProgress) fprintf(stderr,"\b\b\b\b%3u%%",query->lsz);
@@ -415,13 +407,13 @@ filepointer nextObservable(_ObserveQuery* query) {
 */
 
 filepointer nextObserveQueryNode(ObserveQuery query) {
-  unsigned long p,currentOffset;
+  filepointer p,currentOffset;
   char nodeType;
   HashTable* htable = ((_ObserveQuery*) query)->htable;
-  unsigned long identifierNode = ((_ObserveQuery*) query)->identifierNode;
-  unsigned long topIdentifierNode = ((_ObserveQuery*) query)-> topIdentifierNode;
+  filepointer identifierNode = ((_ObserveQuery*) query)->identifierNode;
+  filepointer topIdentifierNode = ((_ObserveQuery*) query)-> topIdentifierNode;
   int recursiveMode = ((_ObserveQuery*) query)->recursiveMode;
-  int handle = ((_ObserveQuery*) query)->handle;
+  HatFile handle = ((_ObserveQuery*) query)->handle;
 
   switch (((_ObserveQuery*) query)->searchMode) {
   case SRCMODE: // use function to find next value at source reference
@@ -474,13 +466,15 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
       }
       currentOffset = hatSeqNext(handle,currentOffset);
       break;
-    case HatName: // Name
-      if ((getNameType()==identifierNode)&&(identifierNode!=0)) {
+    case HatConstant: // Constant
+      if ((getAtom()==identifierNode)&&(identifierNode!=0)) {
 	filepointer satc;
 	//printf("found name reference for identifier at: %u\n",p);
 	addToHashTable(htable,currentOffset);
 	satc = hatSeqNext(handle,currentOffset);
-	if (isSAT(handle,satc)) {  // SATC behind TRNAM?
+	// SAT behind Constant node? (and make sure it's really the result
+	// and not just an isolated SAT, so also check hatResult)
+	if ((isSAT(handle,satc))&&(hatResult(handle,currentOffset)==satc)) {
 	  // found a CAF!
 	  if (hatFollowSATCs(handle,satc)==currentOffset) { // save this satc for future reference
 	    addToHashTable(htable,satc);
@@ -507,26 +501,24 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 void findNodes(HatFile handle,
 	       char* identifier,
 	       char* topIdentifier,
-	       unsigned long *identNode,
-	       unsigned long *topIdentNode,
+	       filepointer *identNode,
+	       filepointer *topIdentNode,
 	       BOOL showProgress) {
-  unsigned long identifierNode = 0,currentOffset,fsz,lsz=0;
-  unsigned long topIdentifierNode = 0;
+  filepointer identifierNode = 0,currentOffset;
+  unsigned long lsz=0;
+  filepointer topIdentifierNode = 0;
   char nodeType;
-  fsz = hatFileSize(handle)/1000;
-  if (fsz<20000) lsz=200;
-  else if (showProgress) {
+  if (showProgress) {
     fprintf(stderr,"  0%%");
     fflush(stderr); // force printing to screen, even though LF is still missing...
   }
-  if (fsz==0) fsz=1;
   currentOffset = hatSeqFirst(handle);
   if ((topIdentifier!=NULL)&&(strcmp(topIdentifier,"")==0)) topIdentifier=NULL;
   while ((!hatSeqEOF(handle,currentOffset))&&
 	 ((identifierNode==0)||
 	  ((topIdentifierNode==0)&&(topIdentifier!=NULL)))) {
-    if ((showProgress)&&((currentOffset/10)/fsz>lsz)) {
-      lsz = (currentOffset/10)/fsz;
+    if ((showProgress)&&(perProgress(handle,currentOffset)>lsz)) {
+      lsz = perProgress(handle,currentOffset);
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
     }
@@ -555,9 +547,9 @@ void findNodes(HatFile handle,
   if (showProgress) fprintf(stderr,"\b\b\b\b");
 }
 
-ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,
+ObserveQuery newObserveQueryIdent(HatFile handle,char* ident,char* topIdent,
 				  BOOL recursiveMode,BOOL showProgress) {
-  unsigned long identifierNode=0,topIdentifierNode=0;
+  filepointer identifierNode=0,topIdentifierNode=0;
   ObserveQuery query;
   
   if ((topIdent!=NULL)&&(strcmp(topIdent,"")==0)) topIdent=NULL;
@@ -565,7 +557,7 @@ ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,
   query = newObserveQuery(handle,identifierNode,topIdentifierNode,
 			  recursiveMode,showProgress);
   if ((topIdentifierNode==0)&&(topIdent!=NULL))
-    ((_ObserveQuery*) query)->currentOffset=hatFileSize(handle);
+    ((_ObserveQuery*) query)->currentOffset=(filepointer) hatFileSize(handle);
   return query;  
 }
 
@@ -578,7 +570,7 @@ FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
 
   currentOffset = nextObserveQueryNode(query);
   while (!((_ObserveQuery*) query)->finished) {
-    unsigned long satc = hatResult(handle,currentOffset);
+    filepointer satc = hatResult(handle,currentOffset);
     ExprNode* r=buildExpr(handle,satc,verboseMode,precision);
     ExprNode* a=buildExpr(handle,currentOffset,verboseMode,precision);
     arity = getExprArity(a);

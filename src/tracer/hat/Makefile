@@ -17,6 +17,7 @@ PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
 all: $(OBJDIR) $(PROGS)
 install: $(OBJDIR) $(PROGS)
+developer: $(DEST)/hatdetect $(DEST)/hatobserve
 objdir: $(OBJDIR)
 objs: $(MALCOBJS) $(THORLIBS) $(patsubst %, %.o, $(PROGS))
 clean:

@@ -31,7 +31,7 @@ void freeHashTable(HashTable* h) {
   free(h);
 }
 
-HashElement* newHashElement(unsigned long value) {
+HashElement* newHashElement(filepointer value) {
   HashElement* e = (HashElement*) malloc(sizeof(HashElement));
   e->value = value;
   e->next = NULL;
@@ -59,7 +59,7 @@ void rehash(HashTable* h) {
 	while (l!=NULL) {      // process every entry from old list 
 	  e = l;               // process first list element
 	  l = l->next;         // get the tail of the list
-	  hash = e->value % sz; // hash value for entry to be processed
+	  hash = ((unsigned long) e->value) % sz; // hash value for entry to be processed
 	  e->next = h2->hashArray[hash]; // append entries to new list
 	  h2->hashArray[hash]=e; // set list in new hash table
 	}
@@ -77,16 +77,16 @@ void rehash(HashTable* h) {
   }
 }
 
-void addToHashTable(HashTable* h,unsigned long value) {
-  unsigned long hash = value % h->size;
+void addToHashTable(HashTable* h,filepointer value) {
+  unsigned long hash = ((unsigned long) value) % h->size;
   HashElement* e = newHashElement(value);
   e->next = h->hashArray[hash];
   h->hashArray[hash]=e;
   if (h->count++>h->rehashAt) rehash(h);
 }
 
-void removeFromHashTable(HashTable* h,unsigned long value) {
-  unsigned long hash = value % h->size;
+void removeFromHashTable(HashTable* h,filepointer value) {
+  unsigned long hash = ((unsigned long) value) % h->size;
   HashElement* e = h->hashArray[hash];
   HashElement* l = NULL;
   while (e!=NULL) {
@@ -110,8 +110,8 @@ void removeFromHashTable(HashTable* h,unsigned long value) {
 }
 
 //#define showHashStatistic
-int isInHashTable(HashTable* h,unsigned long value) {
-  unsigned long hash = value % h->size;
+int isInHashTable(HashTable* h,filepointer value) {
+  unsigned long hash = ((unsigned long) value) % h->size;
   HashElement *e = h->hashArray[hash];
 
 #ifdef showHashStatistic

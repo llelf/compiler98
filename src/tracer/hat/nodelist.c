@@ -19,7 +19,7 @@ NodeList* newList() {
 }
 
 /* append to lists end */
-void appendToList(NodeList *nl,unsigned long foffset) {
+void appendToList(NodeList *nl,filepointer foffset) {
   hNodePtr e = (hNodePtr) calloc(1, sizeof(NodeElement));
   if (e==NULL) {
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
@@ -36,7 +36,7 @@ void appendToList(NodeList *nl,unsigned long foffset) {
 }
 
 /* insert an element at lists beginning */
-void addBeforeList(NodeList *nl,unsigned long foffset) {
+void addBeforeList(NodeList *nl,filepointer foffset) {
   hNodePtr e = (hNodePtr) calloc(1,sizeof(NodeElement));
   if (e==NULL) {
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
@@ -49,7 +49,7 @@ void addBeforeList(NodeList *nl,unsigned long foffset) {
 }
 
 /* insert element appropriately within the list */
-void insertInList(NodeList *nl,unsigned long foffset) {
+void insertInList(NodeList *nl,filepointer foffset) {
   hNodePtr l,e = (hNodePtr) calloc(1,sizeof(NodeElement));
   if (e==NULL) {
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
@@ -71,7 +71,7 @@ void insertInList(NodeList *nl,unsigned long foffset) {
 }
 
 /* check for element in list */
-int isInList(NodeList *nl,unsigned long foffset) {
+int isInList(NodeList *nl,filepointer foffset) {
   hNodePtr e;
   if (nl->first==NULL) return 0; // list empty! => not in list!
   if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
@@ -83,7 +83,7 @@ int isInList(NodeList *nl,unsigned long foffset) {
 
 
 /* remove element from list */
-void removeFromList(NodeList *nl,unsigned long foffset) {
+void removeFromList(NodeList *nl,filepointer foffset) {
   hNodePtr e,last;
   if (nl->first==NULL) return; // list empty! => not in list!
   if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
@@ -100,16 +100,16 @@ void removeFromList(NodeList *nl,unsigned long foffset) {
   }
 }
 
-unsigned long firstElement(NodeList *nl) {
+filepointer firstElement(NodeList *nl) {
   if (nl->first==NULL) return 0;
   return nl->first->fileoffset;
 }
 
-unsigned long firstBigger(NodeList *nl,unsigned long current) {
+filepointer firstBigger(NodeList *nl,filepointer current) {
   hNodePtr e;
   if (nl->first==NULL) return 0;
   e=nl->first;
-  while ((e!=NULL)&&(e->fileoffset<=current)) e=e->next;
+  while ((e!=NULL)&&((int) e->fileoffset<=(int) current)) e=e->next;
   if (e==NULL) return 0;else return e->fileoffset;
 }
 
@@ -159,7 +159,7 @@ void showPretty(HatFile handle,NodeList *nl,int verboseMode,unsigned int precisi
 
   if (e==NULL) printf("FUNCTION TABLE EMPTY\n"); else
     {
-      unsigned long satc;
+      filepointer satc;
       while (e!=NULL) {
 	satc=hatResult(handle,e->fileoffset);  // find SATC for the application!
 	if (isSAT(handle,satc)) {

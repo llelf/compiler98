@@ -36,6 +36,7 @@ typedef union {
   float floatval;
   char* message;
   double* doubleval;
+  filepointer fptr;
   ExprPtr expr;
 } NodeTypes;
 
@@ -87,6 +88,6 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio);
 void showNode(HatFile handle,filepointer fileoffset,int verboseMode,
 	      unsigned int precision);
 
-unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verboseMode,
+filepointer showAppAndResult(HatFile handle,filepointer fileoffset,int verboseMode,
 			       unsigned int precision);
 

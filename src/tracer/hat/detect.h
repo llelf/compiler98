@@ -1,21 +1,28 @@
 /**************************************************************************/
-/* detect.h: module for algorithmic debugging of traces                   */
+/* detect.h: module providing EDT view on Redex Trail files               */
 /*                                                                        */
-/* Thorsten Brehm, 5/2001                                                 */
+/* Thorsten Brehm, 11/2001                                                */
 /**************************************************************************/
 
 
-typedef struct _EDTQuery *EDTQuery;
+  /* abstract data type: EDTQuery                                         */
+typedef struct hiddenEDTQuery* EDTQuery;
 
-EDTQuery     newEDTQuery(            // create a new observe query
-	     HatFile handle,         // hat file handler
-	     filepointer parent);    // node number of searched identifier
+  /* create new query: get EDT children of "parent"                       */
+EDTQuery     newEDTQuery      (HatFile handle,
+			       filepointer parent);
 
-void         freeEDTQuery(EDTQuery query); // end query, free memory
+  /* end query, free memory                                               */
+void         freeEDTQuery     (EDTQuery query);
 
-filepointer  nextEDTQueryNode(EDTQuery query); // 0=none, otherwise: next node returned
+  /* get next EDT child in query (InvalidFilePointer signals end of query)*/
+filepointer  nextEDTQueryNode (EDTQuery query);
 
-filepointer  getEDTroot(HatFile handle);
+  /* get root node of EDT                                                 */
+filepointer  getEDTroot       (HatFile handle);
 
-BOOL         isChildOf(HatFile handle,filepointer nodenumber,filepointer parent);
+  /* determine whether "maybechild" is an EDT child of "parent"           */
+BOOL         isEDTChild       (HatFile handle,
+			       filepointer maybechild,
+			       filepointer parent);
 

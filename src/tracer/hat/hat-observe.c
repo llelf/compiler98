@@ -75,7 +75,8 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
 
 int main (int argc, char *argv[])
 { int verbosemode=0,uniquemode=1,recursivemode=0,sourceRefMode=0;
-  int c = 1,err=0,paramerr=0,handle;
+  int c = 1,err=0,paramerr=0;
+  HatFile handle;
   unsigned int precision = 100;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
   unsigned long line=0,column=0;
@@ -137,11 +138,11 @@ int main (int argc, char *argv[])
     fprintf(stderr,"           applications, missing arguments. \n\n");
     exit(1);
   }
-  if ((handle=hatOpenFile(fname))==-1) {
+  if ((handle=hatOpenFile(fname))==HatFileNotFound) {
     fprintf(stderr, "cannot open trace file %s\n\n",fname);
     exit(1);
   }
-  if (handle==-2) {
+  if (handle==HatFileBadVersion) {
     fprintf(stderr, "format of file unknwon/not supported %s\n\n",fname);
     exit(1);
   }

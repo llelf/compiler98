@@ -4,11 +4,12 @@
 /*                                                                        */
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
+#include "hatinterface.h"
 
 typedef struct hashelement *HashPtr;
 
 typedef struct hashelement {
-  unsigned long value;
+  filepointer value;
   HashPtr next; // Array of all arguments
 } HashElement;
 
@@ -23,13 +24,13 @@ typedef struct {
 
 HashTable*   newHashTable(unsigned long size);   /* return empty table of size */
 void         freeHashTable(HashTable* h);
-void         addToHashTable(HashTable* h,unsigned long value); /* add element to table */
-void         removeFromHashTable(HashTable* h,unsigned long value);
+void         addToHashTable(HashTable* h,filepointer value); /* add element to table */
+void         removeFromHashTable(HashTable* h,filepointer value);
 
 /* check for element in hash table */
 /* returns 1, if value is in the table */
 /*         0 otherwise */
-int          isInHashTable(HashTable* h,unsigned long value); /* check for element */
+int          isInHashTable(HashTable* h,filepointer value); /* check for element */
 
 
 

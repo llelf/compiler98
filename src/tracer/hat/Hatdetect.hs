@@ -62,7 +62,7 @@ main = do
 	  else do
 	    let hattrace = (fromJust maybehattrace);
 	    let startReduction = (getStartReduction hattrace arguments)
-	    putStrLn "\nWelcome to hat-detect (20/09/01)"
+	    putStrLn ("\nWelcome to hat-detect "++hatVersionNumber)
             (b,e,newstate) <- interactive (file,hattrace)
                                           ([startReduction], [], [], []
                                           ,1, 50, False, True, False)

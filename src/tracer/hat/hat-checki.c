@@ -21,20 +21,21 @@ HatFile handle;
 
 int main (int argc, char *argv[])
 {
+  printf("hat-checki version %s\n",hatVersionNumber());
   if (argc!=2) {
     fprintf(stderr,"\nusage: hat-checki file-name\n");
     exit(1);
   }
   fname = hatFileExtension(argv[1]);
-  if ((handle=hatOpenFile(fname))==-1) {
+  if ((handle=hatOpenFile(fname))==HatFileNotFound) {
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);
   }
-  if (handle==-2) {
+  if (handle==HatFileBadVersion) {
     fprintf(stderr, "format of file unknwon/not supported %s\n\n",fname);
     exit(1);
   }
-  
+
   interactive(0);
 
   hatCloseFile(handle);
@@ -137,9 +138,9 @@ int llo5(char b) {
   return (int)(b&037);
 }
 
-filepointer printNode(unsigned long offset) {
+filepointer printNode(filepointer offset) {
   char b,showAble=0;
-  unsigned long next;
+  filepointer next;
   b = getNodeType(handle,offset);
   printf("%i ",b);
   switch (lhi3(b)) {
@@ -166,7 +167,7 @@ filepointer printNode(unsigned long offset) {
       showAble = 1;
       printf(" Name: ");
       printf("TR 0x%x, ", getParent());
-      printf("NT 0x%x, ", getNameType());
+      printf("NT 0x%x, ", getAtom());
       printf("SR 0x%x ", getSrcRef());
       break;
     case IND:
@@ -249,7 +250,7 @@ filepointer printNode(unsigned long offset) {
       if (isTopLevel(handle,offset)) printf("Toplevel ");
       printf("identifier: %s ", getName());
       {
-	unsigned long modinfo = getModInfo();
+	filepointer modinfo = getModInfo();
 	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
 	printf("MD 0x%x, ", modinfo);
@@ -259,7 +260,7 @@ filepointer printNode(unsigned long offset) {
     case CONSTRUCTOR:
       printf("constructor\t\t%s ", getName());
       { 
-	unsigned long modinfo = getModInfo();
+	filepointer modinfo = getModInfo();
 	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
 	printf("MD 0x%x, ", modinfo);
@@ -343,7 +344,7 @@ filepointer printNode(unsigned long offset) {
 void interactive(filepointer current) {
   char command[255];
   int toplevel=0;
-  unsigned long adr,next;
+  filepointer adr,next;
 
   toplevel = (current==0);
   if (current == 0) current = hatNodeNumber(handle);
@@ -368,7 +369,7 @@ void interactive(filepointer current) {
 	  if (isCmd(command,"follow","f")) {
 	    adr = hatFollowSATCs(handle,current);
 	  } else {
-	    adr = atol(command);
+	    adr = (filepointer) atol(command);
 	    if (adr==0) {
 	      sscanf(command, "0x%x", &adr);
 	    }

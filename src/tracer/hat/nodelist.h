@@ -8,7 +8,7 @@
 typedef struct tnode* hNodePtr;  // one pointer to a node
 
 typedef struct tnode {             // one node
-  unsigned long fileoffset;             // stored value
+  filepointer fileoffset;             // stored value
   hNodePtr next;                 // pointer to next
 } NodeElement;
 
@@ -19,18 +19,18 @@ typedef struct {                   // main structure: keep pointer to
 
 
 NodeList*     newList();           // return an empty list
-void          appendToList(NodeList *nl,unsigned long foffset); // append to its end
-void          insertInList(NodeList *nl,unsigned long foffset); // insert
-void          addBeforeList(NodeList *nl,unsigned long foffset);
-int           isInList(NodeList *nl,unsigned long foffset);     // check for value
-void          removeFromList(NodeList *nl,unsigned long foffset);// remove from list
+void          appendToList(NodeList *nl,filepointer foffset); // append to its end
+void          insertInList(NodeList *nl,filepointer foffset); // insert
+void          addBeforeList(NodeList *nl,filepointer foffset);
+int           isInList(NodeList *nl,filepointer foffset);     // check for value
+void          removeFromList(NodeList *nl,filepointer foffset);// remove from list
 void          freeList(NodeList *nl);
 unsigned long listLength(NodeList *nl);
 void          showList(NodeList *nl);                           // show values in list
 void          showPretty(HatFile handle,NodeList *nl,int verbosemode,
 			 unsigned int precision);               // show pretty print
-unsigned long firstElement(NodeList *nl);
-unsigned long firstBigger(NodeList *nl,unsigned long current);
+filepointer firstElement(NodeList *nl);
+filepointer firstBigger(NodeList *nl,filepointer current);
 
 
 

@@ -53,9 +53,12 @@ module HatTrace (
 
  openTrace,	-- open a trace file, return a value of type HatTrace 
  hatTraceName,	-- return file name of file represented by trace
+ hatVersionNumber, -- get current Hat version number
  hatMain,	-- get node representing the "main" caf only
  hatTraceFirst,	-- get first node within HatTrace file
  hatTraceNext,	-- get node immediately after a node
+ hatErrorRedex, -- get failed redex of an aborted evaluation
+ hatErrorMessage, -- get error message of an aborted evaluation
 
  isValidNode,	-- test if node is valid
  isInvalidNode,	-- test if node is invalid
@@ -213,8 +216,8 @@ _fromHatNode :: HatNode -> HatNodeInternal
 _fromHatNode (HatNode v) = v
 _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never occur
 
-%dis maybeHatNode x y = <_fromHatNode / _toHatNode > (int x, int y)
-
+-- %dis maybeHatNode x y = <_fromHatNode / _toHatNode > (int x, int y)
+%dis hfilepointer x = declare "filepointer" x in (%%Int x)
 
 ------------------------------------------------------------------------
 ------------------------------------------------------------------------
@@ -232,91 +235,105 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 %fun c_hatMain :: HatTrace -> RefNumber
 %call (foreign f hattrace)
-%code
-%     nodenumber = hatMainCAF((int) hattrace);
-%result (int nodenumber)
+%code filepointer nodenumber;
+%     nodenumber = hatMainCAF((HatFile) hattrace);
+%result (int "(int) nodenumber")
 
 %fun c_hatFirst :: HatTrace -> RefNumber
 %call (foreign f hattrace)
-%code
-%     nodenumber = hatSeqFirst((int) hattrace);
-%result (int nodenumber)
+%code filepointer nodenumber;
+%     nodenumber = hatSeqFirst((HatFile) hattrace);
+%result (int "(int) nodenumber")
 
 %fun c_hatNext :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace, int nodenumber)
-%code
-%     newnode = hatSeqNext((int) hattrace,nodenumber);
-%result (int newnode)
+%call (foreign f hattrace, hfilepointer nodenumber)
+%code filepointer newnode;
+%     newnode = hatSeqNext((HatFile) hattrace,nodenumber);
+%result (int "(int) newnode")
 
 %fun c_hatParent :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     hatFollowSATCs((int) hattrace,nodenumber);
-%     newnode = getParent();
-%result (int newnode)
+%     hatFollowSATCs((HatFile) hattrace,(filepointer) nodenumber);
+%     nodenumber = getParent();
+%result (hfilepointer "(int) nodenumber")
+
+%fun c_hatErrorRedex :: HatTrace -> RefNumber
+%call (foreign f hattrace)
+%code filepointer nodenumber;
+%     nodenumber = hatErrorRedex((HatFile) hattrace);
+%result (hfilepointer "(int) nodenumber")
+
+%fun c_hatErrorMessage :: HatTrace -> String
+%call (foreign f hattrace)
+%code
+%     message = hatErrorMessage((HatFile) hattrace);
+%     if (!message) message="";
+%     message = newStr(message);
+%result (string message)
 
 ------------------------------------------------
 -- interface to source reference and module names
 
 -- get node within hatfile, containing SrcRef
 %fun c_hatSrcRefNode :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace, int nodenumber)
-%code 
-%     newnode = hatFollowSATCs((int) hattrace,nodenumber);
-%     switch (getNodeType((int) hattrace,newnode)) {
+%call (foreign f hattrace, hfilepointer nodenumber)
+%code filepointer newnode;
+%     newnode = hatFollowSATCs((HatFile) hattrace,(filepointer) nodenumber);
+%     switch (getNodeType((HatFile) hattrace,newnode)) {
 %       case HatApplication:
-%       case HatName:newnode = getSrcRef();break;
+%       case HatConstant:newnode = getSrcRef();break;
 %       case HatIdentifier:
 %       case HatTopIdentifier:
 %       case HatConstructor:
 %       case HatSrcRef:
 %            break;
-%       default: newnode = 0;
+%       default: newnode = InvalidFilePointer;
 %     }
-%result (int newnode)
+%result (int "(int) newnode")
 
 -- get module info node
 %fun c_hatModInfo :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace, int nodenumber)
-%code
+%call (foreign f hattrace, hfilepointer nodenumber)
+%code filepointer newnode;
 %     if (nodenumber!=0) {
-%        getNodeType((int) hattrace, nodenumber); // access node (known to be of correct type)
+%        getNodeType((HatFile) hattrace, (filepointer) nodenumber); // access node (known to be of correct type)
 %        newnode = getModInfo();
-%     } else newnode = 0;
-%result (int newnode)
+%     } else newnode = InvalidFilePointer;
+%result (int "(int) newnode")
 
 %fun c_hatPosnRow :: HatNodeInternal -> Int
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     getNodeType((int) hattrace,nodenumber);
+%     getNodeType((HatFile) hattrace,(filepointer) nodenumber);
 %     value = getPosnRow();
 %result (int value)
 
 %fun c_hatPosnColumn :: HatNodeInternal -> Int
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     getNodeType((int) hattrace,nodenumber);
+%     getNodeType((HatFile) hattrace,(filepointer) nodenumber);
 %     value = getPosnColumn();
 %result (int value)
 
 %fun c_hatModName :: HatNodeInternal -> String
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     getNodeType((int) hattrace,nodenumber);
+%     getNodeType((HatFile) hattrace,nodenumber);
 %     value = getName();
 %result (string value)
 
 %fun c_hatModSrcName :: HatNodeInternal -> String
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     getNodeType((int) hattrace,nodenumber);
+%     getNodeType((HatFile) hattrace,nodenumber);
 %     value = getModuleSrcName();
 %result (string value)
 
 %fun c_hatModSrcTrusted :: HatNodeInternal -> Int
-%call (foreign f hattrace, int nodenumber)
+%call (foreign f hattrace, hfilepointer nodenumber)
 %code
-%     getNodeType((int) hattrace,nodenumber);
+%     getNodeType((HatFile) hattrace,nodenumber);
 %     value = getModuleTrusted();
 %result (int value)
 
@@ -324,29 +341,33 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 ----------------------------------------------------
 
 %fun c_hatResult :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace,int nodenumber)
-%code filepointer fp,fp2;
-%     fp = hatFollowSATCs((int) hattrace,nodenumber);
-%     newnode = getNodeType((int) hattrace,fp);
-%     if ((newnode!=HatApplication)&&(newnode!=HatName)) newnode=0; else {
-%       if ((fp2=hatOutermostSymbol((int) hattrace,fp))==0) newnode==0;else {
-%         if (getNodeType((int) hattrace,fp2)==HatConstructor) newnode=0;else {
-%          newnode=hatFollowSATCs((int) hattrace,hatResult((int) hattrace,fp));
+%call (foreign f hattrace,hfilepointer nodenumber)
+%code filepointer fp,fp2,newnode;
+%     char nodetype;
+%     fp = hatFollowSATCs((HatFile) hattrace,nodenumber);
+%     nodetype = getNodeType((HatFile) hattrace,fp);
+%     if ((nodetype!=HatApplication)&&(nodetype!=HatConstant))
+%        newnode=InvalidFilePointer; else {
+%       if ((fp2=hatOutermostSymbol((HatFile) hattrace,fp))==0)
+%        newnode=InvalidFilePointer;else {
+%         if (getNodeType((HatFile) hattrace,fp2)==HatConstructor)
+%          newnode=InvalidFilePointer;else {
+%           newnode=hatFollowSATCs((HatFile) hattrace,hatResult((HatFile) hattrace,fp));
 %         }
 %       }
 %     }
-%result (int newnode)
+%result (hfilepointer "(int) newnode")
 
 %fun c_hatLeftmost :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace,int nodenumber)
-%code
-%     newnode = hatOutermostSymbol((int) hattrace,nodenumber);
-%result (int newnode)
+%call (foreign f hattrace,hfilepointer nodenumber)
+%code filepointer newnode;
+%     newnode = hatOutermostSymbol((HatFile) hattrace,nodenumber);
+%result (hfilepointer "(int) newnode")
 
 %fun c_hatName :: HatNodeInternal -> String
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     switch(getNodeType((int) hattrace,nodenumber)) {
+%     switch(getNodeType((HatFile) hattrace,nodenumber)) {
 %      case HatConstructor:
 %      case HatIdentifier:
 %      case HatTopIdentifier:
@@ -360,18 +381,18 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %result (string s)
 
 %fun c_hatInt :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code 
-%     if (getNodeType((int) hattrace,nodenumber)!=HatInt) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatInt) {
 %        printf("Not an int node!\n");exit(1);
 %     }
 %     i = getIntValue();
 %result (int i)
 
 %fun c_hatInteger :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     if (getNodeType((int) hattrace,nodenumber)!=HatInteger) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatInteger) {
 %        printf("Not an integer node!\n");exit(1);
 %     }
 %     i = getIntegerValue();
@@ -379,9 +400,9 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 
 %fun c_hatChar :: HatNodeInternal -> Char
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code 
-%     if (getNodeType((int) hattrace,nodenumber)!=HatChar) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatChar) {
 %        printf("Not a char node!\n");exit(1);
 %     }
 %     c = getCharValue();
@@ -389,9 +410,9 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 
 %fun c_hatDouble :: HatNodeInternal -> Double
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code 
-%     if (getNodeType((int) hattrace,nodenumber)!=HatDouble) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatDouble) {
 %        printf("Not a double node!\n");exit(1);
 %     }
 %     d = getDoubleValue();
@@ -399,9 +420,9 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 
 %fun c_hatRational :: HatNodeInternal -> Double
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code 
-%     if (getNodeType((int) hattrace,nodenumber)!=HatRational) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatRational) {
 %        printf("Not a rational node!\n");exit(1);
 %     }
 %     // r = getRationalValue();
@@ -410,18 +431,18 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 
 %fun c_hatFloat :: HatNodeInternal -> Float
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     if (getNodeType((int) hattrace,nodenumber)!=HatFloat) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatFloat) {
 %        printf("Not a float node!\n");exit(1);
 %     }
 %     fl = getFloatValue();
 %result (float fl)
 
 %fun c_hatCString :: HatNodeInternal -> String
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     if (getNodeType((int) hattrace,nodenumber)!=HatCString) {
+%     if (getNodeType((HatFile) hattrace,nodenumber)!=HatCString) {
 %        printf("Not a cstring node!\n");exit(1);
 %     }
 %     s = getStringValue();
@@ -429,69 +450,69 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 
 
 %fun c_hatApplFun :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace,int nodenumber)
-%code filepointer fp;
-%     fp = hatFollowSATCs((int) hattrace,nodenumber);
-%     newnode = getNodeType((int) hattrace,fp);
-%     if (newnode==HatApplication) newnode=getAppFun();
+%call (foreign f hattrace,hfilepointer nodenumber)
+%code filepointer fp,newnode;char nodetype;
+%     fp = hatFollowSATCs((HatFile) hattrace,nodenumber);
+%     nodetype = getNodeType((HatFile) hattrace,fp);
+%     if (nodetype==HatApplication) newnode=getAppFun();
 %     else
-%      if (newnode==HatName) newnode=getNameType();
-%      else  newnode=0;
-%result (int newnode)
+%      if (nodetype==HatConstant) newnode=getAtom();
+%      else newnode=InvalidFilePointer;
+%result (hfilepointer "(int) newnode")
 
 %fun c_hatProjRef :: HatNodeInternal -> RefNumber
-%call (foreign f hattrace,int nodenumber)
-%code
-%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
-%     switch(newnode) {
+%call (foreign f hattrace,hfilepointer nodenumber)
+%code filepointer newnode;char nodetype;
+%     nodetype = getNodeType((HatFile) hattrace,hatFollowSATCs((HatFile) hattrace,nodenumber));
+%     switch(nodetype) {
 %       case HatProjection:case HatSATA:case HatSATB:case HatSATC:
 %         newnode=getProjValue();
 %         break;
-%       default:newnode=0;
+%       default:newnode=InvalidFilePointer;
 %     }
-%result (int newnode)
+%result (hfilepointer "(int) newnode")
 
 %fun c_hatApplArity :: HatNodeInternal -> Int
-%call  (foreign f hattrace,int nodenumber)
-%code 
-%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
-%     if (newnode==HatApplication) newnode=getAppArity();
+%call  (foreign f hattrace,hfilepointer nodenumber)
+%code char nodetype;
+%     nodetype = getNodeType((HatFile) hattrace,hatFollowSATCs((HatFile) hattrace,nodenumber));
+%     if (nodetype==HatApplication) arity=getAppArity();
 %     else
-%        newnode = 0;
-%result (int newnode)
+%        arity = 0;
+%result (int arity)
 
 %fun gethatArgInternal :: HatNodeInternal -> Int -> Int
-%call  (foreign f hattrace,int nodenumber) (int argnum)
-%code
-%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
-%     if (newnode!=HatApplication) newnode=0; else {
-%       newnode = hatFollowSATCs((int) hattrace,getAppArgument(argnum));
+%call  (foreign f hattrace,hfilepointer nodenumber) (int argnum)
+%code filepointer newnode;char nodetype;
+%     nodetype = getNodeType((HatFile) hattrace,hatFollowSATCs((HatFile) hattrace,nodenumber));
+%     if (nodetype!=HatApplication) newnode=InvalidFilePointer; else {
+%       newnode = hatFollowSATCs((HatFile) hattrace,getAppArgument(argnum));
 %     }
-%result (int newnode)
+%result (hfilepointer "(int) newnode")
 
 -- functions accessing higher level C functions
 %fun c_hatIsCAF :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     value = isCAF((int) hattrace,nodenumber);
+%     value = isCAF((HatFile) hattrace,nodenumber);
 %result (int value)
 
 %fun c_hatIsTopLevel :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     value = isTopLevel((int) hattrace,nodenumber);
+%     value = isTopLevel((HatFile) hattrace,nodenumber);
 %result (int value)
 
 %fun c_hatIsTrusted :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     value = isTrusted((int) hattrace,nodenumber);
+%     value = isTrusted((HatFile) hattrace,nodenumber);
 %result (int value)
 
 %fun c_hatExpressionStr :: HatNodeInternal -> Int -> Int -> String
-%call (foreign g hattrace,int nodenumber) (int verbose) (int precision)
+%call (foreign g hattrace,hfilepointer nodenumber) (int verbose) (int precision)
 %code ExprNode* exp;
-%     exp = buildExpr((int) hattrace,nodenumber,verbose,precision<100?100:2*precision);
+%     exp = buildExpr((HatFile) hattrace,nodenumber,verbose,precision<100?100:2*precision);
 %     prettystring = prettyPrintExpr(exp,precision,1);
 %     freeExpr(exp);
 %result (string prettystring)
@@ -531,9 +552,9 @@ toHatNodeType _  = HatInvalidNode
 fromHatNodeType _ = 0
 
 %fun c_hatNodeType :: HatNodeInternal -> HatNodeType
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code //printf("in hatNodeType: %u %u\n",(int) hattrace,nodenumber);
-%     nodetype = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
+%     nodetype = getNodeType((HatFile) hattrace,hatFollowSATCs((HatFile) hattrace,nodenumber));
 %     //printf("out hatNodeType: %u\n",nodetype);
 %result (<fromHatNodeType/toHatNodeType> (int nodetype))
 
@@ -547,23 +568,23 @@ toHatApplType _ = Nothing
 fromHatApplType _ = 0
 
 %fun c_hatApplType :: HatNodeInternal -> Maybe HatApplType
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code filepointer appl,lmo;
-%     nodetype = getNodeType((int) hattrace,
-%			     appl=hatFollowSATCs((int) hattrace,nodenumber));      
-%     if ((nodetype!=HatApplication)&&(nodetype!=HatName)) nodetype=0; else {
-%       if ((lmo=hatOutermostSymbol((int) hattrace,appl))==0) nodetype==0;else {
-%         if (getNodeType((int) hattrace,lmo)==HatConstructor) nodetype=HatConstructor; else {
-%          nodetype = getNodeType((int) hattrace,hatResult((int) hattrace,appl));
+%     nodetype = getNodeType((HatFile) hattrace,
+%			     appl=hatFollowSATCs((HatFile) hattrace,nodenumber));      
+%     if ((nodetype!=HatApplication)&&(nodetype!=HatConstant)) nodetype=0; else {
+%       if ((lmo=hatOutermostSymbol((HatFile) hattrace,appl))==0) nodetype==0;else {
+%         if (getNodeType((HatFile) hattrace,lmo)==HatConstructor) nodetype=HatConstructor; else {
+%          nodetype = getNodeType((HatFile) hattrace,hatResult((HatFile) hattrace,appl));
 %         }
 %       }
 %     }
 %result (<fromHatApplType/toHatApplType> (int nodetype))
 
 %fun c_hatInfixValue :: HatNodeInternal -> Int
-%call (foreign f hattrace,int nodenumber)
+%call (foreign f hattrace,hfilepointer nodenumber)
 %code
-%     hatFollowSATCs((int) hattrace,nodenumber);
+%     hatFollowSATCs((HatFile) hattrace,nodenumber);
 %     infixprio = getInfixType()+(getInfixPrio()*4);
 %result (int infixprio)
 
@@ -572,17 +593,17 @@ fromHatApplType _ = 0
 -- interfacing detect.c
 
 %fun getDetectInt :: HatTrace -> Int -> ForeignObj
-%call (foreign f hattrace) (int nodenumber)
+%call (foreign f hattrace) (hfilepointer nodenumber)
 %code
-%     query = (void*) newEDTQuery((int) hattrace,nodenumber);
+%     query = (void*) newEDTQuery((HatFile) hattrace,nodenumber);
 %result (foreign "freeEDTQuery" query)
 
 -- get one element from the c result
 %fun getDetectedElement :: ForeignObj -> Int -> Int
 %call (foreign f query) (int i)
-%code //printf("in getDetectedElement\n");
+%code filepointer current;
 %     current = nextEDTQueryNode((EDTQuery) query);
-%result (int current)
+%result (hfilepointer "(int) current")
 
 -- convert list of c results in haskell list
 foreignDetectToList :: HatTrace -> ForeignObj -> [HatNode]
@@ -602,7 +623,7 @@ foreignDetectToList hattrace f =
 %code
 %     //printf("Now observing in file %u...\n",(int) hattrace);
 %     //getObserve(hattrace,ident,topIdent,verbose,0,recursive,prec,(int**) &resultArray);
-%     query = (void*) newObserveQueryIdent((int) hattrace,ident,topIdent,recursive,1);
+%     query = (void*) newObserveQueryIdent((HatFile) hattrace,ident,topIdent,recursive,1);
 %     //printf("end of observe\n");
 %result (foreign "freeObserveQuery" query)
 
@@ -610,22 +631,22 @@ foreignDetectToList hattrace f =
 %fun getObserveSrcInt :: HatTrace -> String -> Int -> Int -> ForeignObj
 %call (foreign f hattrace) (string moduleName) (int line) (int column)
 %code
-%     query = (void*) newObserveQuerySource((int) hattrace,moduleName,line,column,1);
+%     query = (void*) newObserveQuerySource((HatFile) hattrace,moduleName,line,column,1);
 %result (foreign "freeObserveQuery" query)
 
 -- submit query to c (observing all observable)
 %fun getObservablesInt :: HatTrace -> ForeignObj
 %call (foreign f hattrace)
 %code
-%     query = (void*) newObservableQuery((int) hattrace,1);
+%     query = (void*) newObservableQuery((HatFile) hattrace,1);
 %result (foreign "freeObserveQuery" query)
 
 -- get one element from the c result
 %fun getObservedElement :: ForeignObj -> Int -> Int
 %call (foreign f query) (int i)
-%code //printf("in getObservedElement\n");
+%code filepointer current;
 %     current = nextObserveQueryNode((ObserveQuery) query);
-%result (int current)
+%result (hfilepointer "(int) current")
 
 -- get status of query: identifier found?
 %fun getObserveIntStatus :: ForeignObj -> Int
@@ -708,7 +729,12 @@ openTrace s =
 %fun hatTraceName :: HatTrace -> String
 %call (foreign f hattrace)
 %code
-%     s = hatFileName((int) hattrace);
+%     s = newStr(hatFileName((HatFile) hattrace));
+%result (string s)
+
+%fun hatVersionNumber :: String
+%code
+%     s = hatVersionNumber();
 %result (string s)
 
 -- get the node type of a HatNode (exportet in HatRep instance for HatNode)
@@ -726,7 +752,7 @@ _hatProjRef :: HatNode -> HatNode
 _hatProjRef (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatProjRef expr)
 _hatProjRef _ = error "Call to \"hatProjRef\" with \"Invalid\" node."
 
--- get the name of an HatName node (exportet in HatRep instance for HatNode)
+-- get the name of an identifier/constructor/module node (exportet in HatRep)
 _hatName :: HatNode -> Maybe String
 _hatName (HatNode hatexpr) = 
  let s = (c_hatName hatexpr) in
@@ -771,7 +797,7 @@ _hatResult :: HatNode -> HatNode
 _hatResult (HatNode expr@(hattrace,nodenumber)) = _toHatNode (hattrace,c_hatResult expr)
 _hatResult _ = error "Call to \"hatResult\" with \"Invalid\" node."
 
--- get information about source position, for Identifier/Constructor/Application/Name
+-- get information about source position, for Identifier/Constructor/Application/Constant
 -- nodes
 -- returns a HatSourceRef (RowPosition,ColumnPosition,ModuleName,ModuleFile,Trusted)
 _hatSourceRef :: HatNode -> HatSourceRef
@@ -791,6 +817,15 @@ _hatSourceRef _ = error "Call to \"hatSourceRef\" with \"Invalid\" node."
 -- get node representing the "main" caf
 hatMain :: HatTrace -> HatNode
 hatMain hattrace = _toHatNode (hattrace,c_hatMain hattrace)
+
+-- get node representing the failed redex of an aborted evaluation
+hatErrorRedex :: HatTrace -> HatNode
+hatErrorRedex hattrace = _toHatNode (hattrace,c_hatErrorRedex hattrace)
+
+-- get error message of an aborted evaluation
+hatErrorMessage :: HatTrace -> Maybe String
+hatErrorMessage hattrace = let e = c_hatErrorMessage hattrace in
+  if (e=="") then Nothing else (Just e)
 
 -- get the first node within the HatTrace file
 hatTraceFirst :: HatTrace -> HatNode

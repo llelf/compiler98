@@ -1,7 +1,7 @@
 /**************************************************************************/
 /* hatinterface.c: general operations on hat files                        */
 /*                                                                        */
-/* Thorsten Brehm, 4/2001                                                 */
+/* Thorsten Brehm, 11/2001                                                */
 /**************************************************************************/
 
 #include <sys/types.h>
@@ -25,6 +25,9 @@ unsigned int buf_n;     // buf[0..buf_n-1] filled
 unsigned int boff;      // if buf_n>0, boff in 0..buf_n-1 and buf[boff] is current
 unsigned long foff;     // if buf_n>0, this is offset in f of buf[0]
 
+typedef struct {int dummy;} hiddenHatFile;
+typedef struct {int dummy;} hiddenFilePointer;
+typedef unsigned long intFile;
 
 typedef struct {
   int f;                  /* file descriptor for archive */
@@ -36,9 +39,11 @@ typedef struct {
   unsigned long filesize;
   struct stat statBuf;
   char* filename;
+  unsigned long pprogress;
 } filehandler;
 
-int hatHandleCount = 0,currentHandle=-1;
+int hatHandleCount = 0;
+HatFile currentHandle=(HatFile) -1;
 filehandler* hatHandle;
 
 typedef union {char byte[4];
@@ -47,28 +52,28 @@ typedef union {char byte[4];
 	       float floatval;} fourbytes;
 
 void _saveHandle(HatFile h) {
-  if (h<0) return;
-  hatHandle[h].f=f;
-  hatHandle[h].bufsize=bufsize;
-  hatHandle[h].buf = buf;
-  hatHandle[h].buf_n = buf_n;
-  hatHandle[h].boff = boff;
-  hatHandle[h].foff = foff;
+  if ((int) h<0) return;
+  hatHandle[(int) h].f=f;
+  hatHandle[(int) h].bufsize=bufsize;
+  hatHandle[(int) h].buf = buf;
+  hatHandle[(int) h].buf_n = buf_n;
+  hatHandle[(int) h].boff = boff;
+  hatHandle[(int) h].foff = foff;
 }
 
 void _loadHandle(HatFile h) {
-  if (h<0) return;
-  f= hatHandle[h].f;
-  bufsize = hatHandle[h].bufsize;
-  buf = hatHandle[h].buf;
-  buf_n = hatHandle[h].buf_n;
-  boff = hatHandle[h].boff;
-  foff = hatHandle[h].foff;
+  if ((int) h<0) return;
+  f= hatHandle[(int) h].f;
+  bufsize = hatHandle[(int) h].bufsize;
+  buf = hatHandle[(int) h].buf;
+  buf_n = hatHandle[(int) h].buf_n;
+  boff = hatHandle[(int) h].boff;
+  foff = hatHandle[(int) h].foff;
 }
 
 void _hatSwitchToHandle(HatFile h) {
   if (h==currentHandle) return;
-  if (h>=hatHandleCount) {
+  if ((int) h>=hatHandleCount) {
     fprintf(stderr,"ERROR: Trying to access an invalid handle in hatinterface!\n");
   }
   _saveHandle(currentHandle);
@@ -81,11 +86,11 @@ HatFile hatNewHandle() {
   if (hatHandleCount>1)
     memcpy(newHandles,hatHandle,sizeof(filehandler)*(hatHandleCount-1));
   free(hatHandle);
-  hatHandle = newHandles;
+  (int) hatHandle = newHandles;
   hatHandle[hatHandleCount-1].bufsize = MAXBUFSIZE;
   hatHandle[hatHandleCount-1].buf = (char*) calloc(MAXBUFSIZE,1);
   hatHandle[hatHandleCount-1].filename = NULL;
-  return hatHandleCount-1;
+  return (HatFile) (hatHandleCount-1);
 }
 
 /* make proper file extension, if missing */
@@ -99,18 +104,18 @@ char* hatFileExtension(char* name) {
   }
 }
 
-unsigned long hatFileSize(HatFile h) {return hatHandle[h].filesize;}
+unsigned long hatFileSize(HatFile h) {return hatHandle[(int) h].filesize;}
 
 /* set new file position */
 void hatSeekNode(HatFile h,filepointer ofs) {
   _hatSwitchToHandle(h);
-  if ((ofs>=foff)&&(ofs<foff+buf_n)) { // new position is within the buffer!
-    boff=ofs-foff;   // only reset the buffer position!
+  if (((intFile) ofs>=foff)&&((intFile) ofs<foff+buf_n)) { // new position is within the buffer!
+    boff=((intFile) ofs)-foff;   // only reset the buffer position!
   } else {
     boff=0;   // set internal pointers correctly
-    foff=ofs;
+    foff=(intFile) ofs;
     buf_n=0;      // buf_n=0, nothing in memory. read from file on next read!
-    lseek(f,ofs,0); // do seek in file
+    lseek(f,(intFile) ofs,0); // do seek in file
   }
 }
 
@@ -130,7 +135,7 @@ int hatSeqEOF(HatFile h,filepointer nodenumber) {
 /* return position in file */
 filepointer hatNodeNumber(HatFile h) {
   _hatSwitchToHandle(h);
-  return foff + boff;
+  return (filepointer) (foff + boff);
 }
 
 /* Routines to extract values encoded as one or more bytes. */
@@ -218,8 +223,8 @@ void skipbytes(int bytes) { boff+=bytes; }
 #define POSNMAX 50
 char posnbuf[POSNMAX+1];
 
-unsigned long readpointer() {
-  return readfourbytes().ptrval;
+filepointer readpointer() {
+  return (filepointer) readfourbytes().ptrval;
 }
 
 void skippointer() {skipbytes(4);}
@@ -285,7 +290,7 @@ filepointer hatSeqFirst(HatFile h) {
   hatSeekNode(h,0);
   skipstring();
   skipbytes(8);
-  return foff + boff;
+  return (filepointer) (foff + boff);
 }
 
 BOOL isSAT(HatFile handle,filepointer fileoffset) {
@@ -295,7 +300,17 @@ BOOL isSAT(HatFile handle,filepointer fileoffset) {
   c = getNodeType(handle,fileoffset);
   hatSeekNode(currentHandle,old);
 
-  return ((c==TRSATC)||(c==TRSATB)||(c==TRSATA));
+  return ((c==HatSATC)||(c==HatSATB)||(c==HatSATA));
+}
+
+BOOL _isNotIsolatedSAT(HatFile handle,filepointer fileoffset) {
+  char c;
+  filepointer old = hatNodeNumber(handle);
+  
+  c = seenextbyte();
+  hatSeekNode(currentHandle,old);
+
+  return ((c==HatSATC)||(c==HatSATB)||(c==HatSATA));
 }
 
 void skipNode(char nodeType) {
@@ -325,7 +340,7 @@ void skipNode(char nodeType) {
 	break;
     default:
 	fprintf(stderr, "skipNode: strange low-bits tag %d in TR 0x%x\n",
-		lo5(nodeType), hatNodeNumber(currentHandle)-1);
+		lo5(nodeType), (int) (hatNodeNumber(currentHandle))-1);
 	exit(1);
     }
     break;
@@ -376,7 +391,7 @@ void skipNode(char nodeType) {
 	break;
     default:
 	fprintf(stderr, "skipNode: strange low-bits tag %d in NT 0x%x\n",
-		lo5(nodeType), hatNodeNumber(currentHandle)-1);
+		lo5(nodeType), (int) (hatNodeNumber(currentHandle))-1);
 	exit(1);
     }
     break;
@@ -385,24 +400,23 @@ void skipNode(char nodeType) {
       break;
   default:
       fprintf(stderr, "skipNode: strange high-bits tag %d at byte offset 0x%x\n",
-	      hi3(nodeType), hatNodeNumber(currentHandle)-1);
+	      hi3(nodeType), (int) (hatNodeNumber(currentHandle))-1);
       exit(1);
   }
 }
 
-/* follow the trace along SATCs, indirections and TRNAMEs */
+/* follow the trace along SATCs, projections and Constants */
 filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
   char nodeType;
-  
   while (1) {
     //printf("following Trace... 0x%x\n",fileoffset);
     nodeType = getNodeType(handle,fileoffset);
     //printf("node type: %i\n",b);
     switch (nodeType) {
-    case TRNAM:
-      fileoffset=getNameType();break;
-    case TRIND: //  Indirection
-    case TRSATC:
+    case HatConstant:
+      fileoffset=getAtom();break;
+    case HatProjection: //  Indirection
+    case HatSATC:
       fileoffset=getProjValue();
       break;
     default:
@@ -417,7 +431,7 @@ filepointer hatFollowHidden(HatFile handle,filepointer fileoffset) {
   
   while (1) {
     nodeType = getNodeType(handle,fileoffset);
-    if (nodeType==TRHIDDEN) {
+    if (nodeType==HatHidden) {
       fileoffset=getParent(); // follow parent...
     } else {
       return fileoffset;
@@ -432,7 +446,7 @@ filepointer hatFollowSATCs(HatFile handle,filepointer fileoffset) {
   while (1) {
     nodeType = getNodeType(handle,fileoffset);
     switch (nodeType) {
-    case TRSATC:
+    case HatSATC:
       fileoffset=getProjValue(); // follow link...
       break;
     default:
@@ -452,10 +466,10 @@ filepointer getResult() {
     hatSeekNode(handle,fileoffset);
     nodeType =  seenextbyte(); // identify isolated SATs! (getNodeType doesn't)
     switch (nodeType) {
-    case TRAPP: // Application
+    case HatApplication: // Application
       p = getParent();
       satc = hatSeqNext(handle,fileoffset);
-      if (isSAT(handle,satc)) { // success! found the SATC!
+      if (_isNotIsolatedSAT(handle,satc)) { // success! found the SATC!
  	return satc;
       }
       if ((getNodeType(handle,satc)==HatApplication)&& // does an App Node follow?
@@ -464,11 +478,11 @@ filepointer getResult() {
       }
       fileoffset = p; // follow parent!
       break;
-    case TRNAM:   // for finding CAFs. SATc should be behind the TRNAM
+    case HatConstant:   // for finding CAFs. SATc should be behind the HatConstant
       p=getParent();
       satc = hatSeqNext(handle,fileoffset);
-      if (isSAT(handle,satc)) return satc;
-      return 0; // for TRNAMs: SATC must be immediately after the node, do not
+      if (_isNotIsolatedSAT(handle,satc)) return satc;
+      return 0; // for HatConstants: SATC must be immediately after the node, do not
       // search its parents!
     default: {
 	filepointer newfileoffset=hatFollowTrace(handle,fileoffset);
@@ -485,8 +499,9 @@ filepointer getResult() {
 
 filepointer hatResult(HatFile handle,filepointer fileoffset) {
   switch(getNodeType(handle,fileoffset)) {
-   case HatName:
+   case HatConstant:
    case HatApplication:return getResult();
+  default:return InvalidFilePointer;
   }
 }
 
@@ -498,7 +513,7 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
-    case SRCREF:
+    case HatSrcRef:
       fileoffset = getModInfo();
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
@@ -506,8 +521,7 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
       // printf(", %s\n",s);
       hatSeekNode(handle,old);
       return tmp;
-    case MDSUSPECT:
-    case MDTRUSTED:
+    case HatModule:
       tmp = getName();
       tmp=catStr("module \"",tmp,"\", ");
       //printf("module \"%s\", ",s);
@@ -517,17 +531,17 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
       //printf("file \"%s\"",s);
       hatSeekNode(handle,old);
       return tmp;
-    case TRAPP:
+    case HatApplication:
       {
 	//fileoffset = getSrcRef();
 	fileoffset = getAppFun();
 	break;
       }
-    case TRNAM:
+    case HatConstant:
       //fileoffset = getSrcRef();
-      fileoffset = getNameType();
+      fileoffset = getAtom();
       break;
-    case NTIDENTIFIER:
+    case HatIdentifier:
       fileoffset = getModInfo();
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
@@ -551,8 +565,8 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
     fileoffset = hatFollowSATCs(handle,fileoffset);
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
-    case NTIDENTIFIER:
-    case NTCONSTRUCTOR:
+    case HatIdentifier:
+    case HatConstructor:
       fileoffset = getParent();
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
@@ -581,13 +595,13 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
       //printf("file \"%s\"",s);
       hatSeekNode(handle,old);
       return tmp;
-    case TRAPP:
+    case HatApplication:
       {
 	fileoffset = getAppFun();
 	break;
       }
-    case TRNAM:
-      fileoffset = getNameType();
+    case HatConstant:
+      fileoffset = getAtom();
       break;
     default:
       //printf("no location at offset: 0x%x\n",fileoffset);
@@ -619,21 +633,21 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
       hatSeekNode(handle,old);
       return trusted;
     }
-    case HatName:{
+    case HatConstant:{
       filepointer nmtype;
-      nmtype=getNameType(); // follow nmType by default
+      nmtype=getAtom(); // follow nmType by default
       srcref=getSrcRef();   // use srcref if nmType is lambda
-      if (getNodeType(handle,nmtype)!=NTLAMBDA) srcref=nmtype;
+      if (getNodeType(handle,nmtype)!=HatLambda) srcref=nmtype;
       break;
     }
-    case NTGUARD:
-    case NTIF:   // IFs are trusted. They do the right thing...
-    case NTCASE: // CASEs are trusted, same reason...
-    case TUPLE:
-    case NTCONSTRUCTOR: // constructors are "trusted"! => its applications are ok!
+    case HatGuard:
+    case HatIf:   // IFs are trusted. They do the right thing...
+    case HatCase: // CASEs are trusted, same reason...
+    case HatTuple:
+    case HatConstructor: // constructors are "trusted"! => its applications are ok!
       hatSeekNode(handle,old);
       return 1;
-    case NTIDENTIFIER:
+    case HatIdentifier:
       srcref=getModInfo(); // follow module info
       break;
     default:
@@ -649,7 +663,7 @@ int isCAF(HatFile handle,filepointer fileoffset) {
   nodeType=getNodeType(handle,fileoffset);
   hatSeekNode(handle,old);
   switch(nodeType) {
-  case TRNAM:
+  case HatConstant:
     return 1;
   default:
     return 0;
@@ -685,36 +699,33 @@ int isTopLevel(HatFile handle,filepointer srcref) {
       i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
       hatSeekNode(handle,old);
       return i;
-    case TRSATA:
-    case TRSATB:
-    case TRSATC:
-    case TRSATAIS:
-    case TRSATBIS:
-    case TRSATCIS:
+    case HatSATA:
+    case HatSATB:
+    case HatSATC:
       srcref=getProjValue();
       break;
-    case TRNAM:
-      srcref=getNameType(); // follow nmType
+    case HatConstant:
+      srcref=getAtom(); // follow nmType
       break;
-    case NTIDENTIFIER:
+    case HatIdentifier:
 //    i=getPosnColumn();
 //    i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
 //    hatSeekNode(handle,old);
 //    return i;
       return getTopLevelFlag();
-    case TRAPP:
+    case HatApplication:
       srcref = getAppFun();
       break;
-    case NTCASE:
-    case NTIF:
-    case NTGUARD:
-    case NTLAMBDA:
-    case NTCONTAINER:
-    case NTTUPLE:
-    case NTDUMMY:
-    case NTFUN:
-    case NTCSTRING:
-    case TRHIDDEN: // neccessary for isChild
+    case HatCase:
+    case HatIf:
+    case HatGuard:
+    case HatLambda:
+    case HatContainer:
+    case HatTuple:
+    case HatDummy:
+    case HatFun:
+    case HatCString:
+    case HatHidden: // neccessary for isChild
       return 0; // not toplevel (necessary for hat-observe funA in funA!)
     default:
       hatSeekNode(handle,old);
@@ -728,22 +739,19 @@ filepointer hatOutermostSymbol(HatFile handle,filepointer fileoffset) {
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
-    case TRSATA:
-    case TRSATB:
-    case TRSATBIS:
-    case TRSATAIS:
+    case HatSATA:
+    case HatSATB:
       return 0;
-    case TRSATC:
-    case TRSATCIS:
+    case HatSATC:
       fileoffset=getProjValue();
       break;
-    case TRNAM:
-      fileoffset=getNameType(); // follow nmType
+    case HatConstant:
+      fileoffset=getAtom(); // follow nmType
       break;
-    case NTIDENTIFIER:
-    case NTCONSTRUCTOR:
+    case HatIdentifier:
+    case HatConstructor:
       return fileoffset;
-    case TRAPP:
+    case HatApplication:
       fileoffset = getAppFun();
       break;
     default:
@@ -758,22 +766,19 @@ filepointer hatOutermostName(HatFile handle,filepointer fileoffset) {
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
-    case TRSATA:
-    case TRSATB:
-    case TRSATBIS:
-    case TRSATAIS:
+    case HatSATA:
+    case HatSATB:
       return 0;
-    case TRSATC:
-    case TRSATCIS:
+    case HatSATC:
       fileoffset=getProjValue();
       break;
-    case TRNAM:
+    case HatConstant:
       return fileoffset;
       break;
-    case NTIDENTIFIER:
-    case NTCONSTRUCTOR:
+    case HatIdentifier:
+    case HatConstructor:
       return fileoffset;
-    case TRAPP:
+    case HatApplication:
       fileoffset = getAppFun();
       break;
     default:
@@ -782,7 +787,7 @@ filepointer hatOutermostName(HatFile handle,filepointer fileoffset) {
   }
 }
 
-filepointer hatInitialCAF(HatFile handle,filepointer fileoffset) {
+filepointer hatTopAncestor(HatFile handle,filepointer fileoffset) {
   filepointer prev = 0;
   filepointer old = hatNodeNumber(handle);
   char nodeType;
@@ -796,7 +801,7 @@ filepointer hatInitialCAF(HatFile handle,filepointer fileoffset) {
       fileoffset = getProjValue();
       break;
     case HatHidden:
-    case TRNAM:
+    case HatConstant:
     case HatApplication:
       fileoffset = getParent();
       break;
@@ -817,18 +822,18 @@ filepointer hatMainCAF(HatFile h) {
   while (!hatSeqEOF(h,currentOffset)) {
     nodeType = getNodeType(h,currentOffset);
     switch (nodeType) {
-    case TRNAM: // Name
+    case HatConstant: // Name
       if (getParent()==0) { // is parent 0?
 	srcref = getSrcRef();
 	satc = hatSeqNext(h,currentOffset);
-	if ((srcref!=0)&&(isSAT(h,satc))) {  // SATC behind TRNAM?
+	if ((srcref!=0)&&(_isNotIsolatedSAT(h,satc))) {  // SATC behind HatConstant?
 	  // found a CAF!
 	  //if (isTrusted(h,srcref)) printf("isTrusted\n");
 	  //if (isTopLevel(h,currentOffset)==0) printf("main is not top-level!\n");
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
 	    filepointer lmo = hatOutermostSymbol(h,currentOffset);
-	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTIDENTIFIER)&&
+	    if ((lmo!=0)&&(getNodeType(h,lmo)==HatIdentifier)&&
 		(strcmp(getName(),"main")==0)) {
 	      return currentOffset;
 	    }
@@ -875,7 +880,7 @@ filepointer getParent() {
   prepareBuffer(5); // need 5 bytes after current position
   lbuf = boff;
 
-  if (nextbyte()==TRAPP) {
+  if (nextbyte()==HatApplication) {
     skipbyte(); // skip one byte in applications (arity)
   }
   fp = readpointer();
@@ -883,7 +888,7 @@ filepointer getParent() {
   return fp;
 }
 
-filepointer getNameType() {
+filepointer getAtom() {
   unsigned int lbuf;
   filepointer fp;
   prepareBuffer(8);
@@ -904,7 +909,7 @@ filepointer getSrcRef() {
   lbuf = boff;
 
   switch(nextbyte()) {
-  case TRAPP:
+  case HatApplication:
     arity = nextbyte();
     boff = lbuf;
     prepareBuffer((arity+3)*4+1);
@@ -912,7 +917,7 @@ filepointer getSrcRef() {
     skipbytes((arity+2)*4+2);
     fp = readpointer();
     break;
-  case TRNAM:
+  case HatConstant:
     prepareBuffer(12);
     skipbytes(8);
     fp = readpointer();
@@ -1021,7 +1026,7 @@ char ratbuf[RATMAX+1];
 // rationals not yet used: rational values are still represented as a constructor
 // application to two integer arguments!
 char *getRationalValue() {
-  filepointer fp;
+  unsigned long fp;
 
   fp = foff;
   skipbyte();
@@ -1066,19 +1071,19 @@ char getNodeType(HatFile h,filepointer nodenumber) {
   char nodeType;
   hatSeekNode(h,nodenumber);
   nodeType=seenextbyte();
-  if ((nodeType&240)==0) nodeType=nodeType & 247;
-  if (nodeType==NTTOPIDENTIFIER) return NTIDENTIFIER;
+  if ((nodeType&240)==0) nodeType=nodeType & 247; // mask isolated SATs
+  if (nodeType==NTTOPIDENTIFIER) return HatIdentifier;
   return (nodeType == MDTRUSTED ? HatModule : nodeType);
 }
 
 filepointer hatSeqNext(HatFile h,filepointer nodenumber) {
   hatSeekNode(h,nodenumber);
   skipNode(nextbyte());
-  return foff + boff;
+  return (filepointer) (foff + boff);
 }
 
 char* getName() { // get module, constructor or identifier name
-  filepointer fp=foff;
+  unsigned long fp=foff;
   unsigned int lbuf=boff;
   char* s;
   
@@ -1095,7 +1100,7 @@ char* getName() { // get module, constructor or identifier name
 }
 
 char _getInfix() {
-  filepointer fp=foff;
+  unsigned long fp=foff;
   unsigned int lbuf=boff;
   char c;
 
@@ -1133,7 +1138,7 @@ filepointer getProjValue() {
 }
 
 char* getModuleSrcName() {
-  filepointer fp=foff;
+  unsigned long fp=foff;
   unsigned int lbuf=boff;
   char* s;
   
@@ -1151,12 +1156,12 @@ char* getModuleSrcName() {
 }
 
 filepointer getModInfo() {
-  filepointer fp=foff;
+  unsigned long fp=foff;
   unsigned int lbuf=boff;
   filepointer res;
   
-  if (nextbyte()!=SRCREF) {
-    skipstring();  // skip string for NTIdentifier and NTConstructor
+  if (nextbyte()!=HatSrcRef) {
+    skipstring();  // skip string for HatIdentifier and HatConstructor
   }
   res = readpointer();
   
@@ -1174,17 +1179,17 @@ BOOL getModuleTrusted() {
 }
 
 unsigned long _getPosn() {
-  filepointer fp=foff;
+  unsigned long fp=foff;
   unsigned int lbuf=boff;
-  filepointer res;
+  unsigned long res;
   
   if (nextbyte()==SRCREF) {
     skipbytes(4);
   } else {
-    skipstring(); // for NTCONST, NTIDENT
+    skipstring(); // for HatConstructor, HatIdentifier
     skipbytes(5);
   }
-  res = readpointer();
+  res = (unsigned long) readpointer();
   
   if (fp==foff) boff=lbuf; // simply reset buffer pointer to old position
   else {
@@ -1210,7 +1215,15 @@ char* getPosnStr() {
   return posnbuf;
 }
 
-filepointer hatErrorPoint(HatFile h) {    // return the error entry point, if
+char* hatVersionNumber() {
+#ifdef VERSION
+  return newStr(VERSION);
+#else
+  return newStr("???");
+#endif
+}
+
+filepointer hatErrorRedex(HatFile h) {    // return the error entry point, if
                                           // evaluation failed, otherwise 0 returned
   filepointer p,old = hatNodeNumber(h);
   hatSeekNode(h,0);
@@ -1220,7 +1233,7 @@ filepointer hatErrorPoint(HatFile h) {    // return the error entry point, if
   return p;
 }
 
-char* hatErrorText (HatFile h) {  // return the error message, otherwise NULL
+char* hatErrorMessage(HatFile h) {  // return the error message, otherwise NULL
   char* errorMessage=NULL;
   filepointer p,old = hatNodeNumber(h);
   hatSeekNode(h,0);
@@ -1260,21 +1273,23 @@ HatFile hatOpenFile(char* name) {
   name = hatFileExtension(name);
   f = open(name, 0);
   if (f!=-1) {
-    int handle = hatNewHandle();
-    stat(name, &(hatHandle[handle].statBuf));
+    int handle = (int) hatNewHandle();
+    stat(name, &(hatHandle[(int) handle].statBuf));
     hatHandle[handle].filesize = hatHandle[handle].statBuf.st_size;
+    hatHandle[handle].pprogress = hatHandle[handle].statBuf.st_size/1000;
+    if (hatHandle[handle].pprogress==0) hatHandle[handle].statBuf.st_size=1;
     hatHandle[handle].filename = name;
     hatHandle[handle].buf_n = 0; // set buffer pointers appropriately. buf_n=0 buffer currently empty
     hatHandle[handle].boff = 0;  // at position 0 in buffer
     hatHandle[handle].foff = 0;  // at position 0 in file
     hatHandle[handle].f = f;
-    currentHandle = handle;
-    _loadHandle(handle);
-    if (hatTestHeader(handle)==0) {
-      hatCloseFile(handle);
+    currentHandle = (HatFile) handle;
+    _loadHandle((HatFile) handle);
+    if (hatTestHeader((HatFile) handle)==0) {
+      hatCloseFile((HatFile) handle);
       return HatFileBadVersion;
     }
-    return handle;
+    return (HatFile) handle;
   } else
     return HatFileNotFound;
 }
@@ -1282,14 +1297,18 @@ HatFile hatOpenFile(char* name) {
 /* close file in internal file descriptor */
 void hatCloseFile(HatFile h) {
   //printf("Closing file %u\n",handle);
-  close(hatHandle[h].f);
-  free(hatHandle[h].buf);
-  freeStr(hatHandle[h].filename);
+  close(hatHandle[(int) h].f);
+  free(hatHandle[(int) h].buf);
+  freeStr(hatHandle[(int) h].filename);
   if (h==currentHandle) {
-    currentHandle = -1;
+    currentHandle = HatFileNotFound;
   }
 }
 
 char* hatFileName(HatFile h) {
-  return hatHandle[h].filename;
+  return hatHandle[(int) h].filename;
+}
+
+int perProgress(HatFile h,filepointer f) {
+  return ((unsigned long) f)/10/hatHandle[(int) h].pprogress;
 }

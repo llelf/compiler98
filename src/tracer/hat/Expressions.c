@@ -170,7 +170,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 		       unsigned int precision,HashTable* hash,filepointer *cycles) {
 //#define DebugbuildExpr
   char b;
-  unsigned long p;
+  filepointer p;
   ExprNode* exp=NULL;
   char *s;
 
@@ -207,7 +207,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 	arity=getAppArity();
 	apn=newAppNode(arity);
 
-	exp = newExprNode(TRAPP);
+	exp = newExprNode(HatApplication);
 	exp->v.appval = apn;
 
 	functionOffset = getAppFun();
@@ -227,12 +227,12 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 	  removeFromHashTable(hash,fileoffset);
 	  return fun; // function was cut off -> whole application is cut off!
 	} else
-	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
+	if ((fun)&&(fun->type==HatConstructor)&&(fun->v.identval)) {
 	  IdentNode* id = fun->v.identval;
 	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
 	    filepointer hidden = hatFollowSATCs(handle,
 						(filepointer) getAppNodeArg(apn,0));
-	    if (getNodeType(handle,hidden)==TRHIDDEN) {
+	    if (getNodeType(handle,hidden)==HatHidden) {
 	      setAppNodeArg(apn,0,(ExprNode*) (getParent()));
 	    }
 	  }
@@ -245,7 +245,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 #endif
 	  // exchange arguments containing fileoffsets against the built expressions
 	  setAppNodeArg(apn,i-1,buildExprRek(handle,
-					     (unsigned long) getAppNodeArg(apn,i-1),
+					     (filepointer) getAppNodeArg(apn,i-1),
 					     verbose,precision-1,hash,cycles));
 	}
 	apn->cycle = isCycle(cycles,fileoffset);
@@ -269,8 +269,8 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       exp->v.identval = newIdentNode(s,infix,infixprio);
       return exp;
     }
-    case HatName: // Name
-      fileoffset=getNameType(); // read NmType -> follow this link to build 
+    case HatConstant: // Name
+      fileoffset=getAtom(); // read NmType -> follow this link to build 
       break;
     case HatProjection: //  Indirection
       fileoffset=getProjValue(); // follow the value link for prettyPrint
@@ -329,7 +329,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       }
     case HatSATB:
       exp = newExprNode(b);
-      exp->v.intval = getParent();
+      exp->v.fptr = getParent();
       return exp;
     default:
       fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x, handle: %u\n",
@@ -387,8 +387,8 @@ char* getStringExpr(ExprNode* exp) {
   printf("inside getStringExpr\n");
   printf("if: %i\n",exp->type);
 #endif
-  if ((exp->type==TRAPP)&&(exp->v.appval->fun!=NULL)&&
-      (exp->v.appval->fun->type==NTCONSTRUCTOR)
+  if ((exp->type==HatApplication)&&(exp->v.appval->fun!=NULL)&&
+      (exp->v.appval->fun->type==HatConstructor)
       &&(strcmp(exp->v.appval->fun->v.identval->name,":")==0)) {
     // ok, so far, it's a list...
 #ifdef DebugStringExpr
@@ -400,7 +400,7 @@ char* getStringExpr(ExprNode* exp) {
 #ifdef DebugStringExpr
     printf("type...\n");if (first!=NULL) printf("is: %u\n",first->type);
 #endif
-    if ((first!=NULL)&&(first->type==NTCHAR)) {
+    if ((first!=NULL)&&(first->type==HatChar)) {
       s1 = prettyChar(first->v.charval);
     } else 
       return NULL;
@@ -416,7 +416,7 @@ char* getStringExpr(ExprNode* exp) {
     freeStr(s1);
     return NULL;
   } else
-    if ((exp->type==NTCONSTRUCTOR)&&(strcmp(exp->v.identval->name,"[]")==0)) {
+    if ((exp->type==HatConstructor)&&(strcmp(exp->v.identval->name,"[]")==0)) {
 #ifdef DebugStringExpr
       printf("found []...\n");
 #endif
@@ -839,8 +839,8 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
       }
       else
 	switch (apn->fun->type) {
-	case NTIDENTIFIER:
-	case NTCONSTRUCTOR:
+	case HatIdentifier:
+	case HatConstructor:
 	  fun = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
@@ -935,53 +935,53 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
         return s1;
 	}*/
     }
-  case NTIDENTIFIER:
+  case HatIdentifier:
     //if (functionDepth>=showEvalUpToDepth) return newStr("_");
-  case NTCONSTRUCTOR:
+  case HatConstructor:
     return newStr(exp->v.identval->name);
-  case NTDOUBLE:
+  case HatDouble:
     sprintf(minibuf,"%f",*(exp->v.doubleval));
     return newStr(minibuf);
-  case NTINTEGER:
-  case NTRATIONAL:
-  case NTINT:
+  case HatInteger:
+  case HatRational:
+  case HatInt:
     sprintf(minibuf,"%i",exp->v.intval);
     return newStr(minibuf);
-  case NTCHAR: {
+  case HatChar: {
     char* s1 = prettyChar(exp->v.charval);
     replaceStr(&s1,"'",s1,"'");
     return s1;
   }
-  case NTFLOAT:
+  case HatFloat:
     sprintf(minibuf,"%f",exp->v.floatval);
     return newStr(minibuf);
-  case NTTUPLE:
+  case HatTuple:
     return newStr("TUPLE");
-  case NTFUN:
+  case HatFun:
     return newStr("");
-  case NTCASE:
+  case HatCase:
     return newStr("CASE");
-  case NTLAMBDA:
+  case HatLambda:
     return newStr("LAMBDA");
-  case NTDUMMY:
+  case HatDummy:
     return newStr("DUMMY");
-  case NTCSTRING:
+  case HatCString:
     return newStr("CSTRING");
-  case NTIF:
+  case HatIf:
     return newStr("IF");
-  case NTGUARD:
+  case HatGuard:
     return newStr("GUARD");
-  case NTCONTAINER:
+  case HatContainer:
     return newStr("CONTAINER");
   case MESSAGE:
     if (verbose) {
       return newStr(exp->v.message);
     } else
       return newStr("_");
-  case TRSATA:
+  case HatSATA:
     if (verbose) return treePrint(exp->v.expr,verbose,topInfixprio);
     else return newStr("_");
-  case TRSATB:
+  case HatSATB:
     return newStr("_|_");
   default:
     fprintf(stderr, "treePrint: strange type in expression syntax tree %i\n",
@@ -1003,12 +1003,12 @@ void showNode(HatFile handle,filepointer fileoffset,int verboseMode,
 }
 
 //#define showAppNode
-unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verboseMode,
+filepointer showAppAndResult(HatFile handle,filepointer fileoffset,int verboseMode,
 			       unsigned int precision) {
   char *appstr;
   char *resstr;
   ExprNode* exp;
-  unsigned long satc = 0;
+  filepointer satc = 0;
 
   exp = buildExpr(handle,fileoffset,verboseMode,precision<100 ? 100:2*precision);
   appstr = prettyPrintExpr(exp,precision,1);
