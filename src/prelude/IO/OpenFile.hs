@@ -7,10 +7,10 @@ import FFI
 
 foreign import openFileC :: CString -> Int -> IO Addr
 #if !defined(TRACING)
-foreign import "addrToHandle" addrToHandle :: Addr -> Handle
+foreign import "addrToHandle" addrToHandle :: Addr -> IO Handle
 #else
-foreign import "addrToHandle" addrToFO :: Addr -> ForeignObj
-addrToHandle a = Handle (addrToFO a)
+foreign import "addrToHandle" addrToFO :: Addr -> IO ForeignObj
+addrToHandle a = addrToFO a >>= return . Handle
 #endif
 
 openFile              :: FilePath -> IOMode -> IO Handle
@@ -20,7 +20,7 @@ openFile fp iomode = do
         errno <- getErrNo
         throwIOError ("openFile "++show iomode) (Just fp) Nothing errno
       else do
-        return (addrToHandle a)
+        addrToHandle a
 
 -- Note: the primitive openFileC returns an Addr that is in fact a
 -- pointer to the C structure representing a ForeignObj.  This is
