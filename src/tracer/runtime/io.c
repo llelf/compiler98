@@ -1814,10 +1814,10 @@ int startDbg(NodePtr nodeptr, int exitok)
 
 	ncInit();
 	if (!(sock = connectToDebugger())) {
-	    fprintf(stderr, "Couldn't connect to debugger\n");
+	    fprintf(stderr, "Couldn't connect to redex trail browser\n");
 	    exit(1);
 	}
-	fprintf(stderr, "Haskell debugger started\n");
+	fprintf(stderr, "Haskell redex trail browser connected\n");
 
 	if (exitok) {
 	    otElement *ote;
@@ -1900,14 +1900,14 @@ C_HEADER(cConnectToServer)
     FILE *sock;
 
     if (!(sock = connectToDebugger())) {
-	fprintf(stderr, "Couldn't connect to debugger\n");
+	fprintf(stderr, "Couldn't connect to redex trail browser\n");
 	exit(1);
     }
     ncInit();
     otInit();
     /*fprintf(stderr, "setvbuf: %d\n", setvbuf(sock, NULL, _IONBF, BUFSIZ));*/
 
-    fprintf(stderr, "Haskell debugger started...\n");
+    fprintf(stderr, "Haskell redex trail browser connected...\n");
     nodeptr = C_GETARG1(1);
     IND_REMOVE(nodeptr);
     /* constr = CONINFO_NUMBER(*nodeptr);*/
