@@ -20,7 +20,7 @@ unsigned int precision = 30;
 main (int argc, char *argv[])
 {
   if (argc!=2) {
-    fprintf(stderr,"\nusage: hat-interactive file-name\n");
+    fprintf(stderr,"\nusage: hat-checki file-name\n");
     exit(1);
   }
   fname = filename(argv[1]);
