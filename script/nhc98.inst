@@ -40,6 +40,7 @@ mv () { { cp $1 $2 && rm $1; } || echo "Warning: can't move $1 to $2"; }
 
 NHC98FUDGETS=${NHC98FUDGETS-$NHC98INCDIR/Fudgets}
 COMP=${NHC98COMP-"$NHC98LIBDIR/$MACHINE/nhc98comp"}
+PRAGMA=$NHC98LIBDIR/$MACHINE/hmake-PRAGMA
 COMPFILES=""
 COMPFLAGS=""
 RUNFLAGS=""
@@ -191,6 +192,20 @@ else
   RUNFLAGS=$RUNFLAGS" -"
 fi
 
+# A routine for getting OPTIONS pragmas out of source files.
+checkPragmas () {
+  if test $VFLAG -eq 1;
+    then LOCAL_OPTS=`grep $1 $2 | $PRAGMA`;
+         if test -n "$LOCAL_OPTS";
+           then echo 1>&2 "Found additional $1: $LOCAL_OPTS";
+                echo $LOCAL_OPTS
+         fi;
+    else grep $1 $2 | $PRAGMA;
+  fi;
+}
+
+
+# Start processing files here, beginning with GreenCard preprocessor.
 case $GRFILES in
 ""   ) ;;
 *    )
@@ -358,12 +373,14 @@ case $COMPFILES in
       then
         echo  `basename $COMP` $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
       fi
-      $COMP $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
+      $COMP $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE `checkPragmas OPTIONS_COMPILE $HSFILE`
 
       if test $? -ne 0
       then
 	exit 1
       fi
+
+      EXTRALIB=$EXTRALIB" "`checkPragmas OPTIONS_LINK $HSFILE`
 
       if test $PRECPP -ne 0
       then

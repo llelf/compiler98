@@ -99,7 +99,8 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/hi.inst script/rtb.inst lib/rtb.jar \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
-	 script/echo.c script/hood.inst lib/hood.jar
+	 script/echo.c script/hood.inst lib/hood.jar \
+	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.c
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -130,6 +131,7 @@ RUNTIMET = \
 	src/tracer/Makefile* \
 	src/tracer/runtime/Makefile* \
 	src/tracer/runtime/*.[ch]
+PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 TRACEUI = src/tracer/ui/*
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
@@ -145,7 +147,7 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 	 compiler-nhc compiler-hbc compiler-ghc \
 	 hmake-nhc hmake-hbc hmake-ghc \
 	 greencard-nhc greencard-hbc greencard-ghc \
-	 ccompiler cprelude cgreencard chmake \
+	 ccompiler cprelude cgreencard cpragma chmake \
 	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
 
 
@@ -171,10 +173,10 @@ config: script/errnogen.c
 install:
 	./configure --install
 
-basic-nhc: runtime hmake-nhc greencard-nhc compiler-nhc prelude
-basic-hbc: runtime hmake-hbc greencard-hbc compiler-hbc prelude
-basic-ghc: runtime hmake-ghc greencard-ghc compiler-ghc prelude
-basic-gcc: runtime cprelude ccompiler cgreencard chmake
+basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude
+basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude
+basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
+basic-gcc:        runtime cprelude cpragma ccompiler cgreencard chmake
 all-nhc: basic-nhc profile tracer-nhc $(TARGDIR)/hood #timeprof
 all-hbc: basic-hbc profile tracer-hbc $(TARGDIR)/hood #timeprof
 all-ghc: basic-ghc profile tracer-ghc $(TARGDIR)/hood #timeprof
@@ -222,6 +224,9 @@ $(TARGDIR)/$(MACHINE)/greencard-hbc: $(GREENCARD)
 $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
+
+$(PRAGMA): script/hmake-PRAGMA.hs
+	$(BUILDWITH) $(BUILDOPTS) -o $@ $<
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
@@ -292,6 +297,9 @@ $(TARGDIR)/$(MACHINE)/ccompiler: $(COMPILERC)
 $(TARGDIR)/$(MACHINE)/cgreencard: $(GREENCARDC)
 	cd src/greencard;      $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/cgreencard
+$(TARGDIR)/$(MACHINE)/cpragma: script/hmake-PRAGMA.c
+	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.c
+	touch $(TARGDIR)/$(MACHINE)/cpragma
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
 	cd src/interpreter;    $(MAKE) fromC
@@ -344,7 +352,7 @@ binDist:
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
 
 # This srcDist used to be the cDist.
-srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC nolinks
+srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC $(TARGDIR)/pragmaC nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
@@ -382,6 +390,9 @@ $(TARGDIR)/compilerC: $(COMPILER)
 $(TARGDIR)/greencardC: $(GREENCARD)
 	cd src/greencard;  $(MAKE) cfiles
 	touch $(TARGDIR)/greencardC
+$(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
+	script/nhc98 -C script/hmake-PRAGMA.hs
+	touch $(TARGDIR)/pragmaC
 $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
 	cd src/interpreter;  $(MAKE) cfiles
@@ -455,7 +466,7 @@ cleanC:
 	rm -f src/hmake/*.c
 	rm -f src/interpreter/*.c
 	cd src/prelude;		$(MAKE) cleanC
-	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC traceui
+	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
