@@ -309,19 +309,20 @@ case $COMPFILES in
 
   while test $1 
   do
+    CSUF=$CSUFFIX
     case $1 in
     *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0;
                               BASENAME=`basename $1 .s`   ;;
     *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
-                              BASENAME=`basename $1 .hc`  ;;
+                              BASENAME=`basename $1 .hc`  CSUF=hc ;;
     *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
-                              BASENAME=`basename $1 .T.c`  ;;
+                              BASENAME=`basename $1 .T.c` CSUF=T.c ;;
     *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
-                              BASENAME=`basename $1 .p.c`  ;;
+                              BASENAME=`basename $1 .p.c` CSUF=p.c ;;
     *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
-                              BASENAME=`basename $1 .z.c`  ;;
+                              BASENAME=`basename $1 .z.c` CSUF=z.c ;;
     *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
-                              BASENAME=`basename $1 .c`   ;;
+                              BASENAME=`basename $1 .c`   CSUF=c ;;
     *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
                               BASENAME=`basename $1 _.hs_` ;;
     *.gc  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=1;
@@ -347,10 +348,20 @@ case $COMPFILES in
 
     TMPCPPPREFILE=$TMP/$BASENAME.$$.hs
 
-    CPPASFILE=$DIRNAME/$BASENAME.$CSUFFIX
+    if [ "$CSUF" != "$CSUFFIX"  -a "$CSUF" != "c" ]
+    then
+      echo "Warning: compiling a .$CSUF file, but expected a .$CSUFFIX file"
+      echo "    Ensure compiler options match the intended build type:"
+      echo "        ordinary            .hc"
+      echo "        heap profiling  -p  .p.c"
+      echo "        time profiling  -t  .z.c"
+      echo "        tracing         -T  .T.c"
+    fi
+
+    CPPASFILE=$DIRNAME/$BASENAME.$CSUF
     if test $CSRC -eq 0
     then
-      TMPCPPASFILE=$TMP/$BASENAME.$$.$CSUFFIX
+      TMPCPPASFILE=$TMP/$BASENAME.$$.$CSUF
     else
       TMPCPPASFILE=$CPPASFILE
     fi
