@@ -66,7 +66,7 @@ mkReadExp expD expR tidFun pos constrInfo =
 					     nts
 				      ,expR]
 
-    else if any isNothing fields	-- ordinary constructor
+    else if null fields || any isNothing fields	-- ordinary constructor
     then
       let expConVar = ExpLit pos (LitString Boxed (showsVar conTid ""))
           expFalse = ExpCon pos (tidFun (tFalse,Con))
