@@ -96,10 +96,11 @@ else			#### Tracing
 
 OBJS_HS_T  = $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs, ${SRCS_T}))
 OBJS_GC_T  = $(patsubst %.gc, ${OBJDIR}/%.o, $(filter %.gc, ${SRCS_T}))
+OBJS_HS_NT = $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs, ${SRCS_NT}))
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
 OBJ_MAIN_T = $(patsubst %.hs, ${OBJDIR}/%.o, ${SRC_MAIN})
 endif
-OBJS_T = ${OBJS_HS_T} ${OBJS_GC_T}
+OBJS_T = ${OBJS_HS_T} ${OBJS_GC_T} ${OBJS_HS_NT}
 
 all: ${OBJS_T} extra ${OBJ_MAIN_T}
 extra:
@@ -117,6 +118,8 @@ $(OBJS_HS_T): ${OBJDIR}/%.o: %.hs
 	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 $(OBJS_GC_T): ${OBJDIR}/%.o: %.gc
 	$(TR_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+$(OBJS_HS_NT): ${OBJDIR}/%.o: %.hs
+	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 ifneq "${EXCLUDE_THISLIB_HS}" "yes"
 ${OBJ_MAIN_T}: ${OBJS_T}
 ${OBJ_MAIN_T}: ${SRC_MAIN}
