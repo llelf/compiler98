@@ -29,9 +29,9 @@ getLineEdited {-history-} = gl "" 0
                        putStr ("\BS")
                        gl s 1
                      else gl s 0
-      '\^J'  -> do delChars "^J"
-                   putChar '\n'
-                   return (reverse s)
+  --  '\^J'  -> do delChars "^J"
+  --               putChar '\n'
+  --               return (reverse s)
       '\^K'  -> do putChar '\n'
                    return ""
       '\^L'  -> do delChars "^L"
@@ -57,9 +57,9 @@ getLineEdited {-history-} = gl "" 0
                        putStr (reverse s++" ")
                        putStr (replicate (n+1) '\BS')
                        gl s n
-      '\^J'  -> do delChars "^J"
-                   putStr (reverse (take n s))
-                   putChar '\n'
+  --  '\^J'  -> do delChars "^J"
+  --               putStr (reverse (take n s))
+  --               putChar '\n'
                    return (reverse s)
       '\^K'  -> do putChar '\n'
                    return ""
