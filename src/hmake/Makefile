@@ -31,10 +31,7 @@ ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HEAP = -H4M
 endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
-HFLAGS += -package lang
-#ifeq "CYGWIN" "$(findstring CYGWIN, $(MACHINE))"
-#config: fixcygwin
-#endif
+HFLAGS += $(shell ${LOCAL}fixghc ${GHCSYM} -package lang)
 endif
 
 all: $(TARGETS)
