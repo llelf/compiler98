@@ -5,7 +5,7 @@
 static SInfo nodeProfInfo = { "Builtin","Builtin.primIntegerFromInt64","Prelude.Integer"};
 #endif
 
-NodePtr primIntegerFromInt64 (long long i)
+NodePtr primIntegerFromInt64 (HsInt64 i)
 {
   Int tag,size;
   NodePtr result;
@@ -31,12 +31,12 @@ NodePtr primIntegerFromInt64 (long long i)
       result[0] = CONSTRW(2,1);
       INIT_PROFINFO(result,&nodeProfInfo)
       result[1+EXTRA] = (int)((-i)&0x00000000ffffffff);
-      result[2+EXTRA] = (int)((-i)&0xffffffff00000000);
+      result[2+EXTRA] = (int)(((-i)&0xffffffff00000000)>>32);
     } else {
       result[0] = CONSTRW(2,0);
       INIT_PROFINFO(result,&nodeProfInfo)
       result[1+EXTRA] = (int)(i&0x00000000ffffffff);
-      result[2+EXTRA] = (int)(i&0xffffffff00000000);
+      result[2+EXTRA] = (int)((i&0xffffffff00000000)>>32);
     }
   }
   return (result);

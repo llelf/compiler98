@@ -64,10 +64,10 @@ HsWord64 primRemWord64  (HsWord64 d1, HsWord64 d2)	{ return (d1%d2); }
 
 /* Integer conversions */
 
-extern HsInt64	primInt64FromInteger (void* d);
-extern void*	primIntegerFromInt64 (HsInt64 d);
-#define FR_INT(d)	primInt64FromInteger(d)
-#define TO_INT(d)	primIntegerFromInt64(d)
+extern HsWord64	primIntegerToWord64	(void* d);
+extern void*	primIntegerFromWord64	(HsWord64 d);
+#define FR_INT(d)	primIntegerToWord64(d)
+#define TO_INT(d)	primIntegerFromWord64(d)
 HsWord8   primWord8FromInteger  (void* d)	{
     HsWord64 i = (HsWord64)FR_INT(d);
     if ((i < HS_WORD8_MIN) || (i > HS_WORD8_MAX))

@@ -69,9 +69,9 @@ HsInt64 primRemInt64	(HsInt64 d1, HsInt64 d2){ return (d1%d2); }
 
 /* Integer conversions */
 
-extern HsInt64	primInt64FromInteger (void* d);
+extern HsInt64	primIntegerToInt64   (void* d);
 extern void*	primIntegerFromInt64 (HsInt64 d);
-#define FR_INT(i)	primInt64FromInteger(d)
+#define FR_INT(i)	primIntegerToInt64(d)
 #define TO_INT(i)	primIntegerFromInt64(d)
 HsInt8	primInt8FromInteger  (void* d)		{
     HsInt64 i = FR_INT(d);
@@ -88,6 +88,11 @@ HsInt32	primInt32FromInteger (void* d)		{
     if ((i < HS_INT32_MIN) || (i > HS_INT32_MAX))
 	fprintf (stderr,"Warning: fromInteger truncates to fit Int32 value\n");
     return (HsInt32)i; }
+HsInt64	primInt64FromInteger (void* d)		{
+    HsInt64 i = FR_INT(d);
+    if ((i < HS_INT64_MIN) || (i > HS_INT64_MAX))
+	fprintf (stderr,"Warning: fromInteger truncates to fit Int64 value\n");
+    return (HsInt64)i; }
 void*	primInt8ToInteger  (HsInt8 d)		{ return TO_INT((HsInt64)d); }
 void*	primInt16ToInteger (HsInt16 d)		{ return TO_INT((HsInt64)d); }
 void*	primInt32ToInteger (HsInt32 d)		{ return TO_INT((HsInt64)d); }
