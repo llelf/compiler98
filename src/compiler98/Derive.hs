@@ -41,27 +41,24 @@ derive :: ((TokenId,IdKind) -> Id) ->
 	  Decls Id 		-> Either [String] (IntState,(Decls Id))
 
 derive tidFun state derived (DeclsParse topdecls) =
-  case doPreWork derived of
-    preWork ->
-      case allThere preWork of
-        errors@(_:_) -> Left errors
-        [] -> 
-          case mapS (\ w -> 
-                     deriveOne state tidFun w >>>= \decl ->  
-                     fixInstance (tidFun (tTrue,Con)) decl) 
-                 (work preWork) () state of
-	    (instdecls,state) -> 
-              Right (state,DeclsParse ( instdecls ++ topdecls))
+  let preWork = doPreWork derived in
+  case allThere preWork of
+      errors@(_:_) -> Left errors
+      [] -> case mapS (\w-> deriveOne state tidFun w >>>= \decl ->  
+                            fixInstance (tidFun (tTrue,Con)) decl)
+                      (work preWork) () state of
+              (instdecls,state) -> 
+                Right (state, DeclsParse (instdecls++topdecls))
   where 
   -- just reorder
   doPreWork :: [(Id,[(Pos,Id)])] -> [(Id,(Pos,Id))]
-  doPreWork d = (concatMap ( \  (con,pos_clss) -> map (pair con) pos_clss))  d
+  doPreWork d = concatMap (\(con,pos_clss)-> map (pair con) pos_clss)  d
 
   allThere :: [(Id,(Pos,Id))] -> [String]
   allThere preWork = 
-    foldr (checkSC state 
-            (foldr ( \ (con,(pos,cls)) t -> addM t (cls,con)) initM preWork))
-      [] preWork
+    foldr (checkSC state (foldr (\(con,(pos,cls)) t -> addM t (cls,con))
+                                initM preWork))
+          [] preWork
 
   work :: [(Id,(Pos,Id))] -> [(((Int,Int),([Int],[(Int,Int)])),(Pos,[NT]))]
   work preWork = solve state (map (startDeriving tidFun state) preWork)
