@@ -93,7 +93,7 @@ methodtext () {
 # with the locations in increasing order of preference.
 trydirs () {
     ext=$1; shift
-    for dir in $*
+    for dir in "$@"
     do
       for m in $methods
       do
@@ -147,7 +147,7 @@ if which ghc >/dev/null 2>&1
 then
   whichGHC=`which ghc`
   GHCVER=`${whichGHC} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-  GHCSYM=`echo $GHCVER | tr "." " " | ( read x y; echo $x$y; )`
+  GHCSYM=`echo $GHCVER | tr "." " " | ( read x y z; echo $x$y; )`
   GHCDIR=`grep '^\$libdir=' ${whichGHC} | head -1 | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
   if [ -d $GHCDIR/imports ]
   then GHCINCDIR=$GHCDIR/imports
