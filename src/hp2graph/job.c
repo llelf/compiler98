@@ -10,7 +10,7 @@ static int argvmax = 32;
 
 char *argv2str(void)
 {
-  int i,len=0;
+  int i,len=1;
   char *cmdline;
   for(i=0; i<argvsize; i++)
     len += strlen(argvdata[i])+1; /* space between argvs */
