@@ -28,9 +28,13 @@ import Char (isSpace)
 #if USE_READLINE
 import Readline
 #else
+#if defined(__HBC__)
+import IOExts (IORef, newIORef, readIORef, writeIORef, unsafePerformIO)
+#else
 import Data.IORef (IORef, newIORef, readIORef, writeIORef)
-import System (system)
 import System.IO.Unsafe (unsafePerformIO)
+#endif
+import System (system)
 #endif
 
 -- | Set up the environment so that the terminal passes characters directly
