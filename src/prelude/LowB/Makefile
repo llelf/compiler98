@@ -1,0 +1,168 @@
+include Makefile.inc
+
+THISLIB = LowB
+
+SRCS_MISC_PART = PrimError.hs Blackhole.hs CString.hs
+SRCS_MISC = _Driver.hs
+
+SRCS_SYSTEM = CExitWith.hs PrimExitWith.hs PrimSystem.hs PrimGetArgs.hs PrimGetEnv.hs PrimGetProgName.hs
+
+SRCS_IO = CHGetChar.hs PrimEqHandlePosn.hs CHPutChar.hs PrimHClose.hs PrimHFileSize.hs PrimHFlush.hs PrimHGetBuffering.hs PrimHGetChar.hs \
+	PrimHGetContents.hs PrimHGetPosn.hs PrimHIsEOF.hs PrimHPutChar.hs PrimHSeek.hs PrimHSetBuffering.hs PrimHSetPosn.hs \
+	PrimOpenFile.hs PrimOpenSocket.hs
+
+SRCS_PS = PrimComparePS.hs PrimIndex.hs PrimLength.hs PrimPackString.hs PrimUnpackPS.hs
+
+SRCS_I = PrimDecodeDouble.hs PrimDecodeFloat.hs PrimDoubleFromInteger.hs PrimEncodeDouble.hs PrimEncodeFloat.hs PrimFloatFromInteger.hs \
+	PrimIntFromInteger.hs \
+	PrimIntegerAbs.hs PrimIntegerAdd.hs PrimIntegerAnd.hs PrimIntegerEq.hs PrimIntegerFromInt.hs PrimIntegerLe.hs \
+	PrimIntegerLt.hs PrimIntegerGe.hs PrimIntegerGt.hs PrimIntegerMul.hs PrimIntegerNe.hs PrimIntegerNeg.hs PrimIntegerOr.hs \
+	PrimIntegerQuotRem.hs PrimIntegerSub.hs
+
+SRCS_LOW_PART = LowI.hs LowPS.hs
+SRCS_LOW = LowSystem.hs LowIO.hs
+
+
+OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
+
+SUBDIROBJDIR=$(patsubst %,%.objdir,${SUBDIRS})
+
+OBJS_MISC_PART = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_MISC_PART})
+OBJS_MISC = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_MISC})
+OBJS_SYSTEM = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_SYSTEM})
+OBJS_IO = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_IO})
+OBJS_PS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_PS})
+OBJS_I = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_I})
+OBJS_LOW_PART = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_LOW_PART})
+OBJS_LOW = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS_LOW})
+
+OBJS_DEFAULT = ${OBJS_MISC_PART} ${OBJS_SYSTEM} ${OBJS_IO} ${OBJS_PS} ${OBJS_I}
+OBJS = ${OBJS_DEFAULT} ${OBJS_MISC} ${OBJS_LOW_PART} ${OBJS_LOW} 
+
+C_MISC_PART = $(patsubst %.hs,%.c,${SRCS_MISC_PART})
+C_MISC = $(patsubst %.hs,%.c,${SRCS_MISC})
+C_SYSTEM = $(patsubst %.hs,%.c,${SRCS_SYSTEM})
+C_IO = $(patsubst %.hs,%.c,${SRCS_IO})
+C_PS = $(patsubst %.hs,%.c,${SRCS_PS})
+C_I = $(patsubst %.hs,%.c,${SRCS_I})
+C_LOW_PART = $(patsubst %.hs,%.c,${SRCS_LOW_PART})
+C_LOW = $(patsubst %.hs,%.c,${SRCS_LOW})
+
+C_DEFAULT = ${C_MISC_PART} ${C_SYSTEM} ${C_IO} ${C_PS} ${C_I}
+CFILES = ${C_DEFAULT} ${C_MISC} ${C_LOW_PART} ${C_LOW}
+
+HFLAGS = -prelude -part -P./ -P../ -P../PreludeIO/ -P../IO/
+	#-prelude
+
+
+all:  ${OBJS}
+boot: ${OBJS}
+cfiles: ${CFILES}
+fromC:
+	$(HC) -c -d $(OBJDIR) ${CFILES}
+${OBJDIR}:
+	mkdir -p ${OBJDIR}
+objdir: ${OBJDIR}
+clean:
+	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
+
+
+ 
+.SUFFIXES: .hs .o .c
+#.hs.o:
+#	$(HC) -c $(HFLAGS) $<
+
+${OBJS_DEFAULT}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(HFLAGS) -o $@ $<
+${OBJS_MISC}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c  +CTS -lib -CTS -P./ -P../ -P../PreludeIO/ -o $@ $<
+${OBJS_LOW_PART}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(NHEAP) +CTS -lib -part -CTS -P./ -P../ -o $@ $<
+${OBJS_LOW}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(NHEAP) +CTS -lib -part -CTS -P./ -P../ -P../PreludeIO/ -P../IO/  -o $@ $<
+
+${C_DEFAULT}: %.c : %.hs
+	$(HC) -C $(HFLAGS) $<
+${C_MISC}: %.c : %.hs
+	$(HC) -C  +CTS -lib -CTS -P./ -P../ -P../PreludeIO/ $<
+${C_LOW_PART}: %.c : %.hs
+	$(HC) -C $(NHEAP) +CTS -lib -part -CTS -P./ -P../ $<
+${C_LOW}: %.c : %.hs
+	$(HC) -C $(NHEAP) +CTS -lib -part -CTS -P./ -P../ -P../PreludeIO/ -P../IO/ $<
+
+
+
+# I know that they depend on .hi, but make is stupid :-(
+${OBJDIR}/PrimError.o: PrimError.hs  ${OBJDIR}/CExitWith.o
+${OBJDIR}/PrimExitWith.o: PrimExitWith.hs ${OBJDIR}/../PreludeIO/DIO.o ${OBJDIR}/CExitWith.o
+${OBJDIR}/PrimGetArgs.o: PrimGetArgs.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimGetEnv.o: PrimGetEnv.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimGetProgName.o: PrimGetProgName.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHClose.o: PrimHClose.hs   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHFileSize.o: PrimHFileSize.hs   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHFlush.o: PrimHFlush.hs   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHGetBuffering.o: PrimHGetBuffering.hs   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHGetChar.o: PrimHGetChar.hs   ${OBJDIR}/../PreludeIO/DIO.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/CHGetChar.o
+${OBJDIR}/PrimHGetContents.o: PrimHGetContents.hs  ${OBJDIR}/../PreludeIO/DIO.o  ${OBJDIR}/CHGetChar.o
+${OBJDIR}/PrimHGetPosn.o: PrimHGetPosn.hs   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHIsEOF.o: PrimHIsEOF.hs  ${OBJDIR}/../PreludeIO/DIOError.o   ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHPutChar.o: PrimHPutChar.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHPutChar.o: PrimHPutChar.hs  ${OBJDIR}/CHPutChar.o
+${OBJDIR}/PrimHSeek.o: PrimHSeek.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHSetBuffering.o: PrimHSetBuffering.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimHSetPosn.o: PrimHSetPosn.hs  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimIntegerGe.o: PrimIntegerGe.hs  ${OBJDIR}/PrimIntegerLt.o
+${OBJDIR}/PrimIntegerGt.o: PrimIntegerGt.hs  ${OBJDIR}/PrimIntegerLe.o
+${OBJDIR}/PrimIntegerNe.o: PrimIntegerNe.hs  ${OBJDIR}/PrimIntegerEq.o
+${OBJDIR}/PrimOpenFile.o: PrimOpenFile.hs ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimSystem.o: PrimSystem.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimOpenSocket.o: PrimOpenSocket.hs ${OBJDIR}/../IO/DSocket.o ${OBJDIR}/CString.o ${OBJDIR}/../PreludeIO/DIO.o
+
+${OBJDIR}/../PreludeIO/MsgIOError.o:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.o
+${OBJDIR}/../PreludeIO/DIOError.o:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.o
+${OBJDIR}/../PreludeIO/DIO.o:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.o
+${OBJDIR}/../IO/DSocket.o:
+	cd ../IO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/IO/DSocket.o
+
+${OBJDIR}/_Driver.o: _Driver.hs ${OBJDIR}/../PreludeIO/DIO.o
+
+
+# And now for the C-files dependencies.
+PrimError.c:          CExitWith.c
+PrimExitWith.c:       ../PreludeIO/DIO.c CExitWith.c
+PrimGetArgs.c:        ../PreludeIO/DIO.c
+PrimGetEnv.c:         CString.c  ../PreludeIO/DIO.c
+PrimGetProgName.c:    ../PreludeIO/DIO.c
+PrimHClose.c:         ../PreludeIO/DIO.c
+PrimHFileSize.c:      ../PreludeIO/DIO.c
+PrimHFlush.c:         ../PreludeIO/DIO.c
+PrimHGetBuffering.c:  ../PreludeIO/DIO.c
+PrimHGetChar.c:       ../PreludeIO/DIO.c  ../PreludeIO/DIOError.c  CHGetChar.c
+PrimHGetContents.c:   ../PreludeIO/DIO.c  CHGetChar.c
+PrimHGetPosn.c:       ../PreludeIO/DIO.c
+PrimHIsEOF.c:         ../PreludeIO/DIOError.c   ../PreludeIO/DIO.c
+PrimHPutChar.c:       ../PreludeIO/DIO.c
+PrimHPutChar.c:       CHPutChar.c
+PrimHSeek.c:          ../PreludeIO/DIO.c
+PrimHSetBuffering.c:  ../PreludeIO/DIO.c
+PrimHSetPosn.c:       ../PreludeIO/DIO.c
+PrimIntegerGe.c:      PrimIntegerLt.c
+PrimIntegerGt.c:      PrimIntegerLe.c
+PrimIntegerNe.c:      PrimIntegerEq.c
+PrimOpenFile.c:       CString.c  ../PreludeIO/DIO.c
+PrimSystem.c:         CString.c  ../PreludeIO/DIOError.c  ../PreludeIO/DIO.c
+PrimOpenSocket.c:     ../IO/DSocket.c CString.c ../PreludeIO/DIO.c
+_Driver.c:            ../PreludeIO/DIO.c
+
+../PreludeIO/MsgIOError.c:
+	cd ../PreludeIO; ${MAKE} DIOError.c
+../PreludeIO/DIOError.c:
+	cd ../PreludeIO; ${MAKE} DIOError.c
+../PreludeIO/DIO.c:
+	cd ../PreludeIO; ${MAKE} DIO.c
+../IO/DSocket.c:
+	cd ../IO;        ${MAKE} DSocket.c
+
