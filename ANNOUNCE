@@ -1,43 +1,44 @@
-		------------------------------------
-		hat-1.12, nhc98-1.12, and hmake-3.02
-		------------------------------------
+		-------------------------
+		nhc98-1.18 and hmake-3.10
+		-------------------------
+		http://haskell.org/nhc98/
+		http://haskell.org/hmake/
 
-We are pleased to announce a new release of Hat, the Haskell tracing
-(an debugging) system, together with supporting releases of the nhc98
-compiler and the hmake compilation manager.
+We are pleased to announce a new release of the nhc98 compiler and the
+hmake compilation manager.  nhc98 is portable to almost any 32-bit
+unix-like platform, and can be easily bootstrapped with just a C
+compiler if no existing Haskell compiler is available.  Hmake plays
+happily with ghc and hbc as well as nhc98.
 
-This release of Hat is a major release.  It incorporates new
-trace-browsing tools, and for the first time has support to compile
-programs for tracing with GHC in addition to nhc98.
+This release is mainly a maintenance refresh, fixing numerous bugs,
+and adding support for many of the new hierarchical libraries that
+are also supplied with ghc-6.4 and Hugs.
 
-for information on hat:       http://www.cs.york.ac.uk/fp/hat/
-for information on nhc98:     http://www.cs.york.ac.uk/fp/nhc98/
-for information on hmake:     http://www.cs.york.ac.uk/fp/hmake/
-for downloads:                http://www.cs.york.ac.uk/fp/nhc98/download.html
+Main feature updates:
+    * Supplied with these standard library packages:
+          base, parsec, haskell-src, QuickCheck, HaXml, HUnit, Cabal
+    * FFI: foreign import "dynamic" is now supported, and C
+           header-files named in an import are now respected.
+    * cpphs: The compiler and hmake now use cpphs rather than your
+             C compiler for preprocessing.  This removes problems with
+             string gaps, primes in identifiers, and so on.
+    * Now supplied with a small test suite to help verify whether
+      the compiler works on new platforms.
 
-(Hat and hmake are packaged together with nhc98 in a single download.)
+Main bugfixes:
+    * Resolved configuration bugs when using ghc-6.2 and ghc-6.4 with hmake.
+    * Build failures associated with gcc-3.3 and upward have been fixed.
 
-If you haven't already tried out the Hat tracing system, now is a
-good time to have a go!  New features worth noting are:
+This release of nhc98 has been tested on the following machines:
+    ix86-Linux      (Slackware 10 and RedHat 7.2 using ghc, hbc, gcc, nhc98)
+    ix86-Cygwin     (Windows 2000 using gcc (fails with ghc))
+    sparc-solaris2  (SunOS 5.9 using ghc, gcc, nhc98)
+    powerpc-Darwin7 (MacOS X 10.3 using ghc, gcc)
 
-  * There is a new tutorial introduction to Hat, showing how to
-    generate program traces and how to explore them.
-
-  * All the interactive trace browsing tools are implemented in
-    Haskell, including a new, simpler, textual version of hat-trail.
-    They all inter-operate, and use a similar command syntax.
-
-  * The trace-generating machinery can now be used with GHC in addition
-    to nhc98:  just use `hmake -ghc -hat' instead of `hmake -nhc98 -T'.
-    (However, for the moment, you still need to download and install
-    the nhc98 distribution, even when you intend to trace programs
-    only with GHC.)
-
-In addition there have also been many minor bugfixes to nhc98 and hmake.
-
-Bug reports should be sent to  nhc-bugs@haskell.org.
-Discussion of the Hat system belongs on  nhc-users@haskell.org.
-
-Regards,
-    The Hat team at York
-
+Credits:
+    Malcolm Wallace (release manager)
+    Ian Lynagh (gcc-3.3 bugfixes, hmake-config add-dyn)
+    Wolfgang Thaller (MacOS gcc-3.3 bugfixes)
+    Simon Marlow (ghc configuration fixes)
+    Sven Panne (warning police, hbc build)
+    numerous library authors, distribution packagers, and bug reporters.

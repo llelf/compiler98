@@ -9,7 +9,7 @@ LD = ld
 STRIP = strip
 
 
-VERSION = 1.17
+VERSION = 1.18
 # When incrementing the nhc98 version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -33,7 +33,9 @@ export MACHINE
 CYG = $(findstring CYGWIN, $(MACHINE))
 ifeq "CYGWIN" "${CYG}"
   TOPDIR := $(shell cygpath -w $(TOPDIR) | tr '\\\\' '/' )
+  CYGFLAG = -D__CYGWIN32__
 endif
+export CYGFLAG
 
 
 OBJ=obj$(CFG)

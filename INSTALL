@@ -23,7 +23,6 @@ System requirements:
 
 The build requires GNU make and a C compiler (usually gcc) together
 with the usual tools of the UNIX environment, such as sh, ar, sed, etc.
-A java compiler is required to build the trace browser tools 'hat-trail'
-and 'hood'.  (If you don't have java, don't worry - the tracer build
-will stop with an error, but everything else you need has already
-been built.)
+A java compiler is required to build the debugging browser 'hood'.
+(If you don't have java, don't worry - the build will stop with an
+error, but everything else you need has already been built.)
