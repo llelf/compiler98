@@ -38,7 +38,7 @@ module Hat
   -- qualified to mark clearly where original Prelude is used
 import Ratio (numerator,denominator)
 
-import FFI (unsafePerformIO,CString,withCString)	-- PORTABLE
+import FFI (Ptr(..),unsafePerformIO,CString,withCString)	-- PORTABLE
 --import PackedString (PackedString,packString) -- NONPORTABLE
   -- import MagicTypes (NmType,CStructure) -- NONPORTABLE
     -- magic C-type living in Haskell heap
@@ -1352,13 +1352,13 @@ mkModule :: String -> String -> ModuleTraceInfo
 mkModule unqual filename = (mkModule' `useString` unqual) `useString` filename
 
 foreign import "primModule"
-  mkModule' :: PackedString -> PackedString -> ModuleTraceInfo
+  mkModule' :: CString -> CString -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
 outputTrace trace output = outputTrace' trace `useString` output
 
 foreign import "outputTrace"
-  outputTrace' :: Trace -> PackedString -> IO ()
+  outputTrace' :: Trace -> CString -> IO ()
 
 
 ----
@@ -1654,7 +1654,7 @@ foreign import "primNTLambda"
 foreign import "primNTDummy"
  mkNTDummy	:: NmType
 foreign import "primNTCString"
- mkNTCString	:: PackedString -> NmType
+ mkNTCString	:: CString -> NmType
 foreign import "primNTIf"
  mkNTIf		:: NmType
 foreign import "primNTGuard"
