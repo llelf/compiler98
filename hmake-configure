@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="2.00 (000915)" export HMAKEVERSION
+HMAKEVERSION="2.01 (000925)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -240,16 +240,26 @@ then
     BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
     echo "I have guessed that you want to build hmake with $BUILDWITH"
   else
-    echo "You are going to build hmake with $BUILDWITH"
+    echo "You are going to build hmake with:          $BUILDWITH"
   fi
   GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   if [ "$BUILDOPTS" != "" ]
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
 
+  echo -n "Testing for the readline library:           "
+  echo 'main(){;}' >rd.c
+  if ${CC-gcc} -o /dev/null rd.c -lreadline >/dev/null 2>&1
+  then echo 'yes (detected)'
+       READLINE="-DUSE_READLINE=1 -lreadline"
+  else echo 'no  (detected)'
+       READLINE=""
+  fi
+  rm -f rd.c
+
   if [ "$EXE" = "" ]
-  then echo "Executables do not have .exe suffix (detected)"
-  else echo "Executables need .exe suffix (detected)"
+  then echo "Executables need .exe suffix?               no  (detected)"
+  else echo "Executables need .exe suffix?               yes (detected)"
   fi
 
 else
@@ -288,6 +298,7 @@ then
       echo "INSTALLVER=\"$CONFIGVERSION\"";
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
+      echo "READLINE=\"$READLINE\"";
       echo "EXE=$EXE";
       echo "GHCSYM=$GHCSYM";
     ) >$BUILDLIBDIR/$MACHINE/config
