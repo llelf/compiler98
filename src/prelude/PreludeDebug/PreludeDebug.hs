@@ -14,6 +14,9 @@ import FFIBuiltin (Addr,ForeignObj,StablePtr)
 import FFIBuiltin (Int8,Int16,Int32,Int64,Word8,Word16,Word32,Word64)
 import PreludeBuiltin (Vector)
 
+import HatArchive
+
+{-
 -- begin HatArchive
 data Trace =
      Ap Trace Traces SR
@@ -217,6 +220,7 @@ sameAs :: Trace -> Trace -> Bool
 x `sameAs` y = cPointerEquality (E x) (E y)
 
 -- end HatArchive
+-}
 
 {-
 Invariant: the trace argument of R is always fully evaluated.
@@ -242,9 +246,9 @@ mkR x t = t `myseq` R x t
 -- used internally by cCheckEvaluation
 data _Value = _Evaluating | _Evaluated | _Closure
 
-
+{-
 data E a = E a
-
+-}
 
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
@@ -276,11 +280,15 @@ instance NmCoerce PackedString where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (Vector a) where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+{- Pattern matching on the trace that has been written to file is
+definitely impossible. However, this FFI extension should be different
+anyway.
 instance NmCoerce (Either a b) where
     toNm t (Left  (R v (Nm _ nm x))) sr = 
       let t' = mkR v (mkTNm t nm x) in t' `myseq` mkR (Left t') t
     toNm t (Right (R v (Nm _ nm x))) sr = 
       let t' = mkR v (mkTNm t nm x) in t' `myseq` mkR (Right t') t
+-}
 
 -- These types use dummies for now.  Ideally, we want to convert them to
 -- either Int or Integer (depending on size), but we can't do that yet
@@ -302,7 +310,7 @@ fatal primitive 1 :: Trace -> a
 --cGetFunNm primitive 1 :: a -> NmType
 --cCheckEvaluation primitive 1 :: E a -> _Value
 cPointerEquality primitive 2 :: E a -> E a -> Bool
-cSeq primitive 2 :: a -> (E b) -> b
+{- cSeq primitive 2 :: a -> (E b) -> b -}
 cEnter primitive 3 :: NmType -> Trace -> E a -> a
 cInitializeDebugger primitive 1 :: E a -> a
 --trusted primitive 2 :: Trace -> Trace -> Bool
@@ -345,10 +353,12 @@ initializeDebugger a =
     cInitializeDebugger (E a)
 
 
-{- A version of `seq' that is sure to work here -}
+{-
+A version of `seq' that is sure to work here 
 myseq :: a -> b -> b
 
 myseq a b = cSeq a (E b)
+-}
 
 {- A version of $! that is sure to work here -}
 myseqAp :: (a -> b) -> a -> b
@@ -902,16 +912,16 @@ fun12 nm rf sr t =
 -- These four functions are dummies, introduced by the tracing compiler
 -- and then eliminated again before code generation.
 fromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
-fromConInteger sr t x = R 1 Root
+fromConInteger sr t x = mkR 1 mkTRoot
 
 patFromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
-patFromConInteger sr t x = R 1 Root
+patFromConInteger sr t x = mkR 1 mkTRoot
 
 fromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
-fromConRational sr t x = R 1 Root
+fromConRational sr t x = mkR 1 mkTRoot
 
 patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
-patFromConRational sr t x = R 1 Root
+patFromConRational sr t x = mkR 1 mkTRoot
 ----
 
 {- Used in module Case to translate overloaded numbers in patterns;

@@ -13,12 +13,14 @@ import State
 import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId
 import Info(Info,isData,isMethod)
-import FSLib
+import FSLib(FSMonad,Tree,startfs,fsState,fsExpAppl,fsClsTypSel,fsExp2,fsId
+            ,fsRealData,fsList,fsTidFun)
 import Ratio
 import Machine
 import DbgId(t_R,t_ap,t_conInt,t_conInteger,t_conFloat,t_conDouble
             ,t_fromConInteger,t_fromConRational
-            ,t_patFromConInteger,t_patFromConRational)
+            ,t_patFromConInteger,t_patFromConRational
+            ,t_mkNTId,t_mkNTConstr,t_mkSR,t_mkNTId',t_mkNTConstr',t_mkSR')
 import Id(Id)
 
 
@@ -142,12 +144,27 @@ fsExp (ExpApplication pos (ExpApplication _ xs:ys)) =
   fsExp (ExpApplication pos (xs++ys))
 
 #ifdef DBGTRANS
+fsExp (ExpApplication p xs@[ExpVar pi i, arg@(ExpLit _ _)]) =
+  fsState >>>= \state ->
+  fsTidFun >>>= \tidFun ->
+  let token = tidIS state i in
+  if token == t_mkNTId' then 
+    fsExp (ExpApplication p [ExpVar pi (tidFun (t_mkNTId,Var)),arg])
+  else if token == t_mkNTConstr' then 
+    fsExp (ExpApplication p [ExpVar pi (tidFun (t_mkNTConstr,Var)),arg])
+  else if token == t_mkSR' then 
+    fsExp (ExpApplication p [ExpVar pi (tidFun (t_mkSR,Var)),arg])
+  else {- nothing to do -}
+    mapS fsExp xs >>>= \ xs -> fsExpAppl p xs
+
 fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType),
                              sr, t, l@(ExpLit p2 (LitInteger b i))]) =
     fsState >>>= \state ->
     fsTidFun >>>= \tidFun -> 
     if tidIS state fci == t_fromConInteger
     && tidIS state qNum == tNum then
+        fsExp sr >>>= \sr ->
+        fsExp t >>>= \t -> 
         if tidIS state qType == tInt then
          -- strace (strPos p++": literal Num expression of type Int\n") $
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInt, Var)), sr, t
@@ -158,11 +175,12 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType),
                                     ,sr, t, l])
         else if tidIS state qType == tFloat then
          -- strace (strPos p++": literal Num expression of type Float\n") $
-	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)), sr, t
+	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)),sr,t
 	                            ,ExpLit p2 (litFloatInteger b i)])
         else if tidIS state qType == tDouble then
          -- strace (strPos p++": literal Num expression of type Double\n") $
-	    unitS (ExpApplication p [ExpVar p (tidFun (t_conDouble, Var)),sr,t
+	    unitS (ExpApplication p [ExpVar p (tidFun (t_conDouble, Var))
+                                    ,sr,t
 	                            ,ExpLit p2 (LitDouble b (fromInteger i))])
   --    else if tidIS state qType == tRational then
   --     -- strace (strPos p++": literal Num expression of type Rational\n") $
@@ -232,6 +250,8 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict{-@(ExpVar _ _)-},
     if tidIS state fci == t_fromConInteger
     || tidIS state fci == t_patFromConInteger then
         fsTidFun >>>= \tidFun -> 
+        fsExp sr >>>= \sr ->
+        fsExp t >>>= \t -> 
         --strace ("fixSyntax: fromInteger expr/pat with dictionary ("
         --      ++showExp state dict++")") $
         --strace (strPos p++": literal Num expr/pat of unknown type\n") $
@@ -262,9 +282,11 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr
     if tidIS state fcr == t_fromConRational
     && tidIS state qFractional == tFractional then
         fsTidFun >>>= \tidFun -> 
+        fsExp sr >>>= \sr ->
+        fsExp t >>>= \t -> 
         if tidIS state qType == tFloat then
          -- strace (strPos p++": literal Fract expression of type Float\n") $
-	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)), sr, t
+	    unitS (ExpApplication p [ExpVar p (tidFun (t_conFloat, Var)),sr,t
 	                            ,ExpLit p2 (litFloatRational b i)])
         else if tidIS state qType == tDouble then
          -- strace (strPos p++": literal Fract expression of type Double\n") $
@@ -338,6 +360,8 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr, ExpDict dict{-@(ExpVar _ _)-},
     if tidIS state fcr == t_fromConRational
     || tidIS state fcr == t_patFromConRational then
         fsTidFun >>>= \tidFun -> 
+        fsExp sr >>>= \sr ->
+        fsExp t >>>= \t -> 
      -- strace (strPos p++": literal Fractional expr/pat of unknown type\n") $
 	unitS (ExpApplication p
                  [ExpVar p (tidFun (t_ap 1, Var)), sr, t
@@ -364,7 +388,9 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr, ExpDict dict{-@(ExpVar _ _)-},
 #endif
 
 --- fromInteger {Int Integer Float Double} constant
-fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger),(ExpDict v2@(Exp2 _ qNum qType)),l@(ExpLit pl (LitInteger b i))]) =
+fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger)
+                              ,(ExpDict v2@(Exp2 _ qNum qType))
+                              ,l@(ExpLit pl (LitInteger b i))]) =
   fsState >>>= \ state ->
     if tidIS state qfromInteger == tfromInteger && tidIS state qNum == tNum 
     then     if tidIS state qType == tInt        then unitS (ExpLit pl (LitInt b (fromInteger i)))
@@ -379,7 +405,9 @@ fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger),(ExpDict v2@(Exp2 _ qNu
     else fsExp (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])
 
 --- fromRational {Float Double Rational} constant
-fsExp (ExpApplication pos [v@(ExpVar _ qfromRational) , (ExpDict v2@(Exp2 _ qFractional qType)) , l@(ExpLit pl (LitRational b i))]) =
+fsExp (ExpApplication pos [v@(ExpVar _ qfromRational) 
+                          ,(ExpDict v2@(Exp2 _ qFractional qType)) 
+                          ,l@(ExpLit pl (LitRational b i))]) =
   fsState >>>= \ state ->
  -- strace (strPos pos++": normal literal Rational expr/pat\n") $
     if tidIS state qfromRational == tfromRational && tidIS state qFractional == tFractional
@@ -393,7 +421,9 @@ fsExp (ExpApplication pos [v@(ExpVar _ qfromRational) , (ExpDict v2@(Exp2 _ qFra
 
 --- negate {Int Integer Float Double Rational} constant
 
-fsExp (ExpApplication pos [v@(ExpVar pos3 qnegate) , (ExpDict v2@(Exp2 _ qNum qType)) , p]) =
+fsExp (ExpApplication pos [v@(ExpVar pos3 qnegate) 
+                          ,(ExpDict v2@(Exp2 _ qNum qType)) 
+                          ,p]) =
   fsState >>>= \ state ->
   if tidIS state qnegate == tnegate && tidIS state qNum == tNum  then
     fsExp p >>>= \ p ->
@@ -411,14 +441,18 @@ fsExp (ExpApplication pos [v@(ExpVar pos3 qnegate) , (ExpDict v2@(Exp2 _ qNum qT
 -- Transforms (sel class.type args) into (sel (class.type) args)
 --
 fsExp (ExpApplication pos (v@(ExpVar _ _):ExpDict v2@(Exp2 _ _ _):es)) =
-  fsExp (ExpApplication pos (v:ExpDict (ExpApplication pos [v2]):es)) -- Match (sel (class.type dicts) args)
+  fsExp (ExpApplication pos (v:ExpDict (ExpApplication pos [v2]):es)) 
+  -- Match (sel (class.type dicts) args)
 
 --
 -- Transforms (sel (class.type dicts) args) into ((class.type.sel dicts) args)
 --
-fsExp (ExpApplication pos (ExpVar sp sel : ExpDict (ExpApplication ap (Exp2 _ cls qtyp:args)) : es)) =
+fsExp (ExpApplication pos (ExpVar sp sel 
+                          :ExpDict (ExpApplication ap (Exp2 _ cls qtyp:args)) 
+                          :es)) =
   fsState >>>= \ state ->
-  if (isMethod . dropJust . lookupIS state) sel && (isData . dropJust . lookupIS state) qtyp then
+  if (isMethod . dropJust . lookupIS state) sel && 
+     (isData . dropJust . lookupIS state) qtyp then
     fsClsTypSel sp cls qtyp sel >>>= \ fun ->
     mapS fsExp (args++es) >>>= \ args ->
     fsExpAppl pos (fun:args)

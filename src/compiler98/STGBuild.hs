@@ -8,8 +8,10 @@ import SyntaxPos
 import Gcode
 import GcodeLow(con0,cap0,caf,fun,extra,profconstructor)
 import StrPos
-import STGState
-import DbgId(t_mkNTId',t_mkNTConstr', t_mkSR')
+import STGState(Where(Arg,Stack,Heap,HeapLate,Direct),Thread(Thread)
+               ,updTOS,popEnv,updHeap,getExtra,incDepthIf,gArity
+               ,lateWhere,gWhereAbs,gState)
+import DbgId(t_mkNTId,t_mkNTConstr, t_mkSR)
 import Machine(wsize)
 
 
@@ -27,6 +29,9 @@ buildBody pu (fun,PosLambda pos _ _ exp) =
    buildExp pu exp >>>= \ (build,ptr) ->
    updTOS pu fun >>>
    unitS (build,(fun,ptr))
+
+
+buildExp :: Bool -> PosExp -> State a Thread ([Gcode],Where) Thread
 
 buildExp pu (PosExpLet pos bindings exp) =
   \ down
@@ -64,6 +69,7 @@ buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) =
 	    )
 
 buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
+{- old:
 #ifdef DBGTRANS
   gState >>>= \state ->                  -- (already done ?) !!! 
   let vid = tidIS state v in
@@ -80,21 +86,29 @@ buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
   	      oneHeap True pu (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0)
   else
 #endif
-  mapS (buildExp False) args >>>= \ build_ptr ->  
-  incDepthIf pu >>>= \ sp ->
-  case unzip build_ptr of
-    (build,ptr) ->
-      getExtra v >>>= \ (e,extra) ->
-      gArity v >>>= \(Just arity) -> -- Always a global here!
-      let nargs = length ptr
-      in
-        updHeap (1+e+nargs) >>>= \ hp ->
-        unitS (concat build ++  (if nargs == arity 
-                                 then pushHeapIf False pu (HEAP_VAP v:extra)
-                                 else pushHeapIf True pu (HEAP_CAP v (arity-nargs):extra)
-                                ) ++ zipWith (heapPtr sp) [hp+1+e .. ] ptr
-        ,Heap hp
-        )
+-}
+#ifdef DBGTRANS
+  gState >>>= \state ->                  -- (already done ?) !!! 
+  let vid = tidIS state v in
+  if vid == t_mkNTId || vid == t_mkNTConstr then
+    case args of
+      [PosInt _ cid] -> 
+        oneHeap True pu (HEAP_GLB "D_" cid) >>>= \build_ptr ->
+        buildAp pu v [build_ptr]
+  else if vid == t_mkSR then
+    getExtra v >>>= \(e, extra) ->
+    case args of
+      [PosInt _ cid] ->
+	-- Every source refererence needs 3 words 
+        -- (plus any extra profiling words)
+        oneHeap True pu 
+          (HEAP_GLB ("D_SR_" ++ show (cid-1)) 0) >>>= \build_ptr ->
+  	buildAp pu v [build_ptr]
+  else
+#endif
+    mapS (buildExp False) args >>>= \ build_ptr ->  
+    buildAp pu v build_ptr
+
 
 buildExp pu (PosExpThunk pos [e]) =
   buildExp pu e
@@ -164,8 +178,33 @@ buildExp pu (PosExpThunk pos (PosPrim _ p:args)) =
 buildExp pu (PosExpApp pos (fun:args)) =
   error ("buildExp App " ++ strPos pos)
 
-oneHeap True True  ptr = updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,EVALUATED,ptr], Heap hp)
-oneHeap False True  ptr = updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,ptr], Heap hp)
+
+buildAp :: Bool -> Int -> [([Gcode],Where)] 
+        -> State a Thread ([Gcode],Where) Thread
+
+buildAp pu v build_ptr =
+  incDepthIf pu >>>= \ sp ->
+  case unzip build_ptr of
+    (build,ptr) ->
+      getExtra v >>>= \ (e,extra) ->
+      gArity v >>>= \(Just arity) -> -- Always a global here!
+      let nargs = length ptr
+      in
+        updHeap (1+e+nargs) >>>= \ hp ->
+        unitS (concat build ++  (if nargs == arity 
+                                 then pushHeapIf False pu (HEAP_VAP v:extra)
+                                 else pushHeapIf True pu (HEAP_CAP v (arity-nargs):extra)
+                                ) ++ zipWith (heapPtr sp) [hp+1+e .. ] ptr
+        ,Heap hp
+        )
+
+
+oneHeap :: Bool -> Bool -> Gcode -> State a Thread ([Gcode],Where) Thread
+
+oneHeap True True  ptr = 
+  updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,EVALUATED,ptr], Heap hp)
+oneHeap False True  ptr = 
+  updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,ptr], Heap hp)
 oneHeap _ False ptr = unitS ([] , Direct ptr)
 
 pushHeapIf True True gs = PUSH_HEAP : EVALUATED : gs

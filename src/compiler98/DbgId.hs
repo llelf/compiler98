@@ -8,7 +8,8 @@ module DbgId(tTrace, t_R, tSR, tSR2, tSR3, tDNum, tE,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
 	     t_fromConRational, t_patFromConRational
 	     ,t_debugger, t_prim, t_rseq, t_cSeq
-             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
+             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkSR,t_mkNTId,t_mkNTConstr
+             ,t_mkNTLambda,t_mkNTCase
 	     ,tNTId, tNTConstr, tCase, tIf, tGuard, tLambda, tNmType,
 	     tDbgPrelude,tDbgPreludeCore,tNmCoerce,tokenDbg)
  where
@@ -29,6 +30,9 @@ t_mkTNm         = qualImp "mkTNm"
 t_mkSR'         = qualImp "mkSR'"
 t_mkNTId'       = qualImp "mkNTId'"
 t_mkNTConstr'   = qualImp "mkNTConstr'"
+t_mkSR          = qualImp "mkSR"
+t_mkNTId        = qualImp "mkNTId"
+t_mkNTConstr    = qualImp "mkNTConstr"
 t_mkNTLambda    = qualImp "mkNTLambda"
 t_mkNTCase      = qualImp "mkNTCase"
 t_Ap		= qualImp "Ap"
@@ -108,6 +112,9 @@ tokenDbg = [(TCon, tTrace),
             (Var, t_mkSR'),
             (Var, t_mkNTId'),
             (Var, t_mkNTConstr'),
+            (Var, t_mkSR),
+            (Var, t_mkNTId),
+            (Var, t_mkNTConstr),
             (Var, t_mkNTLambda),
             (Var, t_mkNTCase),
 	    (Con, t_Ap),

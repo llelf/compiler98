@@ -1,7 +1,12 @@
-module HatArchive 
-  ( NmType
-  , SR
-  , module HatArchive
+module Prelude
+  (Trace(..),NmType,SR
+  ,E(E),cSeq,myseq,sameAs
+  ,mkTRoot,mkTAp1,mkTAp2,mkTAp3,mkTAp4,mkTAp5,mkTAp6,mkTAp7,mkTAp8,mkTAp9
+  ,mkTAp10,mkTAp11,mkTAp12,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC
+  ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble
+  ,mkNTId',mkNTId,mkNTConstr',mkNTConstr,mkNTTuple,mkNTFun,mkNTCase
+  ,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard,mkNTContainer
+  ,mkNoSR,mkSR',mkSR
   ) where
 
 import PackedString (PackedString)
@@ -487,10 +492,10 @@ mkNTInteger	= primNTInteger
 mkNTRational x	= primNTRational 0 0	-- dummy (constructor :% not available)
 mkNTFloat	= primNTFloat
 mkNTDouble	= primNTDouble
-mkNTId'	    x	= undefined x		-- dummy for compile time only
-mkNTId	 	= primNTId		-- dummy for compile time only
+mkNTId' x	= undefined x		-- dummy for compile time only
+mkNTId x	= primNTId x		-- dummy for compile time only
 mkNTConstr' x	= undefined x		-- dummy for compile time only
-mkNTConstr	= primNTConstr		-- dummy for compile time only
+mkNTConstr x	= primNTConstr x	-- dummy for compile time only
 mkNTTuple	= primNTTuple
 mkNTFun		= primNTFun
 mkNTCase	= primNTCase
@@ -511,7 +516,7 @@ mkSR		:: CStructure -> SR	-- is replaced by this one at runtime
 
 mkNoSR		= primSR0
 mkSR' x		= undefined x		-- dummy
-mkSR		= primSR3
+mkSR x		= primSR3 x
 
 
 ----
