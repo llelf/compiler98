@@ -37,10 +37,17 @@ extern Node chars[];
 
 #define UPDATE_VAP(p) SAVE_PROFINFO(vapptr);FILL_AT(SIZE_IND,vapptr); *vapptr= BUILD_IND(p);vapptr= p
 
-#define FORCE_GC(c)                   \
- PUSH_STATE;                    \
- hp = callGc((c),hp,sp,fp);     \
- POP_STATE(0);        
+extern int pendingIdx;		/* deferred finalisers */
+
+#define FORCE_GC(c)		\
+ PUSH_STATE;			\
+ hp = callGc((c),hp,sp,fp);	\
+ POP_STATE(0);			\
+ if (pendingIdx) {		\
+   Sp=sp; Fp=fp; Ip=ip; Hp=hp;	\
+   runDeferredGCs();		\
+   sp=Sp; fp=Fp; ip=Ip; hp=Hp;	\
+ }
 
 
 
