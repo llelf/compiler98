@@ -18,6 +18,11 @@ case `echo -n hello | wc -c | ( read n ; echo $n )` in
        fi ;;
 esac
 
+# Versions of ghc > 6.0 need a hack to make the version number larger.
+if [ $ghcversion -le 100 ]
+then
+  ghcversion=${ghcversion}0
+fi
 
 # We permit arguments to arrive in any format (4.04, 4.06, 4.08, 5.00, 5.04),
 # and translate to the format specified by the first arg.

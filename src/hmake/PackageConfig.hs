@@ -30,7 +30,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
       if ok
         then do
           let ghcpkg = matching ghc (ghcPkg ghc (compilerVersion config))
-          pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+       -- pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+          pkgs <- runAndReadStdout (ghcpkg++" -l")
           let (ok,bad) = partition (`elem` deComma pkgs) packages
           when (not (null bad))
                (hPutStrLn stderr ("\nWarning: package(s) "

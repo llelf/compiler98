@@ -210,8 +210,8 @@ configure Ghc ghcpath = do
 			, includePaths  = undefined
 			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
 			, extraCompilerFlags = []
-			, isHaskell98   = ghcsym>=400 }
-  if windows && ghcsym < 500
+			, isHaskell98   = ghcsym>=400 || ghcsym<100 }
+  if windows && 100<ghcsym && ghcsym<500
     then do
       fullpath <- which exe ghcpath
       let incdir1 = dirname (dirname fullpath)++"/imports"
@@ -219,7 +219,7 @@ configure Ghc ghcpath = do
       if ok
         then return config{ includePaths = ghcDirs ghcsym incdir1 }
         else do ioError (userError ("Can't find ghc includes at\n  "++incdir1))
-    else if ghcsym < 500
+    else if 100<ghcsym && ghcsym<500
     then do
       fullpath <- which exe ghcpath
       dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -1 | "
@@ -247,7 +247,8 @@ configure Ghc ghcpath = do
           let ghcpkg0 = dirname fullpath++"/ghc-pkg-"++ghcversion
           ok <- doesFileExist ghcpkg0
           let ghcpkg = if ok then ghcpkg0 else dirname fullpath++"/ghc-pkg"
-          pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+       -- pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+          pkgs <- runAndReadStdout (ghcpkg++" -l")
           let pkgsOK = filter (`elem`["std","base","haskell98"]) (deComma pkgs)
           idirs <- mapM (\p-> runAndReadStdout
                                   (ghcpkg++" --show-package="++p
