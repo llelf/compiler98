@@ -460,8 +460,8 @@ bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
 bindPat :: Exp TokenId -> NeedLib -> NeedLib
 
 bindPat (ExpApplication   pos exps) = mapR bindPat exps
-bindPat (ExpInfixList     pos (ExpVarOp _ _:pats)) = mapR bindPat pats 
-  -- ^ must be prefix -
+bindPat (ExpInfixList     pos (ExpVarOp _ op:pats)) = -- must be prefix -
+  needTid pos Var op >>> mapR bindPat pats
 bindPat (ExpInfixList     pos exps) = mapR bindPat exps
 bindPat (ExpVar           pos tid)  = bindTid Var tid
 bindPat (ExpCon           pos tid)  = needTid pos Con tid
