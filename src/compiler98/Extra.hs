@@ -122,8 +122,7 @@ assocDef ((k,v):kvs) d a = if a == k then v
 -------------------
 
 -- abstract type for storing the position of a syntactic construct in a file,
--- that is, line and column number
--- currently only includes start position, not end position
+-- that is, line and column number of both start and end positions.
 
 data Pos = P !Int !Int
 -- line * 10000 + column of start, line * 10000 + column of end
@@ -176,6 +175,9 @@ strPos :: Pos -> String
 strPos p = 
   case fromPos p of
     (0,0,0,0) -> "nopos"
+    (l1,c1,0,0)   -> show l1 ++ ':' : show c1
+    (l1,c1,l2,c2) | l1==l2 && c1==c2
+                  -> show l1 ++ ':' : show c1
     (l1,c1,l2,c2) -> show l1 ++ ':' : show c1 ++ '-' : show l2 ++ ':' : show c2
 
 instance Show Pos where
