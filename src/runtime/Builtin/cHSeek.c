@@ -4,7 +4,7 @@
 
 #include "haskell2c.h"
 #if TRACE
-#include "../../tracer/runtime/getconstr.h"
+#include "../../hat/runtime/getconstr.h"
 #endif
 
 #if 0
