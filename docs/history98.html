@@ -6,6 +6,73 @@
 
 <hr>
 
+<h3>full nhc98 release 1.00 (2000-09-15) features</h3>
+<ul>
+<li> Update:  Many changes to the nhc98 tracer (listed separately below)
+              and a new name for the tracing system: <em>Hat</em>.
+<li> Update:  Many changes to <em>hi</em> (hmake interactive), both to
+              improve the automatic configuration and to add features.
+<li> Addition:  Andy Gill's HOOD debugging library.
+<li> Addition:  New commandline flag -showtype, used by <em>hi</em> to
+                display types of expressions.
+<li> Addition:  New options for hmake: -clean and -realclean.
+<li> Documentation:   We have added many more comments and type signatures
+                      to the compiler, so implementers should find it easier
+                      to read.
+<li> Bugfix:  Added correct derivation for Read and Show classes on named
+fields.<li> Bugfix:  Configuration bugs for Cygwin and Solaris.
+<li> Bugfix:  Configuration for 'echo -n' on certain OSes.
+<li> Bugfix:  Parser now accepts {-# pragmas #-}.
+<li> Bugfix:  Directory.closedir: ensure directory is finalised only once.
+<li> Bugfix:  New functions FFI.withForeignObj and FFI.touchForeignObj.
+<li> Bugfix:  List.isPrefixOf: second clause was missing.
+<li> Bugfix:  System.getEnv: throws error when symbol is undefined.
+<li> Bugfix:  Prelude.lex "1..n" now returns [("1", "..n")].
+<li> Bugfix:  Added Read and Show instances for 5-tuples.
+<li> Bugfix:  Doubles were occasionally truncated to Float, Floats were
+              occasionally promoted to Double.
+<li> Portability: You can now run nhc98comp with Hugs!  (although this is
+                  unlikely to be directly useful to anyone.)
+</ul>
+The following updates and bugfixes are specifically for <em>Hat</em>,
+the redex-trail-based tracing and debugging system.
+<ul>
+<li> Literal numeric expressions and patterns now work again (previously
+     broken in the move to Haskell'98).
+<li> Added arithmetic primitives for Integer, Float, and Double types.
+<li> Added rules for the primitive FFI (foreign import only).
+<li> Added standard libraries: Ratio, Complex, Numeric, Ix, List,
+         Maybe, Char, Monad.  (Still missing: Array, Directory, System,
+         Time, Locale, CPUTime, Random.)
+<li> Fixed the compilation of newtypes.
+<li> Fixed derived instances of classes.
+<li> Fixed compiler conflict between Java 1.1 and 1.2.
+</ul>
+
+
+<h3>nhc98 pre-release 19 (2000-06-05) features</h3>
+<ul>
+<li> Big Change: Until recently, the normal/profiling and tracing
+                 versions of the Prelude and Libraries have been
+                 kept in separate source trees.  The normal set is
+                 Haskell'98 compliant, the tracing set was 1.3 and
+                 incomplete.  We have now merged the two sets so that
+                 all the libraries which actually build for tracing
+                 are genuinely Haskell'98.  There are still several
+                 libraries that don't compile for tracing yet, but this
+                 is nevertheless a big step forward to improving the
+                 tracing experience.
+<li> Addition: Implementations of the standard Time and CPUTime
+               libraries.  All standard libraries are now implemented
+               in normal and profiling versions.
+<li> Addition: "hmake interactive" - a brand new Hugs-like
+               interpreter for interactive development.
+<li> Change:   The trace browser command has now been renamed
+               <tt>rtb</tt> for "Redex Trail Browser".
+<li> Bugfix:   IO.hgetLine was broken.
+</ul>
+
+
 <h3>nhc98 pre-release 18 (2000-04-10) features</h3>
 <ul>
 <li> Bugfix: More patches needed for building with ghc-4.06.
@@ -185,7 +252,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.04.26<br>
+This page last modified: 2000.09.15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

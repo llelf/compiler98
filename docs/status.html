@@ -75,7 +75,7 @@ trace browser, time profiler, and common FFI.
   <td>2000-08-20</td>
   <td>1998-06-03</td>
   <td>2000-03-01</td>
-  <td>2000-09-05</td>
+  <td>2000-09-14</td>
 </tr>
 </table>
 </center>
@@ -96,6 +96,13 @@ packages available at
 <a href="ftp://urano.iceb.ufop.br/pub/nhc98/">
 <tt>ftp://urano.iceb.ufop.br/pub/nhc98/</tt></a>
 </center>
+Another contributor, Michael Weber, makes Debian Linux
+packages available at
+<center>
+<a href="ftp://not/yet/known">
+<tt>ftp://not/yet/known</tt></a>
+</center>
+
 The hypertext links in the following table point only to the most
 recent tar packages.
 
@@ -106,11 +113,11 @@ recent tar packages.
                     <th>version</th> <th>date</th> <th>size</th></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.0pre19.tar.gz">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.00.tar.gz">
       Haskell + C source trees</a></td>
   <td>any</td>
-  <td>1.0pre19</td>
-  <td>000605</td>
+  <td>1.00</td>
+  <td>000915</td>
   <td>2530kb</td></tr>
 
 </table>
@@ -120,9 +127,8 @@ recent tar packages.
 <b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, sparc-solaris2,
 mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN-NT4.
 <p>
-<b>Important note:</b> Before pre-release 10, there were separate packages
-for Haskell sources and C sources - these have now been combined.
-Binary distribution packages normally follow a full release.
+<b>Important note:</b> The long series of pre-releases is now finished.
+Binary distribution packages normally follow a full release by a few days.
 
 
 <p>
@@ -151,7 +157,8 @@ profiling, time profiling, and tracing - the full works.
 The <a href="install.html">installation instructions</a> should be
 comprehensive, but if you have any problems, please mail
 <a href="mailto:nhc-users@cs.york.ac.uk?subject=nhc98 installation">
-<tt>nhc-users@cs.york.ac.uk</tt></a>
+<tt>nhc-users@cs.york.ac.uk</tt></a>  (you must be a member of the
+list to post to it).
 
 <br><br><hr>
 
@@ -183,7 +190,7 @@ comprehensive, but if you have any problems, please mail
 <li> Portability: You can now run nhc98comp with Hugs!  (although this is
                   unlikely to be directly useful to anyone.)
 </ul>
-The following are updates and bugfixes all specifically within <em>Hat</em>,
+The following updates and bugfixes are specifically for <em>Hat</em>,
 the redex-trail-based tracing and debugging system.
 <ul>
 <li> Literal numeric expressions and patterns now work again (previously
@@ -196,54 +203,7 @@ the redex-trail-based tracing and debugging system.
 <li> Fixed the compilation of newtypes.
 <li> Fixed derived instances of classes.
 <li> Fixed compiler conflict between Java 1.1 and 1.2.
-</ul>
-
-<h3>nhc98 pre-release 19 (2000-06-05) features</h3>
-<ul>
-<li> Big Change: Until recently, the normal/profiling and tracing
-                 versions of the Prelude and Libraries have been
-                 kept in separate source trees.  The normal set is
-                 Haskell'98 compliant, the tracing set was 1.3 and
-                 incomplete.  We have now merged the two sets so that
-                 all the libraries which actually build for tracing
-                 are genuinely Haskell'98.  There are still several
-                 libraries that don't compile for tracing yet, but this
-                 is nevertheless a big step forward to improving the
-                 tracing experience.
-<li> Addition: Implementations of the standard Time and CPUTime
-               libraries.  All standard libraries are now implemented
-               in normal and profiling versions.
-<li> Addition: "hmake interactive" - a brand new Hugs-like
-               interpreter for interactive development.
-<li> Change:   The trace browser command has now been renamed
-               <tt>rtb</tt> for "Redex Trail Browser".
-<li> Bugfix:   IO.hgetLine was broken.
-</ul>
-
-<h3>nhc98 pre-release 18 (2000-04-10) features</h3>
-<ul>
-<li> Bugfix: More patches needed for building with ghc-4.06.
-<li> Bugfix: The new implementations of two Directory functions
-             (doesFileExist and doesDirectoryExist) threw IOErrors
-             when they shouldn't.
-<li> Addition: We've improved the error messages given by the Directory IO
-               functions to include more information about what caused
-               the error.
-<li> Addition: A new compiler flag <em>-report-imports</em>.
-</ul>
-
-<h3>nhc98 pre-release 17 (2000-03-14) features</h3>
-<ul>
-<li> Bugfix: Now builds with ghc-4.06 as well as ghc-4.04 and earlier.
-<li> Bugfix: Occasional runtime crashes when using Arrays are now eliminated.
-</ul>
-
-<h3>nhc98 pre-release 16 (2000-03-02) features</h3>
-<ul>
-<li> Addition: The standard Random library.
-<li> Addition: The standard Directory library.
-<li> Addition: The common IOExtras library.
-<li> Bugfixes: Various small configuration bugfixes.
+<li> Fixed many browser bugs.
 </ul>
 
 <h3><a href=history98.html>Previous release history (nhc98)</a></h3>
@@ -257,7 +217,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.06.05<br>
+This page last modified: 2000.09.15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
