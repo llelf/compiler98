@@ -25,7 +25,7 @@ module IO (
     ,putChar, putStr, putStrLn, print, getChar, getLine, getContents
     ,readFile, writeFile, appendFile, readIO, readLn
 
- -- ,hGetFileName			-- not standard Haskell'98
+    ,hGetFileName			-- not standard Haskell'98
 #if !defined(TRACING)
     ,SocketType(..), openSocket		-- not standard Haskell'98
 #endif
