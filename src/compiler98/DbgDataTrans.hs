@@ -1,3 +1,6 @@
+{- ---------------------------------------------------------------------------
+
+-}
 module DbgDataTrans(dbgDataTrans) where
 
 import Tree234
@@ -10,7 +13,7 @@ import Syntax
 import SyntaxPos
 import StrSyntax
 import Flags
-import Bind
+--import Bind
 import RenameLib
 import State
 import NT

@@ -10,7 +10,7 @@ module Rename(ctxs2NT, fixInstance, rename) where
 import List
 import Syntax
 import Extra(pair,isJust,dropJust,strace)
-import Bind
+import Bind(bindPat,bindDecls,identPat)
 import RenameLib
 import Fixity(fixInfixList)
 import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)

@@ -1,4 +1,4 @@
-module SyntaxPos(HasPos(..)) where
+module SyntaxPos(Pos,HasPos(..)) where
 
 import Extra(Pos(..),noPos)
 import Syntax

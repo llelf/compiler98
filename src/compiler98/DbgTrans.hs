@@ -1,32 +1,46 @@
+{- ---------------------------------------------------------------------------
+Transforms all value definitions of a program 
+for producing traces for debugging.
+-}
 module DbgTrans(debugTrans, dbgAddImport) where
 
 import Extra(Pos, noPos, pair, fromPos, dropJust)
-import IdKind
+import IdKind(IdKind(Con,Var))
 import TokenId
 import DbgId
-import Info
-import IntState
+--import Info
+import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
+               ,uniqueIS,uniqueISs,IE(IEnone),ntI
+               ,Info(InfoVar,InfoClass,InfoMethod,InfoDMethod,InfoIMethod))
 import Syntax
 import SyntaxPos
 import StrSyntax
 import NT
-import Flags
-import Bind
-import RenameLib
+--import Flags
+--import Bind
+--import RenameLib
 import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 #if defined(__NHC__) || defined(__HBC__)
-import NonStdTrace
+import NonStdTrace(trace)
 #endif
 #if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
+import IOExts(trace)
 #endif
 
 -- newNameVar, nameArity, hsFromInt, addInt
 
 data Inherited a = Inherited (Exp Int) (Exp Int) ((TokenId, IdKind) -> Int) a
-data Threaded = Threaded IntState (Int, [Int]) [(Pos, Int)] -- (AssocTree Int (Exp Int)) -- [(Int, Int)]
+data Threaded = Threaded IntState (Int, [Int]) [(Pos, Int)] 
+                -- (AssocTree Int (Exp Int)) -- [(Int, Int)]
+
+
+{-
+Used to add the special prelude for debugging to the import list.
+Now it serves no purpose and is just the identity function.
+-}
+dbgAddImport :: Bool -> Module a -> Module a
 
 dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
     Module pos id exports (dbgAI dodbg imports) fixities decls
@@ -38,18 +52,42 @@ dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
 -}
 	  dbgAI False impdecls = impdecls
 
+
+{-
+Transforms all value definitions for producing traces for debugging.
+-}
+debugTrans :: a 
+           -> IntState 
+           -> ((TokenId,IdKind) -> Int) 
+           -> PackedString 
+           -> b 
+           -> c 
+           -> Decls Int 
+           -> Maybe [(Pos,Int)] 
+           -> (Decls Int,IntState,Maybe ((Int,[Int]),[(Pos,Int)],c,[Char]))
+
 debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
   initDebugTranslate (dTopDecls decls) istate lookupPrel
-    where initDebugTranslate f istate lookupPrel = 
-              case f (Inherited start_d fatal lookupPrel modid) 
-                     (Threaded istate (1, [0]) constrs) of
-	          (decls', Threaded istate' srt idt) -> (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
-          start_d = ExpCon noPos (lookupPrel (t_Root, Con))
-          fatal = ExpCon noPos (lookupPrel (t_fatal, Var))
+  where 
+  initDebugTranslate f istate lookupPrel = 
+    case f (Inherited start_d fatal lookupPrel modid) 
+           (Threaded istate (1, [0]) constrs) of
+      (decls', Threaded istate' srt idt) -> 
+        (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
+  start_d :: Exp Int
+  start_d = ExpCon noPos (lookupPrel (t_Root, Con))
+  fatal :: Exp Int
+  fatal = ExpCon noPos (lookupPrel (t_fatal, Var))
+
+
+dTopDecls :: Decls Int -> Inherited a -> Threaded -> (Decls Int,Threaded)
 
 dTopDecls (DeclsParse ds) = 
     mapS dTopDecl ds >>>= \dss -> 
        unitS (DeclsParse (concat dss))
+
+
+dTopDecl :: Decl Int -> Inherited a -> Threaded -> ([Decl Int],Threaded)
 
 dTopDecl d@(DeclType id t) = unitS [d]
 dTopDecl d@(DeclData mb ctx id contrs tycls) = unitS [d]
@@ -102,20 +140,26 @@ dDecl (DeclPat (Alt pat [(g, e)] decls)) =
     noGuard >>>= \ng ->
     let evars = map snd bvsnvs in 
     makeTuple noPos evars >>>= \etup ->
-    let pcase = ExpCase noPos e' [Alt pat'' [(g, etup)] (DeclsParse []),
-	                          Alt fp    [(ng, fe)]                  (DeclsParse [])]
+    let pcase = ExpCase noPos e' [Alt pat'' [(g, etup)] (DeclsParse [])
+	                         ,Alt fp    [(ng, fe)]  (DeclsParse [])]
 	pfun = DeclFun noPos patid [Fun [] [(g, pcase)] decls']
 {-
 	vpat p pv i sr = ExpApplication p [ExpVar p pvid, 
-	                                   ExpApplication p [ntid, 
-					                     ExpLit p (LitInt Boxed i)],
+	                                   ExpApplication p 
+                                             [ntid 
+					     ,ExpLit p (LitInt Boxed i)],
 					   vcase p pv{-, sr, redex-}]
-        vcase p pv = ExpCase p (ExpVar p patid) [Alt etup [(g, pv)] (DeclsParse [])]
-        vfun ((p, i), pv) sr = DeclFun p i [Fun [] [(g, vpat p pv i sr)] (DeclsParse [])]
+        vcase p pv = ExpCase p (ExpVar p patid) 
+                       [Alt etup [(g, pv)] (DeclsParse [])]
+        vfun ((p, i), pv) sr = DeclFun p i 
+                                 [Fun [] [(g, vpat p pv i sr)] (DeclsParse [])]
 -}
 	vpat p pv i sr = vcase p pv
-        vcase p pv = ExpCase p (ExpVar p patid) [Alt etup [(g, pv)] (DeclsParse [])]
-        vfun ((p, i), pv) sr = DeclFun p i [Fun [PatWildcard p, PatWildcard p] [(g, vpat p pv i sr)] (DeclsParse [])]
+        vcase p pv = ExpCase p (ExpVar p patid) 
+                       [Alt etup [(g, pv)] (DeclsParse [])]
+        vfun ((p, i), pv) sr = DeclFun p i 
+                                 [Fun [PatWildcard p, PatWildcard p] 
+                                      [(g, vpat p pv i sr)] (DeclsParse [])]
     in unitS (pfun : zipWith vfun bvsnvs srs)
 dDecl d@(DeclPat _) =
     error ("dDecl: pattern binding with guards")
@@ -126,12 +170,13 @@ dDecl d@(DeclFun pos id fundefs) =
     lookupNameStr id >>>= \funName ->
     --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
     if isCMethod info then
-        dMethod info pos id funName fundefs
+      dMethod info pos id funName fundefs
     else
-        let arity = getArity fundefs
-        in case arity of
-	      0 -> dCaf pos id funName fundefs (unwrapNT 0 True (ntI info))
-	      _ -> dFun pos id funName arity fundefs (unwrapNT arity False (ntI info))
+      let arity = getArity fundefs
+      in case arity of
+           0 -> dCaf pos id funName fundefs (unwrapNT 0 True (ntI info))
+           _ -> dFun pos id funName arity fundefs 
+                  (unwrapNT arity False (ntI info))
 dDecl d@(DeclIgnore _) = unitS [d]
 dDecl d@(DeclError _) = unitS [d]
 dDecl d@(DeclAnnot _ _) = unitS [d]
@@ -370,6 +415,12 @@ dFunClause (Fun ps gdses decls) =
 dGdEs (gd, e) = unitS pair =>>> dGuard gd =>>> dExp False e
 
 dExps cr es = mapS (dExp cr) es
+
+
+{-
+
+-}
+dExp :: Bool -> Exp Int -> Inherited a -> Threaded -> (Exp Int,Threaded)
 
 dExp cr (ExpLambda pos pats e) = 
     newVar pos >>>= \redex ->
@@ -670,7 +721,7 @@ unzipConc f ps =
     in unitS (f ps', concat vss)
     
 
--- Utility functions
+{- Utility functions --------------------------------------------------------}
 
 makeTuple pos [e] = unitS e
 makeTuple pos es = 
@@ -680,53 +731,88 @@ makeTuple pos es =
 noGuard =
     unitS (ExpCon noPos) =>>> lookupId Con tTrue
 
-lookupId kind ident = \(Inherited _ _ lookupPrel _) s -> (lookupPrel (ident, kind), s)
-lookupVar pos ident =  \(Inherited _ _ lookupPrel _) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
-lookupCon pos ident =  \(Inherited _ _ lookupPrel _) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
-lookupName ident = \_ s@(Threaded istate _ _) -> (lookupIS istate ident, s)
-lookupNameStr ident = \_ s@(Threaded istate _ _) -> (strIS istate ident, s)
+lookupId kind ident = 
+  \(Inherited _ _ lookupPrel _) s -> (lookupPrel (ident, kind), s)
+lookupVar pos ident =  
+  \(Inherited _ _ lookupPrel _) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
+lookupCon pos ident =  
+  \(Inherited _ _ lookupPrel _) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
+lookupName ident = 
+  \_ s@(Threaded istate _ _) -> (lookupIS istate ident, s)
+lookupNameStr ident = 
+  \_ s@(Threaded istate _ _) -> (strIS istate ident, s)
+
+
+{- Create a new variable with given position -}
+newVar :: Pos -> a -> Threaded -> (Exp Int,Threaded)
 
 newVar pos = \_ (Threaded istate srt idt) ->
                  case uniqueIS istate of
 	             (i, istate') -> (ExpVar pos i, Threaded istate' srt idt)
+
+
+{- Create a list of n new variables, all with the same given position -}
+newVars :: Pos -> Int -> a -> Threaded -> ([Exp Int],Threaded)
 
 newVars pos n = \_ (Threaded istate srt idt) ->
                     case uniqueISs istate [1..n] of
 	                (is, istate') -> (map (ExpVar pos . snd) is, 
 			                  Threaded istate' srt idt)
 
+
+mkInfo :: Either Int Int -> String -> Int -> NewType -> Info
+
 mkInfo (Right u) str arity nt = 
-    InfoVar u (visImpRev (str ++ "_" ++ show u)) (InfixDef, 9) IEnone nt (Just arity)
+    InfoVar u (visImpRev (str ++ "_" ++ show u)) (InfixDef, 9) 
+      IEnone nt (Just arity)
 
 mkInfo (Left u) str arity nt = 
     InfoVar u (visImpRev str) (InfixDef, 9) IEnone nt (Just arity)
 
+
+unwrapNT :: Int -> Bool -> NewType -> NewType
+
 unwrapNT arity isCaf nt@NoType = nt
-unwrapNT arity isCaf (NewType free exist ctxs [NTcons arrow [sr, NTcons _ [t, rt]]]) = 
-    NewType free exist ctxs (if isCaf then [dStripR arity rt] else [NTcons arrow [t, dStripR arity rt]])
-    where dStripR 0 t = t
-          dStripR n (NTcons rt [NTcons a1 [t, NTcons a2 [a, b]]]) | a1 == arrow && a1 == a2 =
-              NTcons arrow [a, dStripR (n-1) b]
-          dStripR n t@(NTcons rt [a]) = t
+unwrapNT arity isCaf 
+  (NewType free exist ctxs [NTcons arrow [sr, NTcons _ [t, rt]]]) = 
+    NewType free exist ctxs (if isCaf 
+                               then [dStripR arity rt] 
+                               else [NTcons arrow [t, dStripR arity rt]])
+  where 
+  dStripR 0 t = t
+  dStripR n (NTcons rt [NTcons a1 [t, NTcons a2 [a, b]]]) 
+    | a1 == arrow && a1 == a2 = NTcons arrow [a, dStripR (n-1) b]
+  dStripR n t@(NTcons rt [a]) = t
 unwrapNT arity isCaf nt = error ("unwrapNT: strange type: " ++ show nt)
 
+
+addNewName :: Int -> Bool -> String -> NewType 
+           -> Inherited a -> Threaded -> (Int,Threaded)
+
 addNewName arity addIdNr str nt = 
-    \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
-        case uniqueIS istate of
-	    (i, istate') -> 
-	        let info = mkInfo (if addIdNr then Right i else Left i) str arity nt
-		    istate'' = addIS i info istate'
-		in (i, Threaded istate'' srt idt)
+  \(Inherited _ _ _ modstr) (Threaded istate srt idt) ->
+    case uniqueIS istate of
+      (i, istate') -> 
+	let info = mkInfo (if addIdNr then Right i else Left i) str arity nt
+	    istate'' = addIS i info istate'
+	in (i, Threaded istate'' srt idt)
 
-setD d = \(Inherited _ f lookupPrel modstr) s -> (Inherited d f lookupPrel modstr, s) 
 
+setD :: Exp Int -> Inherited a -> b -> (Inherited a,b)
+setD d = \(Inherited _ f lookupPrel modstr) s -> 
+           (Inherited d f lookupPrel modstr, s) 
+
+
+getD :: Inherited a -> b -> (Exp Int,b)
 getD = \(Inherited d _ _ _) s -> (d, s)
+
 
 normalFail = 
     lookupVar noPos t_fatal >>>= \fail ->
     setFail fail
 
-setFail fail = \(Inherited d _ lookupPrel modstr) s -> (Inherited d fail lookupPrel modstr, s) 
+setFail fail = \(Inherited d _ lookupPrel modstr) s -> 
+                 (Inherited d fail lookupPrel modstr, s) 
 
 getFail = \(Inherited _ fail _ _) s -> (fail, s)
 
@@ -746,43 +832,72 @@ setArity arity id = \_ (Threaded istate srs) ->
                         Threaded (updVarArity noPos id arity istate) srs
 -}
 
+
+getArity :: [Fun a] -> Int
+
 getArity (Fun pats _ _ : _) = length pats
 
-setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
-    let newid = case lookupAT st id of
-                    Just (InfoMethod u tid fix nt _ cls) ->
-	                InfoMethod u tid fix nt (Just arity) cls
-                    Just (InfoDMethod u tid nt _ cls) ->
-	                InfoDMethod u tid nt (Just arity) cls
-		    Just (InfoIMethod u tid nt _ cls) ->
-		        InfoIMethod u tid nt (Just arity) cls
-		    Just (InfoVar u tid fix exp nt _) ->
-		        InfoVar u tid fix exp nt (Just arity)
-    in Threaded (IntState unique rps (updateAT st id (\_ -> newid)) errors) srt idt
 
+setArity :: Int -> Int -> a -> Threaded -> Threaded
+
+setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
+  let newid = case lookupAT st id of
+                Just (InfoMethod u tid fix nt _ cls) ->
+                      InfoMethod u tid fix nt (Just arity) cls
+                Just (InfoDMethod u tid nt _ cls) ->
+                      InfoDMethod u tid nt (Just arity) cls
+       	        Just (InfoIMethod u tid nt _ cls) ->
+	              InfoIMethod u tid nt (Just arity) cls
+	        Just (InfoVar u tid fix exp nt _) ->
+	             InfoVar u tid fix exp nt (Just arity)
+  in Threaded (IntState unique rps (updateAT st id (\_ -> newid)) errors) 
+       srt idt
+
+
+getPositions :: a -> Threaded -> ((Int,[Int]),Threaded)
 getPositions = \_ s@(Threaded _ srt _) -> (srt, s)
+
+
+setPositions :: (Int,[Int]) -> a -> Threaded -> Threaded
 setPositions srt = \_ s@(Threaded istate _ idt) -> Threaded istate srt idt
 
+
+makeSourceRef :: Int -> Inherited a -> Threaded -> (Exp Int,Threaded)
+
 makeSourceRef p (Inherited _ _ lookupPrel _) s@(Threaded is (nsr, srs) idt) =
-    if rowcol == head srs then
-        (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr)], s)
-    else
-         let nsr' = nsr+1
-	 in seq nsr' (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr')], 
-	              Threaded is (nsr', rowcol:srs) idt)
-    where (row, col) = fromPos p 
-          rowcol = 10000*row + col
-	  sr3 = lookupPrel (tSR3, Con)
+  if rowcol == head srs then
+    (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr)], s)
+  else
+    let nsr' = nsr+1
+    in seq nsr' (ExpApplication p [ExpCon p sr3, ExpLit p (LitInt Boxed nsr')],
+                 Threaded is (nsr', rowcol:srs) idt)
+  where 
+  (row, col) = fromPos p 
+  rowcol = 10000*row + col
+  sr3 = lookupPrel (tSR3, Con)
+
+
+addId :: (Pos,Int) -> a -> Threaded -> Threaded
 
 addId pid inh (Threaded is srt idt) = Threaded is srt (pid:idt)
 
+
+{- Create expression for a string literal at given position -}
+eStr :: Pos -> [Char] -> Exp a
+
 eStr pos s = ExpLit pos (LitString Boxed s)
+
 
 stripPrelude ('_':'x':s) = s
 stripPrelude ('@':s) = s
 stripPrelude s = s
 
 
+{- is it a class method? -}
+isCMethod :: Info -> Bool
+
 isCMethod (InfoIMethod _ _ _ _ _) = True
 isCMethod (InfoDMethod _ _ _ _ _) = True
 isCMethod _ = False
+
+{- End Module DbgTrans ------------------------------------------------------}

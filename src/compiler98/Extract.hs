@@ -1,10 +1,18 @@
 {- ---------------------------------------------------------------------------
+extract:
+Adds arity of all defined variables to symbol table of internal state.
+Adds type of variables from type declarations and primitive and foreign
+function definitions to symbol table of internal state
+(but not type declarations from classes).
+Tests that there are not conflicting arities.
+Tests for instance definition:
+  is it illegally made for a type synonym?
+  does class require instances for superclasses which are not present?
+(Adds appropriate error message to internal state).
 
-Tests if illegal instance for a type synonym is made.
-
-Provides function to transform type from syntax tree into interal type.
+type2NT transforms type from syntax tree into interal type.
 -}
-module Extract(extract,type2NT) where
+module Extract(IntState,Decls,extract,type2NT) where
 
 import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Exp(..),Stmt(..),Alt(..))
 import IntState(IntState,lookupIS,depthI,strIS,addError,superclassesI
@@ -15,7 +23,7 @@ import Rename(ctxs2NT)
 import IExtract(freeType)
 import Extra(snub,strPos,mixSpace,isJust,dropJust,mixCommaAnd,isNothing)
 import Bind(identPat)
-import SyntaxPos(HasPos(getPos))
+import SyntaxPos(Pos,HasPos(getPos))
 import AssocTree(Tree,lookupAT)
 
 
@@ -59,7 +67,8 @@ extractDecl (DeclInstance pos ctxs cls instanceType@(TypeCons poscon con _)
                      ("Instance declaration for the class " 
                       ++ strIS state cls ++ " at " ++ strPos pos 
                       ++ " needs instance(s) of "
- 		      ++ mixCommaAnd (map (strIS state . fst) clss) ++ ".")
+ 		      ++ mixCommaAnd (map (strIS state . fst) clss) 
+                      ++ " according to class declaration.")
   ) >>>
   extractDecls instmethods    -- error if we find any type signatures
 extractDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) = 
@@ -84,8 +93,9 @@ extractDecl d = unitR
 {-
 extractDecl' is used in class declarations 
 as we don't want to use top level signatures there
+why are the declared types not added to the symbol table? (OC)
 -}
-extractDecl' :: Decl Int -> IntState -> IntState
+extractDecl' :: Decl Int -> Reduce IntState IntState
 
 extractDecl' (DeclPat alt) =   extractDeclAlt alt
 extractDecl' (DeclFun pos fun funs) =  
@@ -93,7 +103,13 @@ extractDecl' (DeclFun pos fun funs) =
 extractDecl' d = unitR
 
 
-updFunArity :: a -> Int -> [Fun b] -> IntState -> IntState
+{-
+Adds arity of defined variable to symbol table of internal state 
+(any old arity is overwritten).
+Assumes that variable is already in symbol table.
+Adds error message, if equations of definition suggest different arities.
+-}
+updFunArity :: Pos -> Int -> [Fun a] -> Reduce IntState IntState
 
 updFunArity pos fun funs =
   case map fA funs of
@@ -111,23 +127,29 @@ updFunArity pos fun funs =
 
 extractFun :: Fun Int -> Reduce IntState IntState
 extractFun (Fun  pats guardedExps decls) =
-    mapR extractGuardedExp guardedExps >>>
-    extractDecls decls
+  mapR extractGuardedExp guardedExps >>>
+  extractDecls decls
 
+
+extractGuardedExp :: (Exp Int,Exp Int) -> Reduce IntState IntState
 extractGuardedExp (guard,exp) =
-    extractExp guard >>> extractExp exp
+  extractExp guard >>> extractExp exp
 
+
+extractDeclAlt :: Alt Int -> IntState -> IntState
 extractDeclAlt (Alt  pat guardedExps decls) =
-        mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
-	mapR extractGuardedExp guardedExps >>>
-	extractDecls decls
+  mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
+  mapR extractGuardedExp guardedExps >>>
+  extractDecls decls
 
+
+extractAlt :: Alt Int -> IntState -> IntState
 extractAlt (Alt  pat guardedExps decls) =
-	mapR extractGuardedExp guardedExps >>>
-	extractDecls decls
+  mapR extractGuardedExp guardedExps >>>
+  extractDecls decls
 
 
-extractExp :: Exp Int -> IntState -> IntState
+extractExp :: Exp Int -> Reduce IntState IntState
 
 extractExp (ExpScc            str exp)            = extractExp exp
 extractExp (ExpLambda         pos pats exp)       = extractExp exp
@@ -152,3 +174,5 @@ extractStmt (StmtBind pat exp) =
         mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
 	extractExp exp
 extractStmt (StmtLet decls) = extractDecls decls
+
+{- End Module Extract -------------------------------------------------------}

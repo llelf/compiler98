@@ -306,34 +306,54 @@ fixTid kind tid down renameState@(RenameState flags unique rps rts rt st derived
        Nothing   ->
                (sFix down (ensureM (snd rps) (fst key)),renameState) -- hack
 -- old code    ((InfixL,9::Int),renameState)
-	  
-bindTid pos kind tid _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
+	
+
+{-
+Adds the the given identifier (position, kind of id, token with name)
+to the active names in renameState.
+Adds error to renameState, if identifier is already an active name,
+that is, redefinition occurred.
+-}
+bindTid :: Pos -> IdKind -> TokenId -> a -> RenameState -> RenameState
+
+bindTid pos kind tid _ 
+  renameState@(RenameState flags unique irps@(_,rps) rts rt st derived 
+               defaults errors needCheck) =
   let key =  (tid,kind)
       redefinedGlobal [rt] = lookupAT rt (forceM rps tid,kind)
       redefinedGlobal _ = Nothing
   in case lookupAT rt key of 
-        Just u -> if sRedefine flags then
-		     renameState
-		  else
-		     (RenameState flags unique irps rts
-			   		rt
-					st derived defaults
-					(("Redefinition of " ++ show kind ++ " " ++ show tid ++ " at " ++ strPos pos) : errors) needCheck)
-        Nothing   ->
-	  case redefinedGlobal rts of
-	    Nothing ->
-		 (RenameState flags (unique+1) irps rts
-					(addAT rt sndOf key unique)
-					st derived defaults
-					errors
-					needCheck)
-	    Just u -> (if sRedefine flags then id else
-			strace ("Warning " ++ show tid ++ " is both imported and defined")) $
+       Just u -> 
+         if sRedefine flags 
+           then renameState
+	   else
+	     (RenameState flags unique irps rts rt st derived defaults
+		(("Redefinition of " ++ show kind ++ " " ++ show tid 
+                  ++ " at " ++ strPos pos) : errors) 
+                needCheck)
+       Nothing   ->
+	 case redefinedGlobal rts of
+	   Nothing ->
+	     (RenameState flags (unique+1) irps rts
+			  (addAT rt sndOf key unique)
+			  st derived defaults
+			  errors
+			  needCheck)
+	   Just u -> 
+             (if sRedefine flags 
+                then id 
+                else
+		  strace ("Warning " ++ show tid 
+                          ++ " is both imported and defined")) $
 		 (RenameState flags unique irps rts
-					(addAT rt sndOf key u) -- This catches redefinition within same scope
-					(updateAT st u clearI) derived defaults
-					errors
-					needCheck)
+			      (addAT rt sndOf key u) 
+                              -- ^ This catches redefinition within same scope
+			      (updateAT st u clearI) derived defaults
+			      errors
+			      needCheck)
+
+
+bindNK :: Pos -> a -> RenameState -> (TokenId,RenameState)
 
 bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
   let tid = visible (show unique)
@@ -369,8 +389,15 @@ checkPuns pos down renameState@(RenameState flags unique irps rts rt st derived 
                 needCheck
 
 
--- checkTid is used to check if a field have already been included in the bindings
-checkTid pos kind tid _ renameState@(RenameState flags unique rps rts rt st derived defaults errors needCheck) =
+{-
+Checks if given identifier (kind, token) is already known as active name.
+It is used to check if a field have already been included in the bindings
+-}
+checkTid :: a -> IdKind -> TokenId -> b -> RenameState -> (Bool,RenameState)
+
+checkTid pos kind tid _ 
+  renameState@(RenameState flags unique rps rts rt st derived defaults 
+               errors needCheck) =
   let key =  (tid,kind)
   in  case lookupAT rt key of 
         Just u -> (True,renameState)

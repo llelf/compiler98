@@ -61,8 +61,8 @@ import Overlap(Overlap,Resolution)
 import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS)
 import Rename(rename)
-import DbgDataTrans
-import DbgTrans
+import DbgDataTrans(dbgDataTrans)
+import DbgTrans(debugTrans,dbgAddImport)
 import DbgDumpSRIDTable
 import DbgDumpSRIDTableC
 import EmitState

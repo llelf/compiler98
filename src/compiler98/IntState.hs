@@ -12,6 +12,7 @@ import Extra
 import PackedString(PackedString,packString,unpackPS)
 import Info
 import MergeSort(group)
+import Reduce(Reduce)
 
 data IntState = 
       IntState
@@ -60,20 +61,44 @@ addNewLetBound i tid down state =
 
 -- -==== Reduce
 
+{-
+Adds type of variable to symbol table of internal state.
+Assumes that variable is already in symbol table.
+Adds error message, if there exists already a type for the variable
+in the symbol table or type is badly formed (duplicate predicates in context). 
+-}
+updVarNT :: Pos -> Int -> NewType -> Reduce IntState IntState
+
 updVarNT pos i nt state@(IntState unique rps st errors) =
   case lookupAT st i of
     Just (InfoVar u tid fix exp NoType annots) ->
-        case checkNT pos (strIS state) nt of
-          Nothing -> IntState unique rps (addAT st fstOf i (InfoVar u tid fix exp nt annots)) errors
-	  Just err -> IntState unique rps st (err :errors)
+      case checkNT pos (strIS state) nt of
+        Nothing -> IntState unique rps 
+                     (addAT st fstOf i (InfoVar u tid fix exp nt annots)) 
+                     errors
+	Just err -> IntState unique rps st (err :errors)
     Just (InfoVar u tid fix exp nt' annots) ->
-	IntState unique rps st (("New type signature for " ++ show tid ++ " at " ++ strPos pos):errors)
+      IntState unique rps st 
+        (("New type signature for " ++ show tid ++ " at " ++ strPos pos)
+         : errors)
+
+
+{-
+Adds arity of variable to symbol table of internal state 
+(any old arity is overwritten).
+Assumes that variable is already in symbol table.
+-}
+updVarArity :: Pos -> Int -> Int -> Reduce IntState IntState
 
 updVarArity pos i arity state@(IntState unique rps st errors) =
   case lookupAT st i of
-    Just (InfoVar  u tid fix exp nt _) ->  -- Always update, might change arity for redefined import in Prelude
-        IntState unique rps (addAT st fstOf i (InfoVar u tid fix exp nt (Just arity))) errors
-    _ -> state   -- Ignore arity for methods, methods instances and methods default
+    Just (InfoVar  u tid fix exp nt _) ->  
+      -- Always update, might change arity for redefined import in Prelude
+      IntState unique rps 
+        (addAT st fstOf i (InfoVar u tid fix exp nt (Just arity))) errors
+    _ -> state   
+      -- Ignore arity for methods, methods instances and methods default
+
 
 -- -==== Stand alone
 
@@ -185,12 +210,22 @@ arityIS state i =
     _ -> error ("arityIS in IntState.hs couldn't find " ++ show i)
 
 
--- Not a good place
+{-
+Tests if context of type has duplicate predicates.
+Second argument converts class identifier to string.
+*** This module not a good place for this function.
+-}
+checkNT :: Pos -> (Int -> String) -> NewType -> Maybe String
 
 checkNT pos strFun (NewType free [] ctxs nts) =
   case (filter ((1/=) . length) . group) ctxs of
     [] -> Nothing
     [x] -> Just ("Multiple occurences of " ++ (strFun . fst . head) x ++
-                  " with identical type variable in context close to " ++ strPos pos) 
-    xs -> Just ("Multiple occurences of " ++ mixCommaAnd (map (strFun . fst . head) xs) ++
-                  " with identical type variables in context close to " ++ strPos pos) 
+                 " with identical type variable in context close to " ++ 
+                 strPos pos) 
+    xs -> Just ("Multiple occurences of " 
+                ++ mixCommaAnd (map (strFun . fst . head) xs) ++
+                " with identical type variables in context close to " ++ 
+                strPos pos) 
+
+{- End Module IntState ------------------------------------------------------}
