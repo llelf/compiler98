@@ -5,6 +5,7 @@ module Ix
 	) where
 
 import CIx
+import Ix_0
 import Ix_2
 import Ix_3
 import Ix_4
