@@ -40,7 +40,9 @@ initialise :: IO ()
 initialise = do
     -- The following call is probably non-portable.  Better suggestions?
     -- Note, we turn OFF terminal echoing of input characters
+#if ! USE_READLINE
     system("stty -icanon min 1 -echo")
+#endif
     hSetBuffering stdout NoBuffering
     hSetBuffering stdin  NoBuffering
 #if USE_READLINE
@@ -53,7 +55,9 @@ restore :: IO ()
 restore = do
     -- The following call is probably non-portable.  Better suggestions?
     -- Note, we assume the terminal DOES NOT echo any input character
+#if ! USE_READLINE
     system("stty icanon echo")
+#endif
     hSetBuffering stdout LineBuffering
     hSetBuffering stdin  LineBuffering
 
