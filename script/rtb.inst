@@ -1,0 +1,18 @@
+#!/bin/sh -e
+# Starts up the tracer user-interface
+
+NHC98BINDIR=${NHC98BINDIR-ScriptDir}
+NHC98LIBDIR=${NHC98LIBDIR-ExecutableDir}
+MACHINE=`${NHC98BINDIR}/harch`
+
+if [ ! -d $NHC98LIBDIR/$MACHINE ]
+then
+  echo "Warning: nhc98 may not be installed/configured for $MACHINE."
+  echo "  This might restrict your ability to use the Redex Trail Browser."
+fi
+
+
+CLASSPATH=$NHC98LIBDIR/rtb.jar
+export CLASSPATH
+echo Redex Trail Browser started, please wait for java to initialise...
+java -Dtracer.tracefont=Helvetica:18 -Dtracer.outputfont=Courier:18 -Dtracer.sourcefont=Courier:14 nhctracer.NhcTracer 6710 $* &
