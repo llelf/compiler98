@@ -525,6 +525,8 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS} \
 	${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
 	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
 	rm -f ${TPLOBJS}
+relink: ${TPLOBJS} ${TPPRELS} ${TPLARSDEF} ${TPLARSAUTO}
+	${INSTALL} ${OBJDIR}/tprofprel?.${O} ${DST}/
 else
 
 clean: ${CLEANDIRS}
