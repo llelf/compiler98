@@ -80,10 +80,10 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-PACKAGEBUILD  = base parsec haskell-src QuickCheck HaXml HUnit
+PACKAGEBUILD  = base parsec haskell-src QuickCheck HaXml HUnit Cabal
 PACKAGES      = base parsec haskell-src QuickCheck HaXml HUnit OpenGL \
 		GLUT HGL Japi ObjectIO OpenAL Win32 X11 arrows fgl \
-		monads mtl network readline unix
+		monads mtl network readline unix Cabal
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD})
