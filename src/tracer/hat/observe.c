@@ -318,7 +318,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
   }
   while (!hatSeqEOF(handle,currentOffset)) {
-    updateProgress(query,currentOffset);
+    updateProgress((_ObserveQuery*)query,currentOffset);
 
     nodeType = getNodeType(handle,currentOffset);
     switch (nodeType) {
