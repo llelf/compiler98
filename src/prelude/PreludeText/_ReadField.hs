@@ -14,7 +14,7 @@ _readField prefix name fun
                            tok == name,
 		           (tok,r) <- lex r,
                            tok == "=",
-		           (a,s) <- readsPrec 10 r]
+		           (a,s) <- readsPrec 0 r]
     | otherwise =					-- symbol fieldname
         \ r ->  [(c a,s) | (c,r) <- fun r,
 		           (tok,r) <- lex r,
@@ -27,7 +27,7 @@ _readField prefix name fun
                            tok == ")",
 		           (tok,r) <- lex r,
                            tok == "=",
-		           (a,s) <- readsPrec 10 r]
+		           (a,s) <- readsPrec 0 r]
 
 _readFinal postfix reader =
         \ r ->  [(c,s) | (c,r) <- reader r,
