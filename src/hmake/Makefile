@@ -30,7 +30,7 @@ ifeq "nhc98" "$(HC)"
 HEAP = -H4M
 endif
 ifeq "ghc" "$(HC)"
-HFLAGS += -package lang -package posix
+HFLAGS += -package lang
 endif
 
 all: $(TARGETS)

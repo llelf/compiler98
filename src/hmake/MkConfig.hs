@@ -1,3 +1,4 @@
+{-# OPTIONS -fglasgow-exts #-}
 -- main program for utility hmake-config
 module Main where
 
@@ -9,7 +10,8 @@ import System (system,exitWith,ExitCode(..),getArgs,getEnv,getProgName)
 import List (intersperse,nub,isPrefixOf)
 import Char (isDigit)
 import Monad (foldM)
-import IO (hPutStrLn,stderr,isDoesNotExistError)
+import IO (hPutStrLn,stderr,isDoesNotExistError 
+          ,openFile,IOMode(ReadMode),hClose,hGetChar,bracket,isEOFError)
 
 #ifdef __HBC__
 import UnsafePerformIO
@@ -26,7 +28,7 @@ foreign import "getpid" getProcessID :: IO Int
 #endif
 #ifdef __GLASGOW_HASKELL__
 import IOExts (unsafePerformIO)
-import Posix (getProcessID)
+foreign import "getpid" getProcessID :: IO Int
 #endif
 
 
@@ -162,14 +164,11 @@ configure Ghc ghcpath = do
 			, isHaskell98   = ghcsym>=400 }
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
-    else do
-      libdir <- runAndReadStdout ("grep '^libdir=' "++fullpath++" | head -1 |"
-                                  ++" sed 's/^libdir=.\\(.*\\)./\\1/'")
-      libdir <- if null libdir then
-                  runAndReadStdout ("grep '^TOPDIROPT=' "++fullpath++" |"
-                                    ++" sed 's/^TOPDIROPT=.-B\\(.*\\).;/\\1/'")
-                else return libdir
-      let incdir1 = libdir++"/imports"
+    else do -- 5.00 and above
+      pkgcfg <- runAndReadStdout (fullpath++" -v 2>&1 | head -2 | tail -1 |"
+                                  ++" cut -c28- | head -1")
+      let libdir  = dirname pkgcfg
+          incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
         then do
@@ -272,14 +271,22 @@ runAndReadStdout cmd = do
     case err of
         ExitFailure _ -> ioError (userError ("Command ("++cmd++") failed"))
 	_ -> return ()
-    s <- readFile output
+    s <- readFileNow output
     removeFile output	-- file will not be removed until readFile closes it
     return (safeinit s)	-- strip trailing newline added by shell
   where
     safeinit []     = []
     safeinit ['\n'] = []
     safeinit [x]    = [x]
-    safeinit (x:xs) = x : safeinit xs
+    safeinit (x:xs) = x: safeinit xs
+    readFileNow f = bracket (openFile f ReadMode) hClose hGetContentsNow 
+    hGetContentsNow h = loop ""
+      where loop cts = do x <- catch (hGetChar h >>= (return . Just))
+                                     (\e->if isEOFError e 
+                                          then return $ Nothing
+                                          else ioError e)
+                          case x of Just c  -> loop (c:cts)
+                                    Nothing -> return $ reverse cts
 
 -- Get an environment variable if it exists, or default to given string
 withDefault name def = unsafePerformIO $
