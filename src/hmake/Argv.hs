@@ -64,7 +64,7 @@ decode progArgs =
                  cppSymbols (compiler d)
     , defs     = (map tail . filter (\v -> head v == 'D')) flags
     , ignoreHi = (map tail . filter (\v -> head v == 'N')) flags
-    , dflag    = isopt "od"
+    , dflag    = False	-- isopt "od"
     , quiet    = isopt "q"
     , keepPrel = isopt "keepPrelude"
     , isUnix   = True			-- not (isopt "RiscOS")
