@@ -37,9 +37,9 @@ showFloat' x =
 		  			    else (sig1,		e1  )
     sig1 :: Integer
     sig1	= round t
-    t   :: Rational
-    t		= (s%1) * (b%1)^^n * 10^^(m'-e1-1)
-    e1  :: Int
+    t  	 :: Rational
+    t           = (s%1) * (b%1)^^n * 10^^(m'-e1-1)
+    e1   :: Int
     e1		= floor (logBase 10 x)
     (s, n)	= decodeFloat x
     b		= floatRadix x

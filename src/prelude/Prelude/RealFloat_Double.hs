@@ -1,9 +1,9 @@
 module Prelude(RealFloat(..)) where
 
-#if !defined(TRACING)
 import PrimDecodeDouble
 import PrimEncodeDouble
 import CRealFloat
+#if defined(TRACING)
 #endif
 
 
@@ -17,8 +17,12 @@ instance  RealFloat Double  where
     decodeFloat x = primDecodeDouble x
     encodeFloat x y = primEncodeDouble x y
 #else
+    decodeFloat x = primDecodeDoubleC x
+    encodeFloat x y = primEncodeDoubleC x y
+#if 0
     decodeFloat x = _prim _tprim_DecodeDouble x -- primDecodeDouble x
     encodeFloat x y = _prim _tprim_EncodeDouble x y -- primEncodeDouble x y
+#endif
 #endif
 
     isNaN x 	     = error "isNaN not implemented" -- TODO
@@ -27,7 +31,7 @@ instance  RealFloat Double  where
     isNegativeZero x = error "isNegativeZero not implemented" -- TODO
 
 
-#if defined(TRACING)
+#if 0
 _tprim_DecodeDouble primitive 2 :: Trace -> R Double -> R (Integer, Int)
 _tprim_EncodeDouble primitive 3 :: Trace -> R Integer -> R Int -> R Double
 #endif

@@ -66,8 +66,7 @@ SRCS_T	= \
         D7.hs           D8.hs           D9.hs               DBool.hs \
         DEither.hs      DList.hs        DMaybe.hs           DOrdering.hs \
         DUnit.hs        Dollar.hs       DollarBang.hs       Either.hs \
-        Enum_Bool.hs    Enum_Char.hs    \
-	Enum_Double.hs Enum_Float.hs \
+        Enum_Bool.hs    Enum_Char.hs    Enum_Double.hs      Enum_Float.hs \
         Enum_Int.hs     Enum_Integer.hs Enum_Ordering.hs    Enum_Unit.hs \
         Eq_2.hs         Eq_3.hs         Eq_4.hs             Eq_Bool.hs \
         Eq_Char.hs      Eq_Double.hs    Eq_Either.hs        Eq_Float.hs \

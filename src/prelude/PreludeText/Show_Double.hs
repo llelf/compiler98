@@ -1,6 +1,6 @@
 module Prelude (Show(..)) where
 
-#if !defined(TRACING)
+#if 1
 
 import Numeric(showSigned,showFloat)
 

@@ -2,9 +2,6 @@ module Prelude(Real(..)) where
 
 import Ratio((%))
 
-instance  Real Float
-#if !defined(TRACING)
-                     where
-    toRational x = case decodeFloat x of (m,n) -> (m%1)*(b%1)^^n
-			where b     = floatRadix  x
-#endif
+instance  Real Float where
+    toRational x = case decodeFloat x of (m,n) -> (m%1)*(bf%1)^^n
+			where bf     = floatRadix  x

@@ -1,8 +1,6 @@
 module Prelude(RealFrac(..)) where
 
-instance  RealFrac Float
-#if !defined(TRACING)
-                         where
+instance  RealFrac Float where
     properFraction x =  case decodeFloat x of
 			  (m,n) ->
 			    if n >= 0 then
@@ -11,4 +9,3 @@ instance  RealFrac Float
 				case quotRem m ((floatRadix x)^(negate n)) of
 			          (w,r) -> (fromInteger w, encodeFloat r n)
 
-#endif

@@ -1,9 +1,13 @@
 module Prelude(Num(..)) where
 
-#if !defined(TRACING)
 import PrimDoubleFromInteger
+#if defined(TRACING)
+import PrimsDouble
+#endif
 
 instance Num Double where
+
+#if !defined(TRACING)
  a + b    = a + b       -- MAGIC
  a - b    = a - b       -- MAGIC
  a * b    = a * b       -- MAGIC
@@ -13,9 +17,20 @@ instance Num Double where
  signum a = signum a    -- MAGIC
  
  fromInteger i = primDoubleFromInteger i
-
 #else
+ a + b    = primDoubleAdd a b
+ a - b    = primDoubleSub a b
+ a * b    = primDoubleMul a b
+ 
+ negate a = (0 - a)
+ abs    a = primDoubleAbs a
+ signum a = primDoubleSignum a
+ 
+ fromInteger i = primDoubleFromIntegerC i
+#endif
 
+
+#if 0
 instance Num Double where
  a + b    = _prim _tprim_DoublePlus a b -- a + b       -- MAGIC
  a - b    = _prim _tprim_DoubleMinus a b -- a - b       -- MAGIC
@@ -25,7 +40,7 @@ instance Num Double where
  abs    a = _prim _tprim_DoubleAbs a -- abs    a    -- MAGIC
  signum a = _prim _tprim_DoubleSignum a -- signum a    -- MAGIC
  
- fromInteger i = _prim _tprim_DoubleFromInteger i
+ fromInteger i = primDoubleFromIntegerC i
 
 _tprim_DoublePlus primitive 3 :: Trace -> R Double -> R Double -> R Double
 _tprim_DoubleMinus primitive 3 :: Trace -> R Double -> R Double -> R Double
