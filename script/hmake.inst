@@ -131,6 +131,7 @@ do
     # Flag to hmake + compiler:  note potential conflict with -h for heapsize
     -hidir) hcflags=$hcflags" $1 $2";
             hmflags=$hmflags" -hidir=$2";
+            importflags=$importflags" -I`filepath $2`";
             shift;;
 
     # Run-time flags to hmake itself
