@@ -165,7 +165,9 @@ There are two ways to specify a partial trace:
    <i>Pruning:</i>at each garbage collection, trace structure more
    than a specified distance <i>k</i> from all continuing evaluation points
    is discarded.  Any pruning is specified at run-time: for example,
-   <tt>+RTS -k2 -RTS</tt>.
+   <tt>+RTS -dk2 -RTS</tt>.
+   Just using <tt>+RTS -dk -RTS</tt> prunes the trace structure to free just
+   enough space to continue computation.
    <p>
    By default there is no pruning.
 </ol>
@@ -199,7 +201,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.06.20<br>
+1999.07.26<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Colin.Runciman@cs.york.ac.uk

@@ -9,12 +9,11 @@ import Syntax
 import Extra(mix,mixComma,mixSpace,strChr,strStr)
 import TokenId(TokenId)
 import IntState(IntState,strIS)
-import PackedString()
 
 class StrId a where
   pStd :: IntState -> a -> String
   pFix :: IntState -> a -> String
-  pType :: Bool -> IntState -> Pos -> a -> [Type a] -> [Char]
+  pType :: Bool -> IntState -> Pos -> a -> [Type a] -> String
 
 instance StrId TokenId where  -- state is error here!
   pStd state tid = show tid

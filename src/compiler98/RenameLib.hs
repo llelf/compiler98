@@ -29,6 +29,7 @@ import TokenInt
 import OsOnly(isPrelude)
 import Flags
 import Overlap		-- added in H98
+import Id(Id)
 
 data RenameState =
       RenameState
@@ -585,8 +586,27 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down up@(RenameState flags unique
 												e -> IEnone) NoType (Just 1)))
 				   derived defaults errors needCheck)
 
+
+{- creates token for instance methods for tuple type? -} 
+localTid :: PackedString -> Int -> TokenId -> TokenId
+
 localTid rps u tid = mkQual3 (Visible rps) (t_Tuple u) tid
+
+
+{- if token is not qualified make it qualified with given module name -}
+globalTid :: PackedString -> a -> TokenId -> TokenId
+
 globalTid rps u tid = ensureM rps tid
+
+
+defineVar :: TokenId 
+          -> (PackedString -> Int -> TokenId -> TokenId
+             ,a
+             ,TokenId -> IdKind -> IE
+             ,TokenId -> (InfixClass TokenId,Int)
+             ) 
+          -> RenameState 
+          -> (Id,RenameState)
 
 defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let key = (tid,Var)
@@ -598,6 +618,8 @@ defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st derived def
 				 (InfoVar u realtid  (sFix down (ensureM rps tid)) (sExp down tid Var) NoType Nothing))
 				 derived defaults errors needCheck)
 
+
+defineDefaultMethod :: TokenId -> a -> RenameState -> (Id,RenameState)
 
 defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let realtid = mkQualD rps tid
@@ -612,12 +634,19 @@ defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st d
 			 (addAT st combInfo  unique {-(realtid,MethodDefault)-} (InfoDMethod unique realtid nt annot iClass))
 			 derived defaults errors needCheck)
 
+
+defineInstMethod :: TokenId -> a -> RenameState -> (Id,RenameState)
+
 defineInstMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let realtid = mkQual2 (t_Tuple unique) (ensureM rps tid)
+                -- this is obscure! why a tuple with the size of unique?
       key = (tid,MethodInstance)
   in (unique,RenameState flags (unique+1) irps rts rt
 		 (addAT st combInfo  unique {-(realtid,MethodInstance)-} (InfoIMethod unique realtid NoType Nothing (0::Int)))
 		 derived defaults errors needCheck)
+
+
+defineDerived :: Int -> [(Pos,Int)] -> a -> RenameState -> RenameState
 
 defineDerived con posis down (RenameState flags unique rps rts rt st derived defaults errors needCheck) = 
   RenameState flags unique rps rts rt st ((con,posis):derived) defaults errors needCheck
