@@ -185,7 +185,7 @@ all-$(BUILDCOMP): basic-$(BUILDCOMP) profile tracer $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
-tracer: $(PRAGMA) hmake-$(BUILDCOMP) greencard-$(BUILDCOMP) \
+tracer: $(PRAGMA) runtime hmake-$(BUILDCOMP) greencard-$(BUILDCOMP) \
 	compiler-$(BUILDCOMP) traceruntime traceprelude $(TARGDIR)/traceui
 timetraceprof: timetraceruntime timetraceprelude
 
