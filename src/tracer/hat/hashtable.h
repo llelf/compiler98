@@ -15,7 +15,10 @@ typedef struct hashelement {
 typedef struct {
   HashPtr* hashArray;
   unsigned long size;
+  unsigned long rehashAt;
+  unsigned long incrementSize;
   unsigned long count;
+  int outOfMemory;
 } HashTable;
 
 HashTable*   newHashTable(unsigned long size);   /* return empty table of size */

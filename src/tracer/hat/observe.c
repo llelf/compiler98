@@ -28,6 +28,9 @@
 // observe all observable identifiers/modules
 #define OBSERVABLEMODE 2
 
+// initial size of hash table and size by which it may be increased stepwise
+#define HASHTABLEINCSIZE 80000
+
 typedef struct {
   HashTable* htable;
   filepointer identifierNode;
@@ -53,7 +56,7 @@ ObserveQuery newObserveQuery(int handle,
 		       BOOL showProgress) {
   _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
   newQ->handle = handle;
-  newQ->htable = newHashTable(80000);
+  newQ->htable = newHashTable(HASHTABLEINCSIZE);
   addToHashTable(newQ->htable,identifierNode);
   newQ->identifierNode = identifierNode;
   newQ->topIdentifierNode = topIdentifierNode;
@@ -121,7 +124,7 @@ ObserveQuery newObserveQuerySource(int handle,
 				   BOOL showProgress) {
   _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
   newQ->handle = handle;
-  newQ->htable = newHashTable(80000);
+  newQ->htable = newHashTable(HASHTABLEINCSIZE);
   newQ->searchMode = SRCMODE;
   newQ->line = line;
   newQ->column = column;

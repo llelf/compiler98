@@ -983,10 +983,8 @@ filepointer getParent() {
 filepointer getNameType() {
   unsigned int lbuf;
   filepointer fp;
-
   prepareBuffer(8);
   lbuf = boff;
-
   skipbytes(5);
   fp = readpointer();
 
@@ -1221,11 +1219,11 @@ char getInfixPrio() {
 filepointer getProjTrace() {
   unsigned int lbuf;
   filepointer trace;
-  prepareBuffer(8);
+  prepareBuffer(8);  
+  lbuf = boff;
   skipbytes(5);
   trace = readpointer();
   
-  lbuf = boff;
   boff = lbuf;
   return trace;
 }

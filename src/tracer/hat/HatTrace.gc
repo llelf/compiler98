@@ -34,7 +34,7 @@ module HatTrace (
 	hatInfix,     -- get infix priority of an constructor/identifier node
 	hatResult,    -- get result of an application (type complete only)
 	hatName,      -- get name of a name/identifier/constructor node
-	hatProjValue, -- return original parent of projection node
+	hatProjValue, -- return projected value of projection/SATA/SATB/SATC node
         hatSourceRef,    -- get information about source position of an application/
                          -- identifier/constructor node
 	hatValueInt,     -- get Int value of an HatIntNode
@@ -433,8 +433,11 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %call (foreign f hattrace,int nodenumber)
 %code
 %     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
-%     if (newnode==HatProjection) newnode=getNameType();
-%     else  newnode=0;
+%     switch(newnode) {
+%       case HatProjection:case HatSATA:case HatSATB:case HatSATC:
+%         newnode=getProjTrace();
+%       default:newnode=0;
+%     }
 %result (int newnode)
 
 %fun c_hatApplArity :: HatNodeInternal -> Int

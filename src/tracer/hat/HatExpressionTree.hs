@@ -44,11 +44,11 @@ data HatExpressionTree =
 				     name::String,
 				     infixType::HatInfixType}      |
 		     HatSAT_A     {ref::HatNode,
-				   parent::HatExpressionTree}      |
+				   projValue::HatExpressionTree}      |
                      HatSAT_B     {ref::HatNode,
-			           parent::HatExpressionTree}      |
+			           projValue::HatExpressionTree}      |
                      HatSAT_C     {ref::HatNode,
-				   parent::HatExpressionTree}      |
+				   projValue::HatExpressionTree}      |
 	             HatHidden    {ref::HatNode,
 				   parent::HatExpressionTree}      |
 	             HatProj      {ref::HatNode,
@@ -157,11 +157,11 @@ _toHatExpressionTree precision node = toHatExpression' precision (hatNodeType no
 		 if (isInvalidNode r) then (HatNone node) else
 		 _toHatExpressionTree newprec r))
        toHatExpression' prec HatSAT_ANode = HatSAT_A node (_toHatExpressionTree (prec-1)
-						(hatParent node))
+						(hatProjValue node))
        toHatExpression' prec HatSAT_BNode = HatSAT_B node (_toHatExpressionTree (prec-1)
-						(hatParent node))
+						(hatProjValue node))
        toHatExpression' prec HatSAT_CNode = (_toHatExpressionTree (prec-1)
-						(hatParent node))
+						(hatProjValue node))
        toHatExpression' prec HatHiddenNode = HatHidden node (_toHatExpressionTree (prec-1)
 						(hatParent node))
        toHatExpression' prec HatProjNode =  HatProj node (_toHatExpressionTree (prec-1)
@@ -198,7 +198,7 @@ ppStringExpr precision expr =
  if (exptype==HatProjNode) then (ppStringExpr precision (hatProjValue expr)) else
  if (exptype/=HatConstantNode)&&(exptype/=HatApplNode) then Nothing else
    if ((hatNodeType appfun)==HatInvalidNode) then Nothing else
-    let funsym = (prettyPrint 2 appfun) in
+    let funsym = (prettyPrint 2 False appfun) in
     if funsym==":" then
       let arguments = (hatApplArgs expr) in
        if (length arguments)/=2 then Nothing else
@@ -229,12 +229,12 @@ thrd3 (_,_,c)    = c
 
 -- prettyPrinting by Haskell
 
-prettyPrint :: HatRep a => Int -> a -> String
-prettyPrint i expr = fst3 (pPrint [] i HatNoInfix expr)
+prettyPrint :: HatRep a => Int -> Bool -> a -> String
+prettyPrint i verbose expr = fst3 (pPrint [] i verbose HatNoInfix expr)
 
-pPrint :: HatRep a => [HatNode] -> Int -> HatInfixType -> a ->
+pPrint :: HatRep a => [HatNode] -> Int -> Bool -> HatInfixType -> a ->
           (String,HatInfixType,[HatNode])
-pPrint previousnodes precision topInfix expr
+pPrint previousnodes precision verbose topInfix expr
  | precision == 0 = ("<CUT>",HatNoInfix,[])
  | otherwise =
      let hn = (toHatNode expr) in
@@ -253,7 +253,8 @@ pPrint previousnodes precision topInfix expr
            if (precision>0) then
             let (funsym,infixP,cycles) = (pPrint
 					  pnodes
-					  (precision-1) 
+					  (precision-1)
+					  verbose
 					  topInfix
 					  (hatApplFun expr)) in
              if funsym == "<CUT>" then
@@ -266,20 +267,23 @@ pPrint previousnodes precision topInfix expr
                      p = (hatParent f);
 		     arg = if ((hatNodeType f)==HatHiddenNode)&&(isValidNode p) then p
 			   else f;
-		     (s,_,cycles2) = pPrint pnodes (precision-1) infixP arg
+		     (s,_,cycles2) = pPrint pnodes (precision-1) verbose infixP arg
 		     in
 		      (brackets infixP topInfix (spacer funsym s),infixP,cycles2)
                 else
-		 let pps = map (pPrint pnodes (precision-1) infixP) args in
+		 let pps = map (pPrint pnodes (precision-1) verbose infixP) args in
 		 (brackets infixP topInfix (foldl (spacer) "" (swapListInfix infixP
 				 funsym (map fst3 pps))),
 	          infixP,
 		  (cycles++(foldl (++) [] (map thrd3 pps))))
             else ("<CUT>",HatNoInfix,[])
-    prettyPrint' pnodes HatConstantNode = (pPrint pnodes precision topInfix
+    prettyPrint' pnodes HatConstantNode = (pPrint pnodes precision verbose topInfix
 					   (hatApplFun expr))
     prettyPrint' _ HatHiddenNode    = ("<Hidden>",HatNoInfix,[])
-    prettyPrint' _ HatSAT_ANode     = ("_",HatNoInfix,[])
+    prettyPrint' pnodes HatSAT_ANode= if (verbose) then
+				        (pPrint pnodes precision verbose topInfix
+					 (hatProjValue expr))  
+				       else ("_",HatNoInfix,[])
     prettyPrint' _ HatSAT_BNode     = ("_|_",HatNoInfix,[])
     prettyPrint' _ HatConstrNode    = ((hatName expr),(hatInfix expr),[])
     prettyPrint' _ HatIdentNode     = ((hatName expr),(hatInfix expr),[])
@@ -296,7 +300,7 @@ pPrint previousnodes precision topInfix expr
     prettyPrint' _ HatLambdaNode    = ("LAMBDA",HatNoInfix,[])
     prettyPrint' _ HatDummyNode     = ("DUMMY",HatNoInfix,[])
     prettyPrint' _ HatCaseNode      = ("CASE",HatNoInfix,[])
-    prettyPrint' pnodes HatProjNode = (pPrint pnodes (precision-1) topInfix
+    prettyPrint' pnodes HatProjNode = (pPrint pnodes (precision-1) verbose topInfix
 				       (hatProjValue expr))
     prettyPrint' _ HatInvalidNode   = ("<CUT>",HatNoInfix,[])
     prettyPrint' _ x = ("{ERROR in prettyPrint: "++(show x)++"}",HatNoInfix,[])
@@ -320,33 +324,33 @@ pPrint previousnodes precision topInfix expr
     brackets  _ _ l = '(':(l++")")
 
 
-printExpression :: HatRep a => a -> IO ()
-printExpression expression =
+printExpression :: HatRep a => Bool -> a -> IO ()
+printExpression verbose expression =
     putStr --(unbracket 
-	    (prettyPrint 100 expression) --)
+	    (prettyPrint 100 verbose expression) --)
     where unbracket ('(':r) = cutlast r
           unbracket r = r
           cutlast (')':[]) = []
           cutlast [] = []
           cutlast (c:r) = c:(cutlast r)
 
-printReduction :: HatRep a => a -> IO ()
-printReduction expression =
-  printExpression expression >>
+printReduction :: HatRep a => Bool -> a -> IO ()
+printReduction verbose expression =
+  printExpression verbose expression >>
   let exptype = (hatNodeType expression) in
     if ((exptype==HatApplNode)||(exptype==HatConstantNode)) then
       putStr " = " >>
-      (printExpression (hatResult expression))
+      (printExpression verbose (hatResult expression))
     else
      return ()
 
-printReductionList :: HatRep a => [a] -> IO ()
-printReductionList [] = return ()
-printReductionList (x:list) =
+printReductionList :: HatRep a => Bool -> [a] -> IO ()
+printReductionList _ [] = return ()
+printReductionList verbose (x:list) =
     do
-    printReduction x
+    printReduction verbose x
     putStrLn ""
-    printReductionList list
+    printReductionList verbose list
 
 
 data HatRep a => HatLimit a = Limit Int a deriving Show
