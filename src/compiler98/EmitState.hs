@@ -1,6 +1,12 @@
 module EmitState where
 
 import Char (isLower)
+import GcodeLow (foreignfun)
+#if defined(__HASKELL98__)
+import List (isPrefixOf)
+#else
+import IsPrefixOf
+#endif
 
 --  , {-type-} EmitState
 --  , emitState
@@ -35,7 +41,7 @@ preSym = showString "startLabel"
 startEmitState :: EmitState
 startEmitState =
     ES 0 0 empty []
-        (showString "\nstatic unsigned " . preSym . showString "[] = {\n ")
+        (showString "\nstatic Node " . preSym . showString "[] = {\n ")
 
 emitByte :: ShowS -> EmitState -> EmitState
 emitByte a (ES n 0  word     labs code) = ES n 1 (first a) labs code
@@ -73,7 +79,7 @@ defineLabel Local  sym (ES n b word labs code) =
          shows b . showString ") */\n ")
 defineLabel Global sym (ES n 0 word labs code) =
     ES n 0 word (Define Global (sym "") (n*4): labs)
-        (code . showString "};\nunsigned " . sym . showString "[] = {\n ")
+        (code . showString "};\nNode " . sym . showString "[] = {\n ")
 defineLabel Global ss es = defineLabel Global ss (emitAlign es)
 
 useLabel :: ShowS -> EmitState -> EmitState
@@ -129,7 +135,11 @@ emitState es =
 	-- This is a dreadful hack for distinguishing primitives from bytecode!
         | isLower (head sym) = showString "extern void *" . showString sym .
                                showString "();\n"
-        | otherwise          = showString "extern unsigned " . showString sym .
+	-- It is somewhat easier to distinguish foreign imports.
+        | foreignfun `isPrefixOf` sym = showString "void " . showString sym .
+                               showString "(void);\n"
+	-- If nothing else, it must be bytecode.
+        | otherwise          = showString "extern Node " . showString sym .
                                showString "[];\n"
       endcode = code . showString "};\n"
   in

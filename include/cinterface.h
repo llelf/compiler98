@@ -28,9 +28,9 @@ typedef void (*Primitive)(NodePtr);
 #define _ivapptr   (Fp[2])
 
 #define CALL_C(fun) \
-    Hp = hp; Sp = sp; Fp = fp;  \
+    Hp = hp; Sp = sp; Fp = fp; Ip = ip; \
     (*fun)(vapptr); \
-    hp = Hp; sp = Sp; fp = Fp; vapptr = fp[2];
+    hp = Hp; sp = Sp; fp = Fp; ip = Ip; vapptr = fp[2];
 
 #define C_GETARG1(n)   (NodePtr)_ivapptr[n+EXTRA]
 
@@ -62,3 +62,5 @@ typedef void (*Primitive)(NodePtr);
      Hp = callGc((c),Hp,Sp,Fp);     \
      Sp++;Fp=(NodePtr*)*Sp++;IND_REMOVE(_ivapptr);
 #endif
+
+extern NodePtr evalExport(NodePtr arg);

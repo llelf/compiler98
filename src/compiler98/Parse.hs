@@ -9,7 +9,7 @@ import Parse2
 import ParseLib
 import ParseLex
 import SyntaxPos
-import TokenId (t_nplusk)
+import TokenId (t_nplusk,t_Arrow)
 
 optSemi = () `parseChk` semi
                 `orelse`
@@ -64,9 +64,36 @@ parseTopDecl =
         ]
         (uncurry DeclPrimitive `parseAp` varid `chk` k_primitive `apCut` intPrim `chk` coloncolon `ap` parseType
 	  `orelse`
+        parseForeign
+	  `orelse`
         parseDecl)
 
 parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  parseStrict parseType
+
+
+parseForeign =
+    k_foreign `revChk`
+     ((k_import `revChk` callconv `revChk`
+           ((\(_,LitString _ str) (_,tf) (p,v) t-> DeclForeignImp p str v (calcArity t) tf t)
+           `parseAp` extfun `ap` unsafe `apCut` varid `chk` coloncolon `ap` parseType))
+        `orelse`
+      (k_export `revChk` callconv `revChk`
+           ((\(_,LitString _ str) (p,v) t-> DeclForeignExp p str v t)
+           `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
+        `orelse`
+      (k_cast `revChk` 
+           ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t)
+           `parseAp` varid `chk` coloncolon `ap` parseType))
+     )
+  where
+    callconv = k_ccall `orelse` k_stdcall `orelse` parse noPos
+    extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
+    unsafe   = (k_cast `revChk` cast True)
+                 `orelse`
+               ((k_unsafe `orelse` parse noPos) `revChk` cast False)
+    cast tf  = parse (noPos,tf)
+    calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
+    calcArity _                 | otherwise     = 0
 
 
 parseVarsType =

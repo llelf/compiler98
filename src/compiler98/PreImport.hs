@@ -12,8 +12,8 @@ import Memo
 import Tree234(treeMapList)
 import Extra
 import Lexical(Lex,PosToken(..),PosTokenPre(..),LexState(..),lexical)
-import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),ParseResult(..)
-                ,parseit)
+import ParseCore(Parser(..),ParseBad(..),ParseError(..)
+                ,ParseGood(..),ParseResult(..),parseit)
 import ParseI
 import Flags
 import OsOnly

@@ -73,6 +73,9 @@ import GcodeLowC(gcodeCHeader,gcodeGather)
 import GcodeSpec(gcodeZCon)
 import Depend(depend)
 import PackedString(unpackPS)
+
+import Foreign (Foreign,strForeign)
+
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
 #endif
@@ -128,7 +131,7 @@ nhcNeed flags (Right (parsedProg@(Module pos (Visible modid) e impdecls inf d)))
   case needProg flags parsedProg' inf of
        (need,qualFun,overlap,Left err) -> errorMsg (sSourceFile flags) err
        (need,qualFun,overlap,Right (expFun,imports)) ->
-         pF (sNeed flags) "Need after module"  (show (treeMapList (:) need)) >>
+         pF (sNeed flags) "Need (after reading source module)"  (show (treeMapList (:) need)) >>
          nhcImport flags modid qualFun expFun parsedProg' (initIS need) overlap imports
 
 
@@ -315,37 +318,37 @@ dumpZCon flags state zcons sridt decls =
                (\ioerror -> hPutStr stderr ("Failed writing to object file "++sObjectFile flags++":" ++ show ioerror ++ "\n") >> exit) >>
          return startEmitState) >>= \es->
      profile "dump code" $
-     dumpCode handle flags  (gcodeFixInit state flags) es decls
+     dumpCode handle flags [] (gcodeFixInit state flags) es decls
 
-dumpCode handle flags (state,fixState) es [] =
-     dumpCodeEnd handle flags state es (gcodeFixFinish state fixState)
+dumpCode handle flags foreigns (state,fixState) es [] =
+     dumpCodeEnd handle flags state es foreigns (gcodeFixFinish state fixState)
 
-dumpCode handle flags (state,fixState) es (decl:decls) =
+dumpCode handle flags foreigns (state,fixState) es (decl:decls) =
   -- profile "dump code" $
-     nhcCode2 handle flags fixState decls es (stgGcode (sProfile flags) state decl)
+     nhcCode2 handle flags fixState decls es foreigns (stgGcode (sProfile flags) state decl)
 
  
-nhcCode2 handle flags fixState decls es (gcode,state) =
+nhcCode2 handle flags fixState decls es foreigns (gcode,state,newforeigns) =
      pF (sGcode flags) "G Code" (concatMap (strGcode state) ( gcode)) >>
-     nhcCode3 handle flags decls es (gcodeFix flags state fixState gcode)
+     nhcCode3 handle flags decls es (foreigns++newforeigns) (gcodeFix flags state fixState gcode)
 
-nhcCode3 handle flags decls es (state,fixState,gcode) =
+nhcCode3 handle flags decls es foreigns (state,fixState,gcode) =
      pF (sGcodeFix flags) "G Code (fixed)" (concatMap (strGcode state) ( gcode)) >>
-     nhcCode35 handle flags fixState decls es (gcodeOpt1 state gcode)
+     nhcCode35 handle flags fixState decls es foreigns (gcodeOpt1 state gcode)
  
-nhcCode35 handle flags fixState decls es (gcode,state) =
+nhcCode35 handle flags fixState decls es foreigns (gcode,state) =
      pF (sGcodeOpt1 flags) "G Code (opt1)" (concatMap (strGcode state) ( gcode)) >>
-     nhcCode4 handle flags fixState decls es (gcodeMem (sProfile flags) state gcode)
+     nhcCode4 handle flags fixState decls es foreigns (gcodeMem (sProfile flags) state gcode)
  
-nhcCode4 handle flags fixState decls es (gcode,state) =
+nhcCode4 handle flags fixState decls es foreigns (gcode,state) =
      pF (sGcodeMem flags) "G Code (mem)" (concatMap (strGcode state) ( gcode)) >>
-     nhcCode5 handle flags fixState decls es (gcodeOpt2 state gcode)
+     nhcCode5 handle flags fixState decls es foreigns (gcodeOpt2 state gcode)
  
-nhcCode5 handle flags fixState decls es (gcode,state) =
+nhcCode5 handle flags fixState decls es foreigns (gcode,state) =
      pF (sGcodeOpt2 flags) "G Code (opt2)" (concatMap (strGcode state) ( gcode)) >>
-     nhcCode6 handle flags fixState decls state es (gcodeRel gcode)
+     nhcCode6 handle flags fixState decls state es foreigns (gcodeRel gcode)
  
-nhcCode6 handle flags fixState decls state es gcode =
+nhcCode6 handle flags fixState decls state es foreigns gcode =
      pF (sGcodeRel flags) "G Code (rel)" (concatMap (strGcodeRel state) gcode) >>
     (if (sAnsiC flags) then
        return (gcodeGather state es gcode)
@@ -353,9 +356,9 @@ nhcCode6 handle flags fixState decls state es gcode =
        catch (hPutStr handle (foldr (gcodeDump state) "\n" gcode))
              (\ioerror -> hPutStr stderr ("Failed appending to object file "++sObjectFile flags++":" ++ show ioerror ++ "\n") >> exit) >>
        return es) >>= \es'->
-     dumpCode handle flags (state,fixState) es' decls
+     dumpCode handle flags foreigns (state,fixState) es' decls
 
-dumpCodeEnd handle flags state es gcode =
+dumpCodeEnd handle flags state es foreigns gcode =
   profile "dump tables" $
     pF (sGcodeRel flags) "G Code (rel)" (concatMap (strGcodeRel state) (concat gcode)) >>
     (if (sAnsiC flags) then
@@ -365,6 +368,12 @@ dumpCodeEnd handle flags state es gcode =
      else
        catch (hPutStr handle (foldr (\a b -> foldr (gcodeDump state) b a) "\n" gcode))
              (\ioerror -> hPutStr stderr ("Failed appending tables to object file "++sObjectFile flags++":" ++ show ioerror ++ "\n") >> exit)
+    ) >>
+    (if null foreigns then
+         return ()
+      else
+         hPutStr handle "\n#include <haskell2c.h>\n" >>
+         mapM_ (\f-> hPutStr handle (strForeign f "")) foreigns
     ) >>
     hClose handle
 

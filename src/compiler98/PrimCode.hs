@@ -46,6 +46,8 @@ primLambda (PosLambda pos free args exp) =
   unitS (PosLambda pos free args exp)
 primLambda l@(PosPrimitive pos fun) =
   unitS l
+primLambda l@(PosForeign pos fun t c ie) =
+  unitS l
 
 primExp (PosExpLambda pos envs args exp) = 
   primStrict True >=>  -- will be lifted later

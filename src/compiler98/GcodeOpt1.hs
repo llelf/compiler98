@@ -109,7 +109,7 @@ gOpt :: (AssocTree Int (Bool,OptDown)) -> OptDown -> [Gcode] -> OptUp
 gOpt at evals [] = OptUp initAT []
 gOpt at evals (g@(ALIGN_CONST):gs) = OptUp initAT (g:gs)
 
--- First som easy peep hoole optimisations
+-- First some easy peep hole optimisations
 
 {---------- DAVID ---------
 gOpt at evals (MATCHCON : JUMPS_T : JUMPTABLE l : LABEL l' : gs) = gOpt at evals gs -- Must be pattern match on type with only one constructor
@@ -122,6 +122,8 @@ gOpt at evals (SLIDE   i:g@RETURN_EVAL:gs) = gOpt at evals (g:gs)
 gOpt at evals (g@(SLIDE   i):gs) =
   case gOpt at (slide i evals) gs of
     OptUp upat gs -> OptUp upat (justG (qEval evals) g (endGs gs) gs)
+
+--gOpt at evals (NEEDHEAP i:NEEDSTACK j:gs) = gOpt at evals (NEEDHEAP (i+j):gs) -- MW
 
 gOpt at evals (POP   0:gs) = gOpt at evals gs
 gOpt at evals (POP   i:POP j:gs) = gOpt at evals (POP (i+j):gs)

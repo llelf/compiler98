@@ -21,6 +21,7 @@ import CaseOpt
 import FSLib
 import MergeSort(mergeSort)
 import SyntaxUtil
+import Foreign(ImpExp(..))
 
 caseTopLevel modstr t2i code topdecls state tidFun =
     let
@@ -76,6 +77,10 @@ caseDepends (DeclsRec  ds:r) e = unitS (PosExpLet noPos . concat) =>>> mapS case
 caseDecl :: Decl Int -> CaseFun [(Int,PosLambda)]
 caseDecl d@(DeclPrimitive pos fun arity t) =
   unitS [(fun, PosPrimitive pos fun)]
+caseDecl d@(DeclForeignImp pos str fun arity cast t) =
+  unitS [(fun, PosForeign pos fun str cast Imported)]
+caseDecl d@(DeclForeignExp pos str fun t) =
+  unitS [(fun, PosForeign pos fun str False Exported)]
 caseDecl (DeclFun pos fun funs) =
   unitS ((:[]) . pair fun) =>>> matchFun pos fun funs
 caseDecl (DeclPat (Alt pat gdexps decls)) =

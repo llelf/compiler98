@@ -149,6 +149,12 @@ needDecl (DeclFun pos hs funs) =
       mapR needFun funs
 needDecl (DeclPrimitive pos hs arity t) =
       needType t
+needDecl (DeclForeignImp pos _ hs arity cast t) =
+      needType t
+needDecl (DeclForeignExp pos _ hs typ) =
+      needTid pos Var hs
+  >>> needType typ
+   -- error ("\nAt "++ strPos pos ++ ", foreign export not supported.")
 needDecl (DeclFixity f) =
       needFixDecl f
 
@@ -315,6 +321,8 @@ bindDecl (DeclPat (Alt pat@(ExpInfixList pos pats) _ _)) =
         _ -> error (show pos ++ ": (n+k) patterns are not supported\n")
 bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  -- Also generate need for constructors
 bindDecl (DeclPrimitive pos tid arity t) = bindTid Var tid
+bindDecl (DeclForeignImp pos _ tid arity cast t) = bindTid Var tid
+bindDecl (DeclForeignExp pos _ tid t) = unitR
 bindDecl (DeclFun pos tid funs) = bindTid Var tid
 bindDecl d@(DeclIgnore str) = unitR
 bindDecl d@(DeclError str) = unitR

@@ -8,7 +8,8 @@ SRCS	= \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
 	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
-	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
+	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs	\
+	UnsafePerformIO.hs
 
 
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}

@@ -157,7 +157,11 @@ tidI (InfoMethod  u tid _ _ _ _) = tid
 tidI (InfoIMethod  u tid _ _ _) = tid
 tidI (InfoDMethod  u tid _ _ _) = tid
 tidI (InfoName  u tid _ _) = tid
-tidI info = error ("tidI (Info.hs) " ++ show info)
+tidI info = error ("tidI (Info.hs) called with bad info:\n" ++ show info)
+
+cmpTid t (InfoUsed _ _) = False
+cmpTid t (InfoUsedClass _ _ _) = False
+cmpTid t i =  tidI i == t
 
 methodsI (InfoClass u tid e nt ms ds inst) = zip ms ds
 instancesI (InfoClass u tid e nt ms ds inst) = inst

@@ -2,7 +2,7 @@ module FixSyntax(fixSyntax) where
 
 import Extra(Pos(..),noPos,strPos,pair,dropJust)
 import Syntax
-import Kind(Kind)
+import Kind(Kind(..))
 import State
 import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId
@@ -38,6 +38,10 @@ fsDepend (DeclsNoRec d) = unitS DeclsNoRec =>>> fsDecl d
 fsDepend (DeclsRec  ds) = unitS DeclsRec   =>>> mapS fsDecl ds
 
 fsDecl d@(DeclPrimitive pos fun arity t) =
+  unitS d
+fsDecl d@(DeclForeignImp pos _ fun arity cast t) =
+  unitS d
+fsDecl d@(DeclForeignExp pos _ fun t) =
   unitS d
 fsDecl (DeclFun pos fun funs) =
   unitS (DeclFun pos fun) =>>> mapS fsFun funs

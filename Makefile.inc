@@ -1,6 +1,6 @@
 ### Configurable variables:
 
-OPT = -O2
+OPT = -O2 -fomit-frame-pointer
 
 CC = gcc
 INSTALL = cp

@@ -12,7 +12,8 @@ SRCS	= \
         IoeGetFileName.hs OpenFile.hs      HFileSize.hs \
         HIsEOF.hs         HSetBuffering.hs IoeGetHandle.hs \
         HGetBuffering.hs  HGetFileName.hs  HPutStrLn.hs \
-	NotDoneYet.hs     DSocket.hs       OpenSocket.hs
+	NotDoneYet.hs     DSocket.hs       OpenSocket.hs \
+	IoeGetErrorString.hs	HGetLine.hs
 
 
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}

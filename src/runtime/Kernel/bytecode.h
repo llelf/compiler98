@@ -2,7 +2,14 @@
 #ifndef _BYTECODE_H
 #define _BYTECODE_H
 
-/* bytecode */
+#include "newbytecode.h"
+
+#define ins(x)	x
+typedef enum { INSTRUCTION_LIST } Instr_t;
+#undef ins
+
+#if 0
+/* original bytecode */
 
 #define NEEDHEAP_P1      1
 #define NEEDHEAP_P2      2
@@ -186,7 +193,10 @@
 
 #define TABLESWITCH       190	/* DAVID */
 #define LOOKUPSWITCH      191	/* DAVID */
+#define MKIORETURN	  192	/* MW */
 
 #define ENDCODE           199	/* DAVID */
+
+#endif /* 0 */
 
 #endif

@@ -22,8 +22,8 @@ data StablePtr a = StablePtr a
 %dis string x       = <toCString/fromCString> (packedString x)
 %dis packedString x = declare "char*" x in (%%PackedString x)
 %dis foreign f x    = declare "void*" x in (%%Foreign "%f" x)
-%dis stableptr x    = declare "HaskellRef" x in (%%StablePtr x)
-%dis stable x       = declare "HaskellRef" x in (%%StablePtr x)
+%dis stableptr x    = declare "StablePtr" x in (%%StablePtr x)
+%dis stable x       = declare "StablePtr" x in (%%StablePtr x)
 %dis word x         = declare "unsigned int" x in (%%Word x)
 
 %dis filePath x     = string x

@@ -74,12 +74,14 @@ visImpRev = Visible . packString . reverse
 qualImpRev = Qualified rpsPrelude . packString . reverse
 qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
+qualImpFFI = Qualified rpsFFI     . packString . reverse
 --pqualImpRev = Qualified rpsPrelude . packString . reverse
 
 rpsPrelude      = (packString . reverse ) "Prelude"
 rpsBinary       = (packString . reverse ) "Binary"
 rpsRatio        = (packString . reverse ) "PrelRatio"
 --rpsDPrelude      = (packString . reverse ) "DPrelude"
+rpsFFI          = (packString . reverse ) "FFIBuiltin"
 
 
 isUnit (TupleId 0) = True
@@ -225,7 +227,10 @@ t_eqDouble      = qualImpRev  "_eqDouble"
 t_eqFloat       = qualImpRev  "_eqFloat"
 t_otherwise	= qualImpRev  "otherwise"
 
-{- Malcolm's additions -}
+
+{- Malcolm's additions from here on -}
+
+{- class + instances of Binary -}
 tBinary		= qualImpBin  "Binary"
 t_put	        = qualImpBin  "put"
 t_get           = qualImpBin  "get"
@@ -238,5 +243,26 @@ t_ltlt          = qualImpBin  "<<"
 t_return        = qualImpRev  "return"
 t_plus          = qualImpRev  "+"
 
-t_nplusk        = visImpRev "+"
+{- n plus k patterns -}
+t_nplusk        = visImpRev   "+"
 t_subtract      = qualImpRev  "subtract"
+
+{- ffi -}
+t_foreign	= visImpRev   "foreign"
+t_export	= visImpRev   "export"
+t_ccall		= visImpRev   "ccall"
+t_stdcall	= visImpRev   "stdcall"
+t_unsafe	= visImpRev   "unsafe"
+t_cast		= visImpRev   "cast"
+tForeign	= qualImpFFI  "ForeignObj"
+tAddr		= qualImpFFI  "Addr"
+tStablePtr	= qualImpFFI  "StablePtr"
+tWord		= qualImpFFI  "Word"
+tInt8		= qualImpFFI  "Int8"
+tInt16		= qualImpFFI  "Int16"
+tInt32		= qualImpFFI  "Int32"
+tInt64		= qualImpFFI  "Int64"
+tWord8		= qualImpFFI  "Word8"
+tWord16		= qualImpFFI  "Word16"
+tWord32		= qualImpFFI  "Word32"
+tWord64		= qualImpFFI  "Word64"

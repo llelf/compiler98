@@ -72,6 +72,10 @@ map_sDecl (DeclFun pos fun funs: r) =
         in (DeclFun pos fun ds,([fun],foldr unionSet emptySet use)): map_sDecl r
 map_sDecl (DeclPrimitive pos fun arity typ : r) =
         (DeclPrimitive pos fun arity typ ,([fun],emptySet)): map_sDecl r
+map_sDecl (DeclForeignImp pos str fun arity cast typ : r) =
+        (DeclForeignImp pos str fun arity cast typ ,([fun],emptySet)): map_sDecl r
+map_sDecl (DeclForeignExp pos str fun typ : r) =
+        (DeclForeignExp pos str fun typ ,([fun],emptySet)): map_sDecl r
 
 map_sDecl (DeclType simpleid typeid:_) = error "map_sDecl: DeclType"
 map_sDecl (DeclConstrs pos id pidid:_) = error "map_sDecl: DeclConstrs"
@@ -96,6 +100,10 @@ defDecl (DeclFun pos fun funs) =
        [fun]
 defDecl (DeclPrimitive pos fun arity typ) =
        [fun]
+defDecl (DeclForeignImp pos str fun arity cast typ) =
+       [fun]
+defDecl (DeclForeignExp pos str fun typ) =
+       []
 defDecl (DeclIgnore str) =
        []
 defDecl e = error ("defDecl: _" ++ strPos (getPos e))

@@ -26,6 +26,10 @@ bindDecl  (DeclDefault types) =
     unitS0
 bindDecl  (DeclPrimitive pos tid arity typ) =
     bindTid pos Var tid
+bindDecl  (DeclForeignImp pos _ tid arity cast typ) =	-- foreign import
+    bindTid pos Var tid
+bindDecl  (DeclForeignExp pos _ tid typ) =		-- foreign export
+    unitS0
 bindDecl  (DeclVarsType posidents ctxs typ) =
     unitS0
 bindDecl  (DeclPat (Alt pat guaredExps decls)) =
@@ -95,6 +99,8 @@ bindField (FieldExp pos tid pat) = {- bindTid pos Var tid >>> -} bindPat Var pat
 identDecl (DeclPat (Alt pat gdexps decls)) = map snd (identPat pat)
 identDecl (DeclFun pos fun (Fun args gdexps decls:_)) = [fun]
 identDecl (DeclPrimitive pos fun arity t) = [fun]
+identDecl (DeclForeignImp pos _ fun arity cast t) = [fun]
+identDecl (DeclForeignExp pos _ fun t) = []
 identDecl _ = []
 
 addIdent pos ident _ env = (pos,ident):env

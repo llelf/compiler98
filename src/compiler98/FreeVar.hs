@@ -44,6 +44,8 @@ freeBinding (fun,body@(PosLambda pos envs (_:_) exp)) =
   freeBindingLow True fun body
 freeBinding (fun,body@(PosPrimitive pos fn)) =
   freeBindingLow True fun body
+freeBinding (fun,body@(PosForeign pos fn t c ie)) =
+  freeBindingLow True fun body
 
 freeBindingLow strict fun (PosLambda pos envs args exp) =
   freeStrict strict $
@@ -55,6 +57,8 @@ freeBindingLow strict fun (PosLambda pos envs args exp) =
   in unitS (envsL,(fun,PosLambda pos (map (pair pos) envs) args exp))
 freeBindingLow strict fun (PosPrimitive pos fn) =
   unitS (emptySet,(fun,PosPrimitive pos fn))
+freeBindingLow strict fun (PosForeign pos fn t c ie) =
+  unitS (emptySet,(fun,PosForeign pos fn t c ie))
 
 freeExp (PosExpLambda pos envs args exp)  = freeLambda pos envs args exp
 freeExp (PosExpDict exp)    = freeExp exp -- not needed any more

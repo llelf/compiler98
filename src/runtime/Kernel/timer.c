@@ -53,7 +53,7 @@ void timertick(int i)
 /*    fprintf(stderr,"timertick %6d %6d\n",milliseconds,nextsampletime); */
 #ifdef TPROF
       if (tprof)	/*PH*/
-        tprofRecordTick((CodePtr*)ip);    
+        tprofRecordTick((CodePtr*)Ip);    
       else
 #endif
         profileHpLimit = 0;

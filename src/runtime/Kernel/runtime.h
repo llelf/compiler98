@@ -75,7 +75,7 @@ typedef UInt  *Finfo;
 extern NodePtr  Hp;
 extern NodePtr *Sp;
 extern NodePtr *Fp;
-extern CodePtr  ip;	/*PH*/
+extern CodePtr  Ip;	/*PH*/
 
 extern char **Argv;
 extern int Argc;
@@ -243,7 +243,7 @@ extern int year;
 extern Node FN_Prelude_46blackhole[];
 extern Node CF__95Builtin_46hputc_95ok[];
 extern Node CF__95Driver_46_95toplevel[];
-extern char FN__95Driver_46_95toplevel[];
+extern Node FN__95Driver_46_95toplevel[];
 extern Node FN__95Driver_46_95driver[];
 extern Node FN_Prelude_46primLeave[];
 extern Node FN_Builtin_46primUnpackCString[];
@@ -256,6 +256,8 @@ extern Node Start_World[];
 extern Node FN_Builtin_46primLeave[];
 extern Node CF_Prelude_46_95zap_95arg[];
 extern Node CF_Prelude_46_95zap_95stack[];
+extern Node FN_Prelude_46Monad_46Prelude_46IO_46return[];
+extern Node FN_Prelude_46unsafePerformIO[];
 
 #define BLACKHOLE ((Node)FN_Prelude_46blackhole)
 #define HPUTC_OK ((NodePtr)CF__95Builtin_46hputc_95ok)
@@ -272,6 +274,8 @@ extern Node CF_Prelude_46_95zap_95stack[];
 #define CON_NIL ((Node)C0_Prelude_46_91_93)
 #define ZAP_ARG_NODE ((NodePtr) CF_Prelude_46_95zap_95arg)
 #define ZAP_STACK_NODE ((NodePtr) CF_Prelude_46_95zap_95stack)
+#define IORETURN ((Node)FN_Prelude_46Monad_46Prelude_46IO_46return)
+#define PERFORMIO ((Node)FN_Prelude_46unsafePerformIO)
 
 #define C_CODE ((Code)FN_Prelude_46primLeave)
 
@@ -336,6 +340,7 @@ void gcFile(CData *cd);
 void gcSocket(CData *cd);
 void gcCVal(CData *cd);		/* added by MW */
 void gcNone(CData *cd);
+void noGC(void *x);		/* MW */
 
 extern CData cdata_stdin;
 extern CData cdata_stdout;

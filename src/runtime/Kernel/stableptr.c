@@ -9,31 +9,32 @@
 /*#include "haskell2c.h"*/
 #include "runtime.h"
 #include "mark.h"
+#include "stableptr.h"
 
 extern void mark(NodePtr*);
 extern void flip(NodePtr*);
 
 /* Whenever we get a stable ptr, it is given a reference number and placed in 
  * a table, the StableTable, using stableInsert(NodePtr np).  Nodes are
- * looked up in the table using stableRef(int ref). If it returns zero,
+ * looked up in the table using stableRef(StablePtr ref). If it returns zero,
  * the node is not in the table.
  */
 
-#define STABLE_ALLOCSIZE 1024
+static long STABLE_ALLOCSIZE = 1024;
 
-NodePtr *StableTable;
+static NodePtr *StableTable;
 
-int StableFree;
-int StableRefNr;
+static long StableFree;
+static long StableRefNr;
 
-NodePtr stableRef(int ref)
+NodePtr stableRef(StablePtr ref)
 {
-    return StableTable[ref];
+    return StableTable[(long)ref];
 }
 
 void stableMap(void (*f)(NodePtr*))
 {
-  int i;
+  long i;
   for(i=0; i < STABLE_ALLOCSIZE; i++) {
     if (StableTable[i]) {
       f(&StableTable[i]);
@@ -41,24 +42,30 @@ void stableMap(void (*f)(NodePtr*))
   }    
 }
 
-int stableInsert(NodePtr np) 
+StablePtr stableInsert(NodePtr np) 
 {
-    if (--StableFree) {
-        while (StableTable[StableRefNr]) {
-            if (++StableRefNr == STABLE_ALLOCSIZE)
-                StableRefNr = 0;
+    if (--StableFree == 0) {
+        long i = STABLE_ALLOCSIZE;
+        StableFree += STABLE_ALLOCSIZE;
+        STABLE_ALLOCSIZE *= 2;
+        if (!(StableTable = (NodePtr*)realloc((void*)StableTable,STABLE_ALLOCSIZE*sizeof(NodePtr*)))) {
+	    fprintf(stderr, "Couldn't increase size of stable pointer table.\n");
+	    exit(1);
         }
-        StableTable[StableRefNr] = np;
-        return StableRefNr;
-    } else {
-	fprintf(stderr, "Couldn't allocate stable pointer - limit exceeded.\n");
-	exit(1);
+        for (; i<STABLE_ALLOCSIZE; i++)		/* initialise new portion */
+            StableTable[i] = (NodePtr)0;
     }
+    while (StableTable[StableRefNr]) {
+        if (++StableRefNr == STABLE_ALLOCSIZE)
+            StableRefNr = 0;
+    }
+    StableTable[StableRefNr] = np;
+    return (StablePtr)StableRefNr;
 }
 
-void stableRelease(int i)
+void stableRelease(StablePtr i)
 {
-    StableTable[i] = (NodePtr)0;
+    StableTable[(long)i] = (NodePtr)0;
     StableFree++;
 }
 
@@ -74,7 +81,7 @@ void stableFlip()
 }
 
 int stableInit() {
-    int i;
+    long i;
 
     if (!(StableTable = (NodePtr*)malloc(STABLE_ALLOCSIZE*sizeof(NodePtr*)))) {
 	fprintf(stderr, "Couldn't allocate stable pointer table.\n");
@@ -85,4 +92,8 @@ int stableInit() {
     StableFree = STABLE_ALLOCSIZE;
     StableRefNr = 0;
     add_user_gc(stableMark,stableFlip);
+}
+
+void stableCopy(StablePtr i, StablePtr v) {
+    StableTable[(long)i] = StableTable[(long)v];
 }

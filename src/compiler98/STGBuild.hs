@@ -22,11 +22,11 @@ buildBody pu (fun,PosLambda pos _ _ exp) =
 
 buildExp pu (PosExpLet pos bindings exp) =
   \ down
-    (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack)
+    (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs)
     ->
-     let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack')
+     let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack' fs')
             = mapS (buildBody False) bindings
-                   down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack)
+                   down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack fs)
                    
          (bBuild,addLate) = unzip bBuild_bEnv
          addId = map fst bindings
@@ -37,7 +37,7 @@ buildExp pu (PosExpLet pos bindings exp) =
       (buildExp pu exp >>>= \ (eBuild,ptr) ->
        popEnv >>>
        unitS (concat bBuild ++ eBuild,ptr)
-      ) down (Thread prof' fun' maxDepth' failstack' state' newEnv (addLate:lateenv) depth' heap' depthstack')
+      ) down (Thread prof' fun' maxDepth' failstack' state' newEnv (addLate:lateenv) depth' heap' depthstack' fs')
 
 
 buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) = -- Should evaluate strict arguments

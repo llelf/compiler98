@@ -7,7 +7,7 @@ ifeq "nhc98" "$(HC)"
   HFLAGS = $(NHEAP)
 endif
 ifeq "ghc" "$(HC)"
-  HFLAGS = -syslib exts
+  HFLAGS = +CTS -syslib exts -CTS
 endif
 
 ## Since adopting hmake, all of this junk is obsolete

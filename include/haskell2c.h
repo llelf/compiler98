@@ -8,6 +8,7 @@
 #include "node.h"
 #include "mutlib.h"
 #include "flt.h"
+#include "stableptr.h"
 
 #include "twopass.h"
 

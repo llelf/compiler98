@@ -196,6 +196,7 @@ void prByteIns (CodePtr ip)
   case HGETC: fprintf(stderr," HGETC \n"); break;
   case HPUTC: fprintf(stderr," HPUTC \n"); break;
   case EXIT: fprintf(stderr," EXIT \n"); break;
+  case MKIORETURN: fprintf(stderr," MKIORETURN \n"); break;	/* MW */
   case PRIMITIVE:
     ip = (CodePtr) ALIGNPTR((ip+1));
     fprintf(stderr," PRIMITIVE %08x\n",*(Primitive *)ip);

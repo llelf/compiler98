@@ -83,30 +83,33 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors needCheck
       Just d  -> d
 
   isUnBoxedNT st nt ac u =
-    if u `elem` ac then
+    if u `elem` ac then	-- already been here, so circular defn.
       Nothing
     else
     case lookupAT st u of
       Just info ->
-	if isRealData info then
+	if isRealData info then	-- got the answer!
 	  Just (isDataUnBoxed info)
 	else
           case depthI info of
-	    Just _ ->  -- type synonym
+	    Just _ ->  -- type synonym, so follow the chain
 	      case ntI info of
 		(NewType free [] ctx [NTcons u' _]) ->
 		  isUnBoxedNT st nt (u:ac) u'	      
-	    Nothing -> -- newtype
+	    Nothing -> -- newtype, so follow the chain
 	      case lookup u nt of
-		Just u' -> isUnBoxedNT st nt (u:ac) u'
-		Nothing -> -- error ("nhc98 needs a fix here, but I don't know how")
+		Just u' -> isUnBoxedNT st nt (u:ac) u'	-- defn in this module
+		Nothing ->	-- defn in an imported module
+                  -- error ("nhc98 needs a fix here, but I don't know how")
                   case constrsI info of
                     (coni:_) ->
                       case (ntI . dropJust . lookupAT st) coni of
                         (NewType _ _ _ [NTcons u' _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
                         _ -> error ("when renaming: newtype of imported newtype")
-                    [] -> error ("when renaming: newtype of imported newtype without constructor")
+                    [] -> strace ("Warning: when renaming newtype of imported newtype:\n"++
+                                  "  Real type of imported newtype is not visible.\n"++
+                                  "  I might get boxed/unboxed info wrong.") Nothing
 
   isUnBoxedTS st u = -- Not circular dependency when this function is called
     case lookupAT st u of
@@ -136,7 +139,10 @@ keepRS (RenameState flags unique rps rts rt st derived defaults errors needCheck
 	      (coni:_) ->
 		 case (ntI . dropJust . lookupAT st ) coni of
   	            (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
+                    _ -> error ("Couldn't find rhs of newtype: "++show (tidI info)++
+                                "\nTwo conflicting datatype definitions?")
 	      [] -> (synType,newType)		-- !!! Not a good solution !!!
+      Nothing -> error ("Couldn't find definition for newtype "++show u)
 
   err2 ts (Rec [x]) = "Circular type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
   err2 ts (Rec (x:xs)) = "Circular dependency between the type synonyms "

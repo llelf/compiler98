@@ -8,7 +8,7 @@ import Kind
 import AssocTree
 import Tree234
 import Extra
-import List (delete)
+import Overlap (Overlap(..),addOverlap)
 
 -- Added in H98: the overlap table, which allows for later resolution of
 -- shared module aliases.
@@ -16,7 +16,8 @@ import List (delete)
 data NeedLib = NeedLib (TokenId -> [TokenId])		-- qualified renaming
                        (Memo (TokenId,Kind))		-- tids already seen
                        [Memo (TokenId,Kind)]		-- stack of memos
-                       (AssocTree (TokenId,Kind) (Bool,TokenId,[TokenId])) -- overlap table
+                    -- (AssocTree (TokenId,Kind) (Bool,TokenId,[TokenId])) -- overlap table
+                       Overlap			-- overlaps for later resolution
                        (AssocTree (TokenId,Kind) [Pos])	-- final need-table
 
 initNeed b = treeMap (`pair`[]) (initNeed' b)
@@ -70,10 +71,4 @@ needTid pos kind tid needlib@(NeedLib r m ms o n) =
         case lookupAT n (tid,kind) of -- mostly to evaluate n now and then :-)
           Just _ ->  NeedLib r (addM m (tid,kind)) ms o (updateAT n (tid,kind) (pos:))
           Nothing -> NeedLib r (addM m (tid,kind)) ms o (addAT n undefined (tid,kind) [pos])
-
-addOverlap atid kind o tids =
-    foldr add o tids
-  where add t o = addAT o sndOf (t,kind) (True, atid, delete t tids)
-
-    
 

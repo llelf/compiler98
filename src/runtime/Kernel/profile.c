@@ -69,7 +69,7 @@ void timertick(int i)
       if (tprof) {			/*PH*/
         timeSample = FREEZE_TIME; /* cannot wait for next heap allocation PH */
         timerStop(&runTime);		/*PH*/
-        tprofRecordTick((CodePtr*)ip);	/*PH*/ 
+        tprofRecordTick((CodePtr*)Ip);	/*PH*/ 
         timeSample = ACTIVE_TIME;	/*PH*/
         timerStart(&runTime);		/*PH*/
       } else

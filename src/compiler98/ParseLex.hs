@@ -4,7 +4,9 @@ import Lex
 import Lexical
 import Syntax(Lit(..),Boxed(..),Exp(..),Alt,Pat(..),Decls,Context,Type,Stmt,Field)
 import ParseLib
-import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple,tforall,tdot)
+import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple,
+               tforall,tdot,
+               t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast)
 
 
 lit a = literal (a::Lex)
@@ -36,6 +38,7 @@ notRannot = token (\pos t -> case t of L_RANNOT -> Left "/= #-}";  x -> Right po
 bang :: Parser Pos [PosToken] c
 bang = lvarop t_Bang "!"
 
+-- "special" identifiers which are *not* language keywords.
 k_unit = lconid (t_Tuple 0) "()"
 k_primitive = lvarid tprimitive "primitive"
 k_prefix = lvarid tprefix "prefix"
@@ -43,6 +46,15 @@ k_unboxed = lvarid tunboxed "unboxed"
 k_as = lvarid tas "as"
 k_forall = lvarid tforall "forall"
 k_dot = lvarop tdot "dot"
+
+-- "special" identifiers for FFI which are not (all) language keywords.
+k_foreign = lvarid t_foreign "foreign"
+k_import = lit L_import
+k_export = lvarid t_export "export"
+k_ccall = lvarid t_ccall "ccall"
+k_stdcall = lvarid t_stdcall "stdcall"
+k_unsafe = lvarid t_unsafe "unsafe"
+k_cast = lvarid t_cast "cast"
 
 lvarop :: TokenId -> String -> Parser Pos [PosToken] c
 lvarop tid str = token (\pos t -> case t of L_AVAROP v | v == tid -> Right pos;  x -> Left str)

@@ -1,12 +1,13 @@
-module IO where
+module IO (ioeGetErrorString) where
 
 import IO
 import DIOError
+import PackedString
 
 ioeGetErrorString :: IOError -> String
 ioeGetErrorString (IOErrorUser             str)       = str
-ioeGetErrorString (IOErrorSystem           str errno) = str
-ioeGetErrorString (IOErrorOpen       file mode errno) = "openFile "++file
+ioeGetErrorString (IOErrorSystem           str errno) = unpackPS str
+ioeGetErrorString (IOErrorOpen       file mode errno) = "openFile "++unpackPS file
 ioeGetErrorString (IOErrorEOF           handle op)    = "EOF"
 ioeGetErrorString (IOErrorHIsEOF        handle errno) = "hIsEOF"
 ioeGetErrorString (IOErrorHFileSize     handle errno) = "hFileSize"

@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <sys/param.h>
 #include <string.h>
+#include <signal.h>
 
 int max_clients;
 int nclients = 0;

@@ -1,4 +1,4 @@
-module DeriveBinary (deriveBinary) where
+module DeriveXML (deriveXML) where
 
 import List
 import Syntax

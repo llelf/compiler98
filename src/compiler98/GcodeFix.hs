@@ -57,6 +57,8 @@ escNul (x:xs) = x : escNul xs
 
 fixString elabels (s,i) = (map snd . filter ((i==).fst)) elabels ++ [LOCAL string i, DATA_S s]
 
+fixOne [] _ (tprof,funnames,prof,state,profstatics,strings) =
+    ([],(prof,state,profstatics,strings))
 fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings) =
   let a = arityIS state fn
       thread = Thread state prof profstatics strings True initM 
@@ -271,6 +273,8 @@ gFix g@(PRIMITIVE) = ifLive (emit g)
 gFix g@(DATA_CREATE) = ifLive (emit g)
 gFix g@(DATA_GLB string label) = ifLive (emit g)
 gFix g@(DATA_CLABEL label) = ifLive (emit g)
+gFix g@(DATA_FLABEL label) = ifLive (emit g)
+gFix g@(MKIORETURN) = ifLive (emit g)
 
 gFix g@(PRIM prim) = ifLive (emit g)
 
@@ -301,6 +305,7 @@ gFix g@(PUSH_STRING  s) = ifLive $
     addBefore [DATA_CONW 1 0,DATA_GLB string label] >>>= \ i ->
     emits [PUSH_CADR i, EVALUATED]
 gFix g@(PUSH_ARG  i) = ifLive (emit g)
+gFix g@(PUSH_ZAP_ARG  i) = ifLive (emit g)
 gFix g@(PUSH      i) = ifLive (emit g)
 gFix g@(PUSH_HEAP  ) = ifLive (emit g)
 gFix g@(PUSH_GLB s i) = ifLive $
@@ -349,6 +354,8 @@ gFix g@(HEAP_STRING s) =  ifLive $
     addBefore [DATA_GLB string label] >>>= \ i ->
     emit (HEAP_CVAL i)
 gFix g@(HEAP_ARG  i) = ifLive (emit g)
+gFix g@(HEAP_ARG_ARG i j) = ifLive (emit g)
+gFix g@(HEAP_ARG_ARG_RET_EVAL i j) = ifLive (emit g)
 gFix g@(HEAP      i) = ifLive (emit g)
 gFix g@(HEAP_GLB s i) = ifLive $
     addAfter (DATA_GLB s i) >>>= \ i ->

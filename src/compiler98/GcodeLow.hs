@@ -1,8 +1,14 @@
 module GcodeLow
-	(gcodeSize,gcodeNeed,primNeed,primStack,gcodeStack
+	(offsetSize
+	,shortNeedheap,shortNeedstack,shortPush,shortPop
+        ,shortPushArg,shortZapArg,shortHeapCval,shortHeap
+	,gcodeSize,gcodeNeed,primNeed,primStack,gcodeStack
 	,gcodeDump,gcodeHeader
 	,lowInteger,extra
-	,wsize,con0,cap0,caf,fun,cfun,string,consttable,profstatic,profmodule,proftype,profproducer,profconstructor,align) where
+	,wsize,con0,cap0,caf,fun,cfun,string,consttable,foreignfun
+	,profstatic,profmodule,proftype,profproducer,profconstructor,align
+	,fixStr,showId
+	) where
 
 import Char
 
@@ -31,6 +37,7 @@ fun  = "FN_"
 cfun  = ""
 string = "ST_"
 consttable = "CT_"
+foreignfun = "FR_"
 
 profstatic = "PS_"
 profmodule = "PM_"
@@ -88,6 +95,7 @@ gcodeSize (PRIM prim) = 1
 gcodeSize (NOP)	     = 1
 gcodeSize (TABLESWITCH  size pad ls)      = 2 + pad + size * 2     -- DAVID
 gcodeSize (LOOKUPSWITCH size pad tls def) = 2 + pad + size * 4 + 2 -- DAVID
+gcodeSize (MKIORETURN) = 1					   -- MW
 
 {------- DAVID ------------
 gcodeSize (MATCHCON) = 1
@@ -108,6 +116,7 @@ gcodeSize (PUSH_CVAL  i)   = 1 + offsetSize i
 gcodeSize (PUSH_INT  i)    = 1 + offsetSize i
 gcodeSize (PUSH_CHAR  i)   = 1 + offsetSize i
 gcodeSize (PUSH_ARG  i)    = if fst (shortPushArg i) then 1 else 2
+gcodeSize (PUSH_ZAP_ARG  i)    = if fst (shortPushArg i) then 1 else 2
 gcodeSize (PUSH      i)    = if fst (shortPush i) then 1 else 1 + offsetSize i
 gcodeSize (PUSH_HEAP)      = 1
 gcodeSize (POP       i)    = if fst (shortPop i) then 1 else 1 + offsetSize i 
@@ -130,6 +139,8 @@ gcodeSize (HEAP_CVAL  i)   = if fst (shortHeapCval i) then 1 else 1 + offsetSize
 gcodeSize (HEAP_INT  i)    = 1 + offsetSize i
 gcodeSize (HEAP_CHAR  i)   = 1 + offsetSize i
 gcodeSize (HEAP_ARG  i)    = 2
+gcodeSize (HEAP_ARG_ARG i j) = 3
+gcodeSize (HEAP_ARG_ARG_RET_EVAL i j) = 3
 gcodeSize (HEAP      i)    = if fst (shortHeap i) then 1 else 1 + offsetSize i
 gcodeSize (HEAP_OFF  i)    = 1 + offsetSize i
 
@@ -144,7 +155,8 @@ gcodeSize (DATA_F  f)       = if floatIsDouble then 8 else 4
 gcodeSize (DATA_S  s)       = wsize
 gcodeSize (DATA_D  d)       = 8
 gcodeSize (DATA_NOP)        = 0
-gcodeSize (DATA_CLABEL i)    = wsize
+gcodeSize (DATA_CLABEL i)   = wsize
+gcodeSize (DATA_FLABEL i)   = wsize
 gcodeSize (DATA_GLB s i)    = wsize
 gcodeSize (DATA_VAP i)      = wsize
 gcodeSize (DATA_CAP  i s)   = wsize
@@ -163,6 +175,7 @@ gcodeNeed extra (PUSH_CVAL  i) = ( 1,0)
 gcodeNeed extra (PUSH_INT  i)  = ( 1,0)
 gcodeNeed extra (PUSH_CHAR  i) = ( 1,0)
 gcodeNeed extra (PUSH_ARG  i)  = ( 1,0)
+gcodeNeed extra (PUSH_ZAP_ARG  i)  = ( 1,0)
 -- gcodeNeed extra (PUSH      i)  = ( 1,0)
 gcodeNeed extra (PUSH_HEAP)    = ( 1,0)
 gcodeNeed extra (POP       i)  = (-i,0)
@@ -178,6 +191,8 @@ gcodeNeed extra (HEAP_CVAL  i) = (0,1)
 gcodeNeed extra (HEAP_INT  i)  = (0,1)
 gcodeNeed extra (HEAP_CHAR  i) = (0,1)
 gcodeNeed extra (HEAP_ARG  i)  = (0,1)
+gcodeNeed extra (HEAP_ARG_ARG i j)  = (0,2)
+gcodeNeed extra (HEAP_ARG_ARG_RET_EVAL i j)  = (0,2)
 gcodeNeed extra (HEAP      i)  = (0,1)
 gcodeNeed extra (HEAP_OFF  i)  = (0,1)
 gcodeNeed extra (HEAP_CREATE)  = (0,1)
@@ -195,6 +210,7 @@ gcodeNeed extra (DATA_F  _)     = (0,0)
 gcodeNeed extra (DATA_D  _)     = (0,0)
 gcodeNeed extra (DATA_NOP)      = (0,0)    -- does not generate anything, used after DATA_D to keep 1 DATA/WORD
 gcodeNeed extra (DATA_CLABEL _) = (0,0)
+gcodeNeed extra (DATA_FLABEL _) = (0,0)
 gcodeNeed extra (DATA_GLB _ _)  = (0,0)
 gcodeNeed extra (DATA_VAP _)    = (0,0)
 gcodeNeed extra (DATA_CAP _ _)  = (0,0)
@@ -205,6 +221,7 @@ gcodeNeed extra (DATA_CONW _ _) = (0,0)
 gcodeNeed extra (DATA_CONP _ _) = (0,0)
 -- gcodeNeed extra MATCHCON        = (0,0)	-- DAVID
 -- gcodeNeed extra MATCHINT        = (0,0)	-- DAVID
+gcodeNeed extra (MKIORETURN)	= (0,2)		-- MW
 gcodeNeed extra g              = error ("gcodeNeed " ++ strGcode dummyIntState g) 
 
 primStack prim = fst (primNeed 0 prim)
@@ -251,9 +268,9 @@ opNeed extra OpDouble = 3+extra
 
 
 showId state i = fixStr (strIS state i)
- where
-  fixStr [] = id
-  fixStr (c:cs) =
+
+fixStr [] = id
+fixStr (c:cs) =
    if isAlphanum c then
      showChar c . fixStr cs
    else 
@@ -266,7 +283,8 @@ showJump j i =
 
 showOp op =  showString " DB " . showString op . showChar '\n'
 
-showOp1 op i =  showString " DB " . showString op . showChar ',' . shows i . showChar '\n'
+showOp1 op i   =  showString " DB " . showString op . showChar ',' . shows i . showChar '\n'
+showOp2 op i j =  showString " DB " . showString op . showChar ',' . shows i . showChar ',' . shows j . showChar '\n'
 
 showOp12 op i =
   if i < 0 then
@@ -310,6 +328,8 @@ gcodeDump state (LOOKUPSWITCH size pad tls def) =	-- DAVID
     showOp1 "LOOKUPSWITCH" size . someNops pad .
     someLabels (concatMap (\(f,s) -> [f,s]) tls ++ [def])
 
+gcodeDump state (MKIORETURN)     = showOp "MKIORETURN"	-- MW
+
 {----------- DAVID ---------------
 gcodeDump state (MATCHCON) = showOp "MATCHCON"
 gcodeDump state (MATCHINT) = showOp "MATCHINT"
@@ -329,6 +349,7 @@ gcodeDump state (PUSH_CVAL  i)   = showOp12 "PUSH_CVAL" i
 gcodeDump state (PUSH_INT  i)    = showOp12 "PUSH_INT" i
 gcodeDump state (PUSH_CHAR  i)   = showOp12 "PUSH_CHAR" i
 gcodeDump state (PUSH_ARG  i)    = shortQ shortPushArg showOp1  "PUSH_ARG" i
+gcodeDump state (PUSH_ZAP_ARG  i)= shortQ shortPushArg showOp1  "PUSH_ZAP_ARG" i
 gcodeDump state (PUSH      i)    = shortQ shortPush showOp12 "PUSH" i
 gcodeDump state (PUSH_HEAP)      = showOp "PUSH_HEAP"
 gcodeDump state (POP       i)    = shortQ shortPop showOp12 "POP" i
@@ -351,6 +372,8 @@ gcodeDump state (HEAP_CVAL  i)   = shortQ shortHeapCval showOp12 "HEAP_CVAL" i
 gcodeDump state (HEAP_INT  i)    = showOp12 "HEAP_INT" i
 gcodeDump state (HEAP_CHAR  i)   = showOp12 "HEAP_CHAR" i
 gcodeDump state (HEAP_ARG  i)    = showOp1 "HEAP_ARG" i 
+gcodeDump state (HEAP_ARG_ARG i j)  = showOp2 "HEAP_ARG_ARG" i j
+gcodeDump state (HEAP_ARG_ARG_RET_EVAL i j)  = showOp2 "HEAP_ARG_ARG_RET_EVAL" i j
 gcodeDump state (HEAP      i)    = shortQ shortHeap showOp12 "HEAP" i
 gcodeDump state (HEAP_OFF  i)    = showOp12 "HEAP_OFF" i
 
@@ -372,6 +395,7 @@ gcodeDump state (DATA_S  s)       = chopString s
 gcodeDump state (DATA_D  d)       = showString " DD(" . shows d . showString ")\n"
 gcodeDump state (DATA_NOP)        = id
 gcodeDump state (DATA_CLABEL i)   = showString " DW L(" . showCLabel state i . showString ")\n"
+gcodeDump state (DATA_FLABEL i)   = showString " DW L(" . showString foreignfun . showId state i . showString ")\n"
 gcodeDump state (DATA_GLB s 0)    = showString " DW L(" . showString s . showString ")\n"
 gcodeDump state (DATA_GLB s i)    = showString " DW L(" . showString s . showId state i . showString ")\n"
 gcodeDump state (DATA_VAP i)      = showString " DW VAPTAG(" . showString fun . showId state i . showString ")\n"

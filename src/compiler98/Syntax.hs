@@ -14,7 +14,7 @@ data Export id =
      | ExportModid   Pos id
 
 data ImpDecl id =
---     import modid (import,..) ?as modid? ?hiding (import,..)?
+--     import ?qualified? modid ?as modid? ?hiding? (import,..)?
        Import    (Pos,id) (ImpSpec id)
      | ImportQ   (Pos,id) (ImpSpec id)
      | ImportQas (Pos,id) (Pos,id) (ImpSpec id)
@@ -86,7 +86,12 @@ data Decl id =
      | DeclInstance Pos [Context id] id (Instance id) (Decls id)
 --        default (type,..)
      | DeclDefault [Type id]
+--        var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
+--        foreign import [callconv] [extfun] [unsafe|cast] var :: type
+     | DeclForeignImp Pos String id Int Bool (Type id)
+--        foreign export  callconv  [extfun]  var :: type
+     | DeclForeignExp Pos String id (Type id)
 --      vars :: context => type
      | DeclVarsType [(Pos,id)] [Context id] (Type id)
      | DeclPat (Alt id)

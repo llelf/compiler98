@@ -5,8 +5,10 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 12x (date 9912xx)"
-HMAKEVERSION="v1.5 (date 991005)"
+# When incrementing this version number, don't forget to change the
+# corresponding definition in the Makefile!
+CONFIGVERSION="v1.0 pre-release 14x (date 991214)"
+HMAKEVERSION="v1.6 (date 991208)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`

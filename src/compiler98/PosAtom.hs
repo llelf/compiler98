@@ -32,6 +32,8 @@ atomTopBinding (fun,PosLambda pos [] args exp) =
   unitS ((fun,PosLambda pos [] args exp):bs)
 atomTopBinding (fun,PosPrimitive pos fn) =
   unitS [(fun,PosPrimitive pos fn)]
+atomTopBinding (fun,PosForeign pos fn t c ie) =
+  unitS [(fun,PosForeign pos fn t c ie)]
 
 
 atomBinding (fun,PosLambda pos envs [] exp) =  -- no functions left
@@ -39,6 +41,8 @@ atomBinding (fun,PosLambda pos envs [] exp) =  -- no functions left
   flattenExp fun pos envs exp
 atomBinding (fun,PosPrimitive pos fn) =
   unitS [(fun,PosPrimitive pos fn)]
+atomBinding (fun,PosForeign pos fn t c ie) =
+  unitS [(fun,PosForeign pos fn t c ie)]
 
 isntPrim (PosPrim _ _) = False
 isntPrim _ = True
@@ -157,6 +161,7 @@ atomEnv newenv down@(AtomDown tid env) up@(AtomState state bs) =
 
 freePosLambda (PosLambda pos env arg exp) = map snd env -- Don't need to go deeper
 freePosLambda (PosPrimitive pos p) = []
+freePosLambda (PosForeign pos p t c ie) = []
 
 freePosExp (PosExpLet  pos bindings exp) = foldr unionSet (freePosExp exp) (map (freePosLambda . snd) bindings) `removeSet` map fst bindings
 freePosExp (PosExpCase pos cExp alts) = foldr unionSet (freePosExp cExp)  (map freePosAlt alts)

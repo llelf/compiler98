@@ -7,7 +7,6 @@ static SInfo apply2ProfInfo = { "Runtime","buildClosure","<APPLY.$>"};
 static SInfo apply3ProfInfo = { "Runtime","buildClosure","<APPLY.CAP>"};
 #endif
 
-typedef int HaskellRef;
 extern  HaskellRef       stableInsert (NodePtr);
 extern  NodePtr   stableRef (HaskellRef);
 #define getNode() stableRef(*block++)
@@ -90,11 +89,11 @@ HaskellRef buildClosure (int args, HaskellRef* block)
 
 void eval(HaskellRef x)
 {
-  CodePtr IP=ip;		/* save global instruction pointer */
+  CodePtr IP=Ip;		/* save global instruction pointer */
   C_PUSH(stableRef(x));
   C_EVALTOS(stableRef(x));
   C_POP();
-  ip=IP;			/* restore instruction pointer */
+  Ip=IP;			/* restore instruction pointer */
 }
 
 HaskellRef makeInt (int x) { return stableInsert(mkInt(x)); }

@@ -5,12 +5,18 @@ module IO (
      SeekMode(AbsoluteSeek,RelativeSeek,SeekFromEnd),
      stdin, stdout, stderr, openFile, hClose, hFileSize, hIsEOF, isEOF,
      hSetBuffering, hGetBuffering, hFlush, hGetPosn, hSetPosn, hSeek, 
-     hIsOpen, hIsClosed, hIsReadable, hIsWritable, hIsSeekable, hReady, 
-     hGetChar, hLookAhead, hGetContents, hPutChar, hPutStr, hPutStrLn, hPrint,
-     isAlreadyExistsError, isAlreadyInUseError, isFullError, isEOFError,
+     hWaitForInput, hReady,  hGetChar, hGetLine,
+     hLookAhead, hGetContents, hPutChar, hPutStr, hPutStrLn, hPrint,
+     hIsOpen, hIsClosed, hIsReadable, hIsWritable, hIsSeekable,
+     isAlreadyExistsError, isDoesNotExistError,
+     isAlreadyInUseError, isFullError, isEOFError,
      isIllegalOperation, isPermissionError, isUserError, 
-     ioeGetHandle, ioeGetFileName,hGetFileName,
-     SocketType(..), openSocket) where
+     ioeGetErrorString, ioeGetHandle, ioeGetFileName,
+     try, bracket, bracket_,
+
+     hGetFileName,			-- not standard Haskell'98
+     SocketType(..), openSocket		-- not standard Haskell'98
+  ) where
 
 import Ix
 import LowIO
@@ -28,22 +34,29 @@ import HClose
 import HFileSize
 import HIsEOF
 import IsEOF
+
 import HSetBuffering
 import HGetBuffering
 import HFlush
 import HGetPosn
 import HSetPosn
 import HSeek
+
+import HGetChar
+import HGetLine
 import HGetContents
 import HPutChar
 import HPutStr
 import HPutStrLn
 import HPrint
-import HGetChar
-import IsUserError
+
 import IsEOFError
+import IsUserError
+
+import IoeGetErrorString
 import IoeGetHandle
 import IoeGetFileName
+
 import HGetFileName
 import OpenSocket
 import DSocket

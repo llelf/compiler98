@@ -103,6 +103,8 @@ liftBinding (fun,PosLambda pos envs args exp) =
   unitS (fun,PosLambda pos envs args exp)
 liftBinding (fun,PosPrimitive pos fn) =
   unitS (fun,PosPrimitive pos fn)
+liftBinding (fun,PosForeign pos fn t c ie) =
+  unitS (fun,PosForeign pos fn t c ie)
 
 liftExp (PosExpLambda pos envs args exp)  = liftStrict True (liftExp exp) >>>= liftLambda pos envs args
 liftExp (PosExpLet pos bindings exp) =

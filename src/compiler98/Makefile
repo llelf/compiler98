@@ -27,7 +27,7 @@ SRCS = \
 	SccModule.hs State.hs StrPos.hs StrSyntax.hs Syntax.hs SyntaxPos.hs \
 	SyntaxUtil.hs TokenId.hs TokenInt.hs Tree234.hs Type.hs TypeCtx.hs \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
-	TypeUtil.hs Unlit.hs
+	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs,%.c,${SRCS})

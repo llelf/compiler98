@@ -1,10 +1,13 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre12x
+VERSION = 1.0pre14x
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
+
+HVERSION = 1.6
+# HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
@@ -34,6 +37,7 @@ PRELUDEB = \
 	src/prelude/Maybe/Makefile* src/prelude/Maybe/*.hs \
 	src/prelude/Monad/Makefile* src/prelude/Monad/*.hs \
 	src/prelude/NonStd/Makefile* src/prelude/NonStd/*.hs \
+	src/prelude/NonStd/*.gc \
 	src/prelude/Numeric/Makefile* src/prelude/Numeric/*.hs \
 	src/prelude/PackedString/Makefile* src/prelude/PackedString/*.hs \
 	src/prelude/Prelude/Makefile* src/prelude/Prelude/*.hs \
@@ -44,7 +48,8 @@ PRELUDEB = \
 	src/prelude/Ratio/Makefile* src/prelude/Ratio/*.hs \
 	src/prelude/System/Makefile* src/prelude/System/*.hs \
 	src/prelude/Time/Makefile* src/prelude/Time/*.hs \
-	src/prelude/Time/*.gc
+	src/prelude/Time/*.gc \
+	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs
 PRELUDEC = \
 	src/prelude/Array/*.c \
 	src/prelude/Bit/*.c \
@@ -75,7 +80,8 @@ PRELUDEC = \
 	src/prelude/Random/*.c \
 	src/prelude/Ratio/*.c \
 	src/prelude/System/*.c \
-	src/prelude/Time/*.c
+	src/prelude/Time/*.c \
+	src/prelude/FFI/*.c
 PRELUDET = \
 	src/tracer/prelude/Makefile* \
 	src/tracer/prelude/*.hi \
@@ -111,7 +117,7 @@ COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/nhc98tracer.inst lib/nhctracer.jar \
-         script/nhc98heap.c script/harch script/confhc
+         script/nhc98heap.c script/harch script/confhc script/mangler
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -380,20 +386,32 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 
+
+
+##### package up hmake separately
+
+HBASIC  = src/hmake/README src/hmake/INSTALL
+HMFILE  = src/hmake/Makefile.toplevel
+HAUX    = Makefile.inc COPYRIGHT src/Makefile*
+HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
+	  script/harch script/confhc
+HMAN    = man/hmake.1 docs/hmake
+HCONF   = hmake-configure
+
 hmakeDist:
-	rm -f hmake-(VERSION).tar hmake-(VERSION).tar.gz
-	tar cf hmake-(VERSION).tar $(BASIC)
-	tar rf hmake-(VERSION).tar $(HMAKE)
-	tar rf hmake-(VERSION).tar $(HMAKEC)
-	tar rf hmake-(VERSION).tar src/Makefile*
-	tar rf hmake-(VERSION).tar $(SCRIPT)
-	tar rf hmake-(VERSION).tar $(DOC)
-	tar rf hmake-(VERSION).tar $(MAN)
-	mkdir hmake-$(VERSION)
-	cd hmake-$(VERSION); tar xf ../hmake-$(VERSION).tar
-	tar cf hmake-$(VERSION).tar hmake-$(VERSION)
-	rm -r hmake-$(VERSION)
-	gzip hmake-$(VERSION).tar
+	rm -f hmake-$(HVERSION).tar hmake-$(HVERSION).tar.gz
+	tar cf hmake-$(HVERSION).tar $(HAUX)
+	tar rf hmake-$(HVERSION).tar $(HMAKE)
+	tar rf hmake-$(HVERSION).tar $(HSCRIPT)
+	tar rf hmake-$(HVERSION).tar $(HMAN)
+	mkdir hmake-$(HVERSION)
+	cd hmake-$(HVERSION); tar xf ../hmake-$(HVERSION).tar
+	cp $(HBASIC) hmake-$(HVERSION)
+	cp $(HMFILE) hmake-$(HVERSION)/Makefile
+	cp $(HCONF)  hmake-$(HVERSION)/configure
+	tar cf hmake-$(HVERSION).tar hmake-$(HVERSION)
+	rm -r hmake-$(HVERSION)
+	gzip hmake-$(HVERSION).tar
 
 
 ##### cleanup

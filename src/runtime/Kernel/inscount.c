@@ -174,6 +174,7 @@ static int i_unknown[1];
 
 static int i_tableswitch[1];	/*PH*/
 static int i_lookupswitch[1];	/*PH*/
+static int i_mkioreturn[1];	/*MW*/
 static int i_endcode[1];	/*PH*/
 static int i_hputc[1];		/*PH*/
 static int i_hgetc[1];		/*PH*/
@@ -359,6 +360,7 @@ void genericByteIns (CodePtr ip, fun op0, fun op1, fun op2, fun opdef)
   case HGETC: op0(ip,"HGETC",i_hgetc); break;				/*PH*/
   case TABLESWITCH: op0(ip,"TABLESWITCH",i_tableswitch); break;		/*PH*/
   case LOOKUPSWITCH: op0(ip,"LOOKUPSWITCH",i_lookupswitch); break;	/*PH*/
+  case MKIORETURN: op0(ip,"MKIORETURN",i_mkioreturn); break;		/*MW*/
   case ENDCODE: op0(ip,"ENDCODE",i_endcode); break;			/*PH*/
   default:
     opdef(ip,"Unknown",i_unknown); break;

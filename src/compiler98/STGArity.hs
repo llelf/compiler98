@@ -22,6 +22,8 @@ arityBinding (fun,PosLambda pos env args exp) =
     unitS (fun,PosLambda pos env args exp)
 arityBinding b@(fun,PosPrimitive pos f) =
     unitS b
+arityBinding b@(fun,PosForeign pos f t c ie) =
+    unitS b
 
 arityExp (PosExpLambda pos envs args exp)  =
   pushEnv (map snd args) >>>

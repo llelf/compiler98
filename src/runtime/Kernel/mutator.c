@@ -12,6 +12,32 @@
 #include "mutlib.h"
 #include "mark.h"
 
+
+#if defined(__GNUC__) && !defined(DEBUG)
+#  define USE_GCC_LABELS 1
+#else
+#  define USE_GCC_LABELS 0
+#endif
+
+#ifdef BYTECODE_PROF
+/* for profiling bytecode instruction pairs/triples */
+#define PAIR 1		/* for triples, PAIR=0 */
+#if PAIR
+static int           instr_pair[ENDCODE+1][ENDCODE+1];
+static unsigned char last_instr=EVAL;
+#define register_instr(x)     instr_pair[last_instr][x]++; last_instr=x
+#else
+static int           instr_triple[ENDCODE+1][ENDCODE+1][ENDCODE+1];
+static unsigned char last_instr=EVAL;
+static unsigned char penu_instr=EVAL;
+#define register_instr(x)     instr_triple[penu_instr][last_instr][x]++; \
+				penu_instr=last_instr; \
+				last_instr=x
+#endif
+#else
+#define register_instr(x)
+#endif
+
 extern int exit_code;
 #ifdef __CYGWIN32__
 extern jmp_buf exit_mutator;
@@ -22,7 +48,7 @@ extern sigjmp_buf exit_mutator;
 NodePtr  Hp;
 NodePtr *Sp;
 NodePtr *Fp;
-CodePtr  ip;	/*PH*/
+CodePtr  Ip;	/*PH*/
 
 #if 0
 #define INSTR(x)  fprintf(stderr,"eval: %s\n",x)
@@ -98,8 +124,25 @@ void run(NodePtr toplevel)
   NodePtr *sp,  *fp,  hp;
   NodePtr vapptr;
   NodePtr nodeptr;
-/*CodePtr ip;		-- now global -PH */
+  CodePtr ip;		/* -- now global -PH (also shadow locally, MW) */
   NodePtr *constptr;
+
+
+#if USE_GCC_LABELS
+#  define ins(x)	&&l##x
+   static void *labs[] = { INSTRUCTION_LIST };
+#  undef ins
+#  define Dispatch	Break;
+#  define Case(x)	l##x
+#  define Break		register_instr(*ip); goto *labs[*ip++]
+#  define EndDispatch	
+#else
+#  define Dispatch	switch (*ip++) {
+#  define Case(x)	case x
+#  define Break		break
+#  define EndDispatch	}
+#endif
+
 
 #ifdef TPROF	/*PH*/
   int cancel_enter;
@@ -155,86 +198,30 @@ void run(NodePtr toplevel)
     }
 #endif
 
-    switch (*ip++) {
-    case NEEDHEAP_I32: { HEAP_CHECK_VAP(32); } break;
-    case NEEDHEAP_P1:  { Int i = *ip++;      HEAP_CHECK_VAP(i); } break;
-    case NEEDHEAP_P2:  { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i);} break;
+    Dispatch
+
+    Case(NEEDHEAP_I32): { HEAP_CHECK_VAP(32); } Break;
+    Case(NEEDHEAP_P1):  { Int i = *ip++;      HEAP_CHECK_VAP(i); } Break;
+    Case(NEEDHEAP_P2):  { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i);} Break;
       /* !!! Need stack !!! */
-    case NEEDSTACK_I16:  { HEAP_CHECK_VAP(16); } break;
-    case NEEDSTACK_P1:  { Int i = *ip++;      HEAP_CHECK_VAP(i); } break;
-    case NEEDSTACK_P2: { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i); } break;
+    Case(NEEDSTACK_I16):  { HEAP_CHECK_VAP(16); } Break;
+    Case(NEEDSTACK_P1):  { Int i = *ip++;      HEAP_CHECK_VAP(i); } Break;
+    Case(NEEDSTACK_P2): { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i); } Break;
       
-    case JUMP:  ip += HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); break;
-    case JUMPFALSE:	/* DAVID */
+    Case(JUMP):  ip += HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); Break;
+    Case(JUMPFALSE):	/* DAVID */
       { nodeptr = *sp++; IND_REMOVE(nodeptr);
 	UPDATE_PROFINFO(nodeptr)
 	if (GET_BOOL_VALUE(nodeptr) )
 	  ip += 2;
 	else
 	  ip += HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8);
-      } break;
-    case NOP :
+      } Break;
+    Case(NOP):
       fprintf(stderr,"Executed NOP at %08x\n",ip);
-      break;
-#if 0 /* ----------------------------- DAVID -------------- */
-    case MATCHCON:
-      nodeptr = sp[0];
-      IND_REMOVE(nodeptr);
-      UPDATE_PROFINFO(nodeptr)
-      switch(GET_LARGETAG(nodeptr)) { /* !!! Can be improved when compiler doesn't test tuples !!! */
-      case CON_DATA | CON_TAG:
-      case CON_CDATA | CON_TAG:
-	nodeptr = (NodePtr) GET_CONSTR(nodeptr);	
-	break;
-      case CON_PTRS | CON_TAG:
-      case CON_WORDS | CON_TAG:
-	nodeptr = 0;
-	break;
-      default:
-	fprintf(stderr,"Trying to get tag from unevaluated node in MATCHCON at %08x!\n",ip-1);
-	fprintf(stderr,"Node is:\n");
-	DUMP_NODE(nodeptr);
-	exit(-1);
-	break;
-      }
-      break;
-    case MATCHINT:
-      nodeptr = sp[0];
-      IND_REMOVE(nodeptr);
-      UPDATE_PROFINFO(nodeptr)
-      nodeptr = (NodePtr) GET_INT_VALUE(nodeptr);
-      break;
-    case PRIMITIVE:
-      { Primitive fun;
-	int gc = 0;
-	ip = (CodePtr) ALIGNPTR(ip);
-	fun = *(Primitive*)ip;
-	ip += sizeof(Primitive);
-	CALL_C(fun);
-      } break;
-    case JUMPS_T:
-      ip = (CodePtr) ALIGNPTR2(ip);
-      ip +=  *((JumpItem *)ip + (Int)nodeptr);
-      break;
-    case JUMPS_L:
-      ip = (CodePtr)ALIGNPTR4(ip);
-      { JumpTable *t = (JumpTable*) ip;
-	JumpTable def = *t++;
-	JumpItem len =  def.constr;
-	Int c = (Int)nodeptr;
-	while (len--) {
-	  JumpTable x = *t++;
-	  if (c == (Int)((signed short)x.constr)) {
-	    ip += x.offset;
-	    goto mjump_confound;
-	  }
-	}
-	ip += def.offset;
-      }
-    mjump_confound:
-      break;
-#endif        /* -------------------- DAVID ---------------------- */
-    case PRIMITIVE:
+      Break;
+
+    Case(PRIMITIVE):
       { Primitive fun;
 	int gc = 0;
 	ip = (CodePtr) ALIGNPTR(ip);
@@ -249,64 +236,94 @@ void run(NodePtr toplevel)
 #else
 	CALL_C(fun);
 #endif
-      } break;
+      }
+      /* PRIMITIVE is always followed by RETURN_EVAL, so we elide the */
+      /* bytecode and jump direct.  (Later, let's not generate the */
+      /* bytecode either.) */
+      /* ip++; */
+      /* goto return_eval; */
+      /* Ahem.  It turns out in the new FFI that IO primitives are *not* */
+      /* always followed by RETURN_EVAL.  */
+      Break;
 
 
-    case ZAP_ARG_I1:   vapptr[EXTRA +1    ] = (Node)ZAP_ARG_NODE;  break;
-    case ZAP_ARG_I2:   vapptr[EXTRA +2    ] = (Node)ZAP_ARG_NODE;  break;
-    case ZAP_ARG_I3:   vapptr[EXTRA +3    ] = (Node)ZAP_ARG_NODE;  break;
-    case ZAP_ARG:      vapptr[EXTRA +HEAPOFFSET(ip[0])] = (Node)ZAP_ARG_NODE; ip+=1; break;
-    case ZAP_STACK_P1: sp[HEAPOFFSET(ip[0])           ] = ZAP_STACK_NODE;     ip+=1; break;
-    case ZAP_STACK_P2: sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)] = ZAP_STACK_NODE;     ip+=2; break;
+    Case(ZAP_ARG_I1):   vapptr[EXTRA +1    ] = (Node)ZAP_ARG_NODE;  Break;
+    Case(ZAP_ARG_I2):   vapptr[EXTRA +2    ] = (Node)ZAP_ARG_NODE;  Break;
+    Case(ZAP_ARG_I3):   vapptr[EXTRA +3    ] = (Node)ZAP_ARG_NODE;  Break;
+    Case(ZAP_ARG):      vapptr[EXTRA +HEAPOFFSET(ip[0])] = (Node)ZAP_ARG_NODE; ip+=1; Break;
+    Case(ZAP_STACK_P1): sp[HEAPOFFSET(ip[0])           ] = ZAP_STACK_NODE;     ip+=1; Break;
+    Case(ZAP_STACK_P2): sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)] = ZAP_STACK_NODE;     ip+=2; Break;
       
-    case PUSH_CADR_N2: *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-    case PUSH_CADR_N1: *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])];            ip+=1; break;
-    case PUSH_CADR_P1: *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])];            ip+=1; break;
-    case PUSH_CADR_P2: *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-    case PUSH_CVAL_N2: *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-    case PUSH_CVAL_N1: *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])];            ip+=1; break;
-    case PUSH_CVAL_P1: *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])];            ip+=1; break;  
-    case PUSH_CVAL_P2: *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-    case PUSH_INT_N1:  *--sp =  GET_INT(-HEAPOFFSET(ip[0]));            ip+=1; break;
-    case PUSH_INT_P1:  *--sp =  GET_INT( HEAPOFFSET(ip[0]));            ip+=1; break;
-    case PUSH_CHAR_N1: *--sp =  GET_CHAR(-HEAPOFFSET(ip[0]));           ip+=1; break;
-    case PUSH_CHAR_P1: *--sp =  GET_CHAR( HEAPOFFSET(ip[0]));           ip+=1; break;
-    case PUSH_ARG_I1:  UPDATE_PROFINFO(vapptr);
+    Case(PUSH_CADR_N2): *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+    Case(PUSH_CADR_N1): *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])];            ip+=1; Break;
+    Case(PUSH_CADR_P1): *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])];            ip+=1; Break;
+    Case(PUSH_CADR_P2): *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+    Case(PUSH_CVAL_N2): *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+    Case(PUSH_CVAL_N1): *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])];            ip+=1; Break;
+    Case(PUSH_CVAL_P1): *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])];            ip+=1; Break;  
+    Case(PUSH_CVAL_P2): *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+    Case(PUSH_INT_N1):  *--sp =  GET_INT(-HEAPOFFSET(ip[0]));            ip+=1; Break;
+    Case(PUSH_INT_P1):  *--sp =  GET_INT( HEAPOFFSET(ip[0]));            ip+=1; Break;
+    Case(PUSH_CHAR_N1): *--sp =  GET_CHAR(-HEAPOFFSET(ip[0]));           ip+=1; Break;
+    Case(PUSH_CHAR_P1): *--sp =  GET_CHAR( HEAPOFFSET(ip[0]));           ip+=1; Break;
+    Case(PUSH_ARG_I1):  UPDATE_PROFINFO(vapptr);
                        nodeptr =GET_POINTER_ARG1(vapptr,1);
                        IND_REMOVE(nodeptr); 
-                       *--sp = nodeptr; break;
-    case PUSH_ARG_I2:  UPDATE_PROFINFO(vapptr);
+                       *--sp = nodeptr; Break;
+    Case(PUSH_ARG_I2):  UPDATE_PROFINFO(vapptr);
                        nodeptr =GET_POINTER_ARG1(vapptr,2);
                        IND_REMOVE(nodeptr); 
-                       *--sp = nodeptr; break;
-    case PUSH_ARG_I3:  UPDATE_PROFINFO(vapptr);
+                       *--sp = nodeptr; Break;
+    Case(PUSH_ARG_I3):  UPDATE_PROFINFO(vapptr);
                        nodeptr =GET_POINTER_ARG1(vapptr,3);
                        IND_REMOVE(nodeptr); 
-                       *--sp = nodeptr; break;
-
-    case PUSH_ARG:     UPDATE_PROFINFO(vapptr);
+                       *--sp = nodeptr; Break;
+    Case(PUSH_ARG):     UPDATE_PROFINFO(vapptr);
                        nodeptr =GET_POINTER_ARG1(vapptr,ip[0]);          ip+=1;
                        IND_REMOVE(nodeptr); 
-                       *--sp = nodeptr; break;
-    case PUSH_HEAP:    *--sp = hp; break;
-    case PUSH_I1:      nodeptr = sp[1];                *--sp = nodeptr;        break;
-    case PUSH_P1:      nodeptr = sp[HEAPOFFSET(ip[0])];            *--sp = nodeptr; ip+=1; break;
-    case PUSH_P2:      nodeptr = sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; *--sp = nodeptr; ip+=2; break;
+                       *--sp = nodeptr; Break;
+
+    Case(PUSH_ZAP_ARG_I1):  UPDATE_PROFINFO(vapptr);
+                       nodeptr =GET_POINTER_ARG1(vapptr,1);
+                       IND_REMOVE(nodeptr); 
+                       *--sp = nodeptr;
+                       vapptr[EXTRA +1] = (Node)ZAP_ARG_NODE;  Break;
+    Case(PUSH_ZAP_ARG_I2):  UPDATE_PROFINFO(vapptr);
+                       nodeptr =GET_POINTER_ARG1(vapptr,2);
+                       IND_REMOVE(nodeptr); 
+                       *--sp = nodeptr;
+                       vapptr[EXTRA +2] = (Node)ZAP_ARG_NODE;  Break;
+    Case(PUSH_ZAP_ARG_I3):  UPDATE_PROFINFO(vapptr);
+                       nodeptr =GET_POINTER_ARG1(vapptr,3);
+                       IND_REMOVE(nodeptr); 
+                       *--sp = nodeptr;
+                       vapptr[EXTRA +3] = (Node)ZAP_ARG_NODE;  Break;
+    Case(PUSH_ZAP_ARG):     UPDATE_PROFINFO(vapptr);
+                       nodeptr =GET_POINTER_ARG1(vapptr,ip[0]);
+                       IND_REMOVE(nodeptr); 
+                       *--sp = nodeptr;
+                       vapptr[EXTRA +HEAPOFFSET(ip[0])] = (Node)ZAP_ARG_NODE;
+                       ip+=1; Break;
+
+    Case(PUSH_HEAP):    *--sp = hp; Break;
+    Case(PUSH_I1):      nodeptr = sp[1];                *--sp = nodeptr;        Break;
+    Case(PUSH_P1):      nodeptr = sp[HEAPOFFSET(ip[0])];            *--sp = nodeptr; ip+=1; Break;
+    Case(PUSH_P2):      nodeptr = sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; *--sp = nodeptr; ip+=2; Break;
       
-    case POP_I1:       sp += 1;                        break;
-    case POP_P1:       sp += HEAPOFFSET(ip[0]);             ip+=1; break;
-    case POP_P2:       sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8) ; ip+=2; break;
-    case SLIDE_P1:     nodeptr = sp[0]; sp += HEAPOFFSET(ip[0]);             sp[0] = nodeptr; ip+=1; break;
-    case SLIDE_P2:     nodeptr = sp[0]; sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8) ; sp[0] = nodeptr; ip+=2; break;
-    case SELECT:
+    Case(POP_I1):       sp += 1;                        Break;
+    Case(POP_P1):       sp += HEAPOFFSET(ip[0]);             ip+=1; Break;
+    Case(POP_P2):       sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8) ; ip+=2; Break;
+    Case(SLIDE_P1):     nodeptr = sp[0]; sp += HEAPOFFSET(ip[0]);             sp[0] = nodeptr; ip+=1; Break;
+    Case(SLIDE_P2):     nodeptr = sp[0]; sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8) ; sp[0] = nodeptr; ip+=2; Break;
+    Case(SELECT):
       { Int index = *ip++;
 	nodeptr = *sp;
 	IND_REMOVE(nodeptr);
 	UPDATE_PROFINFO(nodeptr)
 	*sp = (NodePtr) GET_POINTER_ARG1(nodeptr,index);
-      } break;
+      } goto return_eval;
 
-    case UNPACK:
+    Case(UNPACK):
 #if PARANOID
       { int i;
 	nodeptr = sp[0];
@@ -321,7 +338,7 @@ void run(NodePtr toplevel)
 	  i = CONINFO_LARGESIZES(GET_CONINFO(nodeptr));
 	  break;
 	default:
-	  fprintf(stderr,"Trying to get tag from unevaluated node in MATCHCON at %08x!\n",ip-1);
+	  fprintf(stderr,"Trying to get tag from unevaluated node in UNPACK at %08x!\n",ip-1);
 	  fprintf(stderr,"Node is:\n");
 #if TRACE
 	  prGraph(nodeptr,0xff,1);
@@ -330,7 +347,7 @@ void run(NodePtr toplevel)
 	  fprintf(stderr," %08x at %08x\n",nodeptr[0],nodeptr);
 #endif
 	  exit(-1);
-	  break; 
+	  Break; 
 	}
 	if(i!=ip[0]) {
 	  fprintf(stderr,"Trying to do UNPACK %d on a node with %d arguments at %08x!\n",ip[0],i,ip-1);
@@ -352,10 +369,10 @@ void run(NodePtr toplevel)
 	while (arity) {
 	  *--sp = (NodePtr) GET_POINTER_ARG1(nodeptr,arity--);
 	}
-      } break;
+      } Break;
       
       
-    case APPLY:
+    Case(APPLY):
     INSTR("apply");
     { int need,size,args = *ip++;
       Cinfo cinfo;
@@ -385,7 +402,8 @@ void run(NodePtr toplevel)
 #endif /*0*/
 #if 1
       if(GET_TAG(nodeptr)&VAP_TAG && !CINFO_NEED(cinfo)) {   /* Probably not needed */
-        fprintf(stderr,"VAP in Apply?\n");
+        /* Actually, this sometimes happens due to MKIORESULT. */
+        /*fprintf(stderr,"VAP in Apply?\n");*/
         vap = nodeptr;
         goto build_apply;
       }
@@ -424,17 +442,17 @@ void run(NodePtr toplevel)
           *hp++ = (Node)*sp++;
       }
       *--sp = vap;
-    } break;
+    } Break;
 
   /* DON'T Fall trough to evaluate TOS. We might wan't to do RETURN_EVAL !!! */
 
-    case SELECTOR_EVAL:   /* == PUSH_ARG 1, EVAL  has it's own opcode to signal that this is a selector function (gc need to know) */
+    Case(SELECTOR_EVAL):   /* == PUSH_ARG 1, EVAL  has it's own opcode to signal that this is a selector function (gc need to know) */
       UPDATE_PROFINFO(vapptr);
       nodeptr =GET_POINTER_ARG1(vapptr,1);
       IND_REMOVE(nodeptr);
       *--sp = nodeptr;
       /* Fall through to EVAL */
-    case EVAL:
+    Case(EVAL):
       INSTR("evalToS");
     EvalTOS:
       { nodeptr = sp[0];
@@ -502,9 +520,9 @@ void run(NodePtr toplevel)
           cancel_enter=0;
         }
 #endif
-      } break;
+      } Break;
 
- case RETURN:
+ Case(RETURN):
       INSTR("return");
 #if TRACE
       if(traceFlag & TRACE_RETURN)
@@ -513,8 +531,9 @@ void run(NodePtr toplevel)
     nodeptr = *sp++;
     UPDATE_VAP(nodeptr);
     POP_STATEVP;
-    break;
-  case RETURN_EVAL:
+    Break;
+  Case(RETURN_EVAL):
+  return_eval:
       INSTR("returneval");
 #if TRACE
       if(traceFlag & TRACE_RETURN)
@@ -526,37 +545,47 @@ void run(NodePtr toplevel)
     goto EvalTOS;
 
 #ifdef PROFILE
-  case HEAP_CREATE: { BInfo binfo; binfo.all = 0; binfo.parts.created = year;  *hp++ = (Node)binfo.all; break;}
-  case HEAP_SPACE:  *hp++ = 0; break;
+  Case(HEAP_CREATE): { BInfo binfo; binfo.all = 0; binfo.parts.created = year;  *hp++ = (Node)binfo.all; Break;}
+  Case(HEAP_SPACE):  *hp++ = 0; Break;
+#else
+  Case(HEAP_CREATE): Break;	/* Not used, but need to keep gcc-labels happy */
+  Case(HEAP_SPACE):  Break;	/* Not used, but need to keep gcc-labels happy */
 #endif
 
-  case HEAP_OFF_N2: *hp = (Node) (hp-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8));   hp++; ip+=2; break;
-  case HEAP_OFF_N1: *hp = (Node) (hp-HEAPOFFSET(ip[0]));              hp++; ip+=1; break;
-  case HEAP_OFF_P1: *hp = (Node) (hp+HEAPOFFSET(ip[0]));              hp++; ip+=1; break;
-  case HEAP_OFF_P2: *hp = (Node) (hp+HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8));   hp++; ip+=2; break;
+  Case(HEAP_OFF_N2): *hp = (Node) (hp-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8));   hp++; ip+=2; Break;
+  Case(HEAP_OFF_N1): *hp = (Node) (hp-HEAPOFFSET(ip[0]));              hp++; ip+=1; Break;
+  Case(HEAP_OFF_P1): *hp = (Node) (hp+HEAPOFFSET(ip[0]));              hp++; ip+=1; Break;
+  Case(HEAP_OFF_P2): *hp = (Node) (hp+HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8));   hp++; ip+=2; Break;
 
-  case HEAP_CADR_N2: *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-  case HEAP_CADR_N1: *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])];            ip+=1; break;
-  case HEAP_CADR_P1: *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])];            ip+=1; break;
-  case HEAP_CADR_P2: *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-  case HEAP_CVAL_N2: *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-  case HEAP_CVAL_N1: *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])];            ip+=1; break;
-  case HEAP_CVAL_IN3:*hp++ = (Node) constptr[    -3];                   break;  
-  case HEAP_CVAL_I3: *hp++ = (Node) constptr[     3];                   break;  
-  case HEAP_CVAL_I4: *hp++ = (Node) constptr[     4];                   break;  
-  case HEAP_CVAL_I5: *hp++ = (Node) constptr[     5];                   break;  
-  case HEAP_CVAL_P1: *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])];            ip+=1; break;  
-  case HEAP_CVAL_P2: *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; break;
-  case HEAP_INT_N1:  *hp++ = (Node) GET_INT(-HEAPOFFSET(ip[0])) ;            ip+=1; break;
-  case HEAP_INT_P1:  *hp++ = (Node) GET_INT( HEAPOFFSET(ip[0])) ;            ip+=1; break;
-  case HEAP_CHAR_N1: *hp++ = (Node) GET_CHAR(-HEAPOFFSET(ip[0])) ;           ip+=1; break;
-  case HEAP_CHAR_P1: *hp++ = (Node) GET_CHAR( HEAPOFFSET(ip[0])) ;           ip+=1; break;
-  case HEAP_ARG:     UPDATE_PROFINFO(vapptr);
-                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);         ip+=1; break;
-  case HEAP_I1:      nodeptr = sp[   1 ];            *hp++ = (Node)nodeptr;        break;
-  case HEAP_I2:      nodeptr = sp[   2 ];            *hp++ = (Node)nodeptr;        break;
-  case HEAP_P1:      nodeptr = sp[HEAPOFFSET(ip[0])];            *hp++ = (Node)nodeptr; ip+=1; break;
-  case HEAP_P2:      nodeptr = sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; *hp++ = (Node)nodeptr; ip+=1; break;
+  Case(HEAP_CADR_N2): *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+  Case(HEAP_CADR_N1): *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])];            ip+=1; Break;
+  Case(HEAP_CADR_P1): *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])];            ip+=1; Break;
+  Case(HEAP_CADR_P2): *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+  Case(HEAP_CVAL_N2): *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+  Case(HEAP_CVAL_N1): *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])];            ip+=1; Break;
+  Case(HEAP_CVAL_IN3):*hp++ = (Node) constptr[    -3];                   Break;  
+  Case(HEAP_CVAL_I3): *hp++ = (Node) constptr[     3];                   Break;  
+  Case(HEAP_CVAL_I4): *hp++ = (Node) constptr[     4];                   Break;  
+  Case(HEAP_CVAL_I5): *hp++ = (Node) constptr[     5];                   Break;  
+  Case(HEAP_CVAL_P1): *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])];            ip+=1; Break;  
+  Case(HEAP_CVAL_P2): *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; ip+=2; Break;
+  Case(HEAP_INT_N1):  *hp++ = (Node) GET_INT(-HEAPOFFSET(ip[0])) ;            ip+=1; Break;
+  Case(HEAP_INT_P1):  *hp++ = (Node) GET_INT( HEAPOFFSET(ip[0])) ;            ip+=1; Break;
+  Case(HEAP_CHAR_N1): *hp++ = (Node) GET_CHAR(-HEAPOFFSET(ip[0])) ;           ip+=1; Break;
+  Case(HEAP_CHAR_P1): *hp++ = (Node) GET_CHAR( HEAPOFFSET(ip[0])) ;           ip+=1; Break;
+  Case(HEAP_ARG):     UPDATE_PROFINFO(vapptr);
+                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);         ip+=1; Break;
+  Case(HEAP_ARG_ARG): UPDATE_PROFINFO(vapptr);
+                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);
+                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[1]);         ip+=2; Break;
+  Case(HEAP_ARG_ARG_RET_EVAL): UPDATE_PROFINFO(vapptr);
+                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);
+                     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[1]);         ip+=2;
+			goto return_eval;
+  Case(HEAP_I1):      nodeptr = sp[   1 ];            *hp++ = (Node)nodeptr;        Break;
+  Case(HEAP_I2):      nodeptr = sp[   2 ];            *hp++ = (Node)nodeptr;        Break;
+  Case(HEAP_P1):      nodeptr = sp[HEAPOFFSET(ip[0])];            *hp++ = (Node)nodeptr; ip+=1; Break;
+  Case(HEAP_P2):      nodeptr = sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; *hp++ = (Node)nodeptr; ip+=1; Break;
 
 
 #define PRIM_OP2_INT(op) \
@@ -568,24 +597,24 @@ void run(NodePtr toplevel)
 	MK_INT(hp, a op b); \
 	INIT_PROFINFO(hp,&int2ProfInfo) \
 	*--sp = hp; hp += SIZE_INT; \
-    } break
+    } Break
 
-  case ADD_W: PRIM_OP2_INT(+);
-  case SUB_W: PRIM_OP2_INT(-);
-  case MUL_W: PRIM_OP2_INT(*);
-  case QUOT:  PRIM_OP2_INT(/);
-  case REM:   PRIM_OP2_INT(%);
+  Case(ADD_W): PRIM_OP2_INT(+);
+  Case(SUB_W): PRIM_OP2_INT(-);
+  Case(MUL_W): PRIM_OP2_INT(*);
+  Case(QUOT):  PRIM_OP2_INT(/);
+  Case(REM):   PRIM_OP2_INT(%);
 
- case NEG_W:
+ Case(NEG_W):
     { NodePtr nodeptr = *sp++;
       Int a;
       IND_REMOVE(nodeptr); ASSERT_W(ip,nodeptr) UPDATE_PROFINFO(nodeptr) a = GET_INT_VALUE(nodeptr);
       MK_INT(hp, -a); 
       INIT_PROFINFO(hp,&int1ProfInfo) 
       *--sp = hp; hp += SIZE_INT; 
-    } break;
+    } Break;
 
- case ABS_W:
+ Case(ABS_W):
     { NodePtr nodeptr = *sp++;
       Int a;
       IND_REMOVE(nodeptr); ASSERT_W(ip,nodeptr) UPDATE_PROFINFO(nodeptr) a = GET_INT_VALUE(nodeptr);
@@ -596,9 +625,9 @@ void run(NodePtr toplevel)
 	hp += SIZE_INT;
       }
       *--sp = nodeptr;
-    } break;
+    } Break;
 
- case SIGNUM_W:
+ Case(SIGNUM_W):
     { NodePtr nodeptr = *sp++;
       Int a;
       IND_REMOVE(nodeptr); ASSERT_W(ip,nodeptr) UPDATE_PROFINFO(nodeptr) a = GET_INT_VALUE(nodeptr);
@@ -610,7 +639,7 @@ void run(NodePtr toplevel)
 	nodeptr = GET_INT(1);
       }
       *--sp = nodeptr;
-    } break;
+    } Break;
       
 
 #define PRIM_CMP2_INT(op) \
@@ -620,14 +649,14 @@ void run(NodePtr toplevel)
     nodeptr = *sp++;         \
     IND_REMOVE(nodeptr); ASSERT_W(ip,nodeptr) UPDATE_PROFINFO(nodeptr) b = GET_INT_VALUE(nodeptr); \
     *--sp = GET_BOOL(a op b); \
-  } break
+  } Break
 
-  case EQ_W: PRIM_CMP2_INT(==);
-  case NE_W: PRIM_CMP2_INT(!=);
-  case LT_W: PRIM_CMP2_INT(<);
-  case LE_W: PRIM_CMP2_INT(<=);
-  case GT_W: PRIM_CMP2_INT(>);
-  case GE_W: PRIM_CMP2_INT(>=);
+  Case(EQ_W): PRIM_CMP2_INT(==);
+  Case(NE_W): PRIM_CMP2_INT(!=);
+  Case(LT_W): PRIM_CMP2_INT(<);
+  Case(LE_W): PRIM_CMP2_INT(<=);
+  Case(GT_W): PRIM_CMP2_INT(>);
+  Case(GE_W): PRIM_CMP2_INT(>=);
 
 #ifndef __alpha /* Float is Double on alpha */
 #define PRIM_OP2_FLOAT(op) \
@@ -639,12 +668,12 @@ void run(NodePtr toplevel)
 	mk_float(hp, a op b); \
 	INIT_PROFINFO(hp,&float2ProfInfo) \
 	*--sp = hp; hp += SIZE_FLOAT; \
-    } break
+    } Break
 
-  case ADD_F: PRIM_OP2_FLOAT(+);
-  case SUB_F: PRIM_OP2_FLOAT(-);
-  case MUL_F: PRIM_OP2_FLOAT(*);
-  case SLASH_F: PRIM_OP2_FLOAT(/);
+  Case(ADD_F): PRIM_OP2_FLOAT(+);
+  Case(SUB_F): PRIM_OP2_FLOAT(-);
+  Case(MUL_F): PRIM_OP2_FLOAT(*);
+  Case(SLASH_F): PRIM_OP2_FLOAT(/);
 
 #define PRIM_OP1_FLOAT(op) \
     { NodePtr nodeptr = *sp++; \
@@ -653,20 +682,20 @@ void run(NodePtr toplevel)
 	mk_float(hp, op); \
 	INIT_PROFINFO(hp,&float1ProfInfo) \
 	*--sp = hp; hp += SIZE_FLOAT; \
-    } break
+    } Break
 
-  case NEG_F: PRIM_OP1_FLOAT(-a);
-  case ABS_F: PRIM_OP1_FLOAT((a<0?-a:a));
-  case SIGNUM_F: PRIM_OP1_FLOAT((a<0?-1.0:(a==0?0.0:1.0)));
-  case EXP_F: PRIM_OP1_FLOAT((float)exp((double)a));
-  case LOG_F:PRIM_OP1_FLOAT((float)log((double)a));
-  case SQRT_F:PRIM_OP1_FLOAT((float)sqrt((double)a));
-  case SIN_F:PRIM_OP1_FLOAT((float)sin((double)a));
-  case COS_F:PRIM_OP1_FLOAT((float)cos((double)a));
-  case TAN_F:PRIM_OP1_FLOAT((float)tan((double)a));
-  case ASIN_F:PRIM_OP1_FLOAT((float)asin((double)a));
-  case ACOS_F:PRIM_OP1_FLOAT((float)acos((double)a));
-  case ATAN_F:PRIM_OP1_FLOAT((float)atan((double)a));
+  Case(NEG_F): PRIM_OP1_FLOAT(-a);
+  Case(ABS_F): PRIM_OP1_FLOAT((a<0?-a:a));
+  Case(SIGNUM_F): PRIM_OP1_FLOAT((a<0?-1.0:(a==0?0.0:1.0)));
+  Case(EXP_F): PRIM_OP1_FLOAT((float)exp((double)a));
+  Case(LOG_F):PRIM_OP1_FLOAT((float)log((double)a));
+  Case(SQRT_F):PRIM_OP1_FLOAT((float)sqrt((double)a));
+  Case(SIN_F):PRIM_OP1_FLOAT((float)sin((double)a));
+  Case(COS_F):PRIM_OP1_FLOAT((float)cos((double)a));
+  Case(TAN_F):PRIM_OP1_FLOAT((float)tan((double)a));
+  Case(ASIN_F):PRIM_OP1_FLOAT((float)asin((double)a));
+  Case(ACOS_F):PRIM_OP1_FLOAT((float)acos((double)a));
+  Case(ATAN_F):PRIM_OP1_FLOAT((float)atan((double)a));
 
 #define PRIM_CMP2_FLOAT(op) \
   { NodePtr nodeptr = *sp++; \
@@ -675,14 +704,14 @@ void run(NodePtr toplevel)
     nodeptr = *sp++;         \
     IND_REMOVE(nodeptr); ASSERT_F(ip,nodeptr) UPDATE_PROFINFO(nodeptr) b = get_float_value(nodeptr); \
     *--sp = GET_BOOL(a op b); \
-  } break
+  } Break
 
-  case EQ_F: PRIM_CMP2_FLOAT(==);
-  case NE_F: PRIM_CMP2_FLOAT(!=);
-  case LT_F: PRIM_CMP2_FLOAT(<);
-  case LE_F: PRIM_CMP2_FLOAT(<=);
-  case GT_F: PRIM_CMP2_FLOAT(>);
-  case GE_F: PRIM_CMP2_FLOAT(>=);
+  Case(EQ_F): PRIM_CMP2_FLOAT(==);
+  Case(NE_F): PRIM_CMP2_FLOAT(!=);
+  Case(LT_F): PRIM_CMP2_FLOAT(<);
+  Case(LE_F): PRIM_CMP2_FLOAT(<=);
+  Case(GT_F): PRIM_CMP2_FLOAT(>);
+  Case(GE_F): PRIM_CMP2_FLOAT(>=);
 
 #endif /* __alpha */
 
@@ -695,12 +724,12 @@ void run(NodePtr toplevel)
 	mk_double(hp, a op b); \
 	INIT_PROFINFO(hp,&double2ProfInfo) \
 	*--sp = hp; hp += SIZE_DOUBLE; \
-    } break
+    } Break
 
-  case ADD_D: PRIM_OP2_DOUBLE(+);
-  case SUB_D: PRIM_OP2_DOUBLE(-);
-  case MUL_D: PRIM_OP2_DOUBLE(*);
-  case SLASH_D: PRIM_OP2_DOUBLE(/);
+  Case(ADD_D): PRIM_OP2_DOUBLE(+);
+  Case(SUB_D): PRIM_OP2_DOUBLE(-);
+  Case(MUL_D): PRIM_OP2_DOUBLE(*);
+  Case(SLASH_D): PRIM_OP2_DOUBLE(/);
 
 #define PRIM_OP1_DOUBLE(op) \
     { NodePtr nodeptr = *sp++; \
@@ -709,20 +738,20 @@ void run(NodePtr toplevel)
 	mk_double(hp, op); \
 	INIT_PROFINFO(hp,&double1ProfInfo) \
 	*--sp = hp; hp += SIZE_DOUBLE; \
-    } break
+    } Break
 
-  case NEG_D: PRIM_OP1_DOUBLE(-a);
-  case ABS_D: PRIM_OP1_DOUBLE((a<0?-a:a));
-  case SIGNUM_D: PRIM_OP1_DOUBLE((a<0?-1.0:(a==0?0.0:1.0)));
-  case EXP_D: PRIM_OP1_DOUBLE(exp(a));
-  case LOG_D:PRIM_OP1_DOUBLE(log(a));
-  case SQRT_D:PRIM_OP1_DOUBLE(sqrt(a));
-  case SIN_D:PRIM_OP1_DOUBLE(sin(a));
-  case COS_D:PRIM_OP1_DOUBLE(cos(a));
-  case TAN_D:PRIM_OP1_DOUBLE(tan(a));
-  case ASIN_D:PRIM_OP1_DOUBLE(asin(a));
-  case ACOS_D:PRIM_OP1_DOUBLE(acos(a));
-  case ATAN_D:PRIM_OP1_DOUBLE(atan(a));
+  Case(NEG_D): PRIM_OP1_DOUBLE(-a);
+  Case(ABS_D): PRIM_OP1_DOUBLE((a<0?-a:a));
+  Case(SIGNUM_D): PRIM_OP1_DOUBLE((a<0?-1.0:(a==0?0.0:1.0)));
+  Case(EXP_D): PRIM_OP1_DOUBLE(exp(a));
+  Case(LOG_D):PRIM_OP1_DOUBLE(log(a));
+  Case(SQRT_D):PRIM_OP1_DOUBLE(sqrt(a));
+  Case(SIN_D):PRIM_OP1_DOUBLE(sin(a));
+  Case(COS_D):PRIM_OP1_DOUBLE(cos(a));
+  Case(TAN_D):PRIM_OP1_DOUBLE(tan(a));
+  Case(ASIN_D):PRIM_OP1_DOUBLE(asin(a));
+  Case(ACOS_D):PRIM_OP1_DOUBLE(acos(a));
+  Case(ATAN_D):PRIM_OP1_DOUBLE(atan(a));
 
 #define PRIM_CMP2_DOUBLE(op) \
   { NodePtr nodeptr = *sp++; \
@@ -731,16 +760,16 @@ void run(NodePtr toplevel)
     nodeptr = *sp++;         \
     IND_REMOVE(nodeptr); ASSERT_D(ip,nodeptr) UPDATE_PROFINFO(nodeptr) b = get_double_value(nodeptr); \
     *--sp = GET_BOOL(a op b); \
-  } break
+  } Break
 
-  case EQ_D: PRIM_CMP2_DOUBLE(==);
-  case NE_D: PRIM_CMP2_DOUBLE(!=);
-  case LT_D: PRIM_CMP2_DOUBLE(<);
-  case LE_D: PRIM_CMP2_DOUBLE(<=);
-  case GT_D: PRIM_CMP2_DOUBLE(>);
-  case GE_D: PRIM_CMP2_DOUBLE(>=);
+  Case(EQ_D): PRIM_CMP2_DOUBLE(==);
+  Case(NE_D): PRIM_CMP2_DOUBLE(!=);
+  Case(LT_D): PRIM_CMP2_DOUBLE(<);
+  Case(LE_D): PRIM_CMP2_DOUBLE(<=);
+  Case(GT_D): PRIM_CMP2_DOUBLE(>);
+  Case(GE_D): PRIM_CMP2_DOUBLE(>=);
 
-  case ORD:
+  Case(ORD):
     { UInt tag;
       nodeptr = sp[0];
       IND_REMOVE(nodeptr);
@@ -750,8 +779,8 @@ void run(NodePtr toplevel)
       INIT_PROFINFO(hp,&fromEnumProfInfo)
       sp[0] = hp;
       hp+= SIZE_INT;
-    } break;
- case CHR:
+    } Break;
+ Case(CHR):
   { UInt tag;
     nodeptr = sp[0];
     IND_REMOVE(nodeptr);
@@ -761,10 +790,10 @@ void run(NodePtr toplevel)
     INIT_PROFINFO(hp,&toEnumProfInfo)
     sp[0] = hp;
     hp+= SIZE_ENUM;
-  } break;
+  } Break;
 
 
-  case STRING:
+  Case(STRING):
    { char *str;
      nodeptr = *sp++;
      IND_REMOVE(nodeptr);
@@ -797,9 +826,9 @@ void run(NodePtr toplevel)
        nodeptr = GET_NIL();
      }
      *--sp = nodeptr;
-   } break;
+   } Break;
 
-    case HGETC:
+    Case(HGETC):
       { 
 	int c;
 	Arg *a;
@@ -830,8 +859,8 @@ void run(NodePtr toplevel)
 	*sp = GET_CHAR(c);  /* Note EOF == -1 == negative character,      */
 			     /* but it's OK characters are ints anyway,   */
                              /* and the table includes -1.                */
-      } break;
-    case HPUTC:
+      } Break;
+    Case(HPUTC):
       {
 	char c;
 	Arg *a;
@@ -849,20 +878,13 @@ void run(NodePtr toplevel)
 #endif
 	  putc(c,a->fp);
 	*sp = HPUTC_OK;
-      } break;
-    case EXIT:
+      } Break;
+    Case(EXIT):
       INSTR("exit");
       goto mutator_end;
-      break;
+      Break;
 
-    case ENDCODE:
-      INSTR("endcode");
-      fprintf(stderr,"Tried to evaluate beyond end of function.\n");
-      fprintf(stderr,"Instruction pointer at %lx\n",(UInt)&ip[-1]);
-      goto mutator_end;
-      break;
-
-      case TABLESWITCH :	/* DAVID */
+      Case(TABLESWITCH):	/* DAVID */
           nodeptr = sp[0];
           IND_REMOVE(nodeptr);
           UPDATE_PROFINFO(nodeptr)
@@ -876,7 +898,7 @@ void run(NodePtr toplevel)
               nodeptr = 0;
               break;
           default :
-              fprintf(stderr,"Trying to get tag from unevaluated node in MATCHCON at %08x!\n",ip-1);
+              fprintf(stderr,"Trying to get tag from unevaluated node in TABLESWITCH at %08x!\n",ip-1);
               fprintf(stderr,"Node is:\n");
               DUMP_NODE(nodeptr);
               exit(-1);
@@ -884,9 +906,9 @@ void run(NodePtr toplevel)
           }
         ip  = (CodePtr) ALIGNPTR2(ip+1);
           ip += *(((short*) ip) + (int) nodeptr);
-          break;
+          Break;
 
-      case LOOKUPSWITCH :	/* DAVID */
+      Case(LOOKUPSWITCH):	/* DAVID */
         { int    sz = *ip;
           short* t;
 
@@ -905,12 +927,36 @@ void run(NodePtr toplevel)
           }
           ip += *t;
         }
-        break;
+        Break;
 
+    Case(MKIORETURN):	/* MW */
+        INSTR("mkIOreturn");
+        nodeptr = *sp;
+        MK_VAP1(hp,C_VAPTAG(IORETURN),nodeptr); /* Build a call to IO.return */
+        INIT_PROFINFO(hp,&apply1ProfInfo)
+        *sp = hp;
+        hp += SIZE_VAP1;
+        Break;
+
+    Case(ENDCODE):
+      INSTR("endcode");
+      fprintf(stderr,"Tried to evaluate beyond end of function.\n");
+      fprintf(stderr,"Instruction pointer at %lx\n",(UInt)&ip[-1]);
+      goto mutator_end;
+      Break;
+
+    UNUSED_INSTRUCTIONS	/* MW */
+      fprintf(stderr,"Unimplemented instruction %d at %lx\n",ip[-1], (UInt)&ip[-1]);
+      exit(-1);
+
+#if !defined(USE_GCC_LABELS)
     default:
       fprintf(stderr,"Unknown instruction %d at %lx\n",ip[-1], (UInt)&ip[-1]);
       exit(-1);
-    }
+#endif
+
+    EndDispatch
+
   }
  mutator_end:
   Hp = hp;
@@ -948,3 +994,242 @@ int sizeofNode(Node tag) {
 }
 
 #endif
+
+#ifdef BYTECODE_PROF
+#  undef ins
+static char *instr_names[] = {
+ "NEEDHEAP_P1",
+ "NEEDHEAP_P2",
+ "JUMP",
+ "JUMPFALSE",
+ "NOP",
+
+ "PUSH_CADR_N2",
+ "PUSH_CADR_N1",
+ "PUSH_CADR_P1",
+ "PUSH_CADR_P2",
+ "PUSH_CVAL_N2",
+ "PUSH_CVAL_N1",
+ "PUSH_CVAL_P1",
+ "PUSH_CVAL_P2",
+ "PUSH_INT_N2",
+ "PUSH_INT_N1",
+ "PUSH_INT_P1",
+ "PUSH_INT_P2",
+ "PUSH_ARG",
+ "PUSH_P1",
+ "PUSH_P2",
+
+ "POP_P1",
+ "POP_P2",
+ "SLIDE_P1",
+ "SLIDE_P2",
+ "UNPACK",
+
+ "APPLY",
+ "EVAL",
+
+ "RETURN",
+ "RETURN_EVAL",
+
+ "HEAP_CADR_N2",
+ "HEAP_CADR_N1",
+ "HEAP_CADR_P1",
+ "HEAP_CADR_P2",
+ "HEAP_CVAL_N2",
+ "HEAP_CVAL_N1",
+ "HEAP_CVAL_P1",
+ "HEAP_CVAL_P2",
+ "HEAP_INT_N2",
+ "HEAP_INT_N1",
+ "HEAP_INT_P1",
+ "HEAP_INT_P2",
+ "HEAP_ARG",
+ "HEAP_ARG_ARG",
+ "HEAP_ARG_ARG_RET_EVAL",
+ "HEAP_P1",
+ "HEAP_P2",
+
+ "ADD_W",
+ "ADD_F",
+ "ADD_D",
+ "SUB_W",
+ "SUB_F",
+ "SUB_D",
+ "MUL_W",
+ "MUL_F",
+ "MUL_D",
+ "ABS_W",
+ "ABS_F",
+ "ABS_D",
+ "SIGNUM_W",
+ "SIGNUM_F",
+ "SIGNUM_D",
+ "EXP_F",
+ "EXP_D",
+ "LOG_F",
+ "LOG_D",
+ "SQRT_F",
+ "SQRT_D",
+ "SIN_F",
+ "SIN_D",
+ "COS_F",
+ "COS_D",
+ "TAN_F",
+ "TAN_D",
+ "ASIN_F",
+ "ASIN_D",
+ "ACOS_F",
+ "ACOS_D",
+ "ATAN_F",
+ "ATAN_D",
+ "SLASH_F",
+ "SLASH_D",
+ "EQ_W",
+ "EQ_F",
+ "EQ_D",
+ "NE_W",
+ "NE_F",
+ "NE_D",
+ "LT_W",
+ "LT_F",
+ "LT_D",
+ "LE_W",
+ "LE_F",
+ "LE_D",
+ "GT_W",
+ "GT_F",
+ "GT_D",
+ "GE_W",
+ "GE_F",
+ "GE_D",
+ "NEG_W",
+ "NEG_F",
+ "NEG_D",
+
+ "QUOT",
+ "REM",
+ "AND",
+ "OR",
+ "NOT",
+ "ORD",
+ "CHR",
+ "SEQ",
+ "STRING",
+
+ "PRIMITIVE",
+ "PUSH_HEAP",
+ "EXIT",
+
+ "NEEDSTACK_P1",
+ "NEEDSTACK_P2",
+
+ "HEAP_OFF_N2",
+ "HEAP_OFF_N1",
+ "HEAP_OFF_P1",
+ "HEAP_OFF_P2",
+
+ "HEAP_CREATE",
+ "HEAP_SPACE",
+
+ "SELECTOR_EVAL",
+ "SELECT",
+
+ "ZAP_ARG",
+ "ZAP_STACK_P1",
+ "ZAP_STACK_P2",
+
+ "NEEDHEAP_I32",
+ "NEEDSTACK_I16",
+
+ "PUSH_I1",
+ "POP_I1",
+
+ "PUSH_ARG_I1",
+ "PUSH_ARG_I2",
+ "PUSH_ARG_I3",
+
+ "ZAP_ARG_I1",
+ "ZAP_ARG_I2",
+ "ZAP_ARG_I3",
+
+ "HEAP_CVAL_I3",
+ "HEAP_CVAL_I4",
+ "HEAP_CVAL_I5",
+
+ "HEAP_CVAL_IN3",
+
+ "HEAP_I1",
+ "HEAP_I2",
+
+ "HPUTC",
+ "HGETC",
+
+ "PUSH_CHAR_N1",
+ "PUSH_CHAR_P1",
+ "HEAP_CHAR_N1",
+ "HEAP_CHAR_P1",
+
+ "TABLESWITCH",
+ "LOOKUPSWITCH",
+ "MKIORETURN",
+
+ "PUSH_ZAP_ARG_I1",
+ "PUSH_ZAP_ARG_I2",
+ "PUSH_ZAP_ARG_I3",
+ "PUSH_ZAP_ARG",
+
+ "ENDCODE"
+};
+
+#if PAIR
+void instr_prof_init() {
+  int i,j;
+  for (i=1; i<=ENDCODE; i++) {
+    for (j=1; j<=ENDCODE; j++) {
+      instr_pair[i][j] = 0;
+    }
+  }
+}
+void instr_prof_results() {
+  int i,j;
+  fprintf(stderr,"Instruction pairs.\n");
+  for (i=1; i<=ENDCODE; i++) {
+    for (j=1; j<=ENDCODE; j++) {
+      if (instr_pair[i][j]) {
+        fprintf(stderr,"(%3d,%3d) %9d\t%s..%s\n",i,j,
+                  instr_pair[i][j],
+                  instr_names[i],instr_names[j]);
+        }
+    }
+  }
+}
+#else
+void instr_prof_init() {
+  int i,j,k;
+  for (i=1; i<=ENDCODE; i++) {
+    for (j=1; j<=ENDCODE; j++) {
+      for (k=1; k<=ENDCODE; k++) {
+        instr_triple[i][j][k] = 0;
+      }
+    }
+  }
+}
+void instr_prof_results() {
+  int i,j,k;
+  fprintf(stderr,"Instruction triples.\n");
+  for (i=1; i<=ENDCODE; i++) {
+    for (j=1; j<=ENDCODE; j++) {
+      for (k=1; k<=ENDCODE; k++) {
+        if (instr_triple[i][j][k]) {
+          fprintf(stderr,"(%3d,%3d,%3d) %9d\t%s..%s..%s\n",i,j,k,
+                    instr_triple[i][j][k],
+                    instr_names[i],instr_names[j],instr_names[k]);
+        }
+      }
+    }
+  }
+}
+
+#endif /*PAIR*/
+#endif /*BYTECODE_PROF*/

@@ -4,9 +4,9 @@ VPATH = $(INCDIR)
 
 OBJDIR=${BUILDDIR}/${OBJ}/runtime/Kernel
 
-OSRCS = mutator.c mutlib.c
-ASRCS = main.c newtables.c dump.c inscount.c newbuiltin.c collector.c mark.c \
-	 cdata.c timeUnix.c xlib_debug.c stableptr.c closureval.c
+OSRCS = mutator.c mutlib.c main.c
+ASRCS = haskellInit.c newtables.c dump.c inscount.c newbuiltin.c collector.c mark.c \
+	 cdata.c timeUnix.c xlib_debug.c stableptr.c closureval.c ffiexport.c
 
 ifneq "${PROFILING}" ""
 ASRCS += profile.c remark.c xmem.c retainer.c timer.c
@@ -22,7 +22,7 @@ ARCHIVE=${OBJDIR}/Runtime${CFG}.a
 
 OBJS = ${AOBJS} ${OOBJS}
 
-CFLAGS = ${DCFG} ${BUGFIX} ${ENDIAN} ${OPT} -I${INCDIR}
+CFLAGS = ${DCFG} ${BUGFIX} ${ENDIAN} ${OPT} -I${INCDIR} #-DBYTECODE_PROF
 CPP = $(CC) ${DCFG} ${ENDIAN} -E 
 LD  = ld
 LDFLAGS = -r
@@ -32,7 +32,8 @@ AS = $(CC) -c
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-LINKS = bytecode.h cinterface.h mutlib.h newmacros.h node.h runtime.h stableptr.h
+LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
+	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
 
 links:
 	@for f in ${LINKS}; do \
@@ -47,7 +48,7 @@ xxx:
 ${ARCHIVE}: ${AOBJS}
 	$(AR) $(ARFLAGS) $@ ${AOBJS}
 
-all: links ${OBJS} ${ARCHIVE}
+all: links bytecode_o.h ${OBJS} ${ARCHIVE}
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
@@ -71,6 +72,7 @@ newbuiltin.o: newbuiltin.c newmacros.h
 dump.o: dump.c runtime.h bytecode.h node.h
 inscount.o: inscount.c runtime.h bytecode.h node.h
 fake.o: fake.c cinterface.h node.h
+haskellInit.o: haskellInit.c runtime.h mutlib.h node.h
 main.o: main.c runtime.h mutlib.h node.h
 mutator.o: mutator.c runtime.h bytecode.h node.h mutlib.h cinterface.h
 mutlib.o: mutlib.c runtime.h mutlib.h newmacros.h
@@ -84,8 +86,12 @@ xmem.o: xmem.c xmem.h
 retainer.o: retainer.c profile.h xmem.h
 stableptr.o: stableptr.c mark.h runtime.h node.h
 closureval.o: closureval.c mutlib.h runtime.h newmacros.h
+ffiexport.o: ffiexport.c mutlib.h runtime.h newmacros.h
 timer.o: timer.c runtime.h
 tprof.o: tprof.c runtime.h newmacros.h
+
+bytecode_o.h: newbytecode.h
+	$(LOCAL)mangler newbytecode.h bytecode_o.h
 
 #all: prof0 $(OBJS)
 #	#$(LD) $(LDFLAGS) -o Runtime0.o $(OBJS_O)

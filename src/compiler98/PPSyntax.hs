@@ -73,6 +73,11 @@ ppDecl d p (DeclDefault ts) =
         pp ("default (" ++ mixComma (map (strType d p) ts) ++ ")")
 ppDecl d p dec@(DeclPrimitive pos ident arity t) =
         pp ( (pStd p) ident ++ "primitive " ++ show arity ++ " :: " ++ strType d p t)
+ppDecl d p dec@(DeclForeignImp pos str ident arity cast t) =
+        pp ("foreign import \"" ++ str ++ "\" " ++ (if cast then "cast " else "")
+            ++ (pStd p) ident ++ " :: " ++ strType d p t)
+ppDecl d p dec@(DeclForeignExp pos str ident t) =
+        pp ("foreign export " ++ (pStd p) ident ++ " :: " ++ strType d p t)
 ppDecl d p dec@(DeclVarsType ids cxs t) =
         pp (strVarsType d p dec)
 ppDecl d p (DeclPat alt) =

@@ -1,7 +1,14 @@
-#if 1
-typedef int HaskellRef;
+#ifndef _STABLEPTR_H_
+#define _STABLEPTR_H_
 
-extern  HaskellRef     stableInsert (unsigned long*);
-extern  unsigned long *stableRef (HaskellRef);
-extern  void           stableRelease (HaskellRef);
+typedef void* StablePtr;
+
+extern  StablePtr      stableInsert (unsigned long*);
+extern  unsigned long *stableRef (StablePtr);
+extern  void           stableRelease (StablePtr);
+extern  void           stableCopy (StablePtr,StablePtr);
+
+/* for backward compatibility */
+typedef StablePtr HaskellRef;
+
 #endif

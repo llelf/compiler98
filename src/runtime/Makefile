@@ -22,6 +22,7 @@ install: ofiles afile
 	ranlib ${DST}/$(RUNTIME)${CFG}.a
 	${INSTALL} ${OBJDIR}/Kernel/mutator.o ${DST}/mutator${CFG}.o
 	${INSTALL} ${OBJDIR}/Kernel/mutlib.o ${DST}/mutlib${CFG}.o
+	${INSTALL} ${OBJDIR}/Kernel/main.o ${DST}/main${CFG}.o
 ofiles: ${OBJDIR} ${OBJDIRS}
 	cd Kernel; $(MAKE) all
 afile: ${OBJDIR} ${OBJDIRS}

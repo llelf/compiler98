@@ -35,7 +35,7 @@ eitherOf  as bs = filter (`notElem` bs) as ++ bs
 bothOf as bs = filter (`elem` bs) as 
 
 needheap 0 gs = gs
-needheap n (NEEDSTACK m:gs) = NEEDHEAP (n+m) : gs
+needheap n (NEEDSTACK m:gs) = NEEDHEAP (n+m): gs	-- peephole opt /MW
 needheap n gs = NEEDHEAP n : gs
 
 use :: Int -> [Int] -> [Int]
@@ -83,6 +83,9 @@ gMem za zs d at extra (g@RETURN:gs) =
   case gMem0 at extra gs of
     GM na ns h at gs -> GM na (use d ns) 0 at (g:gs)
 gMem za zs d at extra (g@RETURN_EVAL:gs) =
+  case gMem0 at extra gs of
+    GM na ns h at gs -> GM na (use d ns) 0 at (g:gs)
+gMem za zs d at extra (g@(SELECT i):gs) = -- SELECT now incorporates a RET_EVAL
   case gMem0 at extra gs of
     GM na ns h at gs -> GM na (use d ns) 0 at (g:gs)
 gMem za zs d at extra (g@(LABEL i):gs) = -- fall through label
@@ -183,7 +186,7 @@ gMem za zs d at extra (gj@JUMPS_L:(JUMPLENGTH s gll):gs)  =
 
 
 
-gMem za zs d at extra (g@SELECTOR_EVAL:gs) =  -- ZAP (But we now that there is nothing to zap in a selector function!)
+gMem za zs d at extra (g@SELECTOR_EVAL:gs) =  -- ZAP (But we know that there is nothing to zap in a selector function!)
   case gMem za zs (d+1) at extra gs of
     GM na ns h at gs -> 
 	GM (use 1 na) (filter (<= d) ns) 0 at (g:needheap h gs)
@@ -211,12 +214,18 @@ gMem za zs d at extra (g@(MATCHINT):gs) =
 gMem za zs d at extra (g@(PUSH_ARG i):gs) =
         case gMem za zs (d+1) at extra gs of
           GM na ns h at gs -> GM (use i na) (filter (<=d) ns) h at (g:gs)
+--gMem za zs d at extra (g@(PUSH_ZAP_ARG i):gs) =	-- probably not needed
+--        case gMem za zs (d+1) at extra gs of
+--          GM na ns h at gs -> GM (use i na) (filter (<=d) ns) h at (g:gs)
 gMem za zs d at extra (g@(PUSH i):gs) =
         case gMem za zs (d+1) at extra gs of
           GM na ns h at gs -> GM na (use (d-i) (filter (<=d) ns)) h at (g:gs)
 gMem za zs d at extra (g@(HEAP_ARG i):gs) =
         case gMem za zs d at extra gs of
           GM na ns h at gs -> GM (use i na) ns (h+1) at (g:gs)
+--gMem za zs d at extra (g@(HEAP_ARG_ARG i j):gs) =	-- probably not needed
+--        case gMem za zs d at extra gs of
+--          GM na ns h at gs -> GM (use j (use i na)) ns (h+2) at (g:gs)
 gMem za zs d at extra (g@(HEAP i):gs) =
         case gMem za zs d at extra gs of
           GM na ns h at gs -> GM na (use (d-i) ns) (h+1) at (g:gs)
@@ -227,9 +236,9 @@ gMem za zs d at extra (g@(SLIDE   i):gs) =
 gMem za zs d at extra (g@(UNPACK i):gs) =
         case gMem za zs (d-1+i) at extra gs of
           GM na ns h at gs -> GM na (use d (filter (<=d) ns)) h at (g:gs)
-gMem za zs d at extra (g@(SELECT i):gs) = 
-        case gMem za zs d at extra gs of
-          GM na ns h at gs -> GM na (use d ns) h at (g:gs)
+--gMem za zs d at extra (g@(SELECT i):gs) = -- this clause now matched earlier
+--        case gMem za zs d at extra gs of
+--          GM na ns h at gs -> GM na (use d ns) h at (g:gs)
 gMem za zs d at extra (g@(APPLY i):gs) = 
 	let d' = d-i
         in case gMem za (filter (<=d') zs) d' at extra gs of

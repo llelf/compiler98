@@ -180,6 +180,16 @@ renameDecl d@(DeclPrimitive pos tid arity typ) =
   in defineVar tid >>>= \ tid ->
      renameType al typ >>>= \ typ ->
      unitS (DeclPrimitive pos tid arity typ)
+renameDecl d@(DeclForeignImp pos str tid arity cast typ) =
+  let al = (tvTids . snub . freeType) typ
+  in defineVar tid >>>= \ tid ->
+     renameType al typ >>>= \ typ ->
+     unitS (DeclForeignImp pos str tid arity cast typ)
+renameDecl d@(DeclForeignExp pos str tid typ) =
+  let al = (tvTids . snub . freeType) typ
+  in defineVar tid >>>= \ tid ->
+     renameType al typ >>>= \ typ ->
+     unitS (DeclForeignExp pos str tid typ)
 
 --     Used for unimplemented things
 renameDecl d@(DeclIgnore str) = unitS (DeclIgnore str)

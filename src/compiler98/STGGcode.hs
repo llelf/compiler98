@@ -11,16 +11,17 @@ import GcodeLow(con0,cap0,caf,fun,extra)
 import StrPos
 import STGState
 import STGBuild
+import Foreign(ImpExp(..))
 
 stgGcode prof state code = 
-  case {- mapS -} gBindingTop code () (Thread prof 0 0 [] state [] [] 0 0 []) of
-    (bs,(Thread prof fun _ _ state _ _ _ _ _)) -> (bs,state)
+  case {- mapS -} gBindingTop code () (Thread prof 0 0 [] state [] [] 0 0 [] ([],Nothing)) of
+    (bs,(Thread prof fun _ _ state _ _ _ _ _ (fs,_))) -> (bs,state,fs)
   
 gBindingTop (fun,PosLambda pos [] args@[arg] exp@(PosExpCase cpos (PosVar vpos var) [PosAltCon apoc con posargs (PosVar vpos2 var2)])) =
     gOnly con >>>= \ only ->
     if only && any ((var2 ==).snd) posargs then -- Selector function
       let no = dropJust (lookup var2 (zip (map snd posargs) [1..]))
-      in unitS (STARTFUN pos fun : needstack 1 [ SELECTOR_EVAL, SELECT no, RETURN_EVAL])
+      in unitS (STARTFUN pos fun : needstack 1 [ SELECTOR_EVAL, SELECT no ])
     else     -- Ugly duplication of code
       setFun fun >>>
       pushEnv (zip (map snd args) (map Arg [1..])) >>>
@@ -39,13 +40,27 @@ gBindingTop (fun,PosPrimitive pos fn) =
     setFun fun >>>
     gArity fun >>>= \ (Just arity) ->
     unitS (STARTFUN pos fun: concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
-	   [PRIMITIVE , DATA_CLABEL fn , RETURN_EVAL])
+	   [PRIMITIVE, DATA_CLABEL fn, RETURN_EVAL ])
+gBindingTop (fun,PosForeign pos fn str c ie) =
+    setFun fun >>>
+    gArity fun >>>= \ (Just arity) ->
+    makeForeign str arity fn c ie >>>= \ioresult ->
+    case ie of
+      Imported ->
+        unitS
+          (STARTFUN pos fun:
+           concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
+           [ PRIMITIVE , DATA_FLABEL fn ] ++
+           ( if ioresult then [ EVAL, MKIORETURN, RETURN_EVAL ]
+             else [RETURN_EVAL] ))
+      Exported ->
+        unitS []
 
 gExp (PosExpLet pos bindings exp) =
-   \ down (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack) ->
-    let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack')
+   \ down (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs) ->
+    let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack' fs')
             = mapS stgBodyPush bindings
-                   down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack)
+                   down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack fs)
                    
         (bBuild,addLate) = unzip bBuild_bEnv
         addId = map fst bindings
@@ -59,7 +74,7 @@ gExp (PosExpLet pos bindings exp) =
        popEnv >>>
        decDepth size >>>
        unitS (concat bBuild ++ eBuild ++ [SLIDE size])
-       ) down (Thread prof' fun' maxDepth' failstack' state' env lateenv depth heap' depthstack')
+       ) down (Thread prof' fun' maxDepth' failstack' state' env lateenv depth heap' depthstack' fs')
 
 gExp (PosExpCase pos exp alts) =
   gExp exp >>>= \ exp ->
