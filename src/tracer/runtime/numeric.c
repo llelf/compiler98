@@ -15,9 +15,12 @@
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    CTrace* t = (CTrace*)C_GETARG1(1);\
-    NodePtr a = C_GETARG1(2);\
+    CTrace* t; NodePtr nt, a;\
+    nt = C_GETARG1(1);\
+    a = C_GETARG1(2);\
+    IND_REMOVE(nt);\
     IND_REMOVE(a);\
+    t = (CTrace*)nt;\
     a = GET_POINTER_ARG1(a, 1);\
     IND_REMOVE(a);\
     result = res(op(GET_INT_VALUE(a)));\
@@ -28,11 +31,14 @@ C_HEADER(fun)\
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    CTrace* t = (CTrace*)C_GETARG1(1);\
-    NodePtr a = C_GETARG1(2);\
-    NodePtr b = C_GETARG1(3);\
+    CTrace* t; NodePtr nt,a,b;\
+    nt = C_GETARG1(1);\
+    a = C_GETARG1(2);\
+    b = C_GETARG1(3);\
+    IND_REMOVE(nt);\
     IND_REMOVE(a);\
     IND_REMOVE(b);\
+    t = (CTrace*)nt;\
     a = GET_POINTER_ARG1(a, 1);\
     b = GET_POINTER_ARG1(b, 1);\
     IND_REMOVE(a);\
@@ -48,12 +54,14 @@ C_HEADER(fun)\
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    CTrace* t = (CTrace*)C_GETARG1(1);\
-    NodePtr a = C_GETARG1(2);\
-    NodePtr b = C_GETARG1(3);\
-    extern int terminated;\
+    CTrace* t; NodePtr nt,a,b;\
+    nt = C_GETARG1(1);\
+    a = C_GETARG1(2);\
+    b = C_GETARG1(3);\
+    IND_REMOVE(nt);\
     IND_REMOVE(a);\
     IND_REMOVE(b);\
+    t = (CTrace*)nt;\
     a = GET_POINTER_ARG1(a, 1);\
     b = GET_POINTER_ARG1(b, 1);\
     IND_REMOVE(a);\
