@@ -7,7 +7,7 @@ module Prelude where
 
 
 --import PackedString(unpackPS, PackedString(..), packString)
-import Ratio (Ratio,(%))
+import Ratio (Ratio)
 
 sameAs :: a -> a -> Bool
 x `sameAs` y = cPointerEquality (E x) (E y)
@@ -20,7 +20,7 @@ data NmType =
      NTInt Int
    | NTChar Char
    | NTInteger Integer
-   | NTRational Integer Integer		-- changed from Rational
+   | NTRational Rational
    | NTFloat Float
    | NTDouble Double
    | NTId Int
@@ -939,27 +939,9 @@ conFloat sr t b = R b (Nm t (NTFloat b) sr)
 conDouble :: SR -> Trace -> Double -> R Double
 conDouble sr t b = R b (Nm t (NTDouble b) sr)
 
-conRational :: SR -> Trace -> Integer -> Integer
-               -> (SR -> Trace -> R (Trace -> R Integer
-                                     -> R (Trace -> R Integer -> R Rational)))
-               -> R Rational
-conRational sr t n d percent =
-  (\(R r _)->  R r (Nm t (NTRational n d) sr))
-  (pap2 sr t (percent sr t) (conInteger sr t n) (conInteger sr t d))
+conRational :: SR -> Trace -> Rational -> R Rational
+conRational sr t b = R b (Nm t (NTRational b) sr)
 
-{-
-conSpecialiseRatio :: Integral a =>
-            (SR -> Trace -> R (Trace -> R a
-                               -> R (Trace -> R a -> R (Ratio a))))
-            -> (SR -> Trace -> R (Trace -> R Integer
-                                  -> R (Trace -> R Integer -> R Rational)))
-conSpecialiseRatio percent sr t =
-    R (\_ ri1->  let (R f1 _) = percent sr t
-                     (R f2 _) = f1 t ri1
-                 in R (\_ ri2-> f2 t ri2) t
-      ) t
--}
-         
 
 con0 sr t cn nm =
   R cn (Nm t nm sr)
