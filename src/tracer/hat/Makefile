@@ -14,9 +14,7 @@ THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 PROGNAMES = hat-stack hat-connect hat-check hat-observe hat-detect hat-checki Hatobserve
 PROGS = $(patsubst %, $(DEST)/%, $(PROGNAMES))
 
-all: $(OBJDIR) $(PROGS) archive
-archive: $(PROGS)
-	ar -rc $(OBJDIR)/hatlib.a $(THOROBJS)
+all: $(OBJDIR) $(PROGS)
 install: $(OBJDIR) $(PROGS)
 objdir: $(OBJDIR)
 objs: $(MALCOBJS) $(THORLIBS) $(patsubst %, %.o, $(PROGS))
@@ -69,11 +67,12 @@ $(DEST)/hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatinterface.o 
 	$(CC) hat-observe.c $(THOROBJS) -o $(DEST)/hat-observe $(LINKFLAGS)
 $(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatinterface.o $(OBJDIR)/hatgeneral.o
 	$(CC) hat-checki.c $(THOROBJS) -o $(DEST)/hat-checki $(LINKFLAGS)
-
+$(OBJDIR)/hatlib.a:  $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
+	ar -rc $(OBJDIR)/hatlib.a $(THOROBJS)
 
 # Thorsten's haskell libraries and tools
 $(DEST)/Hatobserve: Hatobserve.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/HatTrie.o $(OBJDIR)/hatlib.a
-	hmake -nhc98 -K4M Hatobserve  $(OBJDIR)/hatlib.a -d$(DEST)
+	hmake -nhc98 -K4M Hatobserve $(OBJDIR)/hatlib.a -d$(DEST)
 
 $(OBJDIR)/HatTrie.o: HatTrie.hs $(OBJDIR)/HatTrace.o $(OBJDIR)/HatExpression.o $(OBJDIR)/hatlib.a
 	hmake -nhc98 +RTS -K4M -RTS HatTrie.hs $(OBJDIR)/hatlib.a -d$(OBJDIR)
