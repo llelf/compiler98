@@ -120,7 +120,8 @@ tpgcode info state = let mod = (miIS state)
                      in [DATA_GLB sub mod]
 
 capTable a = 
-  let fill = align wsize (2 * a + 2) `div` 2   -- one extra table item compared to arity
+  let fill = align wsize (2 * a + 2) `div` 2
+		-- one extra table item compared to arity
   in take fill (repeat (DATA_CAPITEM 0 0)) ++ cT a a
  where
   cT a n =
@@ -130,40 +131,51 @@ capTable a =
       []
 
 
-gUnique down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
+gUnique down thread@(Thread state prof profstatics strings live
+                            labels nbs bs nas as) =
   case uniqueIS state of
-    (u,state) -> (u,Thread state prof profstatics strings live labels nbs bs nas as)
+    (u,state) -> (u,Thread state prof profstatics strings live
+                           labels nbs bs nas as)
 
-gState down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
+gState down thread@(Thread state prof profstatics strings live
+                           labels nbs bs nas as) =
   (state,thread)
 
-gInfo i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
+gInfo i down thread@(Thread state prof profstatics strings live
+                            labels nbs bs nas as) =
   (lookupIS state i,thread)
 
-useLabel i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
+useLabel i down thread@(Thread state prof profstatics strings live
+                               labels nbs bs nas as) = 
   Thread state prof profstatics strings live (addM labels i) nbs bs nas as
 
-ifLive f down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
+ifLive f down thread@(Thread state prof profstatics strings live
+                             labels nbs bs nas as) = 
   if live then
     f down thread
   else 
     ([],thread)
 
-emits g down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
+emits g down thread@(Thread state prof profstatics strings live
+                            labels nbs bs nas as) =
   (g, thread)
 
 emit g = emits [g]
 
-conInfo i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
+conInfo i down thread@(Thread state prof profstatics strings live
+                              labels nbs bs nas as) = 
   case lookupIS state i of
-    Just (InfoName u (TupleId a) t _ _) -> ((a,0),thread) -- !!! NR the only constructors that can use InfoName is tuples !!! --PHtprof
+    Just (InfoName u (TupleId a) t _ _) -> ((a,0),thread)
+	-- !!! NR the only constructors that can use InfoName is tuples !!!
+	--PHtprof
     Just cinfo@(InfoConstr _ _ _ _ _ _ idata) ->
       case lookupIS state idata of
 	Just info  ->
 	    ((arityI cinfo,nthcon 0 i (constrsI info)),thread)
  where
   nthcon n con (c:cs) = if con == c then n else nthcon (n+1) con cs
---nthcon n con [] = error ("nthcon: n=="++show n++" con=="++show con++"\n")
+  nthcon n con [] =
+      error ("GcodeFix.nthcon: (n=="++show n++") (con=="++show con++") []\n")
 
 
 checkIfR :: Int -> GcodeFixMonad Bool 
