@@ -111,7 +111,7 @@ int isEDTChild(HatFile handle,filepointer nodenumber,filepointer parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
-      if (isTopLevel(handle,nodenumber)&&(hatResult(handle,nodenumber)!=0)) {
+      if (isTopLevelUntrusted(handle,nodenumber)) {//&&(hatResult(handle,nodenumber)!=0)) {
 	hatSeekNode(handle,old);
 	return 0;
       }
@@ -208,7 +208,7 @@ EDTQuery newEDTQuery(HatFile handle,filepointer edtnode) {
     current = getParent();
   }
   // initialise hash table: save lots of time by disallowing to search
-  // all parents of the node to be searched!
+  // all parents of the node!
   current = edtnode;
   while (current!=0) { // add all parents to hash table: do not search them
     current = getHatParent(handle,current,topmost);
@@ -268,7 +268,7 @@ filepointer nextEDTQueryNode(EDTQuery q) {
   filepointer parentTrace,current;
   if ((query->finished)||(query->searchList==NULL)) {
     if (!query->finished) {
-      free(query->hash);
+      freeHashTable(((_EDTQuery*) query)->hash);
       query->hash = NULL;
       query->finished=1;
     }
@@ -289,7 +289,7 @@ filepointer nextEDTQueryNode(EDTQuery q) {
 filepointer getChildrenForRek(_EDTQuery* query,
 			      filepointer parentTrace,filepointer current) {
   char nodeType;
-  filepointer satc=0,result,orig_current=current;
+  filepointer result,satc=0,orig_current=current;
   SearchList sl,searchList = NULL,currentList = NULL;
   HatFile handle=query->handle;
   {
@@ -305,12 +305,10 @@ filepointer getChildrenForRek(_EDTQuery* query,
     if (current==0) return nextEDTQueryNode((EDTQuery) query);
     addToHashTable(query->hash,current);
 
-    result=hatResult(handle,current);
-
     nodeType = getNodeType(handle,current);
 #ifdef DebuggedtChildrenFor
-    printf("nodeType at 0x%x is %i, searching 0x%x, resulting 0x%x\n",current,nodeType,
-	   parentTrace,result);
+    printf("nodeType at 0x%x is %i, searching 0x%x\n",current,nodeType,
+	   parentTrace);
     debugLines++;
     if (debugLines > 20) {
       char c;
@@ -345,7 +343,6 @@ filepointer getChildrenForRek(_EDTQuery* query,
 	  printf("APP at 0x%x is child of 0x%x\n",current,parentTrace);debugLines++;
 	}
 #endif
-	satc=hatFollowSATCs(handle,result);
 	if ((isChild==0)||(isTopLevel(handle,appTrace)==0)) { // isIForGUARD)) {
 #ifdef DebuggedtChildrenFor
 	  printf("checking parent of 0x%x\n",current);debugLines++;
@@ -354,12 +351,17 @@ filepointer getChildrenForRek(_EDTQuery* query,
 	  addSearchElement(&searchList,&currentList,parentTrace,appTrace);
 	}
 
-	if ((satc!=0)&&(getNodeType(handle,satc)==HatSATA)) isChild=0; // forget this one, if
+	if (isChild) {
+	  result=hatResult(handle,current); // only determine hatResult when really necessary
+	  satc=hatFollowSATCs(handle,result);
+	  if ((satc!=0)&&(getNodeType(handle,satc)==HatSATA))
+	    isChild=0; // forget this one, if
+	}
 	// its result is a SATA (unevaluated!) nothing to ask for...
 
 	if (isChild) { //(appTrace==parentTrace) {
 	  int i=0;
-
+	  
 	  // check evaluation of (partial) function
 	  // # getChildrenForRek(handle,nl,parentTrace,funTrace,hash,initialCAF);
 	  addSearchElement(&searchList,&currentList,parentTrace,funTrace);
@@ -388,11 +390,19 @@ filepointer getChildrenForRek(_EDTQuery* query,
 	      printf("Function at 0x%x is not trusted.\n",funTrace);debugLines++;
 	      printf("Toplevel: %i\n",toplevel);debugLines++;
 #endif
+	      if (satc==0) { // only determine hatResult when really necessary!
+		result=hatResult(handle,current);
+		satc=hatFollowSATCs(handle,result);
+	      }
 	      if ((satc!=0)&&(satc!=current)) { //&&(!isInList(nl,current))) {
 		addFoundElement(&searchList,&currentList,current); // save this
 		// node as an EDT child (but consider later!)
 	      }
 	    } else {
+	      if (satc==0) { // only determine hatResult when really necessary!
+		result=hatResult(handle,current);
+		satc=hatFollowSATCs(handle,result);
+	      }
 	      if (satc!=current)
 		// #getChildrenForRek(handle,nl,current,satc,hash,initialCAF);
 		addSearchElement(&searchList,&currentList,current,satc);

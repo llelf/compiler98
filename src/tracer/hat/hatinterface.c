@@ -657,6 +657,53 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
   }
 }
 
+BOOL isTopLevelUntrusted(HatFile handle,filepointer srcref) {
+  char nodeType;
+  filepointer old = hatNodeNumber(handle);
+  while (1) {
+    nodeType=getNodeType(handle,srcref);
+    switch(nodeType) {
+    case HatApplication:
+      srcref=getAppFun();
+      break;
+    case HatSATA:
+    case HatSATB:
+    case HatSATC:
+      srcref = getProjValue();
+      break;
+    case HatSrcRef:
+      srcref = getParent();
+      break;
+    case HatModule:{
+      char trusted = !getModuleTrusted();
+      hatSeekNode(handle,old);
+      return trusted;
+    }
+    case HatConstant:{
+      filepointer nmtype;
+      nmtype=getAtom(); // follow nmType by default
+      srcref=getSrcRef();   // use srcref if nmType is lambda
+      if (getNodeType(handle,nmtype)!=HatLambda) srcref=nmtype;
+      break;
+    }
+    case HatGuard:
+    case HatIf:   // IFs are trusted. They do the right thing...
+    case HatCase: // CASEs are trusted, same reason...
+    case HatTuple:
+    case HatConstructor: // constructors are "trusted"! => its applications are ok!
+      hatSeekNode(handle,old);
+      return 1;
+    case HatIdentifier:
+      if (getTopLevelFlag()==0) return 0;
+      srcref=getModInfo(); // follow module info
+      break;
+    default:
+      hatSeekNode(handle,old);
+      return 0;
+    }
+  }
+}
+
 int isCAF(HatFile handle,filepointer fileoffset) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);

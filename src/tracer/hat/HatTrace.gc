@@ -1,6 +1,4 @@
 module HatTrace (
- debugPrint,
-
  HatTrace,      -- type, representing a redex trail file
  HatNode,       -- type, representing a node within the redex trail
 		-- structure of HatTrace and HatNode not revealed
@@ -54,6 +52,7 @@ module HatTrace (
  openTrace,	-- open a trace file, return a value of type HatTrace 
  hatTraceName,	-- return file name of file represented by trace
  hatVersionNumber, -- get current Hat version number
+
  hatMain,	-- get node representing the "main" caf only
  hatTraceFirst,	-- get first node within HatTrace file
  hatTraceNext,	-- get node immediately after a node
@@ -77,7 +76,7 @@ module HatTrace (
 
  -- other views on the redex trail
 
- detect,       -- return list of EDT children of a node
+ edtChildren,  -- return list of EDT children of a node
 
 
  observe,      -- make observation: observe a function
@@ -870,14 +869,14 @@ hatIsTrusted exp =
 -- EDT interface
 
 -- returns a list of children for a node
-detect :: HatRep a => a -> [HatNode]
-detect exp =
+edtChildren :: HatRep a => a -> [HatNode]
+edtChildren exp =
     let node = (toHatNode exp) in
      if (isValidNode node) then
        let (HatNode e@(hattrace,nodenumber)) = node in
 	   --(foreignObjToList hattrace (getEDTForeignObj e))
 	   (foreignDetectToList hattrace (getDetectInt hattrace nodenumber))
-      else error "Call to \"detect\" with \"Invalid\" node."
+      else error "Call to \"edtChildren\" with \"Invalid\" node."
 
 --------------------------------------------------------------------------
 -- observational interface
@@ -985,12 +984,3 @@ instance HatRep HatNode where
   hatValueString   = c_hatCString . _fromHatNode
   hatNodeType      = _hatNodeType
 
-
-
-
-
-%fun debugPrint :: String -> Int
-%call (string s)
-%code 
-%     printf(s);
-%result (int "1")

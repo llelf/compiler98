@@ -131,7 +131,7 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
                                  ++"\".\n(Check spelling!)")
                       else
                        do
-                         showObservationList verboseMode 20 1 100
+                         showObservationList verboseMode 20 1 100000
 				             (fromFound observed)
                          return ()
 --                       printCReductionList 100 (fromFound observed)
@@ -140,7 +140,11 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 
 showObservables :: [HatNode] -> IO ()
 showObservables l = showObservables' 0 "" (sort (map hatName l))
- where showObservables' _ _ [] = return ()
+ where showObservables' n _ [] = 
+	   if ((n-1) `mod` 3 == 2) then
+	      return ()
+	     else
+	      putStrLn ""
        showObservables' n preceeding (o:obs) =
           if (preceeding/=o) then
             do

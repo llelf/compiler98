@@ -264,7 +264,7 @@ doCommand cmd s hatfile@(file,_)
              return (b,q,newstate)
     | cmd=="N" || cmd=="NO" ||
       (not reconsider && (cmd=="?N" || cmd=="?NO" || cmd=="N?" || cmd=="NO?")) =
-	let newchildren = detect child in
+	let newchildren = edtChildren child in
 	    do
               (b,q,newstate) <- interactive hatfile 
 				(newchildren,

@@ -27,6 +27,18 @@ HashTable* newHashTable(unsigned long size) {
 }
 
 void freeHashTable(HashTable* h) {
+  int i=0;
+  HashElement *e,*p;
+
+  while (i<h->size) {
+    e=h->hashArray[i];
+    while (e) {
+      p=e;
+      e=e->next;
+      free(p);
+    }
+    i++;
+  }
   free(h->hashArray);
   free(h);
 }
