@@ -1,0 +1,899 @@
+
+Jules's Strictness Analyser, version 0.400
+Copyright (c) Julian Seward 1992
+Read 9 lattice sizes.
+
+
+=============
+=== Input ===
+=============
+
+list a ::= Nil  |
+           Cons a (list a);
+
+
+pair a b ::= Pair a b;
+
+
+tp3 a b c ::= Tp3 a b c;
+
+
+tp4 a b c d ::= Tp4 a b c d;
+
+;;
+
+letrec
+  _error = \ -> _error
+in let
+  _dot = \f g x -> f (g x)
+in let
+  _flip = \f x y -> f y x
+in let
+  _max = \x y -> case _> x y of
+                   True  -> x;
+                   False  -> y
+                 end
+in let
+  _min = \x y -> case _< x y of
+                   True  -> x;
+                   False  -> y
+                 end
+in let
+  _head = \l -> case l of
+                  Cons x xs -> x;
+                  Nil  -> _error
+                end
+in letrec
+  _last = \l -> case l of
+                  Nil  -> _error;
+                  Cons x xs -> case xs of
+                                 Nil  -> x;
+                                 Cons y ys -> _last xs
+                               end
+                end
+in let
+  _tail = \l -> case l of
+                  Cons x xs -> xs;
+                  Nil  -> _error
+                end
+in letrec
+  _init = \l -> case l of
+                  Nil  -> _error;
+                  Cons x xs -> case xs of
+                                 Nil  -> Nil;
+                                 Cons y ys -> Cons x (_init xs)
+                               end
+                end
+in let
+  _null = \l -> case l of
+                  Nil  -> True;
+                  Cons x xs -> False
+                end
+in letrec
+  _foldr = \f z l -> case l of
+                       Nil  -> z;
+                       Cons x xs -> f x (_foldr f z xs)
+                     end
+in let
+  _append = \l1 l2 -> _foldr Cons l2 l1
+in letrec
+  _foldl = \f z l -> case l of
+                       Nil  -> z;
+                       Cons x xs -> _foldl f (f z x) xs
+                     end
+in letrec
+  _del = \xl y -> case xl of
+                    Nil  -> Nil;
+                    Cons x xs -> case _== x y of
+                                   True  -> xs;
+                                   False  -> Cons x (_del xs y)
+                                 end
+                  end
+in let
+  _diff = \ -> _foldl _del
+in let
+  __sc)61 = \n dontCare -> _+ n 1
+in let
+  _length = \ -> _foldl __sc)61 0
+in letrec
+  _nth = \l n -> case l of
+                   Nil  -> _error;
+                   Cons x xs -> case _== n 0 of
+                                  True  -> x;
+                                  False  -> _nth xs (_- n 1)
+                                end
+                 end
+in letrec
+  _map = \f l -> case l of
+                   Nil  -> Nil;
+                   Cons x xs -> Cons (f x) (_map f xs)
+                 end
+in let
+  __sc)76 = \p x xs -> case p x of
+                         True  -> Cons x xs;
+                         False  -> xs
+                       end
+in let
+  _filter = \p -> _foldr (__sc)76 p) Nil
+in let
+  _select = \p x tsfs -> case tsfs of
+                           Pair ts fs -> case p x of
+                                           True  -> Pair (Cons x ts) fs;
+                                           False  -> Pair ts (Cons x fs)
+                                         end
+                         end
+in let
+  _partition = \p -> _foldr (_select p) (Pair Nil Nil)
+in let
+  _foldl1 = \f xl -> case xl of
+                       Nil  -> _error;
+                       Cons x xs -> _foldl f x xs
+                     end
+in letrec
+  _scanl = \f q xl -> Cons q (case xl of
+                        Nil  -> Nil;
+                        Cons x xs -> _scanl f (f q x) xs
+                      end)
+in let
+  _scanl1 = \f xl -> case xl of
+                       Nil  -> _error;
+                       Cons x xs -> _scanl f x xs
+                     end
+in letrec
+  _foldr1 = \f xl -> case xl of
+                       Nil  -> _error;
+                       Cons x xs -> case xs of
+                                      Nil  -> x;
+                                      Cons y ys -> f x (_foldr1 f xs)
+                                    end
+                     end
+in letrec
+  _qs)115 = \f q0 xs -> _scanr f q0 xs;
+  _scanr = \f q0 xl -> case xl of
+                         Nil  -> Cons q0 Nil;
+                         Cons x xs -> case _qs)115 f q0 xs of
+                                        Nil  -> _error;
+                                        Cons qsx qsxs -> Cons (f x qsx) (_qs)115 f q0 xs)
+                                      end
+                       end
+in letrec
+  _qs)123 = \f xs -> _scanr1 f xs;
+  _scanr1 = \f xl -> case xl of
+                       Nil  -> _error;
+                       Cons x xs -> case _qs)123 f xs of
+                                      Nil  -> _error;
+                                      Cons qsx qsxs -> Cons (f x qsx) (_qs)123 f xs)
+                                    end
+                     end
+in letrec
+  _iterate = \f x -> Cons x (_iterate f (f x))
+in letrec
+  _xs = \x -> Cons x (_xs x)
+in let
+  _repeat = \x -> _xs x
+in letrec
+  _xss = \xs -> _append xs (_xss xs)
+in let
+  _cycle = \xs -> _xss xs
+in letrec
+  _take = \n xl -> case _== n 0 of
+                     True  -> Nil;
+                     False  -> case xl of
+                                 Nil  -> Nil;
+                                 Cons x xs -> Cons x (_take (_- n 1) xs)
+                               end
+                   end
+in letrec
+  _drop = \n xl -> case _== n 0 of
+                     True  -> xl;
+                     False  -> case xl of
+                                 Nil  -> Nil;
+                                 Cons x xs -> _drop (_- n 1) xs
+                               end
+                   end
+in letrec
+  _splitAt = \n xl -> case _== n 0 of
+                        True  -> Pair Nil xl;
+                        False  -> case xl of
+                                    Nil  -> Pair Nil Nil;
+                                    Cons x xs -> case _splitAt (_- n 1) xs of
+                                                   Pair xsp xspp -> Pair (Cons x xsp) xspp
+                                                 end
+                                  end
+                      end
+in letrec
+  _takeWhile = \p xl -> case xl of
+                          Nil  -> Nil;
+                          Cons x xs -> case p x of
+                                         True  -> Cons x (_takeWhile p xs);
+                                         False  -> Nil
+                                       end
+                        end
+in letrec
+  _dropWhile = \p xl -> case xl of
+                          Nil  -> Nil;
+                          Cons x xsp -> case p x of
+                                          True  -> _dropWhile p xsp;
+                                          False  -> xl
+                                        end
+                        end
+in letrec
+  _span = \p xs -> case xs of
+                     Nil  -> Pair Nil Nil;
+                     Cons x xsp -> case p x of
+                                     False  -> Pair Nil xs;
+                                     True  -> case _span p xsp of
+                                                Pair ys zs -> Pair (Cons x ys) zs
+                                              end
+                                   end
+                   end
+in let
+  _break = \p -> _span (_dot _not p)
+in let
+  __sc)175 = \x a -> _not (_== a x)
+in letrec
+  _nub = \xl -> case xl of
+                  Nil  -> Nil;
+                  Cons x xs -> Cons x (_nub (_filter (__sc)175 x) xs))
+                end
+in let
+  _reverse = \ -> _foldl (_flip Cons) Nil
+in let
+  __sc)179 = \a b -> _& a b
+in let
+  _and = \ -> _foldr __sc)179 True
+in let
+  __sc)183 = \a b -> _| a b
+in let
+  _or = \ -> _foldr __sc)183 True
+in let
+  _any = \p -> _dot _or (_map p)
+in let
+  _all = \p -> _dot _and (_map p)
+in let
+  __sc)191 = \a b -> _== a b
+in let
+  _elem = \ -> _dot _any __sc)191
+in let
+  __sc)195 = \a b -> _not (_== a b)
+in let
+  _notElem = \ -> _dot _all __sc)195
+in let
+  __sc)199 = \a b -> _+ a b
+in let
+  _sum = \ -> _foldl __sc)199 0
+in let
+  __sc)203 = \a b -> _* a b
+in let
+  _product = \ -> _foldl __sc)203 1
+in let
+  __sc)207 = \a b -> _+ a b
+in let
+  _sums = \ -> _scanl __sc)207 0
+in let
+  __sc)211 = \a b -> _* a b
+in let
+  _products = \ -> _scanl __sc)211 1
+in let
+  _maximum = \ -> _foldl1 _max
+in let
+  _minimum = \ -> _foldl1 _min
+in let
+  _concat = \ -> _foldr _append Nil
+in letrec
+  _zipWith = \z al bl -> case al of
+                           Cons a as -> case bl of
+                                          Cons b bs -> Cons (z a b) (_zipWith z as bs);
+                                          Nil  -> Nil
+                                        end;
+                           Nil  -> Nil
+                         end
+in let
+  __sc)226 = \xs xss -> _zipWith Cons xs (_append xss (_repeat Nil))
+in let
+  _transpose = \ -> _foldr __sc)226 Nil
+in let
+  __sc)230 = \a b -> Pair a b
+in let
+  _zip = \ -> _zipWith __sc)230
+in 42
+
+
+=============
+=== Types ===
+=============
+
+   _error ::                 a
+   _dot ::                   ( a ->  b) ->  ( c ->  a) ->  c ->  b
+   _flip ::                  ( a ->  b ->  c) ->  b ->  a ->  c
+   _max ::                   int ->  int ->  int
+   _min ::                   int ->  int ->  int
+   _head ::                  (list a) ->  a
+   _last ::                  (list a) ->  a
+   _tail ::                  (list a) ->  (list a)
+   _init ::                  (list a) ->  (list a)
+   _null ::                  (list a) ->  bool
+   _foldr ::                 ( a ->  b ->  b) ->  b ->  (list a) ->  b
+   _append ::                (list a) ->  (list a) ->  (list a)
+   _foldl ::                 ( a ->  b ->  a) ->  a ->  (list b) ->  a
+   _del ::                   (list int) ->  int ->  (list int)
+   _diff ::                  (list int) ->  (list int) ->  (list int)
+   __sc)61 ::                int ->  a ->  int
+   _length ::                (list a) ->  int
+   _nth ::                   (list a) ->  int ->  a
+   _map ::                   ( a ->  b) ->  (list a) ->  (list b)
+   __sc)76 ::                ( a ->  bool) ->  a ->  (list a) ->  (list a)
+   _filter ::                ( a ->  bool) ->  (list a) ->  (list a)
+   _select ::                ( a ->  bool) ->  a ->  (pair (list a) (list a)) ->  (pair (list a) (list a))
+   _partition ::             ( a ->  bool) ->  (list a) ->  (pair (list a) (list a))
+   _foldl1 ::                ( a ->  a ->  a) ->  (list a) ->  a
+   _scanl ::                 ( a ->  b ->  a) ->  a ->  (list b) ->  (list a)
+   _scanl1 ::                ( a ->  a ->  a) ->  (list a) ->  (list a)
+   _foldr1 ::                ( a ->  a ->  a) ->  (list a) ->  a
+   _qs)115 ::                ( a ->  b ->  b) ->  b ->  (list a) ->  (list b)
+   _scanr ::                 ( a ->  b ->  b) ->  b ->  (list a) ->  (list b)
+   _qs)123 ::                ( a ->  b ->  b) ->  (list a) ->  (list b)
+   _scanr1 ::                ( a ->  b ->  b) ->  (list a) ->  (list b)
+   _iterate ::               ( a ->  a) ->  a ->  (list a)
+   _xs ::                    a ->  (list a)
+   _repeat ::                a ->  (list a)
+   _xss ::                   (list a) ->  (list a)
+   _cycle ::                 (list a) ->  (list a)
+   _take ::                  int ->  (list a) ->  (list a)
+   _drop ::                  int ->  (list a) ->  (list a)
+   _splitAt ::               int ->  (list a) ->  (pair (list a) (list a))
+   _takeWhile ::             ( a ->  bool) ->  (list a) ->  (list a)
+   _dropWhile ::             ( a ->  bool) ->  (list a) ->  (list a)
+   _span ::                  ( a ->  bool) ->  (list a) ->  (pair (list a) (list a))
+   _break ::                 ( a ->  bool) ->  (list a) ->  (pair (list a) (list a))
+   __sc)175 ::               int ->  int ->  bool
+   _nub ::                   (list int) ->  (list int)
+   _reverse ::               (list a) ->  (list a)
+   __sc)179 ::               bool ->  bool ->  bool
+   _and ::                   (list bool) ->  bool
+   __sc)183 ::               bool ->  bool ->  bool
+   _or ::                    (list bool) ->  bool
+   _any ::                   ( a ->  bool) ->  (list a) ->  bool
+   _all ::                   ( a ->  bool) ->  (list a) ->  bool
+   __sc)191 ::               int ->  int ->  bool
+   _elem ::                  int ->  (list int) ->  bool
+   __sc)195 ::               int ->  int ->  bool
+   _notElem ::               int ->  (list int) ->  bool
+   __sc)199 ::               int ->  int ->  int
+   _sum ::                   (list int) ->  int
+   __sc)203 ::               int ->  int ->  int
+   _product ::               (list int) ->  int
+   __sc)207 ::               int ->  int ->  int
+   _sums ::                  (list int) ->  (list int)
+   __sc)211 ::               int ->  int ->  int
+   _products ::              (list int) ->  (list int)
+   _maximum ::               (list int) ->  int
+   _minimum ::               (list int) ->  int
+   _concat ::                (list (list a)) ->  (list a)
+   _zipWith ::               ( a ->  b ->  c) ->  (list a) ->  (list b) ->  (list c)
+   __sc)226 ::               (list a) ->  (list (list a)) ->  (list (list a))
+   _transpose ::             (list (list a)) ->  (list (list a))
+   __sc)230 ::               a ->  b ->  (pair a b)
+   _zip ::                   (list a) ->  (list b) ->  (list (pair a b))
+   Nil ::                    (list a)
+   Cons ::                   a ->  (list a) ->  (list a)
+   Pair ::                   a ->  b ->  (pair a b)
+   Tp3 ::                    a ->  b ->  c ->  (tp3 a b c)
+   Tp4 ::                    a ->  b ->  c ->  d ->  (tp4 a b c d)
+   True ::                   bool
+   False ::                  bool
+
+
+================
+=== Settings ===
+================
+
+Scaleup ratio = 20/10
+Lower lattice size limit = 0
+Upper lattice size limit = 1000000
+Polymorphic generalisation limit = 11
+
+
+==================
+=== Strictness ===
+==================
+
+Function "_error" is a constant point 0 in domain 
+    {0 1}
+
+
+Domains for "_dot" are
+       8   [Two,Two,Two]
+      12   [Func [Two] Two,Two,Two]
+      18   [Func [Two] Two,Func [Two] Two,Two]
+
+Evaluated at size       8 using    5 evals safe "_dot"
+Evaluated at size       8 using    5 evals live "_dot"
+Evaluated at size      12 using    4 evals safe "_dot"
+Evaluated at size      12 using    4 evals live "_dot"
+Evaluated at size      18 using    2 evals safe "_dot"
+Evaluated at size      18 using    2 evals live "_dot"
+
+Function "_dot" has input domains:
+   1) Func [Two] Two
+   2) Func [Two] Two
+   3) Two
+   and output domain
+      Two
+
+with value:
+
+RepTwo (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),Zero],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero]])
+
+
+Domains for "_flip" are
+       8   [Two,Two,Two]
+      24   [Func [Two,Two] Two,Two,Two]
+
+Evaluated at size       8 using    5 evals safe "_flip"
+Evaluated at size       8 using    5 evals live "_flip"
+Evaluated at size      24 using   16 evals safe "_flip"
+Evaluated at size      24 using   16 evals live "_flip"
+
+Function "_flip" has input domains:
+   1) Func [Two,Two] Two
+   2) Two
+   3) Two
+   and output domain
+      Two
+
+with value:
+
+RepTwo (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,Zero]] [])),Zero,Zero],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),One,Zero],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,Zero]] [MkFrel [Zero,One]])),Zero,One],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,One]] [MkFrel [Zero,One],MkFrel [One,Zero]])),One,One]] [MkFrel [Rep (RepTwo (Min1Max0 2 [] [MkFrel [One,One]])),One,One],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),Zero,One],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One],MkFrel [One,Zero]] [MkFrel [Zero,Zero]])),Zero,Zero],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,Zero]] [MkFrel [Zero,One]])),One,Zero]])
+
+
+Domains for "_max" are
+       4   [Two,Two]
+
+Evaluated at size       4 using    4 evals safe "_max"
+Evaluated at size       4 using    4 evals live "_max"
+
+Function "_max" has input domains:
+   1) {0 1}
+   2) {0 1}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1 1
+       0   |  0 0
+
+
+
+Domains for "_min" are
+       4   [Two,Two]
+
+Evaluated at size       4 using    4 evals safe "_min"
+Evaluated at size       4 using    4 evals live "_min"
+
+Function "_min" has input domains:
+   1) {0 1}
+   2) {0 1}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1 1
+       0   |  0 0
+
+
+
+Domains for "_head" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    2 evals safe "_head"
+Evaluated at size       2 using    2 evals live "_head"
+Evaluated at size       4 using    2 evals safe "_head"
+Evaluated at size       4 using    2 evals live "_head"
+
+Function "_head" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1
+       0   |  0
+
+
+
+Domains for "_last" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    2 evals live "_last"
+Evaluated at size       2 using    2 evals live "_last"
+Evaluated at size       2 using    2 evals safe "_last"
+Evaluated at size       4 using    2 evals live "_last"
+Evaluated at size       4 using    1 evals live "_last"
+Evaluated at size       4 using    1 evals safe "_last"
+
+Function "_last" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  2
+       0   |  0
+
+
+
+Domains for "_tail" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    4 evals safe "_tail"
+Evaluated at size       2 using    4 evals live "_tail"
+Evaluated at size       4 using    3 evals safe "_tail"
+Evaluated at size       4 using    3 evals live "_tail"
+
+Function "_tail" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1 2 3}
+
+   Output  |  Lower frontier
+   --------+----------------
+       3   |  2
+       2   |  
+       1   |  1
+       0   |  0
+
+
+
+Domains for "_init" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    4 evals live "_init"
+Evaluated at size       2 using    4 evals live "_init"
+Evaluated at size       2 using    4 evals safe "_init"
+Evaluated at size       4 using    3 evals live "_init"
+Evaluated at size       4 using    2 evals live "_init"
+Evaluated at size       4 using    2 evals safe "_init"
+
+Function "_init" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1 2 3}
+
+   Output  |  Lower frontier
+   --------+----------------
+       3   |  2
+       2   |  
+       1   |  1
+       0   |  0
+
+
+
+Domains for "_null" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    2 evals safe "_null"
+Evaluated at size       2 using    2 evals live "_null"
+Evaluated at size       4 using    2 evals safe "_null"
+Evaluated at size       4 using    2 evals live "_null"
+
+Function "_null" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1
+       0   |  0
+
+
+
+Domains for "_foldr" are
+       8   [Two,Two,Two]
+      24   [Func [Two,Two] Two,Two,Two]
+      48   [Func [Two,Two] Two,Two,Lift2 [Two]]
+
+Evaluated at size       8 using    7 evals live "_foldr"
+Evaluated at size       8 using    7 evals live "_foldr"
+Evaluated at size       8 using    7 evals safe "_foldr"
+Evaluated at size      24 using    4 evals live "_foldr"
+Evaluated at size      24 using    1 evals live "_foldr"
+Evaluated at size      24 using    1 evals safe "_foldr"
+Evaluated at size      48 using    7 evals live "_foldr"
+Evaluated at size      48 using    2 evals live "_foldr"
+Evaluated at size      48 using    2 evals safe "_foldr"
+
+Function "_foldr" has input domains:
+   1) Func [Two,Two] Two
+   2) Two
+   3) Lift2 [Two]
+   and output domain
+      Two
+
+with value:
+
+RepTwo (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 2 [] [MkFrel [One,One]])),One,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),One,UpUp2 [Zero]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,Zero]] [MkFrel [Zero,One]])),Zero,Up2]] [MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,Zero]] [])),One,Stop2],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),Zero,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),One,Up2],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,One]] [MkFrel [Zero,One],MkFrel [One,Zero]])),One,UpUp2 [Zero]]])
+
+
+Domains for "_append" are
+       4   [Two,Two]
+       8   [Lift2 [Two],Two]
+      16   [Lift2 [Two],Lift2 [Two]]
+
+Evaluated at size       4 using    7 evals safe "_append"
+Evaluated at size       4 using    7 evals live "_append"
+Evaluated at size       8 using    3 evals safe "_append"
+Evaluated at size       8 using    3 evals live "_append"
+Evaluated at size      16 using    4 evals safe "_append"
+Evaluated at size      16 using    4 evals live "_append"
+
+Function "_append" has input domains:
+   1) {0 1 2 3}
+   2) {0 1 2 3}
+   and output domain
+      {0 1 2 3}
+
+   Output  |  Lower frontier
+   --------+----------------
+       3   |  3 3
+       2   |  2 2
+       1   |  1 0
+       0   |  0 0
+
+
+
+Domains for "_foldl" are
+       8   [Two,Two,Two]
+      24   [Func [Two,Two] Two,Two,Two]
+      48   [Func [Two,Two] Two,Two,Lift2 [Two]]
+
+Evaluated at size       8 using    6 evals live "_foldl"
+Evaluated at size       8 using    7 evals live "_foldl"
+Evaluated at size       8 using    7 evals live "_foldl"
+Evaluated at size       8 using    7 evals safe "_foldl"
+Evaluated at size      24 using    4 evals live "_foldl"
+Evaluated at size      24 using    1 evals live "_foldl"
+Evaluated at size      24 using    1 evals safe "_foldl"
+Evaluated at size      48 using   11 evals live "_foldl"
+Evaluated at size      48 using    2 evals live "_foldl"
+Evaluated at size      48 using    2 evals safe "_foldl"
+
+Function "_foldl" has input domains:
+   1) Func [Two,Two] Two
+   2) Two
+   3) Lift2 [Two]
+   and output domain
+      Two
+
+with value:
+
+RepTwo (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 2 [] [MkFrel [One,One]])),One,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,One]] [MkFrel [One,Zero]])),Zero,UpUp2 [Zero]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,Zero]] [MkFrel [Zero,One]])),One,UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [Zero,Zero]] [])),One,Up2],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,Zero]] [MkFrel [Zero,One]])),Zero,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 2 [MkFrel [One,One]] [MkFrel [Zero,One],MkFrel [One,Zero]])),One,UpUp2 [Zero]]])
+
+
+Domains for "_del" are
+       4   [Two,Two]
+       8   [Lift2 [Two],Two]
+
+Evaluated at size       4 using    6 evals live "_del"
+Evaluated at size       4 using    6 evals live "_del"
+Evaluated at size       4 using    6 evals safe "_del"
+Evaluated at size       8 using    5 evals live "_del"
+Evaluated at size       8 using    4 evals live "_del"
+Evaluated at size       8 using    4 evals safe "_del"
+
+Function "_del" has input domains:
+   1) {0 1 2 3}
+   2) {0 1}
+   and output domain
+      {0 1 2 3}
+
+   Output  |  Lower frontier
+   --------+----------------
+       3   |  3 0
+       2   |  2 1
+       1   |  1 1
+       0   |  0 0
+
+
+
+Domains for "_diff" are
+       4   [Two,Two]
+       8   [Lift2 [Two],Two]
+      16   [Lift2 [Two],Lift2 [Two]]
+
+Evaluated at size       4 using    8 evals safe "_diff"
+Evaluated at size       4 using    8 evals live "_diff"
+Evaluated at size       8 using    2 evals safe "_diff"
+Evaluated at size       8 using    2 evals live "_diff"
+Evaluated at size      16 using    8 evals safe "_diff"
+Evaluated at size      16 using    8 evals live "_diff"
+
+Function "_diff" has input domains:
+   1) {0 1 2 3}
+   2) {0 1 2 3}
+   and output domain
+      {0 1 2 3}
+
+   Output  |  Lower frontier
+   --------+----------------
+       3   |  3 2
+       2   |  2 2
+       1   |  1 2
+       0   |  0 0
+
+
+
+Domains for "__sc)61" are
+       4   [Two,Two]
+
+Evaluated at size       4 using    4 evals safe "__sc)61"
+Evaluated at size       4 using    4 evals live "__sc)61"
+
+Function "__sc)61" has input domains:
+   1) {0 1}
+   2) {0 1}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1 0
+       0   |  0 0
+
+
+
+Domains for "_length" are
+       2   [Two]
+       4   [Lift2 [Two]]
+
+Evaluated at size       2 using    2 evals safe "_length"
+Evaluated at size       2 using    2 evals live "_length"
+Evaluated at size       4 using    2 evals safe "_length"
+Evaluated at size       4 using    2 evals live "_length"
+
+Function "_length" has input domains:
+   1) {0 1 2 3}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  2
+       0   |  0
+
+
+
+Domains for "_nth" are
+       4   [Two,Two]
+       8   [Lift2 [Two],Two]
+
+Evaluated at size       4 using    4 evals live "_nth"
+Evaluated at size       4 using    4 evals live "_nth"
+Evaluated at size       4 using    4 evals safe "_nth"
+Evaluated at size       8 using    2 evals live "_nth"
+Evaluated at size       8 using    0 evals live "_nth"
+Evaluated at size       8 using    0 evals safe "_nth"
+
+Function "_nth" has input domains:
+   1) {0 1 2 3}
+   2) {0 1}
+   and output domain
+      {0 1}
+
+   Output  |  Lower frontier
+   --------+----------------
+       1   |  1 1
+       0   |  0 0
+
+
+
+Domains for "_map" are
+       4   [Two,Two]
+       6   [Func [Two] Two,Two]
+      12   [Func [Two] Two,Lift2 [Two]]
+
+Evaluated at size       4 using    6 evals live "_map"
+Evaluated at size       4 using    6 evals live "_map"
+Evaluated at size       4 using    6 evals safe "_map"
+Evaluated at size       6 using    0 evals live "_map"
+Evaluated at size       6 using    0 evals safe "_map"
+Evaluated at size      12 using    7 evals live "_map"
+Evaluated at size      12 using    3 evals live "_map"
+Evaluated at size      12 using    3 evals safe "_map"
+
+Function "_map" has input domains:
+   1) Func [Two] Two
+   2) Lift2 [Two]
+   and output domain
+      Lift2 [Two]
+
+with value:
+
+Rep2 (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),Up2]] [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Stop2]]) (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Up2]]) [RepTwo (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Up2],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),UpUp2 [Zero]]])]
+
+
+Domains for "__sc)76" are
+       8   [Two,Two,Two]
+      12   [Func [Two] Two,Two,Two]
+      24   [Func [Two] Two,Two,Lift2 [Two]]
+
+Evaluated at size       8 using    9 evals safe "__sc)76"
+Evaluated at size       8 using    9 evals live "__sc)76"
+Evaluated at size      12 using    6 evals safe "__sc)76"
+Evaluated at size      12 using    6 evals live "__sc)76"
+Evaluated at size      24 using    5 evals safe "__sc)76"
+Evaluated at size      24 using    5 evals live "__sc)76"
+
+Function "__sc)76" has input domains:
+   1) Func [Two] Two
+   2) Two
+   3) Lift2 [Two]
+   and output domain
+      Lift2 [Two]
+
+with value:
+
+Rep2 (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,Stop2],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,Stop2]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero,UpUp2 [One]]]) (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,UpUp2 [Zero]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One,Up2],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero,UpUp2 [One]]]) [RepTwo (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,UpUp2 [One]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One,UpUp2 [Zero]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero,UpUp2 [One]]])]
+
+
+Domains for "_filter" are
+       4   [Two,Two]
+       6   [Func [Two] Two,Two]
+      12   [Func [Two] Two,Lift2 [Two]]
+
+Evaluated at size       4 using    6 evals safe "_filter"
+Evaluated at size       4 using    6 evals live "_filter"
+Evaluated at size       6 using    0 evals safe "_filter"
+Evaluated at size       6 using    0 evals live "_filter"
+Evaluated at size      12 using    8 evals safe "_filter"
+Evaluated at size      12 using    8 evals live "_filter"
+
+Function "_filter" has input domains:
+   1) Func [Two] Two
+   2) Lift2 [Two]
+   and output domain
+      Lift2 [Two]
+
+with value:
+
+Rep2 (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Up2]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [Zero]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Stop2]]) (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Up2],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),UpUp2 [Zero]]]) [RepTwo (Min1Max0 2 [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),UpUp2 [One]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),UpUp2 [Zero]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Up2],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),UpUp2 [Zero]]])]
+
+
+Domains for "_select" are
+       8   [Two,Two,Two]
+      12   [Func [Two] Two,Two,Two]
+      30   [Func [Two] Two,Two,Lift1 [Two,Two]]
+      54   [Func [Two] Two,Two,Lift1 [Two,Lift2 [Two]]]
+     102   [Func [Two] Two,Two,Lift1 [Lift2 [Two],Lift2 [Two]]]
+
+Evaluated at size       8 using   16 evals safe "_select"
+Evaluated at size       8 using   16 evals live "_select"
+Evaluated at size      12 using    7 evals safe "_select"
+Evaluated at size      12 using    7 evals live "_select"
+Evaluated at size      30 using   10 evals safe "_select"
+Evaluated at size      30 using   10 evals live "_select"
+Evaluated at size      54 using    6 evals safe "_select"
+Evaluated at size      54 using    6 evals live "_select"
+Evaluated at size     102 using    8 evals safe "_select"
+Evaluated at size     102 using    8 evals live "_select"
+
+Function "_select" has input domains:
+   1) Func [Two] Two
+   2) Two
+   3) Lift1 [Lift2 [Two],Lift2 [Two]]
+   and output domain
+      Lift1 [Lift2 [Two],Lift2 [Two]]
+
+with value:
+
+Rep1 (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,Up1 [Stop2,Stop2]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,Up1 [Stop2,Stop2]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,Up1 [UpUp2 [One],UpUp2 [One]]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One,Stop1],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero,Up1 [UpUp2 [One],UpUp2 [One]]]]) [Rep2 (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,Up1 [Stop2,Stop2]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,Up1 [Stop2,Stop2]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,Up1 [UpUp2 [One],UpUp2 [One]]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One,Stop1],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),Zero,Up1 [UpUp2 [One],UpUp2 [One]]]]) (Min1Max0 3 [MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),Zero,Up1 [UpUp2 [Zero],Stop2]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [One]] [MkFrel [Zero]])),One,Up1 [UpUp2 [Zero],Stop2]]] [MkFrel [Rep (RepTwo (Min1Max0 1 [] [MkFrel [One]])),One,Up1 [UpUp2 [One],UpUp2 [One]]],MkFrel [Rep (RepTwo (Min1Max0 1 [MkFrel [Zero]] [])),One,Up1 [Up2,UpUp2 [One]]],MkFrel [Rep (RepTwo (
