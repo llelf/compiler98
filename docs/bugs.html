@@ -47,17 +47,20 @@
       the ansi-C backend.  A workaround is to use the <em>-noansiC</em>
       flag (provided you are using a machine for which we have direct
       assembly language support, i.e. arm, hppa, sparc, x86, mips, alpha).</dd>
-<dt><em>Runtime crashes on Regexp library</em></dt>
-  <dd>The Regexp library (from Glasgow), although it compiles, crashes
-      intermittently at runtime, sometimes with SegFaults, sometimes with
-      other errors.  We believe this to be caused by an obscure GC bug,
-      because changing the heap size alters the behaviour.  The Regexp
-      library is the only known program to tickle this bug.</dd>
 </dl>
 
 
 <h3>Fixed bugs :-)</h3>
 <dl>
+<dt><em>Runtime crashes on Array-based programs</em> (fixed 000314)</dt>
+  <dd>A program although it compiled, crashed intermittently at runtime,
+      sometimes with SegFaults, sometimes with other errors.  This was
+      caused by an obscure Garbage Collection bug, because changing the
+      heap size altered the behaviour.  Although we originally believed
+      that the Regexp library from Glasgow was the only known program to
+      tickle this bug, it turned out that other programs using Arrays
+      also suffered the same fate.  The fix turned out to be a single
+      character change in the sources!</dd>
 <dt><em>Named fields</em> (fixed 990727)</dt>
   <dd>Initialisation of a value using named fields failed to type-check
       (error: typeExp) if some fields were missing.</dd>
@@ -153,7 +156,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.07.15<br>
+2000.03.14<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

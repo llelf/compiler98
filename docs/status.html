@@ -33,7 +33,7 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2000-03-01</td>
+  <td>2000-03-13</td>
   <td>2000-02-18</td>
   <td>1997</td>
   <td>1996</td>
@@ -98,6 +98,14 @@ by anonymous FTP from
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#dddddd><th>package</th> <th>machine</th>
                     <th>version</th> <th>date</th> <th>size</th></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.0pre17.tar.gz">
+      Haskell + C source trees</a></td>
+  <td>any</td>
+  <td>1.0pre17</td>
+  <td>000314</td>
+  <td>2655kb</td></tr>
 
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.0pre16.tar.gz">
@@ -213,6 +221,12 @@ comprehensive, but if you have any problems, please mail
 
 <br><br><hr>
 
+<h3>nhc98 pre-release 17 (2000-03-14) features</h3>
+<ul>
+<li> Bugfix: Now builds with ghc-4.06 as well as ghc-4.04 and earlier.
+<li> Bugfix: Occasional runtime crashes when using Arrays are now eliminated.
+</ul>
+
 <h3>nhc98 pre-release 16 (2000-03-02) features</h3>
 <ul>
 <li> Addition: The standard Random library.
@@ -221,150 +235,8 @@ comprehensive, but if you have any problems, please mail
 <li> Bugfixes: Various small configuration bugfixes.
 </ul>
 
-<h3>nhc98 pre-release 15 (2000-01-18) features</h3>
-<ul>
-<li> Bugfix: There were some minor build-problems with pre14 which I
-             hope are now fixed.
-<li> Bugfix: Duplicate labels error when building the mutator
-             for profiling.
-<li> Bugfix: Erroneous compiler complaints about class contexts when
-             building certain Prelude functions.
-<li> Bugfix: Missing file FFIBuiltin.hi.
-</ul>
-
-<h3>nhc98 pre-release 14 (1999-12-02) features</h3>
-<ul>
-<li> Update: Various tweaks and additions to the new FFI to make it more
-             solid.  Libraries now include Sven Panne's FFI.
-<li> Performance: Thanks to Julian Seward's prompting, we have improved
-             the runtime performance of nhc98-compiled programs by about
-             25% (if you have gcc).  This also means that if you bootstrap
-             nhc98 from C sources, you will get a faster compiler.
-</ul>
-
-<h3>nhc98 pre-release 13 (1999-11-19) features</h3>
-<ul>
-<li> Addition: Completely new FFI added, following the Hugs/ghc model.
-               Beware, this is still alpha - It might even break unrelated
-               things that worked previously!  If in doubt, use 1.0pre12.
-<li> Bugfixes: Numerous small fixes for building on various machines.
-</ul>
-
-<h3>nhc98 pre-release 12 (1999-10-29) features</h3>
-<ul>
-<li> Bugfix: Removed incorrect .h symbolic links.  (This patch hardly
-             seems worth a whole new pre-release, but the bug prevented
-             all builds from proceeding.)
-<li> Bugfix: On HP-UX machines, the ansiC backend had a problem due to
-             conflicts between data/code at link time.
-</ul>
-
-<h3>nhc98 pre-release 11 (1999-10-26) features</h3>
-<ul>
-<li> Bugfix: Minor fixes to config and Makefiles for <em>Cygwin</em>.
-</ul>
-
-<h3>nhc98 pre-release 10 (1999-10-19) features</h3>
-<ul>
-<li> Update: Compiling programs for tracing now works again, although
-             tracing versions of the Prelude and Libraries are still
-             not fully up-to-date with Haskell'98.  The trace browser
-             now has a scripting facility to record your tracing activity
-             for later replay.
-<li> Update: The removal of named field punning in Haskell'98 has
-             turned out to be unpopular.  nhc98 now supports punning
-             again as a compile-time option (default on, except in
-             -98 compatibility mode).
-<li> Update: The old 'nhc98config' is now simplified and called 'configure'.
-             This means that "./configure; make; make install" should now
-             work as expected.
-<li> Update: At configuration time for hmake, we now try to detect existing
-             installations of ghc/hbc/nhc and provide sensible defaults,
-             so you should no longer need to edit config files.
-<li> Bugfix: Resolved conflicts when using hmake flags -I and -d together.
-<li> Bugfix: Some changes to Makefiles, so building on <em>Cygwin32</em>
-             is easier.
-<li> Bugfix: hSetPosn had wrong arity.
-</ul>
-
-<h3>nhc98 pre-release 9 (1999-09-16) features</h3>
-<ul>
-<li> Bugfix: Library module Maybe was missing the definition isNothing.
-<li> Bugfix: Several changes to Makefiles, so building with <em>ghc</em>
-             is easier.
-<li> Bugfix: hmake is more <em>ghc</em>-friendly.
-<li> Update: The standard cpp symbols __HASKELL98__ and __HASKELL__=98 are
-             now supported.
-</ul>
-
-<h3>nhc98 pre-release 8 (1999-08-06) features</h3>
-<ul>
-<li> Bugfix: Initialisation of a value using named fields failed to type-check
-             if some fields were missing.
-<li> Bugfix: Several small script changes required when compiling with <em>ghc</em>.
-<li> Bugfix: Compiler fault in processing interface-files - prevented
-             profiling and tracing versions of the prelude/libraries from
-             building unless the old interface files were removed first.
-</ul>
-
-<h3>nhc98 pre-release 7 (1999-07-23) features</h3>
-<ul>
-<li> Bugfix: Brought layout processing into line with the algorithm
-             given in the Report.
-<li> Update: Underscores are now (optionally) treated in full accordance
-             with the Report as strictly lower-case.
-<li> Update: Licensing conditions for nhc98 are now more explicit.
-</ul>
-
-<h3>nhc98 pre-release 6 (1999-06-10) features</h3>
-<ul>
-<li> Update: At last, we grudgingly support <tt>(n+k)</tt> patterns.
-</ul>
-
-<h3>nhc98 pre-release 5 (990519) features</h3>
-<ul>
-<li> Change: Simpler configuration for hmake and nhc98.
-<li> Update: Infix decls now allowed anywhere type signatures are.  Modules
-             can be imported unqualified with a local alias.  Aliases can
-             overlap.  Empty decls (i.e. extra explicit semicolons) are allowed. 
-<li> Bugfix: isAlphanum is now isAlphaNum.
-<li> Bugfix: Derived Read instances for non-associative infix constructors
-             now work (previously looped).
-</ul>
-
-<h3>nhc98 pre-release 4 (990503) features</h3>
-<ul>
-<li> Fixes: compiler's source code needs to compile under Haskell 98 also!
-</ul>
-
-<h3>nhc98 pre-release 3 (990427) features</h3>
-<ul>
-<li> Fixes: compiler has better compliance with Haskell 98.  (Maximal
-     munch for comments, removed record punning, and numerous other changes.)
-</ul>
-
-<h3>nhc98 pre-release 2 (990217) features</h3>
-<ul>
-<li> Bugfix: Stable Pointers, as used in GreenCard, are now non-strict,
-             i.e. passing the value (error "message") to C as a stable
-             pointer no longer terminates the program immediately.
-</ul>
-
-<h3>nhc98 pre-release 1 (990128) features</h3>
-<ul>
-<li> Major change: nhc13 has become nhc98, supporting the new Haskell 98
-                   language standard, although still incompletely.
-<li> Major addition: Existential types in data declarations.
-<li> Addition: New options <tt>-M</tt> and <tt>-Md</tt> to <em>hmake</em>.
-<li> Bugfix: In the Binary library there was a very slight incompatibility
-             between the types described in the ISMM'98 paper and the
-             implementation.  The implementation is now fixed to match the
-             paper.
-<li> Bugfix: At last, the distribution tarfiles extract into an
-             nhc98-x.x directory, rather than the current directory.
-</ul>
-
-<h3><a href=history.html>Previous release history (nhc13)</a></h3>
+<h3><a href=history98.html>Previous release history (nhc98)</a></h3>
+<h3><a href=history.html>Release history of nhc13</a></h3>
 
 
 <hr>
@@ -374,7 +246,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.03.03<br>
+This page last modified: 2000.03.14<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
