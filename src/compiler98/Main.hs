@@ -527,6 +527,7 @@ nhcWriteI flags interfaceContent =
 {- 
 Fix syntax (small tweaks based on type information) 
 optimisation: evaluation of `fromInteger' where possible
+Also removes data constructors defined by newtype.
 (actually done by preceding function)
 -}
 nhcFixSyntax :: Flags 

@@ -1,10 +1,16 @@
-module TokenId(module TokenId {-,PackedString-}) where
+{- ---------------------------------------------------------------------------
+Defines data type TokenId for names of all kinds of identifiers.
+Also defines tokenIds for identifiers that are hardcoded into the compiler.
+-}
+module TokenId(module TokenId) where
 
 import Extra(mix,isNhcOp,Pos(..),strPos)
 import PackedString(PackedString, unpackPS, packString)
 
+
 visible rtoken = Visible (packString rtoken)
 qualify rmodule rtoken = Qualified (packString rmodule) (packString rtoken)
+
 
 data TokenId =
      TupleId   Int
@@ -17,6 +23,7 @@ data TokenId =
      -- token for method in instance: class token, type token, variable token
    deriving (Eq,Ord)
 
+
 instance Show TokenId where
   showsPrec d (TupleId s) = if s == 0
 			    then showString "()"
@@ -28,6 +35,7 @@ instance Show TokenId where
   showsPrec d (Qualified2 t1 t2) = shows t1 . showChar '.' . shows t2
   showsPrec d (Qualified3 t1 t2 t3) = 
     shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
+
 
 isTidOp (TupleId s) = False
 isTidOp tid = 
@@ -288,6 +296,9 @@ t_eqDouble      = qualImpRev  "_eqDouble"
 t_eqFloat       = qualImpRev  "_eqFloat"
 t_otherwise	= qualImpRev  "otherwise"
 
+t_id            = qualImpRev  "_id"   
+  -- identity function that is not modified by the tracing transformation
+
 
 {- Malcolm's additions from here on -}
 
@@ -328,3 +339,5 @@ tWord16		= qualImpFFI  "Word16"
 tWord32		= qualImpFFI  "Word32"
 tWord64		= qualImpFFI  "Word64"
 tPackedString	= qualImpPS   "PackedString"
+
+{- End TokenId -------------------------------------------------------------}

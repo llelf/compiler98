@@ -203,9 +203,11 @@ renameDecl (DeclType (Simple pos tid tvs) typ) =
   let al = tvPosTids tvs
   in transTypes al (map snd al) [] [typ] >>>= \nt ->
      defineType tid nt >>>  {- = \d -> -}
-     --  gross hack... just remove definition of type synonym from syntax tree
+     -- gross hack
+     -- remove definition of type synonym from syntax tree
      unitS (DeclIgnore "Type Synonym")
 --   unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
+     -- in a way such that it can still be recognised in DbgDataTrans
 
 renameDecl (DeclDataPrim  pos tid size) =
   uniqueTid pos TCon tid >>>= \ i ->

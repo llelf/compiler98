@@ -1,5 +1,5 @@
 {- ---------------------------------------------------------------------------
-
+The FSMonad and some helper functions for FixSyntax
 -}
 module FSLib(module FSLib, AssocTree(..), Tree, TokenId) where
 
@@ -10,18 +10,33 @@ import State
 import AssocTree
 import Extra(Pos(..),noPos,sndOf,dropJust)
 import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,tRatio,tRatioCon
-              ,tident)
+              ,t_id)
 import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS,updateIS)
 import NT(NewType(..),NT)
 import Id(Id)
 
+type Inherited = ((Exp Id,Exp Id)  -- expList (nil, cons)
+                  ,Exp Id          -- expId
+                  ,(TokenId,IdKind) -> Id) --tidFun
+
+type Threaded = (IntState,Tree (TokenId,Id))
+
+type FSMonad a = State Inherited Threaded a Threaded
+
+
+startfs :: (Decls Id -> FSMonad a)
+        -> Decls Id 
+        -> IntState
+        -> ((TokenId,IdKind) -> Id) 
+        -> (a,IntState,Tree (TokenId,Id))
+
 startfs fs x state tidFun =
-      let down = ((ExpCon noPos (tidFun (t_List,Con))	   -- expList  nil
-		  ,ExpCon noPos (tidFun (t_Colon,Con))	   --	    cons
+      let down = ((ExpCon noPos (tidFun (t_List,Con))	 
+		  ,ExpCon noPos (tidFun (t_Colon,Con))	 
 		  )
-		  ,ExpVar noPos (tidFun (tident,Var))	   -- expId
-		  ,tidFun
-		  )
+		 ,ExpVar noPos (tidFun (t_id,Var))  
+		 ,tidFun
+		 )
 
 	  up =	(state
 		    ,initAT)
@@ -29,24 +44,39 @@ startfs fs x state tidFun =
 	case fs x down up of
 	 (x,(state,t2i)) -> (x,state,t2i)
 
-fsList down@(expList,expId,tidFun) up =
-  (expList,up)
 
-fsId down@(expList,expId,tidFun) up =
-  (expId,up)
+fsList :: FSMonad (Exp Id, Exp Id)
+fsList down@(expList,expId,tidFun) up = (expList,up)
 
-fsState down up@(state,t2i) =
-  (state,up)
+fsId :: FSMonad (Exp Id)
+fsId down@(expList,expId,tidFun) up = (expId,up)
 
+fsState :: FSMonad IntState
+fsState down up@(state,t2i) = (state,up)
+
+fsTidFun :: FSMonad ((TokenId,IdKind) -> Id)
 fsTidFun down@(expList,expId,tidFun) up =
   (tidFun,up)
+
+
+{- 
+Returns True iff given data constructor is defined by data definition,
+not newtype definition.
+-}
+fsRealData :: Id -> FSMonad Bool
 
 fsRealData con down up@(state,t2i) =
   ((isRealData . dropJust . lookupIS state . belongstoI 
     . dropJust . lookupIS state) con,up)
 
+
+fsExpAppl :: Pos -> [Exp Id] -> FSMonad (Exp Id)
+ 
 fsExpAppl pos [x] = unitS x
 fsExpAppl pos xs = unitS (ExpApplication pos xs)
+
+
+fsClsTypSel :: Pos -> Id -> Id -> Id -> FSMonad (Exp Id)
 
 fsClsTypSel pos cls typ sel down  up@(state,t2i) = 
   case lookupIS state cls of

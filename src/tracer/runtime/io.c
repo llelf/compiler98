@@ -1674,6 +1674,7 @@ ModInfo NMOD__Apply4 = {"_Apply4", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD_PreludeBuiltin = {"PreludeBuiltin", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD_PreludeDebug = {"PreludeDebug", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 ModInfo NMOD__EqInteger = {"_EqInteger", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
+ModInfo NMOD__Id = {"_Id", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 
 extern ModInfo *MODULE_Main;
 extern ModInfo NMOD_Prelude;

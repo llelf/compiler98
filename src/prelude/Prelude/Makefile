@@ -49,8 +49,10 @@ SRCS = \
         _EnumFromToDec.hs               _EnumFromToInc.hs   _EnumInRange.hs \
         _EnumIndex.hs   _EnumRange.hs   _EqInteger.hs       _Filter.hs \
         _Foldr.hs       _FromEnum.hs    _ToEnum.hs          _TupleIndex.hs \
-        _TupleRange.hs  _Zap_Arg.hs     _Zap_Stack.hs       _NplusK.hs
+        _TupleRange.hs  _Zap_Arg.hs     _Zap_Stack.hs       _NplusK.hs \
+	_Id.hs
 
+# The following are used for the tracing Prelude
 SRCS_T	= \
 	AndAnd.hs       ApplyM.hs       AsTypeOf.hs         Seq.hs \
 	CBounded.hs     Bounded_2.hs    Bounded_3.hs        Bounded_Bool.hs \
@@ -95,7 +97,9 @@ SRCS_T	= \
 	_EnumFromThen.hs _EnumFromThenTo.hs \
 	_EnumFromTo.hs _EnumFromToDec.hs _EnumFromToInc.hs _EnumInRange.hs \
 	_EnumIndex.hs _EnumRange.hs
-SRCS_NT = _EqInteger.hs StartDbg.hs
+# The following are also used for the tracing Prelude,
+# however, they are not traced themselves.
+SRCS_NT = _EqInteger.hs StartDbg.hs _Id.hs
 
 #NTSRCS	= StartDbg.hs
 PLSRCS	= _Apply1.hs _Apply2.hs _Apply3.hs _Apply4.hs _Zap_Arg.hs _Zap_Stack.hs

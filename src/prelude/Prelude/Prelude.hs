@@ -6,6 +6,7 @@ module Prelude (
     ,_hPutChar,_hGetChar
 #endif
     ,_readCon0, _readConArg, _readCon, _readConInfix -- Don't know why I must be explicit
+    ,module _Id
 
     ,module PreludeList
     ,module PreludeText
@@ -147,6 +148,7 @@ import Ix  -- to get all Ix instances
 #endif
 
 -- Shouldn't be visible, but they are:-(
+import _Id
 import _EnumFromThen
 import _EnumFromThenTo
 import _EnumFromTo

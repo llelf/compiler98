@@ -1,4 +1,9 @@
-module TypeData where
+{- ---------------------------------------------------------------------------
+Monad and dictionary type for type checking.
+Also used in Remove1_3 for removing fields.
+-}
+module TypeData(TypeMonad,TypeDown(TypeDown),TypeState(TypeState)
+               ,TypeDict(TypeDict)) where
 
 import IntState(IntState)
 import TokenId(TokenId)
@@ -8,6 +13,7 @@ import Extra(Pos(..))
 import Syntax (Exp)
 import AssocTree
 import Tree234
+import Id(Id)
 
 data TypeDown =
       TypeDown
@@ -23,7 +29,10 @@ data TypeState =
 	IntState		-- state
 	(AssocTree Int NT)	-- phi
 	[TypeDict]		-- ctxs
-	[((Int,NT),Int)]	-- ctxs introduced due to pattern matching on existential NT is either NTvar or NTexist
+	[((Int,NT),Int)]	-- ctxs introduced due to pattern matching 
+                                -- on existential NT is either NTvar or NTexist
+
+type TypeMonad a = TypeDown -> TypeState -> (a,TypeState)
 
 data TypeDict =
       TypeDict
@@ -35,10 +44,12 @@ instance Eq TypeDict where
   (TypeDict c nt ip) == (TypeDict c' nt' ip') = c == c' && nt == nt'
 
 instance Ord TypeDict where
-  (TypeDict c nt ip) <= (TypeDict c' nt' ip') = c < c' || (c == c' && nt <= nt')
+  (TypeDict c nt ip) <= (TypeDict c' nt' ip') = 
+    c < c' || (c == c' && nt <= nt')
   compare (TypeDict c nt ip) (TypeDict c' nt' ip') =
     case compare c c' of
       LT -> LT
       EQ -> compare nt nt'
       GT -> GT
 
+{- TypeData -----------------------------------------------------------------}

@@ -1,3 +1,8 @@
+{- ---------------------------------------------------------------------------
+Small tweaks based on type information.
+optimisation: evaluation of `fromInteger' where possible
+Also removes data constructors defined by newtype.
+-}
 module FixSyntax(fixSyntax) where
 
 import List(intersperse)
@@ -12,11 +17,18 @@ import Info(Info,isData,isMethod)
 import FSLib
 import Ratio
 import Machine
+import Id(Id)
+
+
+litFloatInteger :: a {-boxed-} -> Integer -> Lit a
 
 litFloatInteger b v =
   if floatIsDouble
   then LitDouble b (fromInteger v)
   else LitFloat b (fromInteger v)
+
+
+litFloatRational :: a {-boxed-} -> Ratio Integer -> Lit a
 
 litFloatRational b v =
   if floatIsDouble
@@ -24,19 +36,44 @@ litFloatRational b v =
   else LitFloat b (fromRational v)
 
 
+{- main function of this pass -}
+fixSyntax :: Decls Id 
+          -> IntState 
+          -> ((TokenId,IdKind) -> Id) 
+          -> ([Decl Id]  -- modified declarations
+             ,IntState   -- modified internal state
+             ,Tree (TokenId,Id))
+
 fixSyntax topdecls state tidFun =
   startfs fsTopDecls topdecls state tidFun
 
+
+fsTopDecls :: Decls Id -> FSMonad [Decl Id]
+
+fsTopDecls (DeclsScc depends) = 
+  unitS (concat :: ([[Decl Int]] -> [Decl Int])) =>>> 
 		-- concat must be typed for hbc ?
-fsTopDecls (DeclsScc depends) = unitS (concat :: ([[Decl Int]] -> [Decl Int])) =>>> mapS fsTopDepend depends
+  mapS fsTopDepend depends
+
+
+fsTopDepend :: DeclsDepend Id -> FSMonad [Decl Id]
 
 fsTopDepend (DeclsNoRec d) = fsDecl d >>>= \ d -> unitS [d]
 fsTopDepend (DeclsRec  ds) = mapS fsDecl ds
 
+
+fsDecls :: Decls Id -> FSMonad (Decls Id)
+
 fsDecls (DeclsScc depends) = unitS DeclsScc =>>> mapS fsDepend depends
+
+
+fsDepend :: DeclsDepend Id -> FSMonad (DeclsDepend Id)
 
 fsDepend (DeclsNoRec d) = unitS DeclsNoRec =>>> fsDecl d
 fsDepend (DeclsRec  ds) = unitS DeclsRec   =>>> mapS fsDecl ds
+
+
+fsDecl :: Decl Id -> FSMonad (Decl Id)
 
 fsDecl d@(DeclPrimitive pos fun arity t) =
   unitS d
@@ -52,16 +89,25 @@ fsDecl (DeclPat (Alt pat gdexps decls)) =
   fsDecls decls >>>= \ decls ->
   unitS (DeclPat (Alt pat gdexps decls))  
 
+
+fsFun :: Fun Id -> FSMonad (Fun Id) 
+
 fsFun  (Fun pats gdexps decls) =
   mapS fsExp pats >>>= \ pats ->
   mapS fsGdExp gdexps >>>= \ gdexps ->
   fsDecls decls >>>= \ decls ->
   unitS (Fun pats gdexps decls)
 
+
+fsGdExp :: (Exp Id,Exp Id) -> FSMonad (Exp Id,Exp Id)
+
 fsGdExp (g,e) =
   fsExp g >>>= \ g ->
   fsExp e >>>= \ e ->
   unitS (g,e)
+
+
+fsExp :: Exp Id -> FSMonad (Exp Id)
 
 fsExp (ExpLambda pos pats exp)  =
   mapS fsExp pats >>>= \ pats ->
@@ -298,9 +344,10 @@ fsExp (ExpApplication pos (ExpVar sp sel : ExpDict (ExpApplication ap (Exp2 _ cl
     mapS fsExp es >>>= \ es ->
     fsExpAppl pos (ExpVar sp sel : ExpDict appl :es)
 
---
--- Check if constructor is newtype
--- 
+{-
+Check if data constructor is from newtype definition.
+If it is, then remove it or replace it by the identity function.
+-} 
 fsExp (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
   fsRealData con >>>= \ realdata ->
   if realdata then
@@ -308,10 +355,12 @@ fsExp (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
     fsExpAppl pos (econ:xs)
   else
     if length xs < 1 then
-      fsId
+      fsId -- because argument not available, have to replace by identity
     else
       mapS fsExp xs >>>= \ xs ->
-      fsExpAppl pos xs	-- Can be an application if newtype is isomorphic with a function type
+      fsExpAppl pos xs	
+      -- ^ Can be an application if newtype is isomorphic to a function type
+      -- ^ No! \[x] -> unitS x should do, but that doesn't matter.
 
 ---
 --- Nothing to do
@@ -339,11 +388,13 @@ fsExp (PatAs pos i pat)        =  unitS (PatAs pos i) =>>> fsExp pat
 fsExp (PatIrrefutable pos pat) = unitS (PatIrrefutable pos) =>>> fsExp pat
 fsExp e                 = unitS e
 
+
+fsAlt :: Alt Id -> FSMonad (Alt Id)
+
 fsAlt (Alt pat gdexps decls)  =
   fsExp pat >>>= \ pat ->
   fsDecls decls >>>= \ decls ->
   mapS fsGdExp gdexps >>>= \ gdexps ->
   unitS (Alt pat gdexps decls)
 
---------------------------------------------------------------------------------------
-
+{- End FixSyntax ------------------------------------------------------------}

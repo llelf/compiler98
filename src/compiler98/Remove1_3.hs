@@ -1,3 +1,7 @@
+{- ---------------------------------------------------------------------------
+Translate list comprehensions, do notation, etc, to core.
+
+-}
 module Remove1_3(removeDo,removeExpRecord,removeDecls) where
 
 import Syntax
@@ -6,12 +10,19 @@ import IntState
 import TokenId(TokenId,t_gtgt,t_gtgteq,t_zero,tTrue)
 import TypeLib(getState,newIdent,getIdent,typeError)
 import SyntaxPos
-import TypeData
+import TypeData(TypeMonad)
 import NT
 import IdKind
-import Extra(strPos,dropJust,isJust,isNothing,mixCommaAnd,noPos,dropRight,isRight)
+import Extra(strPos,dropJust,isJust,isNothing,mixCommaAnd,noPos,dropRight
+            ,isRight)
 import List
+import Id(Id)
+
+
 ---- Done before Scc
+
+removeDecls :: Decls Id -> ((TokenId,IdKind) -> Id) -> IntState 
+            -> (Decls Id,[Id],IntState)
 
 removeDecls (DeclsParse decls) tidFun state =
   case mapS removeDecl decls (ExpCon noPos (tidFun (tTrue,Con))) ([],state) of
@@ -26,9 +37,11 @@ mkFun pos (c,i) =
   r13Unique >>>= \ v ->
   let wildcard = PatWildcard pos
       var = ExpVar pos v
-      vars = take (arityI conInfo) (repeat wildcard)  -- arityI safe for constructors :-)
+      vars = take (arityI conInfo) (repeat wildcard)  
+               -- arityI safe for constructors :-)
   in
-    unitS (Fun [ExpApplication pos (ExpCon pos c:onePos var i vars)] [(true,var)] (DeclsParse []))
+    unitS (Fun [ExpApplication pos (ExpCon pos c:onePos var i vars)] 
+             [(true,var)] (DeclsParse []))
 
 
 
@@ -44,6 +57,10 @@ mkSel (pos,field,selector) =
   r13Info field >>>= \  (InfoField unique tid icon_offs iData iSel) ->
   mapS (mkFun pos) icon_offs >>>= \ alts ->
   unitS (DeclFun pos selector alts)
+
+
+removeDecl :: Decl Id -> Exp Id -> ([Id],IntState) 
+           -> ([Decl Id],([Id],IntState))
 
 removeDecl (DeclConstrs pos zcon cs) =
   remember zcon >>>
@@ -133,7 +150,11 @@ getOffsets icon_offs con =
      then Right (con,map dropJust offsets)
      else Left (con,offsets)
 
-removeExpRecord e@(ExpRecord exp' fields') fields = removeExpRecord exp' (fields' ++ fields)
+
+removeExpRecord :: Exp Id -> [Field Id] -> TypeMonad (Exp Id)
+
+removeExpRecord e@(ExpRecord exp' fields') fields = 
+  removeExpRecord exp' (fields' ++ fields)
 removeExpRecord e@(ExpCon pos con) fields =
   getState >>>= \ state ->
   mapS fieldInfo fields >>>= \ coes ->
@@ -143,8 +164,10 @@ removeExpRecord e@(ExpCon pos con) fields =
 	in case getOffsets icon_offs con of
 	    Right (con,offsets) ->
 	      unitS (ExpApplication pos (e:map (fixArg (zip offsets exps))
-					     (zip (repeat (PatWildcard  pos)) [1 .. arityIS state con]) ))
-	    Left (con,offsets) -> typeError (errField1 state pos con offsets fields)
+					     (zip (repeat (PatWildcard  pos)) 
+                                                [1 .. arityIS state con]) ))
+	    Left (con,offsets) -> typeError 
+                                    (errField1 state pos con offsets fields)
       else typeError (errField2 state fields)
 removeExpRecord exp [] =
   typeError (errField4 (getPos exp))
@@ -155,33 +178,57 @@ removeExpRecord exp fields =
       then
 	let (icon_offs,exps) = unzip (map snd coes)
 	    pos = getPos exp
-	in case (partition isRight . map (getOffsets icon_offs) . constrsI  . dropJust . lookupIS state) t of
+	in case (partition isRight . map (getOffsets icon_offs) . 
+                 constrsI  . dropJust . lookupIS state) t of
 	  ([],_) -> typeError (errField3 state fields)
 	  (rps,_) ->
 	    getIdent (tTrue,Con) >>>= \ true ->
-	    mapS (fixAlt pos (ExpCon pos true) exps) (map dropRight rps) >>>= \ alts ->
+	    mapS (fixAlt pos (ExpCon pos true) exps) 
+              (map dropRight rps) >>>= \ alts ->
 	    unitS (ExpCase (getPos exp) exp alts)
       else typeError (errField2 state fields)
 
 
+firstIsEqual :: Eq a => [(a,b)] -> Bool
+
 firstIsEqual [] = True
 firstIsEqual ((k,_):kvs) = all (k==) (map fst kvs)  
 
+
+errField1 :: IntState -> Pos -> Id -> [Maybe a] -> [Field Id] -> String
+
 errField1 state pos con offsets fields =
-   "The field(s)" ++ mixCommaAnd (map ( \ (_,FieldExp pos field exp) -> ' ':show (tidIS state field) ++ " at " ++ strPos pos)
-				 (filter (isNothing.fst) (zip offsets fields)))
-	      ++ " do(es) not belong to constructor " ++ show (tidIS state con) ++ " used at " ++ strPos pos ++ "."
+  "The field(s)" ++ 
+  mixCommaAnd (map (\(_,FieldExp pos field exp) -> ' ':show (tidIS state field)
+                    ++ " at " ++ strPos pos)
+		   (filter (isNothing.fst) (zip offsets fields)))
+  ++ " do(es) not belong to constructor " ++ show (tidIS state con) ++ 
+  " used at " ++ strPos pos ++ "."
+
+
+errField2 :: IntState -> [Field Id] -> String
 
 errField2 state fields =
-   "The fields" ++ mixCommaAnd (map ( \ (FieldExp pos field exp) -> ' ': show (tidIS state field) ++ " at " ++ strPos pos)
-				 fields)
-	      ++ " do not belong to the same type."
+  "The fields" ++ 
+  mixCommaAnd (map (\(FieldExp pos field exp) -> ' ': show (tidIS state field)
+                      ++ " at " ++ strPos pos)
+		   fields)
+  ++ " do not belong to the same type."
+
+
+errField3 :: IntState -> [Field Id] -> String
 
 errField3 state fields =
-   "The fields "++ mixCommaAnd (map ( \ (FieldExp pos field exp) -> ' ':show (tidIS state field) ++ " at " ++ strPos pos)
-				 fields)
-	      ++ " do not belong to the same constructor."
+  "The fields " ++ 
+  mixCommaAnd (map (\(FieldExp pos field exp) -> ' ':show (tidIS state field)
+                    ++ " at " ++ strPos pos)
+	       fields)
+  ++ " do not belong to the same constructor."
+
+
+errField4 :: Pos -> [Char]
 
 errField4 pos =
-   "The update of the expression at " ++ strPos pos ++ " uses an empty list of fields."
+  "The update of the expression at " ++ strPos pos ++ 
+  " uses an empty list of fields."
 

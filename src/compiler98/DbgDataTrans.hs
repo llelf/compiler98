@@ -70,6 +70,7 @@ dTopDecl :: Decl Int -> DbgDataTransMonad [Decl Id]
 --dTopDecl d@(DeclType (Simple tid _ _) t) = 
 -- type synonym definitions are removed earlier by the compiler
 -- and replaced by the following annotation
+--   not anymore! O.C.
 dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
     lookupName noPos tid >>>= \(Just (InfoData _ _ _ nt _)) ->
     dNewType nt >>>= \nt' ->
@@ -86,12 +87,14 @@ dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
 -}
     updateSynType tid nt' >>>
     unitS [DeclIgnore "Type Synonym"]
+{- supperfluous, because DeclData is replaced by DeclConstrs by rename
 dTopDecl (DeclData mb ctx simple constrs tycls) =
   dTrace ("DbgDataTrans.dTopDecl.DeclData") $
   unitS (:[])  
-  =>>> (unitS (DeclData mb ctx) {- =>>> addCtx ctx simple-} 
+  =>>> (unitS (DeclData mb ctx) -- =>>> addCtx ctx simple 
         =>>> unitS simple 
         =>>> mapS dConstr constrs =>>> unitS tycls)
+-}
 dTopDecl d@(DeclConstrs pos id constrids) = 
   dTrace ("DbgDataTrans.dTopDecl.DeclConstrs" ++ show constrids) $
   lookupName noPos id >>>= \(Just idinfo) ->
@@ -157,10 +160,12 @@ dTopDecl (DeclInstance pos ctx id inst decls) =
     dCtxType pos ctx inst >>>= \(_, inst') -> -- Don't change the context!!!
     dDecls decls >>>= \decls' ->
     unitS [DeclInstance pos ctx id inst' decls']
+{- supperfluous, because DeclDataPrim is replaced by DeclConstrs by rename
 dTopDecl (DeclDataPrim pos id size) = 
     lookupNameStr id >>>= \idstr ->
     error ("Cannot yet deal with primitive datatypes (" ++ idstr 
            ++ ", size=" ++ show size ++ ")")
+-}
 dTopDecl d = dDecl d
 
 
