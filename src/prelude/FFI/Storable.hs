@@ -14,7 +14,7 @@ module NHC.FFI
 
 import Int        (Int8, Int16, Int32, Int64)
 import Word       (Word8, Word16, Word32, Word64)
-import Ptr        (Ptr, plusPtr)
+import Ptr        (Ptr, plusPtr, castPtr)
 --import StablePtr  (StablePtr)
 --import CTypes
 --import CTypesISO
@@ -68,6 +68,12 @@ class Storable a where
 
 ----------------------------------------------------------------------
 -- system-dependent instances
+
+instance Storable Bool where
+   sizeOf        = const 1
+   alignment     = const 1
+   peek p        = readCharAtAddr (castPtr p) >>= return . toEnum . fromEnum
+   poke p        = writeCharAtAddr (castPtr p) . toEnum . fromEnum
 
 foreign import ccall readCharAtAddr  :: Ptr Char -> IO Char
 foreign import ccall writeCharAtAddr :: Ptr Char -> Char -> IO ()

@@ -8,6 +8,7 @@ module NHC.FFI
   ) where
 
 import Ptr
+import Storable
 
 data StablePtr a
 
@@ -18,3 +19,8 @@ foreign import ccall "freeStablePtr"  freeStablePtr  :: StablePtr a -> IO ()
 foreign import cast castStablePtrToPtr :: StablePtr a -> Ptr ()
 foreign import cast castPtrToStablePtr :: Ptr () -> StablePtr a
 
+instance Storable (StablePtr a) where
+  sizeOf    = const 4
+  alignment = const 4
+  peek p    = do v <- peek (castPtr p); return (castPtrToStablePtr v)
+  poke p x  = do poke (castPtr p) (castStablePtrToPtr x)

@@ -31,9 +31,10 @@ castPtrToFunPtr :: Ptr a -> FunPtr b
 castPtrToFunPtr (Ptr a) = FunPtr a
 -}
 
-import Ptr     (Ptr,nullPtr)
+import Ptr     (Ptr,nullPtr,castPtr)
 import Numeric (showHex)
 import NonStdUnsafeCoerce (unsafeCoerce)
+import Storable
 
 data FunPtr a;		-- primitive type known to the compiler internals
 
@@ -44,6 +45,11 @@ instance Ord (FunPtr a) where
   compare a b   = compare (funPtrToInt a) (funPtrToInt b)
 instance Show (FunPtr a) where
   showsPrec _ p = showString "0x" . showHex (funPtrToInt p)
+instance Storable (FunPtr a) where
+  sizeOf    = const 4
+  alignment = const 4
+  peek p    = do v <- peek (castPtr p); return (castPtrToFunPtr v)
+  poke p x  = do poke (castPtr p) (castFunPtrToPtr x)
 
 nullFunPtr :: FunPtr a
 nullFunPtr = castPtrToFunPtr nullPtr
