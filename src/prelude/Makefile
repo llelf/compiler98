@@ -21,7 +21,7 @@ FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = $(MACHINE)/NHC LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
 LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory CPUTime \
-	     Random Haskell Binary Bit GreenCard BinArray FFI IOExtras \
+	     Random Binary Bit GreenCard BinArray FFI IOExtras \
              Observe Internal
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
@@ -177,7 +177,7 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 #
 ##and finally the straightforward ones
 #TPLABELS1  = Bit Complex Directory GreenCard Monad Time
-#TPLTHEREST = Array Binary CPUTime Char DErrNo FFI Haskell IO \
+#TPLTHEREST = Array Binary CPUTime Char DErrNo FFI IO \
 #             IOExtras Ix List Locale Maybe Numeric Observe Random Ratio
 #TPLABELS3 += ${TPLTHEREST}
 #TPLARSAUTO = $(patsubst %,${DST}/tp%${CFG}.a,${TPLABELS1} ${TPLTHEREST})
@@ -276,7 +276,7 @@ SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	Ix Array Complex GreenCard Directory CPUTime Random \
 	FFI IOExtras
 NOTYET=	NonStd \
-	Locale Time Haskell \
+	Locale Time \
 	Binary Bit BinArray Observe
 
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
@@ -475,7 +475,7 @@ endif
 TPLTHEREST = Array CPUTime Char DErrNo FFI IO IOExtras \
              Ix List Maybe Numeric Random Ratio
 ifneq "${TRACING}" "T" #Tracing = Not yet
-TPLTHEREST += Bit Binary Haskell Locale Observe
+TPLTHEREST += Bit Binary Locale Observe
 endif
 
 TPLABELS3 += ${TPLTHEREST}

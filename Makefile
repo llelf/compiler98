@@ -22,7 +22,6 @@ PRELUDEA = \
 	src/prelude/Directory/*.gc \
 	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
-	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
 	src/prelude/Internal/Makefile* src/prelude/Internal/*.hs \
@@ -61,7 +60,6 @@ PRELUDEC = \
 	src/prelude/Debug/*.hc         src/prelude/Debug/*.c \
 	src/prelude/Directory/*.hc     src/prelude/Directory/*.c \
 	src/prelude/GreenCard/*.hc     src/prelude/GreenCard/*.c \
-	src/prelude/Haskell/*.hc       src/prelude/Haskell/*.c \
 	src/prelude/IO/*.hc            src/prelude/IO/*.c \
 	src/prelude/IOExtras/*.hc      src/prelude/IOExtras/*.c \
 	src/prelude/Internal/*.hc      src/prelude/Internal/*.c \
