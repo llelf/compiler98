@@ -6,6 +6,7 @@ import List (intersperse)
 import Argv
 import PreProcessor
 import Config
+import RunAndReadStdout (basename)
 
 doEcho True cmd = "echo \"" ++ cmd ++ "\"\n" ++ cmd ++ "\n"
 doEcho False cmd = cmd ++ "\n"
@@ -14,16 +15,16 @@ oFile,hiFile,hatFile :: DecodedArgs -> String -> String -> String
 oFile opts path fmodule =
     let g    = goalDir opts
         gDir = if null g then path else g
-        tmod = if hat opts then ('T':) else id
+        tmod = if hat opts then ("Hat/"++) else id
     in fixFile opts gDir (tmod fmodule) (oSuffix opts)
 hiFile opts path fmodule =
        fixFile opts path fmodule (hiSuffix opts)
 --iFile opts path fmodule =
 --       fixFile opts path fmodule ("pp.hs")
 hatFile opts path fmodule  =
-       fixFile opts path ('T':fmodule) ("hs")
+       fixFile opts path ("Hat/"++fmodule) ("hs")
 hatHiFile opts path fmodule  =
-       fixFile opts path ('T':fmodule) (hiSuffix opts)
+       fixFile opts path ("Hat/"++fmodule) (hiSuffix opts)
 hxFile opts path fmodule  =
        fixFile opts path fmodule ("hx")
 
@@ -70,10 +71,11 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
     | hat opts && cpp =
             doEcho echo ("gcc -E -traditional -x c "++pfile
                         ++concatMap doD (defs opts ++ zdefs opts)
-                        ++" -o /tmp/"++pfile)
-            ++ doEcho echo ("hat-trans $HATFLAGS -P. /tmp/"++pfile)
-            ++ doEcho echo ("mv "++hatFile opts "/tmp" m++" "++hfile)
-            ++ doEcho echo ("mv "++hxFile opts "/tmp" m++" "++hxFile opts p m)
+                        ++" -o /tmp/"++basename pfile)
+            ++ doEcho echo ("hat-trans $HATFLAGS -P. /tmp/"++basename pfile
+				++" "++pfile)
+         -- ++ doEcho echo ("mv "++hatFile opts "/tmp" m++" "++hfile)
+         -- ++ doEcho echo ("mv "++hxFile opts "/tmp" m++" "++hxFile opts p m)
     | hat opts && not cpp = doEcho echo $
                             "hat-trans $HATFLAGS "++pfile
     | otherwise = ""
@@ -107,7 +109,7 @@ qLink opts echo graph (Program file)     =
  where
   goaldir = goalDir opts
   goal = if null goaldir then "." else goaldir
-  tmod = if hat opts then ('T':) else id
+  tmod = if hat opts then ("Hat/"++) else id
   mkOfile path f = if (dflag opts) then
                         fixFile opts ""   (tmod f) (oSuffix opts)
                    else fixFile opts path (tmod f) (oSuffix opts)
