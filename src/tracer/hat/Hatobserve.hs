@@ -63,27 +63,33 @@ main = do
 --             putStrLn (show (noParameters arguments)) >>
 --             putStrLn (show ([verboseMode,recursiveMode,expertMode])) >>
 	     do
-             hattrace <- openTrace file
-	     if (ident1=="") then
-               do
-	         putStrLn "\nWelcome to Hatobserve (6/7/01)"
-                 observed <- interactive (file,hattrace) ([],False,1,0,50)
-		 return ()
-              else
-	       do
-                 observed <- makeObserve hattrace verboseMode recursiveMode expertMode
-			     False (\ x -> True) ident1 ident2
-		 if (isTopIdentNotFound observed) then
-		    putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-			      "identifier \""++ident2++"\".\n(Check spelling!)")
-                  else
-                   if (isIdentNotFound observed) then
- 		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
-			       "identifier \""++ident1++"\".\n(Check spelling!)")
-                     else
-                      old_showReductionList 100 (fromFound observed)
-		 return ()
+             maybehattrace <- openTrace file
+             if (isNothing maybehattrace) then
+		do
+		  putStrLn ("Hatobserve\n\nError: Unable open file \""++file++"\".")
+	      else
+	       let hattrace = (fromJust maybehattrace) in
+                if (ident1=="") then
+		 do
+	          putStrLn "\nWelcome to Hatobserve (10/7/01)"
+                  observed <- interactive (file,hattrace) ([],False,1,0,50)
+		  return ()
+                 else
+	          do
+                   observed <- makeObserve hattrace verboseMode recursiveMode expertMode
+		               False (\ x -> True) ident1 ident2
+      		   if (isTopIdentNotFound observed) then
+		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+			       "identifier \""++ident2++"\".\n(Check spelling!)")
+                    else
+                     if (isIdentNotFound observed) then
+ 		       putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+			         "identifier \""++ident1++"\".\n(Check spelling!)")
+                      else
+                       old_showReductionList 100 (fromFound observed)
+                   return ()
 
+ 
 showObservation :: Int -> Int -> HatNode -> IO()
 showObservation precision i node =
  do
@@ -392,9 +398,12 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
                 interactive hatfile ((fromFound newObserved),newMore,equationsPerPage,
 				     newPos,precision)
 
-doCommand _ _ hatfile state =
-    putStrLn "Unknown command. Enter 'h' for help, 'q' to quit." >>
-    interactive hatfile state
+doCommand cmd s hatfile state =
+    if (null cmd) then
+       putStrLn "Unknown command. Enter 'h' for help, 'q' to quit." >>
+       interactive hatfile state
+     else
+      doCommand "O" ("O "++s) hatfile state
 
 interactiveHelp =
   do

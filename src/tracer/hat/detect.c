@@ -176,6 +176,11 @@ void getChildrenFor(HatFile handle,
 #endif
 	  getChildrenFor(handle,nl,parentTrace,appTrace,hash);
 	}
+
+	satc=hatFollowSATs(handle,result);
+	if (getNodeType(handle,satc)==HatSATA) isChild=0; // forget this one, if
+	// its result is a SATA (unevaluated!) nothing to ask for...
+
 	if (isChild) { //(appTrace==parentTrace) {
 	  int i=0;
 	  while (i++<arity) {
@@ -194,7 +199,7 @@ void getChildrenFor(HatFile handle,
 	  //printf("APP at 0x%x is child!\n",current);debugLines++;
 	  printf("back at APP at 0x%x\n",current);debugLines++;
 #endif
-	  satc=hatFollowSATs(handle,result);
+	  // satc=hatFollowSATs(handle,result); done already!
 	  { 
 	    int trusted = isTrusted(handle,funTrace);
 	    int toplevel = isTopLevel(handle,funTrace);

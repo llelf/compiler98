@@ -127,7 +127,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	      if (((recursiveMode==0)||(isDescendantOf(handle,
 						       apptrace,identifierNode)==0))&&
 		  ((topIdentifierNode==0)||
-		   (isDirectDescendantOf(handle,apptrace,topIdentifierNode)))) {
+		   (isDirectDescendantOf(handle,currentOffset,topIdentifierNode)))) {
 		((_ObserveQuery*) query)->currentOffset = currentOffset;
 		((_ObserveQuery*) query)->found++;
 		queryCleanOutput(query);

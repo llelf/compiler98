@@ -257,7 +257,7 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       s=getName();
       infixprio=getInfixPrio();
       infix = getInfixType();
-      if (strcmp(s,",")==0) {
+      if ((*s)==',') {
 	s=newStr(",");
 	infix=0;
       } else {
@@ -443,7 +443,7 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
     {
       AppNode* apn=exp->v.appval;
       int infix=3,infixprio=32768;
-      int i=0,spacing=1,nospace=0;
+      int i=0,spacing=1,nospace=0,tuple=0;
 #ifdef DebugPrintExpr
       printf("application of arity %i\n",apn->arity);
       printf("address is: %u\n",(unsigned long) exp);
@@ -476,8 +476,10 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
 	  s1 = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
-	  if (strcmp(s1,",")==0) {
+	  if ((*s1)==',') { // first char is ',' => tuple (2-tuple,...13-tuple)
+	    tuple=1;
 	    topInfixprio=32768; // force brackets for a tuple
+	    replaceStr(&s1,"",NULL,NULL);
 	  }
 	  break;
 	default: {
@@ -524,6 +526,10 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
 	  nospace=0;
 	  replaceStr(&s1,s1,s2,NULL); // no spacing!
 	} else
+	  if (tuple) {
+	    if (i==1) replaceStr(&s1,s2,NULL,NULL);else
+	      replaceStr(&s1,s1,",",s2);
+	  } else
 	  if ((infix<3)&&(i==1)) {
 	    if (isalnum(*s1)) replaceStr(&s1,"`",s1,"`");
 	    if (spacing)
@@ -832,7 +838,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 	  fun = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
-	  if (strcmp(fun,",")==0) {
+          if ((*fun)==',') { //tuple found
 	    topInfixprio=32768; // force brackets for a tuple
 	  }
 	  break;

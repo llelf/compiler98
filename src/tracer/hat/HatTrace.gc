@@ -103,11 +103,21 @@ frommightbe (Just v) = v
 %dis maybeHatNode x y = <frommightbe / tomightbe > (int x, int y)
 
 
-%fun openTrace :: String -> IO HatTrace
+%fun _intopenTrace :: String -> IO HatTrace
 %call (string name)
 %code hatfileHandle=(void*) hatOpenFile(name);
 %result (foreign "hatCloseFile" hatfileHandle)
 
+%fun _isInvalidTrace :: HatTrace -> Int
+%call (foreign f hattrace)
+%code res = ((long) hattrace)<0;
+%result (int res)
+
+openTrace :: String -> IO (Maybe HatTrace)
+openTrace s =
+    do
+      h <- _intopenTrace s
+      if ((_isInvalidTrace h)/=0) then return Nothing else return (Just h)
 
 %fun _hatMain :: HatTrace -> RefNumber
 %call (foreign f hattrace)

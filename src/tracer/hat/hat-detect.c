@@ -49,7 +49,7 @@ int main (int argc, char *argv[])
     }
   }
 
-  printf("\nWelcome to hat-detect! (6/7/01)\n");
+  printf("\nWelcome to hat-detect! (10/7/01)\n");
   if (err!=0) {
     fprintf(stderr,"\nusage: hat-detect file-name\n");
     fprintf(stderr,"       algorithmic debugging on a hat redex trace file\n\n");
@@ -424,6 +424,32 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
   return retval;
 }
 
+filepointer topMost(HatFile handle,filepointer fileoffset) {
+  filepointer prev = 0;
+  filepointer old = hatNodeNumber(handle);
+  char nodeType;
+
+  while (fileoffset!=0) {
+    prev = fileoffset;
+    nodeType=getNodeType(handle,fileoffset);
+    switch(nodeType) {
+    case HatHidden:
+    case HatSATC:
+    case HatProjection:
+    case TRNAM:
+    case HatApplication:{
+      fileoffset = getParent();
+      break;
+    }
+    default:
+      hatSeekNode(handle,old);
+      return 0;
+    }
+  }
+  hatSeekNode(handle,old);
+  return prev;
+}
+
 int askNodeList(HatFile handle,int question,NodeList* results,
 		int isTopSession,HashTable* hash) {
   unsigned long satc;
@@ -456,6 +482,7 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	  getChildrenFor(handle,children,e->fileoffset,satc,hash);
 	  freeHashTable(hash);
 	  removeFromList(children,mainCAF); // never consider the main CAF a child of anything
+	  removeFromList(children,topMost(handle,e->fileoffset));
 	}
 	success = askNodeList(handle,question,children,0,hash);
 	if (success>=10) {answer=success;success=0;}
