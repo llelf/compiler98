@@ -15,9 +15,15 @@ SRCS_T	= \
 	PrimIntegerGe.hs PrimIntegerGt.hs PrimIntegerNe.hs \
 	PrimIntegerMul.hs PrimIntegerNeg.hs PrimIntegerOr.hs \
 	PrimIntegerQuotRem.hs PrimIntegerSub.hs \
-	PrimIntegerFromInt.hs PrimIntFromIntegerC.hs 
+	PrimIntegerFromInt.hs PrimIntFromIntegerC.hs \
+	PrimEncodeDouble.hs PrimDoubleFromInteger.hs \
+	PrimEncodeFloat.hs  PrimFloatFromInteger.hs \
+	PrimDecodeDouble.hs PrimDecodeFloat.hs \
+	PrimsFloat.hs PrimsDouble.hs
 
 SRCS_NT	= _Driver.hs PrimIntFromInteger.hs 
+
+ERRORS_T = PrimDecodeDouble.hs PrimDecodeFloat.hs
 
 
 # Here are the main rules.
