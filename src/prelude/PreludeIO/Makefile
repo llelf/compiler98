@@ -12,13 +12,15 @@ SRCS	= \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
 	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
-	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
+	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs	   \
+	_IOReturn.hs
 SRCS_T	=\
 	DIO.hs DIOError.hs GetChar.hs GetContents.hs Interact.hs \
 	Monad_IO.hs PutChar.hs PutStr.hs PutStrLn.hs IoError.hs UserError.hs \
 	TFilePath.hs WriteFile.hs Catch.hs GetLine.hs Print.hs Show_IOError.hs \
 	Eq_IOError.hs Functor_IO.hs
-NTSRCS= StdIO.hs
+SRCS_NT =\
+	_IOReturn.hs StdIO.hs
 NOTDONE= AppendFile.hs Eq_IOError.hs Functor_IO.hs \
 	 ReadFile.hs ReadIO.hs ReadLn.hs \
 	 StrError.hs
@@ -29,13 +31,13 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-NTOBJS=$(patsubst %.hs,${OBJDIR}/%.o,${NTSRCS})
-
-ifeq "T" "${TRACING}"
-extra: ${NTOBJS}
-$(NTOBJS): ${OBJDIR}/%.o: %.hs
-	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-endif
+#NTOBJS=$(patsubst %.hs,${OBJDIR}/%.o,${NTSRCS})
+#
+#ifeq "T" "${TRACING}"
+#extra: ${NTOBJS}
+#$(NTOBJS): ${OBJDIR}/%.o: %.hs
+#	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+#endif
 
 
 

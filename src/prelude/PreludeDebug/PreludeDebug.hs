@@ -8,6 +8,8 @@ module Prelude where
 
 --import PackedString(unpackPS, PackedString(..), packString)
 import Ratio (Ratio)
+import DIO		-- needed for attaching traces to prim I/O operations.
+import DEither		-- traced version needed, as for DIO.
 
 sameAs :: a -> a -> Bool
 x `sameAs` y = cPointerEquality (E x) (E y)
@@ -36,21 +38,25 @@ data NmType =
 
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
-    toNm :: Trace -> a -> SR -> Trace
-    toNm t v sr = Nm t NTDummy sr	-- for safety, we hope never required
+    toNm :: Trace -> a -> SR -> R a
+    toNm t v sr = R v (Nm t NTDummy sr)	-- for safety, we hope never required
 instance NmCoerce Int where
-    toNm t v sr = Nm t (NTInt v) sr
+    toNm t v sr = R v (Nm t (NTInt v) sr)
 instance NmCoerce Char where
-    toNm t v sr = Nm t (NTChar v) sr
+    toNm t v sr = R v (Nm t (NTChar v) sr)
 instance NmCoerce Integer where
-    toNm t v sr = Nm t (NTInteger v) sr
+    toNm t v sr = R v (Nm t (NTInteger v) sr)
 instance NmCoerce Float where
-    toNm t v sr = Nm t (NTFloat v) sr
+    toNm t v sr = R v (Nm t (NTFloat v) sr)
 instance NmCoerce Double where
-    toNm t v sr = Nm t (NTDouble v) sr
+    toNm t v sr = R v (Nm t (NTDouble v) sr)
 instance NmCoerce Bool where
-    toNm t False sr = Nm t (NTConstr 0) sr
-    toNm t True  sr = Nm t (NTConstr 1) sr
+    toNm t False sr = R False (Nm t (NTConstr 0) sr)
+    toNm t True  sr = R True  (Nm t (NTConstr 1) sr)
+instance NmCoerce a => NmCoerce (IO a) where
+    toNm t (IOPrim (R v _)) sr =
+                      R (IO (R (\t0 rw-> R (Right (toNm t v sr)) t) t))
+                        (Nm t (NTConstr 0) sr)
 
 {-
 -- toNm required to coerce return value from a primitive into a Trace structure
@@ -120,7 +126,7 @@ enter nm t e = cEnter nm t (E e)
 primEnter :: NmCoerce a => SR -> NmType -> Trace -> a -> R a
 primEnter sr nm t e = let v  = enter nm t e
                           vn = toNm t v sr
-                      in v `myseq` vn `myseq` (R v vn)
+                      in v `myseq` vn
 --primEnter sr nm t e = let v  = enter nm t e
 --                          vn = toNm v 
 --                      in v `myseq` vn `myseq` (R v (Nm t vn sr))
@@ -1093,10 +1099,8 @@ spine TNil = ()
 value (R v _) = v
 
 
--- Combinator for using primitives:   prim_n
--- This implementation is not yet correct - the trace for
--- the value returned by the primitive is available too early.
---  (Actually, I believe that is fixed now?)
+-- Combinators for using primitives:   prim_n
+
 prim0 nm rf sr t = 
   let tf = Nm t nm sr
   in (\(R v vt)->

@@ -130,7 +130,7 @@ else	#### tracing
 
 # .SUFFIXES: .subdir
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
-	PreludeDebug PreludeList PreludeIO PreludeText Prelude \
+	PreludeList PreludeIO PreludeText PreludeDebug Prelude \
 	Maybe List Monad System IO PackedString \
 	Ix Complex
 NOTYET=	NonStd Array Directory \
