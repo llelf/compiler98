@@ -30,7 +30,7 @@ SRCS = \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
 	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs FFITrans.hs \
 	ReportImports.hs AuxFile.hs AuxLabelAST.hs TraceId.hs AuxFixity.hs \
-	TraceTrans.hs MainNew.hs
+	TraceTrans.hs MainNew.hs TraceDerive.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})

@@ -3,18 +3,23 @@ module TraceId
 			-- constructors:
   , mkLambdaBound      	-- :: TokenId -> TraceId
   , plus		-- :: TokenId -> AuxiliaryInfo -> TraceId
+                        -- modifiers
+  , dropModule          -- :: TraceId -> Traceid
 			-- selectors:
   , tokenId		-- :: TraceId -> TokenId
   , arity		-- :: TraceId -> Maybe Int
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
+  , getUnqualified      -- :: TraceId -> String
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
-  ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus -- :: TraceId
+  ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus,
+  ,tTokenTrue,tTokenFalse -- :: TraceId
   ) where
 
-import TokenId (TokenId,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
-               ,t_andand,t_equalequal,t_greaterequal,tminus)
+import TokenId (TokenId,extractV,dropM,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
+               ,t_andand,t_equalequal,t_greaterequal,tminus,tTrue,tFalse)
 import AuxFile (AuxiliaryInfo(..),Fixity(..),emptyAux)
+import PackedString (unpackPS)
 
 {-
 data TraceId = Keep	{ tokenId :: TokenId }
@@ -34,6 +39,12 @@ mkLambdaBound t =
 
 plus :: TokenId -> AuxiliaryInfo -> TraceId
 t `plus` aux = (t, Just aux)
+
+-- modification functions
+
+-- drop qualifier
+dropModule :: TraceId -> TraceId
+dropModule (tokenId,aux) = (dropM tokenId,aux)
 
 -- selection functions
 
@@ -61,6 +72,8 @@ fixPriority (_,Just info) = encode (fixity info) (priority info)
     encode None    n = 0 + (n*4)
     encode (Pre _) n = 0 + (n*4)
 
+getUnqualified :: TraceId -> String
+getUnqualified = reverse . unpackPS . extractV . tokenId
 
 -- TraceId versions of some hardcoded tokens 
 
@@ -91,3 +104,8 @@ tTokenGreaterEqual = t_greaterequal `plus` emptyAux
 tTokenMinus :: TraceId
 tTokenMinus = tminus `plus` emptyAux
 
+tTokenTrue :: TraceId
+tTokenTrue = tTrue `plus` emptyAux{args=0}
+
+tTokenFalse :: TraceId
+tTokenFalse = tFalse `plus` emptyAux{args=0}

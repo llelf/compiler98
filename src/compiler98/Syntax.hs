@@ -214,6 +214,17 @@ getConstrArgumentList :: Constr id -> [(Maybe [(Pos,id)],Type id)]
 getConstrArgumentList (Constr _ _ xs) = xs
 getConstrArgumentList (ConstrCtx _ _ _ _ xs) = xs
 
+getConstrArgumentTypes :: Constr id -> [Type id]
+getConstrArgumentTypes constr = 
+  concat . map (\(l,t) -> replicate (times l) t) . getConstrArgumentList $ 
+    constr
+  where
+  times Nothing = 1
+  times (Just labels) = length labels 
+
+constrArity :: Constr id -> Int
+constrArity = length . getConstrArgumentTypes
+
 
 type Instance id = Type id  -- Not TypeVar
 

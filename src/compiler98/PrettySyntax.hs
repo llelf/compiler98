@@ -554,7 +554,7 @@ ppDecl info (DeclFun pos fun funs) =
     (sep line . map (ppFun info fun) $ funs)
 
 ppDecl info (DeclIgnore s) =
-  text ("Ignoring " ++ s)
+  text ("{- Ignoring " ++ s ++ " -}")
 
 ppDecl info (DeclError s) =
   text ("ERROR:  " ++ s)

@@ -37,6 +37,9 @@ instance Show TokenId where
   showsPrec d (Qualified3 t1 t2 t3) = 
     shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
 
+mkUnqualifiedTokenId :: String -> TokenId
+mkUnqualifiedTokenId = visible . reverse
+
 
 isTidOp :: TokenId -> Bool
 isTidOp (TupleId s) = False

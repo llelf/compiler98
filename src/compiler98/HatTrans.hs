@@ -96,8 +96,8 @@ main' args = do
   let prg = implicitlyImportPrelude flags 
               (maybeStripOffQual "Prelude" parsedPrg)
   toAuxFile flags (sHatAuxFile flags) prg
-  when (sParse flags)
-       (putStr (prettyPrintTokenId flags ppModule prg)) -- debug
+--  when (sParse flags)
+--       (putStr (prettyPrintTokenId flags ppModule prg)) -- debug
   newprog <- auxLabelSyntaxTree flags prg
   when (sTraceFns flags)
        (putStr (prettyPrintTraceId flags ppModule newprog)) -- debug

@@ -8,8 +8,8 @@ refering to various traces and intermediate expressions.
 Details of new name scheme near the end of this module.
 
 Deferred:
-Records: selectors won't have right type.
 import/export of the form TyCon(..); need extension of module TraceId
+to handle data constructor info and field selectors
 
 In multi-module program may get name conflict, because also names internal to
 a module may be exported. Would need to keep track of all top-level names
@@ -26,13 +26,16 @@ module TraceTrans (traceTrans,maybeStripOffQual) where
 
 import Syntax
 import SyntaxPos (HasPos(getPos))
-import TokenId (TokenId(TupleId,Visible,Qualified),isTidCon
+import TokenId (TokenId(TupleId,Visible,Qualified)
+               ,mkUnqualifiedTokenId,isTidCon
                ,qualify,visible,extractV,extractM,dropM
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq,t_Colon,t_List)
+import TraceDerive (derive)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos,mapListSnd,mapSnd)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
+               ,getUnqualified
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
 import AuxFile (AuxiliaryInfo) -- needed only for hbc's broken import mechanism
@@ -347,13 +350,17 @@ tDecl :: Bool -> Exp TokenId -> Decl TraceId
 
 tDecl _ _ (DeclType lhsTy rhsTy) = 
   singleDecl $ DeclType (tSimple lhsTy) (tType rhsTy)
-tDecl _ _ (DeclData sort contexts lhsTy constrs derive) = 
+tDecl _ _ (DeclData sort contexts lhsTy constrs pClss) = 
   ([DeclData sort (tContexts contexts) (tSimple lhsTy) 
     (map tConstr constrs) []] 
     -- "derive" should be empty, because transformed classes cannot be derived
-  ,instDecl:fieldSelectorDecls
-  ,foldr (uncurry addCon) fieldSelectorConsts (map getCon constrs))
+  ,instDecl:fieldSelectorDecls++deriveDecls
+  ,foldr (uncurry addCon) (fieldSelectorConsts `merge` deriveConsts)
+     (map getCon constrs))
   where
+  (DeclsParse deriveDecls,deriveConsts) = 
+     tDecls False (mkRoot noPos False) 
+       (DeclsParse (derive contexts lhsTy constrs pClss))
   instDecl = wrapValInstDecl (getPos lhsTy) contexts lhsTy constrs
   (fieldSelectorDecls,fieldSelectorConsts) = mkFieldSelectors constrs
   getCon (Constr pos id _) = (pos,id)
@@ -514,10 +521,10 @@ tDecl _ parent (DeclFun pos id (Fun [] _ _ : _)) =
   error "tDecl: variable multiple defined"
 tDecl traced parent (DeclFun pos id funs) = 
   tFuns traced pos id funs  -- a function does not use the static parent
-tDecl _ _ (DeclFixity _) = 
-  ([],[],emptyModuleConsts) 
+tDecl _ _ (DeclFixity _) = ([],[],emptyModuleConsts) 
   -- fixity declarations have been processed before 
   -- not needed in output, because pretty printer produces unambiguous output
+tDecl _ _ (DeclIgnore s) = ([DeclIgnore s],[],emptyModuleConsts)
 tDecl _ _ _ = error "tDecl: unknown sort of declaration"
 
 
@@ -1119,7 +1126,8 @@ tExp traced cr parent (ExpLit pos lit@(LitRational b r)) =
 --      ])
 tExp traced cr parent (ExpLit pos lit@(LitInteger _ _)) =
   (ExpApplication pos 
-    [combApply pos False False 1,sr,parent
+    [combApply pos False False 1,sr
+    ,ExpApplication pos [ExpVar pos tokenMkTHidden,parent]
     ,ExpApplication pos [ExpVar pos tokenFromInteger,sr,parent]
     ,ExpApplication pos [ExpVar pos tokenConInteger,sr,parent,ExpLit pos lit]]
   ,pos `addPos` emptyModuleConsts)
@@ -1577,12 +1585,6 @@ numToSym = map (("!#$%&*+^@>" !!) . digitToInt)
 
 modulePrefix = 'T'
 
-mkUnqualifiedTokenId :: String -> TokenId
-mkUnqualifiedTokenId = visible . reverse
-
-getUnqualified :: TraceId -> String
-getUnqualified = reverse . unpackPS . extractV . tokenId
-
 -- apply function to unqualified name part 
 -- and prefix module name (if qualified)
 updateToken :: (String -> String) -> TraceId -> TokenId
@@ -1712,6 +1714,9 @@ tokenMkTRoot = mkTracingToken "mkTRoot"
 
 tokenHiddenRoot :: TokenId
 tokenHiddenRoot = mkTracingToken "hiddenRoot"
+
+tokenMkTHidden :: TokenId
+tokenMkTHidden = mkTracingToken "mkTHidden"
 
 tokenR :: TokenId
 tokenR = mkTracingToken "R"
