@@ -814,12 +814,10 @@ int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case HatHidden:
-      //case TRSATA:
-      //case TRSATB:
     case HatSATC:
       fileoffset=getParent();
       break;
-    case HatProjection: // right implementation?
+    case HatProjection:
       fileoffset=getParent();
       break;
     case HatName:

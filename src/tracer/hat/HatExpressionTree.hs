@@ -9,7 +9,8 @@ module HatExpressionTree (
 		   HatRational,HatFloat,HatDouble,HatString,HatIf,HatGuard,HatContainer,
 		   HatContainer,HatNone),
  toHatExpressionTree,
-
+ toHatLimit,
+ fromHatLimit,
  prettyPrint,
  printExpression,
  printReduction,
@@ -21,6 +22,10 @@ import HatTrace
 import Maybe
 import Char(isAlphaNum)
 
+
+#ifdef __NHC__
+default (Int,Double,HatExpressionTree)
+#endif
 
 data HatExpressionTree = 
                      HatApplication {ref::HatNode,
@@ -74,6 +79,7 @@ data HatExpressionTree =
 
 instance HatRep HatExpressionTree where
   toHatNode        = ref
+  toUndefined a    = HatNone (toHatNode (toUndefined a))
   hatParent        = parent
   hatApplFun       = fun
   hatApplArgs      = args
@@ -183,8 +189,7 @@ spacer stra strb@(':':_) = stra ++ strb
 spacer stra strb = if (last stra)==':' then stra++strb else stra ++ " " ++ strb
 
 
---ppStringExpr :: HatRep a => Int -> a -> Maybe String
--- because of cyclic dependecy NHC won't compile if the type is given. Why??
+ppStringExpr :: HatRep a => Int -> a -> Maybe String
 ppStringExpr 0 _ = Nothing
 ppStringExpr precision expr =
  let exptype = (hatNodeType expr);
@@ -203,7 +208,7 @@ ppStringExpr precision expr =
      else 
       if funsym=="[]" then (Just "") else Nothing
  where 
-    -- pp' :: HatRep b => b -> b -> Maybe String
+       pp' :: HatRep b => b -> b -> Maybe String
        pp' exp s = if (hatNodeType exp)==HatCharNode then
 		    let c = hatValueChar exp;
 			r = (ppStringExpr (precision-1) s) in
@@ -224,11 +229,10 @@ thrd3 (_,_,c)    = c
 -- prettyPrinting by Haskell
 
 prettyPrint :: HatRep a => Int -> a -> String
-prettyPrint i expr = fst3 (pPrint [] i (HatNoInfix) expr)
+prettyPrint i expr = fst3 (pPrint [] i HatNoInfix expr)
 
--- pPrint :: HatRep a => [HatNode] -> Int -> a -> HatInfixType ->
---           (String,HatInfixType,[HatNode])
--- because of cyclic dependecy NHC won't compile if the type is given. Why?
+pPrint :: HatRep a => [HatNode] -> Int -> HatInfixType -> a ->
+          (String,HatInfixType,[HatNode])
 pPrint previousnodes precision topInfix expr
  | precision == 0 = ("<CUT>",HatNoInfix,[])
  | otherwise =
@@ -293,6 +297,7 @@ pPrint previousnodes precision topInfix expr
     prettyPrint' _ HatCaseNode      = ("CASE",HatNoInfix,[])
     prettyPrint' pnodes HatProjNode = (pPrint pnodes (precision-1) topInfix
 				       (hatProjValue expr))
+    prettyPrint' _ HatInvalidNode   = ("<CUT>",HatNoInfix,[])
     prettyPrint' _ x = ("{ERROR in prettyPrint: "++(show x)++"}",HatNoInfix,[])
     ppString s = ('\'':s)++"'"
     swapListInfix HatNoInfix f x = (f:x)
@@ -343,29 +348,31 @@ printReductionList (x:list) =
     printReductionList list
 
 
-data HatRep a => HatLimit a = Limit a deriving Show
+data HatRep a => HatLimit a = Limit Int a deriving Show
 
---toHatLimit :: HatRep a => a -> HatLimit a
-toHatLimit n = Limit n
+toHatLimit :: HatRep a => Int -> a -> HatLimit a
+toHatLimit 0 a = Limit 0 (toUndefined a)
+toHatLimit limitation n = Limit limitation n
 
---fromLimit :: HatRep a => HatLimit a -> a
-fromLimit (Limit n) = n
+fromHatLimit :: HatRep a => HatLimit a -> a
+fromHatLimit (Limit _ n) = n
 
---instance HatRep (HatLimit a) where
---  toHatNode         = toHatNode . fromLimit
---  hatParent         = toHatLimit . hatParent . fromLimit
---  hatApplFun        = toHatLimit . hatApplFun . fromLimit
---  hatApplArgs       = (map toHatLimit). hatApplArgs . fromLimit
---  hatApplInfix      = hatApplInfix . fromLimit
---  hatResult         = toHatLimit . hatResult . fromLimit
---  hatName           = hatName . fromLimit
---  hatProjValue      = toHatLimit . hatProjValue . fromLimit
---  hatValueInt       = hatValueInt . fromLimit
---  hatValueChar      = hatValueChar . fromLimit
---  hatValueInteger   = hatValueInteger . fromLimit
---  hatValueRational  = hatValueRational . fromLimit
---  hatValueFloat     = hatValueFloat . fromLimit
---  hatValueDouble    = hatValueDouble . fromLimit
---  hatValueString    = hatValueString . fromLimit
---  hatNodeType       = hatNodeType . fromLimit
+instance HatRep a => HatRep (HatLimit a) where
+  toHatNode (Limit p n)        = toHatNode n
+  toUndefined (Limit p n)      = Limit 0 (toUndefined n)
+  hatParent (Limit p n)        = (toHatLimit (p-1) (hatParent n))
+  hatApplFun (Limit p n)       = (toHatLimit (p-1) (hatApplFun n))
+  hatApplArgs (Limit p n)      = (map (toHatLimit (p-1))) (hatApplArgs n)
+  hatApplInfix (Limit p n)     = hatApplInfix n
+  hatResult (Limit p n)        = toHatLimit (p-1) (hatResult n)
+  hatName (Limit p n)          = hatName n
+  hatProjValue (Limit p n)     = toHatLimit (p-1) (hatProjValue n)
+  hatValueInt (Limit p n)      = hatValueInt n
+  hatValueChar (Limit p n)     = hatValueChar n
+  hatValueInteger (Limit p n)  = hatValueInteger n
+  hatValueRational (Limit p n) = hatValueRational n
+  hatValueFloat (Limit p n)    = hatValueFloat n
+  hatValueDouble (Limit p n)   = hatValueDouble n
+  hatValueString (Limit p n)   = hatValueString n
+  hatNodeType (Limit p n)      = hatNodeType n
 

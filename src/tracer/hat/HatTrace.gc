@@ -26,6 +26,7 @@ module HatTrace (
 
  HatRep( -- class HatRep, for all structure representing Hat redexes
 	toHatNode,    -- convert to type HatNode
+	toUndefined,  -- return an undefined node of the same class instance
 	hatNodeType,  -- return type of redex trail node
 	hatParent,    -- return parent of redex trail node
 	hatApplFun,   -- return node for function of an application node
@@ -134,6 +135,7 @@ data HatSourceRef    = HatSourceRef {row           :: Int,
 -- class for all structures representing Hat redexes
 class Show a => HatRep a where
   toHatNode        :: a -> HatNode
+  toUndefined      :: a -> a
   hatParent        :: a -> a
   hatApplFun       :: a -> a
   hatApplArgs      :: a -> [a]
@@ -905,6 +907,7 @@ printCReductionList precision (e:list) =
 
 instance HatRep HatNode where
   toHatNode node   = node
+  toUndefined _    = Invalid
   hatParent        = _hatParent
   hatApplFun       = _hatApplFun
   hatApplArgs      = _hatApplArgs

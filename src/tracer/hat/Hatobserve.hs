@@ -66,9 +66,6 @@ main =
                 recursiveMode = 'r' `elem` options;
                 expertMode = 'x' `elem` options;
 		(ident1,ident2,file) = (fromJust identifiers) in
---             putStrLn (show (goodParameters "vxur" arguments))>>
---             putStrLn (show (noParameters arguments)) >>
---             putStrLn (show ([verboseMode,recursiveMode,expertMode])) >>
 	       startObserve file verboseMode recursiveMode expertMode ident1 ident2 False
 
 --startObserve :: String -> Bool -> Bool -> Bool -> String -> String -> Bool -> IO ()
@@ -91,7 +88,8 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
               if (ident1=="") then
                do
 	 	  dummy <- interactive (file,hattrace) ([],False,1,0,50,
-							observableIdents hattrace)
+							observableIdents hattrace,
+							False,False)
 		  return ()
                else
                if (remote) then
@@ -99,7 +97,9 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
                     hasmore = (null obs)==False in
                  do
 	           dummy <- doCommand "" "" (file,hattrace) ((fromFound observed),
-							     hasmore,1,0,50,[])
+							     hasmore,1,0,50,
+							     observableIdents hattrace,
+							     False,False)
                    return ()
                 else
 	        do
@@ -142,6 +142,7 @@ showObservationList _ i 0 _ = return 0
 showObservationList precision i max (e:r) =
     do
       showObservation precision i e
+      putStrLn ""
       count <- showObservationList precision (i+1) (max-1) r
       return (count+1)
 
@@ -204,8 +205,9 @@ showSomeMore precision currentEq equationsPerPage observed =
 	     showNowList
     return (count+currentEq,hasMore)
 
-interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int,[HatNode]) -> IO()
-interactive hatfile state@(_,more,_,_,_,_) =
+interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int,[HatNode],
+				     Bool,Bool) -> IO()
+interactive hatfile state@(_,more,_,_,_,_,_,_) =
  do
    if (more==False) then
       putStr "\ncommand>: "
@@ -236,16 +238,16 @@ getNumberParam cmd pattern1 pattern2 =
 
 
 doCommand :: String -> String -> (String,HatTrace) ->
-	     ([HatNode],Bool,Int,Int,Int,[HatNode]) -> IO()
+	     ([HatNode],Bool,Int,Int,Int,[HatNode],Bool,Bool) -> IO()
 doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,
-			       precision,observable)
+			       precision,observable,verboseMode,recursiveMode)
   | (cmd=="")||((length (words s)==1)&&((cmd=="D")||(cmd=="DOWN"))) =
     if (more) then
        do
         (newPos,newMore) <- (showSomeMore precision currentPos equationsPerPage
 			     lastObserved)
 	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos,precision,
-			     observable)
+			     observable,verboseMode,recursiveMode)
      else
       do
        if (currentPos>0) then putStrLn "No more applications observed." else
@@ -255,9 +257,22 @@ doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,
 
 -- cmd must be atleast one character long!
 doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
-					currentPos,precision,observable)
+					currentPos,precision,observable,
+					verboseMode,recursiveMode)
     | (cmd=="Q")||(cmd=="QUIT")||(cmd=="EXIT") = putStrLn "Goodbye!\n"
     | (cmd=="H")||(cmd=="HELP") = interactiveHelp >> interactive hatfile state
+    | (cmd=="V")||(cmd=="VERBOSE") =
+	(putStr "verbose mode is now ") >> 
+	(if (verboseMode) then putStrLn "OFF" else putStrLn "ON") >>
+	interactive hatfile (lastObserved,more,equationsPerPage,
+			     currentPos,precision,observable,
+			     not verboseMode,recursiveMode)
+    | (cmd=="R")||(cmd=="RECURSIVE") =
+	(putStr "recursive mode is now ") >> 
+	(if (recursiveMode) then putStrLn "OFF" else putStrLn "ON") >>
+	interactive hatfile (lastObserved,more,equationsPerPage,
+			     currentPos,precision,observable,
+			     verboseMode,not recursiveMode)
     | (cmd=="S")||(cmd=="SHOW") =
 	(putStrLn "\nObservable Identifier:") >>
 	(putStrLn "----------------------") >>
@@ -276,7 +291,8 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
           if (newPerPage>0) then
             putStrLn ("Lines per page set to "++(show newPerPage)) >> 
             interactive hatfile (lastObserved,more,newPerPage,
-				 currentPos,precision,observable)
+				 currentPos,precision,observable,
+				 verboseMode,recursiveMode)
            else
             putStrLn "Lines per page must be greater than 0!" >>
             interactive hatfile state
@@ -288,21 +304,24 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
 	    newPrec = precision+(if (isNothing val) then 1 else fromJust val) in
             putStrLn ("Precision set to "++(show newPrec)) >> 
             interactive hatfile (lastObserved,more,equationsPerPage,
-				 currentPos,newPrec,observable)
+				 currentPos,newPrec,observable,
+				 verboseMode,recursiveMode)
     | (isJust (getNumberParam s "-" "-PREC"))||((cmd=="-")||(cmd=="-PREC")) =
 	let val = (getNumberParam s "-" "-PREC");
 	    newPrec1 = precision-(if (isNothing val) then 1 else fromJust val);
 	    newPrec = if newPrec1<3 then 3 else newPrec1 in
             putStrLn ("Precision set to "++(show newPrec)) >> 
             interactive hatfile (lastObserved,more,equationsPerPage,
-				 currentPos,newPrec,observable)
+				 currentPos,newPrec,observable,
+				 verboseMode,recursiveMode)
     | (isJust (getNumberParam s "U" "UP")) =
 	let up = fromJust (getNumberParam s "U" "UP") in
          if (up==0) then interactive hatfile state else
           let newPos = if up>currentPos then 0 else currentPos-up in
             doCommand "" "" hatfile (lastObserved,
 				  if (currentPos==newPos) then more else True,
-				  equationsPerPage,newPos,precision,observable)
+				     equationsPerPage,newPos,precision,observable,
+				     verboseMode,recursiveMode)
     | ((isJust (getNumberParam s "D" "DOWN"))||
        (isJust (getNumberParam s "G" "GO"))) =
 	let down = if (isJust (getNumberParam s "D" "DOWN")) then
@@ -318,11 +337,13 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
 	       let realPos = length lastObserved in
                 putStrLn "Now at the end of the list." >>
                 interactive hatfile (lastObserved,False,equationsPerPage,realPos,
-				     precision,observable)
+				     precision,observable,
+				     verboseMode,recursiveMode)
             else
              doCommand "" "" hatfile (lastObserved,
 				      True,
-				      equationsPerPage,newPos,precision,observable)
+				      equationsPerPage,newPos,precision,observable,
+				      verboseMode,recursiveMode)
     | (cmd=="U")||(cmd=="UP") = doCommand "UP" ("UP "++(show (2*equationsPerPage)))
 				hatfile state
     | (cmd=="G")||(cmd=="GO") =
@@ -390,7 +411,7 @@ doCommand cmd s hatfile state
         
 doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
 					    more,equationsPerPage,currentPos,precision,
-					    observable)
+					    observable,verboseMode,recursiveMode)
   | ((cmd=="O")||(cmd=="OBSERVE"))&&(length (words s)>1) =
    let (opts,p) = (options (unwords (tail (words s))));
        pattern1 = (stringLex p);
@@ -405,7 +426,8 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
          putStrLn ("searching for: "++fun++(if ident2/="" then " in "++ident2 else ""))
 	 putStrLn ""
 
-         let newObserved = makeObserve hattrace ('v' `elem` opts) ('r' `elem` opts) False
+         let newObserved = makeObserve hattrace (verboseMode || ('v' `elem` opts))
+			   (recursiveMode || ('r' `elem` opts)) False
 			   ((length pattern)>2)
 			   (\x -> (compareExpr x pattern))
 			   fun ident2 in
@@ -428,7 +450,8 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
                 (newPos,newMore) <- (showSomeMore precision 0 equationsPerPage
 	 			     (fromFound newObserved))
                 interactive hatfile ((fromFound newObserved),newMore,equationsPerPage,
-				     newPos,precision,observable)
+				     newPos,precision,observable,
+				     verboseMode,recursiveMode)
 
 doCommand cmd s hatfile state =
     if (null cmd) then
@@ -488,6 +511,15 @@ interactiveHelp =
    putStrLn " l <n>     or lines <n>        set number of equations listed per page to <n>"
    putStrLn " +<n>      or -<n>             increase/decrease precision depth for expressions"
    putStrLn ""
+   putStrLn "Press <RETURN>..."
+   wait <- getLine
+   putStrLn " v         or verbose          to toggle the verbose mode"
+   putStrLn "                                ON:  unevaluated expressions are shown in full"
+   putStrLn "                                OFF: unevaluated expressions are shown as an \"_\""
+   putStrLn " r         or recursive        to toggle the recursive filter mode"
+   putStrLn "                                ON:  recursive calls to functions are omitted"
+   putStrLn "                                OFF: all calls to functions are observed"
+   putStrLn ""
    putStrLn " h         or help             for help"
    putStrLn " q         or quit             quit"
    putStrLn ""
@@ -500,10 +532,7 @@ queryHelp =
   do
    putStrLn "\n\n\n\nHelp for Query Syntax"
    putStrLn "---------------------------------------------------------------------------"
-   putStrLn "syntax for <query>: \"[-rv] <pattern> [in <identifier>]\""
-   putStrLn ""
-   putStrLn " option \"-r\" suppresses recursive applications"
-   putStrLn " option \"-v\" enables verbose output - to show unevaluated expressions"
+   putStrLn "syntax for <query>: \"<pattern> [in <identifier>]\""
    putStrLn ""
    putStrLn " There are three possibilities for <pattern>:"
    putStrLn ""
@@ -517,9 +546,9 @@ queryHelp =
    putStrLn ""
    putStrLn " The underscore \"_\" matches any argument/subexpression!"
    putStrLn ""
-   putStrLn "example queries: -r myfunction"
+   putStrLn "example queries: myfunction"
    putStrLn "                 myfunction _ (myConstructor 2 _) in myOtherFunction"
-   putStrLn "                 -rv (myfunction \"Hello World!\" (: 1 (: 2 _))) = [1,_]"
+   putStrLn "                 (myfunction \"Hello World!\" (: 1 (: 2 _))) = [1,_]"
    putStrLn ""
    putStrLn "ATTENTION: Currently INFIX operators are not supported in patterns!"
    putStrLn "           Please use the prefix style and enclose applications in parenthesis."
