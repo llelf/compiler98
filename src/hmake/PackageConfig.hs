@@ -4,7 +4,8 @@ module PackageConfig
 
 import Config
 import Compiler
-import RunAndReadStdout
+import Platform (unsafePerformIO,escape)
+import RunAndReadStdout (runAndReadStdout,basename,dirname)
 import Directory (doesDirectoryExist)
 import IO (hPutStrLn, stderr)
 import List (partition,intersperse,isPrefixOf)
@@ -23,12 +24,12 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
     else unsafePerformIO $ do
       pkgcfg <- runAndReadStdout (ghc++" -v 2>&1 | head -2 | tail -1 |"
                                   ++" cut -c28- | head -1")
-      let libdir  = dirname pkgcfg
+      let libdir  = dirname (escape pkgcfg)
           incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
         then do
-          let ghcpkg = matching ghc ("ghc-pkg-"++compilerVersion config)
+          let ghcpkg = matching ghc (ghcPkg ghc (compilerVersion config))
           pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
           let (ok,bad) = partition (`elem` deComma pkgs) packages
           when (not (null bad))
@@ -50,6 +51,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
     deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
     matching path cmd =
         if '/' `elem` path then dirname path++"/"++cmd else cmd
+    ghcPkg ghc ver =
+        if '-' `elem` basename ghc then "ghc-pkg-"++ver else "ghc-pkg"
 
 -- nhc98 always stores package imports under its default incdir.
 packageDirs config@(CompilerConfig{ compilerStyle=Nhc98

@@ -3,7 +3,8 @@ module Main where
 
 import Compiler (HC(..))
 import Config
-import RunAndReadStdout (runAndReadStdout, basename, dirname, unsafePerformIO)
+import Platform (unsafePerformIO,escape,windows,exe)
+import RunAndReadStdout (runAndReadStdout, basename, dirname)
 import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
                  ,Permissions(..),renameFile,createDirectory)
 import System (exitWith,ExitCode(..),getArgs,getEnv,getProgName)
@@ -198,8 +199,7 @@ add hc config = return $
 -- configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
 configure Ghc ghcpath = do
-  fullpath <- which ghcpath
-  ghcversion <- runAndReadStdout (ghcpath ++ " --version 2>&1 | "
+  ghcversion <- runAndReadStdout (escape ghcpath ++ " --version 2>&1 | "
                                   ++"sed 's/^.*version[ ]*\\([0-9.]*\\).*/\\1/'"
                                  )
   let ghcsym = (read (take 3 (filter isDigit ghcversion))) :: Int
@@ -211,8 +211,17 @@ configure Ghc ghcpath = do
 			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
 			, extraCompilerFlags = []
 			, isHaskell98   = ghcsym>=400 }
-  if ghcsym < 500
+  if windows && ghcsym < 500
     then do
+      fullpath <- which ghcpath
+      let incdir1 = dirname (dirname fullpath)++"/imports"
+      ok <- doesDirectoryExist incdir1
+      if ok
+        then return config{ includePaths = ghcDirs ghcsym incdir1 }
+        else do ioError (userError ("Can't find ghc includes at\n  "++incdir1))
+    else if ghcsym < 500
+    then do
+      fullpath <- which ghcpath
       dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -1 | "
                                ++ "sed 's/^\\$libdir=[^/]*\\(.*\\).;/\\1/'")
       let incdir1 = dir++"/imports"
@@ -227,14 +236,17 @@ configure Ghc ghcpath = do
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
     else do -- 5.00 and above
-      pkgcfg <- runAndReadStdout (fullpath++" -v 2>&1 | head -2 | tail -1 |"
+      pkgcfg <- runAndReadStdout (ghcpath++" -v 2>&1 | head -2 | tail -1 |"
                                   ++" cut -c28- | head -1")
-      let libdir  = dirname pkgcfg
+      let libdir  = dirname (escape pkgcfg)
           incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
         then do
-          let ghcpkg = dirname fullpath++"/ghc-pkg-"++ghcversion
+          fullpath <- fmap escape (which ghcpath)
+          let ghcpkg0 = dirname fullpath++"/ghc-pkg-"++ghcversion
+          ok <- doesFileExist ghcpkg0
+          let ghcpkg = if ok then ghcpkg0 else dirname fullpath++"/ghc-pkg"
           pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
           let pkgsOK = filter (`elem`["std","base","haskell98"]) (deComma pkgs)
           idirs <- mapM (\p-> runAndReadStdout
@@ -275,7 +287,6 @@ configure Nhc98 nhcpath = do
 			}
 configure Hbc hbcpath = do
   let field n = "| cut -d' ' -f"++show n++" | head -1"
-  fullpath <- which hbcpath
   wibble <- runAndReadStdout (hbcpath ++ " -v 2>&1 " ++ field 2)
   hbcversion <-
       case wibble of
@@ -310,14 +321,6 @@ hcStyle path = toCompiler (basename path)
                   | "hbc" `isPrefixOf` hc = Hbc
                   | otherwise             = Unknown hc
 
--- Get an environment variable if it exists, or default to given string
-withDefault name def = unsafePerformIO $
-   catch (do val <- getEnv name
-             if null val then return def else return val)
-         (\e-> return def)
-
--- Some variables imported from the shell environment
-builtby = "BUILTBY" `withDefault` "unknown"
 
 -- Emulate the shell `which` command.
 which :: String -> IO String
@@ -326,29 +329,32 @@ which cmd =
   in case dir of
     "" -> do -- search the shell environment PATH variable for candidates
              val <- getEnv "PATH"
-             let dirs = splitPath "" val
-             search <- foldM (\a dir-> testFile a (dir++"/"++cmd)) Nothing dirs
+             let psep = pathSep val
+                 dirs = splitPath psep "" val
+             search <- foldM (\a dir-> testFile a (dir++'/': exe cmd))
+                             Nothing dirs
              case search of
                Just x  -> return x
                Nothing -> ioError (userError (cmd++" not found"))
-    _  -> do perms <- getPermissions cmd
-             if executable perms
-               then return cmd
-               else ioError (userError (cmd++" is not executable"))
+    _  -> do f <- perms (exe cmd)
+             case f of
+               Just x  -> return x
+               Nothing -> ioError (userError (cmd++" is not executable"))
   where
-    splitPath :: String -> String -> [String]
-    splitPath acc []         = [reverse acc]
-    splitPath acc (':':path) = reverse acc : splitPath "" path
-    splitPath acc (c:path)   = splitPath (c:acc) path
+    splitPath :: Char -> String -> String -> [String]
+    splitPath sep acc []                 = [reverse acc]
+    splitPath sep acc (c:path) | c==sep  = reverse acc : splitPath sep "" path
+    splitPath sep acc (c:path)           = splitPath sep (c:acc) path
+
+    pathSep s = if length (filter (==';') s) >0 then ';' else ':'
 
     testFile :: Maybe String -> String -> IO (Maybe String)
     testFile gotit@(Just _) path = return gotit
     testFile Nothing path = do
         ok <- doesFileExist path
-        if ok
-          then do
-            perms <- getPermissions path
-            if executable perms
-              then return (Just path)
-              else return Nothing
-          else return Nothing
+        if ok then perms path else return Nothing
+
+    perms file = do
+        p <- getPermissions file
+        return (if executable p then Just file else Nothing)
+

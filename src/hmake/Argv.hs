@@ -4,20 +4,15 @@ import ListUtil (lconcatMap)
 import Compiler
 import Config
 import PackageConfig (packageDirs)
+import Platform (unsafePerformIO)
 
 #if !defined(__HBC__)
 import List (isPrefixOf)
 import IO (hPutStrLn,stderr)
-#if defined(__NHC__)
-import NHC.IOExtras (unsafePerformIO)
-#elif defined(__GLASGOW_HASKELL__)
-import IOExts (unsafePerformIO)
-#endif
 #else
 import IsPrefixOf
-import IO (hPutStr,hPutChar,stderr)
-import UnsafePerformIO (unsafePerformIO)
-hPutStrLn h x = hPutStr h x >> hPutChar h '\n'
+import IO (stderr)
+import IOMisc (hPutStrLn)
 #endif
 
 data Goal = Object  String String

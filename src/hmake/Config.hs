@@ -5,13 +5,7 @@ import System (getEnv)
 import Directory (doesFileExist,doesDirectoryExist,createDirectory)
 import Monad (when)
 import List (nub)
-#if defined(__NHC__)
-import NHC.IOExtras (unsafePerformIO)
-#elif defined(__GLASGOW_HASKELL__)
-import IOExts (unsafePerformIO)
-#elif defined(__HBC__)
-import UnsafePerformIO (unsafePerformIO)
-#endif
+import Platform (unsafePerformIO)
 
 ----
 data PersonalConfig = PersonalConfig

@@ -1,43 +1,29 @@
-{-# OPTIONS -fglasgow-exts #-}
 module RunAndReadStdout
   ( runAndReadStdout
   , basename, dirname
-  , unsafePerformIO
   ) where
 
-import System (system,ExitCode(..))
+import System (system,ExitCode(..),getEnv)
 import IO (openFile,IOMode(ReadMode),hClose,hGetChar,bracket,isEOFError)
 import Directory (removeFile)
-
-#ifdef __HBC__
-import UnsafePerformIO
-#ifdef __HASKELL98__
-import GetPid
-getProcessID = getPid
-#else
-getProcessID = return 3154      -- arbitrary number
-#endif
-#endif
-#ifdef __NHC__
-import NHC.Internal (unsafePerformIO)
-foreign import ccall "getpid" getProcessID :: IO Int
-#endif
-#ifdef __GLASGOW_HASKELL__
-import IOExts (unsafePerformIO)
-foreign import ccall "getpid" getProcessID :: IO Int
-#endif
-
+import List (isPrefixOf)
+import Platform (unsafePerformIO,getProcessID,withDefault,windows)
 
 -- Generate a temporary filename unique to this process.
 tmpfile :: String -> String
-tmpfile root = unsafePerformIO $ do p <- getProcessID
-                                    return ("/tmp/"++root++"."++show p)
+tmpfile root =
+    let tmp = "TEMP" `withDefault` "/tmp" in
+    if windows
+      then (tmp++"\\"++root++".tmp")
+      else unsafePerformIO $ do
+             p <- getProcessID
+             return (tmp++"/"++root++"."++show p)
 
 -- Run a shell command and collect its output.
 runAndReadStdout :: String -> IO String
 runAndReadStdout cmd = do
     let output = tmpfile "hmakeconfig"
-    err <- system ("sh -c \""++cmd++" >"++output++"\"")
+    err <- system ("sh -c \""++cmd++"\" >"++output)
     case err of
         ExitFailure _ -> ioError (userError ("Command ("++cmd++") failed"))
 	_ -> return ()
@@ -60,8 +46,8 @@ runAndReadStdout cmd = do
 
 -- Analogues of the shell commands of the same name.
 basename,dirname :: String -> String
-basename = reverse .        takeWhile (/='/') . reverse
-dirname  = reverse . safetail . dropWhile (/='/') . reverse
+basename = reverse .            takeWhile (not.(`elem`"\\/")) . reverse
+dirname  = reverse . safetail . dropWhile (not.(`elem`"\\/")) . reverse
   where safetail [] = []
         safetail (_:x) = x
 
