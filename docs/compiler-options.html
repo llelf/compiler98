@@ -221,6 +221,9 @@ value is "on", an option can be turned off by prefixing the flag with
 <td valign=top><em>-ansiC</em></td>
   <td>Generate bytecode file as ANSI C (default=on) </td>
 </tr><tr>
+<td valign=top><em>-showtype</em></td>
+  <td>Report type of main expression, but do not generate code</td>
+</tr><tr>
 <td valign=top><em>-profile</em></td>
   <td>number of occurrences = amount of heap profiling information per node</td>
 </tr><tr>
@@ -243,7 +246,7 @@ value is "on", an option can be turned off by prefixing the flag with
   <td>use the tracing prelude</td>
 </tr><tr>
 <td valign=top><em>-trusted</em></td>
-  <td>a "trusted" module (tracer)</td>
+  <td>make this a "trusted" module (tracer)</td>
 </tr></table>
 
 </td><td valign=top>
@@ -261,7 +264,10 @@ value is "on", an option can be turned off by prefixing the flag with
   <td>show need table before import</td>
 </tr><tr>
 <td valign=top><em>-import</em></td>
-  <td>print name of imported files</td>
+  <td>print names of explicitly imported files</td>
+</tr><tr>
+<td valign=top><em>-report-imports</em></td>
+  <td>display imports actually used</td>
 </tr><tr>
 <td valign=top><em>-depend</em></td>
   <td>print imported identifiers that are used (not even alpha-tested yet)</td>
@@ -401,7 +407,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.07.11<br>
+2000.09.11<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -24,8 +24,8 @@ Read-only access is available to anyone - there's no need to ask us
 first.  To get read-only access to our repository:
 
 <ul>
-<li> You need to have <em>ssh</em> (secure shell) installed
-<li> Set your CVS_RSH environment variable to <tt>ssh</tt>
+<li> You need to have <em>ssh</em> (secure shell) installed.
+<li> Set your CVS_RSH environment variable to <tt>ssh</tt>.
 <li> The first time you access the repository, you'll need to do
      the following:
 <pre>
@@ -60,13 +60,14 @@ to us for inclusion.
 
 <p>
 To set up default flags for some of the CVS commands, you can create
-a <tt>.cvsrc</tt> file.  For instance, the -P flag to 'checkout'
-says prune empty directories, which is normally what you want.
+a <tt>.cvsrc</tt> file.  For instance, the -P flag to 'update' says
+prune empty directories, which is normally what you want, and the -d
+flag ensures that you collect new directories that have been added.
 Here is an example <tt>.cvsrc</tt> file:
 <pre>
         checkout -P
         release -d
-        update -P
+        update -d -P
         diff -c
 </pre>
 
@@ -96,7 +97,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.06.02<br>
+This page last modified: 2000.09.11<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
