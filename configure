@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.11 (CVS development version)"
-HMAKEVERSION="3.01 (2002-02-05)" export HMAKEVERSION
+CONFIGVERSION="v1.12 (2002-03-14)"
+HMAKEVERSION="3.02 (2002-03-14)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
@@ -515,8 +515,7 @@ then
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail-in-java
     echo -n "hat-trans "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
-    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
-    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trans
+    sed -e "s|ScriptDir|$BUILDBINDIR|" >$BUILDBINDIR/hat-trans
     echo; echo -n "    "
     for hattool in $HATTOOLS
     do  echo -n $hattool" "
@@ -533,6 +532,11 @@ then
     echo "Updating targets/$MACHINE/hmake3.config..."
     echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
+    if fullname 2>>/dev/null	# cope with symbolic links in directory paths
+      then echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
+		add `fullname ./script/nhc98`" \
+					 >>targets/$MACHINE/hmake3.config
+    fi;
     echo -n "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		default "		>>targets/$MACHINE/hmake3.config
     case $BUILDWITH in
@@ -614,7 +618,8 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hat-trans"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trans
+    sed -e "s|^HATINCDIR=$|HATINCDIR=`if test -f $BUILDDIR/ghcincdir; then cat $BUILDDIR; fi;`|" \
+			>$DESTDIR$BINDIR/hat-trans
     for hattool in $HATTOOLS
     do  echo "	"$hattool
         rm -f $DESTDIR$BINDIR/$hattool;

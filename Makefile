@@ -127,7 +127,8 @@ RUNTIMET = \
 	src/hat/runtime/*.[ch]
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
-	  src/hat/lib/*.hs      src/hat/lib/*.hx
+	  src/hat/lib/*.hs      src/hat/lib/*.hx \
+	  src/hat/lib/hat-package.conf
 HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] \
 	  src/hat/tools/*.hs src/hat/tools/*.gc
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
@@ -137,7 +138,7 @@ INCLUDE = include/*.hi include/*.h include/*.gc include/*.hx
 DOC = docs/*
 MAN = man/*.1
 HATTOOLSET= hat-stack hat-connect hat-check hat-checki hat-detect hat-observe \
-	    hat-port hat-explore
+	    hat-port hat-trail hat-view hat-names
 HATTOOLS= $(patsubst %, lib/$(MACHINE)/%, $(HATTOOLSET))
 
 TARGDIR= targets
@@ -202,7 +203,7 @@ timeprelude-hbc: timeprelude
 tracer-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc \
 		compiler-nhc traceruntime traceprelude hattools
 tracer-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc \
-		compiler-ghc traceruntime traceprelude hattools
+		compiler-ghc traceruntime traceprelude hattools hat-ghc
 tracer-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc \
 		compiler-hbc traceruntime traceprelude hattools
 tracer-$(CC): runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
@@ -299,7 +300,7 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 hoodui: $(TARGDIR)/hoodui
 $(TARGDIR)/hoodui: lib/hood.jar
 	touch $(TARGDIR)/hoodui
-$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) lib/hat-trail.jar
+$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) #lib/hat-trail.jar
 	touch $(TARGDIR)/$(MACHINE)/hat
 
 
@@ -314,6 +315,7 @@ $(TARGDIR)/$(MACHINE)/hat-nhc: $(HATLIB)
 	touch $(TARGDIR)/$(MACHINE)/hat-nhc
 $(TARGDIR)/$(MACHINE)/hat-ghc: $(HATLIB)
 	cd src/hat/lib;	       $(MAKE) HC=ghc all
+	cd src/hat/lib;	       $(MAKE) HC=ghc install-ghc
 	touch $(TARGDIR)/$(MACHINE)/hat-ghc
 
 

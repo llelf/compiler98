@@ -8,12 +8,12 @@ AR = ar
 LD = ld
 
 
-VERSION = 1.11
+VERSION = 1.12
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HVERSION = 3.01
+HVERSION = 3.02
 # HVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
