@@ -42,8 +42,8 @@ fixDir isUnix dir
                     (_,_)   -> dir ++ "/"
   | otherwise = dir
 
-fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hit"
-fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "c"
+fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hi"
+fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hc"
 fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
 fixHatAuxFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
 fixHatTransFile isUnix rootdir s = "Hat/"++ rootdir ++ fixFile isUnix s "hs"
