@@ -268,7 +268,8 @@ configure Nhc98 nhcpath = do
 			, compilerPath  = nhcpath
 			, compilerVersion = nhcversion
 			, includePaths = [dir]
-			, cppSymbols    = ["__NHC__"]
+			, cppSymbols    = ["__NHC__="++
+                                           take 3 (filter isDigit nhcversion)]
 			, extraCompilerFlags = []
 			, isHaskell98   = True
 			}
