@@ -5,7 +5,7 @@ module Foreign
   ) where
 
 import Maybe (fromJust)
-import List (find)
+import List (find,isPrefixOf,isSuffixOf)
 import PackedString (PackedString,unpackPS)
 import Syntax
 import Info
@@ -17,9 +17,12 @@ import GcodeLow (fun,foreignfun,fixStr)
 
 
 data ImpExp  = Imported | Exported
+data Style   = Ordinary | CCast | Address | FunAddress | Dynamic | Wrapper
+             deriving Eq
 data Foreign = Foreign	ImpExp	-- import or export?
-			Bool	-- just a cast?
 			Bool	-- generate C prototype?
+			Style	-- cast / address / dynamic etc
+			(Maybe FilePath) -- C header file (for proto checking)
 			String	-- foreign function name
 			TokenId -- Haskell function name
 			Int	-- arity
@@ -30,19 +33,28 @@ instance Show ImpExp where
   showsPrec p Imported = showString "import"
   showsPrec p Exported = showString "export"
 
+instance Show Style where
+  showsPrec p Ordinary = showString "ccall"
+  showsPrec p CCast    = showString "cast"
+  showsPrec p Address  = showString "ccall &"
+  showsPrec p FunAddress  = showString "ccall &"
+  showsPrec p Dynamic  = showString "ccall dynamic"
+  showsPrec p Wrapper  = showString "ccall wrapper"
+
 instance Show Foreign where
-  showsPrec p (Foreign ie cast proto cname hname arity args res) =
-    word "foreign" . space .
-    (if cast then word "cast"
-     else shows ie . space .  showChar '"' . word cname . showChar '"') .
+  showsPrec p (Foreign ie proto style incl cname hname arity args res) =
+    word "foreign" . space . shows ie . space . shows style . space .
+    showChar '"' . word cname . showChar '"' .
     space .  shows hname . space . shows arity . showString " :: " .
     showString (mix " -> " (map show args)) .
     showString " -> " . shows res
 
 data Arg = Int8  | Int16  | Int32  | Int64
          | Word8 | Word16 | Word32 | Word64
-         | Float | Double | Char   | Bool | PackedString   | Int
-         | Addr  | StablePtr | ForeignObj | Unknown String | Unit
+         | Float | Double | Char   | Bool | Int
+         | Ptr   | FunPtr | StablePtr | ForeignPtr
+         | Addr  | ForeignObj | Integer | PackedString
+         | Unknown String | Unit
 
 instance Show Arg where
   showsPrec p Int8         = showString "FFI.Int8"
@@ -58,10 +70,14 @@ instance Show Arg where
   showsPrec p Double       = showString "Prelude.Double"
   showsPrec p Char         = showString "Prelude.Char"
   showsPrec p Bool         = showString "Prelude.Bool"
-  showsPrec p PackedString = showString "PackedString.PackedString"
-  showsPrec p Addr         = showString "FFI.Addr"
+  showsPrec p Ptr	   = showString "FFI.Ptr"
+  showsPrec p FunPtr	   = showString "FFI.FunPtr"
   showsPrec p StablePtr    = showString "FFI.StablePtr"
-  showsPrec p ForeignObj   = showString "FFI.ForeignObj"
+  showsPrec p ForeignPtr   = showString "FFI.ForeignPtr"
+  showsPrec p Addr         = showString "FFI.Addr"		-- deprecated
+  showsPrec p ForeignObj   = showString "FFI.ForeignObj"	-- deprecated
+  showsPrec p Integer      = showString "Prelude.Integer"	-- non-standard
+  showsPrec p PackedString = showString "PackedString.PackedString" -- non-std
   showsPrec p Unit         = showString "Prelude.()"
   showsPrec p (Unknown s)  = showString s
 
@@ -82,17 +98,44 @@ toForeign :: AssocTree Int Info -> ForeignMemo
 toForeign symboltable memo (Other callconv) ie cname arity var =
     error ("Foreign calling convention \""++callconv++"\" not supported.")
 toForeign symboltable memo callconv ie cname arity var =
-    Foreign ie cast proto cname hname arity' args res
+    Foreign ie proto style include cfunc hname arity' args res
   where
     info = fromJust (lookupAT symboltable var)
     hname = tidI info
+    hnameStr = (reverse . (\w->if head w=='#' then tail w else w)
+               . unpackPS . extractV) hname
     (args,res) = searchType symboltable memo info
-    cast  = (callconv==Cast)
+    (cfunc,style,include) = case callconv of Cast -> (hnameStr,CCast,Nothing)
+                                             _    -> parseEntity cname hnameStr
     proto = (callconv/=Noproto)
     arity' = if arity==length args then arity
-             else error ("foreign function: arity does not match: "++
-                         "is "++show arity++
-                         ", expected "++show (length args)++"\n")
+             else error ("foreign function: arity does not match: "
+                         ++hnameStr++" has "++show arity
+                         ++" args, expected "++show (length args)++"\n")
+
+parseEntity :: String -> String -> (String,Style,Maybe FilePath)
+parseEntity entity hname =
+    case words entity of
+      ("dynamic":_) -> (hname, Dynamic, Nothing)
+      ("wrapper":_) -> (hname, Wrapper, Nothing)
+      ("static":ws) -> filename ws
+      ws            -> filename ws
+  where
+    filename []     = (hname, Ordinary, Nothing)
+    filename (w:ws) | ".h" `isSuffixOf` w = address (Just w) ws
+                    | otherwise           = address Nothing  (w:ws)
+    address file ("&":ws) = lib file Address  ws
+    address file (w:ws)   | "&" `isPrefixOf` w = lib file Address (tail w:ws)
+    address file    ws    = lib file Ordinary ws
+    lib file style []     = (hname, style, file)
+    lib file style (w:ws) | "[" `isPrefixOf` w && "]" `isSuffixOf` w
+                                      = cfunc file style ws
+                          | otherwise = cfunc file style (w:ws)
+    cfunc file style []      = (hname, style, file)
+    cfunc file style [cname] = (cname, style, file)
+    cfunc file style ws      =
+        error ("Couldn't parse entity string in foreign import: "++entity)
+    
 
 searchType :: AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
 searchType st arrow info =
@@ -112,14 +155,17 @@ searchType st arrow info =
 		-- (Pure Unknown) lets polymorphic heap-values across unmolested
 
     toArg t | t==tInt        = Int
-            | t==tWord       = Word32
+         -- | t==tWord       = Word32
             | t==tBool       = Bool
             | t==tChar       = Char
             | t==tFloat      = Float
             | t==tDouble     = Double
-            | t==tForeign    = ForeignObj
+            | t==tPtr        = Ptr
+            | t==tFunPtr     = FunPtr
             | t==tStablePtr  = StablePtr
-            | t==tAddr       = Addr
+            | t==tForeignPtr = ForeignPtr
+            | t==tAddr       = Addr		-- deprecated
+            | t==tForeignObj = ForeignObj	-- deprecated
             | t==(t_Tuple 0) = Unit	-- no void args, but need void results
             | t==tInt8       = Int8
             | t==tInt16      = Int16
@@ -129,7 +175,8 @@ searchType st arrow info =
             | t==tWord16     = Word16
             | t==tWord32     = Word32
             | t==tWord64     = Word64
-            | t==tPackedString  = PackedString
+            | t==tPackedString  = PackedString	-- non-standard
+            | t==tInteger    = Integer		-- non-standard
             | otherwise      =
                     warning ("foreign import/export has non-primitive type: "
                              ++show t++"\n") (Unknown (show t))
@@ -169,12 +216,9 @@ findFirst f (x:xs) =
 ----
 
 strForeign :: Foreign -> ShowS
-strForeign f@(Foreign Imported cast proto cname hname arity args res) =
+strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
     nl . comment (shows f) . nl .
-    (if proto then
-        word "extern" . space . cResType res . space . word realcname .
-          parens (listsep comma (map cTypename args)) . semi
-     else id) .
+    (if proto then genProto style cname else id) .
     word "#ifdef PROFILE" . nl .
     word "static SInfo" . space . word profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
@@ -188,36 +232,43 @@ strForeign f@(Foreign Imported cast proto cname hname arity args res) =
       cResDecl res .
       listsep semi (zipWith cArg args [1..]) . semi .
       foldr (.) id (zipWith cArgDefn args [1..]) . nl .
-      (if cast then cCast arity res
-       else if length args == 1 && noarg (head args)
-       then cCall realcname 0 res
-       else cCall realcname arity res) . nl .
+      (case style of
+         CCast -> cCast arity res
+         Address -> cAddr cname res
+         FunAddress -> cFunAddr cname
+         _ -> if length args == 1 && noarg (head args)
+              then cCall cname 0 res
+              else cCall cname arity res) . nl .
       cFooter profinfo res .
     closecurly . nl
   where
+    genProto :: Style -> String -> ShowS
+    genProto Ordinary cname =
+          word "extern" . space . cResType res . space . word cname
+          . parens (listsep comma (map cTypename args)) . semi
+    genProto CCast cname = id
+    genProto Address cname = id
+       -- word "extern" . space . cResType res . space . word cname . semi
+    genproto FunAddress cname =
+          word "extern" . space . cResType res . space . word cname
+          . parens id . semi
+    genproto Dynamic cname = error "foreign import dynamic not yet supported."
+    genproto Wrapper cname = error "foreign import wrapper not yet supported."
+
     cArg a n = indent . cArgDecl a n
-    realcname =
-      case cname of
-        "" -> (reverse . unpackPS . extractV) hname
-        _  -> cname
-    modname = (reverse . unpackPS . extractM) hname
+    modname  = (reverse . unpackPS . extractM) hname
     noarg Unit = True
     noarg _    = False
-    profinfo = "pf_"++realcname
+    profinfo = "pf_"++cname
 
-strForeign f@(Foreign Exported _ _ cname hname arity args res) =
+strForeign f@(Foreign Exported _ _ _ cname hname arity args res) =
     nl . comment (shows f) . nl .
-    cCodeDecl realcname args res . space .
+    cCodeDecl cname args res . space .
     opencurly . nl .
       --cResDecl res .
       hCall arity hname args .
       hResult res .
     closecurly . nl
-  where
-    realcname =
-      case cname of
-        "" -> (reverse . unpackPS . extractV) hname
-        _  -> cname
 
 
 ---- foreign import ----
@@ -256,6 +307,13 @@ cCast arity res =
         Pure  _      -> word "result = " . parens (cResType res) .
                                               parens (narg 1) . semi
       )
+
+cAddr cname res =
+    indent . word "result = " . parens (cResType res) . word "&" .
+    word cname . semi
+
+cFunAddr cname =
+    indent . word "result = " . word cname . semi
 
 cFooter profinfo (Pure arg) =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
@@ -298,8 +356,6 @@ hResult res =
 ---- shared between foreign import/export ----
 
 cTypename :: Arg -> ShowS
-cTypename Int          = word "HsInt"
-cTypename Bool         = word "HsBool"
 cTypename Int8         = word "HsInt8"
 cTypename Int16        = word "HsInt16"
 cTypename Int32        = word "HsInt32"
@@ -308,19 +364,28 @@ cTypename Word8        = word "HsWord8"
 cTypename Word16       = word "HsWord16"
 cTypename Word32       = word "HsWord32"
 cTypename Word64       = word "HsWord64"
+cTypename Int          = word "HsInt"
+cTypename Bool         = word "HsBool"
+cTypename Char         = word "char"
 cTypename Float        = word "float"
 cTypename Double       = word "double"
-cTypename Char         = word "char"
-cTypename PackedString = word "char*"
-cTypename Addr         = word "void*"
+cTypename Ptr          = word "void*"
+cTypename FunPtr       = word "void*"
 cTypename StablePtr    = word "StablePtr"
-cTypename ForeignObj   = word "void*"
+cTypename ForeignPtr   = word "void*"
 cTypename Unit         = word "void"
+cTypename Addr         = word "void*"	-- deprecated
+cTypename ForeignObj   = word "void*"	-- deprecated
+cTypename PackedString = word "char*"	-- non-standard
+cTypename Integer      = word "NodePtr"	-- non-standard
 cTypename (Unknown _)  = word "NodePtr"	-- for passing Haskell heap values
 
 cConvert :: Arg -> ShowS
 cConvert Int          = word "GET_INT_VALUE(nodeptr)"
 cConvert Bool         = word "GET_BOOL_VALUE(nodeptr)"
+cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
+cConvert Float        = word "get_float_value(nodeptr)"
+cConvert Double       = word "get_double_value(nodeptr)"
 cConvert Int8         = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Int16        = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Int32        = word "GET_32BIT_VALUE(nodeptr)"
@@ -329,19 +394,23 @@ cConvert Word8        = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Word16       = word "GET_16BIT_VALUE(nodeptr)"
 cConvert Word32       = word "GET_32BIT_VALUE(nodeptr)"
 cConvert Word64       = word "nhc_get_64bit_value(nodeptr)"
-cConvert Float        = word "get_float_value(nodeptr)"
-cConvert Double       = word "get_double_value(nodeptr)"
-cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
-cConvert PackedString = word "nhc_getPackedString(nodeptr)"
-cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
+cConvert Ptr          = word "GET_INT_VALUE(nodeptr)"
+cConvert FunPtr       = word "GET_INT_VALUE(nodeptr)"
 cConvert StablePtr    = word "GET_INT_VALUE(nodeptr)"
+cConvert ForeignPtr   = word "derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr))"
+cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
 cConvert ForeignObj   = word "derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr))"
+cConvert PackedString = word "nhc_getPackedString(nodeptr)"
+cConvert Integer      = word "nodeptr"
 cConvert Unit         = word "0"
 cConvert (Unknown _)  = word "nodeptr"
 
 hConvert :: Arg -> ShowS -> ShowS
 hConvert Int          s = word "nhc_mkInt" . parens s
 hConvert Bool         s = word "nhc_mkBool" . parens s
+hConvert Char         s = word "nhc_mkChar" . parens s
+hConvert Float        s = word "nhc_mkFloat" . parens s
+hConvert Double       s = word "nhc_mkDouble" . parens s
 hConvert Int8         s = word "nhc_mkInt8" . parens s
 hConvert Int16        s = word "nhc_mkInt16" . parens s
 hConvert Int32        s = word "nhc_mkInt32" . parens s
@@ -350,16 +419,18 @@ hConvert Word8        s = word "nhc_mkWord8" . parens s
 hConvert Word16       s = word "nhc_mkWord16" . parens s
 hConvert Word32       s = word "nhc_mkWord32" . parens s
 hConvert Word64       s = word "nhc_mkWord64" . parens s
-hConvert Float        s = word "nhc_mkFloat" . parens s
-hConvert Double       s = word "nhc_mkDouble" . parens s
-hConvert Char         s = word "nhc_mkChar" . parens s
-hConvert PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
-hConvert Addr         s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert Ptr          s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert FunPtr       s = word "nhc_mkInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "nhc_mkInt" . parens (word "(int)" . s)
+{- Returning ForeignPtr's to Haskell is usually illegal: -}
+hConvert ForeignPtr   s =
+  warning ("foreign import/export should not return ForeignPtr type.\n") s
+hConvert Addr         s = word "nhc_mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
 hConvert ForeignObj   s =
-  warning ("foreign import/export should not return ForeignObj type.\n")
-                          s
+  warning ("foreign import/export should not return ForeignObj type.\n") s
+hConvert PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
+hConvert Integer      s = s
 hConvert Unit         s = word "nhc_mkUnit()"
 hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched
 
