@@ -269,9 +269,22 @@ C_HEADER(cEnter)
 	interrupted++;
 
     if (interrupted) {
+        CNmType* nt;
+        CTrace* t;
+        FileOffset fo;
 	fprintf(stderr, "Program execution interrupted\n");
-	startDbg(dbg_last_trace, FALSE);
-	interrupted = 0;
+        updateSatBs();
+        updateSatCs();
+        nt = primNTCString("Program interrupted (^C).");
+        fo = nt->ptr;
+        fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
+        fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+        t = (CTrace*)dbg_last_trace;
+        fo = t->ptr;
+        fseek(HatFile,8,SEEK_SET);
+        fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+        haskellEnd();
+        exit(0);
     }
     if (trace_enter) {
 	showSymbol(C_GETARG1(1), &mod, &name, &defpos, &pri);
