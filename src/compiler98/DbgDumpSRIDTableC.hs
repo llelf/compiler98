@@ -153,7 +153,8 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 		    imptokid (ImportQas (_,i) _ _) = i
 		    imptokid (Importas (_,i) _ _) = i
 
-untoken (TupleId n) = take n (repeat ',')
+untoken (TupleId 0) = ""
+untoken (TupleId n) = take (n-1) (repeat ',')
 untoken (Visible ps) = reverse (unpackPS ps)
 untoken (Qualified _ ps) = reverse (unpackPS ps)
 untoken (Qualified2 _ tid) = untoken tid
