@@ -74,6 +74,7 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
                         ++" -o /tmp/"++basename pfile)
             ++ doEcho echo ("hat-trans $HATFLAGS -P. /tmp/"++basename pfile
 				++" "++pfile)
+            ++ doEcho echo ("rm /tmp/"++basename pfile)
          -- ++ doEcho echo ("mv "++hatFile opts "/tmp" m++" "++hfile)
          -- ++ doEcho echo ("mv "++hxFile opts "/tmp" m++" "++hxFile opts p m)
     | hat opts && not cpp = doEcho echo $
