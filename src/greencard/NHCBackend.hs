@@ -48,6 +48,7 @@ hNhc dbg disEnv pre (ProcSpec sig mbcall mbcode mbfail mbresult) =
   fillinProc disEnv pre $
   (sig, mbcall, mbcode, fromMaybe [] mbfail, mbresult)
 
+cfn name  = text "hs_" <> name
 
 --genProcNHC :: (Sig, Call, CCode, Fail, Result) -> (Doc, Doc, Doc)
 --genProcNHC arg =
@@ -55,10 +56,11 @@ hNhc dbg disEnv pre (ProcSpec sig mbcall mbcode mbfail mbresult) =
 
 haskellBit dbg ((name, typ), calls, code, fails, result) =
   let fnName    = text name
-      grName    = text "gr_" <> fnName
-      grResult  = text "gr_result"
-      arity     = text (show (length argTypes))
-      primTypes = ppList (text " -> ") rtnType argTypes
+    --arity     = text (show (length argTypes))
+      primTypes = ppList (text " -> ")
+                         ( if isPureType typ then rtnType
+                           else text "IO" <+> rtnType)
+                         argTypes
       argDISs   = map simplify calls
       rtnDIS    = simplify result
       argTypes  = concat $
@@ -72,69 +74,49 @@ haskellBit dbg ((name, typ), calls, code, fails, result) =
   in
   emit dbg ("*****ARGS:\n"++unlines (map show argDISs)) $
   emit dbg ("*****RESULT:\n"++show rtnDIS++"\n") $
-  grName <+> text "primitive" <+> arity <+> text "::" <+> primTypes $$
-  text ""   $$
-  fnName <+> text "::" <+> ppType typ   $$
-  fnName <+> hsep argPats <+> equals    $$
-  nest 2 (
-    if isPureType typ then
-      if clean rtnDIS && and (map clean argDISs) then
-        grName <+> hsep argsCall
-      else
-        text "let" $$
-        nest 4 (vsep eqns $$
-                rtnPat <+> equals <+> grName <+> hsep argsCall) $$
-        text "in"  <+> rtnCons
-    else
-      text "IO" <+>
-      parens (
-        text "\\_ ->"   $$
-        nest 2 (
+  if clean rtnDIS && and (map clean argDISs) then
+    text "foreign import" <+> doubleQuotes (cfn fnName)
+                          <+> fnName <+> text "::" <+> primTypes
+  else
+    text "foreign import" <+> cfn fnName <+> text "::" <+> primTypes $$
+    text ""   $$
+    fnName <+> text "::" <+> ppType typ   $$
+    fnName <+> hsep argPats <+> equals    $$
+    nest 2 (
+      if isPureType typ then
           text "let" $$
           nest 4 (vsep eqns $$
-                  grResult <+> equals <+> grName <+> hsep argsCall) $$
+                  rtnPat <+> equals <+> cfn fnName <+> hsep argsCall) $$
+          text "in"  <+> rtnCons
+      else
+          ( if null eqns then text "do"
+            else text "let" $$
+                 nest 4 (vsep eqns) $$
+                 text "in do" ) <+>
           if clean rtnDIS then
-            text "in" <+> text "seq" <+> grResult <+>
-            parens (text "Right" <+> grResult)
+              cfn fnName <+> hsep argsCall
           else
-            nest 4 (rtnPat <+> equals <+> grResult)   $$
-            text "in" <+> text "seq" <+> grResult <+>
-            parens (text "Right" <+> rtnCons)
-        )
-      )
-  ) $$
-  text "\n"
+              rtnPat <+> text "<-" <+> cfn fnName <+> hsep argsCall $$
+              text "return" <+> rtnCons
+    ) $$
+    text "\n"
 
 cBit ((name, typ), calls, code, fails, result) =
-  let argDISs  = map simplify calls
-      argDecls = cdecls [] argDISs
-      argDefs  = concatMap cdefs argDISs
+  let argDecls = cdecls [] (map simplify calls)
       rtnDIS   = simplify result
       rtnDecls = cdecls [] [rtnDIS]
-      rtnDefs  = crtn rtnDIS
   in
   text ""   $$
-  text "C_HEADER" <+> parens (text "gr_" <> text name) $$
+  ctype rtnDIS <+> cfn (text name) <+> parens (commaList argDecls) $$
   cblock (
-    (text "NodePtr nodeptr"):
-    argDecls ++
-    [ text ""   $$
-      text "nodeptr = C_GETARG1" <> parens (text (show n)) <> semi $$
-      text "IND_REMOVE" <> parens (text "nodeptr") <> semi $$
-      cdef
-    | (cdef,n) <- zip argDefs [1..] ] ++
-    [ text ""   $$
-      cblock (
-        rtnDecls ++
-        [ text ""   $$
-          text "/* User code starts here */"   $$
-          vcatMap text code   $$
-          text "/* User code ends here */"   $$
-          text ""   $$
-          text "nodeptr = " <> rtnDefs <> semi   $$
-          text "C_RETURN" <> parens (text "nodeptr")
-        ]
-      )
+    rtnDecls ++
+    [ vcatMap text code   $$
+      if isVoid rtnDIS then
+        text "return"
+      else if simple rtnDIS then
+        text "return" <+> fst (initNS (crtnpat rtnDIS) (nameSupply "res"))
+      else
+        text "return " <> crtn rtnDIS
     ]
   )
 
@@ -275,7 +257,7 @@ hrtnpat (Var v)                    = return $ text v
 
 --------
 cdecls :: [String] -> [DIS] -> [Doc]
-cdefs  ::              DIS  -> [Doc]
+--cdefs  ::              DIS  -> [Doc]
 crtn   ::              DIS  ->  Doc
 
 cdecls env ((Apply d ds):rest) = cdecls env (d:ds++rest)
@@ -284,18 +266,28 @@ cdecls env ((Declare cty (Var v)):ds)
 cdecls env (d:ds) = cdecls env ds
 cdecls env  []    = []
 
---
-cdefs (Apply (BaseDIS b) [r]) = [collect b (baseToCType b) r]
-cdefs (Apply d ds) = cdefs d ++ concatMap cdefs ds
-cdefs d = []
+ctype (Apply Tuple ds)           = text "NodePtr"
+ctype (Apply (Var "iO") [d])     = ctype d
+ctype (Apply (UserDIS _ _) [d])  = ctype d
+ctype (Apply (Constructor _) [d])= ctype d
+ctype (Apply d ds)               = ctype d
+ctype (Declare cty (Var v))      = text cty
+ctype (Tuple)                    = text "void"
+ctype (BaseDIS b)                = text (baseToCType b)
+ctype _                          = text "NodePtr"
 
-collect hty cty (Apply (Declare _ _) [r]) = collect hty cty r
-collect hty cty (Declare cast d) = collect hty cast d
-collect hty cty (Var v) = 
-  text v      <+> equals <+> parens (text cty) <> text (baseTyToCall hty)
-collect hty cty (Exp e) = 
-  text (pc e) <+> equals <+> parens (text cty) <> text (baseTyToCall hty)
-collect hty cty d = error ("BaseDIS "++show hty++" applied to "++show d)
+--
+--cdefs (Apply (BaseDIS b) [r]) = [collect b (baseToCType b) r]
+--cdefs (Apply d ds) = cdefs d ++ concatMap cdefs ds
+--cdefs d = []
+--
+--collect hty cty (Apply (Declare _ _) [r]) = collect hty cty r
+--collect hty cty (Declare cast d) = collect hty cast d
+--collect hty cty (Var v) = 
+--  text v      <+> equals <+> parens (text cty) <> text (baseTyToCall hty)
+--collect hty cty (Exp e) = 
+--  text (pc e) <+> equals <+> parens (text cty) <> text (baseTyToCall hty)
+--collect hty cty d = error ("BaseDIS "++show hty++" applied to "++show d)
 
 pc :: String -> String
 pc = filter (/='%')
@@ -317,6 +309,11 @@ crtn' wrap (Exp e)               = text (wrap (pc e))
 crtn' wrap (Var v)               = text (wrap v)
 crtn' wrap d                     = error ("BaseDIS applied to complex DIS: "++
                                            wrap (show d))
+
+crtnpat (Apply d [r])              = crtnpat r
+crtnpat (Declare cty d)            = crtnpat d
+crtnpat (Exp e)                    = return $ text e
+crtnpat (Var v)                    = return $ text v
 
 --------
 cblock :: [Doc] -> Doc
@@ -345,4 +342,23 @@ clean (Tuple)         = True
 clean (UserDIS f t)   = False
 clean (Var v)         = True
 
+-- Following function is new and may not be correct yet.
+simple :: DIS -> Bool
+simple (Apply d [d'])  = simple d && simple d'
+simple (Apply d ds)    = False
+simple (BaseDIS StablePtr) = False
+simple (BaseDIS (Foreign _)) = False
+simple (BaseDIS b)     = True
+simple (Constructor c) = True
+simple (Declare cty d) = simple d
+simple (Exp e)         = True
+simple (Record n ns)   = True
+simple (Tuple)         = False
+simple (UserDIS f t)   = True
+simple (Var v)         = True
+
+isVoid :: DIS -> Bool
+isVoid (Apply (Var "iO") [Tuple]) = True
+isVoid (Tuple)                    = True
+isVoid _                          = False
 --------

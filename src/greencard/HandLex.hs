@@ -183,7 +183,7 @@ ident tok p s ss k =
 multiline :: ([String]->TokenT) ->
              (Posn,[String]) -> Posn -> [String] -> [Token]
 multiline tok (p0,s0) p (('%':h:s):ss)
-    | isSpace h    = multiline tok (p0, (trim s):s0) (newline p) ss
+    | isSpace h    = multiline tok (p0, ({-trim-} s):s0) (newline p) ss
     | otherwise    = emit (tok (reverse s0)) p0:  gcStart gcAny (addcol 1 p) (h:s) ss
 multiline tok (p0,s0) p ss =
                      emit (tok (reverse s0)) p0:  lextop gcAny p ss

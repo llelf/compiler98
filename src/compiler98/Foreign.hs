@@ -454,8 +454,9 @@ hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
 hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
-hConvert ForeignObj   s = trace ("Warning: foreign import/export should not return ForeignObj type.\n") $
-                          word "mkCInt" . parens (word "(int)" . s)
+hConvert ForeignObj   s =
+  trace ("Warning: foreign import/export should not return ForeignObj type.\n")
+                          s
 hConvert Unit         s = word "mkUnit()"
 hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched
 

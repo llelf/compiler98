@@ -193,18 +193,22 @@ C_HEADER(primForeignObj)
 /*      to the Haskell world.  nhc98 does allow it, but this is the only */
 /*      occasion where it actually makes sense.                          */
 
-/* foreign import makeForeignObjC :: Addr -> _E a -> IO Addr             */
+/* foreign import makeForeignObjC :: Addr -> _E a -> IO ForeignObj       */
 void *primForeignObjC (void *addr, NodePtr fbox)
 {
   ForeignObj *fo;
   NodePtr finalise;
   finalise = GET_POINTER_ARG1(fbox,1);
   fo = allocForeignObj(addr, (gcCval)makeStablePtr(finalise), gcLater);
-  return (void*)fo;
+  return mkCInt((int)fo);
 }
 
-/* The following function is also visible to the Haskell world. */
-/* reallyFreeForeignObj primitive 1 :: ForeignObj -> IO () */
+/* The following function is also visible to the Haskell world.       */
+/* It _must_ be a primitive, not a foreign import, because the latter */
+/* mechanism would dereference the ForeignObj argument to become just */
+/* an Addr, which is the opposite of what we want here.               */
+
+/* reallyFreeForeignObj primitive 1 :: ForeignObj -> IO ()            */
 C_HEADER(reallyFreeForeignObj)
 {
   NodePtr nodeptr;

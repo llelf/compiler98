@@ -9,6 +9,9 @@ endif
 ifeq "${BUILDWITH}" "hbc"
 EXTRA_H_FLAGS	=	+RTS -H32M -A2M -RTS
 endif
+ifeq "${BUILDWITH}" "gcc"
+EXTRA_H_FLAGS	=	+RTS -H16M -RTS
+endif
 
 
 SRCS	=

@@ -127,6 +127,40 @@ C_HEADER(_tprim_chGetChar)
     C_RETURN(mkR(result, mkTNm(t, mkNmChar(result), mkSR())));
 }
 
+#if 0
+/* _tprim_chPutStr :: Trace -> R Handle -> R PackedString -> R (Either IOError ()) */
+C_HEADER(_tprim_chPutStr)
+{
+    NodePtr handleR, np, ch, result, t, unit_t;
+    FileDesc *a;
+
+    t = C_GETARG1(1);
+    handleR = C_GETARG1(2);
+    IND_REMOVE(handleR);
+    np = GET_POINTER_ARG1(handleR, 1);
+    a = derefForeignObj((ForeignObj *)GET_INT_VALUE(np));
+    np = C_GETARG1(3);
+    IND_REMOVE(np);
+    ch = GET_POINTER_ARG1(np, 1);
+    IND_REMOVE(ch);
+ /* putc(GET_CHAR_VALUE(ch), a->fp); 	-- needs fixing to PackedString */
+ /* fflush(a->fp); /* Not really necessary... */
+#if 0
+    fprintf(stderr, "\t = 0x%x\n", t);
+    prGraph(t, 1, 1);
+    fprintf(stderr, "\n", t);
+#endif
+ /* otInsert(GET_CHAR_VALUE(ch), outputContext); */
+    
+    unit_t = mkTNm(t, mkNmUnit(), mkSR());
+
+    C_RETURN (mkR(mkRight(mkR(mkUnit(), unit_t)),
+		  mkTAp(t, mkCons(mkTNm(t, mkNmRight(), mkSR()), 
+				  mkCons(unit_t, mkNil())), mkSR())));
+}
+#endif
+
+
 C_HEADER(_tprim_HClose)
 {
     NodePtr handleR, np, ch, result, t, unit_t;
