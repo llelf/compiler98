@@ -3,17 +3,16 @@
 #define	MAX_LINE_SIZE	1024
 #define	MAX_SYM_SIZE	128
 
-
 /**
  * Wait for a Redex Trace Browser to connect on a predefined port.
  * Return a file stream connected to the browser.
  **/
 FILE *
-waitForBrowserConnection()
+waitForBrowserConnection(int port)
 {
     int fdesc;
     char *fdesc_str = getenv("TRACE_FD");
-    int i, port = DBGPORT;
+    int i;
     int s, len;
 #if defined(__linux) || defined(__NetBSD__)
     struct sockaddr addr;

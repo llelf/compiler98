@@ -38,7 +38,7 @@ void		charListP		(FileOffset fo);
 FileOffset	followTrace		(FileOffset fo
 					,FileOffset *pbot, int *pind);
 FileOffset	peekTrace		(FileOffset fo);
-FILE*		waitForBrowserConnection(void);
+FILE*		waitForBrowserConnection(int port);
 void		ToBrowser		(FILE *sock, char *s);
 void		dumpSRToBrowser		(FILE *sock, FileOffset t);
 void		dumpRefToBrowser	(FILE *sock, FileOffset fo);

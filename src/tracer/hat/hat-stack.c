@@ -15,7 +15,7 @@ main (int argc, char** argv)
   int i=0, infix;
   FileOffset parent;
 
-  initialise(argc,argv);
+  initialise(argc,argv,(int*)0);
   if (errorMsg) {
     msg = readNmTypeAt(errorMsg);
     fprintf(stdout,"Program terminated with error:\n  %s\n",msg->idname);

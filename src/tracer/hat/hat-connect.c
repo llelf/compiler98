@@ -21,11 +21,11 @@ int
 main (int argc, char** argv)
 {
     FILE *sock;
-    int i;
+    int i, browserport;
     char str[16], *s;
     FileOffset fo;
 
-    initialise(argc,argv);
+    initialise(argc,argv,&browserport);
 
     paths[0] = getcwd(NULL, 160);
     paths[1] = getenv("TRACE_SOURCEPATH");
@@ -34,7 +34,7 @@ main (int argc, char** argv)
 
     ncInit();
 
-    if (!(sock = waitForBrowserConnection())) {
+    if (!(sock = waitForBrowserConnection(browserport))) {
       fprintf(stderr, "Couldn't connect to redex trail browser\n");
       exit(1);
     }

@@ -27,7 +27,7 @@ typedef struct {
 char*		basename	(char* path, char* ext); /* ext can be NULL */
 char*		dirname		(char* path);
 
-void		initialise	(int argc, char **argv);
+void		initialise	(int argc, char **argv, int *browserport);
 FILE*		openFile	(char* base, char* ext);
 int		sizeFile	(char* base, char* ext);
 

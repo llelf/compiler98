@@ -19,6 +19,7 @@ FileOffset errorRoot, errorMsg,remoteStartNode=0;
 int ignoreErrors=False;
 unsigned filesize=0, outputsize=0;
 char* progname, *dir;
+extern int browserport;
 
 char*
 rmext (char* word, char* ext)
@@ -71,26 +72,37 @@ dirname (char* path)
  * errorRoot and errorMsg globals.
  */
 void
-initialise (int argc, char **argv)
+initialise (int argc, char **argv, int *browserport)
 {
   int err;
   char header[8];
   char *arg;
 
-  if ((argc==4)&&(strcmp(argv[2],"-remote")==0)) {
-    arg=argv[1];
-    remoteStartNode = atoi(argv[3]);
+  if (browserport) {
+    if ((argc==5)&&(strcmp(argv[3],"-remote")==0)) {
+      *browserport=atoi(argv[1]); arg=argv[2];
+      remoteStartNode = atoi(argv[4]);
+    } else {
+      if ((argc!=3)&&(argc!=4)) {
+        fprintf(stderr,"  [%s]\n",argv[0]);
+        fprintf(stderr,"\tUsage: %s portno [-o] program[.hat] [-remote node]\n",
+					basename(argv[0],0));
+        exit(1);
+      }
+      if ((argc==4)&&!strcmp(argv[2],"-o")) {
+        ignoreErrors=True;
+        *browserport=atoi(argv[1]); arg=argv[3];
+      } else {
+        *browserport=atoi(argv[1]); arg=argv[2];
+      }
+    }
   } else {
-   if ((argc!=2)&&(argc!=3)) {
-     fprintf(stderr,"Usage: %s [-o] program\n",argv[0]);
-     exit(1);
-   }
-   if ((argc==3)&&!strcmp(argv[1],"-o")) {
-     ignoreErrors=True;
-     arg=argv[2];
-   } else {
-     arg=argv[1];
-   }
+    if (argc!=2) {
+      fprintf(stderr,"  [%s]\n",argv[0]);
+      fprintf(stderr,"\tUsage: %s program[.hat]\n",basename(argv[0],0));
+      exit(1);
+    }
+    arg=argv[1];
   }
   dir = dirname(arg);
   arg = basename(arg,".hat");
