@@ -136,13 +136,10 @@ sProfile flags = nProfile flags > (0::Int)
   
 
 {- If first argument is True, then print second and third with formatting -}
-
 pF :: Bool -> [Char] -> [Char] -> IO ()
-
 pF flag title text =
   if flag 
-    then hPutStr stderr ( "\n====================================\n\t" 
-                          ++ title++":\n"++text++"\n") 
+    then hPutStr stderr ( "======\t"++title++":\n"++text++"\n") 
     else return ()
 
 {- ---------------------------------------------------------------------------

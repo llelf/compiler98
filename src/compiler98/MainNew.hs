@@ -226,12 +226,12 @@ main' args = do
    ,rt)		-- :: RenameTable
        <- catchError (rename flags modid qualFun expFun inf decls
                              importState overlap)
-                     "Error when renaming:" mixLine
+                     "Errors when renaming" mixLine
   pF (sRename flags) "Declarations after rename and fixity:" 
         (prettyPrintId flags state ppTopDecls decls) 
   pF (sRBound flags) "Symbol table after rename and fixity:"  
         (mixLine (map show (treeMapList (:) (getSymbolTable state))))
-  catchError (getErrorsIS state) "Error after rename:" mixLine
+  catchError (getErrorsIS state) "Errors after renaming" mixLine
 
 
   {- Record dependencies in .dep file -}
@@ -253,7 +253,7 @@ main' args = do
   (state	-- :: IntState
    ,decls)	-- :: Decls Id
            <- catchError (derive tidFun state derived decls)
-                         "Deriving failed:" mixLine
+                         "Deriving failed" mixLine
   pF (sDerive flags) "Declarations after deriving:" 
           (prettyPrintId flags state ppTopDecls decls) 
   pF (sDBound flags) "Symbol table after deriving:"  
@@ -288,7 +288,7 @@ main' args = do
            <- return (extract decls state)
   pF (sEBound flags) "Symbol table after extract:"  
            (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
-  catchError (getErrorsIS state) "Error after extract:" mixLine
+  catchError (getErrorsIS state) "Errors after extract phase" mixLine
 
 
   {-
@@ -322,7 +322,7 @@ main' args = do
           <- return (removeDecls decls tidFun state)
   pF (sRemove flags) "Declarations after remove fields:" 
          (prettyPrintId flags state ppTopDecls decls) 
-  catchError (getErrorsIS state) "Error after remove fields:" mixLine
+  catchError (getErrorsIS state) "Errors after removing fields" mixLine
 
 
   {- 
@@ -357,7 +357,7 @@ main' args = do
          (prettyPrintId flags state ppTopDecls decls) 
   pF (sTBound flags) "Symbol table after type deriving:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
-  catchError (getErrorsIS state) "Error after type deriving/checking" mixLine
+  catchError (getErrorsIS state) "Errors after type inference/checking" mixLine
 
 
   {- Build interface file for this module and write it out -}
@@ -659,7 +659,7 @@ nhcImport flags importState [] = do
   pF (sIRename flags) "Rename table after import"  
              (mixLine (map show (treeMapList 
                                    (:) (getRenameTableIS importState)))) 
-  catchError (getErrIS importState) "Error after import " mixLine
+  catchError (getErrIS importState) "Errors after importing module" mixLine
   return importState
 
 nhcImport flags importState (x:xs) = do

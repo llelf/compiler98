@@ -74,10 +74,10 @@ msgApply es err no =
   "Type error " ++ err ++ "\nwhen trying to apply function at " ++  (strPos . getPos . head) es ++ " to its " 
 	++ showEnum no ++ " argument at " ++ (strPos . getPos . (es !!)) no ++ ".\n"
 
-showEnum 1 = "1:st"
-showEnum 2 = "2:nd"
-showEnum 3 = "3:rd"
-showEnum n = show n ++ ":th"
+showEnum 1 = "1st"
+showEnum 2 = "2nd"
+showEnum 3 = "3rd"
+showEnum n = show n ++ "th"
 
 msgList es err =
   "Type error " ++ err ++ "\nwhen trying to unify items in a list at " ++  (strPos . getPos . head) es ++ ".\n"
