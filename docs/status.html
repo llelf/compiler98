@@ -15,6 +15,32 @@ described here for the two most recent released versions.
 <p>
 
 <hr>
+<h3>nhc98 1.17 (CVS) features</h3>
+<ul>
+<li> New:	Several more packages of hierarchical libraries are included in
+		the build: base, parsec, haskell-src, QuickCheck, HaXml, and
+		HUnit.
+<li> New:	FFI improvements: foreign import "dynamic" is now supported,
+		and named C header-files are now used.
+<li> New:	The compiler now uses cpphs for Haskell source instead of cpp.
+		This removes problems with string gaps, primes in identifiers,
+		and so on.
+<li> New:	In hmake-interactive, if the readline library is not available,
+		the simple line editor now has a history mechanism.
+<li> Bugfix:	hmake's processing of cpp conditional directives is improved
+		also.
+<li> Bugfix:	Evil bugfixes for ghc versions &ge; 6.0
+<li> Bugfix:	More evil bugfixes for gcc versions &ge; 3.3
+<li> Bugfix:	A numeric pattern can now match against a Num newtype.
+<li> Bugfix:	Foreign imports and abstract newtypes now play OK together.
+<li> Bugfix:	Methods in qualified classes no longer need to be qualified
+		in instance decls.
+<li> Bugfix:	GreenCard now accepts &lt;&lt;.../...&gt;&gt; syntax.
+<li> Bugfix:	Numerous internal tidy-ups, including fixes such that nhc98
+		can once again be built by hbc.
+</ul>
+
+<hr>
 <h3>nhc98 1.16 (2003-03-08) features</h3>
 <ul>
 <li> New:	A large subset of the <em>base</em> package of
@@ -76,10 +102,10 @@ are the time profiler and common FFI.
   <th bgcolor='#eeeeee'>component</th>
   <td>compiler</td>
   <td>prelude + libraries</td>
-  <td>heap profiling</td>
-  <td>hp2graph</td>
+  <td>hierarchical libraries</td>
   <td>GreenCard</td>
   <td>hmake</td>
+  <td>cpphs</td>
 </tr><tr>
   <th bgcolor='#eeeeee'>quality</th>
   <td bgcolor='#ddffdd'>release</td>
@@ -87,39 +113,44 @@ are the time profiler and common FFI.
   <td bgcolor='#ddffdd'>release</td>
   <td bgcolor='#ddffdd'>release</td>
   <td bgcolor='#ddffdd'>release</td>
-  <td bgcolor='#ddffdd'>release</td>
+  <td bgcolor='#ffffdd'>beta</td>
 </tr>
 <tr bgcolor='#ddddff'>
   <th bgcolor='#eeeeee'>last change</th>
-  <td>2003-02-27</td>
+  <td>2004-06-27</td>
   <td>2003-03-07</td>
-  <td>1997</td>
-  <td>1996</td>
-  <td>2001-06-01</td>
-  <td>2003-03-06</td>
+  <td>2004-06-27</td>
+  <td>2001</td>
+  <td>2004-06-28</td>
+  <td>2004-06-28</td>
 </tr>
 </table>
 
 <table border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor='#ddddff'>
   <th bgcolor='#eeeeee'>component</th>
+  <td>heap profiling</td>
+  <td>hp2graph</td>
   <td>time profiling</td>
   <td>common FFI</td>
   <td><em>hi</em></td>
   <td>HOOD</td>
 </tr><tr>
   <th bgcolor='#eeeeee'>quality</th>
-  <td bgcolor='#ffffdd'>beta</td>
   <td bgcolor='#ddffdd'>release</td>
+  <td bgcolor='#ddffdd'>release</td>
+  <td bgcolor='#ffffdd'>beta</td>
   <td bgcolor='#ddffdd'>release</td>
   <td bgcolor='#ddffdd'>release</td>
 </tr>
 <tr bgcolor='#ddddff'>
   <th bgcolor='#eeeeee'>last change</th>
-  <td>2001-05-18</td>
+  <td>1997</td>
+  <td>1996</td>
+  <td>2001</td>
   <td>2003-01-24</td>
-  <td>2000-11-10</td>
-  <td>2000-09-15</td>
+  <td>2000</td>
+  <td>2000</td>
 </tr>
 </table>
 </center>
@@ -131,7 +162,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 7th March 2003<br>
+This page last modified: 29th June 2004<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
