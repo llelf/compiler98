@@ -10,7 +10,7 @@
 <p>
 The latest stable release is 1.16, available in various distribution
 formats (listed below).  Important patches for the stable version
-are also provided.  The development tree is at version 1.16,
+are also provided.  The development tree is at version 1.17,
 and is only available by <a href="cvs.html">CVS</a>.  Bugfixes
 and important changes to the system are described in the <a
 href="status.html">release notes</a> for each version.
@@ -155,10 +155,15 @@ instructions</a>.
 branch of Debian and use apt-get to install and handle dependencies
 for you.)
 <br>
-<b>ix86-FreeBSD for 4.6-Stable:</b><br>
-<a href="http://ist.unibw-muenchen.de/People/obraun/nhc98-1.16.tgz">
-<tt>http://ist.unibw-muenchen.de/People/obraun/nhc98-1.16.tgz</tt></a>
+<b>FreeBSD ports:</b><br>
+<a href="http://freshports.org/lang/nhc98/">
+<tt>http://freshports.org/lang/nhc98/</tt></a>
+<a href="http://freshports.org/devel/hs-hmake/">
+<tt>http://freshports.org/devel/hs-hmake/</tt></a>
 <br>
+<b>OpenBSD ports:</b><br>
+<a href="http://www.cse.unsw.edu.au/~dons/haskell_openbsd.html">
+<tt>http://www.cse.unsw.edu.au/~dons/haskell_openbsd.html</tt></a>
 
 <hr>
 
@@ -168,7 +173,7 @@ for you.)
 <table border=1 cellspacing=0 cellpadding=2 bgcolor="#dddddd"><tr>
 <td>ix86</td><td>Linux, NetBSD, FreeBSD, OpenBSD, Solaris, Windows/Cygwin</td>
 </tr><tr>
-<td>ppc</td><td>Linux, MacOS-X</td>
+<td>ppc</td><td>Linux, MacOS-X, Darwin</td>
 </tr><tr>
 <td>sparc</td><td>Solaris, SunOS4</td>
 </tr><tr>
@@ -216,6 +221,17 @@ be comprehensive, but if you have any problems, please mail
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor="#dddddd"><th>patch name</th> <th>patch to</th>
                     <th>date</th> <th>fixes what problem?</th></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.16-gcc3.3">
+      gcc3.3</a></td>
+  <td>nhc98 v1.16</td>
+  <td>2003-12-16</td>
+  <td>Several new features in gcc-3.3 cause breakage in the nhc98 build.
+      This patch fixes many of those problems, including abort() with
+      too many args, literal string line breaks in asmlong.h, and
+      different assembly alignment instructions.
+      </td></tr>
 
 <tr bgcolor="#ddffdd">
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.16-ghc6">
@@ -313,7 +329,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 29th May 2003<br>
+This page last modified: 10th May 2004<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
