@@ -45,6 +45,6 @@ lazyDirContents d =
   catch (do f  <- patchIOErrorVal "readDir" (readdir d)
             fs <- lazyDirContents d
             return (f:fs))
-        (\e-> do patchIOError "closeDir" (closedir d)
+        (\e-> do -- patchIOError "closeDir" (closedir d)
                  return [])
   
