@@ -92,13 +92,13 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-	 script/hmake-config.inst script/hi.inst \
+	 script/hmake-config.inst script/hi.inst script/config-errno.c \
          script/nhc98heap.c script/harch script/confhc script/confhat \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 lib/hood.jar script/hat-trans.inst script/hat-graph \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
-	 hmake.spec nhc98.spec
+	 hmake.spec nhc98.spec script/pkgdirlist
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.hc
@@ -129,7 +129,16 @@ RUNTIMET = \
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
 	  src/hat/lib/*.hs      src/hat/lib/*.hx \
-	  src/hat/lib/Hat/*.hs	src/hat/lib/hat-package.conf
+	  src/hat/lib/Hat/*.hs	src/hat/lib/hat-package.conf \
+	  src/hat/lib/Data/*.h[sx] src/hat/lib/Hat/Data/*.hs \
+	  src/hat/lib/Control/*.hs src/hat/lib/Control/Monad/*.hs \
+	  src/hat/lib/System/*.hs src/hat/lib/System/IO/*.hs \
+	  src/hat/lib/System/Console/*.hs src/hat/lib/Debug/*.hs \
+	  src/hat/lib/Text/*.hs src/hat/lib/Text/PrettyPrint/*.hs \
+	  src/hat/lib/Text/ParserCombinators/*.hs \
+	  src/hat/lib/Text/ParserCombinators/Parsec/*.hs \
+	  src/hat/lib/Foreign/*.h[sx] src/hat/lib/Hat/Foreign/*.hs \
+	  src/hat/lib/Foreign/Marshal/*.hs #src/hat/lib/Foreign/C/*.hs
 HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
 	  src/hat/oldtools/Makefile* src/hat/oldtools/*.[ch] \
 	  src/hat/oldtools/*.hs src/hat/oldtools/*.gc
@@ -531,7 +540,7 @@ hmakeBinDist:
 
 HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
 		script/echo.c script/confhat script/confhc-hat script/fixghc \
-		script/hat-graph
+		script/hat-graph script/pkgdirlist
 HATMISC = Makefile.inc Makefile.hat hat-configure \
 	  src/Makefile.inc src/hat/Makefile* include/art.h
 HATTRANS = src/hat/trans/Makefile* \
