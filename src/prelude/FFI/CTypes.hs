@@ -1,3 +1,4 @@
+{-# OPTIONS_COMPILE -cpp #-}
 module NHC.FFI
 	( -- Integral types, instances of: Eq, Ord, Num, Read, Show, Enum,
 	  -- Typeable, Storable, Bounded, Real, Integral, Bits
