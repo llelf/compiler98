@@ -257,7 +257,7 @@ extern Node FN_Builtin_46primLeave[];
 extern Node CF_Prelude_46_95zap_95arg[];
 extern Node CF_Prelude_46_95zap_95stack[];
 extern Node FN_Prelude_46Monad_46Prelude_46IO_46return[];
-extern Node FN_Prelude_46unsafePerformIO[];
+extern Node FN_IOExtras_46unsafePerformIO[];
 
 #define BLACKHOLE ((Node)FN_Prelude_46blackhole)
 #define HPUTC_OK ((NodePtr)CF__95Builtin_46hputc_95ok)
@@ -275,7 +275,7 @@ extern Node FN_Prelude_46unsafePerformIO[];
 #define ZAP_ARG_NODE ((NodePtr) CF_Prelude_46_95zap_95arg)
 #define ZAP_STACK_NODE ((NodePtr) CF_Prelude_46_95zap_95stack)
 #define IORETURN ((Node)FN_Prelude_46Monad_46Prelude_46IO_46return)
-#define PERFORMIO ((Node)FN_Prelude_46unsafePerformIO)
+#define PERFORMIO ((Node)FN_IOExtras_46unsafePerformIO)
 
 #define C_CODE ((Code)FN_Prelude_46primLeave)
 
