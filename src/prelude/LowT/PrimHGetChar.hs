@@ -9,7 +9,7 @@ primHGetChar h = IO ( \ world -> input h )
  where
   input h = let c = cHGetChar h
             in if c < 0 then
-                 Left (IOErrorEOF h "hGetChar")
+                 Left (EOFError "hGetChar" h)
                else
                	 Right (toEnum c)
 

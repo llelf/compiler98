@@ -14,13 +14,19 @@ primSystem str =
 	         Left errno -> Left (IOErrorSystem cstr errno)
 	         Right code -> Right code)
 
-{-
-int cSystem (char *cmd) {
-    err = system(cmd);
-    if (err==-1) return errno;
-}
 
+{-
+-- a possible future implementation in terms of common FFI?
+import FFI
 import DErrNo
 
-foreign import "cSystem" cSystem :: CString -> IO (Either .. ..)
+{-# CCODE #include <stdlib.h> #-}
+{-# CCODE extern int system (const char *cmd); #-}
+foreign import "system" cSystem :: CString -> IO Int
+primSystem cmd = do
+    v <- cSystem cmd
+    if v==(-1) || v==127
+      then do e <- getErrNo
+              ioError (IOErrorC ("system "++show str) Nothing e)
+      else return v
 -}

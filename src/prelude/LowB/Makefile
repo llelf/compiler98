@@ -10,8 +10,7 @@ EXTRA_C_FLAGS	=
 SRCS	= \
 	PrimError.hs Blackhole.hs \
 	PrimOpenSocket.hs \
-	CExitWith.hs PrimExitWith.hs PrimSystem.hs PrimGetArgs.hs \
-	PrimGetEnv.hs PrimGetProgName.hs \
+	CExitWith.hs PrimExitWith.hs PrimGetArgs.hs \
 	PrimComparePS.hs PrimIndex.hs PrimLength.hs PrimPackString.hs \
 	PrimUnpackPS.hs \
 	PrimDecodeDouble.hs PrimDecodeFloat.hs PrimDoubleFromInteger.hs \
@@ -24,6 +23,7 @@ SRCS	= \
 	PrimIntegerQuotRem.hs PrimIntegerSub.hs  Ieee.hs
 
 
+#	PrimSystem.hs PrimGetEnv.hs PrimGetProgName.hs \
 #	CHGetChar.hs PrimEqHandlePosn.hs CHPutChar.hs PrimHClose.hs \
 # 	PrimHFileSize.hs PrimHFlush.hs PrimHGetBuffering.hs PrimHGetChar.hs \
 #	PrimHGetContents.hs PrimHGetPosn.hs PrimHIsEOF.hs PrimHPutChar.hs \

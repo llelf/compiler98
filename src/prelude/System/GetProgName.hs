@@ -1,6 +1,9 @@
 module System where
 
-import LowSystem(primGetProgName)
+import FFI
+
+foreign import primGetProgName :: IO CString
 
 getProgName             :: IO String
-getProgName = primGetProgName
+getProgName = primGetProgName >>= return . fromCString
+

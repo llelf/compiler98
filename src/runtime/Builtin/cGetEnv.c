@@ -35,3 +35,12 @@ C_HEADER(cGetEnv)
 #endif
   C_RETURN(nodeptr);
 }	
+
+char *
+primGetEnv (char* sym)
+{
+  char* val;
+  val = getenv(sym);
+  if (!val) errno=ENOENT;
+  return val;
+}

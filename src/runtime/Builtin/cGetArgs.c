@@ -53,3 +53,11 @@ C_HEADER(cGetArgs)
   *tmp = mkNil();
   C_RETURN(res);
 }	
+
+char *
+cGetArg (void)
+{
+  static int i=1;
+  if (i>Argc+1) return (char*)0;
+  else return Argv[i++];
+}

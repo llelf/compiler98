@@ -1,10 +1,7 @@
 module System where
 
 import DIO
-import DIOError
 import System(ExitCode)
---import DExitCode
---import CExitWith
 
 primExitWith code =
   IO ( \ world -> _cExitWith code)

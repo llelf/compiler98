@@ -8,11 +8,7 @@ SRCS	= \
 	Ord_ExitCode.hs  Show_ExitCode.hs  \
 	GetArgs.hs GetProgName.hs GetEnv.hs \
 	ExitWith.hs ExitFailure.hs SystemFun.hs
-SRCS_T	= \
-	DExitCode.hs Eq_ExitCode.hs Read_ExitCode.hs \
-	Ord_ExitCode.hs  Show_ExitCode.hs  \
-	ExitWith.hs ExitFailure.hs
-NOTDONE = GetArgs.hs GetProgName.hs GetEnv.hs SystemFun.hs
+SRCS_T	= $(SRCS)
 
 
 # Here are the main rules.

@@ -27,3 +27,9 @@ C_HEADER(cGetProgName)
 #endif
   C_RETURN(res);
 }	
+
+char *
+primGetProgName (void)
+{
+  return Argv[0];
+}

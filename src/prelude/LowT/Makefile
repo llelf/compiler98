@@ -5,11 +5,11 @@ THISLIB	= LowT
 SEARCH	= -P../PreludeIO -P../System -P..
 
 SRCS_T	= \
-	PrimHGetChar.hs PrimHGetContents.hs PrimHPutChar.hs PrimHClose.hs \
 	PrimExitWith.hs \
 	FFIBuiltin.hs PrimPackString.hs PrimUnpackPS.hs CString.hs \
+	PrimHPutChar.hs \
 	NonStdTrace.hs \
-	LowIO.hs LowSystem.hs LowPS.hs \
+	LowSystem.hs LowPS.hs \
 	PrimIntegerAbs.hs PrimIntegerAdd.hs PrimIntegerAnd.hs \
 	PrimIntegerEq.hs PrimIntegerLe.hs PrimIntegerLt.hs \
 	PrimIntegerGe.hs PrimIntegerGt.hs PrimIntegerNe.hs \
@@ -20,6 +20,9 @@ SRCS_T	= \
 	PrimEncodeFloat.hs  PrimFloatFromInteger.hs \
 	PrimDecodeDouble.hs PrimDecodeFloat.hs \
 	PrimsFloat.hs PrimsDouble.hs
+
+#	PrimHGetChar.hs PrimHGetContents.hs PrimHPutChar.hs PrimHClose.hs \
+#	LowIO.hs
 
 SRCS_NT	= _Driver.hs PrimIntFromInteger.hs 
 EXTRA_T	= NonStdUnsafeCoerce.hs
