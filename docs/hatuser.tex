@@ -22,11 +22,11 @@
 
 \begin{document}
 
-\title{Hat Users' Manual\\version 1.0}
+\title{Hat Users' Manual, Version 1.0}
 \author{The ART Team}
 \date{}
 \maketitle
-\vspace*{-8ex}
+\vspace{-8ex}
 
 \thispagestyle{empty}
 
@@ -312,8 +312,11 @@ By default only the \texttt{Prelude} is trusted.
 Pruning is a more radical way to reduce the size of a trace.
 At each garbage collection, trace structure more
 than a specified distance \emph{n} from all continuing evaluation points
-is discarded.  Any pruning is specified at run-time: for example,
-\texttt{+RTS -k2 -RTS}.
+is discarded. Often you find a good deal of information in traces even for very small distances --- after all, the last garbage collection may have been some time ago. Hence even setting the distance to 0 is a worthwhile option.
+ 
+Any pruning is specified at run-time: for example,
+\texttt{+RTS -dk2 -RTS}.
+The run-time option \texttt{-dK} prunes the trace just as much as is necessary to continue the computation within the given heap.
 
 A pruned trace is incomplete and a subexpression that is not available because of pruning is shown as crossed box, $\crossBox$, in the trace.
 A $\crossBox$ can neither be expanded nor can its parent be shown.
@@ -324,7 +327,7 @@ By default there is no pruning.
 
 %------------------------------------------------------------------------------
 
-\section{Some hints}
+\section{Some advice from experience}
 
 \begin{itemize}
 \item First-time users of Hat tend to quickly unfold large parts of the trace and thus clutter the screen and get lost. Think well, before you demand to see another parent. It is seldomly useful to follow a long sequence of parents for whole redexes. Do not forget that you can ask for the parent of any subexpression. Choose the subexpression that interests you carefully. When locating an error, a wrong subexpression of an argument is a good candidate for further enquiry.
@@ -334,6 +337,8 @@ In our experience usually less than 10 parents need to be viewed to locate an er
 \item Use the links to the source as described in Section~\ref{source}. The trace is designed to be of minimal size. The source gives valuable context information.
 
 \item Use the various forms of highlighting described in Section~\ref{advanced}. The conveyed information often makes viewing a parent superfluous.
+
+\item Avoid $\lambda$-abstractions in your program. In fact, informative function names are very helpful for tracing.
 
 \end{itemize}
 
@@ -390,7 +395,6 @@ Note that when a script is active, you cannot manually explore trails.
 
 You can select the font in which the trace is displayed by selecting the ``Select font'' option in the ``Options'' menu. A dialogue appears in which you can choose the font face, the style and the size. Note that you have to press ``Enter'' or ``Return'' to change the size. The effect of your choice is shown in the dialogue. You commit your choice by selecting ``Ok''.
 
-
 %------------------------------------------------------------------------------
 
 \section{Current Limitations}
@@ -423,10 +427,98 @@ required for each traced reduction.)
 
 We plan to address all four of these limitations in future versions.
 
+%------------------------------------------------------------------------------
+
+\appendix
+
+\newpage
+\section{Run-time options of a traced program}
+
+\noindent
+A traced program reads the following environment variables:
+\begin{quote}
+\begin{description}
+\item[\texttt{TRACE\_ENTER}] 
+If set, then every time evaluation of a function application begins, the name of the function is written to stdout.  
+
+\item[\texttt{TRACE\_BPREGEXP}]
+ the traced program interrupts and goes into the trace-available mode, when an application of a function that matches the regular expression given in \texttt{TRACE\_BPREGEXP} is evaluated.
+
+\item[\texttt{TRACE\_STEP}] 
+If set, then program is run in single-stepping mode. That is, after each reduction the program goes into the trace-available mode.
+\end{description}
+\end{quote}
+
+A traced program understands the following run-time options.
+The options for general use have already been described in previous sections.
+
+\begin{center}
+\begin{tabular}{ll}
+\texttt{-ds} \emph{name} &
+suspect the module \emph{name}
+(even if compiled as a trusted module)
+\\
+\texttt{-dsr} \emph{name} &
+suspect the module \emph{name} and all modules it recursively depends on
+\\
+\texttt{-dt} \emph{name} &
+trust the module \emph{name} (even if
+compiled as a suspect module)
+\\
+\texttt{-dtr} \emph{name} &
+trust the module \emph{name} and all modules it recursively depends on
+\\
+\texttt{-dshow} &
+show ???
+\\
+\texttt{-dnr} &
+do not trace R ???
+\\
+\texttt{-dnsatf} &
+do not trace SatF ??? \\
+\texttt{-dnsat} &
+do not trace Sat ??? \\
+\texttt{-dq} &
+quit tracing when ??? \\
+\texttt{-dps} &
+prune Sats ??? \\
+\texttt{-dk}\emph{size} &
+prune trace at distance \emph{size} \\
+\texttt{-dK} &
+prune trace just enough to be able to continue computation \\
+\texttt{-db}\emph{red} &
+go into single step mode after \emph{red}+1 reductions \\
+\texttt{-dg[}\emph{num}\texttt{]} \emph{file} &
+write live heap size into \emph{file} every \emph{num} reductions \\
+\texttt{-D[}\emph{num}\texttt{]} &
+turn on stack dumps to depth \emph{num} (default=1) \\
+\texttt{-T[}\emph{flags}\texttt{]} &
+turn on tracing \emph{flags} where
+\emph{flags} is any sequence of\\
+& 
+\begin{tabular}{ll}
+\texttt{r} & trace returns \\
+\texttt{e} & trace evals \\
+\texttt{b} & trace instruction pointer \\
+\texttt{s} & trace stack pointer \\
+\texttt{h} & trace heap pointer \\
+\texttt{a} & dump address \\
+\texttt{i} & dump indirections \\
+\texttt{t} & dump top \\
+\emph{num} & trace depth \\
+\end{tabular}
+\\
+& If flags is missing, the default is \texttt{bshait}
+\end{tabular}
+\end{center}
+
+
+
 
 %------------------------------------------------------------------------------
 
-\section{Quick reference}
+\newpage
+\section{Quick reference for the browser}
 
 
 A mouse click on a subexpression \emph{S} in the trace panel has the following effect:
