@@ -112,7 +112,7 @@ then
 else
   # ghc, for Haskell'98, with new hslibs
   #     GHCINCPATH is a colon-separated list of directories containing .hi files
-  GHCINCPATH=":"${GHCINCPATH-"${GHCINCDIR}/std:${GHCINCDIR}/data:${GHCINCDIR}/lang:${GHCINCDIR}/posix:${GHCINCDIR}/net:${GHCINCDIR}/num:${GHCINCDIR}/text:${GHCINCDIR}/util:${GHCINCDIR}/win32"}
+  GHCINCPATH=":"${GHCINCPATH-"${GHCINCDIR}/std:${GHCINCDIR}/data:${GHCINCDIR}/lang:${GHCINCDIR}/posix:${GHCINCDIR}/net:${GHCINCDIR}/num:${GHCINCDIR}/text:${GHCINCDIR}/util:${GHCINCDIR}/win32:${GHCINCDIR}/concurrent"}
   GHCCPP="-Z__HASKELL1__=5 ${HASKELL98}"
 fi
 GHCPRELOPTS=`echo $GHCINCPATH | sed -e "s/:/ -P/g"`
