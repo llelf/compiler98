@@ -114,6 +114,237 @@ primTAp5 (FileOffset tap, FileOffset tfn
     return fo;
 }
 
+FileOffset
+primTAp6 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp7 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp8 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset targ8
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ8, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp9 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset targ8
+                        , FileOffset targ9
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ8, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ9, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp10 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset targ8
+                        , FileOffset targ9
+                        , FileOffset targ10
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ8, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ9, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ10, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp11 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset targ8
+                        , FileOffset targ9
+                        , FileOffset targ10
+                        , FileOffset targ11
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ8, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ9, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ10, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ11, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+FileOffset
+primTAp12 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset targ6
+                        , FileOffset targ7
+                        , FileOffset targ8
+                        , FileOffset targ9
+                        , FileOffset targ10
+                        , FileOffset targ11
+                        , FileOffset targ12
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x05,HatFile);
+    fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ2, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ3, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ4, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ5, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ6, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ7, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ8, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ9, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ10, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ11, sizeof(FileOffset), 1, HatFile);
+    fwrite(&targ12, sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
 
 
 
@@ -434,6 +665,12 @@ int
 primTrustedFun (CNmType nm)
 {
     return nm->trust;
+}
+
+int
+primSameTrace (FileOffset t1, FileOffset t2)
+{
+    return (t1==t2);
 }
 
 

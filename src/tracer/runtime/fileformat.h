@@ -68,12 +68,97 @@ FileOffset	primTAp4	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ3
                                                , FileOffset targ4
                                                , FileOffset sr);
+
 FileOffset	primTAp5	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset targ2
                                                , FileOffset targ3
                                                , FileOffset targ4
                                                , FileOffset targ5
+                                               , FileOffset sr);
+
+FileOffset	primTAp6	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset sr);
+
+FileOffset	primTAp7	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset sr);
+
+FileOffset	primTAp8	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset targ8
+                                               , FileOffset sr);
+
+FileOffset	primTAp9	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset targ8
+                                               , FileOffset targ9
+                                               , FileOffset sr);
+
+FileOffset	primTAp10	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset targ8
+                                               , FileOffset targ9
+                                               , FileOffset targ10
+                                               , FileOffset sr);
+
+FileOffset	primTAp11	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset targ8
+                                               , FileOffset targ9
+                                               , FileOffset targ10
+                                               , FileOffset targ11
+                                               , FileOffset sr);
+
+FileOffset	primTAp12	(FileOffset tap, FileOffset tfn
+                                               , FileOffset targ1
+                                               , FileOffset targ2
+                                               , FileOffset targ3
+                                               , FileOffset targ4
+                                               , FileOffset targ5
+                                               , FileOffset targ6
+                                               , FileOffset targ7
+                                               , FileOffset targ8
+                                               , FileOffset targ9
+                                               , FileOffset targ10
+                                               , FileOffset targ11
+                                               , FileOffset targ12
                                                , FileOffset sr);
 
 FileOffset	primTNm		(FileOffset tnm, CNmType nm, FileOffset sr);
@@ -102,6 +187,7 @@ CNmType		primNTGuard	(void);
 CNmType		primNTContainer	(void);
 
 int		primTrustedFun	(CNmType nm);
+int		primSameTrace	(FileOffset t1, FileOffset t2);
 
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);
