@@ -32,4 +32,4 @@ ${OBJDIR}/../Prelude/DEither.$O:
 	cd ../Prelude; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/Prelude/DEither.$O
 
 ../PackedString/DPackedString.${HISUFFIX}:
-	cd ../PackedString; make $@
+	cd ../PackedString; $(MAKE) $@
