@@ -144,14 +144,14 @@ void gcFile(void *c)	/* This is a possible second-stage GC */
   if(!replay)
 #endif
     fclose(a->fp);
-  if (a->path) free(a->path);
+  /*if (a->path) free(a->path);*/
   /*free(a);	-- free'ing causes a seg-fault! don't know why */
 }
 void gcSocket(void *c)	/* This is another possible second-stage GC */
 {
   FileDesc *a = (FileDesc*)c;
   close(a->fdesc);
-  if (a->path) free(a->path);
+  /*if (a->path) free(a->path);*/
   /*free(a);	-- free'ing causes a seg-fault! don't know why */
 }
 
