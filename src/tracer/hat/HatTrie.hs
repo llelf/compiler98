@@ -451,14 +451,18 @@ stringLex s =
                              if (length cs==2)&&(head (tail cs)=='\'') then
                                 (c:cs,drop 2 r)
                              else error "Bad character expression!"
-                        | (readMode==NoMode)&&(c=='_')&&((take 2 r)=="|_") = ("_|_",(drop 2 r))
-                        | (((isAlphaNum c)||(c=='_')||((c=='.')&&(readMode==AlphaMode)))&&
-			   (readMode `elem` [NoMode,AlphaMode]))
+                        | (readMode==NoMode)&&(c=='_')&&((take 2 r)=="|_") 
+                          = ("_|_",(drop 2 r))
+                        | (((isAlphaNum c)||(c=='_'))&&
+                             (readMode `elem` [NoMode,AlphaMode]))
+                            || (((c=='.')||(c=='\''))&&(readMode==AlphaMode))
 			  = let (l,r2) = oneLex AlphaMode r in (c:l,r2)
-                        | ((c `elem` ['+','-','*','/','!','&','|','=','<','>',':'])&&
+                        | ((c `elem` 
+                             ['+','-','*','/','!','&','|','=','<','>',':'])&&
 			  (readMode `elem` [NoMode,SpecialMode]))
 			    = let (l,r2) = oneLex SpecialMode r in (c:l,r2)
-                        | (readMode==NoMode)&&(c=='[')&&((take 1 r)=="]") = ("[]",(drop 1 r))
+                        | (readMode==NoMode)&&(c=='[')&&((take 1 r)=="]") 
+                          = ("[]",(drop 1 r))
 			| c `elem` ['(',')','[',']',',']
 			  = if (readMode==NoMode) then (c:[],r) else ([],c:r)
 			| otherwise = if (readMode==NoMode) then (c:[],r) else ([],c:r)
