@@ -18,4 +18,4 @@ case $MACHINE in
 esac
 export CLASSPATH
 killall -w -q hat-connect || true
-java nhctracer.HatTrail "$@" &
+java nhctracer.HatTrail 6710 "$@" &
