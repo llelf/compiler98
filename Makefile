@@ -460,7 +460,7 @@ hmakeBinDist:
 
 ##### cleanup
 
-clean:
+clean: cleanhi
 	#cd data2c;             $(MAKE) clean
 	cd src/compiler98;      $(MAKE) clean
 	cd src/greencard;       $(MAKE) clean
