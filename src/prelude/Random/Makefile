@@ -37,7 +37,7 @@ clean:
 ${OBJS}: ${OBJDIR}/%.o : %.hs
 	$(HC) -c $(HFLAGS) -o $@ $<
 ${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c -P../NonStd/ +CTS -lib -CTS -o $@ $<
+	$(HC) -c -cpp +CTS -lib -CTS -o $@ $<
 
 ${CFILES}: %.c : %.hs
 	$(HC) -C $(HFLAGS) $<
