@@ -131,18 +131,22 @@ dTopDecls trusted root (DeclsParse ds) =
 
 dTopDecl :: Bool -> Exp Id -> Decl Int -> DbgTransMonad [Decl Int]
 
-dTopDecl trusted root (DeclClass pos ctx id1 id2 decls) =
-  (if trusted then dTrustDecls else dSuspectDecls) root decls >>>= \decls' ->
+dTopDecl trusted root (DeclClass pos ctx id1 id2 (DeclsParse decls)) =
+  mapS ((if trusted then dTrustDecl else dSuspectDecl) root) decls 
+    >>>= \decls' ->
   lookupName id1 >>>= \(Just (InfoClass i tid ie nt ms ds at)) ->
   mapS0 fixMethodArity (zip ms ds) >>>
-  unitS [DeclClass pos ctx id1 id2 decls']
+  unitS (DeclClass pos ctx id1 id2 (DeclsParse (concatMap fst decls'))
+        :concatMap snd decls')
   where 
   fixMethodArity (m, d) =
     lookupName d >>>= \(Just (InfoDMethod _ _ _ (Just arity) _)) ->
     setArity 2 {-arity-} m
-dTopDecl trusted root d@(DeclInstance pos ctx id inst decls) = 
-  unitS  ((:[]) . DeclInstance pos ctx id inst) =>>> 
-    (if trusted then dTrustDecls else dSuspectDecls) root decls
+dTopDecl trusted root d@(DeclInstance pos ctx id inst (DeclsParse decls)) = 
+  mapS ((if trusted then dTrustDecl else dSuspectDecl) root) decls 
+    >>>= \decls' ->
+  unitS (DeclInstance pos ctx id inst (DeclsParse (concatMap fst decls'))
+        :concatMap snd decls')
 dTopDecl _ _ d@(DeclType id t) = unitS [d]
 dTopDecl _ _ d@(DeclData mb ctx id contrs tycls) = unitS [d]
 dTopDecl trusted root d@(DeclConstrs pos id constrids) = 
@@ -153,15 +157,18 @@ dTopDecl trusted root d@(DeclConstrs pos id constrids) =
       setIntState intState' >>>
       mapS ((if trusted then dTrustDecl else dSuspectDecl) root) selDecls 
         >>>= \selDeclss' ->
-      unitS (DeclConstrs pos id [] : concat selDeclss')
-dTopDecl trusted root d = (if trusted then dTrustDecl else dSuspectDecl) root d
+      unitS (DeclConstrs pos id [] 
+            :concatMap (\(ds',ads') -> ds'++ads') selDeclss')
+dTopDecl trusted root d = 
+  (if trusted then dTrustDecl else dSuspectDecl) root d >>>= \(ds',auxDs') ->
+  unitS (ds' ++ auxDs') 
 
 
 dSuspectDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 
 dSuspectDecls parent (DeclsParse ds) = 
-  mapS (dSuspectDecl parent) ds >>>= \dss -> 
-  unitS (DeclsParse (concat dss))
+  mapS (dSuspectDecl parent) ds >>>= \(dss) -> 
+  unitS (DeclsParse (concatMap (\(ds',ads') -> ds'++ads') dss))
 dSuspectDecls parent (DeclsScc []) = -- introduced by translateRecordExp
   unitS (DeclsParse [])
 
@@ -170,12 +177,19 @@ dTrustDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 
 dTrustDecls parent (DeclsParse ds) = 
   mapS (dTrustDecl parent) ds >>>= \dss -> 
-  unitS (DeclsParse (concat dss))
+  unitS (DeclsParse (concatMap (\(ds',ads') -> ds'++ads') dss))
 dTrustDecls parent (DeclsScc []) =  -- introduced by translateRecordExp
   unitS (DeclsParse [])
 
 
-dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad [Decl Id]
+{-
+A definition is transformed into definition(s) that define 
+the same variable(s) as the original one, 
+and possibly additional auxilary definitions
+that are needed to enable sharing. The auxilary definitions are returned
+in the second declaration list.
+-}
+dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
   addNewName 0 True "_pv" NoType >>>= \patid ->
@@ -215,14 +229,14 @@ dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
                (DeclsParse 
                  [DeclFun p t' [Fun [] (Unguarded nte) (DeclsParse [])]])
             ]
-  in unitS (pfun : zipWith3 vfun bvsnvs srs nms)
+  in unitS (zipWith3 vfun bvsnvs srs nms,[pfun])
 dSuspectDecl parent d@(DeclFun pos id fundefs) = 
   addId (pos, id) >>>
   lookupName id >>>= \(Just info) ->
   lookupNameStr id >>>= \funName ->
   --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
   if isCMethod info 
-    then dMethod False info pos id funName fundefs
+    then dMethod parent False info pos id funName fundefs
     else
       getIntState >>>= \intState ->
       let arity = getArity fundefs
@@ -241,12 +255,13 @@ dSuspectDecl parent d@(DeclForeignImp pos cname id' arity cast typ id) =
   -- get real cname from primed hname (f'), if needed
   let (InfoVar _ (Qualified _ f) _ _ _ _) = info
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
-  in unitS [ DeclForeignImp pos cname' id' arity cast typ id
-           , DeclFun pos id [code] ]
+  in unitS ([DeclFun pos id [code]]
+           ,[ DeclForeignImp pos cname' id' arity cast typ id])
 dSuspectDecl parent decl = dDecl decl
 
 
-dTrustDecl :: Exp Id -> Decl Id -> DbgTransMonad [Decl Id]
+{- trusted version of dSuspectDecl -}
+dTrustDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
   addNewName 0 True "_pv" NoType >>>= \patid ->
@@ -285,14 +300,14 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
                             [lazySat, (vpat p pv i), hidParent] )) 
                (DeclsParse [])
             ]
-  in unitS (prhs : pfun : map vfun bvsnvs)
+  in unitS (map vfun bvsnvs,[pfun,prhs])
 dTrustDecl hidParent d@(DeclFun pos id fundefs) = 
   addId (pos, id) >>>
   lookupName id >>>= \(Just info) ->
   lookupNameStr id >>>= \funName ->
   --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
   if isCMethod info 
-    then dMethod True info pos id funName fundefs
+    then dMethod hidParent True info pos id funName fundefs
     else
       getIntState >>>= \intState ->
       lookupId Var t_undef >>>= \undefined ->
@@ -315,30 +330,30 @@ dTrustDecl _ d@(DeclForeignImp pos cname id' arity cast typ id) =
   -- get real cname from primed hname (f'), if needed
   let (InfoVar _ (Qualified _ f) _ _ _ _) = info
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
-  in unitS [ DeclForeignImp pos cname' id' arity cast typ id
-           , DeclFun pos id [code] ]
+  in unitS ([DeclFun pos id [code]]
+           ,[DeclForeignImp pos cname' id' arity cast typ id])
 dTrustDecl _ decl = dDecl decl
 
 
 {- The common trivial cases: -}
-dDecl :: Decl Id -> DbgTransMonad [Decl Id]
+dDecl :: Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
-dDecl d@(DeclTypeRenamed _ _) = unitS [d]
-dDecl d@(DeclDefault tys) = unitS [d]
-dDecl d@(DeclVarsType vars ctx ty) = unitS [d] 
-dDecl d@(DeclIgnore _) = unitS [d]
-dDecl d@(DeclError _) = unitS [d]
-dDecl d@(DeclAnnot _ _) = unitS [d]
-dDecl d@(DeclFixity _) = unitS [d]
-dDecl d@(DeclPrimitive pos id i ty) = unitS [d]
+dDecl d@(DeclTypeRenamed _ _) = unitS ([d],[])
+dDecl d@(DeclDefault tys) = unitS ([d],[])
+dDecl d@(DeclVarsType vars ctx ty) = unitS ([d],[]) 
+dDecl d@(DeclIgnore _) = unitS ([d],[])
+dDecl d@(DeclError _) = unitS ([d],[])
+dDecl d@(DeclAnnot _ _) = unitS ([d],[])
+dDecl d@(DeclFixity _) = unitS ([d],[])
+dDecl d@(DeclPrimitive pos id i ty) = unitS ([d],[])
 dDecl d@(DeclForeignExp pos cname id typ) =
   error ("Can't trace foreign exports yet. "++strPos pos)
 
 
-dMethod :: Bool -> Info -> Pos -> Id -> String -> [Fun Id] 
-               -> DbgTransMonad [Decl Int]
+dMethod :: Exp Id -> Bool -> Info -> Pos -> Id -> String -> [Fun Id] 
+        -> DbgTransMonad ([Decl Id],[Decl Id])
 
-dMethod trusted info@(InfoIMethod _ tid nt (Just arity) _) pos id 
+dMethod parent trusted info@(InfoIMethod _ tid nt (Just arity) _) pos id 
   funName [Fun [] (Unguarded (ExpVar p1 d)) (DeclsParse [])] = 
   -- This must(?) be a wrapper to the method of the superclass
   -- or default(?)
@@ -347,20 +362,25 @@ dMethod trusted info@(InfoIMethod _ tid nt (Just arity) _) pos id
   -- it may succeed even for user defined methods
     setArity 2 id >>>
     newVars pos 2 >>>= \[sr, useParent] ->
-    unitS [DeclFun pos id [Fun [sr, useParent]
+    unitS ([DeclFun pos id [Fun [sr, useParent]
                                (Unguarded 
                                  (ExpApplication p1 
                                    [ExpVar p1 d, sr, useParent]))
            		       (DeclsParse [])]]
-dMethod trusted info pos id funName fundefs = 
-  (if trusted then dTrustFun else dSuspectFun) 
-     pos id funName (getArity fundefs) fundefs NoType
+          ,[])
+dMethod parent trusted info pos id funName fundefs = 
+  let arity = getArity fundefs
+  in case arity of
+       0 -> (if trusted then dTrustCaf else dSuspectCaf)
+              parent pos id funName fundefs NoType
+       _ -> (if trusted then dTrustFun else dSuspectFun) 
+              pos id funName (getArity fundefs) fundefs NoType
 -- dCaf does not work, 
 -- because shared constants need to be defined outside class/instance
 
 
 dSuspectCaf :: Exp Id -> Pos -> Id -> String -> [Fun Id] -> NewType 
-            -> DbgTransMonad [Decl Id]
+            -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dSuspectCaf parent pos id cafName [Fun [] rhs localDecls] nt =
   setArity 2 id >>>
@@ -373,28 +393,28 @@ dSuspectCaf parent pos id cafName [Fun [] rhs localDecls] nt =
   makeNTId pos id >>>= \ntId ->
   makeNm pos parent ntId sr >>>= \nte ->
   lookupVar pos t_lazySat >>>= \lazySat ->
-  unitS [DeclFun pos id 
-          [Fun [PatWildcard pos, PatWildcard pos] 
-             (Unguarded (ExpVar pos nid)) (DeclsParse [])
-          ]
-        -- id _ _ = nid
-        ,DeclFun pos nid 
-           [Fun [] 
-             (Unguarded (ExpApplication pos [lazySat, rhs', useParent]))
-	     (DeclsParse
-	        (DeclFun pos useParentId 
-                   [Fun [] (Unguarded nte) (DeclsParse [])] 
-                :localDeclsList'
-                )
-             )
-           ]
-        {- 
-        id = lazySat e t'
-          where
-          t' = Nm redex (NTId id) sr
-          decls
-        -}
-        ]
+  unitS (-- id _ _ = nid
+         [DeclFun pos id 
+           [Fun [PatWildcard pos, PatWildcard pos] 
+              (Unguarded (ExpVar pos nid)) (DeclsParse [])
+           ]]
+        ,{- 
+         id = lazySat e t'
+           where
+           t' = Nm redex (NTId id) sr
+           decls
+         -}
+         [DeclFun pos nid 
+            [Fun [] 
+              (Unguarded (ExpApplication pos [lazySat, rhs', useParent]))
+	      (DeclsParse
+	         (DeclFun pos useParentId 
+                    [Fun [] (Unguarded nte) (DeclsParse [])] 
+                 :localDeclsList'
+                 )
+              )
+            ]
+         ])
 dSuspectCaf parent pos id cafName _ nt =
   error ("Variable " ++ cafName ++ " multiple defined.")
   -- actually nhc should produce such an error already before;
@@ -402,7 +422,7 @@ dSuspectCaf parent pos id cafName _ nt =
 
 
 dTrustCaf :: Exp Id -> Pos -> Id -> String -> [Fun Id] -> NewType 
-          -> DbgTransMonad [Decl Id]
+          -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dTrustCaf hidParent pos id cafName [Fun [] rhs localDecls] nt =
   setArity 2 id >>>
@@ -413,26 +433,26 @@ dTrustCaf hidParent pos id cafName [Fun [] rhs localDecls] nt =
   dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
   dTrustDecls hidParent localDecls >>>= \localDecls' ->
   lookupVar pos t_lazySat >>>= \lazySat ->
-  unitS [DeclFun pos id 
-          [Fun [PatWildcard pos, PatWildcard pos] 
-             (Unguarded (ExpVar pos nid)) (DeclsParse [])
-          ]
-        -- id _ _ = nid
-        ,DeclFun pos nid
+  unitS (-- id _ _ = nid
+         [DeclFun pos id 
+           [Fun [PatWildcard pos, PatWildcard pos] 
+              (Unguarded (ExpVar pos nid)) (DeclsParse [])
+           ]]
+        ,-- nid = lazySat nid2 t'
+         [DeclFun pos nid
            [Fun [] 
              (Unguarded (ExpApplication pos 
                            [lazySat, (ExpVar pos nid2), hidParent]))
              (DeclsParse [])
            ]
-        -- nid = lazySat nid2 t'
-        ,DeclFun pos nid2
+         ,{- 
+          nid2 = rhs'
+            where
+            decls'
+          -}
+          DeclFun pos nid2
            [Fun [] rhs' localDecls']
-        {- 
-        nid2 = rhs'
-          where
-          decls'
-        -}
-        ]
+        ])
 dTrustCaf hidParent pos id cafName _ nt =
   error ("Variable " ++ cafName ++ " multiple defined.")
   -- actually nhc should produce such an error already before;
@@ -440,7 +460,7 @@ dTrustCaf hidParent pos id cafName _ nt =
 
 
 dSuspectFun :: Pos -> Id -> String -> Int -> [Fun Id] -> NewType
-            -> DbgTransMonad [Decl Id]
+            -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dSuspectFun pos id funName arity fundefs nt =
   lookupVar pos (t_fun arity) >>>= \fun ->
@@ -460,14 +480,14 @@ dSuspectFun pos id funName arity fundefs nt =
   ) >>>= \(fundefs', newdecls) ->
   getIntState >>>= \intState ->
   unitS ([DeclFun pos id [Fun [sr, parent]
-    (Unguarded 
-      (ExpApplication pos 
-        [fun, ntid, ExpVar pos wrappedfun, sr, parent]
-      ))
-      (DeclsParse 
-        (prependTypeSigIfExists intState pos wrappedfun
-          (DeclFun pos wrappedfun fundefs' : newdecls)))
-    ]])
+           (Unguarded 
+             (ExpApplication pos 
+               [fun, ntid, ExpVar pos wrappedfun, sr, parent]
+           ))
+           (DeclsParse 
+             (prependTypeSigIfExists intState pos wrappedfun
+               (DeclFun pos wrappedfun fundefs' : newdecls)))
+         ]],[])
   where
   --prependTypeSigIfExists :: IntState -> Pos -> Id -> ([Decl Id] -> [Decl Id])
   prependTypeSigIfExists intState pos wrappedFun =
@@ -481,7 +501,7 @@ dSuspectFun pos id funName arity fundefs nt =
 
 
 dTrustFun :: Pos -> Id -> String -> Int -> [Fun Id] -> NewType
-            -> DbgTransMonad [Decl Id]
+            -> DbgTransMonad ([Decl Id],[Decl Id])
 
 dTrustFun pos id funName arity fundefs nt =
   lookupVar pos (t_tfun arity) >>>= \fun ->
@@ -508,7 +528,7 @@ dTrustFun pos id funName arity fundefs nt =
       (DeclsParse 
         (prependTypeSigIfExists intState pos wrappedfun
           [DeclFun pos wrappedfun fundefs']))
-    ]])
+    ]],[])
   where
   --prependTypeSigIfExists :: IntState -> Pos -> Id -> ([Decl Id] -> [Decl Id])
   prependTypeSigIfExists intState pos wrappedFun =
