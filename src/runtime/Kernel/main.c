@@ -11,14 +11,10 @@
 #include "mutlib.h"
 /* #include "runtime.h" -- already included in node.h */
 
-#ifdef DBGTRANS
-extern Node FN_Prelude_46_95startDbg[];
-#endif
 
 /* In this variable an error handler can be registered.
  * The error message is passed to it.
  */
-
 void (*haskellErrorHandler)(char *errorMsg) = NULL;
 
 /* This function is always used when an error of a Haskell program
@@ -61,27 +57,12 @@ int main(int argc, char **argv)
   *--Sp = TOPLEVEL_code;
   Fp = Sp;
   spStart = Sp;
-#ifndef DBGTRANS
+
   MK_VAP1(Hp,C_VAPTAG(MAIN), GET_WORLD);
   INIT_PROFINFO(Hp,&mainProfInfo);
   *--Sp = Hp;
   Hp += SIZE_VAP1;
-#else
-#define STARTDBG ((Node)FN_Prelude_46_95startDbg)
-#define SIZE_VAP3  (EXTRA+4)
-#define SIZE_VAP4  (EXTRA+5)
-#define SIZE_VAP5  (EXTRA+6)
-#define MK_VAP3(r,f,a1,a2,a3) (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a1); (r)[2+EXTRA] = (a2) ; (r)[3+EXTRA] = (a3)
-#define MK_VAP4(r,f,a1,a2,a3,a4) (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a1); (r)[2+EXTRA] = (a2) ; (r)[3+EXTRA] = (a3) ; (r)[4+EXTRA] = (a4)
-#define MK_VAP5(r,f,a1,a2,a3,a4,a5) (r)[0] = ((UInt)f) | VAP_TAG; (r)[1+EXTRA] = (a1); (r)[2+EXTRA] = (a2) ; (r)[3+EXTRA] = (a3) ; (r)[4+EXTRA] = (a4) ; (r)[5+EXTRA] = (a5)
-  {
-      
-  MK_VAP1(Hp,C_VAPTAG(STARTDBG), GET_WORLD);
-  INIT_PROFINFO(Hp,&mainProfInfo);
-  *--Sp = Hp;
-  Hp += SIZE_VAP1;
-  }
-#endif
+
 #ifdef __CYGWIN32__
   if(!setjmp(exit_mutator)) {
 #else

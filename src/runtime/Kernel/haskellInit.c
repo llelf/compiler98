@@ -11,24 +11,10 @@
 #include "mutlib.h"
 /* #include "runtime.h" -- already included in node.h */
 
-#ifdef DBGTRANS
-extern Node C0_DPrelude_46SR[];
-extern Node C0_DPrelude_46Root[];
-extern Node FN_DPrelude_46ap1[];
-extern Node FN_Prelude_46_95startDbg[];
-#endif
-
 #define ARGSIZE 200	/* Obsolete?  Used to limit number of cmdline args. */
 
 /* flags */
 
-#ifdef DBGTRANS
-int traceIp,traceSp,traceHp,traceFlag;
-int traceDepth = 1;
-int traceGcStat = 0;
-FILE *traceGcFd = NULL;
-FILE *HatFile, *HatOutput, *HatBridge;
-#endif
 #if INSCOUNT
 int insCount;
 #endif
@@ -38,17 +24,6 @@ int gcStatics;
 int dumpStack;
 timer gcTime,totalTime,runTime;
 extern int hpSize, spSize;
-
-int traceStat = 0;
-int traceShow = 0;
-int traceNoR = 0;
-int traceNoSat = 0;
-int traceNoSatF = 0;
-int traceQuit = 0;
-int tracePruneSATs = 0;
-int traceAdaptablePruning = 0;
-int traceK = -1;
-int traceBreak = 0;
 
 /****/
 
@@ -164,93 +139,6 @@ void haskellInit (int argc, char **argv)
 	  case 'K':
 	    if(argv[i][2]) spSize = (Int)numArg(SIZE_UNIT,&argv[i][2]); break;
 
-	  case 'd':
-#if 0
-	    if (strcmp(&argv[i][2], "s") == 0) {
-		if (i < argc) {
-		    char *p;
-		    extern void suspectModule(char *, char *, int);
-		    i++;
-		    if ((p = strchr(argv[i], '.')) != NULL) {
-		        p[0] = '\0';
-		        suspectModule(argv[i], &p[1], 0);
-		    } else {
-		        suspectModule(argv[i], NULL, 0);
-		    }
-		}
-	    } else if (strcmp(&argv[i][2], "t") == 0) {
-		if (i < argc) {
-		    char *p;
-		    extern void trustModule(char *, char *, int);
-		    i++;
-		    if ((p = strchr(argv[i], '.')) != NULL) {
-		        p[0] = '\0';
-		        trustModule(argv[i], &p[1], 0);
-		    } else {
-		        trustModule(argv[i], NULL, 0);
-		    }
-		}
-	    } else if (strcmp(&argv[i][2], "sr") == 0) {
-		if (i < argc) {
-		    extern void suspectModule(char *, char *, int);
-		    i++;
-		    suspectModule(argv[i], NULL, 1);
-		}
-	    } else if (strcmp(&argv[i][2], "tr") == 0) {
-		if (i < argc) {
-		    extern void trustModule(char *, char *, int);
-		    i++;
-		    trustModule(argv[i], NULL, 1);
-		}
-	    } else
-#endif
-#ifdef DBGTRANS
-	           if (strcmp(&argv[i][2], "show") == 0)
-		traceShow ++;
-	    else if (strcmp(&argv[i][2], "nr") == 0)
-		traceNoR++;
-	    else if (strcmp(&argv[i][2], "nsatf") == 0)
-		traceNoSatF++;
-	    else if (strcmp(&argv[i][2], "nsat") == 0)
-		traceNoSat++;
-	    else if (strcmp(&argv[i][2], "q") == 0)
-		traceQuit++;
-	    else if (strcmp(&argv[i][2], "ps") == 0)
-		tracePruneSATs++;
-	    else if (argv[i][2] == 'b') {
-                if (argv[i][3]) {
-                    traceBreak = (Int)numArg(NO_UNIT,&argv[i][3]);
-                    fprintf(stderr, "traceBreak = %d\n", traceBreak);
-                }
-	    } else if (strcmp(&argv[i][2], "stat") == 0)
-		traceStat++;
-	    else if (argv[i][2] == 'K')
-		traceAdaptablePruning++;
-	    else if (argv[i][2] == 'k') {
-		if (argv[i][3]) 
-		    traceK = (Int)numArg(NO_UNIT,&argv[i][3]);
-		else
-		    traceK = -1;
-	    } else if (argv[i][2] == 'g') {
-               if (argv[i][3]) 
-                   traceGcStat = (Int)numArg(NO_UNIT,&argv[i][3]);
-               if (++i >= argc) {
-                   fprintf(stderr, "-dg requires a filename argument\n");
-                   exit(-1);
-               }
-               if (strcmp(argv[i], "-") == 0)
-                   traceGcFd = stdout;
-               else if ((traceGcFd = fopen(argv[i], "w")) == NULL) {
-                   fprintf(stderr, "-dg: Cannot open log file for writing: %s\n", argv[i]);
-                   exit(-1);
-               }
-               /* After zero reductions the live heap size is ... zero ;-) */
-               fprintf(traceGcFd, "0 0\n");
-	    }
-#else
-            fprintf(stderr, "Program has not been compiled for tracing - ignoring -d[option]\n");
-#endif
-	    break;
 #if defined(PROFILE) || defined(TPROF)
 	  case 'i':
 	    if(argv[i][2]) profileInterval = numArg(SIZE_UNIT|TIME_UNIT,&argv[i][2]);
@@ -315,6 +203,7 @@ void haskellInit (int argc, char **argv)
 	    break;
 #endif
           case 't':
+          case 'z':
 #ifdef TPROF
 #ifdef PROFILE
             if (!profile) { /* -tmt order by module then ticks <default>    */
@@ -332,7 +221,7 @@ void haskellInit (int argc, char **argv)
           case 'G':
             gcData = 1;
 #else
-            fprintf(stderr, "Program has not been compiled for time profiling - ignoring -t[option]\n");
+            fprintf(stderr, "Program has not been compiled for time profiling - ignoring -%c[option]\n",argv[i][1]);
 #endif
             break;
 
@@ -345,42 +234,7 @@ void haskellInit (int argc, char **argv)
 	  case 'X':   /* Only useful if linked with -X */
 	    xlib_debug ++;
 	    break;
-#ifdef DBGTRANS
-	  case 'D':
-	    if(argv[i][2]) dumpStack = (Int)numArg(NO_UNIT,&argv[i][2]);
-	    else dumpStack = 1;
-            break;
-	  case 'T':
-	    if(argv[i][2] != 0) {
-	      int ii = 2;
-	      while(argv[i][ii] != 0) {
-		switch(argv[i][ii]) {
-		case 'r' : traceFlag |= TRACE_RETURN; break;
-		case 'e' : traceFlag |= TRACE_EVAL; break;
-		case 'b' : traceIp ++; break;
-		case 's' : traceSp ++; break;
-		case 'h' : traceHp ++; break;
-		case 'a' : traceFlag |= DUMP_ADDR; break;
-		case 'i' : traceFlag |= DUMP_IND; break;
-		case 't' : traceFlag |= DUMP_TOP; break;
-		default:
-		  if(isdigit(argv[i][ii])) {
-		    traceDepth = 0;
-		    while(isdigit(argv[i][ii])) {
-		      traceDepth = traceDepth*10 + argv[i][ii++] - '0';
-		    }
-		    ii--;
-		  } else {
-		    fprintf(stderr,"Warning unrecognized trace flag %c ignored.\n",argv[i][ii]);
-		  }
-		}
-		ii++;
-	      }
-	    } else {
-	       traceIp++; traceSp++; traceHp++;
-	       traceFlag = DUMP_ADDR | DUMP_IND | DUMP_TOP;
-	     } break;
-#endif
+
 	  default:
 	    fprintf(stderr,"Warning unrecognized run-time flag %s ignored.\n",argv[i]);
 	  }
@@ -392,34 +246,6 @@ void haskellInit (int argc, char **argv)
     } 
   }
 
-#ifdef DBGTRANS
-  {
-    unsigned p = 0;
-    char filename[256];
-  /*extern void dumpNewModInfo(FILE*, void*); */
-  /*extern void *MODULE_Main, NMOD_Prelude; */
-    strcpy(filename,argv[0]);
-    strcat(filename,".hat");		/* the .hat file holds the archive */
-    HatFile = fopen(filename,"w");	/* of redex trails */
-    p = ftell(HatFile);
-    fprintf(HatFile,"Hat%s",VERSION);	/* initialise file */
-    fputc(0,HatFile);
-    fwrite(&p,sizeof(unsigned),1,HatFile);
-    fwrite(&p,sizeof(unsigned),1,HatFile);
-  /*dumpNewModInfo(HatFile,MODULE_Main); */
-  /*dumpNewModInfo(HatFile,&NMOD_Prelude); */
-  /*fflush(HatFile);*/
-
-    initialiseSATstack();
-
-    strcpy(filename,argv[0]);		/* the .output file is a copy of */
-    strcat(filename,".hat.output");	/* stdout */
-    HatOutput = fopen(filename,"w");
-    strcpy(filename,argv[0]);		/* the .bridge file links the output */
-    strcat(filename,".hat.bridge");	/* to the archived trails */
-    HatBridge = fopen(filename,"w");
-  }
-#endif
 
 #ifdef TPROF
   if(gcData) gcDataStart(argc,argv);  /*PH*/
@@ -491,12 +317,6 @@ int haskellEnd (int argc, char **argv) {
   if(gcStatics) {
     finishGc(Hp,1);
   }
-
-#ifdef DBGTRANS
-  fclose(HatFile);
-  fclose(HatOutput);
-  fclose(HatBridge);
-#endif
 
   exit(exit_code);
 }

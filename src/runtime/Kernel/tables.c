@@ -7,37 +7,8 @@
 #ifdef PROFILE
 #define PROFINFO_Int  ,L(prof_Int),4,2,3
 #define PROFINFO_Char  ,L(prof_Char),4,2,3
-#ifdef DBGTRACE
-#define PROFINFO_Pruned  ,L(prof_Pruned),4,2,3
-#endif /*DBGTRACE*/
 #define PROFINFO_True ,L(prof_True),0,0,0
 #define PROFINFO_False ,L(prof_False),0,0,0
-
-#ifdef DBGTRACE
-  EX L(prof_SR3)
-DL(prof_SR3)
-  DW L(PM_Prelude)
-  DW L(PP_compiletime)
-  DW L(PC_DPrelude_46SR3)
-
-  EX L(prof_NTId)
-DL(prof_NTId)
-  DW L(PM_Prelude)
-  DW L(PP_compiletime)
-  DW L(PC_DPrelude_46NTId)
-
-  EX L(prof_NTConstr)
-DL(prof_NTConstr)
-  DW L(PM_Prelude)
-  DW L(PP_compiletime)
-  DW L(PC_DPrelude_46NTConstr)
-
-  EX L(prof_Pruned)
-DL(prof_Pruned)
-  DW L(PM_Prelude)
-  DW L(PP_compiletime)
-  DW L(PC_DPrelude_46Pruned)
-#endif /*DBGTRACE*/
 
 DL(prof_Int)
   DW L(PM_Prelude)
@@ -121,20 +92,11 @@ DL(PP_compiletime)
 #define PROFINFO_Char
 #define PROFINFO_True
 #define PROFINFO_False
-#ifdef DBGTRACE
-#define PROFINFO_Pruned
-#endif /*DBGTRACE*/
 #endif /*PROFILE*/
 
 /***************/
 
   AL
-
-#ifdef DBGTRACE
-  EX L(pruned)
-DL(pruned)
-  DW CONSTRT(5,0,0) PROFINFO_Pruned
-#endif
 
 
 #define DEFINT(n)        DW CONSTRW(1,0) PROFINFO_Int ,n

@@ -125,11 +125,7 @@ void printCaf(GcConst caf, Int flags, Int depth)
     switch(GET_TAG(inptr)) {
     case VAP_TAG0: case VAP_TAG1:
       fprintf(stderr,"%08x * ",inptr);
-#if TRACE
-      prGraph((NodePtr)inptr,flags,depth);
-#else
       fprintf(stderr," %08x",*inptr);
-#endif
       fprintf(stderr,"\n");
       break;     /* Not updated yet */
     case CON_TAG:
@@ -137,11 +133,7 @@ void printCaf(GcConst caf, Int flags, Int depth)
       exit(-1);
     case IND_TAG:
       fprintf(stderr,"%08x   ",inptr);
-#if TRACE
-      prGraph((NodePtr)inptr,flags,depth);
-#else
       fprintf(stderr," %08x",*inptr);
-#endif
       fprintf(stderr,"\n");
       break;
     }
@@ -478,16 +470,9 @@ void do_comment(char *string)
 
 #endif
 
-extern int traceStat, traceShow;
-int tR=0, tAp=0, tNm=0, tInd=0, tRoot=0, tSat=0, tPruned=0;
-int tHidden = 0, tUnknown=0, nPruned = 0;
 
 NodePtr callGc(Int size,NodePtr hp, NodePtr *sp, NodePtr *fp)
 {
-#ifdef DBGTRANS
-  extern int traceK, traceAdaptablePruning;
-/* again:	-- label moved downwards */
-#endif
 
 #if defined(PROFILE) || defined(TPROF)
   double thisGcStart;
@@ -505,22 +490,10 @@ NodePtr callGc(Int size,NodePtr hp, NodePtr *sp, NodePtr *fp)
 #endif
 #endif
 
-#ifdef DBGTRANS
-again:
-  ncInit();
-#endif
-
 #ifdef TPROF
   if(!tprof && size) timerStop(&runTime);     /*PH*/
 #else
   if(size) timerStop(&runTime);
-#endif
-
-#if TRACE
-  if(dumpStack && dumpStack <= nogc+1) {
-    fprintf(stderr,"Stack before GC %d\n",nogc+1);
-    prStackGc(sp,fp,traceFlag,traceDepth);
-  }
 #endif
 
 #if PROFILE
@@ -573,17 +546,6 @@ again:
 
 WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkInit();)
 
-#if 0
-/* #ifdef DBGTRANS */
-  {
-      extern int traceK, tracePruneSATs;
-
-      if ((traceK >= 0) || (tracePruneSATs > 0))
-	  tracePrune(sp);
-      
-  }
-#endif
-
   markClear();
 
   if(size) { /* Last call to count cells at program termination */
@@ -608,9 +570,6 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkInit();)
 
     if(dumpStack && dumpStack <= nogc) {
       fprintf(stderr,"CAF before GC %d\n",nogc+1);
-#if TRACE
-      printCaf(oldCaf,traceFlag,1000);
-#endif
     }
 
 WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
@@ -671,19 +630,9 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
     fprintf(stderr,"  Moved %lld words of heap in %d gcs.\n",hpMoved,nogc);
     fprintf(stderr,"  %d words to next gc.",(NodePtr)sp-hp);
     fprintf(stderr,"  Max live after gc: %ld words.\n",hpMaxSurvive);
-#if TRACE
-    hat_exit("Out of heap.",0,-1);
-#endif
     nhc_abort("Insufficient heap memory.");
   }
 
-#if 0
-  if(showGcStack && (nogc >= showGcStackStart)) {
-    fprintf(stderr,"============= leave callGc %d\n",nogc);
-    printStack(sp,fp,0,0,showGcStack,2);
-  }
-
-#endif
   if(bellGc) {
     fflush(stdout);
     fprintf(stderr,"<GC %3d:%8d>\n",nogc,hp-&hpLowLimit[GCEXTRA]);
@@ -737,56 +686,8 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
   }
 #endif
 
-#if TRACE
-  if(dumpStack && dumpStack <= nogc) {
-    fprintf(stderr,"Stack after GC %d\n",nogc);
-    prStackGc(sp,fp,traceFlag,traceDepth);
-    fprintf(stderr,"CAF after GC %d\n",nogc);
-    printCaf(oldCaf,traceFlag,1000);
-  }
-#endif
 
   clearCaf();
-
-#if 0 /*TRACE*/
-  {
-    NodePtr t = hp;
-    while (t<(NodePtr)sp)
-      *t++ = 0;
-  }
-#endif
-  
-#ifdef DBGTRANS
-  if (traceStat) {
-      fprintf(stderr, "Gc: R: %d Ap: %d Nm: %d Ind: %d Root: %d Sat: %d Hidden: %d Pruned: %d nPruned: %d\n", tR, tAp, tNm, tInd, tRoot, tSat, tHidden, tPruned, nPruned);
-      tR = tAp = tNm = tInd = tRoot = tSat = tPruned = tHidden = nPruned = 0;
-  }
-
-  if (traceAdaptablePruning) {
-      Int live = hp-&hpLowLimit[GCEXTRA];
-      Int freeheap = (NodePtr)sp-hp;
-      Int percentfree = (freeheap*100)/(live+freeheap);
-
-      if (traceShow) {
-	  fprintf(stderr, "left: %d live: %ld\n", freeheap, live);
-	  fprintf(stderr, "percentage left: %d\n", percentfree);
-	  fprintf(stderr, "k = %d\n", traceK);
-      }
-      if (percentfree < 20) {
-	  if (traceK == 0) {
-	      fprintf(stderr, "Adaptable pruning failed. Program aborted.\n");
-	      exit(1);
-	  }
-	  if (traceK < 0)
-	      traceK = (1 << 6) - 2; /* 6 bits are used, (1 << 6) - 1 is special */
-	  else
-	      traceK = traceK * 3 / 4;
-	  if (traceShow)
-	     fprintf(stderr, "Need to gc again with smaller k (%d)\n", traceK);
-	  goto again;
-      }
-  }
-#endif
 
 #ifdef TPROF
   if(timeSample) tprofRecordGC();	        /*PH*/

@@ -89,11 +89,7 @@ static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
 
 #endif
 
-#if TRACE
-#define DUMP_NODE(n) prGraph(n,0xff,1); fprintf(stderr,"\n");
-#else
 #define DUMP_NODE(n) fprintf(stderr," %08x at %08x\n",n[0],n);
-#endif
 
 #if PARANOID
 
@@ -176,23 +172,6 @@ void run(NodePtr toplevel)
   NextInst:
 
 
-#if TRACE
-    if(traceSp&1) prStack(sp,fp,vapptr,constptr,traceFlag,traceDepth);
-    if(traceIp&1) prByteIns(ip);
-
-    inscount++;
-    if(stopInscount && inscount >= stopInscount) {
-      fprintf(stderr,"inscount = %08d\n",inscount);
-    }
-
-    if(ip == stopIP) {
-      fprintf(stderr,"Stop ip = %08x\n",ip);
-    }
-
-    if(hp == stopHP) {
-      fprintf(stderr,"Stop hp = %08x\n",hp);
-    }
-#endif
 #if INSCOUNT
     if(insCount)
       countIns(ip);
@@ -337,24 +316,14 @@ void run(NodePtr toplevel)
 	default:
 	  fprintf(stderr,"Trying to get tag from unevaluated node in UNPACK at %08x!\n",ip-1);
 	  fprintf(stderr,"Node is:\n");
-#if TRACE
-	  prGraph(nodeptr,0xff,1);
-	  fprintf(stderr,"\n");
-#else
 	  fprintf(stderr," %08x at %08x\n",nodeptr[0],nodeptr);
-#endif
 	  exit(-1);
 	  Break; 
 	}
 	if(i!=ip[0]) {
 	  fprintf(stderr,"Trying to do UNPACK %d on a node with %d arguments at %08x!\n",ip[0],i,ip-1);
 	  fprintf(stderr,"Node is:\n");
-#if TRACE
-	  prGraph(nodeptr,0xff,1);
-	  fprintf(stderr,"\n");
-#else
 	  fprintf(stderr," %08x at %08x\n",nodeptr[0],nodeptr);
-#endif
 	  exit(-1);
 	}
       }
@@ -388,9 +357,6 @@ void run(NodePtr toplevel)
 	  case CON_DATA | CON_TAG:
 	  case CON_CDATA | CON_TAG:
 	      fprintf(stderr, "Strange: con in apply:\n");
-#if TRACE
-	      prGraph(nodeptr, 3, 3);
-#endif
 	      fprintf(stderr, "\n");
 	      /*startDbg(GET_POINTER_ARG1(nodeptr, 2));*/
 	      exit(-1);
@@ -465,13 +431,6 @@ void run(NodePtr toplevel)
              * an call it; so the result is the same.
              */
 #if 0
-#ifdef DBGTRANS
-            extern void dbg_blackhole();
-	    dbg_blackhole();
-#if 0 /*def PROFILE*/
-	    prGraph(nodeptr, 15, 15);
-#endif
-#else
             extern Node CF_DbgIface_46blackhole[];
             extern Node FN_DbgIface_46fatal[];
 
@@ -496,7 +455,6 @@ void run(NodePtr toplevel)
 	    }
 	    nodeptr = sp[0];
 #endif
-#endif
 	  }
 	
 	  ZAP(nodeptr);
@@ -504,11 +462,6 @@ void run(NodePtr toplevel)
 	  PUSH_STATE;
 	  vapptr   = nodeptr;
 	  constptr = VAP_CONST(vapptr);
-#if TRACE
-	  if(traceFlag & TRACE_EVAL) {
-	    fprintf(stderr,"<ENTER %s>\n",(char *)constptr[-1]);
-	  }
-#endif
 	  ip       = FINFO_CODE(GET_FINFO(vapptr));
           TPROF_EVAL;
         }
@@ -517,10 +470,6 @@ void run(NodePtr toplevel)
 
  Case(RETURN):
       INSTR("return");
-#if TRACE
-      if(traceFlag & TRACE_RETURN)
-	fprintf(stderr,"<RETURN %s>\n",(char *)constptr[-1]);
-#endif
     nodeptr = *sp++;
     UPDATE_VAP(nodeptr);
     POP_STATEVP;
@@ -528,10 +477,6 @@ void run(NodePtr toplevel)
   Case(RETURN_EVAL):
   return_eval:
       INSTR("returneval");
-#if TRACE
-      if(traceFlag & TRACE_RETURN)
-	fprintf(stderr,"<RETURN(e) %s>\n",(char *)constptr[-1]);
-#endif
     nodeptr = *sp++;
     UPDATE_VAP(nodeptr);
     POP_STATEVP;

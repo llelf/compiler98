@@ -23,8 +23,6 @@ SRCS = \
 	primIntegerFromInt64.c  primIntegerToInt64.c \
 	primIntegerFromWord64.c primIntegerToWord64.c
 
-OLD = \
-	cDoesFileExist.c cEval.c cSystem.c
 
 LINKS = haskell2c.h twopass.h HsFFI.h
 
@@ -78,10 +76,8 @@ cHGetPosn.o: cHGetPosn.c haskell2c.h
 cHSeek.o: cHSeek.c haskell2c.h
 cHSetPosn.o: cHSetPosn.c haskell2c.h
 cProfile.o: cProfile.c haskell2c.h
-cSystem.o: cSystem.c haskell2c.h
 cOpenSocket.o: cOpenSocket.c haskell2c.h
 cBits.o: cBits.c haskell2c.h
-cDoesFileExist.o: cDoesFileExist.c haskell2c.h
 cFFI.o: cFFI.c
 primsFloat.o: primsFloat.c
 primsDouble.o: primsDouble.c

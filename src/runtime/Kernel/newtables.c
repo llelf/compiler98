@@ -3,42 +3,11 @@
 #ifdef PROFILE
 #define PROFINFO_Int  ,useLabel(prof_Int),4,2,3
 #define PROFINFO_Char  ,useLabel(prof_Char),4,2,3
-#ifdef DBGTRANS
-#define PROFINFO_Pruned  ,useLabel(prof_Pruned),4,2,3
-#endif /*DBGTRANS*/
 #define PROFINFO_True ,useLabel(prof_True),0,0,0
 #define PROFINFO_False ,useLabel(prof_False),0,0,0
 
 extern unsigned PM_Prelude[];
 extern unsigned PP_compiletime[];
-
-#ifdef DBGTRANS
-extern unsigned prof_SR3[];
-extern unsigned prof_NTId[];
-extern unsigned prof_NTConstr[];
-extern unsigned prof_Pruned[];
-
-unsigned prof_SR3[] = {
-  useLabel(PM_Prelude)
-, useLabel(PP_compiletime)
-, useLabel(PC_DPrelude_46SR3)
-};
-unsigned prof_NTId[] = {
-  useLabel(PM_Prelude)
-, useLabel(PP_compiletime)
-, useLabel(PC_DPrelude_46NTId)
-};
-unsigned prof_NTConstr[] = {
-  useLabel(PM_Prelude)
-, useLabel(PP_compiletime)
-, useLabel(PC_DPrelude_46NTConstr)
-};
-unsigned prof_Pruned[] = {
-  useLabel(PM_Prelude)
-, useLabel(PP_compiletime)
-, useLabel(PC_DPrelude_46Pruned)
-};
-#endif /*DBGTRANS*/
 
 extern unsigned PC_Prelude__46Int[];
 extern unsigned PC_Prelude__46Char[];
@@ -156,21 +125,10 @@ unsigned PP_compiletime[] = {
 #define PROFINFO_Char
 #define PROFINFO_True
 #define PROFINFO_False
-#ifdef DBGTRANS
-#define PROFINFO_Pruned
-#endif /*DBGTRANS*/
 #endif /*PROFILE*/
 
 /***************/
 
-
-#ifdef DBGTRANS
-extern unsigned pruned[];
-unsigned pruned[] = {
-  CONSTRT(5,0,0)
-  PROFINFO_Pruned
-};
-#endif
 
 
 #define DEFINT(n)        CONSTRW(1,0) PROFINFO_Int  ,(unsigned)n

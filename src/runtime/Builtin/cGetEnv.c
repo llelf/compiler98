@@ -3,41 +3,6 @@
 #include "haskell2c.h"
 #include <errno.h>
 
-#if 0
-
-/* cGetEnv :: CString -> Either Int PackedString */
-C_HEADER(cGetEnv)
-{
-  NodePtr nodeptr;
-  char *src;
-
-  nodeptr = C_GETARG1(1);
-  IND_REMOVE(nodeptr);
-
-#ifdef PROFILE
-  if(replay) {
-    int length;
-    REPLAY(length);
-    nodeptr = nhc_allocPackedString(length);
-    REPLAY_STR(length,nhc_getPackedString(nodeptr));
-  } else
-#endif
-    { src = getenv(nhc_getPackedString(nodeptr));
-      if(!src) { /*src = "";*/
-             nodeptr = nhc_mkLeft(nhc_mkInt(ENOENT));
-      }else{ nodeptr = nhc_mkRight(nhc_mkPackedString(strlen(src),src)); }
-    }
-#ifdef PROFILE
-  if(record) {
-    int length = strlen(src);
-    RECORD(length);
-    RECORD_STR(length,src);
-  }
-#endif
-  C_RETURN(nodeptr);
-}	
-#endif
-
 char *
 primGetEnv (char* sym)
 {
