@@ -19,41 +19,41 @@ import DbgTrans(SRIDTable)
 #define isAlphanum isAlphaNum
 #endif
 
-dbgDumpSRIDTableC :: Handle -> IntState -> Flags -> SRIDTable 
+dbgDumpSRIDTableC :: Pass -> Handle -> IntState -> Flags -> SRIDTable 
                   -> EmitState -> EmitState
 
-dbgDumpSRIDTableC handle state flags Nothing = id
-dbgDumpSRIDTableC handle state flags (Just ((_, srs), idt, impdecls, modid)) = 
+dbgDumpSRIDTableC p handle state flags Nothing = id
+dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     -- Sourcefile name
-    emitAlign >|>
-    defineLabel Local (showString modpre) >|>
-    emitString srcid >|>
+    emitAlign p >|>
+    defineLabel p Local (modpre) >|>
+    emitString p srcid >|>
     -- Module name
-    emitAlign >|>
-    defineLabel Local (showString "NMODN") >|>
-    emitString modid >|>
+    emitAlign p >|>
+    defineLabel p Local ("NMODN") >|>
+    emitString p modid >|>
     -- Identifier table (strings)
-    emitAlign >|>
-    foldr (>|>) (emitWord (shows 0)) (map emitName idtlabs) >|>
+    emitAlign p >|>
+    foldr (>|>) (emitWord p ("0")) (map (emitName p) idtlabs) >|>
     -- Source references
-    emitAlign >|>
-    foldr (>|>) id (map emitSR (zip [0..] (reverse srs))) >|>
+    emitAlign p >|>
+    foldr (>|>) id (map (emitSR p) (zip [0..] (reverse srs))) >|>
     -- Name table
-    defineLabel Global (showString "NM_" . showString srcid) >|>
-    foldr (>|>) id (map emitId idtlabs) >|>
-    emitWord (shows 0) >|>
+    defineLabel p Global ("NM_" ++ srcid) >|>
+    foldr (>|>) id (map (emitId p) idtlabs) >|>
+    emitWord p ("0") >|>
     -- Import table
-    defineLabel Local (showString "N_IMPORTS") >|>
-    foldr (>|>) (emitWord (shows 0)) (map emitImport impdecls) >|>
+    defineLabel p Local ("N_IMPORTS") >|>
+    foldr (>|>) (emitWord p ("0")) (map (emitImport p) impdecls) >|>
     -- Module record
-    defineLabel Global (showString "NMOD_" . showString srcid) >|>
-    useLabel (showString modpre) >|>
-    useLabel (showString "NM_" . showString srcid) >|>
-    useLabel (showString "N_IMPORTS") >|>
-    useLabel (showString "NMODN") >|>
+    defineLabel p Global ("NMOD_" ++ srcid) >|>
+    useLabel p (modpre) >|>
+    useLabel p ("NM_" ++ srcid) >|>
+    useLabel p ("N_IMPORTS") >|>
+    useLabel p ("NMODN") >|>
     if modid == "Main" then
-        defineLabel Global (showString "MODULE_Main") >|>
-        useLabel (showString "NMOD_" . showString srcid)
+        defineLabel p Global ("MODULE_Main") >|>
+        useLabel p ("NMOD_" ++ srcid)
     else
         id
     where profile = sProfile flags
@@ -75,42 +75,42 @@ dbgDumpSRIDTableC handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 			      _ -> ms
 		  in reverse (takeWhile ('/' /=) (reverse ms'))
 
-          emitName ((pos, _, tid), lab) =
-	      defineLabel Local (showString "L_" . shows lab) >|>
-	      emitString (untoken tid)
-	  emitSR (ix, sr) =
+          emitName p ((pos, _, tid), lab) =
+	      defineLabel p Local ("L_" ++ show lab) >|>
+	      emitString p (untoken tid)
+	  emitSR p (ix, sr) =
 	      -- (2, 2, 2) -> (Tag 2 (SR3), size 2, 2 non-pointers)
-	      defineLabel Local (showString "D_SR_" . shows ix) >|>
-	      emitWord (showString "CONSTR(2,2,2)") >|>
+	      defineLabel p Local ("D_SR_" ++ show ix) >|>
+	      emitWord p ("CONSTR(2,2,2)") >|>
 	      (if profile then 
-	          useLabel (showString "prof_SR3") >|>
-		  emitWord (shows 0) >|>
-		  emitWord (shows 0) >|>
-		  emitWord (shows 0)
+	          useLabel p ("prof_SR3") >|>
+		  emitWord p (show 0) >|>
+		  emitWord p (show 0) >|>
+		  emitWord p (show 0)
 	       else
 	          id) >|>
-	      emitWord (shows sr) >|>
-	      useLabel (showString modpre)
-          emitId ((pos, i, tid), lab) =
-	      defineLabel Global (showString "D_" . showString idnhc) >|>
+	      emitWord p (show sr) >|>
+	      useLabel p (modpre)
+          emitId p ((pos, i, tid), lab) =
+	      defineLabel p Global ("D_" ++ idnhc) >|>
 	      -- The 6 below is the constructor number of NTId
 	      -- 22 (16+6) is used if the function is trusted
 	      -- See getconstr.h in the runtime system.
 	      (if trust && isVar then
-	           emitWord (showString "CONSTR(22,3,3)")
+	           emitWord p ("CONSTR(22,3,3)")
 	       else
-	           emitWord (showString "CONSTR(6,3,3)")) >|>
+	           emitWord p ("CONSTR(6,3,3)")) >|>
 	      (if profile then 
-	          useLabel (showString "prof_NTId") >|>
-		  emitWord (shows 0) >|>
-		  emitWord (shows 0) >|>
-		  emitWord (shows 0)
+	          useLabel p ("prof_NTId") >|>
+		  emitWord p (show 0) >|>
+		  emitWord p (show 0) >|>
+		  emitWord p (show 0)
 	       else
 	          id) >|>
-	      useLabel (showString modpre) >|>
-	      emitWord (shows pos) >|>
-	      useLabel (showString "L_" . shows lab) >|>
-	      emitWord (shows (priority pri))
+	      useLabel p (modpre) >|>
+	      emitWord p (show pos) >|>
+	      useLabel p ("L_" ++ show lab) >|>
+	      emitWord p (show (priority pri))
 	    where
 	      idnhc = fixStr (show tid) ""
 	      (isVar, pri) = 
@@ -135,8 +135,8 @@ dbgDumpSRIDTableC handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	      priority (InfixPre _, n) = 0 + shiftPri n
 	      shiftPri :: Int -> Int
 	      shiftPri n = n * 4
-	  emitImport impdecl = 
-	      useLabel (showString "NMOD_" . showString modname)
+	  emitImport p impdecl = 
+	      useLabel p ("NMOD_" ++ modname)
 	      where modname = untoken (imptokid impdecl)
 	            imptokid (Import (_,i) _) = i
 		    imptokid (ImportQ (_,i) _) = i

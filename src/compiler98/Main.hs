@@ -149,7 +149,7 @@ nhcNeed flags
 nhcNeed flags 
         (Right (parsedProg@(Module pos (Visible modid) e impdecls inf d))) =
   -- Insert check that sPart flags or modid == sourcefile
-  profile "need" $ do
+{-profile "need" $-}  do
     pF (sParse flags) "Parse" (ppModule False dummyIntState parsedProg 0) 
     let parsedProg' = 
           dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedProg 
@@ -158,8 +158,9 @@ nhcNeed flags
       (need,qualFun,overlap,Right (expFun,imports)) -> do
          pF (sNeed flags) "Need (after reading source module)"  
             (show (treeMapList (:) need)) 
-         nhcImport flags modid qualFun expFun parsedProg' (initIS need) 
-                   overlap imports
+         profile "imports" $
+           nhcImport flags modid qualFun expFun parsedProg' (initIS need) 
+                     overlap imports
 
 
 {-
@@ -181,7 +182,7 @@ nhcImport :: Flags
           -> IO ()
 
 nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
-  profile "import []" $
+  --profile "import []" $
   case getErrorsIS importState of
     (importState,errors) ->
       if null errors
@@ -208,7 +209,7 @@ nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
 	  exit
 
 nhcImport flags modidl qualFun expFun parseProg importState overlap (x:xs) = 
-  profile ("import:" ++ (reverse . show . fst3) x) $ do
+  {-profile ("import:" ++ (reverse . show . fst3) x) $-}  do
   -- trace ("import:" ++ (reverse . show . fst3) x) $
     importState <- importOne flags importState x 
     pF (sIINeed flags) "Intermediate need after import"
@@ -274,7 +275,7 @@ nhcDerive :: Flags
 
 nhcDerive flags modidl  mrps  expFun userDefault tidFun tidFunSafe 
   intState derived impdecls decls {- constrs -} =
-  profile "derive" $
+  {-profile "derive" $-}
   case (derive tidFun intState derived decls) of
     Left errors -> do
       pF (True) "Deriving failed:" (mixLine errors) 
@@ -369,7 +370,7 @@ nhcDbgTrans :: Flags             -- reads: compiler flags
 
 nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
   tidFunSafe decls constrs impdecls state =
-    profile "dbgtrans" $
+    -- profile "dbgtrans" $
     case getErrors state of
       (state,[]) -> do
         pF (sEBound flags) "Symbol table after extract:"  
@@ -403,7 +404,7 @@ nhcRemove :: Flags
 
 nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe 
   (decls, state, sridt) =
-  profile "remove" $ do
+  {-profile "remove" $-} do
   pF (sTraceFns flags) "Tracing Transformation on function definitions"
                        (ppDecls False state decls 0) 
   nhcScc flags modidl mrps expFun userDefault tidFun tidFunSafe sridt 
@@ -426,7 +427,7 @@ nhcScc :: Flags
 
 nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt 
   (decls,zcon,state) =
-  profile "scc" $
+  {-profile "scc" $-}
   case getErrors state of
     (state,[]) -> do
       pF (sRemove flags) "Declarations after remove fields:" 
@@ -484,7 +485,7 @@ nhcInterface :: Flags
 nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt 
   (code,decls,state) =
   let mod = reverse (unpackPS modidl) in
-  profile "interface" $
+  -- profile "interface" $
   case getErrors state of
     (state,[]) -> do
       pF (sType flags) "Declarations after type deriving:" 
@@ -539,7 +540,7 @@ nhcFixSyntax :: Flags
              -> IO ()
 
 nhcFixSyntax flags zcon tidFun code sridt (decls,state,t2i) =
-  profile "fixsyntax" $ do
+  {-profile "fixsyntax" $-}  do
   pF (sFixSyntax flags) "Declarations after fixSyntax"
      (mixLine (map (\ d -> ppDecl False state d 0) decls)) 
   pF (sFSBound flags) "Symbol table after fixSyntax:"  
@@ -563,7 +564,7 @@ nhcCase :: Flags
         -> IO ()
 
 nhcCase flags zcon tidFun sridt (decls,state) =
-  profile "case" $
+  -- profile "case" $
   case getErrors state of
     (state,errors) -> do
       pF (not (null errors)) "Warning pattern removal" (mixLine errors) 
@@ -586,7 +587,7 @@ nhcPrim :: Flags
         -> IO ()
 
 nhcPrim flags tidFun zcon sridt (decls,state) =
-  profile "prim" $ do
+  {-profile "prim" $-} do
   pF (sPrim flags) "Declarations after prim expand:" 
      (strPCode (strISInt state) decls) 
   pF (sPBound flags) "Symbol table after prim expand:"  
@@ -606,7 +607,7 @@ nhcFree :: Flags
         -> IO ()
 
 nhcFree flags tidFun zcon sridt (decls,state) =
-  profile "free" $ do
+  {-profile "free" $-} do
   pF (sFree flags) "Declarations with explicit free variables:" 
      (strPCode (strISInt state) decls)
   nhcCode1a flags tidFun zcon sridt (stgArity state decls)
@@ -640,7 +641,7 @@ nhcLift :: Flags
         -> IO ()
 
 nhcLift flags tidFun zcon sridt (decls,state) =
-  profile "lift" $ do
+  {-profile "lift" $-} do
   pF (sLift flags) "Declarations after lambda lifting:" 
      (strPCode (strISInt state) decls) 
   pF (sLBound flags) "Symbol table after lambda lifting:"  
@@ -675,7 +676,7 @@ nhcAtom :: Flags
         -> IO ()
 
 nhcAtom flags zcon sridt (decls,state) =
-  profile "atom" $ do
+  {-profile "atom" $-} do
   pF (sAtom flags) "Declarations after atom:" (strPCode (strISInt state) decls)
   pF (sABound flags) "Symbol table after atom:"  
      (mixLine (map show (treeMapList (:) (getSymbolTable state))))
@@ -702,11 +703,15 @@ dumpZCon flags state zcons sridt decls =
                                    ++ sObjectFile flags ++ ":" 
                                    ++ show ioerror ++ "\n")  
                                  exit) 
-  es <- if (sAnsiC flags) 
+  (eslabs,escode) <-
+          if (sAnsiC flags) 
           then do
-                 let es = dbgDumpSRIDTableC handle state flags sridt 
-                            startEmitState 
-                 return (foldr (\a b-> gcodeGather state b a) es zcons)
+             let eslabs = dbgDumpSRIDTableC Labels handle state flags sridt 
+                              (startEmitState Labels)
+                 escode = dbgDumpSRIDTableC Code   handle state flags sridt 
+                              (startEmitState Code)
+             return (foldr (\a b-> gcodeGather Labels state b a) eslabs zcons
+                    ,foldr (\a b-> gcodeGather Code   state b a) escode zcons)
           else do
             dbgDumpSRIDTable handle state flags sridt 
             catch (hPutStr handle (gcodeHeader 
@@ -718,9 +723,9 @@ dumpZCon flags state zcons sridt decls =
                                     ++ sObjectFile flags ++ ":" 
                                     ++ show ioerror ++ "\n")  
                                  exit) 
-            return startEmitState
+            return (startEmitState Labels, startEmitState Code)
   profile "dump code" $
-    dumpCode handle flags [] (gcodeFixInit state flags) es decls
+    dumpCode handle flags [] (gcodeFixInit state flags) eslabs escode decls
 
 
 {-
@@ -737,48 +742,57 @@ dumpCode :: Handle
          -> [Foreign] 
          -> (IntState,(Tree ((Int,Int),Int),(Tree ([Char],Int),[(Int,Gcode)])))
          -> EmitState 
+         -> EmitState 
          -> [(Int,PosLambda)] 
          -> IO ()
 
-dumpCode handle flags foreigns (state,fixState) es [] =
-     dumpCodeEnd handle flags state es foreigns (gcodeFixFinish state fixState)
-dumpCode handle flags foreigns (state,fixState) es (decl:decls) =
+dumpCode handle flags foreigns (state,fixState) eslabs escode [] =
+     dumpCodeEnd handle flags state eslabs escode foreigns
+             (gcodeFixFinish state fixState)
+dumpCode handle flags foreigns (state,fixState) eslabs escode (decl:decls) =
   -- profile "dump code" $
-  nhcCode2 handle flags fixState decls es foreigns 
-    (stgGcode (sProfile flags) state decl)
+     nhcCode2 handle flags fixState decls eslabs escode foreigns 
+             (stgGcode (sProfile flags) state decl)
 
  
-nhcCode2 handle flags fixState decls es foreigns (gcode,state,newforeigns) = do
-  pF (sGcode flags) "G Code" (concatMap (strGcode state) ( gcode)) 
-  nhcCode3 handle flags decls es (foreigns++newforeigns) 
-    (gcodeFix flags state fixState gcode)
+nhcCode2 handle flags fixState decls eslabs escode foreigns
+                                             (gcode,state,newforeigns) =
+  do
+    pF (sGcode flags) "G Code" (concatMap (strGcode state) ( gcode)) 
+    nhcCode3 handle flags decls eslabs escode (foreigns++newforeigns) 
+        (gcodeFix flags state fixState gcode)
 
 
-nhcCode3 handle flags decls es foreigns (state,fixState,gcode) = do
+nhcCode3 handle flags decls eslabs escode foreigns (state,fixState,gcode) = do
   pF (sGcodeFix flags) "G Code (fixed)" (concatMap (strGcode state) ( gcode))
-  nhcCode35 handle flags fixState decls es foreigns (gcodeOpt1 state gcode)
+  nhcCode35 handle flags fixState decls eslabs escode foreigns
+        (gcodeOpt1 state gcode)
  
 
-nhcCode35 handle flags fixState decls es foreigns (gcode,state) = do
+nhcCode35 handle flags fixState decls eslabs escode foreigns (gcode,state) = do
   pF (sGcodeOpt1 flags) "G Code (opt1)" (concatMap (strGcode state) ( gcode))
-  nhcCode4 handle flags fixState decls es foreigns 
-    (gcodeMem (sProfile flags) state gcode)
+  nhcCode4 handle flags fixState decls eslabs escode foreigns 
+        (gcodeMem (sProfile flags) state gcode)
 
  
-nhcCode4 handle flags fixState decls es foreigns (gcode,state) = do
+nhcCode4 handle flags fixState decls eslabs escode foreigns (gcode,state) = do
   pF (sGcodeMem flags) "G Code (mem)" (concatMap (strGcode state) ( gcode))
-  nhcCode5 handle flags fixState decls es foreigns (gcodeOpt2 state gcode)
+  nhcCode5 handle flags fixState decls eslabs escode foreigns
+        (gcodeOpt2 state gcode)
  
 
-nhcCode5 handle flags fixState decls es foreigns (gcode,state) = do
+nhcCode5 handle flags fixState decls eslabs escode foreigns (gcode,state) = do
   pF (sGcodeOpt2 flags) "G Code (opt2)" (concatMap (strGcode state) ( gcode))
-  nhcCode6 handle flags fixState decls state es foreigns (gcodeRel gcode)
+  nhcCode6 handle flags fixState decls state eslabs escode foreigns
+        (gcodeRel gcode)
  
 
-nhcCode6 handle flags fixState decls state es foreigns gcode = do
+nhcCode6 handle flags fixState decls state eslabs escode foreigns gcode = do
   pF (sGcodeRel flags) "G Code (rel)" (concatMap (strGcodeRel state) gcode)
-  es' <- if (sAnsiC flags) 
-           then return (gcodeGather state es gcode)
+  (eslabs',escode') <-
+           if (sAnsiC flags) 
+           then return (gcodeGather Labels state eslabs gcode
+                       ,gcodeGather Code   state escode gcode)
            else do 
                   catch (hPutStr handle (foldr (gcodeDump state) "\n" gcode))
                         (\ioerror -> do
@@ -787,8 +801,8 @@ nhcCode6 handle flags fixState decls state es foreigns gcode = do
                                           ++ sObjectFile flags ++ ":"  
                                           ++ show ioerror ++ "\n") 
                                        exit) 
-                  return es 
-  dumpCode handle flags foreigns (state,fixState) es' decls
+                  return (eslabs,escode)
+  dumpCode handle flags foreigns (state,fixState) eslabs' escode' decls
 
 
 {-
@@ -798,24 +812,27 @@ dumpCodeEnd :: Handle
             -> Flags 
             -> IntState 
             -> EmitState 
+            -> EmitState 
             -> [Foreign] 
             -> [[Gcode]] 
             -> IO ()
 
-dumpCodeEnd handle flags state es foreigns gcode =
-  profile "dump tables" $ do
+dumpCodeEnd handle flags state eslabs escode foreigns gcode =
+  {-profile "dump tables" $-} do
   pF (sGcodeRel flags) "G Code (rel)" 
      (concatMap (strGcodeRel state) (concat gcode)) 
   if (sAnsiC flags) 
     then do
-           let es' = foldr (\a b-> gcodeGather state b a) es gcode
-           catch (hPutStr handle (gcodeCHeader (emitState es')))
-                 (\ioerror -> do
-                                hPutStr stderr 
-                                  ("Failed writing code to object file "
-                                    ++ sObjectFile flags ++ ":" 
-                                    ++ show ioerror ++ "\n") 
-                                exit)
+       let eslabs' = foldr (\a b-> gcodeGather Labels state b a) eslabs gcode
+           escode' = foldr (\a b-> gcodeGather Code   state b a) escode gcode
+       catch (do hPutStr handle (gcodeCHeader)
+                 hPutStr handle (emit Labels eslabs)
+                 hPutStr handle (emit Code escode))
+             (\ioerror -> do hPutStr stderr 
+                                 ("Failed writing code to object file "
+                                  ++ sObjectFile flags ++ ":" 
+                                  ++ show ioerror ++ "\n") 
+                             exit)
     else catch (hPutStr handle (foldr (\a b -> foldr (gcodeDump state) b a) 
                                       "\n" gcode))
                (\ioerror -> do
@@ -835,7 +852,6 @@ dumpCodeEnd handle flags state es foreigns gcode =
 ---   Small help functions
 
 strISInt :: IntState -> Id -> String
-
 strISInt state v = strIS state v ++ "{"++show v++"}"
 
 {- End Module Main ----------------------------------------------------------}

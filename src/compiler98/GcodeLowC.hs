@@ -35,229 +35,227 @@ import NhcFloats
 import Floats
 #endif
 
-#if defined(__HASKELL98__)
-#define isAlphanum isAlphaNum
-#endif
-
-sfun  = showString fun
-ffun  = showString foreignfun
+sfun  = fun
+ffun  = foreignfun
 
 ----------------------------------------
-gcodeCHeader = showString "#include \"newmacros.h\"\n#include \"runtime.h\"\n\n"
+gcodeCHeader = "#include \"newmacros.h\"\n#include \"runtime.h\"\n\n"
 
 ----------------------------------------
 
-emitJump j i =
-  emitByte (showString j)  >|>
-  emitByte (shows l)  >|>
-  emitByte (shows h)
+emitJump p j i =
+  emitByte p (j)       >|>
+  emitByte p (show l)  >|>
+  emitByte p (show h)
  where
   (h,l) = divMod i 256
 
-emitOp op =  emitByte (showString op)
+emitOp p op =  emitByte p (op)
 
-emitOp1 op i =
-  emitByte (showString op)  >|>
-  emitByte (shows i)
+emitOp1 p op i =
+  emitByte p (op)     >|>
+  emitByte p (show i)
 
-emitOp2 op i j =
-  emitByte (showString op)  >|>
-  emitByte (shows i)        >|>
-  emitByte (shows j)
+emitOp2 p op i j =
+  emitByte p (op)     >|>
+  emitByte p (show i) >|>
+  emitByte p (show j)
 
-emitOp12 op i =
+emitOp12 p op i =
   if i < 0 then
     case (-i) `divMod` 256 of
-      (0,l) -> emitByte (showString op . showString "_N1") >|>
-               emitByte (shows l)
-      (h,l) -> emitByte (showString op . showString "_N2") >|>
-               emitByte (shows l) >|>
-               emitByte (shows h)
+      (0,l) -> emitByte p (op ++ "_N1") >|>
+               emitByte p (show l)
+      (h,l) -> emitByte p (op ++ "_N2") >|>
+               emitByte p (show l) >|>
+               emitByte p (show h)
   else
     case i `divMod` 256 of
-      (0,l) -> emitByte (showString op . showString "_P1") >|>
-               emitByte (shows l)
-      (h,l) -> emitByte (showString op . showString "_P2") >|>
-               emitByte (shows l) >|>
-               emitByte (shows h)
+      (0,l) -> emitByte p (op ++ "_P1") >|>
+               emitByte p (show l)
+      (h,l) -> emitByte p (op ++ "_P2") >|>
+               emitByte p (show l)      >|>
+               emitByte p (show h)
 
 
-shortQ pred defgen opstr arg  =
+shortQ p pred defgen opstr arg  =
   case pred arg of
-    (True,argstr) -> emitOp (opstr ++ "_I" ++ argstr)
+    (True,argstr) -> emitOp p (opstr ++ "_I" ++ argstr)
     _             -> defgen opstr arg
 
-gcodeCDump state (ALIGN)         = emitAlign
-gcodeCDump state (ALIGN_CONST)   = emitOp "ENDCODE" >|> emitAlignDouble
-gcodeCDump state (NEEDHEAP i)    = shortQ shortNeedheap emitOp12 "NEEDHEAP" i
-gcodeCDump state (NEEDSTACK i)   = shortQ shortNeedstack emitOp12 "NEEDSTACK" i
-gcodeCDump state (LABEL i)       = defineLabel Local (showId state i)
-gcodeCDump state (LOCAL s i)     = defineLabel Local
-                                               (showString s . showId state i)
-gcodeCDump state (GLOBAL s i)    = defineLabel Global
-                                               (showString s . showId state i)
-gcodeCDump state (JUMP  i)       = emitJump "JUMP" i
-gcodeCDump state (JUMPFALSE i)   = emitJump "JUMPFALSE" i		-- DAVID
-gcodeCDump state (PRIMITIVE)     = emitOp "PRIMITIVE"
-gcodeCDump state (PRIM prim)     = emitOp (strPrim prim)
-gcodeCDump state (NOP)	         = emitOp "NOP"
-gcodeCDump state (MKIORETURN)    = emitOp "MKIORETURN"	-- MW
+gcodeCDump p state (ALIGN)         = emitAlign p
+gcodeCDump p state (ALIGN_CONST)   = emitOp p "ENDCODE" >|> emitAlignDouble p
+gcodeCDump p state (NEEDHEAP i)    = shortQ p shortNeedheap (emitOp12 p)
+                                                                  "NEEDHEAP" i
+gcodeCDump p state (NEEDSTACK i)   = shortQ p shortNeedstack (emitOp12 p)
+                                                                 "NEEDSTACK" i
+gcodeCDump p state (LABEL i)       = defineLabel p Local (showId state i "")
+gcodeCDump p state (LOCAL s i)     = defineLabel p Local
+                                               (s ++ showId state i "")
+gcodeCDump p state (GLOBAL s i)    = defineLabel p Global
+                                               (s ++ showId state i "")
+gcodeCDump p state (JUMP  i)       = emitJump p "JUMP" i
+gcodeCDump p state (JUMPFALSE i)   = emitJump p "JUMPFALSE" i		-- DAVID
+gcodeCDump p state (PRIMITIVE)     = emitOp p "PRIMITIVE"
+gcodeCDump p state (PRIM prim)     = emitOp p (strPrim prim)
+gcodeCDump p state (NOP)           = emitOp p "NOP"
+gcodeCDump p state (MKIORETURN)    = emitOp p "MKIORETURN"	-- MW
 
-gcodeCDump state (TABLESWITCH size pad ls) =		-- DAVID
-    emitOp1 "TABLESWITCH" size >|>
-    someNops pad >|>
-    someLabels ls
-gcodeCDump state (LOOKUPSWITCH size pad tls def) =	-- DAVID
-    emitOp1 "LOOKUPSWITCH" size >|>
-    someNops pad >|>
-    someLabels (concatMap (\(f,s) -> [f,s]) tls ++ [def])
+gcodeCDump p state (TABLESWITCH size pad ls) =		-- DAVID
+    emitOp1 p "TABLESWITCH" size >|>
+    someNops p pad >|>
+    someLabels p ls
+gcodeCDump p state (LOOKUPSWITCH size pad tls def) =	-- DAVID
+    emitOp1 p "LOOKUPSWITCH" size >|>
+    someNops p pad >|>
+    someLabels p (concatMap (\(f,s) -> [f,s]) tls ++ [def])
 
-gcodeCDump state (ZAP_ARG  i)     = shortQ shortZapArg emitOp1  "ZAP_ARG" i
-gcodeCDump state (ZAP_STACK i)    = emitOp12  "ZAP_STACK" i
+gcodeCDump p state (ZAP_ARG  i)     = shortQ p shortZapArg (emitOp1 p)
+                                                                    "ZAP_ARG" i
+gcodeCDump p state (ZAP_STACK i)    = emitOp12 p "ZAP_STACK" i
 
 -- Stack
-gcodeCDump state (PUSH_CADR  i)   = emitOp12 "PUSH_CADR" i
-gcodeCDump state (PUSH_CVAL  i)   = emitOp12 "PUSH_CVAL" i
-gcodeCDump state (PUSH_INT  i)    = emitOp12 "PUSH_INT" i
-gcodeCDump state (PUSH_CHAR  i)   = emitOp12 "PUSH_CHAR" i
-gcodeCDump state (PUSH_ARG  i)    = shortQ shortPushArg emitOp1  "PUSH_ARG" i
-gcodeCDump state (PUSH_ZAP_ARG  i)= shortQ shortPushArg emitOp1  "PUSH_ZAP_ARG" i
-gcodeCDump state (PUSH      i)    = shortQ shortPush emitOp12 "PUSH" i
-gcodeCDump state (PUSH_HEAP)      = emitOp "PUSH_HEAP"
-gcodeCDump state (POP       i)    = shortQ shortPop emitOp12 "POP" i
-gcodeCDump state (SLIDE     i)    = emitOp12  "SLIDE" i
-gcodeCDump state (UNPACK    i)    = emitOp1  "UNPACK" i
+gcodeCDump p state (PUSH_CADR  i)   = emitOp12 p "PUSH_CADR" i
+gcodeCDump p state (PUSH_CVAL  i)   = emitOp12 p "PUSH_CVAL" i
+gcodeCDump p state (PUSH_INT  i)    = emitOp12 p "PUSH_INT" i
+gcodeCDump p state (PUSH_CHAR  i)   = emitOp12 p "PUSH_CHAR" i
+gcodeCDump p state (PUSH_ARG  i)    = shortQ p shortPushArg (emitOp1 p)
+                                                                   "PUSH_ARG" i
+gcodeCDump p state (PUSH_ZAP_ARG i) = shortQ p shortPushArg (emitOp1 p)
+                                                               "PUSH_ZAP_ARG" i
+gcodeCDump p state (PUSH      i)    = shortQ p shortPush (emitOp12 p)  "PUSH" i
+gcodeCDump p state (PUSH_HEAP)      = emitOp p "PUSH_HEAP"
+gcodeCDump p state (POP       i)    = shortQ p shortPop (emitOp12 p)    "POP" i
+gcodeCDump p state (SLIDE     i)    = emitOp12 p  "SLIDE" i
+gcodeCDump p state (UNPACK    i)    = emitOp1 p  "UNPACK" i
 
 -- selector
-gcodeCDump state (SELECTOR_EVAL)  = emitOp "SELECTOR_EVAL"
-gcodeCDump state (SELECT     i)   = emitOp1 "SELECT" i
+gcodeCDump p state (SELECTOR_EVAL)  = emitOp p "SELECTOR_EVAL"
+gcodeCDump p state (SELECT     i)   = emitOp1 p "SELECT" i
 
 -- evaluation
-gcodeCDump state (APPLY     i)    = emitOp1 "APPLY" i
-gcodeCDump state (EVAL)           = emitOp "EVAL"
-gcodeCDump state (RETURN)         = emitOp "RETURN"
-gcodeCDump state (RETURN_EVAL)    = emitOp "RETURN_EVAL"
+gcodeCDump p state (APPLY     i)    = emitOp1 p "APPLY" i
+gcodeCDump p state (EVAL)           = emitOp p "EVAL"
+gcodeCDump p state (RETURN)         = emitOp p "RETURN"
+gcodeCDump p state (RETURN_EVAL)    = emitOp p "RETURN_EVAL"
 
 -- Heap
-gcodeCDump state (HEAP_CADR  i)   = emitOp12 "HEAP_CADR" i
-gcodeCDump state (HEAP_CVAL  i)   = shortQ shortHeapCval emitOp12 "HEAP_CVAL" i
-gcodeCDump state (HEAP_INT  i)    = emitOp12 "HEAP_INT" i
-gcodeCDump state (HEAP_CHAR  i)   = emitOp12 "HEAP_CHAR" i
-gcodeCDump state (HEAP_ARG  i)    = emitOp1 "HEAP_ARG" i 
-gcodeCDump state (HEAP_ARG_ARG i j)  = emitOp2 "HEAP_ARG_ARG" i j
-gcodeCDump state (HEAP_ARG_ARG_RET_EVAL i j)  = emitOp2 "HEAP_ARG_ARG_RET_EVAL" i j
-gcodeCDump state (HEAP      i)    = shortQ shortHeap emitOp12 "HEAP" i
-gcodeCDump state (HEAP_OFF  i)    = emitOp12 "HEAP_OFF" i
+gcodeCDump p state (HEAP_CADR  i)   = emitOp12 p "HEAP_CADR" i
+gcodeCDump p state (HEAP_CVAL  i)   = shortQ p shortHeapCval (emitOp12 p)
+                                                                  "HEAP_CVAL" i
+gcodeCDump p state (HEAP_INT  i)    = emitOp12 p "HEAP_INT" i
+gcodeCDump p state (HEAP_CHAR  i)   = emitOp12 p "HEAP_CHAR" i
+gcodeCDump p state (HEAP_ARG  i)    = emitOp1 p "HEAP_ARG" i 
+gcodeCDump p state (HEAP_ARG_ARG i j)  = emitOp2 p "HEAP_ARG_ARG" i j
+gcodeCDump p state (HEAP_ARG_ARG_RET_EVAL i j)  =
+                                      emitOp2 p "HEAP_ARG_ARG_RET_EVAL" i j
+gcodeCDump p state (HEAP      i)    = shortQ p shortHeap (emitOp12 p) "HEAP" i
+gcodeCDump p state (HEAP_OFF  i)    = emitOp12 p "HEAP_OFF" i
 
-gcodeCDump state (HEAP_CREATE)    = emitOp "HEAP_CREATE"
-gcodeCDump state (HEAP_SPACE)     = emitOp "HEAP_SPACE"
+gcodeCDump p state (HEAP_CREATE)    = emitOp p "HEAP_CREATE"
+gcodeCDump p state (HEAP_SPACE)     = emitOp p "HEAP_SPACE"
 
-gcodeCDump state (DATA_CREATE)    = emitWord (showString "0")
-gcodeCDump state (DATA_CAPITEM a b) = emitByte (shows b) >|> emitByte (shows a)
-gcodeCDump state (DATA_CONSTHEADER a b) = emitWord (showString "HW(" .
-						    shows a . showChar ',' .
-						    shows b . showString ")")
-gcodeCDump state (DATA_W  i)      = emitWord (shows i)
-gcodeCDump state (DATA_S  s)      = foldr (>|>) (emitByte (shows 0))
-                                          (map (emitByte.shows.fromEnum) s)
+gcodeCDump p state (DATA_CREATE)    = emitWord p ("0")
+gcodeCDump p state (DATA_CAPITEM a b) = emitByte p (show b) >|>
+                                        emitByte p (show a)
+gcodeCDump p state (DATA_CONSTHEADER a b) = emitWord p ("HW(" ++
+						        show a ++ ',':
+						        show b ++ ")")
+gcodeCDump p state (DATA_W  i)      = emitWord p (show i)
+gcodeCDump p state (DATA_S  s)      = foldr (>|>) (emitByte p ("0"))
+                                          (map (emitByte p.show.fromEnum) s)
 #if defined(NATIVE)
-gcodeCDump state (DATA_F  f)      = {-no need to test if floatIsDouble-}
-                                    let bytes = showBytes f [] in
-                                    foldr (>|>) id
-                                        (map (emitByte.shows.fromEnum) bytes)
-gcodeCDump state (DATA_D  d)      = let bytes = showBytes d [] in
-                                    foldr (>|>) id
-                                        (map (emitByte.shows.fromEnum) bytes)
+gcodeCDump p state (DATA_F  f)      = {-no need to test if floatIsDouble-}
+                                      let bytes = showBytes f [] in
+                                      foldr (>|>) ""
+                                        (map (emitByte p.show.fromEnum) bytes)
+gcodeCDump p state (DATA_D  d)      = let bytes = showBytes d [] in
+                                      foldr (>|>) ""
+                                        (map (emitByte p.show.fromEnum) bytes)
 #elif defined(NHCFLOAT)
-gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
+gcodeCDump p state (DATA_F  f)      = {-if floatIsDouble then
                                       let (h,l) = doubleToInts f in
-                                      emitWord (shows h) >|> emitWord (shows l)
-                                    else-}
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
+                                      else-}
                                       let i = floatToInt f in
-                                      emitWord (shows i)
-gcodeCDump state (DATA_D  d)      = let (h,l) = doubleToInts d in
-                                    emitWord (shows h) >|> emitWord (shows l)
+                                      emitWord p (show i)
+gcodeCDump p state (DATA_D  d)      = let (h,l) = doubleToInts d in
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
 #elif defined(FLOAT)
-gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
+gcodeCDump p state (DATA_F  f)      = {-if floatIsDouble then
                                       let h = doubleToInt0 f
                                           l = doubleToInt1 f in
-                                      emitWord (shows h) >|> emitWord (shows l)
-                                    else-}
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
+                                      else-}
                                       let i = floatToInt f in
-                                      emitWord (shows i)
-gcodeCDump state (DATA_D  d)      = let h = doubleToInt0 d
-                                        l = doubleToInt1 d in
-                                    emitWord (shows h) >|> emitWord (shows l)
+                                      emitWord p (show i)
+gcodeCDump p state (DATA_D  d)      = let h = doubleToInt0 d
+                                          l = doubleToInt1 d in
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
 #elif defined(HUGSFLOAT)
 -- does not work, just bogus translation of floats and doubles into zero bytes
-gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
+gcodeCDump p state (DATA_F  f)      = {-if floatIsDouble then
                                       let h = 0
                                           l = 0 in
-                                      emitWord (shows h) >|> emitWord (shows l)
-                                    else-}
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
+                                      else-}
                                       let i = 0 in
-                                      emitWord (shows i)
-gcodeCDump state (DATA_D  d)      = let h = 0
-                                        l = 0 in
-                                    emitWord (shows h) >|> emitWord (shows l)
+                                      emitWord p (show i)
+gcodeCDump p state (DATA_D  d)      = let h = 0
+                                          l = 0 in
+                                      emitWord p (show h) >|>
+                                      emitWord p (show l)
 #endif
-gcodeCDump state (DATA_NOP)       = id
-gcodeCDump state (DATA_CLABEL i)  = useLabel (showCLabel state i)
-gcodeCDump state (DATA_FLABEL i)  = useLabel (ffun . showId state i)
-gcodeCDump state (DATA_GLB s 0)   = useLabel (showString s)
-gcodeCDump state (DATA_GLB s i)   = useLabel (showString s . showId state i)
-gcodeCDump state (DATA_VAP i)     = let lab = sfun . showId state i
-                                    in
-                                    mentionLabel lab >|>
-                                    emitWord (showString "VAPTAG(" .
-					      wrapUse lab .
-					      showString ")")
-gcodeCDump state (DATA_CAP  i s)  = let lab = sfun . showId state i
-                                    in
-                                    mentionLabel lab >|>
-                                    emitWord (showString "CAPTAG(" .
-					      wrapUse lab .
-					      showChar ',' .  shows s .
-					      showString ")")
-gcodeCDump state (DATA_CON  s c)  = emitWord (showString "CONSTR(" .
-					      shows c .  showChar ',' .
-					      shows s .  showChar ',' .
-					      showChar '0' .
-					      showString ")")
-gcodeCDump state (DATA_CONR s c)  = emitWord (showString "CONSTRR(" .
-					      shows c .  showChar ',' .
-					      shows s .  showChar ',' .
-					      showChar '0' .
-					      showString ")")
-gcodeCDump state (DATA_CONT s c)  = emitWord (showString "CONSTRT(" .
-					      shows c .  showChar ',' .
-					      shows s .  showChar ',' .
-					      showChar '0' .
-					      showString ")")
-gcodeCDump state (DATA_CONW s e)  = emitWord (showString "CONSTRW(" .
-					      shows s .  showChar ',' .
-			 		      shows e .
-					      showString ")")
-gcodeCDump state (DATA_CONP s e)  = emitWord (showString "CONSTRP(" .
-					      shows s .  showChar ',' .
-			 		      shows e .
-					      showString ")")
+gcodeCDump p state (DATA_NOP)       = id
+gcodeCDump p state (DATA_CLABEL i)  = useLabel p (showCLabel state i "")
+gcodeCDump p state (DATA_FLABEL i)  = useLabel p (ffun ++ showId state i "")
+gcodeCDump p state (DATA_GLB s 0)   = useLabel p (s)
+gcodeCDump p state (DATA_GLB s i)   = useLabel p (s ++ showId state i "")
+gcodeCDump p state (DATA_VAP i)     = let lab = sfun ++ showId state i ""
+                                      in
+                                      mentionLabel p lab >|>
+                                      emitWord p ("VAPTAG(" ++
+					          wrapUse lab ++ ")")
+gcodeCDump p state (DATA_CAP  i s)  = let lab = sfun ++ showId state i ""
+                                      in
+                                      mentionLabel p lab >|>
+                                      emitWord p ("CAPTAG(" ++
+					          wrapUse lab ++
+					          ',': show s ++ ")")
+gcodeCDump p state (DATA_CON  s c)  = emitWord p ("CONSTR(" ++
+					          show c ++  ',':
+					          show s ++  ",0)")
+gcodeCDump p state (DATA_CONR s c)  = emitWord p ("CONSTRR(" ++
+					          show c ++  ',':
+					          show s ++  ",0)")
+gcodeCDump p state (DATA_CONT s c)  = emitWord p ("CONSTRT(" ++
+					          show c ++  ',':
+					          show s ++  ",0)")
+gcodeCDump p state (DATA_CONW s e)  = emitWord p ("CONSTRW(" ++
+					          show s ++  ',':
+			 		          show e ++  ")")
+gcodeCDump p state (DATA_CONP s e)  = emitWord p ("CONSTRP(" ++
+					          show s ++  ',':
+			 		          show e ++  ")")
 
 
-someNops :: Int -> EmitState -> EmitState
-someNops pad = foldr (>|>) id (take pad (repeat (emitOp "NOP")))
+someNops :: Pass -> Int -> EmitState -> EmitState
+someNops p pad = foldr (>|>) id (take pad (repeat (emitOp p "NOP")))
 
-someLabels :: [ Int ] -> EmitState -> EmitState
-someLabels cls =
-  foldr (>|>) id (map (\l -> emitByte (showString "TOP(" . shows l .
-                                       showString ")")   >|>
-                             emitByte (showString "BOT(" . shows l .
-                                       showString ")")
+someLabels :: Pass -> [ Int ] -> EmitState -> EmitState
+someLabels p cls =
+  foldr (>|>) id (map (\l -> emitByte p ("TOP(" ++ show l ++ ")")   >|>
+                             emitByte p ("BOT(" ++ show l ++ ")")
                       )
                       cls)
 
 ----------------------------------------
-gcodeGather state es [] = es
-gcodeGather state es list =
-  (foldr (\a b-> gcodeCDump state a >|> b) emitAlign list) es
+gcodeGather p state es [] = es
+gcodeGather p state es list =
+  (foldr (\a b-> gcodeCDump p state a >|> b) (emitAlign p) list) es
 
