@@ -56,6 +56,10 @@ import DPackedString
 import PackString
 import UnpackPS
 
+import Eq_PackedString
+import Ord_PackedString
+import Show_PackedString
+
 {-
 data PackedString = PS String
 

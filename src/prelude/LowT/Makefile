@@ -7,7 +7,7 @@ SEARCH	= -P../PreludeIO -P../System -P..
 SRCS_T	= \
 	PrimExitWith.hs \
 	FFIBuiltin.hs PrimPackString.hs PrimUnpackPS.hs CString.hs \
-	PrimHPutChar.hs \
+	PrimHPutChar.hs PrimComparePS.hs \
 	NonStdTrace.hs \
 	LowSystem.hs LowPS.hs \
 	PrimIntegerAbs.hs PrimIntegerAdd.hs PrimIntegerAnd.hs \
