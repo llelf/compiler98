@@ -21,7 +21,6 @@ LDFLAGS=
 
 
 all: ${TARGET}
-install: ${TARGET}
 depend:
 	makedepend -- $(CFLAGS) -- $(SRCS)
 clean:

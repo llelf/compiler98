@@ -141,7 +141,6 @@ TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs \
 	 profruntime profprelude profprelude-$(CC) \
 	 timeruntime timeprelude timeprelude-$(CC) \
 	 proflibraries timelibraries proflibraries-$(CC) timelibraries-$(CC) \
-	 timetraceruntime timetraceprelude \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
@@ -205,28 +204,27 @@ proflibraries-hbc: proflibraries
 timelibraries-nhc: timelibraries
 timelibraries-ghc: timelibraries
 timelibraries-hbc: timelibraries
-timetraceprofile: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
-	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
+	cd src/runtime;        $(MAKE) all nhc98heap$(EXE)
 	touch $(TARGDIR)/$(MACHINE)/runtime
 
 
 $(TARGDIR)/$(MACHINE)/compiler-nhc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/compiler-nhc
 $(TARGDIR)/$(MACHINE)/compiler-hbc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/compiler-hbc
 $(TARGDIR)/$(MACHINE)/compiler-ghc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/compiler-ghc
 
 
 $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) install
+	cd src/prelude;        $(MAKE) all
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
 $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
@@ -240,13 +238,13 @@ $(patsubst %,${TARGDIR}/${MACHINE}/%,${PACKAGES}):
 
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-nhc
 $(TARGDIR)/$(MACHINE)/greencard-hbc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-hbc
 $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
 
@@ -265,29 +263,29 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
-	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) all config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 
 $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
-	cd src/hp2graph;       $(MAKE) install
+	cd src/hp2graph;       $(MAKE) all
 	touch $(TARGDIR)/$(MACHINE)/hp2graph
 
 
 $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
-	cd src/runtime;        $(MAKE) CFG=p install
+	cd src/runtime;        $(MAKE) CFG=p all
 	touch $(TARGDIR)/$(MACHINE)/profruntime
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) CFG=p install
+	cd src/prelude;        $(MAKE) CFG=p all
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 $(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
@@ -295,19 +293,11 @@ $(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
 	done && touch $(TARGDIR)/$(MACHINE)/proflibraries
 
 
-$(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
-	cd src/runtime;        $(MAKE) CFG=Tz install
-	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
-$(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;	       $(MAKE) CFG=Tz install
-	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
-
-
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
-	cd src/runtime;        $(MAKE) CFG=z install
+	cd src/runtime;        $(MAKE) CFG=z all
 	touch $(TARGDIR)/$(MACHINE)/timeruntime
 $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) CFG=z install
+	cd src/prelude;        $(MAKE) CFG=z all
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
 $(TARGDIR)/$(MACHINE)/timelibraries: $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
@@ -378,7 +368,7 @@ hoodui: $(TARGDIR)/hoodui
 $(TARGDIR)/hoodui: lib/hood.jar
 	touch $(TARGDIR)/hoodui
 lib/hood.jar: $(HOODUI)
-	cd src/hoodui;         $(MAKE) install
+	cd src/hoodui;         $(MAKE) all
 
 
 ##### scripts for packaging various distribution formats

@@ -20,7 +20,6 @@ OBJS   =  $(patsubst %, ${OBJDIR}/%.$O, ${SRCS})
 
 
 all: $(TARGET)
-install: $(TARGET)
 cfiles:
 	$(HMAKE) -HC=$(LOCAL)nhc98 -C GreenCard.lhs
 fromC: $(OBJDIR)

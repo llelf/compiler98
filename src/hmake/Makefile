@@ -46,7 +46,6 @@ endif
 
 
 all: $(TARGETS)
-install: $(TARGETS)
 config:
 	sh $(BUILDDIR)/hmake3.config
 cfiles: cleanC $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C

@@ -46,7 +46,6 @@ XML_CLASSES = $(XMLLIB)/XmlHandler.class $(XMLLIB)/XmlParser.class
 BINARIES = $(JAVA_CLASSES) $(XML_CLASSES)
 
 all: ${ARCHIVE}
-install: all
 	${INSTALL} ${ARCHIVE} ${LIBDIR}
 ${ARCHIVE}: ${BINARIES}
 	jar cf ${ARCHIVE} *.class com/microstar/xml/*.class

@@ -50,7 +50,6 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 
 
 all: ${TARGET}
-install: ${TARGET}
 objdir: ${OBJDIR}
 cfiles: $(OBJDIR)/$(HC)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs

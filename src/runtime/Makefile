@@ -17,8 +17,7 @@ LDFLAGS = -r
 ARFLAGS = r
 
 
-all:  ofiles afile nhc98heap$(EXE)
-install: ofiles afile
+all: ofiles afile nhc98heap$(EXE)
 	${INSTALL} ${OBJDIR}/Kernel/$(RUNTIME)$(SUF).a ${DST}
 	$(AR) $(ARFLAGS) ${DST}/$(RUNTIME)$(SUF).a ${OBJDIR}/Integer/*.o ${OBJDIR}/Builtin/*.o ${OBJDIR}/Mk/*.o
 	-ranlib ${DST}/$(RUNTIME)$(SUF).a

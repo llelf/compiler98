@@ -24,7 +24,6 @@ export HFLAGS
 endif
 
 all: $(TARGET)
-install: $(TARGET)
 cfiles: cleanC $(SRCS)
 	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -package base -C HInteractive.hs
 clean:

@@ -38,7 +38,6 @@ OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
 
 
 all: ${ARCHIVE}
-install: ${ARCHIVE}
 lib:  $(patsubst %,%.make,${LIBSUBDIRS})
 prel: $(patsubst %,%.make,${PRELSUBDIRS})
 boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
