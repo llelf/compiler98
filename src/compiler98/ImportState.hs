@@ -71,10 +71,9 @@ getSymbolTableIS
 getRenameTableIS 
   (ImportState visible unique orps rps needI rt st insts fixity errors) = rt
 
-getErrorsIS 
-  (ImportState visible unique orps rps needI rt st insts fixity errors) =
-  (ImportState visible unique orps rps needI rt st insts fixity [],errors)
-
+getErrIS is@(ImportState vis unique orps rps needI rt st insts fixity errors)
+  | null errors = Right is
+  | otherwise   = Left errors
 
 importError :: String -> Int -> () -> ImportState -> (Int,ImportState)
 importError err r _  

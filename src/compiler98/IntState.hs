@@ -181,6 +181,11 @@ tidIS state i =
 getErrors :: IntState -> (IntState,[String])
 getErrors (IntState unique rps st errors) = (IntState unique rps st [], errors)
 
+getErrorsIS :: IntState -> Either [String] IntState
+getErrorsIS is@(IntState unique rps st errors)
+    | null errors = Right is
+    | otherwise   = Left errors
+
 addError :: IntState -> [Char] -> IntState
 addError (IntState unique rps st errors) err = 
   IntState unique rps st (err:errors)

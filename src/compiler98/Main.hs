@@ -22,9 +22,9 @@ import OsOnly
 import Extra(Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine,
              pair,fst3,thd3,trace)
 import State(State0(..))
-import ImportState(ImportState,Info,IE,initIS,getErrorsIS,getSymbolTableIS
+import ImportState(ImportState,Info,IE,initIS,getErrIS,getSymbolTableIS
                   ,getRenameTableIS)
-import IntState(IntState,dummyIntState,getSymbolTable,getErrors,strIS,mrpsIS)
+import IntState(IntState,dummyIntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
 import NeedLib(initNeed)
 import RenameLib(getSymbolTableRS,RenameState,getErrorsRS)
 import PreImport
@@ -205,10 +205,9 @@ nhcImport :: Flags
 
 nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
   --profile "import []" $
-  case getErrorsIS importState of
-    (importState,errors) ->
-      if null errors
-        then do
+  case getErrIS importState of
+    Right importState ->
+        do
           pF (sINeed flags) "Need after all imports"    
              (show (treeMapList (:)  (thd3 (getNeedIS importState)))) 
           pF (sIBound flags) "Symbol table after import"  
@@ -218,7 +217,8 @@ nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
              (mixLine (map show (treeMapList 
                                    (:) (getRenameTableIS importState)))) 
 	  nhcRename flags modidl qualFun expFun parseProg importState overlap
-	else do
+    Left errors ->
+	do
 	  pF (True) "Error after import " (mixLine errors) 
           pF (sINeed flags) "Need after all imports"    
              (show (treeMapList (:)  (thd3 (getNeedIS importState)))) 
@@ -265,8 +265,8 @@ nhcRename flags modidl qualFun expFun
                   pF True "Error when renaming:" (mixLine err) 
                   exit
     Right (decls,intState,tidFun,tidFunSafe,derived,userDefault,rt) ->
-       case (getErrors intState) of
-	 (intState,[]) -> do
+       case (getErrorsIS intState) of
+	 Right intState -> do
            depend flags intState rt 
            pF (sRename flags) "Declarations after rename and fixity:" 
               (prettyPrintId flags intState ppTopDecls decls) 
@@ -278,7 +278,7 @@ nhcRename flags modidl qualFun expFun
            nhcFFItrans flags modidl mrps expFun userDefault tidFun 
              tidFunSafe intState derived impdecls decls {- constrs -}
 
-	 (intState,errors) -> do
+	 Left errors -> do
      	   pF (True) "Error after rename " (mixLine errors) 
 	   exit
 
@@ -427,8 +427,8 @@ nhcDbgTrans :: Flags             -- reads: compiler flags
 nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
             tidFunSafe decls constrs impdecls state =
  -- profile "dbgtrans" $
-    case getErrors state of
-      (state,[]) -> do
+    case getErrorsIS state of
+      Right state -> do
         pF (sEBound flags) "Symbol table after extract:"  
            (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
         nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe 
@@ -436,7 +436,7 @@ nhcDbgTrans flags modidl mrps expFun userDefault tidFun
              then debugTrans flags state tidFun modidl (sSourceFile flags) 
                     impdecls decls constrs 
              else (decls, state, Nothing))
-      (state,errors) -> do
+      Left errors -> do
         pF (sEBound flags) "Symbol table after extract:"  
            (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
         pF (True) "Error after extract:" (mixLine errors) 
@@ -487,16 +487,16 @@ nhcScc :: Flags
 nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt 
        (decls,zcon,state) =
   {-profile "scc" $-}
-  case getErrors state of
-    (state,[]) -> do
+  case getErrorsIS state of
+    Right state -> do
       pF (sRemove flags) "Declarations after remove fields:" 
          (prettyPrintId flags state ppTopDecls decls) 
       case rmClasses tidFun state decls of
 	(code,decls,state) ->
 	  nhcType flags zcon modidl  mrps  expFun userDefault tidFun 
             tidFunSafe state code sridt (sccTopDecls decls)
-    (state,errors) -> do
-      pF (True) "Error after remove fileds:" (mixLine errors)
+    Left errors -> do
+      pF (True) "Error after remove fields:" (mixLine errors)
       exit
 
 
@@ -547,8 +547,8 @@ nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt
              (code,decls,state) =
   let mod = reverse (unpackPS modidl) in
 --profile "interface" $
-  case getErrors state of
-    (state,[]) -> do
+  case getErrorsIS state of
+    Right state -> do
       pF (sType flags) "Declarations after type deriving:" 
          (prettyPrintId flags state ppTopDecls decls) 
       pF (sTBound flags) "Symbol table after type deriving:"  
@@ -561,7 +561,7 @@ nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt
       nhcWriteI flags (buildInterface flags modidl state) 
       nhcFixSyntax flags zcon tidFun code sridt
                            (fixSyntax (sDbgTrans flags) decls state tidFun)
-    (state,errors) -> do
+    Left errors -> do
       pF (True) "Error after type deriving/checking" (mixLine errors)
       pF (sType flags) "Declarations after type deriving:" 
          (prettyPrintId flags state ppTopDecls decls) 
@@ -626,16 +626,17 @@ nhcCase :: Flags
         -> ([(Int,PosLambda)],IntState) 
         -> IO ()
 
-nhcCase flags zcon tidFun sridt (decls,state) =
+nhcCase flags zcon tidFun sridt (decls,state) = do
 --profile "case" $
-  case getErrors state of
-    (state,errors) -> do
+  case getErrorsIS state of
+    Left errors ->
       pF (not (null errors)) "Warning pattern removal" (mixLine errors) 
-      pF (sCase flags) "Declarations after case:"  
+    _ -> return ()
+  pF (sCase flags) "Declarations after case:"  
          (strPCode (strISInt state) decls) 
-      pF (sCBound flags) "Symbol table after case:"  
+  pF (sCBound flags) "Symbol table after case:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable state))))
-      nhcPrim flags tidFun zcon sridt 
+  nhcPrim flags tidFun zcon sridt 
         (primCode primFlags (not (sDbgTrans flags)) tidFun state decls)
 
 
