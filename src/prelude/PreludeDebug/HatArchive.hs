@@ -459,7 +459,7 @@ mkTSatC torig tnew =
 mkNTInt		:: Int -> NmType
 mkNTChar	:: Char -> NmType
 mkNTInteger	:: Integer -> NmType
---mkNTRational	:: Rational -> NmType
+mkNTRational	:: Rational -> NmType
 mkNTFloat	:: Float -> NmType
 mkNTDouble	:: Double -> NmType
 mkNTId'		:: Int -> NmType	-- dummy for compile time only
@@ -484,7 +484,7 @@ foreign import "primTrustedFun" trustedNm	:: NmType -> Bool
 mkNTInt		= primNTInt
 mkNTChar	= primNTChar
 mkNTInteger	= primNTInteger
---mkNTRational ((R n _) :% (R d _))	= primNTRational n d
+mkNTRational x	= primNTRational 0 0	-- dummy (constructor :% not available)
 mkNTFloat	= primNTFloat
 mkNTDouble	= primNTDouble
 mkNTId'	    x	= undefined x		-- dummy for compile time only
@@ -685,7 +685,7 @@ foreign import primTSatC :: FileTrace		-- original SatB (or SatA)
 foreign import primNTInt	:: Int -> NmType
 foreign import primNTChar	:: Char -> NmType
 foreign import primNTInteger	:: Integer -> NmType
---foreign import primNTRational	:: Integer -> Integer -> NmType
+foreign import primNTRational	:: Integer -> Integer -> NmType
 foreign import primNTFloat	:: Float -> NmType
 foreign import primNTDouble	:: Double -> NmType
 foreign import primNTId		:: CStructure -> NmType
