@@ -327,6 +327,24 @@ matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
 matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]),fun) =
   caseEqualNumEq >>>= \ equalNumEq ->
+  caseTidFun >>>= \ tidFun ->
+--strace ("Warning: numeric literal pattern in an overloaded context at "++
+--        strPos pos++"\n"++
+--        "    Compiled code _will_ give wrong result.\n"++
+--        "    To fix, resolve to Int or Integer with a type signature.\n") $
+  unitS (PosExpIf pos) =>>>
+	caseExp (ExpApplication pos
+                   [ExpVar pos (tidFun (t_rPatBool,Var))
+	           ,ExpApplication pos
+                      [ExpVar pos (tidFun (t_ap 2,Var)), sr, t
+                      ,ExpApplication pos [equalNumEq dict, sr, t]
+                      ,ExpVar pos v
+                      ,pat]]) =>>>
+	match ces [fun] (unitS PosExpFail) =>>>
+          (unitS PosExpFail)
+-- match (untraced) numeric literal in an unresolved context
+matchAltIf v ces (pat@(ExpApplication pos [fromInteger,dict,lit]), fun) =
+  caseEqualNumEq >>>= \ equalNumEq ->
   unitS (PosExpIf pos) =>>>
 	caseExp (ExpApplication pos [equalNumEq dict,ExpVar pos v,pat]) =>>>
 	match ces [fun] (unitS PosExpFail) =>>>
