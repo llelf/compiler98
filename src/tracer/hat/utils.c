@@ -301,7 +301,14 @@ readNmTypeAt (FileOffset fo)
 		  id->idname = strdup(buf);
 		} break;
     case NTInteger:
-		{ sprintf(buf,"<integer>");
+		{ char size; int n;
+		  fread(&size,sizeof(char),1,HatFile);
+		  if (size==0) sprintf(buf,"0");
+		  else if (size==1) {
+		    int n;
+		    fread(&n,sizeof(int),1,HatFile);
+		    sprintf(buf,"%d",ntohl(n));
+		  } else sprintf(buf,"<integer>");
 		  id->idname = strdup(buf);
 		} break;
     case NTRational:
