@@ -156,7 +156,7 @@ instance Relabel Decl where
   relabel env (DeclForeignExp p str id typ) =
 	DeclForeignExp p str (just id) (relabel env typ)
   relabel env (DeclVarsType pis ctxs typ) =
-	DeclVarsType (relabelPosIds pis) (map (relabel env) ctxs)
+	DeclVarsType (relabelRealPosIds env pis) (map (relabel env) ctxs)
 							(relabel env typ)
   relabel env (DeclPat alt@(Alt (ExpInfixList p exps) rhs decls)) =
 	case infixFun exps of
@@ -299,3 +299,7 @@ instance Relabel Exp where
 relabelPosIds :: [(Pos,TokenId)] -> [(Pos,TraceId)]
 relabelPosIds = map (\(p,i)->(p,just i))
 
+-- `relabelRealPosIds' does the correct (as opposed to simplest) renaming
+-- of a list of position/id pairs from the TokenId type to TraceId type.
+relabelRealPosIds :: AuxTree -> [(Pos,TokenId)] -> [(Pos,TraceId)]
+relabelRealPosIds env = map (\(p,i)->(p,lookEnv env mkVar i))
