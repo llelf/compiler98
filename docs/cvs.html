@@ -1,0 +1,82 @@
+<html><head><title>nhc98 in CVS</title></head>
+<body bgcolor=#ffffff>
+<table><tr><td width=500>
+
+<center>
+  <h1>CVS access to nhc98</h1>
+</center>
+<hr>
+
+<p>
+This page tells you how to get CVS access to the latest, most current,
+<em>nhc98</em> sources.
+
+<h3>Remote Read-only CVS Access</h3>
+
+<p>
+Read-only access is available to anyone - there's no need to ask us
+first. To get read-only access to our repository:
+
+<ul>
+<li> You need to have <em>ssh</em> (secure shell) installed
+<li> Set your CVS_RSH environment variable to <tt>ssh</tt>
+<li> The first time you access the repository, you'll need to do
+     the following:
+<pre>
+        $ cvs -d :ext:anoncvs@hinken.sparud.net:/cvs checkout nhc
+</pre>
+     The checked-out source tree for <em>nhc98</em> will appear in a
+     directory called <tt>nhc</tt>.  You can rename this directory to
+     whatever you like, CVS won't mind.
+<li> From then on, you should no longer need the <em>-d</em> option,
+     and commands like
+<pre>
+        $ cvs diff
+        $ cvs update
+</pre>
+     should work, provided your working directory is somewhere inside
+     the checked out tree.  In normal use, <tt>cvs update</tt>
+     is the command to merge the latest changes from the central
+     repository into your local tree.  <tt>cvs diff</tt> gives you
+     the differences between your version and the central version.
+<li> If you change your current directory into a sub-directory of the
+     CVS tree, cvs commands will normally operate only on that subtree,
+     not on the full tree.  This is very handy if you are only interested
+     in a small part of the source.
+</ul>
+
+<p>
+With read-only CVS access you can do anything except commit changes
+to the repository. You can make changes to your local tree, and still
+use CVS's update facility to keep your tree otherwise up-to-date,
+and you can generate patches using <tt>cvs diff</tt> in order to send
+to us for inclusion.
+
+<p>
+To set up default flags for some of the CVS commands, you can create
+a <tt>.cvsrc</tt> file.  For instance, the -P flag to 'checkout'
+says prune empty directories, which is normally what you want.
+Here is an example <tt>.cvsrc</tt> file:
+<pre>
+        checkout -P
+        release -d
+        update -P
+        diff -c
+</pre>
+
+
+
+<hr>
+<p>
+The latest updates to these pages are available on the WWW from
+<a href="http://www.cs.york.ac.uk/fp/nhc98/">
+<tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
+
+<p>
+This page last modified: 2000.03.21<br>
+<a href="http://www.cs.york.ac.uk/fp/">
+York Functional Programming Group</a><br>
+
+</td></tr></table>
+</body></html>
+
