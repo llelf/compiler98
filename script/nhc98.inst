@@ -448,6 +448,19 @@ case $COMPFILES in
 
     if test $HSRC -ne 0
     then
+      # Grab any extra link options now, they will apply globally.
+      EXTRALIB=$EXTRALIB" "`checkPragmas OPTIONS_LINK $POSTGRFILE`
+    fi
+
+# Now all of the following section goes into a subshell, because the options
+# read from {-# OPTIONS_COMPILE #-} only apply to that individual file.
+    (
+
+    if test $HSRC -ne 0
+    then
+      # Grab any per-file options here, just before compiling.
+      processArgs `checkPragmas OPTIONS_COMPILE $POSTGRFILE`
+
       if test $PRECPP -ne 0
       then
         if test $VFLAG -eq 1
@@ -468,19 +481,6 @@ case $COMPFILES in
         shift
         continue
       fi
-
-      # Grab any extra link options now, they will apply globally.
-      EXTRALIB=$EXTRALIB" "`checkPragmas OPTIONS_LINK $HSFILE`
-    fi
-
-# Now all of the following section goes into a subshell, because the options
-# read from {-# OPTIONS_COMPILE #-} only apply to that individual file.
-    (
-
-    if test $HSRC -ne 0
-    then
-      # Grab any per-file options here, just before compiling.
-      processArgs `checkPragmas OPTIONS_COMPILE $HSFILE`
 
       if test $VFLAG -eq 1
       then
