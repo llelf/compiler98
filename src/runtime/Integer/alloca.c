@@ -4,6 +4,6 @@
 
 void *alloca (unsigned size)
 {
-  fprintf(stderr,"Falilure alloca %d called:-(\n",size);
+  fprintf(stderr,"Failure alloca %d called:-(\n",size);
   abort();
 }
