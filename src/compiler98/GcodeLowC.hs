@@ -167,10 +167,10 @@ gcodeCDump p state (DATA_S  s)      = foldr (>|>) (emitByte p ("0"))
 #if defined(NATIVE)
 gcodeCDump p state (DATA_F  f)      = {-no need to test if floatIsDouble-}
                                       let bytes = showBytes f [] in
-                                      foldr (>|>) ""
+                                      foldr (>|>) id
                                         (map (emitByte p.show.fromEnum) bytes)
 gcodeCDump p state (DATA_D  d)      = let bytes = showBytes d [] in
-                                      foldr (>|>) ""
+                                      foldr (>|>) id
                                         (map (emitByte p.show.fromEnum) bytes)
 #elif defined(NHCFLOAT)
 gcodeCDump p state (DATA_F  f)      = {-if floatIsDouble then
