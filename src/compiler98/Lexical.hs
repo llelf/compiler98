@@ -13,13 +13,20 @@ type LexState = [Int]
 -- 0 : no active indentation (explicit layout)
 
 lexical :: Bool -> [Char] -> [Char] -> [PosToken]
-lexical u file l =
-    case packString file of
-        file' -> 
-            case lexPre u file' l of
-                lp@((f,r,c,L_module):_) ->  iLex [0] 0 lp
-                lp@((f,r,c,L_interface):_) ->  iLex [0] 0 lp
-                lp ->  iLex [0] 0 ((file',1,0,L_module):(file',1,0,L_ACONID tMain):(file',1,0,L_where):lp)
+lexical u file l = iLex [0] 0 (beginning (lexPre u file' l))
+  where
+    file' = packString file
+    beginning toks =
+       case toks of
+           lp@((f,r,c,L_module):_)    ->  lp
+           lp@((f,r,c,L_interface):_) ->  lp
+           (lp@(f,r,c,L_LANNOT):rest) ->  lp: discard_pragma rest
+           lp                         ->  ((file',1,0,L_module)
+                                          :(file',1,0,L_ACONID tMain)
+                                          :(file',1,0,L_where)
+                                          :lp)
+    discard_pragma (lp@(f,r,c,L_RANNOT):rest) = lp: beginning rest
+    discard_pragma (lp@(f,r,c,_):rest)        = lp: discard_pragma rest
 
 lexicalCont :: PosToken -> Either String [PosToken]
 lexicalCont (p,t,(i:s@(i':_)),r) =

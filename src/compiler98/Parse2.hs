@@ -212,4 +212,5 @@ parseInst' =
 
 parsePragma =
      DeclIgnore "PRAGMA" `parseChk`  lannot `chk`
-                                     many (conid `orelse` varid) `chk` rannot
+                                     many notRannot `chk` rannot
+     --                              many (conid `orelse` varid) `chk` rannot

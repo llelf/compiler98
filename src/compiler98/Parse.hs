@@ -26,7 +26,7 @@ optSemi = () `parseChk` semi
 
 
 parseProg :: Parser (Module TokenId) [PosToken] a
-parseProg = parseModule `chkCut` eof
+parseProg = many parsePragma `revChk` (parseModule `chkCut` eof)
 
 
 parseModule :: Parser (Module TokenId) [PosToken] a
