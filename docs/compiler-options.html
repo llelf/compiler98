@@ -7,7 +7,7 @@
 <hr>
 
 <p>
-<b>nhc98</b> is a script which calls (if necessary) in turn, the C
+<b>nhc98</b> is a driver script which calls (if necessary) in turn, the C
 preprocessor, the GreenCard preprocessor, the compiler proper, the C
 compiler, the assembler, and finally the linker.  You can
 control these stages using environment variables and flags.
@@ -40,6 +40,10 @@ control these stages using environment variables and flags.
 
 <p>
 <b>Environment variables.</b>
+<p>
+No environment variables are required.  However, if you wish, you can
+use some or all of the following variables to configure parts of the
+driver script at compile-time.
 
 <table width=250><tr>
 <td valign=top><em>NHC98LIBDIR</em></td>
@@ -393,7 +397,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.10.14<br>
+1999.11.23<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
