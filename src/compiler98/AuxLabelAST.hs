@@ -24,32 +24,25 @@ auxLabelSyntaxTree :: Flags -> Module TokenId -> IO (Module TraceId)
 auxLabelSyntaxTree flags
 	mod@(Module _ _ _ imports fixdecls (DeclsParse decls)) =
   do
-    let (toIdent,_) = mkIdentMap decls
-    let localenv = extendEnv vi
-                             toIdent initAT (map DeclFixity fixdecls ++ decls)
+    let (identMap,_) = mkIdentMap decls
+    let localenv = extendEnv vi (initAT,identMap)
+                             (map DeclFixity fixdecls ++ decls)
     totalenv <- getImports (\_->vi) localenv flags imports
-    let env = reorderAT stripType totalenv
-    return (relabel env mod)
-  where
-    stripType env (Con _ con, aux)    = addAT env const (Con "" con) aux
-    stripType env (Method _ met, aux) = addAT env const (Var met) aux
-    stripType env (Field _ f, aux)    = addAT env const (Var f)   aux
-    stripType env (v@(Var _), aux)    = addAT env const v aux
+--  let env = reorderAT stripType totalenv
+    return (relabel totalenv mod)
+--where
+--  stripType env (Con _ con, aux)    = addAT env const (Con "" con) aux
+--  stripType env (Method _ met, aux) = addAT env const (Var met) aux
+--  stripType env (Field _ f, aux)    = addAT env const (Var f)   aux
+--  stripType env (v@(Var _), aux)    = addAT env const v aux
 
 
--- `im' is a degenerate IdentMap.  We only need to map constructors
--- back to their type, or methods to their class, when dealing with
--- the export list in writing the .hx file.  But when relabeling the
--- syntax tree, the type is irrelevant, so we map all constructors to
--- the empty type.  Likewise, `vi' is a degenerate visibility function.
-
-im :: IdentMap
-im = \v-> let name = show v in if isCon name then Con "" name else Var name
-
+-- `vi' is a degenerate visibility function.  When writing the .hx file,
+-- visibility in the export list is important, but when relabeling the
+-- syntax tree, everything is visible.
 vi :: Visibility
 vi = \_-> True
 
-isCon (c:_) = isUpper c || c==':'
 
 -- `letVar' and `lookEnv' build a TraceId for any TokenId by
 -- looking up the arity information in the environment.  For letVar,
@@ -57,36 +50,34 @@ isCon (c:_) = isUpper c || c==':'
 -- is decided by the caller, but for `lookEnv', it is decided by the
 -- environment.
 
-letVar :: AuxTree -> TokenId -> TraceId
-letVar env id =
-  let v = mkVar id in
+letVar :: Environment -> TokenId -> TraceId
+letVar (env,identMap) id =
+  let v = useIdentMap identMap id in
   case lookupAT env v of
     Just info | letBound info -> id `plus` info
     _ -> error ("AuxLabelAST.letVar: "++show v++" not let-bound in env")
 
-lookEnv env mk id =
-  let v = mk id in
+lookEnv :: Environment -> TokenId -> TraceId
+lookEnv (env,identMap) id =
+  let v = useIdentMap identMap id in
   case lookupAT env v of
     Just info -> id `plus` info
     _ -> case id of
-		-- this is a horrible hack to by-pass qualified names.
-           Qualified _ x -> let v' = mk (Visible x) in
+           -- this is a horrible hack to by-pass qualified names.
+           Qualified _ x -> let v' = useIdentMap identMap (Visible x) in
                             case lookupAT env v' of
                               Just info -> id `plus` info
                               _ -> error ("AuxLabelAST.lookEnv: "++show v
                                           ++" not in environment")
            _ -> error ("AuxLabelAST.lookEnv: "++show v++" not in environment")
 
-mkVar, mkCon :: TokenId -> Identifier
-mkVar id = Var (show id)
-mkCon id = Con "" (show id)
 
 -- The class `Relabel' walks the abstract syntax tree, relabelling all
 -- TokenId to TraceId.  Most instances are pretty trivial - the only
 -- interesting ones are at the end of this section.
 
 class Relabel g where
-  relabel :: AuxTree -> g TokenId -> g TraceId
+  relabel :: Environment -> g TokenId -> g TraceId
 
 instance Relabel Module where
   relabel env (Module p mod Nothing imps fixs decls) =
@@ -129,8 +120,8 @@ instance Relabel InfixClass where
   relabel env (InfixPre x) = (InfixPre (mkLambdaBound x))
 
 instance Relabel FixId where
-  relabel env (FixCon p i) = FixCon p (lookEnv env mkCon i)
-  relabel env (FixVar p i) = FixVar p (lookEnv env mkVar i)
+  relabel env (FixCon p i) = FixCon p (lookEnv env i)
+  relabel env (FixVar p i) = FixVar p (lookEnv env i)
 
 instance Relabel Decls where
   relabel env (DeclsParse decls) = DeclsParse (map (relabel env) decls)
@@ -212,19 +203,20 @@ instance Relabel Context where
 
 instance Relabel Constr where
   relabel env (Constr p id mbs) =
-	Constr p (lookEnv env mkCon id) (map locust mbs)
+	Constr p (lookEnv env id) (map locust mbs)
 		where locust (Nothing,typ) = (Nothing,relabel env typ)
 		      locust (Just pis,typ) = (Just (relabelPosIds pis)
 						,relabel env typ)
   relabel env (ConstrCtx fvs ctxs p id mbs) =
 	ConstrCtx (relabelPosIds fvs) (map (relabel env) ctxs) p
-		  (lookEnv env mkCon id) (map locust mbs)
+		  (lookEnv env id) (map locust mbs)
 		where locust (Nothing,typ) = (Nothing,relabel env typ)
 		      locust (Just pis,typ) = (Just (relabelPosIds pis)
 						,relabel env typ)
 
 instance Relabel Field where
-  relabel env (FieldExp p id exp) = FieldExp p (mkLambdaBound id) (relabel env exp)
+  relabel env (FieldExp p id exp) = FieldExp p (mkLambdaBound id)
+                                               (relabel env exp)
   relabel env (FieldPun p id)     = FieldPun p (mkLambdaBound id)
 
 instance Relabel Stmt where
@@ -246,12 +238,12 @@ instance Relabel Qual where
 
 instance Relabel Fun where
   relabel env (Fun pats rhs ds@(DeclsParse decls)) =
-	let newEnv = foldr (addPat vi) (extendEnv vi im env decls) pats in
+	let newEnv = foldr (addPat vi) (extendEnv vi env decls) pats in
 	Fun (map (relabel newEnv) pats) (relabel newEnv rhs) (relabel newEnv ds)
 
 instance Relabel Alt where
   relabel env (Alt pat rhs ds@(DeclsParse decls)) =
-	let newEnv = addPat vi pat (extendEnv vi im env decls) in
+	let newEnv = addPat vi pat (extendEnv vi env decls) in
 	Alt (relabel newEnv pat) (relabel newEnv rhs) (relabel newEnv ds)
 
 instance Relabel Exp where
@@ -263,7 +255,7 @@ instance Relabel Exp where
 	let newEnv = foldr (addPat vi) env pats in
 	ExpLambda p (map (relabel newEnv) pats) (relabel newEnv exp)
   relabel env (ExpLet p ds@(DeclsParse decls) exp) =
-	let newEnv = extendEnv vi im env decls in
+	let newEnv = extendEnv vi env decls in
 	ExpLet p (relabel newEnv ds) (relabel newEnv exp)
   relabel env (ExpDo p stmts) =
 	ExpDo p (doStmts env stmts)
@@ -273,7 +265,7 @@ instance Relabel Exp where
 		let newEnv = addPat vi pat env in
 		relabel newEnv s: doStmts newEnv ss
 	  doStmts env (s@(StmtLet (DeclsParse decls)):ss) =
-		let newEnv = extendEnv vi im env decls in
+		let newEnv = extendEnv vi env decls in
 		relabel newEnv s: doStmts newEnv ss
   relabel env (ExpCase p exp alts) =
 	ExpCase p (relabel env exp) (map (relabel env) alts)
@@ -285,16 +277,15 @@ instance Relabel Exp where
 	ExpRecord (relabel env exp) (map (relabel env) fields)
   relabel env (ExpApplication p exps) =
 	ExpApplication p (map (relabel env) exps)
-  relabel env (ExpVar p id)   = ExpVar p (lookEnv env mkVar id)
-  relabel env (ExpCon p id)   = ExpCon p (lookEnv env mkCon id)
-  relabel env (ExpVarOp p id) = ExpVarOp p (lookEnv env mkVar id)
-  relabel env (ExpConOp p id) = ExpConOp p (lookEnv env mkCon id)
-  relabel env (ExpInfixList p exps) =
-	relabel env (fixInfixList env exps)
+  relabel env (ExpVar p id)   = ExpVar p (lookEnv env id)
+  relabel env (ExpCon p id)   = ExpCon p (lookEnv env id)
+  relabel env (ExpVarOp p id) = ExpVarOp p (lookEnv env id)
+  relabel env (ExpConOp p id) = ExpConOp p (lookEnv env id)
+  relabel env (ExpInfixList p exps) = relabel env (fixInfixList env exps)
   relabel env (ExpLit p lit)   = ExpLit p lit
   relabel env (ExpList p exps) = ExpList p (map (relabel env) exps)
   relabel env (PatAs p id pat) =
-	PatAs p (lookEnv env mkVar id) (relabel env pat)
+	PatAs p (lookEnv env id) (relabel env pat)
   relabel env (PatWildcard p)  = PatWildcard p
   relabel env (PatIrrefutable p pat) = PatIrrefutable p (relabel env pat)
   relabel env (PatNplusK p id1 id2 exp1 exp2 exp3) =	-- *** No, No, NO
@@ -311,5 +302,5 @@ relabelPosIds = map (\(p,i)->(p,mkLambdaBound i))
 
 -- `relabelRealPosIds' does the correct (as opposed to simplest) renaming
 -- of a list of position/id pairs from the TokenId type to TraceId type.
-relabelRealPosIds :: AuxTree -> [(Pos,TokenId)] -> [(Pos,TraceId)]
-relabelRealPosIds env = map (\(p,i)->(p,lookEnv env mkVar i))
+relabelRealPosIds :: Environment -> [(Pos,TokenId)] -> [(Pos,TraceId)]
+relabelRealPosIds env = map (\(p,i)->(p,lookEnv env i))
