@@ -30,11 +30,13 @@ main (int argc, char *argv[])
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);
   }
-  if (hatTestHeader(handle)) {
-    
-    interactive(0);
-
+  if (handle==-2) {
+    fprintf(stderr, "format of file unknwon/not supported %s\n\n",fname);
+    exit(1);
   }
+  
+  interactive(0);
+
   hatCloseFile(handle);
 }
 
@@ -108,17 +110,17 @@ int isCmd(char* s,char* s1,char* s2) {
 char fixpribuf[FIXPRIMAX+1];
 
 char *getfixpriStr() {
-  switch (getAppInfixType()) {
-  case INFIX:
-    sprintf(fixpribuf, "infix %d", getAppInfixPrio());
+  switch (getInfixType()) {
+  case HatINFIX:
+    sprintf(fixpribuf, "infix %d", getInfixPrio());
     break;
-  case INFIXR:
-    sprintf(fixpribuf, "infixr %d", getAppInfixPrio());
+  case HatINFIXR:
+    sprintf(fixpribuf, "infixr %d", getInfixPrio());
     break;
-  case INFIXL:
-    sprintf(fixpribuf, "infixl %d", getAppInfixPrio());
+  case HatINFIXL:
+    sprintf(fixpribuf, "infixl %d", getInfixPrio());
     break;
-  case NOINFIX:
+  case HatNOINFIX:
     sprintf(fixpribuf, "");
     break;
   }
@@ -159,7 +161,7 @@ filepointer printNode(unsigned long offset) {
     case IND:
       printf(" Indirection: ");
       printf("TR 0x%x, ", getParent());
-      printf("TR 0x%x ", getProjValue());
+      printf("TR 0x%x ", getProjTrace());
       break;
     case HIDDEN:
       showAble = 1;
@@ -209,7 +211,7 @@ filepointer printNode(unsigned long offset) {
     default: printf("WRONG, "); break;
     }
     printf("%s, ", getName());
-    printf("\"%s\"", getSrcName());
+    printf("\"%s\"", getModuleSrcName());
     break;
   case NT:
     printf("NT 0x%x:  ", offset);

@@ -78,20 +78,20 @@ void freeExpr(ExprNode* e) {
   int i;
   if (e!=NULL) {
     switch(e->type) {
-    case TRAPP:
+    case HatApplication:
       i=0;
       while (i++<e->v.appval->arity)
 	freeExpr(getAppNodeArg(e->v.appval,i-1));
       freeAppNode(e->v.appval);
       break;
-    case NTIDENTIFIER:
-    case NTCONSTRUCTOR:
+    case HatIdentifier:
+    case HatConstructor:
       freeIdentNode(e->v.identval);
       break;
-    case TRSATA:
+    case HatSATA:
       freeExpr(e->v.expr);
       break;
-    case NTDOUBLE:
+    case HatDouble:
       free(e->v.doubleval);
       break;
     case MESSAGE:
@@ -105,9 +105,9 @@ void freeExpr(ExprNode* e) {
 int getExprArity(ExprNode* e) {
   if (e==NULL) return 0;
   switch(e->type) {
-  case TRAPP:
+  case HatApplication:
     return getExprArity(e->v.appval->fun)+e->v.appval->arity;
-  case TRSATA:
+  case HatSATA:
     return getExprArity(e->v.expr);
   default:
     return 0;
@@ -117,12 +117,12 @@ int getExprArity(ExprNode* e) {
 int getExprInfixPrio(ExprNode* e) {
   if (e==NULL) return 0;
   switch(e->type) {
-  case TRAPP:
+  case HatApplication:
     return getExprInfixPrio(e->v.appval->fun);
-  case TRSATA:
+  case HatSATA:
     return getExprInfixPrio(e->v.expr);
-  case NTIDENTIFIER:
-  case NTCONSTRUCTOR:
+  case HatIdentifier:
+  case HatConstructor:
     return e->v.identval->infixpriority;
   default:
     return 0;
@@ -157,7 +157,7 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
     printf("node type: %i\n",b);
 #endif
     switch (b) {
-    case TRAPP: // Application
+    case HatApplication: // Application
       {
 	int i=0,arity;
 	AppNode* apn;
@@ -207,78 +207,76 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	}
 	return exp;
 	}
-    case NTIDENTIFIER:
-    case NTCONSTRUCTOR: {
+    case HatIdentifier:
+    case HatConstructor: {
       int infix,infixprio;
       exp = newExprNode(b);
       s=getName();
-      infixprio=getAppInfixPrio();
-      infix = getAppInfixType();
+      infixprio=getInfixPrio();
+      infix = getInfixType();
       if (strcmp(s,",")==0) {
 	s=newStr(",");
 	infix=0;
       } else {
-	if (infix==NOINFIX) infixprio=32768;
+	if (infix==HatNOINFIX) infixprio=32768;
 	s=newStr(s);  // read name of identifier/constructor
       }
       exp->v.identval = newIdentNode(s,infix,infixprio);
       return exp;
     }
-    case TRNAM: // Name
+    case HatName: // Name
       fileoffset=getNameType(); // read NmType -> follow this link to build 
       break;
-    case TRIND: //  Indirection
-      fileoffset=getProjValue(); // follow this link for prettyPrint
+    case HatProjection: //  Indirection
+      fileoffset=getProjTrace(); // follow this link for prettyPrint
       break;
-    case NTINT:
+    case HatInt:
       exp = newExprNode(b);
       exp->v.intval = getIntValue();
       return exp;
-    case NTCHAR:
+    case HatChar:
       exp = newExprNode(b);
       exp->v.charval = getCharValue();
       return exp;
-    case NTDOUBLE:
+    case HatDouble:
       exp = newExprNode(b);
       exp->v.doubleval = (double*) malloc(sizeof(double));
       *(exp->v.doubleval) = getDoubleValue();
       return exp;
-    case NTRATIONAL:
-    case NTINTEGER:
+    case HatRational:
+    case HatInteger:
       exp = newExprNode(b);
       exp->v.intval = getIntegerValue();
       return exp;
-    case NTFLOAT:
+    case HatFloat:
       exp = newExprNode(b);
       exp->v.floatval = getFloatValue();
       return exp;
-    case NTTUPLE:
-    case NTFUN:
-    case NTCASE:
-    case NTLAMBDA:
-    case NTDUMMY:
-    case NTCSTRING:
-    case NTIF:
-    case NTGUARD:
-    case NTCONTAINER:
+    case HatTuple:
+    case HatFun:
+    case HatCase:
+    case HatLambda:
+    case HatDummy:
+    case HatCString:
+    case HatIf:
+    case HatGuard:
+    case HatContainer:
       return newExprNode(b);
-    case TRHIDDEN:
+    case HatHidden:
       if (verbose) {
 	exp = newExprNode(MESSAGE);
 	exp->v.message = newStr("\253HIDDEN\273");
 	return exp;
       } else return NULL;
-    case TRSATAIS:
-    case TRSATA: // unevaluated expression
+    case HatSATA: // unevaluated expression
       if (verbose) {
 	p = getParent();
-	exp = newExprNode(TRSATA);
+	exp = newExprNode(b);
 	exp->v.expr = buildExprRek(handle,p,verbose,precision);
 	return exp;
       } else
 	return NULL;
-    case TRSATBIS:
-    case TRSATB:
+    case HatSATB:
       exp = newExprNode(b);
       exp->v.intval = getParent();
       return exp;
@@ -381,7 +379,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
   printf("exp->type %i\n",exp->type);
 #endif
   switch (exp->type) {
-  case TRAPP:
+  case HatApplication:
     {
       AppNode* apn=exp->v.appval;
       int infix=3,infixprio=32768;
@@ -413,8 +411,8 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
       }
       else
 	switch (apn->fun->type) {
-	case NTIDENTIFIER:
-	case NTCONSTRUCTOR:
+	case HatIdentifier:
+	case HatConstructor:
 	  s1 = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
@@ -494,53 +492,53 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 	return s1;
       }
     }
-  case NTIDENTIFIER:
-  case NTCONSTRUCTOR:
+  case HatIdentifier:
+  case HatConstructor:
     return newStr(exp->v.identval->name);
-  case NTINTEGER:
-  case NTRATIONAL:
-  case NTINT:
+  case HatInteger:
+  case HatRational:
+  case HatInt:
     sprintf(minibuf,"%i",exp->v.intval);
     return newStr(minibuf);
-  case NTCHAR: {
+  case HatChar: {
     char* s1 = prettyChar(exp->v.charval);
     replaceStr(&s1,"'",s1,"'");
     return s1;
   }
-  case NTFLOAT:
+  case HatFloat:
     sprintf(minibuf,"%f",exp->v.floatval);
     return newStr(minibuf);
-  case NTDOUBLE:
+  case HatDouble:
     sprintf(minibuf,"%f",*(exp->v.doubleval));
     //sprintf(minibuf,"DoUbLe");
     return newStr(minibuf);
-  case NTTUPLE:
+  case HatTuple:
     return newStr("TUPLE");
-  case NTFUN:
+  case HatFun:
     return newStr("");
-  case NTCASE:
+  case HatCase:
     return newStr("CASE");
-  case NTLAMBDA:
+  case HatLambda:
     return newStr("LAMBDA");
-  case NTDUMMY:
+  case HatDummy:
     return newStr("DUMMY");
-  case NTCSTRING:
+  case HatCString:
     return newStr("CSTRING");
-  case NTIF:
+  case HatIf:
     return newStr("IF");
-  case NTGUARD:
+  case HatGuard:
     return newStr("GUARD");
-  case NTCONTAINER:
+  case HatContainer:
     return newStr("CONTAINER");
   case MESSAGE:
     if ((verbose)||(strcmp(exp->v.message,"\253HIDDEN\273")!=0)) {
       return newStr(exp->v.message);
     } else
       return newStr("_");
-  case TRSATA:
+  case HatSATA:
     if (verbose) return printRekExpr(exp->v.expr,verbose,topInfixprio);
     else return newStr("_");
-  case TRSATB:
+  case HatSATB:
     return newStr("_|_");
   default:
     fprintf(stderr, "strange type in expression syntax tree %i\n",
@@ -575,7 +573,7 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
   if (e2==NULL) return 1;
   if (e1->type != e2->type) return 2;
   switch(e1->type) {
-  case TRAPP:
+  case HatApplication:
     {
       int i=0;
       if (compareExpr(e1->v.appval->fun,e2->v.appval->fun)!=0) return 2;
@@ -587,27 +585,27 @@ int compareExpr(ExprNode* e1, ExprNode* e2) {
       }
       return cmp;
     }
-  case NTIDENTIFIER:
-  case NTCONSTRUCTOR:
+  case HatIdentifier:
+  case HatConstructor:
     if (strcmp(e1->v.identval->name,e2->v.identval->name)==0) return 0;
     else return 2;
-  case NTINTEGER:
-  case NTRATIONAL:
-  case NTINT:
+  case HatInteger:
+  case HatRational:
+  case HatInt:
     if (e1->v.intval==e2->v.intval) return 0;
     else return 2;
-  case NTCHAR: {
+  case HatChar: {
     if (e1->v.charval==e2->v.charval) return 0;
     else return 2;
   }
-  case NTFLOAT:
+  case HatFloat:
     if (e1->v.floatval==e2->v.floatval) return 0;
     else return 2;
-  case NTDOUBLE:
+  case HatDouble:
     if (*(e1->v.doubleval)==*(e2->v.doubleval)) return 0;
     else return 2;
-  case TRSATA: // both are unevaluated!
-  case TRSATB: // both are bottom!
+  case HatSATA: // both are unevaluated!
+  case HatSATB: // both are bottom!
     return 0;
   default:
     return 2;
@@ -731,7 +729,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
   printf("exp->type %i\n",exp->type);
 #endif
   switch (exp->type) {
-  case TRAPP:
+  case HatApplication:
     {
       AppNode* apn=exp->v.appval;
       int infix=3,infixprio=32768;

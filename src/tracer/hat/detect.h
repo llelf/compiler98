@@ -16,14 +16,16 @@
  filepointer  nextEDTQueryNode(EDTQuery query); // 0=none, otherwise: next node returned
 */
 
+filepointer getEDTroot(HatFile handle);
+
 BOOL isChildOf(HatFile handle,filepointer nodenumber,filepointer parent);
 
 
 
 void getChildrenFor(HatFile handle,NodeList* nl,
-		    filepointer parentTrace,filepointer current,
+		    filepointer parent,filepointer current,
 		    HashTable* hash);
 
-int  getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray);
+int  getEDTchildren(HatFile handle,filepointer parent,int **childrenArray);
 
 void freeArray(int *array);

@@ -12,6 +12,7 @@
 #include "FunTable.h"
 #include "nodelist.h"
 #include "hashtable.h"
+#include "detect.h"
 
 #define HASH_TABLE_SIZE 3000
 /*
@@ -60,6 +61,11 @@ filepointer nextEDTQueryNode(EDTQuery query) {
 // checks, whether nodenumber is a child of parent. It is a child of parent,
 // if the nodenumber's parentTrace equals parent or if its parent is a non-toplevel
 // node which in turn is a child of parent (or so on recursively)
+
+filepointer getEDTroot(HatFile handle) {
+  return hatMainCAF(handle);
+}
+
 int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);
@@ -68,20 +74,17 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   while (nodenumber!=0) {
     nodeType=getNodeType(handle,nodenumber);
     switch(nodeType) {
-    case TRHIDDEN:
-    case TRSATA:
-    case TRSATB:
-    case TRSATC:
-    case TRSATCIS:
-    case TRSATBIS:
-    case TRSATAIS:
+    case HatHidden:
+    case HatSATA:
+    case HatSATB:
+    case HatSATC:
       nodenumber=getParent();
       if (nodenumber==parent) {
 	return 1;
       }
       break;
-    case TRNAM:
-    case TRAPP:{
+    case HatName:
+    case HatApplication:{
       nodenumber = getParent();
       if (nodenumber==parent) {
 	hatSeekNode(handle,old);
@@ -121,7 +124,7 @@ void getChildrenFor(HatFile handle,
 	   parentTrace,result);
 #endif
     switch (nodeType) {
-    case TRAPP:
+    case HatApplication:
       {
 	unsigned long srcref,p,funTrace,appTrace;
 	int arity,isChild;
@@ -170,7 +173,7 @@ void getChildrenFor(HatFile handle,
 	      printf("Toplevel: %i\n",toplevel);
 #endif
 	      if ((satc!=current)&&(!isInList(nl,current))) {
-		appendToList(nl,current);
+		insertInList(nl,current);
 	      }
 	    } else {
 	      if (satc!=current)
@@ -181,7 +184,7 @@ void getChildrenFor(HatFile handle,
       }
       removeFromHashTable(hash,orig_current);
       return;
-    case TRNAM: {
+    case HatName: {
       unsigned long p = getParent();
       unsigned long srcref = getSrcRef();
       unsigned long newcurrent;
@@ -192,7 +195,7 @@ void getChildrenFor(HatFile handle,
 	  if (lmo!=0) {
 	    if (isTopLevel(handle,current)&&(isTrusted(handle,srcref)==0)&&
 		(!isInList(nl,current))) 
-	      appendToList(nl,current);
+	      insertInList(nl,current);
 	  }
 	}
 	removeFromHashTable(hash,orig_current);
@@ -210,16 +213,14 @@ void getChildrenFor(HatFile handle,
     getChildrenFor(handle,nl,parentTrace,current,hash);
     removeFromHashTable(hash,orig_current);
     return;
-    case TRIND:
+    case HatProjection:
       current = getParent();
       getChildrenFor(handle,nl,parentTrace,current,hash);
       removeFromHashTable(hash,orig_current);
       return;
-    case TRHIDDEN:
-    case TRSATA: // not evaluated expression
-    case TRSATAIS:
-    case TRSATB:
-    case TRSATBIS:
+    case HatHidden:
+    case HatSATA: // not evaluated expression
+    case HatSATB:
       current = getParent();
       getChildrenFor(handle,nl,parentTrace,current,hash);
       removeFromHashTable(hash,orig_current);
@@ -249,7 +250,7 @@ int getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray) {
 
   getChildrenFor(handle,results,parentTrace,current,hash);
   l = listLength(results);
-  //printf("New!\n");
+  // printf("New!\n");
   {
     int i=0;
     NodeElement *e = results->first;
@@ -260,7 +261,7 @@ int getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray) {
       e=e->next;
     }
     (*childrenArray)[i]=(-1);
-    //printf("detected %i\n",i);
+    // printf("detected %i\n",i);
   }
   freeList(results);
   freeHashTable(hash);

@@ -72,6 +72,7 @@ main (int argc, char *argv[])
   int c = 1,err=0,paramerr=0,handle;
   unsigned int precision = 30;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
+  ObserveQuery query;
   while (c<argc) {
     err = checkParameters(argv[c],"vxur"); // check for supported parameters
     if (err==1) { // not a parameter!
@@ -114,42 +115,44 @@ main (int argc, char *argv[])
     fprintf(stderr,"           applications, missing arguments. \n\n");
     exit(1);
   }
-  if ((handle=hatOpenFile(fname))<0) {
+  if ((handle=hatOpenFile(fname))==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",fname);
     exit(1);
   }
-  if (hatTestHeader(handle)) {
-    ObserveQuery query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
-    if (observeIdentifier(query)==0) {
-      printf("No toplevel identifier named \"%s\" found!\n",ident);
-      exit(1);
-    }
-    if ((topIdent!=NULL)&&(observeTopIdentifier(query)==0)) {
-      printf("No toplevel identifier named \"%s\" found!\n",topIdent);
-      exit(1);
-    }
-    if (uniquemode) {
-      unsigned long c;
-      FunTable results = observeUnique(query,verbosemode,precision);
-      c = FunTableLength(results);
-      if (c==0)	{
-	printf("No matching applications of \"%s\" found!\n",ident);
-      } else {
-	unsigned long total = observedNodes(query);
-	printf("%i unique application(s) found (%i in total).\n",c,total);
-	if (c>20) {
-	  char answer[10];
-	  printf("Show all %i applications? ",c);
-	  if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
-	}
-	showFunTable(results);
-      }
-      freeFunTable(results);
-    } else {
-      showObserveAll(query,verbosemode,precision);
-    }
-    freeObserveQuery(query);
+  if (handle==-2) {
+    fprintf(stderr, "format of file unknwon/not supported %s\n\n",fname);
+    exit(1);
   }
+  query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
+  if (observeIdentifier(query)==0) {
+    printf("No toplevel identifier named \"%s\" found!\n",ident);
+    exit(1);
+  }
+  if ((topIdent!=NULL)&&(observeTopIdentifier(query)==0)) {
+    printf("No toplevel identifier named \"%s\" found!\n",topIdent);
+    exit(1);
+  }
+  if (uniquemode) {
+    unsigned long c;
+    FunTable results = observeUnique(query,verbosemode,precision);
+    c = FunTableLength(results);
+    if (c==0)	{
+      fprintf(stderr,"No matching applications of \"%s\" found!\n",ident);
+    } else {
+      unsigned long total = observedNodes(query);
+      fprintf(stderr,"%i unique application(s) found (%i in total).\n",c,total);
+      if (c>20) {
+	char answer[10];
+	fprintf(stderr,"Show all %i applications? ",c);
+	if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
+      }
+      showFunTable(results);
+    }
+    freeFunTable(results);
+  } else {
+    showObserveAll(query,verbosemode,precision);
+  }
+  freeObserveQuery(query);
   hatCloseFile(handle);
 }
 

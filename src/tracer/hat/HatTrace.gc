@@ -1,0 +1,456 @@
+module HatTrace (
+ HatTrace,HatNode,  -- do not reveal structure of HatTrace and HatNode
+
+ HatNodeType(HatApplNode,HatConstantNode,HatSAT_ANode,HatSAT_BNode,HatSAT_CNode,
+	     HatHiddenNode,
+	     HatProjNode,HatConstrNode,HatIdentNode,HatCaseNode,
+	     HatLambdaNode,
+	     HatIntNode,HatCharNode,HatIntegerNode,HatRationalNode,HatFloatNode,
+	     HatDoubleNode,HatCStringNode,
+	     HatIfNode,HatGuardNode,HatContainerNode,HatUnknownNode),
+
+ HatApplType(HatApplied,HatBlackholed,HatComplete,HatValue),
+
+ HatValue(HatIntValue,HatIntegerValue,HatStringValue,HatCharValue,HatDoubleValue,
+	  HatRationalValue,HatFloatValue,HatNoValue),
+
+ HatInfixType(HatInfix,HatInfixR,HatInfixL,HatNoInfix),
+
+ openTrace,
+ hatMain,hatParent,hatResult,hatName,hatValue,
+ hatApplFun,hatApplArity,hatApplArgs,hatApplType,hatApplInfix,hatProjRef,
+ hatNodeType,
+ edtChildren,observe,
+ showForeignObjAddr,showHatNode,
+ old_hatExpressionStr,old_showReductionList,old_showReduction,old_showExpression
+)
+where
+
+import FFI
+import GreenCard
+import Maybe
+
+type HatTrace = ForeignObj
+type RefNumber = Int
+type HatNode = (HatTrace,RefNumber)
+
+data HatNodeType = HatApplNode | HatConstantNode | HatSAT_ANode | HatSAT_BNode | 
+		   HatSAT_CNode | HatHiddenNode | 
+		   HatProjNode | HatConstrNode | HatIdentNode |
+		   HatCaseNode | HatLambdaNode | HatIntNode | HatCharNode |
+		   HatIntegerNode | HatRationalNode |
+                   HatFloatNode | HatDoubleNode | HatCStringNode | HatIfNode |
+		   HatGuardNode | HatContainerNode |
+		   HatUnknownNode deriving (Show,Eq)
+
+data HatApplType = HatApplied | HatBlackholed | HatComplete | HatValue deriving (Show,Eq)
+
+data HatValue = HatIntValue Int | HatIntegerValue Integer | HatStringValue String |
+                HatCharValue Char | HatDoubleValue Double | HatRationalValue Rational |
+                HatFloatValue Float | HatNoValue deriving (Show,Eq)
+
+data HatInfixType = HatInfix Int | HatInfixR Int| HatInfixL Int | HatNoInfix 
+                    deriving (Show,Eq)
+
+%C #include "Expressions.h"
+%C #include "hatinterface.h"
+%C #include "nodelist.h"
+%C #include "hashtable.h"
+%C #include "FunTable.h"
+%C #include "observe.h"
+%C #include "detect.h"
+
+%C #include "hatgeneral.h"
+
+%dis addr x = declare "void*" x in (%%Addr x)
+
+
+%fun showForeignObjAddr :: ForeignObj -> Int
+%call (foreign f r)
+%code 
+%result (int "(int) r")
+
+showHatNode (h,r) = "("++(show (showForeignObjAddr h))++","++(show r)++")"
+
+%fun lookupAddr :: Addr -> Int
+%call (addr a)
+%code
+%result (int "*(int*)a")
+
+%fun lookupArray :: ForeignObj -> Int -> Int
+%call (foreign f r) (int i)
+%code //printf("lookupArray %i in %u\n",i,r);
+%     if (r==NULL) {
+%       fprintf(stderr,"Internal ERROR: ForeignObj no longer available!\n\n");
+%       exit(1);
+%     }
+%     //printf("lookupArray, element %i, value %i\n",i,((int*) r)[i]);
+%result (int "((int*) r)[i]")
+
+tomightbe :: HatNode -> Maybe HatNode
+tomightbe expr@(_,nodenumber) =
+    if (nodenumber == 0) then Nothing else Just expr
+
+frommightbe :: Maybe HatNode -> HatNode
+-- frommightbe Nothing = (0,0)
+frommightbe (Just v) = v
+
+%dis maybeHatNode x y = <frommightbe / tomightbe > (int x, int y)
+
+
+%fun openTrace :: String -> IO HatTrace
+%call (string name)
+%code hatfileHandle=(void*) hatOpenFile(name);
+%result (foreign "hatCloseFile" hatfileHandle)
+
+
+%fun _hatMain :: HatTrace -> RefNumber
+%call (foreign f hattrace)
+%code
+%     nodenumber = hatMainCAF((int) hattrace);
+%result (int nodenumber)
+-- %result (maybeHatNode "hattrace" nodenumber)
+
+hatMain :: HatTrace -> Maybe HatNode
+hatMain hattrace = tomightbe (hattrace,_hatMain hattrace)
+
+%fun _hatParent :: HatNode -> RefNumber
+%call (foreign f hattrace, int nodenumber)
+%code
+%     hatFollowSATs((int) hattrace,nodenumber);
+%     newnode = getParent();
+%result (int newnode)
+-- %result (maybeHatNode "hattrace" newnode)
+
+hatParent :: HatNode -> Maybe HatNode
+hatParent expr@(hattrace,nodenumber) = tomightbe (hattrace,_hatParent expr)
+
+%fun _hatResult :: HatNode -> RefNumber
+%call (foreign f hattrace,int nodenumber)
+%code filepointer fp,fp2;
+%     fp = hatFollowSATs((int) hattrace,nodenumber);
+%     newnode = getNodeType((int) hattrace,fp);
+%     if ((newnode!=TRAPP)&&(newnode!=TRNAM)) newnode=0; else {
+%       if ((fp2=hatLMO((int) hattrace,fp))==0) newnode==0;else {
+%         if (getNodeType((int) hattrace,fp2)==NTCONSTRUCTOR) newnode=0;else {
+%          newnode=getResult((int) hattrace,fp);
+%         }
+%       }
+%     }
+%result (int newnode)
+
+hatResult :: HatNode -> Maybe HatNode
+hatResult expr@(hattrace,nodenumber) = tomightbe (hattrace,_hatResult expr)
+
+%fun _hatName :: HatNode -> String
+%call (foreign f hattrace,int nodenumber)
+%code
+%     switch(getNodeType((int) hattrace,nodenumber)) {
+%      case NTCONSTRUCTOR:case NTIDENTIFIER:
+%        s = getName();
+%        break;
+%      default:s=newStr("");
+%     }
+%result (string s)
+
+hatName :: HatNode -> Maybe String
+hatName hatexpr = 
+ let s = (_hatName hatexpr) in 
+  if (s=="") then Nothing else (Just s)
+
+
+%fun _hatInt :: HatNode -> Int
+%call (foreign f hattrace,int nodenumber)
+%code 
+%     if (getNodeType((int) hattrace,nodenumber)!=HatInt) {
+%        printf("Not an int node!\n");exit(1);
+%     }
+%     i = getIntValue();
+%result (int i)
+
+%fun _hatInteger :: HatNode -> Int
+%call (foreign f hattrace,int nodenumber)
+%code 
+%     if (getNodeType((int) hattrace,nodenumber)!=HatInteger) {
+%        printf("Not an integer node!\n");exit(1);
+%     }
+%     i = getIntegerValue();
+%result (int i)
+
+
+%fun _hatChar :: HatNode -> Char
+%call (foreign f hattrace,int nodenumber)
+%code 
+%     if (getNodeType((int) hattrace,nodenumber)!=HatChar) {
+%        printf("Not a char node!\n");exit(1);
+%     }
+%     c = getCharValue();
+%result (char c)
+
+
+%fun _hatDouble :: HatNode -> Double
+%call (foreign f hattrace,int nodenumber)
+%code 
+%     if (getNodeType((int) hattrace,nodenumber)!=HatDouble) {
+%        printf("Not a double node!\n");exit(1);
+%     }
+%     d = getDoubleValue();
+%result (double d)
+
+
+%fun _hatRational :: HatNode -> Double
+%call (foreign f hattrace,int nodenumber)
+%code 
+%     if (getNodeType((int) hattrace,nodenumber)!=HatRational) {
+%        printf("Not a rational node!\n");exit(1);
+%     }
+%     // r = getRationalValue();
+%     r = 0;
+%result (double r)
+
+%fun _hatFloat :: HatNode -> Float
+%call (foreign f hattrace,int nodenumber)
+%code
+%     if (getNodeType((int) hattrace,nodenumber)!=HatFloat) {
+%        printf("Not a float node!\n");exit(1);
+%     }
+%     fl = getFloatValue();
+%result (float fl)
+
+%fun _hatCString :: HatNode -> String
+%call (foreign f hattrace,int nodenumber)
+%code
+%     if (getNodeType((int) hattrace,nodenumber)!=HatCString) {
+%        printf("Not a cstring node!\n");exit(1);
+%     }
+%     s = getStringValue();
+%result (string s)
+
+
+hatValue :: HatNode -> HatValue
+hatValue hatexpr = hatValue' (hatNodeType hatexpr)
+ where
+  hatValue' HatIntNode = HatIntValue (_hatInt hatexpr)
+  hatValue' HatCharNode = HatCharValue (_hatChar hatexpr)
+  hatValue' HatIntegerNode = HatIntegerValue (toInteger (_hatInteger hatexpr))
+  hatValue' HatRationalNode = HatRationalValue (toRational (_hatRational hatexpr))
+  hatValue' HatFloatNode = HatFloatValue (_hatFloat hatexpr)
+  hatValue' HatDoubleNode = HatDoubleValue(_hatDouble hatexpr)
+  hatValue' HatCStringNode = HatStringValue (_hatCString hatexpr)
+  hatValue' _ = HatNoValue
+
+
+%fun _hatApplFun :: HatNode -> RefNumber
+%call (foreign f hattrace,int nodenumber)
+%code filepointer fp;
+%     fp = hatFollowSATs((int) hattrace,nodenumber);
+%     newnode = getNodeType((int) hattrace,fp);
+%     if (newnode==TRAPP) newnode=getAppFun();
+%     else
+%      if (newnode==TRNAM) newnode=getNameType();
+%      else  newnode=0;
+%result (int newnode)
+
+hatApplFun :: HatNode -> Maybe HatNode
+hatApplFun expr@(hattrace,nodenumber) = tomightbe (hattrace,_hatApplFun expr)
+
+
+%fun _hatProjRef :: HatNode -> RefNumber
+%call (foreign f hattrace,int nodenumber)
+%code
+%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     if (newnode==TRIND) newnode=getNameType();
+%     else  newnode=0;
+%result (int newnode)
+
+hatProjRef :: HatNode -> Maybe HatNode
+hatProjRef expr@(hattrace,nodenumber) = tomightbe (hattrace,_hatProjRef expr)
+
+%fun hatApplArity :: HatNode -> Int
+%call  (foreign f hattrace,int nodenumber)
+%code 
+%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     if (newnode==TRAPP) newnode=getAppArity();
+%     else
+%        newnode = 0;
+%result (int newnode)
+
+
+%fun gethatArgInternal :: HatNode -> Int -> Int
+%call  (foreign f hattrace,int nodenumber) (int argnum)
+%code
+%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     if (newnode!=TRAPP) newnode=0; else {
+%       newnode = getAppArgument(argnum);  
+%     }
+%result (int newnode)
+-- %result (int "hattrace", int newnode)
+
+
+hatApplArgs :: HatNode -> [HatNode]
+hatApplArgs expr@(hattrace,h) = gethatArgs 0 (hatApplArity expr)
+ where gethatArgs _ 0 = []
+       gethatArgs i j = (hattrace,(gethatArgInternal expr i)):(gethatArgs (i+1) (j-1))
+
+
+%fun old_hatExpressionStr :: HatNode -> Int -> Int -> String
+%call (foreign g hattrace,int nodenumber) (int verbose) (int precision)
+%code ExprNode* exp;
+%     exp = buildExpr((int) hattrace,nodenumber,verbose,precision);
+%     prettystring = prettyPrintExpr(exp,1);
+%     freeExpr(exp);
+%result (string prettystring)
+
+
+toHatNodeType :: Int -> HatNodeType
+toHatNodeType  0 = HatApplNode
+toHatNodeType  1 = HatConstantNode
+toHatNodeType  2 = HatProjNode
+toHatNodeType  3 = HatHiddenNode
+toHatNodeType  4 = HatSAT_ANode
+toHatNodeType  5 = HatSAT_BNode
+toHatNodeType  6 = HatSAT_CNode
+toHatNodeType 12 = HatSAT_ANode
+toHatNodeType 13 = HatSAT_BNode
+toHatNodeType 14 = HatSAT_CNode
+toHatNodeType 64 = HatIntNode
+toHatNodeType 65 = HatCharNode
+toHatNodeType 66 = HatIntegerNode
+toHatNodeType 67 = HatRationalNode
+toHatNodeType 68 = HatFloatNode
+toHatNodeType 69 = HatDoubleNode
+toHatNodeType 70 = HatIdentNode
+toHatNodeType 71 = HatConstrNode
+toHatNodeType 77 = HatCStringNode
+toHatNodeType 78 = HatIfNode
+toHatNodeType 79 = HatGuardNode
+toHatNodeType 80 = HatContainerNode
+toHatNodeType _  = HatUnknownNode
+
+fromHatNodeType _ = 0
+
+
+%fun hatNodeType :: HatNode -> HatNodeType
+%call (foreign f hattrace,int nodenumber)
+%code //printf("in hatNodeType: %u %u\n",(int) hattrace,nodenumber);
+%     nodetype = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     //printf("out hatNodeType: %u\n",nodetype);
+%result (<fromHatNodeType/toHatNodeType> (int nodetype))
+
+
+toHatApplType 4 = Just HatApplied
+toHatApplType 5 = Just HatBlackholed
+toHatApplType 6 = Just HatComplete
+toHatApplType 71 = Just HatValue
+toHatApplType _ = Nothing
+
+fromHatApplType _ = 0
+
+
+%fun hatApplType :: HatNode -> Maybe HatApplType
+%call (foreign f hattrace,int nodenumber)
+%code filepointer appl,lmo;
+%     nodetype = getNodeType((int) hattrace,
+%			     appl=hatFollowSATs((int) hattrace,nodenumber));      
+%     if ((nodetype!=TRAPP)&&(nodetype!=TRNAM)) nodetype=0; else {
+%       if ((lmo=hatLMO((int) hattrace,appl))==0) nodetype==0;else {
+%         if (getNodeType((int) hattrace,lmo)==NTCONSTRUCTOR) nodetype=NTCONSTRUCTOR; else {
+%          nodetype = getNodeType((int) hattrace,getResult((int) hattrace,appl));
+%         }
+%       }
+%     }
+%result (<fromHatApplType/toHatApplType> (int nodetype))
+
+%fun _hatInfixValue :: HatNode -> Int
+%call (foreign f hattrace,int nodenumber)
+%code
+%     hatFollowSATs((int) hattrace,nodenumber);
+%     infixprio = getInfixType()+(getInfixPrio()*4);
+%result (int infixprio)
+
+hatApplInfix :: HatNode -> HatInfixType
+hatApplInfix expr = 
+  let infixP = (_hatInfixValue expr) in 
+   toInfixType' (infixP `mod` 4) (infixP `div` 4)
+  where
+   toInfixType' 0 infixP = HatInfix infixP
+   toInfixType' 1 infixP = HatInfixR infixP
+   toInfixType' 2 infixP = HatInfixL infixP
+   toInfixType' _ _      = HatNoInfix
+
+foreignObjToList :: HatTrace -> ForeignObj -> [HatNode]
+foreignObjToList hattrace dat =
+    foreignObjToList' 0
+    where foreignObjToList' i =
+            let v = (lookupArray dat i) in
+    	     if (v == -1) then [] else
+		    (hattrace,v):(foreignObjToList' (i+1))
+
+%fun getEDTForeignObj :: HatNode -> ForeignObj
+%call (foreign f hattrace,int nodenumber)
+%code
+%     getEDTchildren((int) hattrace,nodenumber,(int**) &resultArray);
+%result (foreign "freeArray" resultArray)
+
+edtChildren :: HatNode -> [HatNode]
+edtChildren (hattrace,node) = foreignObjToList hattrace (getEDTForeignObj (hattrace,node))
+
+%fun getObserveInt :: HatTrace -> String -> String -> Int -> ForeignObj
+%call (foreign f hattrace) (string ident) (string topIdent) (int recursive)
+%code
+%     //printf("Now observing in file %u...\n",(int) hattrace);
+%     //getObserve(hattrace,ident,topIdent,verbose,0,recursive,prec,(int**) &resultArray);
+%     query = (void*) newObserveQueryIdent((int) hattrace,ident,topIdent,recursive,1);
+%     //printf("end of observe\n");
+%result (foreign "freeArray" query)
+
+%fun getObservedElement :: ForeignObj -> Int -> Int
+%call (foreign f query) (int i)
+%code //printf("in getObservedElement\n");
+%     current = nextObserveQueryNode((ObserveQuery) query);
+%result (int current)
+
+
+foreignObserveToList :: HatTrace -> ForeignObj -> [HatNode]
+foreignObserveToList hattrace f =
+  foreignObserveToList' 0
+  where
+   foreignObserveToList' i =
+     let x = (getObservedElement f i) in
+       if (x==0) then [] else (hattrace,x):(foreignObserveToList' (i+1))
+
+
+observe :: HatTrace -> String -> String -> Int -> [HatNode]
+observe hattrace ident topIdent recursive =
+  let x = (getObserveInt hattrace ident topIdent recursive) in
+   (foreignObserveToList hattrace x)
+		       
+
+old_showExpression :: Maybe HatNode -> IO ()
+old_showExpression hatNode =
+    if (isNothing(hatNode)) then putStr "Nothing" else
+      putStr (old_hatExpressionStr (fromJust hatNode) 0 100)
+
+old_showReduction :: Maybe HatNode -> IO ()
+old_showReduction maybeHatNode =
+  old_showExpression maybeHatNode >>
+  if (isJust maybeHatNode) then
+    let res = (hatResult (fromJust maybeHatNode)) in
+    if (isJust res) then
+       putStr " = " >>
+       (old_showExpression res) >>
+       putStrLn ""
+     else putStrLn ""
+  else
+   return ()
+
+old_showReductionList :: [HatNode] -> IO ()
+old_showReductionList [] = return ()
+old_showReductionList (e:list) = 
+    old_showReduction (Just e) >>
+    old_showReductionList list
+
+
+
+
+

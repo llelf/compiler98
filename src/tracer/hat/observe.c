@@ -53,6 +53,7 @@ ObserveQuery newObserveQuery(int handle,
   newQ->fsz = hatFileSize(handle)/1000;
   if (newQ->fsz==0) newQ->fsz = 1;
   //if (newQ->fsz<20000) newQ->lsz=200;
+  //printf("new query: %u\n",identifierNode);
   return ((ObserveQuery) newQ);
 }
 
@@ -101,7 +102,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 
     nodeType = getNodeType(handle,currentOffset);
     switch (nodeType) {
-    case TRAPP:
+    case HatApplication:
       {
 	filepointer apptrace;
 	apptrace = getParent();  // fileoffset of App-trace
@@ -128,7 +129,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
       }
       currentOffset = hatSeqNext(handle,currentOffset);
       break;
-    case TRNAM: // Name
+    case HatName: // Name
       if ((getNameType()==identifierNode)&&(identifierNode!=0)) {
 	filepointer satc;
 	//printf("found name reference for identifier at: %u\n",p);
@@ -176,6 +177,7 @@ void findNodes(HatFile handle,
   }
   if (fsz==0) fsz=1;
   currentOffset = hatSeqFirst(handle);
+  if ((topIdentifier!=NULL)&&(strcmp(topIdentifier,"")==0)) topIdentifier=NULL;
   while ((!hatSeqEOF(handle,currentOffset))&&
 	 ((identifierNode==0)||
 	  ((topIdentifierNode==0)&&(topIdentifier!=NULL)))) {
@@ -185,7 +187,7 @@ void findNodes(HatFile handle,
       fflush(stderr);
     }
     nodeType = getNodeType(handle,currentOffset);
-    if (nodeType==NTIDENTIFIER) {
+    if (nodeType==HatIdentifier) {
       if ((identifierNode==0)||((topIdentifier!=NULL)&&(topIdentifierNode==0))) {
 	if (isTopLevel(handle,currentOffset)) {
 	  // search for identifier
@@ -211,10 +213,15 @@ void findNodes(HatFile handle,
 ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,
 				  BOOL recursiveMode,BOOL showProgress) {
   unsigned long identifierNode=0,topIdentifierNode=0;
+  ObserveQuery query;
   
+  if ((topIdent!=NULL)&&(strcmp(topIdent,"")==0)) topIdent=NULL;
   findNodes(handle,ident,topIdent,&identifierNode,&topIdentifierNode,showProgress);
-  return newObserveQuery(handle,identifierNode,topIdentifierNode,
-			 recursiveMode,showProgress);
+  if ((topIdentifierNode==0)&&(topIdent!=NULL))
+    ((_ObserveQuery*) query)->currentOffset=hatFileSize(handle);
+  query = newObserveQuery(handle,identifierNode,topIdentifierNode,
+			  recursiveMode,showProgress);
+  return query;  
 }
 
 // get table of all unique observations

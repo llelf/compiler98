@@ -39,22 +39,40 @@ main (int argc, char *argv[])
     exit(1);
   }
   traceFileName = hatFilename(argv[1]);
-  if ((filehandle=hatOpenFile(traceFileName))<0) {
+  if ((filehandle=hatOpenFile(traceFileName))==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
   }
-  if (hatTestHeader(filehandle)) {
-    userTrustedList = newList();
-    CAFList = newList();
-    memorizedFunsYes = newFunTable();
-    memorizedFunsNo = newFunTable();
-    checkmainCAF(filehandle);
+  if (filehandle==-2) {
+    fprintf(stderr, "format of file unknwon/not supported %s\n\n",traceFileName);
+    exit(1);
   }
+  userTrustedList = newList();
+  CAFList = newList();
+  memorizedFunsYes = newFunTable();
+  memorizedFunsNo = newFunTable();
+  checkmainCAF(filehandle);
   hatCloseFile(filehandle);
 }
 
+int getline(char s[], int max) {
+  int c,i;
+  fflush(stdout);
+  c=getchar();
+  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
+    if (c==-1) {
+      i--;
+    } else {
+      s[i]=c;
+    }
+    c=getchar();
+  }
+  s[i]=0;
+  return i;
+}
+
 void quit() {
-  printf("\n\nOk, Goodbye!\n");
+  printf("\n\nOk, goodbye!\n");
   exit(0);
 }
 
