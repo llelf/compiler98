@@ -23,7 +23,7 @@
 
 #define HASH_TABLE_SIZE 3000
 
-void checkmainCAF(HatFile handle);
+void startSession(HatFile handle,filepointer nodeAddress);
 int askNodeList(HatFile handle,int question,NodeList* results,
 		int isTopSession,HashTable* hash);
 
@@ -37,7 +37,19 @@ int filehandle;
 
 int main (int argc, char *argv[])
 {
+  int err=0;
+  filepointer startAddr = 0;
+
   if (argc!=2) {
+    if (argc!=4) err=1; else {
+      if (strcmp(argv[2],"-remote")!=0) err=1;else {
+	startAddr = atoi(argv[3]);
+      }
+    }
+  }
+
+  printf("\nWelcome to hat-detect! (5/7/01)\n");
+  if (err!=0) {
     fprintf(stderr,"\nusage: hat-detect file-name\n");
     fprintf(stderr,"       algorithmic debugging on a hat redex trace file\n\n");
     exit(1);
@@ -55,7 +67,8 @@ int main (int argc, char *argv[])
   CAFList = newList();
   memorizedFunsYes = newFunTable();
   memorizedFunsNo = newFunTable();
-  checkmainCAF(filehandle);
+  if (startAddr==0) startAddr = hatMainCAF(filehandle);
+  startSession(filehandle,startAddr);
   hatCloseFile(filehandle);
   return 0;
 }
@@ -378,7 +391,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  printf("     'Clear'    or 'c' to clear all memorized answers.\n");
 	  printf("     'Verbose'  or 'v' to toggle verbose mode.\n");
 	  printf("     'Go <n>'   or '<n>' to go back to question <n>.\n");
-	  printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
+	  //printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
 	  printf("\n     '+[n]'     or '-[n]' to increase or decrease the output precision [by n].\n");
 	  printf("\n     'Quit'     or 'q' to leave the tool.\n");
 	  break;
@@ -480,10 +493,10 @@ int askNodeList(HatFile handle,int question,NodeList* results,
   return success;
 }
 
-void checkmainCAF(HatFile handle) {
+void startSession(HatFile handle,filepointer nodeAddress) {
   HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
-  addBeforeList(results,hatMainCAF(handle));
+  addBeforeList(results,nodeAddress);
   askNodeList(handle,0,results,2,hash);
   freeHashTable(hash);
   quit();

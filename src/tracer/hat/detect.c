@@ -167,7 +167,7 @@ void getChildrenFor(HatFile handle,
 	  printf("APP at 0x%x is child of 0x%x\n",current,parentTrace);debugLines++;
 	}
 #endif
-	if ((isChild==0)||(isIForGUARD)) {
+	if ((isChild==0)||(isTopLevel(handle,appTrace)==0)) { // isIForGUARD)) {
 	  // isChild check is not enough, 'cause then and else clauses 
 	  // of IF's (and GUARDs) are at the parent...
 	  // (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself
@@ -213,7 +213,7 @@ void getChildrenFor(HatFile handle,
 	  }
 	}
       }
-      removeFromHashTable(hash,orig_current);
+      //removeFromHashTable(hash,orig_current);
       return;
     case HatName: {
       unsigned long p = getParent();
@@ -229,47 +229,47 @@ void getChildrenFor(HatFile handle,
 	      insertInList(nl,current);
 	  }
 	}
-	removeFromHashTable(hash,orig_current);
+	//removeFromHashTable(hash,orig_current);
 	return;
       }
       else {
         newcurrent = hatFollowSATs(handle,p);
 	if (newcurrent==current) {
-	  removeFromHashTable(hash,orig_current);
+	  //removeFromHashTable(hash,orig_current);
 	  return;
 	}
 	else current = newcurrent;
       }
     }
     getChildrenFor(handle,nl,parentTrace,current,hash);
-    removeFromHashTable(hash,orig_current);
+    //removeFromHashTable(hash,orig_current);
     return;
     case HatProjection:
       current = getParent();
       getChildrenFor(handle,nl,parentTrace,current,hash);
-      removeFromHashTable(hash,orig_current);
+      //removeFromHashTable(hash,orig_current);
       return;
     case HatHidden:
     case HatSATA: // not evaluated expression
     case HatSATB:
       current = getParent();
       getChildrenFor(handle,nl,parentTrace,current,hash);
-      removeFromHashTable(hash,orig_current);
+      //removeFromHashTable(hash,orig_current);
       return;
     default: {
 	unsigned long newcurrent = hatFollowSATs(handle,current);
 	if (newcurrent==current) {
-	  removeFromHashTable(hash,orig_current);
+	  //removeFromHashTable(hash,orig_current);
 	  return;
 	}
 	else current = newcurrent;
       }
       getChildrenFor(handle,nl,parentTrace,current,hash);
-      removeFromHashTable(hash,orig_current);
+      //removeFromHashTable(hash,orig_current);
       return;
     }
   }
-  removeFromHashTable(hash,orig_current);
+  //removeFromHashTable(hash,orig_current);
   return;
 }
 

@@ -3,6 +3,28 @@ import HatTrie
 import HatExpression
 import Maybe
 import System
+import Char(isDigit,digitToInt,toUpper)
+import IO(hFlush,stdout)
+
+spawnTerminalCmd = "gnome-terminal -e \""
+spawnTerminalEnd = "\"&"
+
+-----------------------------------------------------------------------
+-- misc functions
+-----------------------------------------------------------------------
+
+stringToInt :: String -> Maybe Int
+stringToInt s = stringToInt' True 0 s
+ where
+  stringToInt' True _ ('#':r) = stringToInt' True 0 r -- skip "#" at beginning
+  stringToInt' True _ (' ':r) = stringToInt' True 0 r -- skip " " at beginning
+--  stringToInt' False i (' ':r) = Just i
+  stringToInt' first i [] = if first then Nothing else  Just i
+  stringToInt' _ i (c:r) | (isDigit c) = stringToInt' False (i*10+(digitToInt c)) r
+		         | otherwise = Nothing
+
+upStr :: String -> String
+upStr = map toUpper
 
 checkParameters :: String -> String -> Int
 checkParameters l ('-':r) = checkParameters' l r
@@ -43,38 +65,88 @@ main = do
 	     do
              hattrace <- openTrace file
 	     if (ident1=="") then
-               interactive hattrace
+               do
+	         putStrLn "\nWelcome to Hatobserve (5/7/01)"
+                 observed <- interactive (file,hattrace) ([],False,10,0)
+		 return ()
               else
-               makeObserve hattrace verboseMode recursiveMode expertMode
-			   False (\ (x,y) -> True) ident1 ident2
+	       do
+                 observed <- makeObserve hattrace verboseMode recursiveMode expertMode
+			     False (\ x -> True) ident1 ident2
+		 if (isIdentNotFound observed) then
+		    putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+			      "identifier \""++ident1++"\".\n(Check spelling!)")
+                  else
+                   if (isTopIdentNotFound observed) then
+ 		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+			       "identifier \""++ident2++"\".\n(Check spelling!)")
+                     else
+                      old_showReductionList (fromFound observed)
+		 return ()
 
-makeObserve hattrace verboseMode recursiveMode expertMode filterMode filterFun ident1 ident2 =
+showObservation :: Int -> HatNode -> IO()
+showObservation i node =
+ do
+   putStr ("#"++(show i)++": ")
+   old_showReduction (Just node)
+
+showObservationList :: Int -> Int -> [HatNode] -> IO Int
+showObservationList _  _ [] = return 0
+showObservationList i 0 _ = return 0
+showObservationList i max (e:r) =
+    do
+      showObservation i e
+      count <- showObservationList (i+1) (max-1) r
+      return (count+1)
+
+makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
+	       (LinExpr->Bool) -> String -> String -> IO ObserveResult
+makeObserve hattrace verboseMode recursiveMode expertMode filterMode 
+	    filterFun ident1 ident2 =
     let recmod = (if recursiveMode then 1 else 0);
 	observed = (observe hattrace ident1 ident2 recmod) in
-     if (expertMode) then
---        showReductionList (map lazyExpression (observe hattrace ident1 ident2
---					       recmod))
-	old_showReductionList observed
-       else
-        if (filterMode) then uniqueFilter observed filterFun else unique observed
+     if (isFound observed) then
+       if (expertMode) then
+	 do
+	   -- showObservations observed
+	   return observed
+        else
+         if (filterMode) then
+            do
+	      r <- uniqueFilter (fromFound observed) filterFun
+              return (Found r)
+	  else
+            do
+	      r <- unique (fromFound observed)
+              return (Found r)
+      else
+       return observed
 
+unique :: [HatNode] -> IO [HatNode]
 unique observed =
     let tries = (insertTrieList []
-		 (map (\x -> let l = lazyExpression x in (linearizeExpr l,
-							  linearizeExpr (res l)))
+		 (map (\x -> let l = lazyExpression x in linearizeEquation l)
 		  observed)) in
       let nodes = (getTrieNodes tries) in
-       if (null nodes) then putStrLn "no match" else old_showReductionList nodes
+       if (null nodes) then
+	  -- putStrLn "no match" >>
+          return []
+	else -- showObservations nodes >>
+	  return nodes
+
 
 uniqueFilter observed filterFun =
-    let linexpr = (map (\x -> let l = lazyExpression x in (linearizeExpr l,
-							   linearizeExpr (res l)))
+    let linexpr = (map (\x -> let l = lazyExpression x in linearizeEquation l)
 		   observed);
         tries = (insertTrieList []
 		 (filter filterFun linexpr)) in
 --    (putStrLn (showLinList (head linexpr)))>>
       let nodes = (getTrieNodes tries) in
-       if (null nodes) then putStrLn "no match" else old_showReductionList nodes
+       if (null nodes) then 
+	  -- putStrLn "no match" >>
+          return [] 
+	else -- showObservations nodes >>
+          return nodes
 
 last2 :: [a] -> ([a],[a])
 last2 [] = ([],[])
@@ -85,66 +157,287 @@ last2 (a:list) = let (lst,whole) = last2 list in
 options :: String -> (String,String)
 options s =
   let w = words s;
-      dropFun = (\x->((length x)>0)&&((head x)=='-'));
+      dropFun = (\ x->((length x)>0)&&((head x)=='-'));
       o = takeWhile dropFun w;
       r = dropWhile dropFun w in
    ((unwords o),(unwords r))
 
-interactive hattrace =
--- let s = "funny _" in
+showSomeMore :: Int -> Int -> [HatNode] -> IO (Int,Bool)
+showSomeMore currentEq equationsPerPage observed =
+ let showNowList = (drop currentEq observed);
+     hasMore = (null (drop equationsPerPage showNowList))==False in
+  do
+    count <- showObservationList (currentEq+1) equationsPerPage
+	     showNowList
+    return (count+currentEq,hasMore)
+
+interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int) -> IO()
+interactive hatfile state@(_,more,_,_) =
  do
-   putStr "\nEnter search pattern: "
+   if (more==False) then
+      putStr "\ncommand>: "
+    else putStr "\n(<RETURN> for more)>: "
+   hFlush stdout
    s <- getLine
-   let (opts,p) = (options s);
+   let w = words s;
+       cmd = if (null w) then "" else upStr (head w);
+    doCommand cmd s hatfile state
+
+
+getNumberParam :: String -> String -> String -> Maybe Int
+getNumberParam cmd pattern1 pattern2 = 
+    if (length pattern1)<(length pattern2) then
+       getNumberParam' cmd pattern2 pattern1
+     else
+       getNumberParam' cmd pattern1 pattern2
+    where
+     getNumberParam' cmd pattern1 pattern2 =
+	 let com = upStr cmd in
+	   if (take (length pattern1) com)==pattern1 then
+	      stringToInt (drop (length pattern1) cmd)
+	    else
+	    if (take (length pattern2) com)==pattern2 then
+               stringToInt (drop (length pattern2) cmd)
+	     else
+              Nothing
+
+
+doCommand :: String -> String -> (String,HatTrace) -> ([HatNode],Bool,Int,Int) -> IO()
+doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos)
+  | (cmd=="")||((length (words s)==1)&&((cmd=="D")||(cmd=="DOWN"))) =
+    if (more) then
+       do
+        (newPos,newMore) <- (showSomeMore currentPos equationsPerPage
+			     lastObserved)
+	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos)
+     else
+      do
+       if (currentPos>0) then putStrLn "No more applications observed." else
+	  return () 
+       putStrLn "Enter 'h' for help, 'q' to quit."
+       interactive hatfile state
+
+-- cmd must be atleast one character long!
+doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,currentPos)
+    | (cmd=="Q")||(cmd=="QUIT")||(cmd=="EXIT") = putStrLn "Goodbye!\n"
+    | (cmd=="H")||(cmd=="HELP") = interactiveHelp >> interactive hatfile state
+    | (cmd=="C")||(cmd=="COUNT") =
+        (if (more) then
+          putStrLn "One moment, this may take a while..."
+         else return ())
+        >>
+	putStrLn ("Number of unique matching applications: "++
+		  (show (length lastObserved))) >>
+	interactive hatfile state
+    | (isJust (getNumberParam s "L" "LINES")) =
+	let newPerPage = fromJust (getNumberParam s "L" "LINES") in
+          if (newPerPage>0) then
+            putStrLn ("Lines per page set to "++(show newPerPage)) >> 
+            interactive hatfile (lastObserved,more,newPerPage,currentPos)
+           else
+            putStrLn "Lines per page must be greater than 0!" >>
+            interactive hatfile state
+    | (cmd=="L")||(cmd=="LINES") =
+	putStrLn ("Equations per page is currently set to "++(show equationsPerPage)++
+		  ".") >>
+	interactive hatfile state
+    | (isJust (getNumberParam s "U" "UP")) =
+	let up = fromJust (getNumberParam s "U" "UP") in
+         if (up==0) then interactive hatfile state else
+          let newPos = if up>currentPos then 0 else currentPos-up in
+            doCommand "" "" hatfile (lastObserved,
+				  if (currentPos==newPos) then more else True,
+				  equationsPerPage,newPos)   
+    | ((isJust (getNumberParam s "D" "DOWN"))||
+       (isJust (getNumberParam s "G" "GO"))) =
+	let down = if (isJust (getNumberParam s "D" "DOWN")) then
+			   (fromJust (getNumberParam s "D" "DOWN"))
+		    else
+			   (fromJust (getNumberParam s "G" "GO")) in
+         if ((head cmd)=='D')&&(down==0) then interactive hatfile state else
+          let newPos = if (head cmd)=='D' then currentPos+down else 
+		       (if down==0 then 0 else down-1);
+              listend = drop newPos lastObserved in
+            if (null listend) then  -- check list as far as necessary
+	       -- ok, at the list's end: now check for the real end of the list
+	       let realPos = length lastObserved in
+                putStrLn "Now at the end of the list." >>
+                interactive hatfile (lastObserved,False,equationsPerPage,realPos)
+            else
+             doCommand "" "" hatfile (lastObserved,
+				      True,
+				      equationsPerPage,newPos)
+    | (cmd=="U")||(cmd=="UP") = doCommand "UP" ("UP "++(show (2*equationsPerPage)))
+				hatfile state
+    | (cmd=="G")||(cmd=="GO") =
+	putStrLn ("Go to which number? Use \"go <n>\" to see equation number <n>.")
+		  >>
+	interactive hatfile state
+    | (isJust (stringToInt cmd)) =
+        let number = (fromJust (stringToInt cmd));
+            node = (drop (number-1) lastObserved) in
+         do
+          if (number>0) then
+            do
+              putStrLn ("starting detect session for #"++
+	 	       (show number)++" in separate window...")
+              if (null node) then -- This test may take a while!
+	         putStrLn "No equation with this number!"
+               else
+                 let (_,id) = (head node) in
+                  do
+                   errcode <- system(spawnTerminalCmd++"hat-detect "++
+				     file++" -remote "++(show id)++spawnTerminalEnd)
+                   if (errcode/=ExitSuccess) then
+		      putStrLn ("ERROR: Unable to start hat-detect.\n"++
+				"Check settings and availability of hat-detect!")
+                    else return ()
+           else
+	      putStrLn "No equation with this number!" 
+	  interactive hatfile state
+
+doCommand cmd s hatfile state
+  | ((cmd=="O")||(cmd=="OBSERVE"))&&((length (words s))==1) =
+    do
+      putStrLn "\nObserve Wizard"
+      putStrLn ""
+      putStr "enter function to be observed: "
+      hFlush stdout
+      fun <- getLine
+      putStrLn ""
+      if (fun=="") then putStrLn "nothing to be observed" else
+       do
+        putStrLn "You can observe applications with specific arguments only."
+        putStrLn "The '_' matches any subexpression."
+        putStrLn "Enter specific arguments separated by spaces, or leave blank."
+        putStr "arguments: "
+        hFlush stdout
+        arguments <- getLine
+        putStrLn ""
+	putStrLn "You can observe applications which result in a specific result."
+        putStrLn "_|_ represents a blackholed result."
+        putStr "result (or leave blank): "
+        result <- getLine
+        putStrLn ""
+        putStrLn ("You can observe applications of \""++fun++"\" within the context of ")
+        putStrLn "specific second function only."
+        putStr "Enter second function (or leave blank): "
+        ident2 <- getLine
+        putStrLn ""
+        rekMode <- if (ident2/="") then return "" else
+           do
+	     putStr ("Do you want to observe recursive calls of "++fun++"? Y/N:")
+             hFlush stdout
+	     rek <- getLine
+             putStrLn ""
+             if ((null rek)==False)&&((toUpper (head rek))=='N') then return "-r " else
+		return ""
+        let query = "o "++rekMode++
+		    (if (null arguments) then fun else ("("++fun++" "++arguments++")"))++
+		    (if (null result) then "" else (" = "++result))++
+		    (if (null ident2) then "" else (" in "++ident2)) in
+	  (putStrLn ("Your query is: "++query++"\n")) >>
+          doCommand "O" query hatfile state
+        
+doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
+					    more,equationsPerPage,currentPos)
+  | ((cmd=="O")||(cmd=="OBSERVE"))&&(length (words s)>1) =
+   let (opts,p) = (options (unwords (tail (words s))));
        pattern1 = (stringLex p);
        (maybeident,pattern2) = (last2 pattern1);
-       (ident2,(patternL,patternR)) =
+       (ident2,pattern) =
 	   if ((length maybeident)==2)&&((head maybeident)=="in") then
                   (head (tail maybeident),(stringLinExpr pattern2))
 		  else ("",(stringLinExpr pattern1));
-       fun = (lmoFun patternL)
+       fun = (lmoFun pattern)
       in
-    do
---      putStrLn ((showLinList patternL)++"\n"++(showLinList patternR))
-      if ((fun=="EXIT")||(fun=="exit")||(fun=="q")||(fun=="quit")) then
-         putStrLn "Goodbye!" else
-       if (fun=="") then (putStrLn "No function given to be observed!") >>
-          interactiveHelp >>
-	  interactive hattrace
-        else
         do
          putStrLn ("searching for: "++fun++(if ident2/="" then " in "++ident2 else ""))
 	 putStrLn ""
-	 makeObserve hattrace ('v' `elem` opts) ('r' `elem` opts) False
-			   (((length patternL)>2)||(length patternR>0))
-			   (if (null patternR) then (\ (x,_)-> (compareExpr x patternL))
-			    else (\ (x,xres) -> ((compareExpr x patternL)&&
-						 (compareExpr xres patternR))))
-			   fun ident2
-         interactive hattrace
+
+         newObserved <- makeObserve hattrace ('v' `elem` opts) ('r' `elem` opts) False
+			((length pattern)>2)
+			(\x -> (compareExpr x pattern))
+			fun ident2
+--         putStrLn "ok1"
+         if (isIdentNotFound newObserved) then
+            putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+                      "identifier \""++fun++"\".\n(Check spelling!)") >>
+            interactive hatfile state
+          else
+           if (isTopIdentNotFound newObserved) then
+              putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
+                        "identifier \""++ident2++"\".\n(Check spelling!)") >>
+              interactive hatfile state
+            else
+--             putStrLn "searching..." >> 
+              if (null (fromFound newObserved)) then
+		putStrLn "no match found\n" >>
+		interactive hatfile state
+	      else
+               do
+                (newPos,newMore) <- (showSomeMore 0 equationsPerPage
+	 			     (fromFound newObserved))
+                interactive hatfile ((fromFound newObserved),newMore,equationsPerPage,
+				     newPos)
+
+doCommand _ _ hatfile state =
+    putStrLn "Unknown command. Enter 'h' for help, 'q' to quit." >>
+    interactive hatfile state
 
 interactiveHelp =
   do
-   putStrLn "\nhelp for interactive mode:\n"
-   putStrLn "usage: \"[-rv] <pattern> [in <identifier>]\""
+   putStrLn "\n\n\n\n\n\n\n\n\n"
+   putStrLn "\nHelp for Interactive Mode"
+   putStrLn "---------------------------------------------------------------------------"
+   putStrLn " supported commands:"
    putStrLn ""
-   putStrLn "option \"-r\" suppresses recursive applications"
-   putStrLn "option \"-v\" enables verbose output - to show unevaluated expressions"
+   putStrLn " o         or observe          make new observation"
+   putStrLn " o <query> or observe <query>  make new observation with query"
    putStrLn ""
-   putStrLn "There are three possibilities for pattern:"
-   putStrLn " <pattern> can be a simple \"<identifier>\""
-   putStrLn "   All applications of <identifier> will be shown."
-   putStrLn " <pattern> can be an application pattern: \"<identfier> [arguments]\""
-   putStrLn "   All applications with matching arguments will be shown."
-   putStrLn " <pattern> can be an equation pattern: \"<identifier> [arguments] = <expression>\""
-   putStrLn "   All applications of <identifier> with matching arguments resulting in a <expression> will be shown."
-   putStrLn "The underscore \"_\" matches any argument!"
+   putStrLn " <n>       or #<n>             start algorithmic debugging session"
+   putStrLn "                               for observed equation number <n>"
    putStrLn ""
-   putStrLn "examples: \"-r f\""
-   putStrLn "          \"f _ 3 in g\""
-   putStrLn "          \"f 1 _ = [1,_]\""
+   putStrLn " g <n>     or go <n>           go to observed equation number <n>"
+   putStrLn " u <n>     or up <n>           go up in observation list by <n>"
+   putStrLn " d <n>     or down <n>         go down in observation list by <n>"
+   putStrLn " <RETURN>                      show more applications (if available)"
    putStrLn ""
-   putStrLn "enter \"q\" or \"quit\" to quit."
+   putStrLn " l <n>     or lines <n>        set number of equations listed per page to <n>"
+   putStrLn ""
+   putStrLn " h         or help             for help"
+   putStrLn " q         or quit             quit"
+   putStrLn ""
+   putStrLn "Press <RETURN> to see help for query-syntax, any other key to return."
+   putStrLn ""
+   s <- getLine
+   if (null s) then queryHelp else return ()
+
+queryHelp =
+  do
+   putStrLn "\n\n\n\nHelp for Query Syntax"
+   putStrLn "---------------------------------------------------------------------------"
+   putStrLn "syntax for <query>: \"[-rv] <pattern> [in <identifier>]\""
+   putStrLn ""
+   putStrLn " option \"-r\" suppresses recursive applications"
+   putStrLn " option \"-v\" enables verbose output - to show unevaluated expressions"
+   putStrLn ""
+   putStrLn " There are three possibilities for <pattern>:"
+   putStrLn ""
+   putStrLn "  <pattern> can be a simple \"<identifier>\""
+   putStrLn "    All applications of <identifier> will be shown."
+   putStrLn "  <pattern> can be an application pattern: \"<identfier> [arguments]\""
+   putStrLn "    All applications with matching arguments will be shown."
+   putStrLn "  <pattern> can be an equation pattern: \"<identifier> [arguments] = <expression>\""
+   putStrLn "    All applications of <identifier> with matching arguments resulting in a"
+   putStrLn "    <expression> will be shown."
+   putStrLn ""
+   putStrLn " The underscore \"_\" matches any argument/subexpression!"
+   putStrLn ""
+   putStrLn "example queries: -r myfunction"
+   putStrLn "                 myfunction _ (myConstructor 2 _) in myOtherFunction"
+   putStrLn "                 -rv (myfunction \"Hello World!\" (: 1 (: 2 _))) = [1,_]"
+   putStrLn ""
 
 showHelp = 
    do

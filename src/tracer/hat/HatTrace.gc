@@ -16,6 +16,9 @@ module HatTrace (
 
  HatInfixType(HatInfix,HatInfixR,HatInfixL,HatNoInfix),
 
+ ObserveResult(IdentNotFound,TopIdentNotFound,Found),
+ isIdentNotFound,isTopIdentNotFound,isFound,fromFound,
+
  openTrace,
  hatMain,hatParent,hatResult,hatName,hatValue,
  hatApplFun,hatApplArity,hatApplArgs,hatApplType,hatApplInfix,hatProjRef,
@@ -51,6 +54,8 @@ data HatValue = HatIntValue Int | HatIntegerValue Integer | HatStringValue Strin
 
 data HatInfixType = HatInfix Int | HatInfixR Int| HatInfixL Int | HatNoInfix 
                     deriving (Show,Eq)
+
+data ObserveResult = IdentNotFound | TopIdentNotFound | Found [HatNode]
 
 %C #include "Expressions.h"
 %C #include "hatinterface.h"
@@ -410,6 +415,13 @@ edtChildren (hattrace,node) = foreignObjToList hattrace (getEDTForeignObj (hattr
 %     current = nextObserveQueryNode((ObserveQuery) query);
 %result (int current)
 
+%fun getObserveIntStatus :: ForeignObj -> Int
+%call (foreign f query)
+%code
+%     if (observeIdentifier((ObserveQuery) query)==0) status=1;else
+%      if (observeTopIdentifier((ObserveQuery) query)==0) status=2;else
+%       status=0;
+%result (int status)
 
 foreignObserveToList :: HatTrace -> ForeignObj -> [HatNode]
 foreignObserveToList hattrace f =
@@ -419,12 +431,29 @@ foreignObserveToList hattrace f =
      let x = (getObservedElement f i) in
        if (x==0) then [] else (hattrace,x):(foreignObserveToList' (i+1))
 
-
-observe :: HatTrace -> String -> String -> Int -> [HatNode]
+observe :: HatTrace -> String -> String -> Int -> ObserveResult
 observe hattrace ident topIdent recursive =
-  let x = (getObserveInt hattrace ident topIdent recursive) in
-   (foreignObserveToList hattrace x)
-		       
+  let x = (getObserveInt hattrace ident topIdent recursive);
+      s = (getObserveIntStatus x) in
+   if ((s==2)&&(topIdent/=[])) then TopIdentNotFound else
+    if (s==1) then IdentNotFound else
+     Found (foreignObserveToList hattrace x)
+
+isIdentNotFound :: ObserveResult -> Bool
+isIdentNotFound IdentNotFound = True
+isIdentNotFound _ = False
+
+isTopIdentNotFound :: ObserveResult -> Bool
+isTopIdentNotFound TopIdentNotFound = True
+isTopIdentNotFound _ = False
+
+isFound :: ObserveResult -> Bool
+isFound (Found _) = True
+isFound _ = False
+
+fromFound :: ObserveResult -> [HatNode]
+fromFound (Found r) = r
+fromFound _ = []
 
 old_showExpression :: Maybe HatNode -> IO ()
 old_showExpression hatNode =
