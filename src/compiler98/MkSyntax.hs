@@ -10,7 +10,7 @@ module MkSyntax
 	, mkTypeList, mkPatNplusK, mkParLhs
 	) where
 
-import Extra(noPos)
+import Extra(Pos,noPos,mergePos,mergePoss)
 import TokenId
 import Syntax
 import SyntaxPos(HasPos(getPos))
@@ -47,17 +47,18 @@ mkDeclFun :: (Pos,a) -> [Pat a] -> Rhs a -> Decls a -> Decl a
 --mkDeclFun (pv,var) [] gdexps w =
 --	DeclPat (Alt (ExpVar pv var) gdexps w)
 mkDeclFun (pv,var) pats gdexps w =
-        DeclFun pv var [Fun pats gdexps w]
+        DeclFun (mergePoss [pv,getPos gdexps,getPos w]) var [Fun pats gdexps w]
 
 
 mkDeclPatFun :: Alt a -> Decl a
 mkDeclPatFun  (Alt (ExpVar pos fun) gdexps w) =
-        DeclFun pos fun [Fun [] gdexps w]
+  DeclFun (mergePoss [pos,getPos gdexps,getPos w]) fun [Fun [] gdexps w]
 --        DeclPat (Alt (ExpVar pos fun) gdexps w)
 mkDeclPatFun  (Alt (ExpInfixList _ [ExpVar pos fun]) gdexps w) =
-  DeclFun pos fun [Fun [] gdexps w]
+  DeclFun (mergePoss [pos,getPos gdexps,getPos w]) fun [Fun [] gdexps w]
 mkDeclPatFun  (Alt (ExpInfixList _ (ExpVar pos fun:qop:args)) gdexps w) 
-  | notOp qop = DeclFun pos fun [Fun (qop:args) gdexps w]
+  | notOp qop = DeclFun (mergePoss [pos,getPos gdexps,getPos w]) fun 
+                  [Fun (qop:args) gdexps w]
 mkDeclPatFun alt = DeclPat alt
 
 notOp (ExpConOp _ _) = False
@@ -82,7 +83,8 @@ mkEnumToThenFrom pos eTo eThen eFrom =
 
 mkAppExp [] = error "mkAppExp"
 mkAppExp [e] = e
-mkAppExp es@(e:_)  = ExpApplication (getPos e) es
+mkAppExp es@(e:es') = 
+  ExpApplication (mergePos (getPos e) (getPos (last es'))) es
 
 
 mkParExp pos [ExpConOp pos' id] = ExpCon pos' id

@@ -160,6 +160,10 @@ mergePos (P s1 e1) (P s2 e2) =
     then P s1 e2 
     else error ("mergePos " ++ strPos (P s1 e1) ++ " " ++ strPos (P s2 e2)) 
 
+mergePoss :: [Pos] -> Pos
+-- merge a list of positions
+mergePoss = foldr mergePos noPos
+
 fromPos :: Pos -> (Line,Column,Line,Column)
 fromPos (P s e) =
  let l1 = s `div` 10000

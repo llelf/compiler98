@@ -3,7 +3,7 @@ Parser for Haskell 98 Syntax
 -}
 module Parse(parseProg) where
 
-import Extra(pair,noPos,strace,strPos)
+import Extra(pair,noPos,strace,strPos,mergePos)
 import Lex
 import Lexical(PosToken)
 import Syntax
@@ -108,22 +108,25 @@ parseFunDep =
 
 parseForeign :: Parser (Decl TokenId) [PosToken] a
 parseForeign =
-  k_foreign `revChk`
+  k_foreign `revAp`
     ((k_import `revChk` 
-        ((\(_,conv) (_,tf) (_,LitString _ str) (p,v) t -> 
-            DeclForeignImp p conv str v (calcArity t) tf t v)
+        ((\(_,conv) (_,tf) (_,LitString _ str) (_,v) t p -> 
+            DeclForeignImp (mergePos p (getPos t)) conv str v 
+              (calcArity t) tf t v)
         `parseAp` callconv `ap` safety `ap` entity `ap` varid `chk` 
         coloncolon `apCut` parseType))
     `orelse`
     (k_export `revChk`
-      ((\(_,conv) (_,LitString _ str) (p,v) t-> DeclForeignExp p conv str v t)
+      ((\(_,conv) (_,LitString _ str) (_,v) t p-> 
+          DeclForeignExp (mergePos p (getPos t)) conv str v t)
       `parseAp` callconv `ap` entity `apCut` varid `chk` coloncolon 
       `ap` parseType))
     `orelse`
     (k_import `revChk`	-- old syntax, will be removed in the future
-        ((\(_,conv) (_,LitString _ str) (_,tf) (p,v) t -> 
-            strace ("Deprecated FFI syntax used at "++strPos p) $
-            DeclForeignImp p conv str v (calcArity t) tf t v)
+        ((\(_,conv) (_,LitString _ str) (_,tf) (_,v) t p -> 
+            let p' = mergePos p (getPos t) in
+            strace ("Deprecated FFI syntax used at "++strPos p') $
+            DeclForeignImp p' conv str v (calcArity t) tf t v)
         `parseAp` (callconv `orelse` is C) `ap` entity `ap`
         safety `apCut` varid `chk` coloncolon `ap` parseType))
  -- `orelse`
@@ -224,12 +227,14 @@ parseExp :: Parser (Exp TokenId) [PosToken] a
 parseExp =
     parseExp0 `revAp` parseExpType
 
+parseExpType :: Parser (Exp TokenId -> Exp TokenId) [PosToken] a
 parseExpType =
       (\pos ctx t e-> ExpType pos e ctx t) `parseAp` coloncolon `apCut`
               parseContexts `ap` parseType
         `orelse`
       parse id
 
+parseExp0 :: Parser (Exp TokenId) [PosToken] a
 parseExp0 = mkInfixList `parseAp` some (anyop `orelse` parseExp10)
 
 parseStmt =

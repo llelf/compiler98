@@ -1,36 +1,36 @@
 module SyntaxPos(Pos,HasPos(..)) where
 
-import Extra(noPos)
+import Extra(Pos,noPos,mergePos,mergePoss)
 import Syntax
 
 class HasPos a where
         getPos :: a -> Pos
 
 instance HasPos (Decls a) where
-     getPos (DeclsParse decls) = getPosList decls
-     getPos (DeclsScc decls) = getPosList decls
+     getPos (DeclsParse decls) = getPos decls
+     getPos (DeclsScc decls) = getPos decls
 
 instance HasPos (DeclsDepend a) where
      getPos (DeclsNoRec decl) = getPos decl
-     getPos (DeclsRec   decls) = getPosList decls
+     getPos (DeclsRec   decls) = getPos decls
 
 instance HasPos (Decl a) where
-    getPos (DeclType simple _)          = getPosSimple simple
-    getPos (DeclDataPrim pos _ _)       = pos
-    getPos (DeclData _ _ simple _ _)    = getPosSimple simple
-    getPos (DeclConstrs pos _ _)        = pos
-    getPos (DeclClass pos _ _ _ _ _)    = pos
-    getPos (DeclInstance pos _ _ _ _)   = pos
-    getPos (DeclDefault [])             = noPos
-    getPos (DeclDefault (t:_))          = getPosType t
-    getPos (DeclVarsType ((pos,_):_) _ _) = pos
-    getPos (DeclFun pos fun funs)       = pos
-    getPos (DeclPrimitive pos fun a t)  = pos
-    getPos (DeclForeignImp pos _ s fun a c t _) = pos
-    getPos (DeclForeignExp pos _ s fun t) = pos
-    getPos (DeclPat alt)                = getPosAlt alt
-    getPos (DeclIgnore str)             = noPos
-    getPos (DeclError str)              = noPos
+  getPos (DeclType simple ty) = mergePos (getPos simple) (getPos ty)
+  getPos (DeclDataPrim pos _ _) = pos
+  getPos (DeclData _ ctx simple constrs derives) = 
+    mergePoss [getPos ctx,getPos simple,getPos constrs,getPosList derives]
+  getPos (DeclConstrs pos _ _) = pos
+  getPos (DeclClass pos _ _ _ _ _) = pos
+  getPos (DeclInstance pos _ _ _ _) = pos
+  getPos (DeclDefault tys) = getPos tys
+  getPos (DeclVarsType ((pos,_):_) _ ty) = mergePos pos (getPos ty)
+  getPos (DeclFun pos fun funs)       = pos
+  getPos (DeclPrimitive pos fun a t)  = pos
+  getPos (DeclForeignImp pos _ s fun a c t _) = pos
+  getPos (DeclForeignExp pos _ s fun t) = pos
+  getPos (DeclPat alt)                = getPos alt
+  getPos (DeclIgnore str)             = noPos
+  getPos (DeclError str)              = noPos
 
 instance HasPos (Entity a) where
     getPos (EntityVar        pos _)   = pos
@@ -38,28 +38,60 @@ instance HasPos (Entity a) where
     getPos (EntityConClsSome pos _ _) = pos
 
 instance HasPos (Alt a) where
-    getPos e = getPosAlt e
+    getPos (Alt pat rhs locals) = 
+      mergePoss [getPos pat,getPos rhs,getPos locals]
 
 instance HasPos (Fun a) where
-    getPos e = getPosFun e
+    getPos (Fun pats rhs locals) = 
+      mergePoss [getPos pats,getPos rhs,getPos locals]
 
 instance HasPos (Rhs a) where
-    getPos r = getPosRhs r
+    getPos (Unguarded e) = getPos e
+    getPos (Guarded gdes) = 
+      mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
 
 instance HasPos (Exp a) where
-    getPos e = getPosExp e
+  getPos (ExpDict        exp)       = getPos exp
+  getPos (ExpScc         str exp)   = getPos exp
+  getPos (ExpLambda      pos _ _)   = pos
+  getPos (ExpLet         pos _ _)   = pos
+  getPos (ExpDo 	 pos _)	    = pos
+  getPos (ExpCase        pos _ _)   = pos
+  getPos (ExpFail)	 	    = error "No position for ExpFail"
+  getPos (ExpIf          pos _ _ _) = pos
+  getPos (ExpType        pos _ _ _) = pos
+  getPos (ExpRecord      exp fdefs) = mergePos (getPos exp) (getPos fdefs)
+  getPos (ExpApplication pos _ )    = pos
+  getPos (ExpInfixList   pos _)     = pos
+  getPos (ExpVar         pos _)     = pos
+  getPos (ExpCon         pos _)     = pos
+  getPos (ExpVarOp       pos _)     = pos
+  getPos (ExpConOp       pos _)     = pos
+  getPos (ExpLit         pos _)     = pos
+  getPos (ExpList        pos _)     = pos
+  getPos (Exp2           pos i1 i2) = pos
+  getPos (PatAs          pos _ _)   = pos
+  getPos (PatWildcard    pos)       = pos
+  getPos (PatIrrefutable pos _)     = pos
+  getPos (PatNplusK      pos _ _ _ _ _) = pos
+
 
 instance HasPos a => HasPos [a] where
-    getPos l = getPosList l
+    -- assumes that first and last element have proper positions
+    getPos [] = noPos
+    getPos xs = mergePos (getPos (head xs)) (getPos (last xs))
 
-instance HasPos b => HasPos (a,b) where  -- used on GdExp
-    getPos (a,b) = getPos b
+instance (HasPos a,HasPos b) => HasPos (a,b) where  -- used on GdExp
+    getPos (a,b) = mergePos (getPos a) (getPos b)
 
 instance HasPos (Simple a) where
-    getPos s = getPosSimple s
+    getPos (Simple pos _ _) = pos
 
 instance HasPos (Type a) where
-    getPos t = getPosType t
+    getPos (TypeApp  t1 t2) = mergePos (getPos t1) (getPos t2)
+    getPos (TypeCons  pos _ _) = pos
+    getPos (TypeVar   pos _)   = pos
+    getPos (TypeStrict  pos _)   = pos
 
 instance HasPos (Context a) where
     getPos (Context pos _ _) = pos
@@ -76,48 +108,7 @@ instance HasPos (Constr a) where
     getPos (Constr pos _ _) = pos
     getPos (ConstrCtx _ _ pos _ _) = pos
 
------------------------
 
+getPosList :: [(Pos,a)] -> Pos
 getPosList [] = noPos
-getPosList (x:xs) = getPos x
-
-getPosSimple (Simple pos _ _) = pos
-
-getPosAlt (Alt pat _ _) = getPosExp pat
-
-getPosFun (Fun [] rhs _) = getPosRhs rhs
-getPosFun (Fun (a:args) _ _)   = getPosExp a
-
-getPosRhs (Unguarded e) = getPosExp e
-getPosRhs (Guarded ((g,e):_)) = getPosExp g
-
-getPosType (TypeApp  t1 t2) = getPosType t1
-getPosType (TypeCons  pos _ _) = pos
-getPosType (TypeVar   pos _)   = pos
-getPosType (TypeStrict  pos _)   = pos
-
-getPosExp (ExpDict              exp)       = getPosExp exp
-getPosExp (ExpScc               str exp)   = getPosExp exp
-getPosExp (ExpLambda            pos _ _)   = pos
-getPosExp (ExpLet               pos _ _)   = pos
-getPosExp (ExpDo 		pos _)	   = pos
-getPosExp (ExpCase              pos _ _)   = pos
-getPosExp (ExpFail)			   = error "No position for ExpFail"
-getPosExp (ExpIf                pos _ _ _) = pos
-getPosExp (ExpType              pos _ _ _) = pos
-getPosExp (ExpRecord            exp fdefs) = getPosExp exp
-getPosExp (ExpApplication       pos _ )    = pos
-getPosExp (ExpInfixList         pos _)     = pos
-getPosExp (ExpVar               pos _)     = pos
-getPosExp (ExpCon               pos _)     = pos
-getPosExp (ExpVarOp             pos _)     = pos
-getPosExp (ExpConOp             pos _)     = pos
-getPosExp (ExpLit               pos _)     = pos
--- getPosExp (ExpTuple             pos _)     = pos
-getPosExp (ExpList              pos _)     = pos
-getPosExp (Exp2                 pos i1 i2) = pos
-getPosExp (PatAs                pos _ _)   = pos
-getPosExp (PatWildcard          pos)       = pos
-getPosExp (PatIrrefutable       pos _)     = pos
-getPosExp (PatNplusK            pos _ _ _ _ _) = pos
-
+getPosList xs = mergePos (fst (head xs)) (fst (last xs))
