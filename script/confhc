@@ -159,8 +159,13 @@ then
     else GHCDIR=""
     fi
   else
-    GHCDIR=`ghc-pkg --show-package std --field import_dirs`
-    GHCINCDIR=`dirname $GHCDIR`
+    #GHCDIR=`ghc-pkg --show-package std --field import_dirs`
+    #GHCINCDIR=`dirname $GHCDIR`
+    GHCDIR=`grep '^libdir' ${whichGHC} | head -1 | sed 's/^libdir=.\(.*\)./\1/'`
+    if [ -d $GHCDIR/imports ]
+    then GHCINCDIR=$GHCDIR/imports
+    else GHCDIR=""
+    fi
   fi
 fi
 if [ "$GHCDIR" = "" ]

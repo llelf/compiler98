@@ -234,6 +234,6 @@ case $CODE in
      rm $TMP/hmake$$
      exit $CODE ;;
   *) rm $TMP/hmake$$
-     echo "Stop - hmake dependency error."
+     echo >&2 "Stop - hmake dependency error."
      exit $CODE ;;
 esac
