@@ -43,6 +43,8 @@ include ${DST}/config
 
 ###
 
+BUILDCOMP := $(shell echo $(BUILDWITH) | cut -c1-3 )
+
 DCFG=
 TRACING=$(findstring T,${CFG})
 PROFILING=$(findstring p,${CFG})

@@ -4,7 +4,7 @@ import GreenCard
 import DClockTime
 import DCalendarTime
 
-%-#include "/usr/include/time.h"
+%-#include <time.h>
 %-
 %fun toUTCTime :: ClockTime -> CalendarTime
 %call (clockTime ct)

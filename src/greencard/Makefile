@@ -4,10 +4,10 @@ OBJDIR = $(BUILDDIR)/$(OBJ)/greencard
 TARGET = $(DST)/greencard$(EXE)
 
 ifeq "nhc98" "$(HC)"
-  HFLAGS = $(BUILDOPTS) $(NHEAP)
+  HFLAGS = $(shell echo $(BUILDOPTS)) $(NHEAP)
 endif
 ifeq "ghc" "$(HC)"
-  HFLAGS = $(BUILDOPTS) +CTS $(shell $(LOCAL)fixghc $(GHCSYM) -syslib exts) -CTS
+  HFLAGS = $(shell echo $(BUILDOPTS)) +CTS $(shell $(LOCAL)fixghc $(GHCSYM) -syslib exts) -CTS
 endif
 
 ## Since adopting hmake, all of this junk is obsolete

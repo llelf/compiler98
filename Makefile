@@ -171,8 +171,8 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 
 ##### compiler build + install scripts
 
-basic: basic-${BUILDWITH}
-all:   all-${BUILDWITH}
+basic: basic-${BUILDCOMP}
+all:   all-${BUILDCOMP}
 help:
 	@echo "Common targets include:        basic all install clean realclean config"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"

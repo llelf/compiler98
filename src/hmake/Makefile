@@ -19,7 +19,7 @@ AUX     = Makefile* BuildNew* HISTORY README* Summary TODO nhcmakeR cfiles \
           hmake hmake.1
 
 HC = $(LOCAL)nhc98
-HFLAGS = $(BUILDOPTS) #-$(CFG)
+HFLAGS = $(shell echo $(BUILDOPTS)) #-$(CFG)
 
 ifeq "nhc98" "$(HC)"
 HEAP = -H2M

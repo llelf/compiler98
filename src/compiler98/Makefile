@@ -41,19 +41,18 @@ DBGOBJS=$(patsubst %,$(OBJDIR)/%.o,${CPPFILES})
 HC = nhc98
 
 ifeq "hbc" "${HC}"
-HMAKEFLAGS = -H32M
+HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "${HC}"
-HFLAGS = -H8M
-export HFLAGS
+HMAKEFLAGS := -H8M +CTS -H8M -CTS
 endif
 ifeq "ghc" "${HC}"
-HMAKEFLAGS=$(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)
-$(TARGET): $(OBJDIR)/ghc_floats.o
-LINK=ghc_floats.o
-else
-LINK=
+EXTRALINK   = $(OBJDIR)/ghc_floats.o
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)  $(EXTRALINK)
+$(TARGET): $(EXTRALINK)
 endif
+
+HMAKEFLAGS += $(shell echo $(BUILDOPTS)) $(DBGFLAG)
 
 
 all: ${TARGET}
@@ -71,7 +70,7 @@ realclean: clean
 	rm -f *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
-	$(LOCAL)hmake -$(HC) $(DBGFLAG) $(HMAKEFLAGS) -d $(OBJDIR) Main $(BUILDOPTS) $(LINK)
+	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) Main
 	mv $(OBJDIR)/Main $(TARGET)
 	strip $(TARGET)
 ${OBJDIR}:
