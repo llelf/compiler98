@@ -13,7 +13,7 @@ VERSION = 1.15
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HMAKEVERSION = 3.07rc4
+HMAKEVERSION = 3.07
 # HMAKEVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 

@@ -8,8 +8,8 @@
 #       (updated - January 2002)
 
 # When incrementing this version number, don't forget to change the
-# corresponding definition in the Makefile!
-HMAKEVERSION="3.07rc4 (2003-03-01)" export HMAKEVERSION
+# corresponding definition in Makefile.inc!
+HMAKEVERSION="3.07 (2003-03-06)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
