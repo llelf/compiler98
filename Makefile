@@ -121,8 +121,8 @@ RUNTIME = \
 PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc \
-	  include/base
+INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc
+INCLUDEPKG = $(patsubst %, include/packages/%, ${PACKAGES})
 DOC = docs/*
 MAN = man/*.1
 
@@ -358,6 +358,7 @@ binDist:
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(SCRIPT)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(MAN)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(INCLUDE)
+	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(INCLUDEPKG)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(DOC)
 	mkdir nhc98-$(VERSION)
 	cd nhc98-$(VERSION); tar xf ../nhc98-$(VERSION)-$(MACHINE).tar
@@ -375,15 +376,11 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
 	tar rf nhc98src-$(VERSION).tar $(COMPILERC)
 	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
-	#tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
 	tar rf nhc98src-$(VERSION).tar $(LIBRARIES)
-	#tar rf nhc98src-$(VERSION).tar $(TRAILUI)
 	tar rf nhc98src-$(VERSION).tar $(HOODUI)
-	#tar rf nhc98src-$(VERSION).tar $(HATUI)
-	#tar rf nhc98src-$(VERSION).tar $(HATLIB)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
 	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
@@ -391,6 +388,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(HMAKEC)
 	tar rf nhc98src-$(VERSION).tar $(MAN)
 	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
+	#tar rf nhc98src-$(VERSION).tar $(INCLUDEPKG)
 	tar rf nhc98src-$(VERSION).tar $(DOC)
 	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
 	mkdir nhc98-$(VERSION)
