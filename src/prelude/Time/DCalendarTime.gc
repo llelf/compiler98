@@ -7,7 +7,7 @@ data CalendarTime = CalendarTime {
     ctYear                       :: Int,
     ctMonth                      :: Month,
     ctDay, ctHour, ctMin, ctSec  :: Int,
-    ctPicoSec                    :: Integer,
+    ctPicosec                    :: Integer,
     ctWDay                       :: Day,
     ctYDay                       :: Int,
     ctTZName                     :: String,
