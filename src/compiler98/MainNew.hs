@@ -167,7 +167,8 @@ main' args = do
     newprog <- auxLabelSyntaxTree flags parsedPrg
     writeFile (sHatTransFile flags)
       (prettyPrintTokenId flags ppModule 
-        (traceTrans (sSourceFile flags) (sHatFileBase flags) newprog))
+        (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
+          (sHatFileBase flags) newprog))
     putStrLn ("Wrote " ++ sHatTransFile flags)
     exitWith (ExitSuccess)
 

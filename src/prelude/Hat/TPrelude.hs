@@ -38,6 +38,8 @@ type String = List TPrelude.Char
 
 type IO a = Prelude.IO (R a)
 
+type Int = Prelude.Int
+
 
 -- type constructors and data constructors need to have same name,
 -- because transformation doesn't distinguish the two
@@ -53,13 +55,19 @@ toChar :: R TPrelude.Char -> Prelude.Char
 toChar (R c _) = c
 
 fromChar :: Trace -> Prelude.Char -> R TPrelude.Char
-fromChar = flip mkR
+fromChar = conChar mkNoSourceRef
 
 toIO :: (R a -> b) -> R (TPrelude.IO a) -> Prelude.IO b 
 toIO f (R io _) = fmap f io
 
 fromIO :: (Trace -> a -> R b) -> Trace -> Prelude.IO a -> R (TPrelude.IO b)
 fromIO f t io = mkR (fmap (f t) io) t
+
+toInt :: R TPrelude.Int -> Prelude.Int
+toInt (R i _) = i
+
+fromInt :: Trace -> Prelude.Int -> R TPrelude.Int
+fromInt = conInt mkNoSourceRef
 
 toTuple0 :: R TPrelude.Tuple0 -> ()
 toTuple0 (R tp _) = tp
@@ -93,8 +101,17 @@ fromPolyList = fromList (\_ x -> x)
 -- ----------------------------------------------------------------------------
 -- functions:
 
-(-++) :: SR -> Trace -> R (Fun (List a) (Fun (List a) (List a)))
-(-++) p t = T.fun2 (+++) (*++) p t
+(!-) :: SR -> Trace -> R (Fun Int (Fun Int Int))
+(!-) p t = T.fun2 (+-) (*-) p t
+
+(+-) = mkAtomIdToplevel tMain noPos 21 "-"
+
+(*-) :: Trace -> R Int -> R Int -> R Int
+(*-) t x y = fromInt t (toInt x - toInt y)
+
+
+(!++) :: SR -> Trace -> R (Fun (List a) (Fun (List a) (List a)))
+(!++) p t = T.fun2 (+++) (*++) p t
 
 (+++) = mkAtomIdToplevel tMain noPos 21 "++"
 
@@ -102,9 +119,9 @@ fromPolyList = fromList (\_ x -> x)
 (*++) t xs ys = fromPolyList t (toPolyList xs ++ toPolyList ys) 
 
 
-oreverse :: SR -> Trace -> R (Fun (List a) (List a))
-oreverse preverse treverse =
-  fun1 a0v0reverse wreverse preverse treverse
+oreverse :: R (Fun (List a) (List a))
+oreverse =
+  fun1 a0v0reverse wreverse mkNoSourceRef mkTRoot
 
 a0v0reverse = mkAtomIdToplevel tMain noPos 3 "reverse"
 
@@ -124,19 +141,21 @@ wmap t f xs = fromPolyList t (map (ap1 mkNoSourceRef hidden f) (toPolyList xs))
   hidden = mkTHidden t
 
 
-oputStr :: SR -> Trace 
-        -> R (Fun TPrelude.String (TPrelude.IO TPrelude.Tuple0))
+oputStr :: R (Fun TPrelude.String (TPrelude.IO TPrelude.Tuple0))
 
-oputStr pputStr tputStr =
-  T.fun1 a8v1putStr wputStr pputStr tputStr
+oputStr =
+  T.fun1 a8v1putStr wputStr mkNoSourceRef mkTRoot
 
 a8v1putStr = T.mkAtomIdToplevel tMain noPos 3 "putStr"
 
 wputStr :: Trace -> R TPrelude.String -> R (TPrelude.IO TPrelude.Tuple0)
 wputStr t os = fromIO fromTuple0 t $ do
   let s = toList toChar os
-  outputTrace t s
-  putStr s
+  mapM (\c -> outputTrace t [c] >> putChar c) s
+  -- have to output on per character basis in case error occurs in 
+  -- evaluation of the string
+--  outputTrace t s
+--  putStr s
   return ()
 
 
@@ -148,7 +167,7 @@ wputStr t os = fromIO fromTuple0 t $ do
 -- ----------------------------------------------------------------------------
 -- type conversion of primitve types
 
-instance NmCoerce Int where
+instance NmCoerce Prelude.Int where
     toNm t v sr = conInt sr t v
 instance NmCoerce Prelude.Char where
     toNm t v sr = conChar sr t v
@@ -159,24 +178,24 @@ instance NmCoerce Float where
 instance NmCoerce Double where
     toNm t v sr = conDouble sr t v
 instance NmCoerce Prelude.Bool where
-    toNm t False sr = mkR False (mkTNm t aFalse sr) 
-    toNm t True  sr = mkR True  (mkTNm t aTrue sr) 
+    toNm t False sr = R False (mkTNm t aFalse sr) 
+    toNm t True  sr = R True  (mkTNm t aTrue sr) 
 instance NmCoerce Prelude.Ordering where
-    toNm t LT sr = mkR LT (mkTNm t aLT sr)
-    toNm t EQ sr = mkR EQ (mkTNm t aEQ sr)
-    toNm t GT sr = mkR GT (mkTNm t aGT sr)
+    toNm t LT sr = R LT (mkTNm t aLT sr)
+    toNm t EQ sr = R EQ (mkTNm t aEQ sr)
+    toNm t GT sr = R GT (mkTNm t aGT sr)
 instance NmCoerce () where
-    toNm t v sr = mkR v (mkTNm t mkNTDummy sr)
+    toNm t v@() sr = R v (mkTNm t mkNTDummy sr)
 instance NmCoerce Addr where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = v `seq` R v (mkTNm t mkNTContainer sr)
 instance NmCoerce (StablePtr a) where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = v `seq` R v (mkTNm t mkNTContainer sr)
 instance NmCoerce ForeignObj where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = v `seq` R v (mkTNm t mkNTContainer sr)
 instance NmCoerce PackedString where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = v `seq` R v (mkTNm t mkNTContainer sr)
 instance NmCoerce (Vector a) where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = v `seq` R v (mkTNm t mkNTContainer sr)
 -- These types use dummies for now.  Ideally, we want to convert them to
 -- either Int or Integer (depending on size), too lazy now
 instance NmCoerce Int8

@@ -864,11 +864,13 @@ FileOffset
 primNTInteger (int i)
 {
     FileOffset fo;
+    int ni;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimNTInteger -> 0x%x\n",fo);)
     fputc(((NmType<<5) | NTInteger),HatFile);
     fputc(0x01,HatFile);
-    fwrite(&i, sizeof(int), 1, HatFile);
+    ni = htonl(i);
+    fwrite(&ni, sizeof(int), 1, HatFile);
     HatCounter += 2+(sizeof(int));
     return fo;
 }

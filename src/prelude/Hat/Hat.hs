@@ -14,6 +14,7 @@ module Hat
   ,fun1,fun2,fun3,fun4,fun5,fun6,fun7,fun8,fun9,fun10,fun11,fun12,fun13
   ,fun14,fun15
   ,indir
+  ,fromConInteger,fromConRational
   ,conInt,conChar,conInteger,conFloat,conDouble,conRational
   ,conCons
   ,con0,con1,con2,con3,con4,con5,con6,con7,con8,con9,con10,con11,con12
@@ -32,11 +33,8 @@ module Hat
   ,Pos,noPos
   ) where
 
--- import Prelude (Int,Char,Integer,Float,Double,Rational,String,IO
---                ,Bool(True,False),Ordering(LT,EQ,GT))
--- import qualified Prelude 
-  -- qualified to mark clearly where original Prelude is used
 import Ratio (numerator,denominator)
+import IOExtras (unsafePerformIO,IORef,newIORef,readIORef,writeIORef)
 
 import FFI (Ptr(..),unsafePerformIO,CString,withCString)	-- PORTABLE
 --import PackedString (PackedString,packString) -- NONPORTABLE
@@ -76,6 +74,9 @@ No, not for pap: pap will force evaluation immediately.
 
 data R a = R a Trace
 
+trace :: R a -> Trace
+trace (R a t) = t
+
 newtype Fun a b = Fun (Trace -> R a -> R b)
 
 
@@ -89,24 +90,6 @@ newtype SR     = SR Int
 newtype Trace  = Trace Int
 newtype NmType = NmType Int
 newtype ModuleTraceInfo = MTI Int
-
--- ----------------------------------------------------------------------------
--- toNm used to coerce primitive return value from a foreign function
--- into a Trace structure
--- simplifies transformation; also in n+k patterns don't know exact type
--- relies on transformed type just being a type synonym for untraced type
-class NmCoerce a where
-  toNm :: Trace -> a -> SR -> R a
-
-
-{-
-counterpart to 'enter' for primitives: ensures that the result trace
-is fully evaluated (the trace contains the result value).
-  ** now `enter' has been eliminated, no longer sure about this defn **
--}
-primEnter :: NmCoerce a => SR -> Trace -> a -> R a
-primEnter sr t e = let vn = toNm t e sr
-                      in e `Prelude.seq` vn
 
 -- ----------------------------------------------------------------------------
 -- combinators for n-ary application in a non-projective context.
@@ -503,14 +486,49 @@ fun0 nm rf sr t =
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Fun a r)
+fun1 nm rf sr t = 
+  let tf = mkTNm t nm sr
+  in R (Fun (\t a -> 
+               if hidden t
+                 then (rf $! (mkTAp1 t tf (trace a) mkNoSourceRef)) a 
+                 else rf t a))
+       tf
 
+fun2 :: NmType -> (Trace -> R a -> R b -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b r))
+fun2 nm rf sr t = 
+  let tf = mkTNm t nm sr
+  in R (Fun (\t a ->
+       R (Fun (\t b -> 
+                 if hidden t 
+                   then (rf $! (mkTAp2 t tf (trace a) (trace b) 
+                                            mkNoSourceRef)) a b
+                   else rf t a b))
+         t))
+       tf
+
+fun3 nm rf sr t =
+  let tf = mkTNm t nm sr
+  in R (Fun (\t a ->
+       R (Fun (\t b ->
+         R (Fun (\t c -> 
+                   if hidden t
+                     then (rf $! (mkTAp3 t tf (trace a) (trace b) 
+                                              (trace c) mkNoSourceRef)) a b c
+                     else rf t a b c))
+           t))
+         t))
+       tf
+
+{-
+fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
+     -> R (Fun a r)
 fun1 nm rf sr t = 
   mkR (Fun (\t a -> rf t a))
       (mkTNm t nm sr)
 
 fun2 :: NmType -> (Trace -> R a -> R b -> R r) -> SR -> Trace
      -> R (Fun a (Fun b r))
-
 fun2 nm rf sr t = 
   mkR (Fun (\t a ->
       R (Fun (\t b -> rf t a b))
@@ -524,7 +542,7 @@ fun3 nm rf sr t =
           t))
         t))
       (mkTNm t nm sr)
-
+-}
 fun4 nm rf sr t = 
   mkR (Fun (\t a ->
       R (Fun (\t b ->
@@ -780,34 +798,42 @@ fun15 nm rf sr t =
 
 {- For lambda-bound variables in projective context. -}
 indir :: Trace -> R a -> R a
-indir t (R v t') = mkR v (mkTInd t t')
+indir t (R v t') = R v (mkTInd t t')
 
 
 {- Combinators for literals in expressions. -}
+fromConInteger :: Prelude.Num a => SR -> Trace -> Integer -> R a
+fromConInteger sr t i = 
+  R (Prelude.fromInteger i) (mkTNm t (mkNTInteger i) sr)
+
+fromConRational :: Prelude.Fractional a => SR -> Trace -> Rational -> R a
+fromConRational sr t r = 
+  R (Prelude.fromRational r) (mkTNm t (mkNTRational r) sr)
+
 conInt :: SR -> Trace -> Int -> R Int
-conInt sr t n = mkR n (mkTNm t (mkNTInt n) sr)
+conInt sr t n = R n (mkTNm t (mkNTInt n) sr)
 
 conChar :: SR -> Trace -> Char -> R Char
-conChar sr t c = mkR c (mkTNm t (mkNTChar c) sr)
+conChar sr t c = R c (mkTNm t (mkNTChar c) sr)
 
 conInteger :: SR -> Trace -> Integer -> R Integer
-conInteger sr t b = mkR b (mkTNm t (mkNTInteger b) sr)
+conInteger sr t b = R b (mkTNm t (mkNTInteger b) sr)
 
 conFloat :: SR -> Trace -> Float -> R Float
-conFloat sr t b = mkR b (mkTNm t (mkNTFloat b) sr)
+conFloat sr t b = R b (mkTNm t (mkNTFloat b) sr)
 
 conDouble :: SR -> Trace -> Double -> R Double
-conDouble sr t b = mkR b (mkTNm t (mkNTDouble b) sr)
+conDouble sr t b = R b (mkTNm t (mkNTDouble b) sr)
 
 conRational :: SR -> Trace -> Rational -> R Rational
-conRational sr t b =  mkR b (mkTNm t (mkNTRational b) sr)
+conRational sr t b =  R b (mkTNm t (mkNTRational b) sr)
 
 
 conCons :: SR -> Trace -> (R Char -> R [Char] -> [Char]) -> Trace 
         -> Char -> R [Char] -> R [Char]
 conCons sr t con tnm c b@(R _ bt) =
   let at = mkTNm t (mkNTChar c) sr
-  in mkR (con (R c at) b) (mkTAp2 t tnm at bt sr)
+  in R (con (R c at) b) (mkTAp2 t tnm at bt sr)
 
 
 {- Combinators for saturated n-ary applications of data constructors. -}
@@ -816,383 +842,77 @@ conCons sr t con tnm c b@(R _ bt) =
 
 con0 :: SR -> Trace -> r -> NmType -> R r
 con0 sr t cn nm =
-  mkR cn (mkTNm t nm sr)
+  R cn (mkTNm t nm sr)
 
 con1 :: SR -> Trace -> (R a -> r) -> NmType -> R a -> R r
 con1 sr t cn nm a@(R _ at) =
-  mkR (cn a) (mkTAp1 t (mkTNm t nm sr) at sr)
+  R (cn a) (mkTAp1 t (mkTNm t nm sr) at sr)
 
 con2 sr t cn nm a@(R _ at) b@(R _ bt) =
-  mkR (cn a b) (mkTAp2 t (mkTNm t nm sr) at bt sr)
+  R (cn a b) (mkTAp2 t (mkTNm t nm sr) at bt sr)
 
 con3 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  mkR (cn a b c) (mkTAp3 t (mkTNm t nm sr) at bt ct sr)
+  R (cn a b c) (mkTAp3 t (mkTNm t nm sr) at bt ct sr)
 
 con4 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
-  mkR (cn a b c d) (mkTAp4 t (mkTNm t nm sr) at bt ct dt sr)
+  R (cn a b c d) (mkTAp4 t (mkTNm t nm sr) at bt ct dt sr)
 
 con5 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
-  mkR (cn a b c d e) (mkTAp5 t (mkTNm t nm sr) at bt ct dt et sr)
+  R (cn a b c d e) (mkTAp5 t (mkTNm t nm sr) at bt ct dt et sr)
 
 con6 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) =
-  mkR (cn a b c d e f) (mkTAp6 t (mkTNm t nm sr) at bt ct dt et ft sr)
+  R (cn a b c d e f) (mkTAp6 t (mkTNm t nm sr) at bt ct dt et ft sr)
 
 con7 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) =
-  mkR (cn a b c d e f g) (mkTAp7 t (mkTNm t nm sr) at bt ct dt et ft gt sr)
+  R (cn a b c d e f g) (mkTAp7 t (mkTNm t nm sr) at bt ct dt et ft gt sr)
 
 con8 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) h@(R _ ht) =
-  mkR (cn a b c d e f g h) 
+  R (cn a b c d e f g h) 
     (mkTAp8 t (mkTNm t nm sr) at bt ct dt et ft gt ht sr)
 
 con9 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
-  mkR (cn a b c d e f g h i) 
+  R (cn a b c d e f g h i) 
     (mkTAp9 t (mkTNm t nm sr) at bt ct dt et ft gt ht it sr)
 
 con10 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
-  mkR (cn a b c d e f g h i j)
+  R (cn a b c d e f g h i j)
     (mkTAp10 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt sr)
 
 con11 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) =
-  mkR (cn a b c d e f g h i j k)
+  R (cn a b c d e f g h i j k)
     (mkTAp11 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt sr)
 
 con12 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) l@(R _ lt) =
-  mkR (cn a b c d e f g h i j k l)
+  R (cn a b c d e f g h i j k l)
     (mkTAp12 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt sr)
 
 con13 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) l@(R _ lt) m@(R _ mt) =
-  mkR (cn a b c d e f g h i j k l m)
+  R (cn a b c d e f g h i j k l m)
     (mkTAp13 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt sr)
 
 con14 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
-  mkR (cn a b c d e f g h i j k l m n)
+  R (cn a b c d e f g h i j k l m n)
     (mkTAp14 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt nt sr)
 
 con15 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                  k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =
-  mkR (cn a b c d e f g h i j k l m n o)
+  R (cn a b c d e f g h i j k l m n o)
     (mkTAp15 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt nt ot sr)
 
-
-
-{-
-Combinators for calling foreign functions:   prim_n
-Definitions identical to those of fun_n, except for the use of primEnter
-instead of enter and that the unwrapped arguments are passed.
-(Maybe common abstraction should be defined?)
--}
-
-prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
-
-prim0 nm rf sr t = 
-  let tf = mkTNm t nm sr
-  in primEnter sr tf rf  -- primEnter strict in tf
-
-prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
-
-prim1 nm rf sr t = 
-  mkR (Fun (\t (R a at) -> primEnter sr t (rf a)))
-    (mkTNm t nm sr)
-
-
-prim2 :: NmCoerce r => 
-         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
-
-prim2 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)-> primEnter sr t (rf a b)))
-      t))
-    (mkTNm t nm sr)
-
-prim3 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)-> primEnter sr t (rf a b c)))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-prim4 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)->
-        R (Fun (\t (R d dt)-> primEnter sr t (rf a b c d)))
-          t))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-
-prim5 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)->
-        R (Fun (\t (R d dt)->
-          R (Fun (\t (R e et)-> primEnter sr t (rf a b c d e)))
-            t))
-          t))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-prim6 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)->
-        R (Fun (\t (R d dt)->
-          R (Fun (\t (R e et)->
-            R (Fun (\t (R f ft)-> primEnter sr t (rf a b c d e f)))
-              t))
-            t))
-          t))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-prim7 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)->
-        R (Fun (\t (R d dt)->
-          R (Fun (\t (R e et)->
-            R (Fun (\t (R f ft)->
-              R (Fun (\t (R g gt)-> 
-                  primEnter sr t (rf a b c d e f g)))
-                t))
-              t))
-            t))
-          t))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-prim8 nm rf sr t = 
-  mkR (Fun (\t (R a at)->
-    R (Fun (\t (R b bt)->
-      R (Fun (\t (R c ct)->
-        R (Fun (\t (R d dt)->
-          R (Fun (\t (R e et)->
-            R (Fun (\t (R f ft)->
-              R (Fun (\t (R g gt)->
-                R (Fun (\t (R h ht)-> 
-                    primEnter sr t (rf a b c d e f g h)))
-                  t))
-                t))
-              t))
-            t))
-          t))
-        t))
-      t))
-    (mkTNm t nm sr)
-
-prim9 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                      primEnter sr t9 (rf a b c d e f g h i)))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim10 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                        primEnter sr t10 (rf a b c d e f 
-                                                         g h i j)))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim11 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                      R (Fun (\t11 (R k kt)->
-                          primEnter sr t11 (rf a b c d e f 
-                                                           g h i j k)))
-                        t10))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim12 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                      R (Fun (\t11 (R k kt)->
-                        R (Fun (\t12 (R l lt)->
-                            primEnter sr t12 (rf a b c d e f 
-                                                             g h i j k l)))
-                          t11))
-                        t10))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim13 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                      R (Fun (\t11 (R k kt)->
-                        R (Fun (\t12 (R l lt)->
-                          R (Fun (\t13 (R m mt)->
-                              primEnter sr t13 (rf a b c d e f 
-                                                         g h i j k l m)))
-                            t12))
-                          t11))
-                        t10))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim14 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                      R (Fun (\t11 (R k kt)->
-                        R (Fun (\t12 (R l lt)->
-                          R (Fun (\t13 (R m mt)->
-                            R (Fun (\t14 (R n nt)->
-                                primEnter sr t14 (rf a b c d e f 
-                                                         g h i j k l m n)))
-                              t13))
-                            t12))
-                          t11))
-                        t10))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
-
-prim15 nm rf sr t = 
-  mkR (Fun (\t1 (R a at)->
-    R (Fun (\t2 (R b bt)->
-      R (Fun (\t3 (R c ct)->
-        R (Fun (\t4 (R d dt)->
-          R (Fun (\t5 (R e et)->
-            R (Fun (\t6 (R f ft)->
-              R (Fun (\t7 (R g gt)->
-                R (Fun (\t8 (R h ht)->
-                  R (Fun (\t9 (R i it)->
-                    R (Fun (\t10 (R j jt)->
-                      R (Fun (\t11 (R k kt)->
-                        R (Fun (\t12 (R l lt)->
-                          R (Fun (\t13 (R m mt)->
-                            R (Fun (\t14 (R n nt)->
-                              R (Fun (\t15 (R o ot)->
-                                  primEnter sr t15 (rf a b c d e f 
-                                                         g h i j k l m n o)))
-                                t14))
-                              t13))
-                            t12))
-                          t11))
-                        t10))
-                      t9))
-                    t8))
-                  t7))
-                t6))
-              t5))
-            t4))
-          t3))
-        t2))
-      t1))
-    (mkTNm t nm sr)
 
 
 
@@ -1282,20 +1002,20 @@ Used for partially applied data constructors.
 pa0 :: b -> (b -> Trace -> c) -> SR -> Trace -> NmType -> c
 
 pa0 c cni sr t nm =
-  cni c Prelude.$! (mkTNm t nm sr) 
+  cni c (mkTNm t nm sr) 
 
 
 pa1 :: (R a1 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType -> R a1 -> c
 
 pa1 c cni sr t nm a1@(R _ t1) =
-  cni (c a1) Prelude.$! mkTAp1 t (mkTNm t nm sr) t1 sr
+  cni (c a1) (mkTAp1 t (mkTNm t nm sr) t1 sr)
 
 
 pa2 :: (R a1 -> R a2 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType
     -> R a1 -> R a2 -> c
 
 pa2 c cni sr t nm a1@(R _ t1) a2@(R _ t2) =
-  cni (c a1 a2) Prelude.$! mkTAp2 t (mkTNm t nm sr) t1 t2 sr
+  cni (c a1 a2) (mkTAp2 t (mkTNm t nm sr) t1 t2 sr)
 
 
 pa3 :: (R a1 -> R a2 -> R a3 -> b) -> (b -> Trace -> c) 
@@ -1303,7 +1023,7 @@ pa3 :: (R a1 -> R a2 -> R a3 -> b) -> (b -> Trace -> c)
     -> R a1 -> R a2 -> R a3 -> c
 
 pa3 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) =
-  cni (c a1 a2 a3) Prelude.$! mkTAp3 t (mkTNm t nm sr) t1 t2 t3 sr
+  cni (c a1 a2 a3) (mkTAp3 t (mkTNm t nm sr) t1 t2 t3 sr)
 
 
 pa4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> (b -> Trace -> c) 
@@ -1311,7 +1031,436 @@ pa4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> (b -> Trace -> c)
     -> R a1 -> R a2 -> R a3 -> R a4 -> c
 
 pa4 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) a4@(R _ t4) =
-  cni (c a1 a2 a3 a4) Prelude.$! mkTAp4 t (mkTNm t nm sr) t1 t2 t3 t4 sr
+  cni (c a1 a2 a3 a4) (mkTAp4 t (mkTNm t nm sr) t1 t2 t3 t4 sr)
+
+
+-- ----------------------------------------------------------------------------
+-- toNm used to coerce primitive return value from a foreign function
+-- into a Trace structure
+-- all instances have to be strict in the unwrapped value
+-- simplifies transformation; also in n+k patterns don't know exact type
+-- relies on transformed type just being a type synonym for untraced type
+-- hence will not work in the long run.
+class NmCoerce a where
+  toNm :: Trace -> a -> SR -> R a
+
+
+{-
+counterpart to 'enter' for primitives: ensures that the result trace
+is fully evaluated (the trace contains the result value).
+  ** now `enter' has been eliminated, no longer sure about this defn **
+-}
+primEnter :: NmCoerce a => SR -> Trace -> a -> R a
+primEnter sr t e = toNm t e sr
+
+{-
+Combinators for calling foreign functions:   prim_n
+Definitions identical to those of fun_n, except for the use of primEnter
+instead of enter and that the unwrapped arguments are passed.
+(Maybe common abstraction should be defined?)
+-}
+
+prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
+
+prim0 nm rf sr t = 
+  let tf = mkTNm t nm sr
+  in primEnter sr tf rf  -- primEnter strict in tf
+
+prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
+
+prim1 nm rf sr t = 
+  R (Fun (\t (R a at) -> primEnter sr t (rf a)))
+    (mkTNm t nm sr)
+
+
+prim2 :: NmCoerce r => 
+         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
+
+prim2 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)-> primEnter sr t (rf a b)))
+      t))
+    (mkTNm t nm sr)
+
+prim3 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)-> primEnter sr t (rf a b c)))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+prim4 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)-> primEnter sr t (rf a b c d)))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+
+prim5 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)-> primEnter sr t (rf a b c d e)))
+            t))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+prim6 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)-> primEnter sr t (rf a b c d e f)))
+              t))
+            t))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+prim7 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)->
+              R (Fun (\t (R g gt)-> 
+                  primEnter sr t (rf a b c d e f g)))
+                t))
+              t))
+            t))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+prim8 nm rf sr t = 
+  R (Fun (\t (R a at)->
+    R (Fun (\t (R b bt)->
+      R (Fun (\t (R c ct)->
+        R (Fun (\t (R d dt)->
+          R (Fun (\t (R e et)->
+            R (Fun (\t (R f ft)->
+              R (Fun (\t (R g gt)->
+                R (Fun (\t (R h ht)-> 
+                    primEnter sr t (rf a b c d e f g h)))
+                  t))
+                t))
+              t))
+            t))
+          t))
+        t))
+      t))
+    (mkTNm t nm sr)
+
+prim9 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                      primEnter sr t9 (rf a b c d e f g h i)))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim10 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                        primEnter sr t10 (rf a b c d e f 
+                                                         g h i j)))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim11 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                          primEnter sr t11 (rf a b c d e f 
+                                                           g h i j k)))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim12 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                            primEnter sr t12 (rf a b c d e f 
+                                                             g h i j k l)))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim13 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
+                              primEnter sr t13 (rf a b c d e f 
+                                                         g h i j k l m)))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim14 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
+                            R (Fun (\t14 (R n nt)->
+                                primEnter sr t14 (rf a b c d e f 
+                                                         g h i j k l m n)))
+                              t13))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+prim15 nm rf sr t = 
+  R (Fun (\t1 (R a at)->
+    R (Fun (\t2 (R b bt)->
+      R (Fun (\t3 (R c ct)->
+        R (Fun (\t4 (R d dt)->
+          R (Fun (\t5 (R e et)->
+            R (Fun (\t6 (R f ft)->
+              R (Fun (\t7 (R g gt)->
+                R (Fun (\t8 (R h ht)->
+                  R (Fun (\t9 (R i it)->
+                    R (Fun (\t10 (R j jt)->
+                      R (Fun (\t11 (R k kt)->
+                        R (Fun (\t12 (R l lt)->
+                          R (Fun (\t13 (R m mt)->
+                            R (Fun (\t14 (R n nt)->
+                              R (Fun (\t15 (R o ot)->
+                                  primEnter sr t15 (rf a b c d e f 
+                                                         g h i j k l m n o)))
+                                t14))
+                              t13))
+                            t12))
+                          t11))
+                        t10))
+                      t9))
+                    t8))
+                  t7))
+                t6))
+              t5))
+            t4))
+          t3))
+        t2))
+      t1))
+    (mkTNm t nm sr)
+
+-- ----------------------------------------------------------------------------
+-- combinators for untraced code
+
+hide :: Trace -> Trace
+hide = undefined
+
+hidden :: Trace -> Bool
+hidden _ = False
+
+-- Assure that a trace component exists iff it is demanded
+-- first trace is the hidden call of untraced code
+-- second trace becomes trace of expression iff the expression is evaluated
+-- but has hidden trace (is partial application)
+
+-- Don't know in which order trace and value are demanded or if at all
+-- Only if trace is demanded first, a Sat is created
+
+ulazySat :: R a -> Trace -> R a
+
+ulazySat x h =
+  let status = unsafePerformIO (newIORef (Hidden h))
+  in status `seq`
+     R (case unsafePerformIO (readIORef status) of
+          Hidden _ -> 
+            case x of 
+              R rv tv -> unsafePerformIO (writeIORef status (Eval tv)) `seq` rv
+          Sat sat -> mkTSatBLonely sat `seq` 
+                     case x of 
+                       R rv tv -> mkTSatCLonely sat tv `seq` rv)
+       (case unsafePerformIO (readIORef status) of
+          Hidden h -> let sat = mkTSatALonely h 
+                      in unsafePerformIO (writeIORef status (Sat sat)) `seq` 
+                         sat
+          Eval t -> t)
+        
+data Status = Hidden Trace  -- neither value nor trace yet demanded
+            | Sat Trace     -- trace demanded, value not yet
+            | Eval Trace    -- value demanded, trace not yet
+                            
+
+-- combinators for n-ary application
+
+uap1 :: Trace -> R (Fun a r) -> R a -> R r
+uap1 h (R (Fun rf) tf) a = ulazySat
+  (case rf h a of
+     R rv tv -> R rv (if hidden tv 
+                        then mkTAp1 h tf (trace a) mkNoSourceRef
+                        else tv))
+  h
+
+uap2 :: Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
+uap2 h f a b = ulazySat
+  (case uap1 h f a of
+     R (Fun rf) tf -> case rf h b of
+                        R rv tv -> R rv
+                          (if hidden tv
+                            then mkTAp1 h tf (trace b) mkNoSourceRef
+                            else tv))
+  h
+
+uap3 :: Trace -> R (Fun a (Fun b (Fun c r))) -> R a -> R b -> R c -> R r
+uap3 h f a b c = ulazySat
+  (case uap2 h f a b of
+     R (Fun rf) tf -> case rf h c of
+                        R rv tv -> R rv
+                          (if hidden tv
+                            then mkTAp1 h tf (trace c) mkNoSourceRef
+                            else tv))
+  h
+
+uap4 :: Trace -> R (Fun a (Fun b (Fun c (Fun d r)))) 
+     -> R a -> R b -> R c -> R d -> R r
+uap4 h f a b c d = ulazySat
+  (case uap3 h f a b c of
+     R (Fun rf) tf -> case rf h d of
+                        R rv tv -> R rv
+                          (if hidden tv
+                             then mkTAp1 h tf (trace d) mkNoSourceRef
+                             else tv))
+  h
+
+-- combinators for transforming n-ary functions
+
+ufun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace -> R (Fun a r)
+ufun1 nm rf sr t = R (Fun (\t a -> rf (hide t) a)) (mkTNm t nm sr)
+
+ufun2 :: NmType -> (Trace -> R a -> R b -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b r))
+ufun2 nm rf sr t =
+  R (Fun (\t a ->
+    R (Fun (\t b -> rf (hide t) a b))
+      t))
+    (mkTNm t nm sr)
+
+ufun3 :: NmType -> (Trace -> R a -> R b -> R c -> R r) -> SR -> Trace
+     -> R (Fun a (Fun b (Fun c r)))
+ufun3 nm rf sr t =
+  R (Fun (\t a ->
+    R (Fun (\t b ->
+      R (Fun (\t c -> rf (hide t) a b c))
+        t))
+      t))
+    (mkTNm t nm sr)
 
 
 -- ----------------------------------------------------------------------------
