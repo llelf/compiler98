@@ -7,9 +7,9 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-VERSIONNUM=116
-NHC98VERSION="v1.16 (2003-03-08)"
-HMAKEVERSION="3.07 (2003-03-06)" export HMAKEVERSION
+VERSIONNUM=117
+NHC98VERSION="v1.17 (CVS version)"
+HMAKEVERSION="3.08 (2003-06-23)" export HMAKEVERSION
 #HATVERSION="2.01" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
@@ -534,7 +534,7 @@ then
       echo "CURSES=\"$CURSES\"";
       echo "EXE=$EXE";
       echo "CC=$CCC";
-      echo "GHCSYM=`cat targets/$MACHINE/ghcsym`";
+      echo "GHCSYM=`cat targets/$MACHINE/ghcsym || true`";
       echo "TRUE=$TRUE";
     ) >$BUILDLIBDIR/$MACHINE/config
 
@@ -723,11 +723,11 @@ else	# [ "$INSTALL" = "yes" ]
     #done
     #rm $DESTDIR$BINDIR/hat-template
     echo
-    chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
-    chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
-    chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
-    chmod +x $DESTDIR$BINDIR/hmake-config #$DESTDIR$BINDIR/hat-trans
-    chmod +x $DESTDIR$BINDIR/hood
+    chmod a+rx $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
+    chmod a+rx $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
+    chmod a+rx $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
+    chmod a+rx $DESTDIR$BINDIR/hmake-config #$DESTDIR$BINDIR/hat-trans
+    chmod a+rx $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
   fi

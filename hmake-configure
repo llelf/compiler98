@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-HMAKEVERSION="3.07 (2003-03-06)" export HMAKEVERSION
+HMAKEVERSION="3.08 (2003-06-23)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -397,8 +397,8 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo
-    chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/harch $DESTDIR$BINDIR/hi
-    chmod +x $DESTDIR$BINDIR/hmake-config
+    chmod a+rx $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/harch $DESTDIR$BINDIR/hi
+    chmod a+rx $DESTDIR$BINDIR/hmake-config
   else
     echo 'Not (re-)installing scripts'
   fi
