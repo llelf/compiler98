@@ -59,7 +59,7 @@ then
 else
   # hbc, set up for Haskell 98  (some guessing here!)
   if [ "$BUILTBY" = "hbc" ]
-  then echo "WARNING: hmake built with hbc-0.9999.5b gets timestamps wrong."
+  then echo >&2 "WARNING: hmake built with hbc-0.9999.5b gets timestamps wrong."
   fi
   HBCCPP=${HASKELL98}
   HBCOPTS=
