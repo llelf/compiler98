@@ -8,7 +8,7 @@ AR = ar
 LD = ld
 
 
-VERSION = 1.13
+VERSION = 1.14
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -17,7 +17,7 @@ HMAKEVERSION = 3.05
 # HMAKEVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
-HATVERSION = 1.99
+HATVERSION = 2.00
 # HATVERSION is the separate version number for hat.
 #   (odd minor number = CVS version;  even minor number = release version)
 
