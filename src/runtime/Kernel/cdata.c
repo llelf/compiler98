@@ -234,7 +234,7 @@ C_HEADER(reallyFreeForeignObj)
   IND_REMOVE(nodeptr);
   fo = (void*)GET_INT_VALUE(nodeptr);
 
-  printf("reallyFreeForeignObj: releasing %d (0x%x)\n",((int)fo-(int)foreign)/sizeof(ForeignObj),fo);
+  /*fprintf(stderr,"reallyFreeForeignObj: releasing %d (0x%x)\n",((int)fo-(int)foreign)/sizeof(ForeignObj),fo);*/
   freeForeignObj(fo);
   C_RETURN(mkUnit());
 }
