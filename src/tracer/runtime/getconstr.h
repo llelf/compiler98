@@ -66,6 +66,12 @@ NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr);
 NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr);
 NodePtr mkTInd(NodePtr t1, NodePtr t2);
 
+NodePtr shortCircuitSelectors(NodePtr node);
+NodePtr mkhString(char *s);
+NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str);
+char   *profName(UInt *p);
+extern void prGraph(NodePtr nodeptr,Int flags,Int d);
+
 extern Node C0_Prelude_46SR[];
 #define mkSR() ((NodePtr)C0_Prelude_46SR)
 

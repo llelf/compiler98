@@ -8,7 +8,7 @@ apa:
 
 ifeq "${TRACING}" "T"
 SRCS  = io.c getconstr.c nodecache.c outputtrace.c minisocklib.c \
-	stub.c demo_server.c vector.c
+	stub.c vector.c numeric.c
 else
 SRCS  = dummy.c
 endif
@@ -34,7 +34,7 @@ chdist:
 	tar cf chdist.tar ${SRCS}
 
 
-${DEMO}: ${OBJS}
+${DEMO}: ${OBJS} ${DEMO}.o
 	$(CC) -O -o $@ ${OBJDIR}/minisocklib.o ${OBJDIR}/demo_server.o
 
 ${OBJDIR}:
@@ -54,6 +54,8 @@ ${OBJDIR}/stub.o: stub.c
 	$(CC) ${DCFG} -I${INCDIR} ${ENDIAN} -c $< -o $@
 ${OBJDIR}/getconstr.o: getconstr.c getconstr.h 
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c getconstr.c -o $@
+${OBJDIR}/numeric.o: numeric.c getconstr.h 
+	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c numeric.c -o $@
 ${OBJDIR}/io.o: io.c getconstr.h nodecache.h outputtrace.h
 	$(CC) ${DCFG} ${OPT} -DPRELSRCDIR=${PRELSRCDIR} -I${INCDIR} ${ENDIAN} -c io.c -o $@
 ${OBJDIR}/outputtrace.o: outputtrace.c outputtrace.h
