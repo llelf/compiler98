@@ -7,7 +7,7 @@ module MkSyntax
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
 	, mkExpListComp, mkIf, mkInfixList
 	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
-	, mkTypeList, mkPatNplusK
+	, mkTypeList, mkPatNplusK, mkParLhs
 	) where
 
 import Extra(Pos(..),noPos,strPos)
@@ -104,6 +104,7 @@ mkParExp pos [ExpVarOp pos' id] = ExpVar pos' id
 mkParExp pos [e] = e
 mkParExp pos es  = ExpApplication pos (ExpCon pos (t_Tuple (length es)):es)
 
+mkParLhs pos app args = ExpApplication pos (app:args)
 
 -- combineGroups (DeclsParse d1) (DeclsParse d2) = DeclsParse (d1++d2)
 -- 
