@@ -129,7 +129,7 @@ relink:
 else	#### tracing
 
 
-.SUFFIXES: .subdir
+# .SUFFIXES: .subdir
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeDebug PreludeList PreludeIO PreludeText Prelude \
 	Maybe List System IO PackedString
@@ -166,10 +166,10 @@ objdir: ${OBJDIR}
 	cd $(patsubst %.install,%,$@); ${MAKE} install
 
 
-${OBJDIRS}: ${OBJDIR}/% : %
-	mkdir -p $@ || /bin/true
 ${OBJDIR}:
 	mkdir -p ${OBJDIR} || /bin/true
+${OBJDIRS}: ${OBJDIR}/% :
+	mkdir -p $@ || /bin/true
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
 	rm -f $@
