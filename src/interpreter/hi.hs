@@ -100,6 +100,19 @@ commands ws options compiler modules =
            e <- system ("$EDITOR " ++ unwords target)
            loadAll options compiler modules
       )
+  command "type"
+      ( do
+          let tmpfile = "/tmp/Main"
+          f <- openFile (tmpfile++".hs") WriteMode
+          hPutStr f (
+            "module Main where\n\n" ++
+            concatMap (\m-> "import "++m++"\n") modules ++
+            "\nmain = let expr  = (" ++ unwords target ++ ")" ++
+            "\n       in putStrLn ("++ nonstdShowsType compiler++" expr \"\")"++
+            "\n")
+          hClose f
+          compile options compiler tmpfile (run tmpfile [])
+      )
   command "cd"
       (if null target then do
             dir <- getCurrentDirectory
@@ -189,7 +202,7 @@ banner = "\
 ||___|| || || || ||  || ||/  ||__||       Copyright (c) 1st-2nd May 2000
 ||---|| || || || ||__|  ||\\_ ||__         http://www.cs.york.ac.uk/fp/hmake/
 ||   ||                                Report bugs to: malcolm@cs.york.ac.uk
-||   || Version: "++hmakeversion++"    -------------------------------------"
+||   || Version: "++hmakeVersion++"    -------------------------------------"
 
 
 help = "\ 

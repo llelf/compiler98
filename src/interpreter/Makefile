@@ -1,7 +1,7 @@
 include Makefile.inc
 
 PROG =	$(MACHINE)/hi
-SRCS =	hi.hs $(MACHINE)/HmakeConfig.hs
+SRCS =	$(MACHINE)/hi.hs $(MACHINE)/HmakeConfig.hs $(MACHINE)/LocalConfig.hs
 
 ifeq "${BUILDWITH}" "ghc"
 HFLAGS = -fglasgow-exts -syslib lang
@@ -17,5 +17,9 @@ clean:
 	cd $(MACHINE); rm -f *.hi *.o
 
 $(PROG): $(SRCS)
-	cp hi.hs $(MACHINE)
 	cd $(MACHINE); hmake -$(BUILDWITH) $(shell echo $(BUILDOPTS)) hi
+
+$(MACHINE)/hi.hs: hi.hs
+	cp hi.hs $(MACHINE)
+$(MACHINE)/HmakeConfig.hs: HmakeConfig.hs
+	cp HmakeConfig.hs $(MACHINE)
