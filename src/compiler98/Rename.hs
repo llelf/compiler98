@@ -32,7 +32,7 @@ import AssocTree
 import TokenInt
 import PackedString(PackedString,packString,unpackPS)
 import SyntaxPos
-import SyntaxUtil(infixFun)
+import SyntaxUtil(infixFun,isTypeVar)
 import Id(Id)
 
 import Overlap(Overlap)
@@ -267,8 +267,8 @@ renameDecl (DeclClass pos ctxs tid (tvar:_) _ decls') =
                   ++") are not supported.")
                  (DeclClass pos [] c [t] [] (DeclsParse []))
 
-renameDecl (DeclInstance pos ctxs tid [instanceType@(TypeCons _ tcon _)]
-                         instmethods') =
+renameDecl (DeclInstance pos ctxs tid [instanceType@(TypeCons _ tcon tvs)]
+                         instmethods') | all isTypeVar tvs =
   let al = tvTids (snub (freeType instanceType))
       (DeclsParse instmethods) = groupFun instmethods'
   in mapS (renameCtx al) ctxs >>>= \ ctxs -> 
@@ -704,7 +704,7 @@ fixInstance iTrue (DeclInstance pos ctxs i [instanceType@(TypeCons _ ti tvs)]
     mapS (\(pos,i) -> getInfo i >>>= \info -> unitS (pos,info))
          (map getI instmethods) >>>= \ ims ->
     let
-      free = map ( \ (TypeVar _ v) -> v) tvs
+      free = concatMap (\tv-> case tv of (TypeVar _ v) -> [v]; _ -> []) tvs
       ctxsNT =  ctxs2NT ctxs
       nt = NewType free [] ctxsNT [NTcons ti (map NTvar free)]
       cmds' = map ( \ (info,d) -> (extractV (tidI info),(info,d))) cmds

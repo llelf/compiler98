@@ -1,5 +1,6 @@
 module SyntaxUtil(dropPatAs, infixFun, isCon
 	, isExpInt, isExpIrr, isExpVar, isVar, isNK
+	, isTypeVar
 	) where
 
 import Syntax
@@ -42,4 +43,5 @@ infixFun es =
 isExpVarOp (ExpVarOp _ _) = True
 isExpVarOp _ = False
 
-
+isTypeVar (TypeVar _ _ ) = True
+isTypeVar _ = False
