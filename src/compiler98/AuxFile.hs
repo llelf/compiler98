@@ -38,12 +38,11 @@ toAuxFile flags aux
                     showLines (listAT fullInfo)
                    ) "")
     let missingDefns = missing exports fullInfo definedTypesAndClasses toIdent
-    if not (null missingDefns) then
-        hPutStr stderr
+    when (not (null missingDefns))
+         (hPutStr stderr
             ((showString "\nExported but not defined in this module "
 		. showString "(possibly imported and reexported):\n"
-		. showLines missingDefns) "\n")
-      else return ()
+		. showLines missingDefns) "\n"))
   where
     showLines :: Show a => [a] -> ShowS
     showLines = foldr (\x y-> shows x . showChar '\n' . y) id
@@ -66,6 +65,7 @@ patternAux = Has { args=(-1), fixity=Def, priority=9, letBound=False }
 -- conids back to the type they belong to.  It also relates methods
 -- to their class.
 data Identifier = Var String | Con String{-type-} String{-con-}
+		| Field String{-type-} String{-field-}
 		| Method String{-class-} String{-method-}
 	deriving (Show,Read,Eq,Ord)
 
@@ -73,19 +73,19 @@ data Identifier = Var String | Con String{-type-} String{-con-}
 -- unique AuxiliaryInfo.
 type AuxTree = AssocTree Identifier AuxiliaryInfo
 
--- IdentMap is an environment associating each constructor with
--- its type, each method with its class.  We can encounter a
+-- IdentMap is an environment associating each constructor/field with
+-- its type, and each method with its class.  We can encounter a
 -- constructor (or method) without its type (or class) in a fixity decl,
 -- but we then need to know its type (or class) to know whether it
--- is exported or not.  If an entity is neither a known constructor
+-- is exported or not.  If an entity is neither a known constructor/field
 -- nor a known method, we assume it is just an ordinary variable.
 type IdentMap = TokenId{-con, var, or method-} -> Identifier
 
 
--- `mkIdentMap' makes a little lookup table from data constructors to their
--- type name, and methods to their class .  Additionally, it builds a list
--- of all defined types, plus synonyms and class names, used to check that
--- all exports have a referent.
+-- `mkIdentMap' makes a little lookup table from data constructors and field
+-- names to their type name, and methods to their class.  Additionally, it
+-- builds a list of all defined types, plus synonyms and class names, used
+-- to check that all exports have a referent.
 
 mkIdentMap :: [Decl TokenId] -> (IdentMap,[TokenId])
 mkIdentMap decls =
@@ -94,10 +94,10 @@ mkIdentMap decls =
     in ( lookup (foldr addMethod (foldr addCon initAT dataDecls) classDecls)
        , map fst dataDecls ++ map fst classDecls ++ concatMap typeSyn decls)
   where
-    dataDecl (DeclData _ _ (Simple _ typ _) tycons _) = [(typ,tycons)]
+    dataDecl (DeclData _ _ (Simple _ typ _) tycons _)  = [(typ,tycons)]
     dataDecl _ = []
 
-    classDecl (DeclClass _ _ id _ (DeclsParse decls)) = [(id,decls)]
+    classDecl (DeclClass _ _ cls _ (DeclsParse decls)) = [(cls,decls)]
     classDecl _ = []
 
     typeSyn (DeclType (Simple pos id vars) _) = [id]
@@ -105,23 +105,29 @@ mkIdentMap decls =
 
     addCon (typ, tycons) t = foldr doCon t tycons
 	where
-            doCon (Constr _ c _) t        = addAT t const c typ
-            doCon (ConstrCtx _ _ _ c _) t = addAT t const c typ
+            doCon (Constr _ c fs) t        = conAndFields c fs t
+            doCon (ConstrCtx _ _ _ c fs) t = conAndFields c fs t
+            conAndFields c fs t = addFields (addAT t const c (Con styp)) styp fs
+            styp = show typ
+
+    addFields t typ [] = t
+    addFields t typ ((Nothing,_):_) = t
+    addFields t typ ((Just posids,_):cs) = foldr doField (rest t) posids
+        where
+            doField (_,f) t = addAT t const f (Field typ)
+            rest t = addFields t typ cs
 
     addMethod (cls, decls) t = foldr doMethod t decls
 	where
 	    doMethod (DeclVarsType pis ctxs typ) t = foldr pId t pis
 	    doMethod _ t = t
-	    pId (pos,meth) t = addAT t const meth cls
+	    pId (pos,meth) t = addAT t const meth (Method (show cls))
 
     lookup t v =
       let id = show v in
       case lookupAT t v of
-	Just tc -> if isCon id then Con (show tc) id else Method (show tc) id
+	Just tc -> tc id
 	Nothing -> Var id
-
-isCon :: String -> Bool
-isCon (x:_) = isUpper x || x==':'
 
 
 -- `extendEnv' extends an AuxTree environment from a list of declarations,
@@ -171,15 +177,19 @@ getImports reexport alreadyGot flags =
 
     x `isAmong` entities = (x `match`) `any` entities
 
-    (Var v)     `match` (EntityVar _ y)       =  v  == show y
-    (Con t1 c)  `match` (EntityTyCon _ t2 cs) =  t1 == show t2 &&
-						 c `elem` (map (show.snd) cs)
-    (Con t1 c)  `match` (EntityTyConCls _ t2) =  t1 == show t2
-    (Method c m)`match` (EntityVar _ y)       =  m  == show y
-    (Method c m)`match` (EntityTyConCls _ cs) =  c  == show cs
-    (Method c m)`match` (EntityTyCls _ cs ms) =  c  == show cs &&
-					 	 m `elem` (map (show.snd) ms)
-    _           `match`  _                    =  False
+    (Var v)     `match` (EntityVar _ y)        =  v  == show y
+    (Field t1 f)`match` (EntityVar _ y)        =  f  == show y
+    (Method c m)`match` (EntityVar _ y)        =  m  == show y
+    (Con t1 c)  `match` (EntityConClsAll _ t2) =  t1 == show t2
+    (Field t1 f)`match` (EntityConClsAll _ t2) =  t1 == show t2
+    (Method c m)`match` (EntityConClsAll _ c2) =  c  == show c2
+    (Con t1 c)  `match` (EntityConClsSome _ t2 cs) =
+				t1 == show t2 && c `elem` (map (show.snd) cs)
+    (Field t1 f)`match` (EntityConClsSome _ t2 cs) =
+				t1 == show t2 && f `elem` (map (show.snd) cs)
+    (Method c m)`match` (EntityConClsSome _ c2 ms) =
+				c  == show c2 && m `elem` (map (show.snd) ms)
+    _           `match`  _                     =  False
 
 
 
@@ -193,7 +203,8 @@ type Visibility = Identifier -> Bool
 -- When checking Constructors, we need to check both whether it
 -- is mentioned explicitly, and whether the type it belongs to it
 -- mentioned in Typ(..) syntax, which implicitly exports all its
--- constructors.  Likewise for methods and the Class(..) syntax.
+-- constructors.  Likewise for fields, and for methods with the
+-- Class(..) syntax.
 
 visibleIn :: Maybe [Export TokenId] -> Visibility -> TokenId -> Visibility
 visibleIn Nothing noneSpecified modid = (\_->False)
@@ -210,27 +221,24 @@ visibleIn (Just exports) noneSpecified modid
 		ExportEntity _ (EntityVar _ e) ->[show e]
 		_ -> []) exports
 
-    explicitTypes = concatMap
+    explicitSubordinates = concatMap
 	 (\e-> case e of
-		ExportEntity _ (EntityTyCon _ _ cons) -> map (show.snd) cons
+		ExportEntity _ (EntityConClsSome _ _ sub) -> map (show.snd) sub
 		_ -> []) exports
 
-    explicitMethods = concatMap
+    implicitSubordinates = concatMap
 	 (\e-> case e of
-		ExportEntity _ (EntityTyCls _ _ mets) -> map (show.snd) mets
+		ExportEntity _ (EntityConClsAll _ torc) -> [show torc]
 		_ -> []) exports
 
-    implicitTypesOrMethods = concatMap
-	 (\e-> case e of
-		ExportEntity _ (EntityTyConCls _ torc) -> [show torc]
-		_ -> []) exports
-
-    idFilter c@(Con typ con)    = con `elem` explicitTypes
-				|| typ `elem` implicitTypesOrMethods
-    idFilter v@(Var var)        = var `elem` explicitVars
-    idFilter v@(Method cls met) = met `elem` explicitMethods
+    idFilter c@(Con typ con)    =  con `elem` explicitSubordinates
+				|| typ `elem` implicitSubordinates
+    idFilter v@(Var var)        =  var `elem` explicitVars
+    idFilter v@(Method cls met) =  met `elem` explicitSubordinates
+				|| cls `elem` implicitSubordinates
 				|| met `elem` explicitVars
-				|| cls `elem` implicitTypesOrMethods
+    idFilter c@(Field typ f)    =  f   `elem` explicitSubordinates
+				|| typ `elem` implicitSubordinates
 
 
 -- The following comment is no longer true - I have added a Maybe
@@ -278,18 +286,24 @@ auxInfo visible toIdent (DeclPrimitive _ f a _) t
 auxInfo visible toIdent (DeclForeignImp _ _ _ f a _ _ _) t
     | visible key  = addAT t replaceArity key (emptyAux {args = a})
 						where key = Var (show f)
--- Add conid/conop identifier, with arity.
-auxInfo visible toIdent (DeclData _ _ typ tycons _) t =
+-- Add conid/conop identifier, with arity, and any associated field names.
+auxInfo visible toIdent (DeclData _ _ (Simple _ typ _) tycons _) t =
     foldr doCon t tycons
   where
-    doCon (Constr _ c ps) t	 = accept c ps t
-    doCon (ConstrCtx _ _ _ c ps) t = accept c ps t
-    accept con ps t
+    doCon (Constr _ c fs) t	   = accept c fs (foldr doFields t fs)
+    doCon (ConstrCtx _ _ _ c fs) t = accept c fs (foldr doFields t fs)
+    accept con fs t
 	| visible key = addAT t replaceArity key (emptyAux {args=a})
 	| otherwise = t
-	where a = sum (map (\(mb,_)->maybe 1 length mb) ps)
-	      (Simple _ typname _) = typ
-	      key = (Con (show typname) (show con))
+	where a = sum (map (\(mb,_)->maybe 1 length mb) fs)
+	      key = Con (show typ) (show con)
+    doFields (Nothing,_) t = t
+    doFields (Just fs,_) t = foldr doField t fs
+    doField (_,f) t
+        | visible key = addAT t replaceArity key (emptyAux {args=1})
+	| otherwise = t
+	where key = Field (show typ) (show f)
+-- Add class method identifier, arity is always -1.
 auxInfo visible toIdent (DeclClass _ _ cls _ (DeclsParse decls)) t =
     foldr doMethod t decls
   where
@@ -354,23 +368,16 @@ missing Nothing defined definedTypes toIdent = []
 missing (Just exports) defined definedTypes toIdent =
     concatMap notDefined exports
   where
-    notDefined (ExportEntity _ (EntityVar _ v))      = methodOrVar v
-    notDefined (ExportEntity _ (EntityTyCon _ t cs)) =
-			 concatMap (isntDef . Con (show t) . show . snd) cs
-    notDefined (ExportEntity _ (EntityTyCls _ c ms)) =
-			 concatMap (isntDef . Method (show c) . show . snd) ms
-    notDefined (ExportEntity _ (EntityTyConCls _ t)) = typNotDefined t
+    notDefined (ExportEntity _ (EntityVar _ v))       = valNotDefined v
+    notDefined (ExportEntity _ (EntityConClsAll _ t)) = typNotDefined t
+    notDefined (ExportEntity _ (EntityConClsSome _ t cs)) =
+				concatMap (valNotDefined . snd) cs
     notDefined _ = []
 
-    isntDef v = case lookupAT defined v of
-		  Just _ -> []
-		  Nothing -> [v]
-
-    methodOrVar m =
-		let v = toIdent m in
-		case lookupAT defined (toIdent m) of
-		  Just _ -> []
-		  Nothing -> [v]
+    valNotDefined m = let v = toIdent m in
+                      case lookupAT defined v of
+                          Just _ -> []
+                          Nothing -> [v]
 
     typNotDefined typ = if typ `elem` definedTypes then []
 			else [Con (show typ) ".."]

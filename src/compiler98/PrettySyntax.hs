@@ -260,11 +260,8 @@ ppExport info (ExportModid pos id) = text "module " <> ppId info id
 
 ppEntity :: PPInfo a -> Entity a -> Doc
 ppEntity info (EntityVar pos id) = ppIdAsVar info id
-ppEntity info (EntityTyConCls pos id) = ppId info id <> text "(..)"
-ppEntity info (EntityTyCon pos id ids) = 
-  nestS info $ 
-    ppId info id <> (parens . sep fComma . map (ppIdAsVar info . snd) $ ids)
-ppEntity info (EntityTyCls pos id ids) =
+ppEntity info (EntityConClsAll pos id) = ppId info id <> text "(..)"
+ppEntity info (EntityConClsSome pos id ids) = 
   nestS info $ 
     ppId info id <> (parens . sep fComma . map (ppIdAsVar info . snd) $ ids)
 

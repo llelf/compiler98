@@ -22,7 +22,7 @@ import Tree234
 
 import Overlap(Overlap)
 import Info(IE)
-import PackedString(PackedString)
+import PackedString(PackedString,unpackPS)
 import ImportState(ImportState)
 
 
@@ -87,20 +87,20 @@ needExport  (ExportModid   pos hs) =
 needEntity :: (TokenId->TokenId) -> Entity TokenId -> NeedLib -> NeedLib
 needEntity q (EntityVar pos hs) =		-- varid
     needTid pos Var (q hs)
-needEntity q (EntityTyConCls pos hs) =		-- TyCon(..) | TyCls(..)
+needEntity q (EntityConClsAll pos hs) =		-- TyCon(..) | TyCls(..)
     needTid pos TC (q hs)
-needEntity q (EntityTyCon pos hs posidents) = 	-- TyCon | TyCon(conid,..,conid)
-    needTid pos TCon (q hs)
-    >>> needPosIdents q Con posidents
-needEntity q (EntityTyCls pos hs posidents) =	-- TyCls(varid,..,varid) 
-    needTid pos TClass (q hs)
-    >>> needPosIdents q Method posidents
+needEntity q (EntityConClsSome pos hs posidents) = -- TC | TC(id0,id1,...)
+    needTid pos TC (q hs)
+    >>> needPosIdents q posidents
 
-
-needPosIdents :: (TokenId->TokenId) -> IdKind -> [(Int,TokenId)]
-                 -> NeedLib -> NeedLib
-needPosIdents q kind posidents = 
-    mapR (\(pos,tid) -> needTid pos kind (q tid)) posidents
+needPosIdents :: (TokenId->TokenId) -> [(Int,TokenId)] -> NeedLib -> NeedLib
+needPosIdents q posidents = 
+    if any (isTidCon.snd) posidents then
+         mapR (\(pos,tid) -> if isTidCon tid then needTid pos Con (q tid)
+                                             else needTid pos Field (q tid))
+              posidents
+    else mapR (\(pos,tid) -> needTid pos Method (q tid)) posidents
+				-- could really be Method or Field.
 
 -----------------------------------
 

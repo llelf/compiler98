@@ -6,7 +6,7 @@ module PreImport (HideDeclIds,qualRename,preImport) where
 import List(partition,nub,intersect,(\\))
 import MergeSort
 import TokenId(TokenId(..),tPrelude,t_Arrow,ensureM,forceM,dropM,
-               rpsPrelude,rpsBinary,t_List)
+               rpsPrelude,rpsBinary,t_List,isTidCon)
 import PackedString(PackedString,packString,unpackPS)
 import Syntax
 import IdKind
@@ -173,8 +173,8 @@ transImport impdecls = impdecls'
   impdecls' =  (sortImport . traverse initAT False)
               -- (ImportQ (noPos,tPrelude) (Hiding []) :
                   (ImportQ (noPos,vis "Ratio") (NoHiding
-				[EntityTyConCls noPos (vis "Rational")
-				,EntityTyConCls noPos (vis "Ratio")
+				[EntityConClsAll noPos (vis "Rational")
+				,EntityConClsAll noPos (vis "Ratio")
 				,EntityVar noPos (vis "%")]) :
                      impdecls)
   vis = Visible . packString . reverse
@@ -265,19 +265,23 @@ mkExportAT expdecls = exportAT
 
 
 extractEntity (EntityVar  pos tid)       = [((tid,Var),IEall)]
-extractEntity (EntityTyConCls pos tid)
-    | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TC),IEall)]
+extractEntity (EntityConClsAll pos tid)
+    | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TCon),IEall)]
     | otherwise                          = [((tid,TC),IEall)]
-extractEntity (EntityTyCon  pos tid [])
+extractEntity (EntityConClsSome pos tid [])
     | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TCon),IEabs)]
-    | otherwise                          = [((tid,TCon),IEabs)]
-extractEntity (EntityTyCon  pos tid ids)
+    | otherwise                          = [((tid,TC),IEabs)]
+extractEntity (EntityConClsSome pos tid ids)
     | (tid==t_Arrow || tid==t_List)      =  ((dropM tid,TCon),IEsome) : constrs
-    | otherwise                          =  ((tid,TCon),IEsome) : constrs
+    | otherwise                          =  ((tid,TC),IEsome) : subordinates
   where constrs = map (\(pos,tid)-> ((tid,Con),IEsel)) ids
-extractEntity (EntityTyCls  pos tid ids) =  ((tid,TClass),IEsome) : methods
-  where methods = map (\(pos,tid)-> ((tid,Method),IEsel)) ids
-
+        subordinates = if any (isTidCon.snd) ids then
+                            map (\(pos,tid)-> if isTidCon tid then
+                                                   ((tid,Con),IEsel)
+                                              else ((tid,Field),IEsel))
+                                ids
+                       else map (\(pos,tid)-> ((tid,Method),IEsel)) ids
+				-- could really be Method or Field...
 
 ------
 

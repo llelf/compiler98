@@ -3,6 +3,7 @@ module AuxLabelAST
   ) where
 
 
+import Char (isUpper)
 import AuxFile
 import AuxFixity
 import TraceId
@@ -32,6 +33,7 @@ auxLabelSyntaxTree flags
   where
     stripType env (Con _ con, aux)    = addAT env const (Con "" con) aux
     stripType env (Method _ met, aux) = addAT env const (Var met) aux
+    stripType env (Field _ f, aux)    = addAT env const (Var f)   aux
     stripType env (v@(Var _), aux)    = addAT env const v aux
 
 
@@ -47,6 +49,7 @@ im = \v-> let name = show v in if isCon name then Con "" name else Var name
 vi :: Visibility
 vi = \_-> True
 
+isCon (c:_) = isUpper c || c==':'
 
 -- `letVar' and `lookEnv' build a TraceId for any TokenId by
 -- looking up the arity information in the environment.  For letVar,
@@ -113,11 +116,10 @@ instance Relabel ImpSpec where
 
 instance Relabel Entity where
   relabel env (EntityVar p id)		= EntityVar p (mkLambdaBound id)
-  relabel env (EntityTyConCls p id)	= EntityTyConCls p (mkLambdaBound id)
-  relabel env (EntityTyCon p id cons)	= EntityTyCon p (mkLambdaBound id)
+  relabel env (EntityConClsAll p id)	= EntityConClsAll p (mkLambdaBound id)
+  relabel env (EntityConClsSome p id cons) = EntityConClsSome p
+						(mkLambdaBound id)
 						(relabelPosIds cons)
-  relabel env (EntityTyCls p id vars)	= EntityTyCls p (mkLambdaBound id)
-						(relabelPosIds vars)
 
 instance Relabel InfixClass where
   relabel env InfixDef = InfixDef

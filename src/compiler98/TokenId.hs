@@ -4,6 +4,7 @@ Also defines tokenIds for identifiers that are hardcoded into the compiler.
 -}
 module TokenId(module TokenId) where
 
+import Char(isUpper)
 import Extra(mix,isNhcOp,Pos(..),strPos)
 import PackedString(PackedString, unpackPS, packString)
 
@@ -37,10 +38,16 @@ instance Show TokenId where
     shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
 
 
+isTidOp :: TokenId -> Bool
 isTidOp (TupleId s) = False
 isTidOp tid = 
   (isNhcOp . head . dropWhile (=='_') . reverse . unpackPS . extractV) tid
 
+isTidCon :: TokenId -> Bool
+isTidCon tid = let (s:_) = (reverse . unpackPS . extractV) tid in
+               (isUpper s || s==':')
+
+isTupleId :: TokenId -> Bool
 isTupleId (TupleId _)        = True
 isTupleId (Qualified2 _ t)   = isTupleId t
 isTupleId (Qualified3 _ _ t) = isTupleId t
@@ -55,33 +62,28 @@ notPrelude (TupleId _) = False
 
 {- construct Qualified2 token from given two tokens -}
 mkQual2 :: TokenId -> TokenId -> TokenId
-
 mkQual2 cls cls_typ = Qualified2 cls cls_typ
 
 
 {- construct Qualified3 token from given three tokens -}
 mkQual3 :: TokenId -> TokenId -> TokenId -> TokenId
-
 mkQual3 cls typ met = Qualified3 cls typ (dropM met)
 
 
 {- -}
 mkQualD :: PackedString -> TokenId -> TokenId
-
 mkQualD rps v@(Visible n) = Qualified3 (Visible rps) t_underscore v
 mkQualD rps   (Qualified m v) = Qualified3 (Visible m) t_underscore (Visible v)
 
 
 {- if token is not qualified make it qualified with given module name -}
 ensureM :: PackedString -> TokenId -> TokenId
-
 ensureM tid (Visible n) = Qualified tid n
 ensureM tid q = q
 
 
 {- make token into qualified token with given module name -}
 forceM :: PackedString -> TokenId -> TokenId
-
 forceM m (Qualified _ n) = Qualified m n
 forceM m (Visible n)     = Qualified m n
 forceM m tid = tid
@@ -89,7 +91,6 @@ forceM m tid = tid
 
 {- drop all qualification (module names) from token -}
 dropM :: TokenId -> TokenId
-
 dropM (Qualified tid n) = Visible n
 dropM (Qualified2 t1 t2) = t2
 dropM (Qualified3 t1 t2 t3) = t3
@@ -97,7 +98,6 @@ dropM v = v
 
 {- get module name from token, correct for Visible? -}
 extractM :: TokenId -> PackedString
-
 extractM (Qualified tid n) = tid
 extractM (Qualified2 t1 t2) = extractM t1
 extractM (Qualified3 t1 t2 t3) = extractM t1
@@ -106,7 +106,6 @@ extractM v = rpsPrelude
 
 {- get identifier name from token, without qualification -}
 extractV :: TokenId -> PackedString
-
 extractV (TupleId n) = packString ('(' : foldr (:) ")" (replicate n ','))
 extractV (Visible v) = v
 extractV (Qualified m v) =  v
@@ -116,7 +115,6 @@ extractV (Qualified3 t1 t2 t3) = extractV t3
 
 {- extend token by adding position to the identifier name -}
 tidPos :: TokenId -> Pos -> TokenId
-
 tidPos (TupleId s) pos = if s == 0 
 		         then visImport ("():" ++ (strPos pos))
 	                 else visImport (shows s (':' : strPos pos))
@@ -132,7 +130,6 @@ tidPos (Qualified3 t1 t2 t3) pos =
 
 {- append given string to module name of qualified token -}
 add2M :: String -> TokenId -> TokenId
-
 add2M str (Qualified m v) =  
   Qualified (packString (reverse str ++ unpackPS m)) v
 
@@ -160,7 +157,6 @@ isUnit _ = False
 
 {- make token for tuple of given size -}
 t_Tuple :: Int -> TokenId
-
 t_Tuple  size   = TupleId size
 
 
@@ -214,7 +210,7 @@ t_Arrow         = qualImpPrel  "->"
 t_Pair          = qualImpPrel  "(,"
 tString         = qualImpPrel  "String"
 t_filter        = qualImpPrel  "_filter" 
-t_foldr         = qualImpPrel  "_foldr"   
+t_foldr         = qualImpPrel  "_foldr" -- be careful, non-standard signature 
 t_Colon         = qualImpPrel  ":"
 t_x             = visImport    "_x"
 t_y             = visImport    "_y"

@@ -45,10 +45,10 @@ data ImpSpec id =
      | Hiding   [Entity id]
 
 data Entity id =
-       EntityVar      Pos id             -- varid
-     | EntityTyConCls Pos id             -- TyCon(..) | TyCls(..)
-     | EntityTyCon    Pos id [(Pos,id)]  -- TyCon | TyCon(conid,..,conid)
-     | EntityTyCls    Pos id [(Pos,id)]  -- TyCls(varid,..,varid) 
+       EntityVar        Pos id             -- varid
+     | EntityConClsAll  Pos id             -- TyCon(..) | TyCls(..)
+     | EntityConClsSome Pos id [(Pos,id)]
+	  -- TyCon | TyCls | TyCon(conid,..,conid) | TyCls(varid,..,varid) 
 
 data InfixClass a =
                   InfixDef

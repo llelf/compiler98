@@ -33,10 +33,9 @@ instance HasPos (Decl a) where
     getPos (DeclError str)              = noPos
 
 instance HasPos (Entity a) where
-    getPos (EntityVar       pos _)   = pos
-    getPos (EntityTyConCls  pos _)   = pos
-    getPos (EntityTyCon     pos _ _) = pos
-    getPos (EntityTyCls     pos _ _) = pos
+    getPos (EntityVar        pos _)   = pos
+    getPos (EntityConClsAll  pos _)   = pos
+    getPos (EntityConClsSome pos _ _) = pos
 
 instance HasPos (Alt a) where
     getPos e = getPosAlt e

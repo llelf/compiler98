@@ -26,7 +26,7 @@ module TraceTrans (traceTrans,maybeStripOffQual) where
 
 import Syntax
 import SyntaxPos (HasPos(getPos))
-import TokenId (TokenId(TupleId,Visible,Qualified)
+import TokenId (TokenId(TupleId,Visible,Qualified),isTidCon
                ,qualify,visible,extractV,extractM
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq,t_Colon,t_List)
@@ -156,14 +156,20 @@ tImpSpec (Hiding entities)   = Hiding (concatMap tEntity entities)
 
 tEntity :: Entity TraceId -> [Entity TokenId]
 tEntity (EntityVar pos id) = [EntityVar pos (nameTransVar id)]
-tEntity (EntityTyConCls pos id) = [EntityTyConCls pos (nameTransTyConCls id)]
+tEntity (EntityConClsAll pos id) = [EntityConClsAll pos (nameTransTyConCls id)]
   -- INCOMPLETE: if TyCon(..) need also to import/export references to traces
   -- of data constructor names, but how know their names?
-tEntity (EntityTyCon pos id posConIds) = 
-  (EntityTyCon pos (nameTransTyConCls id) (mapSnd nameTransCon posConIds))
-  : map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) posConIds
-tEntity (EntityTyCls pos id posVarIds) =
-  [EntityTyCls pos (nameTransTyConCls id) (mapSnd nameTransVar posVarIds)]
+tEntity (EntityConClsSome pos id posIds)
+  | not (null pCons) =  -- i.e. definitely a TyCon
+    (EntityConClsSome pos (nameTransTyConCls id)
+                          (mapSnd nameTransCon pCons
+                           ++ mapSnd nameTransField pFields))
+    : map (\(pos,id) -> EntityVar pos (nameTraceInfoCon id)) pCons
+    -- ++ map (\(pos,id) -> EntityVar pos (nameTraceInfoField id)) pFields
+  | otherwise = -- i.e. probably a TyClass
+    [EntityConClsSome pos (nameTransTyConCls id) (mapSnd nameTransVar posIds)]
+  where
+  (pCons,pFields)   = partition (isTidCon.tokenId.snd) posIds
 
 -- ----------------------------------------------------------------------------
 -- New top-level definitions for generating shared trace info
@@ -1852,9 +1858,9 @@ instance Functor ImpSpec where
 
 instance Functor Entity where
   fmap f (EntityVar pos id) = EntityVar pos (f id)
-  fmap f (EntityTyConCls pos id) = EntityTyConCls pos (f id)
-  fmap f (EntityTyCon pos id pids) = EntityTyCon pos (f id) (mapSnd f pids)
-  fmap f (EntityTyCls pos id pids) = EntityTyCls pos (f id) (mapSnd f pids)
+  fmap f (EntityConClsAll pos id) = EntityConClsAll pos (f id)
+  fmap f (EntityConClsSome pos id pids) =
+				EntityConClsSome pos (f id) (mapSnd f pids)
 
 instance Functor InfixClass where
   fmap f InfixDef = InfixDef
