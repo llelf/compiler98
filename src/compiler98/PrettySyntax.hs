@@ -492,9 +492,14 @@ ppDecl info (DeclDataPrim pos conid size) =
 
 ppDecl info (DeclData dk ctxs s cs ds) =
   groupNestS info $
-    text "data" <> fSpace <> 
+    text sort <> fSpace <> 
     groupNestS info (ppContexts info ctxs <> ppTypeSimple info s) <>
     ppConstrs info cs <> ppDerivings info ds
+  where
+  sort = case dk of
+           Nothing -> "newtype"
+           Just False -> "data"
+           Just True -> "data unboxed"
 
 ppDecl info (DeclConstrs pos did cs) =
   groupNestS info $
