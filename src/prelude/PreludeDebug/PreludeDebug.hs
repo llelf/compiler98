@@ -761,6 +761,17 @@ The given wrapped expression is evaluated before it is returned.
 -}
 eagerSat :: R a -> Trace -> R a
 
+eagerSat x t = 
+  let sat = mkTSatA t
+  in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
+          case x of -- create trace for (unevaluated x/v)
+            R v vt ->
+              v `myseq` -- evaluate v and thus extend trace for v
+              mkTSatC sat vt `myseq` -- set trace for evaluated v
+              v) -- return value
+       sat
+
+{-
 eagerSat x t =
   let sat = mkTSatA t
   in sat `myseq` mkTSatB sat `myseq`
@@ -769,7 +780,7 @@ eagerSat x t =
          v `myseq`
          mkTSatC sat vt `myseq`
          x
-
+-}
 
 -- The following combinator is currently not used.
 -- It should be used to not to loose information about pattern bindings.
