@@ -6,7 +6,7 @@
 #       (configure   - Oct 1999)
 
 # When incrementing this version number, don't forget to change the
-# corresponding definition in the Makefile!
+# corresponding definition in Makefile.inc!
 VERSIONNUM=115
 NHC98VERSION="v1.15 (CVS snapshot)"
 HMAKEVERSION="3.07 (2003-03-06)" export HMAKEVERSION
@@ -42,9 +42,17 @@ case $OS in
   *)       CCC=${CC-gcc};;
 esac
 PWD=`pwd`
-case $PWD in	# path mangling required for older CYGWIN
-  file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
-  //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
+case $OS in
+  CYGWIN*) PWD=`cygpath -w "$PWD" | tr '\\\\' '/'`
+           case $PWD in	# path mangling required for older CYGWIN ?
+             file://?/*) PWD=`echo $PWD | sed -e "s|^file://||" |\
+                              sed -e "s|^[^/]|&:|"` ;;
+             //?/*)      PWD=`echo $PWD | sed -e "s|^//||" |\
+                              sed -e "s|^[^/]|&:|"` ;;
+           esac
+           READLINE=""
+           EXE=.exe ;;
+  *) EXE="" ;;
 esac
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
@@ -177,13 +185,17 @@ HATLIBDIR=${HATLIBDIR-$INSTALLDIR/lib/hat}
 HMAKELIBDIR=${HMAKELIBDIR-$INSTALLDIR/lib/hmake}
 
 case $OS in
-  CYGWIN*) EXE=.exe ;;
-  *)       EXE= ;;
-esac
-case $OS in
-  SunOS)  LIBCOMPAT=" -lsocket -lnsl"  ;;
-  NetBSD) LIBCOMPAT=" -lcompat"  ;;
-  *)      LIBCOMPAT=  ;;
+  CYGWIN*) INSTALLDIR=`cygpath -w "$INSTALLDIR" | tr '\\\\' '/'`
+           BUILDDIR=`cygpath -w "$BUILDDIR" | tr '\\\\' '/'`
+           LIBDIR=`cygpath -w "$LIBDIR" | tr '\\\\' '/'`
+           INCDIR=`cygpath -w "$INCDIR" | tr '\\\\' '/'`
+           BINDIR=`cygpath -w "$BINDIR" | tr '\\\\' '/'`
+           HMAKELIBDIR=`cygpath -w "$HMAKELIBDIR" | tr '\\\\' '/'`
+           LIBCOMPAT=""
+           ;;
+  SunOS)   LIBCOMPAT=" -lsocket -lnsl"  ;;
+  NetBSD)  LIBCOMPAT=" -lcompat"  ;;
+  *)       LIBCOMPAT=""  ;;
 esac
 
 # Detect Haskell compilers and choose one for building with.
@@ -237,7 +249,7 @@ then
     echo "Html documents:       (none)"
   fi
 
-  if [ -d src ]		# Don't bother with these if doing a binary distribution
+  if [ -d src ]	# Don't bother with these if unpacking a binary distribution
   then
     echo
     echo "Now we check/create your build directories:"
@@ -319,7 +331,7 @@ main() {
 !!!
     $CCC -o endian endian.c
     ENDIAN=`./endian`
-    rm -f endian endian.c
+    rm -f endian$EXE endian.c
     echo -n "$ENDIAN "
     echo '(detected) '
   else
@@ -338,51 +350,54 @@ main() {
        echo "Found /usr/bin/true not /bin/true"
   fi
 
-  echo -n "Testing for the curses library:             "
-  if [ "$CURSES" = "" ]
+  if [ "$EXE" = "" ]
   then
-    cat >curses.c <<!!!
+    echo -n "Testing for the curses library:             "
+    if [ "$CURSES" = "" ]
+    then
+      cat >curses.c <<!!!
 #include <curses.h>
 void test (void) { mvaddstr(1,2,"hello world"); }
 int main (void) { test(); }
 !!!
-    if $CCC -o curses curses.c >/dev/null 2>/dev/null
-    then CURSES=""
-    else
-      if $CCC -o curses curses.c -lncurses >/dev/null 2>/dev/null
-      then CURSES="-lncurses"
+      if $CCC -o curses curses.c >/dev/null 2>/dev/null
+      then CURSES=""
       else
-        if $CCC -o curses curses.c -lcurses >/dev/null 2>/dev/null
-        then CURSES="-lcurses"
+        if $CCC -o curses curses.c -lncurses >/dev/null 2>/dev/null
+        then CURSES="-lncurses"
         else
-          if $CCC -o curses curses.c -lcurses -ltermcap >/dev/null 2>/dev/null
-          then CURSES="-lcurses -ltermcap"
-          else CURSES="-ltermcap -lcurses"	# don't know a good default?
+          if $CCC -o curses curses.c -lcurses >/dev/null 2>/dev/null
+          then CURSES="-lcurses"
+          else
+            if $CCC -o curses curses.c -lcurses -ltermcap >/dev/null 2>/dev/null
+            then CURSES="-lcurses -ltermcap"
+            else CURSES="-ltermcap -lcurses"	# don't know a good default?
+            fi
           fi
         fi
       fi
+      rm -f curses curses.c
+      echo -n "$CURSES "
+      echo '(detected) '
+    else
+      echo -n "$CURSES "
+      echo '(cached) '
     fi
-    rm -f curses curses.c
-    echo -n "$CURSES "
-    echo '(detected) '
-  else
-    echo -n "$CURSES "
-    echo '(cached) '
-  fi
 
-  echo -n "Testing for the readline library: "
-  echo 'main(){readline();}' >rd.c
-  if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
-  then echo '          -lreadline (detected)'
-       READLINE="-DUSE_READLINE=1 -lreadline"
-  else if ${CCC} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
-    then echo "          -lreadline $CURSES (detected)"
-       READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
-    else echo '          no  (detected)'
-       READLINE=""
+    echo -n "Testing for the readline library: "
+    echo 'main(){readline();}' >rd.c
+    if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
+    then echo '          -lreadline (detected)'
+         READLINE="-DUSE_READLINE=1 -lreadline"
+    else if ${CCC} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
+      then echo "          -lreadline $CURSES (detected)"
+         READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
+      else echo '          no  (detected)'
+         READLINE=""
+      fi
     fi
+    rm -f rd.c rd.out
   fi
-  rm -f rd.c rd.out
 
   #echo -n "Testing for the glib library: "
   #if glib-config --version >/dev/null 2>&1
@@ -396,7 +411,7 @@ int main (void) { test(); }
   #fi
 
   echo -n "Reading /usr/include/errno.h: "
-  if [ ! -d src/prelude/$MACHINE ]
+  if [ ! -d src/prelude/$MACHINE/NHC ]
   then
      mkdir src/prelude/$MACHINE src/prelude/$MACHINE/NHC
      cp src/prelude/Makefile.machinedepend src/prelude/$MACHINE/NHC/Makefile
@@ -409,9 +424,9 @@ int main (void) { test(); }
      cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE/NHC
   fi
   $CCC -o config-errno script/config-errno.c && \
-	./config-errno >targets/$MACHINE/Errno.hs && rm -f ./config-errno
+	./config-errno >targets/$MACHINE/Errno.hs && rm -f ./config-errno$EXE
   $CCC -o errnogen script/errnogen.c && \
-	./errnogen >DErrNo.hs && rm -f ./errnogen
+	./errnogen >DErrNo.hs && rm -f ./errnogen$EXE
   if diff DErrNo.hs src/prelude/$MACHINE/NHC/DErrNo.hs >/dev/null
   then
     rm -f DErrNo.hs
@@ -476,7 +491,7 @@ main(int argc, char **argv)
 !!!
   $CCC -o heap heap.c
   HEAP=`./heap $NEWHEAP`
-  rm -f heap heap.c
+  rm -f heap$EXE heap.c
   echo -n "$HEAP words "
   echo '(calculated) '
   sed -e "s|DefaultHeap|$HEAP words|" docs/limits.html.inst >docs/limits.html
@@ -500,7 +515,7 @@ echo
 
 if [ "$INSTALL" = "no" ]
 then
-  if [ -d src ]		# Don't overwrite config if doing binary distribution!
+  if [ -d src ]	# Don't overwrite config if unpacking binary distribution!
   then
     echo "Adding Makefile config script to"
     echo "    $BUILDLIBDIR/$MACHINE..."
