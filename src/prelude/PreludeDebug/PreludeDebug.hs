@@ -959,6 +959,13 @@ conRational :: SR -> Trace -> Rational -> R Rational
 conRational sr t b = mkR b (mkTNm t (mkNTRational b) sr)
 
 
+conCons :: SR -> Trace -> (R Char -> R [Char] -> [Char]) -> Trace 
+        -> Char -> R [Char] -> R [Char]
+conCons sr t con tnm c b@(R _ bt) =
+  let at = mkTNm t (mkNTChar c) sr
+  in mkR (con (R c at) b) (mkTAp2 t tnm at bt sr)
+
+
 {- Combinators for saturated n-ary applications of data constructors. -}
 con0 :: SR -> Trace -> r -> NmType -> R r
 con0 sr t cn nm =

@@ -13,7 +13,7 @@ import DbgId(t_R,t_mkTRoot,t_mkTNm
             ,t_if,t_guard
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
-            ,t_conFloat
+            ,t_conFloat,t_conCons,
             ,t_fromConInteger,t_fromConRational
             ,t_patFromConInteger,t_patFromConRational)
 import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
@@ -759,15 +759,15 @@ dExp cr (ExpIf pos c e1 e2) =
 dExp cr (ExpType pos e ctx t) = 
   unitS (\e' -> ExpType pos e' ctx t) =>>> dExp cr e
 dExp cr (ExpApplication pos (f:es))     = 
-    case f of
-        ExpCon _ _ ->            
-	    saturateConstr f es
-	_ ->
-	    lookupVar pos ((if cr then t_ap else t_rap) (length es)) >>>= \apply ->
-	    makeSourceRef pos >>>= \sr -> 
-	    dExps True (f:es) >>>= \fes ->
-	    getD >>>= \trail ->
-            unitS (ExpApplication pos (apply:sr:trail:fes))
+  case f of
+    ExpCon _ _ ->            
+      saturateConstr f es
+    _ ->
+      lookupVar pos ((if cr then t_ap else t_rap) (length es)) >>>= \apply ->
+      makeSourceRef pos >>>= \sr -> 
+      dExps True (f:es) >>>= \fes ->
+      getD >>>= \trail ->
+      unitS (ExpApplication pos (apply:sr:trail:fes))
 dExp cr e@(ExpCon pos id) = saturateConstr e []
 dExp cr e@(ExpVar pos id) = 
 --    lookupName id >>>= \name ->
@@ -785,12 +785,35 @@ dExp cr e@(ExpVar pos id) =
 	    makeSourceRef pos >>>= \sr ->
 	    getD >>>= \redex ->
 	    unitS (ExpApplication pos [e, sr, redex]) 
-dExp cr e@(ExpLit pos (LitString _ s)) = -- mkLitString pos e
-    -- This is somewhat expensive. But it works...
+dExp cr e@(ExpLit pos (LitString _ s)) = 
+  -- calling a combinator `litString pos s' impossible, because
+  -- the list data type (s) cannot be used there.
+  -- The following is somewhat expensive. But it works...
+  -- At least the list constructor (:) is shared in the trace.
+  lookupCon pos t_Colon >>>= \consid ->
+  lookupCon pos t_List >>>= \nilid ->
+  lookupVar pos t_conCons >>>= \conCons ->
+  getD >>>= \d ->
+  makeSourceRef pos >>>= \sr -> 
+  let ExpCon _ consId = consid in
+  makeNTConstr pos consId >>>= \ntconstr ->
+  makeNm pos d ntconstr sr >>>= \consName ->
+  addNewName 0 True "consTrace" NoType >>>= \consTrId ->
+  dExp True nilid >>>= \nil ->
+  let cons :: Char -> Exp Id -> Exp Id
+      cons c rs = ExpApplication pos [conCons, sr, d, consid
+                                     ,ExpVar pos consTrId
+                                     ,ExpLit pos (LitChar Boxed c), rs]
+  in unitS $ ExpLet pos 
+               (DeclsParse [DeclFun pos consTrId 
+                             [Fun [] (Unguarded consName) (DeclsParse []) ]]) 
+               (foldr cons nil s)
+{- old: Simpler, but leads to slightly larger expressions.
     lookupCon pos t_Colon >>>= \consid ->
     lookupCon pos t_List >>>= \nilid ->
     let rs = (map (ExpLit pos . LitChar Boxed) s) in
     dExp True (foldr (\c cs -> ExpApplication pos [consid, c, cs]) nilid rs)
+-}
 dExp cr e@(ExpLit pos (LitInteger b i)) = 
     -- Remove this after typechecking
     lookupVar pos t_fromConInteger >>>= \fci ->
@@ -803,7 +826,7 @@ dExp cr e@(ExpLit pos (LitRational b i)) =
     getD >>>= \d ->
     makeSourceRef pos >>>= \sr -> 
     unitS (ExpApplication pos [fcr, sr, d, e])
-dExp cr e@(ExpLit pos lit) = 	-- at a guess, this clause is obsolete.
+dExp cr e@(ExpLit pos lit) = 
     dLit lit >>>= \constr ->
     getD >>>= \d ->
     makeSourceRef pos >>>= \sr -> 

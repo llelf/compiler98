@@ -4,7 +4,7 @@ module DbgId(tTrace, t_R, tSR, tSR2, tSR3, tDNum, tE,
              t_ap, t_rap, t_patvar, t_caf, t_fun, t_primn, t_guard, t_if,
 	     t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
-	     t_indir,
+	     t_conCons, t_indir,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
 	     t_fromConRational, t_patFromConRational
 	     ,t_debugger, t_prim, t_rseq, t_cSeq
@@ -63,6 +63,7 @@ t_conInteger	= qualImp "conInteger"
 t_conRational	= qualImp "conRational"
 t_conDouble	= qualImp "conDouble"
 t_conFloat	= qualImp "conFloat"
+t_conCons       = qualImp "conCons"
 t_fromConInteger= qualImp "fromConInteger"
 t_patFromConInteger = qualImp "patFromConInteger"
 t_fromConRational = qualImp "fromConRational"
@@ -131,6 +132,7 @@ tokenDbg = [(TCon, tTrace),
 	    (Var, t_conRational),
 	    (Var, t_conFloat),
 	    (Var, t_conDouble),
+            (Var, t_conCons),
 	    (Var, t_fromConInteger),
 	    (Var, t_patFromConInteger),
 	    (Var, t_fromConRational),
