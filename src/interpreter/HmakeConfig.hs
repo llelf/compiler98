@@ -97,7 +97,7 @@ nonstdCoerceImport c  = case c of
     _     -> ""
 nonstdCoerce c  = case c of
     Nhc98 -> "\ncoerce=unsafeCoerce\n"
-    Hbc   -> "\ncoerce = id	-- wrong\n"
+    Hbc   -> "\ncoerce = id\t-- wrong\n"
     Ghc   -> "\ncoerce :: a -> b\ncoerce = unsafeCoerce#\n"
     _     -> ""
 nonstdShow c  = case c of
