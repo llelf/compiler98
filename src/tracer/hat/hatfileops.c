@@ -381,7 +381,7 @@ void skipNode(char nodeType) {
       skippointer();
       break;
     default:
-      fprintf(stderr, "strange low-bits tag %d in TR %u\n",
+      fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
 	      lo5(nodeType), byteoffset()-1);
       exit(1);
     }
@@ -429,7 +429,7 @@ void skipNode(char nodeType) {
     case CONTAINER:
       break;
     default:
-      fprintf(stderr, "strange low-bits tag %d in NT %u\n",
+      fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
 	      lo5(nodeType), byteoffset()-1);
       exit(1);
     }
@@ -438,7 +438,7 @@ void skipNode(char nodeType) {
     skipbytes(4+4);
     break;
   default:
-    fprintf(stderr, "strange high-bits tag %d at byte offset %u\n",
+    fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
 	    hi3(nodeType), byteoffset()-1);
     exit(1);
   }
@@ -450,7 +450,7 @@ unsigned long followTrace(unsigned long fileoffset) {
   unsigned long p;
   
   while (1) {
-    //printf("following Trace... %u\n",fileoffset);
+    //printf("following Trace... 0x%x\n",fileoffset);
     seek(fileoffset);
     nodeType = nextbyte();
     //printf("node type: %i\n",b);
@@ -515,7 +515,7 @@ unsigned long findAppSAT(unsigned long fileoffset) {
   unsigned long p,satc;
 
   while (1) {
-    //printf("searching for App SAT... %u\n",fileoffset);
+    //printf("searching for App SAT... 0x%x\n",fileoffset);
     seek(fileoffset);
     nodeType = getNodeType();
     //printf("node type: %i\n",nodeType);
@@ -568,7 +568,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 
   while (fileoffset!=0) {
 #ifdef DebugbuildExpr
-    printf("building expression... %u\n",fileoffset);
+    printf("building expression... 0x%x\n",fileoffset);
 #endif
     fileoffset=followTrace(fileoffset); // follow the trace along all SATs and indirections
     b = getNodeType();
@@ -701,8 +701,8 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
       exp->v.intval = getTrace();
       return exp;
     default:
-      fprintf(stderr, "strange tag %d in %u\n",
-	      b, byteoffset()-1);
+      fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x\n",
+	      b, byteoffset());
       exit(1);
     }
   }
@@ -800,7 +800,7 @@ void showFunLocation(unsigned long fileoffset) {
       fileoffset = getNmType();
       break;
     default:
-      printf("no location at offset: %u\n",fileoffset);
+      printf("no location at offset: 0x%x\n",fileoffset);
       seek(old);
       return;
     }
@@ -834,7 +834,7 @@ unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode,
 
   if (satc!=0) {
 #ifdef showAppNode
-    printf("(%u): ",fileoffset);
+    printf("(0x%x): ",fileoffset);
 #endif
     exp = buildExpr(byteoffset(),verboseMode,precision);
     resstr = prettyPrintExpr(exp,1); // don't show any level of unevaluated functions
