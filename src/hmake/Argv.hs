@@ -61,7 +61,8 @@ decode progArgs =
     , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
                  includePaths (compiler d)
     , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
-                 cppSymbols (compiler d)
+                 cppSymbols (compiler d) ++
+                 (if isHaskell98 (compiler d) then haskell98SymsForCpp else [])
     , defs     = (map tail . filter (\v -> head v == 'D')) flags
     , ignoreHi = (map tail . filter (\v -> head v == 'N')) flags
     , dflag    = False	-- isopt "od"
