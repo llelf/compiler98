@@ -1,7 +1,7 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre10
+VERSION = 1.0pre12
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
@@ -338,7 +338,7 @@ binDist:
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
 
 # This srcDist used to be the cDist.
-srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC
+srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
@@ -365,6 +365,8 @@ srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDI
 	rm -r nhc98-$(VERSION)
 	gzip nhc98src-$(VERSION).tar
 
+nolinks:
+	cd src/runtime;    $(MAKE) nolinks
 $(TARGDIR)/preludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) cfiles
 	touch $(TARGDIR)/preludeC

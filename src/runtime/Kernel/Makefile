@@ -38,6 +38,8 @@ links:
 	@for f in ${LINKS}; do \
 		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
 	done
+nolinks:
+	rm -f ${LINKS}
 
 xxx: 
 	echo ${BUILDDIR}

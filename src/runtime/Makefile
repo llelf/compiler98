@@ -34,6 +34,11 @@ clean:
 	cd Integer; $(MAKE) clean
 	cd Builtin; $(MAKE) clean
 	cd Mk;      $(MAKE) clean
+nolinks:
+	cd Kernel;  $(MAKE) nolinks
+	cd Integer; $(MAKE) nolinks
+	cd Builtin; $(MAKE) nolinks
+	cd Mk;      $(MAKE) nolinks
 realclean: clean
 	rm -f $(DST)/nhc98heap$(EXE) $(DST)/$(RUNTIME)$(CFG).a
 

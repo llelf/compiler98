@@ -1,5 +1,7 @@
 module EmitState where
 
+import Char (isLower)
+
 --  , {-type-} EmitState
 --  , emitState
 --  , startEmitState
@@ -123,8 +125,12 @@ emitState es =
                                        showString "\t((void*)" .
                                        preSym . showChar '+' . shows def .
                                        showString ")\n"
-      doExtern (Use sym _) = showString "extern unsigned " . showString sym .
-                             showString "[];\n"
+      doExtern (Use sym _)
+	-- This is a dreadful hack for distinguishing primitives from bytecode!
+        | isLower (head sym) = showString "extern void *" . showString sym .
+                               showString "();\n"
+        | otherwise          = showString "extern unsigned " . showString sym .
+                               showString "[];\n"
       endcode = code . showString "};\n"
   in
   (foldr (.) (foldr (.) endcode (map doExtern externs)) (map doLocal locals)

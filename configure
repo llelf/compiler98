@@ -5,7 +5,7 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 10 (date 991020)"
+CONFIGVERSION="v1.0 pre-release 12 (date 991029)"
 HMAKEVERSION="v1.5 (date 991005)"
 
 if uname >/dev/null 2>&1
