@@ -37,7 +37,11 @@ defval sym =
     let (s,d) = break (=='=') sym
     in if null d then (s,"1") else (s, tail d)
 
-data KeepState = Keep | Drop Int
+-- | Internal state for whether lines are being kept or dropped.
+--   In @Drop n b@, @n@ is the depth of nesting, @b@ is whether
+--   we have already succeeded in keeping some lines in a chain of
+--   @elif@'s
+data KeepState = Keep | Drop Int Bool
 
 -- | Return just the list of lines that the real cpp would decide to keep.
 cpp :: FilePath -> SymTab String -> KeepState -> [String] -> [String]
@@ -49,9 +53,9 @@ cpp fp syms Keep (l@('#':x):xs) =
              sym = head (tail ws)
              val = let v = tail (tail ws) in
                    if null v then "1" else head v
-             down = if definedST sym syms then (Drop 1) else Keep
-             up   = if definedST sym syms then Keep else (Drop 1)
-             keep str = if gatherDefined fp syms str then Keep else (Drop 1)
+             down = if definedST sym syms then (Drop 1 False) else Keep
+             up   = if definedST sym syms then Keep else (Drop 1 False)
+             keep str = if gatherDefined fp syms str then Keep else (Drop 1 False)
          in
          if      cmd == "define" then  cpp fp (insertST (sym,val) syms) Keep xs
          else if cmd == "undef"  then  cpp fp (deleteST sym syms) Keep xs
@@ -59,8 +63,8 @@ cpp fp syms Keep (l@('#':x):xs) =
          else if cmd == "ifndef" then  cpp fp syms  down xs
          else if cmd == "ifdef"  then  cpp fp syms  up   xs
          else if cmd == "if"     then  cpp fp syms (keep (drop 2 x)) xs
-         else if cmd == "else"   ||
-                 cmd == "elif"   then  cpp fp syms (Drop 1) xs
+         else if cmd == "else"   then  cpp fp syms (Drop 1 False) xs
+         else if cmd == "elif"   then  cpp fp syms (Drop 1 True) xs
          else if cmd == "endif"  then  cpp fp syms  Keep xs
          else l: cpp fp syms Keep xs
                                      --error ("Unknown directive #"++cmd++"\n")
@@ -71,29 +75,30 @@ cpp fp syms Keep (x:xs) =
 --  | prefix "import " x  = modname (x:xs): cpp syms Keep xs
 --  | otherwise           = cpp syms Keep xs
 
-cpp fp syms (Drop n) (('#':x):xs) =
+cpp fp syms (Drop n b) (('#':x):xs) =
          let ws = words x
              cmd = head ws
-             delse    | n==1      = Keep
-                      | otherwise = Drop n
+             delse    | n==1 && b = Drop 1 b
+                      | n==1      = Keep
+                      | otherwise = Drop n b
              dend     | n==1      = Keep
-                      | otherwise = Drop (n-1)
+                      | otherwise = Drop (n-1) b
              keep str | n==1      = if gatherDefined fp syms str then Keep
-                                    else (Drop 1)
-                      | otherwise = Drop n
+                                    else (Drop 1 b)
+                      | otherwise = Drop n b
          in
          if      cmd == "define" ||
                  cmd == "undef"  ||
-                 cmd == "line"   then  cpp fp syms (Drop n) xs
+                 cmd == "line"   then  cpp fp syms (Drop n b) xs
          else if cmd == "ifndef" ||
                  cmd == "if"     ||
-                 cmd == "ifdef"  then  cpp fp syms (Drop (n+1)) xs
+                 cmd == "ifdef"  then  cpp fp syms (Drop (n+1) b) xs
          else if cmd == "elif"   then  cpp fp syms (keep (drop 4 x)) xs
          else if cmd == "else"   then  cpp fp syms delse xs
          else if cmd == "endif"  then  cpp fp syms dend xs
-         else cpp fp syms (Drop n) xs
+         else cpp fp syms (Drop n b) xs
 				   --error ("Unknown directive #"++cmd++"\n")
-cpp fp syms d@(Drop n) (x:xs) =
+cpp fp syms d@(Drop n b) (x:xs) =
   cpp fp syms d xs
 
 -- | /leximports/ takes a cpp-ed list of lines and returns the list of imports
