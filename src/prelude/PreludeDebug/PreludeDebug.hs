@@ -136,9 +136,6 @@ primEnter sr t e = let v  = enter t e
 t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> Trace -> a
 
 t_guard sr (R gv gt) e cont t = 
-{-  if trustedFun t 
-    then if gv then e t else cont t
-    else -}
   let t' = mkTAp2 t (mkTNm t mkNTGuard sr) gt t sr
   in  t' `myseq` if gv then e t' else cont t'
   -- no SAT necessary, because the unevaluated form never
@@ -150,9 +147,6 @@ t_guard sr (R gv gt) e cont t =
 tif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 tif sr (R iv it) e1 e2 t = 
-{-  if trustedFun t 
-    then lazySat (if iv then e1 t else e2 t) t
-    else -}
   let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
   in  lazySat (if iv then e1 t' else e2 t') t'
 
@@ -165,9 +159,6 @@ Hence need no lazy SAT.
 trif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 trif sr (R iv it) e1 e2 t = 
-{-  if trustedFun t 
-    then if iv then e1 t else e2 t
-    else -}
   let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
   in  t' `myseq` eagerSat (if iv then e1 t' else e2 t') t'
 
@@ -299,7 +290,7 @@ tap1 :: Trace -> R (Trace -> R a -> R r) -> R a -> R r
 
 tap1 t (R rf tf) a = 
   if trustedFun tf
-    then lazySat (rf t a) t
+    then lazySatLonely (rf t a) t
     else case a of 
            R _ at ->
              let t' = mkTAp1 t tf at mkNoSR
@@ -307,7 +298,7 @@ tap1 t (R rf tf) a =
 
 tap2 t (R rf tf) a b = 
   if trustedFun tf 
-    then lazySat (tpap1 t t (rf t a) b) t
+    then lazySatLonely (tpap1 t t (rf t a) b) t
     else case a of 
            R _ at -> case b of 
              R _ bt ->
@@ -316,7 +307,7 @@ tap2 t (R rf tf) a b =
 
 tap3 t (R rf tf) a b c = 
   if trustedFun tf 
-    then lazySat (tpap2 t t (rf t a) b c) t
+    then lazySatLonely (tpap2 t t (rf t a) b c) t
     else case a of 
            R _ at -> case b of 
              R _ bt -> case c of 
@@ -326,42 +317,42 @@ tap3 t (R rf tf) a b c =
 
 tap4 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   if trustedFun tf 
-    then lazySat (tpap3 t t (rf t a) b c d) t
+    then lazySatLonely (tpap3 t t (rf t a) b c d) t
     else let t' = mkTAp4 t tf at bt ct dt mkNoSR
          in  lazySat (tpap3 t t' (rf t' a) b c d) t'
 
 
 tap5 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   if trustedFun tf 
-    then lazySat (tpap4 t t (rf t a) b c d e) t
+    then lazySatLonely (tpap4 t t (rf t a) b c d e) t
     else let t' = mkTAp5 t tf at bt ct dt et mkNoSR
          in  lazySat (tpap4 t t' (rf t' a) b c d e) t'
 
 tap6 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) = 
   if trustedFun tf 
-    then lazySat (tpap5 t t (rf t a) b c d e f) t
+    then lazySatLonely (tpap5 t t (rf t a) b c d e f) t
     else let t' = mkTAp6 t tf at bt ct dt et ft mkNoSR
          in  lazySat (tpap5 t t' (rf t' a) b c d e f) t'
 
 tap7 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) = 
   if trustedFun tf 
-    then lazySat (tpap6 t t (rf t a) b c d e f g) t
+    then lazySatLonely (tpap6 t t (rf t a) b c d e f g) t
     else let t' = mkTAp7 t tf at bt ct dt et ft gt mkNoSR
          in  lazySat (tpap6 t t' (rf t' a) b c d e f g) t'
 
 tap8 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   if trustedFun tf 
-    then lazySat (tpap7 t t (rf t a) b c d e f g h) t
+    then lazySatLonely (tpap7 t t (rf t a) b c d e f g h) t
     else let t' = mkTAp8 t tf at bt ct dt et ft gt ht mkNoSR
          in  lazySat (tpap7 t t' (rf t' a) b c d e f g h) t'
 
 tap9 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   if trustedFun tf 
-    then lazySat (tpap8 t t (rf t a) b c d e f g h i) t
+    then lazySatLonely (tpap8 t t (rf t a) b c d e f g h i) t
     else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it mkNoSR
          in  lazySat (tpap8 t t' (rf t' a) b c d e f g h i) t'
 
@@ -375,7 +366,7 @@ tap10 :: Trace
 tap10 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
   if trustedFun tf 
-    then lazySat (tpap9 t t (rf t a) b c d e f g h i j) t
+    then lazySatLonely (tpap9 t t (rf t a) b c d e f g h i j) t
     else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt mkNoSR
          in  lazySat (tpap9 t t' (rf t' a) b c d e f g h i j) t'
 
@@ -383,7 +374,7 @@ tap11 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) = 
   if trustedFun tf 
-    then lazySat (tpap10 t t (rf t a) b c d e f g h i j k) t
+    then lazySatLonely (tpap10 t t (rf t a) b c d e f g h i j k) t
     else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt mkNoSR
          in  lazySat (tpap10 t t' (rf t' a) b c d e f g h i j k) t'
 
@@ -391,7 +382,7 @@ tap12 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) l@(R _ lt) =  
   if trustedFun tf 
-    then lazySat (tpap11 t t (rf t a) b c d e f g h i j k l) t
+    then lazySatLonely (tpap11 t t (rf t a) b c d e f g h i j k l) t
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt mkNoSR
          in  lazySat (tpap11 t t' (rf t' a) b c d e f g h i j k l) t'
 
@@ -796,6 +787,19 @@ lazySat x t =
        sat
 
 
+lazySatLonely :: R a -> Trace -> R a
+
+lazySatLonely x t = 
+  let sat = mkTSatALonely t
+  in mkR (mkTSatBLonely sat `myseq` -- mark entering of evaluation
+          case x of -- create trace for (unevaluated x/v)
+            R v vt ->
+              v `myseq` -- evaluate v and thus extend trace for v
+              mkTSatCLonely sat vt `myseq` -- set trace for evaluated v
+              v) -- return value
+       sat
+
+
 {-
 Creates a Sat but not for the purpose of assuring that the trace component
 for a possibly unevaluated expression exists.
@@ -826,12 +830,15 @@ patvar nm (R v vt) sr t =
   mkR v (mkTInd (mkTNm t nm sr) vt)
 
 
-{- Combintors for transforming n-ary functions. -}
+{- Combinators for transforming n-ary functions. -}
+
+{- use caf instead
 fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
   let t' = mkTNm t nm sr
   in t' `myseq` lazySat (enter t' (rf t')) t'  -- t here correct?
+-}
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
@@ -1022,12 +1029,15 @@ fun12 nm rf sr t =
 
 -- version for trusted functions:
 
+{- only used as hack for `undefined': -}
 tfun0 :: NmType -> (Trace -> Trace -> R r) -> SR -> Trace -> R r
 
 tfun0 nm rf sr t = 
   let t' = optMkTNm t nm sr
-  in t' `myseq` lazySat (enter t' (rf t' (mkTHidden t'))) t'  
+  in t' `myseq` (if trustedFun t then lazySatLonely else lazySat) 
+                  (enter t' (rf t' (mkTHidden t'))) t'  
     -- t here correct?
+
 
 tfun1 :: NmType -> (Trace -> Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)

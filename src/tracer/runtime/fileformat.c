@@ -14,9 +14,11 @@ extern int spSize;	/* program's runtime stack size */
 
 static FileOffset HatCounter = 8 + 2*sizeof(FileOffset);
 static FileOffset *SATstack;
+static int        *SATstackSort;
 static int SATp = 0;
 static FileOffset SATqueueA[NUM_SATC];
 static FileOffset SATqueueC[NUM_SATC];
+static int        SATqueueSort[NUM_SATC];
 static int SATq = 0;
 
 void
@@ -24,6 +26,11 @@ initialiseSATstack (void)
 {
     SATstack = (FileOffset*)malloc(spSize * sizeof(FileOffset));
     if (SATstack==(FileOffset*)0) {
+        fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",spSize);
+        exit(10);
+    }
+    SATstackSort = (int*)malloc(spSize * sizeof(int));
+    if (SATstackSort==(int*)0) {
         fprintf(stderr,"Couldn't allocate %d words for SAT stack.\n",spSize);
         exit(10);
     }
@@ -485,6 +492,19 @@ primTSatA (CTrace* t1)
 }
 
 
+CTrace*
+primTSatALonely (CTrace* t1)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimTSatALonely 0x%x -> 0x%x\n",t1,fo);)
+    fputc(((Trace<<5) | TSatAL),HatFile);
+    fwrite(&(t1->ptr), sizeof(FileOffset), 1, HatFile);
+    HatCounter += 1 + (sizeof(FileOffset));
+    return mkTrace(fo,t1->trust,False);
+}
+
+
 /* The implementation of SatBs is as follows.
  *   Every SatB represents a function entry, and every SatC a function
  *   return.  Returns must be matched with enters in strictly
@@ -498,6 +518,20 @@ primTSatA (CTrace* t1)
 CTrace*
 primTSatB (CTrace* t1)
 {
+    SATstackSort[SATp] = False;
+    SATstack[SATp++] = t1->ptr;
+    if (SATp >= spSize) {
+        fprintf(stderr,"Exceeded size of SAT stack\n");
+        exit(1);
+    }
+    return t1;
+}
+
+
+CTrace*
+primTSatBLonely (CTrace* t1)
+{
+    SATstackSort[SATp] = True;
     SATstack[SATp++] = t1->ptr;
     if (SATp >= spSize) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
@@ -519,6 +553,35 @@ primTSatC (CTrace* torig,CTrace* teval)
         exit(1);
     } else {
 	/* save updates until we have a bunch of them */
+        SATqueueSort[SATq] = False;
+        SATqueueA[SATq] = torig->ptr;
+        SATqueueC[SATq] = teval->ptr;
+        SATq++;
+        if (SATq >= NUM_SATC) {
+            updateSatCs();
+        }
+        return torig;
+/*
+	-- do each update individually
+        fseek(HatFile,ntohl(torig->ptr),SEEK_SET);
+        fputc(((Trace<<5) | TSatC),HatFile);
+        fwrite(&teval, sizeof(FileOffset), 1, HatFile);
+        fseek(HatFile,HatCounter,SEEK_SET);
+        return torig;
+*/
+    }
+}
+
+
+CTrace*
+primTSatCLonely (CTrace* torig,CTrace* teval)
+{
+    if (SATstack[--SATp] != torig->ptr) {
+        fprintf(stderr,"SAT stack is corrupt.\n");
+        exit(1);
+    } else {
+	/* save updates until we have a bunch of them */
+        SATqueueSort[SATq] = True;
         SATqueueA[SATq] = torig->ptr;
         SATqueueC[SATq] = teval->ptr;
         SATq++;
@@ -549,7 +612,10 @@ updateSatCs (void)
     HIDE(fprintf(stderr,"\tupdateSatCs (%d SatCs) (%d SatBs)\n",SATq,SATp);)
     for (i=0; i<SATq; i++) {
         fseek(HatFile,ntohl(SATqueueA[i]),SEEK_SET);
-        fputc(((Trace<<5) | TSatC),HatFile);
+        if (SATqueueSort[i]) 
+          fputc(((Trace<<5) | TSatCL),HatFile);
+        else
+          fputc(((Trace<<5) | TSatC),HatFile);
         fwrite(&(SATqueueC[i]), sizeof(FileOffset), 1, HatFile);
     }
     fseek(HatFile,HatCounter,SEEK_SET);
@@ -569,7 +635,10 @@ updateSatBs (void)
     HIDE(fprintf(stderr,"\tupdateSatBs (%d SatBs)\n",SATp);)
     for (i=0; i<SATp; i++) {
         fseek(HatFile,ntohl(SATstack[i]),SEEK_SET);
-        fputc(((Trace<<5) | TSatB),HatFile);
+        if (SATstackSort[i])
+          fputc(((Trace<<5) | TSatBL),HatFile);
+        else
+          fputc(((Trace<<5) | TSatB),HatFile);
     }
     fseek(HatFile,HatCounter,SEEK_SET);
 }

@@ -17,6 +17,9 @@ typedef unsigned long FileOffset;
 #define TSatA	4
 #define TSatB	5
 #define TSatC	6
+#define TSatAL  12
+#define TSatBL  13
+#define TSatCL  14
 
 /* NmType: lower 5 bits of tag byte */
 #define NTInt		0

@@ -9,7 +9,7 @@ import IdKind(IdKind(Con,Var,TCon))
 import TokenId
 import DbgId(t_R,tSR,tTrace,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal,t_rPatBool
-            ,t_lazySat,t_fun,t_tfun,t_primn,t_tprimn
+            ,t_lazySat,t_lazySatLonely,t_fun,t_tfun,t_primn,t_tprimn
             ,t_prim,t_ap,t_rap,t_tap,t_trap
             ,t_cn,t_con,t_pa,t_tcon,t_tpa,t_indir
             ,t_if,t_rif,t_guard,t_mkNoSR
@@ -384,7 +384,7 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
   mkFailExpr pos hidParent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
-  lookupVar pos t_lazySat >>>= \lazySat ->
+  lookupVar pos t_lazySatLonely >>>= \lazySat ->
   addNewName 0 True "rhs" NoType >>>= \rhsId ->
   let
     prhs = DeclFun noPos rhsId [Fun [] rhs' (DeclsParse [])]
@@ -532,7 +532,7 @@ dTrustCaf hidParent pos id cafName [Fun [] rhs localDecls] nt =
   lookupId Con tTrue >>>= \true ->
   dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
   dTrustDecls hidParent localDecls >>>= \localDecls' ->
-  lookupVar pos t_lazySat >>>= \lazySat ->
+  lookupVar pos t_lazySatLonely >>>= \lazySat ->
   unitS (-- id _ _ = nid
          [DeclFun pos id 
            [Fun [PatWildcard pos, PatWildcard pos] 
@@ -1106,7 +1106,7 @@ dTrustExp cr parent hidParent (ExpIf pos c e1 e2) =
                        (Unguarded e1') (DeclsParse [])
                   ,Alt (ExpApplication pos [r,false,PatWildcard pos])
                        (Unguarded e2') (DeclsParse [])] in
-  lookupVar pos t_lazySat >>>= \lazySat ->
+  lookupVar pos t_lazySatLonely >>>= \lazySat ->
   unitS 
     (if cr then (ExpApplication pos [lazySat,expCase,hidParent]) else expCase)
 dTrustExp cr parent hidParent (ExpType pos e ctx t) = 

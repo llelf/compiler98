@@ -3,6 +3,7 @@ module Prelude
   ,E(E),myseq,sameAs
   ,mkTRoot,mkTAp1,mkTAp2,mkTAp3,mkTAp4,mkTAp5,mkTAp6,mkTAp7,mkTAp8,mkTAp9
   ,mkTAp10,mkTAp11,mkTAp12,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC
+  ,mkTSatALonely,mkTSatBLonely,mkTSatCLonely
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble
   ,mkNTId',mkNTId,mkNTConstr',mkNTConstr,mkNTTuple,mkNTFun,mkNTCase
   ,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard,mkNTContainer
@@ -221,6 +222,19 @@ foreign import "primTSatB"
 
 foreign import "primTSatC"
  mkTSatC :: Trace	-- original SatB (or SatA)
+	-> Trace	-- trace of reduced value
+	-> Trace	-- result
+
+foreign import "primTSatALonely"
+ mkTSatALonely :: Trace	-- trace of unevaluated expr
+	-> Trace	-- result
+
+foreign import "primTSatBLonely"
+ mkTSatBLonely :: Trace	-- original SatA
+	-> Trace	-- result
+
+foreign import "primTSatCLonely"
+ mkTSatCLonely :: Trace	-- original SatB (or SatA)
 	-> Trace	-- trace of reduced value
 	-> Trace	-- result
 
