@@ -4,7 +4,13 @@ module NHCBackend
 --, genProcNHC
   ) where
 
+#if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
+#else
+#if defined(__GLASGOW_HASKELL__)
+import IOExts (trace)
+#endif
+#endif
 import Pretty
 import PrettyUtils (textline,vcatMap,vsepMap,vsep,commaList,ppList)
 import Decl        (Decl(..), Sig, Call, CCode, Fail, Result)
