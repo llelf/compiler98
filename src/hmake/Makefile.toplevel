@@ -17,7 +17,7 @@ TARGETS = hmake_n hmake_b hmake_g chmake
 all:   all-${BUILDWITH}
 help:
 	@echo "Common targets include:        all install clean realclean config"
-	@echo "For a specific build-compiler: all-hbc  all-ghc  all-nhc  all-gcc"
+	@echo "For a specific build-compiler: all-hbc  all-ghc  all-nhc98 all-gcc"
 	@echo "  (other subtargets: hmake_b hmake_g hmake_n chmake)"
 
 config:
@@ -25,10 +25,11 @@ config:
 install:
 	./configure --install
 
-all-nhc: hmake_n
-all-hbc: hmake_b
-all-ghc: hmake_g
-all-gcc: chmake
+all-hbc:   hmake_b
+all-ghc:   hmake_g
+all-gcc:   chmake
+all-nhc:   hmake_n
+all-nhc98: hmake_n
 
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
