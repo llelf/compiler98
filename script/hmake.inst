@@ -84,10 +84,11 @@ do
     -keepPrelude)  hmflags=$hmflags" $1" ;;
     -watch)        hmflags=$hmflags" $1" ;;
     -hat)          hmflags=$hmflags" $1" ;;
-    -n)  hmflags=$hmflags" -q"; exec=cat ;;
+    -n)  hmflags=$hmflags" -q"; exec="cat" ;;
     -q)  hmflags=$hmflags" $1" ;;
     -N*) hmflags=$hmflags" $1" ;;
     -g)  hmflags=$hmflags" $1"; exec=cat ;;
+    -gd) hmflags=$hmflags" $1"; exec=cat ;;
     -M*) hmflags=$hmflags" $1"; exec=cat ;;
     -f)  shift; configfile=$1; hmflags=$hmflags" -f$1" ;;
     -d)  shift; objdir=$1;     hmflags=$hmflags" -d$1" ;;
@@ -135,18 +136,20 @@ do
     -L*) LDFLAGS=$LDFLAGS" $1" ;;
     -l*) LDFLAGS=$LDFLAGS" $1" ;;
 
-    # tracing and profiling flags (mainly nhc98)
+    # tracing and profiling flags (mainly nhc98, some hat-trans)
     -T) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o"
+        hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o";
         TRACE=1 ;;
     -p) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=p.o" ;;
     -t|-z) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=z.o"
-         TPROF=1 ;;
+           hmflags=$hmflags" -o-suffix=z.o";
+           TPROF=1 ;;
     -C) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=hc" ;;
     -trusted) HATFLAGS=$HATFLAGS" $1" ;;
+    -prelude) HATFLAGS=$HATFLAGS" $1";
+              hcflags=$hcflags" $1" ;;
 
     # mainly GHC flags
     -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
@@ -275,7 +278,7 @@ export MACHINE			# nhc98 script is faster if this is set.
 $MKPROG -hc=$COMP $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
 CODE=$?
 case $CODE in
-  0) $exec <$TMP/hmake$$
+  0) cat $TMP/hmake$$ | $exec
      CODE=$?
      rm $TMP/hmake$$
      exit $CODE ;;
