@@ -5,7 +5,7 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 10 (date 991019)"
+CONFIGVERSION="v1.0 pre-release 10 (date 991020)"
 HMAKEVERSION="v1.5 (date 991005)"
 
 if uname >/dev/null 2>&1
@@ -27,6 +27,7 @@ esac
 #RTSMESSAGE='(default)'
 #RTSFLAG=yes
 HEAP=100000
+BUILDWITH=
 
 BUILDLIBDIR=$PWD/lib
 BUILDINCDIR=$PWD/include
@@ -64,6 +65,7 @@ do
     -man) MAN=no ;;
     +docs) DOCS=yes ;;
     -docs) DOCS=no ;;
+    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-15` ;;
     --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
     --prefix=*)     INSTALLDIR=`echo "$1" | cut -c10-` ;;
     --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
@@ -85,9 +87,10 @@ do
   echo
  #echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
   echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
-  echo
-  echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
-  echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
+  echo "  --buildwith=comp     Build nhc98 with given compiler [detected]"
+ #echo
+ #echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
+ #echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
   echo
   echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
   echo "  --prefix=rootdir     |"
@@ -156,7 +159,7 @@ then
 # echo "  ghc directory:        $GHCDIR"
 # echo
 else
-  script/confhc
+  script/confhc $BUILDWITH
 fi
 echo "--------"
 
@@ -233,8 +236,13 @@ echo
 # The following tests are unnecessary in a binary (src-less) distribution.
 if [ -d src ]
 then
-  BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
-  echo "I am guessing that you will want to build nhc98 with $BUILDWITH"
+  if [ "$BUILDWITH" = "" ]
+  then
+    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+    echo "I am guessing that you want to build nhc98 with $BUILDWITH"
+  else
+    echo "You said you want to build nhc98 with $BUILDWITH"
+  fi
   case $BUILDWITH in
     hbc|xtc)  RTSFLAG=no;;
     ghc|nhc)  RTSFLAG=yes;;

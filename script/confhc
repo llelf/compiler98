@@ -15,9 +15,10 @@ NHC98DIR=
 
 # We need a working `which' command: CYGWIN at least doesn't have it.
 if which which >/dev/null 2>&1
-then ;
+then
+  echo -n ""
 else
-  echo "No builtin `which' command - attempting to emulate it."
+  echo "No builtin 'which' command - attempting to emulate it."
   which () {
     ( for path in `echo $PATH | tr ":" " "`
       do
@@ -176,40 +177,34 @@ else  echo "found in $NHC98DIR"
 fi
 
 
-BUILDHMAKE=
-echo -n "I am guessing that you will want to use "
-# in order of preference: hbc, then ghc, then nhc98...
-if [ "$HBCDIR" = "" ];
+if [ "$1" = "" ]
 then
-  if [ "$GHCDIR" = "" ];
+  BUILDWITH=
+  echo -n "I am guessing that you want to use "
+  # in order of preference: hbc, then ghc, then gcc...
+  if [ "$HBCDIR" = "" ];
   then
-    if [ "$NHC98DIR" = "" ];
+    if [ "$GHCDIR" = "" ];
     then
-      if [ "$NHC13DIR" = "" ];
-      then
-        echo -n gcc
-        BUILDHMAKE=gcc
-      else
-        echo -n nhc13
-        BUILDHMAKE=nhc13
-      fi
+      echo -n gcc
+      BUILDHMAKE=gcc
     else
-      echo -n nhc98
-      BUILDHMAKE=nhc98
+      echo -n ghc
+      BUILDHMAKE=ghc
     fi
   else
-    echo -n ghc
-    BUILDHMAKE=ghc
+    if [ "$GHCDIR" = "" ];
+    then
+      echo -n hbc
+      BUILDHMAKE=hbc
+    else
+      echo -n "hbc (not ghc)"
+      BUILDHMAKE=hbc
+    fi
   fi
 else
-  if [ "$GHCDIR" = "" ];
-  then
-    echo -n hbc
-    BUILDHMAKE=hbc
-  else
-    echo -n "hbc (not ghc)"
-    BUILDHMAKE=hbc
-  fi
+  BUILDWITH=$1
+  echo -n "You said you want to use $BUILDWITH"
 fi
 echo " to build hmake."
 

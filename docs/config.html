@@ -25,10 +25,9 @@ configuration.  Your machine/operating-system is detected and used
 during building and installation to ensure that object files and
 executables from different architectures do not interfere with each
 other.  If you have any existing installations of Haskell compilers,
-we search for those and configure <em>hmake</em> to use them.  We
-also guess which compiler you will use to build <em>nhc98</em> -
-in order of preference: <em>hbc</em>, then <em>ghc</em>, then an
-older installation of <em>nhc98</em>, then <em>gcc</em> (or your
+we search for those and configure <em>hmake</em> to use them.  We also
+guess which compiler you will use to build <em>nhc98</em> - in order of
+preference: <em>hbc</em>, then <em>ghc</em>, then <em>gcc</em> (or your
 own C compiler).
 
 <p>
@@ -86,6 +85,11 @@ some general settings.
       are case-insensitive, e.g. <tt>-H4mb</tt>.  The default setting is for
       400Kb of heap.  You can use this option even when installing from
       a binary package.</dd>
+
+<dt><b>--buildwith=</b><em>comp</em></dt>
+  <dd>Build <em>nhc98</em> using the named compiler (to override
+      the config script's guess).  Possible values are <em>ghc</em>,
+      <em>hbc</em>, <em>nhc</em>, or <em>gcc</em>.</dd>
 
 <dt><b>--builddir=</b><em>dir</em></dt>
   <dd>Use the given base directory for intermediate object files instead of
@@ -152,7 +156,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.10.19<br>
+This page last modified: 1999.10.20<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

@@ -31,15 +31,15 @@ For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <b>nhc98</b> without another Haskell compiler, you need 8Mb of memory
 (although you could probably manage with less), and about 17Mb of disk
-space (40Mb if you build for profiling and tracing as well).
-If you already have another Haskell compiler, <em>hbc</em> or
-<em>ghc</em>, then building <b>nhc98</b> will require at least 32Mb of
-memory, and 50Mb of free disk space.  If you already have an earlier
-version of <em>nhc98</em>, you will need at least 8Mb of memory and 30Mb
-of free disk space.  If you don't have <em>hbc</em> or <em>ghc</em> for
-your machine, then don't worry, <b>nhc98</b> will build quite happily
-using just a C compiler.  (The build is faster and needs much less
-memory, but the resulting compiler will be slower.)
+space (40Mb if you build for profiling and tracing as well).  If you
+already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
+then building <b>nhc98</b> will require at least 32Mb of memory, and
+50Mb of free disk space.  If you don't have <em>hbc</em> or <em>ghc</em>
+for your machine, then don't worry, <b>nhc98</b> will build quite
+happily using just a C compiler.  (The build is much faster, but the
+resulting compiler will be slower.)  You even can build <em>nhc98</em>
+using an earlier version of <em>nhc98</em> if you really want, but
+we don't do that by default because the build time tends to be slow.
 
 <h3>Download it</h3>
 <p>
@@ -115,9 +115,11 @@ require.  (You should supply installation directory options at this
 stage.)  This will attempt to detect any existing Haskell compilers and
 guess which one to build <em>nhc98</em> with.  If you have more than one
 available, we will choose, in order of preference, <em>hbc</em>, then
-<em>ghc</em>, then an older <em>nhc98</em>.  If no Haskell compiler is
-found, <em>nhc98</em> will be built from the bootstrapping C sources
-included in the package.
+<em>ghc</em>.  If neither of these is found, <em>nhc98</em> will be
+built from the bootstrapping C sources included in the package.  (You
+can build <em>nhc98</em> using an earlier version of <em>nhc98</em> if
+you really want, but for speed reasons we don't configure that by
+default.)
 
 <p>
 Then run <tt>make</tt> to build the basic system, or <tt>make all</tt>
@@ -175,7 +177,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.10.19<br>
+This page last modified: 1999.10.20<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
