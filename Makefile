@@ -17,7 +17,6 @@ PRELUDEA = \
 	src/prelude/Char/Makefile* src/prelude/Char/*.hs \
 	src/prelude/Complex/Makefile* src/prelude/Complex/*.hs \
 	src/prelude/DErrNo.hs \
-	src/prelude/Debug/Makefile* src/prelude/Debug/*.hs \
 	src/prelude/Directory/Makefile* src/prelude/Directory/*.hs \
 	src/prelude/Directory/*.gc \
 	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
@@ -30,7 +29,6 @@ PRELUDEB = \
 	src/prelude/List/Makefile* src/prelude/List/*.hs \
 	src/prelude/Locale/Makefile* src/prelude/Locale/*.hs \
 	src/prelude/LowB/Makefile* src/prelude/LowB/*.hs \
-	src/prelude/LowT/Makefile* src/prelude/LowT/*.hs \
 	src/prelude/Maybe/Makefile* src/prelude/Maybe/*.hs \
 	src/prelude/Monad/Makefile* src/prelude/Monad/*.hs \
 	src/prelude/NonStd/Makefile* src/prelude/NonStd/*.hs \
@@ -39,7 +37,6 @@ PRELUDEB = \
 	src/prelude/Observe/Makefile* src/prelude/Observe/*.lhs \
 	src/prelude/PackedString/Makefile* src/prelude/PackedString/*.hs \
 	src/prelude/Prelude/Makefile* src/prelude/Prelude/*.hs \
-	src/prelude/PreludeDebug/Makefile* src/prelude/PreludeDebug/*.hs \
 	src/prelude/PreludeIO/Makefile* src/prelude/PreludeIO/*.hs \
 	src/prelude/PreludeList/Makefile* src/prelude/PreludeList/*.hs \
 	src/prelude/PreludeText/Makefile* src/prelude/PreludeText/*.hs \
@@ -57,7 +54,6 @@ PRELUDEC = \
 	src/prelude/Char/*.hc          src/prelude/Char/*.c \
 	src/prelude/Complex/*.hc       src/prelude/Complex/*.c \
 	src/prelude/DErrNo.hc          src/prelude/DErrNo.?.c \
-	src/prelude/Debug/*.hc         src/prelude/Debug/*.c \
 	src/prelude/Directory/*.hc     src/prelude/Directory/*.c \
 	src/prelude/GreenCard/*.hc     src/prelude/GreenCard/*.c \
 	src/prelude/IO/*.hc            src/prelude/IO/*.c \
@@ -497,7 +493,6 @@ clean: cleanhi
 cleanhi:
 	rm -f  script/hmake-PRAGMA.hi
 	cd src/prelude; $(MAKE) cleanhi
-	cd src/prelude; $(MAKE) CFG=T cleanhi
 
 cleanC:
 	rm -f src/compiler98/*.hc
@@ -506,7 +501,6 @@ cleanC:
 	rm -f src/interpreter/*.hc
 	rm -f script/hmake-PRAGMA.hc
 	cd src/prelude;		$(MAKE)       cleanC
-	cd src/prelude;		$(MAKE) CFG=T cleanC
 	cd src/prelude;		$(MAKE) CFG=p cleanC
 	cd src/prelude;		$(MAKE) CFG=z cleanC
 	cd src/libraries; find -name '*.hc'  -print | xargs rm -f
@@ -517,7 +511,6 @@ cleanC:
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
-	cd src/compiler98; $(MAKE) realclean
 	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
 	cd $(TARGDIR)/$(MACHINE);  rm -f hmakerc hmake3.config config.cache
 	rm -rf src/prelude/$(MACHINE)
