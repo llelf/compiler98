@@ -111,7 +111,7 @@ void getMaxSet(char *maxs)
 }
 #endif
 
-int exit_code;
+int exit_code=0;
 
 #ifdef __CYGWIN32__
 jmp_buf exit_mutator;
@@ -485,6 +485,6 @@ int haskellEnd (int argc, char **argv) {
   fclose(HatBridge);
 #endif
 
-  return exit_code;
+  exit(exit_code);
 }
 
