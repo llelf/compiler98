@@ -24,6 +24,8 @@ lexPre u file l = iPreLex u file 1 1 l
 iPreLex :: Bool -> PackedString -> Int -> Int -> String -> [PosTokenPre]
 iPreLex u file r c []      = [(file,r,0,L_EOF)]
 iPreLex u file r c ('\n':xs) = iPreLex u file (r+1) 1 xs
+iPreLex u file r c ('\^M':'\n':xs) = iPreLex u file (r+1) 1 xs	-- DOS line-end
+iPreLex u file r c ('\^M':xs) = iPreLex u file (r+1) 1 xs	-- Mac line-end
 iPreLex u file r c (' ':xs)  = iPreLex u file r (c+1) xs
 iPreLex u file r c ('\t':xs) = iPreLex u file r (tab c) xs
 iPreLex u file r c ('-':'-':xs)
