@@ -22,23 +22,6 @@ then
   exit 1
 fi
 
-# We need a working `which' command: CYGWIN at least doesn't have it,
-#    and other installed `which's may have undesirable behaviour.
-#if which which >/dev/null 2>&1  && ( which which | grep -v Warning >/dev/null)
-#then echo -n "" ;
-#else
-  which () {
-    ( for path in `echo \":$PATH\" | sed -e 's/:/\" \"/g'`
-      do
-        thefile=`echo $path | tr -d "\""`/$1
-        if [ -f "$thefile" -a -x "$thefile" ]
-        then echo $thefile
-             exit 0
-        fi
-      done; exit 1 )
-  }
-#fi
-
 # Fix an absolute Cygwin path to an absolute native Windows path.
 # (Also copes with options like -I/path etc.)
 # This routine is only strictly required when the MkProg executable
