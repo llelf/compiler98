@@ -158,10 +158,11 @@ instance Relabel Decl where
 	DeclDefault (map (relabel env) typs)
   relabel env (DeclPrimitive p i n typ) =
 	DeclPrimitive p (letVar env i) n (relabel env typ)
-  relabel env (DeclForeignImp p str i1 n fspec typ i2) =
-	DeclForeignImp p str (letVar env i1) n fspec (relabel env typ) (just i2)
-  relabel env (DeclForeignExp p str id typ) =
-	DeclForeignExp p str (just id) (relabel env typ)
+  relabel env (DeclForeignImp p callConv str i1 n fspec typ i2) =
+	DeclForeignImp p callConv str (letVar env i1) n fspec (relabel env typ)
+          (just i2)
+  relabel env (DeclForeignExp p callConv str id typ) =
+	DeclForeignExp p callConv str (just id) (relabel env typ)
   relabel env (DeclVarsType pis ctxs typ) =
 	DeclVarsType (relabelRealPosIds env pis) (map (relabel env) ctxs)
 							(relabel env typ)

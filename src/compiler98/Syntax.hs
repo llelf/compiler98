@@ -112,9 +112,10 @@ data Decl id =
      | DeclPrimitive Pos id Int (Type id)
        -- foreign import [callconv] [extfun] [unsafe|cast|noproto] var :: type
        -- (final id parts are wrapper-fn for Trace and IO respectively)
-     | DeclForeignImp Pos String id Int FSpec (Type id) id
+       --               callconv extfun intfun arity [u|c|n] ty wrapperId
+     | DeclForeignImp Pos CallConv String id Int FSpec (Type id) id
        -- foreign export  callconv  [extfun]  var :: type
-     | DeclForeignExp Pos String id (Type id)
+     | DeclForeignExp Pos CallConv String id (Type id)
        -- vars :: context => type
      | DeclVarsType [(Pos,id)] [Context id] (Type id)
      | DeclPat (Alt id)
@@ -129,8 +130,10 @@ data Decl id =
      -- infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
 
--- for foreign imports
+-- for foreign imports/exports
 data FSpec = Cast | Noproto | Unsafe | Safe deriving (Eq,Show)
+
+data CallConv = C | Haskell deriving Show -- no others supported yet
 
 
 data ClassCode ctx id = -- introduced by RmClasses

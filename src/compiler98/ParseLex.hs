@@ -6,7 +6,7 @@ import Syntax(Lit(..),Boxed(..),Exp(..),Alt,Pat(..),Decls,Context,Type,Stmt,Fiel
 import ParseLib
 import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
-              ,t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast,t_noproto
+              ,t_foreign,t_export,t_ccall,t_haskell,t_unsafe,t_cast,t_noproto
               ,tinterface,thiding,tqualified)
 
 
@@ -57,7 +57,7 @@ k_foreign = lvarid t_foreign "foreign"
 k_import = lit L_import
 k_export = lvarid t_export "export"
 k_ccall = lvarid t_ccall "ccall"
-k_stdcall = lvarid t_stdcall "stdcall"
+k_haskellcall = lvarid t_haskell "haskell"
 k_unsafe = lvarid t_unsafe "unsafe"
 k_noproto = lvarid t_noproto "noproto"
 k_cast = lvarid t_cast "cast"

@@ -95,22 +95,27 @@ parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`
 parseForeign :: Parser (Decl TokenId) [PosToken] a
 parseForeign =
   k_foreign `revChk`
-    ((k_import `revChk` callconv `revChk`
-        ((\(_,LitString _ str) (_,tf) (p,v) t -> 
-            DeclForeignImp p str v (calcArity t) tf t v)
-        `parseAp` extfun `ap` unsafe `apCut` varid `chk` 
+    ((k_import `revChk` 
+        ((\(_,conv) (_,LitString _ str) (_,tf) (p,v) t -> 
+            DeclForeignImp p conv str v (calcArity t) tf t v)
+        `parseAp` callconv `ap` extfun `ap` unsafe `apCut` varid `chk` 
         coloncolon `ap` parseType))
     `orelse`
     (k_export `revChk` callconv `revChk`
-      ((\(_,LitString _ str) (p,v) t-> DeclForeignExp p str v t)
-      `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
+      ((\(_,conv) (_,LitString _ str) (p,v) t-> DeclForeignExp p conv str v t)
+      `parseAp` callconv `ap` extfun `apCut` varid `chk` coloncolon 
+      `ap` parseType))
     `orelse`
       (k_cast `revChk` 
-        ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) Cast t v)
+        ((\(p,v) t-> DeclForeignImp p C "" v (calcArity t) Cast t v)
         `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where
-  callconv = k_ccall `orelse` k_stdcall `orelse` parse noPos
+  callconv = (k_ccall `revChk` cast C)
+               `orelse` 
+             (k_haskellcall `revChk` cast Haskell)
+               `orelse` 
+             (cast C)  -- default
   extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
   unsafe   = (k_cast `revChk` cast Cast)
                `orelse`

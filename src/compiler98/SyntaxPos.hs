@@ -26,8 +26,8 @@ instance HasPos (Decl a) where
     getPos (DeclVarsType ((pos,_):_) _ _) = pos
     getPos (DeclFun pos fun funs)       = pos
     getPos (DeclPrimitive pos fun a t)  = pos
-    getPos (DeclForeignImp pos s fun a c t _) = pos
-    getPos (DeclForeignExp pos s fun t) = pos
+    getPos (DeclForeignImp pos _ s fun a c t _) = pos
+    getPos (DeclForeignExp pos _ s fun t) = pos
     getPos (DeclPat alt)                = getPosAlt alt
     getPos (DeclIgnore str)             = noPos
     getPos (DeclError str)              = noPos

@@ -27,7 +27,7 @@ module TraceTrans (traceTrans) where
 import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
-               ,visible,extractV
+               ,qualify,visible,extractV
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq)
 import PackedString (PackedString,packString,unpackPS)
@@ -113,7 +113,7 @@ tExport (ExportEntity pos entity) = map (ExportEntity pos) (tEntity entity)
 
 tImpDecls :: [ImpDecl TraceId] -> [ImpDecl TokenId]
 tImpDecls decls = 
-  (if any importsPrelude decls 
+  (if any importsPreludeOrOriginal decls 
      then id 
      else ((Import (noPos,nameTransModule (just tPrelude)) (Hiding [])) :))
     ((ImportQ (noPos,tPrelude) (Hiding []))
@@ -122,11 +122,10 @@ tImpDecls decls =
        (noPos,Visible tracingModuleShort) (Hiding [])) 
     :(map tImpDecl decls))
   where 
-  importsPrelude :: ImpDecl TraceId -> Bool
-  importsPrelude (Import (_,id) _) = tokenId id == tPrelude
-  importsPrelude (ImportQ (_,id) _) = tokenId id == tPrelude
-  importsPrelude (ImportQas (_,id) _ _) = tokenId id == tPrelude
-  importsPrelude (Importas (_,id) _ _) = tokenId id == tPrelude
+  importsPreludeOrOriginal :: ImpDecl TraceId -> Bool
+  importsPreludeOrOriginal impDecl = 
+    let id = importedModule impDecl
+    in tokenId id == tPrelude || "TraceOrig" `isPrefixOf` (getUnqualified id)
 
 tImpDecl :: ImpDecl TraceId -> ImpDecl TokenId
 tImpDecl (Import (pos,id) spec) = 
@@ -361,8 +360,14 @@ tDecl _ _ d@(DeclPrimitive pos fnId arity ty) =
   -- hopefully primitives are not needed any more at all
   -- if isPrefixOf "_tprim_" (reverse . unpackPS . extractV . nameOrg $ fnId)
   --   then error "tDecl _tprim_ should not occur"
-  --   else singleDecl $ DeclPrimitive pos (nameOrg fnId) 2 (mkTFunType ty)
-tDecl _ _ (DeclForeignImp pos cname fnId arity fspec ty duplicateId) =
+  --   else singleDecl $ DeclPrimitive pos (nameOrg fnId) 2 (tFunType ty)
+tDecl _ _ (DeclForeignImp pos Haskell hasName fnId arity _ ty _) =
+  tHaskellPrimitive pos 
+    (qualify (tail revHasModNameP) revHasUnqualName) 
+    fnId arity ty
+  where
+  (revHasUnqualName,revHasModNameP) = span (/= '.') . reverse $ hasName 
+tDecl _ _ (DeclForeignImp pos callConv cname fnId arity fspec ty duplicateId) =
   -- fnId is always let-bound, even with zero arguments
   ([DeclFun pos (nameTransVar fnId) 
      [Fun [sr,useParent]
@@ -371,15 +376,15 @@ tDecl _ _ (DeclForeignImp pos cname fnId arity fspec ty duplicateId) =
            [ExpVar pos (tokenPrim arity),ExpVar pos (nameTraceInfoVar pos fnId)
            ,ExpVar pos (nameForeign fnId),sr,useParent]))
        noDecls]
-   ,DeclVarsType [(pos,nameTransVar fnId)] [] (mkTFunType ty)]
-  ,[DeclForeignImp pos 
+   ,DeclVarsType [(pos,nameTransVar fnId)] [] (tFunType ty)]
+  ,[DeclForeignImp pos callConv
      (if null cname then getUnqualified fnId else cname) 
      (nameForeign fnId) arity fspec (tokenIdType ty) (nameForeign fnId)]
   ,addVar pos fnId emptyModuleConsts)
   where
   sr = ExpVar pos (nameSR fnId)
   useParent = ExpVar pos (nameTrace fnId)
-tDecl _ _ (DeclForeignExp pos str fnId _) =
+tDecl _ _ (DeclForeignExp pos callConv str fnId _) =
   error ("Cannot trace foreign export (used at " ++ strPos pos ++ ")")
 tDecl _ _ (DeclVarsType vars contexts ty) =
   ((if null lambdaVars then [] 
@@ -387,7 +392,7 @@ tDecl _ _ (DeclVarsType vars contexts ty) =
              (tContexts contexts) (wrapType (tType ty))])
    ++
    (if null letVars then [] else [DeclVarsType (tPosExps letVars) 
-                                   (tContexts contexts) (mkTFunType ty)])
+                                   (tContexts contexts) (tFunType ty)])
   ,[],emptyModuleConsts)
   where
   (lambdaVars,letVars) = partition (isLambdaBound . snd) vars
@@ -489,6 +494,63 @@ tConstr (Constr pos conId tyArgs) =
 tConstr (ConstrCtx tyVars contexts pos conId tyArgs) =
   ConstrCtx (tPosTyVars tyVars) (tContexts contexts) 
     pos (nameTransCon conId) (tTyArgs tyArgs)
+
+
+tHaskellPrimitive :: Pos -> TokenId -> TraceId -> Arity -> Type TraceId 
+                  -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
+tHaskellPrimitive pos hasId fnId arity ty 
+  -- import of a Haskell function
+  -- used for defining builtin Haskell functions
+  -- transformation yields a wrapper to the untransformed function
+  | arity == 0 =
+    ([DeclVarsType [(pos,nameTransVar fnId)] [] (wrapType (tType ty))
+     ,DeclFun pos (nameTransVar fnId)
+       [Fun []
+         (Unguarded 
+           (ExpApplication pos 
+             [combSat pos False False
+             ,ExpApplication pos 
+               [expFrom pos ty, ExpVar pos tokenHiddenRoot, ExpVar pos hasId]
+	     ,useParent])) 
+	 noDecls]]
+    ,[DeclFun pos useParentId
+       [Fun [] (Unguarded 
+         (mkConstVar (ExpVar pos tokenMkTRoot) pos fnId False)) noDecls]]
+    ,addVar pos fnId emptyModuleConsts)
+  | otherwise =
+    ([DeclVarsType [(pos,nameTransVar fnId)] [] (tFunType ty)
+     ,DeclFun pos (nameTransVar fnId) 
+       [Fun [sr,useParent]
+         (Unguarded 
+           (ExpApplication pos 
+             [combFun pos False arity
+             ,ExpVar pos (nameTraceInfoVar pos fnId)
+             ,ExpVar pos wrappedId',sr,useParent]))
+          noDecls]]
+    ,[DeclFun pos wrappedId' 
+       [Fun (hidden:args)
+         (Unguarded (ExpApplication pos
+           [expFrom pos tyRes, hidden,
+             ExpApplication pos (ExpVar pos hasId : zipWith to tyArgs args)]))
+         noDecls]]
+    ,addVar pos fnId emptyModuleConsts)
+    where
+    sr = ExpVar pos (nameSR fnId)
+    useParent = ExpVar pos useParentId
+    useParentId = nameTrace fnId
+    hidden = ExpVar pos (nameTrace2 fnId)
+    args = take arity . map (ExpVar pos) . nameArgs $ fnId
+    wrappedId' = nameWorker fnId
+    to :: Type TraceId -> Exp TokenId -> Exp TokenId
+    to ty arg = ExpApplication pos [expTo pos ty, hidden, arg]
+    -- assert: length (tyArgs) = arity
+    (tyArgs,tyRes) = decomposeFunType ty
+    decomposeFunType :: Type TraceId -> ([Type TraceId],Type TraceId)
+    decomposeFunType (TypeCons _ tyCon [ty1,ty2]) | isFunTyCon tyCon =
+      (ty1:args,res) 
+      where
+      (args,res) = decomposeFunType ty2
+    decomposeFunType ty = ([],ty)
 
 
 tCaf :: Bool -> Exp TokenId -> Pos -> TraceId -> Rhs TraceId -> Decls TraceId
@@ -995,8 +1057,8 @@ tTyArg (maybePosIds,ty) =
 
 
 -- ty ==> SR -> Trace -> [[ty]]
-mkTFunType :: Type TraceId -> Type TokenId
-mkTFunType ty = 
+tFunType :: Type TraceId -> Type TokenId
+tFunType ty = 
   TypeCons pos tokenSR [] `typeFun` TypeCons pos tokenTrace [] 
     `typeFun` wrapType (tType ty)
   where
@@ -1081,6 +1143,7 @@ nameTraceInfoPos pos = mkUnqualifiedTokenId (('p':) . showsEncodePos pos $ "")
 nameTransModule :: TraceId -> TokenId
 nameTransModule = updateToken updateModule
   where
+  updateModule ('T':'r':'a':'c':'e':'O':'r':'i':'g':orgName) = orgName
   updateModule (name@"Main") = name  -- if the module is `Main', then unchanged
   updateModule name = modulePrefix : name
 
@@ -1191,15 +1254,13 @@ getUnqualified = reverse . unpackPS . extractV . tokenId
 -- apply function to unqualified name part 
 -- and prefix module name (if qualified)
 updateToken :: (String -> String) -> TraceId -> TokenId
+updateToken f traceId | isFunTyCon traceId = qualify "T" "nuF"
 updateToken f traceId = 
   case tokenId (traceId) of
---  t@(TupleId 0) -> if f "" == "a" 
---                     then Qualified transPreludeModule 
---                            (packString . reverse . f $ "Tuple0")
---                     else t
-    t@(TupleId n) -> Qualified 
-                       transPreludeModule 
-                       (packString . reverse . f $ ("Tuple"++show n)) 
+    t@(TupleId n) -> 
+      Qualified 
+        (if n <= 2 then tracingModuleShort else transPreludeModule) 
+        (packString . reverse . f $ ("Tuple"++show n)) 
     Visible n     -> 
       Visible (packString . reverse . f . unqual $ n) 
     Qualified m n -> 
@@ -1213,7 +1274,7 @@ updateToken f traceId =
   updateModule name = modulePrefix : name
   unqual :: PackedString -> String
   unqual n = case reverse . unpackPS $ n of -- change predefined names
-               "->" -> "Fun"
+               -- "->" -> "Fun"
                ":" -> "Cons" 
                "[]" -> "List" -- here both type and data constructor
                s -> s
@@ -1276,10 +1337,20 @@ mkTracingToken s = Qualified tracingModuleShort (packString . reverse $ s)
 mkTracingTokenArity :: String -> Arity -> TokenId
 mkTracingTokenArity s a = mkTracingToken (s ++ show a)
 
+typeModule :: PackedString
+typeModule = packString . reverse $ "TPreludeBuiltinTypes" 
+
+mkTypeToken :: String -> TokenId
+mkTypeToken s = Qualified typeModule (packString . reverse $ s)
+
+
 -- tokens for trace constructors:
 
 tokenMkTRoot :: TokenId
 tokenMkTRoot = mkTracingToken "mkTRoot"
+
+tokenHiddenRoot :: TokenId
+tokenHiddenRoot = mkTracingToken "hiddenRoot"
 
 tokenR :: TokenId
 tokenR = mkTracingToken "R"
@@ -1393,6 +1464,39 @@ tokenTrace :: TokenId
 tokenTrace = mkTracingToken "Trace"
 
 -- ----------------------------------------------------------------------------
+
+expTo :: Pos -> Type TraceId -> Exp TokenId
+expTo = expType True
+
+expFrom :: Pos -> Type TraceId -> Exp TokenId
+expFrom = expType False
+
+expType :: Bool -> Pos -> Type TraceId -> Exp TokenId
+expType to pos (TypeVar _ tyId) = 
+  ExpVar pos (mkTypeToken (prefix to ++ "Id"))
+expType to pos (TypeCons _ tyCon []) = 
+  ExpVar pos (mkTypeToken (prefix to ++ typeName tyCon))
+expType to pos (TypeCons _ tyCon [ty1,ty2]) | isFunTyCon tyCon =
+  ExpApplication pos 
+    [ExpVar pos (mkTypeToken (prefix to ++ "Fun")) 
+    ,expType (not to) pos ty1 
+    ,expType to pos ty2] 
+expType to pos (TypeCons _ tyCon tys) = 
+  ExpApplication pos 
+    (ExpVar pos (mkTypeToken (prefix to ++ typeName tyCon)) 
+    : map (expType to pos) tys)
+
+prefix :: Bool -> String
+prefix True = "to"
+prefix False = "from"
+
+typeName :: TraceId -> String
+typeName aId = 
+  case tokenId aId of
+    TupleId n -> "Tuple" ++ show n
+    _         -> getUnqualified aId
+
+-- ----------------------------------------------------------------------------
 -- various little helper functions
 
 -- test for specific tokens
@@ -1416,6 +1520,12 @@ mkFailExp pos parent = ExpApplication pos [ExpVar pos tokenFatal,parent]
 
 mkTupleExp :: Pos -> [Exp TokenId] -> Exp TokenId
 mkTupleExp pos es = ExpApplication pos (ExpCon pos (t_Tuple (length es)): es)
+
+importedModule :: ImpDecl a -> a
+importedModule (Import (_,id) _) = id 
+importedModule (ImportQ (_,id) _) = id
+importedModule (ImportQas (_,id) _ _) = id 
+importedModule (Importas (_,id) _ _) = id
 
 noDecls :: Decls id
 noDecls = DeclsParse []

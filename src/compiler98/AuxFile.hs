@@ -9,11 +9,6 @@ import List
 import Char
 import Monad
 import IO
-#if defined(__GLASGOW_HASKELL__)
-import IOExts (trace)
-#else
-import NonStdTrace (trace)
-#endif
 
 import Syntax
 import TokenId (TokenId,tPrelude)
@@ -284,7 +279,7 @@ auxInfo visible toIdent (DeclPrimitive _ f a _) t
     | visible key  = addAT t replaceArity key (emptyAux {args = a})
 						where key = Var (show f)
 -- Add varid identifier declared as a foreign import, with arity.
-auxInfo visible toIdent (DeclForeignImp _ _ f a _ _ _) t
+auxInfo visible toIdent (DeclForeignImp _ _ _ f a _ _ _) t
     | visible key  = addAT t replaceArity key (emptyAux {args = a})
 						where key = Var (show f)
 -- Add conid/conop identifier, with arity.

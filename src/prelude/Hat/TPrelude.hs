@@ -61,7 +61,7 @@ toIO :: (R a -> b) -> R (TPrelude.IO a) -> Prelude.IO b
 toIO f (R io _) = fmap f io
 
 fromIO :: (Trace -> a -> R b) -> Trace -> Prelude.IO a -> R (TPrelude.IO b)
-fromIO f t io = mkR (fmap (f t) io) t
+fromIO f t io = R (fmap (f t) io) t
 
 toInt :: R TPrelude.Int -> Prelude.Int
 toInt (R i _) = i
@@ -73,23 +73,22 @@ toTuple0 :: R TPrelude.Tuple0 -> ()
 toTuple0 (R Tuple0 _) = ()
 
 fromTuple0 :: Trace -> () -> R TPrelude.Tuple0
-fromTuple0 t () = mkR Tuple0 t
+fromTuple0 t () = R Tuple0 t
 
 toList :: (R a -> b) -> R (List a) -> [b]
 toList f (R (Cons x xs) _) = f x : toList f xs
 toList f (R List _) = []
 
 fromList :: (Trace -> a -> R b) -> Trace -> [a] -> R (List b)
-fromList f t [] = con0 mkNoSourceRef t List aList
-fromList f t (x:xs) = 
-  con2 mkNoSourceRef t Cons aCons (lazySat (f t x) hidden) 
-    (lazySat (fromList' xs) hidden)
+fromList f h [] = con0 mkNoSourceRef h List aList
+fromList f h (x:xs) = 
+  con2 mkNoSourceRef h Cons aCons (ulazySat (f h x) h) 
+    (ulazySat (fromList' xs) h)
   where
-  fromList' [] = con0 mkNoSourceRef t List aList
+  fromList' [] = con0 mkNoSourceRef h List aList
   fromList' (x:xs) = 
-    con2 mkNoSourceRef t Cons aCons (lazySat (f t x) hidden) 
-      (lazySat (fromList' xs) hidden)
-  hidden = mkTHidden t
+    con2 mkNoSourceRef h Cons aCons (ulazySat (f h x) h) 
+      (ulazySat (fromList' xs) h)
 
 toPolyList :: R (List a) -> [R a]
 toPolyList = toList id
@@ -102,7 +101,7 @@ fromPolyList = fromList (\_ x -> x)
 -- functions:
 
 (!-) :: SR -> Trace -> R (Fun Int (Fun Int Int))
-(!-) p t = T.fun2 (+-) (*-) p t
+(!-) p t = T.ufun2 (+-) (*-) p t
 
 (+-) = mkAtomIdToplevel tMain noPos 21 "-"
 
@@ -111,40 +110,39 @@ fromPolyList = fromList (\_ x -> x)
 
 
 (!++) :: SR -> Trace -> R (Fun (List a) (Fun (List a) (List a)))
-(!++) p t = T.fun2 (+++) (*++) p t
+(!++) p t = T.ufun2 (+++) (*++) p t
 
 (+++) = mkAtomIdToplevel tMain noPos 21 "++"
 
 (*++) :: Trace -> R (List a) -> R (List a) -> R (List a)
-(*++) t xs ys = fromPolyList t (toPolyList xs ++ toPolyList ys) 
+(*++) h xs ys = fromPolyList h (toPolyList xs ++ toPolyList ys) 
 
 
 oreverse :: R (Fun (List a) (List a))
 oreverse =
-  fun1 a0v0reverse wreverse mkNoSourceRef mkTRoot
+  ufun1 a0v0reverse wreverse mkNoSourceRef mkTRoot
 
 a0v0reverse = mkAtomIdToplevel tMain noPos 3 "reverse"
 
 wreverse :: Trace -> R (List a) -> R (List a)
-wreverse t xs = fromPolyList t (reverse (toPolyList xs))
+wreverse h xs = fromPolyList h (reverse (toPolyList xs))
 
 
 omap :: SR -> Trace -> R (Fun (Fun a b) (Fun (List a) (List b)))
 omap pmap tmap =
-  fun2 a0v0map wmap pmap tmap
+  ufun2 a0v0map wmap pmap tmap
 
 a0v0map = mkAtomIdToplevel tMain noPos 3 "map"
 
 wmap :: Trace -> R (Fun a b) -> R (List a) -> R (List b)
-wmap t f xs = fromPolyList t (map (ap1 mkNoSourceRef hidden f) (toPolyList xs))
-  where
-  hidden = mkTHidden t
+wmap h f xs = fromPolyList h (map (uap1 mkNoSourceRef h f) (toPolyList xs))
 
 
 oputStr :: R (Fun TPrelude.String (TPrelude.IO TPrelude.Tuple0))
 
 oputStr =
   T.fun1 a8v1putStr wputStr mkNoSourceRef mkTRoot
+  -- no hidden trace!
 
 a8v1putStr = T.mkAtomIdToplevel tMain noPos 3 "putStr"
 
@@ -156,7 +154,7 @@ wputStr t os = fromIO fromTuple0 t $ do
   -- evaluation of the string
 --  outputTrace t s
 --  putStr s
-  return Tuple0
+  return ()
 
 
 -- error :: T.SR -> T.Trace -> T.R (Trace -> T.R String -> a)

@@ -358,7 +358,7 @@ dSuspectDecl toplevel parent d@(DeclFun pos id fundefs) =
                   (unwrapNT intState 0 True False (ntI info))
            _ -> dSuspectFun pos id funName arity fundefs 
                   (unwrapNT intState arity False False (ntI info))
-dSuspectDecl toplevel parent d@(DeclForeignImp pos cname id' arity cast typ id)=
+dSuspectDecl toplevel parent d@(DeclForeignImp pos callConv cname id' arity cast typ id)=
   (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id' >>>= \(Just info) ->
 --lookupNameStr id' >>>= \funName ->
@@ -369,7 +369,7 @@ dSuspectDecl toplevel parent d@(DeclForeignImp pos cname id' arity cast typ id)=
   let (InfoVar _ (Qualified _ f) _ _ _ _) = info
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
   in unitS ([DeclFun pos id [code]]
-           ,[ DeclForeignImp pos cname' id' arity cast typ id])
+           ,[ DeclForeignImp pos callConv cname' id' arity cast typ id])
 dSuspectDecl toplevel parent decl = dDecl decl
 
 
@@ -434,7 +434,7 @@ dTrustDecl toplevel hidParent d@(DeclFun pos id fundefs) =
              -- sharing not important anyway
            _ -> dTrustFun pos id funName arity fundefs 
                   (unwrapNT intState arity False True (ntI info))
-dTrustDecl toplevel _ d@(DeclForeignImp pos cname id' arity cast typ id) =
+dTrustDecl toplevel _ d@(DeclForeignImp pos callConv cname id' arity cast typ id) =
   (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id' >>>= \(Just info) ->
 --lookupNameStr id' >>>= \funName ->
@@ -445,7 +445,7 @@ dTrustDecl toplevel _ d@(DeclForeignImp pos cname id' arity cast typ id) =
   let (InfoVar _ (Qualified _ f) _ _ _ _) = info
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
   in unitS ([DeclFun pos id [code]]
-           ,[DeclForeignImp pos cname' id' arity cast typ id])
+           ,[DeclForeignImp pos callConv cname' id' arity cast typ id])
 dTrustDecl toplevel _ decl = dDecl decl
 
 
@@ -460,7 +460,7 @@ dDecl d@(DeclError _) = unitS ([d],[])
 dDecl d@(DeclAnnot _ _) = unitS ([d],[])
 dDecl d@(DeclFixity _) = unitS ([d],[])
 dDecl d@(DeclPrimitive pos id i ty) = unitS ([d],[])
-dDecl d@(DeclForeignExp pos cname id typ) =
+dDecl d@(DeclForeignExp pos callConv cname id typ) =
   error ("Can't trace foreign exports yet. "++strPos pos)
 
 

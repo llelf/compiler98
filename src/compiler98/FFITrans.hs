@@ -47,25 +47,25 @@ ffiDecls (DeclsParse ds) =
     (mapS ffiDecl ds >>>= unitS . concat)
 
 ffiDecl :: Decl Id -> FFIMonad [Decl Id]
-ffiDecl d@(DeclForeignImp pos cname id _ cast typ x) =
+ffiDecl d@(DeclForeignImp pos callConv cname id _ cast typ x) =
     examineType pos typ   >>>= \(isIO,nt,typ',arity,adjarity)->
     if isIO then
       copyPrim id cname          >>>= \(id',cname') ->
       makeIWrapper pos id' arity >>>= \code->
       updVar pos id' (NewType (snub (freeType typ)) [] [] [nt]) adjarity >>>
-      unitS [ DeclForeignImp pos cname' id' adjarity cast typ' x
+      unitS [ DeclForeignImp pos callConv cname' id' adjarity cast typ' x
             , DeclVarsType [(pos,id)] [] typ
             , DeclFun pos id [code]
             ]
     else
       updVar pos id (NewType (snub (freeType typ)) [] [] [nt]) arity >>>
       unitS [d]
-ffiDecl d@(DeclForeignExp pos cname id typ) =
+ffiDecl d@(DeclForeignExp pos callConv cname id typ) =
     examineType pos typ   >>>= \(isIO,nt,typ',arity,adjarity)->
     if isIO then
       copyPrim id cname         >>>= \(id',cname')->
       makeEWrapper pos id arity >>>= \code->
-      unitS [ DeclForeignExp pos cname' id' typ'
+      unitS [ DeclForeignExp pos callConv cname' id' typ'
             , DeclVarsType [(pos,id)] [] typ
             , DeclFun pos id' [code]
             ]

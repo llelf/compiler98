@@ -78,10 +78,10 @@ extractDecl (DeclClass pos tctxs tClass tTVar (DeclsParse decls)) =
 extractDecl (DeclPrimitive pos ident arity typ) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]
   in updVarNT pos ident nt >>> updVarArity pos ident arity
-extractDecl (DeclForeignImp pos _ ident arity cast typ _) =
-  unitR		-- type extraction for ffi is now done earlier in FFITrans phase
-extractDecl (DeclForeignExp pos _ ident typ) =
-  unitR		-- type extraction for ffi is now done earlier in FFITrans phase
+extractDecl (DeclForeignImp pos _ _ ident arity cast typ _) =
+  unitR	     -- type extraction for ffi is now done earlier in FFITrans phase
+extractDecl (DeclForeignExp pos _ _ ident typ) =
+  unitR	     -- type extraction for ffi is now done earlier in FFITrans phase
 --let nt = NewType (snub (freeType typ)) [] (ctxs2NT []) [type2NT typ]
 --in updVarNT pos ident nt
 extractDecl (DeclVarsType posidents ctxs typ) =

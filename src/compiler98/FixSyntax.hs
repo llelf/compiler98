@@ -82,9 +82,9 @@ fsDecl :: Decl Id -> FSMonad (Decl Id)
 
 fsDecl d@(DeclPrimitive pos fun arity t) =
   unitS d
-fsDecl d@(DeclForeignImp pos _ fun arity cast t _) =
+fsDecl d@(DeclForeignImp pos _ _ fun arity cast t _) =
   unitS d
-fsDecl d@(DeclForeignExp pos _ fun t) =
+fsDecl d@(DeclForeignExp pos _ _ fun t) =
   unitS d
 fsDecl (DeclFun pos fun funs) =
   unitS (DeclFun pos fun) =>>> mapS fsFun funs

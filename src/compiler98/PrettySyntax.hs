@@ -87,7 +87,7 @@ prettyPrintTokenId flags pp =
            ,maybeTuple = maybeTupleTokenId}
   where
   id2strTokenId =  if sShowQualified flags
-                     then show
+                     then show  
                      else reverse . unpackPS . extractV 
   maybeTupleTokenId t = case t of
                           TupleId n -> Just n
@@ -199,7 +199,7 @@ fSpace :: Doc
 fSpace = fdelimiter " "
 
 fComma :: Doc
-fComma = fdelimiter ","
+fComma = fdelimiter "" <> text ","
 
 fSemi :: Doc
 fSemi = fdelimiter ";"
@@ -223,7 +223,8 @@ encase delimiter docs = delimiter <> term delimiter docs
 {- surround by paranthesis and separate by fComma, but not for 0 element -}
 parensFComma1 :: PPInfo a -> [Doc] -> Doc
 parensFComma1 info [] = nil
-parensFComma1 info docs = fSpace <> (groupNestS info $ parens $ sep fComma docs)
+parensFComma1 info docs = 
+  fSpace <> (groupNestS info $ parens $ sep fComma docs)
 
 
 {- surround by paranthesis and separate by fSpace, but not for 0 or 1 element 
@@ -525,16 +526,17 @@ ppDecl info (DeclPrimitive pos ident arity t) =
     ppIdAsVar info ident <> fSpace <> text "primitive" <> fSpace 
     <> text (show arity) <> text " ::" <> fSpace <> ppType info t
 
-ppDecl info (DeclForeignImp pos str ident arity cast t _) =
+ppDecl info (DeclForeignImp pos callConv str ident arity cast t _) =
   groupNestS info $
-    text "foreign import" <> fSpace <> string str <> fSpace <>
+    text "foreign import" <> fSpace <> text (show callConv) <> 
+    fSpace <> string str <> fSpace <>
     text (show cast) <> fSpace <> ppIdAsVar info ident <> text " ::" <> 
     dSpace <> ppType info t
 
-ppDecl info (DeclForeignExp pos str ident t) =
+ppDecl info (DeclForeignExp pos callConv str ident t) =
   groupNestS info $
-    text "foreign export" <> fSpace <> ppIdAsVar info ident <> text " ::" <>
-    dSpace <> ppType info t
+    text "foreign export" <> fSpace <> text (show callConv) <> fSpace <> 
+    ppIdAsVar info ident <> text " ::" <> dSpace <> ppType info t
 
 ppDecl info (DeclVarsType ids ctxs t) =
   groupNestS info $

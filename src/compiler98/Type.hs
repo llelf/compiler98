@@ -264,9 +264,9 @@ bindType decl@(DeclPat (Alt pat gdexps decls))
 
 bindType decl@(DeclPrimitive pos fun arity typ) down state =
   (decl,state)
-bindType decl@(DeclForeignImp pos str fun arity cast typ _) down state =
+bindType decl@(DeclForeignImp pos conv str fun arity cast typ _) down state =
   (decl,state)
-bindType decl@(DeclForeignExp pos str fun typ) down state =
+bindType decl@(DeclForeignExp pos conv str fun typ) down state =
   (decl,state)
 bindType decl@(DeclFun pos fun funs)
          (globalTVars,trueExp,localCtxi,envHere,defaults) state =
@@ -437,9 +437,9 @@ bindFun dictArgs defaultDecls (Fun args gdexps (DeclsScc decls)) =
 
 typeDecl d@(DeclPrimitive pos fun arity typ) =
   unitS d
-typeDecl d@(DeclForeignImp pos str fun arity cast typ _) =
+typeDecl d@(DeclForeignImp pos conv str fun arity cast typ _) =
   unitS d
-typeDecl d@(DeclForeignExp pos str fun typ) =
+typeDecl d@(DeclForeignExp pos conv str fun typ) =
   unitS d
 typeDecl (DeclPat (Alt pat rhs decls)) =
   typePat pat        >>>= \(pat,patT,eTVar) ->

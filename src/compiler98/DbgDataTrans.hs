@@ -240,7 +240,7 @@ dDecl d@(DeclPrimitive pos id i ty1) =
 --    lookupNameStr id >>>= \idstr ->
 --    error ("dDecl: DeclPrimitive " ++ show pos ++ " " ++ idstr 
 --           ++ " " ++ show i)
-dDecl d@(DeclForeignImp pos cname id ar cast ty1 _) =
+dDecl d@(DeclForeignImp pos callConv cname id ar cast ty1 _) =
     lookupName noPos id >>>= \(Just info) ->
     addNewPrim info >>>= \id' ->	-- copy original prim to new location
     overwritePrim id >>>		-- write wrapper info over original
@@ -248,9 +248,9 @@ dDecl d@(DeclForeignImp pos cname id ar cast ty1 _) =
     wrapRT pos ty2 >>>= \ty3 ->
     addD ty3 >>>= \ty4 -> 
     addSR ty4 >>>= \ty5 ->
-    unitS [ DeclForeignImp pos cname id' ar cast ty1 id
+    unitS [ DeclForeignImp pos callConv cname id' ar cast ty1 id
           , DeclVarsType [(pos,id)] [] ty5]
-dDecl d@(DeclForeignExp _ _ _ _) = unitS [d]
+dDecl d@(DeclForeignExp _ _ _ _ _) = unitS [d]
 dDecl x = error "Hmmm. No match in dbgDataTrans.dDecl"
 
 

@@ -50,9 +50,9 @@ bindDecl  (DeclDefault types) =
     unitS0
 bindDecl  (DeclPrimitive pos tid arity typ) =
     bindTid pos Var tid
-bindDecl  (DeclForeignImp pos _ tid arity cast typ _) =	-- foreign import
+bindDecl  (DeclForeignImp pos _ _ tid arity cast typ _) = -- foreign import
     bindTid pos Var tid
-bindDecl  (DeclForeignExp pos _ tid typ) =		-- foreign export
+bindDecl  (DeclForeignExp pos _ _ tid typ) =		-- foreign export
     unitS0
 bindDecl  (DeclVarsType posidents ctxs typ) =
     unitS0
@@ -160,8 +160,8 @@ identDecl :: Decl a -> [a]
 identDecl (DeclPat (Alt pat gdexps decls)) = map snd (identPat pat)
 identDecl (DeclFun pos fun (Fun args gdexps decls:_)) = [fun]
 identDecl (DeclPrimitive pos fun arity t) = [fun]
-identDecl (DeclForeignImp pos _ fun arity cast t _) = [fun]
-identDecl (DeclForeignExp pos _ fun t) = []
+identDecl (DeclForeignImp pos _ _ fun arity cast t _) = [fun]
+identDecl (DeclForeignExp pos _ _ fun t) = []
 identDecl _ = []
 
 

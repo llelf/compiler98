@@ -4,6 +4,7 @@
 
 module Hat 
   (R(R),mkR,Fun(Fun),SR,Trace,NmType,ModuleTraceInfo
+  ,Tuple0(Tuple0),Tuple2(Tuple2)
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
 --  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
@@ -13,7 +14,7 @@ module Hat
   ,lazySat,lazySatLonely,eagerSat
   ,fun1,fun2,fun3,fun4,fun5,fun6,fun7,fun8,fun9,fun10,fun11,fun12,fun13
   ,fun14,fun15
-  ,ulazySat
+  ,ulazySat,hiddenRoot
   ,uap1,uap2,uap3,uap4
   ,ufun1,ufun2,ufun3
   ,indir
@@ -82,7 +83,15 @@ data R a = R a Trace
 trace :: R a -> Trace
 trace (R a t) = t
 
+
+-- transformed types
+
 newtype Fun a b = Fun (Trace -> R a -> R b)
+
+-- type constructors and data constructors need to have same name,
+-- because transformation doesn't distinguish the two
+data Tuple0 = Tuple0  -- () would do, but this way like other tuples  
+data Tuple2 a b = Tuple2 (R a) (R b) -- not type Tuple2 a b = (R a,R b)
 
 
 {- data constructor R strict in trace argument -}
@@ -1405,6 +1414,9 @@ data Status = Hidden Trace  -- neither value nor trace yet demanded
             | Sat Trace     -- trace demanded, value not yet
             | Eval Trace    -- value demanded, trace not yet
                             
+
+hiddenRoot :: Trace
+hiddenRoot = mkTHidden mkTRoot
 
 -- combinators for n-ary application
 
