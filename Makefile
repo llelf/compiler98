@@ -162,6 +162,7 @@ TARGETS= runtime prelude greencard hp2graph hattools \
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
+greencard: greencard-${BUILDCOMP}
 hmake: hmake-${BUILDCOMP}
 help:
 	@echo "Default target is:      basic"
