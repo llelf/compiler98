@@ -5,11 +5,7 @@ import LexDigits
 
 -- Code in comments are from Haskell 1.2
 
-#if !defined(TRACING)
 lexLitChar		:: ReadS String
-#else
-lexLitChar		:: String -> [(String,String)]
-#endif
 
 lexLitChar ('\\':s)	=  [('\\':esc, t) | (esc,t) <- lexEsc s]
 	where

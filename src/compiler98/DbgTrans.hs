@@ -19,8 +19,9 @@ import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
-import TypeUnify(expand)
 import Info(typeSynonymBodyI)
+import TypeSubst(substNT)
+import Nice(niceNewType)
 
 
 {- table for source references and identifiers refered to from the trace -}
@@ -337,9 +338,10 @@ dCaf pos id cafName fundefs nt =
            ]
         ]
 
-
+{-
 dFun :: Pos -> Id -> String -> Int -> [Fun Id] -> NewType
-     -> DbgTransMonad [Decl Int]
+     -> DbgTransMonad [Decl Id]
+-}
    
 dFun pos id funName arity fundefs nt =
   lookupVar pos (t_fun arity) >>>= \fun ->
@@ -364,7 +366,8 @@ dFun pos id funName arity fundefs nt =
   mkFailExpr pos >>>= \fpexp ->
   noGuard >>>= \ng ->
   let fpclause = Fun (newredex:fp) [(ng, fpexp)] (DeclsParse [])
-  in unitS ([DeclFun pos id [Fun [sr, redex]
+  in getIntState >>>= \intState ->
+     unitS ([DeclFun pos id [Fun [sr, redex]
        [(ng 
         ,ExpApplication pos 
 	   [fun
@@ -373,16 +376,20 @@ dFun pos id funName arity fundefs nt =
 		     --eStr pos (stripPrelude funName),
 	   ,ExpVar pos wrappedfun, sr, redex]
        )]
-       (DeclsParse (prependTypeSigIfExists pos wrappedfun
+       (DeclsParse (prependTypeSigIfExists intState pos wrappedfun
                    [DeclFun pos wrappedfun (fundefs'++[fpclause])]))]
       ] ++ newdecls)
 --     (DeclsParse [DeclFun pos wrappedfun (fundefs'++[fpclause])])]])
   where
-  --prependTypeSigIfExists :: Pos -> Id -> ([Decl Id] -> [Decl Id])
-  prependTypeSigIfExists pos wrappedFun =
+  --prependTypeSigIfExists :: IntState -> Pos -> Id -> ([Decl Id] -> [Decl Id])
+  prependTypeSigIfExists intState pos wrappedFun =
     case nt of
       NoType -> \x->x
-      _      -> (DeclIgnore "Type signature" :)
+      _      -> ( DeclIgnore ("Type signature" ++ niceNewType intState nt) :)
+                -- a bit of a hack
+                -- type signatures do not exist any more in this phase in
+                -- the syntax tree, but the information is useful for
+                -- debugging
 
 
 {-
@@ -1000,11 +1007,16 @@ unwrapNT intState arity isCaf
   dStripR n (NTcons rt [NTcons a1 [t, NTcons a2 [a, b]]]) 
     | a1 == arrow && a1 == a2 = NTcons arrow [a, dStripR (n-1) b]
   dStripR n (NTcons rt [NTcons tysyn tys]) = 
-    -- type my contain type synonym instead of the function arrow
+    -- type may contain type synonym instead of the function arrow
     dStripR n (NTcons rt [expand nt tys])
     where
     nt = dropJust . typeSynonymBodyI . dropJust . lookupIS intState $ tysyn
-  dStripR n t@(NTcons rt [a]) = error ("dStripR: strange type: " ++ show t)
+
+    -- the expand version in TypeUnify does not work here because it uses
+    -- idempotent closure of the substitution
+    expand :: NewType -> [NT] -> NT
+    expand (NewType free [] ctxs [nt]) ts = substNT (zip free ts) nt
+  dStripR n t = error ("dStripR: strange type: " ++ show t)
 unwrapNT intState arity isCaf nt = 
   error ("unwrapNT: strange type: " ++ show nt)
 

@@ -1,4 +1,7 @@
-module TypeUnify(unify,unifyr,expand) where
+{- ---------------------------------------------------------------------------
+The main unification functions for NTs
+-}
+module TypeUnify(unify,unifyr) where
 
 import NT(NT(..),NewType(..),freeNT,strNT)
 import IdKind
@@ -139,11 +142,19 @@ unify state phi (t1@(NTexist e),t2@(NTvar tvn2)) =
 unify state phi _ = error "unify phi _"
 
 
+unifyl :: IntState -> Tree (Id,NT) -> [(NT,NT)] 
+       -> Either (Tree (Id,NT),String) (Tree (Id,NT))
+
 unifyl state phi eqns = foldr unify' (Right phi) eqns
         where
             unify' eqn (Right phi) = unify state  phi eqn
             unify' eqn (Left err) = Left err
 
+
+{- unify a list of NTs from left to right -}
+
+unifyr :: IntState -> Tree (Id,NT) -> [NT] 
+       -> Either (Tree (Id,NT),String) (Tree (Id,NT))
 
 unifyr state phi [] = Right phi
 unifyr state phi [e] = Right phi
@@ -162,6 +173,11 @@ expandAll state t@(NTcons tcon ts) =
 expandAll state t = t
 
 
+{-
+If tcon is a type synoym, then unifyExpand returns the depth and the
+definition body of the type synoym.
+Otherwise it returns the printable name of tcon.
+-}
 unifyExpand :: IntState -> Id -> Either String (Int,NewType)
 
 unifyExpand state tcon =
@@ -171,6 +187,14 @@ unifyExpand state tcon =
           Just d -> Right (d,ntI info)
 	  Nothing -> Left (show (tidI info))
 
+
+{-
+Replaces the free variables of the type given as first argument by
+the types given as second argument.
+Precondition: no free variable of the first type should occur in any
+of the other types (ids of their free variables should be higher).
+Otherwise evaluation of the function will not terminate.
+-}
 
 expand :: NewType -> [NT] -> NT
 

@@ -2,15 +2,11 @@ module Prelude (Read(..)) where
 
 import Lex
 import ReadParen
+import TReadS
 
 class  Read a  where
-#if !defined(TRACING)
     readsPrec  :: Int -> ReadS a
     readList   :: ReadS [a]
-#else
-    readsPrec  :: Int -> String -> [(a,String)]
-    readList   :: String -> [([a],String)]
-#endif
 
     readList = readParen False (\r -> [pr | ("[",s) <- lex r
                                       , pr      <- readl s])

@@ -1,13 +1,10 @@
 module Prelude where
 
 import Char (isAlpha)
-import NonStdTrace
+import TReadS
 
-#if !defined(TRACING)
 _readField :: (Read a) => String -> String -> (String -> [(a->b,String)]) -> ReadS b
-#else
-_readField :: (Read a) => String -> String -> (String -> [(a->b,String)]) -> String -> [(b,String)]
-#endif
+
 _readField prefix name fun
     | isAlpha (head name) =				-- ordinary fieldname
         \ r ->  [(c a,s) | (c,r) <- fun r,

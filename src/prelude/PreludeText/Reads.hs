@@ -1,8 +1,7 @@
 module Prelude where
 
-#if !defined(TRACING)
+import TReadS
+
 reads 	        :: (Read a) => ReadS a
-#else
-reads 	        :: (Read a) => String -> [(a,String)]
-#endif
+
 reads		=  readsPrec 0

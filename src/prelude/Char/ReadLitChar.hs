@@ -9,11 +9,8 @@ import IsDigit
 import Chr
 import Ord
 
-#if !defined(TRACING)
 readLitChar 		:: ReadS Char
-#else
-readLitChar 		:: String -> [(Char,String)]
-#endif
+
 readLitChar ('\\':s)	=  readEsc s
 	where
 	readEsc ('a':s)	 = [('\a',s)]

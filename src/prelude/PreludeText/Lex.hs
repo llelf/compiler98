@@ -3,12 +3,10 @@ module Prelude where
 import Char(isSpace,isAlpha,isDigit,isAlphaNum)
 import LexDigits
 import LexLitChar
+import TReadS
 
-#if !defined(TRACING)
 lex 	    		:: ReadS String
-#else
-lex 	    		:: String -> [(String,String)]
-#endif
+
 
 lex ""			= [("","")]
 lex (c:s) | isSpace c	= lex (dropWhile isSpace s)

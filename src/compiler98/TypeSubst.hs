@@ -1,3 +1,7 @@
+{- ---------------------------------------------------------------------------
+Handling of type substitutions.
+They substitute NTs for Ids.
+-}
 module TypeSubst(Substitute(..),idSubst,AssocTree(..),Tree,substEnv,substCtxs,stripSubst,addSubst,applySubst,list2Subst,strace,substNT) where 
 
 import NT(NT(..),NewType(..),freeNT)
@@ -5,14 +9,29 @@ import Extra(fstOf,dropJust,strace)
 import TypeData
 import AssocTree
 import Tree234
+import Id(Id)
+
 
 forceList [] c = c
 forceList (x:xs) c = seq x (forceList xs c)
 
+
+type NTSubst = AssocTree Id NT
+
+
+idSubst :: NTSubst
+
 idSubst = initAT
 
+
+{-
+subst does not just apply the mapping represented by the tree once,
+but it applies the idempotent closure of the mapping!
+substNT below only applies the mapping once.
+-}
+
 class Substitute a where
-  subst :: AssocTree Int NT -> a -> a
+  subst :: NTSubst -> a -> a
 
 instance Substitute NT where
   subst phi nt@(NTany v)    =
@@ -66,18 +85,27 @@ applySubst phi tvar =
        Nothing -> Just nt
 
 
--- stripSubst :: AssocTree Int NT -> Int -> Tree (Int,NT)
+stripSubst :: NTSubst -> Id -> NTSubst
+
 stripSubst phi tvar = phi -- nhc98 doesn't strip substitutions
 
--- addSubst :: AssocTree Int NT -> Int -> NT -> AssocTree Int NT
+
+addSubst :: NTSubst -> Id -> NT -> NTSubst
+
 addSubst phi tvar t =
    addAT phi (\ a b -> error ("Two mappings for " ++ show tvar ++ " : " ++ show a ++ " and " ++ show b)) tvar t
 
 
--- list2Subst :: [(Int,NT)] -> AssocTree Int NT
+list2Subst :: [(Id,NT)] -> NTSubst
+
 list2Subst xs = foldr ( \ (v,nt) phi -> addSubst phi v nt) idSubst xs
 
---- substNT only goes one step, used for (1->2),(2->1) substitutions in TypeCtx
+
+{-
+substNT only goes one step, used for (1->2),(2->1) substitutions in TypeCtx
+-}
+
+substNT :: [(Id,NT)] -> NT -> NT
 
 substNT tv (NTany  a) = dropJust (lookup a tv)
 substNT tv (NTvar  a) = dropJust (lookup a tv)
