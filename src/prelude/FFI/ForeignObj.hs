@@ -3,6 +3,8 @@ module ForeignObj
   , makeForeignObj		-- :: Addr -> IO () -> IO ForeignObj
   , foreignObjToAddr		-- :: ForeignObj -> Addr
 --, addrToForeignObj		-- :: Addr -> ForeignObj -- no finalizer!
+  , withForeignObj		-- :: ForeignObj -> (Addr -> IO a) -> IO a
+  , touchForeignObj		-- :: ForeignObj -> IO ()
   ) where
 
 import FFIBuiltin (ForeignObj,Addr)
@@ -26,3 +28,19 @@ primForeignObj primitive 2	:: Addr -> a -> IO ForeignObj
 foreign cast foreignObjToAddr	:: ForeignObj -> Addr
 --foreign cast addrToForeignObj	:: Addr       -> ForeignObj
 
+
+-- New operation suggested by Marcin Kowalcsycz and incorporated into GHC.
+-- It is a safer way to use the old unsafe `foreignObjToAddr'.
+withForeignObj  :: ForeignObj -> (Addr -> IO a) -> IO a
+withForeignObj fo action = action (foreignObjToAddr fo)
+{- Note that GHC probably requires the following implementation:
+  do
+    res <- action (foreignObjToAddr fo)
+    touch fo
+    return res
+-}
+
+-- `Touching' a foreignObj is just intended to keep it alive in GHC across
+-- calls which might otherwise allow it to be GC'ed.
+touchForeignObj :: ForeignObj -> IO ()
+touchForeignObj fo = return ()
