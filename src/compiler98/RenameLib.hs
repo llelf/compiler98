@@ -219,6 +219,10 @@ keepRS (RenameState flags unique rps rts rt st derived
   	           (NewType _ [] _ [NTvar v,res]) -> (synType,(u,v):newType)
   	           (NewType _ [] _ [NTapp v1 v2,res]) -> (synType,newType)
 			-- ^ MW hack: omits potential circularity check!
+  	           (NewType _ [] _ (_:_:_)) ->
+                        error ("Invalid rhs of newtype: " ++
+                               show (tidI info)++
+                               "\nA newtype can rename only one type.")
                    _ -> error ("Couldn't find rhs of newtype: " ++
                                show (tidI info)++
                                "\nTwo conflicting newtype definitions?")
