@@ -12,7 +12,7 @@ OBJS = $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
 
 HEADERS = gmp-mparam.h
 
-CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT}
+CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
 
 LINKS = flt.h
 
