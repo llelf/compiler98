@@ -7,7 +7,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.12 (2002-03-14)"
+CONFIGVERSION="v1.13 (CVS development version)"
 HMAKEVERSION="3.02 (2002-03-14)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
@@ -546,6 +546,15 @@ then
   fi
 
 else	# [ "$INSTALL" = "yes" ]
+
+  if [ ! -d src ]	# hmake config for binary distribution only
+  then
+    echo "Setting up hmake configuration."
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
+    chmod +x $BUILDBINDIR/hmake-config
+    sh targets/$MACHINE/hmake3.config
+  fi
 
   echo "Installation directories are now created/checked."
   echo "Install directory root is:"

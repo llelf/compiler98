@@ -8,7 +8,7 @@ AR = ar
 LD = ld
 
 
-VERSION = 1.12
+VERSION = 1.13
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
