@@ -522,6 +522,7 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
       fileoffset = getNameType();
       break;
     case NTIDENTIFIER:
+    case NTTOPIDENTIFIER:
       fileoffset = getModInfo();
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
@@ -546,6 +547,7 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case NTIDENTIFIER:
+    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       fileoffset = getParent();
       s = getPosnStr();
@@ -627,6 +629,7 @@ BOOL isTrusted(HatFile handle,filepointer srcref) {
     case NTCONSTRUCTOR: // constructors are "trusted"! => its applications are ok!
       hatSeekNode(handle,old);
       return 1;
+    case NTTOPIDENTIFIER:
     case NTIDENTIFIER:
       srcref=getModInfo(); // follow module info
       break;
@@ -733,6 +736,7 @@ filepointer hatLMO(HatFile handle,filepointer fileoffset) {
       fileoffset=getNameType(); // follow nmType
       break;
     case NTIDENTIFIER:
+    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       return fileoffset;
     case TRAPP:
@@ -763,6 +767,7 @@ filepointer hatLMOName(HatFile handle,filepointer fileoffset) {
       return fileoffset;
       break;
     case NTIDENTIFIER:
+    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       return fileoffset;
     case TRAPP:
@@ -933,7 +938,7 @@ filepointer hatMainCAF(HatFile h) {
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
 	    filepointer lmo = hatLMO(h,currentOffset);
-	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTIDENTIFIER)&&
+	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTTOPIDENTIFIER)&&
 		(strcmp(getName(),"main")==0)) {
 	      return currentOffset;
 	    }
