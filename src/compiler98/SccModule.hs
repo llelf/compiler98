@@ -52,7 +52,7 @@ sDecls (DeclsParse ds) =
             fixDecl (Rec ns:scc) ds = DeclsRec (map (assocDef ds (error "fixDecl2")) ns):fixDecl scc ds
 
             remove dep = case unzip dep of
-                           (def,depend) -> removeSet (nub (foldr (++) [] depend)) def
+                           (def,depend) -> removeSet (nub (concat depend)) def
 
 sDecls _ = error "I: sDecls not on [DeclParse..]"
 
@@ -94,7 +94,7 @@ map_sFun (Fun pats rhs decls:r) =
             (rhs',useRhs) = sRhs rhs
         in (Fun pats rhs' decls',(use `unionSet` useRhs) `removeSet` defPats pats): map_sFun r
 
-defDecls (DeclsParse decls) = foldr (++) [] (map defDecl decls)
+defDecls (DeclsParse decls) = concat (map defDecl decls)
 
 defDecl (DeclVarsType ids ctx t) = [] --       error "I: defDecl (DeclVarsType ...)"
 defDecl (DeclPat (Alt pat gdexps decls)) =
