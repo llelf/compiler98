@@ -60,7 +60,7 @@ ObserveQuery newObserveQuery(int handle,
   return ((ObserveQuery) newQ);
 }
 
-filepointer findModule(HatFile handle,
+filepointer hatfindModule(HatFile handle,
 		       char* moduleName,
 		       BOOL showProgress) {
   unsigned long currentOffset,fsz,lsz=0;
@@ -104,7 +104,7 @@ ObserveQuery newObserveQuerySource(int handle,
   newQ->line = line;
   newQ->column = column;
   newQ->showProgress = showProgress;
-  if (moduleName==NULL) {
+  if ((moduleName==NULL)||(strcmp(moduleName,"")==0)) {
     filepointer p = hatMainCAF(handle);
     if (p!=0) {
       getNodeType(handle,p); // go to main CAF
@@ -114,7 +114,7 @@ ObserveQuery newObserveQuerySource(int handle,
       }
     }
   } else {
-    newQ->moduleRef = findModule(handle,moduleName,showProgress);
+    newQ->moduleRef = hatfindModule(handle,moduleName,showProgress);
   }
   newQ->currentOffset = hatSeqFirst(handle); //newQ->moduleRef;
   newQ->fsz = hatFileSize(handle)/1000;
@@ -146,11 +146,10 @@ HatFile observeHatFile(ObserveQuery query) {
 
 void queryCleanOutput(ObserveQuery query) {
   if (((_ObserveQuery*) query)->showProgress) {
-    fprintf(stderr,"\b\b\b\b");
+    fprintf(stderr,"\b\b\b\b    \b\b\b\b");
     //fflush(stderr);
   }
 }
-
 
 filepointer nextObserveSrcMode(_ObserveQuery* query) {
   unsigned long p,currentOffset;
@@ -185,31 +184,40 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
     case HatName:
       {
 	filepointer apptrace;
-	if (isInHashTable(htable,getSrcRef())) {
-	  filepointer fun = hatLMO(handle,currentOffset);
-	  char lmoType = 0;
-	  if (fun!=0) lmoType = getNodeType(handle,fun);
-	  if (lmoType==HatIdentifier) {
-	    filepointer result = getResult(handle,currentOffset);
-	    if ((result!=0)&&(isSAT(handle,result))&&
-		(getNodeType(handle,result)!=HatSATA)) { // make sure, result is available!
-	      result = hatFollowSATs(handle,result);
-	      if (result!=currentOffset) { // no partial applications!
-		if (result!=0) {
-		  query->currentOffset = currentOffset;
-		  query->found++;
-		  queryCleanOutput((ObserveQuery)query);
-		  return currentOffset; //result;
+	filepointer src = getSrcRef();
+	if (isInHashTable(htable,src)) {
+	  filepointer next=hatSeqNext(handle,currentOffset);
+	  if ((next!=0)&&(getNodeType(handle,next)==HatApplication)&&
+	      (getAppFun()==currentOffset)&&(getSrcRef()==src)) {
+	    // ok, this is an name/application being a part of the following application
+	    // do not include this name/application, but the whole structure
+	    // do nothing now, wait for next application
+	  } else {
+	    filepointer fun = hatLMO(handle,currentOffset);
+	    char lmoType = 0;
+	    if (fun!=0) lmoType = getNodeType(handle,fun);
+	    if (lmoType==HatIdentifier) {
+	      filepointer result = getResult(handle,currentOffset);
+	      if ((result!=0)&&(isSAT(handle,result))&&
+		  (getNodeType(handle,result)!=HatSATA)) { // make sure, result is available!
+		result = hatFollowSATs(handle,result);
+		if (result!=currentOffset) { // no partial applications!
+		  if (result!=0) {
+		    query->currentOffset = currentOffset;
+		    query->found++;
+		    queryCleanOutput((ObserveQuery)query);
+		    return currentOffset; //result;
+		  }
 		}
 	      }
-	    }
-	  } else
-	    if (lmoType==HatConstructor) {
-	      query->currentOffset = currentOffset;
-	      query->found++;
-	      queryCleanOutput((ObserveQuery)query);
-	      return currentOffset;
-	    }
+	    } else
+	      if (lmoType==HatConstructor) {
+		query->currentOffset = currentOffset;
+		query->found++;
+		queryCleanOutput((ObserveQuery)query);
+		return currentOffset;
+	      }
+	  }
 	}
       }
       currentOffset = hatSeqNext(handle,currentOffset);
@@ -247,7 +255,6 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
   }
   while (!hatSeqEOF(handle,currentOffset)) {
-
     if ((((_ObserveQuery*) query)->showProgress)&&
 	((currentOffset/10)/((_ObserveQuery*) query)->fsz > 
 	 ((_ObserveQuery*) query)->lsz)) {
@@ -262,8 +269,9 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
       {
 	filepointer apptrace;
 	apptrace = getParent();  // fileoffset of App-trace
+	p = getAppFun();
 	//bufferMiss = 0;
-	p = hatFollowSATs(handle,getAppFun());         // fileoffset of Function-trace
+	p = hatFollowSATs(handle,p);         // fileoffset of Function-trace
 	//if (bufferMiss>0) bufferMisses++;else bufferHits++;
 	if (p>currentOffset) { // whoo! The function which is applied here is forward
 	  // in the file! We haven't been there yet: so we need to check it!
@@ -318,6 +326,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
   }
   ((_ObserveQuery*) query)->finished = 1;
   queryCleanOutput(query);
+  //fprintf(stderr,"bufferMisses: %u, bufferHits: %u\n",bufferMisses,bufferHits);
   return 0;
 }
 

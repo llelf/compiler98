@@ -20,6 +20,9 @@ HatFile       hatOpenFile  (char* name);  // open file, return internal handle
 void          hatCloseFile (HatFile h);   // close file in internal handle
 unsigned long hatFileSize  (HatFile h);   // return size of file
 
+filepointer   hatErrorPoint(HatFile h);   // return the error entry point, if
+                                          // evaluation failed, otherwise 0 returned
+char*         hatErrorText (HatFile h);   // return the error message, otherwise NULL
 filepointer   hatMainCAF   (HatFile h);   // return the main CAF of the trace
 
 filepointer   hatSeqFirst  (HatFile h);   // go to the first node in the trace file

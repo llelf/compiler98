@@ -59,7 +59,8 @@ module HatTrace (
 
  detect,      -- return EDT children of a node
 
- observe,     -- make observations
+ observe,     -- make observation: observe a function
+ observeSrc,  -- make observation: observe a source reference
  ObserveResult( -- type: type for the result for "observe"
 	       IdentNotFound,TopIdentNotFound,Found),
  isIdentNotFound,isTopIdentNotFound,isFound, -- test observe's result
@@ -508,7 +509,7 @@ foreignObjToList hattrace dat =
 --------------------------------------------------------------------------
 -- Interfacing observe.c
 
--- submit query to c
+-- submit query to c (observing a function)
 %fun getObserveInt :: HatTrace -> String -> String -> Int -> ForeignObj
 %call (foreign f hattrace) (string ident) (string topIdent) (int recursive)
 %code
@@ -516,6 +517,13 @@ foreignObjToList hattrace dat =
 %     //getObserve(hattrace,ident,topIdent,verbose,0,recursive,prec,(int**) &resultArray);
 %     query = (void*) newObserveQueryIdent((int) hattrace,ident,topIdent,recursive,1);
 %     //printf("end of observe\n");
+%result (foreign "freeArray" query)
+
+-- submit query to c (observing a source reference)
+%fun getObserveSrcInt :: HatTrace -> String -> Int -> Int -> ForeignObj
+%call (foreign f hattrace) (string moduleName) (int line) (int column)
+%code
+%     query = (void*) newObserveQuerySource((int) hattrace,moduleName,line,column,1);
 %result (foreign "freeArray" query)
 
 -- get one element from the c result
@@ -731,6 +739,14 @@ observe hattrace ident topIdent recursive =
     if (s==1) then IdentNotFound else
      (Found (foreignObserveToList hattrace x))
 
+-- returns observations within hattrace: all applications/values at the given
+-- source position are returned. If moduleName is an empty string, the main module
+-- is considered.
+observeSrc :: HatTrace -> String -> Int -> Int -> ObserveResult
+observeSrc hattrace moduleName line column =
+  let x = (getObserveSrcInt hattrace moduleName line column) in
+     (Found (foreignObserveToList hattrace x))
+
 -- predicates for result returned by observe
 
 isIdentNotFound    :: ObserveResult -> Bool
@@ -775,9 +791,9 @@ printCReduction precision hatNode =
 
 printCReductionList :: Int-> [HatNode] -> IO ()
 printCReductionList _ [] = return ()
-old_showReductionList precision (e:list) = 
+printCReductionList precision (e:list) = 
     printCReduction precision e >>
-    old_showReductionList precision list
+    printCReductionList precision list
 
 ------------------------------------------------------------------------------
 

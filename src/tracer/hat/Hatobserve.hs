@@ -83,24 +83,24 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 	  do
             if ((remote)||(ident1=="")) then putStrLn "\nWelcome to Hatobserve (10/7/01)"
              else return ()
-            observed <- if ((remote)||(ident1/="")) then
-                           makeObserve hattrace verboseMode recursiveMode expertMode
-		               False (\ x -> True) ident1 ident2
-                         else
-			   return (Found [])
-	    if (ident1=="") then
+            let observed = if ((remote)||(ident1/="")) then
+			     makeObserve hattrace verboseMode recursiveMode expertMode
+			     False (\ x -> True) ident1 ident2
+			    else
+			     (Found []) in
+              if (ident1=="") then
                do
 	 	  dummy <- interactive (file,hattrace) ([],False,1,0,50)
 		  return ()
-             else
-              if (remote) then
+               else
+               if (remote) then
                 let obs = (fromFound observed);
                     hasmore = (null obs)==False in
                  do
 	           dummy <- doCommand "" "" (file,hattrace) ((fromFound observed),
 							     hasmore,1,0,50)
                    return ()
-               else
+                else
 	        do
       		  if (isTopIdentNotFound observed) then
 		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
@@ -130,52 +130,40 @@ showObservationList precision i max (e:r) =
       return (count+1)
 
 makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
-	       (LinExpr->Bool) -> String -> String -> IO ObserveResult
+	       (LinExpr->Bool) -> String -> String -> ObserveResult
 makeObserve hattrace verboseMode recursiveMode expertMode filterMode 
 	    filterFun ident1 ident2 =
     let observed = (observe hattrace ident1 ident2 recursiveMode) in
      if (isFound observed) then
        if (expertMode) then
-	 do
-	   -- showObservations observed
-	   return observed
+	   observed
         else
          if (filterMode) then
-            do
-	      r <- uniqueFilter (fromFound observed) filterFun
-              return (Found r)
+	    (Found (uniqueFilter (fromFound observed) filterFun))
 	  else
-            do
-	      r <- unique (fromFound observed)
-              return (Found r)
+              (Found (unique (fromFound observed)))
       else
-       return observed
+        observed
 
-unique :: [HatNode] -> IO [HatNode]
-unique observed =
-    let tries = (insertTrieList []
-		 (map (\x -> let l = lazyExpression 200 x in linearizeEquation l)
-		  observed)) in
-      let nodes = (getTrieNodes tries) in
-       if (null nodes) then
-	  -- putStrLn "no match" >>
-          return []
-	else -- showObservations nodes >>
-	  return nodes
+unique :: [HatNode] -> [HatNode]
+unique observed = unique' observed []
+ where
+ unique' [] _ = []
+ unique' (obs:observed) trie =
+    let (b,tries) = (insertTrie trie (linearizeEquation (lazyExpression 200 obs)));
+	r = unique' observed tries in
+	    if b then (obs:r) else r
 
-
-uniqueFilter observed filterFun =
-    let linexpr = (map (\x -> let l = lazyExpression 200 x in linearizeEquation l)
-		   observed);
-        tries = (insertTrieList []
-		 (filter filterFun linexpr)) in
---    (putStrLn (showLinList (head linexpr)))>>
-      let nodes = (getTrieNodes tries) in
-       if (null nodes) then
-	  -- putStrLn "no match" >>
-          return [] 
-	else -- showObservations nodes >>
-          return nodes
+uniqueFilter :: [HatNode] -> (LinExpr -> Bool) -> [HatNode]
+uniqueFilter observed filterFun = uniqueFilter' observed filterFun []
+ where
+ uniqueFilter' [] _ _ = []
+ uniqueFilter' (obs:observed) filterFun trie =
+    let linexpr = linearizeEquation (lazyExpression 200 obs);
+	(b,tries) = if (filterFun linexpr) then (insertTrie trie linexpr) else
+		    (False,trie);
+        r = uniqueFilter' observed filterFun tries in
+		if b then (obs:r) else r
 
 last2 :: [a] -> ([a],[a])
 last2 [] = ([],[])
@@ -389,15 +377,15 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
          putStrLn ("searching for: "++fun++(if ident2/="" then " in "++ident2 else ""))
 	 putStrLn ""
 
-         newObserved <- makeObserve hattrace ('v' `elem` opts) ('r' `elem` opts) False
-			((length pattern)>2)
-			(\x -> (compareExpr x pattern))
-			fun ident2
-         if (isTopIdentNotFound newObserved) then
+         let newObserved = makeObserve hattrace ('v' `elem` opts) ('r' `elem` opts) False
+			   ((length pattern)>2)
+			   (\x -> (compareExpr x pattern))
+			   fun ident2 in
+          if (isTopIdentNotFound newObserved) then
             putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
                       "identifier \""++ident2++"\".\n(Check spelling!)") >>
             interactive hatfile state
-          else
+           else
            if (isIdentNotFound newObserved) then
               putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
                         "identifier \""++fun++"\".\n(Check spelling!)") >>
@@ -517,6 +505,5 @@ showHelp =
    putStrLn "       r: recursive mode. Omitt recursive function applications.\n"
    putStrLn "       xu: expert's mode for a very fast response. All applications"
    putStrLn "           of the identifier are shown, rather than only the most"
-   putStrLn "           general ones. Using this option may result in incomplete"
-   putStrLn "           applications, missing arguments. \n"
+   putStrLn "           general ones.\n"
 

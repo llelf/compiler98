@@ -91,42 +91,48 @@ linearizeExpr' _ = error "linearizeExpr': unknown constructor"
 --  - deal with more/less general equations
 --  - deal with unevalauted subexpressions within lhs or rhs correctly!
 
-
-insertTrie :: Trie -> LinExpr -> Trie
+-- returns new trie and boolean value, indicating whether new element was added or
+-- ignored (equal or less general elements are ignored)
+insertTrie :: Trie -> LinExpr -> (Bool,Trie)
 insertTrie t l = insertTrie' False t l
 
-insertTrie' :: Bool -> Trie -> LinExpr -> Trie
+insertTrie' :: Bool -> Trie -> LinExpr -> (Bool,Trie)
 
-insertTrie' _ tries [] = tries -- LinExpr empty: trie unmodified
+insertTrie' _ tries [] = (False,tries) -- LinExpr empty: trie unmodified
 
 -- if trie is empty, simply add the new elements
-insertTrie' rhs [] (LAppl:r) = [TAppl (insertTrie' rhs [] r)]
-insertTrie' rhs [] ((LConstr s):r) = [TConstr s (insertTrie' rhs [] r)]
-insertTrie' rhs [] ((LIdent s):r) = [TIdent s (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LSATA:r) = [TSATA (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LSATB:r) = [TSATB (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LHidden:r) = [THidden (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LCase:r) = [TCase (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LLambda:r) = [TLambda (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LInt i:r) = [TInt i (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LInteger i:r) = [TInteger i (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LChar c:r) = [TChar c (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LRational rat:r) = [TRational rat (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LFloat f:r) = [TFloat f (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LDouble d:r) = [TDouble d (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LString s:r) = [TString s (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LIf:r) = [TIf (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LGuard:r) = [TGuard (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LContainer:r) = [TContainer (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LLastArg:r) = [TLastArg (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LFirstArg:r) = [TFirstArg (insertTrie' rhs [] r)]
-insertTrie' rhs [] (LRHS:r) = [TRHS (insertTrie' True [] r)]
-insertTrie' rhs [] (LNodeAdr n:[]) = [TNodeAdr n]
-insertTrie' rhs [] (LNone:r) = [TNone (insertTrie' rhs [] r)]
+insertTrie' rhs [] (LAppl:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TAppl t])
+insertTrie' rhs [] ((LConstr s):r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TConstr s t])
+insertTrie' rhs [] ((LIdent s):r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TIdent s t])
+insertTrie' rhs [] (LSATA:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TSATA t])
+insertTrie' rhs [] (LSATB:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TSATB t])
+insertTrie' rhs [] (LHidden:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[THidden t])
+insertTrie' rhs [] (LCase:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TCase t])
+insertTrie' rhs [] (LLambda:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TLambda t])
+insertTrie' rhs [] (LInt i:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TInt i t])
+insertTrie' rhs [] (LInteger i:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TInteger i t])
+insertTrie' rhs [] (LChar c:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TChar c t])
+insertTrie' rhs [] (LRational rat:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TRational rat t])
+insertTrie' rhs [] (LFloat f:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TFloat f t])
+insertTrie' rhs [] (LDouble d:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TDouble d t])
+insertTrie' rhs [] (LString s:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TString s t])
+insertTrie' rhs [] (LIf:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TIf t])
+insertTrie' rhs [] (LGuard:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TGuard t])
+insertTrie' rhs [] (LContainer:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TContainer t])
+insertTrie' rhs [] (LLastArg:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TLastArg t])
+insertTrie' rhs [] (LFirstArg:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TFirstArg t])
+insertTrie' rhs [] (LRHS:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TRHS t])
+insertTrie' rhs [] (LNodeAdr n:[]) = (True,[TNodeAdr n])
+insertTrie' rhs [] (LNone:r) = let (_,t)=(insertTrie' rhs [] r) in (True,[TNone t])
 
 -- a new address is ignored, if it matches the position of an old address:
 --  the equations have been the same so far! (or even less general)
-insertTrie' rhs x@((TNodeAdr _):_) (LNodeAdr _:[]) = x
+insertTrie' rhs x@((TNodeAdr _):_) (LNodeAdr _:[]) = (False,x)
+
+-- if element in Trie matches the one in LinExpr: add rest in its Trie
+insertTrie' rhs (e1:a) (e2:b) | (sameType e1 e2) =
+				  let (bl,t)=(insertTrie' rhs (typesTrie e1) b) in
+					     (bl,((typesConstr e1) t):a)
 
 -- if a SATA is found in the Trie or in the LinExpr, use mostGeneralTrie to
 --  deal with more/less general equations correctly
@@ -136,14 +142,11 @@ insertTrie' rhs trie linexpr@(LSATA:_) =
     mostGeneralTrie rhs trie linexpr
 
 -- if RHS constructor is found (rhs of equation follows) set rhs mode to true!
-insertTrie' _ ((TRHS t1):a) (LRHS:b) = (TRHS (insertTrie' True t1 b):a)
-
--- if element in Trie matches the one in LinExpr: add rest in its Trie
-insertTrie' rhs (e1:a) (e2:b) | (sameType e1 e2) = 
-				  ((typesConstr e1) (insertTrie' rhs (typesTrie e1) b):a)
+insertTrie' _ ((TRHS t1):a) (LRHS:b) = let (bl,t)=(insertTrie' True t1 b) in
+						  (bl,(TRHS t):a)
 
 -- trie and linExpr are different: check other possibilities in the trie
-insertTrie' rhs (x:a) e = x:(insertTrie' rhs a e)
+insertTrie' rhs (x:a) e = let (b,t)=(insertTrie' rhs a e) in (b,x:t)
 
 
 -- state for comparison
@@ -151,14 +154,15 @@ data CompareState = NoState | MoreGeneral | LessGeneral | UncompState deriving E
 
 -- deal with more- or less general equations, when inserting into the trie
 
-mostGeneralTrie :: Bool -> Trie -> LinExpr -> Trie
+mostGeneralTrie :: Bool -> Trie -> LinExpr -> (Bool,Trie)
 
 mostGeneralTrie rhs trielist linexpr@(LSATA:l) =
 -- SATA in new expression: drop one argument within trie and search ALL subtries!
 --  while searching: clear all less general equations within the trie!
  let (state,ntrie) = dropTrieArgument rhs trielist l in
-   if ((state==NoState)||(state==LessGeneral)) then trielist else
-      (TSATA (insertTrie' rhs [] l)):ntrie
+   if ((state==NoState)||(state==LessGeneral)) then (False,trielist) else
+     let (b,nt)=(insertTrie' rhs [] l) in
+      (b,(TSATA nt):ntrie)
 
 mostGeneralTrie rhs trielist@((TSATA t):r) linexpr =
 -- SATA in trie: if rhs==True, new expression might be more general (so clear all
@@ -167,9 +171,10 @@ mostGeneralTrie rhs trielist@((TSATA t):r) linexpr =
 --   less general than the ones already in the trie
  let (state,trie) = compareTrie rhs NoState trielist linexpr in
    if state==LessGeneral then
-       trielist  -- the new equation is less general: return the original trie
-     else 
-      (TSATA t):(insertTrie' rhs r linexpr)
+       (False,trielist)  -- the new equation is less general: return the original trie
+     else
+      let (b,nt)=(insertTrie' rhs r linexpr) in
+	(b,(TSATA t):nt)
       -- it seems more general: so add the new equation to the Trie
 
 -- skip one argument within trie and check ALL its subtries
@@ -296,9 +301,11 @@ compareTrie rhs state (t:trie) linexpr =  -- ok, first elements are uncomparable
 -----------------------------------------------------------------------------
 
 -- insert a list of LinExpressions into a Trie, return resulting trie
-insertTrieList :: Trie -> [LinExpr] -> Trie
-insertTrieList trie [] = trie
-insertTrieList trie (exp:exps) = (insertTrieList (insertTrie trie exp) exps)
+insertTrieList :: Trie -> [LinExpr] -> (Bool,Trie)
+insertTrieList trie [] = (False,trie)
+insertTrieList trie (exp:exps) =
+    let (b,t)=(insertTrie trie exp);
+	(b2,t2)=(insertTrieList t exps) in (b || b2,t2)
 
 
 -- get all node addresses stored within the trie

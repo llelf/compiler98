@@ -75,8 +75,6 @@ void _hatSwitchToHandle(HatFile h) {
   _loadHandle(currentHandle);
 }
 
-HatFile _hatCurrentHandle() {return currentHandle;}
-
 HatFile hatNewHandle() {
   filehandler* newHandles = (filehandler*) calloc(++hatHandleCount,sizeof(filehandler));
   if (hatHandleCount>1)
@@ -950,6 +948,9 @@ void resetFilepointer() {
   boff = 0;
   lseek(f,foff,0); // set filepointer
   buf_n = read(f,buf,bufsize); // read data
+#ifdef countPageMiss
+    bufferMiss++;
+#endif
 }
 
 /* make sure, next <bytes> are in buffer */
@@ -1307,10 +1308,34 @@ char* getPosnStr() {
   return posnbuf;
 }
 
+filepointer hatErrorPoint(HatFile h) {    // return the error entry point, if
+                                          // evaluation failed, otherwise 0 returned
+  filepointer p,old = hatNodeNumber(h);
+  hatSeekNode(h,0);
+  skipstring(); // skip version info string
+  p = readpointer(); // get entry point for trace
+  hatSeekNode(h,old);
+  return p;
+}
+
+char* hatErrorText (HatFile h) {  // return the error message, otherwise NULL
+  char* errorMessage=NULL;
+  filepointer p,old = hatNodeNumber(h);
+  hatSeekNode(h,0);
+  skipstring();  // skip version info string
+  skippointer(); // skip entry point for trace
+  p = readpointer(); // get NmType CString for error message
+  if ((p!=0)&&(getNodeType(h,p)==HatCString)) {
+    errorMessage = getStringValue();
+  }
+  hatSeekNode(h,old);
+  return errorMessage;
+}
+
 /* reading, checking and/or writing header and node information */
 int hatTestHeader(HatFile h) {
   char *version;
-  _hatSwitchToHandle(h);
+  hatSeekNode(h,0);
   version = readstring();
   if (strcmp(version,"Hat v01")!=0) {
     fprintf(stderr,"ERROR: File is not a hat file or version is not supported.\nAborted.\n\n");
