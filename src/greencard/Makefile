@@ -1,7 +1,7 @@
 include Makefile.inc
 
 OBJDIR = $(BUILDDIR)/$(OBJ)/greencard
-TARGET = $(DST)/greencard$(EXE)
+TARGET = $(DST)/greencard-nhc98$(EXE)
 
 ifeq "nhc98" "$(HC)"
   HFLAGS = $(shell echo $(BUILDOPTS)) $(NHEAP)
