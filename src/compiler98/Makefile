@@ -59,7 +59,7 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
 all: ${TARGET}
 install: ${TARGET}
 objdir: ${OBJDIR}
-cfiles:
+cfiles: $(OBJDIR)/$(HC)
 	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -K2M -C Main.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
