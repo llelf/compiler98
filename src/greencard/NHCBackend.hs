@@ -299,8 +299,8 @@ crtn (Apply d ds)                =
   let rs = map crtn ds
       n  = length rs
   in
-  text "mkTuple" <> text (show n) <> parens (commaList rs)
-crtn (Tuple)                     = text "mkUnit()"
+  text "nhc_mkTuple" <> text (show n) <> parens (commaList rs)
+crtn (Tuple)                     = text "nhc_mkUnit()"
 crtn d = empty
 
 crtn' wrap (Apply d [r])         = crtn' wrap r
