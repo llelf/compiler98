@@ -60,6 +60,6 @@ char *
 cGetArg (void)
 {
   static int i=1;
-  if (i>Argc+1) return (char*)0;
-  else return Argv[i++];
+  if (i<Argc) return Argv[i++];
+  else return (char*)0;
 }
