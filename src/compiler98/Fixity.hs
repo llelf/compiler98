@@ -123,8 +123,12 @@ fixInfixList ees@(ExpConOp pos op:es) =
 fixInfixList ees =
   case last ees of
     ExpConOp pos op -> reorder (init ees) >>>= \ exp -> 
+                       fixTid Con op >>>= \ fix ->
+                       invertCheck pos op fix exp >>>
                        unitS (ExpApplication pos [ExpCon pos op,exp])
     ExpVarOp pos op -> reorder (init ees) >>>= \ exp -> 
+                       fixTid Var op >>>= \ fix ->
+                       invertCheck pos op fix exp >>>
                        unitS (ExpApplication pos [ExpVar pos op,exp])
     _ -> reorder ees
 
