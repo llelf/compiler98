@@ -333,13 +333,13 @@ main() {
 
   echo -n "Testing for the readline library: "
   echo 'main(){;}' >rd.c
-  if ${CCC} -o /dev/null rd.c -lreadline >/dev/null 2>&1
+  if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
   then echo '          yes (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
   else echo '          no  (detected)'
        READLINE=""
   fi
-  rm -f rd.c
+  rm -f rd.c rd.out
 
   echo -n "Reading /usr/include/errno.h: "
   if [ ! -d src/prelude/$MACHINE ]
