@@ -20,7 +20,7 @@ then
   echo "`basename $0` is not installed/configured for $MACHINE."
   echo "  (Tried directory $NHC98LIBDIR)"
   echo "  See your system administrator, or install it yourself from"
-  echo "  http://www.cs.york.ac.uk/fp/nhc98/"
+  echo "  http://www.haskell.org/nhc98/"
   exit 1
 fi
 
