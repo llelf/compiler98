@@ -17,11 +17,11 @@ import PackedString (PackedString,packString,unpackPS)
 import List (intersperse)
 
 parseExports =
-    id `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar
+    Just `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar
         `orelse`
-    parse [] `chk` lit (L_ACONID (TupleId 0))
+    parse Nothing `chk` lit (L_ACONID (TupleId 0))
         `orelse`
-    parse []
+    parse (Just [])
 
 parseExport =
     (uncurry ExportModid) `parseChk` lit L_module `apCut` bigModId	-- 1.3

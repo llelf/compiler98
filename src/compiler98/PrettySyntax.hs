@@ -223,7 +223,6 @@ groupParens info = groupNestS info . parens
 {- the conversion functions for every abstract syntax construct ---------- -}
 
 ppModule :: PPInfo a -> Module a -> Doc
-
 ppModule info (Module pos id exports impdecls fixdecls topdecls) = 
     groupNestS info 
       (text "module " <> ppId info id <> 
@@ -233,19 +232,18 @@ ppModule info (Module pos id exports impdecls fixdecls topdecls) =
   ppTopDecls info topdecls
 
 
-ppExports :: PPInfo a -> [Export a] -> Doc
-
-ppExports info = parensFComma1 info . map (ppExport info)
+ppExports :: PPInfo a -> Maybe [Export a] -> Doc
+ppExports info Nothing = parens nil
+ppExports info (Just []) = nil
+ppExports info (Just exps) = parensFComma1 info (map (ppExport info) exps)
 
 
 ppExport :: PPInfo a -> Export a -> Doc
-
 ppExport info (ExportEntity pos entity) = ppEntity info entity
 ppExport info (ExportModid pos id) = text "module " <> ppId info id 
 
 
 ppEntity :: PPInfo a -> Entity a -> Doc
-
 ppEntity info (EntityVar pos id) = ppId info id
 ppEntity info (EntityTyConCls pos id) = ppId info id <> text "(..)"
 ppEntity info (EntityTyCon pos id ids) = 

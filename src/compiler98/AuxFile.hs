@@ -8,7 +8,11 @@ import List
 import Char
 import Monad
 import IO
+#if defined(__GLASGOW_HASKELL__)
 import IOExts (trace)
+#else
+import NonStdTrace (trace)
+#endif
 
 import Syntax
 import TokenId (TokenId,visImpRev,tPrelude)
@@ -39,10 +43,10 @@ toAuxFile flags aux
                    ) "")
     let missingDefns = missing exports fullInfo definedTypesAndClasses toIdent
     if not (null missingDefns) then
-        hPutStrLn stderr
+        hPutStr stderr
             ((showString "\nExported but not defined in this module "
 		. showString "(possibly imported and reexported):\n"
-		. showLines missingDefns) "")
+		. showLines missingDefns) "\n")
       else return ()
   where
     showLines :: Show a => [a] -> ShowS
@@ -198,8 +202,9 @@ type Visibility = Identifier -> Bool
 -- mentioned in Typ(..) syntax, which implicitly exports all its
 -- constructors.  Likewise for methods and the Class(..) syntax.
 
-visibleIn :: [Export TokenId] -> Visibility -> TokenId -> Visibility
-visibleIn exports noneSpecified modid
+visibleIn :: Maybe [Export TokenId] -> Visibility -> TokenId -> Visibility
+visibleIn Nothing noneSpecified modid = (\_->False)
+visibleIn (Just exports) noneSpecified modid
   | null exports = noneSpecified
   | any (implicitAll modid) exports = (\_->True)
   | otherwise = idFilter
@@ -234,6 +239,12 @@ visibleIn exports noneSpecified modid
 				|| met `elem` explicitVars
 				|| cls `elem` implicitTypesOrMethods
 
+
+-- The following comment is no longer true - I have added a Maybe
+-- wrapper around the parsed export list to distinguish the two cases.
+-- However I believe there may a different, more subtle, use of this
+-- distinction, so the code remains for now until I can check more
+-- closely.
 
 -- There is one horrible hack: nhc98 does not distinguish `module
 -- M where' from `module M () where', and treats them identically
@@ -341,8 +352,10 @@ replaceInfix aux1 aux2 = aux2 { priority = priority aux1, fixity = fixity aux1 }
 -- apparently neither defined in this module nor imported/reexported.
 -- In fact, it falsely accuses reexported types and classes at the
 -- moment.
-missing :: [Export TokenId] -> AuxTree -> [TokenId] -> IdentMap -> [Identifier]
-missing exports defined definedTypes toIdent =
+missing :: Maybe [Export TokenId] -> AuxTree -> [TokenId] -> IdentMap
+	 -> [Identifier]
+missing Nothing defined definedTypes toIdent = []
+missing (Just exports) defined definedTypes toIdent =
     concatMap notDefined exports
   where
     notDefined (ExportEntity _ (EntityVar _ v))      = methodOrVar v

@@ -20,7 +20,7 @@ would also be tiresome.
 
 data Module id =
 --     module modid [export] where { impdecls; fixdecls; topdecls }
-       Module Pos id [Export id] [ImpDecl id] [FixDecl id] (Decls id)
+       Module Pos id (Maybe [Export id]) [ImpDecl id] [FixDecl id] (Decls id)
 
 data Export id =
        ExportEntity  Pos (Entity id)

@@ -79,9 +79,11 @@ class Relabel g where
   relabel :: AuxTree -> g TokenId -> g TraceId
 
 instance Relabel Module where
-  relabel env (Module p mod exps imps fixs decls) =
-    Module p (just mod) (map (relabel env) exps) (map (relabel env) imps)
-			[] (relabel env decls)
+  relabel env (Module p mod Nothing imps fixs decls) =
+    Module p (just mod) Nothing (map (relabel env) imps) [] (relabel env decls)
+  relabel env (Module p mod (Just exps) imps fixs decls) =
+    Module p (just mod) (Just (map (relabel env) exps))
+			(map (relabel env) imps) [] (relabel env decls)
 					-- fixdecls are folded into the decls
 
 instance Relabel Export where

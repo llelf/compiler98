@@ -31,8 +31,11 @@ type Arity = Int
 
 traceTrans :: String  -- filename of module 
            -> Module TraceId -> Module TokenId
-traceTrans filename (Module pos modId [] impDecls fixDecls decls) =
-  Module pos (nameTransModule modId) [] (tImpDecls impDecls)
+traceTrans filename (Module pos modId exps impDecls fixDecls decls) =
+  Module pos
+    (nameTransModule modId)
+    (Just [])  -- export decls are not yet transformed, so export everything
+    (tImpDecls impDecls)
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
       (decls' 

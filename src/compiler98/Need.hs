@@ -60,7 +60,9 @@ needModule debugging (Module pos modid exports imports fixdecls topdecls) =
       pushNeed >>>
       bindTid Modid modid >>>
       mapR bindImport imports >>>
-      mapR needExport exports >>>
+      ( case exports of
+          Nothing   -> unitR
+          Just exps -> mapR needExport exps ) >>>
       popNeed >>>
       mapR needImport imports >>>
       mapR needFixDecl fixdecls >>>

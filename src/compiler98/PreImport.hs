@@ -58,7 +58,7 @@ qualRename impdecls = qualRename' qTree
 -- shorten rpsl = if (isPrelude . reverse . unpackPS) rpsl then rpsPrelude else rpsl
 
 preImport :: Flags -> TokenId -> Tree (TokenId,IdKind) 
-          -> [Export TokenId] -> [ImpDecl TokenId] 
+          -> Maybe [Export TokenId] -> [ImpDecl TokenId] 
           -> Either [Char] 
                (Bool -> Bool -> TokenId -> IdKind -> IE
                ,[(PackedString
@@ -70,7 +70,7 @@ preImport :: Flags -> TokenId -> Tree (TokenId,IdKind)
                 ]
                )
 
-preImport flags mtid@(Visible mrps) need expdecls impdecls =
+preImport flags mtid@(Visible mrps) need (Just expdecls) impdecls =
   case transImport impdecls of
     Left err -> Left err
     Right impdecls ->
@@ -79,6 +79,11 @@ preImport flags mtid@(Visible mrps) need expdecls impdecls =
       else Right (exportFun2 mrps exportAT, map (mkNeed need exportAT) impdecls)
   where
   exportAT = mkExportAT expdecls
+preImport flags mtid@(Visible mrps) need Nothing impdecls =
+  case transImport impdecls of
+    Left err -> Left err
+    Right impdecls ->
+           Right (exportFun2 mrps initAT, map (mkNeed need initAT) impdecls)
 
 
 {-
