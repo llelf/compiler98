@@ -1,4 +1,5 @@
 #include "newmacros.h"
+#include "mutlib.h"
 
 #ifdef PROFILE
 #define PROFINFO_Int  ,useLabel(prof_Int),4,2,3
@@ -134,7 +135,7 @@ unsigned PP_compiletime[] = {
 #define DEFINT(n)        CONSTRW(1,0) PROFINFO_Int  ,(unsigned)n
 #define DEFCHAR(n)       CONSTRW(1,0) PROFINFO_Char ,(unsigned)n
 
-unsigned startBytes[] = {
+Node startBytes[] = {
      DEFINT(-10)
 ,    DEFINT( -9)
 ,    DEFINT( -8)
@@ -146,7 +147,7 @@ unsigned startBytes[] = {
 ,    DEFINT( -2)
 ,    DEFINT( -1)
 };
-unsigned ints[] = {
+Node ints[] = {
      DEFINT(  0)
 ,    DEFINT(  1)
 ,    DEFINT(  2)
@@ -408,10 +409,10 @@ unsigned ints[] = {
 ,    DEFINT(256)
 };
 
-unsigned startChars[] = {
+Node startChars[] = {
      DEFCHAR( -1)
 };
-unsigned chars[] = {
+Node chars[] = {
      DEFCHAR(  0)
 ,    DEFCHAR(  1)
 ,    DEFCHAR(  2)
