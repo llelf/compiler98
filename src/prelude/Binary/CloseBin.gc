@@ -1,0 +1,14 @@
+module Binary
+  ( closeBin
+  ) where
+
+import GreenCard
+import BinHandle ({-type-}BinHandle(..))
+
+%-#include "cLowBinary.h"
+
+%fun closeBin :: BinHandle -> IO ()
+%call (binHandle bh)
+%code preFinaliseBH(bh);
+%result ()
+

@@ -1,0 +1,9 @@
+module Binary
+  ( {-type-} BinHandle(..)
+  ) where
+
+import PreludeBuiltin (ForeignObj)
+
+newtype BinHandle = BH ForeignObj
+%dis binHandle bh = BH (declare "BinHandle" bh in foreign "finaliseBH" bh)
+
