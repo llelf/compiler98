@@ -2,6 +2,10 @@ module Main where
 import List
 import Char
 
+#if !defined(__HASKELL98__)
+#define isAlphaNum isAlphanum
+#endif
+
 {- This is a simple-minded program, to get compiler options out of a source
    file pragma, so we can give them to the compiler proper *before* parsing.
    (The options might affect how the parser proper works!)
