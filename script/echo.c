@@ -15,6 +15,6 @@ int main (int argc, char** argv) {
       }
       putchar('\n');
     }
-  }
+  } else putchar('\n');
   exit(0);
 }

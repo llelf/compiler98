@@ -19,9 +19,9 @@ NHC98DIR=
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
 #   (The calling script must have already compiled our emulated 'echo'.)
-case `echo -n hello | wc -c` in
+case `echo -n hello | wc -c | ( read n ; echo $n )` in
     5) ;;
-    *) echo () { $PWD/script/echo $* } ;;
+    *) echo () { $PWD/script/echo "$@"; } ;;
 esac
 
 # We need a working `which' command: CYGWIN at least doesn't have it.

@@ -27,11 +27,11 @@ case $PWD in	# path mangling required for CYGWIN
 esac
 
 # We need a working `echo' command: at least Solaris2.6 may not have it.
-case `echo -n hello | wc -c` in
+case `echo -n hello | wc -c | ( read n ; echo $n )` in
     5) ;;
     *) echo "The builtin 'echo' command doesn't do '-n' - emulating it."
        $CCC -o script/echo script/echo.c
-       echo () { $PWD/script/echo $* } ;;
+       echo () { $PWD/script/echo "$@"; } ;;
 esac
 
 #RTSMESSAGE='(default)'
