@@ -911,7 +911,10 @@ primNTId (IdEntry *id)
         if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
         fo = htonl(HatCounter);
         HIDE(fprintf(stderr,"\tprimNTId \"%s\" -> 0x%x\n",id->name,fo);)
-        fputc(((NmType<<5) | NTId),HatFile);
+        if (id->constr == CONSTR(6,5,5))
+          fputc(((NmType<<5) | NTId),HatFile);
+        else
+          fputc(((NmType<<5) | NTToplevelId),HatFile);
         fprintf(HatFile,"%s",id->name);
         fputc(0x0,HatFile);
         i = 0;

@@ -58,6 +58,7 @@
 #define IF 14
 #define GUARD 15
 #define CONTAINER 16
+#define TOPIDENTIFIER 22
 
 #define SR 3
 
@@ -606,6 +607,15 @@ nextnode() {
 	  { char *p = readposn(); if (amode) printf(" %s", p); }
         }
 	break; 
+      case TOPIDENTIFIER:
+        { char *s = readstring(); if (amode) printf("toplevel ident\t%s ", s); }
+	{ unsigned long modinfo = readpointer();
+	  char *fp = readfixpri();
+	  if (*fp!='\0' && amode) printf("%s ", fp);
+	  dopointer(NONZERO, MD, modinfo, NT, offset);
+	  { char *p = readposn(); if (amode) printf(" %s", p); }
+        }
+	break; 
       case CONSTRUCTOR:
         { char *s = readstring(); if (amode) printf("constructor   \t%s ", s); }
 	{ unsigned long modinfo = readpointer();
@@ -781,6 +791,7 @@ markfrom(unsigned long root, char *buf) {
 	}
 	switch (ntk) {
 	case IDENTIFIER:
+	case TOPIDENTIFIER:
 	case CONSTRUCTOR:
 	  do {
 	    read(f,buf,1);

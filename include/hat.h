@@ -39,7 +39,8 @@ typedef unsigned long FileOffset;
 #define NTIf		14
 #define NTGuard		15
 #define NTContainer	16
-#define NTTrusted	22
+/* #define NTTrusted	22 */
+#define NTToplevelId	22
 
 #ifndef False
 #define False	0

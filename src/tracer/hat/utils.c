@@ -268,7 +268,7 @@ readIdentifierAt (FileOffset fo)
   int defnpos;
 
   freadAt(fo,&c,sizeof(char),1,HatFile);
-  if ((c!=0x46) && (c!=0x47)) {
+  if ((c!=0x46) && (c!=0x47) && (c!=0x56)) {
     fprintf(stderr,"%s: expected an Identifier descriptor at position 0x%x\n"
                   ,progname,fo);
     exit(1);
@@ -399,7 +399,7 @@ readNmTypeAt (FileOffset fo)
 		} break;
     case NTId:
     case NTConstr:
-    case NTTrusted:
+    case NTToplevelId:
 		{ free(id->modname);
 		  free(id->srcname);
 		  free(id);

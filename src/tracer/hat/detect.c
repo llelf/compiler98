@@ -103,6 +103,7 @@ filepointer hatLMOdirect(HatFile handle,filepointer fileoffset) {
       return fileoffset;
       break;
     case NTIDENTIFIER:
+    case NTTOPIDENTIFIER:
     case NTCONSTRUCTOR:
       return fileoffset;
     case TRAPP:

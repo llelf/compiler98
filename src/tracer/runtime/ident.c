@@ -130,7 +130,7 @@ showDbgInfo(ModInfo *modInfo)
 	c = identry->srcpos % 10000;
 #if 1
 	fprintf(stderr, "  %c %s %d:%d\n",
-		CONINFO_NUMBER(identry->constr) == NTId ? 'S' : 'T',
+		CONINFO_NUMBER(identry->constr) == NTId ? 'L' : 'G',
 		identry->name, r, c);
 #endif
 	identry++;
@@ -156,8 +156,10 @@ ModInfo NMOD__EqInteger = {"_EqInteger", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude
 ModInfo NMOD__Id = {"_Id", NULL_ID_TABLE, NULL_MOD_TABLE, "Prelude"};
 
 
+#if 0
 #define	TRUST	CONSTR(NTTrusted, 5, 5)
 #define	SUSPECT	CONSTR(NTId, 5, 5)
+#endif
 
 ModInfo *
 findModule(char *modname, ModInfo *modinfo)
@@ -195,6 +197,10 @@ isConstr(char *name)
   return !((ch >= 'a' && ch <= 'z') || ch == '_');
 }
 
+#if 0
+/* It is no longer possible to change the trustedness of anything at
+ * runtime - the whole module must be re-compiled.
+ */
 void
 changeTrustedness(ModInfo *modInfo, char *fun, int constr)
 {
@@ -269,4 +275,4 @@ suspectModule(char *mod, char *fun, int recursively)
 	fprintf(stderr, "suspectModule: Cannot find module %s\n", mod);
     }
 }
-
+#endif

@@ -16,6 +16,7 @@ DisplayName(char *s, NodePtr nm)
 #define displayString(s) 
 #endif
 
+#if 0
 /* This is the real guts of the trusting algorithm.  It follows the
  * head of the trace structure back up to the nearest Nm.
  * (I.e. in an application node, it follows only the function part.)
@@ -119,6 +120,7 @@ trustFun(NodePtr t)
        }
    }
 }
+#endif
 
 #if 0
 /* This function has been commented out of PreludeDebug.hs for a long time,

@@ -841,6 +841,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 	switch (apn->fun->type) {
 	case NTIDENTIFIER:
 	case NTCONSTRUCTOR:
+	case NTTOPIDENTIFIER:
 	  fun = newStr(apn->fun->v.identval->name);
 	  infix = apn->fun->v.identval->infixtype;
 	  infixprio = apn->fun->v.identval->infixpriority;
@@ -936,6 +937,7 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
 	}*/
     }
   case NTIDENTIFIER:
+  case NTTOPIDENTIFIER:
     //if (functionDepth>=showEvalUpToDepth) return newStr("_");
   case NTCONSTRUCTOR:
     return newStr(exp->v.identval->name);

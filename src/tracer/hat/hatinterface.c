@@ -354,6 +354,7 @@ void skipNode(char nodeType) {
 	skipbytes(8);
 	break;
     case IDENTIFIER:
+    case TOPIDENTIFIER:
 	skipstring();  // simply read string
 	skipbytes(4+1+4);
 	break; 
@@ -686,10 +687,13 @@ int isTopLevel(HatFile handle,filepointer srcref) {
       srcref=getNameType(); // follow nmType
       break;
     case NTIDENTIFIER:
-      i=getPosnColumn();
-      i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
-      hatSeekNode(handle,old);
-      return i;
+//    i=getPosnColumn();
+//    i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
+//    hatSeekNode(handle,old);
+//    return i;
+      return 0;
+    case NTTOPIDENTIFIER:
+      return 1;
     case TRAPP:
       srcref = getAppFun();
       break;

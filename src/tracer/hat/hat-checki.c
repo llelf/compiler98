@@ -246,6 +246,7 @@ filepointer printNode(unsigned long offset) {
       printf("DOUBLE %f", getDoubleValue());
       break;
     case IDENTIFIER:
+    case TOPIDENTIFIER:
       printf("identifier: %s ", getName());
       {
 	unsigned long modinfo = getModInfo();

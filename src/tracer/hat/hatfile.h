@@ -74,6 +74,8 @@
 #define NTGUARD 79
 #define CONTAINER 16
 #define NTCONTAINER 80
+#define TOPIDENTIFIER 22
+#define NTTOPIDENTIFIER 86
 
 #define SR 3
 #define SRCREF 96
