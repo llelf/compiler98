@@ -110,7 +110,7 @@ module FFI
 
 #define INSTANCE_SHOW(T)		\
 ; instance Show T where			\
-    { showsPrec p = showSigned (showIntBase 16) p	\
+    { showsPrec p x = showString "0x" . showSigned (showIntBase 16) p x	\
     }
 
 
