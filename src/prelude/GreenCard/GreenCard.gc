@@ -5,9 +5,10 @@ module GreenCard
   , fromCString
   , ForeignObj
   , StablePtr(..)
+  , Addr
   ) where
 
-import FFIBuiltin (ForeignObj,StablePtr)
+import FFIBuiltin (ForeignObj,StablePtr,Addr)
 --import DIO (IO(..))
 import PackedString (PackedString)
 import CString (toCString, fromCString)
@@ -25,6 +26,7 @@ import CString (toCString, fromCString)
 %dis stableptr x    = declare "StablePtr" x in (%%StablePtr x)
 %dis stable x       = declare "StablePtr" x in (%%StablePtr x)
 %dis word x         = declare "unsigned int" x in (%%Word x)
+%dis addr x         = declare "void *" x in (%%Addr x)
 
 %dis filePath x     = string x
 
