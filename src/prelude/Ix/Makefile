@@ -16,9 +16,9 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/Ix_2.o: Ix_2.hs ${OBJDIR}/RangeSize.o
-${OBJDIR}/Ix_3.o: Ix_3.hs ${OBJDIR}/RangeSize.o
-${OBJDIR}/Ix_4.o: Ix_4.hs ${OBJDIR}/RangeSize.o
+${OBJDIR}/Ix_2.$O: Ix_2.hs ${OBJDIR}/RangeSize.$O
+${OBJDIR}/Ix_3.$O: Ix_3.hs ${OBJDIR}/RangeSize.$O
+${OBJDIR}/Ix_4.$O: Ix_4.hs ${OBJDIR}/RangeSize.$O
 
 
 # C-files dependencies.

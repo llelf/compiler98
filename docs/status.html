@@ -33,12 +33,12 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2000-11-13</td>
-  <td>2000-09-01</td>
+  <td>2000-11-29</td>
+  <td>2000-12-05</td>
   <td>1997</td>
   <td>1996</td>
-  <td>1999-01-28</td>
-  <td>2000-06-12</td>
+  <td>2000-11-23</td>
+  <td>2000-12-05</td>
 </tr>
 </table>
 </center>
@@ -244,12 +244,13 @@ list to post to it).
 
 
 <hr>
-<h3>nhc98 release 1.01 (2000-11-xx) features</h3>
+<h3>nhc98 release 1.01 (2000-12-xx) features</h3>
 <ul>
 <li> Improvement: Fixed a space-leak in the compiler.  Compilation now
               requires approximately half the previous maximum heap,
               and as a result, compile time is 5-10% faster.
 <li> Update:  'hi' now uses GNU's readline library if available.
+<li> Update:  Improved error reporting in hmake.
 <li> Bugfix:  Auto-configuration of hmake.  It occasionally failed to find
               an already-installed version of nhc98.  Also, on Solaris
               (and other System V based OSes), auto-detection of
@@ -257,7 +258,7 @@ list to post to it).
               of the 'which' command.  Finally, the 'hmake' script
               itself failed on Cygwin due to the 'which' command
               being missing altogether.
-<li> Bugfix:  'atan2' in class RealFloat - reverted to a default
+<li> Bugfix:  'atan2' in class RealFloat - revert to a default
               declaration that does not use 'isNegativeZero', because
               we don't implement the latter.
 <li> Bugfix:  Foreign functions declared of IO return type (especially
@@ -267,6 +268,7 @@ list to post to it).
 <li> Bugfix:  Incorrect definitions of inRange and rangeSize in Ix library.
 <li> Bugfix:  Local infix declarations in `where' blocks were ignored.
 <li> Bugfix:  Some non-trivial `newtype' decls produced spurious errors.
+<li> Bugfix:  Printing of characters in the range 0x0100 to 0xffff now works.
 </ul>
 The following updates and bugfixes are specifically for <em>Hat</em>,
 the redex-trail-based tracing and debugging system.
@@ -274,10 +276,16 @@ the redex-trail-based tracing and debugging system.
 <li> Update:  Foreign imports (via the new common primitive FFI) with an
               I/O result type are now also traced (previously only pure
               foreign functions were traced).
+<li> Update:  Interface and object files for tracing now have distinct
+              file suffixes: .T_hi and .T_o.  This improves matters
+              enormously when switching between normal and tracing versions
+              of a program.  It also fixes some dependency bugs when
+              building the tracing version of the compiler.  Both the
+              compiler and hmake have knowledge of the new suffixes.
 <li> Bugfix:  The 'rtb' script failed because of missing shell quotes.
-<li> Added standard libraries: IO, Array.
+<li> Added standard libraries:  IO, Array.
         (Still missing: Directory, System, Time, Locale, CPUTime, Random.)
-<li> Added extension libraries: FFI, IOExtras.
+<li> Added extension libraries:  FFI, IOExtras.
 </ul>
 
 

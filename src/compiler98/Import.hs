@@ -50,7 +50,7 @@ openImport flags mrps =
   preludes = sPreludes flags
   includes = sIncludes flags ++ preludes
   mstr = (reverse . unpackPS)  mrps
-  filenames = fixImportNames isUnix mstr 
+  filenames = fixImportNames isUnix (sHiSuffix flags) mstr 
                 (if isPrelude mstr then preludes else includes) 
 
 

@@ -32,30 +32,30 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/NotDoneYet.o:     ${OBJDIR}/DHandle.o 
-${OBJDIR}/IoeGetFileName.o: ${OBJDIR}/DHandle.o ${OBJDIR}/HGetFileName.o ${OBJDIR}/IoeGetHandle.o
-${OBJDIR}/IoeGetHandle.o:   ${OBJDIR}/DHandle.o 
-${OBJDIR}/Bracket_.o:       ${OBJDIR}/Try.o 
-${OBJDIR}/Bracket.o:        ${OBJDIR}/Try.o 
-${OBJDIR}/HPutStrLn.o:      ${OBJDIR}/DHandle.o ${OBJDIR}/HPutStr.o ${OBJDIR}/HPutChar.o 
-${OBJDIR}/HPutStr.o:        ${OBJDIR}/DHandle.o ${OBJDIR}/HPutChar.o 
-${OBJDIR}/HPutChar.o:       ${OBJDIR}/DHandle.o 
-${OBJDIR}/HGetContents.o:   ${OBJDIR}/DHandle.o 
-${OBJDIR}/HGetChar.o:       ${OBJDIR}/DHandle.o 
-${OBJDIR}/HGetLine.o:       ${OBJDIR}/HGetChar.o 
-${OBJDIR}/HSeek.o:          ${OBJDIR}/SeekMode.o ${OBJDIR}/DHandle.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/HSetPosn.o:       ${OBJDIR}/DHandle.o ${OBJDIR}/DHandlePosn.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/HGetPosn.o:       ${OBJDIR}/DHandle.o ${OBJDIR}/DHandlePosn.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/HFlush.o:         ${OBJDIR}/DHandle.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/HGetBuffering.o:  ${OBJDIR}/DHandle.o ${OBJDIR}/BufferMode.o 
-${OBJDIR}/HSetBuffering.o:  ${OBJDIR}/DHandle.o ${OBJDIR}/BufferMode.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/IsEOF.o:          ${OBJDIR}/HIsEOF.o  ${OBJDIR}/StdIO.o
-${OBJDIR}/HIsEOF.o:         ${OBJDIR}/DHandle.o 
-${OBJDIR}/HGetFileName.o:   ${OBJDIR}/DHandle.o 
-${OBJDIR}/HFileSize.o:      ${OBJDIR}/DHandle.o ${OBJDIR}/HGetFileName.o 
-${OBJDIR}/OpenFile.o:       ${OBJDIR}/DHandle.o ${OBJDIR}/IOMode.o ${OBJDIR}/HClose.o 
-${OBJDIR}/HClose.o:         ${OBJDIR}/DHandle.o 
-${OBJDIR}/Eq_HandlePosn.o:  ${OBJDIR}/DHandlePosn.o 
+${OBJDIR}/NotDoneYet.$O:     ${OBJDIR}/DHandle.$O 
+${OBJDIR}/IoeGetFileName.$O: ${OBJDIR}/DHandle.$O ${OBJDIR}/HGetFileName.$O ${OBJDIR}/IoeGetHandle.$O
+${OBJDIR}/IoeGetHandle.$O:   ${OBJDIR}/DHandle.$O 
+${OBJDIR}/Bracket_.$O:       ${OBJDIR}/Try.$O 
+${OBJDIR}/Bracket.$O:        ${OBJDIR}/Try.$O 
+${OBJDIR}/HPutStrLn.$O:      ${OBJDIR}/DHandle.$O ${OBJDIR}/HPutStr.$O ${OBJDIR}/HPutChar.$O 
+${OBJDIR}/HPutStr.$O:        ${OBJDIR}/DHandle.$O ${OBJDIR}/HPutChar.$O 
+${OBJDIR}/HPutChar.$O:       ${OBJDIR}/DHandle.$O 
+${OBJDIR}/HGetContents.$O:   ${OBJDIR}/DHandle.$O 
+${OBJDIR}/HGetChar.$O:       ${OBJDIR}/DHandle.$O 
+${OBJDIR}/HGetLine.$O:       ${OBJDIR}/HGetChar.$O 
+${OBJDIR}/HSeek.$O:          ${OBJDIR}/SeekMode.$O ${OBJDIR}/DHandle.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/HSetPosn.$O:       ${OBJDIR}/DHandle.$O ${OBJDIR}/DHandlePosn.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/HGetPosn.$O:       ${OBJDIR}/DHandle.$O ${OBJDIR}/DHandlePosn.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/HFlush.$O:         ${OBJDIR}/DHandle.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/HGetBuffering.$O:  ${OBJDIR}/DHandle.$O ${OBJDIR}/BufferMode.$O 
+${OBJDIR}/HSetBuffering.$O:  ${OBJDIR}/DHandle.$O ${OBJDIR}/BufferMode.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/IsEOF.$O:          ${OBJDIR}/HIsEOF.$O  ${OBJDIR}/StdIO.$O
+${OBJDIR}/HIsEOF.$O:         ${OBJDIR}/DHandle.$O 
+${OBJDIR}/HGetFileName.$O:   ${OBJDIR}/DHandle.$O 
+${OBJDIR}/HFileSize.$O:      ${OBJDIR}/DHandle.$O ${OBJDIR}/HGetFileName.$O 
+${OBJDIR}/OpenFile.$O:       ${OBJDIR}/DHandle.$O ${OBJDIR}/IOMode.$O ${OBJDIR}/HClose.$O 
+${OBJDIR}/HClose.$O:         ${OBJDIR}/DHandle.$O 
+${OBJDIR}/Eq_HandlePosn.$O:  ${OBJDIR}/DHandlePosn.$O 
 
 # C deps.
 NotDoneYet.c: DHandle.c 

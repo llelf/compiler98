@@ -40,11 +40,11 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-OBJS_TRICKY	= $(patsubst %.hs, ${OBJDIR}/%.o, ${SRCS_TRICKY})
+OBJS_TRICKY	= $(patsubst %.hs, ${OBJDIR}/%.$O, ${SRCS_TRICKY})
 CFILES_TRICKY	= $(patsubst %.hs, %.c, ${SRCS_TRICKY})
 extra:  ${OBJS_TRICKY}
 cfiles: ${CFILES_TRICKY}
-${OBJS_TRICKY}: ${OBJDIR}/%.o : %.hs
+${OBJS_TRICKY}: ${OBJDIR}/%.$O : %.hs
 	$(HC) -c  $(LIB_FLAGS) -o $@ $<
 ${CFILES_TRICKY}: %.c : %.hs
 	$(HC) -C  $(LIB_FLAGS) $<
@@ -54,43 +54,43 @@ cleanExtraC:
 
 
 # Here are the dependencies.
-${OBJDIR}/PrimError.o: PrimError.hs  ${OBJDIR}/CExitWith.o
-${OBJDIR}/PrimExitWith.o: PrimExitWith.hs ${OBJDIR}/../PreludeIO/DIO.o ${OBJDIR}/CExitWith.o
-${OBJDIR}/PrimGetArgs.o: PrimGetArgs.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimGetEnv.o: PrimGetEnv.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o ${OBJDIR}/../PreludeIO/DIOError.o
-${OBJDIR}/PrimGetProgName.o: PrimGetProgName.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHClose.o: PrimHClose.hs   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHFileSize.o: PrimHFileSize.hs   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHFlush.o: PrimHFlush.hs   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHGetBuffering.o: PrimHGetBuffering.hs   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHGetChar.o: PrimHGetChar.hs   ${OBJDIR}/../PreludeIO/DIO.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/CHGetChar.o
-${OBJDIR}/PrimHGetContents.o: PrimHGetContents.hs  ${OBJDIR}/../PreludeIO/DIO.o  ${OBJDIR}/CHGetChar.o
-${OBJDIR}/PrimHGetPosn.o: PrimHGetPosn.hs   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHIsEOF.o: PrimHIsEOF.hs  ${OBJDIR}/../PreludeIO/DIOError.o   ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHPutChar.o: PrimHPutChar.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHPutChar.o: PrimHPutChar.hs  ${OBJDIR}/CHPutChar.o
-${OBJDIR}/PrimHSeek.o: PrimHSeek.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHSetBuffering.o: PrimHSetBuffering.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimHSetPosn.o: PrimHSetPosn.hs  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimIntegerGe.o: PrimIntegerGe.hs  ${OBJDIR}/PrimIntegerLt.o
-${OBJDIR}/PrimIntegerGt.o: PrimIntegerGt.hs  ${OBJDIR}/PrimIntegerLe.o
-${OBJDIR}/PrimIntegerNe.o: PrimIntegerNe.hs  ${OBJDIR}/PrimIntegerEq.o
-${OBJDIR}/PrimOpenFile.o: PrimOpenFile.hs ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimSystem.o: PrimSystem.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/../PreludeIO/DIO.o  #${OBJDIR}/../PreludeIO/DErrNo.o
-${OBJDIR}/PrimOpenSocket.o: PrimOpenSocket.hs ${OBJDIR}/../IO/DSocket.o ${OBJDIR}/CString.o ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimError.$O: PrimError.hs  ${OBJDIR}/CExitWith.$O
+${OBJDIR}/PrimExitWith.$O: PrimExitWith.hs ${OBJDIR}/../PreludeIO/DIO.$O ${OBJDIR}/CExitWith.$O
+${OBJDIR}/PrimGetArgs.$O: PrimGetArgs.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimGetEnv.$O: PrimGetEnv.hs  ${OBJDIR}/CString.$O  ${OBJDIR}/../PreludeIO/DIO.$O ${OBJDIR}/../PreludeIO/DIOError.$O
+${OBJDIR}/PrimGetProgName.$O: PrimGetProgName.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHClose.$O: PrimHClose.hs   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHFileSize.$O: PrimHFileSize.hs   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHFlush.$O: PrimHFlush.hs   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHGetBuffering.$O: PrimHGetBuffering.hs   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHGetChar.$O: PrimHGetChar.hs   ${OBJDIR}/../PreludeIO/DIO.$O  ${OBJDIR}/../PreludeIO/DIOError.$O  ${OBJDIR}/CHGetChar.$O
+${OBJDIR}/PrimHGetContents.$O: PrimHGetContents.hs  ${OBJDIR}/../PreludeIO/DIO.$O  ${OBJDIR}/CHGetChar.$O
+${OBJDIR}/PrimHGetPosn.$O: PrimHGetPosn.hs   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHIsEOF.$O: PrimHIsEOF.hs  ${OBJDIR}/../PreludeIO/DIOError.$O   ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHPutChar.$O: PrimHPutChar.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHPutChar.$O: PrimHPutChar.hs  ${OBJDIR}/CHPutChar.$O
+${OBJDIR}/PrimHSeek.$O: PrimHSeek.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHSetBuffering.$O: PrimHSetBuffering.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimHSetPosn.$O: PrimHSetPosn.hs  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimIntegerGe.$O: PrimIntegerGe.hs  ${OBJDIR}/PrimIntegerLt.$O
+${OBJDIR}/PrimIntegerGt.$O: PrimIntegerGt.hs  ${OBJDIR}/PrimIntegerLe.$O
+${OBJDIR}/PrimIntegerNe.$O: PrimIntegerNe.hs  ${OBJDIR}/PrimIntegerEq.$O
+${OBJDIR}/PrimOpenFile.$O: PrimOpenFile.hs ${OBJDIR}/CString.$O  ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/PrimSystem.$O: PrimSystem.hs  ${OBJDIR}/CString.$O  ${OBJDIR}/../PreludeIO/DIOError.$O  ${OBJDIR}/../PreludeIO/DIO.$O  #${OBJDIR}/../PreludeIO/DErrNo.$O
+${OBJDIR}/PrimOpenSocket.$O: PrimOpenSocket.hs ${OBJDIR}/../IO/DSocket.$O ${OBJDIR}/CString.$O ${OBJDIR}/../PreludeIO/DIO.$O
 
-${OBJDIR}/../PreludeIO/MsgIOError.o:
-	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.o
-${OBJDIR}/../PreludeIO/DIOError.o:
-	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.o
-${OBJDIR}/../PreludeIO/DIO.o:
-	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.o
-#${OBJDIR}/../DErrNo/DErrNo.o:
-#	cd ../$(MACHINE); ${MAKE} ${BUILDDIR}/${OBJ}/prelude/DErrNo/DErrNo.o
-${OBJDIR}/../IO/DSocket.o:
-	cd ../IO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/IO/DSocket.o
+${OBJDIR}/../PreludeIO/MsgIOError.$O:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.$O
+${OBJDIR}/../PreludeIO/DIOError.$O:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.$O
+${OBJDIR}/../PreludeIO/DIO.$O:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.$O
+#${OBJDIR}/../DErrNo/DErrNo.$O:
+#	cd ../$(MACHINE); ${MAKE} ${BUILDDIR}/${OBJ}/prelude/DErrNo/DErrNo.$O
+${OBJDIR}/../IO/DSocket.$O:
+	cd ../IO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/IO/DSocket.$O
 
-${OBJDIR}/_Driver.o: _Driver.hs ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/_Driver.$O: _Driver.hs ${OBJDIR}/../PreludeIO/DIO.$O
 
 
 # And now for the C-files dependencies.

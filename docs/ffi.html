@@ -30,6 +30,54 @@ your programs.
 <p>
 <br>
 
+<h3>nhc98-specific notes</h3>
+<p>
+<ul>
+<li> In a <tt>foreign import</tt> specification, the external location string
+     is currently ignored.  <b>nhc98</b> does not yet support dynamic linking,
+     and it has no real meaning for completely static linking.
+<li> For the same reason, <tt>foreign import dynamic</tt> and
+     <tt>foreign export dynamic</tt> are not yet supported.
+<li> The calling convention <tt>stdcall</tt> is ignored; <b>nhc98</b> only
+     works on <tt>ccall</tt> platforms anyway.
+<li> The annotation <tt>unsafe</tt> is ignored; it only applies to
+     <em>ghc</em>, and is irrelevant for <b>nhc98</b>.
+<li> Extra annotations are provided.  <tt>cast</tt> indicates that an
+     arity-1 foreign import is only being used for its type-cast, and
+     hence eliminates some runtime overheads:
+     <pre>  foreign import floatToDouble cast :: Float -> Double </pre>
+     and <tt>noproto</tt> tells the compiler not to generate a C function
+     prototype for the external function:
+     <pre>  foreign import sin noproto :: Float -> Float </pre>
+     eliminates the normal generation of
+     <pre>  extern float sin (float); </pre>
+     for occasions when such a declaration might conflict with a #include'd
+     declaration.
+<li> The set of primitive types allowed across the FFI is slightly larger
+     than the standard set in <b>nhc98</b>:  we allow <tt>PackedString</tt>
+     (also known as <tt>CString</tt>) to be passed - these are genuine
+     null-terminated C-style strings.  Used as a result type, the string
+     is copied into the Haskell heap (allowing the original pointer to be
+     freed safely); used as an argument type, a pointer to the
+     heap-allocated string is passed to C (i.e. do not free it!).
+<li> Additionally, we allow any non-primitive datatype to be passed
+     across the FFI (but give a <em>Warning</em> for each one) as a heap
+     pointer.  This feature should only be used by serious implementers,
+     because any foreign code manipulating non-primitive data must use
+     <b>nhc98</b>'s internal heap format.
+<li> A <tt>foreign export</tt> specification is treated as the actual
+     type signature for the exported function.  You are not allowed a
+     second (possibly more general) type signature.
+<li> Hence, you cannot <tt>foreign export</tt> any function that
+     requires a class dictionary.
+<li> <tt>foreign label</tt> is not yet supported.
+<li> Explicitly sized types such as <tt>Int8</tt> exist, but they are not
+     fully supported with instances of <tt>Num</tt>, <tt>Eq</tt>, etc.
+</ul>
+
+<p>
+<br>
+
 <hr>
 <p>
 The latest updates to these pages are available on the WWW from
@@ -37,7 +85,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.07.20<br>
+This page last modified: 2000.11.28<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

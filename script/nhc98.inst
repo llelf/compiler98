@@ -47,6 +47,8 @@ EXTRALIB=""
 LIBDIRS=""
 CPPFLAGS=${CPPFLAGS-""}
 #OBJDIR=
+HISUFFIX="hi"
+OSUFFIX="o"
 
 MAINROUTINE=$NHC98LIBDIR/$MACHINE/main
 
@@ -96,6 +98,7 @@ do
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
             CPPASFLAGS=$CPPASFLAGS" -DPROFILE"
+            OSUFFIX="p_o"
             ;;
     -S    ) KEEPS=1;;
     -C    ) KEEPC=1;;
@@ -104,12 +107,15 @@ do
     -cpp  ) PRECPP=1;;
     -c    ) NOLINK=1;;
     -T)     TRACE=T
-	    IMPORT=-P${NHC98INCDIR}/tracer/
-            COMPFLAGS=$COMPFLAGS" -dbgtrans"
+	    #IMPORT=-P${NHC98INCDIR}/tracer/	-- no longer a different dir
+            COMPFLAGS=$COMPFLAGS" -dbgtrans -hi-suffix=T_hi"
             LDLAST=$LDLAST$LIBCOMPAT
+            HISUFFIX="T_hi"
+            OSUFFIX="T_o"
             ;;
     -t)     TPROF=t
             COMPFLAGS=$COMPFLAGS" -tprof"
+            OSUFFIX="t_o"
             ;;
     -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
     +rts  ) USINGRTS=1;;
@@ -140,7 +146,7 @@ do
     -nomain)    MAINROUTINE="" ;;
     -H*   ) HEAP=`echo $1 | cut -c3-` ;;
     -[Ll]*) EXTRALIB=$EXTRALIB" "$1;;
-    -i*   ) LIBDIRS=$LIBDIRS" "$1;;
+    -i*   ) LIBDIRS=$LIBDIRS" -I"`echo $1 | cut -c3-` ;;
     -I*   ) LIBDIRS=$LIBDIRS" "$1;;
     -s    ) LDFLAGS=$LDFLAGS" "$1;;
     -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "$1
@@ -291,8 +297,8 @@ case $COMPFILES in
       POSTGRFILE=${DIRNAME}/${BASENAME}_.hs
     fi
 
-    HIFILE=$DIRNAME/$BASENAME.hi
-    TMPHIFILE=$TMP/$BASENAME.$$.hi
+    HIFILE=$DIRNAME/$BASENAME.$HISUFFIX
+    TMPHIFILE=$TMP/$BASENAME.$$.$HISUFFIX
 
     TMPCPPPREFILE=$TMP/$BASENAME.$$.hs
 
@@ -312,7 +318,7 @@ case $COMPFILES in
       TMPASFILE=$ASFILE
     fi
 
-    OFILE=$objdir/$BASENAME.o
+    OFILE=$objdir/$BASENAME.$OSUFFIX
     if test $NOLINK -eq 1 -a "$AOUT" != "a.out"
     then
       OFILE=$AOUT

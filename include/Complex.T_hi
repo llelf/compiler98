@@ -1,0 +1,82 @@
+interface Complex where {
+infix   6 :+;
+
+{-# NEED #-}
+instance (Prelude.RealFloat a) => Prelude.Floating (Complex a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.RealFrac (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Fractional (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.RealFloat a) => Prelude.Fractional (Complex a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Real (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Num (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.RealFloat a) => Prelude.Num (Complex a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Enum (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Ord (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Eq (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.RealFloat a) => Prelude.Eq (Complex a);
+
+{-# NEED #-}
+instance (Prelude.Read a,Prelude.Integral a) => Prelude.Read (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Read a,Prelude.RealFloat a) => Prelude.Read (Complex a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Show (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.RealFloat a) => Prelude.Show (Complex a);
+interface ! Complex
+{-# NEED realPart #-}
+realPart{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R a))))));
+
+{-# NEED imagPart #-}
+imagPart{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R a))))));
+
+{-# NEED cis #-}
+cis{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Complex a)))))));
+
+{-# NEED mkPolar #-}
+mkPolar{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Complex a))))))))));
+
+{-# NEED polar #-}
+polar{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R (a,a)))))));
+
+{-# NEED conjugate #-}
+conjugate{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R (Complex a)))))));
+
+{-# NEED phase #-}
+phase{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R a))))));
+
+{-# NEED magnitude #-}
+magnitude{-# 2 #-}::(Prelude.RealFloat a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Complex a)) -> (Prelude.R a))))));
+
+{-# NEED {Complex (:+)} #-}
+data (Prelude.RealFloat a) => Complex a
+  = (:+) (Prelude.R a) (Prelude.R a);
+interface Ratio
+{-# NEED Rational #-}
+type {-# 1 #-} Rational = (Ratio.Ratio Prelude.Integer);
+
+{-# NEED Ratio #-}
+data (Prelude.Integral a) => Ratio a;
+}

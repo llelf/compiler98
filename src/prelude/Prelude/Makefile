@@ -64,7 +64,6 @@ SRCS_T	= ${COMMON_SRCS}
 # however, they are not traced themselves.
 SRCS_NT = _EqInteger.hs StartDbg.hs _Id.hs
 
-#NTSRCS	= StartDbg.hs
 PLSRCS	= _Apply1.hs _Apply2.hs _Apply3.hs _Apply4.hs _Zap_Arg.hs _Zap_Stack.hs
 NOTDONE	= _TupleIndex.hs _TupleRange.hs
 
@@ -75,32 +74,30 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-#NTOBJS = $(patsubst %.hs, ${OBJDIR}/%.o, ${NTSRCS})
-PLOBJS = $(patsubst %.hs, ${OBJDIR}/%.o, ${PLSRCS})
+PLOBJS = $(patsubst %.hs, ${OBJDIR}/%.$O, ${PLSRCS})
 
 ifeq "T" "${TRACING}"
-extra: ${NTOBJS} ${PLOBJS}
-#$(NTOBJS): ${OBJDIR}/%.o: %.hs
-#	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-$(PLOBJS): ${OBJDIR}/%.o: %.hs
+extra: ${PLOBJS}
+$(PLOBJS): ${OBJDIR}/%.$O: %.hs
 	${HC} -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+	mv `basename $< .hs`.hi `basename $< .hs`.${HISUFFIX}
 endif
 
 
 
 # Here are the dependencies.
 
-${OBJDIR}/CEnum.o: CEnum.hs ${OBJDIR}/_EnumFromTo.o  ${OBJDIR}/_EnumFromThenTo.o ${OBJDIR}/Subtract.o
-${OBJDIR}/Enum_Bool.o: Enum_Bool.hs ${OBJDIR}/_EnumFromTo.o  ${OBJDIR}/_EnumFromThen.o
-${OBJDIR}/Enum_Char.o: Enum_Char.hs ${OBJDIR}/_EnumFromTo.o ${OBJDIR}/_EnumFromThen.o
-${OBJDIR}/Enum_Ordering.o: Enum_Ordering.hs ${OBJDIR}/_EnumFromTo.o ${OBJDIR}/_EnumFromThen.o
-${OBJDIR}/_EnumFromThen.o: _EnumFromThen.hs ${OBJDIR}/_EnumFromToInc.o ${OBJDIR}/_EnumFromToDec.o
-${OBJDIR}/_EnumFromThenTo.o: _EnumFromThenTo.hs ${OBJDIR}/_EnumFromToInc.o ${OBJDIR}/_EnumFromToDec.o
-${OBJDIR}/_EnumIndex.o: _EnumIndex.hs ${OBJDIR}/_EnumInRange.o
-${OBJDIR}/_EnumRange.o: _EnumRange.hs ${OBJDIR}/_EnumFromTo.o
-${OBJDIR}/_EnumFromTo.o: _EnumFromTo.hs ${OBJDIR}/_FromEnum.o ${OBJDIR}/_ToEnum.o
+${OBJDIR}/CEnum.$O: CEnum.hs ${OBJDIR}/_EnumFromTo.$O  ${OBJDIR}/_EnumFromThenTo.$O ${OBJDIR}/Subtract.$O
+${OBJDIR}/Enum_Bool.$O: Enum_Bool.hs ${OBJDIR}/_EnumFromTo.$O  ${OBJDIR}/_EnumFromThen.$O
+${OBJDIR}/Enum_Char.$O: Enum_Char.hs ${OBJDIR}/_EnumFromTo.$O ${OBJDIR}/_EnumFromThen.$O
+${OBJDIR}/Enum_Ordering.$O: Enum_Ordering.hs ${OBJDIR}/_EnumFromTo.$O ${OBJDIR}/_EnumFromThen.$O
+${OBJDIR}/_EnumFromThen.$O: _EnumFromThen.hs ${OBJDIR}/_EnumFromToInc.$O ${OBJDIR}/_EnumFromToDec.$O
+${OBJDIR}/_EnumFromThenTo.$O: _EnumFromThenTo.hs ${OBJDIR}/_EnumFromToInc.$O ${OBJDIR}/_EnumFromToDec.$O
+${OBJDIR}/_EnumIndex.$O: _EnumIndex.hs ${OBJDIR}/_EnumInRange.$O
+${OBJDIR}/_EnumRange.$O: _EnumRange.hs ${OBJDIR}/_EnumFromTo.$O
+${OBJDIR}/_EnumFromTo.$O: _EnumFromTo.hs ${OBJDIR}/_FromEnum.$O ${OBJDIR}/_ToEnum.$O
 
-# ${OBJDIR}/Enum_Integer.o: Enum_Integer.hs ${OBJDIR}/NumericEnumFrom.o ${OBJDIR}/NumericEnumFromThen.o 
+# ${OBJDIR}/Enum_Integer.$O: Enum_Integer.hs ${OBJDIR}/NumericEnumFrom.$O ${OBJDIR}/NumericEnumFromThen.$O 
 
 # And for C-files dependencies:
 

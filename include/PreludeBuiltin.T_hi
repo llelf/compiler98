@@ -1,0 +1,62 @@
+interface Prelude where {
+{-# NEED primLeave #-}
+primLeave {-# 1 #-} :: Int -> b;
+{-# NEED primExit #-}
+primExit {-# 1 #-} :: Int -> b;
+{-# NEED primFail #-}
+primFail {-# 1 #-} :: IOError -> IO a;
+interface ! IO
+{-# NEED _stdout #-}
+_stdout {-# 0 #-} :: Prelude.R FFIBuiltin.ForeignObj;
+{-# NEED stdout #-}
+stdout {-# 2 #-} :: Prelude.SR -> Prelude.Trace -> Prelude.R IO.Handle;
+{-# NEED _stdin #-}
+_stdin {-# 0 #-} :: Prelude.R FFIBuiltin.ForeignObj;
+{-# NEED stdin #-}
+stdin {-# 2 #-} :: Prelude.SR -> Prelude.Trace -> Prelude.R IO.Handle;
+{-# NEED _stderr #-}
+_stderr {-# 0 #-} :: Prelude.R FFIBuiltin.ForeignObj;
+{-# NEED stderr #-}
+stderr {-# 2 #-} :: Prelude.SR -> Prelude.Trace -> Prelude.R IO.Handle;
+interface ! FFIBuiltin
+data ForeignObj;
+interface ! Prelude
+{-# NEED Vector #-}
+data Vector a;
+
+{-# NEED PackedString.PackedString #-}
+data PackedString.PackedString;
+
+{-# NEED IO #-}
+data IO a;
+
+{-# NEED IOError #-}
+data IOError;
+interface ! IO
+{-# NEED Socket #-}
+data Socket;
+
+{-# NEED Handle #-}
+data Handle;
+
+{-# NEED HandlePosn #-}
+data HandlePosn;
+interface ! Prelude
+{-# NEED #-}
+_eqDouble{-# 2 #-}::(Double -> (Double -> Bool));
+_eqFloat{-# 2 #-}::(Float -> (Float -> Bool));
+_eqInteger{-# 2 #-}::(Integer -> (Integer -> Bool));
+_hPutChar{-# 2 #-}::Prelude.SR -> Prelude.Trace -> Prelude.R (Prelude.Trace -> Prelude.R IO.Handle -> Prelude.R (Prelude.Trace -> Prelude.R Char -> Prelude.R (Either IOError ())));
+_hGetChar{-# 1 #-}::(IO.Handle -> Int);
+{-# NEED cHGetChar #-}
+cHGetChar{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R IO.Handle) -> (Prelude.R Int))))));
+{-# NEED cHPutChar #-}
+cHPutChar{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R IO.Handle) -> (Prelude.R (Prelude.Trace -> ((Prelude.R Char) -> (Prelude.R (Either IOError ()))))))))));
+data (->) a b;
+data Int;
+data Char;
+data Float;
+data Double;
+data Integer;
+
+}

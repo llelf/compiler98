@@ -13,8 +13,8 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/DTimeLocale.o: DTimeLocale.hs
-${OBJDIR}/DefaultTimeLocale.o: DefaultTimeLocale.hs ${OBJDIR}/DTimeLocale.o
+${OBJDIR}/DTimeLocale.$O: DTimeLocale.hs
+${OBJDIR}/DefaultTimeLocale.$O: DefaultTimeLocale.hs ${OBJDIR}/DTimeLocale.$O
 
 DefaultTimeLocale.c: DTimeLocale.c
 

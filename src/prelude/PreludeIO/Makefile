@@ -33,19 +33,19 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/Catch.o:        ${OBJDIR}/DIO.o
-${OBJDIR}/Eq_IOError.o:   ${OBJDIR}/DIOError.o
-${OBJDIR}/IoError.o:      ${OBJDIR}/DIO.o
-${OBJDIR}/Monad_IO.o:     ${OBJDIR}/DIO.o ${OBJDIR}/DIOError.o # ../Prelude/CMonad.hi
-${OBJDIR}/Functor_IO.o:   # ../Prelude/CFunctor.hi
-${OBJDIR}/Show_IOError.o: ${OBJDIR}/DIOError.o ${OBJDIR}/StrError.o
+${OBJDIR}/Catch.$O:        ${OBJDIR}/DIO.$O
+${OBJDIR}/Eq_IOError.$O:   ${OBJDIR}/DIOError.$O
+${OBJDIR}/IoError.$O:      ${OBJDIR}/DIO.$O
+${OBJDIR}/Monad_IO.$O:     ${OBJDIR}/DIO.$O ${OBJDIR}/DIOError.$O # ../Prelude/CMonad.hi
+${OBJDIR}/Functor_IO.$O:   # ../Prelude/CFunctor.hi
+${OBJDIR}/Show_IOError.$O: ${OBJDIR}/DIOError.$O ${OBJDIR}/StrError.$O
 ifneq "T" "${TRACING}"
-${OBJDIR}/Show_IOError.o: ${OBJDIR}/StrError.o
+${OBJDIR}/Show_IOError.$O: ${OBJDIR}/StrError.$O
 endif
-${OBJDIR}/UserError.o:    ${OBJDIR}/DIOError.o
-${OBJDIR}/DIOError.o:     #${OBJDIR}/DErrNo.o
-${OBJDIR}/ReadLn.o:       ${OBJDIR}/ReadIO.o
-${OBJDIR}/_MkIO.o:        ${OBJDIR}/DIO.o
+${OBJDIR}/UserError.$O:    ${OBJDIR}/DIOError.$O
+${OBJDIR}/DIOError.$O:     #${OBJDIR}/DErrNo.$O
+${OBJDIR}/ReadLn.$O:       ${OBJDIR}/ReadIO.$O
+${OBJDIR}/_MkIO.$O:        ${OBJDIR}/DIO.$O
 
 
 # And now for C-files dependencies.

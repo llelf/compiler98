@@ -3,7 +3,7 @@ module _Driver where
 import PreludeBuiltin
 import DIO
 import System
-import Main_t
+import Main
 --import DPrelude -- (SR(..), Trace(..), R(..), con0, ap1, ap2, initializeDebugger)
 --import ExitWith
 

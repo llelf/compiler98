@@ -25,13 +25,13 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/Fractional_Ratio.o : Fractional_Ratio.hs ${OBJDIR}/RatioCon.o
-${OBJDIR}/Num_Ratio.o : Num_Ratio.hs ${OBJDIR}/Reduce.o
-${OBJDIR}/RatioCon.o : RatioCon.hs ${OBJDIR}/Reduce.o
-${OBJDIR}/Show_Ratio.o : Show_Ratio.hs ${OBJDIR}/Prec.o
-${OBJDIR}/Read_Ratio.o : Read_Ratio.hs ${OBJDIR}/Prec.o ${OBJDIR}/RatioCon.o
-${OBJDIR}/Real_Ratio.o : Real_Ratio.hs
-${OBJDIR}/Enum_Ratio.o : Enum_Ratio.hs
+${OBJDIR}/Fractional_Ratio.$O : Fractional_Ratio.hs ${OBJDIR}/RatioCon.$O
+${OBJDIR}/Num_Ratio.$O : Num_Ratio.hs ${OBJDIR}/Reduce.$O
+${OBJDIR}/RatioCon.$O : RatioCon.hs ${OBJDIR}/Reduce.$O
+${OBJDIR}/Show_Ratio.$O : Show_Ratio.hs ${OBJDIR}/Prec.$O
+${OBJDIR}/Read_Ratio.$O : Read_Ratio.hs ${OBJDIR}/Prec.$O ${OBJDIR}/RatioCon.$O
+${OBJDIR}/Real_Ratio.$O : Real_Ratio.hs
+${OBJDIR}/Enum_Ratio.$O : Enum_Ratio.hs
 
 
 Fractional_Ratio.c : Fractional_Ratio.hs RatioCon.c

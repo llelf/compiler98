@@ -1,0 +1,181 @@
+interface Maybe where {
+
+{-# NEED #-}
+instance Prelude.Functor Prelude.Maybe;
+
+{-# NEED #-}
+instance Prelude.Monad Prelude.Maybe;
+
+{-# NEED #-}
+instance (Prelude.Ord a) => Prelude.Ord (Prelude.Maybe a);
+
+{-# NEED #-}
+instance (Prelude.Eq a) => Prelude.Eq (Prelude.Maybe a);
+
+{-# NEED #-}
+instance (Prelude.Show a) => Prelude.Show (Prelude.Maybe a);
+
+{-# NEED #-}
+instance (Prelude.Read a) => Prelude.Read (Prelude.Maybe a);
+
+interface Prelude
+{-# NEED Read #-}
+class Read a;
+
+{-# NEED RList #-}
+data RList a;
+
+{-# NEED E #-}
+data E a;
+
+{-# NEED Value #-}
+data Value;
+
+{-# NEED Void #-}
+data Void;
+
+{-# NEED World #-}
+data World;
+
+{-# NEED _Value #-}
+data _Value;
+
+{-# NEED IOError #-}
+data IOError;
+interface Prelude
+{-# NEED Either #-}
+data Either a b;
+
+{-# NEED Ordering #-}
+data Ordering;
+interface Prelude
+{-# NEED [] #-}
+data [] a;
+
+{-# NEED IO #-}
+data IO a;
+
+{-# NEED #-}
+data ();
+
+{-# NEED #-}
+data (,,,) a b c d;
+
+{-# NEED #-}
+data (,,) a b c;
+
+{-# NEED #-}
+data (,) a b;
+
+{-# NEED #-}
+data (,,,,,,,,,) a b c d e f g h i j;
+
+{-# NEED #-}
+data (,,,,,,,,) a b c d e f g h i;
+
+{-# NEED #-}
+data (,,,,,,,) a b c d e f g h;
+
+{-# NEED #-}
+data (,,,,,,) a b c d e f g;
+
+{-# NEED #-}
+data (,,,,,) a b c d e f;
+
+{-# NEED #-}
+data (,,,,) a b c d e;
+
+{-# NEED #-}
+data (,,,,,,,,,,,) a b c d e f g h i j k l;
+
+{-# NEED #-}
+data (,,,,,,,,,,) a b c d e f g h i j k;
+interface ! Maybe
+{-# NEED isJust #-}
+isJust{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Maybe a)) -> (Prelude.R Prelude.Bool))))));
+
+{-# NEED fromJust #-}
+fromJust{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Maybe a)) -> (Prelude.R a))))));
+
+{-# NEED maybeToList #-}
+maybeToList{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Maybe a)) -> (Prelude.R [a]))))));
+
+{-# NEED catMaybes #-}
+catMaybes{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R [(Prelude.Maybe a)]) -> (Prelude.R [a]))))));
+
+{-# NEED isNothing #-}
+isNothing{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Maybe a)) -> (Prelude.R Prelude.Bool))))));
+
+{-# NEED mapMaybe #-}
+mapMaybe{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Maybe b))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R [b])))))))));
+
+{-# NEED listToMaybe #-}
+listToMaybe{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (Prelude.Maybe a)))))));
+
+{-# NEED fromMaybe #-}
+fromMaybe{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Maybe a)) -> (Prelude.R a)))))))));
+interface Prelude
+{-# NEED Maybe #-}
+data Maybe a;
+
+{-# NEED R #-}
+data R a;
+
+{-# NEED Trace Traces #-}
+data Trace;
+data Traces;
+
+{-# NEED NmType #-}
+data NmType;
+
+{-# NEED Double #-}
+data Double;
+
+{-# NEED Float #-}
+data Float;
+interface Ratio
+{-# NEED Rational #-}
+type {-# 1 #-} Rational = (Ratio Prelude.Integer);
+
+{-# NEED Ratio #-}
+data (Prelude.Integral a) => Ratio a;
+interface Prelude
+{-# NEED Integral #-}
+class (Prelude.Real a,Prelude.Enum a) => Integral a;
+
+{-# NEED Enum #-}
+class Enum a;
+
+{-# NEED Real #-}
+class (Prelude.Num a,Prelude.Ord a) => Real a;
+
+{-# NEED Ord #-}
+class (Prelude.Eq a) => Ord a;
+
+{-# NEED Num #-}
+class (Prelude.Eq a,Prelude.Show a) => Num a;
+
+{-# NEED Show #-}
+class Show a;
+
+{-# NEED Eq #-}
+class Eq a;
+
+{-# NEED Integer #-}
+data Integer;
+
+{-# NEED Char #-}
+data Char;
+
+{-# NEED SR #-}
+data SR;
+
+{-# NEED Int #-}
+data Int;
+
+{-# NEED Bool #-}
+data Bool;
+
+{-# NEED (->) #-}
+data (->) a b;
+}

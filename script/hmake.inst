@@ -78,6 +78,7 @@ do
     -clean)        hmflags=$hmflags" $1" ;;
     -realclean)    hmflags=$hmflags" $1" ;;
     -keepPrelude)  hmflags=$hmflags" $1" ;;
+    -watch)        hmflags=$hmflags" $1" ;;
     -n)  hmflags=$hmflags" -q"; exec=cat ;;
     -q)  hmflags=$hmflags" $1" ;;
     -N*) hmflags=$hmflags" $1" ;;
@@ -128,12 +129,26 @@ do
     -L*) LDFLAGS=$LDFLAGS" $1" ;;
     -l*) LDFLAGS=$LDFLAGS" $1" ;;
 
+    # tracing and profiling flags (mainly nhc98)
+    -T) hcflags=$hcflags" $1";
+        hmflags=$hmflags" -hi-suffix=T_hi -o-suffix=T_o" ;;
+    -p) hcflags=$hcflags" $1";
+        hmflags=$hmflags" -o-suffix=p_o" ;;
+    -t) hcflags=$hcflags" $1";
+        hmflags=$hmflags" -o-suffix=t_o" ;;
+
+    # mainly GHC flags
+    -package|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
+
     # Any other compiler flags
     -*) hcflags=$hcflags" $1" ;;
 
     # Objects and archives for linking
-    *.o) LDFLAGS=$LDFLAGS" $1" ;;
-    *.a) LDFLAGS=$LDFLAGS" $1" ;;
+    *.o)   LDFLAGS=$LDFLAGS" $1" ;;
+    *.T_o) LDFLAGS=$LDFLAGS" $1" ;;
+    *.p_o) LDFLAGS=$LDFLAGS" $1" ;;
+    *.t_o) LDFLAGS=$LDFLAGS" $1" ;;
+    *.a)   LDFLAGS=$LDFLAGS" $1" ;;
 
     # Anything else must be a module name
     *) modules=$modules" $1" ;;

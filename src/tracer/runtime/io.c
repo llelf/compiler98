@@ -128,6 +128,9 @@ C_HEADER(_tprim_chGetChar)
 }
 
 #if 0
+-- This was the beginnings of a primitive, faster, implementation
+-- of string I/O.  I never completed it.   (malcolm)
+
 /* _tprim_chPutStr :: Trace -> R Handle -> R PackedString -> R (Either IOError ()) */
 C_HEADER(_tprim_chPutStr)
 {
@@ -288,14 +291,18 @@ C_HEADER(_tprim_cExitWith)
     exit(0);
 }
 
-/*_primIntFromInteger primitive 1 :: Integer -> Int */
+#if 0
+-- Im pretty sure this is now obsolete, since I implemented it
+-- properly using the common FFI.  (malcolm)
 
+/*_primIntFromInteger primitive 1 :: Integer -> Int */
 C_HEADER(_primIntFromInteger)
 {
     fprintf(stderr, "In _primIntFromInteger...\n");
     /*prGraph(C_GETARG1(1), 3, 3);*/
     exit(1);
 }
+#endif
 
 /**
  * Check if the node pointed to by nodeptr is evaluated.
@@ -1431,7 +1438,7 @@ char *prelude_path = NULL;
 char *preldirs[] = 
     {"Prelude", "PreludeIO", "PreludeList", "PreludeText", "Ratio", 
      "System", "Text", "Array", "Char", "Complex", "Directory", "IO", 
-     "Interrupt", "Ix", "List", "LowB", "Maybe", "Monad", "NonStd", 
+     "Interrupt", "Ix", "List", "LowT", "Maybe", "Monad", "NonStd", 
      "PackedString", NULL};
 
 void sendFile(FILE *sock, char *filename)

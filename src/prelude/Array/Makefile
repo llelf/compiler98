@@ -22,24 +22,24 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/AMap.o: AMap.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o ${OBJDIR}/AIndex.o ${OBJDIR}/Bounds.o
-${OBJDIR}/Accum.o: Accum.hs ${OBJDIR}/DArray.o ${OBJDIR}/Replace.o ${OBJDIR}/AIndex.o
-${OBJDIR}/AccumArray.o: AccumArray.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o ${OBJDIR}/Accum.o
-${OBJDIR}/ArrayFun.o: ArrayFun.hs ${OBJDIR}/DArray.o
-${OBJDIR}/Assocs.o: Assocs.hs ${OBJDIR}/DArray.o ${OBJDIR}/Indices.o ${OBJDIR}/AIndex.o
-${OBJDIR}/Bounds.o: Bounds.hs ${OBJDIR}/DArray.o
-${OBJDIR}/Elems.o: Elems.hs ${OBJDIR}/DArray.o ${OBJDIR}/Indices.o ${OBJDIR}/AIndex.o
-${OBJDIR}/Eq_Array.o: Eq_Array.hs ${OBJDIR}/DArray.o ${OBJDIR}/Assocs.o
-${OBJDIR}/AIndex.o: AIndex.hs ${OBJDIR}/DArray.o
-${OBJDIR}/Indices.o: Indices.hs ${OBJDIR}/DArray.o ${OBJDIR}/Bounds.o
-${OBJDIR}/IxMap.o: IxMap.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o ${OBJDIR}/AIndex.o
-${OBJDIR}/ListArray.o: ListArray.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o
-${OBJDIR}/Ord_Array.o: Ord_Array.hs ${OBJDIR}/DArray.o ${OBJDIR}/Assocs.o ${OBJDIR}/Eq_Array.o
-${OBJDIR}/Read_Array.o: Read_Array.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o
-${OBJDIR}/Replace.o: Replace.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o ${OBJDIR}/Indices.o ${OBJDIR}/AIndex.o ${OBJDIR}/Bounds.o ${OBJDIR}/../List/Difference.o
-${OBJDIR}/Show_Array.o: Show_Array.hs ${OBJDIR}/DArray.o ${OBJDIR}/Assocs.o ${OBJDIR}/Bounds.o ${OBJDIR}/Elems.o
-${OBJDIR}/../List/Difference.o:
-	cd ../List; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/List/Difference.o
+${OBJDIR}/AMap.$O: AMap.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O ${OBJDIR}/AIndex.$O ${OBJDIR}/Bounds.$O
+${OBJDIR}/Accum.$O: Accum.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Replace.$O ${OBJDIR}/AIndex.$O
+${OBJDIR}/AccumArray.$O: AccumArray.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O ${OBJDIR}/Accum.$O
+${OBJDIR}/ArrayFun.$O: ArrayFun.hs ${OBJDIR}/DArray.$O
+${OBJDIR}/Assocs.$O: Assocs.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Indices.$O ${OBJDIR}/AIndex.$O
+${OBJDIR}/Bounds.$O: Bounds.hs ${OBJDIR}/DArray.$O
+${OBJDIR}/Elems.$O: Elems.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Indices.$O ${OBJDIR}/AIndex.$O
+${OBJDIR}/Eq_Array.$O: Eq_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Assocs.$O
+${OBJDIR}/AIndex.$O: AIndex.hs ${OBJDIR}/DArray.$O
+${OBJDIR}/Indices.$O: Indices.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Bounds.$O
+${OBJDIR}/IxMap.$O: IxMap.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O ${OBJDIR}/AIndex.$O
+${OBJDIR}/ListArray.$O: ListArray.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O
+${OBJDIR}/Ord_Array.$O: Ord_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Assocs.$O ${OBJDIR}/Eq_Array.$O
+${OBJDIR}/Read_Array.$O: Read_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O
+${OBJDIR}/Replace.$O: Replace.hs ${OBJDIR}/DArray.$O ${OBJDIR}/ArrayFun.$O ${OBJDIR}/Indices.$O ${OBJDIR}/AIndex.$O ${OBJDIR}/Bounds.$O ${OBJDIR}/../List/Difference.$O
+${OBJDIR}/Show_Array.$O: Show_Array.hs ${OBJDIR}/DArray.$O ${OBJDIR}/Assocs.$O ${OBJDIR}/Bounds.$O ${OBJDIR}/Elems.$O
+${OBJDIR}/../List/Difference.$O:
+	cd ../List; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/List/Difference.$O
 
 
 # C-files dependencies.

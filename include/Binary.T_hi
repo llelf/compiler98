@@ -1,0 +1,5 @@
+interface Binary where {
+
+{-# NEED #-}
+instance Prelude.Show PackedString.PackedString;
+}

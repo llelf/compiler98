@@ -16,7 +16,7 @@ SRCS_T	=
 # Here are some extra rules.
 cfiles: cfilescheck
 cfilescheck:
-	cp $(INCDIR)/Binary.hi ../Binary	# big hack around compiler bug!
+	cp $(INCDIR)/Binary.${HISUFFIX} ../Binary  # hack around compiler bug!
 
 
 # Here are the main rules.
@@ -26,16 +26,16 @@ include ../Makefile.common
 # Here are the dependencies.
 ${OBJS}: cLowUnboxedArray.h
 
-${OBJDIR}/AllocUBA.o: AllocUBA.gc ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/Binary_UBA.o: Binary_UBA.gc  ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/DUnboxedArray.o: DUnboxedArray.gc
-${OBJDIR}/GetUBAEnd.o: GetUBAEnd.gc ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/GetUBAFree.o: GetUBAFree.gc ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/RUBA.o: RUBA.gc ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/WUBA.o: WUBA.gc ${OBJDIR}/DUnboxedArray.o
-${OBJDIR}/UnboxedArray.o: UnboxedArray.hs ${OBJDIR}/DUnboxedArray.o ${OBJDIR}/AllocUBA.o ${OBJDIR}/Binary_UBA.o ${OBJDIR}/GetUBAEnd.o ${OBJDIR}/GetUBAFree.o ${OBJDIR}/RUBA.o ${OBJDIR}/WUBA.o#
-${OBJDIR}/cLowUnboxedArray.o: cLowUnboxedArray.c
-${OBJDIR}/BinArray.o: BinArray.hs ${OBJDIR}/UnboxedArray.o ${OBJS}
+${OBJDIR}/AllocUBA.$O: AllocUBA.gc ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/Binary_UBA.$O: Binary_UBA.gc  ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/DUnboxedArray.$O: DUnboxedArray.gc
+${OBJDIR}/GetUBAEnd.$O: GetUBAEnd.gc ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/GetUBAFree.$O: GetUBAFree.gc ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/RUBA.$O: RUBA.gc ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/WUBA.$O: WUBA.gc ${OBJDIR}/DUnboxedArray.$O
+${OBJDIR}/UnboxedArray.$O: UnboxedArray.hs ${OBJDIR}/DUnboxedArray.$O ${OBJDIR}/AllocUBA.$O ${OBJDIR}/Binary_UBA.$O ${OBJDIR}/GetUBAEnd.$O ${OBJDIR}/GetUBAFree.$O ${OBJDIR}/RUBA.$O ${OBJDIR}/WUBA.$O
+${OBJDIR}/cLowUnboxedArray.$O: cLowUnboxedArray.c
+${OBJDIR}/BinArray.$O: BinArray.hs ${OBJDIR}/UnboxedArray.$O ${OBJS}
 
 
 # C-files dependencies.

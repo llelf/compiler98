@@ -17,10 +17,10 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-LHOBJS	= $(patsubst %.lhs, ${OBJDIR}/%.o, $(filter %.lhs, ${LIBSRCS}))
+LHOBJS	= $(patsubst %.lhs, ${OBJDIR}/%.$O, $(filter %.lhs, ${LIBSRCS}))
 
 extra:	${LHOBJS}
-${LHOBJS}: ${OBJDIR}/%.o : %.lhs
+${LHOBJS}: ${OBJDIR}/%.$O : %.lhs
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
 ${LHCFILES}: %.c : %.lhs
 	$(HC) -C $(LIB_FLAGS) $<

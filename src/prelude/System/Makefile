@@ -21,10 +21,10 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/Eq_ExitCode.o: Eq_ExitCode.hs ${OBJDIR}/DExitCode.o
-${OBJDIR}/Ord_ExitCode.o: Ord_ExitCode.hs ${OBJDIR}/DExitCode.o ${OBJDIR}/Eq_ExitCode.o
-${OBJDIR}/Read_ExitCode.o: Read_ExitCode.hs ${OBJDIR}/DExitCode.o
-${OBJDIR}/Show_ExitCode.o: Show_ExitCode.hs ${OBJDIR}/DExitCode.o
+${OBJDIR}/Eq_ExitCode.$O: Eq_ExitCode.hs ${OBJDIR}/DExitCode.$O
+${OBJDIR}/Ord_ExitCode.$O: Ord_ExitCode.hs ${OBJDIR}/DExitCode.$O ${OBJDIR}/Eq_ExitCode.$O
+${OBJDIR}/Read_ExitCode.$O: Read_ExitCode.hs ${OBJDIR}/DExitCode.$O
+${OBJDIR}/Show_ExitCode.$O: Show_ExitCode.hs ${OBJDIR}/DExitCode.$O
 
 
 # C-files dependencies.

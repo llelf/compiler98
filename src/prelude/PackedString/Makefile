@@ -26,39 +26,39 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/Append.o: Append.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/UnpackPS.o ${OBJDIR}/PackString.o
-${OBJDIR}/Break.o: Break.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Span.o
-${OBJDIR}/Concat.o: Concat.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Nil.o ${OBJDIR}/Append.o
-${OBJDIR}/Cons.o: Cons.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Append.o ${OBJDIR}/PackString.o
-${OBJDIR}/Drop.o: Drop.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o ${OBJDIR}/Substr.o
-${OBJDIR}/DropWhile.o: DropWhile.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Nil.o ${OBJDIR}/Length.o ${OBJDIR}/Index.o ${OBJDIR}/Substr.o
-${OBJDIR}/Eq_PackedString.o: Eq_PackedString.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Eval_PackedString.o: Eval_PackedString.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Filter.o: Filter.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Foldl.o: Foldl.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Foldr.o: Foldr.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Head.o: Head.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Index.o
-${OBJDIR}/Index.o: Index.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Length.o: Length.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Lines.o: Lines.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Null.o ${OBJDIR}/Break.o ${OBJDIR}/Tail.o
-${OBJDIR}/Map.o: Map.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Nil.o: Nil.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o
-${OBJDIR}/Null.o: Null.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o
-${OBJDIR}/Ord_PackedString.o: Ord_PackedString.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Eq_PackedString.o 
-${OBJDIR}/PackString.o: PackString.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Read_PackedString.o: Read_PackedString.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Reverse.o: Reverse.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Show_PackedString.o: Show_PackedString.hs ${OBJDIR}/DPackedString.o 
-${OBJDIR}/Span.o: Span.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o ${OBJDIR}/Index.o ${OBJDIR}/Substr.o ${OBJDIR}/Nil.o
-${OBJDIR}/SplitAt.o: SplitAt.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Take.o ${OBJDIR}/Drop.o
-${OBJDIR}/Substr.o: Substr.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Tail.o: Tail.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Substr.o ${OBJDIR}/Length.o
-${OBJDIR}/Take.o: Take.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Substr.o ${OBJDIR}/Length.o
-${OBJDIR}/TakeWhile.o: TakeWhile.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Length.o ${OBJDIR}/Index.o ${OBJDIR}/Substr.o
-${OBJDIR}/Unlines.o: Unlines.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/UnpackPS.o: UnpackPS.hs ${OBJDIR}/DPackedString.o # ${OBJDIR}/Length.o ${OBJDIR}/Index.o
-${OBJDIR}/Unwords.o: Unwords.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/PackString.o ${OBJDIR}/UnpackPS.o
-${OBJDIR}/Words.o: Words.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/DropWhile.o ${OBJDIR}/Null.o ${OBJDIR}/Break.o
+${OBJDIR}/Append.$O: Append.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/UnpackPS.$O ${OBJDIR}/PackString.$O
+${OBJDIR}/Break.$O: Break.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Span.$O
+${OBJDIR}/Concat.$O: Concat.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Nil.$O ${OBJDIR}/Append.$O
+${OBJDIR}/Cons.$O: Cons.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Append.$O ${OBJDIR}/PackString.$O
+${OBJDIR}/Drop.$O: Drop.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Length.$O ${OBJDIR}/Substr.$O
+${OBJDIR}/DropWhile.$O: DropWhile.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Nil.$O ${OBJDIR}/Length.$O ${OBJDIR}/Index.$O ${OBJDIR}/Substr.$O
+${OBJDIR}/Eq_PackedString.$O: Eq_PackedString.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Eval_PackedString.$O: Eval_PackedString.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Filter.$O: Filter.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Foldl.$O: Foldl.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Foldr.$O: Foldr.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Head.$O: Head.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Index.$O
+${OBJDIR}/Index.$O: Index.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Length.$O: Length.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Lines.$O: Lines.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Null.$O ${OBJDIR}/Break.$O ${OBJDIR}/Tail.$O
+${OBJDIR}/Map.$O: Map.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Nil.$O: Nil.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O
+${OBJDIR}/Null.$O: Null.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Length.$O
+${OBJDIR}/Ord_PackedString.$O: Ord_PackedString.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Eq_PackedString.$O 
+${OBJDIR}/PackString.$O: PackString.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Read_PackedString.$O: Read_PackedString.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Reverse.$O: Reverse.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Show_PackedString.$O: Show_PackedString.hs ${OBJDIR}/DPackedString.$O 
+${OBJDIR}/Span.$O: Span.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Length.$O ${OBJDIR}/Index.$O ${OBJDIR}/Substr.$O ${OBJDIR}/Nil.$O
+${OBJDIR}/SplitAt.$O: SplitAt.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Take.$O ${OBJDIR}/Drop.$O
+${OBJDIR}/Substr.$O: Substr.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Tail.$O: Tail.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Substr.$O ${OBJDIR}/Length.$O
+${OBJDIR}/Take.$O: Take.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Substr.$O ${OBJDIR}/Length.$O
+${OBJDIR}/TakeWhile.$O: TakeWhile.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/Length.$O ${OBJDIR}/Index.$O ${OBJDIR}/Substr.$O
+${OBJDIR}/Unlines.$O: Unlines.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/UnpackPS.$O: UnpackPS.hs ${OBJDIR}/DPackedString.$O # ${OBJDIR}/Length.$O ${OBJDIR}/Index.$O
+${OBJDIR}/Unwords.$O: Unwords.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/PackString.$O ${OBJDIR}/UnpackPS.$O
+${OBJDIR}/Words.$O: Words.hs ${OBJDIR}/DPackedString.$O ${OBJDIR}/DropWhile.$O ${OBJDIR}/Null.$O ${OBJDIR}/Break.$O
 
 
 # C-files dependencies.

@@ -2,138 +2,105 @@ module Output(qCompile,qLink,qCleano,qCleanhi) where
 import ListUtil -- (lconcatMap)
 import FileName
 import ListUtil
-import Argv  -- Goal
+import Argv
 --import Maybe
 
 doEcho True cmd = "echo \"" ++ cmd ++ "\"\n" ++ cmd ++ "\n"
 doEcho False cmd = cmd ++ "\n"
 
-oFile :: String -> Bool -> String -> String -> String
-oFile goalDir unix path mod =
-    if null goalDir then fixFile unix path    mod "o"
-                    else fixFile unix goalDir mod "o"
-hiFile unix path mod  =  fixFile unix path    mod "hi"
+oFile,hiFile :: DecodedArgs -> String -> String -> String
+oFile opts path mod =
+    let g    = goalDir opts
+        gDir = if null g then path else g
+    in fixFile opts gDir mod (oSuffix opts)
+hiFile opts path mod  =
+       fixFile opts path mod (hiSuffix opts)
 
-cleanModuleName (Program file) = file
-cleanModuleName (Object file) = file
+cleanModuleName (Program file)    = file
+cleanModuleName (Object file suf) = file
 
-qCleano  echo goalDir unix graph mod =
+qCleano  opts echo graph mod =
   let allfiles = close graph [] [cleanModuleName mod]
   in doEcho echo ("rm -f" ++
-         concatMap (\(d,f)-> ' ': oFile goalDir unix d f) allfiles)
+         concatMap (\(d,f)-> ' ': oFile opts d f) allfiles)
 
-qCleanhi echo unix graph mod =
+qCleanhi opts echo graph mod =
   let allfiles = close graph [] [cleanModuleName mod]
   in doEcho echo ("rm -f" ++
-         concatMap (\(d,f)-> ' ': hiFile unix d f) allfiles)
---in unlines $
---   map (\(d,f)-> doEcho echo ("rm -f " ++ hiFile unix d f)) allfiles
+         concatMap (\(d,f)-> ' ': hiFile opts d f) allfiles)
 
-qCompile echo goalDir dflag defines unix (dep,(p,m,source,cpp)) =
+qCompile opts echo (dep,(p,m,source,cpp)) =
   if null dep
   then doEcho echo compilecmd
   else test m dep compilecmd
  where
-  ofile = oFile goalDir unix p m
+  ofile = oFile opts p m
   compilecmd =
     compiler ++ "-c " ++ cppcmd ++
-    (if dflag then "-d "++goalDir else "-o "++ofile) ++
+    (if (dflag opts) then "-d "++(goalDir opts) else "-o "++ofile) ++
     " " ++ source
 
-  compiler = if unix then "${HC} ${HFLAGS} " else "nhc98 "
-  cppcmd = if cpp then "-cpp"++concat (map doD defines)++" " else ""
+  compiler = if (isUnix opts) then "${HC} ${HFLAGS} " else "nhc98 "
+  cppcmd = if cpp then "-cpp"++concat (map doD (defs opts))++" " else ""
   doD s = " -D"++s
 
---goal = if goalDir=="" then "." else goalDir
---compile source = compiler++" -c "++source
---compile source path mod =
---  compiler ++ " -c " ++ cppcmd ++ source {-fixFile unix path mod "hs"-}
---  ++ (if dflag || (path==goal) || (path/=".") then ""
---      else " -o " ++ fixFile unix goalDir mod "o")
-
-
-  test = if unix
+  test = if (isUnix opts)
          then (\m dep comp ->
                "if [ `$OLDER " ++ ofile
-		++ lconcatMap (\(d,p) -> ' ':hiFile unix p d) dep
+		++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
 	        ++"` = 1 ]\nthen\n"
 	        ++ doEcho echo compilecmd
  	        ++ "fi\n")
          else (\m dep comp ->
                "older " ++ ofile
-                        ++ lconcatMap (\(d,p) -> ' ':hiFile unix p d) dep
+                        ++ lconcatMap (\(d,p) -> ' ':hiFile opts p d) dep
                 ++ "\nset Nhc$ReturnCode <Sys$ReturnCode>\n"
---                ++ (if echo then "IF <Nhc$ReturnCode> THEN echo " ++ compilecmd else [])
+           --   ++ (if echo then "IF <Nhc$ReturnCode> THEN echo " ++ compilecmd
+           --               else [])
                 ++ "IF <Nhc$ReturnCode> THEN " ++ compilecmd)
 
---test = if unix
---       then (\m dep comp ->
---             "if [ `$OLDER " ++ fixFile unix goalDir m "o" 
---		++ lconcatMap (\d -> ' ':fixFile unix p d "hi") dep
---              ++"` = 1 ]\nthen\n"
---     		++ doEcho echo compilecmd
---     		++ "fi\n")
---       else (\m dep comp ->
---             "older " ++ fixFile unix goalDir m "o" 
---              ++ lconcatMap (\d -> ' ':fixFile unix p d "hi") dep
---              ++ "\nset Nhc$ReturnCode <Sys$ReturnCode>\n"
-----            ++ (if echo then "IF <Nhc$ReturnCode> THEN echo " ++ compilecmd else [])
---              ++ "IF <Nhc$ReturnCode> THEN " ++ compilecmd)
 
-
-
-qLink echo goalDir dflag unix graph (Object  file) = ""
-qLink echo goalDir dflag unix graph (Program file) =
+qLink opts echo graph (Object  file suf) = ""
+qLink opts echo graph (Program file)     =
   cmd
  where
-  goal = if goalDir=="" then "." else goalDir
-  mkOfile path f = if dflag then fixFile unix ""   f "o"
-                            else fixFile unix path f "o"
+  goaldir = goalDir opts
+  goal = if null goaldir then "." else goaldir
+  mkOfile path f = if (dflag opts) then
+                        fixFile opts ""   f (oSuffix opts)
+                   else fixFile opts path f (oSuffix opts)
   objfiles = close graph [] [file]
-  cmd = if unix 
-        then
+  cmd | isUnix opts =
 	  let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
-          if null goalDir then
+          if null goaldir then
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
-	     ++ doEcho echo ("${HC} ${HFLAGS}"++" -o "++file++objs++" ${LDFLAGS}")
+	     ++ doEcho echo ("${HC} ${HFLAGS}"++" -o "
+                             ++file++objs++" ${LDFLAGS}")
 	     ++ "fi\n"
           else
-	    "if ( cd "++goalDir++" && [ `$OLDER "++file++" "++objs++"` = 1 ] )\nthen\n"
-	     ++ doEcho echo ("cd "++goal++" && ${HC} ${HFLAGS}"++" -o "++file++objs++" ${LDFLAGS}")
+	    "if ( cd "++goaldir++" && [ `$OLDER "
+             ++ file ++ " "++objs++"` = 1 ] )\nthen\n"
+	     ++ doEcho echo ("cd "++goal++" && ${HC} ${HFLAGS}"++" -o "
+                             ++file++objs++" ${LDFLAGS}")
 	     ++ "fi\n"
-        else 
+      | otherwise =
           if length objfiles > 3 then
              "exfile <Wimp$ScrapDir>.nhcmk_via STOP\n"
-              ++ lconcatMap (\(d,f) -> ' ':fixFile unix (if null d then goal else d) f "o" ++ "\n") objfiles
+              ++ lconcatMap (\(d,f) ->
+                             ' ': fixFile opts (if null d then goal else d)
+                                          f (oSuffix opts)
+                                ++ "\n")
+                             objfiles
               ++ "STOP\n"
-              ++ "nhc98 " ++ " -o " ++ file ++ " -via <Wimp$ScrapDir>.nhcmk_via\n"
+              ++ "nhc98 " ++ " -o " ++ file
+              ++ " -via <Wimp$ScrapDir>.nhcmk_via\n"
           else
              "nhc98 " ++ " -o " ++ file
-                      ++ lconcatMap (\(d,f) -> ' ':fixFile unix (if null d then goal else d) f "o") objfiles
-                      ++ "\n"
-
---qLink echo goalDir dflag unix graph (Object  file) = ""
---qLink echo goalDir dflag unix graph (Program file) =
---  cmd
--- where
---  goal = if goalDir=="" then "." else goalDir
---  cmd = if unix 
---        then
---	  let objs =  lconcatMap (\(d,f) -> ' ':fixFile unix (if null d then "" else d) f "o") objfiles
---	--let objs =  lconcatMap (\(d,f) -> ' ':fixFile unix "" f "o") objfiles
---	  in "if cd "++goal++" && [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
---	     ++ doEcho echo ("cd "++goal++" && ${HC} ${HFLAGS}"++" -o "++file++objs++" ${LDFLAGS}")
---	     ++ "fi\n"
---        else 
---          if length objfiles > 3 then
---             "exfile <Wimp$ScrapDir>.nhcmk_via STOP\n"
---              ++ lconcatMap (\(d,f) -> ' ':fixFile unix (if null d then goal else d) f "o" ++ "\n") objfiles
---              ++ "STOP\n"
---              ++ "nhc98 " ++ " -o " ++ file ++ " -via <Wimp$ScrapDir>.nhcmk_via\n"
---          else
---             "nhc98 " ++ " -o " ++ file
---                      ++ lconcatMap (\(d,f) -> ' ':fixFile unix (if null d then goal else d) f "o") objfiles
---                      ++ "\n"
+              ++ lconcatMap (\(d,f) ->
+                             ' ': fixFile opts (if null d then goal else d)
+                                          f (oSuffix opts))
+                            objfiles
+              ++ "\n"
 
 
 

@@ -21,20 +21,20 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/Cis.o: Cis.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Conjugate.o: Conjugate.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Eq_Complex.o: Eq_Complex.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Floating_Complex.o: Floating_Complex.hs ${OBJDIR}/DComplex.o ${OBJDIR}/Magnitude.o ${OBJDIR}/Phase.o ${OBJDIR}/Fractional_Complex.o ${OBJDIR}/Num_Complex.o
-${OBJDIR}/Fractional_Complex.o: Fractional_Complex.hs ${OBJDIR}/DComplex.o ${OBJDIR}/Num_Complex.o
-${OBJDIR}/ImagPart.o: ImagPart.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Magnitude.o: Magnitude.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/MkPolar.o: MkPolar.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Num_Complex.o: Num_Complex.hs ${OBJDIR}/DComplex.o ${OBJDIR}/Magnitude.o ${OBJDIR}/Eq_Complex.o ${OBJDIR}/Show_Complex.o
-${OBJDIR}/Phase.o: Phase.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Read_Complex.o: Read_Complex.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/RealPart.o: RealPart.hs ${OBJDIR}/DComplex.o
-${OBJDIR}/Show_Complex.o: Show_Complex.hs ${OBJDIR}/DComplex.o ${OBJDIR}/RealPart.o
-${OBJDIR}/Polar.o: Polar.hs ${OBJDIR}/DComplex.o ${OBJDIR}/Magnitude.o  ${OBJDIR}/Phase.o
+${OBJDIR}/Cis.$O: Cis.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Conjugate.$O: Conjugate.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Eq_Complex.$O: Eq_Complex.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Floating_Complex.$O: Floating_Complex.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/Magnitude.$O ${OBJDIR}/Phase.$O ${OBJDIR}/Fractional_Complex.$O ${OBJDIR}/Num_Complex.$O
+${OBJDIR}/Fractional_Complex.$O: Fractional_Complex.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/Num_Complex.$O
+${OBJDIR}/ImagPart.$O: ImagPart.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Magnitude.$O: Magnitude.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/MkPolar.$O: MkPolar.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Num_Complex.$O: Num_Complex.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/Magnitude.$O ${OBJDIR}/Eq_Complex.$O ${OBJDIR}/Show_Complex.$O
+${OBJDIR}/Phase.$O: Phase.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Read_Complex.$O: Read_Complex.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/RealPart.$O: RealPart.hs ${OBJDIR}/DComplex.$O
+${OBJDIR}/Show_Complex.$O: Show_Complex.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/RealPart.$O
+${OBJDIR}/Polar.$O: Polar.hs ${OBJDIR}/DComplex.$O ${OBJDIR}/Magnitude.$O  ${OBJDIR}/Phase.$O
 
 
 # C-files dependencies.

@@ -6,13 +6,13 @@ VERSION = 1.01
 # corresponding version in the configure script!
 #   (A trailing x or + means this version has not been released yet.)
 
-HVERSION = 2.01
+HVERSION = 2.02
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \
-	src/prelude/Main.hi src/prelude/Main_t.hi src/prelude/Makefile* \
+	src/prelude/Main.hi src/prelude/Main.T_hi src/prelude/Makefile* \
 	src/prelude/Array/Makefile* src/prelude/Array/*.hs \
 	src/prelude/Bit/Makefile* src/prelude/Bit/*.hs \
 	src/prelude/Binary/Makefile* src/prelude/Binary/*.hs \
@@ -133,7 +133,7 @@ RUNTIMET = \
 TRACEUI = src/tracer/ui/*
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/*.gc include/tracer/*.hi
+INCLUDE = include/*.hi include/*.T_hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
 
@@ -157,7 +157,7 @@ tracer: tracer-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
 help:
 	@echo "Common targets include:        basic all install config"
-	@echo "                               cleanhi clean realclean"
+	@echo "                               clean realclean"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "  (other subtargets: compiler runtime prelude profile timeprof tracer hp2graph"
@@ -175,10 +175,10 @@ basic-nhc: runtime hmake-nhc greencard-nhc compiler-nhc prelude
 basic-hbc: runtime hmake-hbc greencard-hbc compiler-hbc prelude
 basic-ghc: runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-gcc: runtime cprelude ccompiler cgreencard chmake
-all-nhc: basic-nhc profile cleanhi tracer-nhc $(TARGDIR)/hood #timeprof
-all-hbc: basic-hbc profile cleanhi tracer-hbc $(TARGDIR)/hood #timeprof
-all-ghc: basic-ghc profile cleanhi tracer-ghc $(TARGDIR)/hood #timeprof
-all-gcc: basic-gcc profile cleanhi tracer-nhc $(TARGDIR)/hood #timeprof
+all-nhc: basic-nhc profile tracer-nhc $(TARGDIR)/hood #timeprof
+all-hbc: basic-hbc profile tracer-hbc $(TARGDIR)/hood #timeprof
+all-ghc: basic-ghc profile tracer-ghc $(TARGDIR)/hood #timeprof
+all-gcc: basic-gcc profile tracer-nhc $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
@@ -187,9 +187,6 @@ tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
 tracer-ghc: tracecompiler-ghc traceruntime traceprelude $(TARGDIR)/traceui
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
-
-cleanhi:
-	cd src/prelude; $(MAKE) cleanhi
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
@@ -447,6 +444,10 @@ clean: cleanhi
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
 	rm -rf $(TARGDIR)/$(MACHINE)/obj*	# all object files
+
+cleanhi:
+	cd src/prelude; $(MAKE) cleanhi
+	cd src/prelude; $(MAKE) CFG=T cleanhi
 
 cleanC:
 	rm -f src/compiler98/*.c

@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.01 (date 2000-11-xx)"
-HMAKEVERSION="2.01 (001110)" export HMAKEVERSION
+CONFIGVERSION="v1.01 (date 2000-12-xx)"
+HMAKEVERSION="2.02 (0012xx)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -560,19 +560,19 @@ else	# [ "$INSTALL" = "yes" ]
       if [ -f $file ]; then cp $file $DESTDIR$INCDIR; fi
     done
     echo
-    echo "Tracer interface files go into:"
-    echo -n "    $DESTDIR$INCDIR/tracer"
-    if [ ! -d $DESTDIR$INCDIR/tracer ]
-    then mkdir -p $DESTDIR$INCDIR/tracer;  echo ' (created)'
-    else echo ' (exists)'
-    fi
-    echo -n "    "
-    for file in $BUILDINCDIR/tracer/*
-    do
-      echo -n "`basename $file` "
-      cp $file $DESTDIR$INCDIR/tracer
-    done
-    echo
+  # echo "Tracer interface files go into:"
+  # echo -n "    $DESTDIR$INCDIR/tracer"
+  # if [ ! -d $DESTDIR$INCDIR/tracer ]
+  # then mkdir -p $DESTDIR$INCDIR/tracer;  echo ' (created)'
+  # else echo ' (exists)'
+  # fi
+  # echo -n "    "
+  # for file in $BUILDINCDIR/tracer/*
+  # do
+  #   echo -n "`basename $file` "
+  #   cp $file $DESTDIR$INCDIR/tracer
+  # done
+  # echo
   else
     echo 'Not (re-)installing interface and include files'
   fi

@@ -5,6 +5,12 @@ PRELUDE = Prelude
 ARFLAGS = cr
 ARCHIVE=${DST}/${PRELUDE}${CFG}.a
 
+ifeq "${CFG}" "p"
+O=p_o
+else
+O=o
+endif
+
 ifneq "${TRACING}" "T"
 
 FSTSUBDIRS = Char Ratio Numeric
@@ -24,8 +30,6 @@ SUBDIRCLEAN=$(patsubst %,%.clean,${SUBDIRS})
 SUBDIRCLEANC=$(patsubst %,%.cleanC,${SUBDIRS})
 XXX=$(patsubst %,%.xxx,${SUBDIRS})
 
-SUBDIROBJS = $(patsubst %,${OBJDIR}/%/*.o,${SUBDIRS})
-BOOTOBJS = $(patsubst %,${OBJDIR}/%/*.o,${BOOTSUBDIRS})
 OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
 
 
@@ -35,12 +39,12 @@ install: ${ARCHIVE}
 lib:  $(patsubst %,%.make,${LIBSUBDIRS})
 prel: $(patsubst %,%.make,${PRELSUBDIRS})
 boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o  #BOOTOBJS
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o
 	ranlib ${ARCHIVE}
 objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: ${SUBDIRCFILES}
 fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o  #SUBDIROBJS
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o
 	ranlib $(ARCHIVE)
 clean: ${SUBDIRCLEAN}
 realclean: clean
@@ -73,10 +77,10 @@ ${OBJDIRS}: ${OBJDIR}/% :
 	mkdir -p $@ || /bin/true
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.o  #SUBDIROBJS
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.$O
 	ranlib $@
 relink:
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o  #SUBDIROBJS
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.$O
 	ranlib ${ARCHIVE}
 
 
@@ -137,7 +141,6 @@ NOTYET=	NonStd Directory \
 	Locale Time CPUTime Random Haskell \
 	Binary Bit GreenCard BinArray Observe
 
-#SUBDIROBJS=$(patsubst %,${OBJ}/%/*.o,${SUBDIRS})
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
 SUBDIRSINSTALL=$(patsubst %,%.install,${SUBDIRS})
 OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
@@ -154,6 +157,8 @@ realclean: clean
 	rm -f ${ARCHIVE}
 mkfiles: ${MKFILES}
 objdir: ${OBJDIR}
+cleanhi:
+	-rm -f */*.T_hi
 
 
 %.mkfiles:
@@ -175,7 +180,7 @@ ${OBJDIRS}: ${OBJDIR}/% :
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
 	rm -f $@
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T_o
 	ranlib $@
 
 

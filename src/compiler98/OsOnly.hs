@@ -1,4 +1,7 @@
-module OsOnly(isPrelude,fixImportNames,fixRootDir,fixDependFile,fixTypeFile,fixObjectFile) where
+module OsOnly
+  (isPrelude
+  , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
+  ) where
 
 isPrelude str = take (7::Int) str == "Prelude"
 
@@ -21,8 +24,8 @@ fixRootDir isUnix s =
    stripRiscos ('.':'s':'h':    rr) = rr
    stripRiscos                  rr  = rr
 
-fixImportNames isUnix file rootdirs =
-  map (\dir-> fixDir isUnix dir ++ (fixFile isUnix file "hi")) rootdirs
+fixImportNames isUnix suffix file rootdirs =
+  map (\dir-> fixDir isUnix dir ++ (fixFile isUnix file suffix)) rootdirs
 
 
 fixDir isUnix dir

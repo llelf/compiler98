@@ -45,9 +45,9 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/Show_IO.o: Show_IO.hs ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/_ReadCon0.o: _ReadCon0.hs ${OBJDIR}/_ReadCon.o
+${OBJDIR}/Show_IO.$O: Show_IO.hs ${OBJDIR}/../PreludeIO/DIO.$O
+${OBJDIR}/_ReadCon0.$O: _ReadCon0.hs ${OBJDIR}/_ReadCon.$O
 
-${OBJDIR}/../PreludeIO/DIO.o:
-	cd ../PreludeIO; ${MAKE} ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/../PreludeIO/DIO.$O:
+	cd ../PreludeIO; ${MAKE} ${OBJDIR}/../PreludeIO/DIO.$O
 

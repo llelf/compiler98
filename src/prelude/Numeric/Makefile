@@ -16,18 +16,18 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-../PreludeList/%.hi : ../PreludeList/%.hs
+../PreludeList/%.${HISUFFIX} : ../PreludeList/%.hs
 	cd ../PreludeList; ${MAKE} $@
-../Prelude/%.hi : ../Prelude/%.hs
+../Prelude/%.${HISUFFIX} : ../Prelude/%.hs
 	cd ../Prelude; ${MAKE} $@
 
 
 # Here are the dependencies.
 
-${OBJDIR}/ReadDec.o: ReadDec.hs ${OBJDIR}/ReadInt.o
-${OBJDIR}/ReadHex.o: ReadHex.hs ${OBJDIR}/ReadInt.o
-${OBJDIR}/ReadOct.o: ReadOct.hs ${OBJDIR}/ReadInt.o
-${OBJDIR}/ReadFloat.o : ReadFloat.hs ${OBJDIR}/ReadDec.o
-${OBJDIR}/ReadLitChar.o : ReadLitChar.hs ${OBJDIR}/AsciiTab.o ${OBJDIR}/ReadDec.o ${OBJDIR}/ReadOct.o ${OBJDIR}/ReadHex.o
-${OBJDIR}/ShowLitChar.o : ShowLitChar.hs ${OBJDIR}/AsciiTab.o
+${OBJDIR}/ReadDec.$O: ReadDec.hs ${OBJDIR}/ReadInt.$O
+${OBJDIR}/ReadHex.$O: ReadHex.hs ${OBJDIR}/ReadInt.$O
+${OBJDIR}/ReadOct.$O: ReadOct.hs ${OBJDIR}/ReadInt.$O
+${OBJDIR}/ReadFloat.$O : ReadFloat.hs ${OBJDIR}/ReadDec.$O
+${OBJDIR}/ReadLitChar.$O : ReadLitChar.hs ${OBJDIR}/AsciiTab.$O ${OBJDIR}/ReadDec.$O ${OBJDIR}/ReadOct.$O ${OBJDIR}/ReadHex.$O
+${OBJDIR}/ShowLitChar.$O : ShowLitChar.hs ${OBJDIR}/AsciiTab.$O
 

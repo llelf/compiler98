@@ -1,0 +1,120 @@
+interface Monad where {
+infixr  1 Prelude.=<<;
+infixl  1 Prelude.>>=;
+infixl  1 Prelude.>>;
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Real (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Num (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Enum (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Ord (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Eq (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Read a,Prelude.Integral a) => Prelude.Read (Ratio.Ratio a);
+
+{-# NEED #-}
+instance (Prelude.Integral a) => Prelude.Show (Ratio.Ratio a);
+
+{-# NEED #-}
+instance MonadPlus Prelude.Maybe;
+
+{-# NEED #-}
+instance MonadPlus Prelude.[];
+interface ! Prelude
+{-# NEED mapM #-}
+mapM{-# 2 #-}::(Prelude.Monad b) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (b c))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (b [c]))))))))));
+
+{-# NEED (=<<) #-}
+(=<<){-# 2 #-}::(Prelude.Monad b) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (b c))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (b a)) -> (Prelude.R (b c))))))))));
+
+{-# NEED mapM_ #-}
+mapM_{-# 2 #-}::(Prelude.Monad b) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (b c))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (b ()))))))))));
+
+{-# NEED sequence_ #-}
+sequence_{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R [(a b)]) -> (Prelude.R (a ())))))));
+
+{-# NEED sequence #-}
+sequence{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R [(a b)]) -> (Prelude.R (a [b])))))));
+interface ! Monad
+{-# NEED unless #-}
+unless{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R Prelude.Bool) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a ())) -> (Prelude.R (a ()))))))))));
+
+{-# NEED ap #-}
+ap{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R c))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (a c))))))))));
+interface ! Prelude
+{-# NEED {Functor fmap} #-}
+class Functor a where {
+  fmap{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R c)))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (a c))))))))));
+};
+interface ! Monad
+{-# NEED join #-}
+join{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a (a b))) -> (Prelude.R (a b)))))));
+
+{-# NEED when #-}
+when{-# 2 #-}::(Prelude.Monad a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R Prelude.Bool) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a ())) -> (Prelude.R (a ()))))))))));
+
+{-# NEED msum #-}
+msum{-# 2 #-}::(MonadPlus a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R [(a b)]) -> (Prelude.R (a b)))))));
+
+{-# NEED guard #-}
+guard{-# 2 #-}::(MonadPlus a) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R Prelude.Bool) -> (Prelude.R (a ())))))));
+
+{-# NEED {MonadPlus mzero mplus} #-}
+class (Prelude.Monad a) => MonadPlus a where {
+  mzero{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (a b))));
+  mplus{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (a b))))))))));
+};
+
+{-# NEED zipWithM_ #-}
+zipWithM_{-# 2 #-}::(Prelude.Monad c) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (c d)))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [b]) -> (Prelude.R (c ())))))))))))));
+
+{-# NEED liftM #-}
+liftM{-# 2 #-}::(Prelude.Monad c) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R b)))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (c a)) -> (Prelude.R (c b))))))))));
+
+{-# NEED filterM #-}
+filterM{-# 2 #-}::(Prelude.Monad b) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (b Prelude.Bool))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (b [a]))))))))));
+
+{-# NEED mapAndUnzipM #-}
+mapAndUnzipM{-# 2 #-}::(Prelude.Monad b) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (b (c,d)))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (b ([c],[d])))))))))));
+
+{-# NEED zipWithM #-}
+zipWithM{-# 2 #-}::(Prelude.Monad c) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (c d)))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [a]) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [b]) -> (Prelude.R (c [d])))))))))))));
+
+{-# NEED foldM #-}
+foldM{-# 2 #-}::(Prelude.Monad c) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (c a)))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R [b]) -> (Prelude.R (c a)))))))))))));
+
+{-# NEED liftM5 #-}
+liftM5{-# 2 #-}::(Prelude.Monad g) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (Prelude.Trace -> ((Prelude.R c) -> (Prelude.R (Prelude.Trace -> ((Prelude.R d) -> (Prelude.R (Prelude.Trace -> ((Prelude.R e) -> (Prelude.R f)))))))))))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (g a)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (g b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (g c)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (g d)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (g e)) -> (Prelude.R (g f))))))))))))))))))))));
+
+{-# NEED liftM4 #-}
+liftM4{-# 2 #-}::(Prelude.Monad f) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (Prelude.Trace -> ((Prelude.R c) -> (Prelude.R (Prelude.Trace -> ((Prelude.R d) -> (Prelude.R e))))))))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (f a)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (f b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (f c)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (f d)) -> (Prelude.R (f e)))))))))))))))))));
+
+{-# NEED liftM3 #-}
+liftM3{-# 2 #-}::(Prelude.Monad e) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (Prelude.Trace -> ((Prelude.R c) -> (Prelude.R d)))))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (e a)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (e b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (e c)) -> (Prelude.R (e d))))))))))))))));
+
+{-# NEED liftM2 #-}
+liftM2{-# 2 #-}::(Prelude.Monad d) => (Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R a) -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R c))))))) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (d a)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (d b)) -> (Prelude.R (d c)))))))))))));
+interface ! Prelude
+{-# NEED {Monad (>>=) (>>) return fail} #-}
+class Monad a where {
+  (>>=){-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (a c))))) -> (Prelude.R (a c))))))))));
+  (>>){-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a b)) -> (Prelude.R (Prelude.Trace -> ((Prelude.R (a c)) -> (Prelude.R (a c))))))))));
+  return{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R b) -> (Prelude.R (a b)))))));
+  fail{-# 2 #-}::(Prelude.SR -> (Prelude.Trace -> (Prelude.R (Prelude.Trace -> ((Prelude.R Prelude.String) -> (Prelude.R (a b)))))));
+};
+interface Ratio
+{-# NEED Rational #-}
+type {-# 1 #-} Rational = (Ratio.Ratio Prelude.Integer);
+
+{-# NEED Ratio #-}
+data (Prelude.Integral a) => Ratio a;
+}

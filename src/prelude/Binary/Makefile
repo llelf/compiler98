@@ -27,46 +27,46 @@ include ../Makefile.common
 
 
 # Here are the dependencies.
-${OBJDIR}/cLowBinary.o: cLowBinary.h cLowBinary.c
-${OBJDIR}/AlignBin.o: AlignBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/BinHandle.o: BinHandle.gc
-${OBJDIR}/BinIOMode.o: BinIOMode.gc
-${OBJDIR}/BinLocation.o: BinLocation.gc ${OBJDIR}/BinIOMode.o
-${OBJDIR}/BinPtr.o: BinPtr.gc
-${OBJDIR}/Bin.o: Bin.hs ${OBJDIR}/BinPtr.o
-${OBJDIR}/CBinary.o: CBinary.hs ${OBJDIR}/BinHandle.o ${OBJDIR}/Bin.o
-${OBJDIR}/ClearBits.o: ClearBits.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/CloseBin.o: CloseBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/CompareBin.o: CompareBin.gc cLowBinary.h ${OBJDIR}/BinPtr.o ${OBJDIR}/BinHandle.o
-${OBJDIR}/CopyBin.o: CopyBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinLocation.o ${OBJDIR}/OpenBin.o ${OBJDIR}/SizeBin.o
-${OBJDIR}/CopyBits.o: CopyBits.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o ${OBJDIR}/GetBits.o ${OBJDIR}/PutBits.o ${OBJDIR}/SeekBin.o
-${OBJDIR}/CopyBytes.o: CopyBytes.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/EndBin.o: EndBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/EqualsBin.o: EqualsBin.gc cLowBinary.h ${OBJDIR}/BinPtr.o ${OBJDIR}/BinHandle.o
-${OBJDIR}/FreezeBin.o: FreezeBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/GetAt.o: GetAt.hs ${OBJDIR}/CBinary.o ${OBJDIR}/BinHandle.o ${OBJDIR}/Bin.o ${OBJDIR}/SeekBin.o
-${OBJDIR}/GetBitsF.o: GetBitsF.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/GetBits.o: GetBits.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/GetFAt.o: GetFAt.hs ${OBJDIR}/CBinary.o ${OBJDIR}/BinHandle.o ${OBJDIR}/Bin.o
-${OBJDIR}/IsEOFBin.o: IsEOFBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/Instances.o: Instances.hs ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o ${OBJDIR}/BinLocation.o ${OBJDIR}/Bin.o ${OBJDIR}/OpenBin.o ${OBJDIR}/TellBin.o ${OBJDIR}/AlignBin.o ${OBJDIR}/PutBits.o ${OBJDIR}/GetBits.o ${OBJDIR}/CBinary.o ${OBJDIR}/GetBitsF.o ${OBJDIR}/LeftLeft.o ${OBJDIR}/FreezeBin.o
-${OBJDIR}/LeftLeft.o: LeftLeft.hs
-${OBJDIR}/OpenBin.o: OpenBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinIOMode.o ${OBJDIR}/BinLocation.o
-${OBJDIR}/PutAt.o: PutAt.hs ${OBJDIR}/CBinary.o ${OBJDIR}/BinHandle.o ${OBJDIR}/Bin.o ${OBJDIR}/SeekBin.o
-${OBJDIR}/PutAtEnd.o: PutAtEnd.hs ${OBJDIR}/CBinary.o ${OBJDIR}/BinHandle.o ${OBJDIR}/Bin.o ${OBJDIR}/EndBin.o ${OBJDIR}/SeekBin.o
-${OBJDIR}/PutBits.o: PutBits.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/SkipBits.o: SkipBits.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/StdMem.o: StdMem.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/SizeBin.o: SizeBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
-${OBJDIR}/SizedBin.o: SizedBin.hs ${OBJDIR}/BinPtr.o ${OBJDIR}/CBinary.o ${OBJDIR}/PutBits.o ${OBJDIR}/GetBits.o ${OBJDIR}/AlignBin.o ${OBJDIR}/SizeofBin.o ${OBJDIR}/EqualsBin.o ${OBJDIR}/CompareBin.o ${OBJDIR}/StdMem.o ${OBJDIR}/GetFAt.o
-${OBJDIR}/SeekBin.o: SeekBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
-${OBJDIR}/TellBin.o: TellBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
+${OBJDIR}/cLowBinary.$O: cLowBinary.h cLowBinary.c
+${OBJDIR}/AlignBin.$O: AlignBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/BinHandle.$O: BinHandle.gc
+${OBJDIR}/BinIOMode.$O: BinIOMode.gc
+${OBJDIR}/BinLocation.$O: BinLocation.gc ${OBJDIR}/BinIOMode.$O
+${OBJDIR}/BinPtr.$O: BinPtr.gc
+${OBJDIR}/Bin.$O: Bin.hs ${OBJDIR}/BinPtr.$O
+${OBJDIR}/CBinary.$O: CBinary.hs ${OBJDIR}/BinHandle.$O ${OBJDIR}/Bin.$O
+${OBJDIR}/ClearBits.$O: ClearBits.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/CloseBin.$O: CloseBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/CompareBin.$O: CompareBin.gc cLowBinary.h ${OBJDIR}/BinPtr.$O ${OBJDIR}/BinHandle.$O
+${OBJDIR}/CopyBin.$O: CopyBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinLocation.$O ${OBJDIR}/OpenBin.$O ${OBJDIR}/SizeBin.$O
+${OBJDIR}/CopyBits.$O: CopyBits.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O ${OBJDIR}/GetBits.$O ${OBJDIR}/PutBits.$O ${OBJDIR}/SeekBin.$O
+${OBJDIR}/CopyBytes.$O: CopyBytes.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/EndBin.$O: EndBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/EqualsBin.$O: EqualsBin.gc cLowBinary.h ${OBJDIR}/BinPtr.$O ${OBJDIR}/BinHandle.$O
+${OBJDIR}/FreezeBin.$O: FreezeBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/GetAt.$O: GetAt.hs ${OBJDIR}/CBinary.$O ${OBJDIR}/BinHandle.$O ${OBJDIR}/Bin.$O ${OBJDIR}/SeekBin.$O
+${OBJDIR}/GetBitsF.$O: GetBitsF.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/GetBits.$O: GetBits.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/GetFAt.$O: GetFAt.hs ${OBJDIR}/CBinary.$O ${OBJDIR}/BinHandle.$O ${OBJDIR}/Bin.$O
+${OBJDIR}/IsEOFBin.$O: IsEOFBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/Instances.$O: Instances.hs ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O ${OBJDIR}/BinLocation.$O ${OBJDIR}/Bin.$O ${OBJDIR}/OpenBin.$O ${OBJDIR}/TellBin.$O ${OBJDIR}/AlignBin.$O ${OBJDIR}/PutBits.$O ${OBJDIR}/GetBits.$O ${OBJDIR}/CBinary.$O ${OBJDIR}/GetBitsF.$O ${OBJDIR}/LeftLeft.$O ${OBJDIR}/FreezeBin.$O
+${OBJDIR}/LeftLeft.$O: LeftLeft.hs
+${OBJDIR}/OpenBin.$O: OpenBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinIOMode.$O ${OBJDIR}/BinLocation.$O
+${OBJDIR}/PutAt.$O: PutAt.hs ${OBJDIR}/CBinary.$O ${OBJDIR}/BinHandle.$O ${OBJDIR}/Bin.$O ${OBJDIR}/SeekBin.$O
+${OBJDIR}/PutAtEnd.$O: PutAtEnd.hs ${OBJDIR}/CBinary.$O ${OBJDIR}/BinHandle.$O ${OBJDIR}/Bin.$O ${OBJDIR}/EndBin.$O ${OBJDIR}/SeekBin.$O
+${OBJDIR}/PutBits.$O: PutBits.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/SkipBits.$O: SkipBits.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/StdMem.$O: StdMem.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/SizeBin.$O: SizeBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O
+${OBJDIR}/SizedBin.$O: SizedBin.hs ${OBJDIR}/BinPtr.$O ${OBJDIR}/CBinary.$O ${OBJDIR}/PutBits.$O ${OBJDIR}/GetBits.$O ${OBJDIR}/AlignBin.$O ${OBJDIR}/SizeofBin.$O ${OBJDIR}/EqualsBin.$O ${OBJDIR}/CompareBin.$O ${OBJDIR}/StdMem.$O ${OBJDIR}/GetFAt.$O
+${OBJDIR}/SeekBin.$O: SeekBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
+${OBJDIR}/TellBin.$O: TellBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
 
 
-#${OBJDIR}/Binary.o: Binary.hs ${OBJS}
+#${OBJDIR}/Binary.$O: Binary.hs ${OBJS}
 
-#${OBJDIR}/DirectPut.o: DirectPut.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/SizedBin.o ${OBJDIR}/BinPtr.o
-#${OBJDIR}/SizeofBin.o: SizeofBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o ${OBJDIR}/BinPtr.o
+#${OBJDIR}/DirectPut.$O: DirectPut.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/SizedBin.$O ${OBJDIR}/BinPtr.$O
+#${OBJDIR}/SizeofBin.$O: SizeofBin.gc cLowBinary.h ${OBJDIR}/BinHandle.$O ${OBJDIR}/BinPtr.$O
 
 
 # C-files dependencies.

@@ -25,13 +25,13 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-HOBJS	= $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs, ${LIBSRCS}))
-GOBJS	= $(patsubst %.gc, ${OBJDIR}/%.o, $(filter %.gc, ${LIBSRCS}))
+HOBJS	= $(patsubst %.hs, ${OBJDIR}/%.$O, $(filter %.hs, ${LIBSRCS}))
+GOBJS	= $(patsubst %.gc, ${OBJDIR}/%.$O, $(filter %.gc, ${LIBSRCS}))
 
 extra:	${HOBJS} ${GOBJS}
-${HOBJS}: ${OBJDIR}/%.o : %.hs
+${HOBJS}: ${OBJDIR}/%.$O : %.hs
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
-${GOBJS}: ${OBJDIR}/%.o : %.gc
+${GOBJS}: ${OBJDIR}/%.$O : %.gc
 	$(HC) -c $(LIB_FLAGS) -o $@ $<
 ${HCFILES}: %.c : %.hs
 	$(HC) -C $(LIB_FLAGS) $<

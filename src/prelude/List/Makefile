@@ -35,29 +35,29 @@ include ../Makefile.common
 
 # Here are the dependencies.
 
-${OBJDIR}/Nub.o: Nub.hs ${OBJDIR}/NubBy.o
-${OBJDIR}/Delete.o: Delete.hs ${OBJDIR}/DeleteBy.o
-${OBJDIR}/Difference.o: Difference.hs ${OBJDIR}/Delete.o
-${OBJDIR}/DeleteFirsts.o: DeleteFirsts.hs ${OBJDIR}/Difference.o
-${OBJDIR}/DeleteFirstsBy.o: DeleteFirstsBy.hs ${OBJDIR}/DeleteBy.o
-${OBJDIR}/ElemIndex.o: ElemIndex.hs ${OBJDIR}/ElemIndexBy.o
-${OBJDIR}/Group.o: Group.hs ${OBJDIR}/GroupBy.o
-${OBJDIR}/NotElemBy.o: NotElemBy.hs ${OBJDIR}/ElemBy.o
-${OBJDIR}/Nub.o: Nub.hs ${OBJDIR}/NubBy.o
-${OBJDIR}/Zip4.o: Zip4.hs ${OBJDIR}/ZipWith4.o
-${OBJDIR}/Zip5.o: Zip5.hs ${OBJDIR}/ZipWith5.o
-${OBJDIR}/Zip6.o: Zip6.hs ${OBJDIR}/ZipWith6.o
-${OBJDIR}/Zip7.o: Zip7.hs ${OBJDIR}/ZipWith7.o
-${OBJDIR}/Sort.o: Sort.hs ${OBJDIR}/SortBy.o
-${OBJDIR}/SortBy.o: SortBy.hs ${OBJDIR}/InsertBy.o
-${OBJDIR}/ElemIndex.o: ElemIndex.hs ${OBJDIR}/FindIndex.o
-${OBJDIR}/ElemIndices.o: ElemIndices.hs ${OBJDIR}/FindIndices.o
-${OBJDIR}/Find.o: Find.hs ${OBJDIR}/../Maybe/ListToMaybe.o
-${OBJDIR}/FindIndex.o: FindIndex.hs  ${OBJDIR}/FindIndices.o ${OBJDIR}/../Maybe/ListToMaybe.o
-${OBJDIR}/GenericReplicate.o: GenericReplicate.hs ${OBJDIR}/GenericTake.o
-${OBJDIR}/Union.o: Union.hs ${OBJDIR}/Difference.o
-${OBJDIR}/../Maybe/ListToMaybe.o:
-	cd ../Maybe; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/Maybe/ListToMaybe.o
+${OBJDIR}/Nub.$O: Nub.hs ${OBJDIR}/NubBy.$O
+${OBJDIR}/Delete.$O: Delete.hs ${OBJDIR}/DeleteBy.$O
+${OBJDIR}/Difference.$O: Difference.hs ${OBJDIR}/Delete.$O
+${OBJDIR}/DeleteFirsts.$O: DeleteFirsts.hs ${OBJDIR}/Difference.$O
+${OBJDIR}/DeleteFirstsBy.$O: DeleteFirstsBy.hs ${OBJDIR}/DeleteBy.$O
+${OBJDIR}/ElemIndex.$O: ElemIndex.hs ${OBJDIR}/ElemIndexBy.$O
+${OBJDIR}/Group.$O: Group.hs ${OBJDIR}/GroupBy.$O
+${OBJDIR}/NotElemBy.$O: NotElemBy.hs ${OBJDIR}/ElemBy.$O
+${OBJDIR}/Nub.$O: Nub.hs ${OBJDIR}/NubBy.$O
+${OBJDIR}/Zip4.$O: Zip4.hs ${OBJDIR}/ZipWith4.$O
+${OBJDIR}/Zip5.$O: Zip5.hs ${OBJDIR}/ZipWith5.$O
+${OBJDIR}/Zip6.$O: Zip6.hs ${OBJDIR}/ZipWith6.$O
+${OBJDIR}/Zip7.$O: Zip7.hs ${OBJDIR}/ZipWith7.$O
+${OBJDIR}/Sort.$O: Sort.hs ${OBJDIR}/SortBy.$O
+${OBJDIR}/SortBy.$O: SortBy.hs ${OBJDIR}/InsertBy.$O
+${OBJDIR}/ElemIndex.$O: ElemIndex.hs ${OBJDIR}/FindIndex.$O
+${OBJDIR}/ElemIndices.$O: ElemIndices.hs ${OBJDIR}/FindIndices.$O
+${OBJDIR}/Find.$O: Find.hs ${OBJDIR}/../Maybe/ListToMaybe.$O
+${OBJDIR}/FindIndex.$O: FindIndex.hs  ${OBJDIR}/FindIndices.$O ${OBJDIR}/../Maybe/ListToMaybe.$O
+${OBJDIR}/GenericReplicate.$O: GenericReplicate.hs ${OBJDIR}/GenericTake.$O
+${OBJDIR}/Union.$O: Union.hs ${OBJDIR}/Difference.$O
+${OBJDIR}/../Maybe/ListToMaybe.$O:
+	cd ../Maybe; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/Maybe/ListToMaybe.$O
 
 
 # C-files dependencies.

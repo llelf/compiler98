@@ -17,7 +17,7 @@ module Flags where
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
             ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
             ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
-            ,sShowWidth,sShowQualified) where
+            ,sShowWidth,sShowQualified,sHiSuffix) where
 -}
 
 import IO
@@ -39,6 +39,7 @@ data Flags = FF
   ,sPart       :: Bool	-- compiling part of a lib
   ,sUnix       :: Bool	-- either unix or RiscOS
   ,sUnlit      :: Bool	-- unliterate the source code
+  ,sHiSuffix   :: String-- set the interface file suffix (usually .hi)
 
   ,nProfile    :: Int	-- turn on heap profiling
   ,sTprof      :: Bool	-- turn on time profiling
@@ -76,7 +77,7 @@ data Flags = FF
   ,sTraceData  :: Bool	-- ast		after tracing transform (data)
   ,sTraceFns   :: Bool	-- ast		after tracing transform (fns)
   ,sRemove     :: Bool	-- ast		after named-field removal
-  ,sScc        :: Bool		-- ast		after strongly-connected-components
+  ,sScc        :: Bool	-- ast		after strongly-connected-components
   ,sType       :: Bool	-- ast		after type check
   ,sFixSyntax  :: Bool	-- ast		after removing newtypes
   ,sSTG        :: Bool	-- stg tree	after translation from ast
@@ -186,6 +187,8 @@ processArgs xs = flags
   -- ^ Use unix file names
   , sUnlit = fElem False "unlit" xs         	
   -- ^ Unliterate the source code
+  , sHiSuffix = stringFlag "hi" "hi-suffix=" xs
+  -- ^ change the default ".hi" suffix
   , nProfile = length (filter (== "-profile") xs)	
   -- ^ amount of profiling information / node
   , sTprof = fElem False "tprof" xs    -- generate for time profiling PH
@@ -309,8 +312,7 @@ getFiles = filter (\xs -> case xs of ('-':_) -> False ; _ -> True)
 {- obtain list of include paths from argument list -}
 getIncludes :: [String] -> [String]
 getIncludes = map (drop (2::Int)) . 
-              filter (\xs -> case xs of ('-':'i':_) -> True 
-                                        ('-':'I':_) -> True  
+              filter (\xs -> case xs of ('-':'I':_) -> True  
                                         _           -> False)
 
 {- obtain list of prelude paths from argument list -}
@@ -341,3 +343,13 @@ cardFlag def f flags = if null settings then def else read (last settings)
              filter (isPrefixOf ('-':f)) $ flags
 
 
+
+{-
+Returns the value of a "-something=" option with a string value.
+If the option is not given, then the default value (first arg.) is returned.
+-}
+stringFlag :: String -> String -> [String] -> String
+stringFlag def f flags = if null settings then def else last settings
+  where
+  settings = map (drop (length f + 1)) . 
+             filter (isPrefixOf ('-':f)) $ flags

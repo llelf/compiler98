@@ -6,7 +6,7 @@ module Prelude where
 --    by the compiler to normal Prelude functions.
 
 
-import PackedString(PackedString)
+import FFIBuiltin(PackedString)
 import Ratio (Ratio)
 --import DIO		-- needed for attaching traces to prim I/O operations.
 import DEither		-- traced version needed, as for DIO.
