@@ -371,10 +371,23 @@ int readint() {
 char integerbuf[INTEGERMAX+1];
 
 char *readinteger() {
-  int n = (signed char)(nextbyte());
-  if (n<0) n=-n; // negative sign of value is signalled by negative number of bytes
-  while (n-- > 0) (void)(readfourbytes());
-  return "<integer>";  /* DUMMY FOR NOW */
+  unsigned int val = 0;
+  int size = (signed char)(nextbyte());
+  if (size==0) return "0";
+  else if (size==1) {
+      val = readfourbytes().ptrval;
+      sprintf(integerbuf,"%d",val);
+      return integerbuf;
+  } else if (size==-1) {
+      val = readfourbytes().ptrval;
+      sprintf(integerbuf,"-%d",val);
+      return integerbuf;
+  } else {
+      // negative sign of value is signalled by negative number of bytes
+      if (size<0) size=-size;
+      while (size-- > 0) (void)(readfourbytes());
+      return "<biginteger>";  /* DUMMY FOR NOW */
+  }
 }
 
 #define RATMAX (2*INTEGERMAX+2)
