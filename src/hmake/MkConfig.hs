@@ -236,8 +236,8 @@ configure Ghc ghcpath = do
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
     else do -- 5.00 and above
-      pkgcfg <- runAndReadStdout (ghcpath++" -v 2>&1 | head -2 | tail -1 |"
-                                  ++" cut -c28- | head -1")
+      pkgcfg <- runAndReadStdout (escape ghcpath++" -v 2>&1 | head -2 "
+                                  ++"| tail -1 | cut -c28- | head -1")
       let libdir  = dirname (escape pkgcfg)
           incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
@@ -272,9 +272,9 @@ configure Ghc ghcpath = do
 
 configure Nhc98 nhcpath = do
   fullpath <- which id nhcpath
-  nhcversion <- runAndReadStdout (nhcpath
+  nhcversion <- runAndReadStdout (escape nhcpath
                                   ++" --version 2>&1 | cut -d' ' -f2 | head -1")
-  dir <- runAndReadStdout ("grep '^NHC98INCDIR' "++fullpath
+  dir <- runAndReadStdout ("grep '^NHC98INCDIR' "++escape fullpath
                            ++ "| cut -c27- | cut -d'}' -f1 | head -1")
   return CompilerConfig { compilerStyle = Nhc98
 			, compilerPath  = nhcpath

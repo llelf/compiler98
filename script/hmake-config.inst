@@ -16,4 +16,12 @@ then
   exit 1
 fi
 
-exec $HMAKEDIR/$MACHINE/MkConfig "$@"
+map() { f=$1; shift; for item in $*; do $f $item; done; }
+cygfix() { cygpath -w $1 | tr '\\' '/'; }
+
+case $MACHINE in
+  ix86-CYGWIN*) ARGS=`map cygfix "$@"` ;;
+  *) ARGS="$@" ;;
+esac
+
+exec $HMAKEDIR/$MACHINE/MkConfig $ARGS
