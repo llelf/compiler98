@@ -83,22 +83,31 @@ cpp syms d@(Drop n) (x:xs) =
 leximports :: [String] -> [String]
 leximports =
   let
-    nestcomment n ('{':'-':cs)        = nestcomment (n+1) cs
+    nestcomment n ('{':'-':cs) | n>=0 = nestcomment (n+1) cs
     nestcomment n ('-':'}':cs) | n>0  = nestcomment (n-1) cs
-    nestcomment 0 (c:cs)              = c: nestcomment 0 cs
     nestcomment n (c:cs)       | n>0  = nestcomment n cs
-    nestcomment 0 []                  = []
-    nestcomment n []                  = error "improperly terminated {- comment -}"
-
-    linecomment ('-':'-':cs)
-        | null munch
+    
+    nestcomment 0 ('-':'}':cs)        = error ("found close comment -} but no matching open {-")
+    nestcomment 0 ('-':'-':cs)        =
+        if null munch
           || isSpace nextchr
           || nextchr `elem` ",()[]{};\"'`"
-          || isAlphaNum nextchr       = []
+          || isAlphaNum nextchr
+        then nestcomment 0 (dropWhile (/='\n') munch)
+        else '-':'-': nestcomment 0 cs
       where munch = dropWhile (=='-') cs
             nextchr = head munch
-    linecomment (c:cs)                = c: linecomment cs
-    linecomment []                    = []
+    nestcomment 0 ('\'':'"':'\'':cs)  = '\'':'"':'\'': nestcomment 0 cs
+    nestcomment 0 ('\\':'"':cs)       = '\\':'"': nestcomment 0 cs
+    nestcomment 0 ('"':cs)            = '"': endstring cs
+    nestcomment 0 (c:cs)              = c: nestcomment 0 cs
+    nestcomment 0 []                  = []
+    nestcomment n []                  = error ("found "++show n++" open comments {- but no matching close -}")
+
+    endstring ('\\':'"':cs) = '\\':'"': endstring cs
+    endstring ('"':cs) = '"': nestcomment 0 cs
+    endstring (c:cs)   = c  : endstring cs
+    endstring []       = []
 
     getmodnames (x:xs)
       | null x || all isSpace x  = getmodnames xs
@@ -117,7 +126,7 @@ leximports =
            takeUntil "(-{;" two
       else takeUntil "(-{;" one
 
-  in (getmodnames . map linecomment . lines . nestcomment 0 . unlines)
+  in (getmodnames . lines . nestcomment 0 . unlines)
 
 ----
 gatherDefined st inp =
