@@ -26,7 +26,7 @@ cfiles:
 fromC: $(OBJDIR)
 	$(HC) -c -d $(OBJDIR) ${CFILES}
 	$(HC) -H4Mb -o $(TARGET) $(OBJS)
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 clean:
 	rm -f $(OBJS) *.hi
 realclean: clean
@@ -37,7 +37,7 @@ $(OBJDIR):
 	mkdir -p $(OBJDIR) || $(TRUE)
 $(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard$(EXE)
 	mv $(OBJDIR)/GreenCard$(EXE) $(TARGET)
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 $(OBJDIR)/GreenCard$(EXE):
 	$(HMAKE) -hc=$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
 

@@ -38,7 +38,7 @@ $(OBJS): $(OBJDIR)/%.o: %.c
 
 ${TARGET}: $(OBJDIR) ${OBJS}
 	${CC} ${CFLAGS} -o ${TARGET} ${CCFLAGS} ${LDFLAGS} ${OBJS} ${MATHLIB}
-	strip ${TARGET}
+	$(STRIP) ${TARGET}
 
 
 

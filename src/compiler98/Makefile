@@ -57,10 +57,10 @@ cfiles: $(OBJDIR)/$(HC)
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 relink:
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 clean:
 	rm -f $(OBJDIR)/*.$O *.$O *.hi
 cleanC: clean
@@ -71,7 +71,7 @@ realclean: cleanC
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):

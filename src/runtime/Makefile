@@ -60,5 +60,5 @@ objdir: ${OBJDIR}
 
 $(DST)/nhc98heap$(EXE): nhc98heap.c
 	$(CC) -o $@ $<
-	strip $@
+	$(STRIP) $@
 

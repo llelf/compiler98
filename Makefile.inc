@@ -6,6 +6,7 @@ OPT = -O3
 INSTALL = cp
 AR = ar
 LD = ld
+STRIP = strip
 
 
 VERSION = 1.17

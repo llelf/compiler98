@@ -43,7 +43,7 @@ fromC: $(OBJDIR)
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
 	$(HC) $(HFLAGS)    -o $(MKCONFIG) -d $(OBJDIR) MkConfig.$C $(CFGCFILES)
-	strip $(MKPROG) $(OLDER) $(MKCONFIG)
+	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
 	rm -f *.hi
@@ -57,13 +57,13 @@ package:
 
 $(MKPROG): $(OBJDIR) $(OBJS) $(CPPOBJS)
 	$(HC) $(HFLAGS) $(HEAP) -o $@  $(OBJS) $(CPPOBJS)
-	strip $@
+	$(STRIP) $@
 $(OLDER): $(OBJDIR) $(OBJDIR)/Older.$O
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/Older.$O
-	strip $@
+	$(STRIP) $@
 $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/MkConfig.$O $(CFGOBJS)
-	strip $@
+	$(STRIP) $@
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) || $(TRUE)

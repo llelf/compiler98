@@ -38,7 +38,7 @@ $(TARGET): $(OBJDIR) $(SRCS)
 	$(HMAKE) -hc=$(HC) HInteractive -d$(OBJDIR) \
 		$(shell echo "${BUILDOPTS}") -i../hmake $(HFLAGS)
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
@@ -46,7 +46,7 @@ $(OBJDIR):
 fromC: $(OBJDIR)
 	cp $(CHFILES) .
 	$(LOCAL)nhc98 -cpp -o $(TARGET) -d$(OBJDIR) *.$C
-	strip $(TARGET)
+	$(STRIP) $(TARGET)
 
 
 paper.ps: paper.dvi
