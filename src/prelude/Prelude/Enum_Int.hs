@@ -4,7 +4,7 @@ instance Enum Int where
   toEnum = id
   fromEnum = id
 
-#if !defined(TRACING)
+#if 0  /* !defined(TRACING) */
   enumFrom =  numericEnumFrom
   enumFromThen = numericEnumFromThen
 #else
