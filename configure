@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.0 pre-release 19+ (date 000623)"
-HMAKEVERSION="1.9 (000623)" export HMAKEVERSION
+CONFIGVERSION="v1.0 pre-release 19+ (date 000901)"
+HMAKEVERSION="1.9 (000901)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`

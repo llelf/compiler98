@@ -469,7 +469,7 @@ clean: cleanhi
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
-	rm -rf $(TARGDIR)/$(MACHINE)/obj*
+	rm -rf $(TARGDIR)/$(MACHINE)/obj*	# all object files
 
 cleanC:
 	rm -f src/compiler98/*.c
