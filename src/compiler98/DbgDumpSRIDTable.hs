@@ -32,7 +32,7 @@ dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     output (showString "  AL\nDL(D_srstart)\n") >>
     mapM_ (dumpSR state (sProfile flags) modinfo output) (reverse srs) >>
     output (showString " DL(N_IMPORTS)\n") >>
-    mapM_ (dumpImport output) impdecls >>
+--  mapM_ (dumpImport output) impdecls >>
     output (showString "  DW 0\n  EX L(" . showString modinfo .
             showString ")\n DL(" . showString modinfo .
 	    showString ")\n  DW L(" . showString modpre .

@@ -42,7 +42,8 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     emitWord p ("0") >|>
     -- Import table
     defineLabel p Local ("N_IMPORTS") >|>
-    foldr (>|>) (emitWord p ("0")) (map (emitImport p) impdecls) >|>
+--  foldr (>|>) (emitWord p ("0")) (map (emitImport p) impdecls) >|>
+                 emitWord p ("0")                                >|>
     -- Module record
     defineLabel p Global (modinfo) >|>
     useLabel p (modpre) >|>
