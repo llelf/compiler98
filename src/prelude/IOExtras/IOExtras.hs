@@ -9,6 +9,7 @@ module IOExtras
   , readIORef		-- :: IORef a -> IO a
   , writeIORef		-- :: IORef a -> a -> IO ()
 
+  , module Ix		-- re-export Ix for the benefit of IOArrays
   , IOArray		-- data IOArray ix elt -- mutable arrays
   , newIOArray		-- :: Ix ix => (ix,ix) -> elt -> IO (IOArray ix elt)
   , boundsIOArray	-- :: Ix ix => IOArray ix elt -> (ix, ix)
@@ -25,6 +26,7 @@ module IOExtras
 
 import FixIO
 import UnsafePerformIO
+import Ix
 
 import DIORef
 import NewIORef

@@ -2,6 +2,7 @@ module IOExtras
   ( newIORef
   ) where
 
+import Ix
 import DIORef
 import NewIOArray
 

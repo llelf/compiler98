@@ -2,6 +2,7 @@ module IOExtras
   ( writeIORef
   ) where
 
+import Ix
 import DIORef
 import WriteIOArray
 

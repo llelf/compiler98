@@ -2,6 +2,7 @@ module IOExtras
   ( readIORef
   ) where
 
+import Ix
 import DIORef
 import ReadIOArray
 
