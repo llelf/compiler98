@@ -1,7 +1,7 @@
 #include "browsercomms.h"
 
-#define	MAX_LINE_SIZE	1024
-#define	MAX_SYM_SIZE	128
+#define	MAX_LINE_SIZE	4096
+#define	MAX_SYM_SIZE	1024
 
 /**
  * Wait for a Redex Trace Browser to connect on a predefined port.
