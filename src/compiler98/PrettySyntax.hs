@@ -434,7 +434,8 @@ ppDerivings :: PPInfo a -> [(Pos, a)] -> Doc
 ppDerivings info [] = nil
 ppDerivings info ds  = 
   groupNestS info $
-    text "deriving" <> fSpace <> parensFSpace1 info (map (ppId info . snd) ds) 
+    fSpace <> text "deriving" <>
+    fSpace <> parensFSpace1 info (map (ppId info . snd) ds) 
 
 
 ppConstr :: PPInfo a -> Constr a -> Doc
