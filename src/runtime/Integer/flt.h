@@ -6,6 +6,7 @@ int ddecode(double f,MP_INT *man);
 
 
 #if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(__alpha) || defined(__NetBSD__) || defined(__FreeBSD__) || defined(bsdi) || defined(__CYGWIN32__)
+|| defined(__OpenBSD__)
 
 #define DBL_RADIX 2
 #define DBL_DIGITS 53
