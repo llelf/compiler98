@@ -317,7 +317,7 @@ int more() {
 /* Routines to extract values encoded as one or more bytes.
  */
 
-#define STRINGMAX 30
+#define STRINGMAX 1024
 char stringbuf[STRINGMAX+1];
 
 char *readstring() {
