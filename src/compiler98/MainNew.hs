@@ -537,8 +537,8 @@ main' args = do
        let eslabs' = foldr (\a b-> gcodeGather Labels state b a) eslabs gcode
            escode' = foldr (\a b-> gcodeGather Code   state b a) escode gcode
        catch (do hPutStr handle (gcodeCHeader)
-                 hPutStr handle (emit Labels eslabs')
-                 hPutStr handle (emit Code escode'))
+                 mapM_ (hPutStr handle) (emit Labels eslabs')
+                 mapM_ (hPutStr handle) (emit Code escode'))
              (\ioerror -> do hPutStr stderr 
                                  ("Failed writing code to object file "
                                   ++ sObjectFile flags ++ ":" 

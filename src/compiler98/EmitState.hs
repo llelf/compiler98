@@ -10,6 +10,7 @@ import List (isPrefixOf)
 #else
 import IsPrefixOf
 #endif
+import Tree234
 
 --  , {-type-} EmitState
 --  , emitState
@@ -146,24 +147,24 @@ outWord x code = wx:code
 (>|>) :: (a->a) -> (a->a) -> (a->a)
 left >|> right = right . left
 
-emit :: Pass -> EmitState -> String
+emit :: Pass -> EmitState -> [String]
 emit Labels (ES _ _ _ rlabs _) =
   let labs    = reverse rlabs
       locals  = filter isLocal labs
-      defines = filter isDefine labs
       uses    = filter isUse labs
-      externs = filter (\use-> notElemBy useAfterDef use defines) uses
+      externs = filter (not . definedLabel) uses
+      defines = treeFromList min cmp (map defAt (filter isDefine labs))
+        where cmp (k, _) (k', _) = compare k k'
+              defAt (Define Local  sym _)   = (sym, minBound) -- Before any use
+              defAt (Define Global sym def) = (sym, def)
+      definedLabel (Use s u) = treeSearch False (\(_, d) -> u >= d) cmp defines
+        where cmp (k, _) = compare s k
       isLocal (Define Local _ _) = True
       isLocal  _                 = False
       isDefine (Define _ _ _)    = True
       isDefine _                 = False
       isUse (Use _ _)            = True
       isUse    _                 = False
-      notElemBy :: (a->b->Bool) -> a -> [b] -> Bool
-      notElemBy ok x = all (not . ok x)
-      useAfterDef (Use sym use) (Define Local  sym' def) = (sym==sym')
-      useAfterDef (Use sym use) (Define Global sym' def) = (sym==sym') &&
-                                                           (use>=def)
       doLocal (Define Local sym def) = showString "#define " . showString sym .
                                        showString "\t((void*)" .
                                        showString preSym . showChar '+' .
@@ -179,11 +180,11 @@ emit Labels (ES _ _ _ rlabs _) =
         | otherwise          = showString "extern Node " . showString sym .
                                showString "[];\n"
   in
-  foldr ($) (foldr ($) "" (map doExtern externs)) (map doLocal locals)
+  map ($"") (map doLocal locals ++ map doExtern externs)
 
 emit Code es =
   let (ES _ _ _ _ code) = emitAlign Code es
   in
-  concat (reverse ("};\n":code))
+  reverse ("};\n":code)
 
 {- End EmitState -------------------------------------------------------------}

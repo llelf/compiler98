@@ -273,12 +273,14 @@ opNeed extra OpDouble = 3+extra
 
 showId state i = fixStr (strIS state i)
 
-fixStr [] = id
-fixStr (c:cs) =
-   if isAlphanum c then
-     showChar c . fixStr cs
-   else 
-     showChar '_' . shows (fromEnum c) . fixStr cs
+fixStr s
+  | all isAlphaNum s = const s
+  | otherwise        = fixStr' s
+
+fixStr' [] = id
+fixStr' (c:cs)
+  | isAlphanum c = showChar c . fixStr' cs
+  | otherwise    = showChar '_' . shows (fromEnum c) . fixStr' cs
 
 showJump j i =
   showString " DB " . showString j . showChar ',' . shows l . showChar ',' . shows h . showChar '\n'

@@ -10,6 +10,7 @@ import PackedString(PackedString, unpackPS, packString)
 import IntState
 import Extra(strStr, dropJust, trace)
 import Flags
+import GcodeLow(fixStr)
 import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
 import DbgTrans(SRIDTable,LevelId(..))
@@ -98,12 +99,6 @@ dumpId state profile modinfo output trust ((top, pos, i, tid), lab) =
 		          Just im -> (True, fixityI im)
 		  Just i -> (True, fixityI i)
 		  _ -> (True, (InfixL, 9))
-	  fixStr [] = id
-	  fixStr (c:cs) =
-	      if isAlphanum c then
-	          showChar c . fixStr cs
-	      else 
-	          showChar '_' . shows (fromEnum c) . fixStr cs
 	  priority :: (InfixClass TokenId, Int) -> Int
 	  priority (InfixDef, _)   = 3
           priority (InfixL, n)     = 2 + shiftPri n
