@@ -618,7 +618,7 @@ typeExp (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
                                    -- free variables really are free !!!
   (if not (null ctxs) 
   then strace ("Context at " ++ strPos (getPos ctxs)
-              ++ " in typed expression is ignored :-(")
+              ++ " in type-annotated expression is ignored :-(")
   else id) $
   typeExp exp >>>= \ (exp,expT) ->
   let nt = type2NT t
@@ -673,7 +673,7 @@ typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
                                    -- free variables really are free !!!
   (if not (null ctxs) 
   then strace ("Context at " ++ strPos (getPos ctxs)
-              ++ " in typed expression is ignored :-(")
+              ++ " in type-annotated pattern is ignored :-(")
   else id) $
   typePat exp >>>= \ (exp,expT,eTVar) ->
   let nt = type2NT t
