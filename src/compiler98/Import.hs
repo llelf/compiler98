@@ -2,7 +2,7 @@
 Read and process the interface file of one imported module.
 -}
 module Import (Flags,ImportState,PackedString,Tree,TokenId,IdKind,HideDeclIds
-              ,importOne) where
+              ,readFirst,importOne) where
 
 import IO
 import PackedString(PackedString,packString,unpackPS)
