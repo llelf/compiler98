@@ -78,15 +78,17 @@ localname hname   = showString fun . fixStr (show hname)
 
 
 toForeign :: AssocTree Int Info -> ForeignMemo
-              -> FSpec -> ImpExp -> String -> Int -> Int -> Foreign
-toForeign symboltable memo fspec ie cname arity var =
+              -> CallConv -> ImpExp -> String -> Int -> Int -> Foreign
+toForeign symboltable memo (Other callconv) ie cname arity var =
+    error ("Foreign calling convention \""++callconv++"\" not supported.")
+toForeign symboltable memo callconv ie cname arity var =
     Foreign ie cast proto cname hname arity' args res
   where
     info = fromJust (lookupAT symboltable var)
     hname = tidI info
     (args,res) = searchType symboltable memo info
-    cast  = (fspec==Cast)
-    proto = (fspec/=Noproto)
+    cast  = (callconv==Cast)
+    proto = (callconv/=Noproto)
     arity' = if arity==length args then arity
              else error ("foreign function: arity does not match: "++
                          "is "++show arity++

@@ -7,6 +7,7 @@ import ParseLib
 import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
               ,t_foreign,t_export,t_ccall,t_haskell,t_unsafe,t_cast,t_noproto
+              ,t_stdcall,t_cplusplus,t_dotnet,t_jvm,t_safe,t_threadsafe
               ,tinterface,thiding,tqualified)
 
 
@@ -57,8 +58,14 @@ k_foreign = lvarid t_foreign "foreign"
 k_import = lit L_import
 k_export = lvarid t_export "export"
 k_ccall = lvarid t_ccall "ccall"
+k_stdcall = lvarid t_stdcall "stdcall"
+k_cplusplus = lvarid t_cplusplus "cplusplus"
+k_dotnet = lvarid t_dotnet "dotnet"
+k_jvm = lvarid t_jvm "jvm"
 k_haskellcall = lvarid t_haskell "haskell"
+k_safe = lvarid t_safe "safe"
 k_unsafe = lvarid t_unsafe "unsafe"
+k_threadsafe = lvarid t_threadsafe "threadsafe"
 k_noproto = lvarid t_noproto "noproto"
 k_cast = lvarid t_cast "cast"
 

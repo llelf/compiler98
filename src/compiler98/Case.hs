@@ -100,10 +100,10 @@ caseDepends (DeclsRec  ds:r) e =
 caseDecl :: Decl Int -> CaseFun [(Int,PosLambda)]
 caseDecl d@(DeclPrimitive pos fun arity t) =
   unitS [(fun, PosPrimitive pos fun)]
-caseDecl d@(DeclForeignImp pos C str fun arity cast t _) =
-  unitS [(fun, PosForeign pos fun str cast Imported)]
-caseDecl d@(DeclForeignExp pos C str fun t) =
-  unitS [(fun, PosForeign pos fun str Safe Exported)]
+caseDecl d@(DeclForeignImp pos callconv str fun arity safety t _) =
+  unitS [(fun, PosForeign pos fun str callconv Imported)]
+caseDecl d@(DeclForeignExp pos callconv str fun t) =
+  unitS [(fun, PosForeign pos fun str callconv Exported)]
 caseDecl (DeclFun pos fun funs) =
   unitS ((:[]) . pair fun) =>>> matchFun pos fun funs
 caseDecl (DeclPat (Alt pat gdexps decls)) =

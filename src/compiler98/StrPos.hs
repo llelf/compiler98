@@ -6,7 +6,7 @@ module StrPos(strPCode,strPExp) where
 import Extra(mixLine,mixSpace)
 import PosCode
 import SyntaxPos
-import Syntax (FSpec)
+import Syntax (CallConv)
 import Foreign(ImpExp(..))
 
 strPCode p code = mixLine (map (strPBinding p "") code)
@@ -17,8 +17,7 @@ strPLambda p o (PosLambda pos fvs bvs e) =
 strPLambda p o (PosPrimitive pos fun) =
     "primitive " ++ p fun ++ "\n"
 strPLambda p o (PosForeign pos fun str c ie) =
-    "foreign "++show ie++" \"" ++ str ++ "\" " ++ show c ++ " "
-    ++ p fun ++ "\n"
+    "foreign "++show ie++" "++show c++" \""++str++"\" " ++ p fun ++ "\n"
 
 strPBinding p o (i,l) = o ++ p i ++ " = " ++ strPLambda p o l ++ "\n"
 

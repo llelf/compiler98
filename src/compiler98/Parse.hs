@@ -96,35 +96,47 @@ parseForeign :: Parser (Decl TokenId) [PosToken] a
 parseForeign =
   k_foreign `revChk`
     ((k_import `revChk` 
-        ((\(_,conv) (_,LitString _ str) (_,tf) (p,v) t -> 
+        ((\(_,conv) (_,tf) (_,LitString _ str) (p,v) t -> 
             DeclForeignImp p conv str v (calcArity t) tf t v)
-        `parseAp` callconv `ap` extfun `ap` unsafe `apCut` varid `chk` 
+        `parseAp` callconv `ap` safety `ap` entity `apCut` varid `chk` 
         coloncolon `ap` parseType))
     `orelse`
     (k_export `revChk` callconv `revChk`
       ((\(_,conv) (_,LitString _ str) (p,v) t-> DeclForeignExp p conv str v t)
-      `parseAp` callconv `ap` extfun `apCut` varid `chk` coloncolon 
+      `parseAp` callconv `ap` entity `apCut` varid `chk` coloncolon 
       `ap` parseType))
-    `orelse`
-      (k_cast `revChk` 
-        ((\(p,v) t-> DeclForeignImp p C "" v (calcArity t) Cast t v)
-        `parseAp` varid `chk` coloncolon `ap` parseType))
+ -- `orelse`
+ --   (k_cast `revChk` 
+ --     ((\(p,v) t-> DeclForeignImp p Cast "" v (calcArity t) Safe t v)
+ --     `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where
-  callconv = (k_ccall `revChk` cast C)
+  callconv = (k_ccall `revChk` conv C)
                `orelse` 
-             (k_haskellcall `revChk` cast Haskell)
+             (k_cast `revChk` conv Cast)
+               `orelse`
+             (k_noproto `revChk` conv Noproto)
+               `orelse`
+             (k_haskellcall `revChk` conv Haskell)
                `orelse` 
-             (cast C)  -- default
-  extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
-  unsafe   = (k_cast `revChk` cast Cast)
+             (k_stdcall `revChk` conv (Other "stdcall"))
+               `orelse` 
+             (k_cplusplus `revChk` conv (Other "cplusplus"))
+               `orelse` 
+             (k_dotnet `revChk` conv (Other "dotnet"))
+               `orelse` 
+             (k_jvm `revChk` conv (Other "jvm"))
+          --   `orelse` 
+          -- (conv C)  -- previously the default, now the name is mandatory
+  entity   = string `orelse` parse (noPos, LitString UnBoxed "")
+  safety   = (k_unsafe `revChk` conv Unsafe)
                `orelse`
-             (k_noproto `revChk` cast Noproto)
+             (k_safe `revChk` conv Safe)
                `orelse`
-             (k_unsafe `revChk` cast Unsafe)
+             (k_threadsafe `revChk` conv ThreadSafe)
                `orelse`
-             (parse noPos `revChk` cast Safe)
-  cast tf   = parse (noPos,tf)
+             (parse noPos `revChk` conv Safe)	-- default is Safe
+  conv tf   = parse (noPos,tf)
   calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
   calcArity _                 | otherwise     = 0
 
