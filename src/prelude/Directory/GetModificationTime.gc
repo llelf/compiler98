@@ -15,5 +15,5 @@ import DClockTime ({-type-}ClockTime(..))
 %result (int err, clockTime "st.st_mtime")
 
 getModificationTime :: FilePath -> IO ClockTime
-getModificationTime fp = patchIOErrorVal (primGetModTime fp)
+getModificationTime fp = patchIOErrorFVal "getModificationTime" fp primGetModTime
 

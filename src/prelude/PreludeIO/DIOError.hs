@@ -17,6 +17,6 @@ data IOError
         | IOErrorHSetPosn  Handle Int
 	| IOErrorHGetBuffering Handle Int        
 	| IOErrorHSetBuffering Handle Int        
-        | IOErrorC         ErrNo		-- error taken from C's errno
+        | IOErrorC         String (Maybe String) ErrNo	-- error taken from C's errno
 
 

@@ -14,5 +14,5 @@ import PatchIOError
 %result (int err)
 
 createDirectory :: FilePath -> IO ()
-createDirectory fp = patchIOError (mkdir fp)
+createDirectory fp = patchIOErrorF "createDirectory" fp mkdir
 

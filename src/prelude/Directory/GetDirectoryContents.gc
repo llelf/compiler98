@@ -36,15 +36,15 @@ newtype Dir = Dir ForeignObj
 
 getDirectoryContents :: FilePath -> IO [FilePath]
 getDirectoryContents fp = do
-  d <- patchIOErrorVal (opendir fp)
+  d <- patchIOErrorFVal "getDirectoryContents" fp opendir
   lazyDirContents d
 
 -- Despite the name, I'm not entirely sure that this really is lazy.
 lazyDirContents :: Dir -> IO [FilePath]
 lazyDirContents d =
-  catch (do f  <- patchIOErrorVal (readdir d)
+  catch (do f  <- patchIOErrorVal "readDir" (readdir d)
             fs <- lazyDirContents d
             return (f:fs))
-        (\e-> do patchIOError (closedir d)
+        (\e-> do patchIOError "closeDir" (closedir d)
                  return [])
   

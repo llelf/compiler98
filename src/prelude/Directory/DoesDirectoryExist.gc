@@ -15,9 +15,12 @@ import PatchIOError
 %  struct stat st;
 %  err = stat(fp,&st);
 %  if ((err==0) && S_ISDIR(st.st_mode)) b=TRUE;
-%  else b=FALSE;
+%  else {
+%    err=0;	/* MUST reset err flag! */
+%    b=FALSE;
+%  }
 %result (int err, bool b)
 
 doesDirectoryExist :: FilePath -> IO Bool
-doesDirectoryExist fp = patchIOErrorVal (primDoesDirExist fp)
+doesDirectoryExist fp = patchIOErrorFVal "doesDirectoryExist" fp primDoesDirExist
 

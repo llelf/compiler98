@@ -15,5 +15,5 @@ import PatchIOError
 %result (int err, filePath fp)
 
 getCurrentDirectory :: IO FilePath
-getCurrentDirectory = patchIOErrorVal (getcwd ())
+getCurrentDirectory = patchIOErrorVal "getCurrentDirectory" (getcwd ())
 

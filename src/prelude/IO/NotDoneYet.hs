@@ -30,31 +30,31 @@ hIsSeekable h          = error "Not defined: hIsSeekable"
 
 
 isAlreadyExistsError  :: IOError -> Bool
-isAlreadyExistsError (IOErrorC EEXIST) = True	-- file exists
-isAlreadyExistsError (IOErrorC EISDIR) = True	-- is a directory
+isAlreadyExistsError (IOErrorC _ _ EEXIST) = True	-- file exists
+isAlreadyExistsError (IOErrorC _ _ EISDIR) = True	-- is a directory
 isAlreadyExistsError _ = False
 
 isDoesNotExistError   :: IOError -> Bool
-isDoesNotExistError (IOErrorC ENOENT) = True	-- no such file or directory
-isDoesNotExistError (IOErrorC ENXIO)  = True	-- no such device or address
+isDoesNotExistError (IOErrorC _ _ ENOENT) = True   -- no such file or directory
+isDoesNotExistError (IOErrorC _ _ ENXIO)  = True   -- no such device or address
 isDoesNotExistError _ = False
 
 isAlreadyInUseError   :: IOError -> Bool
-isAlreadyInUseError (IOErrorC EBUSY)    = True	-- Device or resource busy
-isAlreadyInUseError (IOErrorC ETXTBSY)  = True	-- Text file busy
+isAlreadyInUseError (IOErrorC _ _ EBUSY)    = True -- Device or resource busy
+isAlreadyInUseError (IOErrorC _ _ ETXTBSY)  = True -- Text file busy
 isAlreadyInUseError _  = False
 
 isFullError           :: IOError -> Bool
-isFullError (IOErrorC ENOSPC)    = True		-- device full
-isFullError (IOErrorC EDQUOT)    = True		-- quota exceeded
+isFullError (IOErrorC _ _ ENOSPC)    = True		-- device full
+isFullError (IOErrorC _ _ EDQUOT)    = True		-- quota exceeded
 isFullError _    = False
 
 isIllegalOperation    :: IOError -> Bool
-isIllegalOperation (IOErrorC EPERM) = True
+isIllegalOperation (IOErrorC _ _ EPERM) = True
 isIllegalOperation _ = False
 
 isPermissionError     :: IOError -> Bool
-isPermissionError (IOErrorC EACCES) = True
+isPermissionError (IOErrorC _ _ EACCES) = True
 isPermissionError _ = False
 
 

@@ -39,8 +39,10 @@ ${OBJS}: ${OBJDIR}/%.o : %.hs
 ${MAINOBJ}: ${OBJS} ${MAINSRC} ../IOExtras/FixIO.hi
 	$(HC) -c $(HFLAGS) $(LIBFLAGS) -o $@ ${MAINSRC}
 
-${CFILES} ${MAINCFILE}: %.c : %.hs
+${CFILES} : %.c : %.hs
 	$(HC) -C $(HFLAGS) $<
+${MAINCFILE}: %.c : %.hs
+	$(HC) -C $(HFLAGS) ${LIBFLAGS} $<
 
 .SUFFIXES: .hs .o .c .hi
 

@@ -31,9 +31,19 @@ instance  Show IOError  where
     showsPrec p (IOErrorHSetPosn handle errno)      = errmsg "hSetPosn" handle errno
     showsPrec p (IOErrorHGetBuffering handle errno) = errmsg "hGetBuffering" handle errno
     showsPrec p (IOErrorHSetBuffering handle errno) = errmsg "hSetBuffering" handle errno
-    showsPrec p (IOErrorC errno) = showString "IO system error (" .
-                                   shows errno . showString "): " .
-                                   showString (strError errno)
+    showsPrec p (IOErrorC cmd Nothing errno) =
+				showString "IO error: '" .
+				showString cmd . showString "' gave " .
+				shows errno . showString " (" .
+				showString (strError errno) .
+				showString ")"
+    showsPrec p (IOErrorC cmd (Just f) errno) =
+				showString "IO error: '" .
+				showString cmd . showString " " .
+				showString f . showString "' gave " .
+				shows errno . showString " (" .
+				showString (strError errno) .
+				showString ")"
 
     showsType a = showString "IOError"
 

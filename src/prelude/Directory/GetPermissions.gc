@@ -29,5 +29,5 @@ import DPermissions
 %result (int err, perms r w x s)
 
 getPermissions :: FilePath -> IO Permissions
-getPermissions fp = patchIOErrorVal (getperms fp)
+getPermissions fp = patchIOErrorFVal "getPermissions" fp getperms
 

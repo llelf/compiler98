@@ -5,5 +5,5 @@ import DErrNo
 
 instance Eq IOError where
   (IOErrorUser str)      == (IOErrorUser str')	=  str == str'
-  (IOErrorC e)		 == (IOErrorC e')	=    e == e'
+  (IOErrorC _ _ e)	 == (IOErrorC _ _ e')	=    e == e'
   _ == _ = False

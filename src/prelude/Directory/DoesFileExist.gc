@@ -27,9 +27,12 @@ import PatchIOError
 %  struct stat st;
 %  err = stat(fp,&st);
 %  if ((err==0) && S_ISREG(st.st_mode)) b=TRUE;
-%  else b=FALSE;
+%  else {
+%    err=0;	/* MUST reset err flag! */
+%    b=FALSE;
+%  }
 %result (int err, bool b)
 
 doesFileExist :: FilePath -> IO Bool
-doesFileExist fp = patchIOErrorVal (primDoesFileExist fp)
+doesFileExist fp = patchIOErrorFVal "doesFileExist" fp primDoesFileExist
 

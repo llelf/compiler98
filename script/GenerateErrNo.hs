@@ -192,6 +192,8 @@ possibleErrNos =
   , "EISNAM"
   , "EREMOTEIO"
   , "EDQUOT"
+  , "ENOMEDIUM"
+  , "EMEDIATYPE"
 -- end of linux symbols
 -- beginning of SGI symbols
   , "EIORESID"

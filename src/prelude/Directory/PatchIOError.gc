@@ -1,4 +1,8 @@
-module Directory (patchIOError, patchIOErrorVal) where
+module Directory
+  ( patchIOError
+  , patchIOErrorVal
+  , patchIOErrorF
+  , patchIOErrorFVal) where
 
 import GreenCard
 import DErrNo
@@ -13,17 +17,30 @@ import DIOError
 %code
 %result (<fromEnum/toEnum> (int "errno"))
 
-returnEither :: Int -> a -> IO a
-returnEither err val =
-  if err == -1 then readErrNo () >>= ioError . IOErrorC 
+returnEither :: String -> Maybe String -> Int -> a -> IO a
+returnEither cmd file err val =
+  if err == -1 then readErrNo () >>= ioError . IOErrorC cmd file
                else return val
 
-patchIOError :: IO Int -> IO ()
-patchIOError comp = do
+patchIOError :: String -> IO Int -> IO ()
+patchIOError cmd comp = do
   err <- comp
-  returnEither err ()
+  returnEither cmd Nothing err ()
 
-patchIOErrorVal :: IO (Int,a) -> IO a
-patchIOErrorVal comp = do
+patchIOErrorVal :: String -> IO (Int,a) -> IO a
+patchIOErrorVal cmd comp = do
   (err,val) <- comp
-  returnEither err val
+  returnEither cmd Nothing err val
+
+----
+ 
+patchIOErrorF :: String -> String -> (String -> IO Int) -> IO ()
+patchIOErrorF cmd f comp = do
+  err <- comp f
+  returnEither cmd (Just f) err ()
+
+patchIOErrorFVal :: String -> String -> (String -> IO (Int,a)) -> IO a
+patchIOErrorFVal cmd f comp = do
+  (err,val) <- comp f
+  returnEither cmd (Just f) err val
+

@@ -126,6 +126,9 @@ data ErrNo =
   | EISNAM
   | EREMOTEIO
   | EDQUOT
+  | ENOMEDIUM
+  | ENOTSUP
+  | ECANCELED
   deriving (Eq,Enum,Show)
 
 eqErrNo :: ErrNo -> ErrNo -> Bool
@@ -133,5 +136,7 @@ eqErrNo EWOULDBLOCK EAGAIN = True
 eqErrNo EAGAIN EWOULDBLOCK = True
 eqErrNo EDEADLOCK EDEADLK = True
 eqErrNo EDEADLK EDEADLOCK = True
+eqErrNo ENOTSUP EOPNOTSUPP = True
+eqErrNo EOPNOTSUPP ENOTSUP = True
 eqErrNo a b = a==b
 

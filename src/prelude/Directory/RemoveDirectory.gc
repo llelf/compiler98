@@ -13,5 +13,5 @@ import PatchIOError
 %result (int err)
 
 removeDirectory :: FilePath -> IO ()
-removeDirectory fp = patchIOError (rmdir fp)
+removeDirectory fp = patchIOErrorF "removeDirectory" fp rmdir
 

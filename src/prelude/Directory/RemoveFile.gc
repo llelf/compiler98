@@ -13,5 +13,5 @@ import PatchIOError
 %result (int err)
 
 removeFile :: FilePath -> IO ()
-removeFile fp = patchIOError (unlink fp)
+removeFile fp = patchIOErrorF "removeFile" fp unlink
 

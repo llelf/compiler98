@@ -18,6 +18,6 @@ ioeGetErrorString (IOErrorHGetPosn      handle errno) = "hGetPosn"
 ioeGetErrorString (IOErrorHSetPosn      handle errno) = "hSetPosn"
 ioeGetErrorString (IOErrorHGetBuffering handle errno) = "hGetBuffering"
 ioeGetErrorString (IOErrorHSetBuffering handle errno) = "hSetBuffering"
-ioeGetErrorString (IOErrorC errno)                    = show errno
+ioeGetErrorString (IOErrorC _ _ errno)                = show errno
 ioeGetErrorString _ = "unusual IO error"
 

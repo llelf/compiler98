@@ -177,13 +177,13 @@ gcodeCDump state (DATA_D  d)      = let (h,l) = doubleToInts d in
                                     emitWord (shows h) >|> emitWord (shows l)
 #elif defined(FLOAT)
 gcodeCDump state (DATA_F  f)      = {-if floatIsDouble then
-                                      let h = doubleToInt0 f in
+                                      let h = doubleToInt0 f
                                           l = doubleToInt1 f in
                                       emitWord (shows h) >|> emitWord (shows l)
                                     else-}
                                       let i = floatToInt f in
                                       emitWord (shows i)
-gcodeCDump state (DATA_D  d)      = let h = doubleToInt0 d in
+gcodeCDump state (DATA_D  d)      = let h = doubleToInt0 d
                                         l = doubleToInt1 d in
                                     emitWord (shows h) >|> emitWord (shows l)
 #endif

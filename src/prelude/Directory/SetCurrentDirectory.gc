@@ -13,5 +13,5 @@ import PatchIOError
 %result (int err)
 
 setCurrentDirectory :: FilePath -> IO ()
-setCurrentDirectory fp = patchIOError (chdir fp)
+setCurrentDirectory fp = patchIOErrorF "setCurrentDirectory" fp chdir
 
