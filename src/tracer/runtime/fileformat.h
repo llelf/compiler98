@@ -183,14 +183,17 @@ FileOffset	primTSatA	(FileOffset t1);
 FileOffset	primTSatB	(FileOffset t1);
 FileOffset	primTSatC	(FileOffset t1, FileOffset t2);
 
+void		updateSatBs	(void);
+void		updateSatCs	(void);
+
 CNmType*	primNTInt	(int i);
 CNmType*	primNTChar	(char c);
 CNmType*	primNTInteger	(NodePtr i);
 CNmType*	primNTRational	(NodePtr i,NodePtr j);
 CNmType*	primNTFloat	(float f);
 CNmType*	primNTDouble	(double d);
-CNmType*	primNTId	(IdEntry *id);	/* believed not necessary */
-CNmType*	primNTConstr	(IdEntry *id);	/* believed not necessary */
+CNmType*	primNTId	(IdEntry *id);
+CNmType*	primNTConstr	(IdEntry *id);
 CNmType*	primNTTuple	(void);
 CNmType*	primNTFun	(void);
 CNmType*	primNTCase	(void);
@@ -211,7 +214,6 @@ CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);
-
 
 #ifndef False
 #define False	0

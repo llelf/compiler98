@@ -8,8 +8,15 @@
 #define SHOW(x)
 #endif
 
+#define	NUM_SATB	8192
+#define	NUM_SATC	32000
 
-static FileOffset HatCounter = 16;
+static FileOffset HatCounter = 8 + 2*sizeof(FileOffset);
+static FileOffset SATstack[NUM_SATB];
+static int SATp = 0;
+static FileOffset SATqueueA[NUM_SATC];
+static FileOffset SATqueueC[NUM_SATC];
+static int SATq = 0;
 
 
 /* Remaining problems include (at least) the following:
@@ -446,41 +453,91 @@ primTSatA (FileOffset t1)
 }
 
 
-/* This implementation of SatB is wrong - it creates a new node rather than
- * overwriting the old one.
+/* The implementation of SatBs is as follows.
+ *   Every SatB represents a function entry, and every SatC a function
+ *   return.  Returns must be matched with enters in strictly
+ *   LIFO order.  So we store SatBs in a stack in memory, and do not
+ *   write them to file.  Every time we write a SatC we also pop the
+ *   corresponding SatB off the stack, checking that it is indeed the
+ *   expected SatB.  If the program fails, a separate routine scans
+ *   the stack and writes the SatB markers to file.
  */
 
 FileOffset
 primTSatB (FileOffset t1)
 {
-    FileOffset fo;
-    fo = htonl(HatCounter);
-    SHOW(fprintf(stderr,"\tprimTSatB 0x%x -> 0x%x\n",t1,fo);)
-    fputc(((Trace<<5) | TSatB),HatFile);
-    fwrite(&t1, sizeof(FileOffset), 1, HatFile);
-    HatCounter += 1 + (sizeof(FileOffset));
-    return fo;
+    SATstack[SATp++] = t1;
+    if (SATp >= NUM_SATB) {
+        fprintf(stderr,"Exceeded size of SAT stack\n");
+        exit(1);
+    }
+    return t1;
 }
 
-/* This implementation of SatC is wrong - it creates a new node rather than
- * overwriting the old one.  Also, for the purpose of an initial observation
- * of correctness, we write two SatCs - first the address to be updated, then
- * the address it should be updated to.
+/* This implementation of SatC saves up a bunch of updates to be done
+ * all at once.  We make no attempt yet to place the updates into order,
+ * which could potentially make the combined update even faster.
  */
 
 FileOffset
 primTSatC (FileOffset torig,FileOffset teval)
 {
-    FileOffset fo;
-    fo = htonl(HatCounter);
-    SHOW(fprintf(stderr,"\tprimTSatC 0x%x 0x%x -> 0x%x\n",torig,teval,fo);)
-    fputc(((Trace<<5) | TSatC),HatFile);
-    fwrite(&torig, sizeof(FileOffset), 1, HatFile);
-    HatCounter += 1 + (sizeof(FileOffset));
-    fputc(((Trace<<5) | TSatC),HatFile);
-    fwrite(&teval, sizeof(FileOffset), 1, HatFile);
-    HatCounter += 1 + (sizeof(FileOffset));
-    return fo;
+    if (SATstack[--SATp] != torig) {
+        fprintf(stderr,"SAT stack is corrupt.\n");
+        exit(1);
+    } else {
+	/* save updates until we have a bunch of them */
+        SATqueueA[SATq] = torig;
+        SATqueueC[SATq] = teval;
+        SATq++;
+        if (SATq >= NUM_SATC) {
+            updateSatCs();
+        }
+/*
+	-- do each update individually
+        fseek(HatFile,ntohl(torig),SEEK_SET);
+        fputc(((Trace<<5) | TSatC),HatFile);
+        fwrite(&teval, sizeof(FileOffset), 1, HatFile);
+        fseek(HatFile,HatCounter,SEEK_SET);
+*/
+    }
+}
+
+/* updateSatCs() can be called at any time.  It clears out the queue
+ * of pending SatC requests, overwriting the appropriate SatA/Bs in
+ * file, and resets the queue counter to zero.
+ */
+
+void
+updateSatCs (void)
+{
+    int i;
+    SHOW(fprintf(stderr,"\tupdateSatCs (%d SatCs) (%d SatBs)\n",SATq,SATp);)
+    for (i=0; i<SATq; i++) {
+        fseek(HatFile,ntohl(SATqueueA[i]),SEEK_SET);
+        fputc(((Trace<<5) | TSatC),HatFile);
+        fwrite(&(SATqueueC[i]), sizeof(FileOffset), 1, HatFile);
+    }
+    fseek(HatFile,HatCounter,SEEK_SET);
+    SATq = 0;
+}
+
+/* updateSatBs() can be called at any time.  It scans the stack
+ * of pending SatB requests and overwrites the appropriate SatAs.
+ * It does /not/ reset the stack pointer - the SatB stack could still
+ * be in use for verifying SatC requests.
+ */
+
+void
+updateSatBs (void)
+{
+    int i;
+    SHOW(fprintf(stderr,"\tupdateSatBs (%d SatBs)\n",SATp);)
+    for (i=0; i<SATp; i++) {
+        fseek(HatFile,ntohl(SATstack[i]),SEEK_SET);
+        fputc(((Trace<<5) | TSatB),HatFile);
+    }
+    fseek(HatFile,HatCounter,SEEK_SET);
 }
 
 
@@ -591,7 +648,7 @@ primNTId (IdEntry *id)
         FileOffset fo;
         int i;
         if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
-    fo = htonl(HatCounter);
+        fo = htonl(HatCounter);
         SHOW(fprintf(stderr,"\tprimNTId \"%s\" -> 0x%x\n",id->name,fo);)
         fputc(((NmType<<5) | NTId),HatFile);
         fprintf(HatFile,"%s",id->name);
@@ -617,7 +674,7 @@ primNTConstr (IdEntry *id)
         FileOffset fo;
         int i;
         if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
-    fo = htonl(HatCounter);
+        fo = htonl(HatCounter);
         SHOW(fprintf(stderr,"\tprimNTConstr \"%s\" -> 0x%x\n",id->name,fo);)
         fputc(((NmType<<5) | NTConstr),HatFile);
         fprintf(HatFile,"%s",id->name);
@@ -766,7 +823,7 @@ primSR3 (SrcRef *sr)
     } else {
         FileOffset fo;
         int i = 0;
-    fo = htonl(HatCounter);
+        fo = htonl(HatCounter);
         SHOW(fprintf(stderr,"\tprimSR3 -> 0x%x\n",fo);)
         fputc((SR<<5),HatFile);
         fwrite(&(sr->modinfo->fileoffset), sizeof(FileOffset), 1, HatFile);
@@ -819,3 +876,4 @@ primHidden (CTrace* t)
     SHOW(fprintf(stderr,"\tprimHidden 0x%x -> %s\n",t,(t->trust?"yes":"no"));)
     return t->hidden;
 }
+
