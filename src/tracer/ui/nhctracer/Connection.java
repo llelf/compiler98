@@ -29,7 +29,7 @@ public class Connection {
     }
     try { 
       in = new BufferedReader(new InputStreamReader(server.getInputStream()));
-      out = new PrintWriter(server.getOutputStream(), true);
+      out = new DbgPrintWriter(server.getOutputStream(), true);
     }
     catch (IOException e) {
       try { 
@@ -148,6 +148,17 @@ public class Connection {
       }
       if (pos >= len)
 	line = null;
+    }
+  }
+  class DbgPrintWriter extends PrintWriter {
+    DbgPrintWriter(OutputStream os, boolean b) {
+      super(os, b);
+    }
+
+    public void println(String s) {
+      if (Options.tracecomm.getState())
+	System.err.println("Sent: " + s);
+      super.println(s);
     }
   }
 }
