@@ -25,7 +25,7 @@ public class TraceFrame extends Frame {
    
   int port;
   String host;
-  String appTitle = "Hat 1.08 Trail Browser";
+  String appTitle = "hat-trail browser";
 
   MainPanel mainPanel;
 
