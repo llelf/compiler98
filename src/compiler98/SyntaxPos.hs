@@ -1,6 +1,6 @@
 module SyntaxPos(Pos,HasPos(..)) where
 
-import Extra(Pos(..),noPos)
+import Extra(noPos)
 import Syntax
 
 class HasPos a where
@@ -87,7 +87,6 @@ getPosAlt (Alt pat _ _) = getPosExp pat
 
 getPosFun (Fun [] rhs _) = getPosRhs rhs
 getPosFun (Fun (a:args) _ _)   = getPosExp a
-getPosFun _ = noPos
 
 getPosRhs (Unguarded e) = getPosExp e
 getPosRhs (Guarded ((g,e):_)) = getPosExp g
