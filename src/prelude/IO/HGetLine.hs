@@ -5,5 +5,7 @@ import HGetChar
 
 hGetLine              :: Handle -> IO String
 hGetLine h             = do c  <- hGetChar h
-                            cs <- hGetLine h
-                            return (c:cs)
+                            case c of
+                              '\n' -> return []
+                               _   -> do cs <- hGetLine h
+                                         return (c:cs)
