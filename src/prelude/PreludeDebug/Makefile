@@ -26,6 +26,10 @@ ${OBJDIR}/${THISLIB}.$O: ${THISLIB}.hs ${OBJDIR}/../Prelude/DEither.$O ../Packed
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
 	cp PreludeDebug.hi PreludeDebug.T.hi
 
+${OBJDIR}/HatArchive.$O: HatArchive.hs
+	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
+	cp HatArchive.hi HatArchive.T.hi
+
 ${OBJDIR}/../PreludeIO/DIO.$O:
 	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.$O
 ${OBJDIR}/../Prelude/DEither.$O:
