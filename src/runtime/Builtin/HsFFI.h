@@ -1,7 +1,7 @@
 #ifndef _HSFFI_H
 #define _HSFFI_H
 
-/* We currently assume a 32-bit architecture. */
+#include <inttypes.h>
 
 #define HsChar		char
 #define HsInt		int
@@ -12,14 +12,14 @@
 #define HsForeignObj	void*
 #define HsStablePtr	void*
 
-#define HsInt8		signed char
-#define HsInt16		signed short
-#define HsInt32		signed long
-#define HsInt64		signed long long
-#define HsWord8		unsigned char
-#define HsWord16	unsigned short
-#define HsWord32	unsigned long
-#define HsWord64	unsigned long long
+#define HsInt8		int8_t
+#define HsInt16		int16_t
+#define HsInt32		int32_t
+#define HsInt64		int64_t
+#define HsWord8		uint8_t
+#define HsWord16	uint16_t
+#define HsWord32	uint32_t
+#define HsWord64	uint64_t
 
 #define HS_CHAR_MIN	0
 #define HS_CHAR_MAX	0xff
