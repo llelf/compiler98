@@ -168,7 +168,8 @@ fsExp' k exp@(ExpApplication pos [v@(ExpVar _ qfromInteger)
                                  ,l@(ExpLit pl (LitInteger b i))]) =
   fsState >>>= \ state ->
     if tidIS state qfromInteger == tfromInteger && tidIS state qNum == tNum 
-    then     if tidIS state qType == tInt        then unitS (ExpLit pl (LitInt b (fromInteger i)))
+    then     if tidIS state qType == tInt
+             && not (k && (abs(i)>32767))        then unitS (ExpLit pl (LitInt b (fromInteger i)))
   	else if tidIS state qType == tIntHash    then unitS (ExpLit pl (LitInt UnBoxed (fromInteger i)))
   	else if tidIS state qType == tInteger    then unitS l
   	else if tidIS state qType == tFloat      then unitS (ExpLit pl (litFloatInteger b i))
