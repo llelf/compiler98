@@ -1,21 +1,20 @@
 module DbgId(tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE,
-            t_mkTRoot,t_mkTNm,t_mkTHidden,
-             {- t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden,-}
-             t_lazySat,t_lazySatLonely,
-             t_ap, t_rap, t_tap, t_trap, t_patvar, t_caf
-            , t_fun, t_tfun, t_primn, t_tprimn
-            , t_guard, t_if, t_rif
+            t_mkTRoot,t_mkTNm,t_mkTHidden
+            ,t_lazySat,t_lazySatLonely,t_eagerSat
+            ,t_ap,t_rap,t_tap,t_trap,t_patvar,t_caf
+            ,t_fun,t_tfun,t_primn,t_tprimn
             ,t_cn, t_pa, t_con, t_tpa, t_tcon, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
 	     t_conCons, t_indir,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
 	     t_fromConRational, t_patFromConRational
-	     ,t_debugger, t_prim, t_rseq, t_cSeq
+	     ,t_debugger, t_prim, t_rseq,t_myseq,t_cSeq
              ,t_mkSR',t_mkNoSR
              ,t_mkNTId',t_mkNTConstr',t_mkSR,t_mkNTId,t_mkNTConstr
-             ,t_mkNTLambda,t_mkNTCase
-	     ,tNTId, tNTConstr, tCase, tIf, tGuard, tLambda, tNmType,
-	     tDbgPrelude,tDbgPreludeCore,tNmCoerce,tokenDbg)
+             ,t_mkNTLambda,t_mkNTCase,t_mkNTGuard,t_mkNTIf
+             ,t_mkTAp
+	     ,tNmType
+	     ,tDbgPrelude,tDbgPreludeCore,tNmCoerce,tokenDbg)
  where
 
 import IdKind
@@ -26,8 +25,6 @@ tTrace		= qualImp "Trace"
 t_R		= qualImp "R"
 tE		= qualImp "E"
 tSR		= qualImp "SR"
---tSR2		= qualImp "SR2"
---tSR3		= qualImp "SR3"
 tDNum           = qualImp "Num"
 t_mkTRoot       = qualImp "mkTRoot"
 t_mkTNm         = qualImp "mkTNm"
@@ -41,20 +38,14 @@ t_mkNTConstr    = qualImp "mkNTConstr"
 t_mkNTLambda    = qualImp "mkNTLambda"
 t_mkNTCase      = qualImp "mkNTCase"
 t_mkTHidden     = qualImp "mkTHidden"
---t_Ap		= qualImp "Ap"
---t_Nm		= qualImp "Nm"
---t_Ind		= qualImp "Ind"
---t_Root		= qualImp "Root"
---t_Sat		= qualImp "Sat"
---t_Pruned       	= qualImp "Pruned"
---t_Hidden       	= qualImp "Hidden"
+t_mkNTGuard     = qualImp "mkNTGuard"
+t_mkNTIf        = qualImp "mkNTIf"
+t_mkTAp n       = qualImp ("mkTAp" ++ show n)     
 t_lazySat       = qualImp "lazySat"
 t_lazySatLonely = qualImp "lazySatLonely"
+t_eagerSat      = qualImp "eagerSat"
 t_patvar	= qualImp "patvar"
 t_caf		= qualImp "caf"
-t_guard		= qualImp "t_guard"
-t_if		= qualImp "tif"
-t_rif           = qualImp "trif"
 t_fun n		= qualImp ("fun" ++ show n)
 t_tfun n        = qualImp ("tfun" ++ show n)
 t_ap n		= qualImp ("ap" ++ show n)
@@ -84,28 +75,15 @@ t_fromConRational = qualImp "fromConRational"
 t_patFromConRational = qualImp "patFromConRational"
 t_rPatBool      = qualImp "rPatBool"
 t_fatal		= qualImp "fatal"
--- t_dbgerror     	= qualImp "_error"
 t_debugger	= qualImp "debugger"
 t_prim	        = qualImp "_prim"
 t_rseq	        = qualImp "rseq"
 t_cSeq	        = qualImp "cSeq"
+t_myseq         = qualImp "myseq"
 t_trust	        = qualImp "trust"
--- tRString	= qualImp "RString"
--- tList		= qualImp "RList"
--- tCons		= qualImp "RCons"
--- tNil		= qualImp "RNil"
 tNmType		= qualImp "NmType"
-tNTConstr	= qualImp "NTConstr"
-tNTId		= qualImp "NTId"
-tCase		= qualImp "NTCase"
-tIf		= qualImp "NTIf"
-tGuard		= qualImp "NTGuard"
-tLambda		= qualImp "NTLambda"
 tDbgPrelude	= visImpRev "DPrelude"
 tDbgPreludeCore	= visImpRev "DbgPreludeCore"
--- t_dbginteract	= qualImp "interact"
--- t_dbgprint	= qualImp "dbgprint"
--- t_stringConst	= qualImp "stril, t_patFromConRational,
 tNmCoerce	= qualImp "NmCoerce"
 
 qualImp = Qualified rpsDbgPrelude . packString . reverse
@@ -117,9 +95,6 @@ tokenDbg = [(TCon, tTrace),
 	    (Con, t_R), 
 	    (Con, tE), 
 	    (TCon, tSR),
-	 -- (Con, tSR),
-	 -- (Con, tSR2),
-	 -- (Con, tSR3),
 	    (TClass, tDNum),
 	    (TClass, tNmCoerce),
             (Var, t_mkTRoot),
@@ -134,13 +109,9 @@ tokenDbg = [(TCon, tTrace),
             (Var, t_mkNTLambda),
             (Var, t_mkNTCase),
             (Var, t_mkTHidden),
-	 -- (Con, t_Ap),
-	 -- (Con, t_Nm),
-	 -- (Con, t_Ind), 
-	 -- (Con, t_Root), 
-	 -- (Con, t_Sat), 
-	 -- (Con, t_Pruned), 
-	 -- (Con, t_Hidden), 
+            (Var, t_mkNTGuard),
+            (Var, t_mkNTIf),
+            (Var, t_mkTAp 2),
 	    (Var, t_indir),
 	    (Var, t_conInt),
 	    (Var, t_conChar),
@@ -157,34 +128,17 @@ tokenDbg = [(TCon, tTrace),
 	    (Var, t_caf), 
             (Var, t_lazySat),
             (Var, t_lazySatLonely),
+            (Var, t_eagerSat),
 	    (Var, t_patvar),
 	    (Var, t_fatal), 
---	    (Var, t_dbgerror),
 	    (Var, t_prim),
 	    (Var, t_rseq),
 	    (Var, t_cSeq),
+            (Var, t_myseq),
 	    (Var, t_trust),
 	    (TCon, tNmType),
-	 -- (Con, tNTConstr),
-	 -- (Con, tNTId),
-	 -- (Con, tCase),
-	 -- (Con, tIf),
-	 -- (Con, tGuard),
-	 -- (Con, tLambda),
---	    (TSyn, tRString), 
---	    (TCon, tList), 
---	    (Con, tCons), 
---	    (Con, tNil),
             (Var, tRatioCon),		-- defined in TokenId, not here.
-	    (TClass, tIntegral),	-- likewise.
---	    ,(Modid, tDbgPrelude)
---	    ,(Modid, tDbgPreludeCore)
---	    (Var, t_dbginteract), 
---	    (Var, t_stringConst), 
---	    (Var, t_dbgprint),
-	    (Var, t_if),
-            (Var, t_rif),
-	    (Var, t_guard)] 
+	    (TClass, tIntegral)]	-- likewise.
            ++ [(Var,  t_fun n)   | n <- [0..12]]
            ++ [(Var,  t_tfun n)  | n <- [0..12]]
 	   ++ [(Var,  t_ap n)    | n <- [1..12]]
@@ -192,7 +146,6 @@ tokenDbg = [(TCon, tTrace),
 	   ++ [(Var,  t_tap n)   | n <- [1..12]]
 	   ++ [(Var,  t_trap n)  | n <- [1..12]]
 	   ++ [(Var,  t_pap n)   | n <- [1..10]]
---	   ++ [(Var,  t_c n)     | n <- [1..12]]
 	   ++ [(Var,  t_cn n)    | n <- [1..8]]
 	   ++ [(Var,  t_pa n)    | n <- [0..4]]
 	   ++ [(Var,  t_con n)   | n <- [0..12]]

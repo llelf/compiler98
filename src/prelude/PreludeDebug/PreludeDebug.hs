@@ -131,6 +131,7 @@ primEnter sr t e = let v  = enter t e
                       in v `myseq` vn
 
 
+{- no longer needed
 {- For guards in suspected code; in trusted code use guards directly -}
 
 t_guard :: SR -> R Bool -> (Trace -> a) -> (Trace -> a) -> Trace -> a
@@ -162,6 +163,7 @@ trif sr (R iv it) e1 e2 t =
   let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
   in  t' `myseq` eagerSat (if iv then e1 t' else e2 t') t'
 
+-}
 
 {- used by _Driver -}
 initializeDebugger :: a -> a

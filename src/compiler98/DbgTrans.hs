@@ -8,13 +8,14 @@ import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var,TCon))
 import TokenId
 import DbgId(t_R,tSR,tTrace,t_mkTRoot,t_mkTNm 
-            ,t_rseq,t_fatal,t_rPatBool
-            ,t_lazySat,t_lazySatLonely,t_fun,t_tfun,t_primn,t_tprimn
+            ,t_rseq,t_myseq,t_fatal,t_rPatBool
+            ,t_lazySat,t_lazySatLonely,t_eagerSat
+            ,t_fun,t_tfun,t_primn,t_tprimn
             ,t_prim,t_ap,t_rap,t_tap,t_trap
             ,t_cn,t_con,t_pa,t_tcon,t_tpa,t_indir
-            ,t_if,t_rif,t_guard,t_mkNoSR
-            ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
-            ,t_mkTHidden
+            ,t_mkNoSR,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
+            ,t_mkNTGuard,t_mkNTIf
+            ,t_mkTHidden,t_mkTAp
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
             ,t_conFloat,t_conCons,t_tfun
             ,t_fromConInteger,t_fromConRational
@@ -703,7 +704,7 @@ dSuspectFunClauses parent funName arity true otherw
                          (DeclsParse []) in
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
     unitS ([Fun (newParent:pats'') 
-            (Unguarded (ExpApplication noPos [expr, newParent])) decls'
+            (Unguarded expr) decls'
             , failclause]
           , DeclFun noPos f mfs:nfs)
   | otherwise =
@@ -713,7 +714,7 @@ dSuspectFunClauses parent funName arity true otherw
     dSuspectDecls parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
     let fs = Fun (parent:pats') 
-               (Unguarded (ExpApplication noPos [e, parent])) decls' in
+               (Unguarded e) decls' in
     unitS (fs:mfs, nfs)
 
 
@@ -784,19 +785,44 @@ dSuspectGuardedExprs :: Bool -> Exp Id -> [(Exp Id,Exp Id)] -> ContExp
                      -> DbgTransMonad (Exp Id)
 
 dSuspectGuardedExprs cr parent [] cont = 
-  newVar noPos >>>= \t ->
-  continuationToExp cont t >>>= \contExp ->
-  unitS (ExpLambda noPos [t] contExp)
+  continuationToExp cont parent
 dSuspectGuardedExprs cr parent ((g, e):ges) cont = 
   let pos = getPos g in
-  dSuspectGuardedExprs cr parent ges cont >>>= \ges' ->
-  dSuspectExp True parent g >>>= \g' ->
   newVar pos >>>= \newParent ->
+  let ExpVar _ newParentId = newParent in
+  dSuspectGuardedExprs cr newParent ges cont >>>= \ges' -> 
+  -- newParent good? probably conditions should have function app as parent
+  dSuspectExp True parent g >>>= \g' ->
   dSuspectExp cr newParent e >>>= \e' ->
-  lookupVar pos t_guard >>>= \guard ->
   makeSourceRef pos >>>= \sr ->
-  unitS (ExpApplication pos 
-           [guard, sr, g', ExpLambda pos [newParent] e', ges'])
+  lookupCon pos t_R >>>= \r ->
+  newVar pos >>>= \gr ->
+  newVar pos >>>= \gt ->
+  lookupVar pos (t_mkTAp 2) >>>= \mkTAp2 ->
+  lookupVar pos t_mkTNm >>>= \mkTNm ->
+  lookupVar pos t_mkNTGuard >>>= \mkNTGuard ->
+  lookupVar pos t_myseq >>>= \myseq ->
+  unitS (ExpCase pos g' 
+          [Alt (ExpApplication pos [r,gr,gt])
+            (Unguarded 
+              (ExpLet pos 
+                (DeclsParse 
+                  [DeclFun pos newParentId 
+                    [Fun [] 
+                      (Unguarded 
+                        (ExpApplication pos 
+                          [mkTAp2,parent
+                          ,ExpApplication pos [mkTNm,parent,mkNTGuard,sr]
+                          ,gt,parent,sr]))
+                      (DeclsParse [])]])
+                (ExpApplication pos [myseq,newParent,ExpIf pos gr e' ges'])))
+            (DeclsParse [])])
+  -- case [[g]]^True_parent of
+  --   R gr gt -> 
+  --     let newParent = mkTAp2 parent (mkTNm parent mkNTGuard sr) gt parent sr
+  --     in newParent `myseq` if gr 
+  --                             then [[e]]^cr_newParent 
+  --                             else [[ges]]^cont_newParent
 
 
 {- Used for combining fail continuation with a trace -}
@@ -883,8 +909,7 @@ dSuspectRhs :: Bool -> Exp Id -> Rhs Id -> ContExp -> DbgTransMonad (Exp Id)
 
 dSuspectRhs cr parent (Unguarded exp) cont = dSuspectExp cr parent exp
 dSuspectRhs cr parent (Guarded gdExps) cont = 
-  dSuspectGuardedExprs cr parent gdExps cont >>>= \expr -> 
-  unitS (ExpApplication noPos [expr, parent])
+  dSuspectGuardedExprs cr parent gdExps cont
 
 
 {-
@@ -941,15 +966,43 @@ dSuspectExp cr parent (ExpCase pos e alts) =
           (ExpVar pos fid)
 	,sr,parent]
       ,e']
-dSuspectExp cr parent (ExpIf pos c e1 e2) = 
-  dSuspectExp True parent c >>>= \c' ->
+dSuspectExp cr parent (ExpIf pos co e1 e2) = 
+  dSuspectExp True parent co >>>= \co' ->
   newVar pos >>>= \ifParent ->
+  let ExpVar _ ifParentId = ifParent in
   dSuspectExp False ifParent e1 >>>= \e1' ->
   dSuspectExp False ifParent e2 >>>= \e2' ->
   makeSourceRef pos >>>= \sr ->
-  lookupVar pos (if cr then t_if else t_rif) >>>= \tif ->
-  unitS (ExpApplication pos [tif, sr, c', ExpLambda pos [ifParent] e1', 
-                             ExpLambda pos [ifParent] e2', parent])
+  lookupCon pos t_R >>>= \r ->
+  newVar pos >>>= \cor ->
+  newVar pos >>>= \cot ->
+  lookupVar pos (t_mkTAp 2) >>>= \mkTAp2 ->
+  lookupVar pos t_mkTNm >>>= \mkTNm ->
+  lookupVar pos t_mkNTIf >>>= \mkNTIf ->
+  lookupVar pos (if cr then t_lazySat else t_eagerSat) >>>= \makeSat ->
+  unitS (ExpCase pos co' 
+          [Alt (ExpApplication pos [r,cor,cot])
+            (Unguarded 
+              (ExpLet pos 
+                (DeclsParse 
+                  [DeclFun pos ifParentId 
+                    [Fun [] 
+                      (Unguarded 
+                        (ExpApplication pos 
+                          [mkTAp2,parent
+                          ,ExpApplication pos [mkTNm,parent,mkNTIf,sr]
+                          ,cot,parent,sr]))
+                      (DeclsParse [])]])
+                (ExpApplication pos [makeSat,ExpIf pos cor e1' e2',ifParent])))
+            (DeclsParse [])])
+  -- case [[g]]^True_parent of
+  --   R gr gt -> 
+  --     let ifParent = mkTAp2 parent (mkTNm parent mkNTGuard sr) gt parent sr
+  --     in makeSat 
+  --          (if gr 
+  --             then [[e1]]^False_ifParent 
+  --             else [[e2]]^False_ifParent)
+  --          ifParent
 dSuspectExp cr parent (ExpType pos e ctx t) = 
   unitS (\e' -> ExpType pos e' ctx t) =>>> dSuspectExp cr parent e
 dSuspectExp cr parent (ExpApplication pos (f:es)) = 
