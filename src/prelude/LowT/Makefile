@@ -22,16 +22,19 @@ SRCS_T	= \
 	PrimsFloat.hs PrimsDouble.hs
 
 SRCS_NT	= _Driver.hs PrimIntFromInteger.hs 
+EXTRA_T	= NonStdUnsafeCoerce.hs
 
-ERRORS_T = PrimDecodeDouble.hs PrimDecodeFloat.hs
-
+EXTRA_O = $(patsubst %.hs, ${OBJDIR}/%.o, ${EXTRA_T})
 
 # Here are the main rules.
 include ../Makefile.common
 
 
-# Here are some extra rules.
 
+# Here are some extra rules.
+extra: ${EXTRA_O}
+${EXTRA_O}: ${OBJDIR}/%.o : %.hs
+	${TR_COMPILE} -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 
 
 # Here are the dependencies.
