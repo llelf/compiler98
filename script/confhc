@@ -106,8 +106,8 @@ if which hbc >/dev/null 2>&1
 then
   HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f2`
   case $HBCVERSION in
-    version) HBCVERSION=`hbc -c 2>&1 | cut -d' ' -f3 | cut -c8` ;;
-    *)       HBCVERSION=`hbc -c 2>&1 | cut -d' ' -f4 | cut -c8` ;;
+    version) HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f3 | cut -c8` ;;
+    *)       HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f4 | cut -c8` ;;
   esac
   whichHBC=`which hbc`
   up1_HBC=`dirname $whichHBC`
