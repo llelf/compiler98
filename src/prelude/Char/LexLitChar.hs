@@ -1,27 +1,39 @@
 module Char where
 
+import IsUpper
 import IsDigit
-import LexDigits
-
--- Code in comments are from Haskell 1.2
+import IsOctDigit
+import IsHexDigit
+import AsciiTab
 
 lexLitChar		:: ReadS String
-
-lexLitChar ('\\':s)	=  [('\\':esc, t) | (esc,t) <- lexEsc s]
+lexLitChar ('\\':s)	=  map (prefix '\\') (lexEsc s)
 	where
+	prefix c (t,s) = (c:t, s)
+
 	lexEsc (c:s)	 | c `elem` "abfnrtv\\\"'" = [([c],s)]
-	lexEsc s@(d:_)	 | isDigit d		 = lexDigits s
-  	lexEsc ('^':c:s) | c >= '@' && c <= '_'  = [(['^',c],s)]
-{-
-	lexEsc ('o':s)	=  [('o':os, t) | (os,t) <- nonnull isOctDigit s]
-	lexEsc ('x':s)	=  [('x':xs, t) | (xs,t) <- nonnull isHexDigit s]
+  	lexEsc ('^':c:s) | c >= '@' && c <= '_'    = [(['^',c],s)]
+
+	-- Numeric escapes
+	lexEsc ('o':s)               = [prefix 'o' (span isOctDigit s)]
+	lexEsc ('x':s)               = [prefix 'x' (span isHexDigit s)]
+        lexEsc s@(d:_)   | isDigit d = [span isDigit s]
+
+	-- Very crude approximation to \XYZ.  
+--	lexEsc s@(c:_)   | isUpper c = [span isCharName s]
+--				where isCharName c   = isUpper c || isDigit c
+	-- Much better approximation to \XYZ.  
 	lexEsc s@(c:_)	 | isUpper c
-			=  case [(mne,s') | mne <- "DEL":asciiTab,
-					    ([],s') <- [match mne s]	  ]
+			=  case [(mne,s') | mne <- "DEL": map snd asciiTab
+					  , ([],s') <- [match mne s]	  ]
 			   of (pr:_) -> [pr]
 			      []     -> []
--}
 	lexEsc _	=  []
+
+	match :: (Eq a) => [a] -> [a] -> ([a],[a])
+	match (x:xs) (y:ys) | x == y  =  match xs ys
+	match xs     ys		      =  (xs,ys)
+
 
 lexLitChar (c:s)	=  [([c],s)]
 lexLitChar ""		= []
