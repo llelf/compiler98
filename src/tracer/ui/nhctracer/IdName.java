@@ -59,7 +59,8 @@ public class IdName extends EDTNode {
     return "help text for IdName";
   }
 
-  public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt) {
+  public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
+                       int irefnr, NodeTable nt) {
     IdName idName = new IdName(parent, tree, index);
     //System.err.println("spawning " + this + "(" + this.name + ") into " + idName);
     idName.sr = sr;
@@ -70,6 +71,9 @@ public class IdName extends EDTNode {
     idName.module = module;
     idName.defpos = defpos;
     idName.pri = pri;
+    idName.tupleConsArity = tupleConsArity;
+    idName.arithSeqArity = arithSeqArity;
+    idName.arithSeqKind = arithSeqKind;
     idName.infix = infix;
     return idName;
   }
