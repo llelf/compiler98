@@ -1,5 +1,5 @@
 module SimpleLineEditor
-  ( getLineEdited	--	:: {- [String] -> -} IO String
+  ( getLineEdited	--	:: String -> {- [String] -> -} IO String
   , delChars		--	:: String -> IO ()
   ) where
 
