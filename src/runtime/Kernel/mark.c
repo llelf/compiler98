@@ -382,10 +382,9 @@ NodePtr mark(NodePtr *inode)
 
 /* Check if it is a known integer */
       { Int i;
-        extern Node ints[];
         if(*node == CONSTRW(1,0) && (i=node[EXTRA+1]) >= -10 && i <= 255) { /* Table int (includes all characters) */
           unmarked(node);
-          node = (NodePtr)&ints[TABLE_SIZE_INT*(i)];
+          node = GET_INT(i);
           goto NextNode;
         }
       }
