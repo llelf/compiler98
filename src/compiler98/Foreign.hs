@@ -332,6 +332,7 @@ hConvert Addr       s = word "mkCInt" . parens (word "(int)" . s)
 --hConvert Addr     s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 hConvert StablePtr  s = word "mkInt" . parens (word "(int)" . s)
 --hConvert StablePtr  s = word "mkStablePtr" . parens (word "stableRef" . parens s)
+{- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
 hConvert ForeignObj s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 --hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
 hConvert Unit       s = word "mkUnit()"
