@@ -410,7 +410,8 @@ The default method just calls "error" with suitable string.
 mkDMethod :: (Pos,TokenId,a) -> (Decl TokenId,a)
 
 mkDMethod (pos,tid,i) = 
-  (DeclFun pos tid [Fun [] (mkNoDefault pos tid) (DeclsParse [])],i)
+  (DeclFun noPos tid [Fun [] (mkNoDefault noPos tid) (DeclsParse [])],i)
+--  (DeclFun pos tid [Fun [] (mkNoDefault pos tid) (DeclsParse [])],i)
 
 
 mkNoDefault :: Pos -> TokenId -> Rhs TokenId

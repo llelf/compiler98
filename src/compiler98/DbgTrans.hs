@@ -334,7 +334,19 @@ dDecl d@(DeclForeignExp pos cname id typ) =
 	error ("Can't trace foreign exports yet. "++strPos pos)
 
 
+dMethod info@(InfoDMethod _ _ _ _ _) pos id funName fundefs = 
+  dFun pos id funName (getArity fundefs) fundefs NoType
+  -- only disadvantage of this simple transformation:
+  -- if a method is called for which no (default) definition exists,
+  -- then the trace shows a redex `error "no default ..."' which does
+  -- not exist in the program.
 
+{- old definition; problem:
+   if a method is called for which no (default) definition exists,
+   then the misleading error message: No match in pattern. is given.
+   The trace is not correctly produced, because the call to fatal is
+   not wrapped with R; hence use of such a method without evaluation
+   even leads to segmentation fault.
 dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoD: " ++show info) $
 --    if arity == 0 then
@@ -363,6 +375,8 @@ dMethod info@(InfoDMethod _ tid nt (Just arity) _) pos id funName fundefs =
 		     dFun pos id funName arity fundefs NoType 
 	    _ -> dFun pos id funName (getArity fundefs) fundefs NoType 
 --	    _ -> dFun pos id funName arity fundefs NoType --(unwrapNT False nt)
+-}
+
 dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs = 
     --trace ("InfoI: " ++show info) $
     -- if (getArity fundefs) {-arity-} == 0 then  --- Wrong !!!!
@@ -375,6 +389,8 @@ dMethod info@(InfoIMethod _ tid nt (Just arity) _) pos id funName fundefs =
                -- This must(?) be a wrapper to the method of the superclass
                -- or default(?)
                -- you don't want to see the explicit call in the trace
+               -- this pattern matching is definitly dangerous:
+               -- it may succeed even for user defined methods
                setArity 2 id >>>
 	       newVars pos 2 >>>= \[sr, redex] ->
 	       unitS [DeclFun pos id [Fun [sr, redex]

@@ -622,6 +622,8 @@ and used for fun_n, prim_n.
 lazySat :: R a -> Trace -> R a
 
 lazySat x t = 
+-- if hidden t then (let R v vt = x in R v vt) else 
+  -- avoid SAT for trusted stuff, but not sure this is always correct
   let sat = mkTSatA t
   in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
           case x of -- create trace for (unevaluated x/v)
@@ -631,15 +633,18 @@ lazySat x t =
               v) -- return value
        sat
 
-{- without SatB and C:
+{- old:
 lazySat x t = 
   let sat = mkTSatA t
-  in mkR (
+  in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
           case x of -- create trace for (unevaluated x/v)
             R v vt ->
+              v `myseq` -- evaluate v and thus extend trace for v
+              mkTSatC sat vt `myseq` -- set trace for evaluated v
               v) -- return value
        sat
 -}
+
 
 -- The following combinator is currently not used.
 -- It should be used to not to loose information about pattern bindings.
@@ -659,7 +664,38 @@ fun0 nm rf sr t =
   let t' = mkTNm t nm sr
   in t' `myseq` lazySat (enter nm t' (rf t)) t'  -- t here correct?
 
+fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
+     -> R (Trace -> R a -> R r)
 
+fun1 nm rf sr t = 
+  mkR (\t a -> lazySat (enter nm t (rf t a)) t)
+      (mkTNm t nm sr)
+
+fun2 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b -> lazySat (enter nm t (rf t a b)) t)
+        t)
+      (mkTNm t nm sr)
+
+fun3 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c -> lazySat (enter nm t (rf t a b c)) t)
+          t)
+        t)
+      (mkTNm t nm sr)
+
+fun4 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d -> lazySat (enter nm t (rf t a b c d)) t)
+            t)
+          t)
+        t)
+      (mkTNm t nm sr)
+
+{-
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
@@ -718,6 +754,7 @@ fun4 nm rf sr t =
           t)
         t)
       (mkTNm t nm sr)
+-}
 
 fun5 nm rf sr t = 
   mkR (\t a ->
@@ -992,7 +1029,41 @@ prim0 nm rf sr t =
   let tf = mkTNm t nm sr
   in lazySat (primEnter sr nm tf rf) tf  -- primEnter strict in tf
 
+prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
+prim1 nm rf sr t = 
+  mkR (\t (R a at) -> lazySat (primEnter sr nm t (rf a)) t)
+    (mkTNm t nm sr)
+
+
+prim2 :: NmCoerce r => 
+         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
+
+prim2 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)-> lazySat (primEnter sr nm t (rf a b)) t)
+      t)
+    (mkTNm t nm sr)
+
+prim3 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)-> lazySat (primEnter sr nm t (rf a b c)) t)
+        t)
+      t)
+    (mkTNm t nm sr)
+
+prim4 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)-> lazySat (primEnter sr nm t (rf a b c d)) t)
+          t)
+        t)
+      t)
+    (mkTNm t nm sr)
+
+{-
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
@@ -1054,6 +1125,7 @@ prim4 nm rf sr t =
         t)
       t)
     (mkTNm t nm sr)
+-}
 
 prim5 nm rf sr t = 
   mkR (\t (R a at)->

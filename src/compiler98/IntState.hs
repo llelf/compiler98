@@ -27,17 +27,32 @@ dummyIntState = IntState 0 (0,packString "<Dummy>") initAT []
 
 -- -===== State
 
+getInfo :: Id -> a -> IntState -> (Info,IntState)
+
 getInfo i down state@(IntState unique rps st errors) =
   case lookupAT st i of
     Just info -> (info,state)
 
+
+addDefaultMethod :: a -> (Id,Id) -> IntState -> IntState
+
 addDefaultMethod tidcls (iMethod,iDefault) state@(IntState unique irps@(_,rps) st errors) =
   case lookupIS state iMethod of
     Just (InfoMethod u tid fix nt' annot iClass) ->
-      IntState unique irps (addAT st fstOf iDefault (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass)) errors
+      IntState unique irps 
+        (addAT st fstOf iDefault 
+          (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass)) 
+        errors
+
+
+getUnique :: a -> IntState -> (Id,IntState)
 
 getUnique down state@(IntState unique rps st errors) =
   (unique,IntState (unique+1) rps st errors)
+
+
+addInstMethod :: TokenId -> TokenId -> TokenId -> NewType -> Id 
+              -> a -> IntState -> (Int,IntState)
 
 addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rps st errors) =
   case lookupIS state iMethod of
@@ -45,6 +60,9 @@ addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rp
       (unique,IntState (unique+1) rps (addAT st (error "adding twice!") unique (InfoIMethod unique (mkQual3 tidcls tidtyp tidMethod) nt (Just arity) iMethod)) errors)
 
 -- -====== State0
+
+updInstMethodNT :: TokenId -> TokenId -> Int -> NewType -> Int 
+                -> a -> IntState -> IntState
 
 updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps st errors) =
   case lookupAT st iMethod of
@@ -54,9 +72,15 @@ updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps st e
 	    let tid = mkQual3 tidcls tidtyp (dropM tid')
 	    in IntState unique rps (addAT st fstOf i (InfoIMethod u tid nt annots iMethod)) errors
 
+
+addInstance :: Int -> Int -> [Int] -> [(Int,Int)] -> a -> IntState -> IntState
+
 addInstance cls con free ctxs down state@(IntState unique rps st errors) =
   let st' = updateAT st cls (addInstanceI con free ctxs)
   in  IntState unique rps st' errors
+
+
+addNewLetBound :: Int -> TokenId -> a -> IntState -> IntState
 
 addNewLetBound i tid down state =
   addIS i (InfoVar i tid (InfixDef,9) IEnone NoType Nothing) state
@@ -125,7 +149,7 @@ updateIS (IntState unique rps st errors) i upd =
 
 
 {- Obtain a new unique and hence also a new internal state -}
-uniqueIS :: IntState -> (Int,IntState)
+uniqueIS :: IntState -> (Id,IntState)
 
 uniqueIS (IntState unique rps st errors) = (unique,IntState (unique+1) rps st errors)
 
@@ -175,6 +199,9 @@ getIndDataIS state indDataI =
           case ntI infoCon of
 	    (NewType ctx free [] (NTcons con _:_)) -> con
 
+
+globalIS :: IntState -> Id -> Bool
+
 globalIS state i =
   case lookupIS state i of
     Nothing -> False
@@ -197,7 +224,9 @@ globalIS state i =
   globalI' _ = False
 
 
+arityIS :: IntState -> Id -> Int
 -- arity with context
+
 arityIS state i =
   case lookupIS state i of 
     Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _]) (Just arity) iMethod) ->
