@@ -11,6 +11,7 @@ import Ratio (Ratio)
 --import DIO		-- needed for attaching traces to prim I/O operations.
 import DEither		-- traced version needed, as for DIO.
 import FFIBuiltin (Addr,ForeignObj,StablePtr)
+import FFIBuiltin (Int8,Int16,Int32,Int64,Word8,Word16,Word32,Word64)
 import PreludeBuiltin (Vector)
 
 sameAs :: a -> a -> Bool
@@ -71,6 +72,19 @@ instance NmCoerce (Vector a) where
 instance NmCoerce (Either a b) where
     toNm t (Left  (R v (Nm _ nm x))) sr = R (Left  (R v (Nm t nm x))) t
     toNm t (Right (R v (Nm _ nm x))) sr = R (Right (R v (Nm t nm x))) t
+
+-- This types use dummies for now.  Ideally, we want to convert them to
+-- either Int or Integer (depending on size), but we can't do that yet
+-- because the instances of fromIntegral are only available in traced
+-- versions!
+instance NmCoerce Int8
+instance NmCoerce Int16
+instance NmCoerce Int32
+instance NmCoerce Int64
+instance NmCoerce Word8
+instance NmCoerce Word16
+instance NmCoerce Word32
+instance NmCoerce Word64
 
 --instance NmCoerce a => NmCoerce (IO a) where
 --    toNm t (IOPrim (R v _)) sr =
