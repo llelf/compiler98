@@ -14,8 +14,8 @@ import NonStdUnsafeCoerce
 import Int	( Int8,  Int16,  Int32,  Int64  )
 import Word	( Word8, Word16, Word32, Word64 )
 import Storable	( Storable(..) )
-import Data.Bits( Bits(..) )
-import NHC.SizedTypes
+-- import Data.Bits( Bits(..) )
+-- import NHC.SizedTypes
 import Monad	( liftM )
 import Ptr	( castPtr )
 

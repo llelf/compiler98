@@ -9,27 +9,24 @@ fakeMap _f xs = unsafeCoerce xs
    to extremely dirty cpp-hackery.   :-P   Some care has to be taken when the
    macros below are modified, otherwise the layout rule will bite you. */
 
-#define BASIC_TYPE(T,B) \
+#define ARITHMETIC_TYPE(T,B) \
 newtype T = T B deriving (Eq, Ord) ; \
+INSTANCE_NUM(T) ; \
+INSTANCE_REAL(T) ; \
 INSTANCE_READ(T) ; \
 INSTANCE_SHOW(T) ; \
 INSTANCE_ENUM(T) ; \
-INSTANCE_STORABLE(T) ;
+INSTANCE_STORABLE(T)
 
-#define NUMERIC_TYPE(T,B) \
-BASIC_TYPE(T,B) ; \
-INSTANCE_NUM(T) ;
+/* ToDo: INTEGRAL_TYPE should include INSTANCE_BITS, too.. */
 
 #define INTEGRAL_TYPE(T,B) \
-NUMERIC_TYPE(T,B) ; \
+ARITHMETIC_TYPE(T,B) ; \
 INSTANCE_BOUNDED(T) ; \
-INSTANCE_REAL(T) ; \
-INSTANCE_INTEGRAL(T) ; \
-INSTANCE_BITS(T)
+INSTANCE_INTEGRAL(T)
 
 #define FLOATING_TYPE(T,B) \
-NUMERIC_TYPE(T,B) ; \
-INSTANCE_REAL(T) ; \
+ARITHMETIC_TYPE(T,B) ; \
 INSTANCE_FRACTIONAL(T) ; \
 INSTANCE_FLOATING(T) ; \
 INSTANCE_REALFRAC(T) ; \
