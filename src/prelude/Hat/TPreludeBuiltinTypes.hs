@@ -15,14 +15,9 @@ import Prelude hiding (IO,String)
 import qualified Prelude
 
 -- beside the types that cannot be defined within Haskell
--- also have to define here the types that are used by primtive functions:
+-- also have to define here the types that are used by primitive functions:
 -- Bool(,List),String,Tuple0,Tuple2
 
-
--- ----------------------------------------------------------------------------
--- module name
-
-tPrelude = T.mkModule "PreludeBuildinTypes" "PreludeBuildinTypes.hs" False
 
 -- ----------------------------------------------------------------------------
 -- types:
@@ -31,17 +26,7 @@ tPrelude = T.mkModule "PreludeBuildinTypes" "PreludeBuildinTypes.hs" False
 aTrue = T.mkAtomCon tPrelude 0 3 "True"
 aFalse = T.mkAtomCon tPrelude 0 3 "False"
 
-data List a = Cons (R a) (R (List a)) | List  
-  -- type constructor and empty list constructor need to have same name,
-  -- because transformation doesn't distinguish the two
-
-aCons = T.mkAtomCon tPrelude 0 21 ":"
-aList = T.mkAtomCon tPrelude 0 3 "[]"
-
 type String = List Char
-
-aTuple0 = T.mkAtomCon tPrelude 0 3 "()"
-aTuple2 = T.mkAtomCon tPrelude 0 3 "(,)" 
 
 newtype IO a = IO (Prelude.IO (R a))
 

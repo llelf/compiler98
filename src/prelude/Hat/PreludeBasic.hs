@@ -129,7 +129,9 @@ class  (Real a, Enum a) => Integral a  where
     n `rem` d        =  r  where (q,r) = quotRem n d
     n `div` d        =  q  where (q,r) = divMod n d
     n `mod` d        =  r  where (q,r) = divMod n d
-    divMod n d       =  if signum r == - signum d then (q-1, r+d) else qr
+    divMod n d       =  if signum r == negate (signum d) then (q-1, r+d) else qr
+                        -- replaced prefix - by negate
+                        -- to make AuxFixity of nhc98 happy
                         where qr@(q,r) = quotRem n d
 
 
@@ -683,8 +685,8 @@ instance  RealFloat Float  where
     isNaN 	   = primFloatIsNaN
     isInfinite     = primFloatIsInfinite
     isDenormalized = primFloatIsDenormalized
-    isNegativeZero = primIsNegativeZero
-    isIEEE         = primIsIEEE
+    isNegativeZero = primFloatIsNegativeZero
+    isIEEE         = primFloatIsIEEE
 
 
 -- data  Double
@@ -763,8 +765,8 @@ instance  RealFloat Double  where
 
     isNaN 	   = primDoubleIsNaN
     isInfinite     = primDoubleIsInfinite
-    isDenormalized = primDoubleDenormalized
-    isNegativeZero = primDoubleNegativeZero
+    isDenormalized = primDoubleIsDenormalized
+    isNegativeZero = primDoubleIsNegativeZero
     isIEEE         = primDoubleIsIEEE
 
 -- The Enum instances for Floats and Doubles are slightly unusual.
@@ -2266,36 +2268,6 @@ readLn           =  do l <- getLine
 
 -- import Array  -- used for character name table.
 
--- Character-testing operations
-isAscii, isControl, isPrint, isSpace, isUpper, isLower,
- isAlpha, isDigit, isOctDigit, isHexDigit, isAlphaNum :: Char -> Bool
-
-isAscii c                =  c < '\x80'
-
-isLatin1 c               =  c <= '\xff'
-
-isControl c              =  c < ' ' || c >= '\DEL' && c <= '\x9f'
-
-isPrint                  =  primUnicodeIsPrint
-
-isSpace c                =  c `elem` " \t\n\r\f\v\xA0"
--- Only Latin-1 spaces recognized
-
-isUpper                  =  primUnicodeIsUpper -- 'A'..'Z'
-
-isLower                  =  primUnicodeIsLower -- 'a'..'z'
-
-isAlpha c                =  isUpper c || isLower c
-
-isDigit c                =  c >= '0' && c <= '9'
-
-isOctDigit c             =  c >= '0' && c <= '7'
-
-isHexDigit c             =  isDigit c || c >= 'A' && c <= 'F' ||
-                                         c >= 'a' && c <= 'f'
-
-isAlphaNum               =  primUnicodeIsAlphaNum
-
 
 -- Digit conversion operations
 digitToInt :: Char -> Int
@@ -2312,12 +2284,6 @@ intToDigit i
   | otherwise            =  error "Char.intToDigit: not a digit"
 
 
--- Case-changing operations
-toUpper                  :: Char -> Char
-toUpper                  =  primUnicodeToUpper
-
-toLower                  :: Char -> Char
-toLower                  =  primUnicodeToLower
 
 -- Character code functions
 ord                     :: Char -> Int

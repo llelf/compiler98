@@ -4,7 +4,8 @@
 
 module Hat 
   (R(R),mkR,Fun(Fun),SR,Trace,NmType,ModuleTraceInfo
-  ,Tuple0(Tuple0),Tuple2(Tuple2)
+  ,tPrelude,Tuple0(Tuple0),Tuple2(Tuple2),aTuple0,aTuple2
+  ,List(Cons,List),aCons,aList
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
 --  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
@@ -84,15 +85,6 @@ trace :: R a -> Trace
 trace (R a t) = t
 
 
--- transformed types
-
-newtype Fun a b = Fun (Trace -> R a -> R b)
-
--- type constructors and data constructors need to have same name,
--- because transformation doesn't distinguish the two
-data Tuple0 = Tuple0  -- () would do, but this way like other tuples  
-data Tuple2 a b = Tuple2 (R a) (R b) -- not type Tuple2 a b = (R a,R b)
-
 
 {- data constructor R strict in trace argument -}
 mkR :: a -> Trace -> R a
@@ -113,6 +105,27 @@ unsafeIOTrace t (Trace i) =
 showHex :: Int -> String
 showHex = ("0x"++) . map (intToDigit . (`mod` 16)) . reverse . takeWhile (>0) 
           . iterate (`div` 16)
+
+-- ----------------------------------------------------------------------------
+-- transformed primitive types (undefinable and with special syntax)
+
+-- module name:
+tPrelude = mkModule "Prelude" "Prelude.hs" False
+
+newtype Fun a b = Fun (Trace -> R a -> R b)
+
+-- type constructors and data constructors need to have same name,
+-- because transformation doesn't distinguish the two
+data Tuple0 = Tuple0  -- () would do, but this way like other tuples  
+data Tuple2 a b = Tuple2 (R a) (R b) -- not type Tuple2 a b = (R a,R b)
+aTuple0 = mkAtomCon tPrelude 0 3 "()"
+aTuple2 = mkAtomCon tPrelude 0 3 "(,)" 
+
+data List a = Cons (R a) (R (List a)) | List  
+  -- type constructor and empty list constructor need to have same name,
+  -- because transformation doesn't distinguish the two
+aCons = mkAtomCon tPrelude 0 21 ":"
+aList = mkAtomCon tPrelude 0 3 "[]"
 
 -- ----------------------------------------------------------------------------
 -- combinators for n-ary application in a non-projective context.

@@ -29,7 +29,7 @@ import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
                ,qualify,visible,extractV
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
-               ,tMain,tmain,tseq)
+               ,tMain,tmain,tseq,t_Colon,t_List)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,just
@@ -1017,13 +1017,19 @@ tPat (ExpRecord pat fields) = ExpRecord (tPat pat) (map tField fields)
 tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
   wrapExp pos (ExpApplication pos (ExpCon pos2 (nameTransCon id) : tPats pats))
     (PatWildcard pos)
+  -- negative numeric literals are represented as (negate number):
+tPat (ExpApplication _ [_,ExpLit pos (LitInteger boxed i)])
+  = wrapExp pos (ExpLit pos (LitInteger boxed (-i))) (PatWildcard pos)
+tPat (ExpApplication _ [_,ExpLit pos (LitRational boxed r)])
+  = wrapExp pos (ExpLit pos (LitRational boxed (-r))) (PatWildcard pos)
+tPat (ExpApplication _ [_,ExpLit pos _]) = error "tPat: app expLit"
 tPat (ExpVar pos id) = ExpVar pos (nameTransVar id)
 tPat (ExpCon pos id) = 
   wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos)
 tPat (ExpLit pos (LitString _ s)) =
   tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
 tPat (ExpLit pos lit) = 
-  wrapExp pos (ExpLit pos lit) (PatWildcard pos)  -- type change
+  wrapExp pos (ExpLit pos lit) (PatWildcard pos) 
 tPat (ExpList pos pats) = tPat . mkTList pos $ pats
 tPat (PatAs pos id pat) = PatAs pos (nameTransVar id) (tPat pat)
 tPat (PatWildcard pos) = PatWildcard pos  -- type change
@@ -1236,7 +1242,7 @@ prefixNames c d token = map (($ token) . updateToken . update) [1..]
                     else (c:) . (++ name) . show $ no
 
 isOperatorName :: String -> Bool
-isOperatorName = not . isAlpha . head
+isOperatorName = not . (\c -> isAlpha c || c == '_') . head
 
 numToSym :: String -> String
 numToSym = map (("!#$%&*+/<>" !!) . digitToInt)
@@ -1254,9 +1260,14 @@ getUnqualified = reverse . unpackPS . extractV . tokenId
 -- apply function to unqualified name part 
 -- and prefix module name (if qualified)
 updateToken :: (String -> String) -> TraceId -> TokenId
-updateToken f traceId | isFunTyCon traceId = qualify "T" "nuF"
+updateToken f traceId | isFunTyCon traceId = 
+  Qualified tracingModuleShort (packString . reverse $ "Fun")
 updateToken f traceId = 
   case tokenId (traceId) of
+    t | t == t_List -> 
+      Qualified tracingModuleShort (packString . reverse . f $ "Nil")
+    t | t == t_Colon -> 
+      Qualified tracingModuleShort (packString . reverse . f $ "Cons")
     t@(TupleId n) -> 
       Qualified 
         (if n <= 2 then tracingModuleShort else transPreludeModule) 

@@ -164,7 +164,9 @@ main' args = do
 
   when (sHatTrans flags) $ do
     toAuxFile flags (sHatAuxFile flags) parsedPrg
+    putStr (prettyPrintTokenId flags ppModule parsedPrg) -- debug
     newprog <- auxLabelSyntaxTree flags parsedPrg
+    putStr (prettyPrintTraceId flags ppModule newprog) -- debug
     writeFile (sHatTransFile flags)
       (prettyPrintTokenId flags ppModule 
         (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 

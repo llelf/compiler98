@@ -6,7 +6,8 @@ module PreludeBuiltin (
   seq,error 
   -- char 
   ,Char,Bool
-  ,isPrint,isUpper,isLower,isAlphaNum,toUpper,toLower
+  ,isAscii,isControl,isPrint,isSpace,isUpper,isLower,isAlpha,isDigit
+  ,isOctDigit,isHexDigit,isAlphaNum,toUpper,toLower
   ,primIntToChar,primCharToInt,primUnicodeMaxBound 
   -- numeric
   ,Int,Integer,Float,Double -- (,) 
@@ -18,15 +19,19 @@ module PreludeBuiltin (
   ,primIntegerLe,primIntegerGt,primIntegerGe,primIntegerQuot
   ,primIntegerRem,primIntegerQuotRem ,primIntegerAdd
   ,primIntegerSub,primIntegerMul,primIntegerNeg
-  ,primFloatFromInteger,primDecodeFloat,primEncodeFloat
+  ,primFloatFromInteger,primFloatRadix,primFloatDigits,primFloatRange
+  ,primDecodeFloat,primEncodeFloat,primFloatIsNaN,primFloatIsInfinite
+  ,primFloatIsDenormalized,primFloatIsNegativeZero,primFloatIsIEEE
   ,primFloatEq,primFloatNe,primFloatLt,primFloatLe,primFloatGt
-  ,primFloatGe,primFloatExp ,primFloatLog,primFloatSqrt
+  ,primFloatGe,primFloatPi,primFloatExp,primFloatLog,primFloatSqrt
   ,primFloatSin,primFloatCos,primFloatTan,primFloatAsin
   ,primFloatAcos,primFloatAtan,primFloatDiv,primFloatAdd
   ,primFloatSub,primFloatMul,primFloatAbs,primFloatSignum
-  ,primDoubleFromInteger,primDecodeDouble,primEncodeDouble
+  ,primDoubleFromInteger,primDoubleRadix,primDoubleDigits,primDoubleRange
+  ,primDecodeDouble,primEncodeDouble,primDoubleIsNaN,primDoubleIsInfinite
+  ,primDoubleIsDenormalized,primDoubleIsNegativeZero,primDoubleIsIEEE
   ,primDoubleEq,primDoubleNe,primDoubleLt,primDoubleLe
-  ,primDoubleGt,primDoubleGe,primDoubleExp,primDoubleLog
+  ,primDoubleGt,primDoubleGe,primDoublePi,primDoubleExp,primDoubleLog
   ,primDoubleSqrt,primDoubleSin,primDoubleCos,primDoubleTan
   ,primDoubleAsin,primDoubleAcos,primDoubleAtan,primDoubleDiv
   ,primDoubleAdd,primDoubleSub,primDoubleMul,primDoubleAbs
@@ -53,13 +58,29 @@ foreign import haskell "Prelude.error"
   error :: String -> a
 
 -- UnicodePrims imported from Char
+-- to avoid any portability problems all character-testing operations are
+-- wrapped
 
+foreign import haskell "Char.isAscii"
+  isAscii :: Char -> Bool
+foreign import haskell "Char.isControl"
+  isControl :: Char -> Bool
 foreign import haskell "Char.isPrint"
   isPrint :: Char -> Bool
+foreign import haskell "Char.isSpace"
+  isSpace :: Char -> Bool
 foreign import haskell "Char.isUpper"
   isUpper :: Char -> Bool
 foreign import haskell "Char.isLower"
   isLower :: Char -> Bool
+foreign import haskell "Char.isAlpha"
+  isAlpha :: Char -> Bool
+foreign import haskell "Char.isDigit"
+  isDigit :: Char -> Bool
+foreign import haskell "Char.isOctDigit"
+  isOctDigit :: Char -> Bool
+foreign import haskell "Char.isHexDigit"
+  isHexDigit :: Char -> Bool
 foreign import haskell "Char.isAlphaNum"
   isAlphaNum :: Char -> Bool
 
@@ -149,10 +170,26 @@ foreign import haskell "Prelude.negate"
 
 foreign import haskell "Prelude.fromInteger"
   primFloatFromInteger  :: Integer -> Float
+foreign import haskell "Prelude.floatRadix"
+  primFloatRadix        :: Float -> Integer
+foreign import haskell "Prelude.floatDigits"
+  primFloatDigits       :: Float -> Int
+foreign import haskell "Prelude.floatRange"
+  primFloatRange        :: Float -> (Int,Int) 
 foreign import haskell "Prelude.decodeFloat"
   primDecodeFloat       :: Float -> (Integer,Int)
 foreign import haskell "Prelude.encodeFloat"
   primEncodeFloat       :: Integer -> Int -> Float
+foreign import haskell "Prelude.isNaN"
+  primFloatIsNaN   :: Float -> Bool
+foreign import haskell "Prelude.isInfinite"
+  primFloatIsInfinite   :: Float -> Bool
+foreign import haskell "Prelude.isDenormalized"
+  primFloatIsDenormalized   :: Float -> Bool
+foreign import haskell "Prelude.isNegativeZero"
+  primFloatIsNegativeZero   :: Float -> Bool
+foreign import haskell "Prelude.isIEEE"
+  primFloatIsIEEE   :: Float -> Bool
 
 foreign import haskell "Prelude.=="
   primFloatEq :: Float -> Float -> Bool
@@ -166,6 +203,8 @@ foreign import haskell "Prelude.>"
   primFloatGt :: Float -> Float -> Bool
 foreign import haskell "Prelude.>="
   primFloatGe :: Float -> Float -> Bool
+foreign import haskell "Prelude.pi"
+  primFloatPi :: Float
 foreign import haskell "Prelude.exp"
   primFloatExp  :: Float -> Float
 foreign import haskell "Prelude.log"
@@ -199,10 +238,26 @@ foreign import haskell "Prelude.signum"
 
 foreign import haskell "Prelude.fromInteger"
   primDoubleFromInteger :: Integer -> Double
+foreign import haskell "Prelude.floatRadix"
+  primDoubleRadix   :: Double -> Integer
+foreign import haskell "Prelude.floatDigits"
+  primDoubleDigits  :: Double -> Int
+foreign import haskell "Prelude.floatRange"
+  primDoubleRange   :: Double -> (Int,Int)
 foreign import haskell "Prelude.decodeFloat"
   primDecodeDouble :: Double -> (Integer,Int)
 foreign import haskell "Prelude.encodeFloat"
   primEncodeDouble :: Integer -> Int -> Double
+foreign import haskell "Prelude.isNaN"
+  primDoubleIsNaN   :: Double -> Bool
+foreign import haskell "Prelude.isInfinite"
+  primDoubleIsInfinite   :: Double -> Bool
+foreign import haskell "Prelude.isDenormalized"
+  primDoubleIsDenormalized   :: Double -> Bool
+foreign import haskell "Prelude.isNegativeZero"
+  primDoubleIsNegativeZero   :: Double -> Bool
+foreign import haskell "Prelude.isIEEE"
+  primDoubleIsIEEE   :: Double -> Bool
 
 foreign import haskell "Prelude.=="
   primDoubleEq :: Double -> Double -> Bool
@@ -216,6 +271,8 @@ foreign import haskell "Prelude.>"
   primDoubleGt :: Double -> Double -> Bool
 foreign import haskell "Prelude.>="
   primDoubleGe :: Double -> Double -> Bool
+foreign import haskell "Prelude.pi"
+  primDoublePi :: Double
 foreign import haskell "Prelude.exp"
   primDoubleExp  :: Double -> Double
 foreign import haskell "Prelude.log"

@@ -876,6 +876,7 @@ isOperator = not . isVarChar . last
   where
   isVarChar c = isAlphaNum c || c == '_' || c == '\'' 
                  || c == ']'  -- empty list []
+                 || c == '}'  -- info of trace id
 
 
 {- End PrettySyntax -------------------------------------------------------- -}
