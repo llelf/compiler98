@@ -1,8 +1,12 @@
 include Makefile.inc
 
+ifeq "${BUILDWITH}" "ghc"
+HEAP = +RTS -K2M -RTS
+endif
+
 THISLIB	= Hat
 SEARCH	=
-EXTRA_H_FLAGS	=
+EXTRA_H_FLAGS	= $(HEAP)
 EXTRA_C_FLAGS	= -DVERSION="\"$(VERSION)\""
 
 SRCS	= \
@@ -15,20 +19,20 @@ SRCS_T	=
 include ../Makefile.common
 
 TPreludeBuiltin.$O: PreludeBuiltin.hs ${OBJDIR}/TPreludeBuiltinTypes.$O
-	hmake -ghc -hat -trusted PreludeBuiltin.hs
+	hmake -ghc -hat -trusted -prelude PreludeBuiltin.hs
 
 TPreludeBasic.$O: PreludeBasic.hs ${OBJDIR}/TPreludeBuiltin.$O
-	hmake -ghc -hat -trusted PreludeBasic.hs
+	hmake -ghc -hat -trusted -prelude PreludeBasic.hs
 
 TPrelude.$O: PreludeTracing.hs ${OBJDIR}/TPreludeBasic.$O
-	hmake -ghc -hat -trusted PreludeTracing.hs
-        mv TPreludeTracing.$O TPrelude.$O
-        mv TPreludeTracing.$HI TPrelude.$HI
+	hmake -ghc -hat -trusted -prelude PreludeTracing.hs
+	mv TPreludeTracing.$O TPrelude.$O
+	mv TPreludeTracing.hi TPrelude.hi
 
 TChar.$O: CharTracing.hs ${OBJDIR}/TPreludeBasic.$O
 	hmake -ghc -hat -trusted CharTracing.hs
-        mv TCharTracing.$O TChar.$O
-        mv TCharTracing.$HI TChar.$HI
+	mv TCharTracing.$O TChar.$O
+	mv TCharTracing.hi TChar.hi
 
 # single archive for all .*O ?
 
