@@ -33,7 +33,7 @@ CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-LINKS = mk.h mkByHand.h mkByProg.h
+LINKS = mk.h mkByHand.h mkByProg.h mutlib.h
 
 links:
 	@for f in ${LINKS}; do \
