@@ -93,6 +93,7 @@ iPreLex u file r c ('#':xs) | c == 1 =
                 case lexInteger 10 0 line of
                   (_,r,_) ->
                       iPreLex u (packString file) (fromInteger r) 1 (tail xs)
+              ("pragma":_) -> iPreLex u file r c xs  -- skip verbiage
               _ -> error ("Unknown preprocessor directive at line " ++ show r
                          ++ ( case show file of {
                                 "\"\"" -> [];
