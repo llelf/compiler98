@@ -296,7 +296,7 @@ case $GRFILES in
     then
       if test $VFLAG -eq 1
       then
-        echo `basename $GREENCARD` produced empty .c file
+        echo `basename $GREENCARD` produced empty .$CSUFFIX file
       fi
       rm $GRCFILE
       COMPFILES=$COMPFILES" "${HSFILE}"_"
@@ -310,7 +310,7 @@ case $GRFILES in
         $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -x c -o $GROFILE $GRCFILE
         if test $? -ne 0
         then
-          echo C compilation failed on ${BASENAME}_.c after `basename $GREENCARD`
+          echo C compilation failed on ${BASENAME}_.$CSUFFIX after `basename $GREENCARD`
           exit 1
         fi
       fi
