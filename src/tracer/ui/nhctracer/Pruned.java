@@ -10,10 +10,11 @@ public class Pruned extends EDTNode {
     this.index = index;
     this.refnr = 0;
     this.trefnr = 0;
+    this.drefnr = 0;
   }
 
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
-                       int irefnr, NodeTable nt) {
+                       int irefnr, int drefnr, NodeTable nt) {
     return new Pruned(parent, tree, index);
   }
 
@@ -22,10 +23,10 @@ public class Pruned extends EDTNode {
   }
 
   public int paint(Graphics g, UI ui, int x0, int y0,
-                   int refnr, int trefnr, int irefnr) {
+                   int refnr, int trefnr, int irefnr, int drefnr) {
     layers = 0;
     g.setColor(color);
-    annotate(g, ui, x0, y0, refnr, trefnr, irefnr);
+    annotate(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
     return width;
   }
 

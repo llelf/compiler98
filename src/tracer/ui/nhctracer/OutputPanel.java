@@ -195,7 +195,7 @@ public class OutputPanel extends Panel {
 	  serverConnection.out.println(""+oc.refnr);
 	  EDTParser parser =
 	    new EDTParser(serverConnection, dbgPanel.nodeTable);
-	  dbgPanel.trace = parser.parseTrace(null);
+	  dbgPanel.trace = parser.parseTrace(null, -1);
 	  dbgPanel.trace.color = Color.black;
 	  dbgPanel.ui.resetColors();
 	  dbgPanel.repaint();

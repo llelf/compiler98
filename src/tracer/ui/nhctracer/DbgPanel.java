@@ -76,7 +76,7 @@ void disableListeners() {
 
   public void connected() {
     EDTParser parser = new EDTParser(serverConnection, nodeTable);
-    trace = parser.parseTrace(null);
+    trace = parser.parseTrace(null, -1);
     trace.color = Color.black;
     repaint();
   }
@@ -258,12 +258,9 @@ void disableListeners() {
 	  }
 	} else if ((modifiers & InputEvent.BUTTON1_MASK) != 0) {
 	  /* left click */
-	  int iortrefnr = ( selectedNode.irefnr > 0 ? selectedNode.irefnr
-	                  : selectedNode.trefnr > 0 ? selectedNode.trefnr
-			  : 0 );
 	  if (selectedNode.trace != null) {
 	    selectedNode.trace.hidden = !selectedNode.trace.hidden;
-	  } else if ((t = selectedNode.tree.inTrace(iortrefnr))
+	  } else if ((t = selectedNode.tree.inTrace(selectedNode.drefnr))
 	                != null) {
 	    selectedNode.setTrace(t);
 	    status.setText("");
@@ -283,7 +280,7 @@ void disableListeners() {
 	      serverConnection.out.println("In 5");
 	      serverConnection.out.println(""+selectedNode.irefnr);
 	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
-	      t = parser.parseTrace(selectedNode.tree);
+	      t = parser.parseTrace(selectedNode.tree, selectedNode.drefnr);
 	      selectedNode.setTrace(t);
 	      selectedNode.tree.addTrace(t);
 	      status.setText("");
@@ -291,7 +288,7 @@ void disableListeners() {
 	      serverConnection.out.println("Gn 5");
 	      serverConnection.out.println(""+selectedNode.trefnr);
 	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
-	      t = parser.parseTrace(selectedNode.tree);
+	      t = parser.parseTrace(selectedNode.tree, selectedNode.drefnr);
 	      selectedNode.setTrace(t);
 	      selectedNode.tree.addTrace(t);
 	      status.setText("");
@@ -324,15 +321,16 @@ void disableListeners() {
       offgraphics.setFont(ui.normalfont);
       offgraphics.setColor(getBackground());
       offgraphics.fillRect(0, 0, getSize().width, getSize().height);
-      int refnr, trefnr, irefnr;
+      int refnr, trefnr, irefnr, drefnr;
       if (lastNode != null) {
 	refnr  = lastNode.refnr;
 	trefnr = lastNode.trefnr;
 	irefnr = lastNode.irefnr;
+	drefnr = lastNode.drefnr;
       } else 
-	refnr = trefnr = irefnr = -1;
+	refnr = trefnr = irefnr = drefnr = -1;
       if (trace != null)
-	trace.paint(offgraphics, ui, 0, 0, refnr, trefnr, irefnr);
+	trace.paint(offgraphics, ui, 0, 0, refnr, trefnr, irefnr, drefnr);
 
       // Now transfer the off-screen image to the canvas, which
       // may need to be enlarged.
@@ -352,7 +350,7 @@ void disableListeners() {
 	Dimension cansize = canvas.getSize();
 	if (nullScreen == null) nullScreen = createImage(1,1);
 	Dimension tracesize =
-          trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1);
+          trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1,-1);
 	if (tracesize.width > cansize.width ||
             tracesize.height > cansize.height) {
 	  Point p = getScrollPosition();

@@ -25,6 +25,8 @@ public abstract class EDTNode extends Object {
   int irefnr = 0;
   /** The reference number of our parent */
   int trefnr;
+  /** The reference of parent that browser would display */
+  int drefnr;
   /** The index in our parent's children list */
   int index;
   /** Our (cached) graphical width */
@@ -63,7 +65,8 @@ public abstract class EDTNode extends Object {
    * @param     nt the current name table (doesn't seem to be used anymore)
    * @return    the width of our graphical representation
    */
-  abstract public int paint(Graphics g, UI ui, int x0_, int y0, int refnr, int trefnr, int irefnr);
+  abstract public int paint(Graphics g, UI ui, int x0_, int y0,
+                            int refnr, int trefnr, int irefnr, int drefnr);
 
   /**
    * Clones the object
@@ -75,7 +78,8 @@ public abstract class EDTNode extends Object {
    * @param     nt the current name table
    * @return    the new copy of the cloned object
    */
-  abstract public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt);
+  abstract public EDTNode spawn(EDTStructuredNode parent, TraceTree tree,
+                                int index, int irefnr, int drefnr, NodeTable nt);
 
   /**
    * Set the trace of the node
@@ -92,9 +96,10 @@ public abstract class EDTNode extends Object {
    * @param     trefnr the parent trail reference number
    * @param     irefnr the indirection node reference number
    */
-  public void setTRefNr(int trefnr, int irefnr) {
+  public void setTRefNr(int trefnr, int irefnr, int drefnr) {
     this.trefnr = trefnr;
     this.irefnr = irefnr;
+    this.drefnr = drefnr;
   }
 
     
@@ -102,13 +107,14 @@ public abstract class EDTNode extends Object {
    * Annotate the node depending on the context. The same arguments as to 
    * <i>paint</i>.
    */
-  public void annotate(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
+  public void annotate(Graphics g, UI ui, int x0, int y0,
+                       int refnr, int trefnr, int irefnr, int drefnr) {
     EDTNode underMouse = HatTrail.traceFrame.mainPanel.dbgPanel.lastNode;
     if (this == underMouse)
       Symbols.drawSelected(g, ui, x0, y0, width);
     underline(g, ui, x0, y0, width);
-    check_ancestor(g, ui, x0, y0, refnr, trefnr, irefnr);
-    check_selected(g, ui, x0, y0, refnr, trefnr, irefnr);
+    check_ancestor(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
+    check_selected(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
   }
 
   /**
@@ -138,20 +144,17 @@ public abstract class EDTNode extends Object {
   }
 
   /**
-   * Highlight background if we are the immediate ancestor to the current node.
+   * Highlight background if we are the displayed parent of the current node.
    */
   void check_ancestor(Graphics g, UI ui, int x0, int y0,
-                      int refnr, int trefnr, int irefnr) {
-    int iortrefnr = ( irefnr > 0 ? irefnr
-                    : trefnr > 0 ? trefnr
-		    : 0 );
-    if (this.refnr == iortrefnr && !ui.highlighting()) {
+                      int refnr, int trefnr, int irefnr, int drefnr) {
+    if (this.refnr == drefnr && !ui.highlighting()) {
       ui.setHighlighting();
       // Paint background yellow, then paint our self again
       g.setColor(Color.yellow);
       g.fillRect(x0-ui.dx, y0-ui.dy+ui.normalfm.getDescent(), 
 		 width, ui.normalfm.getHeight());
-      this.paint(g, ui, x0, y0, refnr, trefnr, irefnr);
+      this.paint(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
       ui.clearHighlighting();
     }
   }
@@ -161,7 +164,7 @@ public abstract class EDTNode extends Object {
    * Used when printing sceen dumps.
    */
   public void check_selected(Graphics g, UI ui, int x0, int y0,
-                             int refnr, int trefnr, int irefnr) {
+                             int refnr, int trefnr, int irefnr, int drefnr) {
     if (selected) {
       g.setColor(Color.black);
       int h = 8, w = 4;

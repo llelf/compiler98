@@ -23,6 +23,7 @@ public class TraceTree extends Object {
     traces.addElement(trace);
   }
   
+  // not yet used
   public void delTrace(Trace trace) {
     traces.removeElementAt(trace.index);
     for (int i = trace.index; i < traces.size(); i++) {
@@ -75,14 +76,14 @@ public class TraceTree extends Object {
   }
 
   public Dimension paint(Graphics g, UI ui, int x, int y,
-                         int refnr, int trefnr, int irefnr) {
+                         int refnr, int trefnr, int irefnr, int drefnr) {
     int i;
     int y0 = y, cy = y;
     int maxw;
     Dimension d;
     layers = 0;
 
-    maxw = x + node.paint(g, ui, x, y, refnr, trefnr, irefnr);
+    maxw = x + node.paint(g, ui, x, y, refnr, trefnr, irefnr, drefnr);
     cy += ui.normalfm.getHeight() + 2*layers + 6;
     // component traces are displayed last to first
     // so that each newly requested trace is shown just
@@ -90,7 +91,7 @@ public class TraceTree extends Object {
     for (i = traces.size()-1; i >= 0; i--) {
       Trace trace = (Trace)traces.elementAt(i);
       if (!trace.hidden) {
-	d = trace.paint(g, ui, x, cy, refnr, trefnr, irefnr);
+	d = trace.paint(g, ui, x, cy, refnr, trefnr, irefnr, drefnr);
 	if (d.width > maxw)
 	  maxw = d.width;
 	cy += d.height;

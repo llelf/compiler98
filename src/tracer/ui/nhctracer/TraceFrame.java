@@ -111,6 +111,7 @@ public class TraceFrame extends Frame {
     
     addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
+        stop();
 	me.dispose();
       }
     });
@@ -134,11 +135,15 @@ public class TraceFrame extends Frame {
     return item;
   }
 
+  boolean stopping = false;
   public void stop() {
+    if (stopping) return;
     if (serverConnection != null) {
+      stopping = true;
       mainPanel.outputPanel.disconnected();      
       serverConnection = null;
       mainPanel.viewer.reset();
+      stopping = false;
     }
   }
 

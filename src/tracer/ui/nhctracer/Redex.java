@@ -12,7 +12,8 @@ public class Redex extends EDTStructuredNode {
     args = new Vector(3, 10);
   }
 
-  public Redex(EDTStructuredNode parent, TraceTree tree, int index, SourceRef sr, int refnr) {
+  public Redex(EDTStructuredNode parent, TraceTree tree, int index,
+               SourceRef sr, int refnr) {
     this.parent = parent;
     this.tree = tree;
     this.index = index;
@@ -22,17 +23,19 @@ public class Redex extends EDTStructuredNode {
     args = new Vector(3, 10);
   }
 
-  public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt) {
+  public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
+                       int irefnr, int drefnr, NodeTable nt) {
     Redex redex = new Redex(parent, tree, index);
     redex.sr = sr;
     redex.refnr = refnr;
-
     redex.trefnr = trefnr;
     redex.irefnr = irefnr;
+    redex.drefnr = drefnr;
     for (int i = 0; i < args.size(); i++) {
       EDTNode node = (EDTNode)args.elementAt(i);
       // Should it be redex.tree here?
-      redex.args.addElement(node.spawn(redex, tree, i, node.irefnr, nt));
+      redex.args.addElement(
+        node.spawn(redex, tree, i, node.irefnr, node.drefnr, nt));
     }
     return redex;    
   }

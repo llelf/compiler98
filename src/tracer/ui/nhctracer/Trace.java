@@ -24,8 +24,7 @@ public class Trace extends Object {
       int h;
       int cy = y0;
       Object result;
-      Trace trace;
-	
+      Trace trace;	
       // only the arrowhead of the trace bar itself is selectable
       if (x >= x0 && x <= x0+2*RADIUS &&
           y >= y0+height-ui.normalfm.getHeight()/3)
@@ -40,18 +39,18 @@ public class Trace extends Object {
       return null;
     }
 
-    public Dimension paint(Graphics g, UI ui, int x, int y, int refnr, int trefnr, int irefnr) {
+    public Dimension paint(Graphics g, UI ui, int x, int y,
+                           int refnr, int trefnr, int irefnr, int drefnr) {
       int i;
       int cy = y;
       int maxw = 0;
       TraceTree tree = null;
       Dimension d;
-
       x0 = x;
       y0 = y;
       for (i = 0; i < trees.size(); i++) {
 	tree = (TraceTree)trees.elementAt(i);
-	d = tree.paint(g, ui, x + INDENT, cy, refnr, trefnr, irefnr);
+	d = tree.paint(g, ui, x + INDENT, cy, refnr, trefnr, irefnr, drefnr);
 	if (d.width > maxw)
 	  maxw = d.width;
 	cy += d.height;

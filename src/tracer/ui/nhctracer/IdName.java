@@ -56,13 +56,14 @@ public class IdName extends EDTNode {
   }
 
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
-                       int irefnr, NodeTable nt) {
+                       int irefnr, int drefnr, NodeTable nt) {
     IdName idName = new IdName(parent, tree, index);
     //System.err.println("spawning " + this + "(" + this.name + ") into " + idName);
     idName.sr = sr;
     idName.refnr = refnr;
     idName.trefnr = trefnr;
     idName.irefnr = irefnr;
+    idName.drefnr = drefnr;
     idName.name = name;
     idName.module = module;
     idName.defpos = defpos;
@@ -82,24 +83,17 @@ public class IdName extends EDTNode {
     }
   }
 
-  public int paint(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
+  public int paint(Graphics g, UI ui, int x0, int y0,
+                   int refnr, int trefnr, int irefnr, int drefnr) {
     boolean parenthesize = false;
     layers = 0;
-
     color = Color.black;
-    if (this.trefnr >= 0) // Don't bother with cut-off-trees
-      if (refnr == this.refnr) {
-	if (this.irefnr == irefnr)
-	  color = Color.black;
-	else
-	  if (Options.highshare.getState()) color = Color.green;	      
-      } else if (trefnr == this.trefnr)
-	color = Color.blue;
-    g.setColor(color);
-
-    if (false) { // Non-clickable
-      g.setFont(ui.boldfont);
+    if (drefnr > 0 && drefnr == this.drefnr) {
+      color = Color.blue;
+    } else if (refnr == this.refnr) {
+      if (Options.highshare.getState()) color = Color.green;	      
     }
+    g.setColor(color);
     FontMetrics fm = g.getFontMetrics();
     int x = x0;
     if (infix &&
@@ -126,7 +120,7 @@ public class IdName extends EDTNode {
     width = x-x0;
     g.setFont(ui.normalfont);
 
-    annotate(g, ui, x0, y0, refnr, trefnr, irefnr);
+    annotate(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
     return width;
   }
   public String dump() {

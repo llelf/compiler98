@@ -183,7 +183,7 @@ public abstract class EDTStructuredNode extends EDTNode {
   }
 
   public int paint(Graphics g, UI ui, int x0, int y0,
-                   int refnr, int trefnr, int irefnr) {
+                   int refnr, int trefnr, int irefnr, int drefnr) {
     int spacew = ui.normalfm.charWidth(' ');
     EDTNode arg;
     int i, x;
@@ -193,15 +193,11 @@ public abstract class EDTStructuredNode extends EDTNode {
 
     //this.x0 = x0;
     color = Color.black;
-    if (this.trefnr >= 0)
-      if (refnr == this.refnr) {
-	if (this.irefnr == irefnr)
-	  color = Color.black;
-	else
-	  if (Options.highshare.getState()) color = Color.green;	      
-      } else if (trefnr == this.trefnr)
-	color = Color.blue;
-
+    if (drefnr > 0 && drefnr == this.drefnr) {
+      color = Color.blue;
+    } else if (refnr == this.refnr) {
+      if (Options.highshare.getState()) color = Color.green;	      
+    }
     g.setFont(ui.normalfont);
 	
     if (contracted) {
@@ -226,7 +222,7 @@ public abstract class EDTStructuredNode extends EDTNode {
 	  x += ui.normalfm.stringWidth(", ");
 	}
 	arg = (EDTNode)args.elementAt(i);
-	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
       }
     } else if (isArithSeq()) {
       int kind = ((IdName)args.elementAt(0)).arithSeqKind;
@@ -234,7 +230,7 @@ public abstract class EDTStructuredNode extends EDTNode {
       g.drawString("[", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
       x += ui.normalfm.charWidth('[');
       arg = (EDTNode)args.elementAt(1);
-      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
       /* Sequence kinds are:
        * 1 enumFrom, 2 enumFromThen, 3 enumFromTo, 4 enumFromThenTo
        */
@@ -245,7 +241,7 @@ public abstract class EDTStructuredNode extends EDTNode {
 	x += ui.normalfm.stringWidth("..");
 	if (kind==3) {
 	  arg = (EDTNode)args.elementAt(2);
-	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
 	}
 	break;
       case 2: case 4:
@@ -253,13 +249,13 @@ public abstract class EDTStructuredNode extends EDTNode {
 	g.drawString(", ", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
 	x += ui.normalfm.stringWidth(", ");
 	arg = (EDTNode)args.elementAt(2);
-	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
 	g.setColor(color);
 	g.drawString("..", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
 	x += ui.normalfm.stringWidth("..");
 	if (kind==4) {
 	  arg = (EDTNode)args.elementAt(3);
-	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+	  x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
 	}
 	break;
       default:
@@ -272,17 +268,18 @@ public abstract class EDTStructuredNode extends EDTNode {
     } else if (isInfix && args.size() == 3) {
       String name = ((IdName)args.elementAt(0)).name;
       arg = (EDTNode)args.elementAt(1);
-      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr) + spacew;
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr) + spacew;
       arg = (EDTNode)args.elementAt(0);
-      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr) + spacew;
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr) + spacew;
       arg = (EDTNode)args.elementAt(2);
-      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr); 
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr); 
     } else {
       arg = (EDTNode)args.elementAt(0);
-      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr);
+      x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
       for (i = 1; i < args.size(); i++) {
 	arg = (EDTNode)args.elementAt(i);
-	x += spacew + arg.paint(g, ui, x+spacew, y0, refnr, trefnr, irefnr);
+	x += spacew +
+	     arg.paint(g, ui, x+spacew, y0, refnr, trefnr, irefnr, drefnr);
       }
     }
     width = x-x0;
@@ -291,7 +288,7 @@ public abstract class EDTStructuredNode extends EDTNode {
       g.drawString(")", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
       width += ui.normalfm.charWidth(')');
     }
-    annotate(g, ui, x0, y0, refnr, trefnr, irefnr);
+    annotate(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);
     return width;
   }
 }
