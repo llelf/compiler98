@@ -71,7 +71,8 @@ transImport impdecls =
                      (ImportQ (noPos,tPrelude) (Hiding []) :
                       --ImportQ (noPos,Visible rpsBinary) (Hiding []) :
                         --ImportQ (noPos,vis "PrelRatio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityVar noPos (vis "%")]) :
-                            impdecls)
+                            ImportQ (noPos,vis "Ratio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityTyConCls noPos (vis "Ratio"), EntityVar noPos (vis "%")]) :
+                              impdecls)
   vis = Visible . packString . reverse
 
   sortImport impdecls = ( map snd 

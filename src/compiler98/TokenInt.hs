@@ -34,7 +34,7 @@ getInts tidk2i =
 tokenMain =     [(TCon,tIO),(TCon,t_Tuple 0)]
 tokenList =	[(TClass,tNum),(Var,tnegate)]
 tokenInteger  = [(Var,tfromInteger)]
-tokenRational =	[(Var,tfromRational),(TSyn,tRational),(TClass,tFractional)]
+tokenRational =	[(Var,tfromRational),(TSyn,tRational),(TCon,tRatio),(TClass,tFractional)]
 tokenAllways = 	[(Var,t_undef)
                 ,(TCon,tBool),(Con,tTrue),(Con,tFalse)
 	        ,(TCon,tInt),(TCon,tInteger),(TCon,tFloat),(TCon,tDouble)
