@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.11 (CVS development version)"
-HMAKEVERSION="3.00 (2002-01-08)" export HMAKEVERSION
+HMAKEVERSION="3.00 (2002-01-18)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
@@ -532,23 +532,13 @@ then
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
     echo "Updating targets/$MACHINE/hmake3.config..."
     echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
-	add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
-    echo -n "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc default " \
-					>>targets/$MACHINE/hmake3.config
+		add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
+    echo -n "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
+		default "		>>targets/$MACHINE/hmake3.config
     case $BUILDWITH in
       ghc|hbc) echo "$BUILDWITH" >>targets/$MACHINE/hmake3.config ;;
       *)       echo "$BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config ;;
     esac
-    echo "Updating src/hmake/Local.hs..."
-    echo "module Local where globalConfigFileDir=\"$HLIBDIR\"" >Local.hs
-    if [ -f src/hmake/Local.hs ]
-    then
-      if diff Local.hs src/hmake/Local.hs >/dev/null
-      then rm Local.hs
-      else mv Local.hs src/hmake/Local.hs
-      fi
-    else mv Local.hs src/hmake/Local.hs
-    fi
   fi
 
 else	# [ "$INSTALL" = "yes" ]
