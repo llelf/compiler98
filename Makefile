@@ -1,7 +1,7 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre17x
+VERSION = 1.0pre18
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
@@ -64,6 +64,7 @@ PRELUDEC = \
 	src/prelude/GreenCard/*.c \
 	src/prelude/Haskell/*.c \
 	src/prelude/IO/*.c \
+	src/prelude/IOExtras/*.c \
 	src/prelude/Interrupt/*.c \
 	src/prelude/Ix/*.c \
 	src/prelude/List/*.c \
@@ -130,7 +131,7 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary*
 HMAKEC = src/hmake/*.c
 RUNTIME = \
-	src/Makefile* \
+	src/Makefile.inc \
 	src/runtime/Makefile* \
 	src/runtime/Builtin/Makefile* \
 	src/runtime/Builtin/*.c \

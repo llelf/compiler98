@@ -1,5 +1,7 @@
 module Prelude (Floating(..)) where
 
+import Ratio(Ratio,(%))
+
 infixr 8  **
 
 class  (Fractional a) => Floating a  where
@@ -13,7 +15,7 @@ class  (Fractional a) => Floating a  where
 
     x ** y		=  exp (log x * y)
     logBase x y		=  log y / log x
-    sqrt x		=  x ** 0.5		-- fromRational (1 :% 2)
+    sqrt x		=  x ** fromRational (1%2)	--0.5		-- fromRational (1 :% 2)
     tan  x		=  sin  x / cos  x
     tanh x		=  sinh x / cosh x
 

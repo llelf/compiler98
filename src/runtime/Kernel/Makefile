@@ -46,7 +46,7 @@ xxx:
 	echo ${BUILDDIR}
 
 ${ARCHIVE}: ${AOBJS}
-	$(AR) $(ARFLAGS) $@ ${AOBJS}
+	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${AOBJS})
 
 all: links bytecode_o.h ${OBJS} ${ARCHIVE}
 

@@ -19,7 +19,7 @@ MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
 CFILES = $(patsubst %.hs,%.c,${SRCS})
 MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
 
-HFLAGS = -P${LOW} -P./ -part -prelude -redefine
+HFLAGS = -P${LOW} -P./ -part -redefine	# -prelude
 #HEAP = +RTS -H2M -RTS
 
 

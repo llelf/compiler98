@@ -1,4 +1,5 @@
-module Ratio(Enum(..)) where
+module Ratio where
+--module Ratio(Enum(..)) where
 
 import DRatio
 import Ord_Ratio

@@ -1,4 +1,5 @@
-module Ratio(Show(..)) where
+module Ratio where
+--module Ratio(Show(..)) where
 
 import DRatio
 import Prec

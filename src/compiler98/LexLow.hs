@@ -172,7 +172,7 @@ toVar r c rid@(i:d) xs =
 lexNum :: Int -> Int -> String -> (Int, Int, Lex, String)
 lexNum r c ('0':b:xs) =
   if b == 'o' || b == 'O' then 
-    case lexInteger 16 (c+2) xs of
+    case lexInteger 8 (c+2) xs of
       (c',i,xs') -> (r,c', L_INTEGER i, xs')
   else if b == 'x' || b == 'X' then 
     case lexInteger 16 (c+2) xs of

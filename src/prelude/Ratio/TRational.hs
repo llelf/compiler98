@@ -1,4 +1,4 @@
-module PrelRatio (Rational(..)) where
+module Ratio (Rational(..)) where
 
 import DRatio
 

@@ -1,3 +1,3 @@
 module PackedString(PackedString) where
 
-import PreludeBuiltin(PackedString)
+import FFIBuiltin(PackedString)

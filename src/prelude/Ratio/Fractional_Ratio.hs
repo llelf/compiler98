@@ -1,4 +1,5 @@
-module Ratio(Fractional(..)) where
+module Ratio where
+--module Ratio(Fractional(..)) where
 
 import DRatio
 import RatioCon

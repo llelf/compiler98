@@ -70,7 +70,7 @@ transImport impdecls =
   impdecls2 =  (sortImport . traverse initAT False)
                      (ImportQ (noPos,tPrelude) (Hiding []) :
                       --ImportQ (noPos,Visible rpsBinary) (Hiding []) :
-                          ImportQ (noPos,vis "PrelRatio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityVar noPos (vis "%")]) :
+                        --ImportQ (noPos,vis "PrelRatio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityVar noPos (vis "%")]) :
                             impdecls)
   vis = Visible . packString . reverse
 

@@ -1,4 +1,4 @@
-module Prelude where
+module Prelude(writeFile) where
 
 import IO
 

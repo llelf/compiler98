@@ -1,4 +1,5 @@
-module Ratio(Eq(..)) where
+module Ratio where
+--module Ratio(Eq(..)) where
 
 import DRatio
 

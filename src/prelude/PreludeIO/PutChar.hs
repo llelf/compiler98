@@ -1,4 +1,4 @@
-module Prelude where
+module Prelude(putChar) where
 
 import IO
 

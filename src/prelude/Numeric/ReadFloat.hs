@@ -1,9 +1,10 @@
-module Numeric where
+module Numeric(readFloat) where
 
-import RatioCon
+--import RatioCon
 import ReadDec
 import LexDigits
-import Fractional_Ratio
+--import Fractional_Ratio
+import Ratio
 
 readFloat:: (RealFloat a) => ReadS a
 readFloat r = [(fromRational ((n%1)*10^^(k-d)), t) | (n,d,s) <- readFix r,

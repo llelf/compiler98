@@ -7,6 +7,7 @@ module BinArray
   , getBinArray
   ) where
 
+import qualified Binary
 import Binary
 import UnboxedArray (UnboxedArray, allocUBA, wUBA, rUBA, getUBAFree, getUBAEnd)
 

@@ -1,8 +1,9 @@
 module System where
 
 import CString
-import DIOError
+import DIOError(IOError(IOErrorSystem))
 import DIO
+import DErrNo
 import System
 
 cSystem primitive 1 :: CString -> Either Int ExitCode
@@ -14,3 +15,10 @@ primSystem str =
 	         Left errno -> Left (IOErrorSystem cstr errno)
 	         Right code -> Right code)
 
+{-
+int cSystem (char *cmd) {
+    err = system(cmd);
+    if (err==-1) return errno;
+}
+
+foreign import "cSystem" cSystem :: CString -> IO 

@@ -1,4 +1,4 @@
-module PrelRatio (Ratio(..)) where
+module Ratio (Ratio(..)) where
 
 infixl 7 :%
 

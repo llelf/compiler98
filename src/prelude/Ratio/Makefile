@@ -13,14 +13,14 @@ SRCS	= \
 
 
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = PrelRatio.hs ${THISLIB}.hs
+MAINSRC = ${THISLIB}.hs
 
 OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
 MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
 CFILES = $(patsubst %.hs,%.c,${SRCS})
 MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
 
-HFLAGS = -part -redefine -prelude # -P../Prelude/ 
+HFLAGS = -part -redefine # -prelude # -P../Prelude/ 
 #HEAP = +RTS -H2M -RTS
 
 

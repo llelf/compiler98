@@ -1,4 +1,5 @@
-module Ratio(RealFrac(..)) where
+module Ratio where
+--module Ratio(RealFrac(..)) where
 
 import DRatio
 import Real_Ratio

@@ -1,4 +1,4 @@
-module Prelude where
+module Prelude(getContents) where
 
 import IO
 

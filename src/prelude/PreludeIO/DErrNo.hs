@@ -1,4 +1,4 @@
-module Prelude where
+module DErrNo where
 
 {- Automatically generated from /usr/include/errno.h -}
 

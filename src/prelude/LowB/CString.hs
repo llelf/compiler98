@@ -1,4 +1,4 @@
-module CString(CString,PackedString,toCString,fromCString) where
+module CString(CString,toCString,fromCString) where
 
 import PackedString(PackedString,unpackPS,packString)
 

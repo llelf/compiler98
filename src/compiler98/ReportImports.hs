@@ -2,7 +2,7 @@ module ReportImports where
 
 import List(nub,groupBy,intersperse,sortBy)
 import PackedString(unpackPS)
-import TokenId
+import TokenId (extractM,extractV)
 import Info
 import IntState
 import Tree234
@@ -31,10 +31,10 @@ reportFnImports m =
   getSymbolTable
 
 moduleName :: TokenId -> String
-moduleName = reverse . unpackPS . TokenId.extractM
+moduleName = reverse . unpackPS . extractM
 
 varName :: TokenId -> String
-varName = reverse . unpackPS . TokenId.extractV
+varName = reverse . unpackPS . extractV
 
 possibleTid (InfoClear)                                  = []
 possibleTid (InfoUsed   unique uses)                     = []

@@ -1,4 +1,4 @@
-module Prelude where
+module Prelude (IOError(..)) where
 
 import PackedString
 import IO

@@ -115,7 +115,7 @@ ${OBJDIR}/PrimIntegerGe.o: PrimIntegerGe.hs  ${OBJDIR}/PrimIntegerLt.o
 ${OBJDIR}/PrimIntegerGt.o: PrimIntegerGt.hs  ${OBJDIR}/PrimIntegerLe.o
 ${OBJDIR}/PrimIntegerNe.o: PrimIntegerNe.hs  ${OBJDIR}/PrimIntegerEq.o
 ${OBJDIR}/PrimOpenFile.o: PrimOpenFile.hs ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIO.o
-${OBJDIR}/PrimSystem.o: PrimSystem.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/../PreludeIO/DIO.o
+${OBJDIR}/PrimSystem.o: PrimSystem.hs  ${OBJDIR}/CString.o  ${OBJDIR}/../PreludeIO/DIOError.o  ${OBJDIR}/../PreludeIO/DIO.o  ${OBJDIR}/../PreludeIO/DErrNo.o
 ${OBJDIR}/PrimOpenSocket.o: PrimOpenSocket.hs ${OBJDIR}/../IO/DSocket.o ${OBJDIR}/CString.o ${OBJDIR}/../PreludeIO/DIO.o
 
 ${OBJDIR}/../PreludeIO/MsgIOError.o:
@@ -124,6 +124,8 @@ ${OBJDIR}/../PreludeIO/DIOError.o:
 	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIOError.o
 ${OBJDIR}/../PreludeIO/DIO.o:
 	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.o
+${OBJDIR}/../PreludeIO/DErrNo.o:
+	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DErrNo.o
 ${OBJDIR}/../IO/DSocket.o:
 	cd ../IO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/IO/DSocket.o
 
@@ -163,6 +165,8 @@ _Driver.c:            ../PreludeIO/DIO.c
 	cd ../PreludeIO; ${MAKE} DIOError.c
 ../PreludeIO/DIO.c:
 	cd ../PreludeIO; ${MAKE} DIO.c
+../PreludeIO/DErrNo.c:
+	cd ../PreludeIO; ${MAKE} DErrNo.c
 ../IO/DSocket.c:
 	cd ../IO;        ${MAKE} DSocket.c
 

@@ -1,5 +1,7 @@
 module Prelude where
 
+import Ratio(Ratio,(%))
+
 class  (Real a, Fractional a) => RealFrac a  where
     properFraction	:: (Integral b) => a -> (b,a)
     truncate, round	:: (Integral b) => a -> b
@@ -9,7 +11,7 @@ class  (Real a, Fractional a) => RealFrac a  where
     
     round x		=  case properFraction x of
 			    (n,r) ->
-    			      case compare (abs r - 0.5) 0 of
+    			      case compare (abs r - fromRational (1%2)) 0 of
     				LT -> n
     			 	EQ -> if even n then n else if r < 0 then n - 1 else n + 1
     				GT ->                       if r < 0 then n - 1 else n + 1

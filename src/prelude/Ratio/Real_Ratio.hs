@@ -1,4 +1,5 @@
-module Ratio(Real(..)) where
+module Ratio where
+--module Ratio(Real(..)) where
 
 import DRatio
 import TRational

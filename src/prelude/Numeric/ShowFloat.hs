@@ -1,6 +1,6 @@
 module Numeric(showFloat) where
 
-import Ratio
+import Ratio(Ratio,(%))
 
 -- The number of decimal digits m below is chosen to guarantee 
 -- read (show x) = x.  See

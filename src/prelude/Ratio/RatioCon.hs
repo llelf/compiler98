@@ -1,4 +1,4 @@
-module PrelRatio((%)) where
+module Ratio((%)) where
 
 import DRatio
 import Reduce

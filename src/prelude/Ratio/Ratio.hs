@@ -8,7 +8,8 @@ module Ratio
 	) where
 
 import DRatio
-import PrelRatio
+import TRational
+import RatioCon
 
 import Numerator
 import Denominator

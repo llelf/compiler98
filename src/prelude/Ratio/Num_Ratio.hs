@@ -1,4 +1,5 @@
-module Ratio(Num(..)) where
+module Ratio where
+--module Ratio(Num(..)) where
 
 import DRatio
 import Reduce
