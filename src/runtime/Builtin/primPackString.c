@@ -17,8 +17,8 @@ C_HEADER(primPackString)
   IND_REMOVE(res);
   length = GET_INT_VALUE(res);
 
-  size = (length + sizeof(Node) -1) / sizeof(Node);
-  extra = size * sizeof(Node) - length;
+  size = (length + sizeof(Node)) / sizeof(Node);
+  extra = size * sizeof(Node) - (length+1);
 
   res = C_ALLOC(1+EXTRA+size);
   res[0] = CONSTRW(size,extra);
@@ -34,6 +34,7 @@ C_HEADER(primPackString)
     *dstptr++ = GET_CHAR_VALUE(chr);
     src = GET_POINTER_ARG1(src,2);
   }
+  *dstptr = '\0';
   C_RETURN(res);
 }	
 
