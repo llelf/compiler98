@@ -172,7 +172,7 @@ case $OS in
   *)       EXE= ;;
 esac
 case $OS in
-  SunOS)  LIBCOMPAT=" -lsocket"  ;;
+  SunOS)  LIBCOMPAT=" -lsocket -lnsl"  ;;
   NetBSD) LIBCOMPAT=" -lcompat"  ;;
   *)      LIBCOMPAT=  ;;
 esac
@@ -335,14 +335,46 @@ main() {
   else echo "Executables need .exe suffix?               yes (detected)"
   fi
 
+  echo -n "Testing for the curses library:             "
+  if [ "$CURSES" = "" ]
+  then
+    cat >curses.c <<!!!
+#include <curses.h>
+void test (void) { mvaddstr(1,2,"hello world"); }
+int main (void) { test(); }
+!!!
+    if $CCC -o curses curses.c >/dev/null 2>/dev/null
+    then CURSES=""
+    else
+      if $CCC -o curses curses.c -lncurses >/dev/null 2>/dev/null
+      then CURSES="-lncurses"
+      else
+        if $CCC -o curses curses.c -lcurses >/dev/null 2>/dev/null
+        then CURSES="-lcurses"
+        else
+          if $CCC -o curses curses.c -lcurses -ltermcap >/dev/null 2>/dev/null
+          then CURSES="-lcurses -ltermcap"
+          else CURSES="-ltermcap -lcurses"	# don't know a good default?
+          fi
+        fi
+      fi
+    fi
+    rm -f curses curses.c
+    echo -n "$CURSES "
+    echo '(detected) '
+  else
+    echo -n "$CURSES "
+    echo '(cached) '
+  fi
+
   echo -n "Testing for the readline library: "
   echo 'main(){;}' >rd.c
   if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
   then echo '          yes (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
-  else if ${CCC} -o rd.out rd.c -lreadline -lncurses >/dev/null 2>&1
+  else if ${CCC} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
     then echo '          yes (detected)'
-       READLINE="-DUSE_READLINE=1 -lreadline -lncurses"
+       READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
     else echo '          no  (detected)'
        READLINE=""
     fi
@@ -469,6 +501,7 @@ then
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "LIBCOMPAT=\"$LIBCOMPAT\"";
       echo "READLINE=\"$READLINE\"" ;
+      echo "CURSES=\"$CURSES\"";
       echo "EXE=$EXE";
       echo "CC=$CCC";
       echo "GHCSYM=$GHCSYM";
