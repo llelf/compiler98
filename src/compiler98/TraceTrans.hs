@@ -67,19 +67,23 @@ traceTrans :: Bool    -- transform for tracing (not for non-tracing)
 traceTrans traced filename traceFilename 
  (Module pos modId exps impDecls fixDecls decls) =
   Module pos
-    (nameTransModule modId)
-    (if isMain modId then Just [] {- export everything -} else tExports exps)
+    modId'
+    (if isMain modId then Just [] {- export everything -} 
+                     else tExports exps (decls'++conNameDefs) modId')
     (tImpDecls modId impDecls)
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
       (decls' 
        ++ [defNameMod pos modId filename traced]
-       ++ map (defNameCon modTrace) cons 
-       ++ map (defNameVar Global modTrace) tvars 
+       ++ conNameDefs 
+       ++ globalVarNameDefs
        ++ map (defNameVar Local modTrace) vars 
        ++ (if traced then map (defNamePos modTrace) poss else [])
        ++ if isMain modId then [defMain traceFilename] else [] ))
   where
+  conNameDefs = map (defNameCon modTrace) cons 
+  globalVarNameDefs = map (defNameVar Global modTrace) tvars 
+  modId' = nameTransModule modId
   modTrace = ExpVar pos (nameTraceInfoModule modId)
   (poss,tvars,vars,cons) = getModuleConsts consts
   (DeclsParse decls',consts) = tDecls Global traced (mkRoot pos) decls
@@ -133,12 +137,34 @@ defMain artFilename =
 -- ----------------------------------------------------------------------------
 -- Transform imports and exports
 
-tExports :: Maybe [Export TraceId] -> Maybe [Export TokenId]
-tExports = fmap (concatMap tExport) 
+makeExport :: Decl TokenId -> [Export TokenId]
+makeExport (DeclType (Simple _ id _) _) = 
+  [ExportEntity noPos (EntityConClsSome noPos id [])]
+makeExport (DeclData _ _ (Simple _ id _) _ _) =
+  [ExportEntity noPos (EntityConClsAll noPos id)]
+makeExport (DeclClass _ _ id _ _) =   
+  [ExportEntity noPos (EntityConClsAll noPos id)]
+makeExport (DeclFun _ id _) | (head (getUnqual id)) `elem` ['g','!','a','+'] =
+  -- only these functions shall be exported 
+  [ExportEntity noPos (EntityVar noPos id)]
+  where
+  getUnqual = reverse . unpackPS . extractV
+makeExport _ = []  
 
-tExport :: Export TraceId -> [Export TokenId]
-tExport (ExportModid pos modId) = [ExportModid pos (nameTransModule modId)]
-tExport (ExportEntity pos entity) = map (ExportEntity pos) (tEntity entity)
+tExports :: Maybe [Export TraceId] -> [Decl TokenId] -> TokenId 
+         -> Maybe [Export TokenId]
+tExports Nothing _ _ = Nothing
+tExports (Just []) decls _ = Just (concatMap makeExport decls)
+tExports (Just exports) decls thisModId =  Just (concatMap tExport exports)
+  where
+  tExport :: Export TraceId -> [Export TokenId]
+  tExport (ExportModid pos modId) =
+    if modId' == thisModId 
+      then concatMap makeExport decls
+      else [ExportModid pos modId']
+    where
+    modId' = nameTransModule modId
+  tExport (ExportEntity pos entity) = map (ExportEntity pos) (tEntity entity)
 
 
 tImpDecls :: TraceId -> [ImpDecl TraceId] -> [ImpDecl TokenId]
@@ -433,8 +459,8 @@ tDecl _ traced parent (DeclInstance pos contexts clsId inst decls) =
   ,declsConsts)
   where
   (decls1,decls2,declsConsts) = tDecls2 traced parent decls
-tDecl _ _ _ (DeclDefault tys) = 
-  singleDecl $ DeclDefault (map tType tys)
+tDecl _ _ _ (DeclDefault tys) = ([],[],emptyModuleConsts) 
+  -- defaulting does not work anyway, maybe warn about nonempty one?
 tDecl _ _ _ d@(DeclPrimitive pos fnId arity ty) =
   error "TraceTrans:tDecl _ _ _ (DeclPrimitive _ _ _ _) should not occur"
 tDecl _ _ _ (DeclForeignImp pos Haskell hasName fnId arity _ ty _) =
@@ -2167,11 +2193,3 @@ instance Functor Field where
 
 -- ----------------------------------------------------------------------------
 -- End
-
-
-
-
-
-
-
-
