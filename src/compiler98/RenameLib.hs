@@ -578,8 +578,8 @@ extending error messages appropriately.
 defineDefault :: [Type Id] -> a -> RenameState -> RenameState
 defineDefault types down (RenameState flags unique rps rts rt st
                                       derived Nothing errors needCheck) =
-    case partition (\nt-> case nt of TypeCons _ _ [] -> True;
-                                     TypeApp _ _ -> True; 
+    case partition (\nt-> case nt of TypeCons _ _ [] -> True
+                                     TypeApp _ _ -> True
                                      _ -> False) 
                    types of
       (cs,[]) -> 
