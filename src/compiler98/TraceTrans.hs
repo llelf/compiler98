@@ -39,7 +39,7 @@ import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
                ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
 import AuxTypes (AuxiliaryInfo) -- needed for hbc's broken import mechanism
-import List (isPrefixOf,union,partition,nubBy)
+import List (isPrefixOf,union,partition,nubBy,delete)
 import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
 import Maybe (fromJust,catMaybes)
@@ -208,19 +208,27 @@ defNameMod pos id filename traced =
           ,ExpCon pos (if traced then tTrue else tFalse)])) 
       noDecls]
 
-defNameCon :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
-defNameCon modTrace (pos,id) =
+defNameCon :: Exp TokenId -> (Pos,TraceId,[TraceId]) -> Decl TokenId
+defNameCon modTrace (pos,id,labels) =
   DeclFun pos (nameTraceInfoCon id)
     [Fun []
       (Unguarded
         (ExpApplication pos
-          [ExpVar pos tokenMkAtomConstructor
-          ,modTrace
-          ,ExpLit pos (LitInt Boxed (encodePos pos))
-          ,ExpLit pos (LitInt Boxed (fixPriority id))
-          ,ExpLit pos (LitInt Boxed (fromJust (arity id)))
-          ,ExpLit pos (LitString Boxed (getUnqualified id))]))
+          (ExpVar pos (tokenMkAtomConstructor withLabels)
+          :modTrace
+          :ExpLit pos (LitInt Boxed (encodePos pos))
+          :ExpLit pos (LitInt Boxed (fixPriority id))
+          :ExpLit pos (LitInt Boxed (fromJust (arity id)))
+          :ExpLit pos (LitString Boxed (getUnqualified id))
+          :if withLabels
+             then (:[]) . mkList pos . 
+                    map (ExpVar pos . nameTraceInfoVar pos Global) $
+                    labels
+             else []
+          )))
       noDecls]
+  where
+  withLabels = not (null labels)
 
 defNameVar :: Scope -> Exp TokenId -> (Pos,TraceId,Scope) -> Decl TokenId
 defNameVar idScope refMod (pos,id,defScope) =
@@ -278,7 +286,8 @@ data ModuleConsts =
   MC [Pos]  -- positions used in traces
     [(Pos,TraceId,Scope)]  -- this-level variable ids for traces
     [(Pos,TraceId,Scope)]  -- variable ids for use in traces
-    [(Pos,TraceId)]  -- constructor ids for use in traces
+    [(Pos,TraceId,[TraceId])]  -- constructor ids for use in traces
+                               -- together with field labels (global)
 
 emptyModuleConsts :: ModuleConsts
 emptyModuleConsts = MC [] [] [] []
@@ -290,9 +299,9 @@ addVar :: Pos -> TraceId -> Scope -> ModuleConsts -> ModuleConsts
 addVar pos id scope (MC poss tids ids cons) = 
   MC (pos `insert` poss) ((pos,id,scope) `insert` tids) ids cons
 
-addCon :: Pos -> TraceId -> ModuleConsts -> ModuleConsts
-addCon pos id (MC poss tids ids cons) =
-  MC (pos `insert` poss) tids ids ((pos,id): cons)
+addCon :: Pos -> TraceId -> [TraceId] -> ModuleConsts -> ModuleConsts
+addCon pos id labels (MC poss tids ids cons) =
+  MC (pos `insert` poss) tids ids ((pos,id,labels): cons)
 
 -- both from the same declaration level
 merge :: ModuleConsts -> ModuleConsts -> ModuleConsts
@@ -308,11 +317,12 @@ withLocal _ _ = error "TraceTrans.withLocal: locally defined data constructors"
 
 getModuleConsts :: ModuleConsts 
                 -> ([Pos],[(Pos,TraceId,Scope)],[(Pos,TraceId,Scope)]
-                   ,[(Pos,TraceId)])
+                   ,[(Pos,TraceId,[TraceId])])
 getModuleConsts (MC pos tids ids cons) = (pos,tids,ids,cons)
 
+-- avoid duplicate
 insert :: Eq a => a -> [a] -> [a] 
-insert p ps = if p `elem` ps then ps else p:ps
+insert p ps = p : delete p ps
 
 -- ----------------------------------------------------------------------------
 -- Transformation of declarations, expressions etc.
@@ -395,16 +405,17 @@ tDecl Global _ _ (DeclData sort contexts lhsTy constrs pClss) =
     (map tConstr constrs) []] 
     -- "derive" should be empty, because transformed classes cannot be derived
   ,instDecl:fieldSelectorDecls++deriveDecls
-  ,foldr (uncurry addCon) (fieldSelectorConsts `merge` deriveConsts)
-     (map getCon constrs))
+  ,foldr addConInfo (fieldSelectorConsts `merge` deriveConsts) constrs)
   where
   (DeclsParse deriveDecls,deriveConsts) = 
      tDecls Global False (mkRoot noPos) 
        (DeclsParse (derive contexts lhsTy constrs pClss))
   instDecl = wrapValInstDecl (getPos lhsTy) contexts lhsTy constrs
   (fieldSelectorDecls,fieldSelectorConsts) = mkFieldSelectors constrs
-  getCon (Constr pos id _) = (pos,id)
-  getCon (ConstrCtx _ _ pos id _) = (pos,id)
+  addConInfo :: Constr TraceId -> ModuleConsts -> ModuleConsts
+  addConInfo constr = 
+    addCon (getPos constr) (getConstrId constr) 
+      (map snd (getConstrLabels constr))
 tDecl _ _ _ (DeclDataPrim pos id size) = 
   error ("Cannot trace primitive data type (" ++ show (tokenId id) 
     ++ " at position " ++ strPos pos ++ ")")
@@ -1185,20 +1196,28 @@ tExp traced cr parent (ExpRecord (ExpCon pos consId) fields) = -- construction
   sr = mkSRExp pos traced
   (fields',fieldsConsts) = mapMerge2 (tField traced parent) fields
 tExp True cr parent (ExpRecord exp fields) = -- update
-  (ExpApplication pos
-    (combUpdate pos True (length labels):mkSRExp pos True:parent:exp'
-    :ExpLambda pos [var] (ExpRecord var fields')
-    :labels ++ fieldExps')
+  (ExpLet pos 
+    (DeclsParse $ 
+      zipWith (DeclFun pos) fieldVarIds 
+        (map ((:[]) . flip (Fun []) noDecls . Unguarded) fieldExps'))
+    (ExpApplication pos
+      (combUpdate pos True (length labels):mkSRExp pos True:parent:exp'
+      :ExpLambda pos [var] (ExpRecord var varFields')
+      :labels ++ fieldVars))
   ,pos `addPos` expConsts `merge` fieldsConsts)
   where
   (exp',expConsts) = tExp True False parent exp
   (fields',fieldsConsts) = mapMerge2 (tField True parent) fields
-  labels = map (ExpVar pos . nameTraceInfoVar noPos Global . fieldLabel) fields
+  labels = map (ExpVar pos . nameTraceInfoVar noPos Global) labelIds
+  varFields' = zipWith (FieldExp pos) (map fieldLabel fields') fieldVars
   fieldExps' = map fieldExp fields'
-  fieldLabel (FieldExp _ labelId _) = labelId
-  fieldExp (FieldExp _ _ exp) = exp
+  fieldVars = map (ExpVar pos) fieldVarIds
+  fieldVarIds = map nameShare labelIds
+  labelIds = map fieldLabel fields
   var = ExpVar pos (nameFromPos pos)
   pos = getPos fields
+  fieldLabel (FieldExp _ labelId _) = labelId
+  fieldExp (FieldExp _ _ exp) = exp
 tExp False cr parent (ExpRecord exp fields) = -- update
   (ExpApplication pos
     [combUpdate pos False undefined,parent,exp'
@@ -1417,6 +1436,11 @@ mkTList pos =
   where
   cons = ExpCon pos tTokenCons
 
+mkList :: Pos -> [Exp TokenId] -> Exp TokenId
+mkList pos = 
+  foldr (\x xs -> ExpApplication pos [cons,x,xs]) (ExpCon pos t_List)
+  where
+  cons = ExpCon pos t_Colon
 
 -- ----------------------------------------------------------------------------
 -- Transform types
@@ -1785,8 +1809,10 @@ tokenMkPos = mkTracingToken "mkSrcPos"
 tokenMkNoPos :: TokenId
 tokenMkNoPos = mkTracingToken "mkNoSrcPos"
 
-tokenMkAtomConstructor :: TokenId
-tokenMkAtomConstructor = mkTracingToken "mkConstructor"
+tokenMkAtomConstructor :: Bool -> TokenId
+tokenMkAtomConstructor withFields = 
+  mkTracingToken 
+    (if withFields then "mkConstructorWFields" else "mkConstructor")
 
 tokenMkAtomVariable :: TokenId
 tokenMkAtomVariable = mkTracingToken "mkVariable"

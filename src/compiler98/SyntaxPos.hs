@@ -72,6 +72,10 @@ instance HasPos (Field a) where
     getPos (FieldExp pos _ _) = pos
     getPos (FieldPun pos _) = pos
 
+instance HasPos (Constr a) where
+    getPos (Constr pos _ _) = pos
+    getPos (ConstrCtx _ _ pos _ _) = pos
+
 -----------------------
 
 getPosList [] = noPos
