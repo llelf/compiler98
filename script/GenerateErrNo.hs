@@ -46,7 +46,7 @@ cprogFooter =
   "      errs[++max] = dups[j];\n" ++
   "      printf(\"  | %s\\n\",errs[max]);\n" ++
   "  }\n" ++
-  "  if (noncontig) {\n" ++
+  "  if (1/*noncontig*/) {\n" ++
   "    printf(\"  deriving (Eq,Show)\\n\\n\");\n" ++
   "    printf(\"instance Enum ErrNo where\\n\");\n" ++
   "    for (i=1; i<=max; i++) {\n" ++

@@ -1302,7 +1302,7 @@ main() {
       errs[++max] = dups[j];
       printf("  | %s\n",errs[max]);
   }
-  if (noncontig) {
+  if (1/*noncontig*/) {
     printf("  deriving (Eq,Show)\n\n");
     printf("instance Enum ErrNo where\n");
     for (i=1; i<=max; i++) {
