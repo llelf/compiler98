@@ -15,17 +15,14 @@
 #include "hatinterface.h"
 #include "FunTable.h"
 #include "nodelist.h"
-#include "hashtable.h"
 #include "observe.h"
 #include "hatgeneral.h"
 #include "detect.h"
 #include "menu.h"
 
-#define HASH_TABLE_SIZE 3000
-
 void startSession(HatFile handle,filepointer nodeAddress);
 int askNodeList(HatFile handle,int question,NodeList* results,
-		int isTopSession,HashTable* hash);
+		int isTopSession);
 
 char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
@@ -273,11 +270,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 		showAppAndResult(handle,newAdr,verboseMode,precision);
 		printf("\n");
 		appendToList(nl,newAdr);
-		{
-		  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
-		  askNodeList(handle,0,nl,1,hash);
-		  freeHashTable(hash);
-		}
+		askNodeList(handle,0,nl,1);
 		printf("\nResuming previous session.\n");
 	      }
 	    }
@@ -442,7 +435,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 }
 
 int askNodeList(HatFile handle,int question,NodeList* results,
-		int isTopSession,HashTable* hash) {
+		int isTopSession) {
   int success,askAgain,question_old,first_question,postponeMode=0;
   NodeList *children=NULL,*postList=newList();
   char s[2];
@@ -466,13 +459,9 @@ int askNodeList(HatFile handle,int question,NodeList* results,
       }
       if ((answer!=1)&&(answer!=3)&&(answer<10)){
 	children = newList();
-	{
-	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
-	  getChildrenFor(handle,children,e->fileoffset,hash);
-	  freeHashTable(hash);
-	  removeFromList(children,mainCAF); // never consider the main CAF a child of anything
-	}
-	success = askNodeList(handle,question,children,0,hash);
+	getChildrenFor(handle,children,e->fileoffset);
+	removeFromList(children,mainCAF); // never consider the main CAF a child of anything
+	success = askNodeList(handle,question,children,0);
 	if (success>=10) {answer=success;success=0;}
 	if (answer==2) {
 	  question = question_old;
@@ -558,11 +547,9 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 }
 
 void startSession(HatFile handle,filepointer nodeAddress) {
-  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   addBeforeList(results,nodeAddress);
-  askNodeList(handle,0,results,2,hash);
-  freeHashTable(hash);
+  askNodeList(handle,0,results,2);
   quit();
 }
 

@@ -5,9 +5,9 @@ module HatExpression (
 	      HatContainer,HatNone),
  hatExpressionType,
  lazyExpression,
- showExpression,
- showReduction,
- showReductionList
+ printExpression,
+ printReduction,
+ printReductionList
 )
 
 where
@@ -79,37 +79,41 @@ lazyExpression precision node = lazyExpression' precision (hatNodeType node)
 	   let parent = (hatParent node);
 	       newprec = (precision-1) in 
 	       (HatApplication node 
-		(if (isNothing(parent)) then (HatNone node) else
-		 (lazyExpression newprec (fromJust parent)))
-                (lazyExpression newprec (fromJust (hatApplFun node)))
+		(if (isInvalidNode parent) then (HatNone node) else
+		 (lazyExpression newprec parent))
+                (lazyExpression newprec (hatApplFun node))
                 (map (lazyExpression newprec) (hatApplArgs node))
 		(let r = (hatResult node) in 
-		 if (isNothing r) then (HatNone node) else
-		 lazyExpression newprec (fromJust r)))
-       lazyExpression' _ HatConstrNode = HatConstructor node (fromJust (hatName node)) (hatApplInfix node)
-       lazyExpression' _ HatIdentNode = HatIdentifier node (fromJust (hatName node)) (hatApplInfix node)
+		 if (isInvalidNode r) then (HatNone node) else
+		 lazyExpression newprec r))
+       lazyExpression' _ HatConstrNode = (HatConstructor node 
+					  (fromJust (hatName node))
+					  (hatApplInfix node))
+       lazyExpression' _ HatIdentNode = (HatIdentifier node
+					 (fromJust (hatName node))
+					 (hatApplInfix node))
        lazyExpression' prec HatConstantNode =  
 	   let parent = (hatParent node);
 	       newprec = prec-1 in
 	       (HatConstant node
-		(if (isNothing(parent)) then (HatNone node) else
-		 (lazyExpression newprec (fromJust parent)))
-		(lazyExpression newprec (fromJust (hatApplFun node)))
+		(if (isInvalidNode parent) then (HatNone node) else
+		 (lazyExpression newprec parent))
+		(lazyExpression newprec (hatApplFun node))
 		(let r = (hatResult node) in 
-		 if (isNothing r) then (HatNone node) else
-		 lazyExpression newprec (fromJust r)))
+		 if (isInvalidNode r) then (HatNone node) else
+		 lazyExpression newprec r))
        lazyExpression' prec HatSAT_ANode = HatSAT_A node (lazyExpression (prec-1)
-						(fromJust (hatParent node)))
+						(hatParent node))
        lazyExpression' prec HatSAT_BNode = HatSAT_B node (lazyExpression (prec-1)
-						(fromJust (hatParent node)))
+						(hatParent node))
        lazyExpression' prec HatSAT_CNode = (lazyExpression (prec-1)
-						(fromJust (hatParent node)))
+						(hatParent node))
        lazyExpression' prec HatHiddenNode = HatHidden node (lazyExpression (prec-1)
-						(fromJust (hatParent node)))
+						(hatParent node))
        lazyExpression' prec HatProjNode =  HatProj node (lazyExpression (prec-1)
-					       (fromJust (hatParent node)))
+					       (hatParent node))
 				              (lazyExpression (prec-1) 
-					       (fromJust (hatProjRef node)))
+					       (hatProjRef node))
        lazyExpression' _ HatCaseNode = HatCase node
        lazyExpression' _ HatLambdaNode = HatLambda node
        lazyExpression' _ HatIntNode = HatInt node (hatInt (hatValue node))
@@ -167,6 +171,9 @@ ppStringExpr precision expr =
                    if (length chr)==3 then (head (tail chr)):r
                    else (head(tail chr)):(head (tail (tail chr))):r
 
+
+-- prettyPrinting by Haskell
+
 prettyPrint :: Int -> HatExpression -> String
 prettyPrint i expr = fst (pPrint i expr (HatInfix 0))
 
@@ -181,7 +188,8 @@ pPrint precision expr topInfix
        if (resultType==HatSAT_ANode) then ("_",HatNoInfix) else
          let s = (ppStringExpr precision expr) in 
           if (isJust s) then
-             if (fromJust s)=="" then ("[]",HatNoInfix) else ("\""++(fromJust s)++"\"",HatNoInfix)
+             if (fromJust s)=="" then ("[]",HatNoInfix) else
+		    ("\""++(fromJust s)++"\"",HatNoInfix)
           else
            if (precision>1) then
             let (funsym,infixP) = (pPrint (precision-1)
@@ -229,12 +237,9 @@ pPrint precision expr topInfix
     brackets (HatInfix p) (HatInfix q) l   = if (p>=q) then l else '(':(l++")")
     brackets  _ _ l = '(':(l++")")
 
---showHatExprList :: [HatExpression] -> [(Int,Int)]
---showHatExprList [] = []
---showHatExprList (((f,node),_):xs) = (((showForeignObjAddr f),node):(showHatExprList xs))
 
-showExpression :: HatExpression -> IO ()
-showExpression hatExpression =
+printExpression :: HatExpression -> IO ()
+printExpression hatExpression =
     putStr (unbracket (prettyPrint 100 hatExpression))
     where unbracket ('(':r) = cutlast r
           unbracket r = r
@@ -242,24 +247,24 @@ showExpression hatExpression =
           cutlast [] = []
           cutlast (c:r) = c:(cutlast r)
 
-showReduction :: HatExpression -> IO ()
-showReduction hatNode =
-  showExpression hatNode >>
+printReduction :: HatExpression -> IO ()
+printReduction hatNode =
+  printExpression hatNode >>
   let exptype = (hatExpressionType hatNode) in
     if ((exptype==HatApplNode)||(exptype==HatConstantNode)) then
      let result = (res hatNode) in
         putStr " = " >>
-        (showExpression result) >>
+        (printExpression result) >>
         putStrLn ""
     else
      return ()
 
-showReductionList :: [HatExpression] -> IO ()
-showReductionList [] = return ()
-showReductionList (x:list) =
+printReductionList :: [HatExpression] -> IO ()
+printReductionList [] = return ()
+printReductionList (x:list) =
     do
-    showReduction x
-    showReductionList list
+    printReduction x
+    printReductionList list
 
 
 

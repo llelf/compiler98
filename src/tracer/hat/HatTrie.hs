@@ -595,7 +595,7 @@ showLin (LFirstArg) = "LFirstArg"
 showLin (LLastArg) = "LLastArg"
 showLin (LRHS) = "LRHS"
 showLin (LNone) = "LNone"
-showLin (LNodeAdr node) = "LNodeArg "++(showHatNode node)
+showLin (LNodeAdr node) = "LNodeArg "++(show node)
 
 showLinList l = "["++(foldl (\x y->(x++", "++y)) [] (map showLin l))++"]"
 
@@ -621,5 +621,5 @@ showTrie (TGuard l) = "TGuard "++(showTrieList l)
 showTrie (TContainer l) = "TContainer "++(showTrieList l)
 showTrie (TFirstArg l) = "TFirstArg "++(showTrieList l)
 showTrie (TRHS l) = "TRHS "++(showTrieList l)
-showTrie (TNodeAdr node) = "TNodeArg "++(showHatNode node)
+showTrie (TNodeAdr node) = "TNodeArg "++(show node)
 showTrie (TNone l) = "TNone "++(showTrieList l)

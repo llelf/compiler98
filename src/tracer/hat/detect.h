@@ -23,8 +23,7 @@ BOOL isChildOf(HatFile handle,filepointer nodenumber,filepointer parent);
 
 
 void getChildrenFor(HatFile handle,NodeList* nl,
-		    filepointer edtnode,
-		    HashTable* hash);
+		    filepointer edtnode);
 
 int  getEDTchildren(HatFile handle,filepointer parent,int **childrenArray);
 

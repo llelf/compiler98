@@ -51,8 +51,12 @@ checkIdentifiers (ident1:file:[]) = Just (ident1,"",file)
 checkIdentifiers (file:[]) = Just ("","",file)
 checkIdentifiers _ = Nothing
 
-main = do
-         arguments <- getArgs
+main = 
+    do
+    arguments <- getArgs
+    if ((length arguments)==3)&&((head (tail arguments))=="-remote") then
+       startObserve (head arguments) False False False (head (drop 2 arguments)) "" True
+      else
          let identifiers = checkIdentifiers (noParameters arguments);
              options = (goodParameters "vxur" arguments) in
           if ((isNothing identifiers)||(hasBadParameters "vxur" arguments)) then
@@ -65,23 +69,40 @@ main = do
 --             putStrLn (show (goodParameters "vxur" arguments))>>
 --             putStrLn (show (noParameters arguments)) >>
 --             putStrLn (show ([verboseMode,recursiveMode,expertMode])) >>
-	     do
-             maybehattrace <- openTrace file
-             if (isNothing maybehattrace) then
-		do
-		  putStrLn ("Hatobserve\n\nError: Unable open file \""++file++"\".")
-	      else
-	       let hattrace = (fromJust maybehattrace) in
-                if (ident1=="") then
-		 do
-	          putStrLn "\nWelcome to Hatobserve (10/7/01)"
-                  observed <- interactive (file,hattrace) ([],False,1,0,50)
-		  return ()
-                 else
-	          do
-                   observed <- makeObserve hattrace verboseMode recursiveMode expertMode
+	       startObserve file verboseMode recursiveMode expertMode ident1 ident2 False
+
+--startObserve :: String -> Bool -> Bool -> Bool -> String -> String -> Bool -> IO ()
+startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
+    do
+      maybehattrace <- openTrace file
+      if (isNothing maybehattrace) then
+	 do
+	   putStrLn ("Hatobserve\n\nError: Unable open file \""++file++"\".")
+       else
+        let hattrace = (fromJust maybehattrace) in
+	  do
+            if ((remote)||(ident1=="")) then putStrLn "\nWelcome to Hatobserve (10/7/01)"
+             else return ()
+            observed <- if ((remote)||(ident1/="")) then
+                           makeObserve hattrace verboseMode recursiveMode expertMode
 		               False (\ x -> True) ident1 ident2
-      		   if (isTopIdentNotFound observed) then
+                         else
+			   return (Found [])
+	    if (ident1=="") then
+               do
+	 	  dummy <- interactive (file,hattrace) ([],False,1,0,50)
+		  return ()
+             else
+              if (remote) then
+                let obs = (fromFound observed);
+                    hasmore = (null obs)==False in
+                 do
+	           dummy <- doCommand "" "" (file,hattrace) ((fromFound observed),
+							     hasmore,1,0,50)
+                   return ()
+               else
+	        do
+      		  if (isTopIdentNotFound observed) then
 		     putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
 			       "identifier \""++ident2++"\".\n(Check spelling!)")
                     else
@@ -89,15 +110,15 @@ main = do
  		       putStrLn ("Sorry, no prize. Nothing recorded in trace about "++
 			         "identifier \""++ident1++"\".\n(Check spelling!)")
                       else
-                       old_showReductionList 100 (fromFound observed)
-                   return ()
+                       printCReductionList 100 (fromFound observed)
+                  return ()
 
  
 showObservation :: Int -> Int -> HatNode -> IO()
 showObservation precision i node =
  do
    putStr ("#"++(show i)++": ")
-   old_showReduction precision (Just node)
+   printCReduction precision node
 
 showObservationList :: Int -> Int -> Int -> [HatNode] -> IO Int
 showObservationList _ _  _ [] = return 0
@@ -112,8 +133,7 @@ makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
 	       (LinExpr->Bool) -> String -> String -> IO ObserveResult
 makeObserve hattrace verboseMode recursiveMode expertMode filterMode 
 	    filterFun ident1 ident2 =
-    let recmod = (if recursiveMode then 1 else 0);
-	observed = (observe hattrace ident1 ident2 recmod) in
+    let observed = (observe hattrace ident1 ident2 recursiveMode) in
      if (isFound observed) then
        if (expertMode) then
 	 do
@@ -151,7 +171,7 @@ uniqueFilter observed filterFun =
 		 (filter filterFun linexpr)) in
 --    (putStrLn (showLinList (head linexpr)))>>
       let nodes = (getTrieNodes tries) in
-       if (null nodes) then 
+       if (null nodes) then
 	  -- putStrLn "no match" >>
           return [] 
 	else -- showObservations nodes >>
@@ -401,10 +421,9 @@ doCommand cmd s hatfile state =
      else
       doCommand "O" ("O "++s) hatfile state
 
-
-startExternalTool file node@(_,id) =
-    let maybeID = hatResult node;
-	rhsID = if (isNothing maybeID) then 0 else (snd (fromJust maybeID)) in
+startExternalTool file node =
+    let id = nodeToRemote node;
+        rhsID = nodeToRemote (hatResult node) in
     do
       putStr "Start Algorithmic Debugging or Tracer? (A/T): "
       choice <- getLine
@@ -414,9 +433,9 @@ startExternalTool file node@(_,id) =
 	  lhs <- getLine
           errcode <- system(spawnTraceCmd++
 			    file++" -remote "++
-			    (show (if ((rhsID==0)||((length lhs)==0)||
-				       (head (upStr lhs)/='R')) then id
-				   else rhsID))++
+			    (if ((rhsID=="")||((length lhs)==0)||
+				 (head (upStr lhs)/='R')) then id
+			     else rhsID)++
 			    spawnTraceEnd)
           if (errcode/=ExitSuccess) then
 	     putStrLn ("ERROR: Unable to start hat-trail.\n"++
@@ -425,7 +444,7 @@ startExternalTool file node@(_,id) =
        else
         do
          errcode <- system(spawnDetectCmd++
-			   file++" -remote "++(show id)++spawnDetectEnd)
+			   file++" -remote "++id++spawnDetectEnd)
 	 if (errcode/=ExitSuccess) then
 	    putStrLn ("ERROR: Unable to start hat-detect.\n"++
 		      "Check settings and availability of hat-detect!")

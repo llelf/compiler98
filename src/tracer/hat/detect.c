@@ -66,12 +66,97 @@ filepointer getEDTroot(HatFile handle) {
   return hatMainCAF(handle);
 }
 
+int hasAncestor(HatFile handle,filepointer nodenumber,filepointer parent) {
+  char nodeType;
+  int distance = 0;
+  filepointer old = hatNodeNumber(handle);
+
+  while (1) {
+    distance++;
+    if (nodenumber==0) {hatSeekNode(handle,old);return 0;}
+    if (nodenumber==parent) {hatSeekNode(handle,old);return distance;}
+    getNodeType(handle,nodenumber);
+    nodenumber = getParent();
+  }
+}
+
+// leftmost outermost application/name, without passing any SATCs
+// nodes "behind" the SATC were calculated separately, and (may) have nothing
+// to do with the current considered EDT node 
+filepointer hatLMOdirect(HatFile handle,filepointer fileoffset) {
+  char nodeType;
+  filepointer last=0;
+
+  while (1) {
+    nodeType=getNodeType(handle,fileoffset);
+    switch(nodeType) {
+    case TRSATA:
+    case TRSATB:
+    case TRSATBIS:
+    case TRSATAIS:
+      return 0;
+    case TRSATC:
+    case TRSATCIS:
+      hatSeekNode(handle,last);
+      return last;
+    case TRNAM:
+      return fileoffset;
+      break;
+    case NTIDENTIFIER:
+    case NTCONSTRUCTOR:
+      return fileoffset;
+    case TRAPP:
+      last = fileoffset;
+      fileoffset = getAppFun();
+      break;
+    default:
+      return 0;
+    }
+  }
+}
+
+filepointer getHatParent(HatFile handle,filepointer nodenumber,filepointer parent) {
+  int d1,d2,ok=0;
+  filepointer p1;
+  char nodeType;
+
+  nodeType=getNodeType(handle,nodenumber);
+  //printf("realparent1: 0x%x\n",nodenumber);
+  p1 = getParent();
+
+  if (nodeType==HatApplication) {
+    filepointer fun = getAppFun();
+    filepointer n;
+    if (!isSAT(handle,fun)) {
+      getNodeType(handle,fun); // hatFollowSATs(handle,fun));
+      n = hatLMOdirect(handle,fun);         // in getChildrenRek!
+      if (n!=0) {
+	getNodeType(handle,n);
+	n = getParent();
+	if (n!=p1) {
+	  d2=hasAncestor(handle,n,parent);
+	  if (d2>0) {
+	    d1=hasAncestor(handle,p1,parent);
+	    if (d2>d1) {
+	      nodenumber=n;
+	      ok=1;
+	    }
+	  }
+	} else {nodenumber=n;ok=1;}
+      }
+    }
+  }
+  if ((nodenumber!=0)&&(ok==0)) {
+    nodenumber=hatFollowHidden(handle,p1);
+  }
+  return nodenumber;
+}
+
 int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);
 
   if (parent==0) return 0;
-  //printf("einstieg: %u\n",nodenumber);
   while (nodenumber!=0) {
     nodeType=getNodeType(handle,nodenumber);
     switch(nodeType) {
@@ -87,26 +172,12 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
       break;
     case HatName:
     case HatApplication:{
-      //printf("node: %u\n",nodenumber);
-      if (nodeType==HatApplication) {
-	filepointer fun = getAppFun();
-	if (getNodeType(handle,hatFollowSATs(handle,fun))!=HatApplication) {
-	  // should match equivalent test
-	  nodenumber = hatLMOName(handle,fun);         // in getChildrenRek!
-	}
-      }
-      //printf("lmo: %u\n",nodenumber);
-      if (nodenumber!=0) {
-	//printf("type: %u\n",
-	getNodeType(handle,nodenumber);
-        nodenumber=getParent();
-      }
-      // nodenumber = getParent();
+      nodenumber = getHatParent(handle,nodenumber,parent);
       if (nodenumber==parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
-      if (isTopLevel(handle,nodenumber)) {
+      if (isTopLevel(handle,nodenumber)&&(getResult(handle,nodenumber)!=0)) {
 	hatSeekNode(handle,old);
 	return 0;
       }
@@ -132,6 +203,8 @@ void getChildrenForRek(HatFile handle,
 		       HashTable* hash,filepointer initialCAF) {
   char nodeType;
   filepointer satc=0,result,orig_current=current;
+
+  //exit(1);
   {
     if (current==parentTrace) return; // GUARD expressions: parent is an argument at the
     // same time: avoid loops!
@@ -162,13 +235,14 @@ void getChildrenForRek(HatFile handle,
 	unsigned long srcref,p,funTrace,appTrace;
 	int arity,isChild,isIForGUARD;
 	arity     = getAppArity();
-	appTrace  = getParent();            // fileoffset of App-trace
+	//appTrace  = getParent();            // fileoffset of App-trace
 	funTrace  = getAppFun();            // function-trace
 	srcref    = getSrcRef();            // get srcref
 	//appTrace  = hatFollowHidden(handle,
 	//			    appTrace); // follow along hidden to find parent
 	
-	if (getNodeType(handle,hatFollowSATs(handle,funTrace))!=HatApplication) {
+	appTrace = getHatParent(handle,current,parentTrace);
+	/*	if (getNodeType(handle,hatFollowSATs(handle,funTrace))!=HatApplication) {
 	  // note: this test should match the test in isChildOf
 	  // if fun is not an application, take the parent of the leftmost node
 	  appTrace = hatLMOName(handle,funTrace);
@@ -181,6 +255,11 @@ void getChildrenForRek(HatFile handle,
 	} else {
 	  // fun is an application: we'll investigate this application node later!
 	  appTrace = hatFollowHidden(handle,appTrace);
+	}
+	*/
+	if (getNodeType(handle,hatFollowSATs(handle,funTrace))==HatApplication) {
+	  // higher order result of fun is applied additional arguments
+	  
 	}
 	switch (getNodeType(handle,funTrace)) {
 	case HatIf:
@@ -320,22 +399,35 @@ void getChildrenForRek(HatFile handle,
 }
 
 void getChildrenFor(HatFile handle,
-		    NodeList* nl,filepointer edtnode,
-		    HashTable* hash) {
+		    NodeList* nl,filepointer edtnode) {
   filepointer result = getResult(handle,edtnode);
   if (edtnode) { // does any result exist?
+    HashTable* hash=newHashTable(HASH_TABLE_SIZE);
+    filepointer topmost,current=edtnode;
+    while (current!=0) { // find topmost CAF
+      topmost = current;
+      getNodeType(handle,current);
+      current = getParent();
+    }
+    // initialise hash table: save lots of time by disallowing to search
+    // all parents of the node to be searched!
+    current = edtnode;
+    while (current!=0) { // add all parents to hash table: do not search them
+      current = getHatParent(handle,current,topmost);
+      addToHashTable(hash,current);
+    }
     getChildrenForRek(handle,nl,edtnode,result,hash,hatInitialCAF(handle,edtnode));
+    freeHashTable(hash);
   }
 }
 
+// interface function to Haskell: return children as an array rather than a list
 int getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray) {
-  HashTable* hash = newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   int l;
 
-  getChildrenFor(handle,results,parentTrace,hash);
+  getChildrenFor(handle,results,parentTrace);
   l = listLength(results);
-  // printf("New!\n");
   {
     int i=0;
     NodeElement *e = results->first;
@@ -346,16 +438,12 @@ int getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray) {
       e=e->next;
     }
     (*childrenArray)[i]=(-1);
-    // printf("detected %i\n",i);
   }
   freeList(results);
-  freeHashTable(hash);
   return l;
 }
 
 void freeArray(int *array) {
-  //printf("Freeing %u...\n",array);
   if (array!=NULL) free(array);
   array = NULL;
-  //printf("Free!\n");
 }
