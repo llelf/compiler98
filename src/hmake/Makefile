@@ -24,13 +24,13 @@ CFGCFILES = $(patsubst %.hs, %.$C, $(CFGSRCS))
 AUX     = Makefile* BuildNew* HISTORY README* Summary TODO nhcmakeR cfiles \
           hmake hmake.1
 
-HC = $(LOCAL)nhc98
+HC = $(LOCAL)nhc98	# can be overridden by caller HC=...
 HFLAGS = $(shell echo $(BUILDOPTS)) #-$(CFG)
 
-ifeq "nhc98" "$(HC)"
+ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HEAP = -H4M
 endif
-ifeq "ghc" "$(HC)"
+ifeq "ghc" "$(findstring ghc, ${HC})"
 HFLAGS += -package lang
 #ifeq "CYGWIN" "$(findstring CYGWIN, $(MACHINE))"
 #config: fixcygwin

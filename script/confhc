@@ -138,6 +138,9 @@ INVOKE="$PWD/script/hmake-config $PWD/lib/$MACHINE/hmakerc"
   then echo "$INVOKE add nhc98"
        echo "$INVOKE add ${NHCKNOWN}"
   fi;
+  if [ "$BUILDHMAKE" != "ghc" -a "$BUILDHMAKE" != "nhc98" ]
+  then echo "$INVOKE add ${BUILDHMAKE}"
+  fi;
 } >targets/$MACHINE/hmake3.config
 echo $BUILDHMAKE >targets/$MACHINE/buildwith
 

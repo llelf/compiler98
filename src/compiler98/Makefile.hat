@@ -20,12 +20,12 @@ OBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, ${SRCS})
 
 HC = nhc98	# can be overridden by caller with 'make HC=...'
 
-ifeq "nhc98" "${HC}"
+ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS
 endif
-ifeq "ghc" "${HC}"
+ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
-HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -syslib exts -CTS)  $(IMPROVE)
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -syslib exts)  $(IMPROVE)
 endif
 
 HMAKEFLAGS += $(shell echo $(BUILDOPTS))
@@ -47,7 +47,7 @@ $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):
-	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc
+	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
 	$(MAKE) clean
 	touch "$(OBJDIR)/$(HC)"
  

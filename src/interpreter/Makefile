@@ -9,16 +9,16 @@ OTHERS = Unlit.hs Compiler.hs Config.hs	# from src/hmake
 CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 
-ifeq "${HC}" "ghc"
+ifeq "$(findstring ghc, ${HC})" "ghc"
 HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
                  -package lang -package util $(READLINE) )
 export HFLAGS
 endif
-ifeq "${HC}" "hbc"
+ifeq "$(findstring hbc, ${HC})" "hbc"
 HFLAGS =
 export HFLAGS
 endif
-ifeq "${HC}" "nhc98"
+ifeq "$(findstring nhc98, ${HC})" "nhc98"
 HFLAGS =
 export HFLAGS
 endif
@@ -34,8 +34,8 @@ realclean: clean
 	-rm -f *.hc *.c
 
 $(TARGET): $(OBJDIR) $(SRCS)
-	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)") \
-		-i../hmake $(HFLAGS)
+	$(HMAKE) -hc=$(HC) HInteractive -d$(OBJDIR) \
+		$(shell echo "${BUILDOPTS}") -i../hmake $(HFLAGS)
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 

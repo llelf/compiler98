@@ -3,10 +3,10 @@ include Makefile.inc
 OBJDIR = $(BUILDDIR)/$(OBJ)/greencard
 TARGET = $(DST)/greencard-nhc98$(EXE)
 
-ifeq "nhc98" "$(HC)"
+ifeq "nhc98" "$(findstring nhc98, ${HC})"
   HFLAGS = $(shell echo $(BUILDOPTS)) +CTS -H4Mb -CTS
 endif
-ifeq "ghc" "$(HC)"
+ifeq "ghc" "$(findstring ghc, ${HC})"
   HFLAGS = $(shell echo $(BUILDOPTS)) $(shell $(LOCAL)fixghc $(GHCSYM) -package lang)
 endif
 
@@ -39,7 +39,7 @@ $(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard$(EXE)
 	mv $(OBJDIR)/GreenCard$(EXE) $(TARGET)
 	strip $(TARGET)
 $(OBJDIR)/GreenCard$(EXE):
-	$(HMAKE) -$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
+	$(HMAKE) -hc=$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
 
 
 

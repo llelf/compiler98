@@ -290,9 +290,9 @@ then
     echo "You are going to build nhc98 with:          $BUILDWITH"
   fi
   case $BUILDWITH in
-    hbc|xtc)  RTSFLAG=no;;
-    ghc|nhc*) RTSFLAG=yes;;
-    gcc)      RTSFLAG=yes;;
+    hbc|xtc)   RTSFLAG=no;;
+    ghc*|nhc*) RTSFLAG=yes;;
+    gcc)       RTSFLAG=yes;;
   esac
   echo "nhc98comp uses RTS delimiters?              $RTSFLAG"
   if [ "$BUILDOPTS" != "" ]
@@ -566,8 +566,8 @@ then
     echo -n "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		default "		>>targets/$MACHINE/hmake3.config
     case $BUILDWITH in
-      ghc|hbc) echo "$BUILDWITH" >>targets/$MACHINE/hmake3.config ;;
-      *)       echo "$BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config ;;
+      ghc*|hbc) echo "$BUILDWITH" >>targets/$MACHINE/hmake3.config ;;
+      *)        echo "$BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config ;;
     esac
   fi
 

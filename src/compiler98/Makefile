@@ -51,13 +51,13 @@ HATSRCS = TraceDerive.hs TraceTrans.hs SyntaxUtil.hs AuxLabelAST.hs \
 
 HC = nhc98	# can be overridden by caller with 'make HC=...'
 
-ifeq "hbc" "${HC}"
+ifeq "hbc" "$(findstring hbc, ${HC})"
 HMAKEFLAGS := -H32M
 endif
-ifeq "nhc98" "${HC}"
+ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS
 endif
-ifeq "ghc" "${HC}"
+ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
 HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package lang -syslib misc )  $(IMPROVE) $(EXTRALINK)
@@ -87,17 +87,17 @@ realclean: clean
 	rm -f *.hc *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
-	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
+	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	strip $(TARGET)
 $(HATTRANS): ${OBJDIR} $(OBJDIR)/$(HC) $(HATSRCS)
-	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
+	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
 	mv $(OBJDIR)/HatTrans$(EXE) $(HATTRANS)
 	strip $(HATTRANS)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):
-	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc
+	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
 	$(MAKE) clean
 	touch "$(OBJDIR)/$(HC)"
  
