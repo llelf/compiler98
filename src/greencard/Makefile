@@ -45,7 +45,8 @@ OBJS   =  $(patsubst %, ${OBJDIR}/%.o, ${SRCS})
 
 all: $(TARGET)
 install: $(TARGET)
-cfiles: ${CFILES}
+cfiles:  #${CFILES}
+	hmake -nhc98 -C GreenCard.lhs
 fromC: $(OBJDIR)
 	$(HC) -c -d $(OBJDIR) ${CFILES}
 	$(HC) -H4Mb -o $(TARGET) $(OBJS)

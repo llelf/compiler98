@@ -21,6 +21,7 @@ decode progArgs =
   flags = (map tail . filter isflag) progArgs
 
   wrapGoal file = case reverse file of
+                     ('s':'h':'l':'.':name) -> Object  (reverse name)
                      ('c':'g':'.':name) -> Object  (reverse name)
                      ('s':'h':'.':name) -> Object  (reverse name)
                      ('o':'.':name)     -> Object  (reverse name)

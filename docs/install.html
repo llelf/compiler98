@@ -11,7 +11,7 @@ If you are in a hurry to get started, here's the brief version of the
 install procedure:
 <pre>
     $ ./configure  [ --prefix=/usr/local ]
-    $ make all
+    $ make [ all ]
     $ make install
 </pre>
 
@@ -21,36 +21,31 @@ Users of Windows 95/98 or NT, please see these <a href="windows.html">special
 instructions</a> first.
 
 <p>
-For the binary release,
-we assume you have a good C compiler (usually <em>gcc</em>), and a
-<em>sh</em> compatible with the Bourne shell.
-If you want to use the trace browser, you will need to have Java on your
+For the binary release, we assume you have a good C compiler (usually
+<em>gcc</em>), and a <em>sh</em> compatible with the Bourne shell.  If
+you want to use the trace browser, you will need to have Java on your
 PATH.
 
 <p>
-For the C source release, in addition you need the usual C compilation
-management tools (<em>ar</em>, GNU <em>make</em>, etc.).  To build
-<b>nhc98</b> from C you need 8Mb of memory (although you could
-probably manage with less), and about 17Mb of disk space (40Mb if you
-build for profiling and tracing as well).
-
-<p>
-For the Haskell source release, you also need another Haskell compiler.
-If you already have <em>hbc</em> or <em>ghc</em>, building <b>nhc98</b>
-will require at least 32Mb of memory, and 50Mb of free disk space.
-If you already have an earlier version of <em>nhc98</em>, you will need
-at least 8Mb of memory and 30Mb of free disk space.  If
-you cannot obtain <em>hbc</em> or <em>ghc</em> for your machine, then
-don't worry, just build <b>nhc98</b> using a C compiler.  (The build is
-faster and needs much less memory, but the resulting compiler will be
-slower.)
+For the source release, you need the usual C compilation management
+tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
+<b>nhc98</b> without another Haskell compiler, you need 8Mb of memory
+(although you could probably manage with less), and about 17Mb of disk
+space (40Mb if you build for profiling and tracing as well).
+If you already have another Haskell compiler, <em>hbc</em> or
+<em>ghc</em>, then building <b>nhc98</b> will require at least 32Mb of
+memory, and 50Mb of free disk space.  If you already have an earlier
+version of <em>nhc98</em>, you will need at least 8Mb of memory and 30Mb
+of free disk space.  If you don't have <em>hbc</em> or <em>ghc</em> for
+your machine, then don't worry, <b>nhc98</b> will build quite happily
+using just a C compiler.  (The build is faster and needs much less
+memory, but the resulting compiler will be slower.)
 
 <h3>Download it</h3>
 <p>
-You have the option of building <b>nhc98</b> from a boot-strapping C
-source tree, from the Haskell-only source tree, or installing a
-binary-only distribution.  You only need to collect the single package
-you require.
+You have the option of building <b>nhc98</b> from a source tree, or
+installing a binary-only distribution.  You only need to collect the
+single package you require.
 
 <p>
 The current distribution packages (and their release status) can be found at
@@ -68,14 +63,13 @@ in <a href="status.html">docs/status.html</a>.
 <p>
 An automatic configuration utility is supplied, called
 <em>configure</em>.  In brief, the default behaviour is to build under
-the current directory, in <tt>targets</tt>,
-and to install various components under
-<tt>/usr/local</tt>, in the subdirectories <tt>bin</tt>,
-<tt>lib/nhc98</tt>, <tt>include/nhc98</tt>, and <tt>man/man1</tt>.
-The config script has several useful options to override the default
-build and installation behaviours.  Use the <tt>--help</tt> option for
-brief details, and see the page about <a href=config.html>configuration
-options</a> for full details.
+the current directory, in <tt>targets</tt>, and to install various
+components under <tt>/usr/local</tt>, in the subdirectories
+<tt>bin</tt>, <tt>lib/nhc98</tt>, <tt>include/nhc98</tt>, and
+<tt>man/man1</tt>.  The config script has several useful options to
+override the default build and installation behaviours.  Use the
+<tt>--help</tt> option for brief details, and see the page about
+<a href=config.html>configuration options</a> for full details.
 
 <p>
 <b>Important:</b> The config script searches your system for other
@@ -97,120 +91,55 @@ to <em>configure</em>.  There are various other
 <a href=config.html>configuration options</a> also.
 
 
-<h3>Building and installing from any sources</h3>
+
+<h3>Building and installing from sources</h3>
 <p>
-Note that all object files are created in a separate directory tree
-from the sources.  This means it is possible to build concurrently
-for different machines from the same shared source tree.  You can also
-build the heap profiling, time profiling, and tracing versions of the
-prelude and runtime system concurrently if you wish.
-
-
-<h3>Building and installing from C sources</h3>
-<p>
-The current C distribution of the compiler will build for any machine
-with 32-bit words.  All questions of machine endian-ness 
-are handled automatically during configuration.
-If you are not using <em>gcc</em> as your C compiler, please
-ensure that your <tt>CC</tt> environment variable is set appropriately
-at the configuration stage.
-<p>
-To build <b>nhc98</b> using just a C compiler, follow these
-instructions:
-<ul>
-<li>
-  Run <tt>./configure</tt> with any <a href=config.html>options</a>
-  you require.  (You should supply installation directory options at
-  this stage.)
-<li>
-  From the top directory, type <tt>make fromC</tt>.  This will build
-  components in the following order:
-<dl>
-<dd> the runtime system built with <em>gcc</em>,
-<dd> the standard prelude and libraries (including Binary) built with <em>gcc</em>,
-<dd> the <em>nhc98comp</em> compiler built with <em>gcc</em>,
-<dd> the <em>GreenCard</em> preprocessor built with <em>gcc</em>,
-<dd> the <em>hp2graph</em> profiling visualisation tool built with <em>gcc</em>,
-<dd> the <em>hmake</em> compilation tool built with <em>gcc</em>.
-</dl>
-  It takes 10 minutes for a complete build on a 150Mhz Pentium.
-
-<li>
-  If you wish to use the extensive heap profiling abilities of <b>nhc98</b>,
-  you now need to recompile for heap profiling (with the fresh <b>nhc98</b>)
-  the runtime system, standard prelude, and libraries, by typing
-  <tt>make profile</tt>.  Please note that this stage will be by far the
-  slowest of the entire build sequence - there are at least 600 Haskell
-  modules to compile.
-
-<li>
-  Also, if you wish to use the <b>nhc98</b> tracer or time profiling,
-  you now need to recompile various components for tracing by typing
-  <tt>make tracer</tt> and/or <tt>make timeprof</tt>.  These stages are
-  slow too.
-
-<li>
-  Finally, when you have built all the components you require,
-  type <tt>make install</tt>.  If you wish to keep your
-  disk usage down, use <tt>make clean</tt>, <tt>make realclean</tt>,
-  or simply delete the entire directory tree.
-</ul>
-
-
-<h3>Building and installing from Haskell sources</h3>
-<p>
-The compiler will build by default for a machine with 32-bit words.
-It is possible to build for a 64-bit machine (e.g. the DEC Alpha), but
-this is not yet handled automatically by the configuration script.
-<p>
-To build from scratch, you will need another Haskell compiler e.g.
-<em>hbc</em>, <em>ghc</em>, or an older version of <em>nhc98</em>.
-We assume you have this other compiler on your <tt>PATH</tt>
-<p>
-First, run <tt>./configure</tt> with any <a href=config.html>configuration
-options</a> you require.  Your system will be searched for existing Haskell
-compilers.  If you have more than one available, we will choose, in order
-of preference, <em>hbc</em>, then <em>ghc</em>, then <em>nhc98</em>, to
-build the new <em>nhc98</em>.
+All object files are created in a separate directory tree from the
+sources.  This means it is possible to build concurrently for different
+machines from the same shared source tree.  You can also build the heap
+profiling, time profiling, and tracing versions of the prelude and
+runtime system concurrently if you wish.
 
 <p>
-If you type <tt>make</tt> or <tt>make basic</tt>,
-the system will build in the following order:
-<dl>
-<dd> the runtime system built with <em>gcc</em>,
-<dd> the <b>hmake</b> compilation tool,
-<dd> the <em>GreenCard</em> preprocessor,
-<dd> the <b>nhc98</b> compiler built using <em>hmake</em>,
-<dd> the standard prelude and libraries built with the fresh <b>nhc98</b>,
-<dd> the York extension libraries built with <b>nhc98</b> and <em>GreenCard</em>.
-</dl>
-<p>
-This gives you the basic compilation system.  If you ask for
-<tt>make all</tt>, then the following components will also be built:
-<dl>
-<dd> the heap-profiling runtime system,
-<dd> the heap-profiling prelude and libraries,
-<dd> the <em>hp2graph</em> profiling visualisation tool,
-<dd> the tracing compiler,
-<dd> the trace browser,
-<dd> the tracing runtime system,
-<dd> the tracing prelude and libraries.
-</dl>
-<p>
-  If you want finer control over which components of the system are built,
-  try typing <tt>make help</tt> for a list of useful individual targets.
-<p>
-The whole sequence (including the profiling and tracing components) takes
-a long time - one sample time is 3.5 hours on a 150MHz Pentium under
-Linux 2.0.29 building with hbc.
-The time taken depends highly on which compiler you use - <em>ghc</em>
-is much slower than <em>hbc</em> in the early stages, but slightly
-faster once the <em>nhc98comp</em> compiler has been built.
+The current distribution of the compiler will build for any machine with
+32-bit words.  All questions of machine endian-ness are handled
+automatically during configuration.  If you are not using <em>gcc</em>
+as your C compiler, please ensure that your <tt>CC</tt> environment
+variable is set appropriately at the configuration stage.  (The C
+compiler is used as a portable backend for nhc98, and is always
+required.)
 
 <p>
-Finally type <tt>make install</tt>, and if you worry about disk usage,
-<tt>make clean</tt>, <tt>make realclean</tt>, or simply delete the
-entire source tree.
+Run <tt>./configure</tt> with any <a href=config.html>options</a> you
+require.  (You should supply installation directory options at this
+stage.)  This will attempt to detect any existing Haskell compilers and
+guess which one to build <em>nhc98</em> with.  If you have more than one
+available, we will choose, in order of preference, <em>hbc</em>, then
+<em>ghc</em>, then an older <em>nhc98</em>.  If no Haskell compiler is
+found, <em>nhc98</em> will be built from the bootstrapping C sources
+included in the package.
+
+<p>
+Then run <tt>make</tt> to build the basic system, or <tt>make all</tt>
+if you want profiling and tracing as well.  If you want finer control
+over which components of the system are built, try running <tt>make
+help</tt> for a list of useful individual targets.
+
+<p>
+The time taken to build nhc98 depends on which compiler you are using,
+and whether you have asked for just the basic system or the full system.
+On a 150Mhz Pentium, a basic build with <em>gcc</em> takes ten minutes,
+whilst a full build with <em>ghc</em> takes 4-5 hours.  These are the
+two extremes - <em>ghc</em> is much slower than <em>hbc</em> in the
+early stages, but slightly faster once the <em>nhc98comp</em> compiler
+has been built.
+
+<p>
+Finally, when you have built all the components you require,
+type <tt>make install</tt>.  If you wish to keep your
+disk usage down, use <tt>make clean</tt>, <tt>make realclean</tt>,
+or simply delete the entire directory tree.
+
 
 
 <h3>Problems?</h3>
@@ -246,7 +175,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.10.12<br>
+This page last modified: 1999.10.19<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

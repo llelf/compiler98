@@ -1,7 +1,7 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre10x
+VERSION = 1.0pre10
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
@@ -297,30 +297,31 @@ $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 
 ##### scripts for packaging various distribution formats
 
-srcDist:
-	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
-	tar cf nhc98src-$(VERSION).tar $(BASIC)
-	#cd src/compiler98/; $(MAKE) cleandephs
-	tar rf nhc98src-$(VERSION).tar $(COMPILER)
-	#tar rf nhc98src-$(VERSION).tar $(DATA2C)
-	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
-	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
-	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
-	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
-	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
-	tar rf nhc98src-$(VERSION).tar $(PRELUDET)
-	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
-	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
-	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
-	tar rf nhc98src-$(VERSION).tar $(HMAKE)
-	tar rf nhc98src-$(VERSION).tar $(MAN)
-	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
-	tar rf nhc98src-$(VERSION).tar $(DOC)
-	mkdir nhc98-$(VERSION)
-	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
-	tar cf nhc98src-$(VERSION).tar nhc98-$(VERSION)
-	rm -r nhc98-$(VERSION)
-	gzip nhc98src-$(VERSION).tar
+# Old, Haskell-only source distribution
+#srcDist:
+#	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
+#	tar cf nhc98src-$(VERSION).tar $(BASIC)
+#	#cd src/compiler98/; $(MAKE) cleandephs
+#	tar rf nhc98src-$(VERSION).tar $(COMPILER)
+#	#tar rf nhc98src-$(VERSION).tar $(DATA2C)
+#	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
+#	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
+#	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
+#	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
+#	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
+#	tar rf nhc98src-$(VERSION).tar $(PRELUDET)
+#	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
+#	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
+#	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
+#	tar rf nhc98src-$(VERSION).tar $(HMAKE)
+#	tar rf nhc98src-$(VERSION).tar $(MAN)
+#	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
+#	tar rf nhc98src-$(VERSION).tar $(DOC)
+#	mkdir nhc98-$(VERSION)
+#	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
+#	tar cf nhc98src-$(VERSION).tar nhc98-$(VERSION)
+#	rm -r nhc98-$(VERSION)
+#	gzip nhc98src-$(VERSION).tar
 
 binDist:
 	rm -f nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)-$(MACHINE).tar.gz
@@ -336,32 +337,33 @@ binDist:
 	rm -r nhc98-$(VERSION)
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
 
-cDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC
-	rm -f nhc98srcC-$(VERSION).tar nhc98srcC-$(VERSION).tar.gz
-	tar cf nhc98srcC-$(VERSION).tar $(BASIC)
-	tar rf nhc98srcC-$(VERSION).tar $(COMPILER)
-	tar rf nhc98srcC-$(VERSION).tar $(COMPILERC)
-	tar rf nhc98srcC-$(VERSION).tar $(SCRIPT)
-	tar rf nhc98srcC-$(VERSION).tar $(RUNTIME)
-	tar rf nhc98srcC-$(VERSION).tar $(RUNTIMET)
-	tar rf nhc98srcC-$(VERSION).tar $(PRELUDEA)
-	tar rf nhc98srcC-$(VERSION).tar $(PRELUDEB)
-	tar rf nhc98srcC-$(VERSION).tar $(PRELUDEC)
-	tar rf nhc98srcC-$(VERSION).tar $(PRELUDET)
-	tar rf nhc98srcC-$(VERSION).tar $(TRACEUI)
-	tar rf nhc98srcC-$(VERSION).tar $(GREENCARD)
-	tar rf nhc98srcC-$(VERSION).tar $(GREENCARDC)
-	tar rf nhc98srcC-$(VERSION).tar $(HP2GRAPH)
-	tar rf nhc98srcC-$(VERSION).tar $(HMAKE)
-	tar rf nhc98srcC-$(VERSION).tar $(HMAKEC)
-	tar rf nhc98srcC-$(VERSION).tar $(MAN)
-	tar rf nhc98srcC-$(VERSION).tar $(INCLUDE)
-	tar rf nhc98srcC-$(VERSION).tar $(DOC)
+# This srcDist used to be the cDist.
+srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC
+	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
+	tar cf nhc98src-$(VERSION).tar $(BASIC)
+	tar rf nhc98src-$(VERSION).tar $(COMPILER)
+	tar rf nhc98src-$(VERSION).tar $(COMPILERC)
+	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
+	tar rf nhc98src-$(VERSION).tar $(RUNTIME)
+	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
+	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
+	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
+	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
+	tar rf nhc98src-$(VERSION).tar $(PRELUDET)
+	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
+	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
+	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
+	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
+	tar rf nhc98src-$(VERSION).tar $(HMAKE)
+	tar rf nhc98src-$(VERSION).tar $(HMAKEC)
+	tar rf nhc98src-$(VERSION).tar $(MAN)
+	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
+	tar rf nhc98src-$(VERSION).tar $(DOC)
 	mkdir nhc98-$(VERSION)
-	cd nhc98-$(VERSION); tar xf ../nhc98srcC-$(VERSION).tar
-	tar cf nhc98srcC-$(VERSION).tar nhc98-$(VERSION)
+	cd nhc98-$(VERSION); tar xf ../nhc98src-$(VERSION).tar
+	tar cf nhc98src-$(VERSION).tar nhc98-$(VERSION)
 	rm -r nhc98-$(VERSION)
-	gzip nhc98srcC-$(VERSION).tar
+	gzip nhc98src-$(VERSION).tar
 
 $(TARGDIR)/preludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) cfiles

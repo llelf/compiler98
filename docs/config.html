@@ -28,16 +28,17 @@ other.  If you have any existing installations of Haskell compilers,
 we search for those and configure <em>hmake</em> to use them.  We
 also guess which compiler you will use to build <em>nhc98</em> -
 in order of preference: <em>hbc</em>, then <em>ghc</em>, then an
-older installation of <em>nhc98</em>.
+older installation of <em>nhc98</em>, then <em>gcc</em> (or your
+own C compiler).
 
 <p>
 <em>configure</em> has many options to override the default build and
 installation behaviours.  The options fall into three categories, but
 they may appear in any order on the command-line.  The first group of
-options controls what task <em>nhc98config</em> will do.  You can only
+options controls what task <em>configure</em> will do.  You can only
 choose one of these - if you choose more than one, only the final one
 will take effect.  The other two groups of options are cached and
-re-used in later invocations of <em>nhc98config</em>, but you can always
+re-used in later invocations of <em>configure</em>, but you can always
 override them on the current commandline.
 
 <dl>
@@ -151,7 +152,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.10.12<br>
+This page last modified: 1999.10.19<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

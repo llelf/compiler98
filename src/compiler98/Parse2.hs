@@ -9,7 +9,7 @@ import MkSyntax
 import ParseLib
 import ParseLex
 import SyntaxPos
-import TokenId(t_Arrow,t_Tuple)
+import TokenId(t_Arrow,t_Tuple,TokenId(..))
 
 parseExports =
     id `parseChk` lpar `apCut` manySep comma parseExport `chk` rpar

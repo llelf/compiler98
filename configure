@@ -5,7 +5,7 @@
 #       (nhc98config - May 1999)
 #       (configure   - Oct 1999)
 
-CONFIGVERSION="v1.0 pre-release 10x (date 991018)"
+CONFIGVERSION="v1.0 pre-release 10 (date 991019)"
 HMAKEVERSION="v1.5 (date 991005)"
 
 if uname >/dev/null 2>&1
@@ -21,6 +21,7 @@ INSTALLDIR=/usr/local
 PWD=`pwd`
 case $PWD in	# path mangling required for CYGWIN
   file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
+  //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
 esac
 
 #RTSMESSAGE='(default)'

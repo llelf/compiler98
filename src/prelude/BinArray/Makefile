@@ -29,7 +29,9 @@ CC = gcc
  
 all: ${OBJS} ${MAINOBJ}
 boot:
-cfiles: ${HSCFILES} ${GCCFILES} ${MAINCFILE}
+cfiles: cfilescheck ${HSCFILES} ${GCCFILES} ${MAINCFILE}
+cfilescheck:
+	cp $(INCDIR)/Binary.hi $(BIN)	# big hack around compiler bug!
 fromC:
 	$(HC) -c -d $(OBJDIR) -I$(BIN) *.c
 ${OBJDIR}:
