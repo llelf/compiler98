@@ -349,10 +349,10 @@ case $GRFILES in
   done;;
 esac
 
-HSRC=
-CSRC=
-SSRC=
-GR=
+HSRC=0
+CSRC=0
+SSRC=0
+GR=0
 case $COMPFILES in
 ""   ) ;; 
 *    )
@@ -445,9 +445,9 @@ case $COMPFILES in
       then
         if test $VFLAG -eq 1
         then
-	  echo  $CPPPRE $CPPFLAGS $POSTGRFILE \> $TMPCPPPREFILE
+	  echo  $CPPPRE $CPPFLAGS $CINCDIRS $POSTGRFILE \> $TMPCPPPREFILE
         fi
-        $CPPPRE $CPPFLAGS $POSTGRFILE > $TMPCPPPREFILE
+        $CPPPRE $CPPFLAGS $CINCDIRS $POSTGRFILE > $TMPCPPPREFILE
         HSFILE=$TMPCPPPREFILE
       else
         HSFILE=$POSTGRFILE
