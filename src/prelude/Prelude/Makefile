@@ -3,7 +3,11 @@ include Makefile.inc
 THISLIB = Prelude
 SEARCH	= -P$(LOW) -P../Ratio -P../PreludeList -P../PreludeText \
 	  -P../PreludeIO -P../PreludeDebug
+ifeq "$(BUILDWITH)" "hbc"
+EXTRA_H_FLAGS	= -prelude +RTS -A2M -H32M -RTS
+else
 EXTRA_H_FLAGS	= -prelude
+endif
 EXTRA_C_FLAGS	=
 
 COMMON_SRCS = \
