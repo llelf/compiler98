@@ -185,4 +185,7 @@ CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 FileOffset	primSR0		(void);
 FileOffset	primSR3		(SrcRef *sr);
 
+FileOffset	readCurrentSatB	(void);
+void		hat_exit	(char* errmsg,	CTrace* locatn,	int ecode);
+
 #endif

@@ -3,6 +3,7 @@
 #include "haskell2c.h"
 #include "bytecode.h"
 #include "getconstr.h"
+#include "fileformat.h"
 
 #ifndef TRUE
 #define TRUE	1
@@ -59,10 +60,7 @@ C_HEADER(fun)\
     IND_REMOVE(b);\
     /*fprintf(stderr, "Doing %d %s %d\n", GET_INT_VALUE(a), #op, GET_INT_VALUE(b)); */\
     if (GET_INT_VALUE(b) == 0) {\
-	fprintf(stderr, "Division by zero\n");\
-	terminated = TRUE;\
-	startDbg(t, FALSE);\
-	exit(1);\
+        hat_exit("Division by zero.", t, 5);\
     }\
     result = res(GET_INT_VALUE(a) op GET_INT_VALUE(b));\
     C_RETURN(mkR(result, mkTNm(t, mknm(result), mkSR())));\
@@ -192,7 +190,7 @@ C_HEADER(_tprim_IntFromInteger)
 C_HEADER(_tprim_##fun)\
 {\
     fprintf(stderr, "%s: not yet implemented\n", #fun); \
-    startDbg(C_GETARG1(1), FALSE); \
+    /*startDbg(C_GETARG1(1), FALSE);*/ \
     exit(3); \
 }
 

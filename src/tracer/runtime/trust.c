@@ -1,5 +1,6 @@
 #include "ui.h"
 
+#if 0
 void
 DisplayName(char *s, NodePtr nm)
 {
@@ -8,8 +9,6 @@ DisplayName(char *s, NodePtr nm)
     showSymbol(nm, &mod, &name, &defpos, &pri);
     fprintf(stderr, "(%s)%s.%s", s, mod, name);
 }
-
-#if 0
 #define displayName(x, y) DisplayName(x, y)
 #define displayString(s) fprintf(stderr, s)
 #else
@@ -179,22 +178,22 @@ C_HEADER(trusted)
 	trust1 = trustFun(C_GETARG1(1));
         displayString("\n");
 	if (trust1) {
-	    redTT++;
+	    /*redTT++;*/
 	    C_RETURN(mkTrue());
 	} else {
-	    redST++;
+	    /*redST++;*/
 	    C_RETURN(mkFalse());
 	}
     } else {
         displayString("\n");
-	    redSS++;
+	    /*redSS++;*/
 	    C_RETURN(mkFalse());
 #if 0
 	if (trust2) {
-	    redST++;
+	    /*redST++;*/
 	    C_RETURN(mkFalse());
 	} else {
-	    redSS++;
+	    /*redSS++;*/
 	    C_RETURN(mkFalse());
 	}
 #endif

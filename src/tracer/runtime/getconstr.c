@@ -517,11 +517,6 @@ void _tprim_error()
 {
     char s[256]; int i=0;
     NodePtr nodeptr, t;
-    CNmType* nt;
-    CTrace* tr;
-    FileOffset fo;
-    extern int terminated;
-    extern int exit_code;
 
     fprintf(stderr, "Error: ");
     nodeptr = C_GETARG1(1);
@@ -543,21 +538,7 @@ void _tprim_error()
 	IND_REMOVE(t);
     }
     s[i] = '\0';
-    fprintf(stderr, "%s\n",s);
-    terminated = TRUE;
-    updateSatBs();
-    updateSatCs();
-    nt = primNTCString(s);
-    fo = nt->ptr;
-    fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
-    fwrite(&fo, sizeof(FileOffset), 1, HatFile);
-    tr = (CTrace*)nodeptr;
-    fo = tr->ptr;
-    fseek(HatFile,8,SEEK_SET);
-    fwrite(&fo, sizeof(FileOffset), 1, HatFile);
-    exit_code = 3;
-    haskellEnd();
-    exit(3);
+    hat_exit(s, (CTrace*)nodeptr, 4);
 }
 
 extern int cTrusted(NodePtr t, NodePtr tf);
@@ -693,4 +674,4 @@ char *profName(UInt *p)
   return "";
 #endif
 }
-    
+

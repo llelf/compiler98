@@ -46,7 +46,7 @@ void	showSymbol	(NodePtr t, char **pmodule, char **pname
 			, int *pdefpos, int *ppri);
 int	checkEvaluation	(NodePtr nodeptr, NodePtr *bot);
 void	stackTrace	(NodePtr t);
-int	startDbg	(NodePtr trace, int exitok);
+/*int	startDbg	(NodePtr trace, int exitok);*/
 
 #define MASK_K                  (0x00003f0)
 #define CONINFO_DIST(p)         (((p)>>8)&0x3f)

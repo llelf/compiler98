@@ -8,7 +8,7 @@ apa:
 
 ifeq "${TRACING}" "T"
 SRCS  = io.c getconstr.c nodecache.c minisocklib.c \
-	stub.c vector.c numeric.c browsercomms.c ident.c trust.c \
+	stub.c vector.c numeric.c initexit.c ident.c trust.c \
 	stacktrace.c fileformat.c
 else
 SRCS  = dummy.c
@@ -62,8 +62,8 @@ ${OBJDIR}/getconstr.o: getconstr.c getconstr.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c getconstr.c -o $@
 ${OBJDIR}/numeric.o: numeric.c getconstr.h 
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c numeric.c -o $@
-${OBJDIR}/browsercomms.o: browsercomms.c ui.h
-	$(CC) ${DCFG} ${OPT} -DPRELSRCDIR=${PRELSRCDIR} -I${INCDIR} ${ENDIAN} -c browsercomms.c -o $@
+${OBJDIR}/initexit.o: initexit.c ui.h
+	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c initexit.c -o $@
 ${OBJDIR}/io.o: io.c ui.h getconstr.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c io.c -o $@
 ${OBJDIR}/trust.o: trust.c ui.h

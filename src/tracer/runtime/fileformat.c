@@ -643,6 +643,16 @@ updateSatBs (void)
     fseek(HatFile,HatCounter,SEEK_SET);
 }
 
+/* readCurrentSatB() is used when the program is interrupted, to
+ * identify the expression currently under evaluation.
+ */
+
+FileOffset
+readCurrentSatB (void)
+{
+  return SATstack[SATp-1];
+}
+
 
 
 /* Auxiliary function to turn a simple FileOffset into a struct CNmType.

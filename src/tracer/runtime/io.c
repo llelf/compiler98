@@ -23,24 +23,6 @@ C_HEADER(_tprim_setOutputContext)
 	C_RETURN(arg);
 }
 
-#if 0
-/* obsolete */
-C_HEADER(mycPutChar)
-{
-    NodePtr nodeptr, ch, t;
-
-    nodeptr = C_GETARG1(1);
-    IND_REMOVE(nodeptr);
-    ch = GET_POINTER_ARG1(nodeptr, 1);
-    IND_REMOVE(ch);
-    t = GET_POINTER_ARG1(nodeptr, 2);
-    IND_REMOVE(t);
-    otInsert(GET_CHAR_VALUE(ch), t);
-    putc(GET_CHAR_VALUE(ch), stdout);
-    fflush(stdout);
-    C_RETURN(mkUnit());
-}
-#endif
 
 /* _tprim_chPutChar :: Trace -> R Handle -> R Char -> R (Either IOError ()) */
 C_HEADER(_tprim_chPutChar)
@@ -270,8 +252,6 @@ C_HEADER(_tprim_cExitWith)
 	fprintf(stderr, "\n");
 	break;
     }
-    terminated = TRUE;
-    startDbg(t, TRUE);
 #ifdef __CYGWIN32__
     longjmp(exit_mutator, 1);
 #else
@@ -307,7 +287,6 @@ C_HEADER(cEnter)
 #if 0
     if ((traceBreak > 0) && (reductions > traceBreak))
 	interrupted++;
-#endif
 
     if (interrupted) {
         CNmType* nt;
@@ -327,7 +306,7 @@ C_HEADER(cEnter)
         haskellEnd();
         exit(0);
     }
-#if 0
+
     if (trace_enter) {
 	showSymbol(C_GETARG1(1), &mod, &name, &defpos, &pri);
 	fprintf(stderr, "Entering %s.%s\n", mod, name);
