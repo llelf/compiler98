@@ -62,10 +62,10 @@ realclean: clean
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) || /bin/true
-$(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard
-	mv $(OBJDIR)/GreenCard $(TARGET)
+$(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard$(EXE)
+	mv $(OBJDIR)/GreenCard$(EXE) $(TARGET)
 	strip $(TARGET)
-$(OBJDIR)/GreenCard:
+$(OBJDIR)/GreenCard$(EXE):
 	$(LOCAL)hmake -$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
 
 ## Obsolete
