@@ -33,7 +33,7 @@ int getline(char s[], int max) {
   s[i]=0;
   return i;
 }
-
+//#define showNodeInfo
 void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   int maxarity = -1;
   int arity,arityProblem = 0,found=0;

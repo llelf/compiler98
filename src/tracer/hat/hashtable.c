@@ -9,7 +9,7 @@
 #include "hashtable.h"
 
 HashTable* newHashTable(unsigned long size) {
-  HashTable* h = (HashTable*) malloc(sizeof(HashTable));
+  HashTable* h = (HashTable*) calloc(1,sizeof(HashTable));
   h->hashArray = (HashElement**) calloc(size,sizeof(HashElement*));
   h->size = size;
   h->count = 0;

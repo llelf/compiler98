@@ -115,7 +115,8 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
       {
 	filepointer apptrace;
 	apptrace = getParent();  // fileoffset of App-trace
-	p = getAppFun();         // fileoffset of Function-trace
+	p = hatFollowSATs(handle,getAppFun());         // fileoffset of Function-trace
+	// p = getAppFun();
 	if (isInHashTable(htable,p)) {
 	  filepointer satc = getResult(handle,currentOffset);  // find SATC for the application!	  
 	  if (isSAT(handle,satc)) {

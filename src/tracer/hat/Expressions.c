@@ -83,6 +83,7 @@ void freeExpr(ExprNode* e) {
       i=0;
       while (i++<e->v.appval->arity)
 	freeExpr(getAppNodeArg(e->v.appval,i-1));
+      freeExpr(e->v.appval->fun);
       freeAppNode(e->v.appval);
       break;
     case HatIdentifier:
@@ -344,9 +345,10 @@ ExprNode* buildExpr(HatFile handle,filepointer fileoffset,int verbose,
 		    unsigned int precision) {
   HashTable* hash = newHashTable(8000);
   filepointer *cycles = calloc(MAXCYCLES,sizeof(filepointer));
-  return buildExprRek(handle,fileoffset,verbose,precision,hash,cycles);
+  ExprNode* expr = buildExprRek(handle,fileoffset,verbose,precision,hash,cycles);
   freeHashTable(hash);
   free(cycles);
+  return expr;
 }
 
 /*********************************************************************/
