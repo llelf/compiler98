@@ -156,7 +156,7 @@ maStrictAn table flagsInit fileName
 main :: IO ()
 
 main = do
-    raw_args <- return ["-fPolyLim11","-fForceAll"]	-- getArgs
+    raw_args <- return ["-fPolyLim10000","-fForceAll"]	-- getArgs
     let cmd_line_args = maGetFlags raw_args
     --anna_dir <- getEnv "ANNADIR"
     tableStr <- readFile ({- anna_dir ++"/"++ -} "anna_table")

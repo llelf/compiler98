@@ -1,4 +1,27 @@
 
+{ 
+  Standard speed test.
+
+  0.202 new domains, old parser
+  ||reductions = 12104147, cells claimed = 16617664, no of gc's = 115, cpu = 645.58
+
+  0.203 polymorphism, new domains, old parser
+  ||reductions = 21233515, cells claimed = 28216776, no of gc's = 317, cpu = 1290.43
+
+  0.2031 polymorphism, new domains, new parser
+  ||reductions = 23331864, cells claimed = 31379551, no of gc's = 313, cpu = 1912.27
+
+  0.204 as 0.2031 and proper handling of HOFs, and new name management scheme
+  ||reductions = 22821816, cells claimed = 30431703, no of gc's = 230, cpu = 1543.68
+
+  0.204 as of end Sunday
+  ||reductions = 21935678, cells claimed = 29447796, no of gc's = 208, cpu = 1536.43
+
+  0.2041 as previous with constructor-recycling
+  ||reductions = 15819053, cells claimed = 21934376, no of gc's = 74, cpu = 648.53
+}
+
+
 day ::= Monday     |
         Tuesday    | 
         Wednesday  |
@@ -21,130 +44,10 @@ assoc a b ::= NilAssoc |
 
 ;;
 
-z4 l1 l2
-   = case l1 of
-        Nil -> Nil;
-        Cons x xs -> case l2 of
-                        Nil -> Nil;
-                        Cons y ys -> Cons (x+y) (z4 xs ys)
-                     end
-     end;
-
-z6 l1 l2
-   = case l1 of
-        Nil -> Nil;
-        Cons x xs -> case l2 of
-                        Nil -> Nil;
-                        Cons y ys -> Cons (z4 x y) (z6 xs ys)
-                     end
-     end;
-
-z8 l1 l2
-   = case l1 of
-        Nil -> Nil;
-        Cons x xs -> case l2 of
-                        Nil -> Nil;
-                        Cons y ys -> Cons (z6 x y) (z8 xs ys)
-                     end
-     end;
-
-z10 l1 l2
-   = case l1 of
-        Nil -> Nil;
-        Cons x xs -> case l2 of
-                        Nil -> Nil;
-                        Cons y ys -> Cons (z8 x y) (z10 xs ys)
-                     end
-     end;
-
-f2 a b 
-  = case a == 0 of
-       True -> b;
-       False -> f2 b a
-    end;
-
-f3 a b c 
-  = case a == 0 of
-       True -> b;
-       False -> f3 c b a
-    end;
-
-f4 a b c d
-  = case a == 0 of
-       True -> b;
-       False -> f4 d c b a 
-    end;
-
-f5 a b c d e
-  = case a == 0 of
-       True -> b;
-       False -> f5 e d c b a 
-    end;
-
-f6 a b c d e f
-  = case a == 0 of
-       True -> b;
-       False -> f6 f e d c b a 
-    end;
-
-f7 a b c d e f g
-  = case a == 0 of
-       True -> b;
-       False -> f7 g f e d c b a
-    end;
-
-p2 a b                       = a;
-
-p3 a b c                     = a + c;
-
-p4 a b c d                   = a + c;
-
-p5 a b c d e                 = a + c + e;
-
-p6 a b c d e f               = a + c + e;
-
-p7 a b c d e f g             = a + c + e + g;
-
-p8 a b c d e f g h           = a + c + e + g;
-
-p9 a b c d e f g h i         = a + c + e + g + i;
-
-p10 a b c d e f g h i j      = a + c + e + g + i;
-
-p11 a b c d e f g h i j k    = a + c + e + g + i + k;
-
-p12 a b c d e f g h i j k l  = a + c + e + g + i + k;
-
-s2 a b                       = a + b;
-
-s4 a b c d                   = a + b + c + d;
-
-s6 a b c d e f               = a + b + c + d + e + f;
-
-s8 a b c d e f g h           = a + b + c + d + e + f + g + h;
-
-s10 a b c d e f g h i j      = a + b + c + d + e + f + g + h + i + j;
-
-s12 a b c d e f g h i j k l  = a + b + c + d + e + f + g + h + i + j + k + l;
-
-
-l2 a b                       = 37;
-
-l4 a b c d                   = 37;
-
-l6 a b c d e f               = 37;
-
-l8 a b c d e f g h           = 37;
-
-l9 a b c d e f g h i         = 37;
-
-l10 a b c d e f g h i j      = 37;
-
-l12 a b c d e f g h i j k l  = 37;
-
 bottomAny = bottomAny;
 
-             bigs  d l2 = case l2 of
+qsort l = letrec
+             bigs = \d l2 -> case l2 of
                                 Nil -> Nil;
                                 Cons l2x l2xs ->
                                    case l2x>d of
@@ -152,25 +55,22 @@ bottomAny = bottomAny;
                                       False -> bigs d l2xs
                                    end
                              end;
-
-             smalls d l2 = case l2 of
+             smalls = \d l2 -> case l2 of
                                 Nil -> Nil;
                                 Cons l2x l2xs ->
                                    case l2x<=d of
                                       True -> Cons l2x (smalls d l2xs);
                                       False -> smalls d l2xs
                                    end
-                             end;
-
-qsort l = 
-          
+                             end
+          in
           case l of
               Nil -> Nil;
               Cons h t -> append (qsort (smalls h t)) 
                                  (Cons h (qsort (bigs h t)))
           end;
 
-topInt = 42;
+{topInt = 42;}
 
 domainHeight d
    = case d of
@@ -192,7 +92,7 @@ workingHours d
 incHead l = case l of
               Nil -> Nil;
               Cons a as -> Cons (a+1) as
-            end;
+           end;
 
 tricky a b = case a==0 of
                 True -> b;
@@ -295,5 +195,3 @@ listToTree l =
    in ltt Leaf l;
 
 nodups l = flatten (listToTree l);
-
-
