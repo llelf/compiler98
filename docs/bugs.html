@@ -62,13 +62,15 @@
       broken in 4.08 as well when -O optimisation is turned on.)</dd>
 <dt><em>Nhc performs no kind check in type definitions.</em></dt>
   <dd><a href="bugs/nhc98test19.hs">Example program</a>.</dd>
-<dt><em>Nhc is too restrictive in rhs of newtype definitions</em></dt>
-  <dd><a href="bugs/nhc98test21.hs">Example program</a>.</dd>
 </dl>
 
 
 <h3>Fixed bugs :-)</h3>
 <dl>
+<dt><em>Nhc is too restrictive in rhs of newtype definitions</em>
+      (fixed 2002-12-17)</dt>
+  <dd><a href="bugs/nhc98test21.hs">Example program</a>.  A too-strong
+      check for newtype circularity was responsible for this fault.</dd>
 <dt><em>Nhc does not handle data types with arguments of kind *->*
          correctly</em></dt>
   <dd><a href="bugs/nhc98test22.hs">Example program</a>.  There is an
@@ -199,7 +201,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2002.12.09<br>
+2002.12.17<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

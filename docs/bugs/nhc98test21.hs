@@ -7,7 +7,7 @@ Fail: Couldn't find rhs of newtype: Main.Fix
 Two conflicting datatype definitions?
 -}
 
-newtype Fix f = Fold (f Fix f)
+newtype Fix f = Fold (f (Fix f))
 data PreNat r = Zero | Succ r
 type Nat = Fix PreNat
 
