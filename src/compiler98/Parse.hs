@@ -103,7 +103,7 @@ parseForeign =
         `parseAp` callconv `ap` safety `ap` entity `ap` varid `chk` 
         coloncolon `apCut` parseType))
     `orelse`
-    (k_export `revChk` callconv `revChk`
+    (k_export `revChk`
       ((\(_,conv) (_,LitString _ str) (p,v) t-> DeclForeignExp p conv str v t)
       `parseAp` callconv `ap` entity `apCut` varid `chk` coloncolon 
       `ap` parseType))
