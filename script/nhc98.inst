@@ -104,7 +104,7 @@ checkPragmas () {
 }
 
 # Define a function for processing command-line arguments.  It will
-# also be used for dealing with {-# OPTIONS-COMPILE #-} pragmas on
+# also be used for dealing with {-# OPTIONS_COMPILE #-} pragmas on
 # a per-file basis.
 processArgs () {
   while test "'$1'" != "''" 
@@ -383,7 +383,7 @@ case $COMPFILES in
 
 # Now all of the following section goes into a subshell, because the options
 # read from {-# OPTIONS_COMPILE #-} only apply to that individual file.
-#   (
+    (
 
     if test $HSRC -ne 0
     then
@@ -495,7 +495,7 @@ case $COMPFILES in
           fi
           rm $TMPOFILE $GROFILE
         fi
-	LDFILES=$OFILE" "$LDFILES
+	LDFILES=$OFILE" "$LDFILES	# no longer works here - see below
 	if test $SSRC -eq 0
         then
           if test $VFLAG -eq 1
@@ -505,6 +505,10 @@ case $COMPFILES in
 	  rm $TMPASFILE
 	fi
       fi
+    fi
+    )
+    if test $KEEPC -ne 1  -a  $KEEPS -ne 1
+    then LDFILES=$OFILE" "$LDFILES	# patch in from subshell - see above
     fi
     shift
   done;;
