@@ -143,7 +143,8 @@ parseCDecls :: Parser (Decls TokenId) [PosToken] a
 parseCDecls = DeclsParse `parseAp` (manysSep semi parseCDecl)	-- H98 added
 
 parseCDecl :: Parser (Decl TokenId) [PosToken] a
-parseCDecl = parseVarsType `orelse` parseValdef -- `orelse` parseInfixDecl
+parseCDecl = parseVarsType `orelse` parseValdef
+		 `orelse` (DeclFixity `parseAp` parseFixDecl)
 
 
 parseValdefs :: Parser (Decls TokenId) [PosToken] a
