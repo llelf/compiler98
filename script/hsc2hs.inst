@@ -18,6 +18,10 @@ fi
 . $EXEDIR/$MACHINE/config
 
 HSC2HSOPTS="--cc=$CC --ld=$CC --cflag=-D__NHC__=$VERSIONNUM -I$INCDIR"
+if test $USINGRTS -eq 0 ; then
+  HSC2HSOPTS="- $HSC2HSOPTS"
+fi
+
 TEMPLATE="--template=$SCRIPTDIR/template-hsc.h"
 
 # Now let's get started.
