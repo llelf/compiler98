@@ -2,4 +2,4 @@
 #	simple redirection script to find the correct executable
 #	for this machine architecture
 MACHINE=${MACHINE-"`ScriptDir/harch`"}
-exec ExecutableDir/$MACHINE/`basename $0` $@
+exec ExecutableDir/$MACHINE/`basename $0` "$@"
