@@ -39,7 +39,7 @@ ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 ${SOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -S ${CFLAGS} -o - $< | sed '/.align 32/s/32/4/' |\
-		 ${CC} -c -x assembler ${CFLAGS} -o $@ -
+		 ${CC} -c -x assembler-with-cpp ${CFLAGS} -o $@ -
 
 LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
 	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
