@@ -56,7 +56,7 @@ run () {
         compbad=$(($compbad+1))
         echo Comparing hmake errors....
         hmakeout=`exists hmakerr`
-        if fgrep -q "`cat $hmakeout`" hmake.err
+        if fgrep -q -f $hmakeout hmake.err
         then echo ".............Failed (ok)"
              hmakeok=$(($hmakeok+1))
         else diff $hmakeout hmake.err
