@@ -118,6 +118,14 @@ trace browser, time profiler, and common FFI.
   <td>5827kb</td></tr>
 
 <tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-CYGWIN_95-4.0.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>ix86-CYGWIN_95-4.0</td>
+  <td>1.02</td>
+  <td>2001-02-16</td>
+  <td>3184kb</td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
       Executable (.deb)</a></td>
   <td>ix86-Linux</td>
@@ -187,6 +195,84 @@ comprehensive, but if you have any problems, please mail
 <a href="mailto:nhc-users@cs.york.ac.uk?subject=nhc98 installation">
 <tt>nhc-users@cs.york.ac.uk</tt></a>  (you must be a member of the
 list to post to it).
+
+<br><br><hr>
+<h3>Patches</h3>
+<center>
+<table width=450 border=1 cellspacing=0 cellpadding=2>
+<tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
+                    <th>date</th> <th>fixes what problem?</th></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fpos_t">
+      fpos_t</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-02-16</td>
+  <td>fixes a compile error in <tt>src/tracer/runtime/ident.c</tt>
+      on RedHat 7 and other systems using the new ISO C standard
+      for <tt>fpos_t</tt>.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-rdonly">
+      rdonly</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-02-19</td>
+  <td>A file opened in ReadMode or WriteMode was actually opened in
+      ReadWriteMode, so if the file had strict permissions the correct
+      opening command would fail.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-install">
+      install</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-02-21</td>
+  <td>On Cygwin, 'make install' reported 'nothing to be done' instead
+      of installing the software.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-hat">
+      Hat</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-03-07</td>
+  <td>The Hat trace browser (rtb) occasionally crashed with a Java numeric
+      error (we were sending corrupted textual data to it).
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-fixity">
+      fixity</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-03-13</td>
+  <td>Operator sections suffered from priority inversion, for example
+      (^2*3) was incorrectly parsed as (^(2*3)), even though ^ binds
+      more tightly than *.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-reexport">
+      reexport</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-03-22</td>
+  <td>An identifier hidden on import and redefined in the current module,
+      then exported, but also imported qualified and used qualified in the
+      current module, led to an incorrect interface file being generated.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.02-mkdir">
+      mkdir</a></td>
+  <td>nhc98 v1.02</td>
+  <td>2001-03-27</td>
+  <td>The library function Directory.createDirectory gave strange permissions
+      to the new directory.  (Mode was in hex, but should have been octal!)
+      </td></tr>
+
+</table>
+</center>
+
 
 <br><br>
 
