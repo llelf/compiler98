@@ -5,7 +5,6 @@ import System
 import Char
 import Directory
 import List
-import Maybe
 
 import HmakeConfig
 
@@ -38,7 +37,7 @@ toplevel options compiler modules = do
       _   -> evaluate s options compiler modules
   toplevel options compiler modules
 
-evaluate expr options compiler modules | "main" `isPrefixOf` expr = do
+evaluate expr options compiler modules | "main " `isPrefixOf` expr = do
   compile options compiler (head modules)
      (run ("./"++head modules) (tail (words expr)))
 evaluate expr options compiler modules = do
@@ -155,11 +154,11 @@ commands ws options compiler modules =
   command "ls" (getDirectoryContents "." >>= indent)
   command "pwd" (getCurrentDirectory >>= putStrLn)
   command "set"
-      (do putStrLn ("Current settings:\n  "++concat (intersperse " " (options++target)))
+      (do putStrLn ("Current settings:\n  "++unwords (options++target))
           toplevel (options++target) compiler modules)
   command "unset"
       (do let newopts = options \\ target
-          putStrLn ("Current settings:\n  "++concat (intersperse " " newopts))
+          putStrLn ("Current settings:\n  "++unwords newopts)
           toplevel newopts compiler modules)
   command "hc"
       (if null target then putStrLn ("Current compiler: "++show compiler)

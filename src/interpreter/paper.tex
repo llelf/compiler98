@@ -1,20 +1,25 @@
 \documentclass[a4paper]{article}
 
-\title{An interpreter for Haskell in Haskell}
+\setlength{\textwidth}{162mm}
+\setlength{\textheight}{254mm}
+\setlength{\oddsidemargin}{1cm}
+\setlength{\evensidemargin}{1cm}
+
+\title{{\em hi} -- an Interactive Haskell Development System, in Haskell}
 \author{Malcolm Wallace \\ University of York, UK}
-\date{May 2000}
+\date{1st June 2000}
 
 \begin{document}
 \maketitle
 
 
-\section*{Introduction}
+\section{Introduction}
 
-\subsection*{Interpreters vs. compilers}
+\subsection{Interpreters vs. compilers}
 
 There are widely recognised benefits to using an interactive language
 interpreter as a development environment over the traditional batch
-compiler.  In the context of the Haskell language, Hugs is widely
+compiler.  In the context of the Haskell language, {\em Hugs} is widely
 preferred over the available compilers for at least the following
 reasons:
 
@@ -44,7 +49,7 @@ $\bullet$
     It is interactive.
 
 \ \ \ \ --
-      \parbox[t]{10cm}{
+      \parbox[t]{150mm}{
         Meaning that one can test expressions, large or small,
         at the command line, getting a rapid answer to whatif? questions.}
 
@@ -58,7 +63,7 @@ $\bullet$
       Types can be reported for individual expressions.
 
 \ \ \ \ --
-      More info can be requested about any name.
+      More detailed information can be requested about any name.
 
 \ \ \ \ --
       Any definition can be found and edited quickly.
@@ -71,7 +76,7 @@ $\bullet$
     They are slow to generate code.
 
 $\bullet$
-  \parbox[t]{11cm}{
+  \parbox[t]{155mm}{
     The generated code is fast, but the extra speed may not be
       critical during program development.}
 
@@ -79,7 +84,7 @@ $\bullet$
     They tend to have machine dependencies.
 
 \ \ \ \ --
-      \parbox[t]{10cm}{
+      \parbox[t]{150mm}{
         Usually a compiler bootstraps with itself, which
         immediately creates a portability problem for new machines.}
 
@@ -99,7 +104,7 @@ $\bullet$
     They are batch oriented.
 
 \ \ \ \ --
-      \parbox[t]{10cm}{
+      \parbox[t]{150mm}{
         Meaning that you expect your program to work already, more or less.
         It is very tedious to test out a series of whatif? expressions.}
 
@@ -110,27 +115,27 @@ $\bullet$
       Users must write Makefiles to get multi-module projects going.
 
 \ \ \ \ --
-      \parbox[t]{10cm}{
+      \parbox[t]{150mm}{
         Tools to report useful information such as types, class methods,
         etc, are either non-existent, or primitive and disjointed.}
 
 \ \ \ \ --
-      \parbox[t]{10cm}{
+      \parbox[t]{150mm}{
         They rely on the user having fluency in an external environment
-        (e.g. the Unix shell) to search for and edit definitions, and
+        (e.g.\ the Unix shell) to search for and edit definitions, and
         indeed to invoke the compiler itself.}
 
-\subsection*{Combined systems}
+\subsection{Combined systems}
 
 Despite the essential differences between interpreters and compilers,
-many users and implementers seem keen to combine the benefits of
-both approaches.  The hbc compiler from Chalmers has long had the
-hbi interpreter, and there has been much effort spent recently
-on combining Hugs with ghc.  What are the the possible benefits of
-a combined interpreter/compiler?
+many users and implementers seem keen to combine the benefits of both
+approaches.  The {\em hbc} compiler from Chalmers has long had the
+{\em hbi} interpreter, and there has been much effort spent recently
+on combining {\em Hugs} with {\em ghc}.  What are the possible
+benefits of a combined interpreter/compiler?
 
 $\bullet$
-  \parbox[t]{11cm}{
+  \parbox[t]{155mm}{
     It can generate slow code quickly, or fast code more slowly,
       allowing the user to tailor their development environment
       to retain a fast interactive turnaround time, whilst achieving
@@ -138,65 +143,66 @@ $\bullet$
       is really needed.}
 
 $\bullet$
-  \parbox[t]{11cm}{
+  \parbox[t]{155mm}{
     Writing code that is portable across different language implementations
       is trickier than one might hope.  An integrated interpreter/compiler
       reduces these difficulties when trying to move code from the
       interactive development stage to a polished final product.}
 
 $\bullet$
-  \parbox[t]{11cm}{
+  \parbox[t]{155mm}{
     The friendly environment of the interpreter is co-opted (to a
       certain extent) for compiled code; for instance type queries,
       searching for definitions, and so on, become available.}
 
 
-\subsection*{A different approach}
+\subsection{A different approach}
 \noindent
 However, a different approach to integration is possible.
 
 We start with the observation that not all compilers are equal.
-For instance, nhc98 falls somewhere between Hugs and ghc on the
-performance spectrum - it has fast compilation times compared with
-ghc (though not as fast as Hugs), and the speed of the generated
-code is fast compared with Hugs (though not as fast as ghc).  Also,
-like Hugs, nhc98 is very portable to new machines, and just as easy
-to configure and build.  In many respects, all nhc98 lacks is the
-convenient, friendly, interactive front-end.
+For instance, {\em nhc98} falls somewhere between {\em Hugs} and
+{\em ghc} on the performance spectrum -- it has fast compilation times
+compared with {\em ghc} (though not as fast as {\em Hugs}), and the
+speed of the generated code is fast compared with {\em Hugs} (though
+not as fast as {\em ghc}).  Also, like {\em Hugs}, {\em nhc98} is very
+portable to new machines, and just as easy to configure and build.
+In many respects, all {\em nhc98} lacks is the convenient, friendly,
+interactive front-end.
 
 The second important observation is that many of the other features
-of Hugs can be provided by external tools - for instance, a compiler
-can produce code; the {\em hmake} program can chase module dependencies;
-a lightweight database can track information about constructors,
-classes, and other names.  The primary feature unique to Hugs is that
-it integrates all these tools coherently.  The interactive interface
-it provides is perhaps more important to the developer than the
-incidental fact that the code is interpreted.
+of {\em Hugs} can be provided by external tools -- for instance,
+a compiler can produce code; the {\em hmake} program can chase
+module dependencies; a lightweight database can track information
+about constructors, classes, and other names.  The primary feature
+unique to {\em Hugs} is that it integrates all these tools coherently.
+The interactive interface it provides is perhaps more important to
+the developer than the incidental fact that the code is interpreted.
 
 So the question arises, is it possible to provide a lightweight
-interactive development environment that is as friendly as the Hugs
-interface, but which is really just a small wrapper over an existing
-compiler?
+interactive development environment that is as friendly as the {\em
+Hugs} interface, but which is really just a small wrapper over an
+existing compiler?
 
 The answer is yes, and this paper is the description of just such
-a wrapper.  It is modelled closely on Hugs as far as style and the
-user-experience are concerned, but the bulk of the work is actually
-done underneath by batch tools.  One of the nice outcomes of this
-strategy is that it is easy to switch backends.  Module-chasing and
-recompilation is managed totally by the {\em hmake} tool, which
+a wrapper.  It is modelled closely on {\em Hugs} as far as style
+and the user-experience are concerned, but the bulk of the work is
+actually done underneath by batch tools.  One of the nice outcomes of
+this strategy is that it is easy to switch backends.  Module-chasing
+and recompilation is managed totally by the {\em hmake} tool, which
 gives us the freedom to layer our wrapper on top of {\em any} of the
 currently available Haskell compilers.  It is even possible to change
 compiler from within the interface: this ability is immensely useful
 when testing whether code is truely {\em standard} and {\em portable}.
 
-The new interface, called {\em hmake interactive} or {\em hi}
-for short, is completely generic, seamlessly extending a common and
-familiar interaction style to embrace the more powerful facilities of
-the various compilers.  It allows an easy "step up" from interpretation
-to compilation.  (However, for brevity throughout this paper we will
-continue to use the word ``interpreter'' with the common meaning of an
-interactive development system, despite the fact that the underlying
-technology is not an interpreter at all!)
+The new interface, called {\em hmake interactive} or {\em hi} for
+short, is completely generic, seamlessly extending a common and
+familiar interaction style to embrace the more powerful facilities
+of the various compilers.  It allows an easy ``step up'' from
+interpretation to compilation.  (However, for brevity throughout this
+paper we will continue to use the word ``interpreter'' with the common
+meaning of an interactive development system, despite the fact that
+the underlying technology is not an interpreter at all!)
 
 Of course the wrapper is written in Haskell, so it is short and
 somewhat specificational in style.  (This paper is the literate
@@ -204,7 +210,7 @@ version of the program.)  This means that it is easy to read, modify,
 and extend.  We hope that other people will take this program and
 use it as a basis from which to customise their own interface.
 We also hope that others will provide generic program development
-tools that can simply "plug in" to this interface - there is no need
+tools that can simply ``plug in'' to this interface -- there is no need
 to understand (still less implement) either a whole compiler or a
 whole interpreter in order to experiment.
 
@@ -218,11 +224,11 @@ from the original module by transformation.
 
 
 
-\section*{The basic operation of an interpreter}
+\section{The basic operation of an interpreter}
 
 As already mentioned, this paper is a literate version of the
 source code of the {\em hmake interactive} interpreter.  You can
-execute this paper! --- lines beginning with a birdtrack ({\tt >})
+execute this paper!  Lines beginning with a birdtrack ({\tt >})
 are program lines.
 
 \begin{verbatim}
@@ -234,7 +240,6 @@ are program lines.
 > import Char
 > import Directory
 > import List
-> import Maybe
 > 
 > import HmakeConfig
 
@@ -243,8 +248,8 @@ are program lines.
 The main job of an interpreter (at least in the sense of an interactive
 development environment) is to present a so-called ``read-eval-print
 loop'' to the user.  In {\em hi}, the startup banner will seem familiar
-to users of the Hugs interpreter.  Before entering the top-level loop,
-we must at least load the Prelude.
+to users of the {\em Hugs} interpreter.  Before entering the top-level
+loop, we must at least load the Prelude.
 
 \begin{verbatim}
 
@@ -277,13 +282,13 @@ is either an expression to evaluate, or a command.
 
 Commands begin with a colon character, followed by a command name,
 possibly followed by arguments.  A later section discusses the commands
-available.  (For historical reasons, the shell escape command {\em :!}
+available.  (For historical reasons, the shell escape command {\tt :!}
 differs from all other commands in that its arguments are not separated
 from the command name by whitespace.  Hence, it is treated specially
 here.  Everything directly following the exclamation mark is passed
 to the shell for execution.)
 
-\being{verbatim}
+\begin{verbatim}
 
 > toplevel options compiler modules = do
 >   putStr (head modules ++ "> ")
@@ -305,12 +310,14 @@ to the shell for execution.)
 
 
 
-\section*{Evaluation of an expression}
+
+
+\section{Evaluation of an expression}
 
 Evaluation of an expression can take one of three forms.
 
-First, if the current module is Main and the user chooses simply to
-run the function {\em Main.main}, then it makes sense for the rest
+First, if the current module is {\tt Main} and the user chooses simply to
+run the function {\tt Main.main}, then it makes sense for the rest
 of the expression to contain command-line arguments to that program.
 Indeed, it could also contain directions to the program's runtime
 system, for instance to set a heapsize, or enable profiling.  In this
@@ -319,14 +326,34 @@ with the rest of the line as arguments.
 
 \begin{verbatim}
 
-> evaluate expr options compiler modules | "main" `isPrefixOf` expr = do
+> evaluate expr options compiler modules | "main " `isPrefixOf` expr = do
 >   compile options compiler (head modules)
 >      (run ("./"++head modules) (tail (words expr)))
 
 \end{verbatim}
 
 The rather more frequent case however, will be where the user is
-testing small functions within the larger conglomeration.
+testing small functions within the large set of functions available
+from the currently selected modules.  In this situation, in order to
+feed the expression correctly through a compiler, we need to generate
+a small {\tt Main} module whose {\tt main} function evaluates the
+user's expression.  This {\tt Main} module (rather obviously) imports
+the user's current collection of modules, and is then simply compiled
+and run.
+
+However, we need to be careful: we insist that there must be a method
+for displaying the result of the expression, so unlike in {\em Hugs},
+the user's expression must have a result type within the standard
+{\tt Show} class.  Furthermore, the user is permitted to enter an
+expression of {\em any} type, but should its type happen to be {\tt
+IO a}, the I/O program should not be displayed, but rather it should
+be run.  So there are two little tricks required: first, to distinguish
+I/O programs from simple expressions we have a non-standard instance
+of the {\tt Show} class for {\tt IO a}; and second, in the case where
+the expression is {\em not} of type {\tt IO a} we need to fool the
+typechecker into allowing that expression to be ``run'' in the dead
+branch of the {\tt case} statement! -- hence the non-standard {\tt
+coerce} function.
 
 \begin{verbatim}
 
@@ -349,16 +376,665 @@ testing small functions within the larger conglomeration.
 
 \end{verbatim}
 
+The third and final case is where the user wishes to test an expression
+within the scope of a particular module.  That is, to avoid the
+restriction of testing only functions that are {\em exported} from
+modules, the user may wish to ``enter'' a module and test local
+definitions not visible outside that module.
+
+This is possibly the most complex case, but again it is relatively
+straightforward to specify, this time by transformation of the selected
+module rather than generation of a new {\tt Main}.
+
+First, the module's header (if any) is removed and replaced with a
+simple {\tt module Main where}.  Then, any existing function called
+{\tt main} is removed (or renamed).  Any extra modules currently
+``loaded'' by the user are imported, since the test expression may
+use them.  Finally, a new {\tt main} function is constructed exactly
+as above.
+
+\begin{verbatim}
+
+> **** code goes here ****
+
+\end{verbatim}
+
+(We do not display the full code for scoped evaluation here, just the
+outline.  The un-literator is standard, appearing in early versions of
+the Haskell Report.  Both the simple code parser and the transformer
+which removes or renames syntactic components are straightforward
+enough to write, but somewhat tedious to read.)
+
+
+\section{Manipulating modules}
+
+Within the interactive environment, the user has some control over
+which modules are in scope, involving a process of loading, compiling,
+and running various modules.
+
+To load several modules at once, each is loaded individually.
+(For stylistic reasons noted elsewhere, the list to be loaded is always
+presented in reverse order, so we have to reverse it again here.)
+
+\begin{verbatim}
+
+> loadAll options compiler modules =
+>   mapM_ (load options compiler) (reverse modules)
+
+\end{verbatim}
+
+For each named module, we try looking in the current directory for a
+normal Haskell file, first with the literate extension {\tt .lhs},
+then with the ordinary extension {\tt .hs}, then with a GreenCard
+extension {\tt .gc}.  If all of those fail, then we look for the module
+amongst the standard prelude and libraries, using an appropriate
+search path for the current compiler.  If even that fails, then we
+display an error.
+
+\begin{verbatim}
+
+> load options compiler mod = do
+>   normal ".lhs" (
+>     normal ".hs" (
+>       normal ".gc" (
+>         foldr  prelude
+>               (putStrLn ("[Module "++mod++" not found...]"))
+>               (preludePaths compiler))))
+
+\end{verbatim}
+
+The procedure for discovering a normal file is continuation-based
+-- if the file exists it is compiled and the search stops, otherwise
+the fall-through continuation is invoked.
+
+\begin{verbatim}
+
+>  where
+>   normal :: String -> IO () -> IO ()
+>   normal ext continue = do
+>     let file = mod++ext
+>     exist <- doesFileExist file
+>     if exist then do
+>         putStr ("[Found module... "++file++"] ")
+>         compile options compiler file (putChar '\n')
+>       else continue
+
+\end{verbatim}
+
+The procedure for discovering a standard prelude or library module
+follows a similar model.   Here however, the file extension is
+{\tt .hi} for an interface file, and of course the standard modules
+do not need to be compiled -- they are simply available.
+
+\begin{verbatim}
+
+>   prelude :: String -> IO () -> IO ()
+>   prelude pp continue = do
+>     hi <- doesFileExist (pp++"/"++mod++".hi")
+>     if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
+>           else continue
+
+\end{verbatim}
+
+When compiling a module, the compiler is not called directly.  Rather,
+the batch tool {\em hmake} is used to establish any dependencies of
+the module, and ensure all modules it imports are also compiled.
+Such dependencies are not reported, but neither does the user have to
+ask for them by name.  {\em Hmake} issues all calls to the currently
+selected compiler with the current options, ensuring that only
+modules that have changed since the last compile, or which depend
+on a changed module, are re-built.  Hence, although the first time
+a module is loaded it may appear slow to the user, on subsequent
+occasions loading can be almost instantaneous.
+
+Should the attempted compilation fail for any reason, we print a
+message to that effect, and of course the particular compiler's own
+diagnostics will also appear on the user's screen.  If the compilation
+succeeds, the informational progress message (``Compiling...'') is
+deleted from the screen, and the success-continuation is invoked.
+
+\begin{verbatim}
+
+> compile options compiler file continue = do
+>   putStr "[Compiling..."
+>   ok <- system ("hmake -"++show compiler++" -I. "
+>                 ++unwords options++" "++file++" >/dev/null")
+>   case ok of
+>     ExitSuccess -> do putStr (delete "[Compiling...")
+>                       continue
+>     _           -> putStrLn "...failed]"
+>  where
+>   delete []     = ""
+>   delete (_:xs) = "\BS \BS" ++ delete xs
+
+\end{verbatim}
+
+Running a program could not be simpler: we just ask the system to
+do it for us with command-line arguments as supplied.
+
+\begin{verbatim}
+
+> run file args = system (file++" "++unwords args) >> done
+
+\end{verbatim}
+
+Occasionally, it is necessary to remove object and interface files,
+particularly when switching between compilers.  To remove a whole
+bunch of modules at once based on the file extension, we test
+for the existence of each file before removing it simply to avoid
+spurious error messages.
+
+\begin{verbatim}
+
+> makeclean ext modules = mapM_ (clean ext) modules
+>   where
+>   clean ext mod = do
+>     let file = mod++ext
+>     exist <- doesFileExist file
+>     if exist then do
+>         putStrLn ("[Removing    ... "++file++"]")
+>         catch (removeFile file) print
+>       else done
+
+\end{verbatim}
 
 
 
-\section*{Commands}
+\section{Commands}
+
+{\em Hmake interactive} aims to provide an interface that is comparable
+to {\em Hugs}, as is illustrated by the command help-text.  In this
+section we describe how each command is implemented.
+
+\begin{verbatim}
+
+> help = "\ 
+> \Commands (can be abbreviated to first letter):
+>   <expr>              evaluate expression
+>   :quit               quit
+>   :Quit               quit
+>   :load mod [mod...]  load modules (note, not filenames)
+>   :load               clear all modules
+>   :reload             repeat last load command
+>   :also mod [mod...]  load additional modules (note, not filenames)
+>   :module mod         set module scope for evaluating expressions
+>   :edit file          edit filename
+>   :edit               edit current module
+>   :cd dir             change directory
+>   :cd                 show current directory
+>   :dir                list current directory
+>   :hc compiler        set Haskell compiler to use
+>   :set options        set hmake/compiler options
+>   :unset options      remove hmake/compiler options
+>   :!command           shell escape"
+
+\end{verbatim}
+
+Commands are presented as a list of words, and are interpreted in the
+context of an environment containing option strings, the current
+compiler, and the current list of modules.  Each command consists of
+a single word (with colon elided), possibly followed by some words
+establishing the target of the command.  The user can abbreviate all
+commands to any prefix of the command word.  In this presentation we
+use the success-continuation model: if a test for an individual
+command succeeds, we invoke the associated continuation action and
+then return immediately to the top-level command loop; otherwise when
+the test fails, control falls through to the next item in the {\em
+do} procedure.
+
+\begin{verbatim}
+
+> commands :: [String] -> [String] -> Compiler -> [String] -> IO ()
+> commands ws options compiler modules =
+>   let target = tail ws 
+>       command :: String -> IO () -> IO ()
+>       command name action =
+>         if head ws `isPrefixOf` name then
+>           do action
+>              toplevel options compiler modules
+>         else done
+>       quit = do
+>          putStrLn "[Leaving hmake interactive...]"
+>          exitWith ExitSuccess
+>       indent = mapM_ (\x-> putStrLn ("  "++x))
+>   in
+
+\end{verbatim}
+
+Of paramount importance to the first-time user of any interactive system
+is the knowledge of how to get out!  For this reason, the {\tt :quit}
+command should always be the first item taught in any tutorial guide.
+A help command is the obvious second priority.
+
+\begin{verbatim}
+
+>   do
+>   command "quit" quit
+>   command "Quit" quit
+>   command "?" (putStrLn help)
+
+\end{verbatim}
+
+The semantics of the {\em Hugs} {\tt :load} command is that with
+no arguments it removes all loaded modules and reverts to just the
+prelude.  Given a list of modules to load, it starts with the prelude
+and adds them one by one.  Notice that here we keep the current list
+of modules in reverse order -- this is simply for the convenience
+elsewhere of reading the topmost module off the head of the list.
+
+A small further point of interest here is that the {\tt :load} command
+has an explicit tail-call to the top-level command loop, rather than
+allowing the normal return defined within the {\tt command} procedure.
+This is because we wish to alter the environment for future commands
+(in this instance, by replacing the current list of modules).
+
+\begin{verbatim}
+
+>   command "load"
+>       (let mods = if null target then ["Prelude"]
+>                   else (reverse ("Prelude":target))
+>        in do loadAll options compiler mods
+>              toplevel options compiler mods
+>       )
+
+\end{verbatim}
+
+The {\tt :also} command differs from the {\tt :load} command solely in
+that it {\em adds} the named modules to the current list rather than
+replacing it.
+
+\begin{verbatim}
+
+>   command "also"
+>       (let mods = if null target then ["Prelude"]
+>                   else (reverse target ++ modules)
+>        in do loadAll options compiler mods
+>              toplevel options compiler mods
+>        )
+
+\end{verbatim}
+
+The {\tt :reload} command is used to force the interpreter to scan
+through the current list of modules again, typically due to having
+edited a module externally, that is, outside the knowledge of
+the interpreter.  Here we can simply rely on the batch {\em hmake}
+to recognise such changes and deal with them appropriately.
+
+\begin{verbatim}
+
+>   command "reload"
+>        (loadAll options compiler modules)
+
+\end{verbatim}
+
+If given no arguments, the {\tt :edit} command is assumed to refer
+to the most-recently loaded module.  After editing, it is necessary
+to reload just that module.  However, if the files to edit were
+explicitly named, then it is safest to reload everything -- don't
+forget that {\em hmake} ensures that only the changed files are
+actually re-compiled.
+
+\begin{verbatim}
+
+>   command "edit"
+>       (if null target then do
+>            e <- system ("$EDITOR " ++ head modules ++ ".hs")
+>            load options compiler (head modules)
+>        else do
+>            e <- system ("$EDITOR " ++ unwords target)
+>            loadAll options compiler modules
+>       )
+
+\end{verbatim}
+
+To change working directory, use the {\tt :cd} command.  If no
+directory is specified, then the current directory is reported instead.
+
+\begin{verbatim}
+
+>   command "cd"
+>       (if null target then do
+>             dir <- getCurrentDirectory
+>             putStrLn ("Current directory: "++dir)
+>        else catch (setCurrentDirectory (head target)) print
+>       )
+
+\end{verbatim}
+
+{\em Hugs} does not have a builtin directory listing command --
+you are assumed capable of using a shell escape for such purposes.
+But to illustrate the ease with which the user can tailor their
+own interactive environment, even if only trivially, {\em hi} has
+the {\tt :dir} command.
+
+\begin{verbatim}
+
+>   command "dir" (getDirectoryContents "." >>= indent)
+
+\end{verbatim}
+
+The {\tt :set} command is used to add options to the current option list.
+With no arguments, it displays the current option list.  It should be
+noted that these options are actually passed to the batch {\em hmake},
+and are not used at all in the interactive system {\em hi} per se.
+And indeed, of the options passed to {\em hmake}, the vast majority
+are actually passed on directly to the underlying compiler.  Thus,
+the meaning of individual option strings is to be found in
+your compiler's documentation, not here!
+
+(Note again here the explicit tail-call to the top-level loop,
+ensuring that the change to the environment state is carried forward.)
+
+\begin{verbatim}
+
+>   command "set"
+>       (do putStrLn ("Current settings:\n  "++unwords (options++target))
+>           toplevel (options++target) compiler modules)
+
+\end{verbatim}
+
+To remove options from the current environment, we just use the quick
+and dirty $\backslash\backslash$ operation from the {\em List} library.
+
+\begin{verbatim}
+
+>   command "unset"
+>       (do let newopts = options \\ target
+>           putStrLn ("Current settings:\n  "++unwords newopts)
+>           toplevel newopts compiler modules)
+
+\end{verbatim}
+
+One of the most interesting facilities of {\em hi} is the ability
+to switch between backend compilers on-the-fly during a session.
+This ability is invaluable for highlighting portability issues in
+Haskell code.
+
+Given no arguments, the {\tt :hc} command reports the current compiler.
+If the command's argument corresponds to a known compiler, then we not
+only switch the name of the current compiler stored in the environment,
+but we also switch between sets of default options for each compiler.
+Because neither interface files nor object files are compatible
+between different compilers, these are removed for all modules in the
+currently-loaded list.  Then all modules are reloaded, necessitating
+a complete rebuild with the newly selected compiler.
+
+\begin{verbatim}
+
+>   command "hc"
+>       (if null target then putStrLn ("Current compiler: "++show compiler)
+>        else let newcomp = toComp (head target)
+>                 newopts = (options \\ defaultOptions compiler)
+>                                    ++ defaultOptions newcomp
+>             in
+>             if compilerKnown newcomp then do
+>                makeclean ".o" modules
+>                makeclean ".hi" modules
+>                loadAll newopts newcomp modules
+>                toplevel newopts newcomp modules	-- explicit return
+>             else do
+>                putStrLn ("Compiler "++head target++" not known/configured")
+>                putStrLn ("Current compiler: "++show compiler)
+>       )
+
+\end{verbatim}
+
+Finally, if none of the commands has yet matched, this {\em do} block
+falls through to an error message.  Although there is no explicit
+tail-call to the top-level loop here at the end, within the calling
+context this function returns to the top-level loop anyway.
+
+\begin{verbatim}
+
+>   putStrLn ("[Unknown command :"++head ws++"]")
+
+\end{verbatim}
 
 
-\section*{What's missing?}
+\section{Shortcomings}
+
+Of course, there are several very useful facilities provided by {\em
+Hugs} that are missing in {\em hi}.  Some of them are listed here.
+
+The {\tt :type} command reports the type of an expression.
+We experimented with one way to achieve the same effect in {\em hi},
+based on a small library extension implemented only by {\em hbc}
+and {\em nhc98}, namely the {\em showsType} method as a member of the
+{\em Show} class.  This proved unsatisfactory due to the monomorphism
+restriction -- although simple expressions seemed correct, polymorphic
+ones were flattened by the defaulting mechanism: for example the
+command {\tt :type map} dutifully reported:
+
+\begin{verbatim}
+   map :: (Integer->Integer) -> [Integer] -> [Integer]
+\end{verbatim}
+
+The underlying problem is that {\em hi} does not have direct access to
+a full parser and typechecker for Haskell.\footnote{One of the goals of
+the combined {\em Hugs/ghc} project is the Haskell Execution Platform
+-- a programmatic interface allowing exactly this direct access to
+individual components of the compiler.}  Although one could imagine
+coding these components into {\em hi}, this would conflict with the
+design philosophy that difficult jobs are shunted to external tools.
+An alternative approach might be to suggest that compiler implementers
+provide a suitable commandline switch to report exactly the information
+required -- this might add a handful of lines to each compiler,
+but avoids adding hundreds of lines to {\em hi}.
+
+The {\tt :info} command in {\em Hugs} reports a wealth of information
+about any name that is in scope, appropriate to whether it is a
+datatype, constructor, class member, function or operator.  {\em hi}
+could in theory parse every module's interface file when loading that
+module, store this information (and more) in a look-up table, and
+present it to the user.  The different
+interface file formats used by different compilers make this job
+tedious, but the problem is not insurmountable.  This mini-database
+would additionally provide exactly the information needed to implement
+the {\tt :find}, {\tt :names} and {\tt :browse} commands.  For some
+compilers, such as {\em hbc} or {\em ghc}, additional information
+about strictness and inlining could also be retrieved from the interface
+file and presented to the user.
+
+Interrupt-handling is non-existent in {\em hi}.  That is to say, typing
+ctrl-C does not halt a running computation as in {\em Hugs}, rather
+it exits the interpreter itself, leaving the computation running as
+a separate process!  This is ugly, and the only excuse for not fixing
+it yet is lack of time.
 
 
-\section*{Backend Configuration}
+\section{Conclusions}
+
+We have presented the code for {\em hi}, a small interactive
+development environment for Haskell, written in Haskell.  It mimics the
+popular {\em Hugs} interface, yet allows the use of any of the commonly
+available Haskell compilers.  The level of interactive performance
+perceived by the user will depend on the particular compiler selected,
+but different compilers give different trade-offs between compilation
+speed and final code speed, so the user has some choice.  On a new
+PC machine, a compiler like {\em nhc98} or {\em hbc} generally gives
+turnaround times of under one second.
+
+The design philosophy is to rely on external tools for most of the
+real work of compilation.  This slightly restricts the number of
+features that are currently supported, but we hope it also serves
+as an inspiration to other hackers to write small tools that can
+be either be used in batch mode or ``plugged in'' to the interactive
+system.
+
+
+\section*{Appendix: Backend Configuration}
+
+And that is (almost) all there is to say about {\em hi}.  Except that
+there is actually a non-trivial amount of code required to configure
+{\em hi} for any particular set of possible compiler backends.
+This Appendix gives a literate-code outline of the configuration
+modules for {\em hi}.  The first module, {\tt HmakeConfig}, performs
+generic configuration tasks, and is fixed.  It encapsulates the various
+differences between compilers that are relevant to the implementation
+of {\em hi}.  The second module, {\tt LocalConfig}, tailors the
+configuration to a particular local installation, and is either
+automatically generated during the installation process, or modified
+to the user's taste.
+
+\begin{verbatim}
+
+> module HmakeConfig where
+> 
+> import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
+>                     hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
+
+\end{verbatim}
+
+{\em Hmake} permits the use of certain environment variables to
+override the default configuration settings, so {\em hi} must
+follow the same scheme to avoid mismatches.  The non-standard
+extension {\tt unsafePerformIO} is very handy to encapsulate
+the reading of the external environment here.  We define an infix
+function {\tt withDefault} to prefer the value of an environment
+variable if it is set and non-empty, otherwise to use the configured
+default.
+
+\begin{verbatim}
+
+> #ifdef __HBC__
+> import UnsafePerformIO
+> #endif
+> #ifdef __NHC__
+> import IOExtras (unsafePerformIO)
+> #endif
+> #ifdef __GLASGOW_HASKELL__
+> import IOExts (unsafePerformIO)
+> #endif
+> import System
+> 
+> withDefault name def = unsafePerformIO $
+>    catch (do val <- getEnv name
+>              if null val then return def else return val)
+>          (\e-> return def)
+
+\end{verbatim}
+
+We know of three main Haskell compilers that might be available on
+any particular machine.
+
+\begin{verbatim}
+
+> data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
+> toComp "nhc98" = Nhc98
+> toComp "ghc"   = Ghc
+> toComp "hbc"   = Hbc
+> toComp x       = Unknown x
+> instance Show Compiler where
+>   showsPrec p Nhc98 = showString "nhc98"
+>   showsPrec p Ghc   = showString "ghc"
+>   showsPrec p Hbc   = showString "hbc"
+>   showsPrec p (Unknown x) = showString x
+
+\end{verbatim}
+
+Of those that might be available, we need to establish which compilers
+are actually present.
+
+\begin{verbatim}
+
+> knownCompilers  = (if ghcKnown then (Ghc:) else id)
+>                    ((if hbcKnown then (Hbc:) else id)
+>                     ((if nhcKnown then (Nhc98:) else id) []))
+> compilerKnown c = c `elem` knownCompilers
+
+\end{verbatim}
+
+Each compiler has non-standard extensions, which of course live
+in different locations.
+
+\begin{verbatim}
+
+> preludePaths c  = case c of
+>     Nhc98 -> [nhc98incdir]
+>     Hbc   -> hbcincpath
+>     Ghc   -> ghcincpath
+>     _     -> []
+> nonstdCoerce c  = case c of
+>     Nhc98 -> "import NonStdUnsafeCoerce\n\ 
+>               \coerce=unsafeCoerce"
+>     Hbc   -> "#define coerce coerceNotFound"
+>     Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
+>              \coerce :: a -> b\ncoerce = unsafeCoerce#"
+>     _     -> ""
+> nonstdShow c  = case c of
+>     Nhc98 -> ""
+>     Hbc   -> "instance Show (IO a) where\n\ 
+>              \  showsPrec p x = showString \"<<IO action>>\""
+>     Ghc   -> "instance Show (IO a) where\n\ 
+>              \  showsPrec p x = showString \"<<IO action>>\""
+>     _     -> ""
+> defaultOptions c = case c of
+>     Nhc98 -> []
+>     Hbc   -> []
+>     Ghc   -> ["-fglasgow-exts"]
+>     _     -> []
+
+\end{verbatim}
+
+The local configuration defines a default compiler to use, but we
+prefer the environment variable {\tt HC} if it is set.
+
+\begin{verbatim}
+
+> defaultCompiler = toComp ("HC" `withDefault` defaultHc)
+
+\end{verbatim}
+
+Each compiler stores its standard prelude and library interface files
+in separate locations.
+
+\begin{verbatim}
+
+> hbcincpath =
+>   let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
+>   in [root++"/hlib1.3", root++"/hbc_library1.3"]
+> nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
+> ghcincpath =
+>   let ghcincdir = "GHCINCDIR" `withDefault` ghcdir
+>   in
+>   if ghclang < 5 then
+>       -- ghc before Haskell'98
+>       [ghcincdir]
+>   else if ghcver < 406 then
+>       -- ghc for Haskell'98, prior to hslibs
+>       [ghcincdir++"/std"        ,ghcincdir++"/exts"
+>       ,ghcincdir++"/misc"       ,ghcincdir++"/posix"]
+>   else
+>       -- ghc for Haskell'98, with new hslibs
+>       [ghcincdir++"/std"        ,ghcincdir++"/data"
+>       ,ghcincdir++"/lang"       ,ghcincdir++"/misc"
+>       ,ghcincdir++"/net"        ,ghcincdir++"/num"
+>       ,ghcincdir++"/text"       ,ghcincdir++"/util"
+>       ,ghcincdir++"/win32"      ,ghcincdir++"/posix"]
+
+\end{verbatim}
+
+Finally, the local configuration module tells us which compilers
+are actually detected as being present on a particular machine,
+what their versions are, where the base directories are located,
+and which one to use as the default compiler.
+
+\begin{verbatim}
+
+> module LocalConfig where
+> hmakeversion = "1.8 or better"
+> builtby = "ghc"
+> ghcKnown =  True
+> hbcKnown =  True
+> nhcKnown =  True
+> hbcdir = "/usr/local/lib/lmlc"
+> nhc98dir = "/usr/local/include/nhc98"
+> ghcdir = "/usr/local/lib/ghc-4.06/imports"
+> ghcver = 406
+> ghclang =  5
+> defaultHc = builtby
+
+\end{verbatim}
 
 
 \end{document}
@@ -405,365 +1081,12 @@ testing small functions within the larger conglomeration.
 >   compile options compiler tmpfile (run tmpfile [])
 >   where
 > -}
-> 
-> compile options compiler file continue = do
->   putStr "[Compiling..."
-> --debug ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
->   ok <- system ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
->   case ok of
->     ExitSuccess -> do putStr (delete "[Compiling...")
->                       continue
->     _           -> putStrLn "...failed]"
->  where
->   delete []     = ""
->   delete (_:xs) = "\BS \BS" ++ delete xs
-> 
-> run file args = system (file++" "++unwords args) >> done
-> 
-> commands :: [String] -> [String] -> Compiler -> [String] -> IO ()
-> commands ws options compiler modules =
->   let target = tail ws in
->   do
->   command "quit" quit
->   command "Quit" quit
->   command "load"
->       (let mods = if null target then ["Prelude"]
->                   else (reverse ("Prelude":target))
->        in do loadAll options compiler mods
->              toplevel options compiler mods	-- explicit return with new module list
->       )
->   command "also"
->       (let mods = if null target then ["Prelude"]
->                   else (reverse target ++ modules)
->        in do loadAll options compiler mods
->              toplevel options compiler mods	-- explicit return with new module list
->        )
->   command "reload"
->        (do -- makeclean ".o" modules	-- NO, let hmake rebuild from changes
->            loadAll options compiler modules)
->   command "edit"
->       (if null target then do
->            e <- system ("$EDITOR " ++ head modules ++ ".hs")
->            load options compiler (head modules)
->        else do
->            e <- system ("$EDITOR " ++ unwords target)
->            loadAll options compiler modules
->       )
->   command "type"
->       ( do
->           let tmpfile = "/tmp/Main"
->           f <- openFile (tmpfile++".hs") WriteMode
->           hPutStr f (
->             "module Main where\n\n" ++
->             concatMap (\m-> "import "++m++"\n") modules ++
->             "\nmain = let expr  = (" ++ unwords target ++ ")" ++
->             "\n       in putStrLn ("++ nonstdShowsType compiler++" expr \"\")"++
->             "\n")
->           hClose f
->           compile options compiler tmpfile (run tmpfile [])
->       )
->   command "cd"
->       (if null target then do
->             dir <- getCurrentDirectory
->             putStrLn ("Current directory: "++dir)
->        else catch (setCurrentDirectory (head target)) print
->       )
->   command "dir" (getDirectoryContents "." >>= indent)
->   command "ls" (getDirectoryContents "." >>= indent)
->   command "pwd" (getCurrentDirectory >>= putStrLn)
->   command "set"
->       (do putStrLn ("Current settings:\n  "++concat (intersperse " " (options++target)))
->           toplevel (options++target) compiler modules)
->   command "unset"
->       (do let newopts = options \\ target
->           putStrLn ("Current settings:\n  "++concat (intersperse " " newopts))
->           toplevel newopts compiler modules)
->   command "hc"
->       (if null target then putStrLn ("Current compiler: "++show compiler)
->        else let newcomp = toComp (head target)
->                 newopts = (options \\ defaultOptions compiler)
->                                    ++ defaultOptions newcomp
->             in
->             if compilerKnown newcomp then do
->                makeclean ".o" modules
->                makeclean ".hi" modules
->                loadAll newopts newcomp modules
->                toplevel newopts newcomp modules	-- explicit return
->             else do
->                putStrLn ("Compiler "++head target++" not known/configured")
->                putStrLn ("Current compiler: "++show compiler)
->       )
->   command "?" (putStrLn help)
->   putStrLn ("[Unknown command :"++head ws++"]")
->  where
->   command :: String -> IO () -> IO ()
->   command name action =
->     if head ws `isPrefixOf` name then
->       do action
->          toplevel options compiler modules
->     else done
->   quit = do
->      putStrLn "[Leaving hmake interactive...]"
->      exitWith ExitSuccess
->   indent = mapM_ (\x-> putStrLn ("  "++x))
-> 
-> loadAll options compiler modules =
->   mapM_ (load options compiler) (reverse modules)
-> 
-> load options compiler mod = do
->   normal ".lhs" (
->     normal ".hs" (
->       normal ".gc" (
->         foldr  prelude
->               (putStrLn ("[Module "++mod++" not found...]"))
->               (preludePaths compiler))))
->  where
->   normal :: String -> IO () -> IO ()
->   normal ext continue = do
->     let file = mod++ext
->     exist <- doesFileExist file
->     if exist then do
->         putStr ("[Found module... "++file++"] ")
->         compile options compiler file (putChar '\n')
->       else continue
->   prelude :: String -> IO () -> IO ()
->   prelude pp continue = do
->     hi <- doesFileExist (pp++"/"++mod++".hi")
->     if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
->           else continue
-> 
-> makeclean ext modules = mapM_ (clean ext) modules
->   where
->   clean ext mod = do
->     let file = mod++ext
->     exist <- doesFileExist file
->     if exist then do
->         putStrLn ("[Removing    ... "++file++"]")
->         catch (removeFile file) print
->       else done
-> 
-> --fromOpt prefix opt =
-> --  if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
-> 
-> {-
-> scope file mod = do
->   system ("sed -e '/^module .* where.*/d' "++file++" >/tmp/"++file)
->   return ("/tmp/"++file)
-> -}
-> 
-> #if defined(__HBC__)
-> banner = "hi - hmake interactive                (Version: "++hmakeVersion++")"
-> help   = "hi - help command does not work in hbc"
-> 
-> #else
 
 
-> 
-> 
-> help = "\ 
-> \Commands (can be abbreviated to first letter):
->   <expr>		evaluate expression
->   :type <expr>	 	show type of expression [nhc98 only]
->   :quit			quit
->   :Quit			quit
->   :load mod [mod...]	load modules (note, not filenames)
->   :load 		clear all modules
->   :reload 		repeat last load command
->   :also mod [mod...]	load additional modules (note, not filenames)
->   :module mod		set module scope for evaluating expressions
->   :edit file	 	edit filename
->   :edit 	 	edit current module
->   :cd dir		change directory
->   :cd 			show current directory
->   :dir 			list current directory
->   :hc compiler		set Haskell compiler to use
->   :set options		set hmake/compiler options
->   :unset options	remove hmake/compiler options
->   :!command 		shell escape"
-> #endif
-> 
-> 
-> 
-> -- This module controls the configuration parameters for hmake-interactive
-> -- by (1) allowing environment variables to override default settings
-> --    (2) taking care of the small differences between Haskell compilers
-> module HmakeConfig where
-> 
-> -- Known Haskell compilers and their locations are all automatically
-> -- generated into LocalConfig.
-> import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
->                     hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
-> 
-> #ifdef __HBC__
-> import UnsafePerformIO
-> #endif
-> #ifdef __NHC__
-> import IOExtras (unsafePerformIO)
-> #endif
-> #ifdef __GLASGOW_HASKELL__
-> import IOExts (unsafePerformIO)
-> #endif
-> import System
-> 
-> -- Get an environment variable if it exists, or default to given string
-> withDefault name def = unsafePerformIO $
->    catch (do val <- getEnv name
->              if null val then return def else return val)
->          (\e-> return def)
-> 
-> -- What compilers are possible choices?
-> data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
-> toComp "nhc98" = Nhc98
-> toComp "ghc"   = Ghc
-> toComp "hbc"   = Hbc
-> toComp x       = Unknown x
-> instance Show Compiler where
->   showsPrec p Nhc98 = showString "nhc98"
->   showsPrec p Ghc   = showString "ghc"
->   showsPrec p Hbc   = showString "hbc"
->   showsPrec p (Unknown x) = showString x
-> 
-> -- Which compilers do we actually have available?
-> knownCompilers  = (if ghcKnown then (Ghc:) else id)
->                    ((if hbcKnown then (Hbc:) else id)
->                     ((if nhcKnown then (Nhc98:) else id) []))
-> compilerKnown c = c `elem` knownCompilers
-> 
-> -- What are the differences between compilers?
-> preludePaths c  = case c of
->     Nhc98 -> [nhc98incdir]
->     Hbc   -> hbcincpath
->     Ghc   -> ghcincpath
->     _     -> []
-> nonstdCoerce c  = case c of
->     Nhc98 -> "import NonStdUnsafeCoerce\n\ 
->               \coerce=unsafeCoerce"
->     Hbc   -> "#define coerce coerceNotFound"
->     Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
->              \coerce :: a -> b\ncoerce = unsafeCoerce#"
->     _     -> ""
-> nonstdShow c  = case c of
->     Nhc98 -> ""
->     Hbc   -> "instance Show (IO a) where\n\ 
->              \  showsPrec p x = showString \"<<IO action>>\""
->     Ghc   -> "instance Show (IO a) where\n\ 
->              \  showsPrec p x = showString \"<<IO action>>\""
->     _     -> ""
-> nonstdShowsType c  = case c of
->     Nhc98 -> "showsType"
->     Hbc   -> "Operation'showsType'Unknown"
->     Ghc   -> "Operation'showsType'Unknown"
->     _     -> ""
-> defaultOptions c = case c of
->     Nhc98 -> []
->     Hbc   -> []
->     Ghc   -> ["-fglasgow-exts"]
->     _     -> []
-> 
-> 
-> -- Ensure that a string has a fixed length by truncating or padding with space
-> fixlength n s | len > n   = take n s
->               | otherwise = s ++ replicate (n-len) ' '
->   where len = length s
-> 
-> hmakeVersion = fixlength 18 hmakeversion
-> 
-> 
-> -- This defines the default compiler hmake will call if none is specified
-> -- on the commandline.  (First look in the HC variable from the environment,
-> -- and if it is empty, then select the compiler we used to build hmake.
-> -- Actually defaultHc, set in LocalConfig, can be either the config variable
-> -- "builtby" or simply "nhc98".)
-> defaultCompiler = toComp ("HC" `withDefault` defaultHc)
-> 
-> 
-> -- hbc, set up for either Haskell 1.3 or Haskell 98
-> --     LMLDIR/HBCDIR is the base directory of your hbc installation
-> --     hbcincpath is a list of directories containing .hi files
-> 
-> hbcincpath =
->   let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
->   in [root++"/hlib1.3", root++"/hbc_library1.3"]
-> 
-> 
-> 
-> 
-> -- nhc98
-> --     nhc98incdir is a single directory containing standard .hi files
-> 
-> nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
-> 
-> 
-> 
-> 
-> -- GHC, set up for various versions of the Haskell language
-> --     ghcincdir could be a single directory containing standard .hi files:
-> --  e.g.  ghcincdir=/usr/lib/ghc-3.02/lib/imports
-> --     or ghcincdir could be the base for...
-> --     ghcincpath containing multiple dirs each of which contains .hi files:
-> --  e.g.  ghcincdir=/usr/lib/ghc-4.04/imports
-> --        ghcincpath=$ghcincdir/exts $ghcincdir/text
-> 
-> 
-> -- Depending on compiler version, we have to choose interface paths.
-> --   ghcver is the value of __GLASGOW_HASKELL__
-> --   ghclang takes the values 2,3,4,5, corresponding to 1.2, 1.3, 1.4 and 98.
-> 
-> ghcincpath =
->   let ghcincdir = "GHCINCDIR" `withDefault` ghcdir
->   in
->   if ghclang < 5 then
->       -- ghc before Haskell'98
->       [ghcincdir]
->   else if ghcver < 406 then
->       -- ghc for Haskell'98, prior to hslibs
->       [ghcincdir++"/std"
->       ,ghcincdir++"/exts"
->       ,ghcincdir++"/misc"
->       ,ghcincdir++"/posix"]
->   else
->       -- ghc for Haskell'98, with new hslibs
->       [ghcincdir++"/std"
->       ,ghcincdir++"/data"
->       ,ghcincdir++"/lang"
->       ,ghcincdir++"/misc"
->       ,ghcincdir++"/net"
->       ,ghcincdir++"/num"
->       ,ghcincdir++"/text"
->       ,ghcincdir++"/util"
->       ,ghcincdir++"/win32"
->       ,ghcincdir++"/posix"]
-> 
-> 
-> 
-> {-
-> -- From here on down, definitions are added by the config script.
-> -- Change these if you like, but be warned that re-running the
-> -- autoconfiguring step will erase your changes.
-> hmakeversion
-> builtby
-> ghcKnown
-> hbcKnown
-> nhcKnown
-> hbcdir
-> nhc98dir
-> ghcdir
-> ghcver
-> ghclang
-> defaultHc
-> -}
-> 
-> 
-> module LocalConfig where
-> hmakeversion = "1.8 or better"
-> builtby = "ghc"
-> ghcKnown =  True
-> hbcKnown =  True
-> nhcKnown =  True
-> hbcdir = "/usr/malcolm/local/lib/lmlc"
-> nhc98dir = "/usr/malcolm/local/include/nhc98"
-> ghcdir = "/usr/malcolm/local/lib/ghc-4.06/imports"
-> ghcver = 406
-> ghclang =     5
-> defaultHc = builtby
+
+
+
+
+
+
 
