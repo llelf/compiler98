@@ -94,20 +94,24 @@ ifeq "T" "${TRACING}"
   HISUFFIX=T.hi
   O=T.o
   C=T.c
+  A=T.a
 else
 ifeq "p" "${PROFILING}"
   HISUFFIX=hi
   O=p.o
   C=p.c
+  A=p.a
 else
 ifeq "z" "${TPROF}"
   HISUFFIX=hi
   O=z.o
   C=z.c
+  A=z.a
 else
   HISUFFIX=hi
   O=o
   C=hc
+  A=a
 endif
 endif
 endif
@@ -117,5 +121,6 @@ ifeq "z" "${TPROF}"
   HISUFFIX=T.hi
   O=Tz.o
   C=Tz.c
+  A=Tz.a
 endif
 endif

@@ -132,8 +132,8 @@ MAN = man/*.1
 
 TARGDIR= targets
 TARGETS= runtime prelude libraries greencard hp2graph \
-	 profruntime profprelude profprelude-$(CC) \
-	 timeruntime timeprelude timeprelude-$(CC) \
+	 profruntime profprelude profprelude-$(CC) proflibraries \
+	 timeruntime timeprelude timeprelude-$(CC) timelibraries \
 	 timetraceruntime timetraceprelude \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
@@ -178,8 +178,9 @@ basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 
 all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #hoodui
 
-heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
-timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
+heapprofile: compiler profruntime profprelude-$(BUILDCOMP) proflibraries \
+								hp2graph
+timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP) timelibraries
 
 profprelude-nhc: profprelude
 profprelude-ghc: profprelude
@@ -258,6 +259,9 @@ $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
+$(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
+	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 CFG=p
+	touch $(TARGDIR)/$(MACHINE)/libraries
 
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
@@ -274,6 +278,9 @@ $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) CFG=z install
 	touch $(TARGDIR)/$(MACHINE)/timeprelude
+$(TARGDIR)/$(MACHINE)/timelibraries: $(LIBRARIES)
+	cd src/libraries/base; $(MAKE) -f Makefile.nhc98 CFG=z
+	touch $(TARGDIR)/$(MACHINE)/libraries
 
 
 $(TARGDIR)/$(MACHINE)/prelude-$(CC): $(PRELUDEC)
