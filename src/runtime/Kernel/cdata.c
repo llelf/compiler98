@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "mk.h"
 /* #include "runtime.h"	-- now included from cinterface.h below */
 #include "stableptr.h"	/* MW 19991213, needed for Haskell finalizers */
 #include "cinterface.h"	/* MW 19991213, needed for Haskell finalizers */
@@ -11,9 +12,9 @@ extern void deferGC (StablePtr finalise);	/* prototype (ditto) */
 
 static ForeignObj foreign[MAX_FOREIGNOBJ];
 
-static FileDesc fd_stdin;
-static FileDesc fd_stdout;
-static FileDesc fd_stderr;
+/*static FileDesc fd_stdin;*/
+/*static FileDesc fd_stdout;*/
+/*static FileDesc fd_stderr;*/
 ForeignObj fo_stdin;
 ForeignObj fo_stdout;
 ForeignObj fo_stderr;
@@ -77,7 +78,10 @@ ForeignObj* allocForeignObj(void* arg, gcCval finalCV, gcFO finalFO)
 void freeForeignObj(ForeignObj *cd)
 {
   /*printf("freeForeignObj: releasing %d\n",((int)cd-(int)foreign)/sizeof(ForeignObj));*/
-  cd->gcf(cd);
+  if (cd->gcf)
+    cd->gcf(cd);
+  else
+    fprintf(stderr,"Warning: freeForeignObj called on already-free ForeignObj");
   cd->used = 0;
   cd->gcf  = NULL;
 }
@@ -141,14 +145,14 @@ void gcFile(void *c)	/* This is a possible second-stage GC */
 #endif
     fclose(a->fp);
   if (a->path) free(a->path);
-  free(a);
+  /*free(a);	-- free'ing causes a seg-fault! don't know why */
 }
 void gcSocket(void *c)	/* This is another possible second-stage GC */
 {
   FileDesc *a = (FileDesc*)c;
   close(a->fdesc);
   if (a->path) free(a->path);
-  free(a);
+  /*free(a);	-- free'ing causes a seg-fault! don't know why */
 }
 
 
@@ -188,7 +192,7 @@ C_HEADER(primForeignObj)
 /*      to the Haskell world.  nhc98 does allow it, but this is the only */
 /*      occasion where it actually makes sense.                          */
 
-/* foreign import makeForeignObjC :: Addr -> a -> IO Addr                */
+/* foreign import makeForeignObjC :: Addr -> _E a -> IO Addr             */
 void *primForeignObjC (void *addr, NodePtr fbox)
 {
   ForeignObj *fo;
@@ -197,6 +201,21 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   fo = allocForeignObj(addr, (gcCval)makeStablePtr(finalise), gcLater);
   return (void*)fo;
 }
+
+/* The following function is also visible to the Haskell world. */
+/* reallyFreeForeignObj primitive 1 :: ForeignObj -> IO () */
+C_HEADER(reallyFreeForeignObj)
+{
+  NodePtr nodeptr;
+  ForeignObj *fo;
+  nodeptr = C_GETARG1(1);
+  IND_REMOVE(nodeptr);
+  fo = (void*)GET_INT_VALUE(nodeptr);
+
+  freeForeignObj(fo);
+  C_RETURN(mkUnit());
+}
+
 
 static StablePtr pending[MAX_FOREIGNOBJ];  /* queue for pending finalisers */
 static int       pendingIdx=0;
