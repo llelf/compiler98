@@ -136,6 +136,8 @@ instance Eq a => Eq (R a) where
 
 instance Ord a => Ord (R a)
 
+type Fun a b = Trace -> R a -> R b
+
 --instance (Show a) => Show (R a) where
 --    showsPrec d (R a _) = showsPrec d a
 
@@ -723,8 +725,31 @@ pap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                                             (TCons kt TNil)))))))))))) sr
         in pap10 sr t1 (rf t1 a) b c d e f g h i j k 
 
+
+{-
+Assure that a trace component of wrapped value exists by construction of Sat.
+Used for Cafs.
+-}
+lazySat :: R a -> Trace -> R a
+
+lazySat a t = 
+  let R v vt = a in R v (Sat t vt)
+
+
+-- The following combinator is currently not used.
+-- It should be used to not to loose information about pattern bindings.
+-- (in transformation of DeclPat).
+
+{- Add name of pattern as an indirection -}
+patvar :: NmType -> R a -> SR -> Trace -> R a
+
+patvar nm (R v vt) sr t = 
+  R v (Ind (Nm t nm sr) vt)
+
+{- old:
 patvar nm (R v vt) sr t = 
     R v (Nm vt nm sr)
+-}
 
 caf rv = \sr t -> rv 
 
@@ -971,7 +996,7 @@ patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
 patFromConRational sr t x = R 1 Root
 ----
 
-rPatBool :: R Bool -> Bool	-- used in the transformation of lit patterns
+rPatBool :: R Bool -> Bool	-- used in the transformation of litpatterns
 rPatBool (R v _) = v
 
 indir :: Trace -> R a -> R a
@@ -1397,22 +1422,35 @@ prim12 nm rf sr t =
 
 
 
--- Dummy defs
+{-
+cni
+Transform a function into a wrapped function with the given trace.
+Used for partially applied constructors
+-}
+
+cn1 :: (R a1 -> b) -> Trace -> R (Fun a1 b)
 cn1 rf t = myseq t (R (\t a ->
                       R (rf a)
                         t)
                       t)
+
+cn2 :: (R a1 -> R a2 -> b) -> Trace -> R (Fun a1 (Fun a2 b))
 cn2 rf t = myseq t (R (\t a ->
                       R (\t b ->
                         R (rf a b)
                           t)
                         t)
                       t)
+
+cn3 :: (R a1 -> R a2 -> R a3 -> b) -> Trace -> R (Fun a1 (Fun a2 (Fun a3 b)))
 cn3 rf t = myseq t (R (\t a ->
                       R (\t b ->
                         R (\t c ->
                           R (rf a b c)
                       t)t)t)t)
+
+cn4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> Trace 
+    -> R (Fun a1 (Fun a2 (Fun a3 (Fun a4 b))))
 cn4 rf t = myseq t (R (\t a ->
                       R (\t b ->
                         R (\t c ->
@@ -1454,18 +1492,53 @@ cn8 rf t = myseq t (R (\t a ->
                                     R (rf a b c d e f g h)
                       t)t)t)t)t)t)t)t)t)
 
-pa0 sr t nm =
-  Nm t nm sr
---pa0 sr t nm =
---  Ap t (TCons (Nm t nm sr) TNil) sr
-pa1 sr t nm a@(R _ at) =
-  Ap t (TCons (Nm t nm sr) (TCons at TNil)) sr
-pa2 sr t nm a@(R _ at) b@(R _ bt) =
-  Ap t (TCons (Nm t nm sr) (TCons at (TCons bt TNil))) sr
-pa3 sr t nm a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  Ap t (TCons (Nm t nm sr) (TCons at (TCons bt (TCons ct TNil)))) sr
-pa4 sr t nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
-  Ap t (TCons (Nm t nm sr) (TCons at (TCons bt (TCons ct (TCons dt TNil))))) sr
+
+{- 
+pai 
+Create application node for function that is partially applied to i
+arguments and transform partial application with given function.
+Used for partially applied data constructors.
+-}
+
+pa0 :: b -> (b -> Trace -> c) -> SR -> Trace -> NmType -> c
+
+pa0 c cni sr t nm =
+  cni c (Nm t nm sr) 
+
+
+pa1 :: (R a1 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType -> R a1 -> c
+
+pa1 c cni sr t nm a1@(R _ t1) =
+  cni (c a1) (Ap t (TCons (Nm t nm sr) (TCons t1 TNil)) sr)
+
+
+pa2 :: (R a1 -> R a2 -> b) -> (b -> Trace -> c) -> SR -> Trace -> NmType
+    -> R a1 -> R a2 -> c
+
+pa2 c cni sr t nm a1@(R _ t1) a2@(R _ t2) =
+  cni (c a1 a2) (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 TNil))) sr)
+
+
+pa3 :: (R a1 -> R a2 -> R a3 -> b) -> (b -> Trace -> c) 
+    -> SR -> Trace -> NmType
+    -> R a1 -> R a2 -> R a3 -> c
+
+pa3 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) =
+  cni (c a1 a2 a3)
+    (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 (TCons t3 TNil)))) sr)
+
+
+pa4 :: (R a1 -> R a2 -> R a3 -> R a4 -> b) -> (b -> Trace -> c) 
+    -> SR -> Trace  -> NmType
+    -> R a1 -> R a2 -> R a3 -> R a4 -> c
+
+pa4 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) a4@(R _ t4) =
+  cni (c a1 a2 a3 a4) 
+    (Ap t (TCons (Nm t nm sr) (TCons t1 (TCons t2 (TCons t3 (TCons t4 TNil)))))
+      sr)
+
+
+{-- --}
 
 c1 nm rf sr t = 
   (R (\t a ->
