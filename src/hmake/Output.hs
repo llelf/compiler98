@@ -33,12 +33,10 @@ doEcho False cmd = cmd ++ "\n"
 
 oFile,hiFile,hatFile :: DecodedArgs -> String -> String -> String
 oFile opts path fmodule =
-    let g    = goalDir opts
-        gDir = if null g then path else g
-        tmod = if hat opts then ("Hat/"++) else id
-    in fixFile opts gDir (tmod fmodule) (oSuffix opts)
+    let tmod = if hat opts then ("Hat/"++) else id
+    in fixFile opts (maybe path id (goalDir opts)) (tmod fmodule) (oSuffix opts)
 hiFile opts path fmodule =
-       fixFile opts path fmodule (hiSuffix opts)
+       fixFile opts (maybe path id (hiDir opts)) fmodule (hiSuffix opts)
 --iFile opts path fmodule =
 --       fixFile opts path fmodule ("pp.hs")
 hatFile opts path fmodule  =
@@ -122,7 +120,8 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
   compilecmd = doEcho echo $
     hc ++ "-c " ++ cppcmd
     ++ (if hat opts then "-package hat " else " ")
-    ++ (if (dflag opts) then "-d "++goalDir opts++" " else "-o "++ofile++" ")
+    ++ (if (dflag opts) then "-d "++maybe "." id (goalDir opts)++" "
+                        else "-o "++ofile++" ")
     ++ hfile
 
   hc | isUnix opts = compilerPath (compiler opts)
@@ -156,8 +155,7 @@ qLink opts echo graph (Object  file suf) = ""
 qLink opts echo graph (Program file)     =
   cmd
  where
-  goaldir = goalDir opts
-  goal = if null goaldir then "." else goaldir
+  goal = maybe "" id (goalDir opts)
   tmod = if hat opts then ("Hat/"++) else id
   mkOfile path f = if (dflag opts) then
                         fixFile opts ""   (tmod f) (oSuffix opts)
@@ -168,7 +166,7 @@ qLink opts echo graph (Program file)     =
      | otherwise   = compilerPath (compiler opts)
   cmd | isUnix opts =
 	  let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
-          if null goaldir then
+          if null goal then
 	    let objs =  lconcatMap (\(d,f) -> ' ':mkOfile d f) objfiles in
 	    "if [ `$OLDER "++file++" "++objs++"` = 1 ]\nthen\n"
 	     ++ doEcho echo (hc++hatflag++" -o "++file++objs++" ${LDFLAGS}")
@@ -177,7 +175,7 @@ qLink opts echo graph (Program file)     =
 	    let objs = lconcatMap (\(d,f) -> ' ':
                                       fixFile opts "" (tmod f) (oSuffix opts))
                                   objfiles in
-	    "if ( cd "++goaldir++" && [ `$OLDER "
+	    "if ( cd "++goal++" && [ `$OLDER "
              ++     file ++ " "++objs++"` = 1 ] )\nthen\n"
 	     ++ doEcho echo ("cd "++goal++" && "++hc++hatflag++" -o "
                              ++file++objs++" ${LDFLAGS}")

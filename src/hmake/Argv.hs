@@ -64,7 +64,8 @@ data DecodedArgs =
 	, debug    :: (String->IO ())	-- ^ debugging printf function
 	, ifnotopt :: ([String]->String->String)  -- ^ is option unset?
 	, ifopt    :: ([String]->String->String)  -- ^ is option set?
-	, goalDir  :: String		-- ^ goal Directory for .o files
+	, goalDir  :: Maybe String	-- ^ goal Directory for .o files
+	, hiDir    :: Maybe String	-- ^ separate directory for .hi files
 	, hiSuffix :: String		-- ^ .hi / .T.hi
 	, oSuffix  :: String		-- ^ .o  / .T.o / .p.o / .z.o
         , config   :: PersonalConfig	-- ^ from file (via optional -ffile)
@@ -99,9 +100,11 @@ decode progArgs =
     , ifnotopt = \opts s -> if not (or (map isopt opts)) then s else ""
     , ifopt    = \opts s -> if any isopt opts then s else ""
     , goalDir  = case filter (\v-> head v == 'd') flags of
-                   []  -> ""
-                   [x] -> tail x
+                   []  -> Nothing
+                   [x] -> Just (tail x)
                    _   -> error "hmake: only one -dobjdir option allowed\n" 
+    , hiDir    = (withDefault Nothing (Just . drop 6 . last)
+                     . filter ("hidir=" `isPrefixOf`)) flags
     , hiSuffix = (withDefault "hi" (drop 10 . last)
                      . filter ("hi-suffix=" `isPrefixOf`)) flags
     , oSuffix  = (withDefault "o"  (drop  9 . last)

@@ -59,9 +59,8 @@ showmake opts goaldir ((f,p,s),i) =
   dotO p f ++ ": " ++ s ++ " " ++ mix i
   where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
         tmod = if hat opts then ("Hat/"++) else id
-        dotO p f =
-          if (dflag opts) then fixFile opts goaldir (tmod f) (oSuffix opts)
-                          else fixFile opts p       (tmod f) (oSuffix opts)
+        dotO p f = fixFile opts (if null goaldir then p else goaldir)
+                                (tmod f) (oSuffix opts)
 
 -- | Information about a single file, including its location, whether
 --   it needs a preprocessor, etc.
@@ -217,11 +216,12 @@ readFirst opts name demand =
   readData path source pp lit = do
      tpp  <- readTime source	-- in many cases, identical to `ths' below
      ths  <- readTime (fixFile opts path  (tmod ff) "hs")
-     thi  <- readTime (fixFile opts path  (tmod ff) (hiSuffix opts))
+     thi  <- readTime (fixFile opts ipath (tmod ff) (hiSuffix opts))
      tobj <- readTime (fixFile opts opath (tmod ff) (oSuffix  opts))
      file <- readFile source
      return (Just ((tpp,ths,thi,tobj),path,source,pp,file,lit file))
-   where opath = if null (goalDir opts) then path else (goalDir opts)
+   where opath = maybe path id (goalDir opts)
+         ipath = maybe path id (hiDir opts)
          tmod = if hat opts then ("Hat/"++) else id
 
 
