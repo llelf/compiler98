@@ -6,7 +6,7 @@ VERSION = 1.0pre14x
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
 
-HVERSION = 1.6
+HVERSION = 1.6.1
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure

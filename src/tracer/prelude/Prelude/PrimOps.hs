@@ -11,8 +11,8 @@ module Prelude(R(..), Trace, _prim,
 	       primCHGetChar, primCHPutChar
 	       ) where
 
-import DPrelude
-import PreludeBuiltin
+--import DPrelude
+import PreludeBuiltin(Handle)
 
 -- Eq Int
 primIntEq primitive 3 :: Trace -> R Int -> R Int -> R Bool

@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="v1.6 (date 991208)"
+HMAKEVERSION="v1.6.1 (date 000104)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`

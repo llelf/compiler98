@@ -100,11 +100,13 @@ leximports =
     linecomment (c:cs)                = c: linecomment cs
     linecomment []                    = []
 
-    getmodnames (x:xs) =
-      let ws = concatMap words (x:xs)	-- allow for import spanning several lines.
-      in if not (null ws) && head ws == "import" then
-             modname (tail ws): getmodnames xs
-         else getmodnames xs
+    getmodnames (x:xs)
+      | null x || all isSpace x  = getmodnames xs
+      | otherwise =
+        let ws = concatMap words (x:xs)	-- allow for import spanning several lines.
+        in if not (null ws) && head ws == "import" then
+               modname (tail ws): getmodnames xs
+           else getmodnames xs
     getmodnames [] = []
 
     modname ws =
@@ -116,7 +118,6 @@ leximports =
       else takeUntil "(-{;" one
 
   in (getmodnames . map linecomment . lines . nestcomment 0 . unlines)
-
 
 ----
 gatherDefined st inp =
