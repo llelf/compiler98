@@ -107,6 +107,8 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.hc src/interpreter/*.hc
+CPPHS = src/cpphs/Makefile* src/cpphs/*.hs src/cpphs/docs src/cpphs/tests \
+	src/cpphs/*.hc src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
@@ -130,7 +132,7 @@ DOC = docs/*
 MAN = man/*.1
 
 TARGDIR= targets
-TARGETS= runtime prelude libraries greencard hp2graph hsc2hs \
+TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs \
 	 profruntime profprelude profprelude-$(CC) \
 	 timeruntime timeprelude timeprelude-$(CC) \
 	 proflibraries timelibraries proflibraries-$(CC) timelibraries-$(CC) \
@@ -138,7 +140,7 @@ TARGETS= runtime prelude libraries greencard hp2graph hsc2hs \
 	 compiler-nhc compiler-hbc compiler-ghc compiler-$(CC) \
 	 hmake-nhc hmake-hbc hmake-ghc hmake-$(CC) \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
-	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC)
+	 prelude-$(CC) pragma-$(CC) libraries-$(CC) hsc2hs-$(CC) cpphs-$(CC)
 
 .PHONY: default basic all compiler help config install
 
@@ -157,7 +159,7 @@ help:
 	@echo "                       all (= basic + heapprofile + timeprofile)"
 	@echo "                       config install clean realclean"
 	@echo "  (other subtargets:   compiler hmake runtime prelude libraries"
-	@echo "                       greencard hp2graph hsc2hs hoodui)"
+	@echo "                       greencard hp2graph hsc2hs cpphs hoodui)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -167,13 +169,13 @@ config: script/errnogen.c
 install:
 	./configure --install
 
-basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude \
-						hsc2hs libraries
-basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude \
-						hsc2hs libraries
-basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude \
-						hsc2hs libraries
-basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
+basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc cpphs \
+						prelude hsc2hs libraries
+basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc cpphs \
+						prelude hsc2hs libraries
+basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc cpphs \
+						prelude hsc2hs libraries
+basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) cpphs-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC) hsc2hs-$(CC) libraries-$(CC)
 
 all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile #hoodui
@@ -235,9 +237,14 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
+
 $(TARGDIR)/$(MACHINE)/hsc2hs: $(HSC2HS)
 	cd src/hsc2hs;         $(MAKE) HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hsc2hs
+
+$(TARGDIR)/$(MACHINE)/cpphs: $(CPPHS)
+	cd src/cpphs;          $(MAKE) -f Makefile.nhc98 HC=$(BUILDWITH) all
+	touch $(TARGDIR)/$(MACHINE)/cpphs
 
 
 pragma: $(PRAGMA)
@@ -324,6 +331,9 @@ $(TARGDIR)/$(MACHINE)/greencard-$(CC): $(GREENCARDC)
 $(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.hc
 	script/nhc98 -o $(PRAGMA) script/hmake-PRAGMA.hc
 	touch $(TARGDIR)/$(MACHINE)/pragma-$(CC)
+$(TARGDIR)/$(MACHINE)/cpphs-$(CC): $(CPPHS)
+	cd src/cpphs;          $(MAKE) -f Makefile.nhc98 fromC
+	touch $(TARGDIR)/$(MACHINE)/cpphs-$(CC)
 $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC config
 	cd src/interpreter;    $(MAKE) fromC
@@ -381,6 +391,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 		$(TARGDIR)/heappreludeC $(TARGDIR)/preludeC \
 		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
 		$(TARGDIR)/pragmaC $(TARGDIR)/hsc2hsC $(TARGDIR)/librariesC \
+		$(TARGDIR)/cpphsC \
 		nolinks
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
@@ -396,6 +407,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
 	tar rf nhc98src-$(VERSION).tar $(HSC2HS)
 	tar rf nhc98src-$(VERSION).tar $(HSC2HSC)
+	tar rf nhc98src-$(VERSION).tar $(CPPHS)
 	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
 	tar rf nhc98src-$(VERSION).tar $(HMAKE)
 	tar rf nhc98src-$(VERSION).tar $(HMAKEC)
@@ -430,6 +442,9 @@ $(TARGDIR)/greencardC: $(GREENCARD)
 $(TARGDIR)/hsc2hsC: $(HSC2HS)
 	cd src/hsc2hs;     $(MAKE) cfiles
 	touch $(TARGDIR)/hsc2hsC
+$(TARGDIR)/cpphsC: $(HSC2HS)
+	cd src/cpphs;      $(MAKE) -f Makefile.nhc98 cfiles
+	touch $(TARGDIR)/cpphsC
 $(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
 	script/nhc98 -cpp -C script/hmake-PRAGMA.hs
 	touch $(TARGDIR)/pragmaC
@@ -500,6 +515,8 @@ clean: cleanhi
 	cd src/greencard;       $(MAKE) clean
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
+	cd src/cpphs;           $(MAKE) clean
+	cd src/hcs2hs;          $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(BUILDDIR)/obj*			# all object files
@@ -521,7 +538,7 @@ cleanC:
 	cd src/libraries; find -name '*.p.c' -print | xargs rm -f
 	cd src/libraries; find -name '*.z.c' -print | xargs rm -f
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
-			timepreludeC heappreludeC hsc2hsC librariesC
+			timepreludeC heappreludeC hsc2hsC cpphsC librariesC
 
 realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
