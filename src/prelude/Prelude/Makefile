@@ -91,13 +91,13 @@ SRCS_T	= \
         Snd.hs          Subtract.hs \
         TString.hs      Uncurry.hs      Undefined.hs        Until.hs \
         _Filter.hs \
-        _Foldr.hs       _FromEnum.hs    _ToEnum.hs   \
-	_EqInteger.hs      _NplusK.hs \
+        _Foldr.hs       _FromEnum.hs    _ToEnum.hs          _NplusK.hs \
 	_EnumFromThen.hs _EnumFromThenTo.hs \
 	_EnumFromTo.hs _EnumFromToDec.hs _EnumFromToInc.hs _EnumInRange.hs \
 	_EnumIndex.hs _EnumRange.hs
+SRCS_NT = _EqInteger.hs StartDbg.hs
 
-NTSRCS	= StartDbg.hs
+#NTSRCS	= StartDbg.hs
 PLSRCS	= _Apply1.hs _Apply2.hs _Apply3.hs _Apply4.hs _Zap_Arg.hs _Zap_Stack.hs
 NOTDONE	= _TupleIndex.hs _TupleRange.hs
 
@@ -108,13 +108,13 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
-NTOBJS = $(patsubst %.hs, ${OBJDIR}/%.o, ${NTSRCS})
+#NTOBJS = $(patsubst %.hs, ${OBJDIR}/%.o, ${NTSRCS})
 PLOBJS = $(patsubst %.hs, ${OBJDIR}/%.o, ${PLSRCS})
 
 ifeq "T" "${TRACING}"
 extra: ${NTOBJS} ${PLOBJS}
-$(NTOBJS): ${OBJDIR}/%.o: %.hs
-	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+#$(NTOBJS): ${OBJDIR}/%.o: %.hs
+#	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 $(PLOBJS): ${OBJDIR}/%.o: %.hs
 	${HC} -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 endif
@@ -137,7 +137,7 @@ ${OBJDIR}/_EnumFromTo.o: _EnumFromTo.hs ${OBJDIR}/_FromEnum.o ${OBJDIR}/_ToEnum.
 
 # And for C-files dependencies:
 
-CEnum.c:           _EnumFromTo.c    _EnumFromThenTo.c
+CEnum.c:           _EnumFromTo.c    _EnumFromThenTo.c  Subtract.c
 Enum_Bool.c:       _EnumFromTo.c    _EnumFromThen.c
 Enum_Char.c:       _EnumFromTo.c    _EnumFromThen.c
 Enum_Ordering.c:   _EnumFromTo.c    _EnumFromThen.c
