@@ -16,7 +16,7 @@ deriveIx tidFun cls typ tvs ctxs pos =
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
   if all noArgs constrInfos   -- enumeration
   then 
-    let nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+    let nt = NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]
         tidTyp = tidI typInfo
 	msg = ExpLit pos (LitString Boxed (show (dropM tidTyp)))
     in addInstMethod tIx tidTyp trange nt (tidFun (trange,Method)) >>>= \ funRange ->
@@ -65,7 +65,7 @@ deriveIx tidFun cls typ tvs ctxs pos =
         exp_tupleIndex = ExpVar pos (tidFun (t_tupleIndex,Var))
         expInRange = ExpVar pos (tidFun (tinRange,Var))
 
-        nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+        nt = NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]
         tidTyp = tidI typInfo
 
     in addInstMethod tIx tidTyp trange nt (tidFun (trange,Method)) >>>= \ funRange ->

@@ -18,7 +18,7 @@ import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Rhs(..),Exp(..),Stmt(..)
              ,Alt(..),Field(..))
 import IntState(IntState,lookupIS,depthI,strIS,addError,superclassesI
                ,instancesI,updVarArity,updVarNT)
-import NT(NT(..),NewType(..))
+import NT(NT(..),NewType(..),mkNTvar,mkNTcons)
 import Reduce(Reduce,mapR,unitR,(>>>))
 import Rename(ctxs2NT)
 import IExtract(freeType)
@@ -34,9 +34,9 @@ import Id(Id)
 type2NT :: Type Id -> NT 
 
 type2NT (TypeApp t1 t2) = NTapp (type2NT t1) (type2NT t2)
-type2NT (TypeCons _ ci ts) = NTcons ci (map type2NT ts)
+type2NT (TypeCons _ ci ts) = mkNTcons ci (map type2NT ts)
 type2NT (TypeStrict _ t) = NTstrict (type2NT t)
-type2NT (TypeVar _ v) = NTvar v
+type2NT (TypeVar _ v) = mkNTvar v	-- No KIND inference yet!
 
 {-
 

@@ -17,7 +17,7 @@ deriveEnum tidFun cls typ tvs ctxs pos =
     deriveError ("Nhc can only derive Enum for enumeration types (" ++ strPos pos ++ ")")
   else
     let expLast = ExpLit pos (LitInt Boxed (length constrInfos -1))
-        nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+        nt = NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]
         tidTyp = tidI typInfo
     in
     addInstMethod tEnum tidTyp tfromEnum nt (tidFun (tfromEnum,Method)) >>>= \ funFromEnum ->

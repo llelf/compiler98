@@ -13,7 +13,7 @@ deriveBounded tidFun cls typ tvs ctxs pos =
  let expTrue = ExpCon pos (tidFun (tTrue,Con))
      constrs = constrsI typInfo
      tidTyp = tidI typInfo
-     nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
+     nt = NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]
  in
   getInfo (head constrs) >>>= \ minInfo ->
   getInfo (last constrs) >>>= \ maxInfo ->

@@ -1,4 +1,5 @@
-module NT ( NT(..), NewType(..)
+module NT ( NT(..), NewType(..), Kind(..)
+	, mkNTvar, mkNTexist, mkNTcons
 	, anyNT, consNT, freeNT, freshNT, polyNT, strTVar
 	, sndNTvar, strNT, strictNT, transCtxs, useNT
 	, contextNT, ntContext2Pair, stripNT, anyVarNT
@@ -9,6 +10,11 @@ import Id(Id)
 import Extra(mixComma,mixSpace,mix)
 import Char
 
+infixr 5 :->:
+data Kind = Star | Kind :->: Kind deriving (Eq,Ord)
+
+-- Perhaps NewType is a type schema?  It quantifies variables over
+-- an arrow of NTs.
 data NewType = NoType
              | NewType [Id]       -- universally quantified type variables
                        [Id]       -- existentially quantified type variables
@@ -22,21 +28,34 @@ instance Show NewType where
   showsPrec d (NewType free exist ctxs nts) = 
     showString (strTVarsCtxsNTs free ctxs nts)
 
-data NT = NTany   Id  -- can be instantiated with unboxed 
-                      -- (needed during type checking)
-        | NTvar   Id
-        | NTexist Id
+data NT = NTany   Id       -- can be instantiated with unboxed 
+                           -- (needed during type checking)
+        | NTvar   Id Kind
+        | NTexist Id Kind
         | NTstrict NT
 	| NTapp   NT NT
-        | NTcons  Id [NT] 
+        | NTcons  Id Kind [NT] 	-- combines constructor + application
         | NTcontext Id Id  -- context (class, type variable)
                            -- purpose here completely unclear (used?)
          deriving (Eq,Ord)
 
-stripNT (NTany   v) = v
-stripNT (NTvar   v) = v
-stripNT (NTexist v) = v
-stripNT (NTapp (NTvar v) nt ) = v
+mkNTvar v = NTvar v Star	-- simple tyvar
+mkNTexist v = NTexist v Star	-- simple tyvar
+
+mkNTcons i nts = NTcons i kind nts
+    where kind = foldr (:->:) Star (map kindNT nts)
+
+kindNT (NTany _) = Star
+kindNT (NTvar _ k) = k
+kindNT (NTexist _ k) = k
+kindNT (NTapp nt1 nt2) = case (kindNT nt1) of (_:->:k) -> k
+kindNT (NTcons _ k nts) = foldl (\(_:->:k') _ -> k') k nts
+kindNT (NTcontext _ _) = Star
+
+stripNT (NTany   v)   = v
+stripNT (NTvar   v _) = v
+stripNT (NTexist v _) = v
+stripNT (NTapp (NTvar v _) nt ) = v
 stripNT nt = error ("stripNT on " ++ show nt)
 
 strictNT (NTstrict _) = True
@@ -56,7 +75,7 @@ consNT nt =
  where
   consNT' (NTstrict nt) r = consNT' nt r
   consNT' (NTapp t1 t2) r = consNT' t1 (consNT' t2 r)
-  consNT' (NTcons c nts) r = c:foldr consNT' r nts
+  consNT' (NTcons c _ nts) r = c:foldr consNT' r nts
   consNT' _ r = r
 
 {- 
@@ -65,24 +84,24 @@ used only in module Export
 -}
 useNT :: NT -> [Id]
 
-useNT (NTany  a) = []
-useNT (NTvar  a) = []
-useNT (NTexist a) = []
+useNT (NTany  a)    = []
+useNT (NTvar  a _)  = []
+useNT (NTexist a _) = []
 useNT (NTstrict t) = useNT t
 useNT (NTapp t1 t2) =  useNT t1 ++ useNT t2
-useNT (NTcons a tas) =  a:concatMap useNT tas
+useNT (NTcons a _ tas) =  a:concatMap useNT tas
 useNT (NTcontext c v) =  [c]
 
 
 {- Determine type variables that occur in given type. -}
 freeNT :: NT -> [Id]
 
-freeNT (NTany  a) = [a]
-freeNT (NTvar  a) = [a]
-freeNT (NTexist a) = [a]
+freeNT (NTany  a)    = [a]
+freeNT (NTvar  a _)  = [a]
+freeNT (NTexist a _) = [a]
 freeNT (NTstrict t) = freeNT t
 freeNT (NTapp t1 t2) =  freeNT t1 ++ freeNT t2
-freeNT (NTcons a tas) =  concat (map freeNT tas)
+freeNT (NTcons a _ tas) =  concat (map freeNT tas)
 
 
 {- 
@@ -91,29 +110,29 @@ Exchange type variables according to given mapping in given type.
 -}
 freshNT :: (Id -> Id) -> NT -> NT
 
-freshNT tv (NTany  a) = NTany (tv a)
-freshNT tv (NTvar  a) = NTvar (tv a)
-freshNT tv t@(NTexist  a) = t
+freshNT tv (NTany  a)   = NTany (tv a)
+freshNT tv (NTvar  a k) = NTvar (tv a) k
+freshNT tv t@(NTexist  a _) = t
 freshNT tv (NTstrict t) = {- NTstrict -}  (freshNT tv t)
 freshNT tv (NTapp t1 t2) =  NTapp (freshNT tv t1) (freshNT tv t2)
-freshNT tv (NTcons a tas) =  NTcons a (map (freshNT tv) tas)
+freshNT tv (NTcons a k tas) =  NTcons a k (map (freshNT tv) tas)
 freshNT tv (NTcontext c v) =  NTcontext c (tv v)
 
-anyNT av t@(NTany  a) = t
-anyNT av t@(NTvar  a) = if a `elem` av then NTany a else t
-anyNT av t@(NTexist a) = t
+anyNT av t@(NTany  a)    = t
+anyNT av t@(NTvar  a _)  = if a `elem` av then NTany a else t
+anyNT av t@(NTexist a _) = t
 anyNT av (NTstrict t) = NTstrict (anyNT av t)
 anyNT av (NTapp t1 t2) =  NTapp (anyNT av t1) (anyNT av t2)
-anyNT av (NTcons a tas) =  NTcons a (map (anyNT av) tas)
+anyNT av (NTcons a k tas) =  NTcons a k (map (anyNT av) tas)
 
-polyNT fv t@(NTany  a) = if a `elem` fv then NTvar a else t
-polyNT fv t@(NTvar  a) = t
-polyNT fv t@(NTexist a) = t
+polyNT fv t@(NTany  a) = if a `elem` fv then mkNTvar a else t
+polyNT fv t@(NTvar  a _) = t
+polyNT fv t@(NTexist a _) = t
 polyNT fv (NTstrict t) = NTstrict (polyNT fv t)
 polyNT fv (NTapp t1 t2) = NTapp (polyNT fv t1) (polyNT fv t2)
-polyNT fv (NTcons a tas) = NTcons a (map (polyNT fv) tas)
+polyNT fv (NTcons a k tas) = NTcons a k (map (polyNT fv) tas)
 
-transCtxs tv tc ctxs = map ( \ (c,v) -> (tc c,tv v)) ctxs 
+transCtxs tv tc ctxs = map (\(c,v) -> (tc c,tv v)) ctxs 
 
 
 
@@ -123,12 +142,12 @@ constructors/class names and for type variables.
 strNT :: (Int -> String) -> (Int -> String) -> NT -> String
 
 strNT c p (NTany  a) = p a++"#"
-strNT c p (NTvar  a) = p a
-strNT c p (NTexist a) = p a++"?"
+strNT c p (NTvar  a _) = p a
+strNT c p (NTexist a _) = p a++"?"
 strNT c p (NTstrict t) = "!" ++ strNT c p t
 strNT c p (NTapp t1 t2) = "(" ++ strNT c p t1  ++ " " ++ strNT c p t2 ++ ")"
-strNT c p (NTcons a []) = c a
-strNT c p (NTcons a tas) = "(" ++ c a ++ " " ++ mixSpace (map (strNT c p) tas) ++ ")"
+strNT c p (NTcons a _ []) = c a
+strNT c p (NTcons a _ tas) = "(" ++ c a ++ " " ++ mixSpace (map (strNT c p) tas) ++ ")"
 strNT c p (NTcontext a v) = "(" ++ c a ++ " " ++ p a ++ ") => "
 
 instance Show NT where
@@ -153,10 +172,10 @@ strTVarsCtxsNTs tvs ctxs nts =
   strTVs tvs ++ strCtxs ctxs ++ mix " -> " (map (strNT show strTVar) nts)
 
 
-sndNTvar (c,v) = (c,NTvar v) -- used for ctxs
+sndNTvar (c,v) = (c,mkNTvar v) -- used for ctxs		*** KIND??
 
 
 anyVarNT :: NT -> Maybe Id
 anyVarNT (NTany tvn) = Just tvn
-anyVarNT (NTvar tvn) = Just tvn
+anyVarNT (NTvar tvn _) = Just tvn
 anyVarNT _ = Nothing

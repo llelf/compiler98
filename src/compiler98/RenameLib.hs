@@ -149,7 +149,7 @@ keepRS (RenameState flags unique rps rts rt st derived
           case depthI info of
 	    Just _ ->  -- type synonym, so follow the chain
 	      case ntI info of
-		(NewType free [] ctx [NTcons u' _]) ->
+		(NewType free [] ctx [NTcons u' _ _]) ->
 		  isUnBoxedNT st nt (u:ac) u'	      
 	    Nothing -> -- newtype, so follow the chain
 	      case lookup u nt of
@@ -159,7 +159,7 @@ keepRS (RenameState flags unique rps rts rt st derived
                   case constrsI info of
                     (coni:_) ->
                       case (ntI . dropJust . lookupAT st) coni of
-                        (NewType _ _ _ [NTcons u' _,_]) ->
+                        (NewType _ _ _ [NTcons u' _ _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
                         _ -> -- strace 
                       -- ("Warning: renaming newtype of imported newtype:\n"++
@@ -182,7 +182,7 @@ keepRS (RenameState flags unique rps rts rt st derived
         case depthI info of
 	  Just _ ->  -- type synonym
 	    case ntI info of
-	      (NewType free [] ctx [NTcons u' _]) ->
+	      (NewType free [] ctx [NTcons u' _ _]) ->
 	        isUnBoxedTS st u'	      
               _ ->  -- FAKE This is a BUG but unboxed is not used anyway
                 False
@@ -215,8 +215,8 @@ keepRS (RenameState flags unique rps rts rt st derived
             case constrsI info of
 	      (coni:_) ->
 		 case (ntI . dropJust . lookupAT st ) coni of
-  	           (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
-  	           (NewType _ [] _ [NTvar v,res]) -> (synType,(u,v):newType)
+  	           (NewType _ [] _ [NTcons c _ _,res]) -> (synType,(u,c):newType)
+  	           (NewType _ [] _ [NTvar v _,res]) -> (synType,(u,v):newType)
   	           (NewType _ [] _ [NTapp v1 v2,res]) -> (synType,newType)
 			-- ^ MW hack: omits potential circularity check!
   	           (NewType _ [] _ (_:_:_)) ->
@@ -552,7 +552,7 @@ transTypes al free ctxs ts =
   mapS (transType al) ts
 
 transTVar pos al v =
-  unitS NTvar =>>> uniqueTVar pos al v
+  unitS mkNTvar =>>> uniqueTVar pos al v	-- no KIND inference
 
 uniqueTVar pos al v =
   case lookup v al of
@@ -569,7 +569,7 @@ transType :: [(TokenId,Int)] -> Type TokenId -> RenameMonad NT
 transType al (TypeApp  t1 t2) = 
   unitS NTapp =>>> transType al t1 =>>> transType al t2
 transType al (TypeCons  pos hs types) = 
-  unitS NTcons =>>> uniqueTid pos TCon hs =>>> mapS (transType al) types
+  unitS mkNTcons =>>> uniqueTid pos TCon hs =>>> mapS (transType al) types
 transType al (TypeVar   pos v) = transTVar pos al v
 transType al (TypeStrict pos t) = unitS NTstrict =>>> transType al t
 

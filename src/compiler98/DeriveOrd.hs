@@ -26,8 +26,8 @@ deriveOrd tidFun cls typ tvs ctxs pos =
  in
   getInfo typ >>>= \ typInfo -> 
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
-  addInstMethod tOrd (tidI typInfo) t_lessequal (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iLessEqual >>>= \ funle ->
-  addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iCompare >>>= \ funcompare ->
+  addInstMethod tOrd (tidI typInfo) t_lessequal (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iLessEqual >>>= \ funle ->
+  addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iCompare >>>= \ funcompare ->
   if all noArgs constrInfos
   then unitS $
 	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $

@@ -143,12 +143,12 @@ parseEntity entity hname =
 searchType :: Style -> AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
 searchType style st (arrow,io) info =
   let
-    toList (NTcons c nts) | c==arrow  = let [a,b] = nts in a: toList b
-    toList (NTcons c nts) | c==io     = let [a]   = nts in [a] -- within FunPtr
+    toList (NTcons c _ nts) | c==arrow  = let [a,b] = nts in a: toList b
+    toList (NTcons c _ nts) | c==io     = let [a]   = nts in [a] -- within FunPtr
     toList (NTstrict nt)  = toList nt
     toList nt             = [nt]
 
-    toTid (NTcons c nts)  =
+    toTid (NTcons c _ nts)  =
       case lookupAT st c of
         Just i | isRealData i ->
                    case toArg (tidI i) of

@@ -41,10 +41,10 @@ deriveBinary tidFun cls typ tvs ctxs pos =
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
   let sizeC = ((ceiling . logBase 2 . fromIntegral . length) constrInfos)::Int
   in
-    addInstMethod tBinary (tidI typInfo) t_put (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iPut >>>= \ funP ->
-    addInstMethod tBinary (tidI typInfo) t_get (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iGet >>>= \ funG ->
-    addInstMethod tBinary (tidI typInfo) t_getF (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iFGet >>>= \ funF ->
-    addInstMethod tBinary (tidI typInfo) t_sizeOf (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iSize >>>= \ funS ->
+    addInstMethod tBinary (tidI typInfo) t_put (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iPut >>>= \ funP ->
+    addInstMethod tBinary (tidI typInfo) t_get (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iGet >>>= \ funG ->
+    addInstMethod tBinary (tidI typInfo) t_getF (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iFGet >>>= \ funF ->
+    addInstMethod tBinary (tidI typInfo) t_sizeOf (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iSize >>>= \ funS ->
     mapS (mkPutFun expPutBits expPut expGtGt expGtGtEq expReturn sizeC pos) (zip [0..] constrInfos) >>>= \ funPs ->
     mkGetFuns expGetBits expGet expGtGtEq expReturn expCons expNil sizeC pos typInfo constrInfos >>>= \ funGs ->
     mkFGetFuns expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos typInfo constrInfos >>>= \ funFs ->

@@ -21,7 +21,7 @@ deriveEq tidFun cls typ tvs ctxs pos =
  in
   getInfo typ >>>= \ typInfo -> 
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
-  addInstMethod tEq (tidI typInfo) t_equalequal (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iEqual >>>= \ fun ->
+  addInstMethod tEq (tidI typInfo) t_equalequal (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iEqual >>>= \ fun ->
   if all noArgs constrInfos
   then let exp_fromEnum = ExpVar pos (tidFun (t_fromEnum,Var))
 	   expEqual = ExpVar pos iEqual

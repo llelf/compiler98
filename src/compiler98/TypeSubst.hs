@@ -37,21 +37,21 @@ instance Substitute NT where
     case lookupAT phi v of
       Just nt -> subst phi nt
       Nothing -> nt
-  subst phi nt@(NTvar v)    =
+  subst phi nt@(NTvar v _)    =
     case lookupAT phi v of
       Just nt -> subst phi nt
       Nothing -> nt
-  subst phi nt@(NTexist v)    =
+  subst phi nt@(NTexist v _)    =
       nt
-  subst phi (NTcons con ts) =
+  subst phi (NTcons con k ts) =
       let ts' = map (subst phi) ts
-      in forceList ts' (NTcons con ts')
+      in forceList ts' (NTcons con k ts')
   subst phi (NTapp t1 t2) =
      let t2' = subst phi t2
      in seq t2'
         (case subst phi t1 of
-	  NTcons con ts ->
-            (NTcons con (ts ++ [t2']))
+	  NTcons con k ts ->
+            (NTcons con k (ts ++ [t2']))
           t -> NTapp t t2'
         )
   subst phi nt@(NTcontext con v) = nt
@@ -71,14 +71,14 @@ substCtxs phi ctxs = map (subst phi) ctxs
 
 applySubst phi tvar =
   case lookupAT phi tvar of
-    Just nt@(NTvar tvar) -> applySubst' phi nt tvar
+    Just nt@(NTvar tvar _) -> applySubst' phi nt tvar
     Just nt@(NTany tvar) -> applySubst' phi nt tvar
     Just nt -> Just nt
     Nothing -> Nothing
  where 
    applySubst' phi nt tvar =
      case lookupAT phi tvar of
-       Just nt@(NTvar tvar) -> applySubst' phi nt tvar
+       Just nt@(NTvar tvar _) -> applySubst' phi nt tvar
        Just nt@(NTany tvar) -> applySubst' phi nt tvar
        Just nt -> Just nt
        Nothing -> Just nt
@@ -107,8 +107,8 @@ substNT only goes one step, used for (1->2),(2->1) substitutions in TypeCtx
 substNT :: [(Id,NT)] -> NT -> NT
 
 substNT tv (NTany  a) = dropJust (lookup a tv)
-substNT tv (NTvar  a) = dropJust (lookup a tv)
-substNT tv t@(NTexist a) = t
+substNT tv (NTvar  a _) = dropJust (lookup a tv)
+substNT tv t@(NTexist a _) = t
 substNT tv (NTstrict t) = NTstrict (substNT tv t)
 substNT tv (NTapp t1 t2) =  NTapp (substNT tv t1) (substNT tv t2)
-substNT tv (NTcons a tas) =  NTcons a (map (substNT tv) tas)
+substNT tv (NTcons a k tas) =  NTcons a k (map (substNT tv) tas)

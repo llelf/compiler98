@@ -39,7 +39,7 @@ addEnv' (pos,ident) _ (env,ctxs,state) =
       case uniqueIS state of
 	(unique,state) -> ((ident,NTany unique):env,ctxs,state)
     ((NewType free' exist' ctxs' [nt']),state) -> -- no constructors here!
-      case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist' then NTexist v else NTvar v)) ctxs') of
+      case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist' then mkNTexist v else mkNTvar v)) ctxs') of
 	(ctxsi',state) ->
 	  ((ident,nt'):env,map snd (cvi2typedict pos exist' ctxsi') ++ctxs,state)
 

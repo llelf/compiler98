@@ -17,27 +17,27 @@ unify state phi (t1@(NTany tvn1),t2) =
     Nothing     -> extendV state phi tvn1 (subst phi t2)
     Just phitvn -> unify state phi (phitvn,subst phi t2)
 
-unify state phi (t1@(NTvar tvn1),(NTany tvn2)) =
+unify state phi (t1@(NTvar tvn1 _),(NTany tvn2)) =
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTvar tvn1),t2) =
+unify state phi (t1@(NTvar tvn1 _),t2) =
   case applySubst phi tvn1 of
     Nothing     -> extendV state phi tvn1 (subst phi t2)
     Just phitvn -> unify state phi (phitvn,subst phi t2)
 
-unify state phi (t1@(NTcons _ _),t2@(NTany tvn2)) =
+unify state phi (t1@(NTcons _ _ _),t2@(NTany tvn2)) =
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTcons _ _),t2@(NTvar tvn2)) =
+unify state phi (t1@(NTcons _ _ _),t2@(NTvar tvn2 _)) =
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTcons c1 ts1),t2@(NTcons c2 ts2)) =
+unify state phi (t1@(NTcons c1 _ ts1),t2@(NTcons c2 _ ts2)) =
   if c1 == c2 && isNotTypeSynonym state c1
   then if length ts1 == length ts2 -- length check because of constructor classes
        then unifyl state phi (zip ts1 ts2)
@@ -60,16 +60,16 @@ unify state phi (t1@(NTcons c1 ts1),t2@(NTcons c2 ts2)) =
       (Right (d1,nt1),Right (d2,nt2))          -> 
         unify state phi (t1            ,expand nt2 ts2)
 
-unify state phi (t1@(NTcons c1 ts1),t2@(NTapp ta2 tb2)) =
+unify state phi (t1@(NTcons c1 _ ts1),t2@(NTapp ta2 tb2)) =
   case expandAll state t1 of
-    t1@(NTcons c1 ts1) ->
+    t1@(NTcons c1 k ts1) ->
 --      strace ("unify(1) " ++ show t1 ++ " " ++ show t2) $
       case ts1 of
         [] ->
           case lookupIS state c1 of
             Just info ->
               Left (phi, "type clash between type applicationa and " ++ show (tidI info))
-        _ ->  unifyl state phi [(NTcons c1 (init ts1),ta2),(last ts1,tb2)]
+        _ ->  unifyl state phi [(NTcons c1 k (init ts1),ta2),(last ts1,tb2)]
 
 
 unify state phi (t1@(NTapp ta1 tb1),t2@(NTany tvn2)) =
@@ -78,56 +78,56 @@ unify state phi (t1@(NTapp ta1 tb1),t2@(NTany tvn2)) =
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTapp ta1 tb1),t2@(NTvar tvn2)) =
+unify state phi (t1@(NTapp ta1 tb1),t2@(NTvar tvn2 _)) =
 --  strace ("unify(3) " ++ show t1 ++ " " ++ show t2) $
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTapp ta1 tb1),t2@(NTcons c2 ts2)) =
+unify state phi (t1@(NTapp ta1 tb1),t2@(NTcons c2 _ ts2)) =
   case expandAll state t2 of
-    t2@(NTcons c2 ts2) ->
+    t2@(NTcons c2 k ts2) ->
 --      strace ("unify(4) " ++ show t1 ++ " " ++ show t2) $
       case ts2 of
 	[] ->
 	  case lookupIS state c2 of
 	    Just info ->
 	      Left (phi, "type clash between " ++ show (tidI info) ++ " and type application ")
-	_ -> unifyl state phi [(ta1,NTcons c2 (init ts2)),(tb1,last ts2)]
+	_ -> unifyl state phi [(ta1,NTcons c2 k (init ts2)),(tb1,last ts2)]
 
 unify state phi (t1@(NTapp ta1 tb1),t2@(NTapp ta2 tb2)) =
 --  strace ("unify(5) " ++ show t1 ++ " " ++ show t2) $
   unifyl state phi [(ta1,ta2),(tb1,tb2)]
 
-unify state phi (t1@(NTexist tvn1),(NTexist tvn2)) =
+unify state phi (t1@(NTexist tvn1 _),(NTexist tvn2 _)) =
   if tvn1 == tvn2 then
     Right phi
   else
    Left (phi,"type clash between existential types")
 
-unify state phi ((NTexist _),(NTcons c _)) =
+unify state phi ((NTexist _ _),(NTcons c _ _)) =
   case lookupIS state c of
     Just info ->
       Left (phi, "type clash between " ++ show (tidI info) ++ " and existential type ")
 
-unify state phi ((NTcons c _),(NTexist _)) =
+unify state phi ((NTcons c _ _),(NTexist _ _)) =
   case lookupIS state c of
     Just info ->
       Left (phi, "type clash between " ++ show (tidI info) ++ " and existential type ")
 
-unify state phi ((NTexist _),(NTapp _ _)) =
+unify state phi ((NTexist _ _),(NTapp _ _)) =
    Left (phi,"type clash between existential type and type application")
 
-unify state phi ((NTapp _ _),(NTexist _)) =
+unify state phi ((NTapp _ _),(NTexist _ _)) =
    Left (phi,"type clash between existential type and type application")
 
-unify state phi (t1@(NTexist e),t2@(NTany tvn2)) =
+unify state phi (t1@(NTexist e _),t2@(NTany tvn2)) =
 -- strace ("unify exist " ++ show e ++ " any " ++ show tvn2) $ 
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
     Just phitvn -> unify state phi (phitvn,subst phi t1)
 
-unify state phi (t1@(NTexist e),t2@(NTvar tvn2)) =
+unify state phi (t1@(NTexist e _),t2@(NTvar tvn2 _)) =
 -- strace ("unify exist " ++ show e ++ " var " ++ show tvn2) $ 
   case applySubst phi tvn2 of
     Nothing     -> extendV state phi tvn2 (subst phi t1)
@@ -162,7 +162,7 @@ unifyr state phi (e1:e2:es) =
 
 -- expand any type synonym at top, so that none is at top in result
 expandAll :: IntState -> NT -> NT
-expandAll state t@(NTcons tcon ts) =
+expandAll state t@(NTcons tcon _ ts) =
   case unifyExpand state tcon of
     Left _ -> t
     Right (d,nt) -> expandAll state (expand nt ts)
@@ -180,7 +180,7 @@ fullyExpand state t =
   case expandAll state t of
     NTstrict t -> NTstrict (fullyExpand state t)
     NTapp t1 t2 -> NTapp (fullyExpand state t1) (fullyExpand state t2)
-    NTcons id ts -> NTcons id (map (fullyExpand state) ts)
+    NTcons id k ts -> NTcons id k (map (fullyExpand state) ts)
     t -> t
 
 {-

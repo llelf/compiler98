@@ -224,7 +224,7 @@ renameDecl (DeclType (Simple pos tid tvs) typ) =
 
 renameDecl (DeclDataPrim  pos tid size) =
   uniqueTid pos TCon tid >>>= \i ->
-  defineDataPrim tid (NewType [] [] [] [NTcons i []]) size >>>= \d ->
+  defineDataPrim tid (NewType [] [] [] [mkNTcons i []]) size >>>= \d ->
   unitS (DeclConstrs pos d [])
 
 renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
@@ -238,7 +238,7 @@ renameDecl (DeclData b ctxs (Simple pos tid tvs) constrs posidents) =
      {- example:
         data Num a => Test a b = A a | B b
         nt = NewType [1,2] [] [(NumId, 1)] 
-               [NTvar 1, NTvar 2, NTcons TestId [NTvar 1, NTvar 2]]
+               [mkNTvar 1, mkNTvar 2, mkNTcons TestId [mkNTvar 1, mkNTvar 2]]
      -}
      mapS (renameConstr tid al ctxs (last nts)) constrs >>>= \csfields ->
      let (cs,noargs,fields) = unzip3 csfields 
@@ -542,7 +542,7 @@ renameConstr :: TokenId          {- type constructor of data/newtype def. -}
              -> RenameMonad (Id,Bool,[(Pos,Int,Int)]) 
                   {- constructor id, no arguments, fields -}
 
-renameConstr typtid al ctxs resType@(NTcons bt _) 
+renameConstr typtid al ctxs resType@(NTcons bt _ _) 
                             c@(Constr pos tid fieldtypes) =
   let e =  [] -- no forall if Constr is used
       es = zip e [1 + length al .. ]
@@ -560,7 +560,7 @@ renameConstr typtid al ctxs resType@(NTcons bt _)
       mapS (defineField typtid bt c) (zip all [ 1:: Int ..]) >>>= \ fs ->
       unitS (c,null nts,map dropJust (filter isJust fs))
 
-renameConstr typtid al ctxs resType@(NTcons bt _) 
+renameConstr typtid al ctxs resType@(NTcons bt _ _) 
                             (ConstrCtx forall ectxs' pos tid fieldtypes) =
   let -- ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
@@ -705,7 +705,7 @@ fixInstance iTrue (DeclInstance pos ctxs i [instanceType@(TypeCons _ ti tvs)]
     let
       free = concatMap (\tv-> case tv of (TypeVar _ v) -> [v]; _ -> []) tvs
       ctxsNT =  ctxs2NT ctxs
-      nt = NewType free [] ctxsNT [NTcons ti (map NTvar free)]
+      nt = NewType free [] ctxsNT [mkNTcons ti (map mkNTvar free)]
       cmds' = map ( \ (info,d) -> (extractV (tidI info),(info,d))) cmds
       old = map ( \ (pos,info) -> (pos,extractV (tidI info),info)) ims      
       dms = map snd3 old

@@ -35,14 +35,14 @@ addRatioCon tidFun state =
  case uniqueIS state of
   (u,state) ->
    let ratio = tidFun (tRatio,TCon)
-       tvar = NTvar 1
+       tvar = mkNTvar 1
    in
     case lookupIS state ratio of
      Just info ->
       case constrsI info of
        [ratioCon] -> (ratioCon,state)
        [] -> (u,addIS u (InfoConstr  u tRatioCon IEnone (InfixL,7)
-				    (NewType [1] [] [{- !!! Integral 1 -}] [tvar,tvar,NTcons ratio [tvar]])
+				    (NewType [1] [] [{- !!! Integral 1 -}] [tvar,tvar,mkNTcons ratio [tvar]])
 			            [Nothing,Nothing] ratio)
 			(updateIS state ratio (\_ -> updConstrsI info [u])))
 

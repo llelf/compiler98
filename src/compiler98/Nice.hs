@@ -20,13 +20,13 @@ niceNT :: Maybe PackedString  -- ??
         -> String
 
 niceNT _ state al (NTany  a) = assocDef al ('?':show a ++ "?") a
-niceNT _ state al (NTvar  a) = assocDef al ('?':show a ++ "?") a
-niceNT _ state al (NTexist a) = assocDef al ('?':show a ++ "?") a
+niceNT _ state al (NTvar  a _) = assocDef al ('?':show a ++ "?") a
+niceNT _ state al (NTexist a _) = assocDef al ('?':show a ++ "?") a
 niceNT m state al (NTstrict t) = "!" ++ niceNT m state al t
 niceNT m state al (NTapp t1 t2) = 
    '(':  niceNT m state al t1 ++ ' ': niceNT m state al t2 ++ ")"
-niceNT m state al (NTcons a []) = niceInt m state a ""
-niceNT m state al (NTcons a tas) =
+niceNT m state al (NTcons a _ []) = niceInt m state a ""
+niceNT m state al (NTcons a _ tas) =
         case (tidI . dropJust .  lookupIS state) a of
 	  TupleId _ -> '(' : mixComma (map (niceNT m state al) tas) ++ ")"
 	  v | v == t_Arrow ->
@@ -38,8 +38,8 @@ niceNT m state al (NTcons a tas) =
 	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': mixSpace (map (niceNT m state al) tas) ++ ")"
 niceNT m state al (NTcontext c a) =
         case (tidI . dropJust .  lookupIS state) c of
-	  TupleId _ -> '(' : niceNT m state al (NTvar a) ++ ")"
-	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': niceNT m state al (NTvar a) ++ ")"
+	  TupleId _ -> '(' : niceNT m state al (mkNTvar a) ++ ")"
+	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': niceNT m state al (mkNTvar a) ++ ")"
 
 
 niceCtxs :: Eq a 

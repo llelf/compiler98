@@ -14,7 +14,7 @@ import State
 initCtxs = []
 
 removeTSyn state nt@(NTstrict nt') = removeTSyn state nt'
-removeTSyn state nt@(NTcons c nts) =
+removeTSyn state nt@(NTcons c _ nts) =
   case lookupIS state c of
     Just (InfoData u tid exp (NewType free [] _ [nt])
                              (DataTypeSynonym uboxed depth)) ->
@@ -57,20 +57,20 @@ ctxsSimplify poss state given cls_nt =
 -- Only NTvar and NTexist in result
 ctxsSimplify' :: [Pos] -> IntState -> [((Int,Int),([Int],[(Int,Int)]))]
                  -> TypeDict -> [(Int,NT)] -> [(Int,NT)]
-ctxsSimplify' _ state given (TypeDict cls (NTany v) ipos) r = (cls,NTvar v):r
-ctxsSimplify' _ state given (TypeDict cls (NTvar v) ipos) r = (cls,NTvar v):r
-ctxsSimplify' _ state given (TypeDict cls (NTexist v) ipos) r = (cls,NTexist v):r
+ctxsSimplify' _ state given (TypeDict cls (NTany v) ipos) r = (cls,mkNTvar v):r
+ctxsSimplify' _ state given (TypeDict cls (NTvar v k) ipos) r = (cls,NTvar v k):r
+ctxsSimplify' _ state given (TypeDict cls (NTexist v k) ipos) r = (cls,NTexist v k):r
 ctxsSimplify' poss state given (TypeDict cls (NTstrict nt) ipos) r =
   -- Don't keep strictness information in ctx?
   ctxsSimplify' poss state given (TypeDict cls nt ipos) r
 ctxsSimplify' poss state given (TypeDict cls nt ipos) r =
   case removeTSyn state nt of
-    (NTvar v) ->  (cls,NTvar v):r
-    (NTany v) ->  (cls,NTvar v):r
-    (NTexist v) ->  (cls,NTexist v):r
+    (NTvar v k) ->  (cls,NTvar v k):r
+    (NTany v)   ->  (cls,mkNTvar v):r
+    (NTexist v k) ->  (cls,NTexist v k):r
     (NTstrict nt) ->   -- Don't keep strictness information in ctx?
       ctxsSimplify' poss state given (TypeDict cls nt ipos) r
-    (NTcons con nts) ->
+    (NTcons con _ nts) ->
       case lookup (cls,con) given of
         Just (tvs,ctxs) -> -- A derived instance
 	  foldr (ctxsSimplify' poss state given) r (pair2ctxs ipos tvs nts ctxs)
@@ -91,10 +91,10 @@ ctxsSimplify' poss state given (TypeDict cls nt ipos) r =
                                  ++ "\nWhen type checking declarations at: " 
                                  ++ mixCommaAnd (map strPos poss)
                                  ++ "\n")
---  (NTapp (NTvar v) nt2) -> 
---              (cls,NTapp (NTvar v) nt2):r
+--  (NTapp (NTvar v k) nt2) -> 
+--              (cls,NTapp (NTvar v k) nt2):r
 --  (NTapp (NTany v) nt2) -> 
---              (cls,NTapp (NTvar v) nt2):r
+--              (cls,NTapp (mkNTvar v) nt2):r
     (NTapp nt1 nt2) -> 
         error ("Couldn't simplify the context (" ++ strIS state cls ++ " ("
                 ++ strNT (strIS state) strTVar nt1 ++ " "
@@ -113,13 +113,13 @@ pair2ctxs ipos tvs nts ctxs =
 
 --- ===================================
 
-isVar (NTvar v) = True
-isVar (NTexist v) = True
+isVar (NTvar v _) = True
+isVar (NTexist v _) = True
 isVar _ = False
 
 buildCtx :: IntState -> Pos -> [((Int, NT), Int)] -> TypeDict -> Exp Int
 buildCtx state pos given (TypeDict cls (NTany tvar) ipos)=
-  buildCtx state pos given (TypeDict cls (NTvar tvar) ipos)
+  buildCtx state pos given (TypeDict cls (mkNTvar tvar) ipos)
 buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =
   case lookup (cls,nt) given of
     Just i -> ExpVar pos i
@@ -140,7 +140,7 @@ buildCtx state pos given (TypeDict cls nt ipos) | isVar nt =
               (PatWildcard pos)
 buildCtx state pos given (TypeDict cls nt ipos) =
       case removeTSyn state nt of
-	nt@(NTcons con nts) ->
+	nt@(NTcons con _ nts) ->
 	  case lookupIS state cls of
 	    Just info -> 
 	      case lookupAT (instancesI info) con of

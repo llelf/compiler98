@@ -34,8 +34,8 @@ deriveShow tidFun cls typ tvs ctxs pos =
  in
   getInfo typ >>>= \ typInfo -> 
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
-  addInstMethod tShow (tidI typInfo) tshowsPrec (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ishowsPrec >>>= \ fun ->
-  addInstMethod tShow (tidI typInfo) tshowsType (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ishowsType >>>= \ funT ->
+  addInstMethod tShow (tidI typInfo) tshowsPrec (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) ishowsPrec >>>= \ fun ->
+  addInstMethod tShow (tidI typInfo) tshowsType (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) ishowsType >>>= \ funT ->
   mapS (mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expLessThan expDot pos) constrInfos >>>= \ funs ->
   mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot pos typInfo constrInfos >>>= \ funTs ->
   unitS $
@@ -224,6 +224,6 @@ patConstr pos info f iexp =
 
 
 simpleNT (NTstrict nt) = simpleNT nt
-simpleNT (NTvar v) = True
+simpleNT (NTvar v _) = True
 simpleNT (NTany v) = True
 simpleNT _ = False

@@ -38,8 +38,8 @@ deriveXML tidFun cls typ tvs ctxs pos =
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
   let sizeC = ((ceiling . logBase 2 . fromIntegral . length) constrInfos)::Int
   in
-    addInstMethod tShowXml (tidI typInfo) t_toHType (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iToHType >>>= \ funH ->
-    addInstMethod tShowXml (tidI typInfo) t_showsElem (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) iShowsElem >>>= \ funS ->
+    addInstMethod tShowXml (tidI typInfo) t_toHType (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iToHType >>>= \ funH ->
+    addInstMethod tShowXml (tidI typInfo) t_showsElem (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iShowsElem >>>= \ funS ->
     mapS (mkShowsFun expTrue expShowsElem expToHType expStagparen expShowConstr expDot expId pos) (zip [0..] constrInfos) >>>= \ funSs ->
     mkHTypeFuns expTrue expToHType expDefined expConstr expCons expNil pos typInfo constrInfos >>>= \ funHs ->
     unitS $

@@ -149,7 +149,7 @@ export flags state =
 fixInst state keep unique (con,(free,ctxs)) r =
   if keep || (notPrelude . tidI . dropJust . lookupIS state) con then
     ( unique
-    , NewType free [] ctxs [NTcons con (map NTvar free)]
+    , NewType free [] ctxs [mkNTcons con (map mkNTvar free)]
     , snub (con:map fst ctxs)
     ):r
   else

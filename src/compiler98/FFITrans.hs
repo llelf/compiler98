@@ -105,13 +105,13 @@ copyPrim id cname lookup state =
 examineType :: Pos -> Type Id -> FFIMonad (Bool, NT, Type Id, Int, Int)
 examineType pos t lookup state =
   let
-    expand n@(NTvar v)      = n
+    expand n@(NTvar v _)    = n
     expand   (NTstrict nt)  = NTstrict (expand nt)
     expand   (NTapp t1 t2)  = NTapp (expand t1) (expand t2)
-    expand   (NTcons c nts) =
+    expand   (NTcons c k nts) =
         case (typeSynonymBodyI . dropJust . lookupIS state) c of
           Just nt -> expand (subst nt nts)
-          Nothing -> NTcons c (map expand nts)
+          Nothing -> NTcons c k (map expand nts)
     expand   _              = error "Unexpected type error in foreign decl"
 
     subst (NewType free [] ctxs [nt]) nts = substNT (zip free nts) nt
@@ -120,14 +120,14 @@ examineType pos t lookup state =
     io    = lookup (tIO,TCon)
     unit  = lookup (t_Tuple 0,TCon)
 
-    isIO  (NTcons c nts)  | c==io    = True
-    isIO  _                          = False
-    rmIO  (NTcons c [nt]) | c==io    = nt
-    rmIO  nt                         = nt
+    isIO  (NTcons c _ nts)  | c==io    = True
+    isIO  _                            = False
+    rmIO  (NTcons c _ [nt]) | c==io    = nt
+    rmIO  nt                           = nt
 
-    toList (NTcons c nts) | c==arrow  = let [a,b] = nts in a: toList b
-    toList (NTstrict nt)  = toList nt
-    toList nt             = [nt]
+    toList (NTcons c _ nts) | c==arrow  = let [a,b] = nts in a: toList b
+    toList (NTstrict nt)    = toList nt
+    toList nt               = [nt]
 
     (resNT:argsNT) = (reverse . toList . expand . type2NT) t
 
@@ -136,11 +136,12 @@ examineType pos t lookup state =
     adjustArity True 0 = 1	-- Change zero-arity (IO a) to (()->IO a)
     adjustArity _    n = n
 
-    adjustArgs True [] = [NTcons unit []]
+    adjustArgs True [] = [mkNTcons unit []]
     adjustArgs _    as = reverse as
 
     finalNT =
-      foldr (\a b-> NTcons arrow [a,b]) (rmIO resNT) (adjustArgs boolIO argsNT)
+      foldr (\a b-> mkNTcons arrow [a,b])
+            (rmIO resNT) (adjustArgs boolIO argsNT)
   in
     ( ( boolIO
       , finalNT
@@ -179,7 +180,7 @@ updVar pos id nt ar lookup state =
 -- nt2type reverses the type2NT translation
 nt2type :: Pos -> NT -> Type Id
 nt2type p (NTapp t1 t2) = TypeApp (nt2type p t1) (nt2type p t2)
-nt2type p (NTcons c ts) = TypeCons p c (map (nt2type p) ts)
+nt2type p (NTcons c _ ts) = TypeCons p c (map (nt2type p) ts)
 nt2type p (NTstrict t)  = TypeStrict p (nt2type p t)
-nt2type p (NTvar v)     = TypeVar p v
+nt2type p (NTvar v _)   = TypeVar p v
 nt2type p _             = error "FFI transformation: nt2type"

@@ -53,7 +53,7 @@ typeCode (CodeInstance pos cls typ _ _ ms) tidFun state =
   in case uniqueISs state ctxs of
       (ctxsi,state) ->
 	(CodeInstance pos cls typ (map snd ctxsi)
-	     (map (buildCtx state noPos (map (mapFst (mapSnd NTvar)) ctxsi) . ( \ cls -> TypeDict cls (NTcons typ (map NTvar free)) [(0,pos)])) sc) ms
+	     (map (buildCtx state noPos (map (mapFst (mapSnd mkNTvar)) ctxsi) . ( \ cls -> TypeDict cls (mkNTcons typ (map mkNTvar free)) [(0,pos)])) sc) ms
 	,state)
 
 
@@ -209,8 +209,8 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict)
 
 --------------------- Fix arguments and types
 
-isExist (NTexist _) = True
-isExist _           = False
+isExist (NTexist _ _) = True
+isExist _             = False
 
 
 bindType :: Decl Id 
@@ -255,7 +255,7 @@ bindType decl@(DeclPat (Alt pat gdexps decls))
   errmsg = "Context for " ++ mixCommaAnd ((map (strIS state) . unique .
                                            map (fst . fst)) localCtxsi)
 	   ++ " needed in left hand pattern at " ++ strPos (getPos pat) ++ "."
-  nt = NewType [1] [] [] [NTvar 1]   -- Used instead of derived type, not sure
+  nt = NewType [1] [] [] [mkNTvar 1] -- Used instead of derived type, not sure
                                      -- if it is any idea
   typeError (pos,ident) state = (updateIS state ident (newNT nt))
 
@@ -313,10 +313,10 @@ bindType decl@(DeclFun pos fun funs)
 
               al = mkAL (givenFree ++ freeNT derivedNT)
 
-	      fixSubst (v,NTvar v') = if v `elem` givenFree then (v',NTvar v)
-                                                            else (v,NTvar v')
-	      fixSubst (v,NTany v') = if v `elem` givenFree then (v',NTvar v)
-                                                            else (v,NTvar v')
+	      fixSubst (v,NTvar v' k) = if v`elem`givenFree then (v',NTvar v k)
+                                                            else (v,NTvar v' k)
+	      fixSubst (v,NTany v')   = if v`elem`givenFree then (v',mkNTvar v)
+                                                            else (v,mkNTvar v')
               fixSubst p = p
 
               one2many phi = ( filter ((/= 1).length.snd)
@@ -331,13 +331,13 @@ bindType decl@(DeclFun pos fun funs)
                          Nothing -> Just v
                          Just xs -> findV xs
 
-              findV [NTvar v] = Just v
+              findV [NTvar v _] = Just v
               findV [NTany v] = Just v
               findV _ = Nothing
 
 	      sameNT (NTany _) v   = NTany v
-	      sameNT (NTvar _) v   = NTvar v
-	      sameNT (NTexist _) v = NTexist v
+	      sameNT (NTvar _ k) v   = NTvar v k
+	      sameNT (NTexist _ k) v = NTexist v k
 
 
               localCtxi' = ( map dropJust
@@ -388,7 +388,7 @@ bindType decl@(DeclFun pos fun funs)
                 let sOne2Many xs =
                         concatMap (\(v,nts)->
                                    "\n    type variable "
-                                   ++ niceNT Nothing state al (NTvar v)
+                                   ++ niceNT Nothing state al (mkNTvar v)
                                    ++ " bound to "
 			           ++ mixCommaAnd (map (niceNT Nothing state al)
                                                         nts)
@@ -396,12 +396,12 @@ bindType decl@(DeclFun pos fun funs)
                     sFreeBound [] = []
                     sFreeBound [(v,t)] =
                         "\n    given free variable "
-                        ++ niceNT Nothing state al (NTvar v)
+                        ++ niceNT Nothing state al (mkNTvar v)
                         ++ " is bound to " ++ niceNT Nothing state al (head t)
                     sFreeBound xs =
                         "\n    given free variables "
                         ++ mixCommaAnd (map (niceNT Nothing state al
-                                            . NTvar . fst) xs)
+                                            . mkNTvar . fst) xs)
                         ++ " are bound to "
                         ++ mixCommaAnd (map (niceNT Nothing state al
                                             . head . snd) xs)
@@ -491,28 +491,28 @@ typeLit e@(ExpLit pos (LitInteger _ _)) =    --- Add fromInteger
       getIdent (tInteger,TCon) >>>= \ tcon ->
       getIdent (tfromInteger,Var) >>>= \ tfromInteger ->
       typeIdentDict (ExpVar pos) pos tfromInteger >>>= \ (exp,expT) ->
-      typeUnifyApply (msgLit pos "integer") [expT,NTcons tcon []] >>>= \ t ->
+      typeUnifyApply (msgLit pos "integer") [expT,mkNTcons tcon []] >>>= \ t ->
       unitS (ExpApplication pos [exp,e],t)
 typeLit e@(ExpLit pos (LitRational _ _)) =	--- Add fromRational
       getIdent (tRational,TCon) >>>= \ tcon ->
       getIdent (tfromRational,Var) >>>= \ tfromRational ->
       typeIdentDict (ExpVar pos) pos tfromRational >>>= \ (exp,expT) ->
-      typeUnifyApply (msgLit pos "rational") [expT,NTcons tcon []] >>>= \ t ->
+      typeUnifyApply (msgLit pos "rational") [expT,mkNTcons tcon []] >>>= \ t ->
       unitS (ExpApplication pos [exp,e],t)
 typeLit e@(ExpLit pos (LitString _ _)) = getIdent (tString,TCon) >>>= \tcon ->
-                                         unitS (e,NTcons tcon [])
+                                         unitS (e,mkNTcons tcon [])
 typeLit e@(ExpLit pos (LitInt _ _))    = getIdent (tInt,TCon)    >>>= \tcon ->
-                                         unitS (e,NTcons tcon [])
+                                         unitS (e,mkNTcons tcon [])
 typeLit e@(ExpLit pos (LitFloat _ _))  = getIdent (tFloat,TCon)  >>>= \tcon ->
-                                         unitS (e,NTcons tcon [])
+                                         unitS (e,mkNTcons tcon [])
 typeLit e@(ExpLit pos (LitDouble _ _)) = getIdent (tDouble,TCon) >>>= \tcon ->
-                                         unitS (e,NTcons tcon [])
+                                         unitS (e,mkNTcons tcon [])
 typeLit e@(ExpLit pos (LitChar _ _))   = getIdent (tChar,TCon)   >>>= \tcon ->
-                                         unitS (e,NTcons tcon [])
+                                         unitS (e,mkNTcons tcon [])
 
 typeUnifyBool g t =
   getIdent (tBool,TCon) >>>= \ tcon ->
-  typeUnify (msgBool g) (NTcons tcon []) t
+  typeUnify (msgBool g) (mkNTcons tcon []) t
 
 typeGdExp (g,e) =
   typeExp g >>>= \(g,gT) ->
@@ -588,7 +588,7 @@ typeExp (ExpList  pos es)         =
    (es,esT) -> 
      typeUnifyMany (msgList es) esT >>>= \t ->
      getIdent (t_List,TCon)     >>>= \tcon ->
-     unitS (ExpList pos es,NTcons tcon [t])
+     unitS (ExpList pos es,mkNTcons tcon [t])
 
 typeExp (ExpLambda pos pats13 exp)  =
 --  phiMark >>>= \ mark ->
@@ -620,7 +620,7 @@ typeExp (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
       free = snub (freeNT nt)
   in 
     mapS (\ _ -> typeNewTVar) free >>>= \ free' -> 
-    let phi = list2Subst (zip free (map ( \ (NTany a) -> NTvar a) free')) 
+    let phi = list2Subst (zip free (map (\(NTany a) -> mkNTvar a) free')) 
     in typeUnify (msgExpType pos) (subst phi nt) expT >>>= \ expT ->
        unitS (exp,expT)
 
@@ -660,7 +660,7 @@ typePat (ExpList  pos es)         =
    (es,esT,eTVar) -> 
      typeUnifyMany (msgList es) esT >>>= \t ->
      getIdent (t_List,TCon)     >>>= \tcon ->
-     unitS (ExpList pos es,NTcons tcon [t],concat eTVar)
+     unitS (ExpList pos es,mkNTcons tcon [t],concat eTVar)
 
 typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
                                    -- free variables really are free !!!
@@ -673,7 +673,7 @@ typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
       free = snub (freeNT nt)
   in 
     mapS (\ _ -> typeNewTVar) free >>>= \ free' -> 
-    let phi = list2Subst (zip free (map ( \ (NTany a) -> NTvar a) free')) 
+    let phi = list2Subst (zip free (map (\(NTany a) -> mkNTvar a) free')) 
     in typeUnify (msgExpType pos) (subst phi nt) expT >>>= \ expT ->
        unitS (exp,expT,eTVar)
 

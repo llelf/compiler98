@@ -201,7 +201,7 @@ getIndDataIS state indDataI =
       case lookupIS state c of
 	(Just infoCon) ->
           case ntI infoCon of
-	    (NewType ctx free [] (NTcons con _:_)) -> con
+	    (NewType ctx free [] (NTcons con _ _:_)) -> con
 
 
 globalIS :: IntState -> Id -> Bool
@@ -233,7 +233,7 @@ arityIS :: IntState -> Id -> Int
 
 arityIS state i =
   case lookupIS state i of 
-    Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _]) (Just arity) iMethod) ->
+    Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _ _]) (Just arity) iMethod) ->
 	case lookupIS state iMethod of
 	  Just (InfoMethod  unique tid ie fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
 	       length ictxs + iarity + (length . snd . dropJust . lookupAT ((instancesI . dropJust . lookupIS state) iClass)) tcon

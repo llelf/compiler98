@@ -216,7 +216,7 @@ importField q free ctxs bt c ((Just (p,tid,_),nt),i) down
               (addAT -- add field name
                 (addAT st combInfo (realtid,Var) -- add selector
 		  (InfoVar  unique realtid IEnone (fixity realtid)
-                    (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) 
+                    (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt]) 
                     (Just 1)))
 		combInfo key (InfoField u realtid IEnone [(c,i)] bt unique)) 
               insts fixity errors)
@@ -237,7 +237,7 @@ importField q free ctxs bt c ((Just (p,tid,_),nt),i) down
 	      (addAT -- add field name
                 (addAT st combInfo (realtid,Var) -- add selector
 		  (InfoVar  (unique+1) realtid IEnone (fixity realtid)
-                    (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) 
+                    (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt]) 
                     (Just 1)))
 		combInfo key (InfoField unique realtid IEnone [(c,i)]
                                         bt (unique+1)))
@@ -482,7 +482,7 @@ iextractDataPrim :: IE -> (TokenId->Bool) -> Pos -> TokenId -> Int
 
 iextractDataPrim expInfo q pos tid size =
      transTid pos TCon tid >>>= \ i ->
-     importData q tid expInfo (NewType [] [] [] [NTcons i []])
+     importData q tid expInfo (NewType [] [] [] [mkNTcons i []])
                               (DataPrimitive size) >>>
      checkInstanceCon tid >>>= \ newinsts ->
      mapS0 newInstance newinsts
@@ -530,8 +530,8 @@ iextractInstance ctxs pos cls typ =
                        -- then add the instance to the type class
     then
       transTypes al (map snd al) ctxs [typ]
-      >>>= \(NewType free [] ctxs [NTcons c nts]) ->
-      importInstance cls c free {- (map ( \ (NTvar v) -> v) nts) -} ctxs
+      >>>= \(NewType free [] ctxs [NTcons c _ nts]) ->
+      importInstance cls c free {- (map ( \ (NTvar v _) -> v) nts) -} ctxs
     else
       storeInstance al cls con ctxs -- otherwise save the instance for later
 
@@ -594,7 +594,7 @@ transConstr :: (TokenId->Bool) -> [(TokenId,Int)] -> [Int] -> [(Id,Id)]
             -> [TokenId] -> NT -> Constr TokenId 
             -> () -> ImportState -> (Int,ImportState)
 
-transConstr q al free ctxs needed resType@(NTcons bt _) (Constr pos cid types) =
+transConstr q al free ctxs needed resType@(NTcons bt _ _) (Constr pos cid types) =
   mapS (transFieldType al) types >>>= \ntss ->
   let all = concat ntss
       nts = map snd all
@@ -607,7 +607,7 @@ transConstr q al free ctxs needed resType@(NTcons bt _) (Constr pos cid types) =
   >>>= \c->
   mapS0 (importField q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
   unitS c
-transConstr q al free ctxs needed resType@(NTcons bt _) 
+transConstr q al free ctxs needed resType@(NTcons bt _ _) 
                                   (ConstrCtx forall ectxs' pos cid types) = 
   let -- ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
@@ -663,7 +663,7 @@ transTVar :: Pos -> [(TokenId,Id)] -> TokenId
           -> () -> ImportState -> (NT,ImportState)
 
 transTVar pos al v =
-  unitS NTvar =>>> uniqueTVar pos al v
+  unitS mkNTvar =>>> uniqueTVar pos al v	-- no KIND inference?
 
 
 {- transform syntactic type variable (TokenId) into internal type variable
@@ -702,7 +702,7 @@ transType :: [(TokenId,Id)] -> Type TokenId
 transType free (TypeApp  t1 t2) = 
   unitS NTapp =>>> transType free t1 =>>> transType free t2
 transType free (TypeCons  pos hs types) = 
-  unitS NTcons =>>> transTid pos TCon hs =>>> mapS (transType free) types
+  unitS mkNTcons =>>> transTid pos TCon hs =>>> mapS (transType free) types
 transType free (TypeVar   pos v)    = transTVar pos free v
 transType free (TypeStrict pos typ) = unitS NTstrict =>>>  transType free typ
 

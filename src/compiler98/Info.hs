@@ -77,8 +77,8 @@ data Info =
                            -- if data or newtype: defined type
                            -- e.g.: data Num a => Test a b = A a | B b
                            -- NewType [1,2] [] [(NumId, 1)] 
-                           --   [NTvar 1, NTvar 2, NTcons TestId 
-                           --                        [NTvar 1, NTvar 2]]
+                           --   [NTvar 1 Star, NTvar 2 Star, mkNTcons TestId 
+                           --                     [NTvar 1 Star, NTvar 2 Star]]
                   DataKind -- kind of data type 
   | InfoClass     Int      -- unique
                   TokenId  -- token of class name

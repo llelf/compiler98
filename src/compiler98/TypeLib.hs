@@ -97,8 +97,8 @@ typeOfMain flags tidFun (DeclsScc depends) state =
       else
         case ntIS state imain of
 	  (NewType free [] [] [nt],state) ->
-	    let mainType = NTcons (tidFun (tIO,TCon)) 
-	                         [NTvar (tidFun (t_Tuple 0,TCon))]
+	    let mainType = mkNTcons (tidFun (tIO,TCon)) 
+	                         [mkNTvar (tidFun (t_Tuple 0,TCon))]
 	    in
 	    case unify state idSubst (nt, mainType) of
 	      Right phi -> return state
@@ -176,7 +176,7 @@ typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict
       in seq f' (f',TypeState state phi ctxs ectxsi)
   unifyApply state phi f ((no,x):xs) = 
     case subst phi f of
-      NTcons c [a,r] | c == arrow ->
+      NTcons c _ [a,r] | c == arrow ->
         case unify state phi (a,x) of
 	  Right phi -> unifyApply state phi r xs
           Left (phi,str) ->
@@ -187,7 +187,7 @@ typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict
           (a,state) ->
 	    case uniqueIS state of
               (r,state) ->
-                case unify state phi (phif,NTcons arrow [NTany a,NTany r]) of
+                case unify state phi (phif,mkNTcons arrow [NTany a,NTany r]) of
    	          Right phi ->
 		    case unify state phi (NTany a,x) of
 		      Right phi -> unifyApply state phi (NTany r) xs
@@ -242,7 +242,7 @@ typeExpCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(Ty
   case ntIS state ident of  -- Be strict!
     (NoType,state) -> -- Not possible for constructors!
 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
-            (u,state) -> ((ExpCon pos ident,NTvar u,[],[]),TypeState state phi ctxs ectxsi)
+            (u,state) -> ((ExpCon pos ident,mkNTvar u,[],[]),TypeState state phi ctxs ectxsi)
     (nt''@(NewType _ eTVar _ _),state) -> 
      case extractCtxs nt'' of
       (nt',ctxs'') ->
@@ -250,7 +250,7 @@ typeExpCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(Ty
 	    (ictxs,nt,state) -> 
 	      let ctxsStripped' = map snd ictxs
 		  is = map fst $ filter ((`elem` eTVar) . ( \ (TypeDict i nt intpos) -> stripNT nt) . snd) ictxs
-	          ctxs' = map ( \ (TypeDict i nt intpos) -> TypeDict i (NTvar (stripNT nt)) intpos) ctxsStripped'
+	          ctxs' = map ( \ (TypeDict i nt intpos) -> TypeDict i (mkNTvar (stripNT nt)) intpos) ctxsStripped'
 	          nt' = subst phi nt
 	      in seq nt' ((ExpCon pos ident,nt',map (\ i -> assocDef ctxDict 
 								  (error "TypeLib:204")
@@ -266,11 +266,11 @@ typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(Ty
   case ntIS state ident of  -- Be strict!
     (NoType,state) -> -- Not possible for constructors!
 	  case uniqueIS state of -- Fake answer, there should be an error reported somewhere else
-            (u,state) -> ((ExpCon pos ident,NTvar u,[],[]),TypeState state phi ctxs inEctxsi)
+            (u,state) -> ((ExpCon pos ident,mkNTvar u,[],[]),TypeState state phi ctxs inEctxsi)
     (nt''@(NewType _ exist _ _),state) -> 
      case extractCtxs nt'' of
       (nt',ectxs') ->
-       case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then NTexist v else NTvar v)) ectxs') of
+       case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then mkNTexist v else mkNTvar v)) ectxs') of
          (ectxsi,state) ->
 	   let eictxs = cvi2typedict pos exist ectxsi
       	   in
@@ -281,11 +281,11 @@ typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(Ty
 	          in seq nt' ((ExpCon pos ident,nt',map (ExpVar pos . fst) eictxs,exist),TypeState state phi (ctxs'++ctxs) (ectxsi ++ inEctxsi))
 
 existNT tv t@(NTany  a) = t
-existNT tv t@(NTvar  a) = if a `elem` tv then NTexist a else t
-existNT tv t@(NTexist  a) = t
+existNT tv t@(NTvar  a k) = if a `elem` tv then NTexist a k else t
+existNT tv t@(NTexist  a _) = t
 existNT tv (NTstrict t) = NTstrict (existNT tv t)
 existNT tv (NTapp t1 t2) =  NTapp (existNT tv t1) (existNT tv t2)
-existNT tv (NTcons a tas) =  NTcons a (map (existNT tv) tas)
+existNT tv (NTcons a k tas) =  NTcons a k (map (existNT tv) tas)
 
 
 typeIdentDict convar pos ident down up@(TypeState state phi ctxs ectxsi) = 
@@ -301,7 +301,7 @@ typeIdentDict' convar pos ident down@(TypeDown env tidFun defaults ctxDict envDi
           in seq t' ((convar ident,t',assocDef envDict [] ident,[]),up)  -- Only let-bound identifiers in envDict
 	Nothing -> -- This is an identifier bound inside a pattern that need dictionaries, i.e, an error reported elsewhere
 	  case uniqueIS state of
-            (u,state) -> ((convar ident,NTvar u,[],[]),TypeState state phi ctxs ectxsi)
+            (u,state) -> ((convar ident,mkNTvar u,[],[]),TypeState state phi ctxs ectxsi)
     (nt'@(NewType _ eTVar _ _),state) -> 
       	case dictAndArrows (tidFun (t_Arrow,TCon)) pos state [] nt' of
 	    (ictxs,nt,state) -> 
@@ -333,7 +333,7 @@ extractCtxs (NewType free exist ctxs nts) =
 
 
 dictAndArrows arrow pos state ectxs (NewType free exist ctxs nts) = 
-  case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then NTexist v else NTvar v)) (ctxs ++ ectxs)) of
+  case uniqueISs state (map (mapSnd ( \ v -> if v `elem` exist then mkNTexist v else mkNTvar v)) (ctxs ++ ectxs)) of
     (ctxsi,state) ->
 	    (cvi2typedict pos exist ctxsi
 	    ,funType arrow nts
@@ -342,7 +342,7 @@ dictAndArrows arrow pos state ectxs (NewType free exist ctxs nts) =
 
 
 funType arrow [x] = x
-funType arrow (x:xs) = NTcons arrow [x , funType arrow xs]
+funType arrow (x:xs) = mkNTcons arrow [x , funType arrow xs]
 
 
 typeError err down  up@(TypeState state phi ctxs ectxsi) =

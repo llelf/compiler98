@@ -23,7 +23,7 @@ deriveRead tidFun cls typ tvs ctxs pos =
  in
   getInfo typ >>>= \ typInfo -> 
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
-  addInstMethod tRead (tidI typInfo) treadsPrec (NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]) ireadsPrec >>>= \ fun ->
+  addInstMethod tRead (tidI typInfo) treadsPrec (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) ireadsPrec >>>= \ fun ->
   mapS (mkReadExp expD expR tidFun pos) constrInfos >>>= \ (e:es) ->
   unitS $
     DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
