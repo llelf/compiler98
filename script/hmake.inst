@@ -102,14 +102,14 @@ do
           done ;;
 
     # Run-time flags to the compiler
-    -A*)  rtflags=$rtflags" $1" ;;
-    -H*)  rtflags=$rtflags" $1" ;;
-    -h*)  rtflags=$rtflags" $1" ;;
-    -B*)  rtflags=$rtflags" $1" ;;
-    -S*)  rtflags=$rtflags" $1" ;;
-    -V*)  rtflags=$rtflags" $1" ;;
-    -K*)  rtflags=$rtflags" $1" ;;
-   #-gc*) rtflags=$rtflags" $1" ;;	-- not used by nhc98 - used by hbc?
+    -A*)  rtflags=$rtflags" $1" ;;	# stacksize:      hbc
+    -H*)  rtflags=$rtflags" $1" ;;	# heapsize:  ghc, hbc, nhc98
+    -h*)  rtflags=$rtflags" $1" ;;	# heapsize:            nhc98
+    -B*)  rtflags=$rtflags" $1" ;;	# GC stats:       hbc, nhc98
+    -S*)  rtflags=$rtflags" $1" ;;	# GC stats:       hbc
+    -V*)  rtflags=$rtflags" $1" ;;	# stacksize:           nhc98
+    -K*)  rtflags=$rtflags" $1" ;;	# stacksize: ghc
+   #-gc*) rtflags=$rtflags" $1" ;;	# GC flags:       hbc?
 
     # Protected compiler flags
     +CTS) shift
