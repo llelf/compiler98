@@ -45,7 +45,7 @@ showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
 showmake opts goaldir ((f,p,s),i) =
   dotO p f ++ ": " ++ s ++ " " ++ mix i
   where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
-        tmod = if hat opts then ('Hat/':) else id
+        tmod = if hat opts then ("Hat/"++) else id
         dotO p f =
           if (dflag opts) then fixFile opts goaldir (tmod f) (oSuffix opts)
                           else fixFile opts p       (tmod f) (oSuffix opts)
