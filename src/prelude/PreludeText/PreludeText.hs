@@ -3,6 +3,7 @@ module Prelude
     ,module _ReadCon0
     ,module _ReadConArg
     ,module _ReadConInfix
+    ,module _ReadField
 
     ,module CRead
     ,module CShow
@@ -26,6 +27,7 @@ import _ReadCon
 import _ReadCon0
 import _ReadConArg
 import _ReadConInfix
+import _ReadField
 
 
 import CRead

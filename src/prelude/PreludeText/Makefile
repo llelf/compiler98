@@ -19,7 +19,7 @@ SRCS	= \
 	_ReadCon0.hs     Read_Integer.hs  Show_Char.hs     TShowS.hs 	\
 	_ReadConArg.hs   Read_List.hs     Show_Double.hs   		\
 	_ReadConInfix.hs Read_Maybe.hs    Show_Either.hs   		\
-	                 Read_Unit.hs     Show_Float.hs    \
+	_ReadField.hs    Read_Unit.hs     Show_Float.hs    \
 	Read_Ordering.hs Show_Ordering.hs
 SRCS_T	= \
 	TReadS.hs        Lex.hs           ReadParen.hs  \
@@ -35,7 +35,7 @@ SRCS_T	= \
 	_ReadCon0.hs     Read_Integer.hs  Show_Char.hs     TShowS.hs 	\
 	_ReadConArg.hs   Read_List.hs     Show_Double.hs   		\
 	_ReadConInfix.hs Read_Maybe.hs    Show_Either.hs   		\
-	                 Read_Unit.hs     Show_Float.hs    \
+	_ReadField.hs    Read_Unit.hs     Show_Float.hs    \
 	Read_Ordering.hs Show_Ordering.hs
 NOTDONE= Show_Fun.hs
 
