@@ -3,7 +3,7 @@
 #	author:   Malcolm.Wallace@cs.york.ac.uk, Sept 1999
 #			added "hmake interactive" config, May 2000
 
-VERSION=${HMAKEVERSION-"1.8"}
+# VERSION=${HMAKEVERSION-"1.8+"}	# obsolete defn
 
 echo "  (hmake configuration is done once only.)"
 echo "First we look for already-installed Haskell compilers:"
@@ -31,10 +31,11 @@ then
 else
   echo "No builtin 'which' command - attempting to emulate it."
   which () {
-    ( for path in `echo $PATH | tr ":" " "`
+    ( for path in `echo \"$PATH\" | sed -e 's/:/\" \"/g'`
       do
-        if [ -f $path/$1 ]
-        then echo $path/$1
+        thefile=`echo $path | tr -d "\""`/$1
+        if [ -f "$thefile" ]
+        then echo $thefile
              exit 0
         fi
       done; exit 1 )
