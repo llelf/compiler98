@@ -116,7 +116,7 @@ mkErrorND (tid,Method) poss =
   ++ mix "," (map strPos poss) ++ " does not belong to this class."
 mkErrorND (tid,kind) poss =
   show kind ++ ' ':show tid ++ " used at " ++ mix "," (map strPos poss)
-  ++ " is not defined. (in overlap resolution)"
+  ++ " is not defined."
 
 mkErrorOVND (tid,kind) poss alias others =
   show kind ++ ' ':show alias ++ " used at " ++ mix "," (map strPos poss)

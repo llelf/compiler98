@@ -142,8 +142,7 @@ Does not bind field names.
 -}
 bindField :: Field TokenId -> RenameRMonadEmpty a
 
-bindField (FieldExp pos tid pat) = {- bindTid pos Var tid >>> -} 
-  bindPat Var pat
+bindField (FieldExp pos tid pat) = {-bindTid pos Var tid >>>-} bindPat Var pat
 bindField (FieldPun pos tid)     = bindTid pos Var tid
 --bindField (FieldPun pos tid)   = bindTid pos Var tid	-- H98 removes
 

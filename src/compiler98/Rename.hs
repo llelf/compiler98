@@ -420,7 +420,8 @@ mkNoDefault pos tid =
   Unguarded $
     ExpApplication pos 
      [ExpVar pos t_error
-     ,ExpLit pos (LitString Boxed ("No default for " ++ show tid))
+     ,ExpLit pos (LitString Boxed ("No default definition for class method "
+                                   ++ show tid))
      ]
 
 
