@@ -125,6 +125,7 @@ data Decl id =
      | DeclIgnore String
      | DeclError String
      | DeclAnnot (Decl id) [Annot id]
+--   | DeclPragma String String
      -- infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
 

@@ -46,8 +46,11 @@ iPreLex u file r c ('{':'-':'#':xs) =
                                iPreLex u (packString newfile)
                                          (fromInteger newr) 1
                                          (tail (dropWhile (/='\n') xs))
-                  (name:_) | name `elem` recognisedPragmas
-                           || all isDigit name ->	-- e.g. fn arity
+                  ("NEED":_) ->
+                          (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
+                  ("#-}":_) ->
+                          (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
+                  (name:_) | all isDigit name ->	-- e.g. fn arity
                           (file,r,c,L_LANNOT) :iPreLex u file r (c+3) xs
                   _ ->    skipcomment u file 0 r (c+3) xs
 iPreLex u file r c ('#':'-':'}':xs) =
@@ -117,11 +120,6 @@ iPreLex u file r c (xs@(x:s))=
           (file,r,c,L_ERROR x) :  iPreLex u file r c s
 
 
--- Extend this list as more pragmas become useful
-recognisedPragmas =
-    "NEED":		-- NEED is found in interface files
-    "#-}":		-- an empty pragma is acceptable
-    []
 
 
 -- Auxiliary used by more than one clause of iPreLex (originally a local defn)

@@ -26,7 +26,7 @@ optSemi = () `parseChk` semi
 
 
 parseProg :: Parser (Module TokenId) [PosToken] a
-parseProg = many parsePragma `revChk` (parseModule `chkCut` eof)
+parseProg = {- many parsePragma `revChk` -} (parseModule `chkCut` eof)
 
 
 parseModule :: Parser (Module TokenId) [PosToken] a
@@ -181,8 +181,9 @@ parseDecl =
     parseValdef
         `orelse`			-- added in H98
     DeclFixity `parseAp` parseFixDecl	-- added in H98
-	`orelse`
+ {-	`orelse`
     parsePragma				-- added by MW, Sept 2000
+  -}
 
 
 parseExp :: Parser (Exp TokenId) [PosToken] a

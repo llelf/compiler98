@@ -227,4 +227,8 @@ parseInst' =
 parsePragma =
      DeclIgnore "PRAGMA" `parseChk`  lannot `chk`
                                      many notRannot `chk` rannot
-     --                              many (conid `orelse` varid) `chk` rannot
+
+{- possible extension for when we want to use pragmas in nhc98 -}
+--parsePragma =
+--     DeclPragma `parseChk`  lannot `ap` conid `chk`
+--                            ("" `parseChk` many notRannot) `chk` rannot
