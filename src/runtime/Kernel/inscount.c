@@ -206,7 +206,7 @@ void genericByteIns (CodePtr ip, fun op0, fun op1, fun op2, fun opdef)
   case NEEDSTACK_P2: op2(ip,"NEEDSTACK_P2",i_needstack_p2); break;
 
   case JUMP: op2(ip,"JUMP",i_jump); break;
-  case JUMPFALSE: op2(ip,"JUMPFALSE",i_jumpf); break; /*DW/PH*/
+  case JUMPFALSE: op2(ip,"JUMPFALSE",i_jumpfalse); break; /*DW/PH*/
 
   case NOP: op0(ip,"NOP",i_nop); break;
 
