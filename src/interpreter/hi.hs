@@ -216,15 +216,18 @@ load options compiler mod = do
     if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
           else continue
 
-makeclean ext modules = mapM_ (clean ext) modules
-  where
-  clean ext mod = do
-    let file = mod++ext
-    exist <- doesFileExist file
-    if exist then do
-        putStrLn ("[Removing    ... "++file++"]")
-        catch (removeFile file) print
-      else done
+makeclean ".o"  modules = system ("hmake -clean "++unwords modules)
+makeclean ".hi" modules = system ("hmake -realclean "++unwords modules)
+
+--makeclean ext modules = mapM_ (clean ext) modules
+--  where
+--  clean ext mod = do
+--    let file = mod++ext
+--    exist <- doesFileExist file
+--    if exist then do
+--        putStrLn ("[Removing    ... "++file++"]")
+--        catch (removeFile file) print
+--      else done
 
 --fromOpt prefix opt =
 --  if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
