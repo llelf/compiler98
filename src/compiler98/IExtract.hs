@@ -332,9 +332,9 @@ checkInstanceCon tid down importState@(ImportState visible unique orps rps needI
 addRT False _    _     _ _   _   _    rt = rt
 addRT True False False u tid rps kind rt = rt
 addRT True False True  u tid rps kind rt = updateAT rt (forceM rps tid,kind) (combRT u)
-addRT True True  False u tid rps kind rt = --updateAT rt (dropM tid     ,kind) (combRT u)
-	error ("Attempting to import "++show tid++" in unqualified form,\n"
-		++"while rejecting its qualified form.\n")
+addRT True True  False u tid rps kind rt = updateAT rt (dropM tid     ,kind) (combRT u)
+--	error ("Attempting to import "++show tid++" in unqualified form,\n"
+--		++"while rejecting its qualified form.\n")
 addRT True True  True  u tid rps kind rt = updateAT (updateAT rt (forceM rps tid,kind) (combRT u)) (dropM tid     ,kind) (combRT u)
 
 combRT u (Left _) = Right [u]
