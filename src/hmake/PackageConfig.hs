@@ -18,7 +18,9 @@ packageDirs :: CompilerConfig -> [String] -> [FilePath]
 -- For ghc, we need to consult ghc-pkg for package import directories.
 packageDirs config@(CompilerConfig{ compilerStyle=Ghc
                                   , compilerPath=ghc }) packages =
-    let ghcsym = (read . take 3 . filter isDigit . compilerVersion) config in
+    let ghcsym = (read . take 3 . filter isDigit . (++"00") . compilerVersion)
+                 config
+    in
     if ghcsym < (500::Int) then
       []
     else unsafePerformIO $ do
