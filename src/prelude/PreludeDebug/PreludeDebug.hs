@@ -787,7 +787,7 @@ fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
   let t' = mkTNm t nm sr
-  in t' `myseq` enter t' (rf t)  -- t here correct?
+  in t' `myseq` lazySat (enter t' (rf t')) t'  -- t here correct?
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
@@ -981,7 +981,8 @@ tfun0 :: NmType -> (Trace -> Trace -> R r) -> SR -> Trace -> R r
 
 tfun0 nm rf sr t = 
   let t' = optMkTNm t nm sr
-  in t' `myseq` enter t' (rf t (mkTHidden t))  -- t here correct?
+  in t' `myseq` lazySat (enter t' (rf t' (mkTHidden t'))) t'  
+    -- t here correct?
 
 tfun1 :: NmType -> (Trace -> Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)

@@ -293,12 +293,15 @@ dExp (ExpApplication pos es) =
   unitS (ExpApplication pos) =>>> dExps es
 dExp (ExpList pos es) = 
   unitS (ExpList pos) =>>> dExps es
-dExp (ExpVar pos id) = 
-  unitS (ExpVar pos id)
+dExp e@(ExpVar pos id) = 
+  unitS e
 dExp (ExpDo pos stmts) = 
   dRemoveDo pos stmts
-dExp (ExpRecord _ _) = 
-  error "ExpRecord not supported when debugging"
+dExp e@(ExpRecord exp fields) =
+  unitS ExpRecord =>>> 
+  dExp exp =>>> 
+  mapS (\(FieldExp pos id exp) -> dExp exp >>>= \exp' -> 
+                                unitS (FieldExp pos id exp')) fields
 dExp (ExpScc s e) = -- never used in compiler
   error "ExpScc not supported when debugging"
 dExp (ExpFatbar _ _) =  -- never used in compiler

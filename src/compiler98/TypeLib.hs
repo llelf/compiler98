@@ -8,7 +8,7 @@ module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
                ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
                ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
                ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK
-               ,newIdent,getState,typeOfMain) where
+               ,newIdent,getState,setState,typeOfMain) where
 
 import Memo
 import NT
@@ -225,6 +225,9 @@ newIdent down up@(TypeState state phi ctxs ectxsi) =
 
 getState down up@(TypeState state phi ctxs ectxsi) = 
     (state,up)
+
+setState state down up@(TypeState _ phi ctxs ectxsi) = 
+  TypeState state phi ctxs ectxsi
 
 extendEnv ext down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up =
   (TypeDown (ext++env) tidFun defaults ctxDict envDict dbgtrans,up)

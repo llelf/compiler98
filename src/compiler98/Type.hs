@@ -8,8 +8,9 @@ import IdKind
 import State
 import NT
 import TypeLib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
-              ,typeIdentDict,debugTranslating,getIdent,getTypeErrors
+              ,typeIdentDict,debugTranslating,getIdent,getTypeErrors,typeError
               ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
+              ,getState,setState
               ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
               ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK)
 import TypeEnv(initEnv,envDecls,tvarsInEnv,envPats,envPat)
@@ -742,3 +743,11 @@ fixPat13 (PatIrrefutable pos pat)     =
   unitS (PatIrrefutable pos) =>>> fixPat13 pat
 fixPat13 pat  = unitS pat
 
+
+
+removeExpRecord :: Exp Id -> [Field Id] -> TypeMonad (Exp Id)
+removeExpRecord exp fields =
+  getState >>>= \state ->
+  case translateExpRecord exp fields state of
+    (Right transExp,state') -> setState state' >>> unitS transExp
+    (Left error,state') -> setState state' >>> typeError error  

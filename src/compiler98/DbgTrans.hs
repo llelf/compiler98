@@ -31,7 +31,8 @@ import Id(Id)
 import Info(typeSynonymBodyI,IE(IEsel))
 import TypeSubst(substNT)
 import Nice(niceNewType)
-import Flags(Flags(..))
+import Remove1_3(mkSel,translateExpRecord) -- for records
+import Flags(Flags(sDbgTrusted))
 import Remove1_3(mkSel)
 import List  -- (zipWith3)
 
@@ -161,6 +162,8 @@ dSuspectDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 dSuspectDecls parent (DeclsParse ds) = 
   mapS (dSuspectDecl parent) ds >>>= \dss -> 
   unitS (DeclsParse (concat dss))
+dSuspectDecls parent (DeclsScc []) = -- introduced by translateRecordExp
+  unitS (DeclsParse [])
 
 
 dTrustDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
@@ -168,6 +171,8 @@ dTrustDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 dTrustDecls parent (DeclsParse ds) = 
   mapS (dTrustDecl parent) ds >>>= \dss -> 
   unitS (DeclsParse (concat dss))
+dTrustDecls parent (DeclsScc []) =  -- introduced by translateRecordExp
+  unitS (DeclsParse [])
 
 
 dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad [Decl Id]
@@ -290,10 +295,14 @@ dTrustDecl hidParent d@(DeclFun pos id fundefs) =
     then dMethod True info pos id funName fundefs
     else
       getIntState >>>= \intState ->
+      lookupId Var t_undef >>>= \undefined ->
       let arity = getArity fundefs
       in case arity of
-           0 -> dTrustCaf hidParent pos id funName fundefs 
-                  (unwrapNT intState 0 True True (ntI info))
+           0 | id /= undefined -> dTrustCaf hidParent pos id funName fundefs 
+                                    (unwrapNT intState 0 True True (ntI info))
+             -- don't consider `undefined' as caf to ensure that it
+             -- has the caller as parent
+             -- sharing not important anyway
            _ -> dTrustFun pos id funName arity fundefs 
                   (unwrapNT intState arity False True (ntI info))
 dTrustDecl _ d@(DeclForeignImp pos cname id' arity cast typ id) =
@@ -853,6 +862,16 @@ dSuspectExp cr parent e@(ExpVar pos id) =
       patchFieldSelectorType id >>>
       makeSourceRef pos >>>= \sr ->
       unitS (ExpApplication pos [e, sr, parent]) 
+dSuspectExp cr parent (ExpRecord exp fields) =
+  getIntState >>>= \state ->
+  case translateExpRecord exp fields state of
+    (Right transExp,state') -> setIntState state' >>> 
+                               dSuspectExp cr parent transExp
+    (Left errorMsg,state') -> error errorMsg  
+dSuspectExp cr parent (PatWildcard pos) = -- introduced by translateExpRecord
+  lookupVar pos t_undef >>>= \undefined ->
+  makeSourceRef pos >>>= \sr ->
+  unitS (ExpApplication pos [undefined,sr,parent])
 dSuspectExp cr parent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -1004,6 +1023,17 @@ dTrustExp cr parent hidParent e@(ExpVar pos id) =
       lookupVar pos t_mkNoSR >>>= \mkNoSR ->
       unitS (ExpApplication pos 
               [e, mkNoSR, if cr then hidParent else parent]) 
+dTrustExp cr parent hidParent (ExpRecord exp fields) =
+  getIntState >>>= \state ->
+  case translateExpRecord exp fields state of
+    (Right transExp,state') -> setIntState state' >>> 
+                               dTrustExp cr parent hidParent transExp
+    (Left errorMsg,state') -> error errorMsg  
+dTrustExp cr parent hidParent (PatWildcard pos) = 
+  -- introduced by translateExpRecord
+  lookupVar pos t_undef >>>= \undefined ->
+  makeSourceRef pos >>>= \sr ->
+  unitS (ExpApplication pos [undefined,sr,if cr then hidParent else parent])
 dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.

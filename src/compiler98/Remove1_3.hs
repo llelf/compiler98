@@ -3,9 +3,10 @@ Three functions for removing some syntactic sugar:
 removeDecls: create selectors for record fields
   mkSel: create a single selector for a named field
 removeDo: remove do notation
-removeExpRecord: remove record expressions (construction and updating)
+translateExpRecord: remove record expressions 
+  (patternmatching, construction and updating)
 -}
-module Remove1_3(removeDecls,mkSel,removeDo,removeExpRecord) where
+module Remove1_3(removeDecls,mkSel,removeDo,translateExpRecord) where
 
 import Syntax
 import State
@@ -191,21 +192,21 @@ Done after strongly connected components analysis,
 more precisely: called by type checker
 -}
 
-fieldInfo :: Field Id 
-          -> TypeMonad (Id  -- type constructor
-                       ,([(Id,Int)] -- data constructors with offsets for field
-                        ,Exp Id))   -- expressions from "field=exp"
+fieldInfo :: IntState
+          -> Field Id 
+          -> (Id  -- type constructor
+             ,([(Id,Int)] -- data constructors with offsets for field
+             ,Exp Id))   -- expressions from "field=exp"
 
-fieldInfo (FieldExp pos field exp) =
-  getState >>>= \ state ->
+fieldInfo state (FieldExp pos field exp) =
   case lookupIS state field of
-    Just (InfoField unique tid icon_offs idata iSel) -> 
-      unitS  (idata,(icon_offs,exp))
+    Just (InfoField unique tid icon_offs idata iSel) -> (idata,(icon_offs,exp))
 
 
-fixArg :: Eq a => [(a,b)] -> (b,a) -> b
+{- lookup value in association list; if not there, then return default value -}
+fixArg :: Eq a => [(a,b)] -> (a,b) -> b
 
-fixArg given (def,i) =
+fixArg given (i,def) =
   case lookup i given of
     Just e -> e
     Nothing -> def
@@ -215,21 +216,21 @@ fixArg given (def,i) =
 fixAlt :: Pos 
        -> [Exp Id]   -- arguments for offsets
        -> (Id,[Int]) -- (data constructor, offsets)
-       -> TypeMonad (Alt Id)
+       -> IntState
+       -> (Alt Id,IntState)
 
-fixAlt pos exps (con,offsets) =
-  getState >>>= \ state ->
-  let nargs = [1 .. arityIS state con]
-  in 
-    mapS ( \ _ -> newIdent) nargs >>>= \ new ->
-    let vars = map (ExpVar noPos) new 
-        econ = ExpCon pos con
-    in unitS
-         (Alt (ExpApplication pos (econ:vars))
-	   (Unguarded 
-             (ExpApplication pos 
-               (econ : map (fixArg (zip offsets exps)) (zip vars nargs))))
-	   (DeclsScc []))
+fixAlt pos exps (con,offsets) state =
+  (Alt (ExpApplication pos (econ:vars))
+       (Unguarded 
+         (ExpApplication pos 
+           (econ : map (fixArg (zip offsets exps)) (zip nargs vars))))
+       (DeclsScc [])
+  ,state')
+  where
+  nargs = [1 .. arityIS state con]
+  (newNIds,state') = uniqueISs state nargs
+  vars = map (ExpVar noPos . snd) newNIds 
+  econ = ExpCon pos con
 
 
 getOffsets :: [[(Id,Int)]] -> Id -> Either (Id,[Maybe Int]) (Id,[Int])
@@ -246,41 +247,45 @@ Replace record expression exp{field1=exp1,...} by a non-record expression.
 Used for record patterns as well.
 (in fact, undefined constructor arguments are filled with wildcard patterns)
 -}
-removeExpRecord :: Exp Id -> [Field Id] -> TypeMonad (Exp Id)
+translateExpRecord :: Exp Id -> [Field Id] -> IntState
+                -> (Either String (Exp Id),IntState)
 
-removeExpRecord e@(ExpRecord exp' fields') fields = 
-  removeExpRecord exp' (fields' ++ fields)
-removeExpRecord e@(ExpCon pos con) fields =
-  getState >>>= \ state ->
-  mapS fieldInfo fields >>>= \ coes ->
-      if firstIsEqual coes
+translateExpRecord e@(ExpRecord exp' fields') fields state = 
+  translateExpRecord exp' (fields ++ fields') state
+translateExpRecord e@(ExpCon pos con) fields state = 
+  let coes = map (fieldInfo state) fields 
+  in  if firstIsEqual coes
       then 
 	let (icon_offs,exps) = unzip (map snd coes)
 	in case getOffsets icon_offs con of
 	    Right (con,offsets) ->
-	      unitS (ExpApplication pos (e:map (fixArg (zip offsets exps))
-					     (zip (repeat (PatWildcard  pos)) 
-                                                [1 .. arityIS state con]) ))
-	    Left (con,offsets) -> typeError 
-                                    (errField1 state pos con offsets fields)
-      else typeError (errField2 state fields)
-removeExpRecord exp [] =
-  typeError (errField4 (getPos exp))
-removeExpRecord exp fields =
-  getState >>>= \ state ->
-  mapS fieldInfo fields >>>= \ coes@((t,_):_) ->
-      if firstIsEqual coes -- all fields belong to same data type
+	      (Right (ExpApplication pos (e:map (fixArg (zip offsets exps))
+					     (zip [1 .. arityIS state con]
+                                                (repeat (PatWildcard  pos)) 
+                                             ) ))
+              ,state)
+	    Left (con,offsets) -> 
+              (Left (errField1 state pos con offsets fields)
+              ,state)
+      else (Left (errField2 state fields),state)
+translateExpRecord exp [] state =
+  (Left (errField4 (getPos exp)),state)
+translateExpRecord exp fields state =
+  let coes@((t,_):_) = map (fieldInfo state) fields
+  in  if firstIsEqual coes -- all fields belong to same data type
       then
 	let (icon_offs,exps) = unzip (map snd coes)
 	    pos = getPos exp
 	in case (partition isRight . map (getOffsets icon_offs) . 
                  constrsI  . dropJust . lookupIS state) t of
-	  ([],_) -> typeError (errField3 state fields)
-	  (rps,_) ->
-	    mapS (fixAlt pos exps) 
-              (map dropRight rps) >>>= \ alts ->
-	    unitS (ExpCase (getPos exp) exp alts)
-      else typeError (errField2 state fields)
+	  ([],_)  -> (Left (errField3 state fields),state)
+	  (rps,_) -> let consFixAlt rps (alts,state) = 
+                           case fixAlt pos exps rps state of 
+                             (alt,state') -> (alt:alts,state')
+                         (alts,state') = foldr consFixAlt ([],state) 
+                                           (map dropRight rps)
+                     in (Right (ExpCase (getPos exp) exp alts), state')
+      else (Left (errField2 state fields),state)
 
 
 {- Test if all first components are equal. -}
