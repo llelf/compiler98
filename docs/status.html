@@ -33,7 +33,7 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2000-09-01</td>
+  <td>2000-11-13</td>
   <td>2000-09-01</td>
   <td>1997</td>
   <td>1996</td>
@@ -73,11 +73,11 @@ trace browser, time profiler, and common FFI.
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
   <td>1998-11-26</td>
-  <td>2000-09-01</td>
+  <td>2000-11-10</td>
   <td>2000-08-20</td>
   <td>1998-06-03</td>
   <td>2000-03-01</td>
-  <td>2000-09-14</td>
+  <td>2000-11-10</td>
   <td>2000-09-15</td>
 </tr>
 </table>
@@ -232,12 +232,19 @@ list to post to it).
   <td>000926</td>
   <td>incorrect definitions of inRange and rangeSize in Ix library</td></tr>
 
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-newtype">
+      newtype</a></td>
+  <td>nhc98 v1.00</td>
+  <td>001113</td>
+  <td>failure for a newtype of an imported newtype whose constructor is hidden</td></tr>
+
 </table>
 </center>
 
 
 <hr>
-<h3>nhc98 release 1.01 (2000-10-xx) features</h3>
+<h3>nhc98 release 1.01 (2000-11-xx) features</h3>
 <ul>
 <li> Improvement: Fixed a space-leak in the compiler.  Compilation now
               requires approximately half the previous maximum heap,
@@ -266,6 +273,9 @@ the redex-trail-based tracing and debugging system.
               I/O result type are now also traced (previously only pure
               foreign functions were traced).
 <li> Bugfix:  The 'rtb' script failed because of missing shell quotes.
+<li> Added standard libraries: IO, Array.
+        (Still missing: Directory, System, Time, Locale, CPUTime, Random.)
+<li> Added extension libraries: FFI, IOExtras.
 </ul>
 
 
@@ -325,7 +335,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.10.16<br>
+This page last modified: 2000.11.13<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
