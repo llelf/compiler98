@@ -15,16 +15,9 @@ import Extra(Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine,
              pair,fst3,thd3,trace)
 import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
                  ParseResult(..),parseit)
-import Flags(Flags,processArgs,pF
-            ,sHatAuxFile,sHatTransFile,sDbgTrusted,sHatFileBase
-            ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
-            ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
-            ,sEBound,sIIRename
-            ,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
-            ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
-            ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
-            ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
+import Flags (Flags,processArgs,pF,sUnderscore,sRealFile,sSourceFile,sUnlit
+             ,sLex,sParse,sPrelude
+             ,sHatFileBase,sHatAuxFile,sTraceFns,sHatTransFile,sDbgTrusted)
 import PrettySyntax(prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
                    ,ppModule,ppTopDecls,ppClassCodes)
 

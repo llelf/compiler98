@@ -69,7 +69,7 @@ traceTrans traced filename traceFilename
   where
   modTrace = ExpVar pos (nameTraceInfoModule modId)
   (poss,tvars,vars,cons) = getModuleConsts consts
-  (DeclsParse decls',consts) = tDecls traced (ExpVar pos tokenMkTRoot) decls
+  (DeclsParse decls',consts) = tDecls traced (mkRoot pos traced) decls
   
 
 -- ----------------------------------------------------------------------------
@@ -543,12 +543,12 @@ tHaskellPrimitive pos hasId fnId arity ty
            (ExpApplication pos 
              [combSat pos False False
              ,ExpApplication pos 
-               [expFrom pos ty, ExpVar pos tokenHiddenRoot, ExpVar pos hasId]
+               [expFrom pos ty,mkRoot pos False, ExpVar pos hasId]
 	     ,useParent])) 
 	 noDecls]]
     ,[DeclFun pos useParentId
        [Fun [] (Unguarded 
-         (mkConstVar (ExpVar pos tokenMkTRoot) pos fnId False)) noDecls]]
+         (mkConstVar (mkRoot pos False) pos fnId False)) noDecls]]
     ,addVar pos fnId emptyModuleConsts)
   | otherwise =
     ([DeclVarsType [(pos,nameTransVar fnId)] [] (tFunType ty)
@@ -1551,6 +1551,10 @@ updateToken f traceId =
 
 -- ----------------------------------------------------------------------------
 -- hardwired Haskell combinators and other names used by transformed modules
+
+mkRoot :: Pos -> Bool {- traced? = not hidden -} -> Exp TokenId
+mkRoot pos traced = 
+  ExpVar pos (if traced then tokenMkTRoot else tokenHiddenRoot)
 
 mkConst :: Exp TokenId -> Exp TokenId -> Pos -> Bool -> Exp TokenId
 mkConst parent atom pos traced = 
