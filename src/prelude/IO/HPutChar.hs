@@ -16,10 +16,9 @@ hPutChar (Handle h) c  = cHPutChar h c
 foreign import "chPutChar" cHPutChar :: ForeignObj -> Char -> IO ()
 -}
 
-hPutChar (Handle h) c  = IO (const (cHPutChar h c))
-	-- const gives much nicer output-tracing than an explicit lambda
+hPutChar (Handle h) c  = IO (cHPutChar h c)
 
-cHPutChar handle ch = _prim _tprim_chPutChar handle ch
+cHPutChar handle ch world = _prim _tprim_chPutChar handle ch
 _tprim_chPutChar primitive 3 :: Trace -> R ForeignObj -> R Char
                                                       -> R (Either IOError ())
 
