@@ -1,0 +1,45 @@
+#!/bin/sh
+
+usage() {
+  echo "Usage: fixCVS (nhc98 | hat)"
+  echo "	-- Patch a CVS working directory to match the modified"
+  echo "	-- repository.  Invoke from either the nhc98 or hat dir."
+  exit 1
+}
+
+replace () {
+  current=$1
+  new=$2
+  echo "replace: $current	-> $new"
+  echo $new >$current/CVS/Repository
+}
+
+case $# in
+  1) baselocation=$1 ;;
+  *) usage ;;
+esac
+
+case $baselocation in
+  nhc98)
+    if [ -d src/cpphs ]
+    then
+      replace  src/cpphs	cpphs
+      replace  src/cpphs/tests	cpphs/tests
+      replace  src/cpphs/docs	cpphs/docs
+    fi
+    LIBRARIES=`cd src; find libraries -type d ! -name CVS`
+    for lib in $LIBRARIES
+    do if [ -d src/$lib/CVS ]
+       then replace src/$lib	fptools/$lib
+       fi
+    done
+    ;;
+  hat)
+    replace  src/compiler98		nhc98/src/compiler98
+    replace  src/compiler98/hugs	nhc98/src/compiler98/hugs
+    ;;
+  *)
+    usage
+    ;;
+esac
+
