@@ -346,7 +346,7 @@ hConvert Float        s = word "mkFloat" . parens s
 hConvert Double       s = word "mkDouble" . parens s
 hConvert Char         s = word "mkChar" . parens s
 hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
-hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
+hConvert Addr         s = word "mkInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
 hConvert ForeignObj   s =
