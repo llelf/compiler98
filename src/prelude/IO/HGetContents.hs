@@ -18,7 +18,7 @@ hGetContents h           = IO (\world -> Right (input h))
 #else
 
 hGetContents            :: Handle -> IO String
-hGetContents (Handle h)  = IO (\world -> Right (input h))
+hGetContents (Handle h)  = IO (const (Right (input h)))
  where
   input h = let c = cHGetChar h
             in if c < 0 then

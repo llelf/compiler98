@@ -23,7 +23,8 @@ cHGetChar h = _hGetChar h		-- _hGetChar -> special bytecode
 #else
 
 hGetChar              :: Handle -> IO Char
-hGetChar (Handle h)    = IO (\world -> input h)
+hGetChar (Handle h)    = IO (const (input h))
+                    --   IO (\world -> input h)  -- const gives nicer traces
  where
   input h = let c = cHGetChar h
             in if c < 0 then
