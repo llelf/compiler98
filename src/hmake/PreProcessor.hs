@@ -44,6 +44,7 @@ knownSuffixes =
   , ("y",      plain, ppHappy)
   , ("ly",     unlit, ppHappy)
   , ("x",      plain, ppAlex)
+  , ("lx",     unlit, ppAlex)
   , ("hs.cpp", plain, ppCpp)
   , ("ghs",    plain, ppGH)
   , ("gc",     plain, ppNone)	-- note, for nhc98 only
