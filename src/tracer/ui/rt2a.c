@@ -3,6 +3,8 @@
  */
 
 /* #include <unistd.h> */
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <stdio.h>
 
 #define TR 0
@@ -44,6 +46,7 @@
 
 #define HEADER 6
 #define INVALID 7
+#define BEYOND 8
 
 /* Main driver and routines to providing basic interface to archive file.
  */
@@ -56,16 +59,22 @@ int boff;            /* if n>0, boff in 0..n-1 and buf[boff] is current */
 unsigned long foff;  /* if n>0, this is offset in f of buf[0] */
 
 int vmode = 0;
+unsigned filesize = 0;
+struct stat statbuf;
 
 main (int argc, char *argv[])
 {
   switch (argc) {
   case 2: 
+    stat(argv[1], &statbuf);
+    filesize = statbuf.st_size;
     f = open(argv[1], 0);
     break;
   case 3: 
     if (strcmp(argv[1], "-v") == 0) {
       vmode = 1;
+      stat(argv[2], &statbuf);
+      filesize = statbuf.st_size;
       f = open(argv[2], 0);
       break;
     }
@@ -227,17 +236,21 @@ char *tag2str(int tag) {
   case NT: return "NT";
   case SR: return "SR";
   case HEADER: return "HEADER";
-  default: return "INVALID";
+  case INVALID: return "INVALID";
+  case BEYOND: return "beyond end of file";
+  default: return "UNKNOWN";
   }
 }   
 
 int tagat(unsigned long offset) {
   char byte[1];
   int i;
-  lseek(f, offset, 0);
-  i = read(f, byte, 1);
-  lseek(f, foff + n, 0);
-  return (i==1 ? hi3(byte[0]) : INVALID);
+  if (offset <= filesize) {
+    lseek(f, offset, 0);
+    i = read(f, byte, 1);
+    lseek(f, foff + n, 0);
+    return (i==1 ? hi3(byte[0]) : INVALID);
+  } else return BEYOND;
 }
   
 void dopointer(int requiretag, unsigned long requireoffset,
@@ -248,7 +261,7 @@ void dopointer(int requiretag, unsigned long requireoffset,
       fprintf(stderr, "tag at %u is %s, not %s as %s at %u implies\n",
             requireoffset, tag2str(t), tag2str(requiretag),
 	    tag2str(contexttag), contextoffset);
-      exit(1);
+      /*exit(1);*/
     }
   }
   printf("(%s %u)", tag2str(requiretag), requireoffset);
@@ -276,7 +289,7 @@ nodes() {
       switch (lo5(b)) {
       case APP:
         { int arity = readarity();
-	  printf("Application\t\t%d",arity);
+	  printf("Application %d\t\t",arity);
 	  for (; arity-- > -2;)
 	    dopointer(TR, readpointer(), TR, offset);
 	}
@@ -298,15 +311,15 @@ nodes() {
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATA:
-        printf(" SAT(A)\t\t");
+        printf(" SAT(A) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATB:
-        printf("SAT(B)\t\t");
+        printf(" SAT(B) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATC:
-        printf("SAT(C)\t\t");
+        printf(" SAT(C) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       default:
