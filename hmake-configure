@@ -32,7 +32,6 @@ MACHINE=`script/harch`
 PWD=`pwd`
 case $OS in
   CYGWIN*) PWD=`cygpath -w "$PWD" | tr '\\\\' '/'`
-           INSTALLDIR=`cygpath -w "$INSTALLDIR" | tr '\\\\' '/'`
            case $PWD in	# further path mangling required for CYGWIN
              file://?/*) PWD=`echo $PWD | sed -e "s|^file://||" |\
                               sed -e "s|^[^/]|&:|"` ;;
@@ -143,6 +142,15 @@ BINDIR=${BINDIR-$INSTALLDIR/bin}
 MANDIR=${MANDIR-$INSTALLDIR/man/man1}
 #HBCDIR=${HBCDIR}
 #GHCDIR=${GHCDIR}
+
+case $OS in
+  CYGWIN*) INSTALLDIR=`cygpath -w "$INSTALLDIR" | tr '\\\\' '/'`
+           BUILDDIR=`cygpath -w "$BUILDDIR" | tr '\\\\' '/'`
+           LIBDIR=`cygpath -w "$LIBDIR" | tr '\\\\' '/'`
+           BINDIR=`cygpath -w "$BINDIR" | tr '\\\\' '/'`
+     ;;
+  *) ;;
+esac
 
 #case $OS in
 #  SunOS)  LIBCOMPAT=" -lsocket"  ;;
