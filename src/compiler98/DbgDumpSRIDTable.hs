@@ -12,7 +12,7 @@ import Extra(strStr, dropJust, trace)
 import Flags
 import Syntax(ImpDecl(..), ImpSpec(..), Entity(..), InfixClass(..))
 import TokenId(TokenId(..))
-import DbgTrans(SRIDTable)
+import DbgTrans(SRIDTable,LevelId(..))
 
 #if defined(__HASKELL98__)
 #define isAlphanum isAlphaNum
@@ -50,9 +50,10 @@ dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     where modpre = "D_" ++ srcid
           modinfo = "NMOD_" ++ srcid
           trust = sDbgTrusted flags
-	  idtlabs = zip [(p, i, (tidI . dropJust . lookupIS state) i) 
-	                | (p, i) <- idt
-			] 
+	  idtlabs = zip ( [ (True,  p, i, (tidI . dropJust . lookupIS state) i) 
+	                  | TopId (p, i) <- idt ] ++
+                          [ (False, p, i, (tidI . dropJust . lookupIS state) i) 
+	                  | LocalId (p, i) <- idt ] )
 			[0..]
           output sf = catch (hPutStr handle (sf "")) outputerr
 	  outputerr ioerror = hPutStr stderr ("Failed appending debug tables to"
@@ -67,13 +68,18 @@ dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 			      ("shl", rf) -> reverse (tail rf)
 			      _ -> ms
 		  in reverse (takeWhile ('/' /=) (reverse ms'))
-dumpId state profile modinfo output trust ((pos, i, tid), lab) =
+dumpId state profile modinfo output trust ((top, pos, i, tid), lab) =
     output (showString "  EX L(D_" . showString idnhc . 
             showString ")\nDL(D_" . showString idnhc . 
-	    -- The 6 below is the constructor number of NTId
-	    -- 22 (16+6) is used if the function is trusted
-	    -- See getconstr.h in the runtime system.
-	    (if trust && isVar then
+	--  -- The 6 below is the constructor number of NTId
+	--  -- 22 (16+6) is used if the function is trusted
+	--  -- See getconstr.h in the runtime system.
+	--  (if trust && isVar then
+	--      showString ")\n  DW CONSTR(22,5,5)\n  DW " 
+	--   else
+	--      showString ")\n  DW CONSTR(6,5,5)\n  DW ") . 
+            -- Representation is changed: 22==top-level 6==local identifier
+	    (if isVar && top then
 	        showString ")\n  DW CONSTR(22,5,5)\n  DW " 
 	     else
 	        showString ")\n  DW CONSTR(6,5,5)\n  DW ") . 
@@ -107,7 +113,7 @@ dumpId state profile modinfo output trust ((pos, i, tid), lab) =
 	  shiftPri :: Int -> Int
 	  shiftPri n = n * 4
 
-dumpNs state profile modpre output trust ((pos, _, tid), lab) =
+dumpNs state profile modpre output trust ((top, pos, _, tid), lab) =
     output (showString "DL(L_" . shows lab . showString ")\n" .
             chopString (untoken tid))
 

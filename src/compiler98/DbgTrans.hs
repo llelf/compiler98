@@ -1,8 +1,8 @@
 {- ---------------------------------------------------------------------------
-Transforms all value definitions of a program 
-to produce traces for debugging.
+-- Transforms all value definitions of a program 
+-- to produce traces for debugging.
 -}
-module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
+module DbgTrans(SRIDTable, debugTrans, dbgAddImport, LevelId(..)) where
 
 import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var,TCon))
@@ -41,9 +41,12 @@ import List  -- (zipWith3)
 
 {- table for source references and identifiers refered to from the trace -}
 type SRIDTable = Maybe ((Int,[Pos])        -- source reference table
-                       ,[(Pos,Id)]         -- identifier table
+                       ,[LevelId (Pos,Id)] -- identifier table
                        ,[ImpDecl TokenId]  -- import declarations
                        ,String)            -- module name
+
+{- distinguish top-level identifiers from local definitions -}
+data LevelId a = TopId a | LocalId a
 
 
 -- newNameVar, nameArity, hsFromInt, addInt
@@ -57,7 +60,8 @@ data Threaded = Threaded
                                -- accumulated for SRIDTable
                                -- first is number of current source reference
                                -- second is list of encoded source references
-                  [(Pos, Id)]  -- identifier table, accumulated for SRIDTable
+                  [LevelId (Pos, Id)]
+                               -- identifier table, accumulated for SRIDTable
 
 
 type DbgTransMonad a = State Inherited Threaded a Threaded
@@ -70,20 +74,17 @@ type SRExp = Exp Id       -- expression of type SR
 {- obtain the internal state -}
 
 getIntState :: DbgTransMonad IntState
-
 getIntState inherited threaded@(Threaded intState _ _) = (intState,threaded)
  
 setIntState :: IntState -> Inherited -> Threaded -> Threaded
-
 setIntState intState inherited threaded@(Threaded _ srt idt) = 
   Threaded intState srt idt
 
 {-
-Used to add the special prelude for debugging to the import list.
-Now it serves no purpose and is just the identity function.
+-- Used to add the special prelude for debugging to the import list.
+-- Now it serves no purpose and is just the identity function.
 -}
 dbgAddImport :: Bool -> Module a -> Module a
-
 dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
     Module pos id exports (dbgAI dodbg imports) fixities decls
     where dbgAI True impdecls = 
@@ -96,7 +97,7 @@ dbgAddImport dodbg m@(Module pos id exports imports fixities decls) =
 
 
 {-
-Transforms all value definitions for producing traces for debugging.
+-- Transform all value definitions to produce traces for debugging.
 -}
 debugTrans :: Flags
            -> IntState 
@@ -116,7 +117,7 @@ debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
   where 
   initDebugTranslate f istate lookupPrel = 
     case f (Inherited lookupPrel) 
-           (Threaded istate (1, [0]) constrs) of
+           (Threaded istate (1, [0]) (map TopId constrs)) of
       (decls', Threaded istate' srt idt) -> 
         (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
   root :: Exp Id
@@ -134,7 +135,7 @@ dTopDecls trusted root (DeclsParse ds) =
 dTopDecl :: Bool -> Exp Id -> Decl Int -> DbgTransMonad [Decl Int]
 
 dTopDecl trusted root (DeclClass pos ctx id1 id2 (DeclsParse decls)) =
-  mapS ((if trusted then dTrustDecl else dSuspectDecl) root) decls 
+  mapS ((if trusted then dTrustDecl else dSuspectDecl) True root) decls 
     >>>= \decls' ->
   lookupName id1 >>>= \(Just (InfoClass i tid ie nt ms ds at)) ->
   mapS0 fixMethodArity (zip ms ds) >>>
@@ -145,7 +146,7 @@ dTopDecl trusted root (DeclClass pos ctx id1 id2 (DeclsParse decls)) =
     lookupName d >>>= \(Just (InfoDMethod _ _ _ (Just arity) _)) ->
     setArity 2 {-arity-} m
 dTopDecl trusted root d@(DeclInstance pos ctx id inst (DeclsParse decls)) = 
-  mapS ((if trusted then dTrustDecl else dSuspectDecl) root) decls 
+  mapS ((if trusted then dTrustDecl else dSuspectDecl) True root) decls 
     >>>= \decls' ->
   unitS (DeclInstance pos ctx id inst (DeclsParse (concatMap fst decls'))
         :concatMap snd decls')
@@ -157,7 +158,7 @@ dTopDecl trusted root d@(DeclConstrs pos id constrids) =
   case mapS mkSel constrids () ([],intState) of
     (selDecls,(_,intState')) -> 
       setIntState intState' >>>
-      mapS ((if trusted then dTrustDecl else dSuspectDecl) root) selDecls 
+      mapS ((if trusted then dTrustDecl else dSuspectDecl) True root) selDecls 
         >>>= \selDeclss' ->
       unitS (DeclConstrs pos id [] 
             :concatMap (\(ds',ads') -> ds'++ads') selDeclss')
@@ -165,7 +166,7 @@ dTopDecl True root (DeclFun pos id [Fun [] rhs localDecls]) =
   -- for top-level trusted caf create a name node,
   -- because it might be called from suspected code;
   -- this is not expensive, because it is only done once per caf.
-  addId (pos, id) >>>
+  addTopId (pos, id) >>>
   lookupName id >>>= \(Just info) ->
   lookupNameStr id >>>= \cafName ->
   getIntState >>>= \intState ->
@@ -180,7 +181,7 @@ dTopDecl True root (DeclFun pos id [Fun [] rhs localDecls]) =
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
   dTrustRhs False useParent hidUseParent true otherw rhs >>>= \rhs' ->
-  dTrustDecls hidUseParent localDecls >>>= \localDecls' ->
+  dTrustDecls False hidUseParent localDecls >>>= \localDecls' ->
   makeSourceRef noPos >>>= \noSR ->
   makeNTId pos id >>>= \ntId ->
   makeNm pos root ntId noSR >>>= \nte ->
@@ -225,12 +226,12 @@ dTopDecl True root (DeclPat (Alt pat rhs decls)) =
       (bvspos,bvsids) = unzip bvsposids 
       pos = head bvspos in
   mapS0 (setArity 2) bvsids >>>  
-  mapS0 addId bvsposids >>>
+  mapS0 addTopId bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
   dTrustRhs True root root true otherw rhs >>>= \rhs' ->
   dPat root pat' >>>= \pat'' ->
-  dTrustDecls root decls >>>= \decls' ->
+  dTrustDecls False root decls >>>= \decls' ->
   mkFailExpr pos root >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -259,47 +260,49 @@ dTopDecl True root (DeclPat (Alt pat rhs decls)) =
             ]
   in unitS (zipWith vfun bvsnvs nms ++ [pfun,prhs])
 dTopDecl trusted root d = 
-  (if trusted then dTrustDecl else dSuspectDecl) root d >>>= \(ds',auxDs') ->
+  (if trusted then dTrustDecl else dSuspectDecl) True root d
+      >>>= \(ds',auxDs') ->
   unitS (ds' ++ auxDs') 
 
 
-dSuspectDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
+dSuspectDecls :: Bool -> Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 
-dSuspectDecls parent (DeclsParse ds) = 
-  mapS (dSuspectDecl parent) ds >>>= \(dss) -> 
+dSuspectDecls toplevel parent (DeclsParse ds) = 
+  mapS (dSuspectDecl toplevel parent) ds >>>= \(dss) -> 
   unitS (DeclsParse (concatMap (\(ds',ads') -> ds'++ads') dss))
-dSuspectDecls parent (DeclsScc []) = -- introduced by translateRecordExp
-  unitS (DeclsParse [])
+dSuspectDecls toplevel parent (DeclsScc []) =
+  unitS (DeclsParse [])			-- introduced by translateRecordExp
 
 
-dTrustDecls :: Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
+dTrustDecls :: Bool -> Exp Id -> Decls Id -> DbgTransMonad (Decls Id)
 
-dTrustDecls parent (DeclsParse ds) = 
-  mapS (dTrustDecl parent) ds >>>= \dss -> 
+dTrustDecls toplevel parent (DeclsParse ds) = 
+  mapS (dTrustDecl toplevel parent) ds >>>= \dss -> 
   unitS (DeclsParse (concatMap (\(ds',ads') -> ds'++ads') dss))
-dTrustDecls parent (DeclsScc []) =  -- introduced by translateRecordExp
+dTrustDecls toplevel parent (DeclsScc []) =  -- introduced by translateRecordExp
   unitS (DeclsParse [])
 
 
 {-
-A definition is transformed into definition(s) that define 
-the same variable(s) as the original one, 
-and possibly additional auxilary definitions
-that are needed to enable sharing. The auxilary definitions are returned
-in the second declaration list.
+-- A definition is transformed into definition(s) that define 
+-- the same variable(s) as the original one, 
+-- and possibly additional auxilary definitions
+-- that are needed to enable sharing. The auxilary definitions are returned
+-- in the second declaration list.
 -}
-dSuspectDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
+dSuspectDecl :: Bool -> Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
-dSuspectDecl parent (DeclPat (Alt v@(ExpVar pos id) rhs decls)) =
+dSuspectDecl toplevel parent (DeclPat (Alt v@(ExpVar pos id) rhs decls)) =
   -- may occur because of the next equation
-  dSuspectDecl parent (DeclFun pos id [Fun [] rhs decls])
-dSuspectDecl parent (DeclPat (Alt (PatAs pos id p) rhs decls)) =
-  dSuspectDecl parent (DeclFun pos id [Fun [] rhs decls]) >>>= \(dc1,dc2) ->
-  dSuspectDecl parent 
+  dSuspectDecl toplevel parent (DeclFun pos id [Fun [] rhs decls])
+dSuspectDecl toplevel parent (DeclPat (Alt (PatAs pos id p) rhs decls)) =
+  dSuspectDecl toplevel parent (DeclFun pos id [Fun [] rhs decls])
+    >>>= \(dc1,dc2) ->
+  dSuspectDecl toplevel parent 
     (DeclPat (Alt p (Unguarded (ExpVar pos id)) (DeclsParse [])))
     >>>= \(dp1,dp2) ->
   unitS (dc1++dp1,dc2++dp2)
-dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
+dSuspectDecl toplevel parent (DeclPat (Alt pat rhs decls)) =
   addNewName 0 True "_pv" NoType >>>= \patid ->
   --trace ("patid = " ++ show patid) $
   setArity 0 patid >>>
@@ -308,12 +311,12 @@ dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
       (bvspos,bvsids) = unzip bvsposids 
       pos = head bvspos in
   mapS0 (setArity 2) bvsids >>>  
-  mapS0 addId bvsposids >>>
+  mapS0 (if toplevel then addTopId else addId) bvsposids >>>
   mapS makeSourceRef bvspos >>>= \srs ->
   dSuspectRhs True parent rhs failContinuation >>>= \rhs' ->
   dPat parent pat' >>>= \pat'' ->
   let ExpApplication _ [r,_,tresult] = pat'' in
-  dSuspectDecls parent decls >>>= \decls' ->
+  dSuspectDecls False parent decls >>>= \decls' ->
   mkFailExpr pos parent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -341,8 +344,8 @@ dSuspectDecl parent (DeclPat (Alt pat rhs decls)) =
                  [DeclFun p t' [Fun [] (Unguarded nte) (DeclsParse [])]])
             ]
   in unitS (zipWith3 vfun bvsnvs srs nms,[pfun])
-dSuspectDecl parent d@(DeclFun pos id fundefs) = 
-  addId (pos, id) >>>
+dSuspectDecl toplevel parent d@(DeclFun pos id fundefs) = 
+  (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id >>>= \(Just info) ->
   lookupNameStr id >>>= \funName ->
   --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
@@ -356,8 +359,8 @@ dSuspectDecl parent d@(DeclFun pos id fundefs) =
                   (unwrapNT intState 0 True False (ntI info))
            _ -> dSuspectFun pos id funName arity fundefs 
                   (unwrapNT intState arity False False (ntI info))
-dSuspectDecl parent d@(DeclForeignImp pos cname id' arity cast typ id) =
-  addId (pos, id) >>>
+dSuspectDecl toplevel parent d@(DeclForeignImp pos cname id' arity cast typ id)=
+  (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id' >>>= \(Just info) ->
 --lookupNameStr id' >>>= \funName ->
 --trace ("DeclForeignImp: " ++ funName ++", info=\n" ++ show info) $
@@ -368,13 +371,13 @@ dSuspectDecl parent d@(DeclForeignImp pos cname id' arity cast typ id) =
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
   in unitS ([DeclFun pos id [code]]
            ,[ DeclForeignImp pos cname' id' arity cast typ id])
-dSuspectDecl parent decl = dDecl decl
+dSuspectDecl toplevel parent decl = dDecl decl
 
 
 {- trusted version of dSuspectDecl -}
-dTrustDecl :: Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
+dTrustDecl :: Bool -> Exp Id -> Decl Id -> DbgTransMonad ([Decl Id],[Decl Id])
 
-dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
+dTrustDecl toplevel hidParent (DeclPat (Alt pat rhs decls)) =
   -- here no indirections, because the fact that the trusted variables
   -- are defined by pattern binding should not be visible.
   addNewName 0 True "_pv" NoType >>>= \patid ->
@@ -385,12 +388,12 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
       (bvspos,bvsids) = unzip bvsposids 
       pos = head bvspos in
   mapS0 (setArity 2) bvsids >>>  
-  mapS0 addId bvsposids >>>
+  mapS0 (if toplevel then addTopId else addId) bvsposids >>>
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
   dTrustRhs True hidParent hidParent true otherw rhs >>>= \rhs' ->
   dPat hidParent pat' >>>= \pat'' ->
-  dTrustDecls hidParent decls >>>= \decls' ->
+  dTrustDecls False hidParent decls >>>= \decls' ->
   mkFailExpr pos hidParent >>>= \fe ->
   let evars = map snd bvsnvs in 
   makeTuple noPos evars >>>= \etup ->
@@ -413,8 +416,8 @@ dTrustDecl hidParent (DeclPat (Alt pat rhs decls)) =
                (DeclsParse [])
             ]
   in unitS (map vfun bvsnvs,[pfun,prhs])
-dTrustDecl hidParent d@(DeclFun pos id fundefs) = 
-  addId (pos, id) >>>
+dTrustDecl toplevel hidParent d@(DeclFun pos id fundefs) = 
+  (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id >>>= \(Just info) ->
   lookupNameStr id >>>= \funName ->
   --trace ("DeclFun: funName = " ++ funName ++ ", arity " ++ show info) $
@@ -432,8 +435,8 @@ dTrustDecl hidParent d@(DeclFun pos id fundefs) =
              -- sharing not important anyway
            _ -> dTrustFun pos id funName arity fundefs 
                   (unwrapNT intState arity False True (ntI info))
-dTrustDecl _ d@(DeclForeignImp pos cname id' arity cast typ id) =
-  addId (pos, id) >>>
+dTrustDecl toplevel _ d@(DeclForeignImp pos cname id' arity cast typ id) =
+  (if toplevel then addTopId else addId) (pos, id) >>>
   lookupName id' >>>= \(Just info) ->
 --lookupNameStr id' >>>= \funName ->
 --trace ("DeclForeignImp: " ++ funName ++", info=\n" ++ show info) $
@@ -444,7 +447,7 @@ dTrustDecl _ d@(DeclForeignImp pos cname id' arity cast typ id) =
       cname' = if null cname then reverse (tail (unpackPS f)) else cname
   in unitS ([DeclFun pos id [code]]
            ,[DeclForeignImp pos cname' id' arity cast typ id])
-dTrustDecl _ decl = dDecl decl
+dTrustDecl toplevel _ decl = dDecl decl
 
 
 {- The common trivial cases: -}
@@ -498,7 +501,7 @@ dSuspectCaf parent pos id cafName [Fun [] rhs localDecls] nt =
   let useParent = ExpVar pos useParentId in
   addNewName 0 True cafName nt >>>= \nid ->
   dSuspectRhs False useParent rhs failContinuation >>>= \rhs' ->
-  dSuspectDecls useParent localDecls >>>= \(DeclsParse localDeclsList') ->
+  dSuspectDecls False useParent localDecls >>>= \(DeclsParse localDeclsList') ->
   makeSourceRef pos >>>= \sr ->
   makeNTId pos id >>>= \ntId ->
   makeNm pos parent ntId sr >>>= \nte ->
@@ -541,7 +544,7 @@ dTrustCaf hidParent pos id cafName [Fun [] rhs localDecls] nt =
   lookupId Var t_otherwise >>>= \otherw ->
   lookupId Con tTrue >>>= \true ->
   dTrustRhs False hidParent hidParent true otherw rhs >>>= \rhs' ->
-  dTrustDecls hidParent localDecls >>>= \localDecls' ->
+  dTrustDecls False hidParent localDecls >>>= \localDecls' ->
   lookupVar pos t_lazySatLonely >>>= \lazySat ->
   unitS (-- id _ _ = nid
          [DeclFun pos id 
@@ -663,15 +666,15 @@ dTrustFunClauses parent hidParent arity true otherw funs =
   dTrustFun (Fun pats rhs decls) =
     dPats hidParent pats >>>= \pats' ->
     dTrustRhs False parent hidParent true otherw rhs >>>= \rhs' ->
-    dTrustDecls hidParent decls >>>= \decls' ->
+    dTrustDecls False hidParent decls >>>= \decls' ->
     unitS (Fun (parent:hidParent:pats') rhs' decls') 
 
 
 {-
-For each clause of the function definition e, return a transformed
-definition e', and possibly declare a new auxiliary function to handle
-failure across guards.
-Note, the parent trace is slightly misused for passing a variable.
+-- For each clause of the function definition e, return a transformed
+-- definition e', and possibly declare a new auxiliary function to handle
+-- failure across guards.
+-- Note, the parent trace is slightly misused for passing a variable.
 -}
 dSuspectFunClauses :: Exp Id -> String -> Int -> Id -> Id -> [Fun Id] 
                    -> DbgTransMonad ([Fun Id],[Decl Id])
@@ -689,7 +692,7 @@ dSuspectFunClauses parent funName arity true otherw
   (Fun pats (Unguarded e) decls : fcs) =
     dPats parent pats >>>= \pats' ->
     dSuspectExp False parent e >>>= \e' ->
-    dSuspectDecls parent decls >>>= \decls' ->
+    dSuspectDecls False parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs 
       >>>= \(mfs, nfs) ->
     unitS (Fun (parent:pats') (Unguarded e') decls' : mfs, nfs)
@@ -708,7 +711,7 @@ dSuspectFunClauses parent funName arity true otherw
     let continuation = functionContinuation f patnames in
     continuationToExp continuation newParent >>>= \contExp ->
     dSuspectGuardedExprs False newParent ges continuation >>>= \expr ->
-    dSuspectDecls newParent decls >>>= \decls' ->
+    dSuspectDecls False newParent decls >>>= \decls' ->
     let failclause = Fun (newParent:patnames) (Unguarded contExp) 
                          (DeclsParse []) in
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
@@ -720,7 +723,7 @@ dSuspectFunClauses parent funName arity true otherw
     -- guards cannot fail or last clause
     dPats parent pats >>>= \pats' ->
     dSuspectGuardedExprs False parent ges failContinuation >>>= \e ->
-    dSuspectDecls parent decls >>>= \decls' ->
+    dSuspectDecls False parent decls >>>= \decls' ->
     dSuspectFunClauses parent funName arity true otherw fcs >>>= \(mfs, nfs) ->
     let fs = Fun (parent:pats') 
                (Unguarded e) decls' in
@@ -728,24 +731,19 @@ dSuspectFunClauses parent funName arity true otherw
 
 
 {-
-To correctly create the trace within guards, a continuation is used.
-The type ContExp should be abstract. Its implementation is only used in 
-the following three functions.
+-- To correctly create the trace within guards, a continuation is used.
+-- The type ContExp should be abstract. Its implementation is only used in 
+-- the following three functions.
 -}
 data ContExp = Fail | Function Id [Exp Id]
 
 failContinuation :: ContExp
-
 failContinuation = Fail
 
-
 functionContinuation :: Id -> [Exp Id] -> ContExp
-
 functionContinuation = Function
 
-
 continuationToExp :: ContExp -> TraceExp -> DbgTransMonad (Exp Id)
-
 continuationToExp Fail t =
   lookupVar noPos t_fatal >>>= \fail ->
   unitS $ ExpApplication noPos [fail, t]
@@ -754,8 +752,8 @@ continuationToExp (Function fun args) t =
 
 
 {-
-Create body of wrapper for imported foreign function.
-id is the new function we are declaring; id' is the real foreign function
+-- Create body of wrapper for imported foreign function.
+-- id is the new function we are declaring; id' is the real foreign function
 -}
 dSuspectForeignImp :: Pos -> Id -> Id -> Int -> DbgTransMonad (Fun Id)
 
@@ -788,7 +786,7 @@ dTrustForeignImp pos id id' arity =
 
 
 {-
-The continuation is used if all guards fail.
+-- The continuation is used if all guards fail.
 -}
 dSuspectGuardedExprs :: Bool -> Exp Id -> [(Exp Id,Exp Id)] -> ContExp 
                      -> DbgTransMonad (Exp Id)
@@ -834,16 +832,16 @@ dSuspectGuardedExprs cr parent ((g, e):ges) cont =
   --                             else [[ges]]^cont_newParent
 
 
+
 {- Used for combining fail continuation with a trace -}
 addAppTrace :: Exp Id -> TraceExp -> Exp Id
-
 addAppTrace (ExpApplication pos (f:es)) t = ExpApplication pos (f:t:es)
 addAppTrace f t = ExpApplication noPos [f, t]
 
 
 {- 
-obtain a variable that names the given pattern;
-easy for variable pattern or as pattern; otherwise produces as pattern
+-- obtain a variable that names the given pattern;
+-- easy for variable pattern or as pattern; otherwise produces as pattern
 -}
 namePat :: Pat Id -> DbgTransMonad (Exp Id,Pat Id)
 
@@ -854,7 +852,7 @@ namePat pat =
 
 
 {-
-Returns False only if the one of the guards definitely has value True.
+-- Returns False only if the one of the guards definitely has value True.
 -}
 canFail :: Id  -- of constructor True
         -> Id  -- of variable otherwise
@@ -908,22 +906,20 @@ checkTrustPrimitive _ _ _ = unitS Nothing
 
 
 mkFailExpr :: Pos -> Exp Id -> DbgTransMonad (Exp Id)
-
 mkFailExpr pos parent =
   lookupVar pos t_fatal >>>= \fatal ->
   unitS (ExpApplication pos [fatal, parent])
 
 
 dSuspectRhs :: Bool -> Exp Id -> Rhs Id -> ContExp -> DbgTransMonad (Exp Id)
-
 dSuspectRhs cr parent (Unguarded exp) cont = dSuspectExp cr parent exp
 dSuspectRhs cr parent (Guarded gdExps) cont = 
   dSuspectGuardedExprs cr parent gdExps cont
 
 
 {-
-First argument False iff the parent is equal to this expression, i.e.,
-the result of this expression is the same as the result of the parent.
+-- First argument False iff the parent is equal to this expression, i.e.,
+-- the result of this expression is the same as the result of the parent.
 -}
 
 
@@ -951,7 +947,7 @@ dSuspectExp cr parent (ExpLambda pos pats e) =
   in unitS (ExpApplication pos [fun, lambda, lamexp, sr, parent])
 dSuspectExp cr parent (ExpLet pos decls e) = 
   unitS (ExpLet pos) =>>> 
-    dSuspectDecls parent decls =>>> 
+    dSuspectDecls False parent decls =>>> 
     dSuspectExp cr parent e
 dSuspectExp cr parent (ExpCase pos e alts) =  
   lookupId Con tTrue >>>= \true ->
@@ -1111,8 +1107,10 @@ dSuspectExps parent es = mapS (dSuspectExp True parent) es
 
 
 {-
-First argument False, if the unevaluated expression never appears as an argument in the trace. Hence not Sat needs to be created.
-False does not imply that the expression is equal to its parent expression, unlike for the suspected case.
+-- First argument False, if the unevaluated expression never appears as
+-- an argument in the trace. Hence not Sat needs to be created.
+-- False does not imply that the expression is equal to its parent
+-- expression, unlike for the suspected case.
 -}
 
 dTrustExp :: Bool -> Exp Id -> Exp Id -> Exp Id -> DbgTransMonad (Exp Id)
@@ -1145,7 +1143,7 @@ dTrustExp cr parent hidParent (ExpLambda pos pats e) =
         set of combinators t_ttfun that do not test trustedness of parent -}
 dTrustExp cr parent hidParent (ExpLet pos decls e) = 
   unitS (ExpLet pos) =>>> 
-    dTrustDecls hidParent decls =>>> 
+    dTrustDecls False hidParent decls =>>> 
     dTrustExp cr parent hidParent e
 dTrustExp cr parent hidParent (ExpCase pos e alts) = 
   dTrustExp cr parent hidParent e >>>= \e' ->
@@ -1270,7 +1268,6 @@ dTrustExp cr parent hidParent e = error ("dExp: no match")
 
 
 dTrustExps :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad [Exp Id]
-
 dTrustExps parent hidParent es = mapS (dTrustExp True parent hidParent) es
 
 
@@ -1280,7 +1277,7 @@ dTrustAlt :: Bool -> Exp Id -> Exp Id -> Id -> Id -> Alt Id
 dTrustAlt cr parent hidParent true otherw (Alt pat rhs decls) =
   dPat hidParent pat >>>= \pat' ->
   dTrustRhs cr parent hidParent true otherw rhs >>>= \rhs' ->
-  dTrustDecls hidParent decls >>>= \decls' ->
+  dTrustDecls False hidParent decls >>>= \decls' ->
   unitS (Alt pat' rhs' decls')
 
 
@@ -1314,8 +1311,8 @@ alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls
 
 
 {-
-Transform data constructor application.
-Number of arguments may be smaller than arity of the data constructor.
+-- Transform data constructor application.
+-- Number of arguments may be smaller than arity of the data constructor.
 -}
 saturateSuspectConstr :: 
                   Exp Id      -- parent
@@ -1357,11 +1354,10 @@ saturateTrustConstr parent c@(ExpCon pos id) args =
 
 
 {-
-Transform constructor application where number of arguments
-equals arity of constructor. The arguments have already been transformed.
+-- Transform constructor application where number of arguments
+-- equals arity of constructor. The arguments have already been transformed.
 -}
 wrapSuspectConst :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
-
 wrapSuspectConst parent c@(ExpCon pos cid) args =
   lookupVar pos (t_con (length args)) >>>= \con ->
   makeNTConstr pos cid >>>= \ntconstr ->
@@ -1370,7 +1366,6 @@ wrapSuspectConst parent c@(ExpCon pos cid) args =
 
 
 wrapTrustConst :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
-
 wrapTrustConst parent c@(ExpCon pos cid) args =
   lookupVar pos (t_tcon (length args)) >>>= \con ->
   makeNTConstr pos cid >>>= \ntconstr ->
@@ -1379,7 +1374,6 @@ wrapTrustConst parent c@(ExpCon pos cid) args =
 
 {- Unused, string is transformed on a per character basis 
 mkLitString :: Pos -> Exp Id -> DbgTransMonad (Exp Id)
-
 mkLitString pos s =
     getD >>>= \d ->
     lookupVar pos t_stringConst >>>= \stringConst  ->
@@ -1389,12 +1383,10 @@ mkLitString pos s =
 
 
 dPats :: Exp Id -> [Pat Id] -> DbgTransMonad [Pat Id] 
-
 dPats parent ps = mapS (dPat parent) ps
 
 
 dPat :: Exp Id -> Pat Id -> DbgTransMonad (Pat Id)
-
 dPat parent (ExpApplication pos (c:ps)) = 
   wrapR pos =>>> 
   (unitS (ExpApplication pos) =>>> (unitS (c:) =>>> dPats parent ps))
@@ -1433,11 +1425,10 @@ foldS f z (x:xs) = foldS f z xs >>>= f x
 
 
 {- 
-Replace all list constructors in a list expression
-by the constructors of the wrapped list and wrap it.
+-- Replace all list constructors in a list expression
+-- by the constructors of the wrapped list and wrap it.
 -}
 foldPatList :: Exp Id -> Pos -> [Exp Id] -> DbgTransMonad (Exp Id)
-
 foldPatList _ pos [] =  wrapR pos =>>> lookupCon pos t_List
 foldPatList parent pos (p:ps) = 
   lookupCon pos t_Colon >>>= \cons ->
@@ -1448,7 +1439,6 @@ foldPatList parent pos (p:ps) =
 
 {- Wrap a pattern with R constructor and new variable as trace argument -}
 wrapR :: Pos -> DbgTransMonad (Pat Id -> Pat Id)
-
 wrapR pos =
   lookupCon pos t_R >>>= \r ->
   newVar pos >>>= \wc ->
@@ -1515,7 +1505,6 @@ lookupNameStr ident =
 
 {- Create a new variable with given position -}
 newVar :: Pos -> DbgTransMonad (Exp Id)
-
 newVar pos = \_ (Threaded istate srt idt) ->
                  case uniqueIS istate of
 	             (i, istate') -> (ExpVar pos i, Threaded istate' srt idt)
@@ -1523,43 +1512,40 @@ newVar pos = \_ (Threaded istate srt idt) ->
 
 {- Create a list of n new variables, all with the same given position -}
 newVars :: Pos -> Int -> DbgTransMonad [Exp Id]
-
 newVars pos n = \_ (Threaded istate srt idt) ->
                     case uniqueISs istate [1..n] of
 	                (is, istate') -> (map (ExpVar pos . snd) is, 
 			                  Threaded istate' srt idt)
 
 {-
-Make info for a variable with given Id, name, arity and type.
-Right Id: Id is added to name
-Left Id: name used as given 
+-- Make info for a variable with given Id, name, arity and type.
+-- Right Id: Id is added to name
+-- Left Id: name used as given 
 -}
 mkInfo :: Either Id Id -> String -> Int -> NewType -> Info
-
 mkInfo (Right u) str arity nt = 
     InfoVar u (visImport (str ++ "_" ++ show u)) (InfixDef, 9) 
       IEnone nt (Just arity)
-
 mkInfo (Left u) str arity nt = 
     InfoVar u (visImport str) (InfixDef, 9) IEnone nt (Just arity)
 
 
 {-
-Wraps off most of the SRs, Traces and Rs.
-e.g. 
-unwrapNT 0 True  False (SR -> Trace -> R Bool) = R Bool
-unwrapNT 0 False False (SR -> Trace -> R Bool) = Trace -> R Bool
-unwrapNT 1 False False (SR -> Trace -> R(Trace -> R Int -> R Bool)) = 
-  Trace -> R Int -> R Bool
-unwrapNT 2 False False
-  (SR -> Trace -> R(Trace -> R Int -> R(Trace -> R Char -> R Int))) =
-  Trace -> R Int -> R Char -> R Int
-
-Assumes that input type has form
-  SR -> Trace -> R (tyn)
-  tyn = Trace -> R (any type) -> R (ty(n-1))
-  ty0 = any type
-Expands type synonyms if necessary to obtain this type
+-- Wraps off most of the SRs, Traces and Rs.
+-- e.g. 
+-- unwrapNT 0 True  False (SR -> Trace -> R Bool) = R Bool
+-- unwrapNT 0 False False (SR -> Trace -> R Bool) = Trace -> R Bool
+-- unwrapNT 1 False False (SR -> Trace -> R(Trace -> R Int -> R Bool)) = 
+--   Trace -> R Int -> R Bool
+-- unwrapNT 2 False False
+--   (SR -> Trace -> R(Trace -> R Int -> R(Trace -> R Char -> R Int))) =
+--   Trace -> R Int -> R Char -> R Int
+-- 
+-- Assumes that input type has form
+--   SR -> Trace -> R (tyn)
+--   tyn = Trace -> R (any type) -> R (ty(n-1))
+--   ty0 = any type
+-- Expands type synonyms if necessary to obtain this type
 -}
 unwrapNT :: IntState -> Int -> Bool -> Bool -> NewType -> NewType
 
@@ -1592,11 +1578,10 @@ unwrapNT intState arity isCaf trusted nt =
 
 
 {-
-Create a new identifier with given arity, name and type.
-Boolean argument decides if Id is appended to name.
+-- Create a new identifier with given arity, name and type.
+-- Boolean argument decides if Id is appended to name.
 -}
 addNewName :: Int -> Bool -> String -> NewType -> DbgTransMonad Id
-
 addNewName arity addIdNr str nt = 
   \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
@@ -1606,11 +1591,10 @@ addNewName arity addIdNr str nt =
 	in (i, Threaded istate'' srt idt)
 
 {-
-Create a new primitive identifier with given Info, changing just the
-location in the table (i.e. the lookup key).
+-- Create a new primitive identifier with given Info, changing just the
+-- location in the table (i.e. the lookup key).
 -}
 addNewPrim :: Info -> DbgTransMonad Id
-
 addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
   \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
@@ -1623,11 +1607,10 @@ addNewPrim (InfoVar _ nm fix ie nt ar) =
   error ("In tracing transformation: foreign import has unqualified name?")
 
 {-
-Create a new identifier for the prim-wrapper, given prim Info, in a fresh
-location in the table
+-- Create a new identifier for the prim-wrapper, given prim Info, in a fresh
+-- location in the table
 -}
 addNewWrapper :: Info -> DbgTransMonad Id
-
 addNewWrapper (InfoVar _ nm fix ie nt ar) = 
   \_ (Threaded istate srt idt) ->
     case uniqueIS istate of
@@ -1637,18 +1620,17 @@ addNewWrapper (InfoVar _ nm fix ie nt ar) =
 	in (i, Threaded istate'' srt idt)
 
 {-
-Overwrite the original primitive identifier with new Info, reflecting
-the change in type and arity.
+-- Overwrite the original primitive identifier with new Info, reflecting
+-- the change in type and arity.
 -}
 overwritePrim :: Id -> Inherited -> Threaded -> Threaded
-
 overwritePrim i = 
   \_ (Threaded istate srt idt) ->
       let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
       in Threaded (updateIS istate i updI) srt idt
 
 {-
-Overwrite the original primitive identifier with new name.
+-- Overwrite the original primitive identifier with new name.
 -}
 overwriteOrigName :: Id -> Inherited -> Threaded -> Threaded
 overwriteOrigName i = 
@@ -1661,6 +1643,7 @@ overwriteOrigName i =
 
 getConArity id = \_ s@(Threaded istate _ _) -> (arityIS istate id, s)
 
+
 getIdArity id = 
     \_ s@(Threaded istate _ _) ->
     case lookupIS istate id of
@@ -1669,11 +1652,11 @@ getIdArity id =
 
 
 {-
-A bit of a hack.
-The type of an imported field selector is derived by nhc from the
-data type definition. However, the transformed selector has a different
-type. Hence we test if a used variable is a selector. If it is, then
-we transform the type (only the first time we come across it).
+-- A bit of a hack.
+-- The type of an imported field selector is derived by nhc from the
+-- data type definition. However, the transformed selector has a different
+-- type. Hence we test if a used variable is a selector. If it is, then
+-- we transform the type (only the first time we come across it).
 -}
 patchFieldSelectorType :: Id -> Inherited -> Threaded -> Threaded
 patchFieldSelectorType id =
@@ -1703,12 +1686,10 @@ patchFieldSelectorType id =
 
 
 getArity :: [Fun a] -> Int
-
 getArity (Fun pats _ _ : _) = length pats
 
 
 setArity :: Int -> Int -> a -> Threaded -> Threaded
-
 setArity arity id  = \inh (Threaded (IntState unique rps st errors) srt idt) ->
   let newid = case lookupAT st id of
                 Just (InfoMethod u tid fix nt _ cls) ->
@@ -1735,12 +1716,8 @@ setPositions :: (Int,[Int]) -> a -> Threaded -> Threaded
 setPositions srt = \_ s@(Threaded istate _ idt) -> Threaded istate srt idt
 
 
-{-
-Make a node expression of type Trace, NmType or SR.
--}
-
+{- Make a node expression of type Trace, NmType or SR.  -}
 makeSourceRef :: Pos -> DbgTransMonad (SRExp)
-
 makeSourceRef p i@(Inherited lookupPrel) s@(Threaded is (nsr, srs) idt) 
   | p == noPos = lookupVar noPos t_mkNoSR i s
   | rowcol == head srs =
@@ -1756,43 +1733,37 @@ makeSourceRef p i@(Inherited lookupPrel) s@(Threaded is (nsr, srs) idt)
   sr3 = lookupPrel (t_mkSR', Var)
 
 
-
 makeNTId :: Pos -> Id -> DbgTransMonad (NmTypeExp)
-
 makeNTId pos id = 
   lookupVar pos t_mkNTId' >>>= \mkNTId' ->
   unitS $ ExpApplication pos [mkNTId',ExpLit pos (LitInt Boxed id)]
         
 
 makeNTConstr :: Pos -> Id -> DbgTransMonad (NmTypeExp)
-
 makeNTConstr pos id =
   lookupVar pos t_mkNTConstr' >>>= \mkNTConstr' ->
   unitS $ ExpApplication pos [mkNTConstr',ExpLit pos (LitInt Boxed id)]
 
 
 makeNTLambda :: Pos -> DbgTransMonad (NmTypeExp)
-
 makeNTLambda pos = lookupVar pos t_mkNTLambda
 
 
 makeNTCase :: Pos -> DbgTransMonad (NmTypeExp)
-
 makeNTCase pos = lookupVar pos t_mkNTCase
 
 
 makeNm :: Pos -> TraceExp -> NmTypeExp -> SRExp -> DbgTransMonad (TraceExp)
-
 makeNm p parent name sr =
   lookupVar noPos t_mkTNm >>>= \nm ->
   unitS $ ExpApplication p [nm, parent, name, sr] 
 
-{-
-Add identifier with position to threaded list.
--}
+{- Add identifier with position to threaded list.  -}
 addId :: (Pos,Id) -> a -> Threaded -> Threaded
+addId pid inh (Threaded is srt idt) = Threaded is srt (LocalId pid:idt)
 
-addId pid inh (Threaded is srt idt) = Threaded is srt (pid:idt)
+addTopId :: (Pos,Id) -> a -> Threaded -> Threaded
+addTopId pid inh (Threaded is srt idt) = Threaded is srt (TopId pid:idt)
 
 
 {- is it a class method? -}
