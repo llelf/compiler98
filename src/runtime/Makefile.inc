@@ -6,10 +6,10 @@ MKDIR:=$(patsubst %/$(notdir ${MKDIR}),%, ${MKDIR})
 endif
 include ${MKDIR}/Makefile.inc
 
-ifeq "sparc-solaris2" "${MACHINE}"
-BUGFIX = -D__EXTENSIONS__ -D__STDC__=0
-else
+#ifeq "sparc-solaris2" "${MACHINE}"
+#BUGFIX = -D__EXTENSIONS__ -D__STDC__=0
+#else
 BUGFIX = 
-endif
+#endif
 
 #TRACEOBJDIR=${RUNTIMEDIR}/obj${CFG}
