@@ -108,7 +108,7 @@ type HatNodeInternal = (HatTrace,RefNumber)           -- internal only
 data HatNode         = HatNode (HatTrace,RefNumber) | -- exported as abstract type only
 		       HatInvalid
 
--- exportet data types (exported with constructors)
+-- exported data types (exported with constructors)
 data HatNodeType     = HatApplNode      | HatConstantNode |
                        HatSAT_ANode     | HatSAT_BNode    | HatSAT_CNode |
                        HatHiddenNode    | HatDummyNode    |
@@ -124,6 +124,7 @@ data HatApplType     = HatApplied       | HatBlackholed   | HatComplete  | HatVa
 
 data HatInfixType    = HatInfix Int     | HatInfixR Int   | HatInfixL Int| HatNoInfix 
                        deriving (Show,Eq)
+                       -- HatNoInfix represents default fixity
 
 data ObserveResult   = IdentNotFound    | TopIdentNotFound| Found [HatNode]
 

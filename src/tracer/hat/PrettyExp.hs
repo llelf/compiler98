@@ -4,7 +4,8 @@
 module PrettyExp(hatRep2Doc,showExpression,showReduction) where
 
 import HatTrace(HatRep(..),HatNodeType(..),HatNode,isValidNode
-               ,HatInfixType(HatInfix,HatInfixL,HatInfixR,HatNoInfix))
+               ,HatInfixType(HatInfix,HatInfixL,HatInfixR,HatNoInfix)
+               ,HatSourceRef(..))
 import HatExpressionTree(HatLimit,toHatLimit)
 import PrettyLib(Doc,text,(<>),delimiter,fdelimiter,nil,group,parens
                 ,groupNest,pretty)
@@ -14,7 +15,7 @@ import List (unzip3)
 
 data SExp = 
   SApp [SExp] | -- n-ary application of at least 2 expressions
-  SId String HatInfixType |
+  SId String SFixity |
   SLiteral String |
   SLambda | 
   SIf SExp | SCase SExp | SGuard SExp |
@@ -22,6 +23,11 @@ data SExp =
   SUnevaluated |
   SBottom |
   SCycle String SExp  -- cyclic expression to be shown as `id where id = ..'
+
+data SFixity = 
+  SInfix Int | SInfixL Int | SInfixR Int | SAssoc Int String | SInfixDefault
+  -- need own type for some hardcoded operators that are known to be
+  -- semantically associative
 
 -- conversion function
 -- if first boolean is True, then cycles are located and expressed as SCycles
@@ -34,6 +40,12 @@ hatRep2SExp cyc uneval expObj = case go cyc uneval [] expObj of (e,_,_) -> e
 fst3 (x,_,_) = x
 snd3 (_,x,_) = x
 thd3 (_,_,x) = x
+
+transFixity :: HatInfixType -> SFixity
+transFixity (HatInfix pri) = SInfix pri
+transFixity (HatInfixL pri) = SInfixL pri
+transFixity (HatInfixR pri) = SInfixR pri
+transFixity HatNoInfix = SInfixDefault
 
 -- worker for definition above
 go :: HatRep a => Bool -> Bool -> [(HatNode,String)] -> a 
@@ -81,7 +93,8 @@ go cyc uneval nodesAbove expObj = case hatNodeType expObj of
           SApp args1 -> SApp (args1++args)  -- combine applications
           _ -> SApp (fun:args)
     in case lookup expNode nodesAbove of
-         Just var -> (SId var HatNoInfix,[expNode],[]) -- `lower' end of cycle
+         Just var -> (SId var SInfixDefault,[expNode],[]) 
+                     -- `lower' end of cycle
          Nothing ->
            case sexp of
              SApp [SId "IO" fixity,_] -> 
@@ -105,9 +118,28 @@ go cyc uneval nodesAbove expObj = case hatNodeType expObj of
   HatDummyNode -> simple $ SLiteral "(<dummy>)"
   HatProjNode -> go cyc uneval nodesAbove (hatProjValue expObj)
   HatConstrNode -> let var = hatName expObj 
-                   in (SId var (hatInfix expObj),[],[])
+                   in (SId var (transFixity (hatInfix expObj)),[],[])
   HatIdentNode -> let var = hatName expObj 
-                  in (SId var (hatInfix expObj),[],[var])
+                  in (SId var
+                       (case var of
+                         "." | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 9 var
+                         "++" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 5 var
+                         "&&" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 3 var
+                         "||" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 2 var
+                         "*" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 7 var
+                         "+" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 6 var
+                         ">>" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 1 var
+                         ">>=" | moduleName (hatSourceRef expObj) == "Prelude" 
+                           -> SAssoc 1 var
+                         _ -> transFixity (hatInfix expObj))
+                     ,[],[var])
   HatCaseNode -> simple $ SCase SLambda  -- hack for recognition as app fun
   HatIfNode -> simple $ SIf SLambda -- ""
   HatGuardNode -> simple $ SGuard SLambda -- ""
@@ -129,14 +161,6 @@ go cyc uneval nodesAbove expObj = case hatNodeType expObj of
 indentation :: Int
 indentation = 2
 
-atomic :: SExp -> Bool
-atomic (SApp ((SId (',':xs) _):args)) = length xs + 2 == length args
-atomic (SApp _) = False
-atomic (SIf _) = False
-atomic (SCase _) = False
-atomic (SGuard _) = False
-atomic (SCycle _ _) = False
-atomic _ = True
 
 -- useful document combinator
 (<->) :: Doc -> Doc -> Doc
@@ -145,79 +169,146 @@ d1 <-> d2 = d1 <> delimiter " " <> d2
 (<+>) :: Doc -> Doc -> Doc
 d1 <+> d2 = d1 <> fdelimiter " " <> d2
 
-isOpSym :: Char -> Bool
-isOpSym c = not (isAlpha c || c == '[') 
+(<|>) :: Doc -> Doc -> Doc
+d1 <|> d2 = d1 <> fdelimiter "" <> d2
+  
+(<*>) :: Doc -> Doc -> Doc
+d1 <*> d2 = d1 <|> text "," <> d2
+
+isOpSym :: String -> Bool
+isOpSym sym = let c = head sym in not (isAlpha c || c == '[') 
 
 funDoc :: String -> Doc
-funDoc var = (if isOpSym $ head var then parens else id) $ text var 
+funDoc var = (if isOpSym var then parens else id) $ text var 
 
 opDoc :: String -> Doc
 opDoc var =  text ((if isAlpha $ head var then ('`' :) . (++ "'") else id) var)
 
--- put parenthesis around non-atomic expression
-argDoc :: SExp -> Doc
-argDoc exp = (if atomic exp then id else parens) $ sExp2Doc exp
 
--- handle argument of infix operator of given priority and test for equal
--- priority
-infixArgDoc :: Int -> (HatInfixType -> Bool) -> SExp -> Doc
-infixArgDoc pri assocTest exp@(SApp [SId var fixity,e1,e2]) = 
-  (if comp (priority fixity) pri (assocTest fixity) then parens else id) $ 
-    sExp2Doc exp  
+data ArgPos = ALeft | ARight
+isRight ARight = True
+isRight ALeft = False
+isLeft = not . isRight
+
+-- surround by parentheses if necessary
+-- first fixity of surrounding expression, then if left or right argument,
+-- then fixity of expression itself
+optParens :: SFixity -> ArgPos -> SFixity -> Doc -> Doc
+optParens surFixity aPos ownFixity =
+  case (priority surFixity) `compare` (priority ownFixity) of
+    LT -> if priority surFixity == (-1) then groupNest indentation else id
+    GT -> groupNest indentation . parens
+    EQ -> if (isInfixR surFixity && isInfixR ownFixity && isRight aPos)
+            || (isInfixL surFixity && isInfixL ownFixity && isLeft aPos)
+            || sameAssoc surFixity ownFixity 
+            then id
+            else groupNest indentation . parens
+
+sameAssoc :: SFixity -> SFixity -> Bool
+sameAssoc (SAssoc _ var1) (SAssoc _ var2) = True
+sameAssoc _ _ = False
+
+foldr0 :: (a -> a -> a) -> a -> [a] -> a
+foldr0 f c [] = c
+foldr0 f c xs = foldr1 f xs
+
+listDoc :: SFixity -> ArgPos -> SExp -> Doc
+listDoc surFixity aPos e =
+  case maybeRest of
+    Nothing -> if all isCharLiteral elems 
+                 then groupNest 1 $ 
+                        text "\"" <> 
+                        (foldr0 (<|>) nil (map (text . getChar) elems)) <> 
+                        text "\""
+                 else group $
+                        text "[" <> (foldr0 (<*>) nil (map sExp2Doc elems)) <>
+                        text "]"
+    Just eRest -> groupNest indentation .
+                    optParens surFixity aPos (SInfixR 5) . 
+                    foldr (<:>) (sExp2Doc eRest) . 
+                    map sExp2Doc $ elems 
   where
-  comp p1 p2 test = case compare p1 p2 of
-                      LT -> True
-                      EQ -> test
-                      GT -> False 
-infixArgDoc _ _ exp = sExp2Doc exp
+  (elems,maybeRest) = getListElems e
+  d1 <*> d2 = d1 <|> text "," <> d2
+  d1 <:> d2 = d1 <|> text ":" <|> d2
+  getListElems :: SExp -> ([SExp],Maybe SExp)
+  getListElems (SApp [SId ":" _,ee,er]) = (ee:ees,mr)
+    where
+    (ees,mr) = getListElems er
+  getListElems (SId "[]" _) = ([],Nothing)
+  getListElems e = ([],Just e)
+  isCharLiteral :: SExp -> Bool
+  isCharLiteral (SLiteral ('\'':_)) = True
+  isCharLiteral _ = False
+  getChar :: SExp -> String
+  getChar (SLiteral ('\'':cs)) = init cs
 
-priority (HatInfix p) = p
-priority (HatInfixL p) = p
-priority (HatInfixR p) = p
-priority HatNoInfix = 10
+priority (SInfix p) = p
+priority (SInfixL p) = p
+priority (SInfixR p) = p
+priority (SAssoc p _) = p
+priority SInfixDefault = 9
 
-notInfixL (HatInfixL _) = False
-notInfixL _ = True
+isInfixL (SInfixL _) = True
+isInfixL SInfixDefault = True
+isInfixL _ = False
 
-notInfixR (HatInfixR _) = False
-notInfixR _ = True
+isInfixR (SInfixR _) = True
+isInfixR _ = False
+
+isNotInfixDefault SInfixDefault = False
+isNotInfixDefault _ = False
+
+considerAsOperator :: String -> SFixity -> Bool
+considerAsOperator var fixity =  isOpSym var || isNotInfixDefault fixity 
 
 -- a central function
 sExp2Doc :: SExp -> Doc 
-sExp2Doc (SApp ((SId (',':xs) _):args)) | length xs + 2 == length args =
-  -- print tuple properly
-  group 
-    (text "(" <> foldr1 (<*>) (map sExp2Doc args)) <> text ")"
+sExp2Doc = goDoc (SInfix (-1)) ARight 
+
+-- fixity of surrounding expression and which sort of argument
+goDoc :: SFixity -> ArgPos -> SExp -> Doc
+goDoc surFixity aPos (SApp ((SId (',':xs) _):args)) =
+  if length xs + 2 == length args 
+    then group (text "(" <> foldr1 (<*>) (map sExp2Doc args)) <> text ")"
+         -- print tuple properly
+    else optParens surFixity aPos ownFixity . 
+           (text ("(,"++xs++")")  <+>) . 
+           foldr1 (<+>) . map (goDoc ownFixity ARight) $ args
+         -- partial application of tuple constructor
   where
-  (<*>) :: Doc -> Doc -> Doc
-  d1 <*> d2 = d1 <> fdelimiter "" <> text "," <> d2
-sExp2Doc (SApp [SId var (HatInfix pri),e1,e2]) =
-  groupNest indentation 
-    (infixArgDoc pri (const True) e1 <+> opDoc var <+> 
-      infixArgDoc pri (const True) e2)
-sExp2Doc (SApp [SId var (HatInfixL pri),e1,e2]) =
-  groupNest indentation
-    (infixArgDoc pri notInfixL e1 <+> opDoc var <+> 
-      infixArgDoc pri (const True) e2)
-sExp2Doc (SApp [SId var (HatInfixR pri),e1,e2]) =
-  groupNest indentation
-    (infixArgDoc pri (const True) e1 <+> opDoc var <+> 
-      infixArgDoc pri notInfixR e2)
-sExp2Doc (SApp [SId var fixity,e]) | fixity /= HatNoInfix =
+  ownFixity = SInfix 10
+
+goDoc surFixity aPos (e@(SApp [SId ":" _,_,_])) = listDoc surFixity aPos e
+goDoc surFixity aPos (SApp [SId var ownFixity,e1,e2]) 
+  | considerAsOperator var ownFixity = 
+    optParens surFixity aPos ownFixity
+      (goDoc ownFixity ALeft e1 <|> opDoc var <|> goDoc ownFixity ARight e2)
+goDoc surFixity aPos (SApp [SId var ownFixity,e]) 
+  | considerAsOperator var ownFixity =
   -- show infix operator with single argument as section
-  groupNest indentation (parens (argDoc e <-> opDoc var))
-sExp2Doc (SApp exps) = groupNest indentation . foldr1 (<+>) . map argDoc $ exps
-sExp2Doc (SId var fixity) = funDoc var
-sExp2Doc (SLiteral lit) = text lit
-sExp2Doc SLambda = text "(\\..)"
-sExp2Doc (SIf exp) = groupNest indentation (text "if" <-> argDoc exp)
-sExp2Doc (SCase exp) = groupNest indentation (text "case" <-> argDoc exp)
-sExp2Doc (SGuard exp) = text "| " <> argDoc exp
-sExp2Doc SInvalid = text "<cut>"
-sExp2Doc SUnevaluated = text "_"
-sExp2Doc SBottom = text "_|_"
-sExp2Doc (SCycle var exp) = 
-  groupNest indentation (text var <+> group (text "where" <+> sExp2Doc exp))
+  groupNest indentation . parens $ goDoc ownFixity ALeft e <-> opDoc var
+goDoc surFixity aPos (SApp (fun:args)) = 
+  optParens surFixity aPos ownFixity . (goDoc ownFixity ALeft fun <+>) . 
+    foldr1 (<+>) . map (goDoc ownFixity ARight) $ args
+  where
+  ownFixity = SInfix 10
+goDoc _ _ (SId var fixity) = funDoc var
+goDoc _ _ (SLiteral lit) = text lit
+goDoc _ _ SLambda = text "(\\..)"
+goDoc _ _ (SIf exp) = 
+  groupNest indentation . parens $ text "if" <-> sExp2Doc exp
+goDoc _ _ (SCase exp) = 
+  groupNest indentation . parens $ text "case" <-> sExp2Doc exp
+goDoc _ _ (SGuard exp) = 
+  groupNest indentation . parens $ text "| " <> sExp2Doc exp
+goDoc _ _ SInvalid = text "<cut>"
+goDoc _ _ SUnevaluated = text "_"
+goDoc _ _ SBottom = text "_|_"
+goDoc _ _ (SCycle var exp) = 
+  groupNest indentation . parens $
+    text var <+> group (text "where" <+> sExp2Doc exp)
+
 
 -- main function
 hatRep2Doc :: HatRep a => Bool -> Bool -> Int -> a -> Doc
@@ -245,7 +336,7 @@ showReduction verboseMode precision node initial final =
 
 
 -- only for testing:
-test1 = SApp [SId "fun" HatNoInfix,SLiteral "24",SLiteral "True",SApp[SId "+" (HatInfixL 5),SLiteral "3",SLiteral "4"]]
+test1 = SApp [SId "fun" SInfixDefault,SLiteral "24",SLiteral "True",SApp[SId "+" (SInfixL 5),SLiteral "3",SLiteral "4"]]
 
-test2 = SApp [SId "*" (HatInfixL 6),SApp [SId "+" (HatInfixL 5),SApp [SId "-" (HatInfixL 5),SLiteral "3",SLiteral "6"],SApp [SId "-" (HatInfixL 5),SLiteral "3",SLiteral "6"]],test1]
+test2 = SApp [SId "*" (SInfixL 6),SApp [SId "+" (SInfixL 5),SApp [SId "-" (SInfixL 5),SLiteral "3",SLiteral "6"],SApp [SId "-" (SInfixL 5),SLiteral "3",SLiteral "6"]],test1]
  
