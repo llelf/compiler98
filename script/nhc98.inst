@@ -607,9 +607,9 @@ then
          fi
          if test $VFLAG -eq 1
          then
-           echo "$NHC98LIBDIR/$MACHINE/nhc98heap $HEAP | $CC -x c -c -o $TMP/nhc$$.o -";
+           echo "$NHC98LIBDIR/$MACHINE/nhc98heap $TRACE $HEAP | $CC -x c -c -o $TMP/nhc$$.o -";
          fi
-         $NHC98LIBDIR/$MACHINE/nhc98heap $HEAP >$TMP/nhc$$.c
+         $NHC98LIBDIR/$MACHINE/nhc98heap $TRACE $HEAP >$TMP/nhc$$.c
          $CC -x c -c -o $TMP/nhc$$.o $TMP/nhc$$.c
          if test $VFLAG -eq 1
          then

@@ -3,10 +3,12 @@ main(int argc, char **argv)
   int prefix = 1;
   int i = 0;
   char *s;
-  if (argc!=2) {
-    i=DefaultHeap;
+  if (argc==1) {
+    i = DefaultHeap;
+  } else if ((argc==2) && (*argv[1]=='T')) {
+    i = 5 * DefaultHeap;
   } else {
-    s = argv[1];
+    s = argv[argc-1];
     while(isdigit(*s)) {
       i = i*10 + *s++ - '0';
     }
