@@ -42,3 +42,8 @@ mapS f (x:xs) = unitS (:) =>>> f x =>>> mapS f xs
 mapS0 :: (a->State0 d s s) -> [a] -> State0 d s s
 mapS0 f []     = unitS0
 mapS0 f (x:xs) = f x >>> mapS0 f xs
+
+zipWithS :: (a -> b -> State d s c s) -> [a] -> [b] -> State d s [c] s
+zipWithS f [] [] = unitS []
+zipWithS f (x:xs) (y:ys) = unitS (:) =>>> f x y =>>> zipWithS f xs ys
+zipWithS _ _ _ = error "zipWithS: lists of different lengths"

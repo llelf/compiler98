@@ -29,7 +29,7 @@ import Id(Id)
 import Info(typeSynonymBodyI)
 import TypeSubst(substNT)
 import Nice(niceNewType)
-import List(zipWith5)
+import List(zipWith3)
 
 
 {- table for source references and identifiers refered to from the trace -}
@@ -160,10 +160,12 @@ dDecl (DeclPat (Alt pat rhs decls)) =
     --trace ("patid = " ++ show patid) $
     setArity 0 patid >>>
     patVars pat >>>= \(pat', bvsnvs) ->
-    let bvsids = map (snd . fst) bvsnvs in  -- original var ids
+    let bvsposids = map fst bvsnvs -- (pos,id)s of original var 
+        (bvspos,bvsids) = unzip bvsposids 
+        pos = head bvspos in
     mapS0 (setArity 2) bvsids >>>  
-    mapS0 addId (map fst bvsnvs) >>>
-    mapS makeSourceRef (map (fst . fst) bvsnvs) >>>= \srs ->
+    mapS0 addId bvsposids >>>
+    mapS makeSourceRef bvspos >>>= \srs ->
     dRhs rhs failContinuation >>>= \rhs' ->
     dPat pat' >>>= \pat'' ->
     let ExpApplication _ [r,_,tresult] = pat'' in
@@ -173,17 +175,38 @@ dDecl (DeclPat (Alt pat rhs decls)) =
 --    lookupCon noPos tNTId >>>= \ntid ->
 --    lookupCon noPos t_Nm >>>= \nm ->
     getD >>>= \redex ->
-    mkFailExpr (fst (fst (head bvsnvs))) 
+    mkFailExpr pos 
       -- the error message "Pattern match failure" could be more specific 
       >>>= \fe ->
     let evars = map snd bvsnvs in 
     makeTuple noPos evars >>>= \etup ->
 
+    zipWithS makeNTId bvspos bvsids >>>= \ntIds ->
+    zipWithS (makeNm pos redex) ntIds srs >>>= \nms ->
+    lookupVar pos t_lazySat >>>= \lazySat ->
+    addNewName 0 True "nt" NoType >>>= \t' ->
+    let
+        pcase = ExpCase noPos rhs' 
+                  [Alt pat'' (Unguarded etup) (DeclsParse [])
+	          ,Alt (PatWildcard noPos)   (Unguarded fe)  (DeclsParse [])]
+	pfun = DeclFun noPos patid [Fun [] (Unguarded pcase) decls']
+	vpat p pv i sr = vcase p pv
+        vcase p pv = ExpCase p (ExpVar p patid) 
+                       [Alt etup (Unguarded pv) (DeclsParse [])]
+        vfun ((p, i), pv) sr nte = 
+          DeclFun p i 
+            [Fun [PatWildcard p, PatWildcard p] 
+               (Unguarded (ExpApplication pos 
+                            [lazySat, (vpat p pv i sr), ExpVar p t'] )) 
+               (DeclsParse 
+                 [DeclFun p t' [Fun [] (Unguarded nte) (DeclsParse [])]])
+            ]
+    in unitS (pfun : zipWith3 vfun bvsnvs srs nms)
 {- 
 The following code is an experiment to create useful redex trails
 for pattern bindings. Unfortunately viewing an unevaluted pattern
 variable in the browser leads to a segmentation fault of the program.
-It seems that Sats sometimes don't work correct, when the expression
+It seems that Sats sometimes don't work correctly, when the expression
 isn't yet evaluated. 
     let epat = ExpApplication noPos [r,etup,tresult] in
 
@@ -274,20 +297,6 @@ isn't yet evaluated.
              ++ zipWith5 vshare orgPos shareIds evars bvsids srs
              ++ zipWith5 vconst orgPos bvsids shareIds constIds srs)
 -}
-
-    let
-        pcase = ExpCase noPos rhs' 
-                  [Alt pat'' (Unguarded etup) (DeclsParse [])
-	          ,Alt (PatWildcard noPos)   (Unguarded fe)  (DeclsParse [])]
-	pfun = DeclFun noPos patid [Fun [] (Unguarded pcase) decls']
-	vpat p pv i sr = vcase p pv
-        vcase p pv = ExpCase p (ExpVar p patid) 
-                       [Alt etup (Unguarded pv) (DeclsParse [])]
-        vfun ((p, i), pv) sr = DeclFun p i 
-                                 [Fun [PatWildcard p, PatWildcard p] 
-                                      (Unguarded (vpat p pv i sr)) 
-                                      (DeclsParse [])]
-    in unitS (pfun : zipWith vfun bvsnvs srs)
 dDecl d@(DeclFun pos id fundefs) = 
     addId (pos, id) >>>
     lookupName id >>>= \(Just info) ->
