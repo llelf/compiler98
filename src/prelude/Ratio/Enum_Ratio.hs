@@ -7,6 +7,8 @@ import Real_Ratio
 import RealFrac_Ratio
 
 instance  (Integral a) => Enum (Ratio a) where
+	succ n = (n+1)
+	pred n = (n-1)
         toEnum n = fromInteger (toInteger n) :% 1
 	fromEnum = fromInteger . truncate        -- may overflow
 	enumFrom x = numericEnumFrom x
