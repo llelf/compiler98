@@ -153,7 +153,7 @@ C_HEADER(primForeignObj)
   finalise = nodeptr;
 
   fo = buildForeignObj(addr,finalise);
-  nodeptr = mkRight(mkCInt((Int)fo));
+  nodeptr = (NodePtr)mkRight(mkCInt((Int)fo));
   C_RETURN(nodeptr);
 }
 

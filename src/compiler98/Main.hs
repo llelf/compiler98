@@ -75,6 +75,7 @@ import Depend(depend)
 import PackedString(unpackPS)
 
 import Foreign (Foreign,strForeign)
+import ReportImports
 
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
@@ -235,11 +236,13 @@ nhcType flags zcon modidl  mrps  expFun userDefault tidFun tidFunSafe intState c
 
 
 nhcInterface flags zcon modidl  mrps expFun  tidFun tidFunSafe sridt (code,decls,state) =
+  let mod = reverse (unpackPS modidl) in
   profile "interface" $
   case getErrors state of
     (state,[]) -> 
       pF (sType flags) "Declarations after type deriving:" (ppDecls False state decls 0) >>
       pF (sTBound flags) "Symbol table after type deriving:"  (mixLine (map show (treeMapList (:) (getSymbolTable state)))) >>
+      pF (sRImport flags) ("Actual imports used by this module ("++mod++"):")  (mixLine (reportFnImports mod state)) >>
       (if reverse (unpackPS modidl) == "Main" then typeOfMain flags tidFun decls state else return state) >>= \ state ->
       nhcWriteI flags modidl mrps expFun tidFun state (export flags state) >>
       nhcFixSyntax flags zcon tidFun code sridt (fixSyntax decls state tidFun)

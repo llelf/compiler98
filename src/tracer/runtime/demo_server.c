@@ -37,7 +37,7 @@ start_demo(int s, char *argv[])
     long tod;
     struct tm *tmb;
     char *timestr, *str;
-    log = fopen("/users/cs/sparud/tracer/demo/log.demo_server", "a");
+    log = fopen("/usr/malcolm/logs/log.demo_server", "a");
 
     /* Run in the background */
     switch (fork()) {

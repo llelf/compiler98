@@ -315,7 +315,7 @@ public class TraceFrame extends Frame {
 	  try {
 	    String serverURL = System.getProperty("nhctracer.demoserver");
 	    if (serverURL == null)
-	      serverURL = "http://www.cs.chalmers.se/~sparud/tracer/demo.dat";
+	      serverURL = "http://www.cs.york.ac.uk/fp/ART/demo/demo.dat";
 	    URL u = new URL(serverURL);
 	    URLConnection uc = u.openConnection();
 	    uc.setDoInput(true);

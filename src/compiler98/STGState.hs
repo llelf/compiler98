@@ -81,7 +81,7 @@ updTOS _ i down up@(Thread prof fun maxDepth fds state (e:env) lateenv d h dhs f
 
 -- However, I'm going to keep the warning just in case it's useful.
 updTOS True i down up@(Thread prof fun maxDepth fds state (((oi,w):e):env) lateenv d h dhs fs)
-    | oi!=i && oi != -1  =
+  | oi/=i && oi /= -1  =
    strace ("Warning: nhc98 might produce faulty code for "++show i++" \n  fun= " ++ show fun ++ "  e = " ++ show e ++ "\n") $ up
 updTOS _ i down up = up
 

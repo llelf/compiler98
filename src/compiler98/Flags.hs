@@ -16,7 +16,7 @@ type FlagBools =
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
 	,(Bool, Bool, Bool, Bool, Bool, Bool, Bool)
-	,(Bool, Bool, Bool, ()  , ()  , ()  , ()  )
+	,(Bool, Bool, Bool, Bool, ()  , ()  , ()  )
 	,(Bool, Bool, Bool, Bool, Bool, ()  , ()  )
 	)
 
@@ -102,7 +102,7 @@ getFlags xs = (
   (fElem False "funnames" xs            -- insert position and name of functions in the code
   ,fElem False "ilex" xs               	-- show lexical input
   ,fElem False "iparse" xs             	-- show syntax tree  after  parser
-  ,()
+  ,fElem False "report-imports" xs	-- show only imports actually used
   ,()
   ,()
   ,()
@@ -203,7 +203,7 @@ sABound    (_,(_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_,_)) = g
 sFunNames  (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = a
 sILex      (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = b
 sIParse    (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = c
---FREE     (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = d
+sRImport   (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = d
 --FREE     (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = e
 --FREE     (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = f
 --FREE     (_,(_,_,_,_,_,_,_,_,(a,b,c,d,e,f,g),_)) = g
