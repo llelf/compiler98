@@ -21,7 +21,7 @@ all:  ofiles afile nhc98heap$(EXE)
 install: ofiles afile
 	${INSTALL} ${OBJDIR}/Kernel/$(RUNTIME)$(SUF).a ${DST}
 	$(AR) $(ARFLAGS) ${DST}/$(RUNTIME)$(SUF).a ${OBJDIR}/Integer/*.o ${OBJDIR}/Builtin/*.o ${OBJDIR}/Mk/*.o
-	ranlib ${DST}/$(RUNTIME)$(SUF).a
+	-ranlib ${DST}/$(RUNTIME)$(SUF).a
 	${INSTALL} ${OBJDIR}/Kernel/mutator.o ${DST}/mutator$(SUF).o
 	${INSTALL} ${OBJDIR}/Kernel/mutlib.o ${DST}/mutlib$(SUF).o
 	${INSTALL} ${OBJDIR}/Kernel/main.o ${DST}/main$(SUF).o
