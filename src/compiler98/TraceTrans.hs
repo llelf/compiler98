@@ -42,7 +42,7 @@ import AuxTypes (AuxiliaryInfo) -- needed for hbc's broken import mechanism
 import List (isPrefixOf,union,partition,nubBy,delete)
 import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
-import Maybe (fromJust,catMaybes)
+import Maybe (fromJust,catMaybes,isNothing)
 
 import Extra (strace)
 
@@ -484,8 +484,6 @@ tDecl _ _ _
   where
   (funDecls,wrapperDecls,consts) = 
     tHaskellPrimitive pos (nameForeign fnId) fnId arity ty
-  sr = ExpVar pos (nameSR fnId)
-  useParent = ExpVar pos (nameTrace fnId)
 tDecl _ _ _ (DeclForeignExp pos callConv str fnId _) =
   error ("Cannot trace foreign export (used at " ++ strPos pos ++ ")")
 tDecl _ _ _ (DeclVarsType vars contexts ty) =
@@ -566,7 +564,7 @@ tDecl scope traced parent (DeclPat (Alt pat rhs decls)) =
   resultTraceId = nameTrace2 firstId
   tuple = mkTupleExp noPos (ExpVar noPos resultTraceId : patVars')
   patPosIds = map (\(ExpVar pos id) -> (pos,id)) patVars
-  (patVars',[],[]) = tPats patVars 
+  (patVars',Nothing) = tPats patVars 
   patVars = getPatVars pat
   pat'' = case pat' of
            ExpApplication p [r,v,_] -> 
@@ -574,14 +572,13 @@ tDecl scope traced parent (DeclPat (Alt pat rhs decls)) =
   (Fun [pat'] (Unguarded exp') decls',altConsts) = 
      tFun traced False parent failContinuation (Fun [pat] rhs decls)
   useSR = ExpVar pos (nameSR firstId)
-  useParent = ExpVar pos (nameTrace firstId)
 
   useDef :: (Pos,TraceId) -> Decl TokenId
   useDef (pos,id) =
     DeclFun pos (nameTransLetVar id)
-      [Fun [useSR,useParent]
+      [Fun [useSR,parent]
         (Unguarded (ExpApplication pos
-          [combConstUse pos,useSR,useParent,ExpVar pos (nameShare id)]))
+          [combConstUse pos,useSR,parent,ExpVar pos (nameShare id)]))
         noDecls]
 
   projDef :: (Pos,TraceId) -> Decl TokenId
@@ -651,7 +648,7 @@ wrapValInstDecl pos contexts ty constrs =
   where
   traceTokenWrapValFun = mkLambdaBound (dropM tokenWrapValFun)
   sr = ExpVar pos (nameSR traceTokenWrapValFun)
-  parent = ExpVar pos (nameTrace traceTokenWrapValFun)
+  parent = ExpVar pos nameParent
   varId = nameTrace2 traceTokenWrapValFun -- actually not a trace
   var = ExpVar pos varId
   infiniteTraces = map (ExpVar pos) . nameArgs $ traceTokenWrapValFun
@@ -691,29 +688,29 @@ tHaskellPrimitive pos hasId fnId arity ty
   | arity == 0 =
     ([DeclVarsType [(pos,nameTransLetVar fnId)] [] (tFunType ty)
      ,DeclFun pos (nameTransLetVar fnId)
-       [Fun [sr,useParent] 
+       [Fun [sr,parent] 
          (Unguarded (ExpApplication pos
-           [combConstUse pos,sr,useParent,ExpVar pos shareId]))
+           [combConstUse pos,sr,parent,ExpVar pos shareId]))
          noDecls]]
     ,[DeclFun pos shareId
        [Fun []
          (Unguarded (ExpApplication pos 
            [combConstDef pos False,mkRoot pos
            ,ExpVar pos (nameTraceInfoVar pos Global fnId)
-           ,ExpLambda pos [useParent] 
+           ,ExpLambda pos [parent] 
              (ExpApplication pos 
-               [expFrom pos ty,useParent, ExpVar pos hasId])]))
+               [expFrom pos ty,parent, ExpVar pos hasId])]))
          noDecls]]
     ,addVar pos fnId Global emptyModuleConsts)
   | otherwise =
     ([DeclVarsType [(pos,nameTransLetVar fnId)] [] (tFunType ty)
      ,DeclFun pos (nameTransLetVar fnId) 
-       [Fun [sr,useParent]
+       [Fun [sr,parent]
          (Unguarded 
            (ExpApplication pos 
              [combFun pos False arity
              ,ExpVar pos (nameTraceInfoVar pos Global fnId)
-             ,sr,useParent,ExpVar pos wrappedId']))
+             ,sr,parent,ExpVar pos wrappedId']))
           noDecls]]
     ,[DeclFun pos wrappedId' 
        [Fun (args++[hidden])
@@ -723,9 +720,8 @@ tHaskellPrimitive pos hasId fnId arity ty
          noDecls]]
     ,addVar pos fnId Global emptyModuleConsts)
     where
+    parent = ExpVar pos nameParent
     sr = ExpVar pos (nameSR fnId)
-    useParent = ExpVar pos useParentId
-    useParentId = nameTrace fnId
     hidden = ExpVar pos (nameTrace2 fnId)
     args = take arity . map (ExpVar pos) . nameArgs $ fnId
     wrappedId' = nameWorker fnId
@@ -786,7 +782,7 @@ mkFieldSelector pos fieldId =
   ,addVar pos fieldId Global emptyModuleConsts)
   where
   sr = ExpVar pos (nameSR fieldId)
-  parent = ExpVar pos (nameTrace fieldId)
+  parent = ExpVar pos nameParent
   wrappedId' = nameWorker fieldId
   var = ExpVar pos varId
   varId:_ = nameArgs fieldId
@@ -817,8 +813,7 @@ tCaf scope traced parent pos id rhs localDecls =
   idId' = nameShare id
   id' = ExpVar pos idId'
   useSR = ExpVar pos (nameSR id)
-  useParentId = nameTraceShared pos id
-  useParent = ExpVar pos useParentId
+  useParent = ExpVar pos nameParent
   (rhs',rhsConsts) = tRhs traced True useParent failContinuation rhs
   (localDecls',localDeclsConsts) = tDecls Local traced useParent localDecls
   smartExpLet :: Pos -> Decls a -> Exp a -> Exp a
@@ -847,10 +842,10 @@ tFuns scope traced pos id funs =
   where
   funArity = case funs of (Fun pats _ _ : _) -> length pats
   sr = ExpVar pos (nameSR id)
-  parent = ExpVar pos (nameTrace id)
+  parent = ExpVar pos nameParent
   wrappedId' = nameWorker id
   (funs',newDecls',funConsts) = 
-    tFunClauses traced pos (ExpVar pos (nameTrace id)) (nameFuns id) 
+    tFunClauses traced pos parent (nameFuns id) 
       (map (ExpVar pos) (nameArgs id)) funArity False funs
          
 
@@ -897,6 +892,7 @@ tFunClauses traced pos parent ids pVars funArity _ (fun@(Fun pats _ _): funs) =
                                  funArity (neverFailingPats pats) funs
 
 
+{-
 -- Numeric literals need to be overloaded with respect to the new
 -- transformed numeric classes; hence they cannot just be left wrapped
 -- in patterns
@@ -943,6 +939,63 @@ tFun traced cr parent contExp (Fun pats rhs decls) =
   andExp e1 e2 = ExpApplication pos [ExpVar pos tTokenAndAnd,e1,e2]
   pos = getPos pats
   newParent = ExpVar pos (nameFromPos pos)
+-}
+
+-- Numeric literals need to be overloaded with respect to the new
+-- transformed numeric classes; hence they cannot just be left wrapped
+-- in patterns
+-- Transform such literals and n+k patterns into conditions in guards.
+-- Have to be careful to preserve left-to-right pattern matching,
+-- e.g. f 1 True = ... -> f x True | x == 1 = ... is wrong.
+-- Assume that ~ has been removed before.
+tFun :: Bool -- traced
+     -> Bool -- this is reduct of parent
+     -> Exp TokenId -- parent
+     -> ContExp -- continuation in case of pattern match failure
+     -> Fun TraceId -> (Fun TokenId,ModuleConsts)
+-- Definition similar to tGuardedExps
+tFun traced cr parent contExp (Fun pats rhs decls) =
+  if isNothing numericLitInfos
+    then (Fun pats' (Unguarded rhs') decls',declsConsts `withLocal` rhsConsts)
+    else
+      (Fun pats' 
+        (Unguarded (ExpApplication pos 
+          (if traced 
+             then
+               [combGuard pos True,mkSRExp pos traced,parent,cond'
+               ,ExpLambda pos [parent]
+                 (ExpApplication pos (ExpVar pos nameFun:argvars++[parent]))
+               ,ExpLambda pos [parent] 
+                 (continuationToExp parent contExp)]
+             else
+               [combGuard pos False,cond'
+               ,ExpApplication pos (ExpVar pos nameFun:argvars++[parent])
+               ,continuationToExp parent contExp])
+        )) 
+        (DeclsParse (def:decl'))
+      ,pos `addPos` condConsts `merge` declConsts `merge` funConsts) 
+      -- condConsts contains positions of the boolean expressions
+      -- patsDeclsConsts contains positions of the bound variables
+  where
+  (pats',numericLitInfos) = tPats pats
+  (rhs',rhsConsts) = 
+    tRhs traced cr parent contExp rhs
+  (decls',declsConsts) = tDecls Local traced parent decls
+  Just (cond,bindings,argvars,argpats) = numericLitInfos
+
+  (cond',condConsts) = tExp traced False parent cond
+  (DeclsParse decl',declConsts) = 
+    tDecls Local traced parent (DeclsParse bindings)
+  def = DeclFun pos nameFun 
+          [Fun (fpats'++[parent]) frhs' fdecls'
+          ,Fun (replicate funArity (PatWildcard pos) ++ [parent])
+             (Unguarded (continuationToExp parent contExp)) 
+             noDecls]
+  funArity = length argpats
+  (Fun fpats' frhs' fdecls',funConsts) = 
+    tFun traced cr parent contExp (Fun argpats rhs decls)
+  pos = getPos pats
+
 
 
 funCanFail :: Fun TraceId -> Bool
@@ -1012,13 +1065,12 @@ tGuardedExps _ cr parent failCont [] =
 tGuardedExps True cr parent failCont ((guard,exp):gdExps) =
   (ExpApplication pos 
     [combGuard pos True,mkSRExp pos True,parent,guard'
-    ,ExpLambda pos [guardParent] exp',ExpLambda pos [guardParent] gdExps']
+    ,ExpLambda pos [parent] exp',ExpLambda pos [parent] gdExps']
   ,pos `addPos` guardConsts `merge` expConsts `merge` gdExpsConsts)
   where
   (guard',guardConsts) = tExp True False parent guard
-  (exp',expConsts) = tExp True cr guardParent exp
-  (gdExps',gdExpsConsts) = tGuardedExps True cr guardParent failCont gdExps
-  guardParent = ExpVar pos (nameFromPos pos)
+  (exp',expConsts) = tExp True cr parent exp
+  (gdExps',gdExpsConsts) = tGuardedExps True cr parent failCont gdExps
   pos = getPos guard
 tGuardedExps False cr parent failCont ((guard,exp):gdExps) =
   (ExpApplication pos 
@@ -1077,20 +1129,19 @@ tExp traced cr parent (ExpLambda pos pats body) =
     ,mkSRExp pos traced
     ,parent
     ,if neverFailingPats pats 
-       then ExpLambda pos (pats' ++ [lambdaParent]) body'
-       else ExpLambda pos (vars ++ [lambdaParent])
+       then ExpLambda pos (pats' ++ [parent]) body'
+       else ExpLambda pos (vars ++ [parent])
               (ExpCase pos (mkTupleExp pos vars)
                 [Alt (mkTupleExp pos pats') (Unguarded body') noDecls
                 ,Alt (PatWildcard pos) 
-                   (Unguarded (mkFailExp pos lambdaParent)) noDecls])]
+                   (Unguarded (mkFailExp pos parent)) noDecls])]
   ,pos `addPos` bodyConsts)
   where
   (Fun pats' (Unguarded body') _,bodyConsts) = 
-    tFun traced True lambdaParent failContinuation 
+    tFun traced True parent failContinuation 
       (Fun pats (Unguarded body) noDecls)
   vars = map (ExpVar pos) . take funArity $ varsIds
-  lambdaParent = ExpVar pos lambdaParentId
-  (lambdaParentId:varsIds) = namesFromPos pos
+  varsIds = namesFromPos pos
   funArity = length pats
 tExp traced cr parent (ExpLet pos decls body) =
   (ExpLet pos decls' body'
@@ -1108,22 +1159,21 @@ tExp traced cr parent (ExpCase pos e alts) =
     ,e']
   ,pos `addPos` eConsts `merge` funConsts)
   where
-  (varId:caseParentId:argId:funsIds) = namesFromPos pos
+  (varId:argId:funsIds) = namesFromPos pos
   (e',eConsts) = tExp traced False parent e
   (fun',defs',funConsts) = 
-    tFunClauses traced pos (ExpVar pos caseParentId) funsIds 
+    tFunClauses traced pos parent funsIds 
       [ExpVar pos argId] 1 False
       . map alt2Fun $ alts
 tExp True cr parent (ExpIf pos cond e1 e2) =
   (ExpApplication pos 
     [combIf pos True,mkSRExp pos True,parent,cond'
-    ,ExpLambda pos [ifParent] e1',ExpLambda pos [ifParent] e2']
+    ,ExpLambda pos [parent] e1',ExpLambda pos [parent] e2']
   ,pos `addPos` condConsts `merge` e1Consts `merge` e2Consts)
   where
   (cond',condConsts) = tExp True False parent cond
-  (e1',e1Consts) = tExp True True ifParent e1
-  (e2',e2Consts) = tExp True True ifParent e2
-  ifParent = ExpVar pos (nameFromPos pos)
+  (e1',e1Consts) = tExp True True parent e1
+  (e2',e2Consts) = tExp True True parent e2
 tExp False cr parent (ExpIf pos cond e1 e2) =
   (ExpApplication pos [combIf pos False,parent,cond',e1',e2']
   ,condConsts `merge` e1Consts `merge` e2Consts)
@@ -1365,7 +1415,7 @@ removeDo (StmtBind pat e : stmts) =
   newId:_ = namesFromPos pos
   pos = getPos e
 
-
+{-
 mapCombine3 :: (a -> (b,[c],[d])) -> [a] -> ([b],[c],[d])
 mapCombine3 f = (\(p,es,ds) -> (p,concat es,concat ds)) . unzip3 . map f
 
@@ -1450,6 +1500,110 @@ tPat (PatNplusK pos id _ k _ _) =
      [Fun []
        (Unguarded (ExpApplication pos [ExpVar pos tTokenMinus,var2,k]))
        noDecls]])
+  where
+  var2 = ExpVar pos tid2
+  tid2 = mkLambdaBound (nameFromPos pos)
+tPat p = error ("tPat: unknown pattern at " ++ strPos (getPos p))
+-}
+
+-- new:
+
+mapCombinePats :: (Pat TraceId 
+                   -> (Exp TokenId, Maybe (c,d,[Exp TokenId],[Pat TraceId])))
+               -> [Pat TraceId] 
+               -> ([Exp TokenId], Maybe (c,d,[Exp TokenId],[Pat TraceId]))
+mapCombinePats f [] = ([],Nothing)
+mapCombinePats f (x:xs) = 
+  case f x of
+    (pat,Nothing) -> (pat:pats,numPatInfos)
+    (pat,Just (e,d,vs,ps)) -> (pat:xvs,Just (e,d,vs++xvs,ps++xs))
+  where
+  (pats,numPatInfos) = mapCombinePats f xs
+  xvs = map patToVar xs
+
+patToVar :: Pat TraceId -> Exp TokenId
+patToVar (ExpVar pos id) = ExpVar pos (nameTransLambdaVar id)
+patToVar (PatAs pos id _) = ExpVar pos (nameTransLambdaVar id)
+patToVar pat = ExpVar pos (nameFromPos pos)
+  where
+  pos = getPos pat
+
+
+tPats :: [Pat TraceId] 
+      -> ([Pat TokenId] -- transformed patterns
+         ,Maybe -- only if there is a numeric pattern (k or n+k)
+           (Exp TraceId     -- test for the numeric pattern (e.g. x==k)
+           ,[Decl TraceId]  -- binding for n if there is an n+k pattern
+           ,[Exp TokenId]   -- variables inserted in pattern after num literal
+           ,[Pat TraceId])) -- original patterns after num literal
+tPats = mapCombinePats tPat
+
+tPat :: Pat TraceId 
+     -> (Pat TokenId
+        ,Maybe (Exp TraceId,[Decl TraceId],[Exp TokenId],[Pat TraceId]))
+tPat (ExpRecord (ExpCon pos id) fields) = 
+  (wrapExp pos (ExpRecord (ExpCon pos (nameTransCon id)) fields') 
+    (PatWildcard pos)
+  ,numInfos)
+  where
+  (poss,ids,pats) = unzipFields fields
+  (pats',numInfos) = mapCombinePats tPat pats
+  fields' = zipFields poss (map nameTransField ids) pats'
+  unzipFields :: [Field a] -> ([Pos],[a],[Pat a])
+  unzipFields = unzip3 . map (\(FieldExp pos id pat) -> (pos,id,pat))
+  zipFields :: [Pos] -> [a] -> [Pat a] -> [Field a]
+  zipFields = zipWith3 FieldExp 
+tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
+  (wrapExp pos 
+    (ExpApplication pos (ExpCon pos2 (nameTransCon id) : pats'))
+    (PatWildcard pos)
+  ,patsNumInfo)
+  where
+  (pats',patsNumInfo) = tPats pats
+  -- negative numeric literals are represented as (negate number):
+tPat (ExpApplication _ [_,ExpLit pos (LitInteger boxed i)]) =
+  tPat (ExpLit pos (LitInteger boxed (-i)))
+tPat (ExpApplication _ [_,ExpLit pos (LitRational boxed r)]) =
+  tPat (ExpLit pos (LitRational boxed (-r)))
+tPat (ExpApplication _ [_,ExpLit pos _]) = error "tPat: app expLit"
+tPat (ExpVar pos id) = (ExpVar pos (nameTransLambdaVar id),Nothing)
+tPat (ExpCon pos id) = 
+  (wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos),Nothing)
+tPat (ExpLit pos (LitString _ s)) =
+  tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
+tPat (ExpLit pos lit@(LitChar _ _)) = 
+  (wrapExp pos (ExpLit pos lit) (PatWildcard pos),Nothing) 
+tPat e@(ExpLit pos lit) = -- only LitInteger and LitRational left
+  (ExpVar pos (nameTransLambdaVar tid)
+  ,Just (ExpApplication pos [ExpVar pos tTokenEqualEqual,ExpVar pos tid,e]
+        ,[],[],[]))
+  where
+  tid = mkLambdaBound (nameFromPos pos)
+tPat (ExpList pos pats) = tPat . mkTList pos $ pats
+tPat (PatAs pos id pat) = 
+  (PatAs pos (nameTransLambdaVar id) pat',patNumInfos)
+  where
+  (pat',patNumInfos) = tPat pat
+tPat (PatWildcard pos) = (PatWildcard pos,Nothing)  -- type change
+tPat (PatIrrefutable pos pat) = 
+  if isNothing patNumInfos
+    then
+      (case pat' of
+         ExpApplication pos' [r,p',t'] -> 
+           ExpApplication pos' [r,PatIrrefutable pos p',t']
+         x -> x
+      ,Nothing)
+    else error "Numeric literal or n+k inside ~ is currently not implemented."
+  where
+  (pat',patNumInfos) = tPat pat 
+tPat (PatNplusK pos id _ k _ _) = 
+  (ExpVar pos (nameTransLambdaVar tid2)
+  ,Just (ExpApplication pos [ExpVar pos tTokenGreaterEqual,var2,k]
+        ,[DeclFun pos id
+           [Fun []
+             (Unguarded (ExpApplication pos [ExpVar pos tTokenMinus,var2,k]))
+           noDecls]]
+        ,[],[]))
   where
   var2 = ExpVar pos tid2
   tid2 = mkLambdaBound (nameFromPos pos)
@@ -1625,6 +1779,10 @@ nameShare = prefixName 's' '|'
 nameTraceShared :: Pos -> TraceId -> TokenId
 nameTraceShared = prefixPosName 'j' '$'
 
+-- variable for parent
+nameParent :: TokenId
+nameParent = mkUnqualifiedTokenId "p"
+
 -- variable for a trace
 nameTrace :: TraceId -> TokenId
 nameTrace = prefixName 'j' '$'
@@ -1636,6 +1794,10 @@ nameTrace2 = prefixName 'k' '@'
 -- name for a local variable for a source reference
 nameSR :: TraceId -> TokenId
 nameSR = prefixName 'p' '%'
+
+-- intermediate function
+nameFun :: TokenId
+nameFun = mkUnqualifiedTokenId "h"
 
 -- infinite list of var ids made from one id (for function clauses)
 nameFuns :: TraceId -> [TokenId]

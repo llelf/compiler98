@@ -351,7 +351,11 @@ addPat patSort visible pat (env,identMap) = (refutableVars,(newEnv,identMap))
   ap s (ExpList p exps) env = foldrPat (ap s) env exps
   ap s (PatAs p id pat) env = (ap s pat `combinePat` extendEnvPat s id) env
   ap s (PatIrrefutable p pat) env  = ap Irrefutable pat env
-  ap s (PatNplusK p id1 id2 exp1 exp2 exp3) env = extendEnvPat s id1 env
+  ap s (PatNplusK p id1 id2 exp1 exp2 exp3) env = 
+    ([],addAT env letBound key patternAux{letBound=True,args=0})
+    where
+    key = Var (show id1)
+    -- variable shall be let bound
   ap s (ExpInfixList p exps) env = ap s (fixInfixList (env,identMap) exps) env
   -- ap s (ExpVarOp p id) env = extendEnvPat s id env
   -- ap s (ExpConOp p id) env = env
