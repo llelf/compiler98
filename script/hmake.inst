@@ -7,6 +7,7 @@
 SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
+TMP=${TMP-/tmp}
 
 MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}
 OLDER=${OLDER-$HMAKEDIR/$MACHINE/Older}
@@ -171,5 +172,14 @@ export HC HFLAGS OLDER LDFLAGS	# MkProg expects these variables to be set.
 export CPPFLAGS			# cpp usually expects this variable.
 export MACHINE			# nhc98 script is faster if this is set.
 
-#Here we go...
-$MKPROG $hmrtflags $hmflags $flags $modules | $exec
+# Here we go...
+$MKPROG $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
+CODE=$?
+case $CODE in
+  0) $exec <$TMP/hmake$$
+     CODE=$?
+     rm $TMP/hmake$$
+     exit $CODE ;;
+  *) echo "Stop - hmake dependency error."
+     exit $CODE ;;
+esac
