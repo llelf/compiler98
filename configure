@@ -12,7 +12,7 @@ HMAKEVERSION="3.01 (2002-02-05)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
-	hat-checki hat-port hat-explore"
+	hat-checki hat-port hat-explore hat-view hat-names hat-trail"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -509,10 +509,10 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
-    echo -n "hat-trail "
-    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trail.inst |\
+    echo -n "hat-trail-in-java "
+    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trail-in-java.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
-    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail-in-java
     echo -n "hat-trans "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
@@ -525,7 +525,7 @@ then
     done
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
-    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hat-trail
+    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hat-trail-in-java
     chmod +x $BUILDBINDIR/hmake-config $BUILDBINDIR/hat-trans
 
     echo "Creating src/runtime/nhc98heap.c ..."
@@ -607,10 +607,10 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
-    echo "	hat-trail"
-    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
+    echo "	hat-trail-in-java"
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail-in-java.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail
+    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail-in-java
     echo "	hat-trans"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -625,7 +625,7 @@ else	# [ "$INSTALL" = "yes" ]
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
     chmod +x $DESTDIR$BINDIR/hmake-config $DESTDIR$BINDIR/hat-trans
-    chmod +x $DESTDIR$BINDIR/hat-trail $DESTDIR$BINDIR/hood
+    chmod +x $DESTDIR$BINDIR/hat-trail-in-java $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
   fi

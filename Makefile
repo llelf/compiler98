@@ -91,7 +91,7 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-	 script/hmake-config.inst script/hi.inst script/hat-trail.inst \
+	 script/hmake-config.inst script/hi.inst script/hat-trail-in-java.inst \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
 	 script/echo.c script/hood.inst script/tprofprel \
@@ -304,7 +304,7 @@ $(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) lib/hat-trail.jar
 
 
 lib/hat-trail.jar: $(TRAILUI)
-	cd src/hat/trail;      $(MAKE) CFG=T install
+	-cd src/hat/trail;      $(MAKE) CFG=T install
 lib/hood.jar: $(HOODUI)
 	cd src/hoodui;         $(MAKE) install
 $(HATTOOLS): $(HATUI)
