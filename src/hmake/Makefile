@@ -5,11 +5,10 @@ MKPROG = $(DST)/MkProg$(EXE)
 OLDER  = $(DST)/Older$(EXE)
 TARGETS = $(MKPROG) $(OLDER)
 
-SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs \
-          SymTab.hs Imports.hs \
+SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs SymTab.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
           Argv.hs MkProg.hs
-CPPSRCS = Graph.hs GetDep.hs ParseLib.hs Compat.hs
+CPPSRCS = Graph.hs GetDep.hs ParseLib.hs Compat.hs Imports.hs
 
 OBJS    = $(patsubst %.hs,$(OBJDIR)/%.o,$(SRCS))
 CPPOBJS = $(patsubst %.hs,$(OBJDIR)/%.o,$(CPPSRCS))
@@ -34,7 +33,7 @@ fromC: $(OBJDIR)
 	$(HC) $(HFLAGS)         -o $(OLDER)  -d $(OBJDIR) Older.c
 	strip $(MKPROG) $(OLDER)
 clean:
-	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.o *.hi
+	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.o *.hi *.c
 realclean: clean
 	rm -f $(TARGETS) *.c
 package:

@@ -5,13 +5,17 @@ module Imports
 import SymTab
 import ParseLib
 import ListUtil (takeUntil)
-import Char     (isSpace)
+import Char
 import Numeric  (readHex)
+
+#if !defined(__HASKELL98__)
+#define isAlphaNum isAlphanum
+#endif
 
 getImports :: [String] -> String -> [String]
 getImports defines inp =
   let syms = foldr (insertST.defval) emptyST defines
-  in cpp syms Keep (lines inp)
+  in (leximports . cpp syms Keep . lines) inp
 
 defval sym =
     let (s,d) = break (=='=') sym
@@ -19,6 +23,8 @@ defval sym =
 
 data KeepState = Keep | Drop Int
 
+-- Used to return the list of module names.
+-- Now returns just the list of lines that cpp decides to keep.
 cpp :: SymTab String -> KeepState -> [String] -> [String]
 cpp _ _ [] = []
 
@@ -43,10 +49,11 @@ cpp syms Keep (('#':x):xs) =
          else if cmd == "endif"  then  cpp syms  Keep xs
          else cpp syms Keep xs    --error ("Unknown directive #"++cmd++"\n")
 cpp syms Keep (x:xs) =
-  if prefix "import " x then
-       modname x: cpp syms Keep xs
---else if any (not.isSpace) x then []	-- a feeble (and incorrect) effort to prune once all imports have been seen
-  else cpp syms Keep xs
+    x: cpp syms Keep xs
+
+-- Old clauses:
+--  | prefix "import " x  = modname (x:xs): cpp syms Keep xs
+--  | otherwise           = cpp syms Keep xs
 
 cpp syms (Drop n) (('#':x):xs) =
          let ws = words x
@@ -72,19 +79,44 @@ cpp syms (Drop n) (('#':x):xs) =
 cpp syms d@(Drop n) (x:xs) =
   cpp syms d xs
 
-modname s =
-  let ws = words s
-      one = head (tail ws)
-      two = head (tail (tail ws))
-  in
-  if one == "qualified" then 
-       takeUntil "(-{;" two
-  else takeUntil "(-{;" one
+-- leximports takes a cpp-ed list of lines and returns the list of imports
+leximports :: [String] -> [String]
+leximports =
+  let
+    nestcomment n ('{':'-':cs)        = nestcomment (n+1) cs
+    nestcomment n ('-':'}':cs) | n>0  = nestcomment (n-1) cs
+    nestcomment 0 (c:cs)              = c: nestcomment 0 cs
+    nestcomment n (c:cs)       | n>0  = nestcomment n cs
+    nestcomment 0 []                  = []
+    nestcomment n []                  = error "improperly terminated {- comment -}"
 
-prefix :: String -> String -> Bool
-prefix [] y = True
-prefix x [] = False
-prefix (x:xs) (y:ys) = (x==y) && prefix xs ys
+    linecomment ('-':'-':cs)
+        | null munch
+          || isSpace nextchr
+          || nextchr `elem` ",()[]{};\"'`"
+          || isAlphaNum nextchr       = []
+      where munch = dropWhile (=='-') cs
+            nextchr = head munch
+    linecomment (c:cs)                = c: linecomment cs
+    linecomment []                    = []
+
+    getmodnames (x:xs) =
+      let ws = concatMap words (x:xs)	-- allow for import spanning several lines.
+      in if not (null ws) && head ws == "import" then
+             modname (tail ws): getmodnames xs
+         else getmodnames xs
+    getmodnames [] = []
+
+    modname ws =
+      let one = head ws
+          two = head (tail ws)
+      in
+      if one == "qualified" then 
+           takeUntil "(-{;" two
+      else takeUntil "(-{;" one
+
+  in (getmodnames . map linecomment . lines . nestcomment 0 . unlines)
+
 
 ----
 gatherDefined st inp =
