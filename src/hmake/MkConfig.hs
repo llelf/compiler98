@@ -7,10 +7,16 @@ import Config
 import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
                  ,Permissions(..),renameFile,createDirectory)
 import System (system,exitWith,ExitCode(..),getArgs,getEnv,getProgName)
-import List (intersperse,nub,isPrefixOf)
+import List (intersperse,nub,isPrefixOf,sort)
 import Char (isDigit)
-import Monad (foldM)
-import IO (hPutStrLn,stderr,isDoesNotExistError 
+import Monad (foldM,when)
+import Maybe (isJust,fromJust)
+#ifdef __HBC__
+import IOMisc (hPutStrLn)
+#else
+import IO (hPutStrLn)
+#endif
+import IO (stderr,isDoesNotExistError 
           ,openFile,IOMode(ReadMode),hClose,hGetChar,bracket,isEOFError)
 
 #ifdef __HBC__
@@ -36,22 +42,32 @@ main = do
   args <- getArgs
   (config,file,args) <- readConfigFile args
   newconfig <- case args of
+    ["list"]       -> do putStrLn ("Config file is:\n    "++file)
+                         putStrLn "Known compilers:"
+                         mapM_ putStrLn
+                               ((reverse . sort
+                                 . map (\c-> "    "++compilerPath c
+                                             ++"\t("++compilerVersion c++")"))
+                                (knownCompilers config))
+                         putStrLn "Default compiler:"
+                         putStrLn ("    "++defaultCompiler config)
+                         return Nothing
     [hc]           -> do -- no command, assume 'add'
                          cc <- configure (hcStyle hc) hc
-                         return config { knownCompilers =
-                                              nub (cc: knownCompilers config)}
+                         return (Just (config { knownCompilers =
+                                              nub (cc: knownCompilers config)}))
     ["add",hc]     -> do cc <- configure (hcStyle hc) hc
-                         return config { knownCompilers =
-                                              nub (cc: knownCompilers config)}
+                         return (Just (config { knownCompilers =
+                                              nub (cc: knownCompilers config)}))
     ["delete",hc]  -> delete config (hcStyle hc) hc
     ["default",hc] -> mkDefault config (hcStyle hc) hc
-    _ -> do hPutStrLn stderr ("Usage: hmake-config"
-                              ++" [configfile] [add|delete|default] hc\n"
-                              ++"    -- hc is name/path of a Haskell compiler")
+    _ -> do hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
+                 ++"       hmake-config [configfile] [add|delete|default] hc\n"
+                 ++"                  -- hc is name/path of a Haskell compiler")
             exitWith (ExitFailure 1)
-            return config -- never reached
+            return Nothing -- never reached
   --renameFile file (file++"~")
-  writeFile file (show newconfig)
+  when (isJust newconfig) (writeFile file (show (fromJust newconfig)))
   exitWith ExitSuccess
 
  where
@@ -60,14 +76,16 @@ main = do
       machine <- catch (getEnv "MACHINE")
                        (\e-> runAndReadStdout "harch")
       case args of
+        [file,"list"] -> do config <- parseConfigFile machine file
+                            return (config, file, tail args)
         [file,_,_] -> do config <- parseConfigFile machine file
                          return (config, file, tail args)
         [] -> do global <- getEnv "HMAKEDIR"
-                 hPutStrLn stderr ("Usage: hmake-config"
-                              ++" [configfile] [add|delete|default] hc\n"
-                              ++"    -- hc is name/path of a Haskell compiler\n"
-                              ++"    -- default configfile is "
-                              ++global++"/"++machine++"/hmakerc")
+                 hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
+                  ++"       hmake-config [configfile] [add|delete|default] hc\n"
+                  ++"              -- hc is name/path of a Haskell compiler\n"
+                  ++"  default configfile is:\n    "
+                  ++global++"/"++machine++"/hmakerc")
                  exitWith (ExitFailure 1)
         _ -> do home <- getEnv "HOME"
                 let path = home++"/.hmakerc/"++machine
@@ -112,20 +130,24 @@ main = do
       return config
 
 
-delete, mkDefault :: HmakeConfig -> HC -> String -> IO HmakeConfig
+delete, mkDefault :: HmakeConfig -> HC -> String -> IO (Maybe HmakeConfig)
 delete config hc path
-  | path == defaultCompiler config =
-        error ("hmake-config: cannot delete\n  '"++path
-               ++"'\n  because it is the default compiler.")
+  | path == defaultCompiler config = do
+        hPutStrLn stderr ("hmake-config: cannot delete\n  '"++path
+                          ++"'\n  because it is the default compiler.")
+        exitWith (ExitFailure 3)
+        return undefined -- never reached
   | otherwise =
-        return config { knownCompilers = filter (\cc-> compilerPath cc /= path)
-                                                (knownCompilers config) }
+        return (Just (config { knownCompilers =
+                                   filter (\cc-> compilerPath cc /= path)
+                                          (knownCompilers config) }))
 mkDefault config hc path
   | path `elem` map compilerPath (knownCompilers config)
-              = return config { defaultCompiler = path }
+              = return (Just (config { defaultCompiler = path }))
   | otherwise = do hPutStrLn stderr ("hmake-config: compiler not known:\n  '"
                                      ++path++"'")
                    exitWith (ExitFailure 2)
+                   return undefined -- never reached
 
 -- configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
@@ -188,7 +210,7 @@ configure Ghc ghcpath = do
 			, extraCompilerFlags = []
 			, isHaskell98   = True }
         else do ioError (userError ("Can't find ghc includes at "++incdir1))
-  where
+ where
     ghcDirs n root | n < 400   = [root]
                    | n < 406   = map ((root++"/")++) ["std","exts","misc"
                                                      ,"posix"]
@@ -237,8 +259,10 @@ configure Hbc hbcpath = do
 			, isHaskell98   = ((hbcversion!!7) >= '5')
 			}
 configure (Unknown hc) hcpath = do
-    error ("hmake-config: the compiler\n  '"++hcpath
-           ++"'\n  does not look like a Haskell compiler.")
+    hPutStrLn stderr ("hmake-config: the compiler\n  '"++hcpath
+                      ++"'\n  does not look like a Haskell compiler.")
+    exitWith (ExitFailure 4)
+    return undefined  -- never reached
 
 
 hcStyle :: String -> HC
@@ -267,7 +291,7 @@ tmpfile root = unsafePerformIO $ do p <- getProcessID
 runAndReadStdout :: String -> IO String
 runAndReadStdout cmd = do
     let output = tmpfile "hmakeconfig"
-    err <- system (cmd++" >"++output)
+    err <- system ("sh -c \""++cmd++" >"++output++"\"")
     case err of
         ExitFailure _ -> ioError (userError ("Command ("++cmd++") failed"))
 	_ -> return ()
