@@ -1,11 +1,13 @@
 module Prelude where
 
+import IO (hPutStr, stdout)
+
 putStr :: String -> IO ()
 
 
 #if !defined(TRACING)
 
-putStr = mapM_ putChar
+putStr = hPutStr stdout
 
 --putStr [] = return ()
 --putStr (x:xs) = do putChar x
