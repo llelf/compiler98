@@ -1,12 +1,13 @@
 include Makefile.inc
 
 THISLIB	= Hat
-SEARCH	= 
+SEARCH	=
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	= -DVERSION="\"$(VERSION)\""
 
 SRCS	= \
-        Hat.hs hat.c TPrelude.hs
+	hat.c TPrelude.hs
 SRCS_T	=
-EXTRA_C_FLAGS=-DVERSION="\"$(VERSION)\""
 
 # Here are the main rules.
 include ../Makefile.common
@@ -16,3 +17,5 @@ include ../Makefile.common
 ${OBJDIR}/Hat.$O: Hat.hs MagicTypes.hi
 ${OBJDIR}/TPrelude.$O: TPrelude.hs MagicTypes.hi
 ${OBJDIR}/hat.$O: hat.c hat.h
+
+# C-files dependencies.
