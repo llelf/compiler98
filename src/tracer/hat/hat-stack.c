@@ -18,16 +18,16 @@ main (int argc, char** argv)
   initialise(argc,argv);
   if (errorMsg) {
     msg = readNmTypeAt(errorMsg);
-    fprintf(stdout,"Program terminated with error:\n    %s\n",msg->idname);
+    fprintf(stdout,"Program terminated with error:\n  %s\n",msg->idname);
     parent = errorRoot;
-    fprintf(stdout,"Virtual stack trace:\n");
+    fprintf(stdout,"%-56s  %13s/line/col\n","Virtual stack trace:","source file");
     while (parent) {
       parent = readTraceAt(parent,&expr,&sr,&infix,True,MAX_EXP_DEPTH);
       if (sr)
-        fprintf(stdout,"    %s\t\t(%s: line-%d/col-%d)\n"
+        fprintf(stdout,"  %-54s  %13s %3d %3d\n"
                       ,expr,sr->srcname,sr->line,sr->column);
       else
-        fprintf(stdout,"    %s\t\t(no source reference)\n",expr);        
+        fprintf(stdout,"  %-54s  %21s\n",expr,"no source reference");
       if (i++ > MAX_DEPTH) parent=0;
     }
   } else {
