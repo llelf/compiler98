@@ -2,11 +2,6 @@
 #include "ident.h"
 #include "fileformat.h"
 
-#if 0
-/*char PM_Prelude[] = "Prelude";*/
-char PM_List[] = "List";
-char Unimplemented[] = "!!!Unimplemented!!!";
-#endif
 
 int terminated = FALSE;
 int reductions = 0;
@@ -22,6 +17,7 @@ extern int traceBreak;
 /*extern void prGraph(NodePtr nodeptr,Int flags,Int d);*/
 
 NodePtr dbg_last_trace = NULL;
+extern int exit_code;
 
 #define	MAX_LINE_SIZE	1024
 #define	MAX_SYM_SIZE	128
@@ -43,8 +39,9 @@ C_HEADER(fatal)
   fo = t->ptr;
   fseek(HatFile,8,SEEK_SET);
   fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  exit_code = 1;
   haskellEnd();
-  exit(0);
+  exit(1);
 }
 
 void
@@ -65,8 +62,9 @@ dbg_blackhole()
   fo = t->ptr;
   fseek(HatFile,8,SEEK_SET);
   fwrite(&fo, sizeof(FileOffset), 1, HatFile);
+  exit_code = 2;
   haskellEnd();
-  exit(0);
+  exit(2);
 }
 
 
