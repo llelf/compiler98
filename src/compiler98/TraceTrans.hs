@@ -1716,8 +1716,8 @@ mkTracingToken s = Qualified tracingModuleShort (packString . reverse $ s)
 mkTracingTokenArity :: String -> Arity -> TokenId
 mkTracingTokenArity s a = mkTracingToken (s ++ show a)
 
--- typeModule :: PackedString
--- typeModule = packString . reverse $ "TPreludeBuiltinTypes" 
+typeModule :: PackedString
+typeModule = packString . reverse $ "TPreludeBuiltinTypes" 
 
 mkTypeToken :: String -> TokenId
 mkTypeToken s@"fromId" = Qualified tracingModuleShort (packString . reverse $ s)
@@ -1728,6 +1728,8 @@ mkTypeToken s@"fromTuple0" = Qualified tracingModuleShort (packString . reverse 
 mkTypeToken s@"toTuple0" = Qualified tracingModuleShort (packString . reverse $ s)
 mkTypeToken s@"fromTuple2" = Qualified tracingModuleShort (packString . reverse $ s)
 mkTypeToken s@"toTuple2" = Qualified tracingModuleShort (packString . reverse $ s)
+mkTypeToken s@"toInteger" = Qualified typeModule (packString . reverse $ s)
+mkTypeToken s@"fromInteger" = Qualified typeModule (packString . reverse $ s)
 mkTypeToken s = Visible (packString . reverse $ s)
 
 
@@ -1902,8 +1904,9 @@ prefix False = "from"
 typeName :: TraceId -> String
 typeName aId = 
   case tokenId aId of
-    TupleId n -> "Tuple" ++ show n
-    _         -> getUnqualified aId
+    TupleId n               -> "Tuple" ++ show n
+    t | eqPredefined "[]" t -> "List"
+    _                       -> getUnqualified aId
 
 -- ----------------------------------------------------------------------------
 -- various little helper functions

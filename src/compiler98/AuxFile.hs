@@ -8,9 +8,10 @@ module AuxFile
 import Monad(when)
 import IO(hPutStr,stderr)
 import Maybe(isNothing)
+import List(isPrefixOf)
 
 import Syntax
-import TokenId (TokenId,tPrelude,visImport,t_Tuple)
+import TokenId (TokenId,tPrelude,visImport,t_Tuple,getUnqualified)
 import AssocTree
 import OsOnly
 import Import
@@ -61,12 +62,14 @@ toAuxFile flags aux
 getImports :: (TokenId->Visibility) -> Environment
 		 -> Flags -> [ImpDecl TokenId] -> IO Environment
 getImports reexport (alreadyGot,identMap) flags impdecls = do
-    let importFiles = map impData impdecls
+    let importFiles = filter normalImport (map impData impdecls)
     auxInfos <- mapM getAuxFile importFiles
     let allInfo = zip importFiles auxInfos
     return ( foldr extendImportEnv alreadyGot allInfo
            , foldr extendIdentMap identMap allInfo )
   where
+    normalImport (modid,_) = 
+      not (sPrelude flags && "TraceOrig" `isPrefixOf` getUnqualified modid)
     getAuxFile :: (TokenId,Visibility) -> IO [(Identifier,AuxiliaryInfo)]
     getAuxFile (modid,importVisible) = do
         (_,f) <- readFirst (fixImportNames (sUnix flags) "hx" (show modid)
