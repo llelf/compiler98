@@ -85,6 +85,7 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
+LIBRARIES = src/libraries
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -142,7 +143,7 @@ HATTOOLSET= hat-stack hat-check hat-detect hat-observe hat-trail hat-view
 HATTOOLS= $(patsubst %, lib/$(MACHINE)/%, $(HATTOOLSET))
 
 TARGDIR= targets
-TARGETS= runtime prelude greencard hp2graph hattools \
+TARGETS= runtime prelude libraries greencard hp2graph hattools \
 	 profruntime profprelude profprelude-$(CC) \
 	 timeruntime timeprelude timeprelude-$(CC) \
 	 timetraceruntime timetraceprelude \
@@ -185,9 +186,12 @@ config: script/errnogen.c
 install:
 	./configure --install
 
-basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude
-basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude
-basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
+basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude \
+								libraries
+basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude \
+								libraries
+basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude \
+								libraries
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
@@ -223,13 +227,13 @@ $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 
 
 $(TARGDIR)/$(MACHINE)/compiler-nhc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=nhc98 install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/compiler-nhc
 $(TARGDIR)/$(MACHINE)/compiler-hbc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=hbc install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/compiler-hbc
 $(TARGDIR)/$(MACHINE)/compiler-ghc: $(COMPILER)
-	cd src/compiler98;     $(MAKE) HC=ghc install
+	cd src/compiler98;     $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/compiler-ghc
 
 
@@ -237,15 +241,19 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
+$(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
+	cd src/libraries/base; $(MAKE) -f Makefile.nhc98
+	touch $(TARGDIR)/$(MACHINE)/libraries
+
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=nhc98 install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-nhc
 $(TARGDIR)/$(MACHINE)/greencard-hbc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=hbc install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-hbc
 $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
-	cd src/greencard;      $(MAKE) HC=ghc install
+	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard-ghc
 
 
@@ -255,16 +263,16 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=nhc98 install config
-	cd src/interpreter;    $(MAKE) HC=nhc98 install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=hbc install config
-	cd src/interpreter;    $(MAKE) HC=hbc install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=ghc install config
-	cd src/interpreter;    $(MAKE) HC=ghc install
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 
@@ -372,23 +380,23 @@ $(TARGDIR)/$(MACHINE)/hat-$(BUILDCOMP): hat-trans-$(BUILDCOMP) \
 	touch $@
 
 $(TARGDIR)/$(MACHINE)/hat-trans-ghc: src/hat/trans/*.hs src/compiler98/*.hs
-	cd src/hat/trans;	$(MAKE) HC=ghc all
+	cd src/hat/trans;	$(MAKE) HC=$(BUILDWITH) all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-trans-nhc: src/hat/trans/*.hs src/compiler98/*.hs
-	cd src/hat/trans;	$(MAKE) HC=nhc98 all
+	cd src/hat/trans;	$(MAKE) HC=$(BUILDWITH) all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-ghc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=ghc all
+	cd src/hat/lib;		$(MAKE) HC=$(BUILDWITH) all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-lib-nhc: $(HATLIB)
-	cd src/hat/lib;		$(MAKE) HC=nhc98 all
+	cd src/hat/lib;		$(MAKE) HC=$(BUILDWITH) all
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-tools-ghc: $(HATUI)
-	cd src/hat/tools;      $(MAKE) HC=ghc install
+	cd src/hat/tools;      $(MAKE) HC=$(BUILDWITH) install
 	#cd src/hat/oldtools;   $(MAKE) install
 	touch $@
 $(TARGDIR)/$(MACHINE)/hat-tools-nhc: $(HATUI)
-	cd src/hat/tools;      $(MAKE) HC=nhc98 install
+	cd src/hat/tools;      $(MAKE) HC=$(BUILDWITH) install
 	#cd src/hat/oldtools;   $(MAKE) install
 	touch $@
 
@@ -424,6 +432,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
+	tar rf nhc98src-$(VERSION).tar $(LIBRARIES)
 	#tar rf nhc98src-$(VERSION).tar $(TRAILUI)
 	tar rf nhc98src-$(VERSION).tar $(HOODUI)
 	#tar rf nhc98src-$(VERSION).tar $(HATUI)
