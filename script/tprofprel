@@ -7,6 +7,14 @@ case $# in
   1) exit 1;;
 esac
 
+case $BASH in
+  "") if ( bash --version -e >/dev/null 2>&1 )
+      then exec bash $0 "$@"
+      fi ;;
+  *) ;;
+esac
+
+
 # Nasty compatibility stuff between /bin/sh/ and bash for arithmetic.
 if sh --version -e | grep -y gnu >/dev/null
 then increment() { ( let x=$1+1; echo $x; ); }
