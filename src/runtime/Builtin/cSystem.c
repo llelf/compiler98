@@ -11,6 +11,11 @@ C_HEADER(cSystem)
   char *src;
   int i;
 
+#ifdef TPROF
+  timerStop(&runTime);	/*PH*/
+  stoptimer();		/*PH*/
+#endif
+
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
 #ifdef PROFILE
@@ -20,15 +25,7 @@ C_HEADER(cSystem)
       REPLAY(errno);
   } else
 #endif
-#ifdef TPROF
-  timerStop(&runTime);	/*PH*/
-  stoptimer();		/*PH*/
-#endif
-  i = system(getPackedString(nodeptr));
-#ifdef TPROF
-  setuptimer();		/*PH*/
-  timerStart(&runTime);	/*PH*/
-#endif
+    i = system(getPackedString(nodeptr));
 #ifdef PROFILE
   if(record) {
     RECORD(i);
@@ -46,5 +43,11 @@ C_HEADER(cSystem)
       nodeptr = mkRight(mkExitSuccess());
     }
   }
+
+#ifdef TPROF
+  setuptimer();		/*PH*/
+  timerStart(&runTime);	/*PH*/
+#endif
+
   C_RETURN(nodeptr);
 }
