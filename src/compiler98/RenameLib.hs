@@ -243,7 +243,7 @@ Basically transform the importState into a renameState
 is2rs :: Flags 
       -> PackedString 
       -> (TokenId -> [TokenId]) 
-      -> (Bool -> Bool -> a {- TokenId -> IdKind -> IE -}) 
+      -> ((TokenId->Bool) -> a {- TokenId -> IdKind -> IE -}) 
       -> Overlap
       -> ImportState 
       -> Either [String] 
@@ -262,7 +262,7 @@ is2rs flags mrps qualFun expFun overlap
 --                           (listAT st) of
 --      (rt,ts) ->
 --          Right (qualFun
---                ,expFun True True
+--                ,expFun (\_->False)
 --                ,RenameState flags (unique+1) (unique,pmrps) [] rt ts []
 --                   Nothing errors []
 --                ,irt)
@@ -274,7 +274,7 @@ is2rs flags mrps qualFun expFun overlap
              (listAT st) of
         (rt,ts) ->
             Right (qf
-                  ,expFun True True
+                  ,expFun (\_->False)
                   ,RenameState flags (unique+1) (unique,pmrps) [] rt ts [] 
                      Nothing errors []
                   ,irt)

@@ -45,19 +45,19 @@ Uniquely rename all identfiers (also patch fixity)
 rename :: Flags 
        -> PackedString 
        -> (TokenId -> [TokenId]) 
-       -> (Bool -> Bool -> TokenId -> IdKind -> IE) 
+       -> ((TokenId->Bool) -> TokenId -> IdKind -> IE) 
        -> [(InfixClass TokenId,Int,[FixId TokenId])] 
        -> Decls TokenId -- declarations of program
        -> ImportState 
        -> Overlap
        -> Either [String] 
-            (Decls Id  -- renamed declarations of program
-            ,IntState  -- internal state with symbol table
-            ,(TokenId,IdKind) -> Id        -- tidFun
-            ,(TokenId,IdKind) -> Maybe Id  -- tidFunSafe
-            ,[(Id,[(Pos,Id)])]             -- derived
-            ,Maybe [Id]                    -- userDefault
-            ,Tree ((TokenId,IdKind),Either [Pos] [Id])  -- rename tree?
+            ( Decls Id  -- renamed declarations of program
+            , IntState  -- internal state with symbol table
+            , (TokenId,IdKind) -> Id        -- tidFun
+            , (TokenId,IdKind) -> Maybe Id  -- tidFunSafe
+            , [(Id,[(Pos,Id)])]             -- derived
+            , Maybe [Id]                    -- userDefault
+            , Tree ((TokenId,IdKind),Either [Pos] [Id])  -- rename tree?
             )
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =

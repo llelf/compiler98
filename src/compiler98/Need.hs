@@ -26,28 +26,31 @@ import PackedString(PackedString)
 import ImportState(ImportState)
 
 
-needProg :: Flags -> Module TokenId -> a {- [FixDecl TokenId] -} 
-         -> (NeedTable
-            ,TokenId -> [TokenId]
-            ,Overlap
-            ,Either [Char] 
-               (Bool -> Bool -> TokenId -> IdKind -> IE
-               ,[(PackedString
-                 ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
-                  -> [[TokenId]] -> Bool
-                 ,HideDeclIds
-                 )
-                ]
-               )
+needProg :: Flags
+         -> Module TokenId
+         -> ( NeedTable
+            , TokenId -> [TokenId]
+            , Overlap
+            , Either [Char] 
+                ( (TokenId->Bool) -> TokenId -> IdKind -> IE
+                , [ ( PackedString
+                    , (PackedString, PackedString, Tree (TokenId,IdKind)) 
+                         -> [[TokenId]] -> Bool
+                    , HideDeclIds
+                    )
+                  ]
+                )
             )
 
-needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) inf =
+needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
   let qualFun = qualRename impdecls
   in case needit (needModule (sDbgTrans flags || sDbgPrelude flags) n) 
                  qualFun (initNeed (modidl == tMain)) of
-       (need,overlap) -> (need,qualFun,overlap
-                         ,preImport flags modidl (treeMap fst need) 
-                            exports impdecls
+       (need,overlap) -> ( need
+                         , qualFun
+                         , overlap
+                         , preImport flags modidl (treeMap fst need) 
+                                     exports impdecls
                          )
 
 

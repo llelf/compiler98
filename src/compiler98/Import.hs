@@ -77,10 +77,10 @@ Read and process the interface file of one imported module.
 
 importOne :: Flags 
           -> ImportState 
-          -> (PackedString
-             ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
-              -> [[TokenId]] -> Bool
-             ,HideDeclIds) 
+          -> ( PackedString
+             , (PackedString,PackedString,Tree (TokenId,IdKind)) 
+                -> [[TokenId]] -> Bool
+             , HideDeclIds) 
           -> IO ImportState
 
 importOne flags importState (mrps,needFun,hideFun) = do

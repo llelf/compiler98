@@ -27,7 +27,6 @@ import ImportState(ImportState,Info,IE,initIS,getSymbolTableIS,getErrIS
 import IntState(IntState,dummyIntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
 import NeedLib(initNeed)
 import RenameLib(getSymbolTableRS,RenameState,getErrorsRS)
-import PreImport
 import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
                  ParseResult(..),parseit)
 
@@ -173,13 +172,14 @@ main' args = do
     else return ()
 
 
+  -- (Module _ (Visible modid) _ _ _ _) <- return parsedPrg
+  -- Insert check that sPart flags or modid == sourcefile ???
+
+
   {- 
   -- Perform "need" analysis (what imported entities are required?) 
   -- Second argument may contain error message or parse tree
-  -- Creates ImportState for next pass.
   -}
-  (Module _ (Visible modid) _ _ inf _) <- return parsedPrg
-  -- Insert check that sPart flags or modid == sourcefile ???
   parsedPrg' <- return (
           dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedPrg)
 
@@ -188,21 +188,20 @@ main' args = do
    ,qualFun	-- :: TokenId -> [TokenId]
    ,overlap	-- :: Overlap
    ,info)	-- :: Either String (expFun,imports)
-         <- return (needProg flags parsedPrg' inf)
-  (expFun	-- :: Bool -> Bool -> TokenId -> IdKind -> IE
+         <- return (needProg flags parsedPrg')
+  (expFun	-- :: (TokenId->Bool) -> TokenId -> IdKind -> IE
    ,imports)	-- :: [ ( PackedString
 		--      , (PackedString, PackedString, Tree (TokenId,IdKind))
 		--            -> [[TokenId]] -> Bool
 		--      , HideDeclIds
 		--      )
 		--    ]
-            <- catchError info
-                          (sSourceFile flags) id
+            <- catchError info (sSourceFile flags) id
   pF (sNeed flags) "Need (after reading source module)"  
             (show (treeMapList (:) need)) 
 
 
-  {- Parse interface files for imported modules -}
+  {- Parse interface files for imported modules.  -}
   beginPhase "imports"
   importState	-- :: ImportState
               <- nhcImport flags (addPreludeTupleInstances () (initIS need))

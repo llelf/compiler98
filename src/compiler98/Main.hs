@@ -174,7 +174,7 @@ nhcNeed flags (parsedProg@(Module pos (Visible modid) e impdecls inf d)) =
     pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedProg) 
     let parsedProg' = 
           dbgAddImport (sDbgTrans flags || sDbgPrelude flags) parsedProg 
-    case needProg flags parsedProg' inf of
+    case needProg flags parsedProg' of
       (need,qualFun,overlap,Left err) -> errorMsg (sSourceFile flags) err
       (need,qualFun,overlap,Right (expFun,imports)) -> do
          pF (sNeed flags) "Need (after reading source module)"  
@@ -251,7 +251,7 @@ Changes from importState to intState
 nhcRename :: Flags 
           -> PackedString 
           -> (TokenId -> [TokenId]) 
-          -> (Bool -> Bool -> TokenId -> IdKind -> IE) 
+          -> ((TokenId->Bool) -> TokenId -> IdKind -> IE) 
           -> Module TokenId 
           -> ImportState 
           -> Overlap 
