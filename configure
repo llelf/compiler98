@@ -7,9 +7,9 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-NHC98VERSION="v1.14 (2002-06-13)"
+NHC98VERSION="v1.15 (CVS snapshot)"
 HMAKEVERSION="3.05 (2002-06-13)" export HMAKEVERSION
-HATVERSION="2.00" export HATVERSION
+HATVERSION="2.01" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 #HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
@@ -707,7 +707,7 @@ else	# [ "$INSTALL" = "yes" ]
     #  else echo ' (exists)'
     #  fi
     #fi
-    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . --exclude hatlib ) |\
+    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
       ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
     if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
