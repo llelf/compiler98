@@ -50,6 +50,7 @@ typedef struct {
     int trust;
 } *CNmType;
 
+FileOffset	primModInfo	(ModInfo *m);
 
 FileOffset	primTRoot	(void);
 FileOffset	primTAp1	(FileOffset tap, FileOffset tfn

@@ -11,8 +11,22 @@
  */
 
 FileOffset
+primModInfo (ModInfo *m)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fprintf(stderr,"primModInfo %s (%s) -> 0x%x\n",m->modname,m->srcfile,fo);
+    fprintf(HatFile,"%c%s%c%s%c", (m->trusted ? 0x21 : 0x20)
+                    ,m->modname, 0x0, m->srcfile, 0x0);
+    m->fileoffset = fo;
+    return fo;
+}
+
+FileOffset
 primTRoot (void)
 {
+    fprintf(stderr,"primTRoot\n");
     return (FileOffset)0;
 }
 
@@ -24,6 +38,7 @@ primTAp1 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp1 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x01,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -42,6 +57,7 @@ primTAp2 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp2 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x02,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -62,6 +78,7 @@ primTAp3 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp3 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x03,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -84,6 +101,7 @@ primTAp4 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp4 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x04,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -108,6 +126,7 @@ primTAp5 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp5 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -134,6 +153,7 @@ primTAp6 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp6 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -162,6 +182,7 @@ primTAp7 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp7 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -192,6 +213,7 @@ primTAp8 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp8 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -224,6 +246,7 @@ primTAp9 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp9 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -258,6 +281,7 @@ primTAp10 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp10 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -294,6 +318,7 @@ primTAp11 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp11 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -332,6 +357,7 @@ primTAp12 (FileOffset tap, FileOffset tfn
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTAp12 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
@@ -363,10 +389,12 @@ primTNm (FileOffset tnm, CNmType nm, FileOffset sr)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTNm 0x%x 0x%x 0x%x -> 0x%x\n",tnm,nm,sr,fo);
     fputc(((Trace<<5) | TNm),HatFile);
     fwrite(&tnm,       sizeof(FileOffset), 1, HatFile);
     fwrite(&(nm->ptr), sizeof(FileOffset), 1, HatFile);
     fwrite(&sr,        sizeof(FileOffset), 1, HatFile);
+    fflush(HatFile);
     return fo;
 }
 
@@ -376,6 +404,7 @@ primTInd (FileOffset t1, FileOffset t2)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTInd 0x%x 0x%x -> 0x%x\n",t1,t2,fo);
     fputc(((Trace<<5) | TInd),HatFile);
     fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     fwrite(&t2, sizeof(FileOffset), 1, HatFile);
@@ -388,6 +417,7 @@ primTHidden (FileOffset t1)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTHidden 0x%x -> 0x%x\n",t1,fo);
     fputc(((Trace<<5) | THidden),HatFile);
     fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     return fo;
@@ -399,6 +429,7 @@ primTSatA (FileOffset t1)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTSatA 0x%x -> 0x%x\n",t1,fo);
     fputc(((Trace<<5) | TSatA),HatFile);
     fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     return fo;
@@ -415,6 +446,7 @@ primTSatB (FileOffset t1)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTSatB 0x%x -> 0x%x\n",t1,fo);
     fputc(((Trace<<5) | TSatB),HatFile);
     fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     return fo;
@@ -430,6 +462,7 @@ primTSatC (FileOffset torig,FileOffset teval)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primTSatB 0x%x 0x%x -> 0x%x\n",torig,teval,fo);
     fputc(((Trace<<5) | TSatC),HatFile);
     fwrite(&teval, sizeof(FileOffset), 1, HatFile);
     return fo;
@@ -465,6 +498,7 @@ primNTInt (int i)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTInt %d -> 0x%x\n",i,fo);
     fputc(((NmType<<5) | NTInt),HatFile);
     i = htonl(i);
     fwrite(&i, sizeof(int), 1, HatFile);
@@ -477,6 +511,7 @@ primNTChar (char c)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTChar '%c' -> 0x%x\n",c,fo);
     fputc(((NmType<<5) | NTChar),HatFile);
     fwrite(&c, sizeof(char), 1, HatFile);
     return mkCNmType(NTChar,fo,False);
@@ -532,12 +567,15 @@ CNmType
 primNTId (IdEntry *id)
 {
     if (id->fileoffset) {
+        fprintf(stderr,"primNTId \"%s\" -> (cached)\n",id->name);
         return mkCNmType(NTId,id->fileoffset,id->srcmod->trusted);
     } else {
         FileOffset fo;
         int i;
+        if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
         fo = ftell(HatFile);
         fo = htonl(fo);
+        fprintf(stderr,"primNTId \"%s\" -> 0x%x\n",id->name,fo);
         fputc(((NmType<<5) | NTId),HatFile);
         fprintf(HatFile,"%s",id->name);
         fputc(0x0,HatFile);
@@ -560,6 +598,7 @@ primNTConstr (IdEntry *id)
     } else {
         FileOffset fo;
         int i;
+        if (!(id->srcmod->fileoffset)) (void)primModInfo(id->srcmod);
         fo = ftell(HatFile);
         fo = htonl(fo);
         fputc(((NmType<<5) | NTConstr),HatFile);
@@ -581,6 +620,7 @@ primNTTuple ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTTuple -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTTuple),HatFile);
     return mkCNmType(NTTuple,fo,False);
 }
@@ -591,6 +631,7 @@ primNTFun ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTFun -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTFun),HatFile);
     return mkCNmType(NTFun,fo,False);
 }
@@ -601,6 +642,7 @@ primNTCase ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTCase -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTCase),HatFile);
     return mkCNmType(NTCase,fo,False);
 }
@@ -611,6 +653,7 @@ primNTLambda ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTLambda -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTLambda),HatFile);
     return mkCNmType(NTLambda,fo,False);
 }
@@ -621,6 +664,7 @@ primNTDummy ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTDummy -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTDummy),HatFile);
     return mkCNmType(NTDummy,fo,False);
 }
@@ -631,6 +675,7 @@ primNTCString (char *s)
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTCString \"%s\" -> 0x%x\n",s,fo);
     fputc(((NmType<<5) | NTCString),HatFile);
     fprintf(HatFile,"%s",s);
     fputc(0x0,HatFile);
@@ -643,6 +688,7 @@ primNTIf ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTIf -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTIf),HatFile);
     return mkCNmType(NTIf,fo,False);
 }
@@ -653,6 +699,7 @@ primNTGuard ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTGuard -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTGuard),HatFile);
     return mkCNmType(NTGuard,fo,False);
 }
@@ -663,6 +710,7 @@ primNTContainer ()
     FileOffset fo;
     fo = ftell(HatFile);
     fo = htonl(fo);
+    fprintf(stderr,"primNTContainer -> 0x%x\n",fo);
     fputc(((NmType<<5) | NTContainer),HatFile);
     return mkCNmType(NTContainer,fo,False);
 }
