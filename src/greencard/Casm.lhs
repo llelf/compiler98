@@ -102,16 +102,16 @@ baseTyToCall StablePtr    = "stableInsert(getStablePtr(nodeptr))"
 baseTyToCall (Foreign _)  = "(derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr)))"
 
 baseTyToRtn :: BaseTy -> String -> String
-baseTyToRtn Int          v = "mkInt("++v++")"
-baseTyToRtn Char         v = "mkChar("++v++")"
-baseTyToRtn Bool         v = "mkBool("++v++")"
-baseTyToRtn Float        v = "mkFloat("++v++")"
-baseTyToRtn Double       v = "mkDouble("++v++")"
-baseTyToRtn PackedString v = "mkString("++v++")"
-baseTyToRtn Word         v = "mkInt("++v++")"
-baseTyToRtn Addr         v = "mkAddr("++v++")"
-baseTyToRtn StablePtr    v = "mkStablePtr(stableRef("++v++"))"
-baseTyToRtn (Foreign f)  v = "mkCInt((int)allocForeignObj((void*)"++v++",(gcCval)"++f++",gcNow))"
+baseTyToRtn Int          v = "nhc_mkInt("++v++")"
+baseTyToRtn Char         v = "nhc_mkChar("++v++")"
+baseTyToRtn Bool         v = "nhc_mkBool("++v++")"
+baseTyToRtn Float        v = "nhc_mkFloat("++v++")"
+baseTyToRtn Double       v = "nhc_mkDouble("++v++")"
+baseTyToRtn PackedString v = "nhc_mkString("++v++")"
+baseTyToRtn Word         v = "nhc_mkInt("++v++")"
+baseTyToRtn Addr         v = "nhc_mkAddr("++v++")"
+baseTyToRtn StablePtr    v = "nhc_mkStablePtr(stableRef("++v++"))"
+baseTyToRtn (Foreign f)  v = "nhc_mkCInt((int)allocForeignObj((void*)"++v++",(gcCval)"++f++",gcNow))"
 
 \end{code}
 
