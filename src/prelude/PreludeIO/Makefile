@@ -34,10 +34,12 @@ include ../Makefile.common
 
 
 # Here are some extra rules.
+
+ifeq "T" "${TRACING}"
 extra: ${SUSPECT_O}
 ${SUSPECT_O}: ${OBJDIR}/%.$O : %.hs
 	$(HC) -c -T -dbgtrans -notrusted -DTRACING -P$(INCDIR) $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
-
+endif
 
 
 # Here are the dependencies.
