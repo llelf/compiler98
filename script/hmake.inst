@@ -1,16 +1,17 @@
 #!/bin/sh
 # hmake - make for Haskell programs
-# Original Author: Thomas Hallgren, hallgren@cs.chalmers.se
+# Original Author (in tcsh): Thomas Hallgren, hallgren@cs.chalmers.se
 # hacked by Niklas Röjemo, rojemo@cs.chalmers.se
-# Current Author: Malcolm Wallace, 1998-1999, Malcolm.Wallace@cs.york.ac.uk 
+# Current Author (in sh): (c) 1998-2002 Malcolm.Wallace@cs.york.ac.uk 
 
+INSTALLVER="InstallVer"
 SCRIPTDIR=${SCRIPTDIR-ScriptDir}
 MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
 HMAKEDIR=${HMAKEDIR-ExecutableDir}
 TMP=${TMP-/tmp}
 
-MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}
-OLDER=${OLDER-$HMAKEDIR/$MACHINE/Older}
+MKPROG=${MKPROG-$HMAKEDIR/$MACHINE/MkProg}	# the real `hmake' program
+OLDER=${OLDER-$HMAKEDIR/$MACHINE/Older}		# a helper program
 
 if [ ! -d $HMAKEDIR/$MACHINE ]
 then
@@ -37,21 +38,19 @@ fi
   }
 #fi
 
-# Some important configuration:
-# First try user's home directory, then machine-specific config, then
-# installation-wide config.  At least one of these must exist!
-if [ -f $HOME/.hmakerc ]
-then . $HOME/.hmakerc
-else
-  if [ -f $HMAKEDIR/$MACHINE/hmake.config ]
-  then . $HMAKEDIR/$MACHINE/hmake.config
-  else
-    if [ -f $HMAKEDIR/hmake.config ]
-    then . $HMAKEDIR/hmake.config
-    else echo "hmake: Important configuration file is missing!"; exit 1
-    fi
-  fi
-fi
+BUILTBY=
+# USINGRTS decides how run-time system options should be passed to MkProg
+# itself (***Note: NOT to the compiler called by hmake).  Possible values
+# are:   rts       enclosed between +RTS -RTS
+#        minus     first on commandline, trailed by -
+# If you compiled hmake with ghc or nhc13/98, USINGRTS should be rts.
+# If you compiled hmake with hbc or xtc,      USINGRTS should be minus.
+case $BUILTBY in
+  ghc|nhc*) USINGRTS=rts;;
+  hbc|xtc) USINGRTS=minus;;
+  gcc)     USINGRTS=rts; BUILTBY=nhc98 ;;
+esac
+
 
 # Now let's get started.
 
@@ -81,21 +80,23 @@ do
     -realclean)    hmflags=$hmflags" $1" ;;
     -keepPrelude)  hmflags=$hmflags" $1" ;;
     -watch)        hmflags=$hmflags" $1" ;;
+    -hat)          hmflags=$hmflags" $1" ;;
     -n)  hmflags=$hmflags" -q"; exec=cat ;;
     -q)  hmflags=$hmflags" $1" ;;
     -N*) hmflags=$hmflags" $1" ;;
     -g)  hmflags=$hmflags" $1"; exec=cat ;;
     -M*) hmflags=$hmflags" $1"; exec=cat ;;
-    -d)  shift; objdir=$1; hmflags=$hmflags" -d$1" ;;
+    -f)  shift; configfile=$1; hmflags=$hmflags" -f$1" ;;
+    -d)  shift; objdir=$1;     hmflags=$hmflags" -d$1" ;;
     -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" $1" ;;
-    # $COMPILERS) COMP=`echo $1 | cut -c2-` ;;	-- doesn't work correctly
     -hbc)   COMP=hbc ;;
     -ghc)   COMP=ghc ;;
     -nhc98) COMP=nhc98 ;;
     -nhc13) COMP=nhc13 ;;
-    -xtc)   COMP=xtc ;;
     -HC=*)  COMP=`echo $1 | cut -c5-` ;;
+    -hc=*)  COMP=`echo $1 | cut -c5-` ;;
     -HC)    shift ; COMP=$1 ;;
+    -hc)    shift ; COMP=$1 ;;
 
     # Run-time flags to hmake itself
     +RTS) shift
@@ -105,13 +106,13 @@ do
           done ;;
 
     # Run-time flags to the compiler
-    -A*)  rtflags=$rtflags" $1" ;;	# stacksize:      hbc
     -H*)  rtflags=$rtflags" $1" ;;	# heapsize:  ghc, hbc, nhc98
     -h*)  rtflags=$rtflags" $1" ;;	# heapsize:            nhc98
+    -A*)  rtflags=$rtflags" $1" ;;	# stacksize:      hbc
+    -V*)  rtflags=$rtflags" $1" ;;	# stacksize:           nhc98
+    -K*)  rtflags=$rtflags" $1" ;;	# stacksize: ghc       nhc98
     -B*)  rtflags=$rtflags" $1" ;;	# GC stats:       hbc, nhc98
     -S*)  rtflags=$rtflags" $1" ;;	# GC stats:       hbc
-    -V*)  rtflags=$rtflags" $1" ;;	# stacksize:           nhc98
-    -K*)  rtflags=$rtflags" $1" ;;	# stacksize: ghc
    #-gc*) rtflags=$rtflags" $1" ;;	# GC flags:       hbc?
 
     # Protected compiler flags
@@ -140,6 +141,8 @@ do
     -t|-z) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=z.o"
          TPROF=1 ;;
+    -C) hcflags=$hcflags" $1";
+        hmflags=$hmflags" -o-suffix=hc" ;;
 
     # mainly GHC flags
     -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
@@ -183,8 +186,50 @@ then
   exit 1
 fi
 
-compilerstyle $COMP	# Use config to select compiler-specific options.
+# Ensure we know the default compiler to use if none was specified, by
+# checking (in this order)
+#   (1) a specified config file,
+#   (2) the user's personal config file
+#   (3) the system-wide config file
+#
+if [ "$COMP" = "" ]
+then
+  if [ -f $configfile ]
+  then COMP=`grep defaultCompiler $configfile | cut -d'"' -f2`
+  else
+    if [ -f $HOME/.hmakerc/$MACHINE ]
+    then COMP=`grep defaultCompiler $HOME/.hmakerc/$MACHINE/ |cut -d'"' -f2`
+    else
+      if [ -f $HMAKEDIR/$MACHINE/hmakerc ]
+      then COMP=`grep defaultCompiler $HMAKEDIR/$MACHINE/hmakerc |cut -d'"' -f2`
+      else COMP=$BUILTBY	# a desparate fallback position
+      fi
+    fi
+  fi
+fi
 
+# This variable should be null - do not change it.
+OD=
+# Define the characteristics of each known compiler.
+compilerstyle () {
+  case `basename $1` in
+    hbc)   RTSOPTIONSTYLE=minus
+           CTSOPTIONSTYLE=none
+           export LMLDIR HBCDIR
+           ;;
+    nhc98) RTSOPTIONSTYLE=rts
+           CTSOPTIONSTYLE=cts
+           OD="-od"
+           ;;
+    ghc)   RTSOPTIONSTYLE=none
+           CTSOPTIONSTYLE=none
+           ;;
+    *)     ;;
+  esac
+}
+
+# Select the right compiler-specific style in which to pass various options.
+compilerstyle $COMP
 case $KNOWN in
   no) echo "hmake: Sorry, I do not know about your installation of $COMP"
       exit 1 ;;
@@ -213,12 +258,8 @@ case $USINGRTS in
   rts)   hmrtflags="+RTS $hmrtflags -RTS" ;;
 esac
 
-if which $COMP >/dev/null 2>&1
-then HC="$COMP"
-else HC="$SCRIPTDIR/$COMP"	# quick hack to enable in-place builds
-fi
-hmflags="$hmflags $PRELUDEPATH $CPPSYMBOLS"
-hcflags="$hcflags $EXTRACOMPILERFLAGS"
+
+# Get ready to rumble...
 HFLAGS="$rtflags$ctflags$hcflags$flags $HFLAGS"
 
 export HC HFLAGS OLDER LDFLAGS	# MkProg expects these variables to be set.
@@ -226,7 +267,7 @@ export CPPFLAGS			# cpp usually expects this variable.
 export MACHINE			# nhc98 script is faster if this is set.
 
 # Here we go...
-$MKPROG $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
+$MKPROG -hc=$COMP $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
 CODE=$?
 case $CODE in
   0) $exec <$TMP/hmake$$

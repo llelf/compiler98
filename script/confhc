@@ -2,20 +2,17 @@
 #	confhc -- detect installed Haskell compilers and versions
 #	author:   Malcolm.Wallace@cs.york.ac.uk, Sept 1999
 #			added "hmake interactive" config, May 2000
+#			removed support for nhc13, Nov 2001
+#			simplified for hmake3, Jan 2002
 
-# VERSION=${HMAKEVERSION-"1.8+"}	# obsolete defn
+MACHINE=${MACHINE-`script/harch`}
+PWD=`pwd`
 
-echo "  (hmake configuration is done once only.)"
-echo "First we look for already-installed Haskell compilers:"
-
+echo "Looking for already-installed Haskell compilers:"
 # Assume that we start out with a blank config.
-HBCDIR=
-GHCDIR=
-NHC13DIR=
-NHC98DIR=
-# ToDo: If any of these variables are already set, should we skip the tests
-# for that compiler?
-
+HBCKNOWN=
+GHCKNOWN=
+NHCKNOWN=
 
 # We need a working BSD-style `echo' command: at least Solaris may not have it.
 #   (The calling script must have already compiled our emulated 'echo'.)
@@ -44,164 +41,51 @@ esac
 #fi
 
 
-# There are a variety of possible schemes for distinguishing
-# architecture-specific files across a shared heterogeneous network.
-# We try most of them here while looking for existing compilers.
-
-MACHINE=`script/harch`
-if arch >/dev/null 2>&1
-then methods="machdir machext machpre archdir archext archpre none"
-     ARCH=`arch`
-else methods="machdir machext machpre none"
-     ARCH=unknown
-fi
-
-
-# This is the mapping from names to methods.
-method () {
-  ext=$1
-  case $2 in
-    none)    echo ${ext} ;;
-    machdir) echo ${ext}/${MACHINE} ;;
-    machext) echo ${ext}-${MACHINE} ;;
-    machpre) echo ${MACHINE}/${ext} ;;
-    archdir) echo ${ext}/${ARCH}    ;;
-    archext) echo ${ext}-${ARCH}    ;;
-    archpre) echo ${ARCH}/${ext}    ;;
-    *)       echo unknown ;;
-  esac
-}
-
-# This is the quoted mapping from names to methods (so we can generate
-# a shell script for the method).
-methodtext () {
-  ext=$1
-  case $2 in
-    none)    echo "${ext}" ;;
-    machdir) echo "${ext}/\$\{MACHINE\}" ;;
-    machext) echo "${ext}-\$\{MACHINE\}" ;;
-    machpre) echo "\$\{MACHINE\}/${ext}" ;;
-    archdir) echo "${ext}/\`arch\`"    ;;
-    archext) echo "${ext}-\`arch\`"    ;;
-    archpre) echo "\`arch\`/${ext}"    ;;
-    *)       echo "unknown" ;;
-  esac
-}
-
-
-# This is the test which tries all methods on a range of directories.
-# The last successful match is kept - so make sure you call 'trydirs'
-# with the locations in increasing order of preference.
-trydirs () {
-    ext=$1; shift
-    for dir in "$@"
-    do
-      for m in $methods
-      do
-        #echo "  ... trying ${dir}/`method ${ext} ${m}`"
-        if [ -d ${dir}/`method ${ext} ${m}` ]
-        then DIR=${dir}
-             EXT=${ext}
-             METHOD=${m}
-             #GHCVER=${ver}	# GHC only	-- no longer required.
-             #echo "found it"
-        fi
-      done
-    done
-}
-
-
 # Ok, so first look for HBC
-DIR=
-EXT=
-METHOD=
-echo -n "  Looking for hbc... "
+echo -n "  Looking for hbc...   "
 if which hbc >/dev/null 2>&1
 then
+  HBCKNOWN=`which hbc`
   HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f2`
   case $HBCVERSION in
-    version) HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f3 | cut -c8` ;;
-    *)       HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f4 | cut -c8` ;;
+    version) HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f3` ;;
+    *)       HBCVERSION=`hbc -v 2>&1 | cut -d' ' -f4` ;;
   esac
-  whichHBC=`which hbc`
-  up1_HBC=`dirname $whichHBC`
-  up2_HBC=`dirname $up1_HBC`
-  trydirs lib/lmlc /usr/local /usr ${up1_HBC} ${up2_HBC}
 fi
-HBCDIR=${DIR}
-HBCEXT=${EXT}
-HBCMETHOD=${METHOD}
-if [ "$HBCDIR" = "" ]
+if [ "$HBCKNOWN" = "" ]
 then
   echo "(not found)"
+  echo "  Note: LMLDIR/HBCDIR variables must be set to enable detection of hbc."
 else
-  echo "found 0.9999.${HBCVERSION} in ${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`"
+  echo "found ${HBCVERSION}"
 fi
   
   
 # Now look for GHC.  Determining the version number here is due to Simon Marlow.
-DIR=
-EXT=
-METHOD=
-echo -n "  Looking for ghc... "
+echo -n "  Looking for ghc...   "
 if which ghc >/dev/null 2>&1
 then
-  whichGHC=`which ghc`
-  GHCVER=`${whichGHC} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-  GHCSYM=`echo $GHCVER | tr "." " " | ( read x y z; echo $x$y; )`
-  if [ $GHCSYM -lt 500 ]
-  then
-    GHCDIR=`grep '^\$libdir=' ${whichGHC} | head -1 | sed 's/^\$libdir=[^/]*\(.*\).;/\1/'`
-    if [ -d $GHCDIR/imports ]
-    then GHCINCDIR=$GHCDIR/imports
-    elif [ -d $GHCDIR/lib/imports ]
-    then GHCINCDIR=$GHCDIR/lib/imports
-    else GHCDIR=""
-    fi
-  else
-    #GHCDIR=`ghc-pkg --show-package std --field import_dirs`
-    #GHCINCDIR=`dirname $GHCDIR`
-    GHCDIR=`grep '^libdir' ${whichGHC} | head -1 | sed 's/^libdir=.\(.*\)./\1/'`
-    if [ ! -d $GHCDIR/imports ]
-    then GHCDIR=`grep '^TOPDIROPT' ${whichGHC} | head -1 | sed 's/^TOPDIROPT="*-B\([^";]*\).*/\1/'`
-    fi
-    if [ -d $GHCDIR/imports ]
-    then GHCINCDIR=$GHCDIR/imports
-    else GHCDIR=""
-    fi
-  fi
+  GHCKNOWN=`which ghc`
+  GHCVERSION=`${GHCKNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
+  echo $GHCVERSION | tr "." " " | ( read x y z; echo $x$y; ) \
+						 >targets/$MACHINE/ghcsym;
 fi
-if [ "$GHCDIR" = "" ]
+if [ "$GHCKNOWN" = "" ]
 then  echo "(not found)"
-else  echo "found ${GHCVER} in ${GHCINCDIR}"
+else  echo "found ${GHCVERSION}"
 fi
   
   
-# Finally, check for previous installations of nhc13 and nhc98.
-echo -n "  Looking for nhc13... "
-if which nhc13 >/dev/null 2>&1
-then
-  whichNHC=`which nhc13`
-  up1_NHC=`dirname ${whichNHC}`
-  up2_NHC=`dirname ${up1_NHC}`
-  NHC13DIR=`grep NHC13INCDIR ${whichNHC} | grep ${up2_NHC} | cut -c27- | cut -d'}' -f1`
-fi
-if [ "$NHC13DIR" = "" ]
-then  echo "(not found)"
-else  echo "found in $NHC13DIR"
-fi
-
+# Finally, check for a previous installation of nhc98.
 echo -n "  Looking for nhc98... "
 if which nhc98 >/dev/null 2>&1
 then
-  whichNHC=`which nhc98`
-  up1_NHC=`dirname ${whichNHC}`
-  up2_NHC=`dirname ${up1_NHC}`
-  NHC98DIR=`grep NHC98INCDIR ${whichNHC} | grep nhc | cut -c27- | cut -d'}' -f1`
+  NHCKNOWN=`which nhc98`
+  NHCVERSION=`${NHCKNOWN} --version | head -1 | cut -d' ' -f2`
 fi
-if [ "$NHC98DIR" = "" ]
-then  echo "(not found)"
-else  echo "found in $NHC98DIR"
+if [ "$NHCKNOWN" != "" ]
+then  echo "found ${NHCVERSION}"
+else  echo "(not found)"
 fi
 
 
@@ -210,9 +94,9 @@ then
   BUILDHMAKE=
   echo -n "I am guessing that you want to use "
   # in order of preference: ghc, then hbc, then gcc...
-  if [ "$HBCDIR" = "" ];
+  if [ "$HBCKNOWN" = "" ];
   then
-    if [ "$GHCDIR" = "" ];
+    if [ "$GHCKNOWN" = "" ];
     then
       echo -n gcc
       BUILDHMAKE=gcc
@@ -221,7 +105,7 @@ then
       BUILDHMAKE=ghc
     fi
   else
-    if [ "$GHCDIR" = "" ];
+    if [ "$GHCKNOWN" = "" ];
     then
       echo -n hbc
       BUILDHMAKE=hbc
@@ -236,83 +120,25 @@ else
 fi
 echo " to build hmake."
 
-export HBCDIR GHCDIR NHC13DIR NHC98DIR BUILDHMAKE
-echo "  Now I'm creating targets/$MACHINE/hmake.config for your installation."
-cat script/hmakeconfig.inst |\
-( if [ "$HBCDIR" = "" ];
-  then cat
-  else sed -e "s|^lmldir=$|lmldir=${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`|" |\
-       sed -e "s|^hbcknown=no$|hbcknown=yes|" |\
-       ( case $HBCVERSION in
-           5)  sed -e "s|^HBC98=$|HBC98=yes|" ;;
-           6)  sed -e "s|^HBC98=$|HBC98=yes|" ;;
-           *)  sed -e "s|^HBC98=$|HBC98=no|" ;;
-         esac
-       )
-  fi
-) |\
-( if [ "$GHCDIR" = "" ];
-  then cat
-  else sed -e "s|^ghcincdir=$|ghcincdir=${GHCINCDIR}|" \
-           -e "s|^ghcknown=no$|ghcknown=yes|" \
-           -e "s|^ghcsym=0$|ghcsym=${GHCSYM}|"  |\
-       ( case $GHCVER in
-           0.29) sed -e "s|^GHC=0$|GHC=2|"  ;;
-           2.*)  sed -e "s|^GHC=0$|GHC=3|"  ;;
-           3.*)  sed -e "s|^GHC=0$|GHC=4|"  ;;
-           4.*)  sed -e "s|^GHC=0$|GHC=5|"  ;;
-           5.*)  sed -e "s|^GHC=0$|GHC=6|"  ;;
-           *)    sed -e "s|^GHC=0$|GHC=7|"  ;;
-         esac
-       )
-  fi
-) |\
-( if [ "$NHC13DIR" = "" ];
-  then cat
-  else sed -e "s|^nhc13incdir=$|nhc13incdir=${NHC13DIR}|" |\
-       sed -e "s|^nhc13known=no$|nhc13known=yes|"
-  fi
-) |\
-( if [ "$NHC98DIR" = "" ];
-  then cat
-  else sed -e "s|^nhc98incdir=$|nhc98incdir=${NHC98DIR}|" |\
-       sed -e "s|^nhc98known=no$|nhc98known=yes|"
-  fi
-) |\
-sed -e "s|^BUILTBY=$|BUILTBY=${BUILDHMAKE}|" >targets/$MACHINE/hmake.config
+# ---- ----
+export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE
+echo "  Now I'm creating targets/$MACHINE/hmake3.config for your installation."
+INVOKE="$PWD/script/hmake-config $PWD/lib/$MACHINE/hmakerc"
+{ if [ "$HBCKNOWN" != "" ]
+  then echo "$INVOKE add hbc"
+       echo "$INVOKE add ${HBCKNOWN}"
+  fi;
+  if [ "$GHCKNOWN" != "" ]
+  then echo "$INVOKE add ghc"
+       echo "$INVOKE add ${GHCKNOWN}"
+  fi;
+  if [ "$NHCKNOWN" != "" ]
+  then echo "$INVOKE add nhc98"
+       echo "$INVOKE add ${NHCKNOWN}"
+  fi;
+} >targets/$MACHINE/hmake3.config
+echo $BUILDHMAKE >targets/$MACHINE/buildwith
 
-### Delete all LocalConfig.hs references.
-#CONFIGHS=src/interpreter/$MACHINE/LocalConfig.hs
-#echo "  Now I'm creating $CONFIGHS"
-#mkdir -p src/interpreter/$MACHINE
-#echo >$CONFIGHS  "module LocalConfig where"
-#echo >>$CONFIGHS "hmakeversion = \"$VERSION\""
-#echo >>$CONFIGHS "builtby = \"$BUILDHMAKE\""
-#echo >>$CONFIGHS "ghcKnown = " \
-#    `if [ "$GHCDIR" = "" ]; then echo "False"; else echo "True"; fi`
-#echo >>$CONFIGHS "hbcKnown = " \
-#    `if [ "$HBCDIR" = "" ]; then echo "False"; else echo "True"; fi`
-#echo >>$CONFIGHS "nhcKnown = " \
-#    `if [ "$NHC98DIR" = "" ]; then echo "False"; else echo "True"; fi`
-#echo >>$CONFIGHS "hbcdir = \"$HBCDIR/`method $HBCEXT $HBCMETHOD`\""
-#echo >>$CONFIGHS "nhc98dir = \"$NHC98DIR\""
-#echo >>$CONFIGHS "ghcdir = \"$GHCINCDIR\""
-#echo >>$CONFIGHS "ghcver = ${GHCSYM-0}"
-#echo >>$CONFIGHS "ghclang = \
-#    `case $GHCVER in
-#           0.29) echo 2 ;;
-#           2.*)  echo 3 ;;
-#           3.*)  echo 4 ;;
-#           4.*)  echo 5 ;;
-#           *)    echo 0 ;;
-#     esac`"
-#echo >>$CONFIGHS "defaultHc = builtby -- \"nhc98\""
-
-echo
-echo "If I got something wrong, you can edit"
-echo "   targets/$MACHINE/hmake.config"
-echo "   by hand and run 'configure' again.  (I will not undo your changes.)"
-echo "   (You can force me to auto-configure hmake again by removing that file.)"
 echo "Done."
 exit 0
 

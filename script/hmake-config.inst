@@ -1,0 +1,20 @@
+#!/bin/sh
+# hmake-config - adjust the configuration of hmake
+# Author: Malcolm Wallace, 2002, Malcolm.Wallace@cs.york.ac.uk 
+
+SCRIPTDIR=${SCRIPTDIR-ScriptDir}
+MACHINE=${MACHINE-"`$SCRIPTDIR/harch`"}
+HMAKEDIR=${HMAKEDIR-ExecutableDir}
+TMP=${TMP-/tmp}
+
+MKCONFIG=${MKCONFIG-$HMAKEDIR/$MACHINE/MkConfig}
+
+if [ ! -d $HMAKEDIR/$MACHINE ]
+then
+  echo "`basename $0` is not installed/configured for $MACHINE."
+  echo "  See your system administrator, or install it yourself from"
+  echo "  http://www.cs.york.ac.uk/fp/hmake/"
+  exit 1
+fi
+
+$MKCONFIG "$@"
