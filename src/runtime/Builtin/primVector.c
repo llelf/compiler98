@@ -131,7 +131,7 @@ NodePtr primNewVectorC (int size, NodePtr box)
 
   dstptr = (NodePtr)&res[1+EXTRA];
   for(i=0; i<size; i++)
-    dstptr[i] = val;
+    dstptr[i] = (Node)val;
 
   return res;
 }
