@@ -311,6 +311,7 @@ $(HATTOOLS): $(HATUI)
 	cd src/hat/oldtools;   $(MAKE) install	# Not for long!
 $(TARGDIR)/$(MACHINE)/hat-nhc: $(HATLIB)
 	cd src/hat/lib;	       $(MAKE) HC=nhc98 all
+	cd src/hat/lib;	       $(MAKE) HC=nhc98 install-nhc98
 	touch $(TARGDIR)/$(MACHINE)/hat-nhc
 $(TARGDIR)/$(MACHINE)/hat-ghc: $(HATLIB)
 	cd src/hat/lib;	       $(MAKE) HC=ghc all
@@ -378,7 +379,7 @@ binDist:
 	rm -f nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)-$(MACHINE).tar.gz
 	tar cf nhc98-$(VERSION)-$(MACHINE).tar $(BASIC)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar lib/$(MACHINE)
-	tar rf nhc98-$(VERSION)-$(MACHINE).tar lib/hat
+	tar rf nhc98-$(VERSION)-$(MACHINE).tar include/hat
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(SCRIPT)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(MAN)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(INCLUDE)

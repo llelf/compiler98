@@ -7,8 +7,9 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.13 (CVS snapshot 2002-05-27)"
+NHC98VERSION="v1.13 (CVS snapshot 2002-05-27)"
 HMAKEVERSION="3.04 (2002-05-17)" export HMAKEVERSION
+HATVERSION="1.13" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 #HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
@@ -138,9 +139,9 @@ do
   echo "  [+/-]man             Do/don't (re-)install man pages [+man]"
   echo "  [+/-]docs            Do/don't (re-)install html docs [-docs]"
             exit 0 ;;
-    --version|-v) echo "`basename $0`: $CONFIGVERSION"
-                  echo "nhc98:     $INSTALLVER"
+    --version|-v) echo "nhc98:     $NHC98VERSION"
                   echo "hmake:     $HMAKEVERSION"
+                  echo "hat:       $HATVERSION"
                   echo '  [' $INSTALLINFO ']'
                   exit 0 ;;
     *) echo "`basename $0`: unrecognised option $1"
@@ -150,7 +151,7 @@ do
   shift
 done
 
-echo Configuring for nhc98... '[' $CONFIGVERSION ']'
+echo Configuring for nhc98... '[' $NHC98VERSION ']'
 if [ -f targets/$MACHINE/config.cache ]
 then
   echo "Starting with earlier config in targets/$MACHINE/config.cache"
@@ -160,7 +161,6 @@ fi
 
 INSTALLINFO="config: $MACHINE/$BUILDWITH by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
 
-HLIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
 LIBDIR=${LIBDIR-$INSTALLDIR/lib/nhc98}
 BINDIR=${BINDIR-$INSTALLDIR/bin}
 INCDIR=${INCDIR-$INSTALLDIR/include/nhc98}
@@ -168,6 +168,9 @@ MANDIR=${MANDIR-$INSTALLDIR/man/man1}
 DOCDIR=${DOCDIR-$INSTALLDIR/doc/nhc98}
 #HBCDIR=${HBCDIR}
 #GHCDIR=${GHCDIR}
+HATINCDIR=${HATINCDIR-$INSTALLDIR/include/hat}
+HATLIBDIR=${HATLIBDIR-$INSTALLDIR/lib/hat}
+HMAKELIBDIR=${HMAKELIBDIR-$INSTALLDIR/lib/hmake}
 
 case $OS in
   CYGWIN*) EXE=.exe ;;
@@ -198,14 +201,16 @@ then
   echo "Final install root:   $INSTALLDIR"
   if [ "$LIB" = "yes" ]
   then
-    echo "hmake binaries:       $HLIBDIR/$MACHINE"
     echo "nhc98 binaries/libs:  $LIBDIR/$MACHINE"
+    echo "hmake binaries:       $HMAKELIBDIR/$MACHINE"
+    echo "hat   binaries:       $HATLIBDIR/$MACHINE"
   else
     echo "Executables and libs: (none)"
   fi
   if [ "$INC" = "yes" ]
   then
     echo "Interfaces/includes:  $INCDIR"
+    echo "Hat interfaces:       $HATINCDIR"
   else
     echo "Interfaces/includes:  (none)"
   fi
@@ -483,7 +488,7 @@ then
         no)  echo "USINGRTS=0" ;;
         yes) echo "USINGRTS=1" ;;
       esac;
-      echo "INSTALLVER=\"$CONFIGVERSION\"";
+      echo "INSTALLVER=\"$NHC98VERSION\"";
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "LIBCOMPAT=\"$LIBCOMPAT\"";
@@ -581,8 +586,21 @@ else	# [ "$INSTALL" = "yes" ]
            cp $file $DESTDIR$INCDIR
       fi
     done
+    echo "Hat interface files (.hx) go into:"
+    echo -n "    $DESTDIR$HATINCDIR"
+    if [ ! -d $DESTDIR$HATINCDIR ]
+    then mkdir -p $DESTDIR$HATINCDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    for file in $BUILDINCDIR/hat/*.hx
+    do
+      if [ -f $file ]
+      then echo "	`basename $file` "
+           cp $file $DESTDIR$HATINCDIR
+      fi
+    done
     case $BUILDWITH in
-      ghc) echo "Installing hat auxiliary files as a ghc package:";
+      ghc) echo "Installing hat as a ghc/nhc98 package:";
            script/confhat;;
     esac
     echo
@@ -607,15 +625,15 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ScriptDir|$BINDIR|" |\
     sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/nhc98
     echo "	hmake"
-    sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
+    sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hmake.inst |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|^BUILTBY=$|BUILTBY=${BUILDWITH}|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
     echo "	hmake-config"
-    sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hmake-config.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo "	hi"
-    sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
+    sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hi.inst |\
     sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo "	hood"
@@ -631,15 +649,18 @@ else	# [ "$INSTALL" = "yes" ]
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
     echo "	hat-trans"
-    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
+    sed -e "s|ExecutableDir|$HATLIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|^HATINCDIR=|HATINCDIR=`if test -f lib/hat/ghcincdir; then cat lib/hat/ghcincdir; fi;`|" \
-			>$DESTDIR$BINDIR/hat-trans
+    sed -e "s|^HATINCDIR=|HATINCDIR=$HATINCDIR|" >$DESTDIR$BINDIR/hat-trans
+    echo "    hat-tools:"
+    sed -e "s|ExecutableDir|$HATLIBDIR|" script/greencard.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hat-template
     for hattool in $HATTOOLS
     do  echo "	"$hattool
         rm -f $DESTDIR$BINDIR/$hattool;
-        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/$hattool
+        ln $DESTDIR$BINDIR/hat-template $DESTDIR$BINDIR/$hattool
     done
+    rm $DESTDIR$BINDIR/hat-template
     echo
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
@@ -658,31 +679,44 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
-    if [ $DESTDIR$LIBDIR != $DESTDIR$HLIBDIR ]
+    if [ $DESTDIR$LIBDIR != $DESTDIR$HMAKELIBDIR ]
     then
-      echo -n "    $DESTDIR$HLIBDIR/$MACHINE"
-      if [ ! -d $DESTDIR$HLIBDIR/$MACHINE ]
-      then mkdir -p $DESTDIR$HLIBDIR/$MACHINE;  echo ' (created)'
+      echo -n "    $DESTDIR$HMAKELIBDIR/$MACHINE"
+      if [ ! -d $DESTDIR$HMAKELIBDIR/$MACHINE ]
+      then mkdir -p $DESTDIR$HMAKELIBDIR/$MACHINE;  echo ' (created)'
+      else echo ' (exists)'
+      fi
+    fi
+    if [ $DESTDIR$LIBDIR != $DESTDIR$HATLIBDIR ]
+    then
+      echo -n "    $DESTDIR$HATLIBDIR/$MACHINE"
+      if [ ! -d $DESTDIR$HATLIBDIR/$MACHINE ]
+      then mkdir -p $DESTDIR$HATLIBDIR/$MACHINE;  echo ' (created)'
       else echo ' (exists)'
       fi
     fi
     { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
       ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
-    if [ $DESTDIR$HLIBDIR != $DESTDIR$LIBDIR ]
+    if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
-           mv MkProg$EXE Older$EXE hmakerc  $DESTDIR$HLIBDIR/$MACHINE;
-           mv HInteractive$EXE MkConfig$EXE $DESTDIR$HLIBDIR/$MACHINE )
+           mv MkProg$EXE Older$EXE hmakerc  $DESTDIR$HMAKELIBDIR/$MACHINE;
+           mv HInteractive$EXE MkConfig$EXE $DESTDIR$HMAKELIBDIR/$MACHINE )
+    fi
+    if [ $DESTDIR$HATLIBDIR != $DESTDIR$LIBDIR ]
+    then ( cd $DESTDIR$LIBDIR/$MACHINE;
+           mv hat-* $DESTDIR$HATLIBDIR/$MACHINE; )
     fi
     # can only change hmake's config if new compiler is in its final location
     if [ -z "$DESTDIR" ]
     then
       echo "	Adjusting... hmakerc"
-      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc add $BINDIR/nhc98
-      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc add nhc98 ||\
+      $BUILDBINDIR/hmake-config $HMAKELIBDIR/$MACHINE/hmakerc add $BINDIR/nhc98
+      $BUILDBINDIR/hmake-config $HMAKELIBDIR/$MACHINE/hmakerc add nhc98 ||\
           echo "(This error message is harmless)"
-      $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc default $BINDIR/nhc98
+      $BUILDBINDIR/hmake-config $HMAKELIBDIR/$MACHINE/hmakerc \
+						default $BINDIR/nhc98
       if [ -d src ]	# remove temporary build version of nhc98 from config
-      then $BUILDBINDIR/hmake-config $HLIBDIR/$MACHINE/hmakerc \
+      then $BUILDBINDIR/hmake-config $HMAKELIBDIR/$MACHINE/hmakerc \
 						delete $BUILDBINDIR/nhc98
       fi
     fi
@@ -750,7 +784,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   echo "EXE=$EXE" ;
   echo "CURSES=\"$CURSES\"" ;
   echo "READLINE=\"$READLINE\"" ;
-  echo "INSTALLVER=\"$CONFIGVERSION\"" ;
+  echo "INSTALLVER=\"$NHC98VERSION\"" ;
   echo "INSTALLINFO=\"$INSTALLINFO\"" ;
 ) >targets/$MACHINE/config.cache
 
