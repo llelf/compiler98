@@ -41,6 +41,40 @@ void hPutStrC (FileDesc *f, NodePtr s)
   return;
 }
 
+static void
+debug_hPutStr (char *i, NodePtr src)
+{
+  if (Hp>=(NodePtr)Sp) {
+    fprintf(stderr,"hPutStr:%s GC required 0x%x>=0x%x\n",i,Hp,Sp);
+  }
+  if (!((unsigned)*src&(unsigned)0x3)) {
+    fprintf(stderr,"hPutStr:%s got INDIRECT src=0x%x dst=0x%x\n",i,src,*src);
+  }
+  if ((unsigned)*src&(unsigned)0x1) {
+    fprintf(stderr,"hPutStr:%s got VAP/CAP src=0x%x\n",i,src);
+  }
+  if ((unsigned)*src&(unsigned)0x2) {
+    switch (GET_LARGETAG(src)) {
+      case CON_DATA  | CON_TAG :
+      case CON_CDATA | CON_TAG :
+        fprintf(stderr,"hPutStr:%s got CONSTR src=0x%x c=%d size=%d psize=%d\n",i,src,GET_CONSTR(src),CONINFO_SIZE(GET_CONINFO(src)),CONINFO_PSIZE(GET_CONINFO(src)));
+        break;
+      case CON_PTRS  | CON_TAG :
+        fprintf(stderr,"hPutStr:%s got CONSTRP src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
+        break;
+      case CON_WORDS | CON_TAG :
+        fprintf(stderr,"hPutStr:%s got CONSTRW src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
+        if (CONINFO_LARGESIZES(GET_CONINFO(src))==1) {
+          fprintf(stderr,"hPutStr:%s%s char='%c'\n",i,i,GET_CHAR_VALUE(src));
+        }
+        break;
+      default:
+        fprintf(stderr,"hPutStr:%s got OTHER src=0x%x\n",i,src);
+        break;
+    }
+  }
+}
+
 static void 
 hPutStr_ByChar (FileDesc *f, NodePtr s)
 {
@@ -59,47 +93,19 @@ hPutStr_ByChar (FileDesc *f, NodePtr s)
             break;
       case 1: /* (:) */
             chr = GET_POINTER_ARG1(src,1);
-            src = GET_POINTER_ARG1(src,2);
             C_PUSH(chr);
             C_EVALTOS(chr);
             chr = C_POP();
             IND_REMOVE(chr);
             c = GET_CHAR_VALUE(chr);
             err = fputc(c,f->fp);
+            src = GET_POINTER_ARG1(src,2);
             break;
       default: /* error */
             fprintf(stderr,"hPutStr: internal error, not a cons-list!\n");
-            fprintf(stderr,"hPutStr:   src=0x%x, constr=%d\n",src,GET_CONSTR(src));
+            debug_hPutStr("  ",src);
             exit(1);
             break;
-    }
-  }
-}
-
-static void
-debug_hPutStr (char *i, NodePtr src)
-{
-  if (!((unsigned)*src&(unsigned)0x3)) {
-    fprintf(stderr,"hPutStr:%s got INDIRECT src=0x%x dst=0x%x\n",i,src,*src);
-  }
-  if ((unsigned)*src&(unsigned)0x1) {
-    fprintf(stderr,"hPutStr:%s got VAP/CAP src=0x%x\n",i,src);
-  }
-  if ((unsigned)*src&(unsigned)0x2) {
-    switch (GET_LARGETAG(src)) {
-      case CON_DATA  | CON_TAG :
-      case CON_CDATA | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTR src=0x%x c=%d size=%d psize=%d\n",i,src,GET_CONSTR(src),CONINFO_SIZE(GET_CONINFO(src)),CONINFO_PSIZE(GET_CONINFO(src)));
-        break;
-      case CON_PTRS  | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTRP src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
-        break;
-      case CON_WORDS | CON_TAG :
-        fprintf(stderr,"hPutStr:%s got CONSTRW src=0x%x size=%d\n",i,src,CONINFO_LARGESIZES(GET_CONINFO(src)));
-        break;
-      default:
-        fprintf(stderr,"hPutStr:%s got OTHER src=0x%x\n",i,src);
-        break;
     }
   }
 }
@@ -129,7 +135,6 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
               break;
         case 1: /* (:) */
               chr = GET_POINTER_ARG1(src,1);
-              src = GET_POINTER_ARG1(src,2);
               C_PUSH(chr);
               C_EVALTOS(chr);
               chr = C_POP();
@@ -143,15 +148,9 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
                            dstptr = &buf[0];	/* re-initialise loop */
                            count=CHUNK;
                            break;
-#if 0
-                case '\0': err = fputs(buf,f->fp);
-                           err = fputc('\0',f->fp);
-                           dstptr = &buf[0];	/* re-initialise loop */
-                           count=CHUNK-1;
-                           break;
-#endif
                 default: break;
               }
+              src = GET_POINTER_ARG1(src,2);
               break;
         default: /* error */
               fprintf(stderr,"hPutStr: internal error, not a cons-list!\n");
@@ -204,16 +203,16 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
               break;
         case 1: /* (:) */
               chr = GET_POINTER_ARG1(src,1);
-              src = GET_POINTER_ARG1(src,2);
               C_PUSH(chr);
               C_EVALTOS(chr);
               chr = C_POP();
               IND_REMOVE(chr);
               *dstptr++ = GET_CHAR_VALUE(chr);
+              src = GET_POINTER_ARG1(src,2);
               break;
         default: /* error */
               fprintf(stderr,"hPutStr: internal error, not a cons-list!\n");
-              fprintf(stderr,"hPutStr:   src=0x%x, constr=%d\n",src,GET_CONSTR(src));
+              debug_hPutStr("  ",src);
               exit(1);
               break;
       }
