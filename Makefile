@@ -386,6 +386,7 @@ binDist:
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(DOC)
 	mkdir nhc98-$(VERSION)
 	cd nhc98-$(VERSION); tar xf ../nhc98-$(VERSION)-$(MACHINE).tar
+	rm nhc98-$(VERSION)/lib/$(MACHINE)/hmakerc
 	tar cf nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)
 	rm -r nhc98-$(VERSION)
 	gzip nhc98-$(VERSION)-$(MACHINE).tar
