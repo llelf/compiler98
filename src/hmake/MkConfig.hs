@@ -179,7 +179,7 @@ configure Nhc98 nhcpath = do
   fullpath <- which nhcpath
   nhcversion <- runAndReadStdout (nhcpath ++ " --version 2>&1 | head -1 | "
                                   ++"cut -d' ' -f2")
-  dir <- runAndReadStdout ("grep \^NHC98INCDIR "++fullpath
+  dir <- runAndReadStdout ("grep ^NHC98INCDIR "++fullpath
                            ++ "| cut -c27- | cut -d'}' -f1")
   return CompilerConfig { compilerStyle = Nhc98
 			, compilerPath  = nhcpath
