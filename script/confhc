@@ -174,12 +174,16 @@ INVOKE="$PWD/script/hmake-config $CONFIGPATH"
   fi;
   if [ "$GHCKNOWN" != "" ]
   then echo "$INVOKE add ghc"
-       echo "$INVOKE add ghc-${GHCVERSION}"
        echo "$INVOKE add ${GHCKNOWN}"
-       echo "$INVOKE add ${GHCKNOWN}-${GHCVERSION}"
+       if ghc-${GHCVERSION} --version >/dev/null 2>&1
+       then echo "$INVOKE add ghc-${GHCVERSION}"
+       fi
+       if ${GHCKNOWN}-${GHCVERSION} --version >/dev/null 2>&1
+       then echo "$INVOKE add ${GHCKNOWN}-${GHCVERSION}"
+       fi
   fi;
   if [ "$GHC2KNOWN" != "" ]
-  then echo "$INVOKE add ghc-${GHC2VERSION}"
+  then echo "$INVOKE add ${COMP}"
        echo "$INVOKE add ${GHC2KNOWN}"
   fi;
   if [ "$NHCKNOWN" != "" ]
