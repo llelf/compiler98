@@ -109,7 +109,7 @@ tokenBinary    = [(TClass,tBinary)
                 ,(Var,t_gtgt),(Var,t_gtgteq),(Var,t_return)
                 ,(Var,t_ltlt),(Var,t_plus)]
 tokenNplusK = 	[(Var,t_lessequal),(Var,t_subtract)]
-tokenFFI =      map (\n->(Var,t_mkIOok n)) [0..12] ++
+tokenFFI =      map (\n->(Var,t_mkIOok n)) [0..15] ++
 		[(Var,tunsafePerformIO)]
 
 {- End TokenInt -------------------------------------------------------------}
