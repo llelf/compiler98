@@ -1,12 +1,21 @@
 #!/bin/sh
 case $1 in
   base)	echo Data Debug Control Control/Monad System System/IO System/Console
-	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
-	echo Text/PrettyPrint Text/Html Text/Show
+	echo Text Text/PrettyPrint Text/Html Text/Show
 	echo Foreign Foreign/Marshal Foreign/C NHC
+	;;
+  parsec)
+	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
+	;;
+  network)
+	echo Network
 	;;
   QuickCheck)
 	echo Debug Debug/QuickCheck
+	;;
+  HaXml)
+	echo Text Text/ParserCombinators Text/XML Text/XML/HaXml
+	echo Text/XML/HaXml/Html Text/XML/HaXml/Xtract
 	;;
   Japi) echo Graphics Graphics/UI Graphics/UI/Japi
 	;;
