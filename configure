@@ -618,6 +618,19 @@ else	# [ "$INSTALL" = "yes" ]
            cp $file $DESTDIR$INCDIR/NHC
       fi
     done
+    echo "    package: base"
+    mkdir -p $DESTDIR$INCDIR/base
+    for dir in `script/pkgdirlist base`
+    do
+      mkdir -p $DESTDIR$INCDIR/base/$dir
+      for file in $BUILDINCDIR/base/$dir/*
+      do
+        if [ -f $file ]
+        then echo "	$dir/`basename $file` "
+             cp $file $DESTDIR$INCDIR/base/$dir
+        fi
+      done
+    done
     #echo "Hat interface files (.hx) go into:"
     #echo -n "    $DESTDIR$HATINCDIR"
     #if [ ! -d $DESTDIR$HATINCDIR ]
