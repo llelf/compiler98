@@ -19,7 +19,7 @@
 
 //#define doStatistics
 
-extern int getline(char s[], int max);
+/* extern int getline(char s[], int max); */
 
 typedef struct lnode* FunTablePtr;
 
@@ -135,7 +135,7 @@ unsigned long showFunTable_internal(FunTable ftable,unsigned int precision,int m
 	l=l->next;
 	if ((mode)&&(c % 20==0)) {
 	  printf("<press RETURN to continue>");
-	  getline(buf,5);
+	/*getline(buf,5);	-- compatibility fix */
 	}
       }
 #ifdef doStatistics      

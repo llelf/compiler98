@@ -6,7 +6,7 @@
 /**************************************************************************/
 
 #include <stdio.h>
-#include <ncurses.h>
+#include <curses.h>
 #include "Expressions.h"
 #include "hatgeneral.h"
 #include "menu.h"

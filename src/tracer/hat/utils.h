@@ -2,6 +2,9 @@
 #define _UTILS_H
 
 #include "hat.h"
+#if defined(sparc)
+#include <sys/byteorder.h>
+#endif
 
 extern FILE *HatFile, *OutputFile, *BridgeFile;
 extern FileOffset errorRoot, errorMsg,remoteStartNode;
