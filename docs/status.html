@@ -33,12 +33,12 @@
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2001-02-05</td>
-  <td>2000-12-05</td>
+  <td>2001-02-13</td>
+  <td>2001-02-12</td>
   <td>1997</td>
   <td>1996</td>
   <td>2000-11-23</td>
-  <td>2001-02-05</td>
+  <td>2001-02-08</td>
 </tr>
 </table>
 </center>
@@ -72,10 +72,10 @@ trace browser, time profiler, and common FFI.
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>1998-11-26</td>
-  <td>2000-11-10</td>
+  <td>1998</td>
+  <td>2001-02-13</td>
   <td>2000-08-20</td>
-  <td>1998-06-03</td>
+  <td>1998</td>
   <td>2000-03-01</td>
   <td>2000-11-10</td>
   <td>2000-09-15</td>
@@ -94,43 +94,35 @@ trace browser, time profiler, and common FFI.
                     <th>version</th> <th>date</th> <th>size</th></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.00.tar.gz">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.02.tar.gz">
       Haskell + C source (.tar.gz)</a></td>
   <td>any</td>
-  <td>1.00</td>
-  <td>000915</td>
-  <td>2804kb</td></tr>
+  <td>1.02</td>
+  <td>2001-02-14</td>
+  <td>3036kb</td></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.00-ix86-Linux.tar.gz">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-Linux.tar.gz">
       Executable (.tar.gz)</a></td>
   <td>ix86-Linux</td>
-  <td>1.00</td>
-  <td>001002</td>
-  <td>4112kb</td></tr>
+  <td>1.02</td>
+  <td>2001-02-14</td>
+  <td>4718kb</td></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.00-2.src.rpm">
-      Haskell + C source (.rpm)</a></td>
-  <td>any</td>
-  <td>1.00</td>
-  <td>000925</td>
-  <td>2798kb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.00-2.i386.rpm">
-      Executable (.rpm)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.00</td>
-  <td>000925</td>
-  <td>4210kb</td></tr>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-sparc-solaris2.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>sparc-solaris2</td>
+  <td>1.02</td>
+  <td>2001-02-14</td>
+  <td>5827kb</td></tr>
 
 <tr bgcolor=#ffffdd>
   <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
       Executable (.deb)</a></td>
   <td>ix86-Linux</td>
-  <td>1.00</td>
-  <td>000928</td>
+  <td>1.00 *</td>
+  <td>2000-09-28</td>
   <td>3Mb</td></tr>
 
 </table>
@@ -155,10 +147,6 @@ Alternative locations:
    ix86-Linux, ix86-NetBSD, ix86-FreeBSD, ix86-CYGWIN-NT4, ix86-Cygwin_95,
    ppc-Linux, sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4.
 <p>
-<b>Important note:</b> The long series of pre-releases is now
-finished, meaning that nhc98 is now pretty stable.  If you would like
-to contribute a package format not already listed, either source or
-executable, please mail us to arrange how to upload it.
 
 <p>
 All the documents available on the web are included in all the packages.
@@ -189,63 +177,10 @@ comprehensive, but if you have any problems, please mail
 <tt>nhc-users@cs.york.ac.uk</tt></a>  (you must be a member of the
 list to post to it).
 
-<br><br><hr>
-<h3>Patches</h3>
-<center>
-<table width=450 border=1 cellspacing=0 cellpadding=2>
-<tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
-                    <th>date</th> <th>fixes what problem?</th></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-confhc">
-      confhc</a></td>
-  <td>nhc98 v1.00</td>
-  <td>000925</td>
-  <td>configuration of hmake sometimes fails to find an already-installed
-      version of nhc98</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-which">
-      which</a></td>
-  <td>nhc98 v1.00</td>
-  <td>000925</td>
-  <td>hmake script on Cygwin fails because of missing 'which' command</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-rtb">
-      rtb</a></td>
-  <td>nhc98 v1.00</td>
-  <td>000925</td>
-  <td>rtb script fails because of missing shell quotes</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-freebsd">
-      freebsd</a></td>
-  <td>nhc98 v1.00</td>
-  <td>000925</td>
-  <td>failure to build BinArray library on FreeBSD
-      (htonl/ntohl errors)</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-rangeSize">
-      rangeSize</a></td>
-  <td>nhc98 v1.00</td>
-  <td>000926</td>
-  <td>incorrect definitions of inRange and rangeSize in Ix library</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-newtype">
-      newtype</a></td>
-  <td>nhc98 v1.00</td>
-  <td>001113</td>
-  <td>failure for a newtype of an imported newtype whose constructor is hidden</td></tr>
-
-</table>
-</center>
-
+<br><br>
 
 <hr>
-<h3>nhc98 release 1.01 (2001-02-xx) features</h3>
+<h3>nhc98 release 1.02 (2001-02-14) features</h3>
 <ul>
 <li> Improvement: Fixed a space-leak in the compiler.  Compilation now
               requires approximately half the previous maximum heap,
@@ -300,50 +235,6 @@ the redex-trail-based tracing and debugging system.
 </ul>
 
 
-<hr>
-<h3>full nhc98 release 1.00 (2000-09-15) features</h3>
-<ul>
-<li> Update:  Many changes to the nhc98 tracer (listed separately below)
-              and a new name for the tracing system: <em>Hat</em>.
-<li> Update:  Many changes to <em>hi</em> (hmake interactive), both to
-              improve the automatic configuration and to add features.
-<li> Addition:  Andy Gill's HOOD debugging library.
-<li> Addition:  New commandline flag -showtype, used by <em>hi</em> to
-                display types of expressions.
-<li> Addition:  New options for hmake: -clean and -realclean.
-<li> Documentation:   We have added many more comments and type signatures
-                      to the compiler, so implementers should find it easier
-                      to read.
-<li> Bugfix:  Added correct derivation for Read and Show classes on named fields.
-<li> Bugfix:  Configuration bugs for Cygwin and Solaris.
-<li> Bugfix:  Configuration for 'echo -n' on certain OSes.
-<li> Bugfix:  Parser now accepts {-# pragmas #-}.
-<li> Bugfix:  Directory.closedir: ensure directory is finalised only once.
-<li> Bugfix:  New functions FFI.withForeignObj and FFI.touchForeignObj.
-<li> Bugfix:  List.isPrefixOf: second clause was missing.
-<li> Bugfix:  System.getEnv: throws error when symbol is undefined.
-<li> Bugfix:  Prelude.lex "1..n" now returns [("1", "..n")].
-<li> Bugfix:  Added Read and Show instances for 5-tuples.
-<li> Bugfix:  Doubles were occasionally truncated to Float, Floats were
-              occasionally promoted to Double.
-<li> Portability: You can now run nhc98comp with Hugs!  (although this is
-                  unlikely to be directly useful to anyone.)
-</ul>
-The following updates and bugfixes are specifically for <em>Hat</em>,
-the redex-trail-based tracing and debugging system.
-<ul>
-<li> Literal numeric expressions and patterns now work again (previously
-     broken in the move to Haskell'98).
-<li> Added arithmetic primitives for Integer, Float, and Double types.
-<li> Added rules for the primitive FFI (foreign import only).
-<li> Added standard libraries: Ratio, Complex, Numeric, Ix, List,
-         Maybe, Char, Monad.  (Still missing: Array, Directory, System,
-         Time, Locale, CPUTime, Random.)
-<li> Fixed the compilation of newtypes.
-<li> Fixed derived instances of classes.
-<li> Fixed compiler conflict between Java 1.1 and 1.2.
-<li> Fixed many browser bugs.
-</ul>
 
 <h3><a href=history98.html>Previous release history (nhc98)</a></h3>
 <h3><a href=history.html>Release history of nhc13</a></h3>
@@ -356,7 +247,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.11.23<br>
+This page last modified: 2001.02.13<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
