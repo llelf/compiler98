@@ -3,7 +3,9 @@ include Makefile.inc
 THISLIB = IOExtras
 
 HSSRCS	= FixIO.hs PerformGC.hs UnsafePerformIO.hs UnsafePtrEq.hs \
-	  DIORef.hs NewIORef.hs ReadIORef.hs WriteIORef.hs
+	  DIORef.hs NewIORef.hs ReadIORef.hs WriteIORef.hs \
+	  DIOArray.hs BoundsIOArray.hs FreezeIOArray.hs NewIOArray.hs \
+	  ReadIOArray.hs WriteIOArray.hs
 GCSRCS	=
 
 
@@ -39,14 +41,14 @@ clean:
 
 
 ${HSOBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c  -P$(LOW) -P../PreludeIO/ -part -o $@ $<
+	$(HC) -c  -P$(LOW) -P../PreludeIO/ -P../Array -part -o $@ $<
 ${GCOBJS}: ${OBJDIR}/%.o : %.gc
 	$(HC) -c  -P../Time/ -P../PreludeIO/ -part -o $@ $<
 ${MAINOBJ}: ${OBJDIR}/%.o : %.hs
 	$(HC) -c +CTS -lib -CTS -o $@ $<
 
 ${HSCFILES}: %.c : %.hs
-	$(HC) -C -P$(LOW) -P../PreludeIO/ -part $<
+	$(HC) -C -P$(LOW) -P../PreludeIO/ -P../Array -part $<
 ${GCCFILES}: %.c : %.gc
 	$(HC) -C -P../Time/ -P../PreludeIO/ -part $<
 ${MAINCFILE}: %.c : %.hs

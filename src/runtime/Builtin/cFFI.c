@@ -12,4 +12,4 @@ void   writeCharAtAddr   (void* a, char c)	{ *(char*)a = c; }
 char   readCharAtAddr    (void* a)		{ return *(char*)a; }
 
 /* pointer equality for IOExtras */
-int    unsafePtrEq       (void* a, void* b)	{ return (a==b); )
+int    unsafePtrEq       (void* a, void* b)	{ return (a==b); }

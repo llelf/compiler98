@@ -13,6 +13,7 @@ extern Node CF_Array_46_95arrayMultiple[];
 
 #ifdef PROFILE
 static SInfo nodeProfInfo = { "Builtin","Builtin.primVector","Vector.Vector"};
+static SInfo nodeProfInfoCopy = { "Builtin","Builtin.primCopyVector","Vector.Vector"};
 #endif
 
 C_HEADER(primVector)
@@ -67,5 +68,51 @@ C_HEADER(primVector)
 
 
 
+/* primCopyVector :: Vector a -> Vector a */
+C_HEADER(primCopyVector)
+{
+  int size,i;
+  NodePtr res,arg;
+  NodePtr srcptr,dstptr;
 
+  arg = C_GETARG1(1);
+  IND_REMOVE(arg);
+  size = CONINFO_LARGESIZES(GET_CONINFO(arg));
+
+  res = C_ALLOC(1+EXTRA+size);
+  res[0] = CONSTRW(size,0);
+  INIT_PROFINFO(res,&nodeProfInfoCopy)
+  
+  srcptr = (NodePtr)&arg[1+EXTRA];
+  dstptr = (NodePtr)&res[1+EXTRA];
+  for(i=0; i<size; i++)
+    dstptr[i] = srcptr[i];
+
+  C_RETURN(res);
+}	
+
+
+/* primUpdateVector :: Int -> a -> Vector a -> () */
+C_HEADER(primUpdateVector)
+{
+  int idx,size;
+  NodePtr val,arg;
+  NodePtr dstptr;
+
+  arg = C_GETARG1(1);
+  IND_REMOVE(arg);
+  idx = GET_INT_VALUE(arg);
+
+  val = C_GETARG1(2);
+  IND_REMOVE(val);
+
+  arg = C_GETARG1(3);
+  IND_REMOVE(arg);
+  size = CONINFO_LARGESIZES(GET_CONINFO(arg));
+  dstptr = (NodePtr)&arg[1+EXTRA];
+
+  if (idx<=size) dstptr[idx] = (Node)val;
+
+  C_RETURN(mkUnit());
+}	
 
