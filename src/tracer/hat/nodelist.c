@@ -14,16 +14,13 @@
 
 /* return an empty list */
 NodeList* newList() {
-  int sz = sizeof(NodeList);
-  NodeList* e = (NodeList*) calloc(1,sz); // sets both pointers to NULL!
+  NodeList* e = (NodeList*) calloc(1, sizeof(NodeList)); // sets both pointers to NULL!
 }
 
 /* append to lists end */
 void appendToList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr e = (NodePtr) calloc(1,sz);
+  hNodePtr e = (hNodePtr) calloc(1, sizeof(NodeElement));
   if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
     exit(1);
   }
@@ -39,10 +36,8 @@ void appendToList(NodeList *nl,unsigned long foffset) {
 
 /* insert an element at lists beginning */
 void addBeforeList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr e = (NodePtr) calloc(1,sz);
+  hNodePtr e = (hNodePtr) calloc(1,sizeof(NodeElement));
   if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
     exit(1);
   }
@@ -54,10 +49,8 @@ void addBeforeList(NodeList *nl,unsigned long foffset) {
 
 /* insert element appropriately within the list */
 void insertInList(NodeList *nl,unsigned long foffset) {
-  int sz = sizeof(NodeElement);
-  NodePtr l,e = (NodePtr) calloc(1,sz);
+  hNodePtr l,e = (hNodePtr) calloc(1,sizeof(NodeElement));
   if (e==NULL) {
-    fprintf(stderr,"Tried to reserve %i bytes of memory.\n",sz);
     fprintf(stderr,"ERROR: No more space in heap!\n\n");
     exit(1);
   }
@@ -78,7 +71,7 @@ void insertInList(NodeList *nl,unsigned long foffset) {
 
 /* check for element in list */
 int isInList(NodeList *nl,unsigned long foffset) {
-  NodePtr e;
+  hNodePtr e;
   if (nl->first==NULL) return 0; // list empty! => not in list!
   if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
     return 0;  // foffset without range of stored values => not in list!
@@ -90,7 +83,7 @@ int isInList(NodeList *nl,unsigned long foffset) {
 
 /* show values in list */
 void showList(NodeList *nl) {
-  NodePtr e;
+  hNodePtr e;
   e = nl->first;
   if (e==NULL) printf("EMPTY\n"); else
     {
@@ -103,7 +96,7 @@ void showList(NodeList *nl) {
 
 /* return the number of elements in the list */
 unsigned long listLength(NodeList *nl) {
-  NodePtr e;
+  hNodePtr e;
   unsigned long l = 0;
   e = nl->first;
   while (e!=NULL) {
@@ -115,7 +108,7 @@ unsigned long listLength(NodeList *nl) {
 
 /* free the entire list */
 void freeList(NodeList *nl) {
-  NodePtr e,f;
+  hNodePtr e,f;
   e = nl->first;
   while (e!=NULL) {
     f=e;
@@ -127,8 +120,8 @@ void freeList(NodeList *nl) {
 }
 
 /* show pretty printing of all nodes (and their results) in the list */
-void showPretty(NodeList *nl,int verboseMode) {
-  NodePtr e;
+void showPretty(NodeList *nl,int verboseMode,unsigned int precision) {
+  hNodePtr e;
   FunTable* results = newFunTable();
   e = nl->first;
 
@@ -139,8 +132,8 @@ void showPretty(NodeList *nl,int verboseMode) {
       while (e!=NULL) {
 	satc=findAppSAT(e->fileoffset);  // find SATC for the application!
 	if (isSAT()) {
-	  ExprNode* r=buildExpr(satc,verboseMode);
-	  ExprNode* a=buildExpr(e->fileoffset,verboseMode);
+	  ExprNode* r=buildExpr(satc,verboseMode,precision);
+	  ExprNode* a=buildExpr(e->fileoffset,verboseMode,precision);
 	  addToFunTable(results,a,r,e->fileoffset);
 	}
 	e=e->next;

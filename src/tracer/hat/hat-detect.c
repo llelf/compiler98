@@ -14,8 +14,10 @@
 #include "hatfileops.h"
 #include "FunTable.h"
 #include "nodelist.h"
+#include "hashtable.h"
+#include "observe.h"
 
-void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current);
+#define HASH_TABLE_SIZE 3000
 
 void checkmainCAF();
 
@@ -24,6 +26,7 @@ NodeList* userTrustedList = NULL; // list of trusted functions
 FunTable* memorizedFunsYes = NULL;
 FunTable* memorizedFunsNo = NULL;
 NodeList* CAFList = NULL;
+unsigned int precision = 30;
 
 main (int argc, char *argv[])
 {
@@ -33,7 +36,7 @@ main (int argc, char *argv[])
     exit(1);
   }
   traceFileName = filename(argv[1]);
-  if (!openfile(traceFileName)) {
+  if (openfile(traceFileName)<0) {
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
   }
@@ -95,11 +98,47 @@ void clearCAFList() {
 }
 
 void showReduction(unsigned long application,unsigned long result,int verbose) {
-  showNode(application,verbose);
+  showNode(application,verbose,precision);
   printf(" = ");
-  showNode(result,verbose);
+  showNode(result,verbose,precision);
   printf("\n");
 }
+
+/***********************************************************************/
+/* observing function applications                                     */
+/***********************************************************************/
+
+FunTable* currentFTable;
+int currentFTablePos;
+FunTable* currentFTablePtr;
+
+char* getFunTableStr(int i) {
+  char *appstr,*resstr;
+  if (i<currentFTablePos) {
+    currentFTablePos=0;
+    currentFTablePtr=currentFTable;
+  }
+  while ((currentFTablePtr!=NULL)&&(i>currentFTablePos)) {
+    currentFTablePtr=currentFTablePtr->next;
+    currentFTablePos++;
+  }
+  if (currentFTablePtr==NULL) return newStr("");
+  appstr = prettyPrintExpr(currentFTablePtr->funAppl,1);
+  resstr = prettyPrintExpr(currentFTablePtr->res,1);
+  replaceStr(&appstr,appstr," = ",resstr);
+  freeStr(resstr);
+  return appstr;
+}
+
+long showFunTablePaged(FunTable* l) {
+  currentFTable=l->next;
+  currentFTablePtr=l->next;
+  currentFTablePos=0;
+  return menu("choose any equation and press <RETURN> or <Q> to cancel",
+	      FunTableLength(l),&getFunTableStr);  
+}
+
+/***********************************************************************/
 
 int verboseMode = 0;
 int memorizeMode = 1;
@@ -118,8 +157,8 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
   isCAF = (resofs == 0);
   if (isCAF) resofs = findAppSAT(appofs);
 
-  appNode = buildExpr(appofs,verboseMode);
-  resNode = buildExpr(resofs,verboseMode);
+  appNode = buildExpr(appofs,verboseMode,precision);
+  resNode = buildExpr(resofs,verboseMode,precision);
 
   if (memorizeMode) {
     c=getMemorizedAnswer(appNode,resNode);
@@ -141,7 +180,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
     else printf("   (Y/?/N): ");
     if (getline(answer,10)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YNQT?HVUMGOC*0123456789",c)==NULL) { // was answer a valid character?
+      if (strchr("YNQT?HVUMGOC*0123456789+-",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
 	switch(c) {
@@ -152,22 +191,34 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	  break;
 	case 'O': 
 	  {
-	    unsigned long newAdr,newSAT;
+	    unsigned long newAdr,newSAT,selected;
+	    FunTable* results = newFunTable();
+
 	    seek(lmost);
-	    newAdr = observeNode(lmost,0,verboseMode,1,0);
+	    observeNode(lmost,0,verboseMode,1,0,precision,results);
+	    selected=showFunTablePaged(results);
+	    if (selected>=0) {
+	      newAdr=getFunTableFileOffs(results,selected);
+	    } else newAdr=0;
+	    freeFunTable(results);
+
 	    if ((newAdr>0)&&(newAdr!=appofs)) {
 	      char s[10];
 	      printf("Start detect session for ");
-	      showAppAndResult(newAdr);
+	      showAppAndResult(newAdr,precision);
 	      printf("(Y/N): ");
 	      getline(s,10);
 	      if (toupper(s[0])=='Y') {
 		NodeList* nl=newList();
 		printf("New detect session for: ");
-		showAppAndResult(newAdr);
+		showAppAndResult(newAdr,precision);
 		printf("\n");
 		appendToList(nl,newAdr);
-		askNodeList(0,nl,1);
+		{
+		  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
+		  askNodeList(0,nl,1,hash);
+		  freeHashTable(hash);
+		}
 		printf("\nResuming previous session.\n");
 	      }
 	    }
@@ -200,7 +251,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	case 'T':
 	  userTrustsFunction(lmost);
 	  printf("   Ok. \"");
-	  showNode(lmost);
+	  showNode(lmost,precision);
 	  printf("\" will be trusted from now on.\n");
 	  retval = 1; // answer is yes
 	  break;
@@ -218,14 +269,36 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	    freeStr(treeP);
 	  }
 	  break;
+	case '+':
+	case '-':
+	  {
+	    long step = atol(answer);
+	    long prec = precision;
+	    printf("%i\n",step);
+	    if (step==0) {
+	      if (answer[0]=='+') step=1;else step=-1;
+	    }
+	    if ((step<0)&&(prec+step<2)&&(prec>2)) {
+	      step = -(prec-2);
+	    }
+	    if ((step>0)||(prec+step>1)) {
+	      precision = precision+step;
+	      freeExpr(appNode);
+	      freeExpr(resNode);
+	      appNode = buildExpr(appofs,verboseMode,precision);
+	      resNode = buildExpr(resofs,verboseMode,precision);
+	      printf("precision now %i",precision);
+	    } else printf("Precision already at minimum level.\n");
+	  }
+	  break;
 	case 'V':
 	  verboseMode = 1-verboseMode;
 	  printf("   verbose mode is now ");
 	  if (verboseMode) printf("ON\n"); else printf("OFF\n");
 	  freeExpr(appNode);
 	  freeExpr(resNode);
-	  appNode = buildExpr(appofs,verboseMode);
-	  resNode = buildExpr(resofs,verboseMode);
+	  appNode = buildExpr(appofs,verboseMode,precision);
+	  resNode = buildExpr(resofs,verboseMode,precision);
 	  break;
 	case 'M':
 	  memorizeMode = 1-memorizeMode;
@@ -273,6 +346,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	  printf("     'Verbose'  or 'v' to toggle verbose mode.\n");
 	  printf("     'Go <n>'   or '<n>' to go back to question <n>.\n");
 	  printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
+	  printf("\n     '+[n]'     or '-[n]' to increase or decrease the output precision [by n].\n");
 	  printf("\n     'Quit'     or 'q' to leave the tool.\n");
 	  break;
 	}
@@ -403,126 +477,7 @@ void findmainCAF(NodeList* nl) {
   }
 }
 
-//#define DebugFindAppsFor
-void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
-  char nodeType;
-  unsigned long satc=0,result;
-  int question_old=0;
-  while (1) {
-    if (current==0) return;
-
-    result=findAppSAT(current);
-
-    seek(current);
-    nodeType = getNodeType();
-#ifdef DebugFindAppsFor
-    printf("nodeType at %u is %i, searching %u, resulting %u\n",current,nodeType,
-	   parentTrace,result);
-#endif
-    switch (nodeType) {
-    case TRAPP:
-      {
-	unsigned long srcref,p,funTrace,appTrace;
-	int arity,isChild;
-	arity     = getAppArity();
-	appTrace  = getTrace();             // fileoffset of App-trace
-	funTrace  = getFunTrace();          // function-trace
-	srcref    = getSrcRef();            // get srcref
-	appTrace  = followHidden(appTrace); // follow along hidden to find parent
-	
-	isChild   = isChildOf(current,parentTrace);
-	if ((appTrace==parentTrace)&&(isChild==0)) {
-	  printf("That's odd: %u %u %u\n",current,parentTrace,appTrace);
-	  printf("AppTrace: %u\n",getTrace());
-	  printf("AppTrace: %u\n",getTrace());
-	  //isChild = 1;
-	}
-
-	if (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself
-	  findAppsFor(nl,parentTrace,appTrace);
-	}
-	if (isChild) { //(appTrace==parentTrace) {
-	  int i=0;
-	  while (i++<arity) {
-#ifdef DebugFindAppsFor
-	    printf("checking arg %i of %u\n",i,current);
-#endif
-	    seek(current);
-	    p = getAppArgument(i-1);
-	    findAppsFor(nl,parentTrace,p);
-	  }
-	}
-	
-	if ((isChild)||(appTrace==0)) {
-	  //((appTrace==parentTrace)||(appTrace==0)) {
-#ifdef DebugFindAppsFor
-	  printf("APP at %u is child!\n",current);
-#endif
-	  satc=followSATs(result);
-	  { 
-	    int trusted = isTrusted(funTrace);
-	    int toplevel = isTopLevel(funTrace);
-	    int isOk=1;
-	    if ((trusted==0)&&(toplevel)) {
-#ifdef DebugFindAppsFor
-	      printf("Function at %u is not trusted.\n",funTrace);
-	      printf("Toplevel: %i\n",toplevel);
-#endif
-	      if (satc!=current) {
-		appendToList(nl,current);
-	      }
-	    } else {
-	      if (satc!=current)
-		findAppsFor(nl,current,satc);
-	    }
-	  }
-	}
-      }
-      return;
-    case TRNAM: {
-      unsigned long p = getTrace();
-      unsigned long srcref = getSrcRef();
-      unsigned long newcurrent;
-
-      if ((p==parentTrace)||(p==0)) {
-	if (p==0) {  // CAF found
-	  unsigned long lmo = leftmostOutermost(current);
-	  if (lmo!=0) {
-	    if (isTopLevel(current)&&(isTrusted(srcref)==0)) 
-	      appendToList(nl,current);
-	  }
-	}
-	return;
-      }
-      else {
-        newcurrent = followSATs(p);
-	if (newcurrent==current) return;
-	else current = newcurrent;
-      }
-    }
-    break;
-    case TRIND:
-      current = getTrace();
-      break;
-    case TRHIDDEN:
-    case TRSATA: // not evaluated expression
-    case TRSATAIS:
-    case TRSATB:
-    case TRSATBIS:
-      current = getTrace();
-      break;
-    default: {
-	unsigned long newcurrent = followSATs(current);
-	if (newcurrent==current) return;
-	else current = newcurrent;
-      }
-    break;
-    }
-  }
-  return;
-}
-
-int askNodeList(int question,NodeList* results,int isTopSession) {
+int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash) {
   unsigned long satc;
   int success,askAgain,question_old,first_question;
   NodeList* children=NULL;
@@ -546,8 +501,12 @@ int askNodeList(int question,NodeList* results,int isTopSession) {
       if ((answer!=1)&&(answer<10)){
 	satc=findAppSAT(e->fileoffset);
 	children = newList();
-	findAppsFor(children,e->fileoffset,satc);
-	success = askNodeList(question,children,0);
+	{
+	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
+	  getChildrenFor(children,e->fileoffset,satc,hash);
+	  freeHashTable(hash);
+	}
+	success = askNodeList(question,children,0,hash);
 	if (success>=10) {answer=success;success=0;}
 	if (answer==2) {
 	question = question_old;
@@ -604,8 +563,10 @@ int askNodeList(int question,NodeList* results,int isTopSession) {
 
 void checkmainCAF() {
   int success;
+  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   findmainCAF(results);
-  askNodeList(0,results,2);
+  askNodeList(0,results,2,hash);
+  freeHashTable(hash);
   quit();
 }

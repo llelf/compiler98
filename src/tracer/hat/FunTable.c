@@ -2,8 +2,7 @@
 /* FunTable.c                                                             */
 /* Stores a function table. For each function application the list of     */
 /* arguments is saved. Applications may be compared, only the most        */
-/* general application                                                    */
-/* is stored.                                                             */
+/* general application is stored.                                         */
 /*                                                                        */
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
@@ -15,7 +14,6 @@
 #include "Expressions.h"
 #include "hatfileops.h"
 #include "FunTable.h"
-#include "menu.h"
 
 //#define doStatistics
 
@@ -136,41 +134,11 @@ void showFunTable(FunTable* l) {
   showFunTable_internal(l,0);
 }
 
-FunTable* currentFTable;
-int currentFTablePos;
-FunTable* currentFTablePtr;
-
-char* getFunTableStr(int i) {
-  char *appstr,*resstr;
-  if (i<currentFTablePos) {
-    currentFTablePos=0;
-    currentFTablePtr=currentFTable;
-  }
-  while ((currentFTablePtr!=NULL)&&(i>currentFTablePos)) {
-    currentFTablePtr=currentFTablePtr->next;
-    currentFTablePos++;
-  }
-  if (currentFTablePtr==NULL) return newStr("");
-  appstr = prettyPrintExpr(currentFTablePtr->funAppl,1);
-  resstr = prettyPrintExpr(currentFTablePtr->res,1);
-  replaceStr(&appstr,appstr," = ",resstr);
-  freeStr(resstr);
-  return appstr;
-}
-
 unsigned long getFunTableFileOffs(FunTable*l,long i) {
   l=l->next;
   while ((l!=NULL)&&(i-->0)) l=l->next;
   if (l==NULL) return 0;
   return l->fileoffset;
-}
-
-long showFunTablePaged(FunTable* l) {
-  currentFTable=l->next;
-  currentFTablePtr=l->next;
-  currentFTablePos=0;
-  return menu("choose any equation and press <RETURN> or <Q> to cancel",
-	      FunTableLength(l),&getFunTableStr);  
 }
 
 int isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res) {

@@ -19,6 +19,10 @@ unsigned long byteoffset();           /* return position in file */
 int           testheader();            /* reading and checking header information */
 
 
+void          saveHandle(int h);
+void          loadHandle(int h);
+void          switchToHandle(int h);
+int           newHatHandle();
 
 /*********************************************************************/
 /* Routines to extract values encoded as one or more bytes.          */
@@ -41,7 +45,7 @@ filepointer   getSrcRef();           // get pointer to source reference
 char          getCharValue();        // get value of a char node
 int           getIntValue();         // get value of an int node
 int           getIntegerValue();     // get value of an integer node
-char*         getRationalValue();   // get value of a rational node
+char*         getRationalValue();    // get value of a rational node
 float         getFloatValue();       // get value of a float node
 double        getDoubleValue();      // get value of a double node
 char*         getName();             // get constructor, identifier or module name
@@ -60,6 +64,7 @@ unsigned long followTrace(unsigned long fileoffset);
 /* search for the SAT of a given application */
 unsigned long findAppSAT(unsigned long fileoffset);
 
+filepointer   mainCAF(); /* return the main CAF of the trace */
 
 unsigned long leftmostOutermost(unsigned long fileoffset);
 int           isDirectDescendantOf(unsigned long fileoffset,unsigned long parent);
@@ -75,7 +80,8 @@ void          showFunLocation(unsigned long fileoffset);
 
 
 /* read whole expression to memory */
-ExprNode*     buildExpr(unsigned long fileoffset,int buildUnevaldepth);
+ExprNode*     buildExpr(unsigned long fileoffset,int verbose,
+			unsigned int precision);
 
 
 

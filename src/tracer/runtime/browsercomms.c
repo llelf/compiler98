@@ -196,18 +196,17 @@ ToBrowser(FILE *sock, char *s)
  * If profiling, some extra information is available. This function prints
  * that information. Used when debugging the tracer.
  **/
-void
-showNode(NodePtr p)
-{
-#ifdef PROFILE
+/* void showNode(NodePtr p)
+ {
+ #ifdef PROFILE
     Info *info = GET_INFO(p);
     
     fprintf(stdout, "m: %s p: %s c: %s\n", 
 	    info->sinfo->module, 
 	    info->sinfo->producer,
 	    info->sinfo->constructor);
-#endif
-}
+ #endif
+ }*/
 
 /*	This definition does not match the one in PreludeDebug.hs !!!!
 data NmType =
@@ -228,6 +227,7 @@ data NmType =
  * Get information about a node, and fill in variables with source
  * reference and priority (for infix operators) information.
  **/
+// function believed to be obsolete!
 void 
 showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 {
@@ -237,7 +237,7 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
     NodePtr c, np;
 
     *pdefpos = -1;
-    *ppri = 3; /* Default priority, infixl 9 */
+    *ppri = 3; // Default priority, infixl 9
     IND_REMOVE(t);
     constr = CONINFO_NUMBER(*t);
     switch (constr) {
@@ -327,14 +327,13 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
 	break;
     case NTCString:
 	*pmodule = strdup("Unknown");
-/*	{ Coninfo ci;
-          np = GET_POINTER_ARG1(t, 1);
-          ci = GET_CONINFO(np);
-          len = CONINFO_LARGESIZEU(ci)*sizeof(Node) - CONINFO_LARGEEXTRA(ci);
-	  *pname = malloc(3+len);
-	  sprintf(*pname, "'%s'", (char *)&np[1+EXTRA]);
-        }
-*/
+//	{ Coninfo ci;
+//          np = GET_POINTER_ARG1(t, 1);
+//          ci = GET_CONINFO(np);
+//          len = CONINFO_LARGESIZEU(ci)*sizeof(Node) - CONINFO_LARGEEXTRA(ci);
+//	  *pname = malloc(3+len);
+//	  sprintf(*pname, "'%s'", (char *)&np[1+EXTRA]);
+//        }
         np = GET_POINTER_ARG1(t, 1);
 	sprintf(&str[0],"<%d>",GET_INT_VALUE(np));
 	*pname = strdup(str);
@@ -347,10 +346,12 @@ showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri)
       {
 #ifdef PROFILE
 	Info *info = GET_INFO(t);
-	showNode(t);
+	// showNode(t); // ATTENTION: line commented out: name clash with showNode
+	//                 in hatfileops.c. Whole function "showSymbol" believed to be
+	//                 obsolete!
 #endif
 	fprintf(stderr, "\nStrange node in showSymbol at 0x%x(0x%x)\n", t, *t);
-	/*prGraph(t, 3, 3);*/
+	// prGraph(t, 3, 3);
 	exit(1);
       }
     }
@@ -505,28 +506,29 @@ checkForCaseIfGuard(NodePtr t) /* t must be a TagAp */
 }
 
 #define DEBUG_FT_NOT
-
-NodePtr
-followTrace(NodePtr t, NodePtr *pbot, int *pind)
-{
+// function followTrace obsolete. Commented out due to name clash with hatfileops.c
+/*
+ NodePtr
+ followTrace(NodePtr t, NodePtr *pbot, int *pind)
+ {
     NodePtr n;
     int constr, ref;
     *pbot = NULL;
     *pind = 0;
-#ifdef DEBUG_FT
+ #ifdef DEBUG_FT
     fprintf(stderr, "\n.");
-#endif    
+ #endif    
     while (1) {
-#ifdef DEBUG_FT
+ #ifdef DEBUG_FT
 	fprintf(stderr, ".");
-#endif    
+ #endif    
 	t = shortCircuitSelectors(t);
 	constr = CONINFO_NUMBER(*t);
 	if (constr & MASK_K) {
 	    
 	    if ((CONINFO_DIST(*t) != INF_AGE) || 
 		((constr & ~MASK_K) != TagNm)) {
-		/* A name should have K == INF_AGE */
+		// A name should have K == INF_AGE
 		fprintf(stderr, "Pruned-bit not removed (d=%d)!!!\n", CONINFO_DIST(*t));
 	    }
 	    constr &= ~MASK_K;
@@ -534,9 +536,9 @@ followTrace(NodePtr t, NodePtr *pbot, int *pind)
 	}
 	switch (constr) {
 	case TagInd:
-#ifdef DEBUG_FT
+ #ifdef DEBUG_FT
 	    fprintf(stderr, " # (%d, %d)", ncFind(t), ncFind(GET_POINTER_ARG1(t, 1)));
-#endif	    
+ #endif	    
 	    if (*pind == 0) {
 		ref = abs(ncFind(t));
 		if (ref == 0)
@@ -547,23 +549,23 @@ followTrace(NodePtr t, NodePtr *pbot, int *pind)
 	    break;
 	case TagSat:
 	    n = shortCircuitSelectors(GET_POINTER_ARG1(t, 2));
-#ifdef DEBUG_FT
+ #ifdef DEBUG_FT
 	    fprintf(stderr, " S -> (%d, %d)", ncFind(t), ncFind(GET_POINTER_ARG1(t, 1)));
-#endif	    
+ #endif	    
 	    switch (checkEvaluation(n, pbot)) {
 	    case EVALUATED:
 		t = n;
 		break;
 	    case EVALUATING:
-#if 0  
+ #if 0  
 		fprintf(stderr, "Evaluating!!!!\n");
-#endif
+ #endif
 		return GET_POINTER_ARG1(t, 1);
 	    case CLOSURE:
-#if 0
+ #if 0
 		fprintf(stderr, "Evaluated!!!\n");
 		prGraph(n, 15, 15);
-#endif
+ #endif
 		t = GET_POINTER_ARG1(t, 1);
 		break;
 	    }
@@ -573,35 +575,35 @@ followTrace(NodePtr t, NodePtr *pbot, int *pind)
 	case TagPruned:
 	case TagNm:
 	case TagHidden:
-#ifdef DEBUG_FT
+ #ifdef DEBUG_FT
 	    fprintf(stderr, " RAPN %d\n", ncFind(t));
-#endif	    
+ #endif	    
 	    return t;
 	default:
 	    fprintf(stderr, "followTrace: strange node (tag=%d).\n", constr);
 	    showNode(t);
-	    /*prGraph(t, 1, 1); fprintf(stderr, "\n");	    */
+	    // prGraph(t, 1, 1); fprintf(stderr, "\n");
 	    exit(1);
        }
     }
 }
 
-void
-getRef(FILE *sock, NodePtr t)
-{
+ void
+ getRef(FILE *sock, NodePtr t)
+ {
     int ref, constr;
     NodePtr bot;
     static char str[16];
-#if 0
+ #if 0
     t = followTrace(t, &bot);
     if (bot != NULL) {
 	fprintf(stderr, "getRef: impossible bottom...\n");
-#ifdef PROFILE
+ #ifdef PROFILE
 	prGraph(t, 5, 5);
 	fprintf(stderr, "\n");
-#endif
+ #endif
     }
-#endif
+ #endif
     ref = ncFind(t);
     constr = CONINFO_NUMBER(*t);
     if ((GET_TAG(t) == CON_TAG) && (constr == TagRoot))
@@ -612,23 +614,24 @@ getRef(FILE *sock, NodePtr t)
 	ref = abs(ref);
     sprintf(&str[0], " %d ", ref);
     ToBrowser(sock, str);
-}
+ }
 
-static NodePtr charListInProgress = NULL;
+ static NodePtr charListInProgress = NULL;
 
-void
-charListP(NodePtr t)
-{
+ // function charListP obsolete
+ void
+ charListP(NodePtr t)
+ {
     NodePtr old = t, bot = NULL, np, ts;
     int ind;
 
     while (1) {
 	switch (CONINFO_NUMBER(*t)) {
 	case TagAp:
-		ts = GET_POINTER_ARG1(t, 2); /* Get arg list */
+		ts = GET_POINTER_ARG1(t, 2); // Get arg list
 		IND_REMOVE(ts);
-		if (CONINFO_PSIZE(*ts) != 2) return; /* Check if empty */
-		np = GET_POINTER_ARG1(ts, 1); /* Get the head (the cons) */
+		if (CONINFO_PSIZE(*ts) != 2) return; // Check if empty
+		np = GET_POINTER_ARG1(ts, 1); // Get the head (the cons)
 		IND_REMOVE(np);
 		np = followTrace(np, &bot, &ind);
 		if (bot != NULL) return;
@@ -642,17 +645,17 @@ charListP(NodePtr t)
 			break;
 		default: return;
 		}
-		ts = GET_POINTER_ARG1(ts, 2); /* Get the tail */
-		if (CONINFO_PSIZE(*ts) != 2) return; /* Check if empty */
-		np = GET_POINTER_ARG1(ts, 1); /* Get the head (the char) */
+		ts = GET_POINTER_ARG1(ts, 2); // Get the tail
+		if (CONINFO_PSIZE(*ts) != 2) return; // Check if empty
+		np = GET_POINTER_ARG1(ts, 1); // Get the head (the char)
 		IND_REMOVE(np);
 		np = followTrace(np, &bot, &ind);
 		if (bot != NULL) return;
 		if (CONINFO_NUMBER(*np) != TagNm) return;
 		np = GET_POINTER_ARG1(np, 2);
 		if (CONINFO_NUMBER(*np) != NTChar) return;
-		ts = GET_POINTER_ARG1(ts, 2); /* Get the tail */
-		if (CONINFO_PSIZE(*ts) != 2) return; /* Check if empty */
+		ts = GET_POINTER_ARG1(ts, 2); // Get the tail
+		if (CONINFO_PSIZE(*ts) != 2) return; // Check if empty
 		old = t;
 		t = followTrace(GET_POINTER_ARG1(ts, 1), &bot, &ind);
 		if (bot != NULL) return;	       
@@ -670,11 +673,12 @@ charListP(NodePtr t)
 		return;
 	}
     }
-}
-
-void
-dump(FILE *sock, int level, NodePtr t) 
-{
+ }
+ 
+ // function dump obsolete. Commented out...
+ void
+ dump(FILE *sock, int level, NodePtr t) 
+ {
    int constr, tag, first = 1, ref, ind;
    NodePtr nt, n, ts, bot;
    static char str[128];
@@ -729,16 +733,16 @@ dump(FILE *sock, int level, NodePtr t)
 	   
 	   nmType = checkForCaseIfGuard(t);
 
-	   ts = GET_POINTER_ARG1(t, 2); /* Get arg list */
+	   ts = GET_POINTER_ARG1(t, 2); // Get arg list
 	   IND_REMOVE(ts);
 
-	   if (nmType == 0) { /* Ordinary application */
+	   if (nmType == 0) { // Ordinary application
 	       if (!charListInProgress) {
 		   charListP(t);
 	       }
 	       sprintf(&str[0], "(A%s %d ", charListInProgress==NULL?"":"s", abs(ref));
 	       if (charListInProgress == t)  
-		   charListInProgress = NULL; /* We're done with the string */
+		 charListInProgress = NULL; // We're done with the string
 
 	       ToBrowser(sock, str);
 	       dumpSR(sock, GET_POINTER_ARG1(t,3));
@@ -805,14 +809,14 @@ dump(FILE *sock, int level, NodePtr t)
        ToBrowser(sock, "P ");
        break;
    case TagRoot:
-       /* Shouldn't happen */
+     // Shouldn't happen
        fprintf(stderr, "TagRoot in dump. Hmmm.\n");
        ToBrowser(sock, "P ");
-       break; /* Should exit !!! */
+       break; // Should exit !!!
    case TagSat:
        fprintf(stderr, "TagSat in dump. Hmmm.\n");
        showNode(t);
-       /*prGraph(t, 1, 1); fprintf(stderr, "\n");*/
+       // prGraph(t, 1, 1); fprintf(stderr, "\n");
        exit(1);
    case TagHidden:
        ref = ncFind(t);
@@ -832,17 +836,19 @@ dump(FILE *sock, int level, NodePtr t)
    default:
        fprintf(stderr, "dump: strange node.\n");
        showNode(t);
-       /*prGraph(t, 1, 1); fprintf(stderr, "\n");*/
+       // prGraph(t, 1, 1); fprintf(stderr, "\n");
        exit(1);
        break;
    }
-}
+ }
 
-void
-dumperr(NodePtr t)
-{
+ // function dumperr obsolete
+ void
+ dumperr(NodePtr t)
+ {
     dump(stderr, 3, t);
-}
+ }
+*/
 
 void
 getOutputRef(FILE *sock, NodePtr t)
@@ -874,9 +880,11 @@ getOutputRef(FILE *sock, NodePtr t)
     ToBrowser(sock, str);
 }
 
-void
-dumpOutput(FILE *sock, int ch, NodePtr t) 
-{
+/*
+ // function dumpOutput obsolete
+ void
+ dumpOutput(FILE *sock, int ch, NodePtr t) 
+ {
    int constr, ref, ind;
    NodePtr c, np, bot;
    static char str[128];
@@ -887,14 +895,14 @@ dumpOutput(FILE *sock, int ch, NodePtr t)
        exit(1);
    }
 
-   /* Transfer the character */
+   // Transfer the character
    sprintf(&str[0], " %d ", ch);
    ToBrowser(sock, str);
 
-   /* Transfer its trace */
+   // Transfer its trace
    getOutputRef(sock, t);
 
-#if 0
+ #if 0
    constr = CONINFO_NUMBER(*t);
    switch (constr) {
    case TagNm:
@@ -912,18 +920,18 @@ dumpOutput(FILE *sock, int ch, NodePtr t)
 	       ToBrowser(sock, str);
 	   } else 
 	       getRef(sock,  GET_POINTER_ARG1(t, 1));
-	   /*fprintf(stderr, "Sending char '%c'\n", GET_INT_VALUE(c));*/
+	   // fprintf(stderr, "Sending char '%c'\n", GET_INT_VALUE(c));
        } else {
 	   fprintf(stderr, "dumpOutput: not a char\n");
 	   sprintf(&str[0], "64 0 ");
 	   ToBrowser(sock, str);
-#if 0
+ #if 0
 	   prGraph(c, 3, 3);
 	   fprintf(stderr, "\n");
 	   prGraph(t, 3, 3);
 	   fprintf(stderr, "\n");	   
 	   exit(1);
-#endif
+ #endif
        }
        break;
    default:
@@ -932,8 +940,9 @@ dumpOutput(FILE *sock, int ch, NodePtr t)
        ToBrowser(sock, str);
        break;
    }
-#endif
-}
+ #endif
+ }
+*/
 
 int
 isRoot(NodePtr t)
@@ -942,16 +951,16 @@ isRoot(NodePtr t)
     return CONINFO_NUMBER(*t) == TagRoot;
 }
 
-void
-dumpTrace(FILE *sock, NodePtr t)
-{
-    /*ToBrowser(sock, "(");*/
-    /*dumpChain(sock, 50, 10, t);*/
-    charListInProgress = NULL;
-    dump(sock, DEFAULT_DEPTH, t);
-    ToBrowser(sock, "\n");
-    fflush(sock);
-}
+/*void
+ dumpTrace(FILE *sock, NodePtr t)
+ {
+  //ToBrowser(sock, "(");
+  //dumpChain(sock, 50, 10, t);
+  charListInProgress = NULL;
+  dump(sock, DEFAULT_DEPTH, t);
+  ToBrowser(sock, "\n");
+  fflush(sock);
+ }*/
 
 NodePtr
 listIndex(int n, NodePtr t)
@@ -1024,9 +1033,11 @@ sendFile(FILE *sock, char *filename)
     ToBrowser(sock, "<EOF>\n");
 }
 
-int
-getline(FILE *sock, char *s)
-{
+/*
+ // function obsolete: commented out due to name clash with hatfileops.c
+ int
+ getline(FILE *sock, char *s)
+ {
     if (fgets(s, MAX_LINE_SIZE, sock) == NULL) {
 	if (terminated) {
 	    fprintf(stderr, "Socket closed. Exiting.\n");
@@ -1034,28 +1045,31 @@ getline(FILE *sock, char *s)
 	}
 	return FALSE;
     }
-    /* fprintf(stderr, "got: %s\n", s); */
+    // fprintf(stderr, "got: %s\n", s);
     return TRUE;
-}
+ }
+*/
 
-void
-loop(FILE *sock, NodePtr t)
-{
+/*
+ // function obsolete
+ void
+ loop(FILE *sock, NodePtr t)
+ {
     NodePtr nt;
     int refnr;
     char str[MAX_LINE_SIZE];
     int done = FALSE;
-#if 0
+ #if 0
     t = shortCircuitSelectors(t);
     t = GET_POINTER_ARG1(t, 1);
-#endif
-#if 0
+ #endif
+ #if 0
     dumpTrace(sock, t);
-#endif
+ #endif
     while (!done) {
 	if (!getline(sock, &str[0]))
 	    break;
-	/*fprintf(stderr, "command: %s\n", str);*/
+	// fprintf(stderr, "command: %s\n", str);
 	switch (str[0]) {
 	case 'G':
 	    if (!getline(sock, &str[0]))
@@ -1070,10 +1084,10 @@ loop(FILE *sock, NodePtr t)
 	    if (!getline(sock, &str[0]))
 		done = TRUE;
 	    else {
-		    /*fprintf(stderr, "Icommand: %s\n", str);*/
+		    // fprintf(stderr, "Icommand: %s\n", str);
 		sscanf(str, "%d", &refnr);
 		nt = ncRef(refnr);
-		/* Must be an indirection!!! */
+		// Must be an indirection!!!
 		if (CONINFO_NUMBER(*nt) != TagInd) {
 		    fprintf(stderr, "Expected TagInd, got %s\n",
 			    TAGSTR[CONINFO_NUMBER(*nt)]);
@@ -1114,8 +1128,8 @@ loop(FILE *sock, NodePtr t)
 	    break;
 	}
     }
-}
-
+ }
+*/
 extern timer gcTime,totalTime,runTime;
 
 void
@@ -1141,7 +1155,6 @@ displayTime()
 }
 
 
-
 int
 startDbg(NodePtr nodeptr, int exitok)
 {
@@ -1154,7 +1167,7 @@ startDbg(NodePtr nodeptr, int exitok)
     extern int traceStat;
     extern int traceShow;
 
-    /* Reset signal handlers */
+    // Reset signal handlers
     signal(SIGINT, SIG_DFL);
     signal(SIGQUIT, SIG_DFL);
 
@@ -1195,7 +1208,7 @@ startDbg(NodePtr nodeptr, int exitok)
 	    ToBrowser(sock, str);
 	    for (i = 1; i <= otSize(); i++) {
 		ote = otRef(i);
-		/* fprintf(stderr, "Sending char %d '%c'\n", i, ote->ch); */
+		// fprintf(stderr, "Sending char %d '%c'\n", i, ote->ch);
 		dumpOutput(sock, ote->ch, ote->trace);
 	    }
 	    ToBrowser(sock, "\n");
@@ -1203,13 +1216,14 @@ startDbg(NodePtr nodeptr, int exitok)
 	    ToBrowser(sock, "Error\n");
 	    dumpTrace(sock, nodeptr);
 	}
-	/*nodeptr = otRef(1);*/
-	/*IND_REMOVE(nodeptr);*/
+	//nodeptr = otRef(1);
+	//IND_REMOVE(nodeptr);
 	loop(sock, nodeptr);
 	fclose(sock);
     }
 #endif
 }
+
 
 void
 sigquit_handler()
@@ -1271,6 +1285,7 @@ C_HEADER(cInitializeDebugger)
 }
 
 /* cConnectToServer :: E Trace -> () */
+
 C_HEADER(cConnectToServer)
 {
     int constr;
@@ -1282,18 +1297,18 @@ C_HEADER(cConnectToServer)
 	exit(1);
     }
     ncInit();
-  /*otInit();*/
-    /*fprintf(stderr, "setvbuf: %d\n", setvbuf(sock, NULL, _IONBF, BUFSIZ));*/
+    //otInit();
+    //fprintf(stderr, "setvbuf: %d\n", setvbuf(sock, NULL, _IONBF, BUFSIZ));
 
     fprintf(stderr, "Haskell redex trail browser connected...\n");
     nodeptr = C_GETARG1(1);
     IND_REMOVE(nodeptr);
-    /* constr = CONINFO_NUMBER(*nodeptr);*/
-    /* fprintf(stderr, "constr = %d(np=0x%x)\n", constr, *nodeptr);*/
+    // constr = CONINFO_NUMBER(*nodeptr);
+    // fprintf(stderr, "constr = %d(np=0x%x)\n", constr, *nodeptr);
     ToBrowser(sock, "Output\n");
-    loop(sock, nodeptr);
+    //loop(sock, nodeptr);
     C_RETURN(mkUnit());
-}
+ }
 
 
 /***** Code not currently used *****/

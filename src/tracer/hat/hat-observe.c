@@ -13,16 +13,15 @@
 #include "FunTable.h"
 #include "hatfileops.h"
 #include "hashtable.h"
-
-void observeIdentifier(char* identifier,char* topIdentifier,
-	     int verbosemode,int uniquemode,int recursivemode,int interactmode);
+#include "observe.h"
 
 main (int argc, char *argv[])
-{ int verbosemode=0,uniquemode=1,recursivemode=0,interactmode=0;
+{ int verbosemode=0,uniquemode=1,recursivemode=0;
   int c = 1,err=0,paramerr=0;
+  unsigned int precision = 30;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
   while (c<argc) {
-    err = checkParameters(argv[c],"vxuri"); // check for supported parameters
+    err = checkParameters(argv[c],"vxur"); // check for supported parameters
     if (err==1) { // not a parameter!
       err=0;
       break;
@@ -31,7 +30,7 @@ main (int argc, char *argv[])
       fprintf(stderr,"\nUnsupported option! See below for possible flags!\n");
       break;
     }
-    if (strchr(argv[c],'i')!=NULL) interactmode=1;
+    //if (strchr(argv[c],'i')!=NULL) interactmode=1;
     if (strchr(argv[c],'v')!=NULL) verbosemode=1;
     if ((sub=strchr(argv[c],'x'))!=NULL) {
       if (*(++sub)!='u') {
@@ -63,12 +62,16 @@ main (int argc, char *argv[])
     fprintf(stderr,"           applications, missing arguments. \n\n");
     exit(1);
   }
-  if (!openfile(fname)) {
+  if (openfile(fname)<0) {
     fprintf(stderr, "cannot open trace file %s\n\n",fname);
     exit(1);
   }
   if (testheader()) {
-    observeIdentifier(ident,topIdent,verbosemode,uniquemode,recursivemode,interactmode);
+    FunTable* results = newFunTable();
+    observeIdentifier(ident,topIdent,verbosemode,uniquemode,recursivemode,
+		      precision,results);
+    if (uniquemode) showFunTable(results);
+    freeFunTable(results);
   }
   closefile();
 }

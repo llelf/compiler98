@@ -13,23 +13,73 @@
 #include "FunTable.h"
 
 /* routines providing interface to the hat archive file. */
-
-int f;                  /* file descriptor for archive */
 #define MAXBUFSIZE 16384
-int bufsize=MAXBUFSIZE; /* buffersize */
-char buf[MAXBUFSIZE];   /* input buffer */
-unsigned int buf_n;     /* buf[0..buf_n-1] filled */
-unsigned int boff;      /* if buf_n>0, boff in 0..buf_n-1 and buf[boff] is current */
-unsigned long foff;     /* if buf_n>0, this is offset in f of buf[0] */
 
-unsigned long _filesize = 0;
+int f;                  // file descriptor for archive
 
-struct stat hatStatBuf;
+int bufsize=MAXBUFSIZE; // buffersize 
+char* buf;              // input buffer
+unsigned int buf_n;     // buf[0..buf_n-1] filled
+unsigned int boff;      // if buf_n>0, boff in 0..buf_n-1 and buf[boff] is current
+unsigned long foff;     // if buf_n>0, this is offset in f of buf[0]
+
+
+typedef struct {
+  int f;                  /* file descriptor for archive */
+  int bufsize;
+  char *buf;              /* input buffer */
+  unsigned int buf_n;     /* buf[0..buf_n-1] filled */
+  unsigned int boff;      /* if buf_n>0, boff in 0..buf_n-1 and buf[boff] is current */
+  unsigned long foff;     /* if buf_n>0, this is offset in f of buf[0] */
+  unsigned long filesize;
+  struct stat statBuf;
+} filehandler;
+
+int hatHandleCount = 0,currentHandle=-1;
+filehandler* hatHandle;
 
 typedef union {char byte[4];
                unsigned long ptrval;
 	       long intval;
 	       float floatval;} fourbytes;
+
+void saveHandle(int h) {
+  if (h<0) return;
+  hatHandle[h].f=f;
+  hatHandle[h].bufsize=bufsize;
+  hatHandle[h].buf = buf;
+  hatHandle[h].buf_n = buf_n;
+  hatHandle[h].boff = boff;
+  hatHandle[h].foff = foff;
+}
+
+void loadHandle(int h) {
+  if (h<0) return;
+  f= hatHandle[h].f;
+  bufsize = hatHandle[h].bufsize;
+  buf = hatHandle[h].buf;
+  buf_n = hatHandle[h].buf_n;
+  boff = hatHandle[h].boff;
+  foff = hatHandle[h].foff;
+}
+
+void switchToHandle(int h) {
+  if (h==currentHandle) return;
+  saveHandle(currentHandle);
+  currentHandle = h;
+  loadHandle(currentHandle);
+}
+
+int newHatHandle() {
+  filehandler* newHandles = (filehandler*) calloc(++hatHandleCount,sizeof(filehandler));
+  if (hatHandleCount>1)
+    memcpy(newHandles,hatHandle,sizeof(filehandler)*(hatHandleCount-1));
+  free(hatHandle);
+  hatHandle = newHandles;
+  hatHandle[hatHandleCount-1].bufsize = MAXBUFSIZE;
+  hatHandle[hatHandleCount-1].buf = (char*) calloc(MAXBUFSIZE,1);
+  return hatHandleCount-1;
+}
 
 int checkParameters(char* str,char* allowed) {
   if (*str!='-') return 1; // bad parameter syntax
@@ -72,23 +122,32 @@ int getline(char s[], int max) {
 
 /* open file for reading, save in internal file descriptor */
 int openfile(char* name) {
+  int f;
   name = filename(name);
-  stat(name, &hatStatBuf);
-  _filesize = hatStatBuf.st_size;
   f = open(name, 0);
-  freeStr(name);
-  buf_n = 0; // set buffer pointers appropriately. buf_n=0 buffer currently empty
-  boff = 0;  // at position 0 in buffer
-  foff = 0;  // at position 0 in file
-  return (f!=-1);
+  if (f!=-1) {
+    int handle = newHatHandle();
+    stat(name, &(hatHandle[handle].statBuf));
+    hatHandle[handle].filesize = hatHandle[handle].statBuf.st_size;
+    freeStr(name);
+    hatHandle[handle].buf_n = 0; // set buffer pointers appropriately. buf_n=0 buffer currently empty
+    hatHandle[handle].boff = 0;  // at position 0 in buffer
+    hatHandle[handle].foff = 0;  // at position 0 in file
+    hatHandle[handle].f = f;
+    currentHandle = handle;
+    loadHandle(handle);
+    return handle;
+  } else
+    return -1;
 }
 
 /* close file in internal file descriptor */
 void closefile() {
-  close(f);
+  close(hatHandle[currentHandle].f);
+  free(hatHandle[currentHandle].buf);
 }
 
-unsigned long filesize() {return _filesize;}
+unsigned long filesize() {return hatHandle[currentHandle].filesize;}
 
 /* set new file position */
 void seek(unsigned long ofs) {
@@ -264,7 +323,7 @@ int readfixpri() {
 int tagat(unsigned long offset) {
   char byte[1];
   int i;
-  if (offset <= _filesize) {
+  if (offset <= hatHandle[currentHandle].filesize) {
     lseek(f, offset, 0);
     i = read(f, byte, 1);
     lseek(f, foff + buf_n, 0);
@@ -491,13 +550,21 @@ unsigned long findAppSAT(unsigned long fileoffset) {
   }
 }
 
+#define CUT_MESSAGE "\253CUT\273"
+
 /* building expression at given offset from hat file */
-ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
+ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precision) {
 //#define DebugbuildExpr
   char b;
   unsigned long p;
   ExprNode* exp=NULL;
   char *s;
+
+  if (precision==0) {
+    exp = newExprNode(MESSAGE);
+    exp->v.message = newStr(CUT_MESSAGE);
+    return exp; // nesting reached the given boundary!
+  }
 
   while (fileoffset!=0) {
 #ifdef DebugbuildExpr
@@ -510,7 +577,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 #endif
     switch (b) {
     case TRAPP: // Application
-      { 
+      {
 	int i=0,arity;
 	AppNode* apn;
 	ExprNode* fun;
@@ -530,10 +597,13 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 	  // abuse pointers for storing the fileoffsets temporarily
 	}
 	// build function
-	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose));
+	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose,precision-1));
 	/* special workaround for IO(_) follows: show operation behind HIDDEN node,
 	   to give atleast some information about the kind of IO performed */
-	if ((fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
+	if ((fun)&&(fun->type==MESSAGE)&&(strcmp(fun->v.message,CUT_MESSAGE)==0)) {
+	  return fun; // function was cut off -> whole application is cut off!
+	} else
+	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
 	  IdentNode* id = fun->v.identval;
 	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
 	    unsigned long hidden = followSATs((unsigned long) getAppNodeArg(apn,0));
@@ -550,7 +620,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 #endif
 	  // exchange arguments containing fileoffsets against the built expressions
 	  setAppNodeArg(apn,i-1,buildExprRek((unsigned long) getAppNodeArg(apn,i-1),
-					     verbose));
+					     verbose,precision-1));
 	}
 	return exp;
 	}
@@ -621,7 +691,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
       if (verbose) {
 	p = getTrace();
 	exp = newExprNode(TRSATA);
-	exp->v.expr = buildExprRek(p,verbose);
+	exp->v.expr = buildExprRek(p,verbose,precision);
 	return exp;
       } else
 	return NULL;
@@ -640,8 +710,9 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose) {
 }
 
 /* build expression at given offset in file */
-ExprNode* buildExpr(unsigned long fileoffset,int buildUnevaldepth) {
-  return buildExprRek(fileoffset,buildUnevaldepth);
+ExprNode* buildExpr(unsigned long fileoffset,int verbose,
+		    unsigned int precision) {
+  return buildExprRek(fileoffset,verbose,precision);
 }
 
 /*********************************************************************/
@@ -736,11 +807,11 @@ void showFunLocation(unsigned long fileoffset) {
   }
 }
 
-void showNode(unsigned long fileoffset,int verboseMode) {
+void showNode(unsigned long fileoffset,int verboseMode,unsigned int precision) {
   char *appstr;
   ExprNode* exp;
 
-  exp = buildExpr(fileoffset,verboseMode);
+  exp = buildExpr(fileoffset,verboseMode,precision);
   appstr = prettyPrintExpr(exp,1);
   printf(appstr);
   freeExpr(exp);
@@ -748,13 +819,14 @@ void showNode(unsigned long fileoffset,int verboseMode) {
 }
 
 //#define showAppNode
-unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode) {
+unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode,
+			       unsigned int precision) {
   char *appstr;
   char *resstr;
   ExprNode* exp;
   unsigned long satc = 0;
 
-  exp = buildExpr(fileoffset,verboseMode);
+  exp = buildExpr(fileoffset,verboseMode,precision);
   appstr = prettyPrintExpr(exp,1);
   freeExpr(exp);
 
@@ -764,7 +836,7 @@ unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode) {
 #ifdef showAppNode
     printf("(%u): ",fileoffset);
 #endif
-    exp = buildExpr(byteoffset(),verboseMode);
+    exp = buildExpr(byteoffset(),verboseMode,precision);
     resstr = prettyPrintExpr(exp,1); // don't show any level of unevaluated functions
     freeExpr(exp);
     printf(appstr);
@@ -1038,6 +1110,46 @@ unsigned long leftmostOutermost(unsigned long fileoffset) {
   }
 }
 
+filepointer mainCAF() {
+  unsigned long currentOffset,satc,srcref;
+  char nodeType;
+
+  seek(0);
+  testheader();
+
+  while (more()) {
+    currentOffset = byteoffset();
+    nodeType = getNodeType();
+    switch (nodeType) {
+    case TRNAM: // Name
+      if (getTrace()==0) { // is parent 0?
+	srcref = getSrcRef();
+	nextNode();
+	satc = byteoffset();
+	if ((srcref!=0)&&(isSAT(satc))) {  // SATC behind TRNAM?
+	  // found a CAF!
+	  if (isTrusted(srcref)) printf("isTrusted\n");
+	  if (isTopLevel(currentOffset)==0) printf("not top-level!\n");
+	  if ((isTrusted(srcref)==0)&&
+	      (isTopLevel(currentOffset))) {
+	    unsigned long lmo = leftmostOutermost(currentOffset);
+	    seek(lmo);
+	    if ((lmo!=0)&&(getNodeType()==NTIDENTIFIER)&&
+		(strcmp(getName(),"main")==0)) {
+	      return currentOffset;
+	    }
+	    seek(satc);
+	  }
+	}
+      } else nextNode();
+      break;
+    default:
+      nextNode();
+      break;
+    }
+  }
+  return 0;
+}
 
 /* set beginning of internal buffer to current position in file */
 void resetFilepointer() {

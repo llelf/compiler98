@@ -241,7 +241,7 @@ char minibuf[256];
 
 /* pretty printing routine, called recursively */
 char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
-//#define DebugPrintExpr  // enable switch to get debug info
+  //#define DebugPrintExpr  // enable switch to get debug info
   char b;
   unsigned long p;
   char* s1;
@@ -403,7 +403,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
   case NTCONTAINER:
     return newStr("CONTAINER");
   case MESSAGE:
-    if (verbose) {
+    if ((verbose)||(strcmp(exp->v.message,"\253HIDDEN\273")!=0)) {
       return newStr(exp->v.message);
     } else
       return newStr("_");

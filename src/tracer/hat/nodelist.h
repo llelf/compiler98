@@ -5,16 +5,16 @@
 /* Thorsten Brehm, 5/2001                                                 */
 /**************************************************************************/
 
-typedef struct tnode* NodePtr;  // one pointer to a node
+typedef struct tnode* hNodePtr;  // one pointer to a node
 
 typedef struct tnode {          // one node
   unsigned long fileoffset;     // stored value
-  NodePtr next;                 // pointer to next
+  hNodePtr next;                 // pointer to next
 } NodeElement;
 
 typedef struct {                // main structure: keep pointer to
-  NodePtr first;                // first and
-  NodePtr last;                 // last element of the list
+  hNodePtr first;                // first and
+  hNodePtr last;                 // last element of the list
 } NodeList;
 
 
@@ -26,7 +26,8 @@ int           isInList(NodeList *nl,unsigned long foffset);     // check for val
 void          freeList(NodeList *nl);
 unsigned long listLength(NodeList *nl);
 void          showList(NodeList *nl);                           // show values in list
-void          showPretty(NodeList *nl,int verbosemode);         // show pretty print
+void          showPretty(NodeList *nl,int verbosemode,
+			 unsigned int precision);               // show pretty print
 
 
 

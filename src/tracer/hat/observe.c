@@ -13,6 +13,7 @@
 #include "FunTable.h"
 #include "hatfileops.h"
 #include "hashtable.h"
+#include "menu.h"
 
 // optional switch
 
@@ -23,7 +24,7 @@
 void checkNodes(unsigned long identifierNode,
 		unsigned long topIdentifierNode,
 		FunTable* result,int verboseMode,int uniqueMode,
-		int recursiveMode) {
+		int recursiveMode,unsigned int precision) {
   unsigned long p,progress=0,currentOffset,fsz,lsz=0;
   char nodeType;
   HashTable* htable = newHashTable(80000);
@@ -64,8 +65,8 @@ void checkNodes(unsigned long identifierNode,
 		if (((recursiveMode==0)||(isDescendantOf(apptrace,identifierNode)==0))&&
 		    ((topIdentifierNode==0)||
 		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
-		  ExprNode* r=buildExpr(satc,verboseMode);
-		  ExprNode* a=buildExpr(currentOffset,verboseMode);
+		  ExprNode* r=buildExpr(satc,verboseMode,precision);
+		  ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
 		  arity = getExprArity(a);
 		  if (arity>=maxarity) {
 		    addToFunTable(result,a,r,currentOffset);
@@ -80,7 +81,7 @@ void checkNodes(unsigned long identifierNode,
 		if (((recursiveMode==0)||(isDescendantOf(apptrace,identifierNode)==0))&&
 		    ((topIdentifierNode==0)||
 		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
-		  ExprNode* a=buildExpr(currentOffset,verboseMode);
+		  ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
 		  arity = getExprArity(a);
 		  if (arity>=maxarity) {
 		    if ((arity>maxarity)&&(maxarity!=-1)) {
@@ -92,7 +93,7 @@ void checkNodes(unsigned long identifierNode,
 #ifdef showNodeInfo
 		    printf("(%u) ",currentOffset);
 #endif
-		    showAppAndResult(currentOffset,verboseMode);
+		    showAppAndResult(currentOffset,verboseMode,precision);
 		    found++;
 		  }
 		  freeExpr(a);
@@ -116,11 +117,11 @@ void checkNodes(unsigned long identifierNode,
 	    addToHashTable(htable,satc);
 	  } else {  // makes no sense to print equation of form "identifier = identifier"
 	    if (uniqueMode) {
-	      ExprNode* r=buildExpr(satc,verboseMode);
-	      ExprNode* a=buildExpr(currentOffset,verboseMode);
+	      ExprNode* r=buildExpr(satc,verboseMode,precision);
+	      ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
 	      addToFunTable(result,a,r,currentOffset);
 	    } else { // print CAF and its value
-	      showAppAndResult(currentOffset,verboseMode);
+	      showAppAndResult(currentOffset,verboseMode,precision);
 	    }
 	  }
 	  seek(satc); // go to satc
@@ -158,6 +159,7 @@ void findNodes(char* identifier,
     fflush(stderr); // force printing to screen, even though LF is still missing...
   }
   if (fsz==0) fsz=1;
+  seek(0);
   while ((more())&&(identifierNode==0)&&((topIdentifierNode==0)||
 					 (topIdentifier==NULL))) {
     currentOffset = byteoffset();
@@ -191,31 +193,49 @@ void findNodes(char* identifier,
 }
 
 unsigned long observeNode(unsigned long identifierNode,unsigned long topIdentifierNode,
-		 int verbosemode,int uniqueMode,int recursivemode,int interactmode) {
+			  int verbosemode,int uniqueMode,int recursivemode,
+			  unsigned int precision,FunTable* results) {
   unsigned long result=0;
-  FunTable* results = newFunTable();
+
   checkNodes(identifierNode,topIdentifierNode,
-	     results,verbosemode,uniqueMode,recursivemode);
+	     results,verbosemode,uniqueMode,recursivemode,precision);
   if (uniqueMode) { 
     checkArities(results); // remove partial applications with missing arguments
-    if (interactmode) {
-     long selected=showFunTablePaged(results);
-     if (selected>=0) {
-       result=getFunTableFileOffs(results,selected);
-     }
-    }
-    else showFunTable(results);
-    freeFunTable(results);
   }
-  return result;
 }
 
 void observeIdentifier(char* ident,char* topIdent,
-	     int verbosemode,int uniqueMode,int recursivemode,int interactmode) {
+		       int verbosemode,int uniqueMode,int recursivemode,
+		       unsigned int precision,FunTable* results) {
   unsigned long identifierNode=0,topIdentifierNode=0;
   
   findNodes(ident,topIdent,&identifierNode,&topIdentifierNode,uniqueMode);
   observeNode(identifierNode,topIdentifierNode,verbosemode,uniqueMode,recursivemode,
-	      interactmode);
+	      precision,results);
 }
 
+
+int getObserve(char* ident,char* topIdent,
+	       int verbosemode,int uniqueMode,int recursivemode,
+	       unsigned int precision,int **childrenArray) {
+  FunTable* results=newFunTable();
+  int l;
+
+  observeIdentifier(ident,topIdent,verbosemode,uniqueMode,recursivemode,
+		    precision,results);
+  l = FunTableLength(results);
+  //printf("New Observe: %i\n",l);
+  {
+    int i=0;
+    FunTable *e = results->next;
+    *childrenArray = (int*) calloc(l+1,sizeof(long));
+    while (i<l) {
+      (*childrenArray)[i]=e->fileoffset;
+      i++;
+      e=e->next;
+    }
+    (*childrenArray)[i]=-1;
+  }
+  freeFunTable(results);
+  return l;
+}

@@ -14,10 +14,19 @@ HashTable* newHashTable(unsigned long size) {
   h->count = 0;
 }
 
+void freeHashTable(HashTable* h) {
+  free(h->hashArray);
+  free(h);
+}
+
 HashElement* newHashElement(unsigned long value) {
   HashElement* e = (HashElement*) malloc(1,sizeof(HashElement));
   e->value = value;
   e->next = NULL;
+}
+
+void freeHashElement(HashElement* e) {
+  free(e);
 }
 
 void addToHashTable(HashTable* h,unsigned long value) {
@@ -26,6 +35,30 @@ void addToHashTable(HashTable* h,unsigned long value) {
   e->next = h->hashArray[hash];
   h->hashArray[hash]=e;
   h->count++;
+}
+
+void removeFromHashTable(HashTable* h,unsigned long value) {
+  unsigned long hash = value % h->size;
+  HashElement* e = h->hashArray[hash];
+  HashElement* l = NULL;
+  while (e!=NULL) {
+    if (e->value==value) {
+      if (l==NULL) {
+	h->hashArray[hash]=e->next;
+	e->next = NULL;
+	freeHashElement(e);
+	e = h->hashArray[hash];
+      } else {
+	l->next=e->next;
+	e->next = NULL;
+	freeHashElement(e);
+	e=l->next;
+      }
+    } else {
+      l=e;
+      e=e->next;
+    }
+  }
 }
 
 //#define showHashStatistic
