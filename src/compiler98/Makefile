@@ -44,7 +44,7 @@ ifeq "hbc" "${HC}"
 HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "${HC}"
-HMAKEFLAGS := -H16M +CTS -H16M -CTS
+HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS
 endif
 ifeq "ghc" "${HC}"
 IMPROVE     = #-O
@@ -60,7 +60,7 @@ all: ${TARGET}
 install: ${TARGET}
 objdir: ${OBJDIR}
 cfiles:
-	$(LOCAL)hmake -nhc98 -C Main.hs
+	$(LOCAL)hmake -nhc98 -K2M -C Main.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.c
 	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
