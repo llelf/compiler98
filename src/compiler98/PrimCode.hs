@@ -1,3 +1,8 @@
+{-
+Besides other things it implements the MAGIC of some function definitions.
+Occurrences of these functions (in specific contexts) are turned into
+a respective bytecode. 
+-}
 module PrimCode(primCode{-,rpsEval-},rpsseq) where
 
 import Extra(pair,Pos(..),noPos,strPos,strace)
@@ -11,13 +16,27 @@ import PackedString(PackedString,packString,unpackPS)
 import Memo
 import Tree234
 import IdKind
+import Id(Id)
 
 ------- (true if bool == Int, true if && || not is primitives,true if )
 
-primCode flags tidFun state code = 
-  case mapS primBindingTop code (flags,True,tidFun (tident,Var)) (state,[]) of
+primCode :: (Bool,Bool,Bool) -- bool, logic, always
+         -> Bool -- magic: create byte code instructions for some functions
+         -> ((TokenId,IdKind) -> Int) 
+         -> IntState 
+         -> [(a,PosLambda)] 
+         -> ([(a,PosLambda)],IntState)
+
+primCode flags magic tidFun state code = 
+  case mapS primBindingTop code (flags,magic,True,tidFun (tident,Var)) 
+         (state,[]) of
     (bs,(state,_)) -> (concat bs,state)
   
+
+primBindingTop :: (a,PosLambda) 
+               -> ((Bool,Bool,Bool),Bool,b,Id) 
+               -> (IntState,[(a,PosLambda)]) 
+               -> ([(a,PosLambda)],(IntState,[c]))
 
 primBindingTop (fun,lambda) =
     primStrict True >=>
@@ -118,9 +137,10 @@ primApp pos fun es =
 -- All args are already processed
 
 primExpand pos fun es =
-  primFlags >>>= \ ((bool,logic,always),strict) ->
+  primFlags >>>= \ ((bool,logic,always),magic,strict) ->
   primTidArity fun >>>= \ (arity,tid) ->
-  if arity < 0 || not (strict || always) then -- this cannot be a primitive, or we don't translate unless strict
+  if not magic || (arity < 0 || not (strict || always)) then 
+    -- this cannot be a primitive, or we don't translate unless strict
     primApp pos fun es
   else
     case tid of
@@ -214,18 +234,14 @@ primUnique down up@(state,bs) =
   case uniqueIS state of
     (u,state) -> (u,(state,bs))
 
-primIdent pos down@(flags,strict,ident) up =
+primIdent pos down@(flags,magic,strict,ident) up =
   (PosVar pos ident,up)
 
-primFlags down@(flags,strict,ident) up =
-  ((flags,strict),up)
+primFlags down@(flags,magic,strict,ident) up =
+  ((flags,magic,strict),up)
 
-primStrict s down@(flags,strict,ident) up =
-  ((flags,s,ident),up)
-
-primQStrict s down@(flags,strict,ident) up =
-  (s,up)
-
+primStrict s down@(flags,magic,strict,ident) up =
+  ((flags,magic,s,ident),up)
 
 primTidArity i down up@(state,bs) =
   case lookupIS state i of

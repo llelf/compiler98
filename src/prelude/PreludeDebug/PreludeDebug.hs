@@ -210,72 +210,17 @@ hide t = if hidden t then t else mkTHidden t -- collapse Hidden chains
 
 {- Check if function and application trace are trusted. -}
 trusted :: Trace -> Trace -> Bool
-trusted t tf = trustedFun tf `tand` trustedFun t
+trusted t tf = if trustedFun tf then trustedFun t else False
+  -- && not available here and if-then-else also more efficient
 
-True  `tand` x = x
-False `tand` _ = False
-
+{- Only create name if parent trace is suspected. -}
+optMkTNm :: Trace -> NmType -> SR -> Trace
+optMkTNm t nm sr = 
+  if trustedFun t 
+    then t  -- name must be trusted as well, because occurs in trusted module
+    else mkTNm t nm sr
 
 {- combinators for n-ary application in a non-projective context. -}
-
-
-{- old inlined code
-ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
-
-ap1 sr t (R rf tf) a@(R _ at) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then (if hidden t then t else mkTHidden t)
-             else mkTAp1 t tf at sr
-  in  t1 `myseq` rf t1 a
-
-ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then (if hidden t then t else mkTHidden t)
-             else mkTAp2 t tf at bt sr
-  in  case (rf t1 a) of
-        (R rf tf) -> if t1 `sameAs` tf 
-                       then rf t1 b
-                       else let t2 = mkTAp1 t1 tf bt sr
-                            in  t2 `myseq` rf t2 b
-
-ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then (if hidden t then t else mkTHidden t)
-             else mkTAp3 t tf at bt ct sr
-  in  case (rf t1 a) of
-        (R rf tf) -> 
-          let t2 = if t1 `sameAs` tf 
-                      then t1 
-                      else mkTAp2 t1 tf bt ct sr
-          in case (rf t2 b) of
-               (R rf tf) ->
-                 if t2 `sameAs` tf 
-                   then rf t2 c
-                   else let t3 = mkTAp1 t2 tf ct sr
-                        in  t3 `myseq` rf t3 c
-
-ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then (if hidden t then t else mkTHidden t)
-             else mkTAp4 t tf at bt ct dt sr
-  in  case (rf t1 a) of
-        (R rf tf) -> 
-          let t2 = if t1 `sameAs` tf 
-                      then t1 
-                      else mkTAp3 t1 tf bt ct dt sr
-          in case (rf t2 b) of
-               (R rf tf) ->
-                 let t3 = if t2 `sameAs` tf
-                            then t2
-                            else mkTAp2 t2 tf ct dt sr
-                 in case (rf t3 c) of
-                      (R rf tf) ->
-                        if t3 `sameAs` tf 
-                          then rf t3 d
-                          else let t4 = mkTAp1 t3 tf dt sr
-                               in  t4 `myseq` rf t4 d
-      
--}
 
 ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
@@ -378,66 +323,6 @@ because the skipped trace node has the same type as the
 parent redex.
 -}
 
-{- old inlined:
-rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
-
-rap1 sr t (R rf tf) a@(R _ at) = 
-  if trustedFun tf `tand` trustedFun t
-    then rf t a
-    else let t1 = mkTAp1 t tf at sr
-	 in  t1 `myseq` rf t1 a
-
-
-rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
-
-rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  let t1 = if trustedFun tf `tand` trustedFun t 
-             then t
-             else  mkTAp2 t tf at bt sr
-  in case (rf t1 a) of
-       (R rf tf) ->
-         if t1 `sameAs` tf 
-           then rf t1 b
-           else let t2 = mkTAp1 t1 tf bt sr
-                in  t2 `myseq` rf t2 b
-
-rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then t
-             else mkTAp3 t tf at bt ct sr
-  in  case (rf t1 a) of
-        (R rf tf) ->
-          let t2 =  if t1 `sameAs` tf 
-                      then t1
-                      else mkTAp2 t1 tf bt ct sr
-          in case (rf t2 b) of
-               (R rf tf) ->
-                 if t2 `sameAs` tf 
-                   then rf t2 c
-                   else let t3 = mkTAp1 t2 tf ct sr
-                        in  t3 `myseq` rf t3 c
-
-rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
-  let t1 = if trustedFun tf `tand` trustedFun t
-             then t
-             else mkTAp4 t tf at bt ct dt sr
-  in  case (rf t1 a) of
-        (R rf tf) ->
-          let t2 =  if t1 `sameAs` tf 
-                      then t1
-                      else mkTAp3 t1 tf bt ct dt sr
-          in case (rf t2 b) of
-               (R rf tf) ->
-                 let t3 =  if t2 `sameAs` tf 
-                             then t2
-                             else mkTAp2 t1 tf ct dt sr
-                 in case (rf t3 c) of
-                      (R rf tf) ->
-                        if t3 `sameAs` tf 
-                          then rf t3 d
-                          else let t4 = mkTAp1 t3 tf dt sr
-                               in  t4 `myseq` rf t4 d
--}
 
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
@@ -707,67 +592,6 @@ fun4 nm rf sr t =
         t)
       (mkTNm t nm sr)
 
-{- old inlined:
-fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
-     -> R (Trace -> R a -> R r)
-
-fun1 nm rf sr t = 
-  mkR (\t a -> let sat = mkTSatA t
-               in mkR (mkTSatB sat `myseq` 
-                        case (enter t (rf t a)) of 
-                          R v vt ->
-                            v `myseq` 
-                            mkTSatC sat vt `myseq` 
-                            v) 
-                  sat)
-      (mkTNm t nm sr)
-
-fun2 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b -> let sat = mkTSatA t
-                 in mkR (mkTSatB sat `myseq` 
-                          case (enter t (rf t a b)) of 
-                            R v vt ->
-                              v `myseq` 
-                              mkTSatC sat vt `myseq` 
-                              v) 
-                    sat)
-        t)
-      (mkTNm t nm sr)
-
-fun3 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c -> let sat = mkTSatA t
-                   in mkR (mkTSatB sat `myseq` 
-                            case (enter t (rf t a b c)) of 
-                              R v vt ->
-                                v `myseq` 
-                                mkTSatC sat vt `myseq` 
-                                v) 
-                      sat)
-          t)
-        t)
-      (mkTNm t nm sr)
-
-fun4 nm rf sr t = 
-  mkR (\t a ->
-      R (\t b ->
-        R (\t c ->
-          R (\t d -> let sat = mkTSatA t
-                   in mkR (mkTSatB sat `myseq` 
-                            case (enter t (rf t a b c d)) of 
-                              R v vt ->
-                                v `myseq` 
-                                mkTSatC sat vt `myseq` 
-                                v) 
-                      sat)
-            t)
-          t)
-        t)
-      (mkTNm t nm sr)
--}
-
 fun5 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
@@ -792,7 +616,6 @@ fun6 nm rf sr t =
             t)
           t)
         t)
-      (mkTNm t nm sr)
 
 fun7 nm rf sr t = 
   mkR (\t a ->
@@ -922,6 +745,201 @@ fun12 nm rf sr t =
           t)
         t)
       (mkTNm t nm sr)
+
+
+-- version for trusted functions:
+
+tfun0 :: NmType -> (Trace -> Trace -> R r) -> SR -> Trace -> R r
+
+tfun0 nm rf sr t = 
+  let t' = optMkTNm t nm sr
+  in t' `myseq` enter t' (rf t (hide t))  -- t here correct?
+
+tfun1 :: NmType -> (Trace -> Trace -> R a -> R r) -> SR -> Trace 
+     -> R (Trace -> R a -> R r)
+
+tfun1 nm rf sr t = 
+  mkR (\t a -> enter t (rf t (hide t) a))
+      (optMkTNm t nm sr)
+
+tfun2 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b -> enter t (rf t (hide t) a b))
+        t)
+      (optMkTNm t nm sr)
+
+tfun3 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c -> enter t (rf t (hide t) a b c))
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun4 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d -> enter t (rf t (hide t) a b c d))
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun5 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e -> enter t (rf t (hide t) a b c d e))
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun6 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f -> enter t (rf t (hide t) a b c d e f))
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun7 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g -> enter t (rf t (hide t) a b c d e f g))
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun8 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h -> enter t (rf t (hide t) a b c d e f g h))
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun9 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i -> enter t (rf t (hide t) a b c d e f g h i))
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun10 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j -> enter t (rf t (hide t) a b c d e f g 
+                                                           h i j))
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun11 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k -> enter t (rf (hide t) t a b c d e f g 
+                                                             h i j k))
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun12 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l -> enter t (rf t (hide t) a b c d e f g 
+                                                               h i j k l))
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
 
 
 -- These four functions are dummies, introduced by the tracing compiler
@@ -1082,69 +1100,6 @@ prim4 nm rf sr t =
       t)
     (mkTNm t nm sr)
 
-{- old inlined:
-prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
-
-prim1 nm rf sr t = 
-  mkR (\t (R a at) -> let sat = mkTSatA t
-                      in mkR (mkTSatB sat `myseq` 
-                               case (primEnter sr t (rf a)) of 
-                                 R v vt ->
-                                   v `myseq` 
-                                   mkTSatC sat vt `myseq` 
-                                   v) 
-                           sat)
-    (mkTNm t nm sr)
-
-
-prim2 :: NmCoerce r => 
-         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
-
-prim2 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)-> let sat = mkTSatA t
-                     in  mkR (mkTSatB sat `myseq` 
-                               case (primEnter sr t (rf a b)) of 
-                                 R v vt ->
-                                   v `myseq` 
-                                   mkTSatC sat vt `myseq` 
-                                   v) 
-                           sat)
-      t)
-    (mkTNm t nm sr)
-
-prim3 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)-> let sat = mkTSatA t
-                       in  mkR (mkTSatB sat `myseq` 
-                                 case (primEnter sr t (rf a b c)) of 
-                                   R v vt ->
-                                     v `myseq` 
-                                     mkTSatC sat vt `myseq` 
-                                     v) 
-                              sat)
-        t)
-      t)
-    (mkTNm t nm sr)
-
-prim4 nm rf sr t = 
-  mkR (\t (R a at)->
-    R (\t (R b bt)->
-      R (\t (R c ct)->
-        R (\t (R d dt)-> let sat = mkTSatA t
-                         in  mkR (mkTSatB sat `myseq` 
-                                   case (primEnter sr t (rf a b c d)) of 
-                                     R v vt ->
-                                       v `myseq` 
-                                       mkTSatC sat vt `myseq` 
-                                       v) 
-                               sat)
-          t)
-        t)
-      t)
-    (mkTNm t nm sr)
--}
 
 prim5 nm rf sr t = 
   mkR (\t (R a at)->
@@ -1306,6 +1261,209 @@ prim12 nm rf sr t =
         t2)
       t1)
     (mkTNm t nm sr)
+
+
+tprim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
+
+tprim0 nm rf sr t = 
+  let tf = mkTNm t nm sr
+  in primEnter sr tf rf  -- primEnter strict in tf
+
+tprim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
+
+tprim1 nm rf sr t = 
+  mkR (\t (R a at) -> primEnter sr t (rf a))
+    (optMkTNm t nm sr)
+
+
+tprim2 :: NmCoerce r => 
+         NmType -> (a -> b -> r) -> SR -> Trace -> R (Fun a (Fun b r))
+
+tprim2 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)-> primEnter sr t (rf a b))
+      t)
+    (optMkTNm t nm sr)
+
+tprim3 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)-> primEnter sr t (rf a b c))
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+tprim4 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)-> primEnter sr t (rf a b c d))
+          t)
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+
+tprim5 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)-> primEnter sr t (rf a b c d e))
+            t)
+          t)
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+tprim6 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)-> primEnter sr t (rf a b c d e f))
+              t)
+            t)
+          t)
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+tprim7 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)->
+              R (\t (R g gt)-> 
+                  primEnter sr t (rf a b c d e f g))
+                t)
+              t)
+            t)
+          t)
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+tprim8 nm rf sr t = 
+  mkR (\t (R a at)->
+    R (\t (R b bt)->
+      R (\t (R c ct)->
+        R (\t (R d dt)->
+          R (\t (R e et)->
+            R (\t (R f ft)->
+              R (\t (R g gt)->
+                R (\t (R h ht)-> 
+                    primEnter sr t (rf a b c d e f g h))
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      t)
+    (optMkTNm t nm sr)
+
+tprim9 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                      primEnter sr t9 (rf a b c d e f g h i))
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim10 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                        primEnter sr t10 (rf a b c d e f 
+                                                         g h i j))
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim11 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                          primEnter sr t11 (rf a b c d e f 
+                                                           g h i j k))
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim12 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                            primEnter sr t12 (rf a b c d e f 
+                                                             g h i j k l))
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
 
 
 {-

@@ -69,7 +69,7 @@ CTrace*
 primTRoot (void)
 {
     HIDE(fprintf(stderr,"primTRoot\n");)
-    return mkTrace((FileOffset)0,False,False);
+    return mkTrace((FileOffset)0,True,False);  /* test: hidden was False */
 }
 
 CTrace*
@@ -462,7 +462,7 @@ primTHidden (CTrace* t1)
     fputc(((Trace<<5) | THidden),HatFile);
     fwrite(&(t1->ptr), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
-    return mkTrace(fo,t1->trust,True);
+    return mkTrace(fo,t1->trust,True);  /* hiddeness t1->trust = True? */
 }
 
 CTrace*

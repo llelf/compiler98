@@ -6,7 +6,7 @@ import Memo
 import AssocTree
 import TokenId (TokenId(..))
 import PackedString (PackedString)
-import DbgId(t_R, t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden)
+import DbgId(t_R)
 import State
 import Info
 import Extra
@@ -166,11 +166,14 @@ checkIfR i down thread@(Thread state prof profstatics strings live labels nbs bs
     (tidIS state i == t_R, thread)
 
 
+{- no longer needed with file archiving:
 checkIfTrace :: Int -> GcodeFixMonad Bool
 
 checkIfTrace i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) =
     (tid == t_Ap || tid == t_Nm || tid == t_Ind || tid == t_Root || tid == t_Sat || tid == t_Pruned || tid == t_Hidden, thread)
     where tid = tidIS state i
+-}
+
 
 addString str els down thread@(Thread state prof profstatics (strings,elabels) live labels nbs bs nas as) = 
   case lookupAT strings str of
@@ -389,11 +392,13 @@ gFix g@(HEAP_CON  i) = ifLive $
         addBefore [DATA_CONR s c] >>>= \ i ->
         emits [HEAP_CVAL i]
     else 
+        {- no longer needed with file archiving
         checkIfTrace i >>>= \isTrace ->
 	if isTrace then
 	    addBefore [DATA_CONT s c] >>>= \ i ->
             emits [HEAP_CVAL i]
 	else
+        -}
 	    addBefore [DATA_CON s c] >>>= \ i ->
             emits [HEAP_CVAL i]
 gFix g@(HEAP_CAP  i a) = ifLive $

@@ -1,5 +1,5 @@
 module Prelude
-  (Trace,trustedFun,hidden,NmType,SR
+  (Trace,trustedFun,trustedNm,hidden,NmType,SR
   ,E(E),myseq,sameAs
   ,mkTRoot,mkTAp1,mkTAp2,mkTAp3,mkTAp4,mkTAp5,mkTAp6,mkTAp7,mkTAp8,mkTAp9
   ,mkTAp10,mkTAp11,mkTAp12,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC

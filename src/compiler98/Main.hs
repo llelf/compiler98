@@ -36,7 +36,8 @@ import Flags
             (Flags,processArgs,pF
             ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
             ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive,sEBound
+            ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
+            ,sEBound
             ,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
@@ -610,7 +611,8 @@ nhcCase flags zcon tidFun sridt (decls,state) =
          (strPCode (strISInt state) decls) 
       pF (sCBound flags) "Symbol table after case:"  
          (mixLine (map show (treeMapList (:) (getSymbolTable state))))
-      nhcPrim flags tidFun zcon sridt (primCode primFlags tidFun state decls)
+      nhcPrim flags tidFun zcon sridt 
+        (primCode primFlags (not (sDbgTrans flags)) tidFun state decls)
 
 
 {-
