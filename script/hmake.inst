@@ -32,6 +32,7 @@ usage() {
   echo '       -M           show Makefile format dependencies'
   echo '       -Md          show Makefile format dependencies, wrt -d option'
   echo '       -dobjdir     use objdir for object files'
+  echo '       -hidir dir   use dir for interface files'
   echo '       -clean       just remove all relevant .o files'
   echo '       -realclean   just remove all relevant .o and .hi files'
   echo '       -*           other options are passed through to the compiler'
@@ -50,9 +51,9 @@ then filepath() { case $1 in
                           dir=`cygpath -w "$dir" | tr '\\\\' '/'`
                           echo `echo $1 | cut-c1-2`$dir ;;
                     /*)   cygpath -w "$1" | tr '\\\\' '/';;
-                    *)    echo $1;;
+                    *)    echo "$1";;
                   esac; }
-else filepath() { echo $1; }
+else filepath() { echo "$1"; }
 fi
 
 BUILTBY=
@@ -126,6 +127,11 @@ do
     -hc=*)  COMP=`echo $1 | cut -c5-` ;;
     -HC)    shift ; COMP=$1 ;;
     -hc)    shift ; COMP=$1 ;;
+
+    # Flag to hmake + compiler:  note potential conflict with -h for heapsize
+    -hidir) hcflags=$hcflags" $1 $2";
+            hmflags=$hmflags" -hidir=$2";
+            shift;;
 
     # Run-time flags to hmake itself
     +RTS) shift
