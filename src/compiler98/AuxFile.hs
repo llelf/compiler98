@@ -392,7 +392,7 @@ addPat v (ExpConOp p id) env         = env
 addPat v (ExpList p exps) env        = foldr (addPat v) env exps
 addPat v (PatAs p id pat) env        = addPat v pat (extendEnvPat v id env)
 addPat v (PatIrrefutable p pat) env  = addPat v pat env
-addPat v (PatNplusK p id1 id2 exp1 exp2 exp3) env = env   -- not correct
+addPat v (PatNplusK p id1 id2 exp1 exp2 exp3) env = addPat v id1 env
 addPat _   _ env = env
 
 addField v (FieldExp p id exp) env = addPat v exp env
