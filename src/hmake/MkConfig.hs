@@ -49,7 +49,7 @@ main = do
                               ++"    -- hc is name/path of a Haskell compiler")
             exitWith (ExitFailure 1)
             return config -- never reached
-  renameFile file (file++"~")
+  --renameFile file (file++"~")
   writeFile file (show newconfig)
   exitWith ExitSuccess
 
@@ -61,6 +61,12 @@ main = do
       case args of
         [file,_,_] -> do config <- parseConfigFile machine file
                          return (config, file, tail args)
+        [] -> do hPutStrLn stderr ("Usage: hmake-config"
+                              ++" [configfile] [add|delete|default] hc\n"
+                              ++"    -- hc is name/path of a Haskell compiler\n"
+                              ++"    -- default configfile is "
+                              ++globalConfigFileDir++"/"++machine++"/hmakerc")
+                 exitWith (ExitFailure 1)
         _ -> do home <- getEnv "HOME"
                 let path = home++"/.hmakerc/"++machine
                 config <- parseConfigFile machine path
