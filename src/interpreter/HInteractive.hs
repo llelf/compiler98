@@ -38,7 +38,7 @@ main = do
                           _ -> do cfg <- safeReadConfig defaultConfigLocation
                                   return (cfg,Nothing,options)
   let defaultComp = usualCompiler cfg
-      opts = options ++ extraCompilerFlags defaultComp
+      opts = options ++ extraHiOptions defaultComp
   putStrLn banner
   putStrLn (replicate 43 ' '++
             "... Using compiler "++compilerPath defaultComp++" ...\n")
@@ -64,7 +64,7 @@ toplevel :: State -> IO ()
 toplevel state = do
   let prompt = case scope state of
   		    Nothing  -> head (modules state)++ "> "
-    		    Just mod -> mod++ "*> "
+    		    Just mod -> "["++mod++"]> "
   s <- getLineEdited prompt
   case s of
     Nothing -> quit
@@ -133,7 +133,7 @@ showtype expr _ state = do
 
 compile flag file state continue = do
   if flag then putStr "[Compiling..." else done
-  ok <- system ("hmake -hc="++compilerPath (compiler state)++" -I. "
+  ok <- system (hmake ++" -hc="++compilerPath (compiler state)++" -I. "
                 ++(case cfgfile state of {Just f-> ("-f "++f++" "); _->"";})
                 ++unwords (options state)++" "++file++" >/dev/null")
   case ok of
@@ -221,15 +221,20 @@ commands ws state = let target = tail ws in do
           toplevel (state {options=newopts}) )
   command "hc"
       (if null target then do
-            putStrLn ("Current compiler: "++compilerPath (compiler state))
+          putStrLn ("Current compiler:    "++compilerPath (compiler state))
+          putStr    "Compilers available: "
+          putStrLn ((concat . intersperse (",\n"++replicate 21 ' ')
+                    . reverse . sort
+                    . map (\cc->compilerPath cc++"\t("++compilerVersion cc++")")
+                    . knownCompilers . config) state)
        else if compilerKnown (head target) (config state) then do
-               let ncomp = matchCompiler (head target) (config state)
-                   nopts = ((options state)
-                                       \\ extraCompilerFlags (compiler state))
-                                       ++ extraCompilerFlags ncomp
+               let newcomp = matchCompiler (head target) (config state)
+                   newopts = ((options state)
+                                       \\ extraHiOptions (compiler state))
+                                       ++ extraHiOptions newcomp
                makeclean ".o" (modules state)
                makeclean ".hi" (modules state)
-               let newstate = state {options=nopts, compiler=ncomp}
+               let newstate = state {options=newopts, compiler=newcomp}
                loadAll newstate (toplevel newstate)	-- explicit return
             else do
                putStrLn ("Compiler "++head target++" not known/configured")
@@ -250,6 +255,8 @@ commands ws state = let target = tail ws in do
 --          makeclean ".hi" (modules state)
 --          let newstate = state {options=newopts, compiler=Nhc98}
 --          loadAll newstate (toplevel newstate))	-- explicit return
+  command "version"
+      (putStrLn ("hmake version: "++hmakeVersion++"\t("++hmake++")"))
   command "?" (putStrLn help)
   putStrLn ("[Unknown command :"++head ws++"]")
  where
@@ -361,10 +368,12 @@ help = "\
 \  :cd                  show current directory\n\ 
 \  :dir                 list current directory\n\ 
 \  :hc compiler         set Haskell compiler to use\n\ 
+\  :hc                  show current compiler and other available compilers\n\ 
 \  :set options         set hmake/compiler options\n\ 
 \  :unset options       remove hmake/compiler options\n\ 
 \  :observe name        debug function 'name' with 'Hood' [coming soon]\n\ 
 \  :trace [on|off]      switch on/off debugging with 'Hat' [nhc98 only]\n\ 
 \  :!command            shell escape\n\ 
+\  :version             show hmake version\n\ 
 \  :?                   display this list of commands"
 #endif

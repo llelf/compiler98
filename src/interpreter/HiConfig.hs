@@ -48,6 +48,8 @@ fixlength n s | len > n   = take n s
 
 -- Definitions imported from the environment
 hmakeVersion = fixlength 18 ("INSTALLVER" `withDefault` "1.8 or better")
+hmake = unsafePerformIO $ do script <- getEnv "SCRIPTDIR"
+                             return (script++"/hmake")
 
 
 -- What are the differences between compilers?
@@ -73,9 +75,9 @@ nonstdShowsType c  = case c of
     Hbc   -> "Operation'showsType'Unknown"
     Ghc   -> "Operation'showsType'Unknown"
     _     -> ""
-defaultOptions c = case c of
-    Nhc98 -> []
-    Hbc   -> []
-    Ghc   -> ["-fglasgow-exts"]
+extraHiOptions c = case compilerStyle c of
+    Nhc98 -> extraCompilerFlags c
+    Hbc   -> extraCompilerFlags c
+    Ghc   -> "-fglasgow-exts": extraCompilerFlags c
     _     -> []
 
