@@ -23,7 +23,8 @@ the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.  */
 #include "gmp-impl.h"
 #include "longlong.h"
 
-#ifdef DEBUG
+/* disabled for now, _mpn_mul_classic has vanished somehow... */
+#if defined(DEBUG) && 0
 #define MPN_MUL_VERIFY(res_ptr,res_size,op1_ptr,op1_size,op2_ptr,op2_size) \
   _mpn_mul_verify (res_ptr, res_size, op1_ptr, op1_size, op2_ptr, op2_size)
 
