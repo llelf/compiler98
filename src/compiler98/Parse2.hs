@@ -40,10 +40,10 @@ parseImpDecl =
 	`orelse`
     importas `parseChk` lit L_import `ap` aconid `ap` parseImpSpec
 	`orelse`
-    ImportQas `parseChk` lit L_import `chk` lit L_qualified `ap` bigModId
+    ImportQas `parseChk` lit L_import `chk` k_qualified `ap` bigModId
                     `chk` k_as `ap` aconid `ap` parseImpSpec
 	`orelse`
-    importQas `parseChk` lit L_import `chk` lit L_qualified
+    importQas `parseChk` lit L_import `chk` k_qualified
                     `ap` aconid `ap` parseImpSpec     -- impSpec is FAKE
   where
     importas  m@(p,Visible _)     s = Import m s
@@ -64,7 +64,7 @@ parseImpSpec =
     NoHiding `parseChk` lpar `apCut` manySep comma parseEntity `chk` 
       optional comma `chk` rpar
         `orelse`
-    Hiding `parseChk` lit L_hiding `chk` lpar `apCut`
+    Hiding `parseChk` k_hiding `chk` lpar `apCut`
       manySep comma parseEntity `chk` optional comma `chk` rpar
         `orelse`
     parse (Hiding [])

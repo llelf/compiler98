@@ -19,7 +19,7 @@ lexical u file l = iLex [0] 0 (beginning (lexPre u file' l))
     beginning toks =
        case toks of
            lp@((f,r,c,L_module):_)    ->  lp
-           lp@((f,r,c,L_interface):_) ->  lp
+           lp@((f,r,c,L_AVARID t):_) | t==tinterface ->  lp
            (lp@(f,r,c,L_LANNOT):rest) ->  lp: discard_pragma rest
            lp                         ->  ((file',1,0,L_module)
                                           :(file',1,0,L_ACONID tMain)

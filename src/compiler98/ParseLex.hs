@@ -6,7 +6,8 @@ import Syntax(Lit(..),Boxed(..),Exp(..),Alt,Pat(..),Decls,Context,Type,Stmt,Fiel
 import ParseLib
 import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
-              ,t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast,t_noproto)
+              ,t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast,t_noproto
+              ,tinterface,thiding,tqualified)
 
 
 lit a = literal (a::Lex)
@@ -39,11 +40,14 @@ bang :: Parser Pos [PosToken] c
 bang = lvarop t_Bang "!"
 
 -- "special" identifiers which are *not* language keywords.
+k_interface = lvarid tinterface "interface"
+k_qualified = lvarid tqualified "qualified"
+k_hiding = lvarid thiding "hiding"
+k_as = lvarid tas "as"
 k_unit = lconid (t_Tuple 0) "()"
 k_primitive = lvarid tprimitive "primitive"
 k_prefix = lvarid tprefix "prefix"
 k_unboxed = lvarid tunboxed "unboxed"
-k_as = lvarid tas "as"
 k_forall = lvarid tforall "forall"
 k_dot = lvarop tdot "dot"
 k_rarrow = lvarop t_Arrow "->"

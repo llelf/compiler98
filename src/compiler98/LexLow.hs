@@ -135,7 +135,7 @@ toVar r c rid@(i:d) xs =
   	else if d == "rehw"     then (r,c,L_where,xs)
   	else if d == "pyt"      then (r,c,L_type,xs)
   	else if d == "pytwen"   then (r,c,L_newtype,xs)
-  	else if d == "cafretni" then (r,c,L_interface,xs)
+--  	else if d == "cafretni" then (r,c,L_interface,xs)
   	else if d == "cnatsni"  then (r,c,L_instance,xs)
 --  	else if d == "vitimirp" then (r,c,L_primitive,xs)
   	else if d == "ludom"   then (r,c,L_module,xs)
@@ -158,12 +158,12 @@ toVar r c rid@(i:d) xs =
 			     else (r,c,L_AVARID (visible rid),xs)
   else if i == 'g' 
   then       if d == "nivired" then (r,c,L_deriving,xs)
-  	else if d == "nidih"   then (r,c,L_hiding,xs)
+-- 	else if d == "nidih"   then (r,c,L_hiding,xs)
 			       else (r,c,L_AVARID (visible rid),xs)
-  else if i == 'd' 
-  then       if d == "eifilauq" then (r,c,L_qualified,xs)
+--else if i == 'd' 
+--then       if d == "eifilauq" then (r,c,L_qualified,xs)
 --        else if d == "exobnu"   then (r,c,L_unboxed,xs)
-			        else (r,c,L_AVARID (visible rid),xs)
+--			        else (r,c,L_AVARID (visible rid),xs)
   else if i == '_' && null d
   then (r,c,L_Underscore,xs)
 

@@ -51,7 +51,6 @@ data Lex =
     | L_STRING [Char]
 
 -- reserved words
---    | L_as
     | L_case
     | L_class
     | L_data
@@ -59,28 +58,29 @@ data Lex =
     | L_deriving
     | L_do
     | L_else
-    | L_hiding
     | L_if
     | L_import
     | L_in
     | L_infix
     | L_infixl
     | L_infixr
---    | L_prefix
---    | L_primitive
     | L_instance
-    | L_interface
     | L_let
     | L_module
     | L_newtype
     | L_of
-    | L_qualified
-    | L_renaming
     | L_then
     | L_type
---    | L_unboxed
     | L_where
-    | L_with
+--    | L_as
+--    | L_hiding
+--    | L_prefix
+--    | L_primitive
+--    | L_interface
+--    | L_qualified
+--    | L_renaming
+--    | L_unboxed
+--    | L_with
 
 instance Eq Lex where
     L_EOF          == L_EOF         = True
@@ -123,7 +123,6 @@ instance Eq Lex where
     (L_CHAR _)   == (L_CHAR _)   = True
     (L_STRING _) == (L_STRING _) = True
 
---    L_as        == L_as        = True
     L_case      == L_case      = True
     L_class     == L_class     = True
     L_data      == L_data      = True
@@ -131,28 +130,29 @@ instance Eq Lex where
     L_deriving  == L_deriving  = True
     L_do        == L_do        = True
     L_else      == L_else      = True
-    L_hiding    == L_hiding    = True
     L_if        == L_if        = True
     L_import    == L_import    = True
     L_in        == L_in        = True
     L_infix     == L_infix     = True
     L_infixl    == L_infixl    = True
     L_infixr    == L_infixr    = True
---    L_prefix    == L_prefix    = True
---    L_primitive == L_primitive = True
     L_instance  == L_instance  = True
-    L_interface == L_interface = True
     L_let       == L_let       = True
     L_module    == L_module    = True
     L_newtype   == L_newtype   = True
     L_of        == L_of        = True
-    L_qualified == L_qualified = True
-    L_renaming  == L_renaming  = True
     L_then      == L_then      = True
     L_type      == L_type      = True
---    L_unboxed   == L_unboxed   = True
     L_where     == L_where     = True
-    L_with      == L_with      = True
+--    L_as        == L_as        = True
+--    L_hiding    == L_hiding    = True
+--    L_interface == L_interface = True
+--    L_prefix    == L_prefix    = True
+--    L_primitive == L_primitive = True
+--    L_qualified == L_qualified = True
+--    L_renaming  == L_renaming  = True
+--    L_unboxed   == L_unboxed   = True
+--    L_with      == L_with      = True
     _           == _           = False
 
 instance Show Lex where
@@ -199,7 +199,6 @@ instance Show Lex where
   showsPrec d (L_CHAR c)     = showString (strChr c)
   showsPrec d (L_STRING s)   = showString (strStr s)
 
---  showsPrec d (L_as )        = showString "_as_"
   showsPrec d (L_case )      = showString "_case_"
   showsPrec d (L_class )     = showString "_class_"
   showsPrec d (L_data )      = showString "_data_"
@@ -207,25 +206,26 @@ instance Show Lex where
   showsPrec d (L_deriving )  = showString "_deriving_"
   showsPrec d (L_do )        = showString "_do_"
   showsPrec d (L_else )      = showString "_else_"
-  showsPrec d (L_hiding )    = showString "_hiding_"
   showsPrec d (L_if )        = showString "_if_"
   showsPrec d (L_import )    = showString "_import_"
   showsPrec d (L_in )        = showString "_in_"
   showsPrec d (L_infix )     = showString "_infix_"
   showsPrec d (L_infixl )    = showString "_infixl_"
   showsPrec d (L_infixr )    = showString "_infixr_"
---  showsPrec d (L_prefix )    = showString "_prefix_"
---  showsPrec d (L_primitive)  = showString "_primitive_"
   showsPrec d (L_instance )  = showString "_instance_"
-  showsPrec d (L_interface ) = showString "_interface_"
   showsPrec d (L_let )       = showString "_let_"
   showsPrec d (L_module )    = showString "_module_"
   showsPrec d (L_newtype)    = showString "_newtype_"
   showsPrec d (L_of )        = showString "_of_"
-  showsPrec d (L_qualified)  = showString "_qualified_"
-  showsPrec d (L_renaming )  = showString "_renaming_"
   showsPrec d (L_then )      = showString "_then_"
   showsPrec d (L_type )      = showString "_type_"
---  showsPrec d (L_unboxed)    = showString "_unboxed_"
   showsPrec d (L_where )     = showString "_where_"
-  showsPrec d (L_with )      = showString "_with_"
+--  showsPrec d (L_as )        = showString "_as_"
+--  showsPrec d (L_hiding )    = showString "_hiding_"
+--  showsPrec d (L_interface ) = showString "_interface_"
+--  showsPrec d (L_prefix )    = showString "_prefix_"
+--  showsPrec d (L_primitive)  = showString "_primitive_"
+--  showsPrec d (L_qualified)  = showString "_qualified_"
+--  showsPrec d (L_renaming )  = showString "_renaming_"
+--  showsPrec d (L_unboxed)    = showString "_unboxed_"
+--  showsPrec d (L_with )      = showString "_with_"

@@ -14,7 +14,7 @@ import MkSyntax(mkDeclClass)
 import ParseLib
 import ParseLex
 import Parse2
-import TokenId(tNEED,TokenId(..))
+import TokenId(tNEED,TokenId(..),tinterface)
 import PreImp
 import List (intersperse)
 
@@ -56,7 +56,7 @@ parseNeedAnnot =
 
 parseInterface1 =
     (\(pos,modid) imports fixdecls rest -> (modid,imports,fixdecls,rest))
-                `parseChk` lit L_interface `apCut` bigModId
+                `parseChk` k_interface `apCut` bigModId
                 `chkCut` lit L_where `chkCut` lcurl
                 `apCut` parseImpDecls
 	        `apCut` parseFixDecls
@@ -71,7 +71,7 @@ parseEof = Nothing `parseChk` optSemi `chk` rcurl
 parseInterface3 st needs hideFun =
   ParseEof st `parseChk` parseEof
     `orelse`
-  ParseNext st `parseChk` lit L_interface `apCut` optBang `ap` bigModId
+  ParseNext st `parseChk` k_interface `apCut` optBang `ap` bigModId
                                                               `apCut` parseRest
     `orelse`
   ParseNeed `parseAp` parseITopDecls st needs hideFun `apCut` parseNeedAnnot
@@ -81,7 +81,7 @@ parseInterface4 st hideFun =
   parseITopDecls st [] hideFun `into`
         \st -> ParseEof st `parseChk` parseEof
 	           `orelse`
-               ParseNext st `parseChk` lit L_interface  `apCut` optBang
+               ParseNext st `parseChk` k_interface  `apCut` optBang
                                                `ap` bigModId `apCut` parseRest
 
 parseITopDecls st needs hideFuns =
@@ -158,7 +158,7 @@ parseUntilNeed st good bad input err =
  where
    untilNeed [] = error "Internal error in parseUntilNeed"
    untilNeed ((pos,L_EOF,_,_):input) = good (ParseEof st) input err
-   untilNeed ((_,L_interface,_,_):input) =
+   untilNeed ((_,L_AVARID t,_,_):input) | t==tinterface =
        (ParseNext st `parseAp` optBang `ap` bigModId `apCut` parseRest)
        good bad input err
    untilNeed ((_,L_LANNOT,_,_):(_,L_ACONID x,_,_):input) | x == tNEED =
