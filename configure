@@ -281,7 +281,7 @@ then
     BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
     echo "I am guessing that you want to build nhc98 with $BUILDWITH"
   else
-    echo "You are going to build nhc98 with $BUILDWITH"
+    echo "You are going to build nhc98 with:          $BUILDWITH"
   fi
   GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   case $BUILDWITH in
@@ -289,10 +289,11 @@ then
     ghc|nhc*) RTSFLAG=yes;;
     gcc)      RTSFLAG=yes;;
   esac
-  if [ "$RTSFLAG" = "yes" ]
-  then echo "  so nhc98comp uses RTS delimiters."
-  else echo "  so nhc98comp does not use RTS delimiters."
-  fi
+  echo "nhc98comp uses RTS delimiters?              $RTSFLAG"
+# if [ "$RTSFLAG" = "yes" ]
+# then echo "  so nhc98comp uses RTS delimiters."
+# else echo "  so nhc98comp does not use RTS delimiters."
+# fi
   if [ "$BUILDOPTS" != "" ]
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
