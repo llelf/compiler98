@@ -1,8 +1,8 @@
 module DbgId(tTrace, t_R, tSR, tSR2, tSR3, tDNum, tE,
              t_mkTRoot,t_mkTNm,
              t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden, t_lazySat,
-             t_ap, t_rap, t_patvar, t_caf, t_fun, t_primn, t_guard, t_if,
-	     t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
+             t_ap, t_rap, t_patvar, t_caf, t_fun, t_primn, t_guard, t_if, t_rif
+            ,t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
 	     t_conCons, t_indir,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
@@ -47,6 +47,7 @@ t_patvar	= qualImp "patvar"
 t_caf		= qualImp "caf"
 t_guard		= qualImp "t_guard"
 t_if		= qualImp "tif"
+t_rif           = qualImp "trif"
 t_fun n		= qualImp ("fun" ++ show n)
 t_ap n		= qualImp ("ap" ++ show n)
 t_rap n		= qualImp ("rap" ++ show n)
@@ -166,6 +167,7 @@ tokenDbg = [(TCon, tTrace),
 --	    (Var, t_stringConst), 
 --	    (Var, t_dbgprint),
 	    (Var, t_if),
+            (Var, t_rif),
 	    (Var, t_guard)] 
            ++ [(Var,  t_fun n)   | n <- [0..12]]
 	   ++ [(Var,  t_ap n)    | n <- [1..12]]

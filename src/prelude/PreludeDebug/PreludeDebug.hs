@@ -141,9 +141,23 @@ tif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
 tif sr (R iv it) e1 e2 t = 
   if trustedFun t 
-    then if iv then e1 t else e2 t
+    then lazySat (if iv then e1 t else e2 t) t
     else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
          in  lazySat (if iv then e1 t' else e2 t') t'
+
+
+{- 
+Same as above for projective context 
+Know that the if expression has to be evaluated.
+Hence need no SAT.
+-}
+trif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
+
+trif sr (R iv it) e1 e2 t = 
+  if trustedFun t 
+    then if iv then e1 t else e2 t
+    else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
+         in  t' `myseq` if iv then e1 t' else e2 t'
 
 
 {- used by _Driver -}
@@ -197,8 +211,10 @@ False `tand` _ = False
 
 
 {- combinators for n-ary application in a non-projective context. -}
-ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
+
+{- old inlined code
+ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
 ap1 sr t (R rf tf) a@(R _ at) = 
   let t1 = if trustedFun tf `tand` trustedFun t
@@ -253,66 +269,69 @@ ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
                           else let t4 = mkTAp1 t3 tf dt sr
                                in  t4 `myseq` rf t4 d
       
-{-
+-}
+
+ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
+
 ap1 sr t (R rf tf) a@(R _ at) = 
   let t' = if trusted t tf
              then hide t
              else mkTAp1 t tf at sr
-  in  t' `myseq` rf t' a
+  in  lazySat (rf t' a) t'
 
 ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp2 t tf at bt sr
-  in  pap1 sr t' (rf t' a) b
+  in  lazySat (pap1 sr t t' (rf t' a) b) t'
 
 ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp3 t tf at bt ct sr
-  in  pap2 sr t' (rf t' a) b c
+  in  lazySat (pap2 sr t t' (rf t' a) b c) t'
 
 
 ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp4 t tf at bt ct dt sr
-  in  pap3 sr t' (rf t' a) b c d
--}
+  in  lazySat (pap3 sr t t' (rf t' a) b c d) t'
+
 
 ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp5 t tf at bt ct dt et sr
-  in  pap4 sr t' (rf t' a) b c d e
+  in  lazySat (pap4 sr t t' (rf t' a) b c d e) t'
 
 ap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp6 t tf at bt ct dt et ft sr
-  in  pap5 sr t' (rf t' a) b c d e f
+  in  lazySat (pap5 sr t t' (rf t' a) b c d e f) t'
 
 ap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp7 t tf at bt ct dt et ft gt sr
-  in  pap6 sr t' (rf t' a) b c d e f g
+  in  lazySat (pap6 sr t t' (rf t' a) b c d e f g) t'
 
 ap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp8 t tf at bt ct dt et ft gt ht sr
-  in  pap7 sr t' (rf t' a) b c d e f g h
+  in  lazySat (pap7 sr t t' (rf t' a) b c d e f g h) t'
 
 ap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp9 t tf at bt ct dt et ft gt ht it sr
-  in  pap8 sr t' (rf t' a) b c d e f g h i
+  in  lazySat (pap8 sr t t' (rf t' a) b c d e f g h i) t'
 
 
 ap10 :: SR -> Trace 
@@ -326,7 +345,7 @@ ap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-  in  pap9 sr t' (rf t' a) b c d e f g h i j
+  in  lazySat (pap9 sr t t' (rf t' a) b c d e f g h i j) t'
 
 ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -334,7 +353,7 @@ ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-  in  pap10 sr t' (rf t' a) b c d e f g h i j k
+  in  lazySat (pap10 sr t t' (rf t' a) b c d e f g h i j k) t'
 
 ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -342,7 +361,7 @@ ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
-  in  pap11 sr t' (rf t' a) b c d e f g h i j k l
+  in  lazySat (pap11 sr t t' (rf t' a) b c d e f g h i j k l) t'
 
 
 {- 
@@ -353,6 +372,7 @@ because the skipped trace node has the same type as the
 parent redex.
 -}
 
+{- old inlined:
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
 rap1 sr t (R rf tf) a@(R _ at) = 
@@ -411,95 +431,93 @@ rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
                           then rf t3 d
                           else let t4 = mkTAp1 t3 tf dt sr
                                in  t4 `myseq` rf t4 d
+-}
 
-{- original:
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
 rap1 sr t (R rf tf) a@(R _ at) = 
   if trusted t tf 
     then rf t a
     else let t' = mkTAp1 t tf at sr
-	 in  t' `myseq` rf t' a
+	 in  rf t' a
 
 
 rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
 
 rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
   if trusted t tf 
-    then pap1 sr t (rf t a) b
+    then pap1 sr t t (rf t a) b
     else let t' = mkTAp2 t tf at bt sr
-         in  pap1 sr t' (rf t' a) b
+         in  pap1 sr t t' (rf t' a) b
 
 rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   if trusted t tf 
-    then pap2 sr t (rf t a) b c
+    then pap2 sr t t (rf t a) b c
     else let t' = mkTAp3 t tf at bt ct sr
- 	 in  pap2 sr t' (rf t' a) b c
+ 	 in  pap2 sr t t' (rf t' a) b c
 
 rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   if trusted t tf 
-    then pap3 sr t (rf t a) b c d
+    then pap3 sr t t (rf t a) b c d
     else let t' = mkTAp4 t tf at bt ct dt sr
-	  in pap3 sr t' (rf t' a) b c d
-
--}
+	  in pap3 sr t t' (rf t' a) b c d
 
 rap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   if trusted t tf 
-    then pap4 sr t (rf t a) b c d e
+    then pap4 sr t t (rf t a) b c d e
     else let t' = mkTAp5 t tf at bt ct dt et sr
-	 in  pap4 sr t' (rf t' a) b c d e
+	 in  pap4 sr t t' (rf t' a) b c d e
 
 rap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) = 
   if trusted t tf 
-    then pap5 sr t (rf t a) b c d e f
+    then pap5 sr t t (rf t a) b c d e f
     else let t' = mkTAp6 t tf at bt ct dt et ft sr
-         in  pap5 sr t' (rf t' a) b c d e f
+         in  pap5 sr t t' (rf t' a) b c d e f
 
 rap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) = 
   if trusted t tf 
-    then pap6 sr t (rf t a) b c d e f g
+    then pap6 sr t t (rf t a) b c d e f g
     else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
-	 in  pap6 sr t' (rf t' a) b c d e f g
+	 in  pap6 sr t t' (rf t' a) b c d e f g
 
 rap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   if trusted t tf 
-    then pap7 sr t (rf t a) b c d e f g h
+    then pap7 sr t t (rf t a) b c d e f g h
     else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
-	 in  pap7 sr t' (rf t' a) b c d e f g h
+	 in  pap7 sr t t' (rf t' a) b c d e f g h
 
 rap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   if trusted t tf 
-    then pap8 sr t (rf t a) b c d e f g h i
+    then pap8 sr t t (rf t a) b c d e f g h i
     else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
-	 in  pap8 sr t' (rf t' a) b c d e f g h i
+	 in  pap8 sr t t' (rf t' a) b c d e f g h i
 
 rap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
   if trusted t tf 
-    then pap9 sr t (rf t a) b c d e f g h i j
+    then pap9 sr t t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-	 in  pap9 sr t' (rf t' a) b c d e f g h i j
+	 in  pap9 sr t t' (rf t' a) b c d e f g h i j
 
 rap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) = 
   if trusted t tf 
-    then pap10 sr t (rf t a) b c d e f g h i j k
+    then pap10 sr t t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-	 in  pap10 sr t' (rf t' a) b c d e f g h i j k
+	 in  pap10 sr t t' (rf t' a) b c d e f g h i j k
 
 rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) l@(R _ lt) =  
   if trusted t tf 
-    then pap11 sr t (rf t a) b c d e f g h i j k l
+    then pap11 sr t t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
-	 in  pap11 sr t' (rf t' a) b c d e f g h i j k l
+	 in  pap11 sr t t' (rf t' a) b c d e f g h i j k l
 
 
 {- 
@@ -512,34 +530,34 @@ pap0 :: Trace -> R r -> R r
 pap0 t e = e
 
 
-pap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
+pap1 :: SR -> Trace -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
 
-pap1 sr t (R rf tf) a@(R _ at) =
+pap1 sr p t (R rf tf) a@(R _ at) =
   if t `sameAs` tf 
     then rf t a
-    else let t' = mkTAp1 t tf at sr
+    else let t' = mkTAp1 p tf at sr
          in  t' `myseq` rf t' a
 
-pap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) =
+pap2 sr p t (R rf tf) a@(R _ at) b@(R _ bt) =
   if t `sameAs` tf 
-    then pap1 sr t (rf t a) b
-    else let t' = mkTAp2 t tf at bt sr
-         in  pap1 sr t' (rf t' a) b
+    then pap1 sr p t (rf t a) b
+    else let t' = mkTAp2 p tf at bt sr
+         in  pap1 sr p t' (rf t' a) b
 
-pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
+pap3 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
   let t' = if t `sameAs` tf 
              then t
-             else mkTAp3 t tf at bt ct sr
+             else mkTAp3 p tf at bt ct sr
   in case (rf t' a) of
        (R rf tf) -> 
          let t'' = if t' `sameAs` tf
                      then t'
-                     else mkTAp2 t' tf bt ct sr
+                     else mkTAp2 p tf bt ct sr
          in case (rf t'' b) of
               (R rf tf) ->
                 if t'' `sameAs` tf 
                   then rf t'' c
-                  else let t''' = mkTAp1 t'' tf ct sr
+                  else let t''' = mkTAp1 p tf ct sr
                        in  t''' `myseq` rf t''' c
  
 {- original:
@@ -550,67 +568,67 @@ pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
          in pap2 sr t' (rf t' a) b c
 -}
 
-pap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
+pap4 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
   if t `sameAs` tf 
-    then pap3 sr t (rf t a) b c d
-    else let t' = mkTAp4 t tf at bt ct dt sr
-         in  pap3 sr t' (rf t' a) b c d
+    then pap3 sr p t (rf t a) b c d
+    else let t' = mkTAp4 p tf at bt ct dt sr
+         in  pap3 sr p t' (rf t' a) b c d
 
-pap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
+pap5 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
   if t `sameAs` tf 
-    then pap4 sr t (rf t a) b c d e
-    else let t' = mkTAp5 t tf at bt ct dt et sr
-         in  pap4 sr t' (rf t' a) b c d e
+    then pap4 sr p t (rf t a) b c d e
+    else let t' = mkTAp5 p tf at bt ct dt et sr
+         in  pap4 sr p t' (rf t' a) b c d e
 
-pap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) =
+pap6 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                      f@(R _ ft) =
   if t `sameAs` tf 
-    then pap5 sr t (rf t a) b c d e f
-    else let t' = mkTAp6 t tf at bt ct dt et ft sr
-         in  pap5 sr t' (rf t' a) b c d e f
+    then pap5 sr p t (rf t a) b c d e f
+    else let t' = mkTAp6 p tf at bt ct dt et ft sr
+         in  pap5 sr p t' (rf t' a) b c d e f
 
-pap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) =
+pap7 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                      f@(R _ ft) g@(R _ gt) =
   if t `sameAs` tf 
-    then pap6 sr t (rf t a) b c d e f g
-    else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
-         in  pap6 sr t' (rf t' a) b c d e f g
+    then pap6 sr p t (rf t a) b c d e f g
+    else let t' = mkTAp7 p tf at bt ct dt et ft gt sr
+         in  pap6 sr p t' (rf t' a) b c d e f g
 
-pap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) =
+pap8 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                      f@(R _ ft) g@(R _ gt) h@(R _ ht) =
   if t `sameAs` tf 
-    then pap7 sr t (rf t a) b c d e f g h
-    else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
-         in  pap7 sr t' (rf t' a) b c d e f g h
+    then pap7 sr p t (rf t a) b c d e f g h
+    else let t' = mkTAp8 p tf at bt ct dt et ft gt ht sr
+         in  pap7 sr p t' (rf t' a) b c d e f g h
 
 
-pap9 :: SR -> Trace 
+pap9 :: SR -> Trace -> Trace
      -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun f (Fun g (Fun h 
         (Fun i r))))))))) 
      -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i 
      -> R r 
 
-pap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
+pap9 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
   if t `sameAs` tf 
-    then pap8 sr t (rf t a) b c d e f g h i
-    else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
-         in  pap8 sr t' (rf t' a) b c d e f g h i
+    then pap8 sr p t (rf t a) b c d e f g h i
+    else let t' = mkTAp9 p tf at bt ct dt et ft gt ht it sr
+         in  pap8 sr p t' (rf t' a) b c d e f g h i
 
-pap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
+pap10 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
   if t `sameAs` tf 
-    then pap9 sr t (rf t a) b c d e f g h i j
-    else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-         in pap9 sr t' (rf t' a) b c d e f g h i j
+    then pap9 sr p t (rf t a) b c d e f g h i j
+    else let t' = mkTAp10 p tf at bt ct dt et ft gt ht it jt sr
+         in pap9 sr p t' (rf t' a) b c d e f g h i j
 
-pap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
-                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
-                     k@(R _ kt) =
+pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) =
   if t `sameAs` tf 
-    then pap10 sr t (rf t a) b c d e f g h i j k
-    else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-         in  pap10 sr t' (rf t' a) b c d e f g h i j k 
+    then pap10 sr p t (rf t a) b c d e f g h i j k
+    else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt sr
+         in  pap10 sr p t' (rf t' a) b c d e f g h i j k 
 
 
 
@@ -633,18 +651,6 @@ lazySat x t =
               v) -- return value
        sat
 
-{- old:
-lazySat x t = 
-  let sat = mkTSatA t
-  in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
-          case x of -- create trace for (unevaluated x/v)
-            R v vt ->
-              v `myseq` -- evaluate v and thus extend trace for v
-              mkTSatC sat vt `myseq` -- set trace for evaluated v
-              v) -- return value
-       sat
--}
-
 
 -- The following combinator is currently not used.
 -- It should be used to not to loose information about pattern bindings.
@@ -662,25 +668,25 @@ fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
   let t' = mkTNm t nm sr
-  in t' `myseq` lazySat (enter nm t' (rf t)) t'  -- t here correct?
+  in t' `myseq` enter nm t' (rf t)  -- t here correct?
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
 fun1 nm rf sr t = 
-  mkR (\t a -> lazySat (enter nm t (rf t a)) t)
+  mkR (\t a -> enter nm t (rf t a))
       (mkTNm t nm sr)
 
 fun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> lazySat (enter nm t (rf t a b)) t)
+      R (\t b -> enter nm t (rf t a b))
         t)
       (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> lazySat (enter nm t (rf t a b c)) t)
+        R (\t c -> enter nm t (rf t a b c))
           t)
         t)
       (mkTNm t nm sr)
@@ -689,13 +695,13 @@ fun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> lazySat (enter nm t (rf t a b c d)) t)
+          R (\t d -> enter nm t (rf t a b c d))
             t)
           t)
         t)
       (mkTNm t nm sr)
 
-{-
+{- old inlined:
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
@@ -761,7 +767,7 @@ fun5 nm rf sr t =
       R (\t b ->
         R (\t c ->
           R (\t d ->
-            R (\t e -> lazySat (enter nm t (rf t a b c d e)) t)
+            R (\t e -> enter nm t (rf t a b c d e))
               t)
             t)
           t)
@@ -774,7 +780,7 @@ fun6 nm rf sr t =
         R (\t c ->
           R (\t d ->
             R (\t e ->
-              R (\t f -> lazySat (enter nm t (rf t a b c d e f)) t)
+              R (\t f -> enter nm t (rf t a b c d e f))
                 t)
               t)
             t)
@@ -789,7 +795,7 @@ fun7 nm rf sr t =
           R (\t d ->
             R (\t e ->
               R (\t f ->
-                R (\t g -> lazySat (enter nm t (rf t a b c d e f g)) t)
+                R (\t g -> enter nm t (rf t a b c d e f g))
                   t)
                 t)
               t)
@@ -806,7 +812,7 @@ fun8 nm rf sr t =
             R (\t e ->
               R (\t f ->
                 R (\t g ->
-                  R (\t h -> lazySat (enter nm t (rf t a b c d e f g h)) t)
+                  R (\t h -> enter nm t (rf t a b c d e f g h))
                     t)
                   t)
                 t)
@@ -825,7 +831,7 @@ fun9 nm rf sr t =
               R (\t f ->
                 R (\t g ->
                   R (\t h ->
-                    R (\t i -> lazySat (enter nm t (rf t a b c d e f g h i)) t)
+                    R (\t i -> enter nm t (rf t a b c d e f g h i))
                       t)
                     t)
                   t)
@@ -846,8 +852,8 @@ fun10 nm rf sr t =
                 R (\t g ->
                   R (\t h ->
                     R (\t i ->
-                      R (\t j -> lazySat (enter nm t (rf t a b c d e f g 
-                                                           h i j)) t)
+                      R (\t j -> enter nm t (rf t a b c d e f g 
+                                                           h i j))
                         t)
                       t)
                     t)
@@ -870,8 +876,8 @@ fun11 nm rf sr t =
                   R (\t h ->
                     R (\t i ->
                       R (\t j ->
-                        R (\t k -> lazySat (enter nm t (rf t a b c d e f g 
-                                                             h i j k)) t)
+                        R (\t k -> enter nm t (rf t a b c d e f g 
+                                                             h i j k))
                           t)
                         t)
                       t)
@@ -896,8 +902,8 @@ fun12 nm rf sr t =
                     R (\t i ->
                       R (\t j ->
                         R (\t k ->
-                          R (\t l -> lazySat (enter nm t (rf t a b c d e f g 
-                                                               h i j k l)) t)
+                          R (\t l -> enter nm t (rf t a b c d e f g 
+                                                               h i j k l))
                             t)
                           t)
                         t)
@@ -1034,12 +1040,12 @@ prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
 
 prim0 nm rf sr t = 
   let tf = mkTNm t nm sr
-  in lazySat (primEnter sr nm tf rf) tf  -- primEnter strict in tf
+  in primEnter sr nm tf rf  -- primEnter strict in tf
 
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
-  mkR (\t (R a at) -> lazySat (primEnter sr nm t (rf a)) t)
+  mkR (\t (R a at) -> primEnter sr nm t (rf a))
     (mkTNm t nm sr)
 
 
@@ -1048,14 +1054,14 @@ prim2 :: NmCoerce r =>
 
 prim2 nm rf sr t = 
   mkR (\t (R a at)->
-    R (\t (R b bt)-> lazySat (primEnter sr nm t (rf a b)) t)
+    R (\t (R b bt)-> primEnter sr nm t (rf a b))
       t)
     (mkTNm t nm sr)
 
 prim3 nm rf sr t = 
   mkR (\t (R a at)->
     R (\t (R b bt)->
-      R (\t (R c ct)-> lazySat (primEnter sr nm t (rf a b c)) t)
+      R (\t (R c ct)-> primEnter sr nm t (rf a b c))
         t)
       t)
     (mkTNm t nm sr)
@@ -1064,13 +1070,13 @@ prim4 nm rf sr t =
   mkR (\t (R a at)->
     R (\t (R b bt)->
       R (\t (R c ct)->
-        R (\t (R d dt)-> lazySat (primEnter sr nm t (rf a b c d)) t)
+        R (\t (R d dt)-> primEnter sr nm t (rf a b c d))
           t)
         t)
       t)
     (mkTNm t nm sr)
 
-{-
+{- old inlined:
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
@@ -1139,7 +1145,7 @@ prim5 nm rf sr t =
     R (\t (R b bt)->
       R (\t (R c ct)->
         R (\t (R d dt)->
-          R (\t (R e et)-> lazySat (primEnter sr nm t (rf a b c d e)) t)
+          R (\t (R e et)-> primEnter sr nm t (rf a b c d e))
             t)
           t)
         t)
@@ -1152,7 +1158,7 @@ prim6 nm rf sr t =
       R (\t (R c ct)->
         R (\t (R d dt)->
           R (\t (R e et)->
-            R (\t (R f ft)-> lazySat (primEnter sr nm t (rf a b c d e f)) t)
+            R (\t (R f ft)-> primEnter sr nm t (rf a b c d e f))
               t)
             t)
           t)
@@ -1168,7 +1174,7 @@ prim7 nm rf sr t =
           R (\t (R e et)->
             R (\t (R f ft)->
               R (\t (R g gt)-> 
-                  lazySat (primEnter sr nm t (rf a b c d e f g)) t)
+                  primEnter sr nm t (rf a b c d e f g))
                 t)
               t)
             t)
@@ -1186,7 +1192,7 @@ prim8 nm rf sr t =
             R (\t (R f ft)->
               R (\t (R g gt)->
                 R (\t (R h ht)-> 
-                    lazySat (primEnter sr nm t (rf a b c d e f g h)) t)
+                    primEnter sr nm t (rf a b c d e f g h))
                   t)
                 t)
               t)
@@ -1206,7 +1212,7 @@ prim9 nm rf sr t =
               R (\t7 (R g gt)->
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
-                      lazySat (primEnter sr nm t9 (rf a b c d e f g h i)) t9)
+                      primEnter sr nm t9 (rf a b c d e f g h i))
                     t8)
                   t7)
                 t6)
@@ -1228,8 +1234,8 @@ prim10 nm rf sr t =
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
-                        lazySat (primEnter sr nm t10 (rf a b c d e f 
-                                                         g h i j)) t10)
+                        primEnter sr nm t10 (rf a b c d e f 
+                                                         g h i j))
                       t9)
                     t8)
                   t7)
@@ -1253,8 +1259,8 @@ prim11 nm rf sr t =
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
-                          lazySat (primEnter sr nm t11 (rf a b c d e f 
-                                                           g h i j k)) t11)
+                          primEnter sr nm t11 (rf a b c d e f 
+                                                           g h i j k))
                         t10)
                       t9)
                     t8)
@@ -1280,8 +1286,8 @@ prim12 nm rf sr t =
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
                         R (\t12 (R l lt)->
-                            lazySat (primEnter sr nm t12 (rf a b c d e f 
-                                                             g h i j k l)) t12)
+                            primEnter sr nm t12 (rf a b c d e f 
+                                                             g h i j k l))
                           t11)
                         t10)
                       t9)

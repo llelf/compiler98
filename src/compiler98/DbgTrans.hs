@@ -10,7 +10,7 @@ import TokenId
 import DbgId(t_R,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal
             ,t_lazySat,t_fun,t_primn,t_prim,t_ap,t_rap,t_cn,t_con,t_pa,t_indir
-            ,t_if,t_guard
+            ,t_if,t_rif,t_guard
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
             ,t_conFloat,t_conCons,
@@ -718,8 +718,8 @@ dExp cr (ExpLambda pos pats e) =
 	        Alt fpat (Unguarded fpexp) (DeclsParse [])] 
     in unitS (ExpApplication pos [fun, lambda, lamexp, sr, oldredex])
 dExp cr (ExpLet pos decls e) = 
-  unitS (ExpLet pos) =>>> dDecls decls =>>> dExp False e
-  -- shouldn't there be cr instead of False?
+  unitS (ExpLet pos) =>>> dDecls decls =>>> dExp cr e
+  -- there was False instead of the cr, certainly incorrect.
 dExp cr (ExpCase pos e alts) =  
   let alt2Fun :: Alt a -> Fun a
       alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls in
@@ -753,7 +753,7 @@ dExp cr (ExpIf pos c e1 e2) =
     dExp False e1 >>>= \e1' ->
     dExp False e2 >>>= \e2' ->
     makeSourceRef pos >>>= \sr ->
-    lookupVar pos t_if >>>= \tif ->
+    lookupVar pos (if cr then t_if else t_rif) >>>= \tif ->
     unitS (ExpApplication pos [tif, sr, c', ExpLambda pos [t] e1', 
                                ExpLambda pos [t] e2', oldredex])
 dExp cr (ExpType pos e ctx t) = 
