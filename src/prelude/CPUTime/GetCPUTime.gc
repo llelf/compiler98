@@ -8,6 +8,8 @@ getCPUTime = do
   i <- clock ()
   return (toInteger i * cpuTimePrecision)
 
+%-#include <time.h>
+%-
 %fun clock :: () -> IO Int
 %call ()
 %code
