@@ -31,7 +31,7 @@ openTrace (char *progname)
     strcat(filename,".hat");		/* the .hat file holds the archive */
     HatFile = fopen(filename,"w");	/* of redex trails */
     p = ftell(HatFile);                 /* should be 0 */
-    fprintf(HatFile,"Hat v01");		/* initialise file */
+    fprintf(HatFile,"Hat%s",VERSION);	/* initialise file */
     fputc(0,HatFile);
     fwrite(&p,sizeof(unsigned),1,HatFile);
     fwrite(&p,sizeof(unsigned),1,HatFile);
@@ -1270,6 +1270,22 @@ primSourceRef (FileOffset moduleTraceInfo,int pos)
 
 
 CNmType*
+primAtomCon (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
+{
+  int tracePos = htonl (pos);
+  FileOffset fo = htonl(HatCounter);
+  HIDE(fprintf(stderr,"\tprimAtomId \"%s\" -> 0x%x\n",name,fo);)
+  fputc(((NmType<<5) | NTConstr),HatFile);
+  fprintf(HatFile,"%s",name);
+  fputc(0x0,HatFile);
+  fwrite(&moduleTraceInfo, sizeof(FileOffset), 1, HatFile);
+  fputc(fixPri,HatFile);
+  fwrite(&tracePos, sizeof(int), 1, HatFile);
+  HatCounter = ftell(HatFile);
+  return mkCNmType(NTConstr,fo,False);  /* no trusting */
+}
+
+CNmType*
 primAtomId (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
 {
   int tracePos = htonl (pos);
@@ -1283,6 +1299,22 @@ primAtomId (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
   fwrite(&tracePos, sizeof(int), 1, HatFile);
   HatCounter = ftell(HatFile);
   return mkCNmType(NTId,fo,False);  /* no trusting */
+}
+
+CNmType*
+primAtomIdToplevel (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
+{
+  int tracePos = htonl (pos);
+  FileOffset fo = htonl(HatCounter);
+  HIDE(fprintf(stderr,"\tprimAtomId \"%s\" -> 0x%x\n",name,fo);)
+  fputc(((NmType<<5) | NTToplevelId),HatFile);
+  fprintf(HatFile,"%s",name);
+  fputc(0x0,HatFile);
+  fwrite(&moduleTraceInfo, sizeof(FileOffset), 1, HatFile);
+  fputc(fixPri,HatFile);
+  fwrite(&tracePos, sizeof(int), 1, HatFile);
+  HatCounter = ftell(HatFile);
+  return mkCNmType(NTToplevelId,fo,False);  /* no trusting */
 }
 
 

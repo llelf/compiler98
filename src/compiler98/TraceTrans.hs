@@ -59,12 +59,13 @@ traceTrans filename traceFilename
       (decls' 
        ++ [defNameMod pos modId filename]
        ++ map (defNameCon modTrace) cons 
-       ++ map (defNameVar modTrace) vars 
+       ++ map (defNameVar True modTrace) tvars 
+       ++ map (defNameVar False modTrace) vars 
        ++ map (defNamePos modTrace) poss
        ++ if isMain modId then [defMain traceFilename] else [] ))
   where
   modTrace = ExpVar pos (nameTraceInfoModule modId)
-  (poss,vars,cons) = getModuleConsts consts
+  (poss,tvars,vars,cons) = getModuleConsts consts
   (DeclsParse decls',consts) = tDecls (ExpVar pos tokenMkTRoot) decls
 
 -- ----------------------------------------------------------------------------
@@ -183,20 +184,20 @@ defNameCon modTrace (pos,id) =
     [Fun []
       (Unguarded
         (ExpApplication pos
-          [ExpVar pos tokenMkAtomId
+          [ExpVar pos tokenMkAtomCon
           ,modTrace
           ,ExpLit pos (LitInt Boxed (encodePos pos))
           ,ExpLit pos (LitInt Boxed (fixPriority id))
           ,ExpLit pos (LitString Boxed (getUnqualified id))]))
       noDecls]
 
-defNameVar :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId
-defNameVar modTrace (pos,id) =
+defNameVar :: Bool -> Exp TokenId -> (Pos,TraceId) -> Decl TokenId
+defNameVar toplevel modTrace (pos,id) =
   DeclFun pos (nameTraceInfoVar pos id)
     [Fun []
       (Unguarded
         (ExpApplication pos
-          [ExpVar pos tokenMkAtomId
+          [ExpVar pos (tokenMkAtomId toplevel)
           ,modTrace
           ,ExpLit pos (LitInt Boxed (encodePos pos))
           ,ExpLit pos (LitInt Boxed (fixPriority id))
@@ -221,35 +222,48 @@ encodePos pos = 10000*row + col -- encoding of positions in trace file
 
 -- ----------------------------------------------------------------------------
 -- abstract data type 
--- implements sets of positions, variables, constructors (no duplicates)
+-- implements sets of positions, defined this-level and local variables, 
+-- and defined constructors (no duplicates)
+-- this-level means defined on the currently considered declaration level,
+-- local means defined in some declaration local to the current declaration.
+-- variables and constructors come with the position at which they are defined
 -- precondition: variables and constructors are only added once
 -- because same position may be used for a variable, an application etc,
 -- a position may be added several times.
 
 data ModuleConsts = MC [Pos]  -- positions used in traces
+                       [(Pos,TraceId)]  -- this-level variable ids for traces
                        [(Pos,TraceId)]  -- variable ids for use in traces
                        [(Pos,TraceId)]  -- constructor ids for use in traces
 
 emptyModuleConsts :: ModuleConsts
-emptyModuleConsts = MC [] [] [] 
+emptyModuleConsts = MC [] [] [] []
 
 addPos :: Pos -> ModuleConsts -> ModuleConsts
-addPos pos (MC poss ids cons) = MC (pos `insert` poss) ids cons
+addPos pos (MC poss tids ids cons) = MC (pos `insert` poss) tids ids cons
 
 addVar :: Pos -> TraceId -> ModuleConsts -> ModuleConsts
-addVar pos id (MC poss ids cons) = 
-  MC (pos `insert` poss) ((pos,id):ids) cons
+addVar pos id (MC poss tids ids cons) = 
+  MC (pos `insert` poss) ((pos,id):tids) ids cons
 
 addCon :: Pos -> TraceId -> ModuleConsts -> ModuleConsts
-addCon pos id (MC poss ids cons) =
-  MC (pos `insert` poss) ids ((pos,id):cons)
+addCon pos id (MC poss tids ids cons) =
+  MC (pos `insert` poss) tids ids ((pos,id):cons)
 
+-- both from the same declaration level
 merge :: ModuleConsts -> ModuleConsts -> ModuleConsts
-merge (MC poss1 ids1 cons1) (MC poss2 ids2 cons2) = 
-  MC (poss1 `union` poss2) (ids1 ++ ids2) (cons1 ++ cons2)
+merge (MC poss1 tids1 ids1 cons1) (MC poss2 tids2 ids2 cons2) = 
+  MC (poss1 `union` poss2) (tids1 ++ tids2) (ids1 ++ ids2) (cons1 ++ cons2)
 
-getModuleConsts :: ModuleConsts -> ([Pos],[(Pos,TraceId)],[(Pos,TraceId)])
-getModuleConsts (MC pos ids cons) = (pos,ids,cons)
+-- combine this declaration level with a local declaration level
+withLocal :: ModuleConsts -> ModuleConsts -> ModuleConsts
+withLocal (MC poss1 tids1 ids1 cons1) (MC poss2 tids2 ids2 []) =
+  MC (poss1 `union` poss2) tids1 (ids1 ++ tids2 ++ ids2) cons1
+withLocal _ _ = error "TraceTrans.withLocal: locally defined data constructors"
+
+getModuleConsts :: ModuleConsts 
+                -> ([Pos],[(Pos,TraceId)],[(Pos,TraceId)],[(Pos,TraceId)])
+getModuleConsts (MC pos tids ids cons) = (pos,tids,ids,cons)
 
 insert :: Eq a => a -> [a] -> [a] 
 insert p ps = if p `elem` ps then ps else p:ps
@@ -375,7 +389,7 @@ tDecl parent (DeclPat (Alt pat rhs decls)) =
           ]))
       decls']
    :map (uncurry (mkConstDecl parent)) patPosIds
-  ,foldr (uncurry addVar) (rhsConsts `merge` declsConsts) patPosIds)
+  ,foldr (uncurry addVar) (declsConsts `withLocal` rhsConsts) patPosIds)
   where
   firstId = snd . head $ patPosIds
   patId = nameShare firstId
@@ -465,7 +479,8 @@ tCaf parent pos id rhs localDecls =
    --   where
    --   localDecls'
    -- traceId = constId parent pos id
-  ,addVar pos id (rhsConsts `merge` localDeclsConsts))
+  ,addVar pos id emptyModuleConsts `withLocal` 
+    (rhsConsts `merge` localDeclsConsts))
   where
   useParent = ExpVar pos useParentId
   useParentId = nameTrace id
@@ -517,7 +532,7 @@ tFunClauses pos parent ids pVars funArity _
  (Fun pats (Unguarded exp) decls : funs) =
   (Fun (parent : pats') (Unguarded exp') decls' : funs'
   ,funDecls
-  ,expConsts `merge` declsConsts `merge` funConsts)
+  ,declsConsts `merge` funConsts `withLocal` expConsts)
   where
   pats' = tPats pats
   (exp',expConsts) = tExp True parent exp
@@ -531,7 +546,7 @@ tFunClauses pos parent ids pVars funArity _
      ,Fun (parent : replicate funArity (PatWildcard pos)) 
        (Unguarded (continuationToExp parent failCont)) noDecls]
     ,DeclFun pos contId funs' : funDecls
-    ,gdExpsConsts `merge` declsConsts `merge` funConsts)
+    ,declsConsts `merge` funConsts `withLocal` gdExpsConsts)
   where
   contId = head ids
   failCont = functionContinuation contId vars
@@ -546,7 +561,7 @@ tFunClauses pos parent ids pVars funArity _
   -- last clause or guards cannot fail
   (Fun (parent:pats') (Unguarded gdExps') decls' : funs'
   ,funDecls
-  ,gdExpsConsts `merge` declsConsts `merge` funConsts)
+  ,declsConsts `merge` funConsts `withLocal` gdExpsConsts)
   where
   pats' = tPats pats
   (gdExps',gdExpsConsts) = tGuardedExps True parent failContinuation gdExps
@@ -679,7 +694,7 @@ tExp cr parent (ExpLambda pos pats body) =
   funArity = length pats
 tExp cr parent (ExpLet pos decls body) =
   (ExpLet pos decls' body'
-  ,declConsts `merge` bodyConsts)
+  ,declConsts `withLocal` bodyConsts)
   where
   (decls',declConsts) = tDecls parent decls
   (body',bodyConsts) = tExp cr parent body
@@ -1208,13 +1223,17 @@ tokenMkTAp :: Arity -> TokenId
 tokenMkTAp = mkTracingTokenArity "mkTAp"
 
 tokenMkModule :: TokenId
-tokenMkModule = mkTracingToken "mkModule"  -- new
+tokenMkModule = mkTracingToken "mkModule"
 
 tokenMkPos :: TokenId
-tokenMkPos = mkTracingToken "mkSourceRef"  -- new, similar to mkSR
+tokenMkPos = mkTracingToken "mkSourceRef" 
 
-tokenMkAtomId :: TokenId
-tokenMkAtomId = mkTracingToken "mkAtomId"  -- new
+tokenMkAtomCon :: TokenId
+tokenMkAtomCon = mkTracingToken "mkAtomCon"
+
+tokenMkAtomId :: Bool -> TokenId
+tokenMkAtomId toplevel = 
+  mkTracingToken (if toplevel then "mkAtomIdToplevel" else "mkAtomId") 
 
 tokenMkConst :: TokenId
 tokenMkConst = mkTracingToken "mkTNm"

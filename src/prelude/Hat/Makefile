@@ -6,7 +6,7 @@ SEARCH	=
 SRCS	= \
         Hat.hs hat.c TPrelude.hs
 SRCS_T	=
-
+EXTRA_C_FLAGS=-DVERSION="\"$(VERSION)\""
 
 # Here are the main rules.
 include ../Makefile.common

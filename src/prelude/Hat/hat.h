@@ -235,7 +235,9 @@ CTrace*		mkTrace		(FileOffset p, int tr, int hid);
 FileOffset	readCurrentSatB	(void);
 
 FileOffset      primSourceRef   (FileOffset moduleTraceInfo,int pos);
+CNmType*        primAtomCon     (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
 CNmType*        primAtomId      (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
+CNmType*        primAtomIdToplevel (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
 FileOffset      primModule      (char *modname, char *srcfile);
 void            outputTrace     (FileOffset trace, char *output);
 

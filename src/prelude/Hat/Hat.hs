@@ -23,7 +23,7 @@ module Hat
   ,cn1,cn2,cn3,cn4,cn5,cn6,cn7,cn8
   ,pa0,pa1,pa2,pa3,pa4
   ,mkTRoot,mkTNm
-  ,mkSourceRef,mkAtomId,mkModule
+  ,mkSourceRef,mkAtomCon,mkAtomId,mkAtomIdToplevel,mkModule
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble,mkNTTuple
   ,mkNTFun,mkNTCase,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard
   ,mkNTContainer,mkNTRational
@@ -1382,11 +1382,24 @@ newtype ModuleTraceInfo = MTI Int
 foreign import "primSourceRef"
   mkSourceRef :: ModuleTraceInfo -> Int -> SR
 
+mkAtomCon :: ModuleTraceInfo -> Int -> Int -> String -> NmType
+mkAtomCon mti pos fixPri unqual = mkAtomCon' mti pos fixPri (packString unqual)
+
+foreign import "primAtomCon"
+  mkAtomCon' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+
 mkAtomId :: ModuleTraceInfo -> Int -> Int -> String -> NmType
 mkAtomId mti pos fixPri unqual = mkAtomId' mti pos fixPri (packString unqual)
 
 foreign import "primAtomId"
   mkAtomId' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+
+mkAtomIdToplevel :: ModuleTraceInfo -> Int -> Int -> String -> NmType
+mkAtomIdToplevel mti pos fixPri unqual = 
+  mkAtomIdToplevel' mti pos fixPri (packString unqual)
+
+foreign import "primAtomIdToplevel"
+  mkAtomIdToplevel' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
 
 mkModule :: String -> String -> ModuleTraceInfo
 mkModule unqual filename = mkModule' (packString unqual) (packString filename)
