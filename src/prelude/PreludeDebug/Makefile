@@ -21,7 +21,7 @@ include ../Makefile.common
 
 # Here are some extra rules.
 extra: ${OBJDIR}/${THISLIB}.$O
-${OBJDIR}/${THISLIB}.$O: ${THISLIB}.hs ${OBJDIR}/../Prelude/DEither.$O ../PackedString/DPackedString.${HISUFFIX}
+${OBJDIR}/${THISLIB}.$O: ${THISLIB}.hs ${OBJDIR}/../Prelude/DEither.$O ../PackedString/DPackedString.${HISUFFIX} ${OBJDIR}/HatArchive.$O
 	cp ../Prelude/DEither.T.hi ./DEither.hi
 	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
 	cp PreludeDebug.hi PreludeDebug.T.hi
