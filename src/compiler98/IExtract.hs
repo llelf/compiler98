@@ -25,12 +25,14 @@ import ImportState
 import Id(Id)
 
 -- The spike doesn't disappear if rt' is forced, instead memory usage increases!
-
 --- ===========================
-needFixity inf  (ImportState visible unique orpsl rpsl needI rt st insts fixity errors)  =
-  case foldr (fixOne orpsl) (initAT,[]) inf of  -- fixity only at the beginning of interface file
+needFixity inf (ImportState visible unique orpsl rpsl needI rt st
+                            insts fixity errors)  =
+  case foldr (fixOne orpsl) (initAT,[]) inf of
+			 -- fixity only at the beginning of interface file
     (fixAT,err) ->
-	 ImportState visible unique orpsl rpsl needI rt st insts (fixFun fixAT defFixFun) (err++errors)
+	 ImportState visible unique orpsl rpsl needI rt st
+                     insts (fixFun fixAT defFixFun) (err++errors)
 
 
 ---- fixFun :: AssocTree TokenId (InfixClass TokenId,Int) -> (TokenId -> (InfixClass TokenId,Int))
@@ -52,7 +54,8 @@ defFixFun key = defFixity
 defFixity = (InfixDef,9::Int)
 
 
-fixOne rps (InfixPre var,level,[fixid]) fix_err@(fix,err) =  -- ensureM also done in fixFun
+fixOne rps (InfixPre var,level,[fixid]) fix_err@(fix,err) =
+					  -- ensureM also done in fixFun
   let fl = (InfixPre (ensureM rps var),level)
   in fixAdd fl (fixTid rps fixid) fix_err
 fixOne rps (fixClass,level,ids) fixity_err =
@@ -73,7 +76,8 @@ fixAdd fl tid fix_err@(fix,err) =
    Just fl' ->
 	if fl' == fl 
 	then fix_err
-	else (fix,(show tid ++ " has conflicting fixities (" ++ show fl ++ " and " ++ show fl' ++ ")\n"):err)
+	else (fix,(show tid ++ " has conflicting fixities (" ++ show fl
+                   ++ " and " ++ show fl' ++ ")\n"):err)
 
 --------------------  End duplication
 
@@ -419,33 +423,29 @@ transType free (TypeStrict pos typ)    = unitS NTstrict =>>>  transType free typ
 -----
 
 {- 
-Number identifiers, beginning with 1.;
-return renaming mapping and renamed list 
+Number the identifiers, beginning with 1.;
+return the renaming mapping and the renamed list 
 -}
 
 tvrPosTids :: [(Pos,TokenId)] -> ([(TokenId,Id)], [(Pos, Id)])
-
 tvrPosTids tv = (tvTids tokens, zip positions [1..])
   where
   (positions, tokens) = unzip tv
 
 
-{- Number identifiers, beginning with 1. First drop positions. -}
+{- Number the identifiers, beginning with 1. First drop positions. -}
 tvPosTids :: [(Pos,TokenId)] -> [(TokenId,Id)]
-
 tvPosTids tv = tvTids (map snd tv)
 
 
-{- Number identifiers, beginning with 1. -}
+{- Number the identifiers, beginning with 1. -}
 tvTids :: [TokenId] -> [(TokenId,Id)]
-
 tvTids tv = zip tv [1..] 
 
 -----
 
-{- Return list of type variables occurring in type. -}
+{- Return a list of type variables occurring in the type. -}
 freeType :: Type a -> [a]
-
 freeType (TypeApp  t1 t2) =  freeType t1 ++ freeType t2
 freeType (TypeCons  pos hs types) = concatMap freeType types
 freeType (TypeVar   pos v)        = [v]

@@ -24,21 +24,16 @@ import Memo
 profile a b = b
 
 
-{- 
-Build the contents of the interface file 
--}
+{- Build the contents of the interface file -}
 buildInterface :: Flags -> PackedString -> IntState -> String
-
 buildInterface flags modidl state =
   strExport modidl state (export flags state)
 
-{-
-Collect the information that has to go into the interface file.
--}
+
+{- Collect the information that has to go into the interface file.  -}
 export :: Flags 
        -> IntState 
        -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])])
-
 export flags state =
   let infoExport = (  filter (isExported . expI) . treeMapList ((:).snd) 
                     . getSymbolTable) 
@@ -158,7 +153,8 @@ fixInfo' keep state ds n =
 	  else []
 
 
-useNewType (NewType free exist ctxs nts) = snub (map fst ctxs ++ (concatMap useNT nts))
+useNewType (NewType free exist ctxs nts) =
+  snub (map fst ctxs ++ (concatMap useNT nts))
 
 useConstr (Just (InfoConstr  unique tid fix nt fields iType)) = useNewType nt
 
@@ -353,7 +349,6 @@ strExport modidl state (fixs,exps) =
 
 
   expMethod :: PackedString -> Maybe Info -> String
-
   expMethod mrps (Just (InfoMethod  unique tid fix nt annot iClass)) =
     (showString "  " . showsVar (fixTid mrps tid) . showsAnnot annot 
      . showString "::" . showString (niceNewType state nt))  

@@ -42,7 +42,6 @@ data  ImportState =
 
 {- initial import state -}
 initIS :: Tree ((TokenId,IdKind),[Pos]) -> ImportState
-
 initIS rt = 
   ImportState False 1 (packString "???") (packString "???") initM 
     (treeMap ( \ (k,v) -> (k,Left v)) rt) initAT [] (error "no fixity") []
@@ -50,21 +49,19 @@ initIS rt =
 
 {- put modid of interface file into import state -}
 putModidIS :: ImportState -> PackedString -> ImportState
-
 putModidIS (ImportState visible unique _ _ needI rt st insts fixity errors)
-  rps =
+           rps =
   ImportState True unique rps rps needI {-initM-} rt st insts fixity errors
 
 
 {- put modid of current section of interface file into import state -}
 putModid2IS :: ImportState -> Bool -> PackedString -> ImportState
-
 putModid2IS (ImportState _ unique orps _ needI rt st insts fixity errors) 
-  visible rps =
+            visible rps =
   ImportState visible unique orps rps needI rt st insts fixity errors
 
 
-getNeedIS 
+getNeedIS
   (ImportState visible unique orps rps needI rt st insts fixity errors) = 
   (orps,rps,needI)
 
@@ -80,8 +77,7 @@ getErrorsIS
 
 
 importError :: String -> Int -> () -> ImportState -> (Int,ImportState)
-
 importError err r _  
-  (ImportState visible unique orps rps needI rt st insts fixity errors) =
+    (ImportState visible unique orps rps needI rt st insts fixity errors) =
   (r
   ,ImportState visible unique orps rps needI rt st insts fixity (err:errors))
