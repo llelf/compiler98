@@ -1,16 +1,19 @@
 module HatTrace (
  HatTrace,      -- type, representing a redex trail file
  HatNode,       -- type, representing a node within the redex trail
- -- structure of HatTrace and HatNode not revealed
+		-- structure of HatTrace and HatNode not revealed
 
- HatNodeType(   -- type: information about what a node within the Redex Trail contains
-	      HatApplNode,HatConstantNode,HatSAT_ANode,HatSAT_BNode,HatSAT_CNode,
+ HatNodeType(   -- type: information about what a node within the Redex
+		-- Trail contains
+	      HatApplNode,HatConstantNode,
+              HatSAT_ANode,HatSAT_BNode,HatSAT_CNode,
 	      HatHiddenNode,
 	      HatProjNode,HatConstrNode,HatIdentNode,HatCaseNode,
 	      HatLambdaNode,HatDummyNode,
-	      HatIntNode,HatCharNode,HatIntegerNode,HatRationalNode,HatFloatNode,
-	      HatDoubleNode,HatCStringNode,
-	      HatIfNode,HatGuardNode,HatContainerNode,HatModuleNode,HatInvalidNode),
+	      HatIntNode,HatCharNode,HatIntegerNode,HatRationalNode,
+              HatFloatNode, HatDoubleNode,HatCStringNode,
+	      HatIfNode,HatGuardNode,HatContainerNode,HatModuleNode,
+              HatInvalidNode),
 
  HatApplType(   -- type: type of application node
 	      HatApplied,HatBlackholed,HatComplete,HatValue),
@@ -19,9 +22,9 @@ module HatTrace (
 	      HatInfix,HatInfixR,HatInfixL, -- constructors with priority
 	      HatNoInfix),                  -- constructor with no priority
 
- HatSourceRef(                 -- type for values returned as source reference
-	      HatNoSourceRef,  -- no reference given
-	      HatSourceRef),   -- reference given: row, column, moduleName,
+ HatSourceRef(..),             -- type for values returned as source reference
+	  -- (HatNoSourceRef,  -- no reference given
+	  --  HatSourceRef),   -- reference given: row, column, moduleName,
 			       -- moduleFile, moduletrusted are exported
 
  HatRep( -- class HatRep, for all structure representing Hat redexes
@@ -46,26 +49,26 @@ module HatTrace (
 	hatValueString   -- get String value of an HatCStringNode
        ),
 
- openTrace,    -- open a trace file, return a value of type HatTrace 
- hatTraceName, -- return file name of file represented by trace
- hatMain,      -- get node representing the "main" caf only
- hatTraceFirst,-- get first node within HatTrace file
- hatTraceNext, -- get node immediately after a node
+ openTrace,	-- open a trace file, return a value of type HatTrace 
+ hatTraceName,	-- return file name of file represented by trace
+ hatMain,	-- get node representing the "main" caf only
+ hatTraceFirst,	-- get first node within HatTrace file
+ hatTraceNext,	-- get node immediately after a node
 
- isValidNode,  -- test if node is valid
- isInvalidNode,-- test if node is invalid
+ isValidNode,	-- test if node is valid
+ isInvalidNode,	-- test if node is invalid
  hatInvalidNode,-- return an invalid hat node
 
- toRemoteRep,  -- convert any HatRep to command-line represenation (in order to pass to
-	       -- another hat tool)
- fromRemoteRep,-- convert command-line represenation to node (in order to accept an
-	       -- argument from another hat tool)
+ toRemoteRep,	-- convert any HatRep to command-line represenation
+		-- (in order to pass to another hat tool)
+ fromRemoteRep,	-- convert command-line representation to node (in order to
+		-- accept an argument from another hat tool)
 
  -- functions for convenience
  hatIsCAF,     -- check, whether a node represents a CAF or not
- hatIsTopLevel,-- check, whether an application/name/identifier is top-level or not
+ hatIsTopLevel,-- check, whether an application/name/identifier is top-level
  hatIsTrusted, -- check, whether an application/name/identifier is trusted
- hatLeftmost,  -- get leftmost outermost constructor/identifier of an application
+ hatLeftmost,  -- get leftmost outermost constructor/identifier of application
 
  -- other views on the redex trail
 
