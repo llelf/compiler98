@@ -28,30 +28,31 @@ computations, including those that:
     all the necessary compiling and linking automatically.
 <p>
 <li>
-    Run the program with a larger-than-normal heap space.
-    For example, give additional arguments <tt>+RTS -H10M -RTS</tt> to specify
-    a ten-megabyte heap.
+    Run the program.
     <p>
     If the program halts, any normal output from the program will
-    be followed by a summary line indicating that a trace is
-    now available.  The program does <i>not</i> terminate but waits
-    to be attached to a trace-browser.
+    be followed by a summary line indicating whether it terminated
+    correctly or if there was an error.  The trace is
+    now available in a file called <tt>&lt;program&gt;.<em>hat</em></tt>.
     <p>
     If it seems the program is stuck in an unproductive loop
-    force the trace-available state by keying an interrupt
-    (usually <i>ctrl</i>-<tt>C</tt>).
+    force it to halt by keying an interrupt (usually <i>ctrl</i>-<tt>C</tt>).
+<p>
+<li>
+    This is now a variety of tools you can use to explore this trace.
+
 </ol>
 
-<h3> To explore traces using the trace browser </h3>
+<h3> To explore a trace using the <tt>hat-trail</tt> browser </h3>
 
 <ol>
 <li>
     If there is not already a trace browser running, start
-    one by giving the shell command <tt>rtb</tt>'.
-    (The Redex Trail Browser is a separate program that
-    communicates with a trace-producing Haskell program.)
+    one by giving the shell command <tt>hat-trail</tt>, optionally
+    adding the name of the program whose trail you wish to browse.
 <p>
 <li>
+    ****<br>Wrong here<br>****<br>
     With a traced Haskell program in the trace-available
     state, click over the `connect' button in the upper part
     of the trace-browser window.  
@@ -201,7 +202,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.07.26<br>
+2001.04.27<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Colin.Runciman@cs.york.ac.uk
