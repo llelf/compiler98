@@ -1,5 +1,6 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><title>Using the NHC.Binary library</title></head>
-<body bgcolor=#ffffff>
+<body bgcolor='#ffffff'>
 <table><tr><td width=500>
 
 <center><h1>Using the NHC.Binary library</h1></center>
@@ -8,7 +9,7 @@
 This document sketches the York NHC.Binary library.  (See also the
 <a href="BinArray.html">BinArray</a> library for an example of the
 use of Binary to build other abstractions.)  For fuller details,
-see <a href=ftp://ftp.cs.york.ac.uk/pub/malcolm/ismm98.html>
+see <a href="ftp://ftp.cs.york.ac.uk/pub/malcolm/ismm98.html">
 this paper</a>.
 
 <hr>
@@ -22,31 +23,31 @@ this paper</a>.
     data BinHandle = ...
 
     stdmem     :: BinHandle
-    openBin    :: BinLocation -> IO BinHandle
-    freezeBin  :: BinHandle -> IO ()	-- changes BinIOMode to RO
-    closeBin   :: BinHandle -> IO ()
+    openBin    :: BinLocation -&gt; IO BinHandle
+    freezeBin  :: BinHandle -&gt; IO ()	-- changes BinIOMode to RO
+    closeBin   :: BinHandle -&gt; IO ()
 
-    putBits    :: BinHandle -> Int -> Int -> IO (BinPtr a)
-    getBits    :: BinHandle -> Int -> IO Int
-    getBitsF   :: BinHandle -> Int -> BinPtr a -> (Int, BinPtr b)
+    putBits    :: BinHandle -&gt; Int -&gt; Int -&gt; IO (BinPtr a)
+    getBits    :: BinHandle -&gt; Int -&gt; IO Int
+    getBitsF   :: BinHandle -&gt; Int -&gt; BinPtr a -&gt; (Int, BinPtr b)
 
-    seekBin    :: BinHandle -> BinPtr a -> IO ()
-    tellBin    :: BinHandle -> IO (BinPtr a)
-    isEOFBin   :: BinHandle -> IO Bool
+    seekBin    :: BinHandle -&gt; BinPtr a -&gt; IO ()
+    tellBin    :: BinHandle -&gt; IO (BinPtr a)
+    isEOFBin   :: BinHandle -&gt; IO Bool
 
-    copyBin    :: BinHandle -> BinLocation -> IO BinHandle
-    copyBits   :: BinHandle -> BinPtr a -> BinHandle -> BinPtr a -> Int -> IO ()
-    copyBytes  :: BinHandle -> BinHandle -> Int -> IO (BinPtr a)
+    copyBin    :: BinHandle -&gt; BinLocation -&gt; IO BinHandle
+    copyBits   :: BinHandle -&gt; BinPtr a -&gt; BinHandle -&gt; BinPtr a -&gt; Int -&gt; IO ()
+    copyBytes  :: BinHandle -&gt; BinHandle -&gt; Int -&gt; IO (BinPtr a)
 
     class Binary a where
-        put    :: BinHandle -> a -> IO (BinPtr a)
-        get    :: BinHandle -> IO a
-        getF   :: BinHandle -> BinPtr a -> (a, BinPtr b)
-        sizeOf :: a -> Int
+        put    :: BinHandle -&gt; a -&gt; IO (BinPtr a)
+        get    :: BinHandle -&gt; IO a
+        getF   :: BinHandle -&gt; BinPtr a -&gt; (a, BinPtr b)
+        sizeOf :: a -&gt; Int
 
-    putAt  :: Binary a => BinHandle -> BinPtr a -> a -> IO ()
-    getAt  :: Binary a => BinHandle -> BinPtr a -> IO a
-    getFAt :: Binary a => BinHandle -> BinPtr a -> a
+    putAt  :: Binary a =&gt; BinHandle -&gt; BinPtr a -&gt; a -&gt; IO ()
+    getAt  :: Binary a =&gt; BinHandle -&gt; BinPtr a -&gt; IO a
+    getFAt :: Binary a =&gt; BinHandle -&gt; BinPtr a -&gt; a
 </pre>
 
 <hr>
@@ -97,9 +98,9 @@ similarly reads a number of bits from the bit-stream, returning an int
 which represents their value.  Both operations update the ``current''
 position in the stream.
 <pre>
-    putBits    :: BinHandle -> Int -> Int -> IO (BinPtr a)
-    getBits    :: BinHandle -> Int -> IO Int
-    getBitsF   :: BinHandle -> Int -> BinPtr a -> (Int, BinPtr b)
+    putBits    :: BinHandle -&gt; Int -&gt; Int -&gt; IO (BinPtr a)
+    getBits    :: BinHandle -&gt; Int -&gt; IO Int
+    getBitsF   :: BinHandle -&gt; Int -&gt; BinPtr a -&gt; (Int, BinPtr b)
 </pre>
 
 <p>
@@ -113,9 +114,9 @@ In order to get full control of the bit-stream, there are various other
 operations available, to move the current position, to report the current
 position, and so on.
 <pre>
-    seekBin    :: BinHandle -> BinPtr a -> IO ()
-    tellBin    :: BinHandle -> IO (BinPtr a)
-    isEOFBin   :: BinHandle -> IO Bool
+    seekBin    :: BinHandle -&gt; BinPtr a -&gt; IO ()
+    tellBin    :: BinHandle -&gt; IO (BinPtr a)
+    isEOFBin   :: BinHandle -&gt; IO Bool
 </pre>
 
 
@@ -139,7 +140,7 @@ return, set the current position to the end of the value which has
 just been read or written.
 
 <table><tr>
-  <td colspan=2><tt>put :: BinHandle -> a -> IO (BinPtr a)</tt></td>
+  <td colspan=2><tt>put :: BinHandle -&gt; a -&gt; IO (BinPtr a)</tt></td>
 </tr><tr>
   <td width=200 valign=top><tt>put bh x</tt></td>
   <td valign=top>writes a binary representation of the ordinary value
@@ -150,13 +151,13 @@ just been read or written.
       return value of <tt>put</tt> can be used as the positional argument of
       <tt>getAt</tt> and <tt>putAt</tt>.</td>
 </tr><tr>
-  <td colspan=2><tt>get :: BinHandle -> IO a</tt></td>
+  <td colspan=2><tt>get :: BinHandle -&gt; IO a</tt></td>
 </tr><tr>
   <td width=200 valign=top><tt>get bh</tt></td>
   <td valign=top>reads a binary representation sequentially from the current
       position, returning the ordinary representation of the value.</td>
 </tr><tr>
-  <td colspan=2><tt>putAt :: BinHandle -> a -> BinPtr a -> IO ()</tt></td>
+  <td colspan=2><tt>putAt :: BinHandle -&gt; a -&gt; BinPtr a -&gt; IO ()</tt></td>
 </tr><tr>
   <td width=200 valign=top><tt>putAt bh p x</tt></td>
   <td valign=top>writes a binary representation of the ordinary value
@@ -165,13 +166,13 @@ just been read or written.
       <tt>put</tt> operation, or it may been read from a binary stream via
       a <tt>get</tt> operation, or indeed it may have been calculated.</td>
 </tr><tr>
-  <td colspan=2><tt>getAt :: BinHandle -> BinPtr a -> IO a</tt></td>
+  <td colspan=2><tt>getAt :: BinHandle -&gt; BinPtr a -&gt; IO a</tt></td>
 </tr><tr>
   <td width=200 valign=top><tt>getAt bh p</tt></td>
   <td valign=top>reads a binary representation from the position <tt>p</tt>, 
       returning the ordinary representation of the value.</td>
 </tr><tr>
-  <td colspan=2><tt>getFAt :: BinHandle -> BinPtr a -> a</tt></td>
+  <td colspan=2><tt>getFAt :: BinHandle -&gt; BinPtr a -&gt; a</tt></td>
 </tr><tr>
   <td width=200 valign=top><tt>getFAt bh p</tt></td>
   <td valign=top>is a pure, lazy, version of the <tt>getAt</tt> method, which
@@ -204,10 +205,10 @@ in <tt>src/prelude/Binary/Instances.hs</tt> to see how things work.
 <p>
 The lower-level tools used in defining instances are:
 <pre>
-    getBits  :: BinHandle -> Int -> BinPtr a -> IO Int
-    putBits  :: BinHandle -> Int -> Int      -> IO (BinPtr a)
-    getBitsF :: BinHandle -> Int -> BinPtr a -> (Int, BinPtr b)
-    (<<) :: ((a->b),c) -> (c->(a,d)) -> (b,d)
+    getBits  :: BinHandle -&gt; Int -&gt; BinPtr a -&gt; IO Int
+    putBits  :: BinHandle -&gt; Int -&gt; Int      -&gt; IO (BinPtr a)
+    getBitsF :: BinHandle -&gt; Int -&gt; BinPtr a -&gt; (Int, BinPtr b)
+    (&lt;&lt;) :: ((a-&gt;b),c) -&gt; (c-&gt;(a,d)) -&gt; (b,d)
 </pre>
 
 

@@ -1,5 +1,6 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><title>The NHC.PackedString library</title></head>
-<body bgcolor=#ffffff>
+<body bgcolor='#ffffff'>
 <table><tr><td width=500>
 
 <center><h1>The NHC.PackedString library in nhc98</h1></center>
@@ -22,36 +23,36 @@ less space than an evaluated PackedString.
 <pre>
 module NHC.PackedString
     ( PackedString	-- abstract, instance of Eq, Ord, Show, Read
-    , packString	-- :: String -> PackedString
-    , unpackPS		-- :: PackedString -> String 
+    , packString	-- :: String -&gt; PackedString
+    , unpackPS		-- :: PackedString -&gt; String 
 
-    , cons	-- :: Char -> PackedString -> PackedString
+    , cons	-- :: Char -&gt; PackedString -&gt; PackedString
     , nil	-- :: PackedString
-    , head	-- :: PackedString -> Char
-    , tail	-- :: PackedString -> PackedString
+    , head	-- :: PackedString -&gt; Char
+    , tail	-- :: PackedString -&gt; PackedString
 
-    , append	-- :: PackedString -> PackedString -> PackedString
-    , break	-- :: (Char->Bool) -> PackedString -> (PackedString, PackedString)
-    , concat	-- :: [PackedString] -> PackedString
-    , drop	-- :: Int -> PackedString -> PackedString
-    , dropWhile	-- :: (Char->Bool) -> PackedString -> PackedString
-    , filter	-- :: (Char->Bool) -> PackedString -> PackedString
-    , foldl	-- :: (a->Char->a) -> a -> PackedString -> a
-    , foldr	-- :: (Char->a->a) -> a -> PackedString -> a
-    , index	-- :: PackedString -> Int -> Char
-    , length	-- :: PackedString -> Int
-    , lines	-- :: PackedString -> [PackedString]
-    , map	-- :: (Char->Char) -> PackedString -> PackedString
-    , null	-- :: PackedString -> Bool
-    , reverse	-- :: PackedString -> PackedString
-    , span	-- :: (Char->Bool) -> PackedString -> (PackedString, PackedString)
-    , splitAt	-- :: Int -> PackedString -> (PackedString, PackedString)
-    , substr	-- :: PackedString -> Int -> Int -> PackedString
-    , take	-- :: Int -> PackedString -> PackedString
-    , takeWhile	-- :: (Char->Bool) -> PackedString -> PackedString
-    , unlines	-- :: [PackedString] -> PackedString
-    , unwords	-- :: [PackedString] -> PackedString
-    , words	-- PackedString -> [PackedString]
+    , append	-- :: PackedString -&gt; PackedString -&gt; PackedString
+    , break	-- :: (Char-&gt;Bool) -&gt; PackedString -&gt; (PackedString, PackedString)
+    , concat	-- :: [PackedString] -&gt; PackedString
+    , drop	-- :: Int -&gt; PackedString -&gt; PackedString
+    , dropWhile	-- :: (Char-&gt;Bool) -&gt; PackedString -&gt; PackedString
+    , filter	-- :: (Char-&gt;Bool) -&gt; PackedString -&gt; PackedString
+    , foldl	-- :: (a-&gt;Char-&gt;a) -&gt; a -&gt; PackedString -&gt; a
+    , foldr	-- :: (Char-&gt;a-&gt;a) -&gt; a -&gt; PackedString -&gt; a
+    , index	-- :: PackedString -&gt; Int -&gt; Char
+    , length	-- :: PackedString -&gt; Int
+    , lines	-- :: PackedString -&gt; [PackedString]
+    , map	-- :: (Char-&gt;Char) -&gt; PackedString -&gt; PackedString
+    , null	-- :: PackedString -&gt; Bool
+    , reverse	-- :: PackedString -&gt; PackedString
+    , span	-- :: (Char-&gt;Bool) -&gt; PackedString -&gt; (PackedString, PackedString)
+    , splitAt	-- :: Int -&gt; PackedString -&gt; (PackedString, PackedString)
+    , substr	-- :: PackedString -&gt; Int -&gt; Int -&gt; PackedString
+    , take	-- :: Int -&gt; PackedString -&gt; PackedString
+    , takeWhile	-- :: (Char-&gt;Bool) -&gt; PackedString -&gt; PackedString
+    , unlines	-- :: [PackedString] -&gt; PackedString
+    , unwords	-- :: [PackedString] -&gt; PackedString
+    , words	-- PackedString -&gt; [PackedString]
     )
 where
 

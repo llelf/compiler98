@@ -1,5 +1,6 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 <html><head><title>Using the NHC.BinArray library</title></head>
-<body bgcolor=#ffffff>
+<body bgcolor='#ffffff'>
 <table><tr><td width=500>
 
 <center><h1>Using the NHC.BinArray library</h1></center>
@@ -30,13 +31,13 @@ manner.
 
     data BinArray a = ...
 
-    newBinArray   :: Binary a => Int -> a -> IO (BinArray a)
+    newBinArray   :: Binary a =&gt; Int -&gt; a -&gt; IO (BinArray a)
 
-    intoBinArray  :: Binary a => BinArray a -> a   -> IO Int
-    fromBinArray  :: Binary a => BinArray a -> Int -> IO a
+    intoBinArray  :: Binary a =&gt; BinArray a -&gt; a   -&gt; IO Int
+    fromBinArray  :: Binary a =&gt; BinArray a -&gt; Int -&gt; IO a
 
-    putBinArray   :: Binary a => FilePath -> BinArray a -> IO ()
-    getBinArray   :: Binary a => FilePath -> IO (BinArray a)
+    putBinArray   :: Binary a =&gt; FilePath -&gt; BinArray a -&gt; IO ()
+    getBinArray   :: Binary a =&gt; FilePath -&gt; IO (BinArray a)
 </pre>
 
 <p>
