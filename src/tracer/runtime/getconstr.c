@@ -561,7 +561,7 @@ C_HEADER(cPointerEquality)
   /*prGraph(nodeptr2, 0, 1); fprintf(stderr, "\n");
   printf("n2 = 0x%x\n", nodeptr2);*/
 
-  C_RETURN(mkBool((nodeptr1 == nodeptr2) || cTrusted(nodeptr1, nodeptr2)));
+  C_RETURN(mkBool((nodeptr1 == nodeptr2) /*|| cTrusted(nodeptr1, nodeptr2)*/));
 }
 
 extern Node FN_Main_46con[];

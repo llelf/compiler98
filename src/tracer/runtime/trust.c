@@ -163,6 +163,7 @@ C_HEADER(trustedFun)
 #endif
 
 
+#if 0
 /* 'trusted' takes two args, the context trace and the fn trace,
  * and returns True only if both traces are trusted.
  */
@@ -201,7 +202,9 @@ C_HEADER(trusted)
 #endif
     }
 }
+#endif
 
+#if 0
 int
 cTrusted(NodePtr t, NodePtr tf)
 {
@@ -223,4 +226,4 @@ C_HEADER(trust)
     C_RETURN(mkFalse());
   }
 }
-
+#endif
