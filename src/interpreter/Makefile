@@ -1,6 +1,6 @@
 include Makefile.inc
 
-PROG =	$(MACHINE)/hi
+PROG =	$(MACHINE)/hi$(EXE)
 SRCS =	$(MACHINE)/hi.hs $(MACHINE)/HmakeConfig.hs $(MACHINE)/LocalConfig.hs
 
 
@@ -25,6 +25,13 @@ $(MACHINE)/hi.hs: hi.hs
 	cp hi.hs $(MACHINE)
 $(MACHINE)/HmakeConfig.hs: HmakeConfig.hs
 	cp HmakeConfig.hs $(MACHINE)
+
+fromC: $(SRCS)		# actually, make with fresh nhc98, not from C.
+	cd $(MACHINE); $(LOCAL)nhc98 -c      LocalConfig.hs
+	cd $(MACHINE); $(LOCAL)nhc98 -c -cpp HmakeConfig.hs
+	cd $(MACHINE); $(LOCAL)nhc98 -c -cpp hi.hs
+	$(LOCAL)nhc98 -o $(PROG) $(MACHINE)/*.o
+	mv $(PROG) $(DST)
 
 
 paper.ps: paper.dvi
