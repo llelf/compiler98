@@ -14,6 +14,7 @@ import DbgId(t_R,tSR,tTrace,t_mkTRoot,t_mkTNm
             ,t_cn,t_con,t_pa,t_tcon,t_tpa,t_indir
             ,t_if,t_rif,t_guard,t_mkNoSR
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
+            ,t_mkTHidden
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
             ,t_conFloat,t_conCons,t_tfun
             ,t_fromConInteger,t_fromConRational
@@ -159,6 +160,57 @@ dTopDecl trusted root d@(DeclConstrs pos id constrids) =
         >>>= \selDeclss' ->
       unitS (DeclConstrs pos id [] 
             :concatMap (\(ds',ads') -> ds'++ads') selDeclss')
+dTopDecl True root (DeclFun pos id [Fun [] rhs localDecls]) =
+  -- for top-level trusted caf create a name node,
+  -- because it might be called from suspected code;
+  -- this is not expensive, because it is only done once per caf.
+  addId (pos, id) >>>
+  lookupName id >>>= \(Just info) ->
+  lookupNameStr id >>>= \cafName ->
+  getIntState >>>= \intState ->
+  let nt = (unwrapNT intState 0 True True (ntI info)) in
+  setArity 2 id >>>
+  addNewName 0 True cafName nt >>>= \nid ->
+  addNewName 0 True cafName nt >>>= \nid2 ->
+  addNewName 0 True "nt" NoType >>>= \useParentId ->
+  let useParent = ExpVar pos useParentId in
+  addNewName 0 True "nt" NoType >>>= \hidUseParentId ->
+  let hidUseParent = ExpVar pos hidUseParentId in
+  lookupId Var t_otherwise >>>= \otherw ->
+  lookupId Con tTrue >>>= \true ->
+  dTrustRhs False useParent hidUseParent true otherw rhs >>>= \rhs' ->
+  dTrustDecls hidUseParent localDecls >>>= \localDecls' ->
+  makeSourceRef noPos >>>= \noSR ->
+  makeNTId pos id >>>= \ntId ->
+  makeNm pos root ntId noSR >>>= \nte ->
+  lookupVar pos t_lazySat >>>= \lazySat ->
+  lookupVar pos t_mkTHidden >>>= \mkTHidden ->
+  unitS [-- id _ _ = nid
+         DeclFun pos id 
+           [Fun [PatWildcard pos, PatWildcard pos] 
+              (Unguarded (ExpVar pos nid)) (DeclsParse [])]
+        ,-- nid = lazySat nid2 t'
+         DeclFun pos nid
+           [Fun [] 
+             (Unguarded (ExpApplication pos 
+                           [lazySat, (ExpVar pos nid2), useParent]))
+             (DeclsParse [])
+           ]
+        ,{- 
+          nid2 = rhs'
+            where
+            decls'
+          -}
+         DeclFun pos nid2
+           [Fun [] rhs' localDecls']
+        ,{- t' = Nm redex (NTId id) sr -}
+         DeclFun pos useParentId
+           [Fun [] (Unguarded nte) (DeclsParse [])]
+        ,{- t'' = mkTHidden t' -}
+         DeclFun pos hidUseParentId
+           [Fun [] (Unguarded (ExpApplication pos [mkTHidden,useParent])) 
+             (DeclsParse [])]
+        ]
 dTopDecl trusted root d = 
   (if trusted then dTrustDecl else dSuspectDecl) root d >>>= \(ds',auxDs') ->
   unitS (ds' ++ auxDs') 
@@ -1040,9 +1092,9 @@ dTrustExp cr parent hidParent e@(ExpVar pos id) =
 	  unitS (ExpApplication pos [indir, parent, e])
     Just n -> -- A letbound or global function
       patchFieldSelectorType id >>>
-      lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+      makeSourceRef noPos >>>= \noSR ->
       unitS (ExpApplication pos 
-              [e, mkNoSR, if cr then hidParent else parent]) 
+              [e, noSR, if cr then hidParent else parent]) 
 dTrustExp cr parent hidParent (ExpRecord exp fields) =
   getIntState >>>= \state ->
   case translateExpRecord exp fields state of
@@ -1064,13 +1116,13 @@ dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) =
   lookupVar pos t_conCons >>>= \conCons ->
   let ExpCon _ consId = cons in
   makeNTConstr pos consId >>>= \ntconstr ->
-  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+  makeSourceRef noPos >>>= \noSR ->
   let tParent = if cr then hidParent else parent in
-  makeNm pos tParent ntconstr mkNoSR >>>= \consName ->
+  makeNm pos tParent ntconstr noSR >>>= \consName ->
   addNewName 0 True "consTrace" NoType >>>= \consTrId ->
   dTrustExp cr parent hidParent nil >>>= \nil' ->
   let cons' :: Char -> Exp Id -> Exp Id
-      cons' c rs = ExpApplication pos [conCons, mkNoSR, tParent, cons
+      cons' c rs = ExpApplication pos [conCons, noSR, tParent, cons
                                       ,ExpVar pos consTrId
                                       ,ExpLit pos (LitChar Boxed c), rs]
   in unitS $ ExpLet pos 
@@ -1086,18 +1138,18 @@ dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) =
 dTrustExp cr parent hidParent e@(ExpLit pos (LitInteger b i)) = 
   -- Remove this after typechecking
   lookupVar pos t_fromConInteger >>>= \fci ->
-  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
-  unitS (ExpApplication pos [fci, mkNoSR, if cr then hidParent else parent, e])
+  makeSourceRef noPos >>>= \noSR ->
+  unitS (ExpApplication pos [fci, noSR, if cr then hidParent else parent, e])
 dTrustExp cr parent hidParent e@(ExpLit pos (LitRational b i)) = 
   -- Remove this after typechecking
   lookupVar pos t_fromConRational >>>= \fcr ->
-  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
-  unitS (ExpApplication pos [fcr, mkNoSR, if cr then hidParent else parent, e])
+  makeSourceRef noPos >>>= \noSR ->
+  unitS (ExpApplication pos [fcr, noSR, if cr then hidParent else parent, e])
 dTrustExp cr parent hidParent e@(ExpLit pos lit) = 
     dLit lit >>>= \constr ->
-    lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+    makeSourceRef noPos >>>= \noSR ->
     unitS (ExpApplication pos 
-             [constr, mkNoSR, if cr then hidParent else parent, e])
+             [constr, noSR, if cr then hidParent else parent, e])
     where dLit (LitInt _ _) = lookupVar pos t_conInt
           dLit (LitChar _ _) = lookupVar pos t_conChar
           dLit (LitInteger _ _) = lookupVar pos t_conInteger
@@ -1579,10 +1631,11 @@ Make a node expression of type Trace, NmType or SR.
 
 makeSourceRef :: Pos -> DbgTransMonad (SRExp)
 
-makeSourceRef p (Inherited lookupPrel) s@(Threaded is (nsr, srs) idt) =
-  if rowcol == head srs then
+makeSourceRef p i@(Inherited lookupPrel) s@(Threaded is (nsr, srs) idt) 
+  | p == noPos = lookupVar noPos t_mkNoSR i s
+  | rowcol == head srs =
     (ExpApplication p [ExpVar p sr3, ExpLit p (LitInt Boxed nsr)], s)
-  else
+  | otherwise =
     let nsr' = nsr+1
     in seq nsr' (ExpApplication p [ExpVar p sr3, ExpLit p (LitInt Boxed nsr')],
                  Threaded is (nsr', rowcol:srs) idt)

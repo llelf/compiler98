@@ -1,5 +1,5 @@
 module DbgId(tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE,
-            t_mkTRoot,t_mkTNm,t_hide,
+            t_mkTRoot,t_mkTNm,t_mkTHidden,
              {- t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden,-}
              t_lazySat,
              t_ap, t_rap, t_tap, t_trap, t_patvar, t_caf
@@ -40,7 +40,7 @@ t_mkNTId        = qualImp "mkNTId"
 t_mkNTConstr    = qualImp "mkNTConstr"
 t_mkNTLambda    = qualImp "mkNTLambda"
 t_mkNTCase      = qualImp "mkNTCase"
-t_hide          = qualImp "hide"
+t_mkTHidden     = qualImp "mkTHidden"
 --t_Ap		= qualImp "Ap"
 --t_Nm		= qualImp "Nm"
 --t_Ind		= qualImp "Ind"
@@ -132,7 +132,7 @@ tokenDbg = [(TCon, tTrace),
             (Var, t_mkNTConstr),
             (Var, t_mkNTLambda),
             (Var, t_mkNTCase),
-            (Var, t_hide),
+            (Var, t_mkTHidden),
 	 -- (Con, t_Ap),
 	 -- (Con, t_Nm),
 	 -- (Con, t_Ind), 
