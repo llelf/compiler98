@@ -85,6 +85,13 @@ else
 fi
 NEWHEAP=$HEAP
 
+case $CC in	# versions of gcc >= 3.3 require extra evil in the evil mangler!
+  *gcc*) if $CC --version | head -1 | grep "3.3" >/dev/null
+         then MOREEVIL=yes
+         else MOREEVIL=no
+         fi ;;
+esac
+
 while [ "$1" != "" ]
 do
   case $1 in
@@ -523,6 +530,8 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
       then sed -e "s|greencard-nhc98 -|greencard-nhc98|"; else cat; fi ) |\
+    ( if [ "$MOREEVIL" = "yes" ];
+      then sed -e "s|#	perl|	perl|"; else cat; fi ) |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
     echo -n "hmake "
