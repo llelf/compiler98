@@ -159,7 +159,7 @@ TARGETS= runtime prelude greencard hp2graph hat \
 
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
-compiler: hmake compiler-${BUILDCOMP}
+compiler: compiler-${BUILDCOMP}
 hmake: hmake-${BUILDCOMP}
 help:
 	@echo "Common targets include: basic all install config"
@@ -185,7 +185,8 @@ all-$(BUILDCOMP): basic-$(BUILDCOMP) profile tracer $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
-tracer: compiler-$(BUILDCOMP) traceruntime traceprelude $(TARGDIR)/traceui
+tracer: $(PRAGMA) hmake-$(BUILDCOMP) greencard-$(BUILDCOMP) \
+	compiler-$(BUILDCOMP) traceruntime traceprelude $(TARGDIR)/traceui
 timetraceprof: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
