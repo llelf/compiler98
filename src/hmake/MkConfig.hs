@@ -351,7 +351,7 @@ which exe cmd =
              case search of
                Just x  -> return x
                Nothing -> ioError (userError (cmd++" not found"))
-    _  -> do f <- perms (exe cmd)
+    _  -> do f <- testFile Nothing (exe cmd)
              case f of
                Just x  -> return x
                Nothing -> ioError (userError (cmd++" is not executable"))
