@@ -1,6 +1,6 @@
 module Parse2(parseConstr, parseContexts, parseDeriving, parseFixDecls
              ,parseFixDecl,parseImpDecls, parseInst, parseSimple, parseType
-	     ,parseExports,parseStrict) where
+	     ,parseExports,parseStrict,   parsePragma) where
 
 import Extra(pair,triple,noPos,Pos(..))
 import Lex
@@ -180,18 +180,22 @@ parseDeriving =
     parse []
 
 parseInst =
-    (\ (p,c) -> TypeCons p c []) `parseAp` conid	-- type without arguments
+    (\ (p,c) -> TypeCons p c []) `parseAp` conid  -- type without arguments
         `orelse`
-    lpar `revChk` parseInst' `chkCut` rpar		-- type inside paranthesis
+    lpar `revChk` parseInst' `chkCut` rpar	  -- type inside parenthesis
         `orelse`
-    (\p (_,pat) -> mkInstList p pat) `parseAp` lbrack `apCut` varid `chk` rbrack -- the list type
+    (\p (_,pat) -> mkInstList p pat) `parseAp` lbrack `apCut` varid
+                                     `chk` rbrack -- the list type
 
 parseInst' =
-    lpar `revChk` parseInst' `chkCut` rpar		-- useless extra paranthesis
+    lpar `revChk` parseInst' `chkCut` rpar	  -- useless extra parenthesis
 	`orelse`
-    varid `revAp` ((\pos (pa,a) (pb,b) -> TypeCons pos t_Arrow [TypeVar pb b,TypeVar pa a]) `parseAp` rarrow `apCut` varid
-                        `orelse`
-                   (\a b@(p,_) -> mkParInst p (b:a)) `parseChk` comma `apCut` someSep comma varid
+    varid `revAp` ((\pos (pa,a) (pb,b) ->
+                        TypeCons pos t_Arrow [TypeVar pb b,TypeVar pa a])
+                                             `parseAp` rarrow `apCut` varid
+                      `orelse`
+                   (\a b@(p,_) -> mkParInst p (b:a)) `parseChk` comma
+                                             `apCut` someSep comma varid
                   )
         `orelse`
     mkAppInst `parseAp` conid `ap` many varid
@@ -199,3 +203,7 @@ parseInst' =
 --    (TypeCons noPos (t_Tuple 0) []) `parseChk` lpar `chk` rpar
 --        `orelse`
     parse (TypeCons noPos (t_Tuple 0) [])
+
+parsePragma =
+     DeclIgnore "PRAGMA" `parseChk`  lannot `chk`
+                                     many (conid `orelse` varid) `chk` rannot

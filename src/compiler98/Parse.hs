@@ -183,6 +183,8 @@ parseDecl =
     parseValdef
         `orelse`			-- added in H98
     DeclFixity `parseAp` parseFixDecl	-- added in H98
+	`orelse`
+    parsePragma				-- added by MW, Sept 2000
 
 
 parseExp :: Parser (Exp TokenId) [PosToken] a
