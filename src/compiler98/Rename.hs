@@ -409,6 +409,7 @@ pairDefault ms (d@(DeclFun pos tid funs):r) =
      ([(p,m,i)],ms) -> (d,i) : pairDefault ms r
      -- covers all cases under assumption of no duplicate type declarations
 pairDefault ms (DeclIgnore str:r) = pairDefault ms r
+pairDefault ms (DeclFixity f:r) = pairDefault ms r
 
 
 {- 

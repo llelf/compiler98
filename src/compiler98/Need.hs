@@ -269,6 +269,8 @@ needClassInst (DeclFun pos fun funs) =
   >>> mapR needFun funs
 needClassInst (DeclAnnot decl annots) =
      needClassInst decl
+needClassInst (DeclFixity fixdecl) =
+     needFixDecl fixdecl
 
 needFun (Fun pats rhs decls) =
      pushNeed
