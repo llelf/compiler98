@@ -23,8 +23,7 @@ defval sym =
 
 data KeepState = Keep | Drop Int
 
--- Used to return the list of module names.
--- Now returns just the list of lines that cpp decides to keep.
+-- Return just the list of lines that the real cpp would decide to keep.
 cpp :: FilePath -> SymTab String -> KeepState -> [String] -> [String]
 cpp _ _ _ [] = []
 
@@ -110,6 +109,7 @@ leximports fp =
         error ("In file "++fp++"\n    found "++show n
                ++" open comments {- but no matching close -}")
 
+    endstring ('\\':'\\':cs) = '\\':'\\': endstring cs
     endstring ('\\':'"':cs) = '\\':'"': endstring cs
     endstring ('"':cs) = '"': nestcomment 0 cs
     endstring (c:cs)   = c  : endstring cs
