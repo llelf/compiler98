@@ -7,9 +7,9 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-NHC98VERSION="v1.13 (CVS snapshot 2002-05-27)"
-HMAKEVERSION="3.05 (2002-06-06)" export HMAKEVERSION
-HATVERSION="1.99" export HATVERSION
+NHC98VERSION="v1.14 (2002-06-13)"
+HMAKEVERSION="3.05 (2002-06-13)" export HMAKEVERSION
+HATVERSION="2.00" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 #HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
@@ -141,7 +141,7 @@ do
             exit 0 ;;
     --version|-v) echo "nhc98:     $NHC98VERSION"
                   echo "hmake:     $HMAKEVERSION"
-                  echo "hat:       $HATVERSION"
+                  #echo "hat:       $HATVERSION"
                   echo '  [' $INSTALLINFO ']'
                   exit 0 ;;
     *) echo "`basename $0`: unrecognised option $1"
@@ -203,14 +203,14 @@ then
   then
     echo "nhc98 binaries/libs:  $LIBDIR/$MACHINE"
     echo "hmake binaries:       $HMAKELIBDIR/$MACHINE"
-    echo "hat   binaries:       $HATLIBDIR/$MACHINE"
+    #echo "hat   binaries:       $HATLIBDIR/$MACHINE"
   else
     echo "Executables and libs: (none)"
   fi
   if [ "$INC" = "yes" ]
   then
     echo "Interfaces/includes:  $INCDIR"
-    echo "Hat interfaces:       $HATINCDIR"
+    #echo "Hat interfaces:       $HATINCDIR"
   else
     echo "Interfaces/includes:  (none)"
   fi
@@ -380,16 +380,16 @@ int main (void) { test(); }
   fi
   rm -f rd.c rd.out
 
-  echo -n "Testing for the glib library: "
-  if glib-config --version >/dev/null 2>&1
-  then
-    echo '              yes (detected)'
-  else
-    echo '              NOT FOUND'
-    echo 'WARNING: the hat browsing tools cannot be built without glib.'
-    echo '    Glib-1.2 is freely available via   http://www.gtk.org/'
-    exit 1
-  fi
+  #echo -n "Testing for the glib library: "
+  #if glib-config --version >/dev/null 2>&1
+  #then
+  #  echo '              yes (detected)'
+  #else
+  #  echo '              NOT FOUND'
+  #  echo 'WARNING: the hat browsing tools cannot be built without glib.'
+  #  echo '    Glib-1.2 is freely available via   http://www.gtk.org/'
+  #  exit 1
+  #fi
 
   echo -n "Reading /usr/include/errno.h: "
   if [ ! -d src/prelude/$MACHINE ]
@@ -535,19 +535,19 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
-    echo -n "hat-trans "
-    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
-    sed -e "s|ScriptDir|$BUILDBINDIR|" >$BUILDBINDIR/hat-trans
-    echo; echo -n "    "
-    for hattool in $HATTOOLS
-    do  echo -n $hattool" "
-        rm -f $BUILDBINDIR/$hattool
-        ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/$hattool
-    done
+    #echo -n "hat-trans "
+    #sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
+    #sed -e "s|ScriptDir|$BUILDBINDIR|" >$BUILDBINDIR/hat-trans
+    #echo; echo -n "    "
+    #for hattool in $HATTOOLS
+    #do  echo -n $hattool" "
+    #    rm -f $BUILDBINDIR/$hattool
+    #    ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/$hattool
+    #done
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hmake-config
-    chmod +x $BUILDBINDIR/hat-trans
+    #chmod +x $BUILDBINDIR/hat-trans
 
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
@@ -597,23 +597,23 @@ else	# [ "$INSTALL" = "yes" ]
            cp $file $DESTDIR$INCDIR
       fi
     done
-    echo "Hat interface files (.hx) go into:"
-    echo -n "    $DESTDIR$HATINCDIR"
-    if [ ! -d $DESTDIR$HATINCDIR ]
-    then mkdir -p $DESTDIR$HATINCDIR;  echo ' (created)'
-    else echo ' (exists)'
-    fi
-    for file in $BUILDINCDIR/hat/*.hx
-    do
-      if [ -f $file ]
-      then echo "	`basename $file` "
-           cp $file $DESTDIR$HATINCDIR
-      fi
-    done
-    case $BUILDWITH in
-      ghc) echo "Installing hat as a ghc/nhc98 package:";
-           script/confhat;;
-    esac
+    #echo "Hat interface files (.hx) go into:"
+    #echo -n "    $DESTDIR$HATINCDIR"
+    #if [ ! -d $DESTDIR$HATINCDIR ]
+    #then mkdir -p $DESTDIR$HATINCDIR;  echo ' (created)'
+    #else echo ' (exists)'
+    #fi
+    #for file in $BUILDINCDIR/hat/*.hx
+    #do
+    #  if [ -f $file ]
+    #  then echo "	`basename $file` "
+    #       cp $file $DESTDIR$HATINCDIR
+    #  fi
+    #done
+    #case $BUILDWITH in
+    #  ghc) echo "Installing hat as a ghc/nhc98 package:";
+    #       script/confhat;;
+    #esac
     echo
   else
     echo 'Not (re-)installing interface and include files'
@@ -659,25 +659,25 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
-    echo "	hat-trans"
-    sed -e "s|ExecutableDir|$HATLIBDIR|" script/hat-trans.inst |\
-    sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|^HATINCDIR=|HATINCDIR=$HATINCDIR|" >$DESTDIR$BINDIR/hat-trans
-    echo "    hat-tools:"
-    sed -e "s|ExecutableDir|$HATLIBDIR|" script/greencard.inst |\
-    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hat-template
-    chmod +x $DESTDIR$BINDIR/hat-template
-    for hattool in $HATTOOLS
-    do  echo "	"$hattool
-        rm -f $DESTDIR$BINDIR/$hattool;
-        ln $DESTDIR$BINDIR/hat-template $DESTDIR$BINDIR/$hattool
-    done
-    rm $DESTDIR$BINDIR/hat-template
+    #echo "	hat-trans"
+    #sed -e "s|ExecutableDir|$HATLIBDIR|" script/hat-trans.inst |\
+    #sed -e "s|ScriptDir|$BINDIR|" |\
+    #sed -e "s|^HATINCDIR=|HATINCDIR=$HATINCDIR|" >$DESTDIR$BINDIR/hat-trans
+    #echo "    hat-tools:"
+    #sed -e "s|ExecutableDir|$HATLIBDIR|" script/greencard.inst |\
+    #sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hat-template
+    #chmod +x $DESTDIR$BINDIR/hat-template
+    #for hattool in $HATTOOLS
+    #do  echo "	"$hattool
+    #    rm -f $DESTDIR$BINDIR/$hattool;
+    #    ln $DESTDIR$BINDIR/hat-template $DESTDIR$BINDIR/$hattool
+    #done
+    #rm $DESTDIR$BINDIR/hat-template
     echo
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
-    chmod +x $DESTDIR$BINDIR/hmake-config $DESTDIR$BINDIR/hat-trans
+    chmod +x $DESTDIR$BINDIR/hmake-config #$DESTDIR$BINDIR/hat-trans
     chmod +x $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
@@ -699,14 +699,14 @@ else	# [ "$INSTALL" = "yes" ]
       else echo ' (exists)'
       fi
     fi
-    if [ $DESTDIR$LIBDIR != $DESTDIR$HATLIBDIR ]
-    then
-      echo -n "    $DESTDIR$HATLIBDIR/$MACHINE"
-      if [ ! -d $DESTDIR$HATLIBDIR/$MACHINE ]
-      then mkdir -p $DESTDIR$HATLIBDIR/$MACHINE;  echo ' (created)'
-      else echo ' (exists)'
-      fi
-    fi
+    #if [ $DESTDIR$LIBDIR != $DESTDIR$HATLIBDIR ]
+    #then
+    #  echo -n "    $DESTDIR$HATLIBDIR/$MACHINE"
+    #  if [ ! -d $DESTDIR$HATLIBDIR/$MACHINE ]
+    #  then mkdir -p $DESTDIR$HATLIBDIR/$MACHINE;  echo ' (created)'
+    #  else echo ' (exists)'
+    #  fi
+    #fi
     { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . --exclude hatlib ) |\
       ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
     if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
@@ -714,10 +714,11 @@ else	# [ "$INSTALL" = "yes" ]
            mv MkProg$EXE Older$EXE hmakerc  $DESTDIR$HMAKELIBDIR/$MACHINE;
            mv HInteractive$EXE MkConfig$EXE $DESTDIR$HMAKELIBDIR/$MACHINE )
     fi
-    if [ $DESTDIR$HATLIBDIR != $DESTDIR$LIBDIR ]
-    then ( cd $DESTDIR$LIBDIR/$MACHINE;
-           mv hat-* $DESTDIR$HATLIBDIR/$MACHINE; )
-    fi
+    #if [ $DESTDIR$HATLIBDIR != $DESTDIR$LIBDIR \
+    #    -a -f $BUILDLIBDIR/$MACHINE/hat-check ]
+    #then ( cd $DESTDIR$LIBDIR/$MACHINE;
+    #       mv hat-* $DESTDIR$HATLIBDIR/$MACHINE; )
+    #fi
     # can only change hmake's config if new compiler is in its final location
     if [ -z "$DESTDIR" ]
     then
