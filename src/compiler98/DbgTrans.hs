@@ -1537,11 +1537,11 @@ Left Id: name used as given
 mkInfo :: Either Id Id -> String -> Int -> NewType -> Info
 
 mkInfo (Right u) str arity nt = 
-    InfoVar u (visImpRev (str ++ "_" ++ show u)) (InfixDef, 9) 
+    InfoVar u (visImport (str ++ "_" ++ show u)) (InfixDef, 9) 
       IEnone nt (Just arity)
 
 mkInfo (Left u) str arity nt = 
-    InfoVar u (visImpRev str) (InfixDef, 9) IEnone nt (Just arity)
+    InfoVar u (visImport str) (InfixDef, 9) IEnone nt (Just arity)
 
 
 {-

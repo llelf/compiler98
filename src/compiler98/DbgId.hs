@@ -1,21 +1,23 @@
-module DbgId(tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE,
-            t_mkTRoot,t_mkTNm,t_mkTHidden
-            ,t_lazySat,t_lazySatLonely,t_eagerSat
-            ,t_ap,t_rap,t_tap,t_trap,t_patvar,t_caf
-            ,t_fun,t_tfun,t_primn,t_tprimn
-            ,t_cn, t_pa, t_con, t_tpa, t_tcon, t_trust, t_rPatBool, t_pap,
-	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
-	     t_conCons, t_indir,
-	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
-	     t_fromConRational, t_patFromConRational
-	     ,t_debugger, t_prim, t_rseq,t_myseq,t_cSeq
-             ,t_mkSR',t_mkNoSR
-             ,t_mkNTId',t_mkNTConstr',t_mkSR,t_mkNTId,t_mkNTConstr
-             ,t_mkNTLambda,t_mkNTCase,t_mkNTGuard,t_mkNTIf
-             ,t_mkTAp
-	     ,tNmType
-	     ,tDbgPrelude,tDbgPreludeCore,tNmCoerce,tokenDbg)
- where
+module DbgId
+	( tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE
+	, t_mkTRoot, t_mkTNm, t_mkTHidden
+	, t_lazySat, t_lazySatLonely, t_eagerSat
+	, t_ap, t_rap, t_tap, t_trap, t_patvar, t_caf
+	, t_fun, t_tfun, t_primn, t_tprimn
+	, t_cn, t_pa, t_con, t_tpa, t_tcon, t_trust, t_rPatBool, t_pap
+	, t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble
+	, t_conCons, t_indir
+	, t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal
+	, t_fromConRational, t_patFromConRational
+	, t_debugger, t_prim, t_rseq,t_myseq,t_cSeq
+	, t_mkSR', t_mkNoSR
+	, t_mkNTId', t_mkNTConstr', t_mkSR, t_mkNTId, t_mkNTConstr
+	, t_mkNTLambda, t_mkNTCase, t_mkNTGuard, t_mkNTIf
+	, t_mkTAp
+	, tNmType
+--	, tDbgPrelude, tDbgPreludeCore
+	, tNmCoerce, tokenDbg
+	) where
 
 import IdKind
 import TokenId
@@ -82,8 +84,8 @@ t_cSeq	        = qualImp "cSeq"
 t_myseq         = qualImp "myseq"
 t_trust	        = qualImp "trust"
 tNmType		= qualImp "NmType"
-tDbgPrelude	= visImpRev "DPrelude"
-tDbgPreludeCore	= visImpRev "DbgPreludeCore"
+--tDbgPrelude	= visImpRev "DPrelude"
+--tDbgPreludeCore	= visImpRev "DbgPreludeCore"
 tNmCoerce	= qualImp "NmCoerce"
 
 qualImp = Qualified rpsDbgPrelude . packString . reverse

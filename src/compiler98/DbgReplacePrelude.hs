@@ -21,10 +21,10 @@ dbgReplacePrelude flags True (ImportState _ _ _ _ _ _ rns _ _ _) =
 -}
 
 replaceEntry rns tree [s1, s2] = 
-     case lookupAT rns (visImpRev s1, Var) of
+     case lookupAT rns (visImport s1, Var) of
 	 Nothing -> error ("Couldn't find " ++ s1 ++ " in PreludeDbg.map.")
 	 Just n1 ->
-	     case lookupAT rns (visImpRev s2, Var) of
+	     case lookupAT rns (visImport s2, Var) of
 		 Nothing -> error ("Couldn't find " ++ s2 ++ " in PreludeDbg.map.")
 		 Just n2 ->
 		     return (treeAdd (error "No combine function") 
