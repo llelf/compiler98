@@ -19,7 +19,7 @@
 
 //#define doStatistics
 
-int getline(char s[], int max);
+extern int getline(char s[], int max);
 
 typedef struct lnode* FunTablePtr;
 

@@ -399,6 +399,7 @@ filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
     //printf("node type: %i\n",b);
     switch (nodeType) {
     case TRNAM:
+      fileoffset=getNameType();break;
     case TRIND: //  Indirection
     case TRSATCIS:
     case TRSATC:
@@ -1224,7 +1225,7 @@ filepointer getProjValue() {
   filepointer trace;
   prepareBuffer(8);  
   lbuf = boff;
-  skipbytes(5);
+  if (nextbyte()==HatProjection) skippointer();
   trace = readpointer();
   
   boff = lbuf;
