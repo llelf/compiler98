@@ -5,5 +5,7 @@ case $1 in
 	echo Text/PrettyPrint Text/Html Text/Show
 	echo Foreign Foreign/Marshal Foreign/C NHC
 	;;
+  Japi) echo Graphics Graphics/UI Graphics/UI/Japi
+	;;
   *) ;;
 esac
