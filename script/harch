@@ -48,7 +48,7 @@ REL=`echo $REL | tr '/ 	' '-'`
 
 # Canonicalise equivalent processor families to one representative member.
 case $PROCESSOR in
-  i[345678]86)	PROCESSOR=ix86;;
+  i[3456789]86)	PROCESSOR=ix86;;
   sun3*)	PROCESSOR=sun3;;
   sun4*)	PROCESSOR=sun4;;
   sparc*)	PROCESSOR=sparc;;
@@ -66,8 +66,14 @@ case $OS in
 		  4*) OS=SunOS4;;
 		  5*) OS=solaris2;;
 		  6*) OS=solaris3;;
-		  7*) OS=solaris7;;
 		  *)  OS=SunOS-$REL;;
+		esac;;
+  Darwin)	case $REL in
+		  5*) OS=Darwin5;;
+		  6*) OS=Darwin6;;
+		  7*) OS=Darwin7;;
+		  8*) OS=Darwin8;;
+		  *)  OS=Darwin-$REL;;
 		esac;;
   IRIX*)	case $REL in
 		  5*) OS=IRIX5;;
