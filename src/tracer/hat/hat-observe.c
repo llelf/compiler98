@@ -17,12 +17,28 @@
 #include "hatgeneral.h"
 
 
+int getline(char s[], int max) {
+  int c,i;
+  fflush(stdout);
+  c=getchar();
+  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
+    if (c==-1) {
+      i--;
+    } else {
+      s[i]=c;
+    }
+    c=getchar();
+  }
+  s[i]=0;
+  return i;
+}
+
 void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   int maxarity = -1;
   int arity,arityProblem = 0,found=0;
   filepointer currentOffset;
 
-  currentOffset = nextQueryNode(query);
+  currentOffset = nextObserveQueryNode(query);
   while (currentOffset != 0) {
     ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
     arity = getExprArity(a);
@@ -40,7 +56,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
       found++;
     }
     freeExpr(a);
-    currentOffset = nextQueryNode(query);
+    currentOffset = nextObserveQueryNode(query);
   }
   if (arityProblem>0) {
     printf("\nAttention: Due to partial applications the first %i line(s)\n",
@@ -102,14 +118,37 @@ main (int argc, char *argv[])
     exit(1);
   }
   if (hatTestHeader()) {
-    ObserveQuery query = newIdentifierQuery(handle,ident,topIdent,recursivemode,1);
+    ObserveQuery query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
+    if (observeIdentifier(query)==0) {
+      printf("No toplevel identifier named \"%s\" found!\n",ident);
+      exit(1);
+    }
+    if ((topIdent!=NULL)&&(observeTopIdentifier(query)==0)) {
+      printf("No toplevel identifier named \"%s\" found!\n",topIdent);
+      exit(1);
+    }
     if (uniquemode) {
+      unsigned long c;
       FunTable results = observeUnique(query,verbosemode,precision);
-      showFunTable(results);
+      c = FunTableLength(results);
+      if (c==0)	{
+	printf("No matching applications of \"%s\" found!\n",ident);
+      } else {
+	unsigned long total = observedNodes(query);
+	printf("%i unique application(s) found (%i in total).\n",c,total);
+	if (c>20) {
+	  char answer[10];
+	  printf("Show all %i applications? ",c);
+	  if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
+	}
+	showFunTable(results);
+      }
       freeFunTable(results);
     } else {
       showObserveAll(query,verbosemode,precision);
     }
+    freeObserveQuery(query);
   }
   hatCloseFile(handle);
 }
+

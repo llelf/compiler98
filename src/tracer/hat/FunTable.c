@@ -111,14 +111,14 @@ void addToFunTable(FunTable ftable,ExprNode* funAppl,ExprNode* res,filepointer f
   }
 }
 
-void showFunTable_internal(FunTable ftable,int mode) {
+unsigned long showFunTable_internal(FunTable ftable,int mode) {
   char* appstr;
   char* resstr;
   unsigned long c=0;
   char buf[5];
   _FunTable* l = (_FunTable*) ftable;
 
-  if ((l==NULL)||(l->next==NULL)) printf("FUNCTION TABLE EMPTY\n"); else
+  if ((l==NULL)||(l->next==NULL)) return 0; else
     { 
       l=l->next;
       while (l!=NULL) {
@@ -140,11 +140,12 @@ void showFunTable_internal(FunTable ftable,int mode) {
       fprintf(stderr,"statistics: thesame %u,smaller %u, moregeneral %u, uncomparable %u\n",
 	      thesame,smaller,moregeneral,uncomparable);
 #endif
+      return c;
     }
 }
 
-void showFunTable(FunTable l) {
-  showFunTable_internal(l,0);
+unsigned long showFunTable(FunTable l) {
+  return showFunTable_internal(l,0);
 }
 
 FunTable _FunTablecurrent,_FunTablelast=NULL;

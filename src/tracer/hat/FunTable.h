@@ -25,4 +25,4 @@ void          getFunTableEntry(FunTable l,long i,
 			       ExprNode** appl,
 			       ExprNode** res);
 
-void          showFunTable(FunTable l);
+unsigned long showFunTable(FunTable l);

@@ -13,6 +13,48 @@
 #include "hashtable.h"
 
 #define HASH_TABLE_SIZE 3000
+/*
+typedef struct {
+  HashTable* htable;
+  filepointer parent;
+  filepointer currentOffset;
+  int found;
+  int finished;
+  HatFile handle;
+} _EDTQuery;
+
+
+EDTQuery newObserveQuery(HatFile handle,
+			 filepointer parent) {
+  _EDTQuery* newQ = (_EDTQuery*) calloc(1,sizeof(_EDTQuery));
+  hatSwitchToHandle(handle);
+  newQ->handle = handle;
+  newQ->htable = newHashTable(80000);
+  newQ->parent = parent;
+  newQ->currentOffset = identifierNode;
+  if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
+  newQ->fsz = hatFileSize()/1000;
+  if (newQ->fsz==0) newQ->fsz = 1;
+  if (newQ->fsz<20000) newQ->lsz=200;
+  return ((EDTQuery) newQ);
+}
+
+void freeEDTQuery(EDTQuery query) {
+  freeHashTable(((_EDTQuery*) query)->htable);
+  ((_EDTQuery*) query)->htable = NULL;
+  free(query);
+}
+
+filepointer nextEDTQueryNode(EDTQuery query) {
+  unsigned long p,currentOffset;
+  char nodeType;
+  int arity;
+  HashTable* htable = ((_EDTQuery*) query)->htable;
+  unsigned long identifierNode = ((_EDTQuery*) query)->identifierNode;
+  unsigned long topIdentifierNode = ((_EDTQuery*) query)-> topIdentifierNode;
+  int recursiveMode = ((_EDTQuery*) query)->recursiveMode;
+
+*/
 
 // checks, whether nodenumber is a child of parent. It is a child of parent,
 // if the nodenumber's parentTrace equals parent or if its parent is a non-toplevel

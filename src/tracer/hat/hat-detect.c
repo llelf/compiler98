@@ -204,14 +204,14 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	    unsigned long newAdr,newSAT,selected;
 	    FunTable results;
 	    ObserveQuery query;
-	    query = newQuery(filehandle,lmost,0,0,1);
+	    query = newObserveQuery(filehandle,lmost,0,0,1);
 	    results = observeUnique(query,verboseMode,precision);
 	    selected=showFunTablePaged(results);
 	    if (selected>=0) {
 	      ExprNode* dummy;
 	      getFunTableEntry(results,selected,&newAdr,&dummy,&dummy);
 	    } else newAdr=0;
-	    freeQuery(query);
+	    freeObserveQuery(query);
 	    freeFunTable(results);
 
 	    if ((newAdr>0)&&(newAdr!=appofs)) {

@@ -467,6 +467,7 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
 	  replaceStr(&s1,s1,s2,NULL); // no spacing!
 	} else
 	  if ((infix<3)&&(i==1)) {
+	    if (isalnum(*s1)) replaceStr(&s1,"`",s1,"`");
 	    if (spacing)
 	      replaceStr(&s1,s2," ",s1);     // write first argument before the function
 	    else replaceStr(&s1,s2,s1,NULL);

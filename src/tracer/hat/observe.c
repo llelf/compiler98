@@ -28,7 +28,6 @@ typedef struct {
   unsigned long currentOffset;
   unsigned long fsz;
   unsigned long lsz;
-  char nodeType;
   int found;
   int finished;
   int showProgress;
@@ -36,7 +35,7 @@ typedef struct {
 } _ObserveQuery;
 
 
-ObserveQuery newQuery(int handle,
+ObserveQuery newObserveQuery(int handle,
 		       filepointer identifierNode,
 		       filepointer topIdentifierNode,
 		       BOOL recursiveMode,
@@ -53,17 +52,29 @@ ObserveQuery newQuery(int handle,
   if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
   newQ->fsz = hatFileSize()/1000;
   if (newQ->fsz==0) newQ->fsz = 1;
-  if (newQ->fsz<20000) newQ->lsz=200;
+  //if (newQ->fsz<20000) newQ->lsz=200;
   return ((ObserveQuery) newQ);
 }
 
-void freeQuery(ObserveQuery query) {
+void freeObserveQuery(ObserveQuery query) {
   freeHashTable(((_ObserveQuery*) query)->htable);
   ((_ObserveQuery*) query)->htable = NULL;
   free(query);
 }
 
-filepointer nextQueryNode(ObserveQuery query) {
+filepointer observeIdentifier(ObserveQuery query) {
+  return ((_ObserveQuery*) query)->identifierNode;
+}
+
+filepointer observeTopIdentifier(ObserveQuery query) {
+  return ((_ObserveQuery*) query)->topIdentifierNode;
+}
+
+unsigned long observedNodes(ObserveQuery query) {
+  return ((_ObserveQuery*) query)->found;
+}
+
+filepointer nextObserveQueryNode(ObserveQuery query) {
   unsigned long p,currentOffset;
   char nodeType;
   int arity;
@@ -162,8 +173,8 @@ void findNodes(char* identifier,
   }
   if (fsz==0) fsz=1;
   hatSeqFirst();
-  while ((!hatSeqEOF())&&(identifierNode==0)&&((topIdentifierNode==0)||
-					 (topIdentifier==NULL))) {
+  while ((!hatSeqEOF())&&((identifierNode==0)||
+			  ((topIdentifierNode==0)&&(topIdentifier!=NULL)))) {
     currentOffset = hatNodeNumber();
     if ((showProgress)&&((currentOffset/10)/fsz>lsz)) {
       lsz = (currentOffset/10)/fsz;
@@ -194,14 +205,14 @@ void findNodes(char* identifier,
   *topIdentNode=topIdentifierNode;
 }
 
-ObserveQuery newIdentifierQuery(int handle,char* ident,char* topIdent,
-				 BOOL recursiveMode,BOOL showProgress) {
+ObserveQuery newObserveQueryIdent(int handle,char* ident,char* topIdent,
+				  BOOL recursiveMode,BOOL showProgress) {
   unsigned long identifierNode=0,topIdentifierNode=0;
   
   hatSwitchToHandle(handle);
   findNodes(ident,topIdent,&identifierNode,&topIdentifierNode,showProgress);
-  return newQuery(handle,identifierNode,topIdentifierNode,
-		  recursiveMode,showProgress);
+  return newObserveQuery(handle,identifierNode,topIdentifierNode,
+			 recursiveMode,showProgress);
 }
 
 // get table of all unique observations
@@ -210,7 +221,7 @@ FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
   filepointer currentOffset;
   int arity,maxarity = -1;
 
-  currentOffset = nextQueryNode(query);
+  currentOffset = nextObserveQueryNode(query);
   while (!((_ObserveQuery*) query)->finished) {
     unsigned long satc = getResult(currentOffset);
     ExprNode* r=buildExpr(satc,verboseMode,precision);
@@ -223,7 +234,7 @@ FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
       freeExpr(r);
       freeExpr(a);
     }
-    currentOffset = nextQueryNode(query);
+    currentOffset = nextObserveQueryNode(query);
   }
   checkArities(results); // remove partial applications with missing arguments
   return results;

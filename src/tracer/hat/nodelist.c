@@ -122,7 +122,7 @@ void freeList(NodeList *nl) {
 /* show pretty printing of all nodes (and their results) in the list */
 void showPretty(NodeList *nl,int verboseMode,unsigned int precision) {
   hNodePtr e;
-  FunTable* results = newFunTable();
+  FunTable results = newFunTable();
   e = nl->first;
 
   if (e==NULL) printf("FUNCTION TABLE EMPTY\n"); else

@@ -13,25 +13,25 @@ typedef struct _ObserveQuery *ObserveQuery;
      are selected.
      If recursiveMode is 1, applications of identifierNode within itself are
      omitted. */
-ObserveQuery newQuery(                            // create a new observe query
+ObserveQuery newObserveQuery(            // create a new observe query
 	     HatFile handle,             // hat file handler
 	     filepointer identifierNode, // node number of searched identifier
 	     filepointer topIdentifierNode, // 0=none
-	     BOOL recursiveMode,         // =1: omit recursive applications
+	     BOOL recursiveFilter,       // =1: omit recursive applications
 	     BOOL showProgress);         // =1: show progress indicator (0-100%)
 
   /* same as newQuery, but the identifier (and topIdentifier) are passed as strings
-     rather than the node number.  */
-ObserveQuery newIdentifierQuery(
+     rather than the node number. */
+ObserveQuery newObserveQueryIdent(
              HatFile handle,
-	     char* ident,     // searched identifier
-	     char* topIdent,  // within topIdentifier (or NULL=none)
-	     BOOL recursivemode, // =1: omit recursive applications
-	     BOOL showProgress); // =1: show progress indicator (0-100%)
+	     char* identifier,     // searched identifier
+	     char* topIdentifier,  // within topIdentifier (or NULL=none)
+	     BOOL recursiveFilter, // =1: omit recursive applications
+	     BOOL showProgress);   // =1: show progress indicator (0-100%)
 
-void         freeQuery(ObserveQuery query);     // end query, free memory
+void         freeObserveQuery(ObserveQuery query); // end query, free memory
 
-filepointer  nextQueryNode(ObserveQuery query); // 0=none, otherwise: next node returned
+filepointer  nextObserveQueryNode(ObserveQuery query); // 0=none, otherwise: next node returned
 
   /* observeUnique: observe all unique and most general applications within the query.
      The entire file is searched first, before the result is determined.
@@ -42,3 +42,9 @@ FunTable    observeUnique(
 	    BOOL verboseMode,    // =1: show unevaluated expressions
 	    int precision);      // precision depth of output (how
                                  //  far to recurse into structures)
+
+filepointer observeIdentifier(ObserveQuery query);
+
+filepointer observeTopIdentifier(ObserveQuery query);
+
+unsigned long observedNodes(ObserveQuery query);
