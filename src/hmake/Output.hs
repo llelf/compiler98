@@ -39,7 +39,7 @@ qCleanhi opts echo graph mod =
 qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
   test dep (preprocess++hattrans++compilecmd)
  where
-  -- srcfile (preprocess)-> pfile (hattrans)-> hfile (compile)-> ofile
+  -- srcfile -(preprocess)-> pfile -(hattrans)-> hfile -(compile)-> ofile
   ofile = oFile opts p m
   pfile
     | null (ppExecutableName pp) = srcfile
@@ -56,9 +56,10 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
                                                ++[srcfile]))
   hattrans
     | hat opts && cpp = doEcho echo $
-                        "gcc -E -x c "++concatMap doD (defs opts ++ zdefs opts)
+                        "gcc -E -traditional -x c "++pfile
+                            ++concatMap doD (defs opts ++ zdefs opts)
                             ++" -o /tmp/"++pfile
-                            ++"\nhat-trans $HATFLAGS /tmp/"++pfile
+                            ++"\nhat-trans $HATFLAGS -P. /tmp/"++pfile
                             ++"\nmv "++hatFile opts "/tmp" m++" "++hfile
     | hat opts && not cpp = doEcho echo $
                             "hat-trans $HATFLAGS "++pfile

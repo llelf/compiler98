@@ -32,7 +32,7 @@ knownSuffixes =
 
 ppCpp, ppGreenCard, ppHsc2hs, ppC2hs, ppHappy, ppNone :: PreProcessor
 ppCpp = PreProcessor
-	{ ppExecutableName = "gcc -E"
+	{ ppExecutableName = "gcc -E -traditional"
 	, ppDefaultOptions = \d-> "-x c" : map ("-D"++) (defs d++zdefs d)
 	, ppOutputFileOption = \f-> "> "++f
 	, ppSuitable = \hc-> True
