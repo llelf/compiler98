@@ -112,14 +112,19 @@ void checkNodes(unsigned long identifierNode,
 	if (isSAT(byteoffset())) {  // SATC behind TRNAM?
 	  // found a CAF!
 	  unsigned long satc = byteoffset();
-	  if (uniqueMode) {
-	    ExprNode* r=buildExpr(satc,verboseMode);
-	    ExprNode* a=buildExpr(currentOffset,verboseMode);
-	    addToFunTable(result,a,r,currentOffset);
-	  } else { // print CAF and its value
-	    showAppAndResult(currentOffset,verboseMode);
+	  if (followSATs(satc)==currentOffset) { // save this satc for future reference
+	    addToHashTable(htable,satc);
+	  } else {  // makes no sense to print equation of form "identifier = identifier"
+	    if (uniqueMode) {
+	      ExprNode* r=buildExpr(satc,verboseMode);
+	      ExprNode* a=buildExpr(currentOffset,verboseMode);
+	      addToFunTable(result,a,r,currentOffset);
+	    } else { // print CAF and its value
+	      showAppAndResult(currentOffset,verboseMode);
+	    }
 	  }
-	  seek(satc);
+	  seek(satc); // go to satc
+	  nextNode(); // skip this node
 	}
       } else nextNode();
       break;

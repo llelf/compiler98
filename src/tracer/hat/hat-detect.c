@@ -425,6 +425,9 @@ void findAppsFor(NodeList* nl,unsigned long parentTrace,unsigned long current) {
 	isChild   = isChildOf(current,parentTrace);
 	if ((appTrace==parentTrace)&&(isChild==0)) {
 	  printf("That's odd: %u %u %u\n",current,parentTrace,appTrace);
+	  printf("AppTrace: %u\n",getTrace());
+	  printf("AppTrace: %u\n",getTrace());
+	  //isChild = 1;
 	}
 
 	if (isChild==0) { //(appTrace!=parentTrace) { // if it's not a child itself

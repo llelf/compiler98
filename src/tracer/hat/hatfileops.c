@@ -866,6 +866,7 @@ int isTopLevel(unsigned long srcref) {
     case NTDUMMY:
     case NTFUN:
     case NTCSTRING:
+    case TRHIDDEN: // neccessary for isChild
       return 0; // not toplevel (necessary for hat-observe funA in funA!)
     default:
       seek(old);
@@ -970,6 +971,9 @@ int isChildOf(unsigned long fileoffset,unsigned long parent) {
     case TRSATBIS:
     case TRSATAIS:
       fileoffset=getTrace();
+      if (fileoffset==parent) {
+	return 1;
+      }
       break;
     case TRNAM:
     case TRAPP:{
@@ -1052,7 +1056,7 @@ filepointer getTrace() {
   lbuf = boff;
 
   if (nextbyte()==TRAPP) {
-    skipbyte(); // skip one byte in applications
+    skipbyte(); // skip one byte in applications (arity)
   }
   fp = readpointer();
   boff = lbuf;
