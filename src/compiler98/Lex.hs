@@ -156,7 +156,11 @@ instance Eq Lex where
     _           == _           = False
 
 instance Show Lex where
-  showsPrec d (L_EOF)       = showString  "{-EOF-}"
+	-- Note: EOF really means end-of-file, but because error messages
+	--   saying "got blah but expected EOF" are less than helpful,
+	--   I have changed the string for EOF to indicate the likely cause
+	--   of the parse error.
+  showsPrec d (L_EOF)       = showString  "{-end-of-definition-or-EOF-}"
   showsPrec d (L_ERROR c)   = showString  "{-ERROR " . showChar c . showString "-}"
   showsPrec d (L_LPAR )     = showString  "("
   showsPrec d (L_RPAR )     = showString  ")"
