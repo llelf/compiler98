@@ -83,7 +83,7 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-PACKAGES  = base QuickCheck
+PACKAGES  = base parsec QuickCheck HaXml
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    $(patsubst %, src/libraries/%, ${PACKAGES})
@@ -212,10 +212,9 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
 $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
-	for pkg in ${PACKAGES}; \
-	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ; \
-	done
-	touch $(TARGDIR)/$(MACHINE)/libraries
+	for pkg in ${PACKAGES};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
+	done && touch $(TARGDIR)/$(MACHINE)/libraries
 
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
@@ -312,8 +311,7 @@ $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGES};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
-	done
-	touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
+	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
 
 
 script/errnogen.c: script/GenerateErrNo.hs
@@ -405,10 +403,9 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 $(TARGDIR)/librariesC: $(LIBRARIES)
-	for pkg in ${PACKAGES};
+	for pkg in ${PACKAGES};\
 	do ( cd src/libraries/$$pkg;  $(MAKE) -f Makefile.nhc98 cfiles; ) ;\
-	done
-	touch $(TARGDIR)/librariesC
+	done && touch $(TARGDIR)/librariesC
 
 
 
