@@ -29,9 +29,7 @@ ${OBJDIR}/Eq_IOError.$O:   ${OBJDIR}/DIOError.$O
 ${OBJDIR}/Monad_IO.$O:     ${OBJDIR}/DIOError.$O # ../Prelude/CMonad.hi
 ${OBJDIR}/Functor_IO.$O:   # ../Prelude/CFunctor.hi
 ${OBJDIR}/Show_IOError.$O: ${OBJDIR}/DIOError.$O ${OBJDIR}/StrError.$O
-ifneq "T" "${TRACING}"
 ${OBJDIR}/Show_IOError.$O: ${OBJDIR}/StrError.$O
-endif
 ${OBJDIR}/UserError.$O:    ${OBJDIR}/DIOError.$O
 ${OBJDIR}/DIOError.$O:     #${OBJDIR}/DErrNo.$O
 ${OBJDIR}/ReadLn.$O:       ${OBJDIR}/ReadIO.$O

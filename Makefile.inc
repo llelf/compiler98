@@ -66,13 +66,8 @@ BUILDCOMP := $(shell basename $(BUILDWITH) | cut -c1-3 )
 CPP = $(CC) -E -x c
 
 DCFG:=
-TRACING=$(findstring T,${CFG})
 PROFILING=$(findstring p,${CFG})
 TPROF=$(findstring z,${CFG})
-
-ifeq "T" "${TRACING}"
-DCFG:=${DCFG} -DTRACE=1 -DDBGTRANS
-endif
 
 ifeq "p" "${PROFILING}"
 DCFG:=${DCFG} -DPROFILE=2
@@ -87,12 +82,6 @@ NHEAP = +RTS -H8M -RTS
 endif
 
 
-ifeq "T" "${TRACING}"
-  HISUFFIX=T.hi
-  O=T.o
-  C=T.c
-  A=T.a
-else
 ifeq "p" "${PROFILING}"
   HISUFFIX=hi
   O=p.o
@@ -111,13 +100,4 @@ else
   A=a
 endif
 endif
-endif
 
-ifeq "T" "${TRACING}"
-ifeq "z" "${TPROF}"
-  HISUFFIX=T.hi
-  O=Tz.o
-  C=Tz.c
-  A=Tz.a
-endif
-endif
