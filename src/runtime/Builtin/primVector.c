@@ -1,9 +1,6 @@
 #include <string.h>
 #include "haskell2c.h"
 
-/* primVector :: Int -> [(Int,a)] -> Vector a */
-/* The list and all index must be evaluated before calling cPrimVector */
-/* Index out of range is ignored */
 
 extern Node CF_Array_46_95arrayUndefined[];
 extern Node CF_Array_46_95arrayMultiple[];
@@ -12,10 +9,13 @@ extern Node CF_Array_46_95arrayMultiple[];
 #define MULTIPLE ((Node)CF_Array_46_95arrayMultiple)
 
 #ifdef PROFILE
-static SInfo nodeProfInfo = { "Builtin","Builtin.primVector","Vector.Vector"};
+static SInfo nodeProfInfo = { "Builtin","Builtin.primNewVector","Vector.Vector"};
 static SInfo nodeProfInfoCopy = { "Builtin","Builtin.primCopyVector","Vector.Vector"};
 #endif
 
+/* primVector :: Int -> [(Int,a)] -> Vector a */
+/* The list and all index must be evaluated before calling cPrimVector */
+/* Index out of range is ignored */
 C_HEADER(primVector)
 {
   int size,i;
@@ -67,7 +67,6 @@ C_HEADER(primVector)
 }	
 
 
-
 /* primCopyVector :: Vector a -> Vector a */
 C_HEADER(primCopyVector)
 {
@@ -82,7 +81,7 @@ C_HEADER(primCopyVector)
   res = C_ALLOC(1+EXTRA+size);
   res[0] = CONSTRP(size,0);
   INIT_PROFINFO(res,&nodeProfInfoCopy)
-  
+
   srcptr = (NodePtr)&arg[1+EXTRA];
   dstptr = (NodePtr)&res[1+EXTRA];
   for(i=0; i<size; i++)
@@ -116,3 +115,88 @@ C_HEADER(primUpdateVector)
   C_RETURN(mkUnit());
 }	
 
+/* primNewVectorC :: Int -> a -> IO (Vector a) */
+NodePtr primNewVectorC (int size, NodePtr box)
+{
+  int i;
+  NodePtr res, val;
+  NodePtr dstptr;
+  /*fprintf(stderr,"newVector: size=%d\n",size);*/
+
+  val = GET_POINTER_ARG1(box,1);
+
+  res = C_ALLOC(1+EXTRA+size);
+  res[0] = CONSTRP(size,0);
+  INIT_PROFINFO(res,&nodeProfInfo)
+
+  dstptr = (NodePtr)&res[1+EXTRA];
+  for(i=0; i<size; i++)
+    dstptr[i] = val;
+
+  return res;
+}
+
+
+/* primCopyVectorC :: Vector a -> IO (Vector a) */
+NodePtr primCopyVectorC (NodePtr arg)
+{
+  int size,i;
+  NodePtr res;
+  NodePtr srcptr,dstptr;
+
+  size = CONINFO_LARGESIZES(GET_CONINFO(arg));
+  /*fprintf(stderr,"copyVector: size=%d\n",size);*/
+
+  res = C_ALLOC(1+EXTRA+size);
+  res[0] = CONSTRP(size,0);
+  INIT_PROFINFO(res,&nodeProfInfoCopy)
+  
+  srcptr = (NodePtr)&arg[1+EXTRA];
+  dstptr = (NodePtr)&res[1+EXTRA];
+  for(i=0; i<size; i++)
+    dstptr[i] = srcptr[i];
+
+  return res;
+}	
+
+
+/* primUpdateVectorC :: Int -> _E a -> Vector a -> IO () */
+void primUpdateVectorC (int idx, NodePtr box, NodePtr arg)
+{
+  int size;
+  NodePtr val,dstptr;
+
+  val = GET_POINTER_ARG1(box,1);
+
+  size = CONINFO_LARGESIZES(GET_CONINFO(arg));
+  dstptr = (NodePtr)&arg[1+EXTRA];
+  /*fprintf(stderr,"updateVector: size=%d idx=%d\n",size,idx);*/
+
+  if (idx<=size) dstptr[idx] = (Node)val;
+
+  return;
+}
+
+/* primSetVectorC :: Int -> _E a -> Vector a -> IO () */
+void primSetVectorC (int idx, NodePtr box, NodePtr arg)
+{
+  int size;
+  NodePtr val,dstptr;
+
+  val = GET_POINTER_ARG1(box,1);
+
+  size = CONINFO_LARGESIZES(GET_CONINFO(arg));
+  dstptr = (NodePtr)&arg[1+EXTRA];
+  /*fprintf(stderr,"setVector: size=%d idx=%d\n",size,idx);*/
+
+  if (idx<=size) {
+    dstptr[idx] = (Node)val;
+    if(dstptr[idx] == UNDEFINED) {
+        dstptr[idx] = (Node)val;
+    } else {
+        dstptr[idx] = MULTIPLE;
+    }
+  }
+
+  return;
+}		

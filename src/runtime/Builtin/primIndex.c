@@ -29,9 +29,10 @@ C_HEADER(primIndex)
 }	
 
 
-/* foreign import primIndexC :: Vector a -> Int -> a */
-NodePtr primIndexC (int i, NodePtr vec)
+/* foreign import primVectorIndexC :: Vector a -> Int -> a */
+NodePtr primVectorIndexC (NodePtr vec, int i)
 {
+  /* fprintf(stderr,"vectorIndex: idx=%d\n",i); */
   return (NodePtr)vec[1+EXTRA+i];
 }
 
