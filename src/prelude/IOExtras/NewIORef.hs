@@ -2,10 +2,11 @@ module IOExtras
   ( newIORef
   ) where
 
-import Ix
 import DIORef
-import NewIOArray
+import LowVector
+import _E
 
 newIORef :: a -> IO (IORef a)
-newIORef a = do a <- newIOArray (0,0) a
-                return (IORef a)
+newIORef a = do v <- primNewVectorC 1 (_E a)
+                return (IORef v)
+

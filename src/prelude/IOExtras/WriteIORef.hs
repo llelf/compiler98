@@ -2,11 +2,10 @@ module IOExtras
   ( writeIORef
   ) where
 
-import Ix
 import DIORef
-import WriteIOArray
+import LowVector
+import _E
 
 writeIORef :: IORef a -> a -> IO ()
-writeIORef (IORef f) a = do
-    writeIOArray f 0 a
+writeIORef (IORef v) a = do primUpdateVectorC 0 (_E a) v
 

@@ -1,9 +1,9 @@
+{-# OPTIONS_COMPILE -prelude #-}
 module IOExtras
   ( IORef(..)
   ) where
 
 import FFI
-import DIOArray
+import PreludeBuiltin(Vector)
 
-newtype IORef a = IORef (IOArray Int a)	-- contains only one element!
-
+newtype IORef a = IORef (Vector a)	-- vector contains only one element!
