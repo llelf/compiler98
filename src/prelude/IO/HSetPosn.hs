@@ -7,7 +7,7 @@ import FFI
 -- #if !defined(TRACING)
 #if 1
 
-foreign import ccall hSetPosnC :: Handle -> ForeignObj -> IO Int
+foreign import ccall hSetPosnC :: Handle -> ForeignPtr () -> IO Int
 
 hSetPosn              :: HandlePosn -> IO () 
 hSetPosn (HandlePosn h p) = do

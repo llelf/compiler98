@@ -1,6 +1,6 @@
 module PackedString where
 
-import FFIBuiltin(PackedString)
+import DPackedString(PackedString)
 
 unpackPS primitive 1 :: PackedString -> [Char]
 

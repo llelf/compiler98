@@ -11,6 +11,7 @@ SRCS	= \
 	PrimError.hs Blackhole.hs \
 	PrimOpenSocket.hs \
 	CExitWith.hs PrimExitWith.hs PrimGetArgs.hs \
+	DPackedString.hs \
 	PrimComparePS.hs PrimIndex.hs PrimLength.hs PrimPackString.hs \
 	PrimUnpackPS.hs \
 	PrimDecodeDouble.hs PrimDecodeFloat.hs PrimDoubleFromInteger.hs \

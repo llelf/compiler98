@@ -1,6 +1,6 @@
 module PackedString where
 
-import FFIBuiltin(PackedString)
+import DPackedString
 
 primPackString primitive 2 :: Int -> String -> PackedString
 

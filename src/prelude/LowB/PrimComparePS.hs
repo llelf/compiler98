@@ -1,5 +1,5 @@
 module PackedString where
 
-import FFIBuiltin(PackedString)
+import DPackedString
 
 primComparePS primitive 2 :: PackedString -> PackedString -> Ordering

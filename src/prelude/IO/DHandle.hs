@@ -1,5 +1,5 @@
 module IO (Handle(..),ForeignObj) where
 
-import FFIBuiltin (ForeignObj)
+import FFI (ForeignObj)
 
 newtype Handle = Handle ForeignObj

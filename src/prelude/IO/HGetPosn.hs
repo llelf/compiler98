@@ -6,16 +6,16 @@ import FFI
 
 -- #if !defined(TRACING)
 #if 1
-foreign import ccall hGetPosnC :: Handle -> IO Addr
+foreign import ccall hGetPosnC :: Handle -> IO (Ptr ())
 
 hGetPosn              :: Handle -> IO HandlePosn
 hGetPosn h = do
-    a <- hGetPosnC h
-    if a==nullAddr then do
+    p <- hGetPosnC h
+    if p==nullPtr then do
         errno <- getErrNo
         throwIOError "hGetPosn" Nothing (Just h) errno
       else do
-        f <- newForeignObj a (free (Ptr a))
+        f <- newForeignPtr p nullFunPtr -- (free p)
         return (HandlePosn h f)
 
 #else

@@ -2,8 +2,8 @@ module System where
 
 import FFI
 
-foreign import ccall cGetArg       :: IO Addr
-foreign import cast  addrToCString :: Addr -> IO PackedString
+foreign import ccall cGetArg      :: IO (Ptr Char)
+foreign import cast  ptrToCString :: (Ptr Char) -> IO PackedString
 
 getArgs  :: IO [String]
 getArgs =
@@ -15,7 +15,7 @@ getArgs =
  where
   getThem () = do
     a <- cGetArg
-    if (a==nullAddr) then return []
-      else do arg <- addrToCString a
+    if (a==nullPtr) then return []
+      else do arg  <- ptrToCString a
               args <- getThem ()
               return (fromCString arg:args)

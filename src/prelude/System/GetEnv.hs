@@ -2,15 +2,15 @@ module System where
 
 import FFI
 
-foreign import ccall primGetEnv   :: PackedString -> IO Addr
-foreign import cast  addrToString :: Addr -> PackedString
+foreign import ccall primGetEnv  :: PackedString -> IO (Ptr Char)
+foreign import cast  ptrToString :: (Ptr Char) -> PackedString
 
 getEnv                    :: String -> IO String
 getEnv symbol = do
     ptr <- primGetEnv (toCString symbol)
-    if ptr==nullAddr then do
+    if ptr==nullPtr then do
         errno <- getErrNo
         throwIOError ("getEnv \""++symbol++"\"") Nothing Nothing errno
       else do
-        return (fromCString (addrToString ptr))
+        return (fromCString (ptrToString ptr))
 

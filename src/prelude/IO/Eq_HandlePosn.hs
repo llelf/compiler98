@@ -6,7 +6,7 @@ import Eq_Handle
 import FFI
 
 
-foreign import ccall primEqHandlePosnC :: ForeignObj -> ForeignObj -> Bool
+foreign import ccall primEqHandlePosnC :: ForeignPtr () -> ForeignPtr () -> Bool
 
 instance Eq HandlePosn where
   (HandlePosn h a) == (HandlePosn j b)   =   h==j  &&  primEqHandlePosnC a b

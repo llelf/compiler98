@@ -8,7 +8,7 @@ module PackedString(
    ) where
 
 import Prelude hiding(Ix(range,index,inRange),length)
-import FFIBuiltin(PackedString)
+import DPackedString(PackedString)
 import PrimComparePS
 import PrimUnpackPS
 import PrimPackString

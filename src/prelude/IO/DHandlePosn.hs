@@ -1,6 +1,6 @@
 module IO(HandlePosn(..)) where
 
-import FFI (ForeignObj)
+import FFI (ForeignPtr)
 import DHandle
 
-data HandlePosn = HandlePosn Handle ForeignObj
+data HandlePosn = HandlePosn Handle (ForeignPtr ())
