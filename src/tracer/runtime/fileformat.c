@@ -457,7 +457,7 @@ primTHidden (CTrace* t1)
     FileOffset fo;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTHidden 0x%x -> 0x%x\n",t1,fo);)
-    if (t1->hidden) return t1;
+    if (t1->hidden) return t1; /* collapse hidden chains */
     fputc(((Trace<<5) | THidden),HatFile);
     fwrite(&(t1->ptr), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
@@ -726,7 +726,7 @@ primNTConstr (IdEntry *id)
         fwrite(&i, sizeof(int), 1, HatFile);
         id->fileoffset = fo;
         HatCounter = ftell(HatFile);
-        return mkCNmType(NTConstr,fo,id->srcmod->trusted);
+        return mkCNmType(NTConstr,fo,False);  /* id->srcmod->trusted);  */
     }
 }
 

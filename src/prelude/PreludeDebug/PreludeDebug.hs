@@ -203,11 +203,6 @@ _tprim_setOutputContext primitive 2 :: Trace -> E (R a) -> R a
 
 -- ---------------------------------------------------------- --
 
-{- Mark trace as incomplete due to trusting. -}
-hide :: Trace -> Trace
-hide t = if hidden t then t else mkTHidden t -- collapse Hidden chains
-
-
 {- Check if function and application trace are trusted. -}
 trusted :: Trace -> Trace -> Bool
 trusted t tf = if trustedFun tf then trustedFun t else False
@@ -664,6 +659,11 @@ pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
 
 -- trusted:
 
+myOr :: Bool -> Bool -> Bool
+True `myOr` _ = True
+False `myOr` b = b
+
+
 tpap0 :: Trace -> R r -> R r
 
 tpap0 t e = e
@@ -672,62 +672,62 @@ tpap0 t e = e
 tpap1 :: Trace -> Trace -> R (Trace -> R a -> R r) -> R a -> R r
 
 tpap1 p t (R rf tf) a@(R _ at) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then rf t a
     else let t' = mkTAp1 p tf at mkNoSR
          in  t' `myseq` rf t' a
 
 tpap2 p t (R rf tf) a@(R _ at) b@(R _ bt) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap1 p t (rf t a) b
     else let t' = mkTAp2 p tf at bt mkNoSR
          in  tpap1 p t' (rf t' a) b
 
 tpap3 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  let t' = if t `sameAs` tf 
+  let t' = if t `sameAs` tf `myOr` trustedFun tf
              then t
              else mkTAp3 p tf at bt ct mkNoSR
   in case (rf t' a) of
        (R rf tf) -> 
-         let t'' = if t' `sameAs` tf
+         let t'' = if t' `sameAs` tf `myOr` trustedFun tf
                      then t'
                      else mkTAp2 p tf bt ct mkNoSR
          in case (rf t'' b) of
               (R rf tf) ->
-                if t'' `sameAs` tf 
+                if t'' `sameAs` tf `myOr` trustedFun tf
                   then rf t'' c
                   else let t''' = mkTAp1 p tf ct mkNoSR
                        in  t''' `myseq` rf t''' c
  
 tpap4 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap3 p t (rf t a) b c d
     else let t' = mkTAp4 p tf at bt ct dt mkNoSR
          in  tpap3 p t' (rf t' a) b c d
 
 tpap5 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap4 p t (rf t a) b c d e
     else let t' = mkTAp5 p tf at bt ct dt et mkNoSR
          in  tpap4 p t' (rf t' a) b c d e
 
 tpap6 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap5 p t (rf t a) b c d e f
     else let t' = mkTAp6 p tf at bt ct dt et ft mkNoSR
          in  tpap5 p t' (rf t' a) b c d e f
 
 tpap7 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap6 p t (rf t a) b c d e f g
     else let t' = mkTAp7 p tf at bt ct dt et ft gt mkNoSR
          in  tpap6 p t' (rf t' a) b c d e f g
 
 tpap8 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) h@(R _ ht) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap7 p t (rf t a) b c d e f g h
     else let t' = mkTAp8 p tf at bt ct dt et ft gt ht mkNoSR
          in  tpap7 p t' (rf t' a) b c d e f g h
@@ -741,14 +741,14 @@ tpap9 :: Trace -> Trace
 
 tpap9 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap8 p t (rf t a) b c d e f g h i
     else let t' = mkTAp9 p tf at bt ct dt et ft gt ht it mkNoSR
          in  tpap8 p t' (rf t' a) b c d e f g h i
 
 tpap10 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap9 p t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 p tf at bt ct dt et ft gt ht it jt mkNoSR
          in tpap9 p t' (rf t' a) b c d e f g h i j
@@ -756,7 +756,7 @@ tpap10 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
 tpap11 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                        k@(R _ kt) =
-  if t `sameAs` tf 
+  if t `sameAs` tf `myOr` trustedFun tf
     then tpap10 p t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt mkNoSR
          in  tpap10 p t' (rf t' a) b c d e f g h i j k 
@@ -993,25 +993,25 @@ tfun0 :: NmType -> (Trace -> Trace -> R r) -> SR -> Trace -> R r
 
 tfun0 nm rf sr t = 
   let t' = optMkTNm t nm sr
-  in t' `myseq` enter t' (rf t (hide t))  -- t here correct?
+  in t' `myseq` enter t' (rf t (mkTHidden t))  -- t here correct?
 
 tfun1 :: NmType -> (Trace -> Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
 tfun1 nm rf sr t = 
-  mkR (\t a -> enter t (rf t (hide t) a))
+  mkR (\t a -> enter t (rf t (mkTHidden t) a))
       (optMkTNm t nm sr)
 
 tfun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> enter t (rf t (hide t) a b))
+      R (\t b -> enter t (rf t (mkTHidden t) a b))
         t)
       (optMkTNm t nm sr)
 
 tfun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> enter t (rf t (hide t) a b c))
+        R (\t c -> enter t (rf t (mkTHidden t) a b c))
           t)
         t)
       (optMkTNm t nm sr)
@@ -1020,7 +1020,7 @@ tfun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> enter t (rf t (hide t) a b c d))
+          R (\t d -> enter t (rf t (mkTHidden t) a b c d))
             t)
           t)
         t)
@@ -1031,7 +1031,7 @@ tfun5 nm rf sr t =
       R (\t b ->
         R (\t c ->
           R (\t d ->
-            R (\t e -> enter t (rf t (hide t) a b c d e))
+            R (\t e -> enter t (rf t (mkTHidden t) a b c d e))
               t)
             t)
           t)
@@ -1044,7 +1044,7 @@ tfun6 nm rf sr t =
         R (\t c ->
           R (\t d ->
             R (\t e ->
-              R (\t f -> enter t (rf t (hide t) a b c d e f))
+              R (\t f -> enter t (rf t (mkTHidden t) a b c d e f))
                 t)
               t)
             t)
@@ -1059,7 +1059,7 @@ tfun7 nm rf sr t =
           R (\t d ->
             R (\t e ->
               R (\t f ->
-                R (\t g -> enter t (rf t (hide t) a b c d e f g))
+                R (\t g -> enter t (rf t (mkTHidden t) a b c d e f g))
                   t)
                 t)
               t)
@@ -1076,7 +1076,7 @@ tfun8 nm rf sr t =
             R (\t e ->
               R (\t f ->
                 R (\t g ->
-                  R (\t h -> enter t (rf t (hide t) a b c d e f g h))
+                  R (\t h -> enter t (rf t (mkTHidden t) a b c d e f g h))
                     t)
                   t)
                 t)
@@ -1095,7 +1095,7 @@ tfun9 nm rf sr t =
               R (\t f ->
                 R (\t g ->
                   R (\t h ->
-                    R (\t i -> enter t (rf t (hide t) a b c d e f g h i))
+                    R (\t i -> enter t (rf t (mkTHidden t) a b c d e f g h i))
                       t)
                     t)
                   t)
@@ -1116,7 +1116,7 @@ tfun10 nm rf sr t =
                 R (\t g ->
                   R (\t h ->
                     R (\t i ->
-                      R (\t j -> enter t (rf t (hide t) a b c d e f g 
+                      R (\t j -> enter t (rf t (mkTHidden t) a b c d e f g 
                                                            h i j))
                         t)
                       t)
@@ -1140,7 +1140,7 @@ tfun11 nm rf sr t =
                   R (\t h ->
                     R (\t i ->
                       R (\t j ->
-                        R (\t k -> enter t (rf (hide t) t a b c d e f g 
+                        R (\t k -> enter t (rf (mkTHidden t) t a b c d e f g 
                                                              h i j k))
                           t)
                         t)
@@ -1166,7 +1166,7 @@ tfun12 nm rf sr t =
                     R (\t i ->
                       R (\t j ->
                         R (\t k ->
-                          R (\t l -> enter t (rf t (hide t) a b c d e f g 
+                          R (\t l -> enter t (rf t (mkTHidden t) a b c d e f g 
                                                                h i j k l))
                             t)
                           t)
