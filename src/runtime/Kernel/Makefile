@@ -5,7 +5,8 @@ include Makefile.inc
 OBJDIR=${BUILDDIR}/${OBJ}/runtime/Kernel
 
 OSRCS = mutator.c mutlib.c main.c
-ASRCS = haskellInit.c newtables.c dump.c inscount.c newbuiltin.c collector.c mark.c \
+SSRCS = newtables.c newbuiltin.c
+ASRCS = haskellInit.c dump.c inscount.c collector.c mark.c \
 	 cdata.c timeUnix.c xlib_debug.c stableptr.c closureval.c ffiexport.c
 
 ifneq "${PROFILING}" ""
@@ -17,6 +18,7 @@ TPLOBJS = $(patsubst %,${OBJDIR}/tpl%Builtin.o,1 2 3)
 endif
 
 OOBJS = $(patsubst %.c,${OBJDIR}/%.o,${OSRCS})
+SOBJS = $(patsubst %.c,${OBJDIR}/%.o,${SSRCS})
 AOBJS = $(patsubst %.c,${OBJDIR}/%.o,${ASRCS})
 
 ifeq "$(CFG)" ""
@@ -25,7 +27,7 @@ else
   ARCHIVE=${OBJDIR}/Runtime.${CFG}.a 
 endif
 
-OBJS = ${AOBJS} ${OOBJS}
+OBJS = ${AOBJS} ${SOBJS} ${OOBJS}
 
 CFLAGS = ${DCFG} ${BUGFIX} ${ENDIAN} ${OPT} -I${INCDIR} \
          -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
@@ -35,6 +37,9 @@ AS = $(CC) -c
 
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
+${SOBJS}: ${OBJDIR}/%.o: %.c
+	${CC} -S ${CFLAGS} -o - $< | sed '/.align 32/s/32/4/' |\
+		 ${CC} -c -x assembler ${CFLAGS} -o $@ -
 
 LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
 	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
@@ -51,13 +56,14 @@ xxx:
 
 ifeq "${TPROF}" ""
 
-${ARCHIVE}: ${AOBJS}
-	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${AOBJS})
+${ARCHIVE}: ${AOBJS} ${SOBJS}
+	cd ${OBJDIR}; \
+		$(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${AOBJS} ${SOBJS})
 else
 
-${ARCHIVE}: ${AOBJS} ${TPLOBJS}
+${ARCHIVE}: ${AOBJS} ${SOBJS} ${TPLOBJS}
 	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ \
-	$(patsubst ${OBJDIR}/%,%,${TPLOBJS} ${AOBJS})
+		$(patsubst ${OBJDIR}/%,%,${TPLOBJS} ${AOBJS} ${SOBJS})
 	rm -f ${TPLOBJS}
 
 ${TPLOBJS}:
