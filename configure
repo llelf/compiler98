@@ -494,7 +494,7 @@ else	# [ "$INSTALL" = "yes" ]
       if [ -f $file ]; then cp -p $file $LIBDIR/$VERSION; fi
     done
     if [ $HLIBDIR != $LIBDIR ]
-    then ( cd $LIBDIR/$VERSION; mv MkProg Older $HLIBDIR/$VERSION )
+    then ( cd $LIBDIR/$VERSION; mv MkProg Older hi $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
@@ -582,7 +582,8 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/greencard
     echo -n "hi "
-    ln $BINDIR/greencard $BINDIR/hi
+    sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hi
     echo -n "hp2graph "
     rm -f $BINDIR/hp2graph; ln $BINDIR/greencard $BINDIR/hp2graph
     echo -n "harch "
