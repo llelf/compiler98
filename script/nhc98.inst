@@ -92,6 +92,7 @@ do
     -p    ) PROF=p
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
+            CPPASFLAGS=$CPPASFLAGS" -DPROFILE"
             ;;
     -S    ) KEEPS=1;;
     -C    ) KEEPC=1;;
