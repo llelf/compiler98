@@ -2,8 +2,14 @@ include Makefile.inc
 
 THISLIB	= DErrNo
 SEARCH	=
-EXTRA_H_FLAGS	=
 EXTRA_C_FLAGS	=
+ifeq "${BUILDWITH}" "ghc"
+EXTRA_H_FLAGS	=	+RTS -K2M -RTS
+endif
+ifeq "${BUILDWITH}" "hbc"
+EXTRA_H_FLAGS	=	+RTS -H16M -RTS
+endif
+
 
 SRCS	=
 SRCS_T	=
