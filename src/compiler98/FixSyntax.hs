@@ -22,7 +22,6 @@ import Id(Id)
 
 
 litFloatInteger :: a {-boxed-} -> Integer -> Lit a
-
 litFloatInteger b v =
   if floatIsDouble
   then LitDouble b (fromInteger v)
@@ -30,7 +29,6 @@ litFloatInteger b v =
 
 
 litFloatRational :: a {-boxed-} -> Ratio Integer -> Lit a
-
 litFloatRational b v =
   if floatIsDouble
   then LitDouble b (fromRational v)
@@ -50,7 +48,6 @@ fixSyntax topdecls state tidFun =
 
 
 fsTopDecls :: Decls Id -> FSMonad [Decl Id]
-
 fsTopDecls (DeclsScc depends) = 
   unitS (concat :: ([[Decl Int]] -> [Decl Int])) =>>> 
 		-- concat must be typed for hbc ?
@@ -58,24 +55,20 @@ fsTopDecls (DeclsScc depends) =
 
 
 fsTopDepend :: DeclsDepend Id -> FSMonad [Decl Id]
-
 fsTopDepend (DeclsNoRec d) = fsDecl d >>>= \ d -> unitS [d]
 fsTopDepend (DeclsRec  ds) = mapS fsDecl ds
 
 
 fsDecls :: Decls Id -> FSMonad (Decls Id)
-
 fsDecls (DeclsScc depends) = unitS DeclsScc =>>> mapS fsDepend depends
 
 
 fsDepend :: DeclsDepend Id -> FSMonad (DeclsDepend Id)
-
 fsDepend (DeclsNoRec d) = unitS DeclsNoRec =>>> fsDecl d
 fsDepend (DeclsRec  ds) = unitS DeclsRec   =>>> mapS fsDecl ds
 
 
 fsDecl :: Decl Id -> FSMonad (Decl Id)
-
 fsDecl d@(DeclPrimitive pos fun arity t) =
   unitS d
 fsDecl d@(DeclForeignImp pos _ _ fun arity cast t _) =
@@ -85,89 +78,95 @@ fsDecl d@(DeclForeignExp pos _ _ fun t) =
 fsDecl (DeclFun pos fun funs) =
   unitS (DeclFun pos fun) =>>> mapS fsFun funs
 fsDecl (DeclPat (Alt pat rhs decls)) =
-  fsExp pat >>>= \ pat ->
+  fsPat pat >>>= \ pat ->
   fsRhs rhs >>>= \ rhs ->
   fsDecls decls >>>= \ decls ->
   unitS (DeclPat (Alt pat rhs decls))  
 
 
 fsFun :: Fun Id -> FSMonad (Fun Id) 
-
 fsFun  (Fun pats rhs decls) =
-  mapS fsExp pats >>>= \ pats ->
+  mapS fsPat pats >>>= \ pats ->
   fsRhs rhs >>>= \ rhs ->
   fsDecls decls >>>= \ decls ->
   unitS (Fun pats rhs decls)
 
 
 fsRhs :: Rhs Id -> FSMonad (Rhs Id)
-
-fsRhs (Unguarded e) = fsExp e >>>= \e -> unitS (Unguarded e)
+fsRhs (Unguarded e) = fsExp False e >>>= \e -> unitS (Unguarded e)
 fsRhs (Guarded gdexps) = 
   mapS fsGdExp gdexps >>>= \gdexps -> unitS (Guarded gdexps)
 
 
 fsGdExp :: (Exp Id,Exp Id) -> FSMonad (Exp Id,Exp Id)
-
 fsGdExp (g,e) =
-  fsExp g >>>= \ g ->
-  fsExp e >>>= \ e ->
+  fsExp False g >>>= \ g ->
+  fsExp False e >>>= \ e ->
   unitS (g,e)
 
 
-fsExp :: Exp Id -> FSMonad (Exp Id)
 
-fsExp (ExpLambda pos pats exp)  =
-  mapS fsExp pats >>>= \ pats ->
-  fsExp exp >>>= \ exp ->
+-- fsPat is exactly like fsExp, except that dictionary selectors with
+-- a statically known dict are not compiled away.  (Need to keep them
+-- for e.g. numeric pattern-matching.)
+fsPat :: Exp Id -> FSMonad (Exp Id)
+fsPat exp = fsExp True exp
+
+-- fsExp takes a boolean argument, indicating whether we are in a pattern
+-- (True) or in an expression (False).
+fsExp :: Bool -> Exp Id -> FSMonad (Exp Id)
+
+fsExp _ (ExpLambda pos pats exp)  =
+  mapS fsPat pats >>>= \ pats ->
+  fsExp False exp >>>= \ exp ->
   unitS (ExpLambda pos pats exp)
 
-fsExp (ExpLet pos decls exp)    =
+fsExp _ (ExpLet pos decls exp)    =
   fsDecls decls >>>= \ decls ->
-  fsExp exp >>>= \ exp ->
+  fsExp False exp >>>= \ exp ->
   unitS (ExpLet pos decls exp)
 
-fsExp (ExpDict exp)    =
-  fsExp exp >>>= \ exp ->
+fsExp k (ExpDict exp)    =
+  fsExp k exp >>>= \ exp ->
   unitS (ExpDict exp)
 
-fsExp (ExpCase pos exp alts) =
-  unitS (ExpCase pos) =>>> fsExp exp =>>> mapS fsAlt alts
+fsExp _ (ExpCase pos exp alts) =
+  unitS (ExpCase pos) =>>> fsExp False exp =>>> mapS fsAlt alts
 
-fsExp (ExpIf pos c e1 e2)       =
-  unitS (ExpIf pos) =>>> fsExp c =>>> fsExp e1 =>>> fsExp e2
+fsExp _ (ExpIf pos c e1 e2)       =
+  unitS (ExpIf pos) =>>> fsExp False c =>>> fsExp False e1 =>>> fsExp False e2
 
-fsExp exp@(ExpApplication _ _) =
-  fsExp' exp
+fsExp k exp@(ExpApplication _ _) =
+  fsExp' k exp
 
 ---
 --- No ExpList anymore
 ---
-fsExp (ExpList  pos es)         = 
-  mapS fsExp es >>>= \ es -> 
+fsExp k (ExpList  pos es)         = 
+  mapS (fsExp k) es >>>= \ es -> 
   fsList >>>= \ (nil,cons) ->
   unitS (foldr (\ h t -> ExpApplication pos [cons,h,t]) nil es)
 
 --- Change con into (con)
-fsExp e@(ExpCon pos ident) = fsExp (ExpApplication pos [e])
+fsExp k e@(ExpCon pos ident) = fsExp k (ExpApplication pos [e])
 
 --- Change Char into Int
---fsExp (ExpLit pos (LitChar b i)) = unitS (ExpLit pos (LitInt b (fromEnum i)))
-fsExp (Exp2   pos      i1 i2) =  fsExp2 pos i1 i2
+--fsExp _ (ExpLit pos (LitChar b i)) = unitS (ExpLit pos (LitInt b (fromEnum i)))
+fsExp _ (Exp2   pos      i1 i2) =  fsExp2 pos i1 i2
 
-fsExp (PatAs pos i pat)        =  unitS (PatAs pos i) =>>> fsExp pat
-fsExp (PatIrrefutable pos pat) = unitS (PatIrrefutable pos) =>>> fsExp pat
-fsExp e                 = unitS e
+fsExp _ (PatAs pos i pat)        =  unitS (PatAs pos i) =>>> fsPat pat
+fsExp _ (PatIrrefutable pos pat) = unitS (PatIrrefutable pos) =>>> fsPat pat
+fsExp _ e                 = unitS e
 
 
 -- Auxiliary for fsExp guaranteed to get ExpApplications only.
-fsExp' (ExpApplication pos (ExpApplication _ xs:ys)) =
-  fsExp' (ExpApplication pos (xs++ys))
+fsExp' k (ExpApplication pos (ExpApplication _ xs:ys)) =
+  fsExp' k (ExpApplication pos (xs++ys))
 
 --- fromInteger {Int Integer Float Double} constant
-fsExp' exp@(ExpApplication pos [v@(ExpVar _ qfromInteger)
-                               ,(ExpDict v2@(Exp2 _ qNum qType))
-                               ,l@(ExpLit pl (LitInteger b i))]) =
+fsExp' k exp@(ExpApplication pos [v@(ExpVar _ qfromInteger)
+                                 ,(ExpDict v2@(Exp2 _ qNum qType))
+                                 ,l@(ExpLit pl (LitInteger b i))]) =
   fsState >>>= \ state ->
     if tidIS state qfromInteger == tfromInteger && tidIS state qNum == tNum 
     then     if tidIS state qType == tInt        then unitS (ExpLit pl (LitInt b (fromInteger i)))
@@ -178,13 +177,13 @@ fsExp' exp@(ExpApplication pos [v@(ExpVar _ qfromInteger)
   	else if tidIS state qType == tDouble     then unitS (ExpLit pl (LitDouble b (fromInteger i)))
   	else if tidIS state qType == tDoubleHash then unitS (ExpLit pl (LitDouble UnBoxed (fromInteger i)))
   	else if tidIS state qType == tRational   then unitS (ExpLit pl (LitRational b (fromInteger i)))
-  	else fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])  -- Match (sel (class.type dicts) args)
-    else fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])
+  	else fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])  -- Match (sel (class.type dicts) args)
+    else fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])
 
 --- fromRational {Float Double Rational} constant
-fsExp' (ExpApplication pos [v@(ExpVar _ qfromRational) 
-                           ,(ExpDict v2@(Exp2 _ qFractional qType)) 
-                           ,l@(ExpLit pl (LitRational b i))]) =
+fsExp' k (ExpApplication pos [v@(ExpVar _ qfromRational) 
+                             ,(ExpDict v2@(Exp2 _ qFractional qType)) 
+                             ,l@(ExpLit pl (LitRational b i))]) =
   fsState >>>= \ state ->
  -- strace (strPos pos++": normal literal Rational expr/pat\n") $
     if tidIS state qfromRational == tfromRational && tidIS state qFractional == tFractional
@@ -193,17 +192,17 @@ fsExp' (ExpApplication pos [v@(ExpVar _ qfromRational)
   	else if tidIS state qType == tDouble     then unitS (ExpLit pl (LitDouble b (fromRational i)))
   	else if tidIS state qType == tDoubleHash then unitS (ExpLit pl (LitDouble UnBoxed (fromRational i)))
   	else if tidIS state qType == tRational   then unitS l
-  	else fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])  -- Match (sel (class.type dicts) args)
-    else fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])
+  	else fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])  -- Match (sel (class.type dicts) args)
+    else fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos [v2]),l])
 
 --- negate {Int Integer Float Double Rational} constant
 
-fsExp' (ExpApplication pos [v@(ExpVar pos3 qnegate) 
-                           ,d@(ExpDict v2@(Exp2 _ qNum qType)) 
-                           ,p]) =
+fsExp' k (ExpApplication pos [v@(ExpVar pos3 qnegate) 
+                             ,d@(ExpDict v2@(Exp2 _ qNum qType)) 
+                             ,p]) =
   fsState >>>= \ state ->
   if tidIS state qnegate == tnegate && tidIS state qNum == tNum  then
-    fsExp p >>>= \ p ->
+    fsExp k p >>>= \ p ->
     case p of
       ExpLit pos (LitInt b i)      -> unitS (ExpLit pos (LitInt b (-i)))
       ExpLit pos (LitInteger b i)  -> unitS (ExpLit pos (LitInteger b (-i)))
@@ -216,50 +215,50 @@ fsExp' (ExpApplication pos [v@(ExpVar pos3 qnegate)
       -- for later, when we lookup the (==) method to match the pattern.
       ExpApplication _ [ExpVar _ _,ExpLit _ _] ->
           unitS (ExpApplication pos [v,d,p])
-      _ -> fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])  -- Will do p once more :-(
+      _ -> fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])  -- Will do p once more :-(
    else
-     fsExp' (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])
+     fsExp' k (ExpApplication pos [v,ExpDict (ExpApplication pos3 [v2]),p])
 
 --
 -- Transforms (sel class.type args) into (sel (class.type) args)
 --
-fsExp' (ExpApplication pos (v@(ExpVar _ _):ExpDict v2@(Exp2 _ _ _):es)) =
-  fsExp' (ExpApplication pos (v:ExpDict (ExpApplication pos [v2]):es)) 
+fsExp' k (ExpApplication pos (v@(ExpVar _ _):ExpDict v2@(Exp2 _ _ _):es)) =
+  fsExp' k (ExpApplication pos (v:ExpDict (ExpApplication pos [v2]):es)) 
   -- Match (sel (class.type dicts) args)
 
 --
 -- Transforms (sel (class.type dicts) args) into ((class.type.sel dicts) args)
 --
-fsExp' (ExpApplication pos (ExpVar sp sel 
-                           :ExpDict (ExpApplication ap (Exp2 _ cls qtyp:args))
-                           :es)) =
+fsExp' k (ExpApplication pos (ExpVar sp sel 
+                             :ExpDict (ExpApplication ap (Exp2 _ cls qtyp:args))
+                             :es)) =
   fsState >>>= \ state ->
   if (isMethod . dropJust . lookupIS state) sel && 
-     (isData . dropJust . lookupIS state) qtyp then
+     (isData . dropJust . lookupIS state) qtyp && not k then
     fsClsTypSel sp cls qtyp sel >>>= \ fun ->
-    mapS fsExp (args++es) >>>= \ args ->
+    mapS (fsExp k) (args++es) >>>= \ args ->
     fsExpAppl pos (fun:args)
   else
     fsExp2 ap cls qtyp >>>= \ fun ->
-    mapS fsExp args >>>= \ args ->
+    mapS (fsExp k) args >>>= \ args ->
     fsExpAppl ap (fun:args) >>>= \ appl ->
-    mapS fsExp es >>>= \ es ->
+    mapS (fsExp k) es >>>= \ es ->
     fsExpAppl pos (ExpVar sp sel : ExpDict appl :es)
 
 {-
 Check if data constructor is from newtype definition.
 If it is, then remove it or replace it by the identity function.
 -} 
-fsExp' (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
+fsExp' k (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
   fsRealData con >>>= \ realdata ->
   if realdata then
-    mapS fsExp xs >>>= \ xs ->
+    mapS (fsExp k) xs >>>= \ xs ->
     fsExpAppl pos (econ:xs)
   else
     if length xs < 1 then
       fsId -- because argument not available, have to replace by identity
     else
-      mapS fsExp xs >>>= \ xs ->
+      mapS (fsExp k) xs >>>= \ xs ->
       fsExpAppl pos xs	
       -- ^ Can be an application if newtype is isomorphic to a function type
       -- ^ No! \[x] -> unitS x should do, but that doesn't matter.
@@ -267,16 +266,15 @@ fsExp' (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
 ---
 --- Nothing to do
 ---
-fsExp' (ExpApplication pos xs) =
-  mapS fsExp xs >>>= \ xs ->
+fsExp' k (ExpApplication pos xs) =
+  mapS (fsExp k) xs >>>= \ xs ->
   fsExpAppl pos xs
 
 
 
 fsAlt :: Alt Id -> FSMonad (Alt Id)
-
 fsAlt (Alt pat rhs decls)  =
-  fsExp pat >>>= \ pat ->
+  fsPat pat >>>= \ pat ->
   fsDecls decls >>>= \ decls ->
   fsRhs rhs >>>= \ rhs ->
   unitS (Alt pat rhs decls)
