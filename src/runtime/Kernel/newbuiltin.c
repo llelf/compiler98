@@ -128,8 +128,8 @@ unsigned FN_Builtin_46primUnpackCString[] = {
 #ifdef TPROF
   0,		/* DAVID/PH */
 #endif
-  bytes2word(NEEDHEAP_I32,NEEDSTACK_I16,PUSH_ARG_I1,STRING)
-, bytes2word(RETURN,ENDCODE,0,0)	/* DAVID */
+  bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,STRING,RETURN)
+, bytes2word(ENDCODE,0,0,0)	/* DAVID */
 
 , 0
 , useLabel(ST_Builtin_46primUnpackCString)

@@ -63,7 +63,6 @@ DL(FN_Builtin_46primUnpackCString)
    DW 0		/* DAVID/PH */
 #endif
  DB NEEDHEAP_I32
- DB NEEDSTACK_I16
  DB PUSH_ARG_I1
  DB STRING
  DB RETURN
