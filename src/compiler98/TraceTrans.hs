@@ -1051,7 +1051,7 @@ nameTransField :: TraceId -> TokenId
 nameTransField = prefixName 'e' '^'
 
 nameTransVar :: TraceId -> TokenId
-nameTransVar = prefixName 'o' '-'
+nameTransVar = prefixName 'o' '!'
 
 -- internal, local names
 
