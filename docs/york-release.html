@@ -1,8 +1,8 @@
-<html><head><title>Release 1.14 of nhc98</title></head>
+<html><head><title>Release 1.16 of nhc98</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1>Release 1.14 of nhc98</h1></center>
+<center><h1>Release 1.16 of nhc98</h1></center>
 
 <hr>
 
@@ -10,10 +10,9 @@
 
 <dl>
 <dt><em>Because it is easy to install.</em></dt>
-<dd> Some people find <em>ghc</em> and <em>hbc</em> difficult to install
-  on their machine, particularly if their machine is not a unix PC.
-  <em>nhc98</em> is very easy to configure and build, even for new machines
-  which have never seen a Haskell compiler before.</dd>
+<dd><em>nhc98</em> is very easy to configure and build, even for new machines
+  which have never seen a Haskell compiler before, and it copes with both
+  Unix and Windows without difficulty.</dd>
 
 <dt><em>Because you have a small machine.</em></dt>
 <dd>  <em>nhc98</em> is designed for space-efficiency.  Compile the same
@@ -24,7 +23,7 @@
   you can compress your heap data in addition to the normal savings.)
   Expect to pay a speed penalty though - programs produced by
   <em>nhc98</em> run between 2x and 6x slower than with <em>ghc</em>
-  or <em>hbc</em> (although they are still rather faster than
+  or <em>hbc</em> (although they are still up to 15x faster than
   <em>Hugs</em>).</dd>
 
 <dt><em>Because you're a software developer.</em></dt>
@@ -39,7 +38,7 @@
 <dt><em>Because your programs have strange space behaviour.</em></dt>
 <dd>
   <em>nhc98</em> has the most advanced heap profiler in the Haskell
-  world [4], allowing you to observe in very fine detail exactly what is
+  world [2], allowing you to observe in very fine detail exactly what is
   happening to the heap.  Profile types include producer, construction,
   retainer, biography, and lifetime - and any combination thereof.</dd>
 
@@ -48,20 +47,12 @@
   <em>nhc98</em> has <em>two</em> sets of debugging facilities.
   First, Andy Gill's <a href="http://www.haskell.org/hood/">HOOD</a>
   library together with his XML-based debugging browser.
-  Second, York's advanced <em>Hat</em> tracing system based on
-  advanced redex trails [2,3], which gives you much, much more.
-  The Hat system provides three different and complementary browsing
-  tools for exploring the runtime behaviour of your program.
-  <em>hat-observe</em> gives you HOOD-like observations of the
-  behaviour of functions, but with no need to annotate the program
-  being studied.  In <em>hat-trail</em>, browsing proceeds
-  <em>backwards</em> from the error message or suspicious output value,
-  observing and exploring the reduction history of parts of the
-  computation.  By answering the question "What function application caused
-  the evaluation of this expression?" at each stage, it is possible to
-  narrow down program bugs quickly.  Finally, <em>hat-detect</em> is
-  an algorithmic debugger which asks you questions about the program
-  and then automatically pinpoints the source of an error.
+  Second, York's advanced
+  <a href="http://www.haskell.org/hat/"><em>Hat</em></a> tracing system
+  based on augmented redex trails [2,3], which gives you much, much more.
+  The Hat system (distributed separately from nhc98) provides three different
+  and complementary browsing tools for exploring the runtime behaviour
+  of your program.
   </dd>
 
 </dl>
@@ -76,19 +67,7 @@
     [<a href="ftp://ftp.cs.york.ac.uk/pub/malcolm/ismm98.html">FTP site</a>]
 
 <p>
-[2] Tracing Large Functional Computations Using Partial Redex Trails,
-    Jan Sparud and Colin Runciman, Proc 9th IFL, St Andrews,
-    Springer LNCS 1467, Sept 1997.
-    [<a href="ftp://ftp.cs.york.ac.uk/pub/colin/ifl97s.ps.gz">FTP site</a>]
-
-<p>
-[3] Tracing Lazy Functional Computations Using Redex Trails, Jan Sparud
-    and Colin Runciman, Proc 9th PLILP, Southampton, Springer LNCS
-    1292, Sept 1997.
-    [<a href="ftp://ftp.cs.york.ac.uk/pub/colin/plilp97.ps.gz">FTP site</a>]
-
-<p>
-[4] Heap Profiling for Space Efficiency, Colin Runciman and Niklas R&ouml;jemo,
+[2] Heap Profiling for Space Efficiency, Colin Runciman and Niklas R&ouml;jemo,
     2nd Intl School on Advanced Functional Programming, pp.159-183,
     Springer LNCS 1129, Olympia WA, Aug 1996.
     [<a href="ftp://ftp.cs.york.ac.uk/pub/colin/advfp96.ps.gz">FTP site</a>]

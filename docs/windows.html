@@ -8,8 +8,13 @@
 
 <h3>System Requirements</h3>
 <p>
-In order to use <b>nhc98</b> under Windows 95/98/ME or NT/2000/XP, you first
+In order to use <b>nhc98</b> under Windows 95/98/SE/Me/NT/2000/XP, you first
 need to install the Cygwin DLL, the <em>gcc</em> C compiler, and GNU tools.
+
+<p align=center>
+<b>Full information on Cygwin, and downloads, are available from
+<a href="http://www.cygwin.com/">
+<tt>http://www.cygwin.com/</tt></a></b>
 
 <p>
 For recent releases of Cygwin (from <em>1.1.0</em> onwards), you should
@@ -19,61 +24,41 @@ This is an interactive process where you can choose which components
 to collect and install.
 
 <p>
-(The older Cygwin release <em>1.0</em> was available on CD-ROM only,
-and for even older Cygwin versions (<em>b19</em>, <em>b20</em>, and
-<em>b20.1</em>), you needed to download and run the self-extracting
-archive <em>cygwin/full.exe</em>.)
+Alongside the default set of packages that Cygwin installs for you,
+you will also need: <em>gcc</em>, <em>binutils</em>, <em>tar</em>,
+<em>gunzip</em>, and <em>make</em>.
 
 <p>
-Along with <em>gcc</em>, you should also get the <em>bash</em> shell
-and lots of other Unix tools, such as <em>tar</em>, <em>gunzip</em>,
-and <em>make</em>, which are needed to unpack and build the
-<b>nhc98</b> distribution.  (It is safest to simply collect the
-entire set of packages.)
+We tested successfully with Cygwin DLL release <em>1.3.20</em>,
+together with <em>gcc 3.2</em> and <em>make 3.79.1</em>, in March 2003.
 
+<h3>And now...</h3>
 <p>
-Caution: some people report that their anti-virus software interacts
-badly with Cygwin, slowing the entire Windows system to a crawl.
-If you are surprised by the slowness of your system, try disabling
-(or changing the settings in) your anti-virus package.
+Once you have installed <em>gcc</em> and tools, the standard <a
+href="install.html">installation instructions</a> apply.  You have
+the option of installing the binary or source distribution packages.
+(A prior installation of Cygwin is required even for the binary
+distribution.)
 
-<p>
-We last tested with Cygwin release <em>1.1.4</em>, together with
-<em>gcc 2.95.2-4</em> and <em>make 3.79.1</em>.
 
+<br><br>
+<h3>Caveats</h3>
 <p>
-<b>Full information on Cygwin is available from
-<a href="http://sources.redhat.com/cygwin/">
-<tt>http://sources.redhat.com/cygwin/</tt></a></b>
-
-<p>
-In Northern Europe, a good mirror of the Cygwin toolset is
-<a href="ftp://sunsite.org.uk/Mirrors/sourceware.cygnus.com/pub/cygwin/">
-SunSite</a>.)
+<b>Caution:</b> Some people report that their anti-virus software
+interacts badly with Cygwin, slowing the entire Windows system to
+a crawl.  If you are surprised by the slowness of your system, try
+disabling (or changing the settings in) your anti-virus package.
 
 
 <p>
-If you have a recent version of GHC (5.00 upwards) already installed
-on your Windows system, then there is a specific pitfall to beware of.
-<ul>
-<li> GHC no longer relies on the Cygwin environment, but is a fully
-     native Windows compiler.  This is a good thing in general,
-     but it does mean that if you try to use GHC under Cygwin, for
-     instance to build nhc98, you may occasionally bump into problems.
-     These are largely due to a mismatch between the Windows view of
-     the filesystem and the Cygwin view of it.
-<li> The build system for nhc98 uses an absolute pathname as the
-     destination of a compile command.  This is one of the areas
-     where Cygwin and GHC can conflict if you are not careful.  The
-     important thing to remember is that the location in which you
-     unpack the nhc98 distribution must have the same absolute
-     filepath in both Cygwin and Windows.  For instance, a Cygwin
-     mount that maps <tt>C:\tmp</tt> to <tt>/tmp</tt> will work fine,
-     whereas a mount that maps <tt>C:\cygwin\tmp</tt> to <tt>/tmp</tt>
-     will probably not work.
-</ul>
+<b>Notes for GHC users:</b>
+If you recently tried to build nhc98 on a Cygwin system with a version
+of GHC upwards of 5.00, then you might have encountered significant
+problems getting hmake or nhc98 to work.  We believe these problems
+are all now fixed from nhc98 version 1.16 upwards.
 
 <p>
+<b>Notes for older Cygwin releases:</b>
 Some people have reported difficulty getting recent releases of nhc98
 to build with older versions of Cygwin.  The make fails very quickly,
 saying that there is "no rule to make target .../src/runtime/Kernel".
@@ -94,15 +79,6 @@ This could be due to one of several causes.
 
 
 <br><br>
-<h3>And now...</h3>
-<p>
-Once you have installed <em>gcc</em> and tools, the standard <a
-href="install.html">installation instructions</a> apply.  You have
-the option of installing the binary or source distribution packages.
-(A prior installation of Cygwin is required even for the binary
-distribution.)
-
-<br><br>
 <hr>
 <p>
 The latest updates to these pages are available on the WWW from
@@ -110,7 +86,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2002.04.05<br>
+2003.03.07<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

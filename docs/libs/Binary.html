@@ -1,20 +1,20 @@
-<html><head><title>Using the York Binary library</title></head>
+<html><head><title>Using the NHC.Binary library</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1>Using the York Binary library in nhc98</h1></center>
+<center><h1>Using the NHC.Binary library</h1></center>
 
 <hr>
-This document sketches the York Binary library.  (See also the
+This document sketches the York NHC.Binary library.  (See also the
 <a href="BinArray.html">BinArray</a> library for an example of the
 use of Binary to build other abstractions.)  For fuller details,
 see <a href=ftp://ftp.cs.york.ac.uk/pub/malcolm/ismm98.html>
 this paper</a>.
 
 <hr>
-<h3>The York Binary library</h3>
+<h3>The NHC.Binary library</h3>
 <pre>
-    module Binary where
+    module NHC.Binary where
 
     data BinPtr a = ...
     data BinLocation = Memory | File FilePath BinIOMode

@@ -5,12 +5,41 @@
 <center><h1>nhc98 release history</h1></center>
 
 <hr>
+<h3>nhc98 1.16 (2003-03-08) features</h3>
+<ul>
+<li> New:       A large subset of the <em>base</em> package of
+                hierarchical libraries is now included in the build.
+<li> New:       The primitive FFI mechanism has been updated to match
+                the latest official spec, and the full Foreign
+                libraries are also included.
+<li> Performance: The library function List.sortBy now uses a stable
+                O(n log n) mergesort.
+<li> Bugfix:    nhc98 now works correctly in the presence of gcc-3.x.
+<li> Bugfix:    nhc98 once again builds on Cygwin with ghc.
+<li> Bugfix:    Numerous other small fixes, including revisions to the
+                Haskell'98 standard.
+</ul>
+
+
+<hr>
+<h3>nhc98 1.14a (2002-08-13) features</h3>
+<ul>
+<li> The only change between 1.14 and 1.14a is that the version of
+     hmake included in the source package has been updated from 3.05
+     to 3.06.
+</ul>
+
+
+<hr>
 <h3>nhc98 1.14 (2002-06-14) features</h3>
 <ul>
 <li> Major change: The Hat tracing system is now entirely separate from
                 the nhc98 compiler.  Hat can now be used with either ghc
                 or nhc98 - you should download and build the Hat system
                 <em>after</em> building nhc98.
+<li> New:       The compiler now supports a simplified version of ghc's
+                package mechanism.  No documentation yet, but Hat relies
+                on it.
 <li> Performance: Various patches for improved time/space usage of the
                 compiler itself, contributed by Thomas Nordin.
 <li> Bugfix:    Various small fixes for OS environments like OpenBSD,

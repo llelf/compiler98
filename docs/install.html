@@ -18,7 +18,7 @@ install procedure:
 
 <h3>System Requirements</h3>
 <p>
-Users of Windows 95/98/SE/Me/NT/2k/XP, please see these
+Users of Windows 95/98/SE/Me/NT/2k/XP/etc, please see these
 <a href="windows.html">special Windows instructions</a> first.
 
 <p>
@@ -33,8 +33,8 @@ For the binary release, we assume you have a good C compiler (usually
 For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <em>nhc98</em> without another Haskell compiler, you need 8Mb of memory
-(although you could probably manage with less), and about 50Mb of disk
-space (70Mb if you build for profiling as well).  If you
+(although you could probably manage with less), and about 80Mb of disk
+space (100Mb if you build for profiling as well).  If you
 already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
 then building <em>nhc98</em> will require at least 32Mb of memory,
 and 100Mb of free disk space.  If you don't have <em>hbc</em> or
@@ -57,7 +57,7 @@ The current distribution packages can be found at
     <a href="http://www.cs.york.ac.uk/fp/nhc98/download.html">http://www.cs.york.ac.uk/fp/nhc98/download.html</a>
 </pre>
 Using <em>tar</em> and <em>gunzip</em>, unpack your chosen package, and
-<em>cd</em> to the base directory (called nhc98-x.x, where the x's are the
+<em>cd</em> to the base directory (called nhc98-x.xx, where the x's are the
 version number).  Note that all the documentation available on the web
 is also included in all packages, although the web versions will of course
 be more up-to-date.  Your local copy of the release notes is
@@ -105,13 +105,13 @@ build the heap profiling and time profiling versions of the prelude
 and runtime system concurrently if you wish.
 
 <p>
-The current distribution of the compiler will build for any machine with
-32-bit words.  All questions of machine endian-ness are handled
-automatically during configuration.  If you are not using <em>gcc</em>
-as your C compiler, please ensure that your <em>CC</em> environment
-variable is set appropriately at the configuration stage.  (The C
-compiler is used as a portable backend for nhc98, and is always
-required.)  For instance,
+The current distribution of the compiler will build for any machine
+with 32-bit words.  (Sorry, no 64-bit support yet.)  All questions of
+machine endian-ness are handled automatically during configuration.
+If you are not using <em>gcc</em> as your C compiler, please ensure
+that your <em>CC</em> environment variable is set appropriately at
+the configuration stage.  (The C compiler is used as a portable
+backend for nhc98, and is always required.)  For instance,
 <pre>    CC=cc   ./configure --buildwith=...</pre>
 
 <p>
@@ -148,9 +148,9 @@ some extra components.  Here are some sample build times in minutes:
     <th>build<br>compiler</th>
     <th>basic only</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td align=right>5</td><td align=right>20</td>
+    <td>gcc</td><td align=right>9</td><td align=right>21</td>
 </tr><tr>
-    <td>ghc</td><td align=right>21</td><td align=right>58</td>
+    <td>ghc</td><td align=right>31</td><td align=right>58</td>
 </tr><tr>
     <td>hbc</td><td align=right>-</td><td align=right>-</td>
 </tr><tr>
@@ -200,7 +200,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2002.06.12<br>
+This page last modified: 2003.03.07<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

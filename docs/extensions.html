@@ -11,16 +11,19 @@
 Extensions of the Haskell'98 language available in <em>nhc98</em> include:
 
 <ul>
-<li>
-  A <em>Binary</em> data representation library.
-  In summary, this library
-  module provides bit-stream operations and a new Binary class for which
-  the compiler fully supports "deriving" clauses.
-  Fuller details can be found in [1] and in
-  <a href="libs/Binary.html">this documentation</a>.
 
 <li>
-  The new common <a href="ffi.html">primitive FFI</a>.
+  The new common standard <a href="ffi.html">primitive FFI</a>.
+
+<li>
+  Extended module namespaces, of the form Long.Hierarchical.Module.Name.
+
+<li>
+  Local forall quantification on datatypes.
+
+<li>
+  The common standard hierarchical libraries (base package).  Use the
+  compiler option <tt>-package base</tt> to access them.
 
 <li>
   The IOExtras library, containing IORefs, IOArrays, trace,
@@ -30,10 +33,12 @@ Extensions of the Haskell'98 language available in <em>nhc98</em> include:
   Andy Gill's Observe.lhs library, used for HOOD debugging.
 
 <li>
-  Local forall quantification on datatypes.
-
-<li>
-  Extended module namespaces, of the form Long.Hierarchical.Module.Name.
+  A <em>Binary</em> data representation library.
+  In summary, this library
+  module provides bit-stream operations and a new Binary class for which
+  the compiler fully supports "deriving" clauses.
+  Fuller details can be found in [1] and in
+  <a href="libs/Binary.html">this documentation</a>.
 
 </ul>
 
@@ -53,7 +58,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.10.23<br>
+2003.03.07<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
