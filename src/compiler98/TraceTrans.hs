@@ -1178,7 +1178,9 @@ tExp traced cr parent (ExpRecord (ExpCon pos consId) fields) = -- construction
   consUndefined = 
     if consArity == 0 then ExpCon pos (nameTransCon consId)
       else ExpApplication pos . (ExpCon pos (nameTransCon consId) :) .
-             take consArity . repeat $ ExpVar pos tokenUndefined
+             take consArity . repeat $ 
+               ExpApplication pos 
+                 [ExpVar pos tokenUndefined,mkSRExp pos False,parent]
   Just consArity = arity consId
   sr = mkSRExp pos traced
   (fields',fieldsConsts) = mapMerge2 (tField traced parent) fields
