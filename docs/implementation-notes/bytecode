@@ -292,3 +292,75 @@ Incidentally, a truly horrendous tangle of cpp hackery is used to
 switch between the individual bytes of the pair when it comes time
 to interpret the function code pointer.  Look at include/node.h for
 the gory details, which include EXT_HADDRESS and FINFO_CODE.
+
+Now for the bytecodes themselves, here is a basic summary:
+
+    NEEDHEAP i		ensure there is at least n words free heap space
+    NEEDSTACK i		ensure there is at least n words free stack
+    JUMP i j		unconditional jump (16-bit)
+    JUMPFALSE		pop from the stack and jump if false, otherwise continue
+    NOP			do nothing
+    PRIMITIVE p		call a primitive function p (written in C)
+    ZAP_ARG i		overwrite a function argument with a special value
+			  to indicate it is under evaluation
+			  (this creates a black-hole to detect a loop)
+    ZAP_STACK i		overwrite a stack entry with a black-hole
+    PUSH_CADR i		push address of a constant from the constant table
+    PUSH_CVAL i		push value of a constant from the constant table
+    PUSH_INT i		push a literal Int i onto the stack (suitably padded)
+    PUSH_CHAR i		push a literal Char i onto the stack
+    PUSH_ARG i		push argument i of the current function closure (vapptr)
+    PUSH_ZAP_ARG i	push argument i of the current function closure (vapptr)
+			  and blackhole it immediately afterwards
+			  (essentially a PUSH followed by a ZAP)
+    PUSH_HEAP		push the current heap pointer
+    PUSH i		push (copy) the i'th stack entry to the top of the stack
+    POP i		remove i elements from the stack
+    SLIDE i		remove (i-1) elements from just below the current top
+			  of stack, i.e. slide the top element down by i places
+    SELECT i		interpreting the TOS as a heap pointer, replace the TOS
+                          by its i'th argument
+    UNPACK i		interpreting the TOS as a heap pointer, push the first i
+                          arguments, in right-to-left order
+    APPLY i		build an application of the TOS to the next i stack
+			  elements
+
+    SELECTOR_EVAL
+    EVAL
+    RETURN
+    RETURN_EVAL
+
+    HEAP_OFF i
+    HEAP_CADR i
+    HEAP_CVAL i
+    HEAP_INT i
+    HEAP_CHAR i
+    HEAP_ARG i
+    HEAP i
+
+    ORD			convert TOS from enumeration constructor to int
+    CHR			convert TOS from int to enumeration constructor
+    STRING		interpret TOS as a C string pointer, and convert it
+			   to a Haskell cons-char cell (lazily)
+    HGETS		read a string from Handle on top of stack
+    HGETC		read a char from Handle on top of stack
+    HPUTC		write a char to given Handle
+    EXIT		abnormal termination
+
+    TABLESWITCH i
+
+is followed by an aligned table of 16-bit relative jumps.  The
+constructor from the value on the top of stack is used to index into
+the table, which is of size i.  For instance, to distinguish Nothing
+and (Just a), you might have TABLESWITCH 2 (04) (08), and if the TOS
+value is a Nothing, you jump 4 forward, but for a Just constructor,
+jump 8 forward.
+
+    LOOKUPSWITCH i
+
+is similar to TABLESWITCH, except that the TOS is interpreted as a
+16-bit Int, and each jump address is paired with a 16-bit Int key.
+The argument i says how big the table is, and the mutator searches
+linearly through the table comparing with keys until a match is found,
+then it selects that jump.
+
