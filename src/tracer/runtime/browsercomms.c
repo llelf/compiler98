@@ -1145,6 +1145,7 @@ startDbg(NodePtr nodeptr, int exitok)
     if (traceQuit) {
 	fprintf(stderr, "%d reductions (%d TT, %d TS, %d ST, %d SS)\n", 
 		reductions, redTT, redTS, redST, redSS);
+#if 0
     } else { 
 	paths[0] = getcwd(NULL, 160);
 	paths[1] = getenv("TRACE_SOURCEPATH");
@@ -1182,6 +1183,7 @@ startDbg(NodePtr nodeptr, int exitok)
 	/*IND_REMOVE(nodeptr);*/
 	loop(sock, nodeptr);
 	fclose(sock);
+#endif
     }
 }
 
