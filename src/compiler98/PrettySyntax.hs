@@ -709,7 +709,7 @@ ppExpPrec info withPar (ExpType pos e cxs t) =
 ppExpPrec info withPar (ExpRecord exp fields) =
   parenExp info noPos withPar $
     ppExpPrec info True exp <> dSpace <> 
-    (braces . sep fSemi . map (ppField info) $ fields)
+    (braces . sep fComma . map (ppField info) $ fields)
 ppExpPrec info withPar (ExpApplication pos (ExpCon _ id : args)) 
   | isJust tuple && n == length args =
     ppPos info pos <> 

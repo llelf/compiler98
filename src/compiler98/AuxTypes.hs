@@ -14,7 +14,7 @@ data AuxiliaryInfo = Has
 	, letBound :: Bool
 	}
 	deriving (Show,Read)
-data Fixity = L | R | Pre String | Def | None deriving (Show,Read)
+data Fixity = L | R | Pre String | Def | None deriving (Eq,Show,Read)
 emptyAux = Has { args=(-1), fixity=Def, priority=9, letBound=True }
 patternAux = Has { args=(-1), fixity=Def, priority=9, letBound=False }
 

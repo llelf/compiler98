@@ -40,6 +40,8 @@ instance Show TokenId where
 mkUnqualifiedTokenId :: String -> TokenId
 mkUnqualifiedTokenId = visible . reverse
 
+mkQualifiedTokenId :: String -> String -> TokenId
+mkQualifiedTokenId mod name = qualify (reverse mod) (reverse name)
 
 isTidOp :: TokenId -> Bool
 isTidOp (TupleId s) = False

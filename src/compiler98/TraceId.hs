@@ -1,5 +1,6 @@
 module TraceId
   ( TraceId		-- abstract type
+  , Fixity(L,R,Pre,Def,None)
 			-- constructors:
   , mkLambdaBound      	-- :: TokenId -> TraceId
   , plus		-- :: TokenId -> AuxiliaryInfo -> TraceId
@@ -12,15 +13,28 @@ module TraceId
   , arity		-- :: TraceId -> Maybe Int
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
+  , tFixity             -- :: TraceId -> Fixity
+  , tPriority           -- :: TraceId -> Int {0-9}
   , getUnqualified      -- :: TraceId -> String
   , hasInfo             -- :: TraceId -> Bool
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
-  , tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus
-  , tTokenTrue,tTokenFalse -- :: TraceId
+  , tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenGreater,tTokenMinus
+  , tTokenTrue,tTokenFalse,tTokenEQ,tTokenCompare
+  ,tTokenLocalFromEnum,tTokenInt,tTokenMinBound,tTokenMaxBound
+  ,tTokenFromEnum,tTokenToEnum,tTokenEnumFrom,tTokenEnumFromThen
+  ,tTokenEnumFromTo,tTokenEnumFromThenTo,tTokenError
+  ,tTokenCompose,tTokenShowsPrec,tTokenShowParen,tTokenShowChar
+  ,tTokenShowString,tTokenReadsPrec,tTokenReadParen,tTokenYield
+  ,tTokenAlt,tTokenThenAp,tTokenThenLex -- :: TraceId
   ) where
 
-import TokenId (TokenId,extractV,dropM,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
-               ,t_andand,t_equalequal,t_greaterequal,tminus,tTrue,tFalse)
+import TokenId 
+  (TokenId,mkQualifiedTokenId,extractV,dropM,t_Colon,t_List,t_gtgt,t_gtgteq
+  ,tfail,t_andand,t_equalequal,t_greater,t_greaterequal,tminus,tTrue
+  ,tFalse,tEQ,tcompare,visImport,tInt,tminBound,tmaxBound
+  ,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,tenumFromTo
+  ,tenumFromThenTo,t_error,t_dot,tshowsPrec,tshowParen,tshowChar
+  ,tshowString,treadsPrec,treadParen)
 import AuxTypes (AuxiliaryInfo(..),Fixity(..),emptyAux)
 import Maybe (isJust)
 import PackedString (unpackPS)
@@ -70,6 +84,14 @@ isLambdaBound (TI _ Nothing) =
   error "TraceId.isLambdaBound: no aux information"
 isLambdaBound (TI _ (Just aux)) = not (letBound aux)
 
+tFixity :: TraceId -> Fixity
+tFixity (TI _ Nothing) = Def
+tFixity (TI _ (Just info)) = fixity info
+
+tPriority :: TraceId -> Int {- 0-9 -}
+tPriority (TI _ Nothing) = 9
+tPriority (TI _ (Just info)) = priority info
+
 fixPriority :: TraceId -> Int
 fixPriority (TI _ Nothing) = 3	-- default fixity and priority
 fixPriority (TI _ (Just info)) = encode (fixity info) (priority info)
@@ -109,6 +131,9 @@ tTokenAndAnd = t_andand `plus` emptyAux{args=2}
 tTokenEqualEqual :: TraceId
 tTokenEqualEqual = t_equalequal `plus` emptyAux
 
+tTokenGreater :: TraceId
+tTokenGreater = t_greater `plus` emptyAux
+
 tTokenGreaterEqual :: TraceId
 tTokenGreaterEqual = t_greaterequal `plus` emptyAux
 
@@ -120,3 +145,77 @@ tTokenTrue = tTrue `plus` emptyAux{args=0}
 
 tTokenFalse :: TraceId
 tTokenFalse = tFalse `plus` emptyAux{args=0}
+
+tTokenEQ :: TraceId
+tTokenEQ = tEQ `plus` emptyAux{args=0}
+
+tTokenCompare :: TraceId
+tTokenCompare = tcompare `plus` emptyAux
+
+tTokenLocalFromEnum :: TraceId
+tTokenLocalFromEnum = visImport "localFromEnum" `plus` emptyAux{args=1}
+
+tTokenInt :: TraceId
+tTokenInt = tInt `plus` emptyAux
+
+tTokenMinBound :: TraceId
+tTokenMinBound = tminBound `plus` emptyAux
+
+tTokenMaxBound :: TraceId
+tTokenMaxBound = tmaxBound `plus` emptyAux
+
+tTokenFromEnum :: TraceId
+tTokenFromEnum = tfromEnum `plus` emptyAux
+
+tTokenToEnum :: TraceId
+tTokenToEnum = ttoEnum `plus` emptyAux
+
+tTokenEnumFrom :: TraceId
+tTokenEnumFrom = tenumFrom `plus` emptyAux
+
+tTokenEnumFromTo :: TraceId
+tTokenEnumFromTo = tenumFromTo `plus` emptyAux
+
+tTokenEnumFromThen :: TraceId
+tTokenEnumFromThen = tenumFromThen `plus` emptyAux
+
+tTokenEnumFromThenTo :: TraceId
+tTokenEnumFromThenTo = tenumFromThenTo `plus` emptyAux
+
+tTokenError :: TraceId
+tTokenError = t_error `plus` emptyAux{args=1}
+
+tTokenCompose :: TraceId
+tTokenCompose = t_dot `plus` emptyAux{args=2}
+
+tTokenShowsPrec :: TraceId
+tTokenShowsPrec = tshowsPrec `plus` emptyAux
+
+tTokenShowParen :: TraceId
+tTokenShowParen = tshowParen `plus` emptyAux{args=2}
+
+tTokenShowString :: TraceId
+tTokenShowString = tshowString `plus` emptyAux{args=0}
+
+tTokenShowChar :: TraceId
+tTokenShowChar = tshowChar `plus` emptyAux{args=0}
+
+tTokenReadsPrec :: TraceId
+tTokenReadsPrec = treadsPrec `plus` emptyAux
+
+tTokenReadParen :: TraceId
+tTokenReadParen = treadParen `plus` emptyAux{args=2}
+
+tTokenYield :: TraceId
+tTokenYield = mkQualifiedTokenId "PreludeBasic" "yield" `plus` emptyAux{args=2}
+
+tTokenAlt :: TraceId
+tTokenAlt = mkQualifiedTokenId "PreludeBasic" "alt" `plus` emptyAux{args=3}
+
+tTokenThenLex :: TraceId
+tTokenThenLex = mkQualifiedTokenId "PreludeBasic" "thenLex" `plus` emptyAux{args=2}
+
+tTokenThenAp :: TraceId
+tTokenThenAp = mkQualifiedTokenId "PreludeBasic" "thenAp" `plus` emptyAux{args=0}
+
+

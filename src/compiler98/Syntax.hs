@@ -5,6 +5,7 @@ import PackedString(PackedString)
 import TokenId(TokenId)
 import Id(Id)
 import Ratio
+import Maybe(isNothing,fromJust)
 
 {-
 Note that that some syntactic constructs contain the syntactic construct 
@@ -213,6 +214,14 @@ getConstrId (ConstrCtx _ _ _ id _) = id
 getConstrArgumentList :: Constr id -> [(Maybe [(Pos,id)],Type id)]
 getConstrArgumentList (Constr _ _ xs) = xs
 getConstrArgumentList (ConstrCtx _ _ _ _ xs) = xs
+
+getConstrLabels :: Constr id -> [(Pos,id)]
+getConstrLabels constr =
+  if null args || (isNothing . fst . head) args 
+    then []
+    else concatMap (fromJust . fst) args
+  where
+  args = getConstrArgumentList constr
 
 getConstrArgumentTypes :: Constr id -> [Type id]
 getConstrArgumentTypes constr = 
