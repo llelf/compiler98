@@ -679,7 +679,7 @@ ppExpPrec :: PPInfo a -> Bool -> Exp a -> Doc
 
 ppExpPrec info withPar (ExpLambda pos pats e) =
   parenExp info pos withPar $
-    text "\\ " <> sep fSpace (map (ppExpPrec info False) pats) <>
+    text "\\ " <> sep fSpace (map (ppLambdaPat info) pats) <>
     text " ->" <> dSpace <> ppExpPrec info False e
 ppExpPrec info withPar (ExpDo pos stmts) =
   parenExp info pos withPar $
@@ -776,6 +776,11 @@ ppExpPrec info _ (PatIrrefutable pos pat) =
 ppExpPrec info withPar (PatNplusK pos n n' k _ _) =
   parenExp info pos withPar $
     ppIdAsVar info n <> fSpace <> text "+" <> fSpace <> ppExpPrec info True k 
+
+
+ppLambdaPat :: PPInfo a -> Exp a -> Doc
+ppLambdaPat info pat@(ExpApplication _ _) = ppExpPrec info True pat
+ppLambdaPat info pat                      = ppExpPrec info False pat
 
 
 ppField :: PPInfo a -> Field a -> Doc
