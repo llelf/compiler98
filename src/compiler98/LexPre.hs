@@ -89,6 +89,10 @@ iPreLex u file r c ('#':xs) | c == 1 =
        case span ('\n' /=) xs of
          (line,xs) ->
             case words line of
+              ("line":line:file:_) | all isDigit line ->
+                case lexInteger 10 0 line of
+                  (_,r,_) ->
+                      iPreLex u (packString file) (fromInteger r) 1 (tail xs)
               (line:file:_) | all isDigit line ->
                 case lexInteger 10 0 line of
                   (_,r,_) ->
