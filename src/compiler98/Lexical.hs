@@ -1,3 +1,7 @@
+{-
+Lexical analysis of a file.
+-}
+
 module Lexical(lexical,lexicalCont,Lex
                 ,LexState,PosToken,PosTokenPre,Pos) where
 
@@ -8,14 +12,18 @@ import SysDeps(PackedString,packString,unpackPS)
 import TokenId
 
 type PosToken = (Pos,Lex, LexState, [PosTokenPre])
-type LexState = [Int]
+type LexState = [Int]  -- stack of indentations of {} blocks
 
 -- 0 : no active indentation (explicit layout)
 
 lexical :: Bool -> [Char] -> [Char] -> [PosToken]
+               -- filename  file content
+-- lexPre basically does the lexing, but afterwards handles
+-- indentation for the layout rule
 lexical u file l = iLex [0] 0 (beginning (lexPre u file' l))
   where
     file' = packString file
+    -- handle pragmas and start and missing "module" header
     beginning toks =
        case toks of
            lp@((f,r,c,L_module):_)    ->  lp
@@ -40,6 +48,7 @@ lexicalCont (p,t, []  ,r) =
 
 ---  local
 
+iLex :: LexState -> Int -> [PosTokenPre] -> [PosToken]
 iLex s i [] = []
 iLex s i ((f,r,c,t):pt) = 
   seq p $

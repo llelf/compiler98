@@ -9,6 +9,7 @@ import SysDeps(PackedString,packString,isAlphaNum)
 import TokenId(t_List,t_Arrow,t_Tuple)
 
 type PosTokenPre = (PackedString,Int,Int,Lex)
+                -- filename, line, column, lexem
 
 lexPre :: Bool -> PackedString -> String -> [PosTokenPre]
 lexPre u file l = iPreLex u file 1 1 l
@@ -16,6 +17,7 @@ lexPre u file l = iPreLex u file 1 1 l
 ------- local
 
 iPreLex :: Bool -> PackedString -> Int -> Int -> String -> [PosTokenPre]
+                -- filename       line   column   input
 iPreLex u file r c []              = [(file,r,0,L_EOF)]
 iPreLex u file r c ('\n':xs)       = iPreLex u file (r+1) 1 xs
 iPreLex u file r c ('\^M':'\n':xs) = iPreLex u file (r+1) 1 xs	-- DOS line-end
