@@ -6,10 +6,10 @@ import FFI
 
 #if !defined(TRACING)
 
-foreign import hSetPosnC :: Handle -> HandlePosn -> IO Int
+foreign import hSetPosnC :: Handle -> ForeignObj -> IO Int
 
-hSetPosn              :: Handle -> HandlePosn -> IO () 
-hSetPosn h p = do
+hSetPosn              :: HandlePosn -> IO () 
+hSetPosn (HandlePosn h p) = do
     i <- hSetPosnC h p
     if i/=0 then do
         errno <- getErrNo
@@ -21,12 +21,12 @@ hSetPosn h p = do
 
 foreign import hSetPosnC :: ForeignObj -> ForeignObj -> IO Int
 
-hSetPosn              :: Handle -> HandlePosn -> IO () 
-hSetPosn (Handle h) (HandlePosn p) = do
-    i <- hSetPosnC h p
+hSetPosn              :: HandlePosn -> IO () 
+hSetPosn (HandlePosn h@(Handle hfo) p) = do
+    i <- hSetPosnC hfo p
     if i/=0 then do
         errno <- getErrNo
-        throwIOError "hSetPosn" Nothing (Just (Handle h)) errno
+        throwIOError "hSetPosn" Nothing (Just h) errno
       else
         return ()
 

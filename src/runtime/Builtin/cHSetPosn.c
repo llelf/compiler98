@@ -52,7 +52,7 @@ C_HEADER(cHSetPosn)
 #endif
 
 /* foreign import hSetPosnC :: Handle -> HandlePosn -> IO Int */
-NodePtr hSetPosnC (FileDesc *f, fpos_t *p)
+int hSetPosnC (FileDesc *f, fpos_t *p)
 {
   return fsetpos(f->fp,p);
 }

@@ -15,19 +15,19 @@ hGetPosn h = do
         throwIOError "hGetPosn" Nothing (Just h) errno
       else do
         f <- makeForeignObj a (free a)
-        return (HandlePosn f)
+        return (HandlePosn h f)
 
 #else
 foreign import hGetPosnC :: ForeignObj -> IO Addr
 
 hGetPosn              :: Handle -> IO HandlePosn
-hGetPosn (Handle h) = do
-    a <- hGetPosnC h
+hGetPosn h@(Handle hfo) = do
+    a <- hGetPosnC hfo
     if a==nullAddr then do
         errno <- getErrNo
-        throwIOError "hGetPosn" Nothing (Just (Handle h)) errno
+        throwIOError "hGetPosn" Nothing (Just h) errno
       else do
         f <- makeForeignObj a (free a)
-        return (HandlePosn f)
+        return (HandlePosn h f)
 
 #endif
