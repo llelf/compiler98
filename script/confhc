@@ -89,7 +89,7 @@ trydirs () {
         then DIR=${dir}
              EXT=${ext}
              METHOD=${m}
-             GHCVER=${ver}	# GHC only
+             #GHCVER=${ver}	# GHC only	-- no longer required.
              #echo "found it"
         fi
       done
@@ -125,7 +125,7 @@ else
 fi
   
   
-# Now look for GHC.  Determining the version number is a bit trickier here.
+# Now look for GHC.  Determining the version number here is due to Simon Marlow.
 DIR=
 EXT=
 METHOD=
@@ -215,7 +215,7 @@ cat script/hmakeconfig.inst |\
   then cat
   else sed -e "s|^lmldir=$|lmldir=${HBCDIR}/`methodtext ${HBCEXT} ${HBCMETHOD}`|" |\
        sed -e "s|^hbcknown=no$|hbcknown=yes|" |\
-       ( case HBCVERSION in
+       ( case $HBCVERSION in
            5)  sed -e "s|^HBC98=$|HBC98=yes|" ;;
            6)  sed -e "s|^HBC98=$|HBC98=yes|" ;;
            *)  sed -e "s|^HBC98=$|HBC98=no|" ;;

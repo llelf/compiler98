@@ -58,6 +58,7 @@ then
   HBCOPTS="-1.3"
 else
   # hbc, set up for Haskell 98  (some guessing here!)
+  echo "WARNING: hmake built with hbc-0.9999.5b gets dependencies wrong."
   HBCCPP=${HASKELL98}
   HBCOPTS=
 fi
