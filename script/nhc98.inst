@@ -459,7 +459,8 @@ case $COMPFILES in
     if test $HSRC -ne 0
     then
       # Grab any per-file options here, just before compiling.
-      processArgs `checkPragmas OPTIONS_COMPILE $POSTGRFILE`
+      processArgs `checkPragmas OPTIONS_COMPILE $POSTGRFILE` \
+                  `checkPragmas OPTIONS_NHC98 $POSTGRFILE`
 
       if test $PRECPP -ne 0
       then
