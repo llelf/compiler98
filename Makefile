@@ -130,7 +130,8 @@ HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
 	  src/hat/lib/*.hs      src/hat/lib/*.hx \
 	  src/hat/lib/hat-package.conf
 HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] \
-	  src/hat/tools/*.hs src/hat/tools/*.gc
+	  src/hat/tools/*.hs 
+# src/hat/tools/*.gc
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
