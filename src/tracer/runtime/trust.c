@@ -17,6 +17,10 @@ DisplayName(char *s, NodePtr nm)
 #define displayString(s) 
 #endif
 
+/* This is the real guts of the trusting algorithm.  It follows the
+ * head of the trace structure back up to the nearest Nm.
+ * (I.e. in an application node, it follows only the function part.)
+ */
 int
 trustFun(NodePtr t) 
 {
@@ -35,7 +39,6 @@ trustFun(NodePtr t)
 	   IND_REMOVE(t);
 	   t = GET_POINTER_ARG1(t, 1);
 	   displayString("TagAp\n");
-	   /*return FALSE;*/ /*  Wrong!!!!!!!! */
 	   break;
        case TagNm:
 	   displayString("TagNm\n");
@@ -118,6 +121,10 @@ trustFun(NodePtr t)
    }
 }
 
+#if 0
+/* This function has been commented out of PreludeDebug.hs for a long time,
+ * so i guess it is obsolete.  MW, 2001-02-15.
+ */
 C_HEADER(trustedName)
 {
 	NodePtr t = C_GETARG1(1);
@@ -139,7 +146,12 @@ C_HEADER(trustedName)
 		break;
 	}
 }
+#endif
 
+#if 0
+/* This function has been commented out of PreludeDebug.hs for a long time,
+ * so i guess it is obsolete.  MW, 2001-02-15.
+ */
 C_HEADER(trustedFun)
 {
     NodePtr t = C_GETARG1(1);
@@ -147,7 +159,12 @@ C_HEADER(trustedFun)
     dump(stderr, 5, t);
     C_RETURN(trustFun(C_GETARG1(1)) ? mkTrue() : mkFalse());
 }
+#endif
 
+
+/* 'trusted' takes two args, the context trace and the fn trace,
+ * and returns True only if both traces are trusted.
+ */
 C_HEADER(trusted)
 {
     int trust1, trust2;
@@ -190,6 +207,9 @@ cTrusted(NodePtr t, NodePtr tf)
     return trustFun(tf) && trustFun(t);
 }
 
+/* 'trust' takes only one arg, and returns True if that trace is
+ * indeed trusted.
+ */
 C_HEADER(trust)
 {
   NodePtr np = C_GETARG1(1);
