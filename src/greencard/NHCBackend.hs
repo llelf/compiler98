@@ -68,7 +68,7 @@ haskellBit dbg ((name, typ), calls, code, fails, result) =
       (eqns,argPats) = fst $ initNS (hargpats argDISs) (nameSupply "tmp")
       argsCall  = fst $ initNS (mapM hargcall argDISs) (nameSupply "arg")
       rtnType   = fst $ initNS (hrtntype rtnDIS) (nameSupply "r")
-      rtnCons   = fst $ initNS (hrtncons rtnDIS) (nameSupply "res")
+      (bind,rtnCons) = fst $ initNS (hrtncon rtnDIS) (nameSupply "res")
       rtnPat    = fst $ initNS (hrtnpat rtnDIS)  (nameSupply "res")
       emit c x  = if c then trace x else id
   in
@@ -84,20 +84,28 @@ haskellBit dbg ((name, typ), calls, code, fails, result) =
     fnName <+> hsep argPats <+> equals    $$
     nest 2 (
       if isPureType typ then
-          text "let" $$
-          nest 4 (vsep eqns $$
-                  rtnPat <+> equals <+> cfn fnName <+> hsep argsCall) $$
-          text "in"  <+> rtnCons
+      --  text "let" $$
+      --  nest 4 (vsep eqns $$
+      --          rtnPat <+> equals <+> cfn fnName <+> hsep argsCall) $$
+      --  text "in"  <+> rtnCons
+          vsep (map (<+> text "in") eqns) $$
+          text "let" <+> rtnPat <+> equals <+>
+                         cfn fnName <+> hsep argsCall <+> text "in" $$
+          rtnCons
       else
-          ( if null eqns then text "do"
-            else text "let" $$
-                 nest 4 (vsep eqns) $$
-                 text "in do" ) <+>
-          if clean rtnDIS then
-              cfn fnName <+> hsep argsCall
-          else
-              rtnPat <+> text "<-" <+> cfn fnName <+> hsep argsCall $$
-              text "return" <+> rtnCons
+       -- ( if null eqns then text "do"
+       --   else text "let" $$
+       --        nest 4 (vsep eqns) $$
+       --        text "in do" ) <+>
+          text "do" <+>
+          nest 4
+            ( vsep eqns $$
+              if clean rtnDIS then
+                cfn fnName <+> hsep argsCall
+              else
+                rtnPat <+> text "<-" <+> cfn fnName <+> hsep argsCall $$
+                vsep bind $$
+                text "return" <+> rtnCons)
     ) $$
     text "\n"
 
@@ -125,7 +133,7 @@ cBit ((name, typ), calls, code, fails, result) =
 hargtypes ::  DIS  -> NSM  [Doc]
 hrtntype  ::  DIS  -> NSM   Doc
 hargpats  :: [DIS] -> NSM ([Doc],[Doc])
-hrtncons  ::  DIS  -> NSM   Doc
+hrtncon   ::  DIS  -> NSM ([Doc],Doc)
 hargcall  ::  DIS  -> NSM   Doc
 hrtnpat   ::  DIS  -> NSM   Doc
 
@@ -142,7 +150,7 @@ hargtypes (Declare cty d)          = return $ []
 hargtypes (Exp e)                  = return $ []
 hargtypes (Record n ns)            = return $ []
 hargtypes (Tuple)                  = return $ [text "()"]
-hargtypes (UserDIS f t)            = return $ []
+hargtypes (UserDIS _ f t)          = return $ []
 hargtypes (Var v)                  = return $ []
 --
 hrtntype (Apply (BaseDIS (Foreign _)) ds)   = return $ text "ForeignObj"
@@ -158,7 +166,7 @@ hrtntype (Declare cty d)           = return $ empty
 hrtntype (Exp e)                   = return $ empty
 hrtntype (Record n ns)             = return $ empty
 hrtntype (Tuple)                   = return $ text "()"
-hrtntype (UserDIS f t)             = return $ empty
+hrtntype (UserDIS _ f t)           = return $ empty
 hrtntype (Var v)                   = return $ empty
 --
 {-
@@ -183,9 +191,15 @@ hrtntype (Var v)                   = return $ empty
 hargpats ds = mapM hargpat ds >>= \xs->
               let (eqnss,pats) = unzip xs in
               return (concat eqnss, pats)
-hargpat (Apply (UserDIS f t) ds)   = getNewName  >>= \n->
+hargpat (Apply (UserDIS True f t) ds) = getNewName  >>= \n->
                                      hargpats ds >>= \(eqns,pats)->
-                                     return ((hsep pats <+> equals <+>
+                                     return ((text "let" <+>
+                                              hsep pats <+> equals <+>
+                                              text f <+> text n): eqns,
+                                             text n)
+hargpat (Apply (UserDIS False f t) ds) = getNewName  >>= \n->
+                                     hargpats ds >>= \(eqns,pats)->
+                                     return ((hsep pats <+> text "<-" <+>
                                               text f <+> text n): eqns,
                                              text n)
 hargpat (Apply Tuple ds)           = hargpats ds >>= \(eqns,pats)->
@@ -204,32 +218,41 @@ hargpat (Declare cty d)            = hargpat d
 hargpat (Exp e)                    = getNewName >>= \n-> return ([],text n)
 hargpat (Record n ns)              = return $ ([],empty)
 hargpat (Tuple)                    = return $ ([],text "()")
-hargpat (UserDIS f t)              = return $ ([],empty)
+hargpat (UserDIS _ f t)            = return $ ([],empty)
 hargpat (Var v)                    = return $ ([],text v)
 --
-hrtncons (Apply Tuple ds)          = mapM hrtncons ds >>=
-                                     return . parens .  commaList
-hrtncons (Apply (Constructor c) ds)= mapM hrtncons ds >>= \cs->
-                                     return $ parens (text c <+> hsep cs)
-hrtncons (Apply (Record n ns) ds)  = mapM hrtncons ds >>= \cs->
-                                     return $ parens (text n <+> feqList ns cs)
-hrtncons (Apply (UserDIS f t) ds)  = mapM hrtncons ds >>= \cs->
-                                     return $ parens (text t <+> hsep cs)
-hrtncons (Apply d ds)              = mapM hrtncons ds >>= return . hsep
-hrtncons (BaseDIS b)               = return $ empty
-hrtncons (Constructor c)           = return $ text c
-hrtncons (Declare cty d)           = hrtncons d
-hrtncons (Exp e)                   = getNewName >>= return . text
-hrtncons (Record n ns)             = return $ empty
-hrtncons (Tuple)                   = getNewName >>= return . text
+hrtncons ds = mapM hrtncon ds >>= \xs->
+              let (eqnss,cs) = unzip xs in
+              return (concat eqnss, cs)
+hrtncon (Apply Tuple ds)          = hrtncons ds >>= \(eqns,cs)->
+                                    return $ (eqns, parens (commaList cs))
+hrtncon (Apply (Constructor c) ds)= hrtncons ds >>= \(eqns,cs)->
+                                    return $ (eqns, parens (text c <+> hsep cs))
+hrtncon (Apply (Record n ns) ds)  = hrtncons ds >>= \(eqns,cs)->
+                                    return $ (eqns, parens (text n <+> feqList ns cs))
+hrtncon (Apply (UserDIS True f t) ds)= hrtncons ds >>= \(eqns,cs)->
+                                    return $ (eqns, parens (text t <+> hsep cs))
+hrtncon (Apply (UserDIS False f t) ds)= getNewName >>= \n->
+                                    hrtncons ds >>= \(eqns,cs)->
+                                    return $ ((text n <+> text "<-" <+>
+                                               text t <+> hsep cs):eqns
+                                             , text n)
+hrtncon (Apply d ds)              = hrtncons ds >>= \(eqns,cs)->
+                                    return $ (eqns, hsep cs)
+hrtncon (BaseDIS b)               = return $ ([], empty)
+hrtncon (Constructor c)           = return $ ([], text c)
+hrtncon (Declare cty d)           = hrtncon d
+hrtncon (Exp e)                   = getNewName >>= \n-> return ([], text n)
+hrtncon (Record n ns)             = return $ ([], empty)
+hrtncon (Tuple)                   = getNewName >>= \n-> return ([], text n)
                                      -- return $ text "()"
-hrtncons (UserDIS f t)             = return $ empty
-hrtncons (Var v)                   = return $ text v
+hrtncon (UserDIS _ f t)           = return $ ([], empty)
+hrtncon (Var v)                   = return $ ([], text v)
 --
 {-hargcall (Apply (Declare cty (Var v)) ds) = text v-}
 --hargcall (Apply (UserDIS f t) ds)  = mapM hargcall ds >>= \as->
 --                                     return $ parens (text f <+> hsep as)
-hargcall (Apply (BaseDIS StablePtr) [d]) = hargcall d >>= return . parens . (text "StablePtr" <+>)
+--hargcall (Apply (BaseDIS StablePtr) [d]) = hargcall d >>= return . parens . (text "StablePtr" <+>)
 hargcall (Apply d ds)              = mapM hargcall ds >>= return . hsep
 hargcall (BaseDIS b)               = return $ empty
 hargcall (Constructor c)           = return $ empty
@@ -237,10 +260,10 @@ hargcall (Declare cty d)           = hargcall d
 hargcall (Exp e)                   = getNewName >>= return . text
 hargcall (Record n ns)             = mapM (hargcall . Var) ns >>= return . hsep
 hargcall (Tuple)                   = return $ text "()"
-hargcall (UserDIS f t)             = return $ empty
+hargcall (UserDIS _ f t)           = return $ empty
 hargcall (Var v)                   = return $ text v
 --
-hrtnpat (Apply (BaseDIS StablePtr) [r]) = hrtnpat r >>= return . parens . (text "StablePtr" <+>)
+--hrtnpat (Apply (BaseDIS StablePtr) [r]) = hrtnpat r >>= return . parens . (text "StablePtr" <+>)
 hrtnpat (Apply d [r])              = hrtnpat r
 hrtnpat (Apply d ds)               = mapM hrtnpat ds >>=
                                      return . parens . commaList
@@ -252,7 +275,7 @@ hrtnpat (Record n ns)              = mapM (hrtnpat . Var) ns >>=
                                      return . parens . commaList
 hrtnpat (Tuple)                    = getNewName >>= return . text
                                      -- return $ text "()"
-hrtnpat (UserDIS f t)              = return $ empty
+hrtnpat (UserDIS _ f t)            = return $ empty
 hrtnpat (Var v)                    = return $ text v
 
 --------
@@ -268,7 +291,7 @@ cdecls env  []    = []
 
 ctype (Apply Tuple ds)           = text "NodePtr"
 ctype (Apply (Var "iO") [d])     = ctype d
-ctype (Apply (UserDIS _ _) [d])  = ctype d
+ctype (Apply (UserDIS _ _ _) [d])= ctype d
 ctype (Apply (Constructor _) [d])= ctype d
 ctype (Apply d ds)               = ctype d
 ctype (Declare cty (Var v))      = text cty
@@ -339,7 +362,7 @@ clean (Declare cty d) = True
 clean (Exp e)         = True
 clean (Record n ns)   = False
 clean (Tuple)         = False		-- previously True (until 2001-05-24)
-clean (UserDIS f t)   = False
+clean (UserDIS _ f t) = False
 clean (Var v)         = True
 
 -- Following function is new and may not be correct yet.
@@ -354,7 +377,7 @@ simple (Declare cty d) = simple d
 simple (Exp e)         = True
 simple (Record n ns)   = True
 simple (Tuple)         = False
-simple (UserDIS f t)   = True
+simple (UserDIS _ f t) = True
 simple (Var v)         = True
 
 isVoid :: DIS -> Bool

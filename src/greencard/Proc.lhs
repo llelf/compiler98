@@ -238,7 +238,7 @@ marshall (Apply (Record c fs) ds) = do
   let (ns, ms, decls, pss) = unzip4 bits
   return (ppRecord (text c) (map text fs) ns, compose ms, hsep decls, concat pss)
 
-marshall (Apply (UserDIS n1 n2) ds) = do
+marshall (Apply (UserDIS _ n1 n2) ds) = do
 --error ("Unrecognised userDIS <" ++n1++"/"++n2++">")
   bits <- mapM marshall ds
   let (ns, ms, decls, pss) = unzip4 bits
@@ -353,7 +353,7 @@ unmarshall (Apply (Record c fs) ds) = do
   let (packs, ms, decls, pss) = unzip4 bits
   return (compose packs, ppRecord (text c) (map text fs) ms, hsep decls, concat pss)
 
-unmarshall (Apply (UserDIS n1 n2) ds) = 
+unmarshall (Apply (UserDIS _ n1 n2) ds) = 
   error ("Unrecognised userDIS <" ++n1++"/"++n2++">")
 
 unmarshall (Apply (BaseDIS b) ds) = 

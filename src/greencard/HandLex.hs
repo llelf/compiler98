@@ -35,6 +35,8 @@ data TokenT = TokFun
       | TokSqClose
       | TokAngOpen
       | TokAngClose
+      | TokAng2Open
+      | TokAng2Close
       | TokSlash
       | TokComma
       | TokEqual
@@ -120,7 +122,9 @@ gcAny = blank gcAny'
     gcAny' p (')': s) ss  = emit TokClose p:     gcAny (addcol 1 p) s ss
     gcAny' p ('[': s) ss  = emit TokSqOpen p:    gcAny (addcol 1 p) s ss
     gcAny' p (']': s) ss  = emit TokSqClose p:   gcAny (addcol 1 p) s ss
-    gcAny' p ('<': s) ss  = emit TokAngOpen p:   gcUser [] (addcol 1 p) s ss
+    gcAny' p ('<': s) ss
+      | take 1 s == "<"   = emit TokAng2Open p:  skip 1 p s ss (gcUser [])
+      | otherwise         = emit TokAngOpen p:   gcUser [] (addcol 1 p) s ss
     gcAny' p ('>': s) ss  = emit TokAngClose p:  gcAny (addcol 1 p) s ss
     gcAny' p (',': s) ss  = emit TokComma p:     gcAny (addcol 1 p) s ss
     gcAny' p ('=': s) ss  = emit TokEqual p:     gcAny (addcol 1 p) s ss
@@ -166,8 +170,11 @@ gcConst = blank gcConst1
 gcUser acc = blank (gcUser' acc)
   where gcUser' acc p ('/':s) ss = emit (TokName (revtrim acc)) p:
                                    emit TokSlash p: gcUser [] (addcol 1 p) s ss
+        gcUser' acc p ('>':'>':s) ss
+                                 = emit (TokName (revtrim acc)) p:
+                                   emit TokAng2Close p: gcAny (addcol 1 p) s ss
         gcUser' acc p ('>':s) ss = emit (TokName (revtrim acc)) p:
-                                   emit TokAngClose p: gcAny (addcol 1 p) s ss
+                                   emit TokAngClose p:  gcAny (addcol 1 p) s ss
         gcUser' acc p ('-':'>':s) ss = gcUser' ('>':'-':acc) (addcol 2 p) s ss
         gcUser' acc p (h:s)   ss = gcUser' (h:acc) (addcol 1 p) s ss
         gcUser' acc p  []     ss = lextop (gcUser acc) p ss

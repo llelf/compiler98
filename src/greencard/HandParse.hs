@@ -179,7 +179,14 @@ dis =
          n2 <- name	 `elserror` "need name inside <.../...>"
          tok TokAngClose `elserror` "need closing > in <.../...>"
          as <- many1 arg `elserror` "need args after <.../...>"
-         return (apply (UserDIS n1 n2) as))) +++
+         return (apply (UserDIS True n1 n2) as))) +++
+    ( tok TokAng2Open `cut` (do
+         n1 <- name	 `elserror` "need name inside <<.../...>>"
+         tok TokSlash	 `elserror` "need / inside <<.../...>>"
+         n2 <- name	 `elserror` "need name inside <<.../...>>"
+         tok TokAng2Close`elserror` "need closing >> in <<.../...>>"
+         as <- many1 arg `elserror` "need args after <<.../...>>"
+         return (apply (UserDIS False n1 n2) as))) +++
     ( do b <- baseTy
          case b of
            "Foreign" -> do f <- (nName+++cexp) `elserror` "expected <freeing function> in %%Foreign"

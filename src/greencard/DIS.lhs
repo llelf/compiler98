@@ -48,7 +48,7 @@ data DIS
   | Exp String
   | Record Name [Name]
   | Tuple 
-  | UserDIS Name Name
+  | UserDIS Bool Name Name	-- bool is whether user functions are pure
   | Var Name
  deriving ( Show )
 
@@ -94,7 +94,8 @@ ppDIS' showCasts dis = pp dis
   pp (Exp s)      		 = quotes (text s)
   pp (Record nm fs)    		 = text "<record>"
   pp Tuple             		 = text "()" -- unit
-  pp (UserDIS n1 n2)   		 = text ('<':n1++'/':n2++'>':[])
+  pp (UserDIS True n1 n2) 	 = text ('<':n1++'/':n2++'>':[])
+  pp (UserDIS False n1 n2) 	 = text ('<':'<':n1++'/':n2++'>':'>':[])
   pp (Var nm)      		 = text nm
 
   pps = map pp
@@ -173,8 +174,8 @@ expandDIS' denv aenv d = xp d
   xp (Exp s)
     = Exp (subst s)
 
-  xp (UserDIS f t)
-    = UserDIS (subst f) (subst t)
+  xp (UserDIS p f t)
+    = UserDIS p (subst f) (subst t)
 
   xp (BaseDIS (Foreign f))
     = BaseDIS (Foreign (subst f))
@@ -225,7 +226,7 @@ simplify dis = simpl [] dis
         Just _  -> simpl env d
         Nothing -> simpl ((v,decl):env) d
     simpl env (Apply (Declare cty (Exp v)) [d]) = simpl env d
-    simpl env (Apply u@(UserDIS f t) ds)
+    simpl env (Apply u@(UserDIS p f t) ds)
         | length ds > 1 = Apply u [Apply Tuple (map (simpl env) ds)]
     simpl env (Apply d ds) = Apply (simpl env d) (map (simpl env) ds)
     simpl env d@(Var "iO") = d
