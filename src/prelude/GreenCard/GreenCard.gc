@@ -1,19 +1,16 @@
 module GreenCard
---( IO(..)
   ( PackedString
   , toCString
   , fromCString
   , ForeignObj
-  , StablePtr(..)
+  , StablePtr
   , Addr
   ) where
 
-import FFIBuiltin (ForeignObj,StablePtr,Addr)
+import FFI (ForeignObj,StablePtr,Addr)
 --import DIO (IO(..))
 import PackedString (PackedString)
 import CString (toCString, fromCString)
-
--- data StablePtr a = StablePtr a
 
 %dis int x          = declare "int" x in (%%Int x)
 %dis char x         = declare "char" x in (%%Char x)
