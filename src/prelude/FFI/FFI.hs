@@ -144,8 +144,10 @@ module NHC.FFI
   , mallocBytes       -- ::               Int -> IO (Ptr a)
   , alloca            -- :: Storable a =>        (Ptr a -> IO b) -> IO b
   , allocaBytes       -- ::               Int -> (Ptr a -> IO b) -> IO b
+  , realloc           -- :: Storable b => Ptr a -> IO (Ptr b)
   , reallocBytes      -- :: Ptr a -> Int -> IO (Ptr a)
   , free              -- :: Ptr a -> IO ()
+  , finalizerFree     -- :: FinalizerPtr a
 
    -------------------------------------------------------------------
    -- `MarshalArray' provides bulk memory allocation/storage routines.
