@@ -1,10 +1,9 @@
 #ifndef _BYTECODE_O_H_
 #define _BYTECODE_O_H_
-
 /* This file defines an obsolete form of the bytecode, used by the
- * non-ANSI-C (assembler) backend of the compiler.  This obsolete form
- * can maintained in sync with the "real" bytecode (if the "real" bytecode
- * changes) by running the file  script/mangler.
+ * non-ANSI-C (assembler) backend of the compiler.  This obsolete
+ * form can be maintained in sync with the "real" bytecode (if the
+ * "real" bytecode changes) by running the file  script/mangler.
  */
 
 #define DUMMY_FOR_ZERO 0
@@ -166,5 +165,7 @@
 #define PUSH_ZAP_ARG_I3 156
 #define PUSH_ZAP_ARG 157
 #define ENDCODE 158
+#define POW_F 159
+#define POW_D 160
 
 #endif
