@@ -7,6 +7,10 @@
  *   added -s option for statistics, made text an option (-a)
  * 28 March 2001
  *   added -r option to check proportion of nodes reachable
+ * 6 April 2001
+ *   -v extended to check for inappropriate zero pointers
+ *   -n option added to request textual dump of single node
+ *   when both -a & -r set show reachability of each node in text lines
  */
 
 /* #include <unistd.h> */
@@ -64,10 +68,12 @@ char buf[BUFSIZE];   /* input buffer */
 int n;               /* buf[0..n-1] filled */
 int boff;            /* if n>0, boff in 0..n-1 and buf[boff] is current */
 unsigned long foff;  /* if n>0, this is offset in f of buf[0] */
+unsigned long nextoffset;
 
 int vmode = 0;       /* verify -- check tag-types of pointer destinations */
 int smode = 0;       /* statistics -- counts and space usage for node types */
 int amode = 0;       /* ascii -- show archive in a `readable' text format */
+int nmode = 0;       /* node -- show node at given offset in text format */
 int rmode = 0;       /* reachable -- show how many nodes are reachable */
 
 unsigned filesize = 0; /* used in precondition for seeks ... */
@@ -90,6 +96,9 @@ main (int argc, char *argv[])
       smode = 1;
     } else if (strcmp(argv[i], "-a") == 0) {
       amode = 1;
+    } else if (strcmp(argv[i], "-n") == 0) {
+      nmode = 1;
+      sscanf(argv[++i], "0x%x", &nextoffset);      
     } else if (strcmp(argv[i], "-r") == 0) {
       smode = 1;
       rmode = 1;
@@ -103,27 +112,45 @@ main (int argc, char *argv[])
   stat(filename, &statbuf);
   filesize = statbuf.st_size;
   f = open(filename, (rmode ? 2 : 0));
-  if (f==-1) { fprintf(stderr, "cannot open trace file %s\n",filename); exit(1); }
+  if (f==-1) {
+    fprintf(stderr, "cannot open trace file %s\n",filename);
+    exit(1);
+  }
+  if (nmode) {
+    if (nextoffset >= filesize) {
+      fprintf(stderr, "-n 0x%x is beyond end of trace file\n", nextoffset);
+      exit(1);
+    }
+    amode = 1; rmode = 0; smode = 0;
+  } else {
+    nextoffset = 0L;
+  }
   if (rmode) {
     markfromheader(buffer);
     strcat(filename, ".bridge");
     markfromoutput(filename,buffer);
     lseek(f,0L,0);
   }
+  lseek(f,nextoffset,0);
   n = read(f, buf, BUFSIZE);
   boff = 0;
-  foff = 0L;
-  if (smode) initstats();
-  header();
-  nodes();
-  if (amode && smode) putchar('\n');
-  if (smode) reportstats();
+  foff = nextoffset;
+  if (nmode) {
+    nextnode();
+  } else {
+    if (smode) initstats();
+    header();
+    nodes();
+    if (amode && smode) putchar('\n');
+    if (smode) reportstats();
+  }
 }
 
 
 badusage() {
-  fprintf(stderr,"usage: hat-check [-a] [-r] [-s] [-v] prog-name\n");
+  fprintf(stderr,"usage: hat-check [-a] [-n <hexnode>][-r] [-s] [-v] prog-name\n");
   fprintf(stderr,"\t-a\tprint ascii text version of hat file\n");
+  fprintf(stderr,"\t-n\tprint text for specified node only (disables -r, -s)\n");
   fprintf(stderr,"\t-r\tprint statistics about reachable nodes (implies -s)\n");
   fprintf(stderr,"\t-s\tprint statistics about frequency and size of nodes\n");
   fprintf(stderr,"\t-v\tverify tag types of pointer destinations\n");
@@ -203,15 +230,15 @@ reportstats() {
   if (rmode) printf("%7.1f", pc(reachtrcount[SATC], trcount[SATC]));
   printf("%10u   %-20s%12u%10.1f\n",
     trcount[SATC], "TR type C SAT nodes", trspace[SATC], pc(trspace[SATC],grandspace));
+  if (rmode) printf("%7.1f", pc(reachcount[MD], count[MD]));
+  printf("%10u   %-20s%12u%10.1f\n",
+    count[MD], "MD nodes", space[MD], pc(space[MD],grandspace));
   if (rmode) printf("%7.1f", pc(reachcount[NT], count[NT]));
   printf("%10u   %-20s%12u%10.1f\n",
     count[NT], "NT nodes", space[NT], pc(space[NT],grandspace));
   if (rmode) printf("%7.1f", pc(reachcount[SR], count[SR]));
   printf("%10u   %-20s%12u%10.1f\n",
     count[SR], "SR nodes", space[SR], pc(space[SR],grandspace));
-  if (rmode) printf("%7s", "");
-  printf("%10u   %-20s%12u%10.1f\n",
-    count[MD], "MD nodes", space[MD], pc(space[MD],grandspace));
   { int w;
     putchar('\n');
     if (rmode) for (w=0; w<7; w++) putchar(' ');
@@ -396,8 +423,12 @@ void newtagat(char *t, unsigned long offset) {
   write(f, t, 1);
   lseek(f, foff + n, 0);
 }
+
+#define NONZERO 0
+#define MAYBEZERO 1
    
-void dopointer(int requiretag, unsigned long requireoffset,
+void dopointer(int okzero,
+               int requiretag, unsigned long requireoffset,
                int contexttag, unsigned long contextoffset) {
 #ifdef EXTRAS
   if (smode) {
@@ -408,13 +439,16 @@ void dopointer(int requiretag, unsigned long requireoffset,
     }
   }
 #endif
+  if (vmode && !okzero && requireoffset == 0) {
+      fprintf(stderr, "bad zero pointer in %s 0x%x\n",
+	    tag2str(contexttag), contextoffset);     
+  }
   if (vmode && requireoffset>0) {
     int t = tagat(requireoffset);
     if (t != requiretag) {
-      fprintf(stderr, "tag at %u is %s, not %s as %s at %u implies\n",
+      fprintf(stderr, "tag at 0x%x is %s, not %s as %s at 0x%x implies\n",
             requireoffset, tag2str(t), tag2str(requiretag),
 	    tag2str(contexttag), contextoffset);
-      /*exit(1);*/
     }
   }
   if (amode) printf("(%s 0x%x)", tag2str(requiretag), requireoffset);
@@ -436,185 +470,188 @@ cleartag(char *b) {
 header() {
   { char *s = readstring(); if (amode) printf("%s", s); }
   if (amode) printf("\nEntry point: ");
-  dopointer(TR, readpointer(), HEADER, 0L);
+  dopointer(MAYBEZERO, TR, readpointer(), HEADER, 0L);
   if (amode) printf("\nError message: ");
-  dopointer(NT, readpointer(), HEADER, 0L);
+  dopointer(MAYBEZERO, NT, readpointer(), HEADER, 0L);
   if (amode) printf("\n");
   headspace = byteoffset();
 }
   
 nodes() {
-  unsigned long offset;
-  unsigned long nextoffset;
   nextoffset = byteoffset();
   while (more()) {
-    char b = nextbyte();
-    int marked;
-    offset = nextoffset;
-    if (rmode) {
-      marked = ismarked(b);
-      if (marked) {
-        cleartag(&b);
-	newtagat(&b, offset);
-      }
+    nextnode();
+  }
+}
+
+nextnode() {
+  unsigned long offset = nextoffset;
+  char b = nextbyte();
+  int marked;
+  if (rmode) {
+    marked = ismarked(b);
+    if (marked) {
+      cleartag(&b);
+      newtagat(&b, offset);
     }
-    {
-      int k = hi3(b);
-      if (k > SR) {
-	fprintf(stderr, "strange high-bits tag %d at byte offset %u\n",
-                	k, offset);
-	exit(1);
+    if (amode) printf("%s", (marked ? "=> " : "   "));
+  }
+  {
+    int k = hi3(b);
+    if (k > SR) {
+      fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
+                      k, offset);
+      exit(1);
+    } else {
+      count[k]++;
+      if (rmode && marked) reachcount[k]++;
+    }
+    switch (k) {
+    case TR: {
+      int trk = lo5(b);
+      if (trk > SATC) {
+        fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
+	        trk, offset);
+        exit(1);
       } else {
-	count[k]++;
-	if (rmode && marked) reachcount[k]++;
+        trcount[trk]++;
+	if (rmode && marked) reachtrcount[trk]++;
       }
-      switch (k) {
-      case TR: {
-	int trk = lo5(b);
-	if (trk > SATC) {
-          fprintf(stderr, "strange low-bits tag %d in TR %u\n",
-	          trk, offset);
-          exit(1);
-	} else {
-          trcount[trk]++;
-	  if (rmode && marked) reachtrcount[trk]++;
+      if (amode) printf("TR 0x%x: ", offset);
+      switch (trk) {
+      case APP:
+        { int arity = readarity();
+	  if (amode) printf(" Application %d \t",arity);
+	  for (; arity-- > -2;)
+	    dopointer(NONZERO, TR, readpointer(), TR, offset);
 	}
-	if (amode) printf("TR 0x%x: ", offset);
-	switch (trk) {
-	case APP:
-          { int arity = readarity();
-	    if (amode) printf(" Application %d \t",arity);
-	    for (; arity-- > -2;)
-	      dopointer(TR, readpointer(), TR, offset);
-	  }
-	  dopointer(SR, readpointer(), TR, offset);
-	  break;
-	case NAM:
-          if (amode) printf(" Name          \t");
-          dopointer(TR, readpointer(), TR, offset);
-	  dopointer(NT, readpointer(), TR, offset);
-	  dopointer(SR, readpointer(), TR, offset);
-	  break;
-	case IND:
-          if (amode) printf(" Indirection   \t");
-	  dopointer(TR, readpointer(), TR, offset);
-	  dopointer(TR, readpointer(), TR, offset);
-	  break;
-	case HIDDEN:
-          if (amode) printf(" Hidden        \t");
-	  dopointer(TR, readpointer(), TR, offset);
-	  break;
-	case SATA:
-          if (amode) printf(" SAT(A)        \t");
-	  dopointer(TR, readpointer(), TR, offset);
-	  break;
-	case SATB:
-          if (amode) printf(" SAT(B)        \t");
-	  dopointer(TR, readpointer(), TR, offset);
-	  break;
-	case SATC:
-          if (amode) printf(" SAT(C)        \t");
-	  dopointer(TR, readpointer(), TR, offset);
-	  break;
-	}
-	trspace[trk] += byteoffset() - offset;
+	dopointer(NONZERO, SR, readpointer(), TR, offset);
+	break;
+      case NAM:
+        if (amode) printf(" Name          \t");
+        dopointer(MAYBEZERO, TR, readpointer(), TR, offset);
+	dopointer(NONZERO,   NT, readpointer(), TR, offset);
+	dopointer(MAYBEZERO, SR, readpointer(), TR, offset);
+	break;
+      case IND:
+        if (amode) printf(" Indirection   \t");
+	dopointer(NONZERO,   TR, readpointer(), TR, offset);
+	dopointer(MAYBEZERO, TR, readpointer(), TR, offset);
+	break;
+      case HIDDEN:
+        if (amode) printf(" Hidden        \t");
+	dopointer(NONZERO,   TR, readpointer(), TR, offset);
+	break;
+      case SATA:
+        if (amode) printf(" SAT(A)        \t");
+	dopointer(NONZERO,   TR, readpointer(), TR, offset);
+	break;
+      case SATB:
+        if (amode) printf(" SAT(B)        \t");
+	dopointer(NONZERO,   TR, readpointer(), TR, offset);
+	break;
+      case SATC:
+        if (amode) printf(" SAT(C)        \t");
+	dopointer(NONZERO,   TR, readpointer(), TR, offset);
 	break;
       }
-      case MD:
-	if (amode) printf("MD 0x%x:  ", offset);
-	switch (lo5(b)) {
-            case SUSPECT: if (amode) printf("module (suspect)\t"); break;
-            case TRUSTED: if (amode) printf("module (trusted)\t"); break;
-            default:
-	      fprintf(stderr, "strange low-bits tag %d in MD %u",
-	              lo5(b), offset);
-	      exit(1);
-	}
-	{ char *s = readstring(); if (amode) printf("%s\t", s); }
-	{ char *s = readstring(); if (amode) printf("\"%s\"", s); }
-	break;
-      case NT:
-	if (amode) printf("NT 0x%x:  ", offset);
-	switch (lo5(b)) {
-	case INT:
-          { int i = readint(); if (amode) printf("INT %d", i); }
-	  break;
-	case CHAR:
-          { char c = readchar(); if (amode) printf("CHAR '%c'", c); }
-	  break;
-	case INTEGER:
-          { char *i = readinteger(); if (amode) printf("INTEGER %s", i); }
-	  break;       
-	case RATIONAL:
-          { char *r = readrational(); if (amode) printf("RATIONAL %s", r); }
-	  break;
-	case FLOAT:
-          { float f = readfloat(); if (amode) printf("FLOAT %g", f); }
-	  break;
-	case DOUBLE:
-          { double d = readdouble(); if (amode) printf("DOUBLE %g", d); }
-	  break;
-	case IDENTIFIER:
-          { char *s = readstring(); if (amode) printf("identifier    \t%s ", s); }
-	  { unsigned long modinfo = readpointer();
-	    char *fp = readfixpri();
-	    if (*fp!='\0' && amode) printf("%s ", fp);
-	    dopointer(MD, modinfo, NT, offset);
-	    { char *p = readposn(); if (amode) printf(" %s", p); }
-          }
-	  break; 
-	case CONSTRUCTOR:
-          { char *s = readstring(); if (amode) printf("constructor   \t%s ", s); }
-	  { unsigned long modinfo = readpointer();
-	    char *fp = readfixpri();
-	    if (*fp!='\0' && amode) printf("%s ", fp);
-	    dopointer(MD, modinfo, NT, offset);
-	    { char *p = readposn(); if (amode) printf(" %s", p); }
-          }
-	  break; 
-	case TUPLE:
-	  if (amode) printf("TUPLE");
-	  break;
-	case FUN:
-	  if (amode) printf("FUN");
-	  break;
-	case CASE:
-	  if (amode) printf("CASE");
-	  break;
-	case LAMBDA:
-	  if (amode) printf("LAMBDA");
-	  break;
-	case DUMMY:
-	  if (amode) printf("DUMMY");
-	  break;
-	case CSTRING:
-	  {char *s = readstring(); if (amode) printf("CSTRING \"%s\"", s); }
-	  break;
-	case IF:
-	  if (amode) printf("IF");
-	  break;
-	case GUARD:
-	  if (amode) printf("GUARD");
-	  break;
-	case CONTAINER:
-	  if (amode) printf("CONTAINER");
-	  break;
-	default:
-          fprintf(stderr, "strange low-bits tag %d in NT %u\n",
-	                  lo5(b), offset);
-          exit(1);
-	}
-	break;
-      case SR:
-	if (amode) printf("SR 0x%x:  Source reference  \t", offset);
-	dopointer(MD, readpointer(), SR, offset);
-	{ char *p = readposn(); if (amode) printf(" %s", p); }
-	break;
-      }
-      if (amode) printf("\n");
-      nextoffset = byteoffset();
-      space[k] += nextoffset - offset;
+      trspace[trk] += byteoffset() - offset;
+      break;
     }
+    case MD:
+      if (amode) printf("MD 0x%x:  ", offset);
+      switch (lo5(b)) {
+          case SUSPECT: if (amode) printf("module (suspect)\t"); break;
+          case TRUSTED: if (amode) printf("module (trusted)\t"); break;
+          default:
+	    fprintf(stderr, "strange low-bits tag %d in MD 0x%x\n",
+	            lo5(b), offset);
+	    exit(1);
+      }
+      { char *s = readstring(); if (amode) printf("%s\t", s); }
+      { char *s = readstring(); if (amode) printf("\"%s\"", s); }
+      break;
+    case NT:
+      if (amode) printf("NT 0x%x:  ", offset);
+      switch (lo5(b)) {
+      case INT:
+        { int i = readint(); if (amode) printf("INT %d", i); }
+	break;
+      case CHAR:
+        { char c = readchar(); if (amode) printf("CHAR '%c'", c); }
+	break;
+      case INTEGER:
+        { char *i = readinteger(); if (amode) printf("INTEGER %s", i); }
+	break;       
+      case RATIONAL:
+        { char *r = readrational(); if (amode) printf("RATIONAL %s", r); }
+	break;
+      case FLOAT:
+        { float f = readfloat(); if (amode) printf("FLOAT %g", f); }
+	break;
+      case DOUBLE:
+        { double d = readdouble(); if (amode) printf("DOUBLE %g", d); }
+	break;
+      case IDENTIFIER:
+        { char *s = readstring(); if (amode) printf("identifier    \t%s ", s); }
+	{ unsigned long modinfo = readpointer();
+	  char *fp = readfixpri();
+	  if (*fp!='\0' && amode) printf("%s ", fp);
+	  dopointer(NONZERO, MD, modinfo, NT, offset);
+	  { char *p = readposn(); if (amode) printf(" %s", p); }
+        }
+	break; 
+      case CONSTRUCTOR:
+        { char *s = readstring(); if (amode) printf("constructor   \t%s ", s); }
+	{ unsigned long modinfo = readpointer();
+	  char *fp = readfixpri();
+	  if (*fp!='\0' && amode) printf("%s ", fp);
+	  dopointer(NONZERO, MD, modinfo, NT, offset);
+	  { char *p = readposn(); if (amode) printf(" %s", p); }
+        }
+	break; 
+      case TUPLE:
+	if (amode) printf("TUPLE");
+	break;
+      case FUN:
+	if (amode) printf("FUN");
+	break;
+      case CASE:
+	if (amode) printf("CASE");
+	break;
+      case LAMBDA:
+	if (amode) printf("LAMBDA");
+	break;
+      case DUMMY:
+	if (amode) printf("DUMMY");
+	break;
+      case CSTRING:
+	{char *s = readstring(); if (amode) printf("CSTRING \"%s\"", s); }
+	break;
+      case IF:
+	if (amode) printf("IF");
+	break;
+      case GUARD:
+	if (amode) printf("GUARD");
+	break;
+      case CONTAINER:
+	if (amode) printf("CONTAINER");
+	break;
+      default:
+        fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
+	                lo5(b), offset);
+        exit(1);
+      }
+      break;
+    case SR:
+      if (amode) printf("SR 0x%x:  Source reference  \t", offset);
+      dopointer(NONZERO, MD, readpointer(), SR, offset);
+      { char *p = readposn(); if (amode) printf(" %s", p); }
+      break;
+    }
+    if (amode) printf("\n");
+    nextoffset = byteoffset();
+    space[k] += nextoffset - offset;
   }
 }
 
@@ -685,7 +722,7 @@ markfrom(unsigned long root, char *buf) {
     {
       int k = hi3(*buf);
       if (k > SR) {
-	fprintf(stderr, "strange high-bits tag %d at %u\n",
+	fprintf(stderr, "strange high-bits tag %d at 0x%x\n",
                 	k, root);
 	exit(1);
       }
@@ -693,7 +730,7 @@ markfrom(unsigned long root, char *buf) {
       case TR: {
 	int trk = lo5(*buf);
 	if (trk > SATC) {
-          fprintf(stderr, "strange low-bits tag %d in TR %u\n",
+          fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
 	          trk, root);
           exit(1);
 	}
@@ -729,8 +766,27 @@ markfrom(unsigned long root, char *buf) {
       }
       case MD:
 	break;
-      case NT:
+      case NT: {
+	int ntk = lo5(*buf);
+	if (ntk > CONTAINER) {
+          fprintf(stderr, "strange low-bits tag %d in NT 0x%x\n",
+	          ntk, root);
+          exit(1);
+	}
+	switch (ntk) {
+	case IDENTIFIER:
+	case CONSTRUCTOR:
+	  do {
+	    read(f,buf,1);
+	  } while (*buf!='\0');
+	  read(f,buf,4);
+	  markfrom(getpointer(buf), buf);
+	  break;
+	default:
+	  break;
+	}
 	break;
+      }
       case SR:
 	break;
       }
