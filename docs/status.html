@@ -66,7 +66,7 @@ trace browser, time profiler, GreenCard, and hmake.
   <th bgcolor=#eeeeee>last change</th>
   <td>1999-09-15</td>
   <td>1998-11-26</td>
-  <td>1998-05-20</td>
+  <td>1999-10-08</td>
   <td>1998-10-20</td>
   <td>1999-01-28</td>
   <td>1998-06-03</td>
@@ -101,15 +101,15 @@ by anonymous FTP from
       Haskell source tree</a></td>
   <td>any</td>
   <td>1.0pre9</td>
-  <td>9909xx</td>
+  <td>990917</td>
   <td>1045kb</td></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98srcC-1.0pre9.tar.gz">
+  <td><a xhref="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98srcC-1.0pre9.tar.gz">
       C source tree</a></td>
   <td>any</td>
   <td>1.0pre9</td>
-  <td>9909xx</td>
+  <td>990917</td>
   <td>2376kb</td></tr>
 
 <tr bgcolor=#ffffdd>
@@ -117,15 +117,15 @@ by anonymous FTP from
       binary package</a></td>
   <td>ix86-Linux (glibc 2.1)<br>built with ghc-4.04</td>
   <td>1.0pre9</td>
-  <td>9909xx</td>
+  <td>990917</td>
   <td>3398kb</td></tr>
 
 <tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.0pre9-ix86-Linux-glibc1.tar.gz">
+  <td><a xhref="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.0pre9-ix86-Linux-glibc1.tar.gz">
       binary package</a></td>
   <td>ix86-Linux (libc5)<br>built with hbc-0.9999.4</td>
   <td>1.0pre9</td>
-  <td>9909xx</td>
+  <td>990917</td>
   <td>3398kb</td></tr>
 
 </table>
@@ -175,7 +175,28 @@ comprehensive, but if you have any problems, please mail
 
 <br><br><hr>
 
-<h3>nhc98 pre-release 9 (1999-xx-xx) features</h3>
+<h3>nhc98 pre-release 10 (1999-xx-xx) features</h3>
+<ul>
+<li> Update: Compiling programs for tracing now works again, although
+             tracing versions of the Prelude and Libraries are still
+             not fully up-to-date with Haskell'98.
+<li> Update: The removal of named field punning in Haskell'98 has
+             turned out to be unpopular.  We plan to support punning
+             again as a default language extension (but it is turned
+             off in -98 mode.)
+<li> Update: The old 'nhc98config' is now simplified and called 'configure'.
+             This means that "./configure; make; make install" should now
+             work as expected.
+<li> Update: At configuration time for hmake, we now try to detect existing
+             installations of ghc/hbc/nhc and provide sensible defaults,
+             so you should no longer need to edit config files.
+<li> Bugfix: Resolved conflicts when using hmake flags -I and -d together.
+<li> Bugfix: Some changes to Makefiles, so building on <em>Cygwin32</em>
+             is easier.
+<li> Bugfix: hSetPosn had wrong arity.
+</ul>
+
+<h3>nhc98 pre-release 9 (1999-09-16) features</h3>
 <ul>
 <li> Bugfix: Library module Maybe was missing the definition isNothing.
 <li> Bugfix: Several changes to Makefiles, so building with <em>ghc</em>
@@ -262,7 +283,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.09.16<br>
+This page last modified: 1999.10.08<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

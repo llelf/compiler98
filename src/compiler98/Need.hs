@@ -243,6 +243,10 @@ needStmts (StmtLet decls :r) =  pushNeed  >>> bindDecls decls  >>> needDecls dec
 
 needField (FieldExp pos var exp) = needTid pos Field var >>> needExp exp
 --needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var -- H98 removes
+needField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
+      show var ++
+      "\nPunning of named fields has been removed from the Haskell language."++
+      "\nUse "++show var++"="++show var++" instead.")
 
 needExp (ExpScc            str exp) =  needExp exp
 needExp (ExpLambda         pos pats exp) =
@@ -308,7 +312,7 @@ bindDecl (DeclPat (Alt pat@(ExpInfixList pos pats) _ _)) =
     case filter isVarOp pats of
         [ExpVarOp pos tid] -> bindTid Var tid
         [] -> bindPat pat
-        _ -> error "(n+k) patterns are not supported\n"
+        _ -> error (show pos ++ ": (n+k) patterns are not supported\n")
 bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  -- Also generate need for constructors
 bindDecl (DeclPrimitive pos tid arity t) = bindTid Var tid
 bindDecl (DeclFun pos tid funs) = bindTid Var tid
@@ -328,6 +332,10 @@ bindClass _ = unitR
 
 bindField (FieldExp pos var pat) = needTid pos Field var >>> bindTid Var var >>> bindPat pat
 --bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var -- H98 removes
+bindField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
+      show var ++
+      "\nPunning of named fields has been removed from the Haskell language."++
+      "\nUse "++show var++"="++show var++" instead.")
 
 --- Above only in expressions
 bindPat (ExpApplication   pos exps) = mapR bindPat exps

@@ -30,6 +30,10 @@ import NameSupply
 import Target( Target )
 --import NHCBackend (genProcNHC)
 
+#if !defined(__HASKELL98__)
+#define fmap map
+#endif
+
 \end{code}
 
 %************************************************************************

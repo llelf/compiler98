@@ -133,14 +133,17 @@ fi
 
 compilerstyle $COMP	# Use config to select compiler-specific options.
 
+case $KNOWN in
+  no) echo "hmake: Sorry, I do not know about your installation of $COMP"
+      exit 1 ;;
+  yes) ;;
+esac
 case $RTSOPTIONSTYLE in
   rts)     if [ "$rtflags" != "" ]
            then rtflags=" +RTS$rtflags -RTS"
            fi ;;
   minus)   rtflags="$rtflags -" ;;
   none)    ;;
-  unknown) echo "hmake: I don't know how to invoke your compiler"
-           exit 1;
 esac
 case $CTSOPTIONSTYLE in
   cts)     if [ "$ctflags" != "" ]
@@ -149,7 +152,7 @@ case $CTSOPTIONSTYLE in
 esac
 case $OD in
   -od) if [ "$objdir" != "" ]
-       then hcflags=$hcflags" -d $objdir"
+       then #hcflags=$hcflags" -d $objdir"
             hmflags="$hmflags $OD"
        fi
 esac

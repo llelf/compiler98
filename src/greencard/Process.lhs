@@ -28,7 +28,14 @@ import NHCBackend (cNhc, hNhc)
 import PrelBase(maybe) -- workaround for GHC 2.02
 #endif
 
+#if defined(__HASKELL98__)
+#define MPLUS `mplus`
+#else
+#define MPLUS ++
+#define fmap map
+#define fail error
 hPutStrLn h s = hPutStr h s >> hPutChar h '\n'
+#endif
 
 \end{code}
 
@@ -232,7 +239,7 @@ tryRead path name = do
              return Nothing
 
 mbImportName :: String -> Maybe String
-mbImportName xs = maybe Nothing (Just . head) (iq `mplus` i)
+mbImportName xs = maybe Nothing (Just . head) (iq MPLUS i)
   where
     iq	= prefix ["import", "qualified"] wxs
     i	= prefix ["import"] wxs

@@ -127,7 +127,9 @@ main(int argc, char **argv)
   int s;
   char pidfilename[16];
 
+#if !defined(__linux__)
   signal(SIGCHLD, wait_for_children);
+#endif
   if(argc > 3) {
     max_clients = atoi(argv[1]);
     port = atoi(argv[2]);

@@ -168,9 +168,9 @@ parseAExp =
 
 
 parseFieldExp =
-    varid `into` (\ (pos,ident) -> FieldExp pos ident `parseChk` equal `ap` parseExp
-			--		`orelse`		-- H98 removes
-			--	   parse (FieldPun pos ident)	-- H98 removes
+    varid `into` (\ (pos,ident) -> (FieldExp pos ident `parseChk` equal `ap` parseExp)
+					`orelse`		-- H98 removes
+				   parse (FieldPun pos ident)	-- H98 removes
                  )
 
 parseBrackExp0 pos =                -- found '['
@@ -252,8 +252,8 @@ parseAPat = parseAPat2 `into` parseAPat1
 
 parseFieldPat =
     varid `into` (\ (pos,ident) -> FieldExp pos ident `parseChk` equal `ap` parsePat
-			--		`orelse`		-- H98 removes
-			--	   parse (FieldPun pos ident)	-- H98 removes
+					`orelse`		-- H98 removes
+				   parse (FieldPun pos ident)	-- H98 removes
                  )
 
 parseAPat1 exp =

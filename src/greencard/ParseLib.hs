@@ -30,6 +30,14 @@ import Monad
 
 infixr 5 +++
 
+#if defined (__HASKELL98__)
+#define MPLUS `mplus`
+#else
+#define fmap map
+#define mzero zero
+#define MPLUS ++
+#endif
+
 --- The parser monad ---------------------------------------------------------
 
 newtype Parser a   = P ([Token] -> [(a,[Token])])
@@ -45,11 +53,22 @@ instance Monad Parser where
    -- >>=         :: Parser a -> (a -> Parser b) -> Parser b
    (P p) >>= f     = P (\inp -> concat [papply (f v) out | (v,out) <- p inp])
 
+#if defined(__HASKELL98__)
+   fail s          = P (\inp -> [])
+#endif
+
+#if defined(__HASKELL98__)
 instance MonadPlus Parser where
+#else
+instance MonadZero Parser where
+#endif
    -- mzero            :: Parser a
    mzero                = P (\inp -> [])
+#if !defined(__HASKELL98__)
+instance MonadPlus Parser where
+#endif
    -- mplus            :: Parser a -> Parser a -> Parser a
-   (P p) `mplus` (P q)  = P (\inp -> (p inp ++ q inp))
+   (P p) MPLUS (P q)    = P (\inp -> (p inp ++ q inp))
 
 --- Other primitive parser combinators ---------------------------------------
 
@@ -83,7 +102,7 @@ cut               :: Parser a -> Parser b -> Parser b
 --- Derived combinators ------------------------------------------------------
 
 (+++)             :: Parser a -> Parser a -> Parser a
-p +++ q            = first (p `mplus` q)
+p +++ q            = first (p MPLUS q)
 
 --sat               :: (Char -> Bool) -> Parser Char
 --sat p              = do {x <- item; if p x then return x else mzero}

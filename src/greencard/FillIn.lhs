@@ -7,6 +7,11 @@ module FillIn
 	, Consts, genConsts, genConsts2
 	) where
 
+#if !defined(__HASKELL98__)
+#define mplus (++)
+#define isAlphaNum isAlphanum
+#endif
+
 import Char (isLower, isAlphaNum)
 import Decl (Sig, Call, CCode, Fail, Result)
 import Proc (Proc, ppProc)
@@ -23,11 +28,15 @@ import PrettyUtils( indent, joinedBy, ppAssign, vcatMap )
 import Maybe( fromMaybe )
 import Char ( toLower )
 import List( intersperse )
+
+#if defined(__HASKELL98__)
 import Monad (MonadPlus(mplus))
+#endif
 
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ <= 202
 import PrelBase(maybe) -- workaround for GHC 2.02
 #endif
+
 
 \end{code}
 
@@ -205,8 +214,8 @@ leafVarsOfDIS = free
   varsInExp ('%':c:cs)
     | isLower c     = nm: varsInExp rest
     | c=='%'        = varsInExp cs
-    where (cs', rest) = span isAlphaNum cs
-          nm = c:cs'
+    where (cs1, rest) = span isAlphaNum cs
+          nm = c:cs1
   varsInExp (c:cs)  = varsInExp cs
   noDups = noDups' []
     where noDups' a [] = a

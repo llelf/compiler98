@@ -51,6 +51,7 @@ esac
 case $OS in
   unknown)	;;
   Linux)	;;
+  CYGWIN*)      ;;
   *BSD)		;;
   BSD/OS)	OS="BSD-OS"$REL ;;
   SunOS)	case $REL in

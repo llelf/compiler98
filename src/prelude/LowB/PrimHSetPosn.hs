@@ -4,7 +4,7 @@ import IO
 import DIO
 import PreludeBuiltin(HandlePosn)
 
-cHSetPosn primitive 1 :: Handle -> HandlePosn -> Either IOError ()
+cHSetPosn primitive 2 :: Handle -> HandlePosn -> Either IOError ()
 
 primHSetPosn :: Handle -> HandlePosn -> IO ()
 primHSetPosn h i = 

@@ -1,11 +1,11 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre9
+VERSION = 1.0pre10x
 # When incrementing the version number, don't forget to change the
-# corresponding version in the nhc98config script!
+# corresponding version in the configure script!
 
-BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT nhc98config
+BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \
 	src/prelude/Main.hi src/prelude/Makefile* \
@@ -110,7 +110,7 @@ COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/nhc98tracer.inst lib/nhctracer.jar \
-         script/nhc98heap.c script/harch
+         script/nhc98heap.c script/harch script/confhc
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -124,7 +124,6 @@ RUNTIME = \
 	src/runtime/Makefile* \
 	src/runtime/Builtin/Makefile* \
 	src/runtime/Builtin/*.c \
-	src/runtime/Builtin/*.h \
 	src/runtime/Integer/Makefile* \
 	src/runtime/Integer/*.c \
 	src/runtime/Integer/*.h \
@@ -133,8 +132,10 @@ RUNTIME = \
 	src/runtime/Kernel/*.c \
 	src/runtime/Kernel/*.h \
 	src/runtime/Mk/Makefile* \
-	src/runtime/Mk/*.c \
-	src/runtime/Mk/*.h
+	src/runtime/Mk/*.c
+#	src/runtime/Builtin/*.h
+#	src/runtime/Mk/*.h
+
 RUNTIMET = \
 	src/tracer/Makefile* \
 	src/tracer/runtime/Makefile* \
@@ -159,23 +160,23 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 ##### compiler build + install scripts
 
 default:
-	@echo "No target specified - try one of: withHBC withGHC withNHC'
-	@echo "                                  fromC install clean"
-	@echo '  (other subtargets: runtime prelude profile timeprof'
-	@echo '                     greencard hp2graph'
-	@echo '                     compiler_b compiler_g compiler_n'
-	@echo '                     tracer_b tracer_g tracer_n '
-	@echo '                     hmake_b hmake_g hmake_n)'
+	@echo "No target specified - try one of: withHBC withGHC withNHC"
+	@echo "                                  fromC install config clean"
+	@echo "  (other subtargets: runtime prelude profile timeprof hp2graph"
+	@echo "                     compiler_b compiler_g compiler_n"
+	@echo "                     tracer_b tracer_g tracer_n "
+	@echo "                     hmake_b hmake_g hmake_n"
+	@echo "                     greencard_b greencard_g greencard_n)"
 
 config:
-	./nhc98config --config
+	./configure --config
 install:
-	./nhc98config --install
+	./configure --install
 
 #all: runtime compiler prelude greencard hmake hp2graph profile tracer
-withHBC: runtime hmake_b compiler_b prelude greencard hp2graph
-withGHC: runtime hmake_g compiler_g prelude greencard hp2graph
-withNHC: runtime hmake_n compiler_n prelude greencard hp2graph
+withNHC: runtime hmake_n greencard_n compiler_n prelude hp2graph
+withHBC: runtime hmake_b greencard_b compiler_b prelude hp2graph
+withGHC: runtime hmake_g greencard_g compiler_g prelude hp2graph
 fromC: runtime cprelude ccompiler cgreencard hp2graph chmake
 profile: profruntime profprelude
 timeprof: timeruntime timeprelude
@@ -190,6 +191,7 @@ $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap
 	cd src/tracer/runtime; $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/runtime
+
 $(TARGDIR)/$(MACHINE)/compiler_n: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/compiler_n
@@ -199,15 +201,27 @@ $(TARGDIR)/$(MACHINE)/compiler_b: $(COMPILER)
 $(TARGDIR)/$(MACHINE)/compiler_g: $(COMPILER)
 	cd src/compiler98;     $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/compiler_g
-$(TARGDIR)/$(MACHINE)/bootprelude:
-	cd src/prelude;        $(MAKE) boot
-	touch $(TARGDIR)/$(MACHINE)/bootprelude
-$(TARGDIR)/$(MACHINE)/greencard: $(TARGDIR)/$(MACHINE)/bootprelude $(GREENCARD)
-	cd src/greencard;      $(MAKE) install
-	touch $(TARGDIR)/$(MACHINE)/greencard
-$(TARGDIR)/$(MACHINE)/prelude: greencard $(PRELUDEA) $(PRELUDEB)
+
+#$(TARGDIR)/$(MACHINE)/bootprelude:
+#	cd src/prelude;        $(MAKE) boot
+#	touch $(TARGDIR)/$(MACHINE)/bootprelude
+$(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/prelude
+
+#$(TARGDIR)/$(MACHINE)/greencard: $(TARGDIR)/$(MACHINE)/bootprelude $(GREENCARD)
+#	cd src/greencard;      $(MAKE) install
+#	touch $(TARGDIR)/$(MACHINE)/greencard
+$(TARGDIR)/$(MACHINE)/greencard_n: $(GREENCARD)
+	cd src/greencard;      $(MAKE) HC=nhc98 install
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_n
+$(TARGDIR)/$(MACHINE)/greencard_b: $(GREENCARD)
+	cd src/greencard;      $(MAKE) HC=hbc install
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_b
+$(TARGDIR)/$(MACHINE)/greencard_g: $(GREENCARD)
+	cd src/greencard;      $(MAKE) HC=ghc install
+	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/greencard_g
+
 $(TARGDIR)/$(MACHINE)/hmake_n: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake_n
@@ -217,6 +231,7 @@ $(TARGDIR)/$(MACHINE)/hmake_b: $(HMAKE)
 $(TARGDIR)/$(MACHINE)/hmake_g: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake_g
+
 $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
 	cd src/hp2graph;       $(MAKE) install
 	touch $(TARGDIR)/$(MACHINE)/hp2graph
@@ -226,7 +241,7 @@ $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 	cd src/tracer/runtime; $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profruntime
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) CFG=p cleanhi install
+	cd src/prelude;        $(MAKE) CFG=p install  #cleanhi 
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
 $(TARGDIR)/$(MACHINE)/tracecompiler_n: $(COMPILER)

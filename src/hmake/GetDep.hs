@@ -1,18 +1,17 @@
 module GetDep(showdep,showmake,dependency,When) where
+
 import Getmodtime(When(..))
---import Env(haskellImport)
 import Imports(getImports)
 import FileName
---import Either
 import Unlit(unlit)
 #ifdef __HBC__
 import FileStat
 #endif
 #if defined(__NHC__) || defined(__GLASGOW_HASKELL__)
 import Directory
---import Cpp
 #endif
 import IO
+import Time
 
 #if !defined(__HASKELL98__)
 #define ioError fail
@@ -28,10 +27,19 @@ showdep (f,(((ths,thi,tobj),p,s,cpp),i)) =
   f ++ ": " ++ mix i ++ "\n"
   where mix = foldr (\a b-> a++' ':b) ""
 
-showmake unixf goalDir (f,(((ths,thi,tobj),p,s,cpp),i)) =
+showmake unixf dflag goalDir (f,(((ths,thi,tobj),p,s,cpp),i)) =
   dotO f ++ ": " ++ s ++ " " ++ mix i
   where mix = foldr (\a b-> dotO a ++ ' ':b) "\n"
         dotO f = fixFile unixf goalDir f "o"
+
+-- #### The following replacement is intended for when the graph
+-- #### contains paths for all the imports.
+--showmake unixf dflag goalDir (f,(((ths,thi,tobj),p,s,cpp),i)) =
+--  dotO p f ++ ": " ++ s ++ " " ++ mix i
+--  where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
+--        dotO p f = if dflag then fixFile unixf goalDir f "o"
+--                            else fixFile unixf p       f "o"
+
 
 dependency unixf defs kp op ihi ds srcPath prelPath [] =
   return ds
@@ -62,7 +70,7 @@ dependency unixf defs kp op ihi ds srcPath prelPath (f:fs) =
 --   itos a _ = a
 
 #ifdef __HBC__
-readTime f = catch (getFileStat f >>= \sf -> return (At (st_mtime sf)))
+readTime f = catch (getFileStat f >>= \sf -> return (At ((st_mtime sf)::ClockTime)))
                    (\_ -> return Never)
 #endif
 #if defined(__NHC__) || defined (__GLASGOW_HASKELL__)
@@ -131,7 +139,8 @@ readFirst unixf op normalPath prelude filename =
 
   readData path source file =
      readTime source >>= \ths ->
-     readTime (fixFile unixf (path{-++op-}) ff "hi") >>= \thi ->
-     readTime (fixFile unixf (path++op) ff "o") >>= \tobj ->
+     readTime (fixFile unixf path  ff "hi") >>= \thi ->
+     readTime (fixFile unixf opath ff "o") >>= \tobj ->
      return (Right  ((ths,thi,tobj),path,file,source))
+   where opath = if null op then path else op
 

@@ -15,6 +15,10 @@ module NameSupply
 
 import Name( Name )
 
+#if !defined(__HASKELL98__)
+#define fmap map
+#endif
+
 \end{code}
 
 %************************************************************************

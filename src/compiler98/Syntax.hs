@@ -170,7 +170,7 @@ data Exp id =
     | PatNplusK		Pos id id (Exp id) (Exp id) (Exp id)
 
 data Field id = FieldExp  Pos id (Exp id)
-          --  | FieldPun  Pos id	-- H98 removes
+              | FieldPun  Pos id	-- H98 removes (retained for error msgs)
 
 data Boxed = Boxed | UnBoxed
 
