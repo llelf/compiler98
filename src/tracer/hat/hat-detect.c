@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <sys/file.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include "Expressions.h"
@@ -18,10 +19,13 @@
 #include "observe.h"
 #include "hatgeneral.h"
 #include "detect.h"
+#include "menu.h"
 
 #define HASH_TABLE_SIZE 3000
 
 void checkmainCAF(HatFile handle);
+int askNodeList(HatFile handle,int question,NodeList* results,
+		int isTopSession,HashTable* hash);
 
 char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
@@ -31,7 +35,7 @@ NodeList* CAFList = NULL;
 unsigned int precision = 30;
 int filehandle;
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
   if (argc!=2) {
     fprintf(stderr,"\nusage: hat-detect file-name\n");
@@ -53,6 +57,7 @@ main (int argc, char *argv[])
   memorizedFunsNo = newFunTable();
   checkmainCAF(filehandle);
   hatCloseFile(filehandle);
+  return 0;
 }
 
 int getline(char s[], int max) {
@@ -117,10 +122,11 @@ void clearCAFList() {
     CAFList = newList();
 }
 
-void showReduction(unsigned long application,unsigned long result,int verbose) {
-  showNode(application,verbose,precision);
+void showReduction(HatFile handle,filepointer application,
+		   filepointer result,int verbose) {
+  showNode(handle,application,verbose,precision);
   printf(" = ");
-  showNode(result,verbose,precision);
+  showNode(handle,result,verbose,precision);
   printf("\n");
 }
 
@@ -158,8 +164,7 @@ int memorizeMode = 1;
 /* returns 1 for yes, 0 for no, 2 for ? */
 int askForApp(HatFile handle,int *question,unsigned long appofs,
 	      unsigned long resofs,int reconsider) {
-  int success=0;
-  char answer[11];
+  char answer[51];
   int c,err,retval=-1;
   ExprNode *appNode,*resNode;
   char *pp1,*pp2;
@@ -191,7 +196,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
     err=0;
     if (reconsider) printf("   (Y/N): ");
     else printf("   (Y/?/N): ");
-    if (getline(answer,10)>=1) {
+    if (getline(answer,50)>=1) {
       c=toupper(answer[0]);
       if (strchr("YNQT?HVUMGOC*0123456789+-",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
@@ -204,10 +209,18 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  break;
 	case 'O': 
 	  {
-	    unsigned long newAdr,newSAT,selected;
+	    unsigned long newAdr,selected;
 	    FunTable results;
 	    ObserveQuery query;
-	    query = newObserveQuery(filehandle,lmost,0,0,1);
+	    if (strlen(answer)>2) {
+	      char* ans = newStr(answer+2);
+	      printf("looking for %s\n",ans);
+	      query = newObserveQueryIdent(filehandle,
+					   ans,
+					   NULL,0,1);
+	    } else {
+	      query = newObserveQuery(filehandle,lmost,0,0,1);
+	    }
 	    results = observeUnique(query,verboseMode,precision);
 	    selected=showFunTablePaged(results);
 	    if (selected>=0) {
@@ -220,13 +233,13 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	    if ((newAdr>0)&&(newAdr!=appofs)) {
 	      char s[10];
 	      printf("Start detect session for ");
-	      showAppAndResult(newAdr,precision);
+	      showAppAndResult(handle,newAdr,verboseMode,precision);
 	      printf("(Y/N): ");
 	      getline(s,10);
 	      if (toupper(s[0])=='Y') {
 		NodeList* nl=newList();
 		printf("New detect session for: ");
-		showAppAndResult(newAdr,precision);
+		showAppAndResult(handle,newAdr,verboseMode,precision);
 		printf("\n");
 		appendToList(nl,newAdr);
 		{
@@ -266,7 +279,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	case 'T':
 	  userTrustsFunction(lmost);
 	  printf("   Ok. \"");
-	  showNode(lmost,precision);
+	  showNode(handle,lmost,verboseMode,precision);
 	  printf("\" will be trusted from now on.\n");
 	  retval = 1; // answer is yes
 	  break;
@@ -412,7 +425,8 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	if (answer==0) {
 	  char *tmp;
 	  printf("\nError located!\nBug found in: ");
-	  showReduction(e->fileoffset,getResult(handle,e->fileoffset),verboseMode);
+	  showReduction(handle,e->fileoffset,getResult(handle,e->fileoffset),
+			verboseMode);
 	  tmp = hatLocationStr(handle,e->fileoffset);
 	  printf(tmp);
 	  freeStr(tmp);
@@ -462,7 +476,6 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 }
 
 void checkmainCAF(HatFile handle) {
-  int success;
   HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   addBeforeList(results,hatMainCAF(handle));
@@ -470,3 +483,7 @@ void checkmainCAF(HatFile handle) {
   freeHashTable(hash);
   quit();
 }
+
+
+
+

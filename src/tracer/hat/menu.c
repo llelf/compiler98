@@ -9,6 +9,7 @@
 #include <ncurses.h>
 #include "Expressions.h"
 #include "hatgeneral.h"
+#include "menu.h"
 
 #define STATUSLINES 2
 

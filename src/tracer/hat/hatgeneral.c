@@ -48,3 +48,15 @@ void replaceStr(char** s,char* s1,char *s2,char* s3) {
 }
 
 /*********************************************************************/
+
+int checkParameters(char* str,char* allowed) {
+  if (*str!='-') return 1; // bad parameter syntax
+  str++;
+  if (*str=='\0') return 1; // nothing specified!
+  while (*str!='\0') {
+    if (strchr(allowed,*str)==NULL)
+      return 2; // unsupported parameter
+    str++;
+  }
+  return 0; // string is ok
+}

@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 #include "Expressions.h"
 #include "FunTable.h"
 #include "hatinterface.h"
@@ -67,7 +68,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   }
 }
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 { int verbosemode=0,uniquemode=1,recursivemode=0;
   int c = 1,err=0,paramerr=0,handle;
   unsigned int precision = 30;
@@ -154,5 +155,6 @@ main (int argc, char *argv[])
   }
   freeObserveQuery(query);
   hatCloseFile(handle);
+  return 0;
 }
 

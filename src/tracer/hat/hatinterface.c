@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <unistd.h>
 #include "hatinterface.h"
 #include "hatgeneral.h"
 
@@ -66,6 +67,9 @@ void _loadHandle(HatFile h) {
 
 void _hatSwitchToHandle(HatFile h) {
   if (h==currentHandle) return;
+  if (h>=hatHandleCount) {
+    fprintf(stderr,"ERROR: Trying to access an invalid handle in hatinterface!\n");
+  }
   _saveHandle(currentHandle);
   currentHandle = h;
   _loadHandle(currentHandle);
@@ -82,18 +86,6 @@ HatFile hatNewHandle() {
   hatHandle[hatHandleCount-1].bufsize = MAXBUFSIZE;
   hatHandle[hatHandleCount-1].buf = (char*) calloc(MAXBUFSIZE,1);
   return hatHandleCount-1;
-}
-
-int checkParameters(char* str,char* allowed) {
-  if (*str!='-') return 1; // bad parameter syntax
-  str++;
-  if (*str=='\0') return 1; // nothing specified!
-  while (*str!='\0') {
-    if (strchr(allowed,*str)==NULL)
-      return 2; // unsupported parameter
-    str++;
-  }
-  return 0; // string is ok
 }
 
 /* make proper file extension, if missing */
@@ -214,7 +206,7 @@ fourbytes readfourbytes() {
  */
 void skipbytes(int bytes) { boff+=bytes; }
 
-#define POSNMAX 30
+#define POSNMAX 50
 char posnbuf[POSNMAX+1];
 
 unsigned long readpointer() {
@@ -497,12 +489,11 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
     case MDSUSPECT:
     case MDTRUSTED:
       tmp = getName();
-      replaceStr(&tmp,"module \"",tmp,"\", ");
+      tmp=catStr("module \"",tmp,"\", ");
       //printf("module \"%s\", ",s);
       s = getModuleSrcName();
       replaceStr(&tmp,tmp,"file \"",s);
       replaceStr(&tmp,tmp,"\"","");
-      freeStr(s);
       //printf("file \"%s\"",s);
       hatSeekNode(handle,old);
       return tmp;
@@ -521,7 +512,6 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
       replaceStr(&tmp,tmp,", ",s);
-      freeStr(s);
       //printf(", %s\n",s);
       hatSeekNode(handle,old);
       return tmp;
@@ -547,7 +537,6 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
       s = getPosnStr();
       tmp = hatLocationStr(handle,fileoffset);
       replaceStr(&tmp,tmp,", ",s);
-      freeStr(s);
       //printf(", %s\n",s);
       hatSeekNode(handle,old);
       return tmp;
@@ -563,10 +552,10 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
     case MDTRUSTED:
       s = getName();
 
-      printf("module \"%s\", ",s);
-      replaceStr(&s,"module \"",s,"\", ");
+      //printf("module \"%s\", ",s);
+      s=catStr("module \"",s,"\", ");
       tmp = getModuleSrcName();
-      replaceStr(&tmp,tmp,"file \"",s);
+      tmp=catStr(tmp,"file \"",s);
       replaceStr(&tmp,tmp,"\"","");
       freeStr(s);
       //printf("file \"%s\"",s);
@@ -1051,7 +1040,8 @@ double getDoubleValue() {
 char getNodeType(HatFile h,filepointer nodenumber) {
   char nodeType;
   hatSeekNode(h,nodenumber);
-  nodeType=seenextbyte()&247;
+  nodeType=seenextbyte();
+  if (nodeType&240==0) nodeType=nodeType & 247;
   return (nodeType == MDTRUSTED ? HatModule : nodeType);
 }
 

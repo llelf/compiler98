@@ -19,7 +19,7 @@ int verboseMode = 0;
 unsigned int precision = 30;
 HatFile handle;
 
-main (int argc, char *argv[])
+int main (int argc, char *argv[])
 {
   if (argc!=2) {
     fprintf(stderr,"\nusage: hat-checki file-name\n");
@@ -38,6 +38,8 @@ main (int argc, char *argv[])
   interactive(0);
 
   hatCloseFile(handle);
+
+  return 0;
 }
 
 int getline(char s[], int max) {
@@ -127,14 +129,23 @@ char *getfixpriStr() {
   return fixpribuf;
 }
 
+int lhi3(char b) {
+  return (int)(b>>5);
+}
+
+int llo5(char b) {
+  return (int)(b&037);
+}
+
 filepointer printNode(unsigned long offset) {
   char b,showAble=0;
   unsigned long next;
   b = getNodeType(handle,offset);
-  switch (hi3(b)) {
+  printf("%i ",b);
+  switch (lhi3(b)) {
   case TR:
     printf("TR 0x%x: ", offset);
-    switch (lo5(b)) {
+    switch (llo5(b)) {
     case APP:
       { 
 	int i=0;
@@ -200,12 +211,12 @@ filepointer printNode(unsigned long offset) {
       break;
     default:
       printf("strange low-bits tag %d in TR 0x%x\n",
-	     lo5(b), offset);
+	     llo5(b), offset);
     }
     break;
   case MD:
     printf("MD 0x%x: ", offset);
-    switch (lo5(b)) {
+    switch (llo5(b)) {
     case SUSPECT: printf("module (suspect), "); break;
     case TRUSTED: printf("module (trusted), "); break;
     default: printf("WRONG, "); break;
@@ -215,7 +226,7 @@ filepointer printNode(unsigned long offset) {
     break;
   case NT:
     printf("NT 0x%x:  ", offset);
-    switch (lo5(b)) {
+    switch (llo5(b)) {
     case INT:
       printf("INT %d", getIntValue());
       break;
@@ -283,7 +294,7 @@ filepointer printNode(unsigned long offset) {
       break;
     default:
       printf("strange low-bits tag %d in NT 0x%x\n",
-	     lo5(b), offset);
+	     llo5(b), offset);
     }
     break;
   case SR:
@@ -293,7 +304,7 @@ filepointer printNode(unsigned long offset) {
     break;
   default:
     printf("strange high-bits tag %d at byte offset 0x%x\n",
-	   hi3(b), offset);
+	   lhi3(b), offset);
   }
   printf("\n");
   next = hatSeqNext(handle,offset);

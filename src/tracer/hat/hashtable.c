@@ -25,6 +25,7 @@ HashElement* newHashElement(unsigned long value) {
   HashElement* e = (HashElement*) malloc(sizeof(HashElement));
   e->value = value;
   e->next = NULL;
+  return e;
 }
 
 void freeHashElement(HashElement* e) {

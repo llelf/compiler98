@@ -18,3 +18,5 @@ void       replaceStr(char** s,char* s1,char *s2,char* s3);
 
 /* free memory space */
 void       freeStr(char* s);
+
+int checkParameters(char* str,char* allowed);
