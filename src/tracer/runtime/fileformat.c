@@ -10,6 +10,12 @@
  */
 
 FileOffset
+primTRoot (void)
+{
+    return (FileOffset)0;
+}
+
+FileOffset
 primTAp1 (FileOffset tap, FileOffset tfn
                         , FileOffset targ1
                         , FileOffset sr)

@@ -50,6 +50,7 @@ typedef struct {
 } *CNmType;
 
 
+FileOffset	primTRoot	(void);
 FileOffset	primTAp1	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset sr);
