@@ -73,6 +73,7 @@ struct stat statbuf;   /* ... to catch seek beyond EOF */
 main (int argc, char *argv[])
 {
   int i = 0;
+  char filename[256];
   while (++i < argc-1) {
     if (strcmp(argv[i], "-v") == 0) {
       vmode = 1;
@@ -85,10 +86,12 @@ main (int argc, char *argv[])
     }
   }
   if (i > argc-1) badusage();
-  stat(argv[i], &statbuf);
+  strcpy(filename,argv[i]);
+  strcat(filename,".hat");
+  stat(filename, &statbuf);
   filesize = statbuf.st_size;
-  f = open(argv[i], 0);
-  if (f==-1) { fprintf(stderr, "cannot open trace file"); exit(1); }
+  f = open(filename, 0);
+  if (f==-1) { fprintf(stderr, "cannot open trace file %s",filename); exit(1); }
   n = read(f, buf, BUFSIZE);
   boff = 0;
   foff = 0L;
@@ -101,7 +104,7 @@ main (int argc, char *argv[])
 
 
 badusage() {
-  fprintf(stderr,"usage: hat-check [-a] [-s] [-v] file-name\n");
+  fprintf(stderr,"usage: hat-check [-a] [-s] [-v] prog-name\n");
   fprintf(stderr,"\t-a\tprint ascii text version of hat file\n");
   fprintf(stderr,"\t-s\tprint statistics about frequency and size of nodes\n");
   fprintf(stderr,"\t-v\tverify tag types of pointer destinations\n");
