@@ -2,10 +2,23 @@
 #define _HSFFI_H
 
 #if !defined(INT64_MIN)
-#  if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__)
-#include "inttypes.h"
+#  if defined(__CYGWIN32__)
+#    include <sys/types.h>
+     //typedef signed char int8_t;
+     //typedef short  int16_t;
+     //typedef int  int32_t;
+     //typedef long long  int64_t;
+
+     typedef unsigned char   uint8_t;
+     typedef unsigned short  uint16_t;
+     typedef unsigned int    uint32_t;
+     typedef unsigned long long   uint64_t;
 #  else
-#include "stdint.h"
+#    if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#      include <inttypes.h>
+#    else
+#      include <stdint.h>
+#    endif
 #  endif
 #endif
 
