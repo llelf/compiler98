@@ -1,0 +1,12 @@
+module Array
+(Var "!",Has{args=2,fixity=L,priority=9,letBound=True})
+(Var "//",Has{args=2,fixity=L,priority=9,letBound=True})
+(Var "accum",Has{args=1,fixity=Def,priority=9,letBound=True})
+(Var "accumArray",Has{args=3,fixity=Def,priority=9,letBound=True})
+(Var "array",Has{args=2,fixity=Def,priority=9,letBound=True})
+(Var "assocs",Has{args=1,fixity=Def,priority=9,letBound=True})
+(Var "bounds",Has{args=1,fixity=Def,priority=9,letBound=True})
+(Var "elems",Has{args=1,fixity=Def,priority=9,letBound=True})
+(Var "indices",Has{args=0,fixity=Def,priority=9,letBound=True})
+(Var "ixmap",Has{args=3,fixity=Def,priority=9,letBound=True})
+(Var "listArray",Has{args=2,fixity=Def,priority=9,letBound=True})
