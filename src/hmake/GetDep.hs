@@ -128,12 +128,12 @@ readFirst opts name demand =
                                      readData p source (unlit name file) ppNone)
                                     (\_ -> rN ps)))
 
-  rP [] = error ("Can't find module "++name++" in\n\t"++
+  rP [] = error ("Can't find module "++name++" in user directories\n\t"++
                  concat (intersperse "\n\t" (".":pathSrc opts))++
-                 "\n  Or in standard libraries at\n\t"++
+                 "\n  Or in installed libraries/packages at\n\t"++
                  concat (intersperse "\n\t" (pathPrel opts))++
                  "\n  Asked for by: "++demand++
-                 "\n[Check settings of -I or -P flags?]\n")
+                 "\n  Fix using the -I, -P, or -package flags.\n")
   rP (p:ps) =
      let source = fixFile opts p ff (hiSuffix opts)
      in watch ("Trying (P)" ++ source) >>
@@ -156,12 +156,12 @@ readFirst opts name demand =
                   else try xs
               else try xs
 
-  rP [] = error ("Can't find module "++name++" in\n\t"++
+  rP [] = error ("Can't find module "++name++" in user directories\n\t"++
                  concat (intersperse "\n\t" (".":pathSrc opts))++
-                 "\n  Or in standard libraries at\n\t"++
+                 "\n  Or in installed libraries/packages at\n\t"++
                  concat (intersperse "\n\t" (pathPrel opts))++
                  "\n  Asked for by: "++demand++
-                 "\n[Check settings of -I or -P flags?]\n")
+                 "\n  Fix using the -I, -P, or -package flags.\n")
   rP (p:ps) = do
      let hinterface = fixFile opts p ff (hiSuffix opts)
      watch ("Trying (P)" ++ hinterface)

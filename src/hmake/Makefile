@@ -8,10 +8,11 @@ TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs SymTab.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
-          MkProg.hs IsPrefixOf.hs Compiler.hs PreProcessor.hs
+          MkProg.hs IsPrefixOf.hs Compiler.hs PreProcessor.hs \
+	  PackageConfig.hs
 CPPSRCS = Argv.hs Graph.hs GetDep.hs ParseLib.hs Compat.hs Imports.hs \
-	  Config.hs
-CFGSRCS = Config.hs Compiler.hs
+	  Config.hs RunAndReadStdout.hs
+CFGSRCS = RunAndReadStdout.hs Config.hs Compiler.hs
 
 OBJS    = $(patsubst %.hs, $(OBJDIR)/%.$O, $(SRCS))
 CPPOBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, $(CPPSRCS))
@@ -31,12 +32,18 @@ HEAP = -H4M
 endif
 ifeq "ghc" "$(HC)"
 HFLAGS += -package lang
+#ifeq "CYGWIN" "$(findstring CYGWIN, $(MACHINE))"
+#config: fixcygwin
+#endif
 endif
 
 all: $(TARGETS)
 install: $(TARGETS)
 config:
 	sh $(BUILDDIR)/hmake3.config
+fixcygwin:
+	cd ../..; MACHINE=$(MACHINE) script/fixcygwin
+	touch fixcygwin
 cfiles: clean $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
 fromC: $(OBJDIR)
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
@@ -105,7 +112,10 @@ ${OBJDIR}/Config.$O:	Config.hs ${OBJDIR}/Compiler.$O
 ${OBJDIR}/Compiler.$O:	Compiler.hs 
 ${OBJDIR}/ListUtil.$O:	ListUtil.hs 
 ${OBJDIR}/Argv.$O:	Argv.hs ${OBJDIR}/ListUtil.$O ${OBJDIR}/Compiler.$O \
-			${OBJDIR}/Config.$O 
+			${OBJDIR}/Config.$O ${OBJDIR}/PackageConfig.$O
+${OBJDIR}/PackageConfig.$O:	PackageConfig.hs ${OBJDIR}/RunAndReadStdout.$O \
+				${OBJDIR}/Compiler.$O ${OBJDIR}/Config.$O
+${OBJDIR}/RunAndReadStdout.$O:	RunAndReadStdout.hs
 ${OBJDIR}/MkProg.$O:	MkProg.hs ${OBJDIR}/Argv.$O ${OBJDIR}/GetDep.$O \
 			${OBJDIR}/Getmodtime.$O ${OBJDIR}/ListUtil.$O \
 			${OBJDIR}/Order.$O ${OBJDIR}/Output.$O 

@@ -3,6 +3,7 @@ module Argv(Goal(..),DecodedArgs(..),decode,stripGoal) where
 import ListUtil (lconcatMap)
 import Compiler
 import Config
+import PackageConfig (packageDirs)
 
 #if !defined(__HBC__)
 import List (isPrefixOf)
@@ -59,7 +60,10 @@ decode progArgs =
                  (map tail . filter (\v -> head v == 'i')) flags ++
                  if isopt "keepPrelude" then pathPrel d else []
     , pathPrel = (map tail . filter (\v -> head v == 'P')) flags ++
-                 includePaths (compiler d)
+                 includePaths (compiler d) ++
+                 packageDirs (compiler d)
+                             (map (drop 8) $
+                              filter ("package="`isPrefixOf`) flags)
     , zdefs    = (map tail . filter (\v -> head v == 'Z')) flags ++
                  cppSymbols (compiler d) ++
                  (if isHaskell98 (compiler d) then haskell98SymsForCpp else [])

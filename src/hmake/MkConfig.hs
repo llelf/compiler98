@@ -1,40 +1,21 @@
-{-# OPTIONS -fglasgow-exts #-}
 -- main program for utility hmake-config
 module Main where
 
 import Compiler (HC(..))
 import Config
+import RunAndReadStdout (runAndReadStdout, basename, dirname, unsafePerformIO)
 import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
                  ,Permissions(..),renameFile,createDirectory)
-import System (system,exitWith,ExitCode(..),getArgs,getEnv,getProgName)
+import System (exitWith,ExitCode(..),getArgs,getEnv,getProgName)
 import List (intersperse,nub,isPrefixOf,sort)
 import Char (isDigit)
 import Monad (foldM,when)
 import Maybe (isJust,fromJust)
+import IO (stderr,isDoesNotExistError)
 #ifdef __HBC__
 import IOMisc (hPutStrLn)
 #else
 import IO (hPutStrLn)
-#endif
-import IO (stderr,isDoesNotExistError 
-          ,openFile,IOMode(ReadMode),hClose,hGetChar,bracket,isEOFError)
-
-#ifdef __HBC__
-import UnsafePerformIO
-#ifdef __HASKELL98__
-import GetPid
-getProcessID = getPid
-#else
-getProcessID = return 3154      -- arbitrary number
-#endif
-#endif
-#ifdef __NHC__
-import IOExtras (unsafePerformIO)
-foreign import "getpid" getProcessID :: IO Int
-#endif
-#ifdef __GLASGOW_HASKELL__
-import IOExts (unsafePerformIO)
-foreign import "getpid" getProcessID :: IO Int
 #endif
 
 
@@ -157,6 +138,14 @@ configure Ghc ghcpath = do
                                   ++"sed 's/^.*version[ ]*\\([0-9.]*\\).*/\\1/'"
                                  )
   let ghcsym = (read (take 3 (filter isDigit ghcversion))) :: Int
+      config  = CompilerConfig
+			{ compilerStyle = Ghc
+			, compilerPath  = ghcpath
+			, compilerVersion = ghcversion
+			, includePaths  = undefined
+			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
+			, extraCompilerFlags = []
+			, isHaskell98   = ghcsym>=400 }
   if ghcsym < 500
     then do
       dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -1 | "
@@ -164,26 +153,12 @@ configure Ghc ghcpath = do
       let incdir1 = dir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
-        then return CompilerConfig
-			{ compilerStyle = Ghc
-			, compilerPath  = ghcpath
-			, compilerVersion = ghcversion
-			, includePaths  = ghcDirs ghcsym incdir1
-			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
-			, extraCompilerFlags = []
-			, isHaskell98   = ghcsym>=400 }
+        then return config{ includePaths = ghcDirs ghcsym incdir1 }
         else do
           let incdir2 = dir++"/lib/imports"
           ok <- doesDirectoryExist incdir2
           if ok
-            then return CompilerConfig
-			{ compilerStyle = Ghc
-			, compilerPath  = ghcpath
-			, compilerVersion = ghcversion
-			, includePaths  = ghcDirs ghcsym incdir2
-			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
-			, extraCompilerFlags = []
-			, isHaskell98   = ghcsym>=400 }
+            then return config{ includePaths = ghcDirs ghcsym incdir2 }
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
     else do -- 5.00 and above
@@ -196,19 +171,12 @@ configure Ghc ghcpath = do
         then do
           let ghcpkg = dirname fullpath++"/ghc-pkg-"++ghcversion
           pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
+          let pkgsOK = filter (`elem`["std","base","haskell98"]) (deComma pkgs)
           idirs <- mapM (\p-> runAndReadStdout
-                                  (ghcpkg++" --show-package="
-                                   ++(if last p==',' then init p else p)
+                                  (ghcpkg++" --show-package="++p
                                    ++" --field=import_dirs"))
-                        (words pkgs)
-          return CompilerConfig
-			{ compilerStyle = Ghc
-			, compilerPath  = ghcpath
-			, compilerVersion = ghcversion
-			, includePaths  = pkgDirs libdir idirs
-			, cppSymbols    = ["__GLASGOW_HASKELL__="++show ghcsym]
-			, extraCompilerFlags = []
-			, isHaskell98   = True }
+                        pkgsOK
+          return config{ includePaths = pkgDirs libdir idirs }
         else do ioError (userError ("Can't find ghc includes at "++incdir1))
  where
     ghcDirs n root | n < 400   = [root]
@@ -223,6 +191,7 @@ configure Ghc ghcpath = do
                     then libdir++drop 7 dir
                     else dir)
             (concatMap words dirs)
+    deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
 
 configure Nhc98 nhcpath = do
   fullpath <- which nhcpath
@@ -264,7 +233,7 @@ configure (Unknown hc) hcpath = do
     exitWith (ExitFailure 4)
     return undefined  -- never reached
 
-
+-- Work out which basic compiler.
 hcStyle :: String -> HC
 hcStyle path = toCompiler (basename path)
   where
@@ -274,43 +243,6 @@ hcStyle path = toCompiler (basename path)
                   | "ghc" `isPrefixOf` hc = Ghc
                   | "hbc" `isPrefixOf` hc = Hbc
                   | otherwise             = Unknown hc
-
-basename,dirname :: String -> String
-basename = reverse .        takeWhile (/='/') . reverse
-dirname  = reverse . safetail . dropWhile (/='/') . reverse
-  where safetail [] = []
-        safetail (_:x) = x
-
-
--- Generate a temporary filename unique to this process.
-tmpfile :: String -> String
-tmpfile root = unsafePerformIO $ do p <- getProcessID
-                                    return ("/tmp/"++root++"."++show p)
-
--- Run a shell command and collect its output.
-runAndReadStdout :: String -> IO String
-runAndReadStdout cmd = do
-    let output = tmpfile "hmakeconfig"
-    err <- system ("sh -c \""++cmd++" >"++output++"\"")
-    case err of
-        ExitFailure _ -> ioError (userError ("Command ("++cmd++") failed"))
-	_ -> return ()
-    s <- readFileNow output
-    removeFile output	-- file will not be removed until readFile closes it
-    return (safeinit s)	-- strip trailing newline added by shell
-  where
-    safeinit []     = []
-    safeinit ['\n'] = []
-    safeinit [x]    = [x]
-    safeinit (x:xs) = x: safeinit xs
-    readFileNow f = bracket (openFile f ReadMode) hClose hGetContentsNow 
-    hGetContentsNow h = loop ""
-      where loop cts = do x <- catch (hGetChar h >>= (return . Just))
-                                     (\e->if isEOFError e 
-                                          then return $ Nothing
-                                          else ioError e)
-                          case x of Just c  -> loop (c:cts)
-                                    Nothing -> return $ reverse cts
 
 -- Get an environment variable if it exists, or default to given string
 withDefault name def = unsafePerformIO $
