@@ -41,4 +41,9 @@ extern NodePtr getStablePtr(NodePtr x);			/* MW */
 extern NodePtr mkInt64(long long i);
 #define sizeInt64 (1+EXTRA+2)
 
+#define mkWord8(i)	mkInt(i)
+#define mkWord16(i)	mkInt(i)
+#define mkWord32(i)	mkInt(i)
+#define mkWord64(i)	mkInt64(i)
+
 extern long long get_64bit_value (NodePtr n);

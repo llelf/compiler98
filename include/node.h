@@ -130,9 +130,9 @@
 
 #define GET_CONSTR(p)        CONINFO_NUMBER(GET_CONINFO(p))
 #define GET_CHAR_VALUE(p)    (char)GET_INT_VALUE(p)
-#define GET_8BIT_VALUE(p)    (char)GET_INT_VALUE(p)
-#define GET_16BIT_VALUE(p)   (short)GET_INT_VALUE(p)
-#define GET_32BIT_VALUE(p)   (long)GET_INT_VALUE(p)
+#define GET_8BIT_VALUE(p)    (unsigned char)GET_INT_VALUE(p)
+#define GET_16BIT_VALUE(p)   (unsigned short)GET_INT_VALUE(p)
+#define GET_32BIT_VALUE(p)   (unsigned long)GET_INT_VALUE(p)
 
 #define GET_BOOL_VALUE(p)    CONINFO_NUMBER(GET_CONINFO(p))
 
