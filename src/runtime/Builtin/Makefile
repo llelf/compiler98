@@ -13,12 +13,13 @@ SRCS = \
 	cOpen.c cHClose.c cHIsEOF.c cHFileSize.c \
 	cHFlush.c cHGetPosn.c cHSetPosn.c cHSeek.c \
 	cHGetBuffering.c cHSetBuffering.c \
+	cHGetFileName.c \
 	primEqHandlePosn.c \
 	cGetProgName.c cGetEnv.c cGetArgs.c cProfile.c cExitWith.c cSystem.c \
 	cEval.c \
 	cOpenSocket.c \
 	primVector.c primIndex.c \
-        cBits.c  cDoesFileExist.c cFFI.c \
+        cBits.c  cDoesFileExist.c cFFI.c cIOExtras.c \
 	primsFloat.c primsDouble.c
 
 LINKS = haskell2c.h twopass.h
