@@ -2,6 +2,7 @@
 #define _FILEFORMAT_H
 
 #include "ident.h"
+#include "runtime.h"
 
 extern FILE *HatFile;
 
@@ -27,7 +28,7 @@ extern FILE *HatFile;
 #define NTRational	3
 #define NTFloat		4
 #define NTDouble	5
-#define NTID		6
+#define NTId		6
 #define NTConstr	7
 #define NTTuple		8
 #define NTFun		9
@@ -39,26 +40,35 @@ extern FILE *HatFile;
 #define NTGuard		15
 #define NTContainer	16
 
+typedef struct {
+    int constr;
+#ifdef PROFILE
+    int profInfo[EXTRA];
+#endif
+    FileOffset ptr;
+    int trust;
+} *CNmType;
 
-FileOffset	mkTAp1		(FileOffset tap, FileOffset tfn
+
+FileOffset	primTAp1	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset sr);
-FileOffset	mkTAp2		(FileOffset tap, FileOffset tfn
+FileOffset	primTAp2	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset targ2
                                                , FileOffset sr);
-FileOffset	mkTAp3		(FileOffset tap, FileOffset tfn
+FileOffset	primTAp3	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset targ2
                                                , FileOffset targ3
                                                , FileOffset sr);
-FileOffset	mkTAp4		(FileOffset tap, FileOffset tfn
+FileOffset	primTAp4	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset targ2
                                                , FileOffset targ3
                                                , FileOffset targ4
                                                , FileOffset sr);
-FileOffset	mkTAp5		(FileOffset tap, FileOffset tfn
+FileOffset	primTAp5	(FileOffset tap, FileOffset tfn
                                                , FileOffset targ1
                                                , FileOffset targ2
                                                , FileOffset targ3
@@ -66,32 +76,42 @@ FileOffset	mkTAp5		(FileOffset tap, FileOffset tfn
                                                , FileOffset targ5
                                                , FileOffset sr);
 
-FileOffset	mkTNm		(FileOffset tnm, FileOffset nm, FileOffset sr);
-FileOffset	mkTInd		(FileOffset t1, FileOffset t2);
-FileOffset	mkTHidden	(FileOffset t1);
-FileOffset	mkTSatA		(FileOffset t1);
-FileOffset	mkTSatB		(FileOffset t1);
-FileOffset	mkTSatC		(FileOffset t1);
+FileOffset	primTNm		(FileOffset tnm, CNmType nm, FileOffset sr);
+FileOffset	primTInd	(FileOffset t1, FileOffset t2);
+FileOffset	primTHidden	(FileOffset t1);
+FileOffset	primTSatA	(FileOffset t1);
+FileOffset	primTSatB	(FileOffset t1);
+FileOffset	primTSatC	(FileOffset t1, FileOffset t2);
 
-FileOffset	mkNTInt		(int i);
-FileOffset	mkNTChar	(char c);
-FileOffset	mkNTInteger	(NodePtr i);
-FileOffset	mkNTRational	(NodePtr i,NodePtr j);
-FileOffset	mkNTFloat	(float f);
-FileOffset	mkNTDouble	(double d);
-FileOffset	mkNTId		(IdEntry *id);
-FileOffset	mkNTConstr	(IdEntry *id);
-FileOffset	mkNTTuple	(void);
-FileOffset	mkNTFun		(void);
-FileOffset	mkNTCase	(void);
-FileOffset	mkNTLambda	(void);
-FileOffset	mkNTDummy	(void);
-FileOffset	mkNTCString	(char *s);
-FileOffset	mkNTIf		(void);
-FileOffset	mkNTGuard	(void);
-FileOffset	mkNTContainer	(void);
+CNmType		primNTInt	(int i);
+CNmType		primNTChar	(char c);
+CNmType		primNTInteger	(NodePtr i);
+CNmType		primNTRational	(NodePtr i,NodePtr j);
+CNmType		primNTFloat	(float f);
+CNmType		primNTDouble	(double d);
+CNmType		primNTId	(IdEntry *id);	/* believed not necessary */
+CNmType		primNTConstr	(IdEntry *id);	/* believed not necessary */
+CNmType		primNTTuple	(void);
+CNmType		primNTFun	(void);
+CNmType		primNTCase	(void);
+CNmType		primNTLambda	(void);
+CNmType		primNTDummy	(void);
+CNmType		primNTCString	(char *s);
+CNmType		primNTIf	(void);
+CNmType		primNTGuard	(void);
+CNmType		primNTContainer	(void);
 
-FileOffset	mkSR0		(void);
-FileOffset	mkSR3		(SrcRef *sr);
+int		primTrustedFun	(CNmType nm);
+
+FileOffset	primSR0		(void);
+FileOffset	primSR3		(SrcRef *sr);
+
+
+#ifndef False
+#define False	0
+#endif
+#ifndef True
+#define True	1
+#endif
 
 #endif

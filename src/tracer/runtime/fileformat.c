@@ -1,14 +1,23 @@
+#include <stdio.h>
 #include "fileformat.h"
 
+/* Remaining problems include (at least) the following:
+ *   . All Integer values are faked to zero for now.
+ *   . Hence all Rational values are also dummy.
+ *   . Floats and Doubles are written to the file without regard for endianness.
+ *   . SATs are never overwritten - the B and C variants create new things
+ *     in the file.
+ */
+
 FileOffset
-mkTAp1 (FileOffset tap, FileOffset tfn
-                      , FileOffset targ1
-                      , FileOffset sr)
+primTAp1 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TAp)),HatFile);
+    fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x01,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
     fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
@@ -18,15 +27,15 @@ mkTAp1 (FileOffset tap, FileOffset tfn
 }
 
 FileOffset
-mkTAp2 (FileOffset tap, FileOffset tfn
-                      , FileOffset targ1
-                      , FileOffset targ2
-                      , FileOffset sr)
+primTAp2 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TAp)),HatFile);
+    fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x02,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
     fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
@@ -37,16 +46,16 @@ mkTAp2 (FileOffset tap, FileOffset tfn
 }
 
 FileOffset
-mkTAp3 (FileOffset tap, FileOffset tfn
-                      , FileOffset targ1
-                      , FileOffset targ2
-                      , FileOffset targ3
-                      , FileOffset sr)
+primTAp3 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TAp)),HatFile);
+    fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x03,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
     fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
@@ -58,17 +67,17 @@ mkTAp3 (FileOffset tap, FileOffset tfn
 }
 
 FileOffset
-mkTAp4 (FileOffset tap, FileOffset tfn
-                      , FileOffset targ1
-                      , FileOffset targ2
-                      , FileOffset targ3
-                      , FileOffset targ4
-                      , FileOffset sr)
+primTAp4 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TAp)),HatFile);
+    fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x04,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
     fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
@@ -81,18 +90,18 @@ mkTAp4 (FileOffset tap, FileOffset tfn
 }
 
 FileOffset
-mkTAp5 (FileOffset tap, FileOffset tfn
-                      , FileOffset targ1
-                      , FileOffset targ2
-                      , FileOffset targ3
-                      , FileOffset targ4
-                      , FileOffset targ5
-                      , FileOffset sr)
+primTAp5 (FileOffset tap, FileOffset tfn
+                        , FileOffset targ1
+                        , FileOffset targ2
+                        , FileOffset targ3
+                        , FileOffset targ4
+                        , FileOffset targ5
+                        , FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TAp)),HatFile);
+    fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
     fwrite(&tap,   sizeof(FileOffset), 1, HatFile);
     fwrite(&tfn,   sizeof(FileOffset), 1, HatFile);
@@ -111,313 +120,344 @@ mkTAp5 (FileOffset tap, FileOffset tfn
 
 
 FileOffset
-mkTNm (FileOffset tnm, FileOffset nm, FileOffset sr)
+primTNm (FileOffset tnm, CNmType nm, FileOffset sr)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TNm)),HatFile);
-    fwrite(&tnm, sizeof(FileOffset), 1, HatFile);
-    fwrite(&nm,  sizeof(FileOffset), 1, HatFile);
-    fwrite(&sr,  sizeof(FileOffset), 1, HatFile);
+    fputc(((Trace<<5) | TNm),HatFile);
+    fwrite(&tnm,       sizeof(FileOffset), 1, HatFile);
+    fwrite(&(nm->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,        sizeof(FileOffset), 1, HatFile);
     return fo;
 }
 
 FileOffset
-mkTInd (FileOffset t1, FileOffset t2)
+primTInd (FileOffset t1, FileOffset t2)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TInd)),HatFile);
-    fwrite(&t1,   sizeof(FileOffset), 1, HatFile);
-    fwrite(&t2,   sizeof(FileOffset), 1, HatFile);
+    fputc(((Trace<<5) | TInd),HatFile);
+    fwrite(&t1, sizeof(FileOffset), 1, HatFile);
+    fwrite(&t2, sizeof(FileOffset), 1, HatFile);
     return fo;
 }
 
 FileOffset
-mkTHidden (FileOffset t1)
+primTHidden (FileOffset t1)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | THidden)),HatFile);
-    fwrite(&t1,   sizeof(FileOffset), 1, HatFile);
+    fputc(((Trace<<5) | THidden),HatFile);
+    fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     return fo;
 }
 
 FileOffset
-mkTSatA (FileOffset t1)
+primTSatA (FileOffset t1)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((Trace<<5) | TSatA)),HatFile);
-    fwrite(&t1,   sizeof(FileOffset), 1, HatFile);
-    return fo;
-}
-
-FileOffset
-mkTSatB (FileOffset t1)
-{
-    FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
-    fo = htonl(fo);
-    fputc(((Trace<<5) | TSatB)),HatFile);
-    fwrite(&t1,   sizeof(FileOffset), 1, HatFile);
-    return fo;
-}
-
-FileOffset
-mkTSatC (FileOffset t1)
-{
-    FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
-    fo = htonl(fo);
-    fputc(((Trace<<5) | TSatC)),HatFile);
-    fwrite(&t1,   sizeof(FileOffset), 1, HatFile);
+    fputc(((Trace<<5) | TSatA),HatFile);
+    fwrite(&t1, sizeof(FileOffset), 1, HatFile);
     return fo;
 }
 
 
-
-
-
-
+/* This implementation of SatB is wrong - it creates a new node rather than
+ * overwriting the old one.
+ */
 
 FileOffset
-mkNTInt (int i)
+primTSatB (FileOffset t1)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTInt)),HatFile);
+    fputc(((Trace<<5) | TSatB),HatFile);
+    fwrite(&t1, sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+/* This implementation of SatC is wrong - it creates a new node rather than
+ * overwriting the old one.
+ */
+
+FileOffset
+primTSatC (FileOffset torig,FileOffset teval)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((Trace<<5) | TSatC),HatFile);
+    fwrite(&teval, sizeof(FileOffset), 1, HatFile);
+    return fo;
+}
+
+
+
+/* Auxiliary function to turn a simple FileOffset into a struct CNmType.
+ * We store the kind of the Nm object (currently not needed),
+ * and also its trustedness (needed).
+ */
+
+CNmType
+mkCNmType (int type, FileOffset fo, int trustedness)
+{
+    CNmType nm;
+    nm = (CNmType) C_ALLOC(1+EXTRA+2);
+    nm->constr = CONSTRW(type,2);
+    INIT_PROFINFO((void*)nm,&dummyProfInfo)
+    nm->ptr = fo;
+    nm->trust = trustedness;
+    return nm;
+}
+
+
+
+
+
+
+CNmType
+primNTInt (int i)
+{
+    FileOffset fo;
+    fo = ftell(HatFile);
+    fo = htonl(fo);
+    fputc(((NmType<<5) | NTInt),HatFile);
     i = htonl(i);
-    fwrite(&i,   sizeof(int), 1, HatFile);
-    return fo;
+    fwrite(&i, sizeof(int), 1, HatFile);
+    return mkCNmType(NTInt,fo,False);
 }
 
-FileOffset
-mkNTChar (char c)
+CNmType
+primNTChar (char c)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTChar)),HatFile);
-    fwrite(&c,   sizeof(char), 1, HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTChar),HatFile);
+    fwrite(&c, sizeof(char), 1, HatFile);
+    return mkCNmType(NTChar,fo,False);
 }
 
-FileOffset
-mkNTInteger (Nodeptr i)
+CNmType
+primNTInteger (NodePtr i)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTInteger)),HatFile);
+    fputc(((NmType<<5) | NTInteger),HatFile);
     fputc(0x00,HatFile);	/* fake all Integers as zero for now */
-    return fo;
+    return mkCNmType(NTInteger,fo,False);
 }
 
-FileOffset
-mkNTRational (Nodeptr i, Nodeptr j)
+CNmType
+primNTRational (NodePtr i, NodePtr j)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTRational)),HatFile);
+    fputc(((NmType<<5) | NTRational),HatFile);
     fputc(0x00,HatFile);	/* fake all Integers as zero for now */
     fputc(0x00,HatFile);	/* fake all Integers as zero for now */
-    return fo;
+    return mkCNmType(NTRational,fo,False);
 }
 
-FileOffset
-mkNTFloat (float f)
+CNmType
+primNTFloat (float f)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    CNmType nm;
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTFloat)),HatFile);
-    fwrite(&f,   sizeof(float), 1, HatFile);	/* ignore endian problems */
-    return fo;
+    fputc(((NmType<<5) | NTFloat),HatFile);
+    fwrite(&f, sizeof(float), 1, HatFile);	/* ignore endian problems */
+    return mkCNmType(NTFloat,fo,False);
 }
 
-FileOffset
-mkNTDouble (double d)
+CNmType
+primNTDouble (double d)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTDouble)),HatFile);
-    fwrite(&d,   sizeof(double), 1, HatFile);	/* ignore endian problems */
-    return fo;
+    fputc(((NmType<<5) | NTDouble),HatFile);
+    fwrite(&d, sizeof(double), 1, HatFile);	/* ignore endian problems */
+    return mkCNmType(NTDouble,fo,False);
 }
 
-FileOffset
-mkNTId (IdEntry *id)
+CNmType
+primNTId (IdEntry *id)
 {
     if (id->fileoffset) {
-        return id->fileoffset;
+        return mkCNmType(NTId,id->fileoffset,id->srcmod->trusted);
     } else {
         FileOffset fo;
         int i;
-        fgetpos(HatFile,(fpos_t)&fo);
+        fo = ftell(HatFile);
         fo = htonl(fo);
-        fputc(((NmType<<5) | NTId)),HatFile);
+        fputc(((NmType<<5) | NTId),HatFile);
         fprintf(HatFile,"%s",id->name);
         fputc(0x0,HatFile);
         i = 0;
-        fwrite(&i,                       sizeof(FileOffset), 1, HatFile);
-      /*fwrite(&id->modinfo->fileoffset, sizeof(FileOffset), 1, HatFile);*/
+        fwrite(&(id->srcmod->fileoffset), sizeof(FileOffset), 1, HatFile);
         fputc(id->pri,HatFile);
         i = htonl(id->srcpos);
         fwrite(&i, sizeof(int), 1, HatFile);
         id->fileoffset = fo;
-        return fo;
+        return mkCNmType(NTId,fo,id->srcmod->trusted);
     }
 }
 
-FileOffset
-mkNTConstr (IdEntry *id)
+/* probably never used? */
+CNmType
+primNTConstr (IdEntry *id)
 {
     if (id->fileoffset) {
-        return id->fileoffset;
+        return mkCNmType(NTConstr,id->fileoffset,id->srcmod->trusted);
     } else {
         FileOffset fo;
         int i;
-        fgetpos(HatFile,(fpos_t)&fo);
+        fo = ftell(HatFile);
         fo = htonl(fo);
-        fputc(((NmType<<5) | NTConstr)),HatFile);
+        fputc(((NmType<<5) | NTConstr),HatFile);
         fprintf(HatFile,"%s",id->name);
         fputc(0x0,HatFile);
         i = 0;
-        fwrite(&i,                       sizeof(FileOffset), 1, HatFile);
-      /*fwrite(&id->modinfo->fileoffset, sizeof(FileOffset), 1, HatFile);*/
+        fwrite(&(id->srcmod->fileoffset), sizeof(FileOffset), 1, HatFile);
         fputc(id->pri,HatFile);
         i = htonl(id->srcpos);
         fwrite(&i, sizeof(int), 1, HatFile);
         id->fileoffset = fo;
-        return fo;
+        return mkCNmType(NTConstr,fo,id->srcmod->trusted);
     }
 }
 
-FileOffset
-mkNTTuple ()
+CNmType
+primNTTuple ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTTuple)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTTuple),HatFile);
+    return mkCNmType(NTTuple,fo,False);
 }
 
-FileOffset
-mkNTFun ()
+CNmType
+primNTFun ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTFun)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTFun),HatFile);
+    return mkCNmType(NTFun,fo,False);
 }
 
-FileOffset
-mkNTCase ()
+CNmType
+primNTCase ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTCase)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTCase),HatFile);
+    return mkCNmType(NTCase,fo,False);
 }
 
-FileOffset
-mkNTLambda ()
+CNmType
+primNTLambda ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTLambda)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTLambda),HatFile);
+    return mkCNmType(NTLambda,fo,False);
 }
 
-FileOffset
-mkNTDummy ()
+CNmType
+primNTDummy ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTDummy)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTDummy),HatFile);
+    return mkCNmType(NTDummy,fo,False);
 }
 
-FileOffset
-mkNTCString (char *s)
+CNmType
+primNTCString (char *s)
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTCString)),HatFile);
+    fputc(((NmType<<5) | NTCString),HatFile);
     fprintf(HatFile,"%s",s);
     fputc(0x0,HatFile);
-    return fo;
+    return mkCNmType(NTCString,fo,False);
 }
 
-FileOffset
-mkNTIf ()
+CNmType
+primNTIf ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTIf)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTIf),HatFile);
+    return mkCNmType(NTIf,fo,False);
 }
 
-FileOffset
-mkNTGuard ()
+CNmType
+primNTGuard ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTGuard)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTGuard),HatFile);
+    return mkCNmType(NTGuard,fo,False);
 }
 
-FileOffset
-mkNTContainer ()
+CNmType
+primNTContainer ()
 {
     FileOffset fo;
-    fgetpos(HatFile,(fpos_t)&fo);
+    fo = ftell(HatFile);
     fo = htonl(fo);
-    fputc(((NmType<<5) | NTContainer)),HatFile);
-    return fo;
+    fputc(((NmType<<5) | NTContainer),HatFile);
+    return mkCNmType(NTContainer,fo,False);
+}
+
+
+int
+primTrustedFun (CNmType nm)
+{
+    return nm->trust;
 }
 
 
 
-
-
 FileOffset
-mkSR0 ()
+primSR0 ()
 {
     return (FileOffset)0;
 }
 
 FileOffset
-mkSR3 (SrcRef *sr)
+primSR3 (SrcRef *sr)
 {
     if (sr->fileoffset) {
         return sr->fileoffset;
     } else {
         FileOffset fo;
         int i = 0;
-        fgetpos(HatFile,(fpos_t)&fo);
+        fo = ftell(HatFile);
         fo = htonl(fo);
         fputc((SR<<5),HatFile);
-        fwrite(&i,                       sizeof(fileOffset), 1, HatFile);*/
-      /*fwrite(&sr->modinfo->fileoffset, sizeof(fileOffset), 1, HatFile);*/
+        fwrite(&(sr->modinfo->fileoffset), sizeof(FileOffset), 1, HatFile);
         i = htonl(sr->posn);
-        fwrite(&i, sizeof(int), 1, HatFile);*/
+        fwrite(&i, sizeof(int), 1, HatFile);
         sr->fileoffset = fo;
         return fo;
     }
