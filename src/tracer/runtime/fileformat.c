@@ -851,6 +851,7 @@ primSR3 (SrcRef *sr)
     } else {
         FileOffset fo;
         int i = 0;
+        if (!(sr->modinfo->fileoffset)) (void)primModInfo(sr->modinfo);
         fo = htonl(HatCounter);
         HIDE(fprintf(stderr,"\tprimSR3 -> 0x%x\n",fo);)
         fputc((SR<<5),HatFile);
