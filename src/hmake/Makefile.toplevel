@@ -3,6 +3,7 @@ export MACHINE
 
 # This included config is only for the BUILDWITH variable.
 include targets/$(MACHINE)/config.cache
+BUILDCOMP = $(shell echo ${BUILDWITH} | cut -c1-3)
 
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
@@ -15,9 +16,9 @@ TARGETS = hmake-nhc98 hmake-hbc hmake-ghc chmake hi-nhc98 hi-hbc hi-ghc chi
 
 ##### compiler build + install scripts
 
-all:   all-${BUILDWITH}
-hmake: hmake-${BUILDWITH}
-hi:    hi-${BUILDWITH}
+all:   all-${BUILDCOMP}
+hmake: hmake-${BUILDCOMP}
+hi:    hi-${BUILDCOMP}
 help:
 	@echo "Common targets include:        all install clean realclean config"
 	@echo "Common targets include:        hmake hi"
@@ -28,37 +29,37 @@ config:
 install: all
 	./configure --install
 
-all-hbc:   hmake-hbc hi-hbc
-all-ghc:   hmake-ghc hi-ghc
-all-gcc:   chmake chi
-all-nhc98: hmake-nhc98 hi-nhc98
+all-hbc: hmake-hbc hi-hbc
+all-ghc: hmake-ghc hi-ghc
+all-gcc: chmake chi
+all-nhc: hmake-nhc hi-nhc
 
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 
-$(TARGDIR)/$(MACHINE)/hmake-nhc98: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=nhc98 install config
-	touch $(TARGDIR)/$(MACHINE)/hmake-nhc98
+$(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
+	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=hbc install config
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
-	cd src/hmake;          $(MAKE) HC=ghc install config
+	cd src/hmake;          $(MAKE) HC=$(BUILDWITH) install config
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	@echo "WARNING: hmake might not build correctly from C sources!"
 	cd src/hmake;          $(MAKE) HC=nhc98 fromC config
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
-$(TARGDIR)/$(MACHINE)/hi-nhc98: $(HMAKE) hmake-nhc98
-	cd src/interpreter;    $(MAKE) HC=nhc98 install
+$(TARGDIR)/$(MACHINE)/hi-nhc: $(HMAKE) hmake-nhc
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hi-nhc98
 $(TARGDIR)/$(MACHINE)/hi-hbc: $(HMAKE) hmake-hbc
-	cd src/interpreter;    $(MAKE) HC=hbc install
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hi-hbc
 $(TARGDIR)/$(MACHINE)/hi-ghc: $(HMAKE) hmake-ghc
-	cd src/interpreter;    $(MAKE) HC=ghc install
+	cd src/interpreter;    $(MAKE) HC=$(BUILDWITH) install
 	touch $(TARGDIR)/$(MACHINE)/hi-ghc
 $(TARGDIR)/$(MACHINE)/chi: $(HMAKEC) chmake
 	@echo "WARNING: hi might not build correctly from C sources!"
