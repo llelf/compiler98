@@ -225,6 +225,7 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
     }
     /* *dstptr = '\0'; */
     err = fwrite(buf,sizeof(char),reqsize,f->fp);
+    err = fflush(f->fp);
   }
 }
 
