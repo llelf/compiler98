@@ -72,7 +72,7 @@ int stopInscount;
 static SInfo apply1ProfInfo = { "Runtime","<APPLY>","<APPLY.VAP>"};
 static SInfo apply2ProfInfo = { "Runtime","<APPLY>","<APPLY.$>"};
 static SInfo apply3ProfInfo = { "Runtime","<APPLY>","<APPLY.CAP>"};
-static SInfo evalProfInfo = { "Runtime","<EVAL>","<EVAL.BlackHole>"};
+/* static SInfo evalProfInfo = { "Runtime","<EVAL>","<EVAL.BlackHole>"}; */
 static SInfo int1ProfInfo = { "Runtime","<unary_int_op>","Prelude.Int"};
 static SInfo int2ProfInfo = { "Runtime","<binary_int_op>","Prelude.Int"};
 static SInfo float1ProfInfo = { "Runtime","<unary_float_op>","Prelude.Float"};
@@ -85,7 +85,7 @@ static SInfo string1ProfInfo = { "Runtime","<STRING>","Prelude.Int"};
 static SInfo string2ProfInfo = { "Runtime","<STRING>","<String_VAP>"};
 static SInfo string3ProfInfo = { "Runtime","<STRING>","Prelude.:"};
 static SInfo inpStringProfInfo = { "Runtime","<STRING>","<hGetContents_VAP>"};
-static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
+/* static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"}; */
 
 #endif
 
@@ -988,7 +988,7 @@ int sizeofNode(Node tag) {
 	return 0;
       }
     }
-  case IND_TAG:
+  default:
     { fprintf(stderr,"IND_TAG in sizeofNode!\n");
       exit(-1);
       return 0;

@@ -1,5 +1,8 @@
 /* tprof.c */
 #include <string.h>
+#include <stdlib.h>
+#include <math.h>
+#include <time.h>
 #include "runtime.h"
 #include "newmacros.h"  /* only for DIR_DEL macro ! */
 
@@ -263,17 +266,6 @@ static void insert_by_key_AVL(AVLnode **tree, AVLnode **node) {
   }
 }
 
-static void discard_AVL(AVLnode **tree) {
-  AVLnode *left_sub, *right_sub, *root;
-  if (*tree != NULL) {
-    discard_AVL(&((*tree)->left));
-    discard_AVL(&((*tree)->right));
-    free(root->funname);
-    free(root);
-    *tree = NULL;
-  }
-}
-
 static void print_AVL_raw(AVLnode *tree, FILE *fp, int tab) {
   int i;
   if (tree != NULL) {
@@ -369,8 +361,7 @@ static char* print_AVL_node(AVLnode *tree, Subtree *subtree,
         }
         else {
           fprintf(fp, "\n%s%c\t %5.1f%% time", mod, sp, 
-                  100*((float) tree->ticks)/Sums.nonZeroTotalTicks, 
-                  *(tree->enters));
+                  100*((float) tree->ticks)/Sums.nonZeroTotalTicks);
           if (gem_wants_the_ticks) fprintf(fp, "\t[%d]",tree->ticks);
           fprintf(fp, "\t%10d calls", *(tree->enters));
           if(enter_percentages) 
@@ -491,7 +482,7 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
   AVLnode *n_ticks_AVL_root;
   Subtree subtree[Mods.premods+Mods.usrmods+1];
 
-  int i, nonZeroTotalTicks;
+  int i;
   char *c;
 
   if (*tree != NULL) {
@@ -648,7 +639,7 @@ void tprofStart(void)
 
 void tprofInclude(char *module)
 {
-  int mod_len,i,j,k;
+  int mod_len,i,j;
   int listpermod=0;
   char *args;
 
@@ -861,7 +852,7 @@ void gcDataStart(int argc, char **argv)
 
 
   if(profileInterval)
-    fprintf(gdFILE, "PROFINTERVAL %8d\n", profileInterval);
+    fprintf(gdFILE, "PROFINTERVAL %7.2f\n", profileInterval);
   else {
     profileInterval = (double)hpSize+spSize;
     gcData = 2;
@@ -870,7 +861,7 @@ void gcDataStart(int argc, char **argv)
 
 void gcDataStop(NodePtr hp) {
   /* Last data point might be needed */
-  fprintf(gdFILE,"POINT %8d %8d %8d %7.3f\n",hp-hpBase+hpTotal,0,0,0.0);  
+  fprintf(gdFILE,"POINT %8ld %8d %8d %7.3f\n",hp-hpBase+hpTotal,0,0,0.0);  
 
   fprintf(gdFILE,"GCTIME %7.2f\n",(double)gcTime.l/(double)HZ);
   fprintf(gdFILE,"RUNTIME %7.2f\n",(double)runTime.l/(double)HZ);

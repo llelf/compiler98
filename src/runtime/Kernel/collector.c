@@ -94,7 +94,7 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 #if TPROF
   /*hpBase = &hpLowLimit[GCEXTRA];*/
   if(gcData) {
-    fprintf(gdFILE,"HPSP %8d\n",totalSize-tableSize);
+    fprintf(gdFILE,"HPSP %8ld\n",totalSize-tableSize);
   }
 #endif
   *ihp = &hpLowLimit[GCEXTRA];
@@ -323,12 +323,10 @@ void flipHeap(NodePtr hp)
 void do_profile(NodePtr hp)
 {
   double t = (double)runTime.l/(double)HZ;
-  NodePtr scanptr,newpos;
+  NodePtr scanptr;
   int m;
   int live;
   int dead = post_mortem;
-
-  WHEN_DYNAMIC(extern int FilterRetainer;)
 
   if(pactive && proFILE)
     fprintf(proFILE,"SAMPLE %d %8.2f\n",year,t);
@@ -394,15 +392,6 @@ void do_profile(NodePtr hp)
   }
 }
 
-#endif
-
-#if PROFILE
-static void intmove(Int *t,Int *f,int i)
-{
-  while(i--) {
-    *t++ = *f++;
-  }
-}
 #endif
 
 NodePtr moveHeap(NodePtr hp)
@@ -471,8 +460,10 @@ void do_comment(char *string)
 NodePtr callGc(Int size,NodePtr hp, NodePtr *sp, NodePtr *fp)
 {
 
-#if defined(PROFILE) || defined(TPROF)
+#ifdef TPROF
   double thisGcStart;
+#endif
+#if defined(PROFILE) || defined(TPROF)
   NodePtr hpsave = hp;
   int collectinfo =  size<= 0 || (NodePtr)sp >= profileHpLimit; /* called Gc because of profiler */
   pactive = collectinfo;

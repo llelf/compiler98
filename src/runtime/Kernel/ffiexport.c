@@ -2,13 +2,14 @@
 #include "newmacros.h"
 #include "stableptr.h"
 
+#if 0
+
 #ifdef PROFILE
 static SInfo apply1ProfInfo = { "Runtime","foreign_export","<APPLY.VAP>"};
 static SInfo apply2ProfInfo = { "Runtime","foreign_export","<APPLY.$>"};
 static SInfo apply3ProfInfo = { "Runtime","foreign_export","<APPLY.CAP>"};
 #endif
 
-#if 0
 NodePtr buildExportClosure (int args, NodePtr* buffer)
 {
     int need, size;

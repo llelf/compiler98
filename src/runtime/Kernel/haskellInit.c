@@ -11,6 +11,7 @@
 #include "mutlib.h"
 #include "initend.h"
 #include "stableptr.h"
+#include "profile.h"
 /* #include "runtime.h" -- already included in node.h */
 
 #define ARGSIZE 200	/* Obsolete?  Used to limit number of cmdline args. */

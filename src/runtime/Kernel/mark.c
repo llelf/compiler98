@@ -8,6 +8,7 @@
 /*                         -- already included in node.h via newmacros.h */
 #include "mark.h"
 #include "mutlib.h"
+#include "profile.h"
 
 GcConst oldCaf = GcEnd;
 GcConst newCaf = GcEnd;
@@ -390,8 +391,8 @@ NodePtr mark(NodePtr *inode)
       }
 
 #ifdef DYNAMIC
-      { Coninfo coninfo = GET_CONINFO(node);
-        Int size  = (Int)CONINFO_LARGESIZEU(coninfo);
+      { EDB(Coninfo coninfo = GET_CONINFO(node);)
+        EDB(Int size  = (Int)CONINFO_LARGESIZEU(coninfo);)
         if(pactive) GET_INFO(node)->rinfo = profileRetainer;
         EDB(if(debug) {fprintf(stderr,"size = %d:",size); fflush(stderr);})
       } goto NextNode;

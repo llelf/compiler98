@@ -5,6 +5,7 @@
 /* #include "runtime.h"   -- already included in node.h */
 /* #include "newmacros.h" -- already included in node.h */
 #include "mark.h"
+#include "profile.h"
 
 #ifdef PROFILE
 
@@ -94,15 +95,12 @@ NodePtr remark(NodePtr *inode, int newKeep, char *newMember,int who)
     case CON_DATA|VAP_TAG0: case CON_PTRS|VAP_TAG0: case CON_CDATA|VAP_TAG0: case CON_WORDS|VAP_TAG0:
     case CON_DATA|VAP_TAG1: case CON_PTRS|VAP_TAG1: case CON_CDATA|VAP_TAG1: case CON_WORDS|VAP_TAG1:
       EDB(if(debug) {fprintf(stderr,"VAP/CAP:"); fflush(stderr);})
-      { Cinfo cinfo = GET_CINFO(node);
-	Int size = CINFO_SIZE(cinfo);
-	GET_INFO(node)->rinfo = findRetainer(GET_INFO(node)->rinfo,newKeep,newMember);
+      { GET_INFO(node)->rinfo = findRetainer(GET_INFO(node)->rinfo,newKeep,newMember);
       } goto NextNode;
     case CON_DATA|CON_TAG:    case CON_CDATA|CON_TAG:
       EDB(if(debug) {fprintf(stderr,"CON:"); fflush(stderr);})
       { Coninfo coninfo = GET_CONINFO(node);
         UInt psize  = CONINFO_PSIZE(coninfo);
-        UInt size  =  CONINFO_SIZE(coninfo);
 	GET_INFO(node)->rinfo = findRetainer(GET_INFO(node)->rinfo,newKeep,newMember);
         if(psize) {
           newpptr = node+psize+EXTRA;
@@ -123,9 +121,7 @@ NodePtr remark(NodePtr *inode, int newKeep, char *newMember,int who)
       } goto NextNode;
     case CON_WORDS|CON_TAG:
       EDB(if(debug) {fprintf(stderr,"CON WORDS:"); fflush(stderr);})
-      { Coninfo coninfo = GET_CONINFO(node);
-	Int size  = CONINFO_LARGESIZEU(coninfo);
-	GET_INFO(node)->rinfo = findRetainer(GET_INFO(node)->rinfo,newKeep,newMember);
+      { GET_INFO(node)->rinfo = findRetainer(GET_INFO(node)->rinfo,newKeep,newMember);
       } goto NextNode;
       break;
     default:

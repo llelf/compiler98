@@ -5,6 +5,7 @@
 #include <limits.h>
 #include <signal.h>
 #include <time.h>
+#include <unistd.h>
 #include "comp.h"
 
 #include "runtime.h"
@@ -443,7 +444,7 @@ void printTableBio(FILE *fp)
       Count *ap = es->count;
       d.all = es->key.i;
       if(useUnique || d.parts.created<year) { /* if useUnique then filtering is done in addElement */
-	fprintf(fp,"  %d\t",d.all);
+	fprintf(fp,"  %ld\t",d.all);
 	fprintf(fp,"%d\n",ap->size);
       }
     }
@@ -658,7 +659,6 @@ void profile_stop(NodePtr hp)
 
 void profile_again(int argc,char **argv)
 {
-  int i;
   if(profile_old) {  /* run a second time */
     char **newargv = malloc((argc+3)*sizeof(char *));
     int i;
