@@ -31,8 +31,8 @@ import Id(Id)
 import Info(typeSynonymBodyI,IE(IEsel))
 import TypeSubst(substNT)
 import Nice(niceNewType)
+import Flags(Flags(..))
 import Remove1_3(mkSel)
-import Flags(Flags,sDbgTrusted)
 import List  -- (zipWith3)
 
 
