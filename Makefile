@@ -32,7 +32,6 @@ PRELUDEA = \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
-	src/prelude/Interrupt/Makefile* src/prelude/Interrupt/*.hs \
 	src/prelude/Ix/Makefile* src/prelude/Ix/*.hs
 PRELUDEB = \
 	src/prelude/List/Makefile* src/prelude/List/*.hs \
@@ -71,7 +70,6 @@ PRELUDEC = \
 	src/prelude/Haskell/*.c \
 	src/prelude/IO/*.c \
 	src/prelude/IOExtras/*.c \
-	src/prelude/Interrupt/*.c \
 	src/prelude/Ix/*.c \
 	src/prelude/List/*.c \
 	src/prelude/Locale/*.c \
@@ -91,35 +89,7 @@ PRELUDEC = \
 	src/prelude/System/*.c \
 	src/prelude/Time/*.c \
 	src/prelude/FFI/*.c
-PRELUDET = \
-	src/tracer/prelude/Makefile* \
-	src/tracer/prelude/*.hi \
-	src/tracer/prelude/*/Makefile* \
-	src/tracer/prelude/Char/*.hs \
-	src/tracer/prelude/DontKnow/*.hs \
-	src/tracer/prelude/IO/*.hs \
-	src/tracer/prelude/List/*.hs \
-	src/tracer/prelude/LowB/*.hs \
-	src/tracer/prelude/LowB/LowSystem.hi \
-	src/tracer/prelude/Maybe/*.hs \
-	src/tracer/prelude/NonStd/*.hs \
-	src/tracer/prelude/PackedString/*.hs \
-	src/tracer/prelude/Prelude/*.hs \
-	src/tracer/prelude/PreludeDebug/*.hs \
-	src/tracer/prelude/PreludeIO/*.hs \
-	src/tracer/prelude/PreludeList/*.hs \
-	src/tracer/prelude/PreludeText/*.hs \
-	src/tracer/prelude/Ratio/*.hs \
-	src/tracer/prelude/System/*.hs \
-	src/tracer/prelude/Text/*.hs
 
-#	src/tracer/prelude/Array/*.hs \
-#	src/tracer/prelude/Complex/*.hs \
-#	src/tracer/prelude/Debug/*.hs \
-#	src/tracer/prelude/Directory/*.hs \
-#	src/tracer/prelude/Interrupt/*.hs \
-#	src/tracer/prelude/Ix/*.hs \
-#	src/tracer/prelude/Monad/*.hs \
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -341,7 +311,6 @@ script/errnogen.c: script/GenerateErrNo.hs
 #	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 #	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 #	tar rf nhc98src-$(VERSION).tar $(RUNTIMET)
-#	tar rf nhc98src-$(VERSION).tar $(PRELUDET)
 #	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
 #	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
 #	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
@@ -381,7 +350,6 @@ srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDI
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
-	#tar rf nhc98src-$(VERSION).tar $(PRELUDET)
 	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)

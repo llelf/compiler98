@@ -10,7 +10,8 @@ ifneq "${TRACING}" "T"
 FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = $(MACHINE) LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
-LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI IOExtras Observe
+LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory CPUTime \
+	     Random Haskell Binary Bit GreenCard BinArray FFI IOExtras Observe
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
 SUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${LIBSUBDIRS}
@@ -105,8 +106,6 @@ relink:
 #	cp System/System.hi $(INCDIR)/System.hi
 #	mv -f $(INCDIR)/Directory.hi $(INCDIR)/Directory.hi.BAK
 #	cp Directory/Directory.hi $(INCDIR)/Directory.hi
-#	mv -f $(INCDIR)/Interrupt.hi $(INCDIR)/Interrupt.hi.BAK
-#	cp Interrupt/Interrupt.hi $(INCDIR)/Interrupt.hi
 #	mv -f $(INCDIR)/IO.hi $(INCDIR)/IO.hi.BAK
 #	cp IO/IO.hi $(INCDIR)/IO.hi
 #	mv -f $(INCDIR)/PackedString.hi $(INCDIR)/PackedString.hi.BAK
@@ -132,8 +131,11 @@ else	#### tracing
 # .SUFFIXES: .subdir
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeDebug PreludeList PreludeIO PreludeText Prelude \
-	Maybe List Monad System IO PackedString
-NOTYET= Array Complex Directory Interrupt Ix 
+	Maybe List Monad System IO PackedString \
+	Ix Complex
+NOTYET=	NonStd Array Directory \
+	Locale Time CPUTime Random Haskell \
+	Binary Bit GreenCard BinArray FFI IOExtras Observe
 
 #SUBDIROBJS=$(patsubst %,${OBJ}/%/*.o,${SUBDIRS})
 SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
