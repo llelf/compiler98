@@ -78,11 +78,6 @@ public abstract class EDTNode extends Object {
   abstract public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt);
 
   /**
-   * Returns the status line help text for node classes
-   */
-  abstract public String getHelpText();
-
-  /**
    * Set the trace of the node
    * 
    * @param     trace the new trace
@@ -108,24 +103,12 @@ public abstract class EDTNode extends Object {
    * <i>paint</i>.
    */
   public void annotate(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
-    if (refnr == this.refnr)
-      boxify(g, ui, x0, y0, width);
+    EDTNode underMouse = HatTrail.traceFrame.mainPanel.dbgPanel.lastNode;
+    if (this == underMouse)
+      Symbols.drawSelected(g, ui, x0, y0, width);
     underline(g, ui, x0, y0, width);
     check_ancestor(g, ui, x0, y0, refnr, trefnr, irefnr);
     check_selected(g, ui, x0, y0, refnr, trefnr, irefnr);
-  }
-
-  /**
-   * Draw a box around the graphical representation of the object.
-   */
-  void boxify(Graphics g, UI ui, int x0, int y0, int width) {
-    g.setColor(Color.red);
-    int baseline = y0 + 5 + ui.normalfm.getHeight();
-    int topline = y0+3; //baseline - ui.normalfm.getAscent();
-    g.drawRect(x0-3-ui.dx, topline+1-ui.dy, 
-	       width+6, baseline-topline-2);	    
-    g.drawRect(x0-2-ui.dx, topline-ui.dy, 
-	       width+4, baseline-topline);	          
   }
 
   /**
@@ -135,7 +118,7 @@ public abstract class EDTNode extends Object {
     int i;
     if (trace != null) {
       layers++;
-      int ly = y + ui.normalfm.getHeight() + 2 + 2*layers;
+      int ly = y + ui.normalfm.getHeight() + 4 + 2*layers;
       if (trace.hidden) {
 	g.setColor(Color.black);
 	for (i = x; i < x+width-3; i += 6) {

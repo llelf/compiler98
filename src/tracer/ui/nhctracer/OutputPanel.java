@@ -5,7 +5,6 @@ import java.awt.event.*;
 import java.applet.*;
 import java.util.Vector;
 import java.io.*;
-//import com.sun.java.swing.*;
 
 public class OutputPanel extends Panel {
   TraceFrame frame;
@@ -48,7 +47,8 @@ public class OutputPanel extends Panel {
     output = new Output();
     serverConnection = null;
     ui = new UI();
-    ui.normalfont = GetParams.getFont("nhctracer.outputfont", Font.PLAIN, "SansSerif", 12);
+    ui.normalfont =
+      GetParams.getFont("nhctracer.outputfont", Font.PLAIN, "Courier", 10);
     ui.boldfont = ui.normalfont;
     ui.normalfm = getFontMetrics(ui.normalfont);	
     ui.boldfm = getFontMetrics(ui.boldfont);	
@@ -70,7 +70,6 @@ public class OutputPanel extends Panel {
     } else {
       EDTParser parser = new EDTParser(serverConnection, dbgPanel.nodeTable);
       output = parser.parseOutput();
-      //tabPanel.setSelectedComponent(this); // Swing
       tabPanel.select("Program output");
       repaint();
     }
@@ -112,7 +111,6 @@ public class OutputPanel extends Panel {
 	System.err.println("Cannot allocate offscreen buffer of size "+
 			   d.width + "x" + d.height + ".");
 	return;
-	/* System.exit(-1); */
       }
       offscreensize = d;
       offgraphics = offscreen.getGraphics();
@@ -122,9 +120,7 @@ public class OutputPanel extends Panel {
     offgraphics.fillRect(0, 0, d.width, d.height);
     if (output != null) {
       Dimension extents = output.paint(offgraphics, ui, START_X, START_Y, refnr);    
-      if (Options.oarrow.getState())
-	select(lastline, lastcol);
-	  
+      if (Options.oarrow.getState()) select(lastline, lastcol);	  
       if (selected != null) {
 	Point p = posCoord(output.lineno, output.colno, ui, START_X, START_Y);
 	offgraphics.setColor(Color.black);
@@ -163,7 +159,8 @@ public class OutputPanel extends Panel {
 	    lastcol = output.colno;
 	    refnr = ((OutputChar)obj).refnr;
 	    if (frame != null && frame.script != null)
-	      frame.script.println(new Events.OutputSelect(refnr, output.lineno, output.colno));
+	      frame.script.println(
+	        new Events.OutputSelect(refnr, output.lineno, output.colno));
 	  }
 	}
 	repaint();
@@ -196,7 +193,8 @@ public class OutputPanel extends Panel {
 	  OutputChar oc = (OutputChar)obj;
 	  serverConnection.out.println("Gn 5");
 	  serverConnection.out.println(""+oc.refnr);
-	  EDTParser parser = new EDTParser(serverConnection, dbgPanel.nodeTable);
+	  EDTParser parser =
+	    new EDTParser(serverConnection, dbgPanel.nodeTable);
 	  dbgPanel.trace = parser.parseTrace(null);
 	  dbgPanel.trace.color = Color.black;
 	  dbgPanel.ui.resetColors();
@@ -218,8 +216,7 @@ public class OutputPanel extends Panel {
 
   Point posCoord(int lineno, int colno, UI ui, int startx, int starty) {
     int y = ui.normalfm.getHeight()*lineno+starty+ui.normalfm.getHeight();
-    int x = startx;
-	
+    int x = startx;	
     Vector line = (Vector)output.lines.elementAt(lineno);
     for (int i = 0; i < colno; i++) {
       x += ((OutputChar)line.elementAt(i)).width;
@@ -232,7 +229,8 @@ public class OutputPanel extends Panel {
     output.lineno = lineno;
     output.colno = colno;
     try {
-      selected = (OutputChar)((Vector)output.lines.elementAt(lineno)).elementAt(colno);
+      selected =
+        (OutputChar)((Vector)output.lines.elementAt(lineno)).elementAt(colno);
     } catch (Exception e) {
       selected = null;
     }

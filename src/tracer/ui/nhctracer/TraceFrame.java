@@ -9,7 +9,7 @@ import java.net.*;
 public class TraceFrame extends Frame {
   MenuBar menuBar;
   
-  Menu fileMenu, optionMenu;  // viewMenu, helpMenu;
+  Menu fileMenu, optionMenu, helpMenu;  // viewMenu
   
   // File menu items
   MenuItem
@@ -20,7 +20,9 @@ public class TraceFrame extends Frame {
   // Options menu items
   MenuItem fontItem;
 
-  // Help menu items  
+  // Help menu items
+  MenuItem mouseHelpItem, highlightHelpItem, symbolHelpItem;
+   
   int port;
   String host;
   String appTitle = "Hat 1.04 Trail Browser";
@@ -53,7 +55,7 @@ public class TraceFrame extends Frame {
     // editMenu = new Menu("Edit"); menuBar.add(editMenu);
     optionMenu = new Menu("Options"); menuBar.add(optionMenu);
     // viewMenu = new Menu("View"); menuBar.add(viewMenu);
-    // helpMenu = new Menu("Help"); //menuBar.add(helpMenu);
+    helpMenu = new Menu("Help"); // menuBar.add(helpMenu);
 	
     handler = new ActionHandler();
     // serverItem =
@@ -84,25 +86,23 @@ public class TraceFrame extends Frame {
     
     // optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
     // optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
-    // optionMenu.add(createCheckboxMenuItem(Options.dumprefs, true));
-    // optionMenu.add(createCheckboxMenuItem(Options.arrow, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.highshare, true));
     // optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
     
-    // menuBar.setHelpMenu(helpMenu);
+    mouseHelpItem =
+      createMenuItem("mouse clicks", helpMenu, handler, true, null);
+    highlightHelpItem =
+      createMenuItem("expression highlights", helpMenu, handler, true, null);
+    symbolHelpItem =
+      createMenuItem("special symbols", helpMenu, handler, true, null);
+    menuBar.setHelpMenu(helpMenu);
 	
     setTitle(appTitle);
 
     mainPanel = new MainPanel(this);
 
-    // connect = new Button("Connect");
-    // connect.addActionListener(handler);
-    // disconnect = new Button("Disconnect");
-    // disconnect.addActionListener(handler);
-
     Panel pb = new Panel();
     pb.setLayout(new FlowLayout());
-    // pb.add(connect);
-    // pb.add(disconnect);
 
     setLayout(new BorderLayout());
 
@@ -276,11 +276,13 @@ public class TraceFrame extends Frame {
 	    fontDialog = new FontDialog(me, mainPanel.dbgPanel.ui);
 	  else
 	    fontDialog.show();
+	} else if (target == mouseHelpItem) {
+	  new Help("mouse clicks", mainPanel.dbgPanel.ui);
+	} else if (target == highlightHelpItem) {
+	  new Help("expression highlights", mainPanel.dbgPanel.ui);
+	} else if (target == symbolHelpItem) {
+	  new Help("special symbols", mainPanel.dbgPanel.ui);
 	}
-      // } else if (target == connect) {
-      //   doConnect();
-      // } else if (target == disconnect) {
-      //   doDisconnect();
       }
     }
   }

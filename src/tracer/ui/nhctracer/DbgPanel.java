@@ -14,7 +14,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   SourceViewer viewer = null;
   ScrollPane scrollpane;
   Status status;
-  Color mbgc, bgc, fgc, lc;
+  Color mbgc, bgc, lc;
   Trace trace;
   Object scriptObj;
   EDTNode lastNode = null;
@@ -58,7 +58,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 
     ui = new UI();
     ui.normalfont =
-      GetParams.getFont("nhctracer.tracefont", Font.PLAIN, "SansSerif", 14);
+      GetParams.getFont("nhctracer.tracefont", Font.BOLD, "SansSerif", 12);
     ui.boldfont = ui.normalfont;
     ui.normalfm = getFontMetrics(ui.normalfont);	
     ui.boldfm = getFontMetrics(ui.boldfont);	
@@ -70,7 +70,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     this.add(scrollpane, BorderLayout.CENTER);
 
     bgc = Color.white;
-    fgc = Color.red;
     lc = Color.black;
     mbgc = Color.cyan;
 

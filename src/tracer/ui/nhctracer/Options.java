@@ -9,8 +9,8 @@ public class Options {
     new Option("Trace hat-connect communication", false);
   public static Option dumprefs =
     new Option("Print reference numbers when dumping trace structures", false);
-  public static Option arrow =
-    new Option("Paint cursor when printing to file", false);
+  public static Option highshare =
+    new Option("Highlight shared occurrences", false);
   public static Option oarrow =
     new Option("Paint cursor in output window", false);
 }

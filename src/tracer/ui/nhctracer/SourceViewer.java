@@ -21,7 +21,7 @@ public class SourceViewer extends Panel {
 	add(viewer, BorderLayout.CENTER);
 	viewer.setEditable(false);
 	viewer.setFont(GetParams.getFont("nhctracer.sourcefont",
-	                                 Font.PLAIN, "Courier", 12));
+	                                 Font.PLAIN, "Courier", 10));
 	files = new Hashtable(20);
     }
   
@@ -39,7 +39,8 @@ public class SourceViewer extends Panel {
 	System.err.println("Selection:" + viewer.getSelectedText());
     }
 
-    public void showSourceLocation(Connection conn, String filename, int r, int c) {
+    public void showSourceLocation(Connection conn, String filename,
+                                   int r, int c) {
 	getToolkit().sync();
 	if (filename != null && readFile(conn, filename)) {
 	    markPosition(r-1, c);

@@ -12,10 +12,6 @@ public class CutOffTree extends EDTNode {
     this.trefnr = -1;
   }
 
-  public String getHelpText() {
-    return "help text for CutOffTree";
-  }
-
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt) {
     return new CutOffTree(parent, tree, index, refnr);
   }

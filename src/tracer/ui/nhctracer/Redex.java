@@ -22,10 +22,6 @@ public class Redex extends EDTStructuredNode {
     args = new Vector(3, 10);
   }
 
-  public String getHelpText() {
-    return "help text for Redex";
-  }
-
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index, int irefnr, NodeTable nt) {
     Redex redex = new Redex(parent, tree, index);
     redex.sr = sr;

@@ -55,10 +55,6 @@ public class IdName extends EDTNode {
     } else { arithSeqArity = -1; arithSeqKind = -1; }
   }
 
-  public String getHelpText() {
-    return "help text for IdName";
-  }
-
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
                        int irefnr, NodeTable nt) {
     IdName idName = new IdName(parent, tree, index);
@@ -96,7 +92,7 @@ public class IdName extends EDTNode {
 	if (this.irefnr == irefnr)
 	  color = Color.black;
 	else
-	  color = Color.green;	      
+	  if (Options.highshare.getState()) color = Color.green;	      
       } else if (trefnr == this.trefnr)
 	color = Color.blue;
     g.setColor(color);

@@ -129,9 +129,9 @@ public class Connection {
 	  result = line.substring(pos, np+1);
 	  line = line.substring(np+1);
 	  return result;
-	case '"':
+	case '\"':
 	  np = pos+1;
-	  while (np < len && line.charAt(np) != '"' || 
+	  while (np < len && line.charAt(np) != '\"' || 
 		 (line.charAt(np) == '"' && np > 0 && line.charAt(np-1) == '\\'))
 	    np++;
 	  result = line.substring(pos+1, np);

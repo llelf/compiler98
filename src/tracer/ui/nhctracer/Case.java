@@ -26,10 +26,6 @@ public class Case extends EDTStructuredNode {
     args = new Vector(3, 10);
   }
 
-  public String getHelpText() {
-    return "help text for Case";
-  }
-
   public EDTNode spawn(EDTStructuredNode parent, TraceTree tree, int index,
                        int irefnr, NodeTable nt) {
     Case c = new Case(parent, tree, index);
@@ -76,9 +72,9 @@ public class Case extends EDTStructuredNode {
     if (this.trefnr >= 0) // Don't bother with cut-off-trees
       if (refnr == this.refnr) {
 	if (this.irefnr == irefnr)
-	  color = Color.red;
+	  color = Color.black;
 	else
-	  color = Color.green;	      
+	  if (Options.highshare.getState()) color = Color.green;	      
       } else if (trefnr == this.trefnr)
 	color = Color.blue;
     g.setColor(color);
@@ -88,21 +84,9 @@ public class Case extends EDTStructuredNode {
       g.drawString(key, x-ui.dx, y0-ui.dy+fm.getHeight());
       x += fm.stringWidth(key);
       x += se.paint(g, ui, x, y0, refnr, trefnr, irefnr); 
-      int baseline = y0 + ui.normalfm.getHeight();
-      int topline = baseline - ui.normalfm.getAscent()*5/6;
-      width = ui.normalfm.charWidth('m');
-      int space = ui.normalfm.charWidth(' ');
       g.setColor(Color.black);
-      g.drawLine(
-        x+space-ui.dx, (baseline+topline)/2-ui.dy,
-        x+space+width-ui.dx, topline-ui.dy);
-      g.drawLine(
-        x+space-ui.dx, (baseline+topline)/2-ui.dy,
-        x+space+width-ui.dx, baseline-ui.dy);
-      g.drawLine(
-        x+space+width-ui.dx, topline-ui.dy,
-        x+space+width-ui.dx, baseline-ui.dy);
-      x += space + width + space;
+      int space = ui.normalfm.charWidth(' ');
+      x += space + Symbols.drawWithin(g, ui, x+space, y0) + space;
     }
     x += ctxt.paint(g, ui, x, y0, refnr, trefnr, irefnr); 
     width = x-x0;

@@ -57,7 +57,7 @@ public class TraceTree extends Object {
     int h;
     int cy = y0;
 
-    cy += ui.normalfm.getHeight() + 2*layers + 4;
+    cy += ui.normalfm.getHeight() + 2*layers + 6;
     if (y <= cy)
       return node.inside(ui, x, y, x0, y0);
     // component traces are displayed last to first
@@ -83,7 +83,7 @@ public class TraceTree extends Object {
     layers = 0;
 
     maxw = x + node.paint(g, ui, x, y, refnr, trefnr, irefnr);
-    cy += ui.normalfm.getHeight() + 2*layers + 4;
+    cy += ui.normalfm.getHeight() + 2*layers + 6;
     // component traces are displayed last to first
     // so that each newly requested trace is shown just
     // below the selected expression

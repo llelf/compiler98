@@ -182,25 +182,8 @@ public abstract class EDTStructuredNode extends EDTNode {
       return null;
   }
 
-  /** Paints this node "contracted", i.e. as a box */
-  public int paint_contracted(Graphics g, UI ui, int x0, int y0) {
-    width = ui.normalfm.charWidth('m');
-    int w = width * 5 / 6;
-    //this.x0 = x0;
-    g.setColor(color);
-	
-    int baseline = y0 + ui.normalfm.getHeight();
-    int topline = baseline - ui.normalfm.getAscent()*5/6;
-
-    g.drawRect(x0-ui.dx, topline-ui.dy, w, baseline-topline);
-    //g.fillRect(x0-ui.dx + 2*w/3, topline-ui.dy, w/3, baseline-topline);
-
-    underline(g, ui, x0, y0, w);
-
-    return width;
-  }
-
-  public int paint(Graphics g, UI ui, int x0, int y0, int refnr, int trefnr, int irefnr) {
+  public int paint(Graphics g, UI ui, int x0, int y0,
+                   int refnr, int trefnr, int irefnr) {
     int spacew = ui.normalfm.charWidth(' ');
     EDTNode arg;
     int i, x;
@@ -213,16 +196,19 @@ public abstract class EDTStructuredNode extends EDTNode {
     if (this.trefnr >= 0)
       if (refnr == this.refnr) {
 	if (this.irefnr == irefnr)
-	  color = Color.red;
+	  color = Color.black;
 	else
-	  color = Color.green;	      
+	  if (Options.highshare.getState()) color = Color.green;	      
       } else if (trefnr == this.trefnr)
 	color = Color.blue;
 
     g.setFont(ui.normalfont);
 	
     if (contracted) {
-      return paint_contracted(g, ui, x0, y0);
+      g.setColor(color);
+      width = Symbols.drawPlaceholder(g, ui, x0, y0);
+      underline(g, ui, x0, y0, width);
+      return width;
     }
 
     x = x0;
