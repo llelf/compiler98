@@ -6,15 +6,20 @@ EXTRA_H_FLAGS	=
 EXTRA_C_FLAGS	=
 
 SRCS	= \
-	Addr.hs ForeignObj.hs Ptr.hs StablePtr.hs
+	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs StablePtr.hs
 SRCS_T	= \
-	Addr.hs ForeignObj.hs Ptr.hs
-
-NotYetSRCS = Int.hs Word.hs
+	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs
 
 
 # Here are the main rules.
 include ../Makefile.common
+
+
+# Here are some extra rules.
+Int.hs: Int.hs.cpp
+	$(CC) -E $< >$@
+Word.hs: Word.hs.cpp
+	$(CC) -E $< >$@
 
 
 # Here are the dependencies.

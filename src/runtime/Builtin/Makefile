@@ -22,7 +22,7 @@ SRCS = \
         cBits.c  cDoesFileExist.c cFFI.c cIOExtras.c cHPutStr.c \
 	primsFloat.c primsDouble.c primsInt.c primsWord.c
 
-LINKS = haskell2c.h twopass.h
+LINKS = haskell2c.h twopass.h HsFFI.h
 
 links:
 	@for f in ${LINKS}; do \

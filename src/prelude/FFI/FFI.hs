@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.6 2000/11/22 16:22:25 malcolm Exp $
+   $Id: FFI.hs,v 1.7 2001/01/03 18:37:59 malcolm Exp $
 -}
 
 module FFI
@@ -9,11 +9,11 @@ module FFI
    -- Num, Bounded, Real, Integral, Ix, Enum, Read, Show
    -- NOTE 1: GHC has additional instances CCallable, CReturnable, Bits
    -- NOTE 2: No plain Word
--- Int8,  Int16,  Int32,  Int64,
--- Word8, Word16, Word32, Word64,
+  ( Int8,  Int16,  Int32,  Int64
+  , Word8, Word16, Word32, Word64
 
    -------------------------------------------------------------------
-  ( Addr                  -- abstract, instance of: Eq, Ord, Enum, Show
+  , Addr                  -- abstract, instance of: Eq, Ord, Enum, Show
   , nullAddr              -- :: Addr
   , plusAddr              -- :: Addr -> Int -> Addr
   , Storable
@@ -46,8 +46,8 @@ module FFI
 #if !defined(TRACING)
    ,freeForeignObj        -- :: ForeignObj -> IO ()
 #endif
-   ,withForeignObj        -- :: ForeignObj -> (Addr -> IO a) -> IO a
-   ,touchForeignObj       -- :: ForeignObj -> IO ()
+  , withForeignObj        -- :: ForeignObj -> (Addr -> IO a) -> IO a
+  , touchForeignObj       -- :: ForeignObj -> IO ()
 
    -------------------------------------------------------------------
 #if !defined(TRACING)
@@ -64,12 +64,12 @@ module FFI
   , fromCString		-- :: CString -> String
   ) where
 
---import Int		-- not complete yet
---import Word		-- not complete yet
-import Addr		-- new
-import ForeignObj	-- new
+import Int		-- believed complete now
+import Word		-- 
+import Addr		--
+import ForeignObj	--
 #if !defined(TRACING)
-import StablePtr	-- new
+import StablePtr	-- only works for non-tracing so far
 #endif
 import CString		-- nhc98-only
 import FixIO (fixIO)	-- part of IOExtras, but IOExtras depends on FFI.
@@ -154,55 +154,77 @@ instance Storable Double where
    peek          = readDoubleAtAddr
    poke          = writeDoubleAtAddr
 
-{-
+foreign import readWord8AtAddr  :: Addr -> IO Word8
+foreign import writeWord8AtAddr :: Addr -> Word8 -> IO ()
+
 instance Storable Word8 where
    sizeOf        = const 1
    alignment     = sizeOf   -- not sure about this
-   peek          = readWord8OffAddr
-   poke          = writeWord8OffAddr
+   peek          = readWord8AtAddr
+   poke          = writeWord8AtAddr
+
+foreign import readWord16AtAddr  :: Addr -> IO Word16
+foreign import writeWord16AtAddr :: Addr -> Word16 -> IO ()
 
 instance Storable Word16 where
    sizeOf        = const 2
    alignment     = sizeOf   -- not sure about this
-   peek          = readWord16OffAddr
-   poke          = writeWord16OffAddr
+   peek          = readWord16AtAddr
+   poke          = writeWord16AtAddr
+
+foreign import readWord32AtAddr  :: Addr -> IO Word32
+foreign import writeWord32AtAddr :: Addr -> Word32 -> IO ()
 
 instance Storable Word32 where
    sizeOf        = const 4
    alignment     = sizeOf   -- not sure about this
-   peek          = readWord32OffAddr
-   poke          = writeWord32OffAddr
+   peek          = readWord32AtAddr
+   poke          = writeWord32AtAddr
+
+foreign import readWord64AtAddr  :: Addr -> IO Word64
+foreign import writeWord64AtAddr :: Addr -> Word64 -> IO ()
 
 instance Storable Word64 where
    sizeOf        = const 8
    alignment     = sizeOf   -- not sure about this
-   peek          = readWord64OffAddr
-   poke          = writeWord64OffAddr
+   peek          = readWord64AtAddr
+   poke          = writeWord64AtAddr
+
+foreign import readInt8AtAddr  :: Addr -> IO Int8
+foreign import writeInt8AtAddr :: Addr -> Int8 -> IO ()
 
 instance Storable Int8 where
    sizeOf        = const 1
    alignment     = sizeOf   -- not sure about this
-   peek          = readInt8OffAddr
-   poke          = writeInt8OffAddr
+   peek          = readInt8AtAddr
+   poke          = writeInt8AtAddr
+
+foreign import readInt16AtAddr  :: Addr -> IO Int16
+foreign import writeInt16AtAddr :: Addr -> Int16 -> IO ()
 
 instance Storable Int16 where
    sizeOf        = const 2
    alignment     = sizeOf   -- not sure about this
-   peek          = readInt16OffAddr
-   poke          = writeInt16OffAddr
+   peek          = readInt16AtAddr
+   poke          = writeInt16AtAddr
+
+foreign import readInt32AtAddr  :: Addr -> IO Int32
+foreign import writeInt32AtAddr :: Addr -> Int32 -> IO ()
 
 instance Storable Int32 where
    sizeOf        = const 4
    alignment     = sizeOf   -- not sure about this
-   peek          = readInt32OffAddr
-   poke          = writeInt32OffAddr
+   peek          = readInt32AtAddr
+   poke          = writeInt32AtAddr
+
+foreign import readInt64AtAddr  :: Addr -> IO Int64
+foreign import writeInt64AtAddr :: Addr -> Int64 -> IO ()
 
 instance Storable Int64 where
    sizeOf        = const 8
    alignment     = sizeOf   -- not sure about this
-   peek          = readInt64OffAddr
-   poke          = writeInt64OffAddr
--}
+   peek          = readInt64AtAddr
+   poke          = writeInt64AtAddr
 
 ---------------------------------------------------------------------------
 -- (de-)allocation of raw bytes
