@@ -31,7 +31,7 @@ rmext (char* word, char* ext)
     while (*c) c++;
     while (*e) e++;
     while ((*--c==*--e) && e!=ext) ;
-    if (e==ext) *c='\0'; else *++c='\0';
+    if ((e==ext) && (*c==*e)) *c='\0';
     return i;
   }
 }
