@@ -287,17 +287,23 @@ int main (void) { test(); }
       echo '(cached) '
     fi
 
-    echo -n "Testing for the readline library: "
-    echo 'main(){readline();}' >rd.c
-    if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
-    then echo '          -lreadline (detected)'
-         READLINE="-DUSE_READLINE=1 -lreadline"
-    else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
-      then echo "          -lreadline $CURSES (detected)"
-         READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
-      else echo "          no  (detected)"
-         READLINE=""
+    echo -n "Testing for the readline library:           "
+    if [ "$READLINE" = "" ]
+    then
+      echo 'main(){readline();}' >rd.c
+      if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
+      then echo '-lreadline (detected)'
+           READLINE="-DUSE_READLINE=1 -lreadline"
+      else if ${CC-gcc} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
+        then echo "-lreadline $CURSES (detected)"
+           READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
+        else echo "no  (detected)"
+           READLINE=""
+        fi
       fi
+    else
+      echo -n "$READLINE "
+      echo '(cached) '
     fi
     rm -f rd.c rd.out
   fi
