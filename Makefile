@@ -2,7 +2,7 @@
 include Makefile.inc
 .SUFFIXES: 		# To remove default rules like .cpp -> C++
 
-VERSION = 1.03
+VERSION = 1.04
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -140,10 +140,11 @@ INCLUDE = include/*.hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
 HATTOOLS= lib/$(MACHINE)/hat-stack lib/$(MACHINE)/hat-connect \
-	lib/$(MACHINE)/hat-check
+	lib/$(MACHINE)/hat-check lib/$(MACHINE)/hat-observe \
+	lib/$(MACHINE)/hat-detect lib/$(MACHINE)/hat-checki
 
 TARGDIR= targets
-TARGETS= runtime prelude greencard hp2graph hat \
+TARGETS= runtime prelude greencard hp2graph hattools \
 	 profruntime profprelude \
 	 timeruntime timeprelude \
 	 timetraceruntime timetraceprelude \
@@ -153,7 +154,7 @@ TARGETS= runtime prelude greencard hp2graph hat \
 	 greencard-nhc greencard-hbc greencard-ghc greencard-$(CC) \
 	 prelude-$(CC) pragma-$(CC)
 
-.PHONY: basic all tracer compiler help config install hat
+.PHONY: basic all tracer compiler help config install hattools
 
 
 ##### compiler build + install scripts
@@ -163,10 +164,12 @@ all:   all-${BUILDCOMP}
 compiler: compiler-${BUILDCOMP}
 hmake: hmake-${BUILDCOMP}
 help:
-	@echo "Common targets include: basic all install config"
-	@echo "                        clean realclean"
+	@echo "Default target is:      basic"
+	@echo "Other targets include:  heapprofile timeprofile tracer"
+	@echo "                        all (= basic + heapprofile + timeprofile + tracer)"
+	@echo "                        config install clean realclean"
 	@echo "  (other subtargets:    compiler hmake runtime prelude"
-	@echo "                        profile timeprof tracer hp2graph hat)"
+	@echo "                        hp2graph hattools hoodui)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -182,13 +185,13 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) profile timeprof tracer $(TARGDIR)/hood
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer hoodui
 
-profile: profruntime profprelude hp2graph
-timeprof: timeruntime timeprelude
+heapprofile: compiler profruntime profprelude hp2graph
+timeprofile: compiler timeruntime timeprelude
 tracer: $(PRAGMA) runtime hmake-$(BUILDCOMP) greencard-$(BUILDCOMP) \
-	compiler-$(BUILDCOMP) traceruntime traceprelude $(TARGDIR)/traceui
-timetraceprof: timetraceruntime timetraceprelude
+	compiler-$(BUILDCOMP) traceruntime traceprelude hattools
+timetraceprofile: timetraceruntime timetraceprelude
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
@@ -264,8 +267,6 @@ $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
-$(TARGDIR)/traceui: lib/hat-trail.jar $(HATTOOLS)
-	touch $(TARGDIR)/traceui
 
 
 $(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
@@ -277,9 +278,10 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
 
 
-$(TARGDIR)/hood: lib/hood.jar
-	touch $(TARGDIR)/hood
-$(TARGDIR)/$(MACHINE)/hat: $(HATTOOLS)
+hoodui: $(TARGDIR)/hoodui
+$(TARGDIR)/hoodui: lib/hood.jar
+	touch $(TARGDIR)/hoodui
+$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) lib/hat-trail.jar
 	touch $(TARGDIR)/$(MACHINE)/hat
 
 
