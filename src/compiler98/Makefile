@@ -51,7 +51,7 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 
 all: ${TARGET}
 objdir: ${OBJDIR}
-cfiles: $(OBJDIR)/$(HC)
+cfiles: $(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
@@ -67,16 +67,16 @@ cleanC: clean
 realclean: cleanC
 	rm -f $(TARGET)
 
-$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
+$(TARGET): ${OBJDIR} $(OBJDIR)/$(BASECOMP) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	$(STRIP) $(TARGET)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
-$(OBJDIR)/$(HC):
+$(OBJDIR)/$(BASECOMP):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
 	$(MAKE) cleanC
-	touch "$(OBJDIR)/$(HC)"
+	touch "$(OBJDIR)/$(BASECOMP)"
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
 	$(CC) -c -o $@ $<

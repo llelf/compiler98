@@ -62,6 +62,7 @@ export HC
 HMAKE = $(LOCAL)hmake
 export HMAKE
 
+BASECOMP := $(shell basename $(BUILDWITH))
 BUILDCOMP := $(shell basename $(BUILDWITH) | cut -c1-3 )
 CPP = $(CC) -E -x c
 

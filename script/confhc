@@ -12,7 +12,9 @@ echo "Looking for already-installed Haskell compilers:"
 # Assume that we start out with a blank config.
 HBCKNOWN=
 GHCKNOWN=
+GHC2KNOWN=
 NHCKNOWN=
+NHC2KNOWN=
 CONFIGPATH="$PWD/lib/$MACHINE/hmakerc"
 
 # We need a working BSD-style `echo' command: at least Solaris may not have it.
@@ -30,7 +32,14 @@ esac
 #else
 #  echo "No builtin 'which' command - attempting to emulate it."
   which () {
-    ( for path in `echo \"$PATH\" | sed -e 's/:/\" \"/g'`
+    ( case $1 in
+        /*) if [ -f "$1" -a -x "$1" ]
+            then echo $1
+                 exit 0
+            fi;;
+        *) ;;
+      esac
+      for path in `echo \"$PATH\" | sed -e 's/:/\" \"/g'`
       do
         thefile=`echo $path | tr -d "\""`/$1
         if [ -f "$thefile" -a -x "$thefile" ]
@@ -87,9 +96,9 @@ fi
 
 # There may be another version of ghc to look for.
 COMP=$1
-if [ "`echo $COMP | cut -c1-3`" = "ghc" ]
+if [ -n "$COMP" -a "`basename $COMP | cut -c1-3`" = "ghc" ]
 then
-  VER=`echo $COMP | cut -c5-`
+  VER=`basename $COMP | cut -c5-`
   if [ -n "$VER" -a "$VER" != "$GHCVERSION" ]
   then
     echo -n "  Looking for $COMP...   "
@@ -116,7 +125,30 @@ then
 fi
 if [ "$NHCKNOWN" != "" ]
 then  echo "found ${NHCVERSION}"
+      NHCSYM=`echo $NHCVERSION | tr ".va" " " | ( read x y z; echo $x$y; )`
+      echo $NHCSYM >targets/$MACHINE/nhcsym;
 else  echo "(not found)"
+fi
+
+# There may be another version of nhc98 to look for.
+if [ -n "$COMP" -a "`basename $COMP | cut -c1-5`" = "nhc98" ]
+then
+  VER=`basename $COMP | cut -c7-`
+  if [ -n "$VER" -a "$VER" != "$NHCVERSION" ]
+  then
+    echo -n "  Looking for $COMP...   "
+    if which $COMP >/dev/null 2>&1
+    then
+      NHC2KNOWN=`which $COMP`
+      NHC2VERSION=`${NHC2KNOWN} --version | head -1 | cut -d' ' -f2`
+      NHC2SYM=`echo $NHC2VERSION | tr ".va" " " | ( read x y z; echo $x$y; )`
+      echo $NHC2SYM >targets/$MACHINE/nhcsym;
+    fi
+    if [ "$NHC2KNOWN" = "" ]
+    then  echo "(not found)"
+    else  echo "found ${NHC2VERSION}"
+    fi
+  fi
 fi
 
 
@@ -165,13 +197,16 @@ case $MACHINE in
             if [ -n "$NHCKNOWN" ]
             then NHCKNOWN=`cygpath -w "$NHCKNOWN" | tr '\\\\' '/'`
             fi
+            if [ -n "$NHC2KNOWN" ]
+            then NHC2KNOWN=`cygpath -w "$NHC2KNOWN" | tr '\\\\' '/'`
+            fi
             CONFIGPATH=`cygpath -w "$CONFIGPATH" | tr '\\\\' '/'`
      ;;
   *) ;;
 esac
 
 # ---- ----
-export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE
+export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE GHC2KNOWN NHC2KNOWN
 echo "  Now I'm creating targets/$MACHINE/hmake3.config for your installation."
 INVOKE="$PWD/script/hmake-config $CONFIGPATH"
 { echo "$INVOKE new"
@@ -196,6 +231,10 @@ INVOKE="$PWD/script/hmake-config $CONFIGPATH"
   if [ "$NHCKNOWN" != "" ]
   then echo "$INVOKE add nhc98"
        echo "$INVOKE add ${NHCKNOWN}"
+  fi;
+  if [ "$NHC2KNOWN" != "" ]
+  then echo "$INVOKE add ${COMP}"
+       echo "$INVOKE add ${NHC2KNOWN}"
   fi;
 } >targets/$MACHINE/hmake3.config
 echo $BUILDHMAKE >targets/$MACHINE/buildwith
