@@ -51,20 +51,8 @@ C_HEADER(cHSetPosn)
 }
 #endif
 
-/* foreign import hSetPosnC :: Handle -> HandlePosn -> Either Int () */
+/* foreign import hSetPosnC :: Handle -> HandlePosn -> IO Int */
 NodePtr hSetPosnC (FileDesc *f, fpos_t *p)
 {
-  int err;
-  err = fsetpos(f->fp,p);
-#if !TRACE
-  if (err)
-    return mkLeft(mkInt(errno));
-  else
-    return mkRight(mkUnit());
-#else
-  if (err)
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-  else
-    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
-#endif
+  return fsetpos(f->fp,p);
 }

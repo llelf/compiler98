@@ -52,22 +52,17 @@ C_HEADER(cHGetPosn)
 }
 #endif
 
-/* foreign import hGetPosnC :: Handle -> Either Int Addr */
-NodePtr hGetPosnC(FileDesc* f)
+/* foreign import hGetPosnC :: Handle -> IO Addr */
+void* hGetPosnC(FileDesc* f)
 {
   fpos_t *p;
   int err;
   p = (fpos_t*)malloc(sizeof(fpos_t));
   err = fgetpos(f->fp,p);
-#if !TRACE
-  if (err)
-    return mkLeft(mkInt(errno));
-  else
-    return mkRight(mkCInt((int)p));
-#else
-  if (err)
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-  else
-    return mkRight(mkR(mkCInt((int)p),mkTNm(0,mkNmVector(),mkSR())));
-#endif
+  if (err) {
+    free(p);
+    return (void*)0;
+  } else {
+    return p;
+  }
 }

@@ -87,8 +87,12 @@ C_HEADER(cOpen)
 
 #endif
 
-/* foreign import openFileC :: CString -> IOMode -> Either Int ForeignObj */
-NodePtr openFileC (char* filename, int iom)
+/* foreign import openFileC :: CString -> IOMode -> IO Addr */
+/*   Note: the return Addr is not an ordinary Addr - it is actually
+ *   a ForeignObj: we must later (in Haskell) cast it to the right
+ *   type (ForeignObj), and then wrap it up as a Handle.
+ */
+void* openFileC (char* filename, int iom)
 {
   char *type;
   FILE *fp;
@@ -113,17 +117,9 @@ NodePtr openFileC (char* filename, int iom)
     a->path = strdup(filename);
     fo = allocForeignObj(a,gcFile,gcNow);
     /*fprintf(stderr,"[openFileC: succeeded %x %x]\n",a,a->fp);*/
-#if !TRACE
-    return mkRight(mkCInt((int)fo));
-#else
-    return mkRight(mkR(mkCInt((int)fo),mkTNm(0,mkNmVector(),mkSR())));
-#endif
+    return (void*)fo;
   } else {
     /*fprintf(stderr,"fopen: failed to open file %s for %s\n",filename,type);*/
-#if !TRACE
-    return mkLeft(mkInt(errno));
-#else
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-#endif
+    return (void*)0;
   }
 }

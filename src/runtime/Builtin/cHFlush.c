@@ -45,20 +45,8 @@ C_HEADER(cHFlush)
 }
 #endif
 
-/* foreign import hFlushC :: Handle -> Either Int () */
-NodePtr hFlushC (FileDesc* a)
+/* foreign import hFlushC :: Handle -> Int */
+int hFlushC (FileDesc* a)
 {
-  int err;
-  err = fflush(a->fp);
-#if !TRACE
-  if (err)
-    return mkLeft(mkInt(errno));
-  else
-    return mkRight(mkUnit());
-#else
-  if (err)
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-  else
-    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
-#endif
+  return fflush(a->fp);
 }

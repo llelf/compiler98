@@ -68,8 +68,8 @@ C_HEADER(cHSetBuffering)
 }
 #endif
 
-/* foreign import hSetBufferingC :: Handle -> BufferMode -> Either Int () */
-NodePtr hSetBufferingC (FileDesc*f, NodePtr bufm)
+/* foreign import hSetBufferingC :: Handle -> BufferMode -> IO Int */
+int hSetBufferingC (FileDesc*f, NodePtr bufm)
 {
   int bm,size = BUFSIZ;
   int err;
@@ -90,18 +90,10 @@ NodePtr hSetBufferingC (FileDesc*f, NodePtr bufm)
   }
   err = setvbuf(f->fp,0,bm,size);
   if (err) {
-#if !TRACE
-    return mkLeft(mkInt(errno));
-#else
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-#endif
+    return err;
   } else {
     f->bm = bm;
     f->size = size;
-#if !TRACE
-    return mkRight(mkUnit());
-#else
-    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
-#endif
+    return 0;
   }
 }

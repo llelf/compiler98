@@ -61,10 +61,9 @@ C_HEADER(cHSeek)
 }
 #endif
 
-/* foreign import hSeekC :: Handle -> Int -> Integer -> Either Int () */
-NodePtr hSeekC (FileDesc* f, int seekmode, NodePtr i)
+/* foreign import hSeekC :: Handle -> Int -> Integer -> IO Int */
+int hSeekC (FileDesc* f, int seekmode, NodePtr i)
 {
-  int err;
   int sm;
   long offset;
   switch (seekmode) {
@@ -73,16 +72,5 @@ NodePtr hSeekC (FileDesc* f, int seekmode, NodePtr i)
     case SeekFromEnd:  sm = SEEK_END; break;
   }
   offset = GET_INT_VALUE(i);	/* naughty! */
-  err = fseek(f->fp,offset,sm);
-#if !TRACE
-  if (err)
-    return mkLeft(mkInt(errno));
-  else
-    return mkRight(mkUnit());
-#else
-  if (err)
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-  else
-    return mkRight(mkR(mkUnit(),mkTNm(0,mkNmUnit(),mkSR())));
-#endif
+  return fseek(f->fp,offset,sm);
 }

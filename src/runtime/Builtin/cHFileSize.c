@@ -53,20 +53,14 @@ C_HEADER(cHFileSize)
 }
 #endif
 
+/* foreign import primHFileSizeC :: Handle -> IO Integer */
 NodePtr primHFileSizeC (FileDesc* f)
 {
   struct stat buf;
   int err;
   err = fstat(fileno(f->fp),&buf);
-#if !TRACE
   if (err)
-    return mkLeft(mkInt(errno));
+    return mkSmallIntegerU(-1);
   else
-    return mkRight(mkSmallIntegerU(buf.st_size));
-#else
-  if (err)
-    return mkLeft(mkR(mkInt(errno),mkTNm(0,mkNmInt(mkInt(errno)),mkSR())));
-  else
-    return mkRight(mkR(mkSmallIntegerU(buf.st_size),mkTNm(0,mkNmInt(mkInt(buf.st_size)),mkSR())));
-#endif
+    return mkSmallIntegerU(buf.st_size);
 }
