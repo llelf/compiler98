@@ -50,6 +50,9 @@ objdir: ${OBJDIR}
 clean:
 	rm -f ${OBJDIR}/*.o
 
+primIntegerFromInt64.o: HsFFI.h
+primIntegerToWord64.o: HsFFI.h
+primIntegerFromWord64.o: HsFFI.h
 primDecodeDouble.o: primDecodeDouble.c haskell2c.h
 primDecodeFloat.o: primDecodeFloat.c haskell2c.h
 primDoubleFromInteger.o: primDoubleFromInteger.c haskell2c.h
@@ -78,8 +81,8 @@ cHSetPosn.o: cHSetPosn.c haskell2c.h
 cProfile.o: cProfile.c haskell2c.h
 cOpenSocket.o: cOpenSocket.c haskell2c.h
 cBits.o: cBits.c haskell2c.h
-cFFI.o: cFFI.c
+cFFI.o: cFFI.c HsFFI.h
 primsFloat.o: primsFloat.c
 primsDouble.o: primsDouble.c
-primsInt.o: primsInt.c
-primsWord.o: primsWord.c
+primsInt.o: primsInt.c HsFFI.h
+primsWord.o: primsWord.c HsFFI.h
