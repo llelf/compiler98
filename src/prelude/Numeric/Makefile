@@ -7,7 +7,7 @@ SRCS	= \
         Nonnull.hs     ReadDec.hs     LexDigits.hs \
         ReadFloat.hs   ReadHex.hs     ReadInt.hs \
         ReadOct.hs     ReadSigned.hs  ShowFloat.hs \
-        ShowInt.hs     ShowSigned.hs
+        ShowInt.hs     ShowSigned.hs  ShowIntBase.hs
 SRCS_T = ${SRCS}
 	 
 

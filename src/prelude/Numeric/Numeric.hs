@@ -9,6 +9,7 @@ module Numeric
   , module ReadSigned
   , module ShowFloat
   , module ShowInt
+  , module ShowIntBase
   , module ShowSigned
   ) where
 
@@ -22,5 +23,6 @@ import ReadOct
 import ReadSigned
 import ShowFloat
 import ShowInt
+import ShowIntBase
 import ShowSigned
 
