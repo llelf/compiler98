@@ -19,6 +19,16 @@ good mirror of the Gnu tools is
 SunSite</a>.)
 
 <p>
+Some people have reported difficulty getting recent pre-releases of
+nhc98 to build with Cygwin.  The make fails very quickly, saying
+that there is "no rule to make target .../src/runtime/Kernel".
+We aren't yet exactly sure of the cause.  Here is one suggestion -
+make sure that the environment variable MAKE_MODE is set to UNIX.
+If this fixes the problem, please let me know so that I can count
+this as a dead bug rather than an annoyingly still-alive bug.
+
+
+<p>
 Along with <em>gcc</em>, you also get the <em>bash</em> shell and lots
 of other Unix tools, such as <em>tar</em>, <em>gunzip</em>, and
 <em>make</em>, which are needed to unpack and build the <b>nhc98</b>
@@ -43,7 +53,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.01.17<br>
+2000.05.08<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

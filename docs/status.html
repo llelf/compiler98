@@ -152,12 +152,26 @@ comprehensive, but if you have any problems, please mail
 
 <br><br><hr>
 
-<h3>nhc98 pre-release 19 (2000-04-xx) features</h3>
+<h3>nhc98 pre-release 19 (2000-05-xx) features</h3>
 <ul>
+<li> Big Change: Until recently, the normal/profiling and tracing
+                 versions of the Prelude and Libraries have been
+                 kept in separate source trees.  The normal set is
+                 Haskell'98 compliant, the tracing set was 1.3 and
+                 incomplete.  We have now merged the two sets so that
+                 all the libraries which actually build for tracing
+                 are genuinely Haskell'98.  There are still several
+                 libraries that don't compile for tracing yet, but this
+                 is nevertheless a big step forward to improving the
+                 tracing experience.
 <li> Addition: Implementations of the standard Time and CPUTime
-               libraries.  All standard libraries are now implemented.
+               libraries.  All standard libraries are now implemented
+               in normal and profiling versions.
+<li> Addition: "hmake interactive" - a brand new Hugs-like
+               interpreter for interactive development.
 <li> Change:   The trace browser command has now been renamed
                <tt>rtb</tt> for "Redex Trail Browser".
+<li> Bugfix:   IO.hgetLine was broken.
 </ul>
 
 <h3>nhc98 pre-release 18 (2000-04-10) features</h3>
