@@ -42,7 +42,7 @@ import FFI
 
 -}
 
-foreign import openFileC :: CString -> Int -> IO ForeignObj
+foreign import openFileC :: PackedString -> Int -> IO ForeignObj
 
 openFile              :: FilePath -> IOMode -> IO Handle
 openFile fp iomode = do

@@ -5,7 +5,7 @@ import DIOError(IOError(IOErrorSystem))
 import DIO
 import System
 
-cSystem primitive 1 :: CString -> Either Int ExitCode
+cSystem primitive 1 :: PackedString -> Either Int ExitCode
 
 primSystem str =
   IO ( \ world ->

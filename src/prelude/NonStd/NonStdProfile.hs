@@ -2,7 +2,7 @@ module NonStdProfile where
 
 import CString
 
-cProfile primitive 1 :: CString -> ()
+cProfile primitive 1 :: PackedString -> ()
 
 profile :: String -> a -> a
 profile msg a =

@@ -4,7 +4,7 @@ import FFI
 import Numeric (readOct)
 import Monad   (when)
 
-foreign import mkdir :: CString -> Int -> IO Int
+foreign import mkdir :: PackedString -> Int -> IO Int
 
 createDirectory :: FilePath -> IO ()
 createDirectory fp = do

@@ -1,8 +1,6 @@
-module CString(CString,PackedString,toCString,fromCString) where
+module CString(PackedString,toCString,fromCString) where
 
 import PackedString(PackedString,unpackPS,packString)
 
-type CString = PackedString
-
 toCString str = packString (str ++ ['\0'])
-fromCString str = unpackPS str
+fromCString str = init (unpackPS str)

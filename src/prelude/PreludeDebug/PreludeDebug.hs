@@ -10,7 +10,7 @@ import FFIBuiltin(PackedString)
 import Ratio (Ratio)
 --import DIO		-- needed for attaching traces to prim I/O operations.
 import DEither		-- traced version needed, as for DIO.
-import FFIBuiltin (Addr,ForeignObj,StablePtr)
+import FFIBuiltin (Addr,ForeignObj,StablePtr,Ptr(..))
 import FFIBuiltin (Int8,Int16,Int32,Int64,Word8,Word16,Word32,Word64)
 import PreludeBuiltin (Vector)
 
@@ -78,12 +78,14 @@ instance NmCoerce () where
     toNm t v sr = mkR v (mkTNm t mkNTDummy sr)
 instance NmCoerce Addr where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+instance NmCoerce (Ptr a) where
+    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (StablePtr a) where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce ForeignObj where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce PackedString where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
+    toNm t v sr = mkR v (mkTNm t (mkNTCString v) sr)
 instance NmCoerce (Vector a) where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 {- Pattern matching on the trace that has been written to file is

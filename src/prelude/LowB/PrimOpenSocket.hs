@@ -5,7 +5,7 @@ import CString
 import DIO
 import DSocket
 
-cOpenSocket primitive 3 :: CString -> Int -> SocketType -> (Either IOError Handle)
+cOpenSocket primitive 3 :: PackedString -> Int -> SocketType -> (Either IOError Handle)
 
 primOpenSocket :: String -> Int -> SocketType -> IO Handle
 primOpenSocket host port stype = 

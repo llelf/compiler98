@@ -3,7 +3,7 @@ module Directory (renameDirectory) where
 import FFI
 import Monad (when)
 
-foreign import noproto rename :: CString -> CString -> IO Int
+foreign import noproto rename :: PackedString -> PackedString -> IO Int
 
 renameDirectory :: FilePath -> FilePath -> IO ()
 renameDirectory fp1 fp2 = do

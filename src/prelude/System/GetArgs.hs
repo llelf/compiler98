@@ -3,7 +3,7 @@ module System where
 import FFI
 
 foreign import cGetArg       :: IO Addr
-foreign cast   addrToCString :: Addr -> IO CString
+foreign cast   addrToCString :: Addr -> IO PackedString
 
 getArgs  :: IO [String]
 getArgs =

@@ -4,7 +4,7 @@ import FFI
 import Monad
 
 foreign import getcwd        :: Addr -> Int -> IO Addr
-foreign cast   addrToCString :: Addr -> CString
+foreign cast   addrToCString :: Addr -> PackedString
 
 getCurrentDirectory :: IO FilePath
 getCurrentDirectory = do

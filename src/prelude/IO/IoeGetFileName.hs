@@ -1,6 +1,5 @@
 module IO (ioeGetFileName) where
 
-import CString
 import DHandle
 import DIOError
 import HGetFileName
