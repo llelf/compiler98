@@ -1,3 +1,4 @@
+{-# OPTIONS -fglasgow-exts -#include "ghc_floats.h" -fvia-C #-}
 module Floats
   ( floatToInt
   , doubleToInt0
