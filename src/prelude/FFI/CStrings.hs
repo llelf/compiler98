@@ -1,4 +1,4 @@
-module CStrings (
+module FFI (
   -- representation of strings in C
   CString,           -- = Ptr CChar
   CStringLen,        -- = (CString, Int)

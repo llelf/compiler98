@@ -86,6 +86,11 @@ module FFI
 #endif
 
    -------------------------------------------------------------------
+   -- `unsafePerformIO' is so commonly used, it should be exported.
+   -------------------------------------------------------------------
+  , unsafePerformIO	-- :: IO a -> a
+
+   -------------------------------------------------------------------
    -- nhc98's `PackedString' is a heap-allocated packed array of characters.
    -------------------------------------------------------------------
   , PackedString	-- abstract
@@ -219,3 +224,4 @@ import CStrings		-- C pointer to array of char
 import CString		-- nhc98-only
 import CError		-- nhc98-only
 
+import IOExtras (unsafePerformIO)
