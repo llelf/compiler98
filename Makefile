@@ -91,12 +91,12 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-	 script/hmake-config.inst script/hi.inst script/hat-trail-in-java.inst \
+	 script/hmake-config.inst script/hi.inst \
          script/nhc98heap.c script/harch script/confhc script/confhat \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
-	 lib/hat-trail.jar lib/hood.jar script/hat-trans.inst \
-	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
+	 lib/hood.jar script/hat-trans.inst \
+	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
 	 hmake.spec nhc98.spec
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
@@ -129,17 +129,16 @@ PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HATLIB  = src/hat/lib/Makefile* src/hat/lib/*.[ch] \
 	  src/hat/lib/*.hs      src/hat/lib/*.hx \
 	  src/hat/lib/hat-package.conf
-HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] \
-	  src/hat/tools/*.hs 
-# src/hat/tools/*.gc
+HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
+	  src/hat/oldtools/Makefile* src/hat/oldtools/*.[ch] \
+	  src/hat/oldtools/*.hs src/hat/oldtools/*.gc
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
-HATTOOLSET= hat-stack hat-connect hat-check hat-checki hat-detect hat-observe \
-	    hat-port hat-trail hat-view hat-names
+HATTOOLSET= hat-stack hat-check hat-detect hat-observe hat-trail hat-view 
 HATTOOLS= $(patsubst %, lib/$(MACHINE)/%, $(HATTOOLSET))
 
 TARGDIR= targets
@@ -189,7 +188,7 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer hoodui
+all-$(BUILDCOMP): basic-$(BUILDCOMP) heapprofile timeprofile tracer #hoodui
 
 heapprofile: compiler profruntime profprelude-$(BUILDCOMP) hp2graph
 timeprofile: compiler timeruntime timeprelude-$(BUILDCOMP)
@@ -301,16 +300,15 @@ $(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
 hoodui: $(TARGDIR)/hoodui
 $(TARGDIR)/hoodui: lib/hood.jar
 	touch $(TARGDIR)/hoodui
-$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS) #lib/hat-trail.jar
+$(TARGDIR)/$(MACHINE)/hattools: $(HATTOOLS)
 	touch $(TARGDIR)/$(MACHINE)/hat
 
 
-lib/hat-trail.jar: $(TRAILUI)
-	-cd src/hat/trail;      $(MAKE) CFG=T install
 lib/hood.jar: $(HOODUI)
 	cd src/hoodui;         $(MAKE) install
 $(HATTOOLS): $(HATUI)
 	cd src/hat/tools;      $(MAKE) install
+	cd src/hat/oldtools;   $(MAKE) install	# Not for long!
 $(TARGDIR)/$(MACHINE)/hat-nhc: $(HATLIB)
 	cd src/hat/lib;	       $(MAKE) HC=nhc98 all
 	touch $(TARGDIR)/$(MACHINE)/hat-nhc
@@ -462,7 +460,7 @@ HAUX1   = Makefile.inc COPYRIGHT
 HAUX2   = src/Makefile*
 HSCRIPT = script/hmake.inst script/hmake-config.inst \
 	  script/harch script/hi.inst script/confhc \
-	  script/echo.c script/fixghc
+	  script/echo.c script/fixghc script/fixcygwin
 HMAN    = man/hmake.1 docs/hmake
 HCONF   = hmake-configure
 HBIN    = lib/$(MACHINE)/MkProg$(EXE) lib/$(MACHINE)/Older$(EXE) \

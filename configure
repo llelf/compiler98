@@ -7,12 +7,15 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.13 (CVS development version)"
-HMAKEVERSION="3.03 (2002-03-25)" export HMAKEVERSION
+CONFIGVERSION="v1.13 (CVS snapshot 2002-05-27)"
+HMAKEVERSION="3.04 (2002-05-17)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
-HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
-	hat-checki hat-port hat-view hat-names hat-trail"
+#HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
+#	hat-names"
+HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
+	hat-stack-T hat-check-T hat-observe-T hat-detect-T hat-trail-T \
+	hat-names-T"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -34,7 +37,7 @@ USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
 CCC=${CC-gcc}
 PWD=`pwd`
-case $PWD in	# path mangling required for CYGWIN
+case $PWD in	# path mangling required for older CYGWIN
   file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
   //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
 esac
@@ -516,10 +519,6 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
-    echo -n "hat-trail-in-java "
-    sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trail-in-java.inst |\
-    sed -e "s|ScriptDir|$BUILDBINDIR|" |\
-    sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hat-trail-in-java
     echo -n "hat-trans "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" >$BUILDBINDIR/hat-trans
@@ -531,15 +530,15 @@ then
     done
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
-    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hat-trail-in-java
-    chmod +x $BUILDBINDIR/hmake-config $BUILDBINDIR/hat-trans
+    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hmake-config
+    chmod +x $BUILDBINDIR/hat-trans
 
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
     echo "Updating targets/$MACHINE/hmake3.config..."
     echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
-    if fullname 2>>/dev/null	# cope with symbolic links in directory paths
+    if ( fullname ) 2>/dev/null	# cope with symbolic links in directory paths
       then echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		add `fullname ./script/nhc98`" \
 					 >>targets/$MACHINE/hmake3.config
@@ -631,10 +630,6 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
-    echo "	hat-trail-in-java"
-    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail-in-java.inst |\
-    sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail-in-java
     echo "	hat-trans"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trans.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -650,7 +645,7 @@ else	# [ "$INSTALL" = "yes" ]
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
     chmod +x $DESTDIR$BINDIR/hmake-config $DESTDIR$BINDIR/hat-trans
-    chmod +x $DESTDIR$BINDIR/hat-trail-in-java $DESTDIR$BINDIR/hood
+    chmod +x $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
   fi
@@ -691,8 +686,6 @@ else	# [ "$INSTALL" = "yes" ]
 						delete $BUILDBINDIR/nhc98
       fi
     fi
-    echo "	hat-trail.jar"
-    cp $BUILDLIBDIR/hat-trail.jar $DESTDIR$LIBDIR
     echo "	hood.jar"
     cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
     echo

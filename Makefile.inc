@@ -13,7 +13,7 @@ VERSION = 1.13
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HVERSION = 3.03
+HVERSION = 3.04
 # HVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
@@ -25,29 +25,37 @@ MKDIR:=$(shell pwd)
 #MKDIR:=$(PWD)
 endif
 
-TOPDIR= $(MKDIR)
-LOCAL = $(TOPDIR)/script/
-export LOCAL
-
-MACHINE := $(shell $(LOCAL)harch)
+TOPDIR := $(MKDIR)
+MACHINE = $(shell $(TOPDIR)/script/harch)
 export MACHINE
 
-OBJ=obj${CFG}
-SCRIPTDIR=${LOCAL}
-INCDIR=${TOPDIR}/include
-SRCDIR=${TOPDIR}/src
-LIBDIR=${TOPDIR}/lib
-DST=${LIBDIR}/${MACHINE}
+# CYG = $(findstring CYGWIN, $(MACHINE))
+# ifeq "CYGWIN" "${CYG}"
+#   TOPDIR := $(shell echo `cygpath -w $(TOPDIR)` | tr '\\' '/' )
+# endif
+
+
+OBJ=obj$(CFG)
+INCDIR=$(TOPDIR)/include
+SRCDIR=$(TOPDIR)/src
+LIBDIR=$(TOPDIR)/lib
+DST=$(LIBDIR)/$(MACHINE)
 
 ### This is a very important step: get the local configuration
-include ${DST}/config
+include $(DST)/config
 ###
 
 ifeq "" "${BUILDBASEDIR}"
 BUILDBASEDIR:=/tmp
 endif
-BUILDDIR=${BUILDBASEDIR}/${MACHINE}
+# ifeq "CYGWIN" "${CYG}"
+#   BUILDDIR = $(shell echo `cygpath -w $(BUILDBASEDIR)/$(MACHINE)` | tr '\\' '/')
+# else
+BUILDDIR = $(BUILDBASEDIR)/$(MACHINE)
+# endif
 
+LOCAL = $(TOPDIR)/script/
+export LOCAL
 HC = $(LOCAL)nhc98
 export HC
 HMAKE = $(LOCAL)hmake
