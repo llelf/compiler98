@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #if !defined(__arm) && !defined(__hppa__) && !defined(__CYGWIN32__)
-#include <malloc.h>
+#include "localmalloc.h"
 #endif
 #include "node.h"
 /* #include "newmacros.h"  -- already included in node.h */

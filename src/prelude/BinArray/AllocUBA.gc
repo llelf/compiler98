@@ -7,7 +7,7 @@ import DUnboxedArray ({-type-}UnboxedArray(..))
 import BinPtr        ({-type-}BinPtr(..))
 
 %-#include "cLowUnboxedArray.h"
-%-#include <malloc.h>
+%-#include "localmalloc.h"
 
 %fun allocUBA :: Int -> BinPtr -> IO UnboxedArray
 %call (int size) (binPtr end)
