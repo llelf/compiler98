@@ -24,7 +24,7 @@ main (int argc, char *argv[])
     exit(1);
   }
   fname = filename(argv[1]);
-  if (!openfile(fname)) {
+  if (openfile(fname)==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);
   }
@@ -114,7 +114,7 @@ unsigned long printNode(unsigned long offset) {
   b = getNodeType();
   switch (hi3(b)) {
   case TR:
-    printf("TR %u: ", offset);
+    printf("TR 0x%x: ", offset);
     switch (lo5(b)) {
     case APP:
       { 
@@ -122,70 +122,70 @@ unsigned long printNode(unsigned long offset) {
 	int arity = getAppArity();
 	showAble = 1;
 	printf("Application: ");
-	printf("AppTrace %u, ",getTrace());
-	printf("AppFun %u, ",getFunTrace());
+	printf("AppTrace 0x%x, ",getTrace());
+	printf("AppFun 0x%x, ",getFunTrace());
 	printf("Arguments [");
 	while (i++<arity) {
-	  printf("TR %u",getAppArgument(i-1));
+	  printf("TR 0x%x",getAppArgument(i-1));
 	  if (i<arity) printf(",");
 	}
-	printf("], SRCREF %u",getSrcRef());
+	printf("], SRCREF 0x%x",getSrcRef());
 	break;
       }
     case NAM:
       showAble = 1;
       printf(" Name: ");
-      printf("TR %u, ", getTrace());
-      printf("NT %u, ", getNmType());
-      printf("SR %u ", getSrcRef());
+      printf("TR 0x%x, ", getTrace());
+      printf("NT 0x%x, ", getNmType());
+      printf("SR 0x%x ", getSrcRef());
       break;
     case IND:
       printf(" Indirection: ");
-      printf("TR %u, ", getTrace());
-      printf("TR %u ", getValueTrace());
+      printf("TR 0x%x, ", getTrace());
+      printf("TR 0x%x ", getValueTrace());
       break;
     case HIDDEN:
       showAble = 1;
       printf(" Hidden: ");
-      printf("TR %u", getTrace());
+      printf("TR 0x%x", getTrace());
       break;
     case SATA:
       showAble = 1;
       printf(" SAT(A): ");
-      printf("TR %u", getTrace());
+      printf("TR 0x%x", getTrace());
       break;
     case SATAIS:
       showAble = 1;
       printf(" isolated SAT(A): ");
-      printf("TR %u", getTrace());
+      printf("TR 0x%x", getTrace());
       break;
     case SATB:
       showAble = 1;
       printf(" SAT(B): ");
-      printf("TR %u\t", getTrace());
+      printf("TR 0x%x\t", getTrace());
       break;
     case SATBIS:
       showAble = 1;
       printf(" isolated SAT(B): ");
-      printf("TR %u\t", getTrace());
+      printf("TR 0x%x\t", getTrace());
       break;
     case SATC:
       showAble = 1;
       printf(" SAT(C): ");
-      printf("TR %u", getTrace());
+      printf("TR 0x%x", getTrace());
       break;
     case SATCIS:
       showAble = 1;
       printf(" isolated SAT(C): ");
-      printf("TR %u", getTrace());
+      printf("TR 0x%x", getTrace());
       break;
     default:
-      printf("strange low-bits tag %d in TR %u\n",
+      printf("strange low-bits tag %d in TR 0x%x\n",
 	     lo5(b), offset);
     }
     break;
   case MD:
-    printf("MD %u: ", offset);
+    printf("MD 0x%x: ", offset);
     switch (lo5(b)) {
     case SUSPECT: printf("module (suspect), "); break;
     case TRUSTED: printf("module (trusted), "); break;
@@ -195,7 +195,7 @@ unsigned long printNode(unsigned long offset) {
     printf("\"%s\"", getSrcName());
     break;
   case NT:
-    printf("NT %u:  ", offset);
+    printf("NT 0x%x:  ", offset);
     switch (lo5(b)) {
     case INT:
       printf("INT %d", getIntValue());
@@ -221,7 +221,7 @@ unsigned long printNode(unsigned long offset) {
 	unsigned long modinfo = getModInfo();
 	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
-	printf("MD %u, ", modinfo);
+	printf("MD 0x%x, ", modinfo);
 	printf(" %s", getPosnStr());
       }
       break; 
@@ -231,7 +231,7 @@ unsigned long printNode(unsigned long offset) {
 	unsigned long modinfo = getModInfo();
 	char *fp = getfixpriStr();
 	if (*fp!='\0') printf("%s ", fp);
-	printf("MD %u, ", modinfo);
+	printf("MD 0x%x, ", modinfo);
 	printf(" %s", getPosnStr());
       }
       break; 
@@ -263,17 +263,17 @@ unsigned long printNode(unsigned long offset) {
       printf("CONTAINER");
       break;
     default:
-      printf("strange low-bits tag %d in NT %u\n",
+      printf("strange low-bits tag %d in NT 0x%x\n",
 	     lo5(b), offset);
     }
     break;
   case SR:
-    printf("SR %u:  Source reference\t", offset);
-    printf("MD %u\t", getModInfo());
+    printf("SR 0x%x:  Source reference\t", offset);
+    printf("MD 0x%x\t", getModInfo());
     printf(" %s", getPosnStr());
     break;
   default:
-    printf("strange high-bits tag %d at byte offset %u\n",
+    printf("strange high-bits tag %d at byte offset 0x%x\n",
 	   hi3(b), offset);
   }
   printf("\n");
@@ -291,7 +291,7 @@ unsigned long printNode(unsigned long offset) {
     satc = findAppSAT(followSATs(offset));
     seek(satc);
     if ((isSAT(satc))&&(satc!=offset)) {
-      printf("corresponding SAT at: %u\n\n",satc);
+      printf("corresponding SAT at: 0x%x\n\n",satc);
       printf("reduction: %s = ",appstr);
       freeStr(appstr);
       exp = buildExpr(satc,verboseMode,precision);
@@ -316,7 +316,7 @@ void interactive(unsigned long current) {
   while (1) {
     next = 0;
     if (current!=0) next=printNode(current);
-    printf("\nenter <address>, (b)ack, (n)ext=%u or (f)ollow SATs, (q)uit: ",next);
+    printf("\nenter <address>, (b)ack, (n)ext=0x%x or (f)ollow SATs, (q)uit: ",next);
     getline(command,80);
     if (isCmd(command,"back","b")) {
       if (toplevel) printf("Sorry. Already at beginning. Can't go back!\n");
@@ -333,8 +333,12 @@ void interactive(unsigned long current) {
 	} else {
 	  if (isCmd(command,"follow","f")) {
 	    adr = followSATs(current);
-	  } else
+	  } else {
 	    adr = atol(command);
+	    if (adr==0) {
+	      sscanf(command, "0x%x", &adr);
+	    }
+	  }
 	  if (adr!=0) {
 	    if (current==0) current=adr;else
 	      interactive(adr);

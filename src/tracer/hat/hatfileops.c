@@ -1296,11 +1296,13 @@ int getIntegerValue() { // int for now!
 
   skipbyte();
   n = (signed char) nextbyte();
+  //printf("integer length %i\n",n);
   i = n;
+  if (i<0) i=-i;
   
   boff = lbuf;
   if (n==0) return 0;
-  prepareBuffer(2+(n*4));
+  prepareBuffer(2+(i*4));
   lbuf = boff;
   skipbytes(2);
   
