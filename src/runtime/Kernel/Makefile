@@ -29,8 +29,9 @@ endif
 
 OBJS = ${AOBJS} ${SOBJS} ${OOBJS}
 
-CFLAGS = ${DCFG} ${BUGFIX} ${ENDIAN} ${OPT} -I${INCDIR} \
+CFLAGSNOOPT = ${DCFG} ${BUGFIX} ${ENDIAN} -I${INCDIR} \
          -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
+CFLAGS = ${CFLAGSNOOPT} ${OPT}
 CPP = $(CC) ${DCFG} ${ENDIAN} -E 
 LDFLAGS = -r
 AS = $(CC) -c
@@ -38,9 +39,9 @@ AS = $(CC) -c
 ${AOBJS} ${OOBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 ${SOBJS}: ${OBJDIR}/%.o: %.c
-	${CC} -S ${CFLAGS} -o - $< |\
+	${CC} -S ${CFLAGSNOOPT} -o - $< |\
 		sed -e '/.align 32/s/32/4/' -e '/.p2align 5/s/5/2/' |\
-		${CC} -c -x assembler-with-cpp ${CFLAGS} -o $@ -
+		${CC} -c -x assembler-with-cpp ${CFLAGSNOOPT} -o $@ -
 
 LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
 	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
