@@ -7,9 +7,9 @@
 <hr>
 
 <p>
-The latest stable release is 1.02, available in various distribution
+The latest stable release is 1.04, available in various distribution
 formats (listed below).  Important patches for the stable version
-are also provided.  The development tree is at version 1.03,
+are also provided.  The development tree is at version 1.05,
 and is only available by <a href="cvs.html">CVS</a>.  Bugfixes
 and important changes to the system are described in the <a
 href="status.html">release notes</a> for each version.
@@ -29,9 +29,17 @@ instructions</a>.
 <tr bgcolor=#dddddd><th>package</th> <th>machine</th>
                     <th>version</th> <th>date</th> <th>size</th></tr>
 
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.04.tar.gz">
+      Sources (.tar.gz)</a></td>
+  <td>any</td>
+  <td>1.04</td>
+  <td>2001-05-21</td>
+  <td>3036kb</td></tr>
+
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.02.tar.gz">
-      Haskell + C source (.tar.gz)</a></td>
+      Sources (.tar.gz)</a></td>
   <td>any</td>
   <td>1.02</td>
   <td>2001-02-14</td>
@@ -61,7 +69,7 @@ instructions</a>.
   <td>2001-02-16</td>
   <td>3184kb</td></tr>
 
-<tr bgcolor=#ffffdd>
+<tr bgcolor=#ffdddd>
   <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
       Executable (.deb)</a></td>
   <td>ix86-Linux</td>
@@ -74,7 +82,7 @@ instructions</a>.
 
 <p>
 <center>
-Alternative locations:
+<em>Alternative locations:</em>
 <br>
 Tarfiles:
 <br>
@@ -106,23 +114,23 @@ ix86-Linux for Debian:
 
 <p>
 All the documents available on the web are included in all the packages.
-(* Please note that the installation instructions for out-of-date packages
-often differ slightly from the ones on the web.  Always follow the
+(* Please note that options/instructions for out-of-date packages
+may differ slightly from the ones on the web.  Always follow the
 instructions from the package itself.)
 
 <p>
 The unified source tree contains the complete Haskell sources for the
 compiler, runtime system, standard prelude, and libraries (including
 Binary, FFI, IOExtras, etc) for <b>nhc98</b>, and current versions of
-<em>GreenCard</em>, <em>hp2graph</em>, <em>hmake</em>, and the trace
-browser.  In addition, it contains bootstrapping C sources in case you
+<em>GreenCard</em>, <em>hp2graph</em>, <em>hmake</em>, and the Hat tracing
+tools.  In addition, it contains bootstrapping C sources in case you
 don't already have a Haskell compiler to build nhc98 with.
 
 <p>
 The binary packages contain just the executables, interface files, and
 object files for the compiler, runtime system, standard prelude,
 libraries (including Binary, FFI, IOExtras, etc), <em>GreenCard</em>,
-<em>hp2graph</em>, <em>hmake</em> and the trace browser.  In short,
+<em>hp2graph</em>, <em>hmake</em> and the Hat tracing tools.  In short,
 everything (except the sources) needed for normal compilation, heap
 profiling, time profiling, and tracing - the full works.
 
@@ -222,7 +230,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.04.30<br>
+This page last modified: 2001.05.18<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

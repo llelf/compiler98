@@ -12,6 +12,7 @@ install procedure:
 <pre>
     $ ./configure  [ --prefix=/usr/local ]
     $ make [ all ]
+    [ perhaps become root ]
     $ make install
 </pre>
 
@@ -23,7 +24,7 @@ Users of Windows 95/98/SE/Me/NT/2k/XP, please see these
 <p>
 If you want to use the trace browsing tools <tt>hat-trail</tt> or
 <tt>hood</tt>, you will need to have Java on your PATH.  Java 1.2
-and 1.3 work okay, but at least for <tt>hat-trail</tt> they do not
+and 1.3 work okay, but at least for <tt>hat-trail</tt> they may not
 produce as pretty displays as Java 1.1 (we recommend jdk-1.1.7).
 
 <p>
@@ -35,15 +36,16 @@ For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
 <b>nhc98</b> without another Haskell compiler, you need 8Mb of memory
 (although you could probably manage with less), and about 27Mb of disk
-space (40Mb if you build for profiling and tracing as well).  If you
+space (50Mb if you build for profiling and tracing as well).  If you
 already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
-then building <b>nhc98</b> will require at least 32Mb of memory, and
-50Mb of free disk space.  If you don't have <em>hbc</em> or <em>ghc</em>
-for your machine, then don't worry, <b>nhc98</b> will build quite
-happily using just a C compiler.  (The basic build is much faster, but the
-resulting compiler will be slower.)  You even can build <em>nhc98</em>
-using an earlier version of <em>nhc98</em> if you really want, but
-we don't do that by default because the build time tends to be slow.
+then building <b>nhc98</b> will require at least 32Mb of memory,
+and 70Mb of free disk space.  If you don't have <em>hbc</em> or
+<em>ghc</em> for your machine, then don't worry, <b>nhc98</b> will
+build quite happily using just a C compiler.  (The basic build is
+much faster, but the resulting compiler will be slower.)  You can
+also build <em>nhc98</em> using an earlier version of <em>nhc98</em>
+if you want, but we don't do that by default because the build time
+can be slow.
 
 <h3>Download it</h3>
 <p>
@@ -67,7 +69,7 @@ in <a href="status.html">docs/status.html</a>.
 <p>
 An automatic configuration utility is supplied, called
 <em>configure</em>.  In brief, the default behaviour is to build under
-the current directory, in <tt>targets</tt>, and to install various
+<tt>targets</tt> in the current directory, and to install various
 components under <tt>/usr/local</tt>, in the subdirectories
 <tt>bin</tt>, <tt>lib/nhc98</tt>, <tt>include/nhc98</tt>, and
 <tt>man/man1</tt>.  The config script has several useful options to
@@ -122,48 +124,57 @@ available, we will choose, in order of preference, <em>ghc</em>, then
 <em>hbc</em>.  If neither of these is found, <em>nhc98</em> will be
 built from the bootstrapping C sources included in the package.  (You
 can build <em>nhc98</em> using an earlier version of <em>nhc98</em> if
-you really want, but for speed reasons we don't configure that by
-default.)
+you want using the configure options, but it is not selected by default.)
 
 <p>
-Then run <tt>make</tt> to build the basic system, or <tt>make all</tt>
-if you want profiling and tracing as well.  If you want finer control
-over which components of the system are built, try running <tt>make
-help</tt> for a list of useful individual targets.
+Decide what profiling and tracing features you want to use -
+<tt>make help</tt> gives a list of useful individual targets,
+such as <tt>basic</tt>, <tt>heapprofile</tt>, <tt>timeprofile</tt>
+and <tt>tracer</tt>.
+
+<p>
+Then run <tt>make</tt> with your chosen targets, or <tt>make all</tt>
+to build all the possible facilities.  (A simple <tt>make</tt>
+without targets builds only the basic compiler and tools, with no
+support for tracing or profiling.)
 
 <p>
 The time taken to build nhc98 depends on your machine, which compiler
 you are using, and whether you have asked for just the basic system or
-the full system.  Here are some sample build times in minutes, all on
-Pentium class machines:
+some extra components.  Here are some sample build times in minutes,
+all on Pentium class machines:
 
 <center>
 <table><tr>
     <th></th>
-    <th colspan=2>500Mhz/Linux</th>
+    <th colspan=3>500Mhz/Linux</th>
     <th colspan=2>150MHz/Linux</th>
     <th colspan=2>150MHz/Win95</th>
 </tr><tr>
     <th>build compiler</th>
+    <th>basic</th><th>basic+tracer</th><th>all</th>
     <th>basic</th><th>all</th>
     <th>basic</th><th>all</th>
-    <th>basic</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td>4</td><td>161</td><td>14</td><td>450</td><td>45</td><td>1200</td>
+    <td>gcc</td><td>5</td><td>xxx</td><td>262</td><td>14</td><td>450</td><td>45</td><td>1200</td>
 </tr><tr>
-    <td>ghc</td><td>21</td><td>49</td><td>99</td><td></td><td></td><td></td>
+    <td>ghc</td><td>21</td><td>xxx</td><td>69</td><td>99</td><td></td><td></td><td></td>
 </tr><tr>
-    <td>hbc</td><td>22</td><td>75</td><td></td><td></td><td></td><td></td>
+    <td>hbc</td><td>22</td><td>xxx</td><td>110</td><td></td><td></td><td></td><td></td>
 </tr><tr>
-    <td>nhc98</td><td>50</td><td>202</td><td></td><td></td><td></td><td></td>
+    <td>nhc98</td><td>50</td><td>xxx</td><td>288</td><td></td><td></td><td></td><td></td>
 </tr></table>
 </center>
 
 <p>
-Finally, when you have built all the components you require,
-type <tt>make install</tt>.  If you wish to keep your
-disk usage down, use <tt>make clean</tt>, <tt>make realclean</tt>,
-or simply delete the entire directory tree.
+Finally, when you have built all the components you require, type
+<tt>make install</tt> to copy the components to their final location.
+(You may need to become root for this step, depending on the final
+location you selected at configure time.)  As an alternative to
+installing in a system-wide location, it is also possible to use
+all the <b>nhc98</b> tools in-place in the build tree by adding the
+<tt>script</tt> directory to your PATH (if you wish to keep your
+disk usage down, use <tt>make clean</tt> or <tt>make realclean</tt>)
 
 
 
@@ -199,7 +210,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.04.30<br>
+This page last modified: 2001.05.18<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
