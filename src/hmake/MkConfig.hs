@@ -4,9 +4,9 @@ module Main where
 import Compiler (HC(..))
 import Config
 import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
-                 ,Permissions(..),renameFile)
+                 ,Permissions(..),renameFile,createDirectory)
 import System (system,exitWith,ExitCode(..),getArgs,getEnv,getProgName)
-import List (intersperse,nub)
+import List (intersperse,nub,isPrefixOf)
 import Char (isDigit)
 import Monad (foldM)
 import IO (hPutStrLn,stderr,isDoesNotExistError)
@@ -77,43 +77,53 @@ main = do
       catch (safeReadConfig path)
             (\e-> if isDoesNotExistError e
                   then do
+                    hPutStrLn stderr ("hmake-config: Warning: "
+                                      ++"Config file not found:\n  '"
+                                      ++path++"'")
                     globalDir <- getEnv "HMAKEDIR"
                     let global = globalDir++"/"++machine++"/hmakerc"
-                    hPutStrLn stderr ("hmake-config: Warning"
-                                      ++"\n    Config file '"++path
-                                      ++"' not found."
-                                      ++"\n    Copying from '"++global++"'.")
-                    catch (do config <- safeReadConfig global
-                              writeFile path (show config)
-                              return config)
-                          (\e-> if isDoesNotExistError e
-                                then do
-                                  hPutStrLn stderr
-                                      ("hmake-config: Warning\n    '"++global
-                                       ++"' not found either.\n    "
-                                       ++"Starting new config from scratch.")
-                                  let config = (HmakeConfig
-                                                 { defaultCompiler="unknown"
-                                                 , knownCompilers=[]})
+                    if path == global
+                      then newConfigFile path
+                      else do
+                        hPutStrLn stderr ("hmake-config: Copying from\n  '"
+                                          ++global++"'.")
+                        catch (do config <- safeReadConfig global
                                   writeFile path (show config)
-                                  return config
-                                else ioError e)
+                                  return config)
+                              (\e-> if isDoesNotExistError e
+                                    then do
+                                      hPutStrLn stderr
+                                        ("hmake-config: Warning: "
+                                         ++"System config file not found:\n  '"
+                                         ++global++"'")
+                                      newConfigFile path
+                                    else ioError e)
                   else ioError e)
+    newConfigFile path = do
+      hPutStrLn stderr ("hmake-config: Starting new config from scratch.")
+      let config = HmakeConfig {defaultCompiler="unknown", knownCompilers=[]}
+      catch (writeFile path (show config))
+            (\e -> if isDoesNotExistError e	-- fails because no directory
+                   then do createDirectory (dirname path)
+                           writeFile path (show config)
+                   else ioError e)		-- fails for other reason
+      return config
 
 
 delete, mkDefault :: HmakeConfig -> HC -> String -> IO HmakeConfig
 delete config hc path
   | path == defaultCompiler config =
-        error ("hmake-config: cannot delete '"++path
-               ++"'\n              because it is the default compiler.")
+        error ("hmake-config: cannot delete\n  '"++path
+               ++"'\n  because it is the default compiler.")
   | otherwise =
         return config { knownCompilers = filter (\cc-> compilerPath cc /= path)
                                                 (knownCompilers config) }
 mkDefault config hc path
   | path `elem` map compilerPath (knownCompilers config)
               = return config { defaultCompiler = path }
-  | otherwise = error ("hmake-config: compiler '"++path
-                       ++"'\n              is not known yet.")
+  | otherwise = do hPutStrLn stderr ("hmake-config: compiler not known:\n  '"
+                                     ++path++"'")
+                   exitWith (ExitFailure 2)
 
 -- configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
@@ -209,19 +219,19 @@ configure Hbc hbcpath = do
 			, isHaskell98   = ((hbcversion!!7) >= '5')
 			}
 configure (Unknown hc) hcpath = do
-    error ("hmake-config: the compiler '"++hcpath
-           ++"'\n              does not look like a Haskell compiler.")
+    error ("hmake-config: the compiler\n  '"++hcpath
+           ++"'\n  does not look like a Haskell compiler.")
 
 
 hcStyle :: String -> HC
 hcStyle path = toCompiler (basename path)
-
-toCompiler :: String -> HC
-toCompiler "gcc"   = Nhc98
-toCompiler "nhc98" = Nhc98
-toCompiler "ghc"   = Ghc
-toCompiler "hbc"   = Hbc
-toCompiler x       = Unknown x
+  where
+    toCompiler :: String -> HC
+    toCompiler hc | "gcc" `isPrefixOf` hc = Nhc98
+                  | "nhc" `isPrefixOf` hc = Nhc98
+                  | "ghc" `isPrefixOf` hc = Ghc
+                  | "hbc" `isPrefixOf` hc = Hbc
+                  | otherwise             = Unknown hc
 
 basename,dirname :: String -> String
 basename = reverse .        takeWhile (/='/') . reverse
