@@ -10,7 +10,7 @@ import Unlit (unlit,plain)
 data PreProcessor = PreProcessor
 	{ ppExecutableName   :: String
         , ppDefaultOptions   :: DecodedArgs -> [String]
-	, ppOutputFileOption :: Maybe String
+	, ppOutputFileOption :: String -> String
 	, ppSuitable         :: HC -> Bool
 	}
 
@@ -34,37 +34,37 @@ ppCpp, ppGreenCard, ppHsc2hs, ppC2hs, ppHappy, ppNone :: PreProcessor
 ppCpp = PreProcessor
 	{ ppExecutableName = "gcc -E"
 	, ppDefaultOptions = \d-> "-x c" : map ("-D"++) (defs d++zdefs d)
-	, ppOutputFileOption = Just "-o "
+	, ppOutputFileOption = \f-> "> "++f
 	, ppSuitable = \hc-> True
 	}
 ppGreenCard = PreProcessor
-	{ ppExecutableName = "greencard"
-	, ppDefaultOptions = \d-> ["-t", show (compilerStyle (compiler d))]
-	, ppOutputFileOption = Just "-o "
+	{ ppExecutableName = "green-card"
+	, ppDefaultOptions = \d-> ["-tffi"]	-- + includePath of compiler?
+	, ppOutputFileOption = \f-> "-o "++f
 	, ppSuitable = \hc-> hc == Ghc
 	}
 ppHsc2hs = PreProcessor
 	{ ppExecutableName = "hsc2hs"
 	, ppDefaultOptions = \_-> []
-	, ppOutputFileOption = Nothing
+	, ppOutputFileOption = \_-> ""
 	, ppSuitable = \hc-> hc `elem` [Ghc,Nhc98]
 	}
 ppC2hs = PreProcessor
 	{ ppExecutableName = "c2hs"
 	, ppDefaultOptions = \_-> []
-	, ppOutputFileOption = Nothing
+	, ppOutputFileOption = \_-> ""
 	, ppSuitable = \hc-> hc `elem` [Ghc,Nhc98]
 	}
 ppHappy = PreProcessor
 	{ ppExecutableName = "happy"
 	, ppDefaultOptions = \_-> []
-	, ppOutputFileOption = Nothing
+	, ppOutputFileOption = \_-> ""
 	, ppSuitable = \hc-> True
 	}
 ppNone = PreProcessor
 	{ ppExecutableName = ""
 	, ppDefaultOptions = \_-> []
-	, ppOutputFileOption = Nothing
+	, ppOutputFileOption = \_-> ""
 	, ppSuitable = \hc-> True
 	}
 
