@@ -7,10 +7,16 @@ import Directory
 import List
 
 import HmakeConfig
-import SimpleLineEditor (delChars, done, getLineEdited)
+import SimpleLineEditor (delChars, getLineEdited)
+
+#if defined(__GLASGOW_HASKELL__)
+import Posix
+#endif
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
+
+done = return ()
 
 main = do
   options <- getArgs
@@ -20,6 +26,9 @@ main = do
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
   hSetBuffering stdin NoBuffering
+#if defined(__GLASGOW_HASKELL__)
+  installHandler sigINT Ignore Nothing
+#endif
   load opts defaultCompiler "Prelude"
   toplevel opts defaultCompiler ["Prelude"]
 

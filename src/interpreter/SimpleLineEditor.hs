@@ -1,11 +1,11 @@
 module SimpleLineEditor
   ( getLineEdited	--	:: {- [String] -> -} IO String
-  , delChars		--	:: String -> IO String
+  , delChars		--	:: String -> IO ()
   ) where
 
 import IO
 
-delChars :: String -> IO String
+delChars :: String -> IO ()
 delChars []     = return ()
 delChars (_:xs) = do putStr "\BS \BS"
                      delChars xs

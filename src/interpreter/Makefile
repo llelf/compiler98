@@ -7,7 +7,7 @@ SRCS   = hi.hs HmakeConfig.hs SimpleLineEditor.hs
 
 
 ifeq "${HC}" "ghc"
-HFLAGS = -fglasgow-exts -syslib lang
+HFLAGS = -fglasgow-exts -syslib lang -syslib posix
 export HFLAGS
 endif
 ifeq "${HC}" "hbc"
