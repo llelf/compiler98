@@ -11,7 +11,7 @@ module TraceId
   ) where
 
 import TokenId (TokenId)
-import AuxFile (AuxiliaryInfo(..))
+import AuxFile (AuxiliaryInfo(..),Fixity(..))
 
 {-
 data TraceId = Keep	{ tokenId :: TokenId }
