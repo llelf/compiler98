@@ -298,12 +298,7 @@ then
   fi
   # echo $RTSMESSAGE
 
-  if [ "$EXE" = "" ]
-  then echo "Executables do not have .exe suffix (detected)"
-  else echo "Executables need .exe suffix (detected)"
-  fi
-
-  echo -n "This machine's endian-ness is: "
+  echo -n "This machine's endian-ness is:              "
   if [ "$ENDIAN" = "" ]
   then
     cat >endian.c <<!!!
@@ -330,6 +325,21 @@ main() {
     echo '(cached) '
   fi
 
+  if [ "$EXE" = "" ]
+  then echo "Executables need .exe suffix?               no  (detected)"
+  else echo "Executables need .exe suffix?               yes (detected)"
+  fi
+
+  echo -n "Testing for the readline library: "
+  echo 'main(){;}' >rd.c
+  if ${CCC} -o /dev/null rd.c -lreadline >/dev/null 2>&1
+  then echo '          yes (detected)'
+       READLINE="-DUSE_READLINE=1 -lreadline"
+  else echo '          no  (detected)'
+       READLINE=""
+  fi
+  rm -f rd.c
+
   echo -n "Reading /usr/include/errno.h: "
   if [ ! -d src/prelude/$MACHINE ]
   then
@@ -343,10 +353,10 @@ main() {
   if diff DErrNo.hs src/prelude/$MACHINE/DErrNo.hs >/dev/null
   then
     rm -f DErrNo.hs
-    echo 'no change'
+    echo '              no change'
   else
     mv DErrNo.hs src/prelude/$MACHINE/DErrNo.hs
-    echo 'updated DErrNo.hs'
+    echo '              updated DErrNo.hs'
   fi
 
 else	# do the following only in binary distributions
@@ -446,6 +456,7 @@ then
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "LIBCOMPAT=\"$LIBCOMPAT\"";
+      echo "READLINE=\"$READLINE\"" ;
       echo "EXE=$EXE";
       echo "CC=$CCC";
       echo "GHCSYM=$GHCSYM";
