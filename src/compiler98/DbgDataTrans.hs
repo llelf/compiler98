@@ -537,7 +537,10 @@ wrapRNewType (NewType free exist ctxs ts) =
   let (t:rts) = reverse ts in
   lookupId TCon t_R >>>= \rt ->
   unitS (NewType free exist ctxs 
-           (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
+           (reverse (map (wrapper rt) rts) ++ [t]))
+ where
+  wrapper rt (NTstrict t) = NTstrict (NTcons rt [t])
+  wrapper rt t            = NTcons rt [t]
 
 
 {- t  ==> SR -> (Trace -> R t) -}
