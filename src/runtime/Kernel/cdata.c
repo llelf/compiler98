@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 
 /* #include "runtime.h"	-- now included from cinterface.h below */
 #include "stableptr.h"	/* MW 19991213, needed for Haskell finalizers */
@@ -22,29 +23,37 @@ ForeignObj fo_stderr;
 void initForeignObjs(void)
 {
   int i;
+  FileDesc *fd_stdin, *fd_stdout, *fd_stderr;
+
   for(i=0; i<MAX_FOREIGNOBJ; i++) {
     foreign[i].used = 0;
     foreign[i].cval = NULL;
     foreign[i].gc   = NULL;
     foreign[i].gcf  = NULL;
   }
-  fd_stdin.fp = stdin; 
-  fd_stdin.bm = _IOLBF; 
-  fd_stdin.size = -1; 
+  fd_stdin = (FileDesc*)malloc(sizeof(FileDesc));
+  fd_stdin->fp = stdin; 
+  fd_stdin->bm = _IOLBF; 
+  fd_stdin->size = -1; 
+  fd_stdin->path = strdup("<stdin>"); 
     fo_stdin.used = 1; 
-    fo_stdin.cval = (void*)&fd_stdin; 
+    fo_stdin.cval = (void*)fd_stdin; 
     fo_stdin.gcf  = gcNone;
-  fd_stdout.fp = stdout;
-  fd_stdout.bm = _IOLBF;
-  fd_stdout.size = -1;
+  fd_stdout = (FileDesc*)malloc(sizeof(FileDesc));
+  fd_stdout->fp = stdout;
+  fd_stdout->bm = _IOLBF;
+  fd_stdout->size = -1;
+  fd_stdout->path = strdup("<stdout>"); 
     fo_stdout.used = 1; 
-    fo_stdout.cval = (void*)&fd_stdout;
+    fo_stdout.cval = (void*)fd_stdout;
     fo_stdout.gcf  = gcNone;
-  fd_stderr.size = -1;
-  fd_stderr.fp = stderr;
-  fd_stderr.bm = _IOLBF;
+  fd_stderr = (FileDesc*)malloc(sizeof(FileDesc));
+  fd_stderr->fp = stderr;
+  fd_stderr->bm = _IOLBF;
+  fd_stderr->size = -1;
+  fd_stderr->path = strdup("<stderr>"); 
     fo_stderr.used = 1; 
-    fo_stderr.cval = (void*)&fd_stderr;
+    fo_stderr.cval = (void*)fd_stderr;
     fo_stderr.gcf  = gcNone;
 }
 
@@ -131,13 +140,15 @@ void gcFile(void *c)	/* This is a possible second-stage GC */
   if(!replay)
 #endif
     fclose(a->fp);
-  /* free(a); */
+  if (a->path) free(a->path);
+  free(a);
 }
 void gcSocket(void *c)	/* This is another possible second-stage GC */
 {
   FileDesc *a = (FileDesc*)c;
   close(a->fdesc);
-  /* free(a); */
+  if (a->path) free(a->path);
+  free(a);
 }
 
 
