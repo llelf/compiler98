@@ -4,6 +4,8 @@ import HbcOnly
 import Char
 import List
 import Maybe
+import IO (hPutStr,stderr)
+import Error (exit)
 #if defined(__NHC__) || defined(__HBC__)
 import NonStdTrace
 #endif
@@ -218,3 +220,21 @@ isNhcOp '^' = True; isNhcOp '#' = True; isNhcOp '?' = True
 isNhcOp '\\' = True
 isNhcOp _ = False
 
+------------------------
+-- Given a list of filenames, return filename and its content of first file
+-- that was read successfully (intention: other filenames may not exist)
+
+readFirst :: [String] -> IO (String,String)
+
+readFirst []     = do
+  hPutStr stderr "Fail no filenames, probably no -I or -P" 
+  exit
+readFirst [x]    = do 
+  finput <- readFile x
+  return (x,finput)
+readFirst (x:xs) =
+  catch (do finput <- readFile x
+            return (x,finput))
+        (\ _ -> readFirst xs)
+
+------------------------

@@ -12,29 +12,29 @@ import List(isPrefixOf)
 
 import Error
 import Syntax
-import Extra(Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine,
-             pair,fst3,thd3,trace)
-import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
-                 ParseResult(..),parseit)
+import Extra (Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine
+             ,pair,fst3,thd3,trace)
+import ParseCore (Parser(..),ParseBad(..),ParseError(..),ParseGood(..)
+                 ,ParseResult(..),parseit)
 import Flags (Flags,processArgs,pF,sUnderscore,sRealFile,sSourceFile,sUnlit
              ,sLex,sParse,sPrelude
              ,sHatFileBase,sHatAuxFile,sTraceFns,sHatTransFile,sDbgTrusted)
-import PrettySyntax(prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
-                   ,ppModule,ppTopDecls,ppClassCodes)
+import PrettyTraceId (prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
+                     ,ppModule,ppTopDecls,ppClassCodes)
 
-import TokenId(TokenId(..),getUnqualified
-              ,visible,t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
-import IdKind(IdKind(..))
-import Id(Id)
-import Lex(Lex,LexAnnot)  -- need show
+import TokenId (TokenId(..),getUnqualified
+               ,visible,t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
+import IdKind (IdKind(..))
+import Id (Id)
+import Lex (Lex,LexAnnot)  -- need show
 
-import Unlit(unlit)
-import Lexical(PosToken(..),PosTokenPre(..),LexState(..),lexical)
-import Parse(parseProg)
+import Unlit (unlit)
+import Lexical (PosToken(..),PosTokenPre(..),LexState(..),lexical)
+import Parse (parseProg)
 
-import AuxFile(toAuxFile)
-import AuxLabelAST(auxLabelSyntaxTree)
-import TraceTrans(traceTrans,maybeStripOffQual)
+import AuxFile (toAuxFile)
+import AuxLabelAST (auxLabelSyntaxTree)
+import TraceTrans (traceTrans,maybeStripOffQual)
 
 
 --import NonStdProfile

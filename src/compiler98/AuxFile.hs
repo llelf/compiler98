@@ -14,9 +14,8 @@ import Syntax
 import TokenId (TokenId,tPrelude,visImport,t_Tuple,getUnqualified)
 import AssocTree
 import OsOnly
-import Import
 import Flags
-import Extra (noPos)
+import Extra (noPos, readFirst)
 import AuxTypes
 import AuxFixity (fixInfixList)
 

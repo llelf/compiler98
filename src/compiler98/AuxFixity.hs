@@ -13,7 +13,7 @@ import Syntax
 import SyntaxPos
 import TokenId(TokenId(..), t_x, t_y, t_flip, t_minus, tnegate, visImport)
 import AssocTree
-import PreImp
+--import PreImp
 import AuxTypes
 
 
@@ -91,6 +91,8 @@ getExp env ops exps (e:es) =
       let fix = lookupFix env o in
         case fix of
 	  (Pre a,l) -> getExp env (stackPrefix fix (ExpVar pos o):ops) exps es
+	  _ | o==t_minus
+                    -> getExp env (stackPrefix (Pre "negate",6) (ExpVar pos o):ops) exps es
     _ -> getOp env ops (e:exps) es
 getExp env ops [] [] =
    error ("Problem with infix section at unknown location.")

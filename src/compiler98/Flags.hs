@@ -5,20 +5,85 @@ a function processArgs to obtain a value of type Flags from the argument list,
 and a simple function pF for printing information demanded by a flag.
 -}
 module Flags
-  (Flags,processArgs,pF
-  ,sProfile,sRedefine,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
-  ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-  ,sIIBound,sIINeed,sIIRename,sRBound,sRename
-  ,sTraceData,sDBound,sDerive
-  ,sEBound,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile
+  (Flags
+  ,processArgs
+  ,pF
+  ,sProfile
+  ,sRedefine
+  ,sUnix
+  ,sUnlit
+  ,sSourceFile
+  ,sUnderscore
+  ,sLex
+  ,sDbgPrelude
+  ,sDbgTrans
+  ,sNeed
+  ,sParse
+  ,sIRename
+  ,sIBound
+  ,sINeed
+  ,sIIBound
+  ,sIINeed
+  ,sIIRename
+  ,sRBound
+  ,sRename
+  ,sTraceData
+  ,sDBound
+  ,sDerive
+  ,sEBound
+  ,sTraceFns
+  ,sRemove
+  ,sScc
+  ,sRImport
+  ,sTBound
+  ,sType
+  ,sTypeFile
   ,sPrelude
-  ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
-  ,sArity,sLBound,sLift,sProfile,sABound,sAtom,sAnsiC,sObjectFile
-  ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
-  ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
-  ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
-  ,sShowWidth,sShowIndent,sShowQualified,sHiSuffix
-  ,sHatTrans,sHatAuxFile,sHatTransFile,sHatFileBase,sHatTransFile
+  ,sFSBound
+  ,sFixSyntax
+  ,sCBound
+  ,sCase
+  ,sKeepCase
+  ,sPBound
+  ,sPrim
+  ,sFree
+  ,sArity
+  ,sLBound
+  ,sLift
+  ,sProfile
+  ,sABound
+  ,sAtom
+  ,sAnsiC
+  ,sObjectFile
+  ,sGcode
+  ,sGcodeFix
+  ,sGcodeOpt1
+  ,sGcodeMem
+  ,sGcodeOpt2
+  ,sGcodeRel
+  ,sNplusK
+  ,sPuns
+  ,sPreludes
+  ,sIncludes
+  ,sImport
+  ,sILex
+  ,sPart
+  ,sLib
+  ,sDbgTrusted
+  ,sTprof
+  ,sFunNames
+  ,sDepend
+  ,sRealFile
+  ,sShowType
+  ,sShowWidth
+  ,sShowIndent
+  ,sShowQualified
+  ,sHiSuffix
+--  ,sHatTrans
+--  ,sHatAuxFile
+--  ,sHatTransFile
+--  ,sHatFileBase
+--  ,sHatTransFile
   ) where
 
 import IO
@@ -33,9 +98,9 @@ data Flags = FF
   ,sSourceFile :: String
   ,sTypeFile   :: String
   ,sObjectFile :: String
-  ,sHatAuxFile   :: String
-  ,sHatTransFile :: String
-  ,sHatFileBase  :: String
+--  ,sHatAuxFile   :: String
+--  ,sHatTransFile :: String
+--  ,sHatFileBase  :: String
   ,sIncludes   :: [String]
   ,sPreludes   :: [String]
 
@@ -57,7 +122,7 @@ data Flags = FF
   ,sDbgTrans   :: Bool	-- do tracing transformation
   ,sDbgPrelude :: Bool	-- use tracing prelude
   ,sDbgTrusted :: Bool	-- trust this module
-  ,sHatTrans   :: Bool	-- perform portable hat transformation for tracing
+--  ,sHatTrans   :: Bool	-- perform portable hat transformation for tracing
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
@@ -178,9 +243,9 @@ processArgs xs = flags
   , sSourceFile=sourcefile
   , sTypeFile=typefile
   , sObjectFile=cfile
-  , sHatAuxFile=fixHatAuxFile isUnix rootdir filename
-  , sHatTransFile=fixHatTransFile isUnix rootdir filename
-  , sHatFileBase=fixHatFileBase isUnix rootdir filename
+--  , sHatAuxFile=fixHatAuxFile isUnix rootdir filename
+--  , sHatTransFile=fixHatTransFile isUnix rootdir filename
+--  , sHatFileBase=fixHatFileBase isUnix rootdir filename
   , sIncludes=rootdir:getIncludes xs
   , sPreludes=getPreludes xs
 
@@ -210,7 +275,7 @@ processArgs xs = flags
   , sDbgTrans = fElem False "dbgtrans" xs     -- perform debugging translation
   , sDbgPrelude = fElem False "dbgprelude" xs -- use the debugging prelude
   , sDbgTrusted = fElem False "trusted" xs    -- "trusted" module (don't trace)
-  , sHatTrans = fElem False "hat" xs     -- preform hat tracing transform
+--  , sHatTrans = fElem False "hat" xs     -- preform hat tracing transform
 
   , sAnsiC = fElem True  "ansiC" xs    -- Generate bytecode as ANSI C file
   , s64bit = fElem False "64bit" xs    -- 32bit/64bit word size (ignored)

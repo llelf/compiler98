@@ -44,7 +44,7 @@ import Char (isAlpha,digitToInt)
 import Ratio (numerator,denominator)
 import Maybe (fromJust,catMaybes,isNothing)
 
-import Extra (strace)
+--import Extra (strace)
 
 infixr 6 `typeFun`	-- hbc won't let me declare this later.
 
@@ -1915,13 +1915,13 @@ mkSRExp pos traced =
 
 combApply :: Pos -> Bool -> Arity -> Exp TokenId
 combApply pos traced a = 
-  testArity (if traced then 15 else 8) a "application with more than "
+  testArity pos (if traced then 15 else 8) a "application with more than "
     " arguments."
     (ExpVar pos ((if traced then tokenAp else tokenUAp) a))
 
 combFun :: Pos -> Bool -> Arity -> Exp TokenId
 combFun pos traced a = 
-  testArity (if traced then 15 else 8) a 
+  testArity pos (if traced then 15 else 8) a 
     "function definition with more than " " arguments."
     (ExpVar pos ((if traced then tokenFun else tokenUFun) a))
 
@@ -1947,32 +1947,33 @@ combCase pos traced =
 
 combCon :: Pos -> Arity -> Exp TokenId
 combCon pos arity =
-  testArity 15 arity "application of constructor to more than "
+  testArity pos 15 arity "application of constructor to more than "
     " arguments."
     (ExpVar pos (tokenCon arity))
 
 combPartial :: Pos -> Arity -> Exp TokenId
 combPartial pos arity =
-  testArity 8 arity "partial application of constructor to more than "
+  testArity pos 8 arity "partial application of constructor to more than "
     " arguments."
     (ExpVar pos (tokenPa arity))
 
 combCn :: Pos -> Arity -> Exp TokenId
 combCn pos arity =
-  testArity 12 arity "partial application of constructor with more than "
+  testArity pos 12 arity "partial application of constructor with more than "
     " missing arguments."
     (ExpVar pos (tokenCn arity))  
 
 combUpdate :: Pos -> Bool -> Arity -> Exp TokenId
 combUpdate pos traced arity = 
-  testArity (if traced then 2 else maxBound) arity 
+  testArity pos (if traced then 2 else maxBound) arity 
     "field update with more than " " labels."
     (ExpVar pos (if traced then tokenUpdate arity else tokenUUpdate))
 
-testArity :: Arity -> Arity -> String -> String -> a -> a
-testArity maxArity arity str1 str2 x =
+testArity :: Pos -> Arity -> Arity -> String -> String -> a -> a
+testArity pos maxArity arity str1 str2 x =
   if arity > maxArity 
-    then error ("Cannot handle " ++ str1 ++ show maxArity ++ str2)
+    then error ("Cannot handle " ++ str1 ++ show maxArity ++ str2
+                ++ "\nAttempted arity " ++ show arity ++ " at " ++ strPos pos)
     else x
 
 -- apply data constructor R

@@ -6,7 +6,7 @@ a structured document for pretty printing.
 module PrettySyntax
   ( PPInfo(..)
   , prettyPrintSimple
-  , prettyPrintTokenId, prettyPrintId, simplePrintId, prettyPrintTraceId
+  , prettyPrintTokenId, prettyPrintId, simplePrintId -- , prettyPrintTraceId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
@@ -28,10 +28,11 @@ import PackedString (unpackPS)
 import Char(isAlphaNum)
 import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
-import TraceId(TraceId,hasInfo,arity,isLambdaBound,tokenId)
-import AuxTypes (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
+-- import TraceId(TraceId,hasInfo,arity,isLambdaBound,tokenId)
+-- import AuxTypes (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
 
 
+{-
 prettyPrintTraceId :: Flags -> (PPInfo TraceId -> a -> Doc) -> a -> String
 
 prettyPrintTraceId flags pp =
@@ -50,11 +51,12 @@ prettyPrintTraceId flags pp =
                     ) ++
                     ( if hasInfo t 
                         then "{-"++ show (arity t) ++"/"++
-			     ( if isLambdaBound t then "lam-}" else "let-}" )
+{-			     ( if isLambdaBound t then "lam-}" else "let-}" )
                         else "")
   maybeTupleTraceId t = case tokenId t of
                           TupleId n -> Just n
                           _         -> Nothing
+-}
 
 prettyPrintSimple :: Int -> (PPInfo TokenId -> a -> Doc) -> a -> String
 prettyPrintSimple width pp =
