@@ -399,10 +399,9 @@ void haskellInit (int argc, char **argv)
     fputc(0,HatFile);
     fwrite(&p,sizeof(fpos_t),1,HatFile);
     fwrite(&p,sizeof(fpos_t),1,HatFile);
-    dumpNewModInfo(HatFile,MODULE_Main);
-    dumpNewModInfo(HatFile,&NMOD_Prelude);
+  /*dumpNewModInfo(HatFile,MODULE_Main); */
+  /*dumpNewModInfo(HatFile,&NMOD_Prelude); */
     fflush(HatFile);
-    /*fclose(HatFile);*/
   }
 #endif
 
