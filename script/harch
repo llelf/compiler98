@@ -60,6 +60,7 @@ case $OS in
   unknown)	;;
   Linux)	;;
   CYGWIN*)      ;;
+  MINGW*)       ;;
   *BSD)		;;
 # BSD/OS)	OS="BSD-OS"$REL ;;	-- removed by slash->dash translation.
   SunOS)	case $REL in
