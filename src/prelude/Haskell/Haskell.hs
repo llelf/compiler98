@@ -10,10 +10,10 @@ version        :: String	-- some combination of the above
 
 systemName     = "nhc"
 haskellVersion = 98
-releaseDate    = CalendarTime { ctYear=2000, ctMonth=September, ctDay=15,
-                                ctHour=0, ctMin=0, ctSec=0, ctPicoSec=0,
+releaseDate    = CalendarTime { ctYear=2001, ctMonth=October, ctDay=22,
+                                ctHour=0, ctMin=0, ctSec=0, ctPicosec=0,
                                 ctWDay=Friday, ctYDay=200, ctTZName="UTC",
                                 ctTZ=0, ctIsDST=False }
-version        = systemName ++ show haskellVersion ++ " v1.00 " ++
+version        = systemName ++ show haskellVersion ++ " v1.10 " ++
                  formatCalendarTime defaultTimeLocale "%Y-%m-%d" releaseDate
 
