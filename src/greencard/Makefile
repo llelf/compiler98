@@ -22,7 +22,7 @@ OBJS   =  $(patsubst %, ${OBJDIR}/%.$O, ${SRCS})
 all: $(TARGET)
 install: $(TARGET)
 cfiles:
-	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -C GreenCard.lhs
+	$(HMAKE) -HC=$(LOCAL)nhc98 -C GreenCard.lhs
 fromC: $(OBJDIR)
 	$(HC) -c -d $(OBJDIR) ${CFILES}
 	$(HC) -H4Mb -o $(TARGET) $(OBJS)
@@ -39,7 +39,7 @@ $(TARGET): $(OBJDIR) $(OBJDIR)/GreenCard$(EXE)
 	mv $(OBJDIR)/GreenCard$(EXE) $(TARGET)
 	strip $(TARGET)
 $(OBJDIR)/GreenCard$(EXE):
-	$(LOCAL)hmake -$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
+	$(HMAKE) -$(HC) $(HFLAGS) -d $(OBJDIR) GreenCard
 
 
 

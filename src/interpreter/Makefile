@@ -26,15 +26,15 @@ endif
 all: $(TARGET)
 install: $(TARGET)
 cfiles: $(SRCS)
-	$(LOCAL)hmake -clean HInteractive.hs
-	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -C HInteractive.hs
+	$(HMAKE) -hc=$(LOCAL)nhc98 -clean HInteractive.hs
+	$(HMAKE) -hc=$(LOCAL)nhc98 -C HInteractive.hs
 clean:
 	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
 realclean: clean
 	-rm -f *.hc *.c $(TARGET) cfiles
 
 $(TARGET): $(OBJDIR) $(SRCS)
-	$(LOCAL)hmake -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)")
+	$(HMAKE) -$(HC) HInteractive -d$(OBJDIR) $(shell echo "$(BUILDOPTS)")
 	mv $(OBJDIR)/HInteractive$(EXE) $(TARGET)
 	strip $(TARGET)
 
