@@ -66,7 +66,8 @@ greencard opts =
     
     optfiles	= [f | OptFile f <- opts]
     optincludedirs = 
-      map ensuredir $ concat [split ':' d | OptIncludeDirs d <- reverse opts]
+      map ensuredir $ [d | OptIncludeDirs d <- reverse opts]
+    --map ensuredir $ concat [split ':' d | OptIncludeDirs d <- reverse opts]
     ensuredir d =
       case reverse d of
         ('/':_) -> d

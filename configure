@@ -13,7 +13,7 @@ then OS=`uname -s`
 else OS=unknown
 fi
 
-USER=${USER-`whoami`}
+USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
 VERSION=$MACHINE
 CCC=${CC-gcc}

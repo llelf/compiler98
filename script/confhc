@@ -24,8 +24,9 @@ else
       do
         if [ -f $path/$1 ]
         then echo $path/$1
+             exit 0
         fi
-      done ) | cut -d' ' -f1
+      done; exit 1 )
   }
 fi
 
@@ -130,14 +131,14 @@ then
   whichGHC=`which ghc`
   up1_GHC=`dirname $whichGHC`
   up2_GHC=`dirname $up1_GHC`
-  up3_GHC=`dirname $up3_GHC`
-  for ver in 0.29 2.01 2.02 2.03 2.04 2.07 2.08 2.09 2.10 3.00 3.01 3.02 3.03
+  up3_GHC=`dirname $up2_GHC`
+  for ver in 0.26 0.27 0.28 0.29 2.01 2.02 2.03 2.04 2.07 2.08 2.09 2.10 3.00 3.01 3.02 3.03
   do
-    trydirs ghc-${ver}/lib/imports /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
+    trydirs ghc-${ver}/lib/imports /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC} ${up3_GHC}
   done
-  for ver in 4.01 4.02 4.04 4.04pl1 4.05 4.06
+  for ver in 4.00 4.01 4.02 4.03 4.04 4.04pl1 4.05 4.06
   do
-    trydirs ghc-${ver}/imports     /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC}
+    trydirs ghc-${ver}/imports     /usr/local/lib /usr/lib ${up1_GHC} ${up2_GHC} ${up3_GHC}
   done
 fi
 GHCDIR=${DIR}
