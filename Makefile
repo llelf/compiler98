@@ -107,8 +107,9 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.hc src/interpreter/*.hc
-CPPHS = src/cpphs/Makefile* src/cpphs/*.hs src/cpphs/docs src/cpphs/tests \
-	src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
+CPPHS  = src/cpphs/Makefile* src/cpphs/*.hs src/cpphs/docs src/cpphs/tests \
+	 src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
+CPPHSC = src/cpphs/*.hc
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
@@ -408,6 +409,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(HSC2HS)
 	tar rf nhc98src-$(VERSION).tar $(HSC2HSC)
 	tar rf nhc98src-$(VERSION).tar $(CPPHS)
+	tar rf nhc98src-$(VERSION).tar $(CPPHSC)
 	tar rf nhc98src-$(VERSION).tar $(HP2GRAPH)
 	tar rf nhc98src-$(VERSION).tar $(HMAKE)
 	tar rf nhc98src-$(VERSION).tar $(HMAKEC)
