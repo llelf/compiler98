@@ -16,16 +16,17 @@ PLAINSRCS = Hat.hs TPreludeBuiltinTypes.hs
 PLAINOBJS = $(patsubst %.hs,  $(OBJDIR)/%.o, $(PLAINSRCS))
 # these Haskell sources undergo hat-trans before compilation
 TRANSSRCS = PreludeBuiltin.hs PreludeBasic.hs
+TRANSHATS = $(patsubst %,     T%,             $(TRANSSRCS))
 TRANSOBJS = $(patsubst %.hs,  $(OBJDIR)/T%.o, $(TRANSSRCS))
 # these Haskell sources undergo hat-trans, and the final obj is also renamed
 MOVEDSRCS = PreludeTracing.hs CharTracing.hs
+MOVEDHATS = $(patsubst %,            T%,             $(MOVEDSRCS))
 MOVEDOBJS = $(patsubst %Tracing.hs,  $(OBJDIR)/T%.o, $(MOVEDSRCS))
 
 
 all: $(OBJDIR) $(TARGET)
 clean:
-	-rm -rf $(OBJDIR) TPreludeBuiltin.hs TPreludeBasic.hs \
-			TPreludeTracing.hs  TCharTracing.hs
+	-rm -rf $(OBJDIR) $(TRANSHATS) $(MOVEDHATS) *.hi
 $(OBJDIR):
 	mkdir -p $(OBJDIR)
 
@@ -39,27 +40,16 @@ $(TRANSOBJS): $(OBJDIR)/T%.o: %.hs
 $(MOVEDOBJS): $(OBJDIR)/T%.o: %Tracing.hs
 	$(LOCAL)hat-trans -trusted -prelude $<
 	ghc $(HFLAGS) -cpp -c -o $@ T$<
-	mv $(patsubst %.hs, T%.hi, $<) $(patsubst %Tracing.hs, T%.hi, $<) 
-	mv $(patsubst %.hs, T%.hx, $<) $(patsubst %Tracing.hs, T%.hx, $<) 
+	mv $(patsubst %.hs, %.hx, $<) $(patsubst %Tracing.hs, T%.hx, $<) 
 
-#$(OBJDIR)/TPrelude.o: PreludeTracing.hs
-#	$(LOCAL)hat-trans -trusted -prelude $<
-#	ghc $(HFLAGS) -cpp -c -o $@ T$<
-#	mv $(OBJDIR)/TPreludeTracing.o $(OBJDIR)/TPrelude.o
-#	mv TPreludeTracing.hi TPrelude.hi
-
-#$(OBJDIR)/TChar.o: CharTracing.hs
-#	$(LOCAL)hat-trans -trusted $<
-#	ghc $(HFLAGS) -cpp -c -o $@ T$<
-#	mv $(OBJDIR)/TCharTracing.o $(OBJDIR)/TChar.o
-#	mv TCharTracing.hi TChar.hi
 
 $(COBJS): $(OBJDIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 # single archive for all object files
 $(TARGET): $(COBJS) $(PLAINOBJS) $(TRANSOBJS) $(MOVEDOBJS)
-	$(CC) -o $(TARGET) $(COBJS) $(PLAINOBJS) $(TRANSOBJS) $(MOVEDOBJS)
+	$(AR) cr $(TARGET) $(COBJS) $(PLAINOBJS) $(TRANSOBJS) $(MOVEDOBJS)
+	ranlib $(TARGET)
 	# ghc-pkg --add-package <hat-package.conf
 
 
