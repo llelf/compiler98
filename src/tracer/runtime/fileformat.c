@@ -639,7 +639,9 @@ primNTInteger (NodePtr i)
     HIDE(fprintf(stderr,"primNTInteger size=%d ",size);)
     HIDE(if (size==1) fprintf(stderr,"value=%d\n",i[1]); \
          else         fprintf(stderr,"value=0\n");)
-    fputc(size,HatFile);
+    if(CONINFO_LARGEEXTRA(i[0]))
+         fputc(-size,HatFile);
+    else fputc(size,HatFile);
     for (count=1;count<=size;count++) {
       n = htonl(i[count]);
       fwrite(&n, sizeof(long), 1, HatFile);

@@ -357,6 +357,10 @@ readNmTypeAt (FileOffset fo)
 		    int n;
 		    fread(&n,sizeof(int),1,HatFile);
 		    sprintf(buf,"%d",ntohl(n));
+		  } else if (size==-1) {
+		    int n;
+		    fread(&n,sizeof(int),1,HatFile);
+		    sprintf(buf,"-%d",ntohl(n));
 		  } else sprintf(buf,"<integer>");
 		  id->idname = strdup(buf);
 		} break;
