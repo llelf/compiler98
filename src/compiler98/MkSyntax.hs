@@ -40,8 +40,8 @@ mkInstList p id = TypeCons p t_List [TypeVar p id]
 
 mkDeclPat :: (Pos,a) -> Exp a -> Exp a -> Rhs a -> Decls a -> Decl a
 
-mkDeclPat (pv,var) op (ExpInfixList pos es) gdexps w =
-	DeclPat (Alt (ExpInfixList pos (ExpVar pv var:op:es)) gdexps w)
+mkDeclPat (pv,var) op e@(ExpInfixList pos es) gdexps w =
+	DeclPat (Alt (ExpInfixList pos [ExpVar pv var,op,e]) gdexps w)
 mkDeclPat (pv,var) op e gdexps w =
 	DeclPat (Alt (ExpInfixList pv [ExpVar pv var,op,e]) gdexps w)
 
