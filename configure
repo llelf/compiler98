@@ -560,7 +560,7 @@ then
     echo "Updating targets/$MACHINE/hmake3.config..."
     echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		add $BUILDBINDIR/nhc98" >>targets/$MACHINE/hmake3.config
-    if ( fullname ) 2>/dev/null	# cope with symbolic links in directory paths
+    if fullname ./script/nhc98	>/dev/null 2>&1   # cope with symbolic links in directory paths
       then echo "$BUILDBINDIR/hmake-config $BUILDLIBDIR/$MACHINE/hmakerc \
 		add `fullname ./script/nhc98`" \
 					 >>targets/$MACHINE/hmake3.config
