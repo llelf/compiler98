@@ -165,7 +165,7 @@ void haskellInit (int argc, char **argv)
 	    if(argv[i][2]) spSize = (Int)numArg(SIZE_UNIT,&argv[i][2]); break;
 
 	  case 'd':
-#ifdef DBGTRANS
+#if 0
 	    if (strcmp(&argv[i][2], "s") == 0) {
 		if (i < argc) {
 		    char *p;
@@ -202,7 +202,10 @@ void haskellInit (int argc, char **argv)
 		    i++;
 		    trustModule(argv[i], NULL, 1);
 		}
-	    } else if (strcmp(&argv[i][2], "show") == 0)
+	    } else
+#endif
+#ifdef DBGTRANS
+	           if (strcmp(&argv[i][2], "show") == 0)
 		traceShow ++;
 	    else if (strcmp(&argv[i][2], "nr") == 0)
 		traceNoR++;
