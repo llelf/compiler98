@@ -148,16 +148,14 @@ noPos :: Pos
 noPos = P 0 0
 
 mergePos :: Pos -> Pos -> Pos
--- combines start of first pos with end of second pos
--- assumes that first pos really earlier 
--- but positions may or may not overlap
+-- combines positions by determining minimal one that covers both
+-- positions may or may not overlap
+-- does not assume that first pos really earlier 
 -- nonexisting positions are ignored
 mergePos (P s1 e1) (P s2 e2) =
   if e1 == 0 then P s2 e2
   else if e2 == 0 then P s1 e1
-  else if s1 <= s2 && e1 <= e2 
-    then P s1 e2 
-    else error ("mergePos " ++ strPos (P s1 e1) ++ " " ++ strPos (P s2 e2)) 
+  else P (min s1 s2) (max e1 e2)
 
 mergePoss :: [Pos] -> Pos
 -- merge a list of positions
