@@ -116,19 +116,19 @@ driver script at compile-time.
 <td valign=top><em><b>-L</b>dir</em></td>
 	<td>search <em>dir</em> when linking against libs</td>
 </tr><tr>
-<td valign=top><em><b>-I</b>dir/</em></td>
+<td valign=top><em><b>-I</b>dir</em></td>
   <td>search directory <em>dir</em> for imported modules during compilation,
       and for <tt>#include</tt>'d C header files during compilation of the
       C-section of a <em>GreenCard</em> file</td>
 </tr><tr>
-<td valign=top><em><b>-i</b>dir/</em></td>
+<td valign=top><em><b>-i</b>dir</em></td>
   <td>as for <em><b>-I</b></em> option, except also search <em>dir</em>
       and <em>dir/$MACHINE</em> for a library archive called <em>lib$CFG.a</em>
       at link stage, where $CFG is taken from the <em>-p</em>, <em>-t</em>,
       and <em>-T</em> flags, respectively indicating heap profiling, time
       profiling or tracing</td>
 </tr><tr>
-<td valign=top><em><b>-P</b>dir/</em></td>
+<td valign=top><em><b>-P</b>dir</em></td>
   <td>search directory <em>dir</em> for prelude and stdlib modules during
       compilation</td>
 </tr><tr>
@@ -177,19 +177,19 @@ linker option-name.  To be sure that compiler options are parsed
 correctly, it is best to enclose them between <em>+CTS</em> and
 <em>-CTS</em>.
 
-<p>
-In general, the default value of an option is "off" (except where
-noted), and using the flag turns the option on.  Where the default
-value is "on", an option can be turned off by prefixing the flag with
-<em>no</em>:  for instance <em>-zap</em> is usually on by default, but
-<em>-nozap</em> will turn it off.
-
 </td></tr></table>
 
 <table width=500>
 <tr><td valign=top>
 <p>
 <b>Options to change the usual compilation behaviour.</b>
+
+<p>
+In general, the default value of an option is "off" (except where
+noted), and using the flag turns the option on.  Where the default
+value is "on", an option can be turned off by prefixing the flag with
+<em>no</em>:  for instance <em>-zap</em> is usually on by default, but
+<em>-nozap</em> will turn it off.
 
 <table width=250><tr>
 <td valign=top><em><b>-redefine</b></em></td>

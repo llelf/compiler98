@@ -24,7 +24,8 @@
 <dt><em>the monomorphism restriction</em></dt>
   <dd>is not implemented.</dd>
 <dt><em>the Unicode character set</em></dt>
-  <dd>is not supported yet - characters are still 8-bit.</dd>
+  <dd>is not fully supported yet - internally, characters are 16-bits,
+      but Haskell source files are read in 8-bit UTF.</dd>
 <dt><em>Latin-ISO-8859-1 character set not fully supported</em></dt>
   <dd><a href="bugs/nhc13test18.hs">Example program</a>.</dd>
 <dt><em>Overloaded cafs are treated as functions (debatable "problem")</em></dt>
@@ -40,20 +41,12 @@
   <dd><a href="bugs/nhc13test2.hs">Example program</a>.</dd>
 <dt><em>Type checking: default declarations</em></dt>
   <dd><a href="bugs/nhc13test3.hs">Example program</a>.</dd>
-<dt><em>Bizarre error on seq interacting with classes</em></dt>
-  <dd><a href="bugs/nhc13test5.hs">Example program</a>.</dd>
-<dt><em>Using an imported renaming type to define a second renaming type</em></dt>
-  <dd><a href="bugs/Nhc13Test13.hs">Example module</a>.
-      <a href="bugs/nhc13test13.hs">Example program</a>.</dd>
 <dt><em>Importing qualified Prelude and then using an unqualified Prelude entity</em></dt>
   <dd><a href="bugs/nhc13test16.hs">Example program</a>.</dd>
 <dt><em>Contexts required in let-bindings</em></dt>
   <dd><a href="bugs/nhc13test17.hs">Example program</a>.  This is
       a consequence of the non-implementation of the monomorphism
       restriction.</dd>
-<dt><em>GreenCard IO cafs</em></dt>
-  <dd>A CAF (constant applicative form) of type <tt>IO a</tt> implemented
-      as a C-function via GreenCard is only evaluated once.</dd>
 <dt><em>Compiler crashes on large source files</em></dt>
   <dd>Very rarely, the compiler will crash on a large source file
       with a ``pointer stack overflow'' or a ``heap overrun'', or sometimes
@@ -63,12 +56,12 @@
       assembly language support, i.e. arm, hppa, sparc, x86, mips, alpha).</dd>
 <dt><em>ghc-4.06 bug</em></dt>
   <dd>If you build nhc98 using ghc-4.06, all code using Floats and Doubles
-      is broken.  This is due to a bug in ghc, fixed in 4.08.</dd>
+      is broken.  This is due to a bug in ghc, fixed in 4.08.  (Actually,
+      broken in 4.08 as well when -O optimisation is turned on.)</dd>
 <dt><em>Nhc performs no kind check in type definitions.</em></dt>
   <dd><a href="bugs/nhc98test19.hs">Example program</a>.</dd>
 <dt><em>Nhc is too restrictive in rhs of newtype definitions</em></dt>
-  <dd><a href="bugs/nhc98test20.hs">Example program</a>.
-      <a href="bugs/nhc98test21.hs">Example program</a>.</dd>
+  <dd><a href="bugs/nhc98test21.hs">Example program</a>.</dd>
 <dt><em>Nhc does not handle data types with arguments of kind *->* correctly</em></dt>
   <dd><a href="bugs/nhc98test22.hs">Example program</a>.</dd>
 </dl>
@@ -110,6 +103,9 @@
       For nhc13, we had been using a cheap and cheerful
       parser combinator library without error-detection.  We have now
       added error-detection to the combinators.)</dd>
+<dt><em>GreenCard IO cafs</em></dt>
+  <dd>A CAF (constant applicative form) of type <tt>IO a</tt> implemented
+      as a C-function via GreenCard is only evaluated once.</dd>
 <dt><em>Unknown instruction 199</em> (fixed 980827)</dt>
   <dd>A GreenCard-ed program which called C which called back to Haskell
       which called out to C again would sometimes fail with this error.
@@ -166,6 +162,13 @@
   <dd><a href="bugs/nhc13test12.hs">Example program</a>.</dd>
 <dt><em>Translating do-notation for a pattern of the form `[a]'</em></dt>
   <dd><a href="bugs/nhc13test14.hs">Example program</a>.</dd>
+<dt><em>Bizarre error on seq interacting with classes</em></dt>
+  <dd><a href="bugs/nhc13test5.hs">Example program</a>.</dd>
+<dt><em>Using an imported renaming type to define a second renaming type</em></dt>
+  <dd><a href="bugs/Nhc13Test13.hs">Example module</a>.
+      <a href="bugs/nhc13test13.hs">Example program</a>.</dd>
+<dt><em>Nhc is too restrictive in rhs of newtype definitions</em></dt>
+  <dd><a href="bugs/nhc98test20.hs">Example program</a>.</dd>
 </dl>
 
 <h3>Reporting bugs</h3>
@@ -182,7 +185,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.09.25<br>
+2000.12.19<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
