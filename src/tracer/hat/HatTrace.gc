@@ -571,19 +571,27 @@ fromHatApplType _ = 0
 --------------------------------------------------------------------------
 -- interfacing detect.c
 
-foreignObjToList :: HatTrace -> ForeignObj -> [HatNode]
-foreignObjToList hattrace dat =
-    foreignObjToList' 0
-    where foreignObjToList' i =
-            let v = (lookupArray dat i) in
-    	     if (v == -1) then [] else
-		    (HatNode (hattrace,v)):(foreignObjToList' (i+1))
-
-%fun getEDTForeignObj :: HatNodeInternal -> ForeignObj
-%call (foreign f hattrace,int nodenumber)
+%fun getDetectInt :: HatTrace -> Int -> ForeignObj
+%call (foreign f hattrace) (int nodenumber)
 %code
-%     getEDTchildren((int) hattrace,nodenumber,(int**) &resultArray);
-%result (foreign "freeArray" resultArray)
+%     query = (void*) newEDTQuery((int) hattrace,nodenumber);
+%result (foreign "freeEDTQuery" query)
+
+-- get one element from the c result
+%fun getDetectedElement :: ForeignObj -> Int -> Int
+%call (foreign f query) (int i)
+%code //printf("in getDetectedElement\n");
+%     current = nextEDTQueryNode((EDTQuery) query);
+%result (int current)
+
+-- convert list of c results in haskell list
+foreignDetectToList :: HatTrace -> ForeignObj -> [HatNode]
+foreignDetectToList hattrace f =
+  foreignDetectToList' 0
+  where
+   foreignDetectToList' i =
+     let x = (getDetectedElement f i) in
+       if (x==0) then [] else (HatNode (hattrace,x)):(foreignDetectToList' (i+1))
 
 --------------------------------------------------------------------------
 -- Interfacing observe.c
@@ -596,21 +604,21 @@ foreignObjToList hattrace dat =
 %     //getObserve(hattrace,ident,topIdent,verbose,0,recursive,prec,(int**) &resultArray);
 %     query = (void*) newObserveQueryIdent((int) hattrace,ident,topIdent,recursive,1);
 %     //printf("end of observe\n");
-%result (foreign "freeArray" query)
+%result (foreign "freeObserveQuery" query)
 
 -- submit query to c (observing a source reference)
 %fun getObserveSrcInt :: HatTrace -> String -> Int -> Int -> ForeignObj
 %call (foreign f hattrace) (string moduleName) (int line) (int column)
 %code
 %     query = (void*) newObserveQuerySource((int) hattrace,moduleName,line,column,1);
-%result (foreign "freeArray" query)
+%result (foreign "freeObserveQuery" query)
 
 -- submit query to c (observing all observable)
 %fun getObservablesInt :: HatTrace -> ForeignObj
 %call (foreign f hattrace)
 %code
 %     query = (void*) newObservableQuery((int) hattrace,1);
-%result (foreign "freeArray" query)
+%result (foreign "freeObserveQuery" query)
 
 -- get one element from the c result
 %fun getObservedElement :: ForeignObj -> Int -> Int
@@ -636,8 +644,6 @@ foreignObserveToList hattrace f =
    foreignObserveToList' i =
      let x = (getObservedElement f i) in
        if (x==0) then [] else (HatNode (hattrace,x)):(foreignObserveToList' (i+1))
-
-
 
 --------------------------------------------------------------------------
 --                                                                      --
@@ -833,8 +839,9 @@ detect :: HatRep a => a -> [HatNode]
 detect exp =
     let node = (toHatNode exp) in
      if (isValidNode node) then
-       let (HatNode e@(hattrace,_)) = node in
-	   (foreignObjToList hattrace (getEDTForeignObj e))
+       let (HatNode e@(hattrace,nodenumber)) = node in
+	   --(foreignObjToList hattrace (getEDTForeignObj e))
+	   (foreignDetectToList hattrace (getDetectInt hattrace nodenumber))
       else error "Call to \"detect\" with \"Invalid\" node."
 
 --------------------------------------------------------------------------
