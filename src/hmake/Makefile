@@ -7,7 +7,7 @@ TARGETS = $(MKPROG) $(OLDER)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs SymTab.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
-          MkProg.hs
+          MkProg.hs IsPrefixOf.hs
 CPPSRCS = Argv.hs Graph.hs GetDep.hs ParseLib.hs Compat.hs Imports.hs
 
 OBJS    = $(patsubst %.hs,$(OBJDIR)/%.o,$(SRCS))
@@ -81,11 +81,14 @@ ${OBJDIR}/Getmodtime.o:	Getmodtime.hs
 ${OBJDIR}/GetDep.o:	GetDep.hs ${OBJDIR}/Getmodtime.o ${OBJDIR}/Imports.o \
 			${OBJDIR}/FileName.o ${OBJDIR}/Unlit.o ${OBJDIR}/Argv.o 
 ${OBJDIR}/ListUtil.o:	ListUtil.hs 
-${OBJDIR}/Argv.o:	Argv.hs ${OBJDIR}/ListUtil.o 
+${OBJDIR}/Argv.o:	Argv.hs ${OBJDIR}/ListUtil.o
 ${OBJDIR}/MkProg.o:	MkProg.hs ${OBJDIR}/Argv.o ${OBJDIR}/GetDep.o \
 			${OBJDIR}/Getmodtime.o ${OBJDIR}/ListUtil.o \
 			${OBJDIR}/Order.o ${OBJDIR}/Output.o 
 ${OBJDIR}/Older.o:	Older.hs
+ifeq "hbc" "$(HC)"
+${OBJDIR}/Argv.o:	${OBJDIR}/IsPrefixOf.o
+endif
 
 
 #$(OBJDIR)/Cpp.o: Cpp.gc
