@@ -149,7 +149,8 @@ getImports :: (TokenId->Visibility) -> AuxTree
 		 -> Flags -> [ImpDecl TokenId] -> IO AuxTree
 getImports reexport alreadyGot flags =
     foldM getAuxFile alreadyGot . map impData
-	. (Import (noPos,tPrelude) (Hiding []) :)   -- omit until bootstrapped!
+	. (if sPrelude flags then id  -- omit Prelude when bootstrapping
+           else (Import (noPos,tPrelude) (Hiding []) :))
   where
     getAuxFile got (modid,importVisible) = do
         (_,f) <- readFirst (fixImportNames (sUnix flags) "hx" (show modid)
