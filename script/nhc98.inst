@@ -114,7 +114,7 @@ processArgs () {
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
             CPPASFLAGS=$CPPASFLAGS" -DPROFILE"
-            OSUFFIX="p_o"
+            OSUFFIX="p.o"
             ;;
     -S    ) KEEPS=1;;
     -C    ) KEEPC=1;;
@@ -131,7 +131,7 @@ processArgs () {
             ;;
     -t)     TPROF=t
             COMPFLAGS=$COMPFLAGS" -tprof"
-            OSUFFIX="t_o"
+            OSUFFIX="t.o"
             ;;
     -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
     +rts  ) USINGRTS=1;;
