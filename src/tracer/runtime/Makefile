@@ -9,7 +9,7 @@ apa:
 ifeq "${TRACING}" "T"
 SRCS  = io.c getconstr.c nodecache.c outputtrace.c minisocklib.c \
 	stub.c vector.c numeric.c browsercomms.c ident.c trust.c \
-	stacktrace.c
+	stacktrace.c fileformat.c
 else
 SRCS  = dummy.c
 endif
@@ -46,6 +46,7 @@ ${ARCHIVE}: objdir ${OBJS}
 	ranlib $@
 
 ui.h: getconstr.h nodecache.h outputtrace.h ;
+fileformat.h: ident.h ;
 
 ${OBJDIR}/demo_server.o: demo_server.c
 	$(CC) -O -c demo_server.c -o $@
@@ -66,7 +67,7 @@ ${OBJDIR}/io.o: io.c ui.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c io.c -o $@
 ${OBJDIR}/trust.o: trust.c ui.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c trust.c -o $@
-${OBJDIR}/ident.o: ident.c ui.h
+${OBJDIR}/ident.o: ident.c ui.h ident.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c ident.c -o $@
 ${OBJDIR}/stacktrace.o: stacktrace.c ui.h
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} ${ENDIAN} -c stacktrace.c -o $@
@@ -76,3 +77,5 @@ ${OBJDIR}/nodecache.o: nodecache.c
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c  -o $@ $<
 ${OBJDIR}/vector.o: vector.c getconstr.h 
 	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c vector.c -o $@
+${OBJDIR}/fileformat.o: fileformat.c fileformat.h 
+	$(CC) ${DCFG} ${OPT} -I${INCDIR} -c fileformat.c -o $@
