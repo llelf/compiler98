@@ -3,7 +3,7 @@
 -- combinators in Haskell and interfaces to C-functions
 
 module Hat 
-  (R(R),mkR,FileTrace,SR,Trace,ModuleTraceInfo
+  (R(R),mkR,SR,Trace,NmType,ModuleTraceInfo
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
   ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
@@ -39,7 +39,7 @@ module Hat
 import Ratio (numerator,denominator)
 
 import PackedString (PackedString,packString) -- NONPORTABLE
-import MagicTypes (NmType,CStructure) -- NONPORTABLE
+-- import MagicTypes (NmType,CStructure) -- NONPORTABLE
   -- magic C-type living in Haskell heap
 
 type Pos = Int
@@ -78,6 +78,13 @@ type Fun a b = Trace -> R a -> R b
 mkR :: a -> Trace -> R a
 mkR x t = t `Prelude.seq` R x t
 
+
+
+newtype SR     = SR Int
+newtype Trace  = Trace Int
+newtype NmType = NmType Int
+newtype ModuleTraceInfo = MTI Int
+
 -- ----------------------------------------------------------------------------
 -- toNm used to coerce primitive return value from a foreign function
 -- into a Trace structure
@@ -93,28 +100,11 @@ is fully evaluated (the trace contains the result value).
   ** now `enter' has been eliminated, no longer sure about this defn **
 -}
 primEnter :: NmCoerce a => SR -> Trace -> a -> R a
---primEnter sr t e = let v  = enter t e
---                       vn = toNm t v sr
---                      in v `Prelude.seq` vn
 primEnter sr t e = let vn = toNm t e sr
                       in e `Prelude.seq` vn
 
--- ---------------------------------------------------------- --
-
-{- Check if function and application trace are trusted. -}
-trusted :: Trace -> Trace -> Bool
-trusted t tf = if trustedFun tf then trustedFun t else False
-  -- && not available here and if-then-else also more efficient
-
-{- Only create name if parent trace is suspected. -}
-optMkTNm :: Trace -> NmType -> SR -> Trace
-optMkTNm t nm sr = 
-  if trustedFun t 
-    then t  -- name must be trusted as well, because occurs in trusted module
-    else mkTNm t nm sr
-
-{- combinators for n-ary application in a non-projective context. -}
--- suspected:
+-- ----------------------------------------------------------------------------
+-- combinators for n-ary application in a non-projective context.
 
 ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
@@ -295,14 +285,9 @@ rap15 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   in  pap14 sr t t' (rf t' a) b c d e f g h i j k l m n o
 
 
-
-{- 
-Combinators for n-ary application used by the combinators above.
-Introduces a new application node if the function is a saturated
-application.
--}
-
--- untrusted
+-- Combinators for n-ary application used by the combinators above.
+-- Introduces a new application node if the function is a saturated
+-- application.
 
 pap0 :: Trace -> R r -> R r
 
@@ -1314,20 +1299,13 @@ pa4 c cni sr t nm a1@(R _ t1) a2@(R _ t2) a3@(R _ t3) a4@(R _ t4) =
 -- ----------------------------------------------------------------------------
 -- part from HatArchive
 
-newtype FileTrace = FileTrace Int
-newtype SR        = SR        Int
-newtype Trace = Trace CStructure
+-- foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
 
-foreign import "primTrustedFun" trustedFun :: Trace -> Bool
-foreign import "primHidden"     hidden     :: Trace -> Bool
-foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
-
-foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
+sameAs :: Trace -> Trace -> Bool
+(Trace fileptr1) `sameAs` (Trace fileptr2) = fileptr1 == fileptr2
 
 
 -- new combinators for portable transformation:
-
-newtype ModuleTraceInfo = MTI Int
 
 mkNoSourceRef :: SR
 mkNoSourceRef = SR 0
@@ -1345,14 +1323,14 @@ mkAtomId :: ModuleTraceInfo -> Int -> Int -> String -> NmType
 mkAtomId mti pos fixPri unqual = mkAtomId' mti pos fixPri (packString unqual)
 
 foreign import "primAtomId"
-  mkAtomId' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+  mkAtomId' :: ModuleTraceInfo -> Pos -> Int -> PackedString -> NmType
 
-mkAtomIdToplevel :: ModuleTraceInfo -> Int -> Int -> String -> NmType
+mkAtomIdToplevel :: ModuleTraceInfo -> Pos -> Int -> String -> NmType
 mkAtomIdToplevel mti pos fixPri unqual = 
   mkAtomIdToplevel' mti pos fixPri (packString unqual)
 
 foreign import "primAtomIdToplevel"
-  mkAtomIdToplevel' :: ModuleTraceInfo -> Int -> Int -> PackedString -> NmType
+  mkAtomIdToplevel' :: ModuleTraceInfo -> Pos -> Int -> PackedString -> NmType
 
 mkModule :: String -> String -> ModuleTraceInfo
 mkModule unqual filename = mkModule' (packString unqual) (packString filename)
@@ -1361,10 +1339,10 @@ foreign import "primModule"
   mkModule' :: PackedString -> PackedString -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
-outputTrace trace output = outputTrace' (traceptr trace) (packString output)
+outputTrace trace output = outputTrace' trace (packString output)
 
 foreign import "outputTrace"
-  outputTrace' :: FileTrace -> PackedString -> IO ()
+  outputTrace' :: Trace -> PackedString -> IO ()
 
 
 ----
@@ -1667,10 +1645,6 @@ foreign import "primNTGuard"
  mkNTGuard	:: NmType
 foreign import "primNTContainer"
  mkNTContainer	:: NmType
-
-
-foreign import "primTrustedNm" 
- trustedNm	:: NmType -> Bool
 
 -- ----------------------------------------------------------------------------
 -- End

@@ -968,8 +968,9 @@ tType (TypeApp lTy rTy) = TypeApp (tType lTy) (tType rTy)
 tType (TypeVar pos tyId) = TypeVar pos (nameTransTyVar tyId)
 tType (TypeStrict pos ty) = TypeStrict pos (tType ty)
 
--- ty ==> R ty
+-- ty ==> R ty  (!ty ==> ! (R ty))
 wrapType :: Type TokenId -> Type TokenId
+wrapType (TypeStrict pos ty) = TypeStrict pos (wrapType ty)
 wrapType ty = TypeCons noPos tokenR [ty]
 
 -- just replace TraceIds by TokenIds
