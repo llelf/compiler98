@@ -27,8 +27,7 @@ import NT(NewType(NewType))
 import PackedString (unpackPS)
 import Char(isAlphaNum)
 import Maybe(isJust,fromJust)
-import Flags {- import list does not work with nhc 
-             (Flags,sShowWidth,sShowQualified,sShowIndent) -}
+import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
 import TraceId
 import AuxFile (AuxiliaryInfo)	-- hbc's broken import mechanism needs this
 

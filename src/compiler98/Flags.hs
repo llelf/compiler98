@@ -4,22 +4,21 @@ argument list. Here a data type Flags is defined for holding this information,
 a function processArgs to obtain a value of type Flags from the argument list,
 and a simple function pF for printing information demanded by a flag.
 -}
-module Flags where
-{- export list does not work with current nhc
-            (Flags,processArgs,pF
-            ,sProfile,sRedefine,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
-            ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
-            ,sIIBound,sIINeed,,sIIRename,sRBound,sRename
-            ,sTraceData,sDBound,sDerive
-            ,sEBound,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile
-            ,sPrelude
-            ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
-            ,sArity,sLBound,sLift,sProfile,sABound,sAtom,sAnsiC,sObjectFile
-            ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
-            ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
-            ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
-            ,sShowWidth,sShowQualified,sHiSuffix) where
--}
+module Flags
+  (Flags,processArgs,pF
+  ,sProfile,sRedefine,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
+  ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
+  ,sIIBound,sIINeed,,sIIRename,sRBound,sRename
+  ,sTraceData,sDBound,sDerive
+  ,sEBound,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile
+  ,sPrelude
+  ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
+  ,sArity,sLBound,sLift,sProfile,sABound,sAtom,sAnsiC,sObjectFile
+  ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel
+  ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
+  ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
+  ,sShowWidth,sShowIndent,sShowQualified,sHiSuffix
+  ) where
 
 import IO
 import OsOnly(fixRootDir,fixTypeFile,fixObjectFile
