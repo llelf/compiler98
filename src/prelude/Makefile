@@ -132,7 +132,7 @@ else	#### tracing
 # .SUFFIXES: .subdir
 SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
 	PreludeDebug PreludeList PreludeIO PreludeText Prelude \
-	Maybe List System IO PackedString
+	Maybe List Monad System IO PackedString
 NOTYET= Array Complex Directory Interrupt Ix 
 
 #SUBDIROBJS=$(patsubst %,${OBJ}/%/*.o,${SUBDIRS})
