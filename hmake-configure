@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="v1.7.2 (date 000207)"
+HMAKEVERSION="v1.8 (date 0005xx)"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -28,17 +28,20 @@ BUILDWITH=
 
 BUILDLIBDIR=$PWD/lib
 BUILDBINDIR=$PWD/script
-BUILDTARGDIR=$PWD/targets
-BUILDDIR=$BUILDTARGDIR
+BUILDDIR=$PWD/targets
 
 INSTALL=no
 LIB=yes
 BIN=yes
 MAN=yes
 
-if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+if [ -f targets/$MACHINE/config.cache ]
 then		# cached settings override defaults above
-  . $BUILDTARGDIR/$MACHINE/config.cache
+  . targets/$MACHINE/config.cache
+else
+  if [ ! -d targets/$MACHINE ]
+  then mkdir -p targets/$MACHINE
+  fi
 fi
 
 while [ "$1" != "" ]
@@ -50,7 +53,8 @@ do
     -bin) BIN=no ;;
     +man) MAN=yes ;;
     -man) MAN=no ;;
-    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-15` ;;
+    --buildwith=*)  BUILDWITH=`echo "$1" | cut -c13-` ;;
+    --buildopts=*)  BUILDOPTS=`echo "$1" | cut -c13-` ;;
     --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
     --prefix=*)     INSTALLDIR=`echo "$1" | cut -c10-` ;;
     --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
@@ -69,6 +73,7 @@ do
   echo "  --version / -v       Display versions of `basename $0` and hmake"
   echo
   echo "  --buildwith=comp     Build hmake with given compiler [detected]"
+  echo "  --buildopts=flags    Give extra flags to build-compiler [none]"
  #echo
  #echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
  #echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
@@ -96,7 +101,7 @@ do
 done
 
 echo Configuring for hmake... '[' $CONFIGVERSION ']'
-if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+if [ -f targets/$MACHINE/config.cache ]
 then
   echo "Starting with earlier config in targets/$MACHINE/config.cache"
   echo '[' $INSTALLINFO ']'
@@ -124,9 +129,10 @@ esac
 # Configure hmake
 echo "--------"
 echo Configuring known compilers... '[' $HMAKEVERSION ']'
-if [ -f script/hmake.config ]
+if [ -f targets/$MACHINE/hmake.config ]
 then
-  echo "  Compilers have already been detected once.  (Remove file script/hmake.config"
+  echo "  Compilers have already been detected once.  (Remove file"
+  echo "    targets/$MACHINE/hmake.config"
   echo "    and run `basename $0` again if you want to re-do that step.)"
 # echo "  hbc/LML directory:    $HBCDIR"
 # echo "  ghc directory:        $GHCDIR"
@@ -168,10 +174,10 @@ then
   then
     echo
     echo "Now we check/create your build directories:"
-    echo "Build directory root:  $BUILDDIR"
-    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
-    if [ ! -d $BUILDTARGDIR/$MACHINE ]
-    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
+    echo "Config directory:      targets/$MACHINE"
+    echo -n "Build directory root:  $BUILDDIR"
+    if [ ! -d $BUILDDIR ]
+    then mkdir -p $BUILDDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
     echo -n "Object files build in: $BUILDDIR/$MACHINE"
@@ -184,6 +190,21 @@ then
     then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
+  else
+    echo
+    echo "Checking your binary distribution for integrity:"
+    echo -n "Config directory:      targets/$MACHINE"
+    if [ ! -d targets/$MACHINE ]
+    then mkdir -p targets/$MACHINE;  echo ' (created ok)'
+    else echo ' (exists)'
+    fi
+    echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
+    if [ ! -d $BUILDLIBDIR/$MACHINE ]
+    then echo ' (***MISSING!)'
+         echo 'Help!  Have you got the right executables for your machine?'
+         exit 1
+    else echo ' (ok)'
+    fi
   fi
 fi
 
@@ -194,10 +215,13 @@ if [ -d src ]
 then
   if [ "$BUILDWITH" = "" ]
   then
-    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+    BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
     echo "I have guessed that you want to build hmake with $BUILDWITH"
   else
-    echo "You said you want to build hmake with $BUILDWITH"
+    echo "You are going to build hmake with $BUILDWITH"
+  fi
+  if [ "$BUILDOPTS" != "" ]
+  then echo "You gave the following extra build options: $BUILDOPTS"
   fi
 
   if [ "$EXE" = "" ]
@@ -226,14 +250,15 @@ then
   then
     echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
     ( echo "BUILDWITH=$BUILDWITH";
+      echo "BUILDOPTS=\"$BUILDOPTS\"";
       echo "INSTALLVER=\"$CONFIGVERSION\"";
       echo "INSTALLINFO=\"$INSTALLINFO\"";
       echo "BUILDBASEDIR=$BUILDDIR";
       echo "EXE=$EXE";
     ) >$BUILDLIBDIR/$MACHINE/config
 
-    echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
+    echo "Updating hmake config script in $BUILDLIBDIR/$MACHINE/hmake.config..."
+    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$BUILDLIBDIR/$MACHINE/hmake.config
   fi
 
 else	# [ "$INSTALL" = "yes" ]
@@ -257,9 +282,9 @@ else	# [ "$INSTALL" = "yes" ]
       echo -n "`basename $file` "
       if [ -f $file ]; then cp -p $file $LIBDIR/$MACHINE; fi
     done
-    echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config \
-                                         >$LIBDIR/$MACHINE/hmake.config
+    #echo -n "hmake.config "
+    #sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config \
+    #                                     >$LIBDIR/$MACHINE/hmake.config
     echo
   else
     echo 'Not (re-)installing executables and library files'
@@ -277,7 +302,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$LIBDIR|" script/hmake.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$LIBDIR/hmake.config
+    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$LIBDIR/$MACHINE/hmake.config
     echo -n "harch "
     cp script/harch $BINDIR
     echo
@@ -315,6 +340,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
   if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
   echo "BUILDWITH=$BUILDWITH" ;
+  echo "BUILDOPTS=\"$BUILDOPTS\"" ;
   echo "BUILDDIR=$BUILDDIR" ;
   echo "LIB=$LIB" ;
   echo "BIN=$BIN" ;
@@ -322,7 +348,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   echo "EXE=$EXE" ;
   echo "INSTALLVER=\"$CONFIGVERSION\"" ;
   echo "INSTALLINFO=\"$INSTALLINFO\"" ;
-) >$BUILDTARGDIR/$MACHINE/config.cache
+) >targets/$MACHINE/config.cache
 
 echo "Done."
 if [ "$INSTALL" = "yes" ]
