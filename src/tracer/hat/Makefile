@@ -9,7 +9,7 @@ MALCOBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(MALCLIBS))
 THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
 
 
-PROGS = hat-stack hat-connect hat-check hat-observe hat-detect hat-interact
+PROGS = hat-stack hat-connect hat-check hat-observe hat-detect hat-checki
 
 all: $(OBJDIR) $(PROGS)
 install: $(OBJDIR) $(PROGS)
@@ -62,7 +62,7 @@ hat-detect: hat-detect.c $(OBJDIR)/hatfileops.o $(OBJDIR)/observe.o
 	$(CC) $(LINKFLAGS) hat-detect.c -o hat-detect $(THOROBJS)
 hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
 	$(CC) $(LINKFLAGS) hat-observe.c -o hat-observe $(THOROBJS) $(ncurses)
-hat-interact: hat-interact.c $(OBJDIR)/hatfileops.o
-	$(CC) $(LINKFLAGS) hat-interact.c -o hat-interact $(THOROBJS) $(ncurses)
+hat-checki: hat-checki.c $(OBJDIR)/hatfileops.o
+	$(CC) $(LINKFLAGS) hat-checki.c -o hat-checki $(THOROBJS) $(ncurses)
 
 
