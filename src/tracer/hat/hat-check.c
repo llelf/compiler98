@@ -1,5 +1,10 @@
-/* rt2a: expands redex trail archives to a (more) readable ASCII format
- * Colin Runciman, University of York, February 2001
+/* hat-check: reads hat trace files, checking at least the basic format
+ * other checks and information can be requested by options
+ * Colin Runciman, University of York
+ * Original version February 2001
+ *   text output as default, with -v option for added verification check
+ * 21 March 2001
+ *   added -s option for statistics, made text an option (-a)
  */
 
 /* #include <unistd.h> */
@@ -58,41 +63,116 @@ int n;               /* buf[0..n-1] filled */
 int boff;            /* if n>0, boff in 0..n-1 and buf[boff] is current */
 unsigned long foff;  /* if n>0, this is offset in f of buf[0] */
 
-int vmode = 0;
-unsigned filesize = 0;
-struct stat statbuf;
+int vmode = 0;       /* verify -- check tag-types of pointer destinations */
+int smode = 0;       /* statistics -- counts and space usage for node types */
+int amode = 0;       /* ascii -- show archive in a `readable' text format */
+
+unsigned filesize = 0; /* used in precondition for seeks ... */
+struct stat statbuf;   /* ... to catch seek beyond EOF */
 
 main (int argc, char *argv[])
 {
-  switch (argc) {
-  case 2: 
-    stat(argv[1], &statbuf);
-    filesize = statbuf.st_size;
-    f = open(argv[1], 0);
-    break;
-  case 3: 
-    if (strcmp(argv[1], "-v") == 0) {
+  int i = 0;
+  while (++i < argc-1) {
+    if (strcmp(argv[i], "-v") == 0) {
       vmode = 1;
-      stat(argv[2], &statbuf);
-      filesize = statbuf.st_size;
-      f = open(argv[2], 0);
-      break;
+    } else if (strcmp(argv[i], "-s") == 0) {
+      smode = 1;
+    } else if (strcmp(argv[i], "-a") == 0) {
+      amode = 1;
+    } else {
+      badusage();
     }
-  default:
-    fprintf(stderr,"usage: rt2a [-v] file-name\n");
-    exit(1);
   }
-  if (f==-1) {
-    fprintf(stderr, "cannot open trace file %s\n",argv[1]);
-    exit(1);
-  }
+  if (i > argc-1) badusage();
+  stat(argv[i], &statbuf);
+  filesize = statbuf.st_size;
+  f = open(argv[i], 0);
+  if (f==-1) { fprintf(stderr, "cannot open trace file"); exit(1); }
   n = read(f, buf, BUFSIZE);
   boff = 0;
   foff = 0L;
+  if (smode) initstats();
   header();
   nodes();
+  if (amode && smode) putchar('\n');
+  if (smode) reportstats();
 }
-  
+
+
+badusage() {
+  fprintf(stderr,"usage: hat-check [-a] [-s] [-v] file-name\n");
+  fprintf(stderr,"\t-a\tprint ascii text version of hat file\n");
+  fprintf(stderr,"\t-s\tprint statistics about frequency and size of nodes\n");
+  fprintf(stderr,"\t-v\tverify tag types of pointer destinations\n");
+  exit(1);
+}
+
+unsigned int count[4];       /* indexed by TR, MD, NT, SR */
+unsigned long space[4];      /* ditto */
+unsigned long headspace;     /* space oocupied by header */
+unsigned int trcount[7];     /* indexed by APP, NAM, ... , SATC */
+unsigned long trspace[7];    /* ditto */
+
+initstats() {
+  int k;
+  for (k=0; k<4; k++) {
+    count[k] = 0;
+    space[k] = 0L;
+  }
+  for (k=0; k<7; k++) {
+    trcount[k] = 0;
+    trcount[k] = 0L;
+  }
+}
+
+float pc(unsigned long i, unsigned long j) {
+  return (float)((i*100.0)/j);
+}
+
+reportstats() {
+  unsigned int grandcount = 0;
+  unsigned long grandspace = 0L;
+  unsigned long allspace;
+  int k;
+  for (k=0; k<4; k++) {
+    grandcount += count[k];
+    grandspace += space[k];
+  }
+  allspace = headspace + grandspace;
+  printf("%10s\t%-20s\t%10s\t%8s\n\n",
+    "Number", "Description", "Bytes", "% Space");
+  printf("%10u\t%-20s\t%10u\n\n",
+    1, "header", headspace);
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[APP], "TR application nodes", trspace[APP], pc(trspace[APP],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[NAM], "TR name nodes", trspace[NAM], pc(trspace[NAM],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[IND], "TR indirection nodes", trspace[IND], pc(trspace[IND],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[HIDDEN], "TR hidden nodes", trspace[HIDDEN], pc(trspace[HIDDEN],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[SATA], "TR type A SAT nodes", trspace[SATA], pc(trspace[SATA],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[SATB], "TR type B SAT nodes", trspace[SATB], pc(trspace[SATB],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    trcount[SATC], "TR type C SAT nodes", trspace[SATC], pc(trspace[SATC],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    count[MD], "MD nodes", space[MD], pc(space[MD],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    count[NT], "NT nodes", space[NT], pc(space[NT],allspace));
+  printf("%10u\t%-20s\t%10u\t%8.1f\n",
+    count[SR], "SR nodes", space[SR], pc(space[SR],allspace));
+  { int w;
+    putchar('\n');
+    for (w=0; w<64; w++) putchar(w<16 ? ' ' : '-');
+    putchar('\n');
+  }
+  printf("%10s\t%-20s\t%10u\t%8.1f\n",
+    "", "whole trace file", allspace, pc(allspace,allspace));
+}
+
 unsigned long byteoffset() {
   return foff + boff;
 }
@@ -264,145 +344,166 @@ void dopointer(int requiretag, unsigned long requireoffset,
       /*exit(1);*/
     }
   }
-  printf("(%s 0x%x)", tag2str(requiretag), requireoffset);
+  if (amode) printf("(%s 0x%x)", tag2str(requiretag), requireoffset);
 }
   
 /* reading, checking and/or writing header and node information
  */
  
 header() {
-  printf("%s", readstring());
-  printf("\nEntry point: ");
+  { char *s = readstring(); if (amode) printf("%s", s); }
+  if (amode) printf("\nEntry point: ");
   dopointer(TR, readpointer(), HEADER, 0L);
-  printf("\nError message: ");
+  if (amode) printf("\nError message: ");
   dopointer(NT, readpointer(), HEADER, 0L);
-  printf("\n");
+  if (amode) printf("\n");
+  headspace = byteoffset();
 }
   
 nodes() {
+  unsigned long offset;
+  unsigned long nextoffset;
+  nextoffset = byteoffset();
   while (more()) {
-    unsigned long offset = byteoffset();
     char b = nextbyte();
-    switch (hi3(b)) {
-    case TR:
-      printf("TR 0x%x: ", offset);
-      switch (lo5(b)) {
+    int k = hi3(b);
+    offset = nextoffset;
+    if (k > SR) {
+      fprintf(stderr, "strange high-bits tag %d at byte offset %u\n",
+                      k, offset);
+      exit(1);
+    } else {
+      count[k]++;
+    }
+    switch (k) {
+    case TR: {
+      int trk = lo5(b);
+      if (trk > SATC) {
+        fprintf(stderr, "strange low-bits tag %d in TR %u\n",
+	        trk, offset);
+        exit(1);
+      } else {
+        trcount[trk]++;
+      }
+      if (amode) printf("TR 0x%x: ", offset);
+      switch (trk) {
       case APP:
         { int arity = readarity();
-	  printf("Application %d\t\t",arity);
+	  if (amode) printf("Application %d\t\t",arity);
 	  for (; arity-- > -2;)
 	    dopointer(TR, readpointer(), TR, offset);
 	}
 	dopointer(SR, readpointer(), TR, offset);
 	break;
       case NAM:
-        printf(" Name\t\t\t");
+        if (amode) printf(" Name\t\t\t");
         dopointer(TR, readpointer(), TR, offset);
 	dopointer(NT, readpointer(), TR, offset);
 	dopointer(SR, readpointer(), TR, offset);
 	break;
       case IND:
-        printf(" Indirection\t\t");
+        if (amode) printf(" Indirection\t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case HIDDEN:
-        printf(" Hidden\t\t\t");
+        if (amode) printf(" Hidden\t\t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATA:
-        printf(" SAT(A) \t\t");
+        if (amode) printf(" SAT(A) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATB:
-        printf(" SAT(B) \t\t");
+        if (amode) printf(" SAT(B) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
       case SATC:
-        printf(" SAT(C) \t\t");
+        if (amode) printf(" SAT(C) \t\t");
 	dopointer(TR, readpointer(), TR, offset);
 	break;
-      default:
-        fprintf(stderr, "strange low-bits tag %d in TR %u\n",
-	        lo5(b), offset);
-        exit(1);
       }
+      trspace[trk] += byteoffset() - offset;
       break;
+    }
     case MD:
-      printf("MD 0x%x:  ", offset);
+      if (amode) printf("MD 0x%x:  ", offset);
       switch (lo5(b)) {
-          case SUSPECT: printf("module (suspect)\t"); break;
-          case TRUSTED: printf("module (trusted)\t"); break;
-          default: printf("WRONG\t\t\t"); break;
+          case SUSPECT: if (amode) printf("module (suspect)\t"); break;
+          case TRUSTED: if (amode) printf("module (trusted)\t"); break;
+          default:
+	    fprintf(stderr, "strange low-bits tag %d in MD %u",
+	            lo5(b), offset);
+	    exit(1);
       }
-      printf("%s\t", readstring());
-      printf("\"%s\"", readstring());
+      { char *s = readstring(); if (amode) printf("%s\t", s); }
+      { char *s = readstring(); if (amode) printf("\"%s\"", s); }
       break;
     case NT:
-      printf("NT 0x%x:  ", offset);
+      if (amode) printf("NT 0x%x:  ", offset);
       switch (lo5(b)) {
       case INT:
-        printf("INT %d", readint());
+        { int i = readint(); if (amode) printf("INT %d", i); }
 	break;
       case CHAR:
-        printf("CHAR '%c'", readchar());
+        { char c = readchar(); if (amode) printf("CHAR '%c'", c); }
 	break;
       case INTEGER:
-        printf("INTEGER %s", readinteger());
+        { char *i = readinteger(); if (amode) printf("INTEGER %s", i); }
 	break;       
       case RATIONAL:
-        printf("RATIONAL %s", readrational());
+        { char *r = readrational(); if (amode) printf("RATIONAL %s", r); }
 	break;
       case FLOAT:
-        printf("FLOAT %g", readfloat());
+        { float f = readfloat(); if (amode) printf("FLOAT %g", f); }
 	break;
       case DOUBLE:
-        printf("DOUBLE %g", readdouble());
+        { double d = readdouble(); if (amode) printf("DOUBLE %g", d); }
 	break;
       case IDENTIFIER:
-        printf("identifier\t\t%s ", readstring());
+        { char *s = readstring(); if (amode) printf("identifier\t\t%s ", s); }
 	{ unsigned long modinfo = readpointer();
 	  char *fp = readfixpri();
-	  if (*fp!='\0') printf("%s ", fp);
+	  if (*fp!='\0' && amode) printf("%s ", fp);
 	  dopointer(MD, modinfo, NT, offset);
-	  printf(" %s", readposn());
+	  { char *p = readposn(); if (amode) printf(" %s", p); }
         }
 	break; 
       case CONSTRUCTOR:
-        printf("constructor\t\t%s", readstring());
+        { char *s = readstring(); if (amode) printf("constructor\t\t%s", s); }
 	{ unsigned long modinfo = readpointer();
 	  char *fp = readfixpri();
-	  if (*fp!='\0') printf("%s ", fp);
+	  if (*fp!='\0' && amode) printf("%s ", fp);
 	  dopointer(MD, modinfo, NT, offset);
-	  printf(" %s", readposn());
+	  { char *p = readposn(); if (amode) printf(" %s", p); }
         }
 	break; 
       case TUPLE:
-	printf("TUPLE");
+	if (amode) printf("TUPLE");
 	break;
       case FUN:
-	printf("FUN");
+	if (amode) printf("FUN");
 	break;
       case CASE:
-	printf("CASE");
+	if (amode) printf("CASE");
 	break;
       case LAMBDA:
-	printf("LAMBDA");
+	if (amode) printf("LAMBDA");
 	break;
       case DUMMY:
-	printf("DUMMY");
+	if (amode) printf("DUMMY");
 	break;
       case CSTRING:
-	printf("CSTRING \"%s\"", readstring());
+	{char *s = readstring(); if (amode) printf("CSTRING \"%s\"", s); }
 	break;
       case IF:
-	printf("IF");
+	if (amode) printf("IF");
 	break;
       case GUARD:
-	printf("GUARD");
+	if (amode) printf("GUARD");
 	break;
       case CONTAINER:
-	printf("CONTAINER");
+	if (amode) printf("CONTAINER");
 	break;
       default:
         fprintf(stderr, "strange low-bits tag %d in NT %u\n",
@@ -411,16 +512,14 @@ nodes() {
       }
       break;
     case SR:
-      printf("SR 0x%x:  Source reference\t", offset);
+      if (amode) printf("SR 0x%x:  Source reference\t", offset);
       dopointer(MD, readpointer(), SR, offset);
-      printf(" %s", readposn());
+      { char *p = readposn(); if (amode) printf(" %s", p); }
       break;
-    default:
-      fprintf(stderr, "strange high-bits tag %d at byte offset %u\n",
-                      hi3(b), offset);
-      exit(1);
     }
-    printf("\n");
+    if (amode) printf("\n");
+    nextoffset = byteoffset();
+    space[k] += nextoffset - offset;
   }
 }
 
