@@ -214,7 +214,7 @@ FileOffset      primSourceRef   (FileOffset moduleTraceInfo,int pos);
 FileOffset        primAtomCon     (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
 FileOffset        primAtomId      (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
 FileOffset        primAtomIdToplevel (FileOffset moduleTraceInfo, int pos, int fixPri, char *name);
-FileOffset      primModule      (char *modname, char *srcfile);
+FileOffset      primModule      (char *modname, char *srcfile, int traced);
 void            outputTrace     (FileOffset trace, char *output);
 
 

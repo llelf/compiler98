@@ -1257,11 +1257,11 @@ primAtomIdToplevel (FileOffset moduleTraceInfo, int pos, int fixPri, char *name)
 
 
 FileOffset
-primModule (char *modname, char *srcfile)
+primModule (char *modname, char *srcfile, int traced)
 {
   FileOffset fo = htonl(HatCounter);
   HIDE(fprintf(stderr,"\tprimModule %s (%s) -> 0x%x\n",modname,srcfile,fo);)
-  fprintf(HatFile,"%c%s%c%s%c", 0x20 /* not trusted */
+  fprintf(HatFile,"%c%s%c%s%c", 0x20 + (traced?0:1)
                  ,modname, 0x0, srcfile, 0x0);
   HatCounter = ftell(HatFile);
   return fo;

@@ -1505,11 +1505,11 @@ mkAtomIdToplevel mti pos fixPri unqual =
 foreign import "primAtomIdToplevel"
   mkAtomIdToplevel' :: ModuleTraceInfo -> Pos -> Int -> CString -> NmType
 
-mkModule :: String -> String -> ModuleTraceInfo
+mkModule :: String -> String -> Bool -> ModuleTraceInfo
 mkModule unqual filename = (mkModule' `useString` unqual) `useString` filename
 
 foreign import "primModule"
-  mkModule' :: CString -> CString -> ModuleTraceInfo
+  mkModule' :: CString -> CString -> Bool -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
 outputTrace trace output = withCString output (outputTrace' trace)

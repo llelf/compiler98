@@ -28,7 +28,7 @@ import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
                ,visible,extractV
-               ,tPrelude,t_Tuple,t_Arrow,tTrue,t_otherwise,t_undef
+               ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
@@ -58,7 +58,7 @@ traceTrans traced filename traceFilename
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
       (decls' 
-       ++ [defNameMod pos modId filename]
+       ++ [defNameMod pos modId filename traced]
        ++ map (defNameCon modTrace) cons 
        ++ map (defNameVar True modTrace) tvars 
        ++ map (defNameVar False modTrace) vars 
@@ -165,15 +165,16 @@ tEntity (EntityTyCls pos id posVarIds) =
 -- position in the name, because the same variable name may be used several 
 -- times.
 
-defNameMod :: Pos -> TraceId -> String -> Decl TokenId
-defNameMod pos id filename =
+defNameMod :: Pos -> TraceId -> String -> Bool -> Decl TokenId
+defNameMod pos id filename traced =
   DeclFun pos (nameTraceInfoModule id) 
     [Fun [] 
       (Unguarded 
         (ExpApplication pos 
           [ExpVar pos tokenMkModule
           ,ExpLit pos (LitString Boxed (getUnqualified id))
-          ,ExpLit pos (LitString Boxed filename)])) 
+          ,ExpLit pos (LitString Boxed filename)
+          ,ExpCon pos (if traced then tTrue else tFalse)])) 
       noDecls]
 
 defNameCon :: Exp TokenId -> (Pos,TraceId) -> Decl TokenId

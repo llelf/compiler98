@@ -10,7 +10,7 @@ import MagicTypes (Vector)
   -- magic C-type living in Haskell heap
 
 
-tMain = T.mkModule "Prelude" "Prelude.hs"
+tMain = T.mkModule "Prelude" "Prelude.hs" False
 
 -- ----------------------------------------------------------------------------
 -- types:
