@@ -195,7 +195,7 @@ DL(stdin_t)
 #ifdef PROFILE
   DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
-  DW L(root_t), L(stdin_nm), L(sr_t)
+  DW L(root_t), L(stdin_nm), L(noSR)
 
 DL(stdin_nm)
   DW CONSTR(NTId,3,3)
@@ -224,7 +224,7 @@ DL(stdout_t)
 #ifdef PROFILE
   DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
-  DW L(root_t), L(stdout_nm), L(sr_t)
+  DW L(root_t), L(stdout_nm), L(noSR)
 
 DL(stdout_nm)
   DW CONSTR(NTId,3,3)
@@ -253,7 +253,7 @@ DL(stderr_t)
 #ifdef PROFILE
   DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
-  DW L(root_t), L(stderr_nm), L(sr_t)
+  DW L(root_t), L(stderr_nm), L(noSR)
 
 DL(stderr_nm)
   DW CONSTR(NTId,3,3)
@@ -285,11 +285,12 @@ DL(root_t)
   DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
 
-DL(sr_t)
-  DW CONSTRW(0,TagSR)
+DL(noSR)
+  DW CONSTRW(3,TagSR)
 #ifdef PROFILE
   DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
+  DW 0, 0, 0
 
 #endif /* DBGTRANS */
 

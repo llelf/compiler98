@@ -58,7 +58,7 @@ extern unsigned stdin_t[];
 extern unsigned stdin_nm[];
 extern unsigned stdin_s[];
 extern unsigned root_t[];
-extern unsigned sr_t[];
+extern unsigned noSR[];
 extern unsigned io_s[];
 extern unsigned fo_stdout_node[];
 extern unsigned fo_stderr_node[];
@@ -289,7 +289,7 @@ unsigned stdin_t[] = {
 #endif
 , useLabel(root_t)
 , useLabel(stdin_nm)
-, useLabel(sr_t)
+, useLabel(noSR)
 
 };
 unsigned stdin_nm[] = {
@@ -340,7 +340,7 @@ unsigned stdout_t[] = {
 #endif
 , useLabel(root_t)
 , useLabel(stdout_nm)
-, useLabel(sr_t)
+, useLabel(noSR)
 
 };
 unsigned stdout_nm[] = {
@@ -391,7 +391,7 @@ unsigned stderr_t[] = {
 #endif
 , useLabel(root_t)
 , useLabel(stderr_nm)
-, useLabel(sr_t)
+, useLabel(noSR)
 
 };
 unsigned stderr_nm[] = {
@@ -437,14 +437,18 @@ unsigned root_t[] = {
 #endif
 
 };
-unsigned sr_t[] = {
-  CONSTRW(0,TagSR)
+
+unsigned noSR[] = {
+  CONSTRW(3,TagSR)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
 #endif
+, 0
+, 0
+, 0
 
 #endif /* DBGTRANS */
 
