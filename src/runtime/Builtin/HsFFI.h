@@ -2,7 +2,11 @@
 #define _HSFFI_H
 
 #if !defined(INT64_MIN)
+#  if defined(__sun__) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#include "inttypes.h"
+#  else
 #include "stdint.h"
+#  endif
 #endif
 
 #define HsChar		char
