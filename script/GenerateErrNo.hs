@@ -29,7 +29,7 @@ cppify symbol =
   "#endif\n"
 
 cprogFooter =
-  "  printf(\"module Prelude where\\n\\n\");\n" ++
+  "  printf(\"module DErrNo where\\n\\n\");\n" ++
   "  printf(\"{- Automatically generated from /usr/include/errno.h -}\\n\\n\");\n" ++
   "  printf(\"data ErrNo =\\n\");\n" ++
   "  printf(\"    Edummy\\n\");\n" ++
