@@ -62,11 +62,16 @@ instance NmCoerce Float where
     toNm t v sr = mkR v (mkTNm t (mkNTFloat v) sr)
 instance NmCoerce Double where
     toNm t v sr = mkR v (mkTNm t (mkNTDouble v) sr)
+--instance NmCoerce Bool where
+--    toNm t False sr = mkR False (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
+--    toNm t True  sr = mkR True  (mkTNm t (mkNTConstr' 1) sr)  -- 1 wrong!
+--instance NmCoerce () where
+--    toNm t v sr = mkR v (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
 instance NmCoerce Bool where
-    toNm t False sr = mkR False (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
-    toNm t True  sr = mkR True  (mkTNm t (mkNTConstr' 1) sr)  -- 1 wrong!
+    toNm t False sr = mkR False (mkTNm t mkNTDummy sr)
+    toNm t True  sr = mkR True  (mkTNm t mkNTDummy sr)
 instance NmCoerce () where
-    toNm t v sr = mkR v (mkTNm t (mkNTConstr' 0) sr)  -- 0 wrong!
+    toNm t v sr = mkR v (mkTNm t mkNTDummy sr)
 instance NmCoerce Addr where
     toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
 instance NmCoerce (StablePtr a) where
