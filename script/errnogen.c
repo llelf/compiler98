@@ -1286,7 +1286,7 @@ main() {
     errs[EREMOTERELEASE] = "EREMOTERELEASE";
   if (EREMOTERELEASE>max) max=EREMOTERELEASE;
 #endif
-  printf("module DErrNo where\n\n");
+  printf("module NHC.DErrNo where\n\n");
   printf("{- Automatically generated from /usr/include/errno.h -}\n\n");
   printf("data ErrNo =\n");
   printf("    Edummy\n");

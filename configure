@@ -36,7 +36,10 @@ INSTALLDIR=/usr/local
 
 USER=${USER-`whoami 2>/dev/null`}
 MACHINE=`script/harch`
-CCC=${CC-gcc}
+case $OS in
+  Darwin*) CCC=${CC-cc};;
+  *)       CCC=${CC-gcc};;
+esac
 PWD=`pwd`
 case $PWD in	# path mangling required for older CYGWIN
   file://?/*)   PWD=`echo $PWD | sed -e "s|^file://||" | sed -e "s|^[^/]|&:|"` ;;
@@ -394,22 +397,23 @@ int main (void) { test(); }
   echo -n "Reading /usr/include/errno.h: "
   if [ ! -d src/prelude/$MACHINE ]
   then
-     mkdir src/prelude/$MACHINE
-     cp src/prelude/Makefile.machinedepend src/prelude/$MACHINE/Makefile
+     mkdir src/prelude/$MACHINE src/prelude/$MACHINE/NHC
+     cp src/prelude/Makefile.machinedepend src/prelude/$MACHINE/NHC/Makefile
      cp src/prelude/PreludeIO/Makefile.inc src/prelude/$MACHINE/Makefile.inc
-     cp src/prelude/DErrNo.hs   src/prelude/$MACHINE
-     cp src/prelude/DErrNo.hc   src/prelude/$MACHINE
-     cp src/prelude/DErrNo.T.c  src/prelude/$MACHINE
-     cp src/prelude/DErrNo.p.c  src/prelude/$MACHINE
-     cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE
+     cp src/prelude/PreludeIO/Makefile.inc src/prelude/$MACHINE/NHC/Makefile.inc
+     cp src/prelude/DErrNo.hs   src/prelude/$MACHINE/NHC
+     cp src/prelude/DErrNo.hc   src/prelude/$MACHINE/NHC
+     cp src/prelude/DErrNo.T.c  src/prelude/$MACHINE/NHC
+     cp src/prelude/DErrNo.p.c  src/prelude/$MACHINE/NHC
+     cp src/prelude/DErrNo.z.c  src/prelude/$MACHINE/NHC
   fi
   $CCC -o errnogen script/errnogen.c && ./errnogen >DErrNo.hs && rm -f ./errnogen
-  if diff DErrNo.hs src/prelude/$MACHINE/DErrNo.hs >/dev/null
+  if diff DErrNo.hs src/prelude/$MACHINE/NHC/DErrNo.hs >/dev/null
   then
     rm -f DErrNo.hs
     echo '              no change'
   else
-    mv DErrNo.hs src/prelude/$MACHINE/DErrNo.hs
+    mv DErrNo.hs src/prelude/$MACHINE/NHC/DErrNo.hs
     echo '              updated DErrNo.hs'
   fi
 
@@ -595,6 +599,14 @@ else	# [ "$INSTALL" = "yes" ]
       if [ -f $file ]
       then echo "	`basename $file` "
            cp $file $DESTDIR$INCDIR
+      fi
+    done
+    mkdir -p $DESTDIR$INCDIR/NHC
+    for file in $BUILDINCDIR/NHC/*
+    do
+      if [ -f $file ]
+      then echo "	NHC/`basename $file` "
+           cp $file $DESTDIR$INCDIR/NHC
       fi
     done
     #echo "Hat interface files (.hx) go into:"

@@ -25,6 +25,7 @@ PRELUDEA = \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
+	src/prelude/Internal/Makefile* src/prelude/Internal/*.hs \
 	src/prelude/Ix/Makefile* src/prelude/Ix/*.hs
 PRELUDEB = \
 	src/prelude/List/Makefile* src/prelude/List/*.hs \
@@ -63,6 +64,7 @@ PRELUDEC = \
 	src/prelude/Haskell/*.hc       src/prelude/Haskell/*.c \
 	src/prelude/IO/*.hc            src/prelude/IO/*.c \
 	src/prelude/IOExtras/*.hc      src/prelude/IOExtras/*.c \
+	src/prelude/Internal/*.hc      src/prelude/Internal/*.c \
 	src/prelude/Ix/*.hc            src/prelude/Ix/*.c \
 	src/prelude/List/*.hc          src/prelude/List/*.c \
 	src/prelude/Locale/*.hc        src/prelude/Locale/*.c \
@@ -133,7 +135,7 @@ HATUI	= src/hat/tools/Makefile* src/hat/tools/*.[ch] src/hat/tools/*.hs \
 TRAILUI = src/hat/trail/Makefile* src/hat/trail/*.java
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.h include/*.gc
+INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc
 DOC = docs/*
 MAN = man/*.1
 HATTOOLSET= hat-stack hat-check hat-detect hat-observe hat-trail hat-view 
@@ -331,7 +333,7 @@ $(TARGDIR)/$(MACHINE)/profprelude-$(CC): $(PRELUDEC)
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 $(TARGDIR)/$(MACHINE)/compiler-$(CC): $(COMPILERC)
 	cd src/compiler98;     $(MAKE) fromC
-	cd src/prelude/$(MACHINE); $(MAKE) clean all	# Patch machine-specific parts.
+	cd src/prelude/$(MACHINE)/NHC; $(MAKE) clean all	# Patch machine-specific parts.
 	cd src/prelude;        $(MAKE) relink
 	cd src/compiler98;     $(MAKE) relink
 	touch $(TARGDIR)/$(MACHINE)/compiler-$(CC)
@@ -525,6 +527,7 @@ HATMISC = Makefile.inc Makefile.hat hat-configure \
 	  src/Makefile.inc src/hat/Makefile* include/art.h
 HATTRANS = src/hat/trans/Makefile* \
 	 $(shell hmake -M HatTrans.hs -Isrc/hat/trans -Isrc/compiler98 \
+		 -package lang \
 		| cut -d':' -f1 | sed -e 's/\.o$$/.hs/' | sed -e '/^. /d' )
 HATMAN  = man/hat-*
 HATDOCS = docs/hat/*
