@@ -12,7 +12,7 @@ NHC98VERSION="v1.17 (CVS version)"
 HMAKEVERSION="3.08 (2003-06-23)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
-PACKAGES="base parsec QuickCheck HaXml"
+PACKAGES="base parsec haskell-src QuickCheck HaXml"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -604,22 +604,22 @@ else	# [ "$INSTALL" = "yes" ]
     for pkg in $PACKAGES
     do
       echo "    package: $pkg"
-      mkdir -p $DESTDIR$INCDIR/$pkg
-      for file in $BUILDINCDIR/$pkg/*
+      mkdir -p $DESTDIR$INCDIR/packages/$pkg
+      for file in $BUILDINCDIR/packages/$pkg/*
       do
         if [ -f $file ]
         then echo "	`basename $file` "
-             cp $file $DESTDIR$INCDIR/$pkg
+             cp $file $DESTDIR$INCDIR/packages/$pkg
         fi
       done
       for dir in `script/pkgdirlist $pkg`
       do
-        mkdir -p $DESTDIR$INCDIR/$pkg/$dir
-        for file in $BUILDINCDIR/$pkg/$dir/*
+        mkdir -p $DESTDIR$INCDIR/packages/$pkg/$dir
+        for file in $BUILDINCDIR/packages/$pkg/$dir/*
         do
           if [ -f $file ]
           then echo "	$dir/`basename $file` "
-               cp $file $DESTDIR$INCDIR/$pkg/$dir
+               cp $file $DESTDIR$INCDIR/packages/$pkg/$dir
           fi
         done
       done
