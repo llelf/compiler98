@@ -165,8 +165,8 @@ keepRS (RenameState flags unique rps rts rt st derived
                         _ -> error "when renaming: newtype of imported newtype"
                     [] -> strace 
                      ("Warning: when renaming newtype of imported newtype:\n"++
-                      "  Real type of imported newtype is not visible.\n"++
-                      "  I might get boxed/unboxed info wrong.") Nothing
+                      "  Real type of "++show(tidI info)++" is not visible.\n"++
+                      "  I might get boxed/unboxed info wrong.") (Just False)
 
   isUnBoxedTS st u = -- No circular dependency when this function is called
     case lookupAT st u of
