@@ -25,13 +25,14 @@ endif
 
 all: $(TARGET)
 install: $(TARGET)
-cfiles: $(SRCS)
-	-rm -f *.hi *.hc
+cfiles: cleanC $(SRCS)
 	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -package base -C HInteractive.hs
 clean:
-	-rm -f *.hi *.o $(OBJDIR)/*.o $(OBJDIR)/HInteractive$(EXE)
-realclean: clean
+	-rm -f *.hi *.o $(OBJDIR)/*.o
+cleanC: clean
 	-rm -f *.hc *.c
+realclean: clean cleanC
+	-rm -f $(OBJDIR)/HInteractive$(EXE)
 
 $(TARGET): $(OBJDIR) $(SRCS)
 	$(HMAKE) -hc=$(HC) HInteractive -d$(OBJDIR) \

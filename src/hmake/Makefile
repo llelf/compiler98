@@ -38,7 +38,7 @@ all: $(TARGETS)
 install: $(TARGETS)
 config:
 	sh $(BUILDDIR)/hmake3.config
-cfiles: clean $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
+cfiles: cleanC $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
 fromC: $(OBJDIR)
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
@@ -47,8 +47,9 @@ fromC: $(OBJDIR)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
 	rm -f *.hi
-realclean: clean
+cleanC: clean
 	rm -f *.hc *.c
+realclean: cleanC
 	rm -f $(TARGETS)
 package:
 	tar zcvf hmake.tar.gz $(SRCS) $(GCSRCS) $(CPPSRCS) Older.hs MkConfig.hs $(AUX)
