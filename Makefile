@@ -518,7 +518,8 @@ hmakeBinDist:
 ##### package up hat separately
 
 HATSCRIPT = script/harch script/hat-trans.inst script/greencard.inst \
-		script/confhat script/confhc-hat script/fixghc script/hat-graph
+		script/echo.c script/confhat script/confhc-hat script/fixghc \
+		script/hat-graph
 HATMISC = Makefile.inc Makefile.hat hat-configure \
 	  src/Makefile.inc src/hat/Makefile* include/art.h
 HATTRANS = src/compiler98/Makefile* \
