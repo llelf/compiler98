@@ -50,6 +50,7 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
     useLabel p ("N_IMPORTS") >|>
     useLabel p ("NMODN") >|>
     emitWord p ("0") >|>
+    emitWord p (if trust then "1" else "0") >|>
     -- Source references
     emitAlign p >|>
     foldr (>|>) id (map (emitSR p) (zip [0..] (reverse srs))) >|>

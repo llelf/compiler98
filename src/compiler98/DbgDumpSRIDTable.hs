@@ -39,6 +39,7 @@ dbgDumpSRIDTable handle state flags (Just ((_, srs), idt, impdecls, modid)) =
             showString "), L(NM_" . showString srcid .
             showString "), L(N_IMPORTS), L(NMODN)\n" .
             showString " DW 0\n" .
+            showString (if trust then " DW 1\n" else " DW 0\n") .
 	    showString " DL(NMODN)\n" . chopString modid . 
 	    showString "  AL\n") >>
     if modid == "Main" then

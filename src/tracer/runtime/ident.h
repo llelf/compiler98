@@ -21,6 +21,7 @@ typedef struct _ModInfo {
     struct _ModInfo **modinfo;
     char *modname;
     FileOffset fileoffset;
+    int trusted;		/* really just a bool */
 } ModInfo;
 
 typedef struct _SrcRef {

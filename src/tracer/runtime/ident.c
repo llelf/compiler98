@@ -72,7 +72,7 @@ dumpNewModInfo (FILE *dumpfile, ModInfo *modinfo)
     /* dump this module info */
     fgetpos(dumpfile,&mypos);
     mypos = htonl(mypos);	/* ensure network byte-ordering */
-    fprintf(dumpfile,"%c%s%c%s%c", 0x20
+    fprintf(dumpfile,"%c%s%c%s%c", (modinfo->trusted ? 0x21 : 0x20)
                     ,modinfo->modname, 0x0, modinfo->srcfile, 0x0);
     modinfo->fileoffset = mypos;
 
