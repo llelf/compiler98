@@ -7,10 +7,10 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-VERSIONNUM=115
-NHC98VERSION="v1.15 (CVS snapshot)"
+VERSIONNUM=116
+NHC98VERSION="v1.16 (2003-03-08)"
 HMAKEVERSION="3.07 (2003-03-06)" export HMAKEVERSION
-HATVERSION="2.01" export HATVERSION
+#HATVERSION="2.01" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 #HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
