@@ -169,9 +169,10 @@ fromPos (P s e) =
  in (l1,c1,l2,c2)
 
 strPos :: Pos -> String
-strPos p = case fromPos p of
-             (0,0,0,0) -> "nopos"
-	     (l,c,_,_) -> show l ++ ':':show c
+strPos p = 
+  case fromPos p of
+    (0,0,0,0) -> "nopos"
+    (l1,c1,l2,c2) -> show l1 ++ ':' : show c1 ++ '-' : show l2 ++ ':' : show c2
 
 instance Show Pos where
   show p = strPos p

@@ -130,17 +130,17 @@ iPreLex u file r c xxs@('_':xs@(x:_)) =
   if isNhcId x
     then case lexId u r c xxs of
 	   (r,c',lex,xs) -> 
-             (file,toPos r c r c',c,lex) : iPreLex u file r c' xs
+             (file,toPos r c r (c'-1),c,lex) : iPreLex u file r c' xs
     else (file,toPos r c r c,c,L_Underscore) : iPreLex u file r (c+1) xs
 iPreLex u file r c (xs@(x:s))=
   if isLexId x
     then case lexId u r c xs of
 	   (r,c',lex,xs) -> 
-             (file,toPos r c r c',c,lex) : iPreLex u file r c' xs
+             (file,toPos r c r (c'-1),c,lex) : iPreLex u file r c' xs
     else if isDigit x
     then case lexNum r c xs of
 	   (r,c',lex,xs) -> 
-             (file,toPos r c r c',c,lex) : iPreLex u file r c' xs
+             (file,toPos r c r (c'-1),c,lex) : iPreLex u file r c' xs
     else (file,toPos r c r c,c,L_ERROR x) : iPreLex u file r c s
 
 
