@@ -233,23 +233,21 @@
 
 #if defined (__mc68000__)
 #define add_ssaaaa(sh, sl, ah, al, bh, bl) \
-  __asm__ ("add%.l %5,%1
-	addx%.l %3,%0"							\
-	   : "=d,d" ((unsigned long int)(sh)),				\
-	     "=&d,m" ((unsigned long int)(sl))				\
-	   : "%0,0" ((unsigned long int)(ah)),				\
-	     "d,d" ((unsigned long int)(bh)),				\
-	     "%1,1" ((unsigned long int)(al)),				\
-	     "g,d" ((unsigned long int)(bl)))
+  __asm__ ("add%.l %5,%1\n\taddx%.l %3,%0"				\
+	   : "=d" ((unsigned long int)(sh)),				\
+	     "=&d" ((unsigned long int)(sl))				\
+	   : "%0" ((unsigned long int)(ah)),				\
+	     "d" ((unsigned long int)(bh)),				\
+	     "%1" ((unsigned long int)(al)),				\
+	     "g" ((unsigned long int)(bl)))
 #define sub_ddmmss(sh, sl, ah, al, bh, bl) \
-  __asm__ ("sub%.l %5,%1
-	subx%.l %3,%0"							\
-	   : "=d,d" ((unsigned long int)(sh)),				\
-	     "=&d,m" ((unsigned long int)(sl))				\
-	   : "0,0" ((unsigned long int)(ah)),				\
-	     "d,d" ((unsigned long int)(bh)),				\
-	     "1,1" ((unsigned long int)(al)),				\
-	     "g,d" ((unsigned long int)(bl)))
+  __asm__ ("sub%.l %5,%1\n\tsubx%.l %3,%0"				\
+	   : "=d" ((unsigned long int)(sh)),				\
+	     "=&d" ((unsigned long int)(sl))				\
+	   : "0" ((unsigned long int)(ah)),				\
+	     "d" ((unsigned long int)(bh)),				\
+	     "1" ((unsigned long int)(al)),				\
+	     "g" ((unsigned long int)(bl)))
 #if defined (__mc68020__) || defined (__NeXT__) || defined(mc68020)
 #define umul_ppmm(w1, w0, u, v) \
   __asm__ ("mulu%.l %3,%1:%0"						\
