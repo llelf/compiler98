@@ -329,7 +329,7 @@ fsExp exp@(ExpApplication p [ExpVar _ fcr, ExpDict dict{-@(ExpVar _ _)-},
     if tidIS state fcr == t_fromConRational
     || tidIS state fcr == t_patFromConRational then
         fsTidFun >>>= \tidFun -> 
-        strace (strPos p++": literal Fractional expr/pat of unknown type\n") $
+     -- strace (strPos p++": literal Fractional expr/pat of unknown type\n") $
 	unitS (ExpApplication p
                  [ExpVar p (tidFun (t_ap 1, Var)), sr, t
                  ,ExpApplication p
