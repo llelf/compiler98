@@ -175,6 +175,9 @@ config: script/errnogen.c
 	./configure --config
 install:
 	./configure --install
+test:
+	cd tests && ./runtests clean >/dev/null && ./runtests >t.log 2>t.err
+	tail -4 tests/t.err
 
 basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc cpphs \
 						prelude hsc2hs libraries
