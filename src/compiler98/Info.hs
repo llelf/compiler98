@@ -371,10 +371,10 @@ constrsI (InfoName  unique tid i ptid _) = [unique]   --PHtprof
 constrsI (InfoData   unique tid exp nt dk) =
       case dk of
 	(DataTypeSynonym unboxed depth) ->  
-           strace ("Constr of type synonym " ++ show tid) []
+           strace ("Constr of type synonym "++show tid++"\n") []
 	(DataNewType unboxed constructors) -> constructors
-	(DataPrimitive size) ->  
-           strace ("Constr of data primitive " ++ show tid) []
+	(DataPrimitive size) ->
+           strace ("Constr of data primitive "++show tid++"\n") []
 	(Data unboxed  constrs) -> constrs
 constrsI info = error ("constrsI " ++ show info)
 

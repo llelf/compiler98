@@ -113,8 +113,8 @@ parseITopDecl st needs hideFuns =
                            `ap` parse needs `apCut` parseDeriving)
       , (L_data, \pos ->
 		 hDataPrim hideFuns st `parseChk` k_primitive 
-					`ap` conid `chk` equal
-                                        `apCut` intPrim
+					`apCut` conid `chk` equal
+                                                      `apCut` intPrim
 		   `orelse`
 		 (hData hideFuns st . Right) `parseAp` unboxed
                            `ap` parseContexts `ap` parseSimple `apCut`
