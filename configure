@@ -9,7 +9,7 @@
 # corresponding definition in the Makefile!
 NHC98VERSION="v1.13 (CVS snapshot 2002-05-27)"
 HMAKEVERSION="3.05 (2002-06-06)" export HMAKEVERSION
-HATVERSION="1.13" export HATVERSION
+HATVERSION="1.99" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
 #HATTOOLS="hat-stack hat-check hat-observe hat-detect hat-view hat-trail \
@@ -666,6 +666,7 @@ else	# [ "$INSTALL" = "yes" ]
     echo "    hat-tools:"
     sed -e "s|ExecutableDir|$HATLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hat-template
+    chmod +x $DESTDIR$BINDIR/hat-template
     for hattool in $HATTOOLS
     do  echo "	"$hattool
         rm -f $DESTDIR$BINDIR/$hattool;
