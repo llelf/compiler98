@@ -203,6 +203,15 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   return mkCInt((int)fo);
 }
 
+/* 'addrToHandle' is very tricky!  The Addr *must* be a pointer to   */
+/* a ForeignObj that has already been allocated in C-land.  This     */
+/* function just changes the types around for Haskell-land.          */
+void *
+addrToHandle (void* addr)
+{
+  return mkCInt((int)addr);
+}
+
 /* The following function is also visible to the Haskell world.       */
 /* It _must_ be a primitive, not a foreign import, because the latter */
 /* mechanism would dereference the ForeignObj argument to become just */
