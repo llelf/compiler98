@@ -120,8 +120,8 @@ instance Relabel InfixClass where
   relabel env (InfixPre x) = (InfixPre (just x))
 
 instance Relabel FixId where
-  relabel env (FixCon p i) = FixCon p (just i)
-  relabel env (FixVar p i) = FixVar p (just i)
+  relabel env (FixCon p i) = FixCon p (lookEnv env mkCon i)
+  relabel env (FixVar p i) = FixVar p (lookEnv env mkVar i)
 
 instance Relabel Decls where
   relabel env (DeclsParse decls) = DeclsParse (map (relabel env) decls)
@@ -202,13 +202,13 @@ instance Relabel Context where
 
 instance Relabel Constr where
   relabel env (Constr p id mbs) =
-	Constr p (just id) (map locust mbs)
+	Constr p (lookEnv env mkCon id) (map locust mbs)
 		where locust (Nothing,typ) = (Nothing,relabel env typ)
 		      locust (Just pis,typ) = (Just (relabelPosIds pis)
 						,relabel env typ)
   relabel env (ConstrCtx fvs ctxs p id mbs) =
 	ConstrCtx (relabelPosIds fvs) (map (relabel env) ctxs) p
-						 (just id) (map locust mbs)
+		  (lookEnv env mkCon id) (map locust mbs)
 		where locust (Nothing,typ) = (Nothing,relabel env typ)
 		      locust (Just pis,typ) = (Just (relabelPosIds pis)
 						,relabel env typ)
