@@ -30,4 +30,4 @@ else
 fi
 
 # Now let's get started.
-exec ExecutableDir/$MACHINE/`basename $0` $@
+exec ExecutableDir/$MACHINE/HInteractive $@
