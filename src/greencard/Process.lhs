@@ -248,7 +248,7 @@ mbImportName xs = maybe Nothing (Just . head) (iq MPLUS i)
   where
     iq	= prefix ["import", "qualified"] wxs
     i	= prefix ["import"] wxs
-    wxs = tokens xs
+    wxs = words xs  -- (tokens xs)
 
 tokens :: String -> [String]
 tokens s = case lex s of
@@ -264,7 +264,12 @@ All filenames with prefix from @path@ and suffix from @exts@.
 
 allFileNames :: [String] -> String -> [String] -> [String]
 allFileNames path file exts 
-  = [d ++ file ++ ext | d <- path, ext <- exts]
+  = [d ++ hierarch file ++ ext | d <- path, ext <- exts]
+
+hierarch :: String -> String
+hierarch ('.':xs) = '/': hierarch xs
+hierarch (x:xs)   = x  : hierarch xs
+hierarch []       = []
 
 \end{code}
 
