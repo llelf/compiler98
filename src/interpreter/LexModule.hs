@@ -3,6 +3,10 @@ module LexModule (lexmodule, nestcomment) where
 import Char
 import List
 
+#if !defined(__HASKELL98__)
+#define isAlphaNum isAlphanum
+#endif
+
 
 -- lexmodule takes a string (file content), removes any module header,
 -- and renames any function beginning in the left-most column called
