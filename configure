@@ -11,7 +11,8 @@ CONFIGVERSION="v1.07 (CVS development version)"
 HMAKEVERSION="2.02 (2001-02-08)" export HMAKEVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
-HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect hat-checki"
+HATTOOLS="hat-stack hat-connect hat-check hat-observe hat-detect \
+	hat-checki hat-port"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -507,7 +508,7 @@ then
     for hattool in $HATTOOLS
     do  echo -n $hattool" "
         rm -f $BUILDBINDIR/$hattool
-        ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/$hattool
+        ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/$hattool
     done
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98

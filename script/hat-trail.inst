@@ -17,5 +17,5 @@ case $MACHINE in
   *)            CLASSPATH=$NHC98LIBDIR/hat-trail.jar ;;
 esac
 export CLASSPATH
-killall -w -q hat-connect || true
-java nhctracer.HatTrail 6710 "$@" &
+#killall -w -q hat-connect || true
+java nhctracer.HatTrail `hat-port` "$@" &
