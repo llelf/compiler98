@@ -7,4 +7,4 @@ export CLASSPATH
 PATH=${JAVADIR}/bin:$PATH
 export PATH
 echo hat-trail: starting java browser ...
-java nhctracer.HatTrail 6710 $* &
+java nhctracer.HatTrail $* &
