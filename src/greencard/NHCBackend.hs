@@ -75,10 +75,10 @@ haskellBit dbg ((name, typ), calls, code, fails, result) =
   emit dbg ("*****ARGS:\n"++unlines (map show argDISs)) $
   emit dbg ("*****RESULT:\n"++show rtnDIS++"\n") $
   if clean rtnDIS && and (map clean argDISs) then
-    text "foreign import" <+> doubleQuotes (cfn fnName)
-                          <+> fnName <+> text "::" <+> primTypes
+    text "foreign import ccall" <+> doubleQuotes (cfn fnName)
+                                <+> fnName <+> text "::" <+> primTypes
   else
-    text "foreign import" <+> cfn fnName <+> text "::" <+> primTypes $$
+    text "foreign import ccall" <+> cfn fnName <+> text "::" <+> primTypes $$
     text ""   $$
     fnName <+> text "::" <+> ppType typ   $$
     fnName <+> hsep argPats <+> equals    $$
