@@ -2,7 +2,7 @@
 #include "cinterface.h"
 #include "mk.h"
 
-void   performGC         ()                     { C_GC(0); }
+void   performGC         ()                     { C_GC(0); C_RETURN(mkUnit()); }
 int    unsafePtrEq       (void* a, void* b)     { return (a==b); }
 
 /* basic error handling via C's errno */
