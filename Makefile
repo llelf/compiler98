@@ -5,7 +5,7 @@ include Makefile.inc
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \
-	src/prelude/Main.hi src/prelude/Main.T.hi src/prelude/Makefile* \
+	src/prelude/Main.hi src/prelude/Makefile* \
 	src/prelude/Array/Makefile* src/prelude/Array/*.hs \
 	src/prelude/Bit/Makefile* src/prelude/Bit/*.hs \
 	src/prelude/Binary/Makefile* src/prelude/Binary/*.hs \
