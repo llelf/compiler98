@@ -105,9 +105,9 @@ dbgDumpSRIDTableC p handle state flags (Just ((_, srs), idt, impdecls, modid)) =
 	      -- 22 (16+6) is used if the function is trusted
 	      -- See getconstr.h in the runtime system.
 	      (if trust && isVar then
-	           emitWord p ("CONSTR(22,3,3)")
+	           emitWord p ("CONSTR(22,5,5)")
 	       else
-	           emitWord p ("CONSTR(6,3,3)")) >|>
+	           emitWord p ("CONSTR(6,5,5)")) >|>
 	      (if profile then 
 	          useLabel p ("prof_NTId") >|>
 		  emitWord p (show 0) >|>

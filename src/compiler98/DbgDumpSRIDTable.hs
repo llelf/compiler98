@@ -74,9 +74,9 @@ dumpId state profile modinfo output trust ((pos, i, tid), lab) =
 	    -- 22 (16+6) is used if the function is trusted
 	    -- See getconstr.h in the runtime system.
 	    (if trust && isVar then
-	        showString ")\n  DW CONSTR(22,3,3)\n  DW " 
+	        showString ")\n  DW CONSTR(22,5,5)\n  DW " 
 	     else
-	        showString ")\n  DW CONSTR(6,3,3)\n  DW ") . 
+	        showString ")\n  DW CONSTR(6,5,5)\n  DW ") . 
 	    (if profile then showString "L(prof_NTId), 0, 0, 0, " else id) .
 	    showString "L(" . showString modinfo .
             showString "), " . shows pos . 
