@@ -209,8 +209,9 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   return nhc_mkCInt((int)fo);
 }
 
-/* foreign import makeForeignPtrC :: Ptr a -> FunPtr () -> IO ForeignPtr */
-void *primForeignPtrC (void *addr, gcCval finaliser)
+/* foreign import newForeignPtr
+                  :: FinalizerPtr () -> Ptr a -> IO (ForeignPtr a) */
+void *primForeignPtrC (gcCval finaliser, void *addr)
 {
   ForeignObj *fo;
   fo = allocForeignObj(addr, finaliser, gcNow);

@@ -1,18 +1,17 @@
 module NHC.FFI
     ( ForeignPtr		-- abstract, instance of: Eq,Ord,Show
     , FinalizerPtr		-- type synonym for FunPtr (Ptr a -> IO ())
-    , newForeignPtr		-- :: Ptr a -> FinalizerPtr a
-   				--			-> IO (ForeignPtr a)
-    , newForeignPtr_		-- :: Ptr a -> IO (ForeignPtr a)
-    , addForeignPtrFinalizer	-- :: ForeignPtr a -> FinalizerPtr a
-   				--			-> IO ()
+    , newForeignPtr		-- :: FinalizerPtr a ->
+   				--		  Ptr a	-> IO (ForeignPtr a)
+    , newForeignPtr_		-- ::             Ptr a -> IO (ForeignPtr a)
+    , addForeignPtrFinalizer	-- :: FinalizerPtr a -> ForeignPtr a  -> IO ()
     , withForeignPtr		-- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
     , touchForeignPtr		-- :: ForeignPtr a -> IO ()
     , unsafeForeignPtrToPtr	-- :: ForeignPtr a -> Ptr a
     , castForeignPtr		-- :: ForeignPtr a -> ForeignPtr b
 
-    , newConcForeignPtr		-- :: Ptr a -> IO () -> IO (ForeignPtr a)
-    , addConcForeignPtrFinalizer-- :: ForeignPtr a -> IO () -> IO ()
+    , newConcForeignPtr		-- :: IO () -> Ptr a -> IO (ForeignPtr a)
+    , addConcForeignPtrFinalizer-- :: IO () -> ForeignPtr a -> IO ()
     ) 
     where
 
@@ -54,11 +53,11 @@ data ForeignPtr a;	-- primitive type known to the compiler internals
 
 foreign import cast foreignPtrToInt :: ForeignPtr a -> Int
 instance Eq (ForeignPtr a) where
-  a == b        =  (foreignPtrToInt a) == (foreignPtrToInt b)
+  a == b        =  (unsafeForeignPtrToPtr a) == (unsafeForeignPtrToPtr b)
 instance Ord (ForeignPtr a) where
-  compare a b   =  compare (foreignPtrToInt a) (foreignPtrToInt b)
+  compare a b   =  compare (unsafeForeignPtrToPtr a) (unsafeForeignPtrToPtr b)
 instance Show (ForeignPtr a) where
-  showsPrec _ p = showString "0x" . showHex (foreignPtrToInt p)
+  showsPrec p f = showsPrec p (unsafeForeignPtrToPtr f)
 
 
 type FinalizerPtr a = FunPtr (Ptr a -> IO ())
@@ -70,15 +69,15 @@ type FinalizerPtr a = FunPtr (Ptr a -> IO ())
 --   *** Do not do it elsewhere!
 
 foreign import ccall "primForeignPtrC"
-  newForeignPtr :: Ptr a -> FinalizerPtr a -> IO (ForeignPtr a)
+  newForeignPtr :: FinalizerPtr a -> Ptr a -> IO (ForeignPtr a)
 
 -- newForeignPtr_ creates a ForeignPtr without a finaliser.
 newForeignPtr_ :: Ptr a -> IO (ForeignPtr a)
-newForeignPtr_ p = newForeignPtr p nullFunPtr
+newForeignPtr_ p = newForeignPtr nullFunPtr p
 
 -- addForeignPtrFinalizer is not implemented in nhc98.
-addForeignPtrFinalizer :: ForeignPtr a -> FinalizerPtr a -> IO ()
-addForeignPtrFinalizer p free = return ()
+addForeignPtrFinalizer :: FinalizerPtr a -> ForeignPtr a -> IO ()
+addForeignPtrFinalizer free p = return ()
 
 
 -- `withForeignPtr' is a safer way to use `unsafeForeignPtrToPtr'.
@@ -121,10 +120,10 @@ foreign import ccall "primForeignObjC"
 
 data _E a = _E a        -- just a box to protect arg from evaluation
 
-newConcForeignPtr      :: Ptr a -> IO () -> IO (ForeignPtr a)
-newConcForeignPtr p f  = primForeignPtr p (_E (unsafePerformIO f))
+newConcForeignPtr      :: IO () -> Ptr a -> IO (ForeignPtr a)
+newConcForeignPtr f p   = primForeignPtr p (_E (unsafePerformIO f))
 
-addConcForeignPtrFinalizer :: ForeignPtr a -> IO () -> IO ()
-addConcForeignPtrFinalizer p free = return ()
+addConcForeignPtrFinalizer        :: IO () -> ForeignPtr a -> IO ()
+addConcForeignPtrFinalizer free p  = return ()
 
 ----------------
