@@ -7,6 +7,7 @@ extern  StablePtr      makeStablePtr  (unsigned long*);
 extern  unsigned long *derefStablePtr (StablePtr);
 extern  void           freeStablePtr  (StablePtr);
 extern  void           copyStablePtr  (StablePtr,StablePtr);
+extern  void           stableInit     (void);
 
 /* for backwards compatibility: */
 typedef StablePtr HaskellRef;

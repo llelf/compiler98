@@ -350,6 +350,8 @@ void gcNone(ForeignObj *cd);
 void gcFile(void *a);
 void gcSocket(void *a);
 
+void runDeferredGCs (void);
+
 extern ForeignObj fo_stdin;
 extern ForeignObj fo_stdout;
 extern ForeignObj fo_stderr;

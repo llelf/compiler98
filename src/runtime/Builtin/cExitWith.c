@@ -3,6 +3,7 @@
 #include <setjmp.h>
 
 #include "haskell2c.h"
+#include "initend.h"
 
 /* cExitWith :: ExitCode -> a */
 
@@ -11,7 +12,6 @@ extern jmp_buf exit_mutator;
 #else
 extern sigjmp_buf exit_mutator;
 #endif
-extern int exit_code;
 
 C_HEADER(cExitWith)
 {
