@@ -14,21 +14,25 @@ import AssocTree
 import Syntax(InfixClass(..))
 import Id(Id)
 
--- Guess: this is "Interface Exports"?
 data IE = IEnone | IEsel | IEabs | IEall deriving (Eq,Show) 
+-- This is "Interface Exports"
 --    defined in a lattice   IEall
 --                          /     \
 --                       IEsel   IEabs
 --                          \     /
 --                           IEnone
+--   IEall  -> exported (with all constructors/methods)
+--   IEabs  -> exported abstractly (without constructors)
+--   IEsel  -> selector (named fields) (is exported, despite defn below!)
+--   IEnone -> not exported
 isExported IEnone = False
 isExported IEsel  = False
 isExported _      = True
 
 
 combIE IEall  _ = IEall
-combIE IEnone i = i
 combIE _ IEall  = IEall
+combIE IEnone i = i
 combIE i IEnone = i
 combIE _      i = i
 
