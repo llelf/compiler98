@@ -4,6 +4,7 @@ import CString
 import PackedString
 import DIOError
 import IO
+import DErrNo
 
 instance  Show IOError  where
     showsPrec p (IOErrorUser str)      = showString "User-defined IO error:" . showString str
@@ -29,7 +30,9 @@ instance  Show IOError  where
     showsPrec p (IOErrorHSetPosn handle errno)      = errmsg "hSetPosn" handle errno
     showsPrec p (IOErrorHGetBuffering handle errno) = errmsg "hGetBuffering" handle errno
     showsPrec p (IOErrorHSetBuffering handle errno) = errmsg "hSetBuffering" handle errno
-
+    showsPrec p (IOErrorC errno) = showString "IO system error (" .
+                                   shows (fromEnum errno) . showString "): " .
+                                   showString (show errno)
 
     showsType a = showString "IOError"
 

@@ -2,10 +2,11 @@ module Prelude where
 
 import PackedString
 import IO
+import DErrNo
 
 data IOError 
         = IOErrorUser      String 
-        | IOErrorSystem    PackedString Int
+        | IOErrorSystem    PackedString Int	-- error in system() call
         | IOErrorOpen      PackedString PackedString Int
 	| IOErrorEOF       Handle String
         | IOErrorHIsEOF    Handle Int
@@ -16,5 +17,6 @@ data IOError
         | IOErrorHSetPosn  Handle Int
 	| IOErrorHGetBuffering Handle Int        
 	| IOErrorHSetBuffering Handle Int        
+        | IOErrorC         ErrNo		-- error taken from C's errno
 
 

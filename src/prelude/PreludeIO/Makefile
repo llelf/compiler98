@@ -2,14 +2,13 @@ include Makefile.inc
 
 THISLIB = PreludeIO
 
-SRCS	= \
+SRCS	= DErrNo.hs \
 	Eq_IOError.hs    Monad_IO.hs      ReadLn.hs 	\
 	AppendFile.hs    Print.hs         Show_IOError.hs \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
 	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
-	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs	\
-	UnsafePerformIO.hs
+	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
 
 
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
