@@ -9,6 +9,7 @@ import Syntax
 import Extra(mix,mixComma,mixSpace,strChr,strStr)
 import TokenId(TokenId)
 import IntState(IntState,strIS)
+import PackedString (unpackPS)
 
 class StrId a where
   pStd :: IntState -> a -> String
@@ -32,7 +33,7 @@ strAnnots d p annots = mixSpace (map (strAnnot d p) annots)
 strAnnot d p (AnnotArity (pos,ident) int) =
         "{-# ARITY " ++ (pStd p) ident ++ " = " ++ show int ++ "#-}"
 strAnnot d p (AnnotPrimitive (pos,ident) prim) = 
-        "{-# PRIMITIVE " ++ (pStd p) ident ++ " = " ++ show prim ++ "#-}"
+        "{-# PRIMITIVE " ++ (pStd p) ident ++ " = " ++ unpackPS prim ++ "#-}"
 strAnnot d p (AnnotNeed posidents) =
         "{-# NEED " ++ mixSpace (map strNeed posidents) ++ "#-}"
    where strNeed [x] = (pStd p) x
