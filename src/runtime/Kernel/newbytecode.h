@@ -169,6 +169,7 @@
 \
  ins(HPUTC),		\
  ins(HGETC),		\
+ ins(HGETS),		\
 \
  ins(PUSH_CHAR_N1),	\
  ins(PUSH_CHAR_P1),	\

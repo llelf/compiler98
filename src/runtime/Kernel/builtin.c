@@ -82,6 +82,34 @@ DL(PROF_46primUnpackCString)
  DW L(PM_Prelude),L(PP_compiletime),L(PC_Builtin_46primUnpackCString)
 #endif
 
+ AL
+ DB FILL4toWORD 1,0,0,1
+ DW L(CT_hgets)
+  EX L(FN_Builtin_46hgets)
+DL(FN_Builtin_46hgets)
+#ifdef TPROF
+   DW 0		/* DAVID/PH */
+#endif
+ DB NEEDHEAP_I32
+ DB PUSH_ARG_I1
+ DB HGETS
+ DB RETURN
+ DB ENDCODE	/* DAVID */
+
+ AL
+ DW 0
+ DW L(ST_Builtin_46hgets)
+DL(CT_hgets)
+ DW HW(0,1)
+ DW 0
+DL(F0_Builtin_46hgets)
+ DW CAPTAG(FN_Builtin_46hgets,1)
+#ifdef PROFILE
+ DW L(PROF_46hgets), 0, 0, 0
+DL(PROF_46hgets)
+ DW L(PM_Prelude),L(PP_compiletime),L(PC_Builtin_46hgets)
+#endif
+
 #ifndef DBGTRANS
   AL
   EX L(CF_IO_46stdout)
@@ -174,7 +202,7 @@ DL(stdin_nm)
 #ifdef PROFILE
   DW L(PROF_IO_46stdin), 0, 0, 0
 #endif
-  DW L(io_s), 0, L(stdin_s)
+  DW L(io_s), 0, L(stdin_s), 0, 0
 
   EX L(CF_IO_46_95stdout)
 DL(CF_IO_46_95stdout)
@@ -203,7 +231,7 @@ DL(stdout_nm)
 #ifdef PROFILE
   DW L(PROF_IO_46stdout), 0, 0, 0
 #endif
-  DW L(io_s), 0, L(stdout_s)
+  DW L(io_s), 0, L(stdout_s), 0, 0
 
   EX L(CF_IO_46_95stderr)
 DL(CF_IO_46_95stderr)
@@ -232,7 +260,7 @@ DL(stderr_nm)
 #ifdef PROFILE
   DW L(PROF_IO_46stderr), 0, 0, 0
 #endif
-  DW L(io_s), 0, L(stderr_s)
+  DW L(io_s), 0, L(stderr_s), 0, 0
 
 DL(io_s)
   DS "IO"
@@ -337,5 +365,16 @@ DL(PC_Builtin_46primUnpackCString)
 #endif
 DL(ST_Builtin_46primUnpackCString)
   DS "Builtin.primUnpackString"
+  DB 0
+
+#ifdef PROFILE
+  AL
+  EX L(PP_Builtin_46hgets)
+DL(PP_Builtin_46hgets)
+  EX L(PC_Builtin_46hgets)
+DL(PC_Builtin_46hgets)
+#endif
+DL(ST_Builtin_46hgets)
+  DS "Builtin.hgets"
   DB 0
 

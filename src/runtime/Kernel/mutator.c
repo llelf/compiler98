@@ -81,6 +81,8 @@ static SInfo toEnumProfInfo = { "Runtime","<toEnum>","<Enum>"};
 static SInfo string1ProfInfo = { "Runtime","<STRING>","Prelude.Int"};
 static SInfo string2ProfInfo = { "Runtime","<STRING>","<String_VAP>"};
 static SInfo string3ProfInfo = { "Runtime","<STRING>","Prelude.:"};
+static SInfo inpStringProfInfo = { "Runtime","<STRING>","<hGetContents_VAP>"};
+static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
 
 #endif
 
@@ -828,6 +830,67 @@ void run(NodePtr toplevel)
      *--sp = nodeptr;
    } Break;
 
+    Case(HGETS):	/* added MW 2001.02.06 for improved(?) input speed */
+      { 
+	int c;
+     /* ForeignObj *fo; */
+	FileDesc *a;
+
+	nodeptr = *sp++;
+	IND_REMOVE(nodeptr);
+	UPDATE_PROFINFO(nodeptr)
+	a  = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
+	/* fo = (ForeignObj*)(GET_INT_VALUE(nodeptr)); */
+	/* a  = derefForeignObj(fo);                   */
+
+#ifdef PROFILE
+	if(replay) {
+	  if(255==(c=getc(inputFILE)))
+	    if(0==(c=getc(inputFILE))) c = -1;
+	} else
+#endif
+	  c = getc(a->fp);
+#ifdef PROFILE
+	if(record) {
+	  if(c==EOF) {
+	    putc(255,inputFILE);
+	    putc(0,inputFILE);
+	  } if (c==255) {
+	    putc(255,inputFILE);
+	    putc(255,inputFILE);
+	  } else
+	    putc(c,inputFILE);
+	}
+#endif
+
+      /*fprintf(stderr,"HGETS:    c=%d '%c'\n",c,c);*/
+
+        if (c==-1) {
+          nodeptr = GET_NIL();
+        } else {
+       /* MK_CDATA1(hp,(UInt)(fo));         */
+       /* INIT_PROFINFO(hp,&handleProfInfo) */
+       /* nodeptr = hp;                     */
+       /* hp += SIZE_INT;                   */
+
+          MK_VAP1(hp
+                 ,(Node)(C_VAPTAG(PRIM_HGETS))
+                 ,(Node)nodeptr);
+          INIT_PROFINFO(hp,&inpStringProfInfo)
+          nodeptr = hp;
+          hp += SIZE_VAP1;
+
+          MK_CONS(hp
+                 ,(Node)GET_CHAR(c)
+                 ,(Node)nodeptr);
+          INIT_PROFINFO(hp,&string3ProfInfo)
+ 
+          nodeptr = hp;
+          hp += SIZE_CONS;
+        }
+        *--sp = nodeptr;
+      } Break;
+
     Case(HGETC):
       { 
 	int c;
@@ -860,6 +923,7 @@ void run(NodePtr toplevel)
 			     /* but it's OK characters are ints anyway,   */
                              /* and the table includes -1.                */
       } Break;
+
     Case(HPUTC):
       {
 	char c;

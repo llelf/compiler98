@@ -247,6 +247,7 @@ extern Node FN__95Driver_46_95toplevel[];
 extern Node FN__95Driver_46_95driver[];
 extern Node FN_Prelude_46primLeave[];
 extern Node FN_Builtin_46primUnpackCString[];
+extern Node FN_Builtin_46hgets[];
 extern Node FN_Prelude_46_36[];
 extern Node C0_Prelude_46_91_93[];
 extern Node C0_Builtin_46PrimToken[];
@@ -269,6 +270,7 @@ extern Node FN_IOExtras_46unsafePerformIO[];
 #define MAIN ((Node)FN__95Driver_46_95driver)
 #define TOKEN ((Node)C0_Builtin_46PrimToken)
 #define PRIM_STRING ((Node)FN_Builtin_46primUnpackCString)
+#define PRIM_HGETS ((Node)FN_Builtin_46hgets)
 #define PRIM_APPLY ((Node)FN_Prelude_46_36)
 #define CON_TRUE ((Node)C0_Prelude_46True)
 #define CON_FALSE ((Node)C0_Prelude_46False)

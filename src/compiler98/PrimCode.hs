@@ -178,6 +178,8 @@ primExpand pos fun es =
 	  primPrimitive pos (CMP_EQ OpFloat) 2 es
         else if met == rps_eqDouble then
 	  primPrimitive pos (CMP_EQ OpDouble) 2 es
+        else if met == rps_hGetStr then
+	  primPrimitive pos HGETS 1 es
         else if met == rps_hGetChar then
 	  primPrimitive pos HGETC 1 es
         else if met == rps_hPutChar then
@@ -253,6 +255,7 @@ rpsOrOr = impRev "||"
 rpsnot = impRev "not"
 rps_fromEnum = impRev "_fromEnum"
 rps_toEnum = impRev "_toEnum"
+rps_hGetStr  = impRev "_hGetStr"
 rps_hGetChar = impRev "_hGetChar"
 rps_hPutChar = impRev "_hPutChar"
 

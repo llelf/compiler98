@@ -147,17 +147,18 @@
 #define HEAP_I2 143
 #define HPUTC 144
 #define HGETC 145
-#define PUSH_CHAR_N1 146
-#define PUSH_CHAR_P1 147
-#define HEAP_CHAR_N1 148
-#define HEAP_CHAR_P1 149
-#define TABLESWITCH 150
-#define LOOKUPSWITCH 151
-#define MKIORETURN 152
-#define PUSH_ZAP_ARG_I1 153
-#define PUSH_ZAP_ARG_I2 154
-#define PUSH_ZAP_ARG_I3 155
-#define PUSH_ZAP_ARG 156
-#define ENDCODE 157
+#define HGETS 146
+#define PUSH_CHAR_N1 147
+#define PUSH_CHAR_P1 148
+#define HEAP_CHAR_N1 149
+#define HEAP_CHAR_P1 150
+#define TABLESWITCH 151
+#define LOOKUPSWITCH 152
+#define MKIORETURN 153
+#define PUSH_ZAP_ARG_I1 154
+#define PUSH_ZAP_ARG_I2 155
+#define PUSH_ZAP_ARG_I3 156
+#define PUSH_ZAP_ARG 157
+#define ENDCODE 158
 
 #endif

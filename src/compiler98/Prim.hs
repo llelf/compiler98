@@ -36,6 +36,7 @@ data Prim =
     | CHR
     | SEQ
     | STRING   -- NR
+    | HGETS    -- MW
     | HGETC    -- NR
     | HPUTC    -- NR
     -- -- | QUOTREM	-- WITHDRAWN
@@ -75,6 +76,7 @@ strPrim ORD 		= "ORD"
 strPrim CHR 		= "CHR"
 strPrim SEQ 		= "SEQ"
 strPrim STRING 		= "STRING"
+strPrim HGETS 		= "HGETS"
 strPrim HGETC 		= "HGETC"
 strPrim HPUTC 		= "HPUTC"
 

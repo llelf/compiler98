@@ -5,6 +5,7 @@ extern unsigned CF__95Builtin_46hputc_95ok[];
 extern unsigned Start_World[];
 extern unsigned FN_Prelude_46primLeave[];
 extern unsigned FN_Builtin_46primUnpackCString[];
+extern unsigned FN_Builtin_46hgets[];
 extern unsigned CF_IO_46stdout[];
 extern unsigned CF_IO_46stdin[];
 extern unsigned CF_IO_46stderr[];
@@ -17,6 +18,8 @@ extern unsigned CT_primLeave[];
 extern unsigned ST_primLeave[];
 extern unsigned CT_unpackCString[];
 extern unsigned ST_Builtin_46primUnpackCString[];
+extern unsigned CT_hgets[];
+extern unsigned ST_Builtin_46hgets[];
 extern unsigned fo_stdout[];
 extern unsigned fo_stdin[];
 extern unsigned fo_stderr[];
@@ -26,12 +29,15 @@ extern unsigned PP_Prelude_46primLeave[];
 extern unsigned PC_Prelude_46primLeave[];
 extern unsigned PP_Builtin_46primUnpackCString[];
 extern unsigned PC_Builtin_46primUnpackCString[];
+extern unsigned PP_Builtin_46hgets[];
+extern unsigned PC_Builtin_46hgets[];
 
 extern unsigned PROF_primToken[];
 extern unsigned PROF_hputc_ok[];
 extern unsigned PROF_Start_World[];
 extern unsigned PROF_primLeave[];
 extern unsigned PROF_46primUnpackCString[];
+extern unsigned PROF_46hgets[];
 extern unsigned PM_Prelude[];
 extern unsigned PM_IO[];
 extern unsigned PP_compiletime[];
@@ -120,7 +126,6 @@ unsigned F0_Prelude_46primLeave[] = {
 , 0
 #endif
 
-  FILL4toWORD
 , bytes2word(1,0,0,1)
 , useLabel(CT_unpackCString)
 };
@@ -150,6 +155,37 @@ unsigned PROF_46primUnpackCString[] = {
   useLabel(PM_Prelude)
 , useLabel(PP_compiletime)
 , useLabel(PC_Builtin_46primUnpackCString)
+#endif
+
+, bytes2word(1,0,0,1)
+, useLabel(CT_hgets)
+};
+unsigned FN_Builtin_46hgets[] = {
+#ifdef TPROF
+  0,		/* DAVID/PH */
+#endif
+  bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,HGETS,RETURN)
+, bytes2word(ENDCODE,0,0,0)	/* DAVID */
+
+, 0
+, useLabel(ST_Builtin_46hgets)
+};
+unsigned CT_hgets[] = {
+  HW(0,1)
+, 0
+};
+unsigned F0_Builtin_46hgets[] = {
+  CAPTAG(FN_Builtin_46hgets,1)
+#ifdef PROFILE
+, useLabel(PROF_46hgets)
+, 0
+, 0
+, 0
+};
+unsigned PROF_46hgets[] = {
+  useLabel(PM_Prelude)
+, useLabel(PP_compiletime)
+, useLabel(PC_Builtin_46hgets)
 #endif
 
 #ifndef DBGTRANS
@@ -267,6 +303,8 @@ unsigned stdin_nm[] = {
 , useLabel(io_s)
 , 0
 , useLabel(stdin_s)
+, 0
+, 0
 
 };
 unsigned CF_IO_46_95stdout[] = {
@@ -316,6 +354,8 @@ unsigned stdout_nm[] = {
 , useLabel(io_s)
 , 0
 , useLabel(stdout_s)
+, 0
+, 0
 
 };
 unsigned CF_IO_46_95stderr[] = {
@@ -365,6 +405,8 @@ unsigned stderr_nm[] = {
 , useLabel(io_s)
 , 0
 , useLabel(stderr_s)
+, 0
+, 0
 
 };
 unsigned io_s[] = {
@@ -513,4 +555,18 @@ unsigned ST_Builtin_46primUnpackCString[] = {
 , bytes2word('c','k','C','S')
 , bytes2word('t','r','i','n')
 , bytes2word('g',0,0,0)
+
+#ifdef PROFILE
 };
+unsigned PP_Builtin_46hgets[] = {
+};
+unsigned PC_Builtin_46hgets[] = {
+#endif
+};
+unsigned ST_Builtin_46hgets[] = {
+  bytes2word('B','u','i','l')
+, bytes2word('t','i','n','.')
+, bytes2word('h','g','e','t')
+, bytes2word('s',0,0,0)
+};
+
