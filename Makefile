@@ -172,7 +172,6 @@ help:
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "  (other subtargets: compiler runtime prelude profile timeprof tracer hp2graph"
 	@echo "                     compiler-hbc  compiler-ghc  compiler-nhc"
-	@echo "                     tracer-hbc    tracer-ghc    tracer-nhc"
 	@echo "                     hmake-hbc     hmake-ghc     hmake-nhc"
 	@echo "                     greencard-hbc greencard-ghc greencard-nhc)"
 
@@ -185,10 +184,10 @@ basic-nhc: $(PRAGMA) runtime hmake-nhc greencard-nhc compiler-nhc prelude
 basic-hbc: $(PRAGMA) runtime hmake-hbc greencard-hbc compiler-hbc prelude
 basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-gcc:        runtime cprelude cpragma ccompiler cgreencard chmake
-all-nhc: basic-nhc profile tracer-nhc $(TARGDIR)/hood #timeprof
-all-hbc: basic-hbc profile tracer-hbc $(TARGDIR)/hood #timeprof
-all-ghc: basic-ghc profile tracer-ghc $(TARGDIR)/hood #timeprof
-all-gcc: basic-gcc profile tracer-nhc $(TARGDIR)/hood #timeprof
+all-nhc: basic-nhc profile tracer $(TARGDIR)/hood #timeprof
+all-hbc: basic-hbc profile tracer $(TARGDIR)/hood #timeprof
+all-ghc: basic-ghc profile tracer $(TARGDIR)/hood #timeprof
+all-gcc: basic-gcc profile tracer $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
