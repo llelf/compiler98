@@ -152,6 +152,8 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 	 ccompiler cprelude cgreencard cpragma chmake \
 	 tracecompiler-nhc tracecompiler-hbc tracecompiler-ghc
 
+.PHONY: basic all tracer compiler help config install
+
 
 ##### compiler build + install scripts
 
@@ -460,7 +462,7 @@ clean: cleanhi
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
 	rm -f  script/hmake-PRAGMA.o
-	rm -rf $(TARGDIR)/$(MACHINE)/obj*	# all object files
+	rm -rf $(BUILDDIR)/obj*			# all object files
 
 cleanhi:
 	rm -f  script/hmake-PRAGMA.hi
