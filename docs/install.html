@@ -37,18 +37,17 @@ will need to have Java on your PATH.
 <p>
 For the source release, you need the usual C compilation management
 tools (<em>gcc</em>, <em>ar</em>, GNU <em>make</em>, etc.).  To build
-<em>nhc98</em> without another Haskell compiler, you need 8Mb of memory
-(although you could probably manage with less), and about 80Mb of disk
-space (100Mb if you build for profiling as well).  If you
-already have another Haskell compiler, <em>hbc</em> or <em>ghc</em>,
-then building <em>nhc98</em> will require at least 32Mb of memory,
-and 100Mb of free disk space.  If you don't have <em>hbc</em> or
-<em>ghc</em> for your machine, then don't worry, <em>nhc98</em> will
-build quite happily using just a C compiler.  (The basic build is
-much faster, but the resulting compiler will be slower.)  You can
-also build <em>nhc98</em> using an earlier version of <em>nhc98</em>
-if you want, but we don't do that by default because the build time
-can be slow.
+<em>nhc98</em> without another Haskell compiler, you need at least
+16Mb of memory, and about 150Mb of disk space (300Mb if you build for
+all forms of profiling as well).  If you already have another Haskell
+compiler, <em>hbc</em> or <em>ghc</em>, then building <em>nhc98</em>
+will require at least 64Mb of memory, and 300Mb of free disk space.
+If you don't have <em>hbc</em> or <em>ghc</em> for your machine,
+then don't worry, <em>nhc98</em> will build quite happily using just
+a C compiler.  (The basic build is much faster, but the resulting
+compiler will be slower.)  You can also build <em>nhc98</em> using
+an earlier version of <em>nhc98</em> if you want, but we don't do
+that by default because the build time can be slow.
 
 <h3>Download it</h3>
 <p>
@@ -167,7 +166,7 @@ sample build times:
     <td>gcc</td><td align="right">9m</td><td align="right">26m</td>
                 <td align="right">4m</td><td align="right">12m</td>
                 <td align="right">22m</td><td align="right">-</td>
-                <td align="right">9m</td><td align="right">-</td>
+                <td align="right">9m</td><td align="right">26m</td>
 </tr><tr>
     <td>ghc</td><td align="right">31m</td><td align="right">1h11</td>
                 <td align="right">10m</td><td align="right">26m</td>
