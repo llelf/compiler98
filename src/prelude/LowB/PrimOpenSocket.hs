@@ -1,6 +1,6 @@
 module Prelude(cOpenSocket,primOpenSocket,SocketType) where
 
-import IO
+import IO hiding (IO(..))
 import CString
 import DIO
 import DSocket
