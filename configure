@@ -535,8 +535,8 @@ else	# [ "$INSTALL" = "yes" ]
       else echo ' (exists)'
       fi
     fi
-    ( cd $BUILDLIBDIR/$MACHINE/; tar cf - . ) |\
-        ( cd $DESTDIR$LIBDIR/$MACHINE; tar xvf - ) | sed -e 's/^/	/'
+    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . ) |\
+      ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
     # for file in $BUILDLIBDIR/$MACHINE/*
     # do
     #   if [ -f $file ]
@@ -591,6 +591,8 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$BINDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
+    echo "	harch"
+    cp script/harch $DESTDIR$BINDIR
     echo "	nhc98"
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
     ( if [ "$RTSFLAG" = "yes" ];
@@ -605,10 +607,9 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
-    echo "	hat-trail"
-    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
-    sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail
+    echo "	hi"
+    sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo "	hood"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hood.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -616,19 +617,18 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	greencard"
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/greencard-nhc98
-    echo "	hi"
-    sed -e "s|ExecutableDir|$HLIBDIR|" script/hi.inst |\
-    sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hi
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
+    echo "	hat-trail"
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail
     for hattool in $HATTOOLS
-    do  echo " "$hattool
+    do  echo "	"$hattool
         rm -f $DESTDIR$BINDIR/$hattool;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/$hattool
     done
-    echo "	harch"
-    cp script/harch $DESTDIR$BINDIR
     echo
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
