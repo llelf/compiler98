@@ -5,8 +5,8 @@ module Foreign
   ) where
 
 import Maybe (fromJust,isNothing)
-import List (find,isPrefixOf,isSuffixOf,intersperse)
-import PackedString (PackedString,unpackPS)
+import List (isPrefixOf,isSuffixOf,intersperse)
+import PackedString (unpackPS)
 import Syntax
 import Info
 import NT
@@ -30,19 +30,19 @@ data Foreign = Foreign	ImpExp	-- import or export?
 			Res	-- result type
 
 instance Show ImpExp where
-  showsPrec p Imported = showString "import"
-  showsPrec p Exported = showString "export"
+  showsPrec _ Imported = showString "import"
+  showsPrec _ Exported = showString "export"
 
 instance Show Style where
-  showsPrec p Ordinary = showString "ccall"
-  showsPrec p CCast    = showString "cast"
-  showsPrec p Address  = showString "ccall &"
-  showsPrec p FunAddress  = showString "ccall &"
-  showsPrec p Dynamic  = showString "ccall dynamic"
-  showsPrec p Wrapper  = showString "ccall wrapper"
+  showsPrec _ Ordinary = showString "ccall"
+  showsPrec _ CCast    = showString "cast"
+  showsPrec _ Address  = showString "ccall &"
+  showsPrec _ FunAddress  = showString "ccall &"
+  showsPrec _ Dynamic  = showString "ccall dynamic"
+  showsPrec _ Wrapper  = showString "ccall wrapper"
 
 instance Show Foreign where
-  showsPrec p (Foreign ie proto style incl cname hname arity args res) =
+  showsPrec _ (Foreign ie _proto style incl cname hname arity args res) =
     word "foreign" . space . shows ie . space . shows style . space .
     showChar '"' . maybe id (\i-> word i . space) incl . word cname .
     showChar '"' . space .
@@ -58,46 +58,47 @@ data Arg = Int8  | Int16  | Int32  | Int64
          | Unknown String | Unit | HaskellFun [Arg]
 
 instance Show Arg where
-  showsPrec p Int8         = showString "FFI.Int8"
-  showsPrec p Int16        = showString "FFI.Int16"
-  showsPrec p Int32        = showString "FFI.Int32"
-  showsPrec p Int64        = showString "FFI.Int64"
-  showsPrec p Word8        = showString "FFI.Word8"
-  showsPrec p Word16       = showString "FFI.Word16"
-  showsPrec p Word32       = showString "FFI.Word32"
-  showsPrec p Word64       = showString "FFI.Word64"
-  showsPrec p Int          = showString "Prelude.Int"
-  showsPrec p Float        = showString "Prelude.Float"
-  showsPrec p Double       = showString "Prelude.Double"
-  showsPrec p Char         = showString "Prelude.Char"
-  showsPrec p Bool         = showString "Prelude.Bool"
-  showsPrec p Ptr	   = showString "FFI.Ptr"
-  showsPrec p (FunPtr t)   = showString "FFI.FunPtr"
+  showsPrec _ Int8         = showString "FFI.Int8"
+  showsPrec _ Int16        = showString "FFI.Int16"
+  showsPrec _ Int32        = showString "FFI.Int32"
+  showsPrec _ Int64        = showString "FFI.Int64"
+  showsPrec _ Word8        = showString "FFI.Word8"
+  showsPrec _ Word16       = showString "FFI.Word16"
+  showsPrec _ Word32       = showString "FFI.Word32"
+  showsPrec _ Word64       = showString "FFI.Word64"
+  showsPrec _ Int          = showString "Prelude.Int"
+  showsPrec _ Float        = showString "Prelude.Float"
+  showsPrec _ Double       = showString "Prelude.Double"
+  showsPrec _ Char         = showString "Prelude.Char"
+  showsPrec _ Bool         = showString "Prelude.Bool"
+  showsPrec _ Ptr	   = showString "FFI.Ptr"
+  showsPrec _ (FunPtr t)   = showString "FFI.FunPtr"
       . parens (showString (concat (intersperse " -> " (map show t))))
-  showsPrec p StablePtr    = showString "FFI.StablePtr"
-  showsPrec p ForeignPtr   = showString "FFI.ForeignPtr"
-  showsPrec p Addr         = showString "FFI.Addr"		-- deprecated
-  showsPrec p ForeignObj   = showString "FFI.ForeignObj"	-- deprecated
-  showsPrec p Integer      = showString "Prelude.Integer"	-- non-standard
-  showsPrec p PackedString = showString "PackedString.PackedString" -- non-std
-  showsPrec p Unit         = showString "Prelude.()"
-  showsPrec p (HaskellFun as)  =
+  showsPrec _ StablePtr    = showString "FFI.StablePtr"
+  showsPrec _ ForeignPtr   = showString "FFI.ForeignPtr"
+  showsPrec _ Addr         = showString "FFI.Addr"		-- deprecated
+  showsPrec _ ForeignObj   = showString "FFI.ForeignObj"	-- deprecated
+  showsPrec _ Integer      = showString "Prelude.Integer"	-- non-standard
+  showsPrec _ PackedString = showString "PackedString.PackedString" -- non-std
+  showsPrec _ Unit         = showString "Prelude.()"
+  showsPrec _ (HaskellFun as)  =
       parens (showString (concat (intersperse " -> " (map show as))))
-  showsPrec p (Unknown s)  = showString s
+  showsPrec _ (Unknown s)  = showString s
 
 -- Note: as of 2000-10-18, the result can never have an IO type - pure only.
 -- (IO results are created by wrapping auxiliary _mkIOokN around a pure call.)
 type Res = Arg
 
+foreignname, localname, profname :: TokenId -> ShowS
 foreignname hname = showString foreignfun . fixStr (show hname)
-localname hname   = showString fun . fixStr (show hname)
-profname hname    = showString "pf_" . fixStr (show hname)
+localname   hname = showString fun        . fixStr (show hname)
+profname    hname = showString "pf_"      . fixStr (show hname)
 ----
 
 
 toForeign :: AssocTree Int Info -> ForeignMemo
               -> CallConv -> ImpExp -> String -> Int -> Int -> Foreign
-toForeign symboltable memo (Other callconv) ie cname arity var =
+toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var =
     error ("Foreign calling convention \""++callconv++"\" not supported.")
 toForeign symboltable memo callconv ie cname arity var =
     Foreign ie proto style include cfunc hname arity' args res
@@ -135,7 +136,7 @@ parseEntity entity hname =
                           | otherwise = cfunc file style (w:ws)
     cfunc file style []      = (hname, style, file)
     cfunc file style [cname] = (cname, style, file)
-    cfunc file style ws      =
+    cfunc _file _style _ws      =
         error ("Couldn't parse entity string in foreign import: "++entity)
     
 
@@ -155,7 +156,7 @@ searchType style st (arrow,io) info =
                      HaskellFun _ -> HaskellFun (map toTid (toList (head nts)))
                      t        -> t
                | otherwise -> toTid (getNT (isRenamingFor st i))
-    toTid (NTapp t1 t2)   = toTid t1
+    toTid (NTapp t1 _t2)  = toTid t1
     toTid (NTstrict t)    = toTid t
     toTid t = Unknown (show t)  -- error ("Unrecognised NT: "++show t)
 		-- 'Unknown' lets polymorphic heap-values across unmolested
@@ -209,11 +210,11 @@ foreignMemo st =
     check tid (Just info) | cmpTid tid info  = Just (uniqueI info)
                           | otherwise        = Nothing
 	-- If the ident doesn't exist after typecheck, it won't be used!
-    check tid Nothing                        = Just 0
+    check _tid Nothing                       = Just 0
 
 findFirst :: (a->Maybe b) -> [a] -> b
 -- specification:   findFirst = head . catMaybes . map
-findFirst f [] = error "findFirst failed"
+findFirst _ [] = error "findFirst failed"
 findFirst f (x:xs) =
     case f x of
       Just b  -> b
@@ -227,7 +228,7 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
     maybe id
           (\i-> word "#include " . showChar '"' . word i . showChar '"' . nl)
           incl .
-    (if proto then genProto style cname else id) .
+    (if proto then genProto style else id) .
     word "#ifdef PROFILE" . nl .
     word "static SInfo" . space . profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
@@ -252,8 +253,8 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
       cFooter profinfo res .
     closecurly . nl
   where
-    genProto :: Style -> String -> ShowS
-    genProto Ordinary cname =
+    genProto :: Style -> ShowS
+    genProto Ordinary =
       case res of
         FunPtr t ->
           word "extern" . space . cResType (last t)
@@ -263,13 +264,13 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
         _ ->
           word "extern" . space . cResType res . space . word cname
           . parens (listsep comma (map cTypename args)) . semi
-    genProto FunAddress cname =
+    genProto FunAddress =
           word "extern" . space . cResType res . space . word cname
           . parens id . semi
-    genProto CCast   cname = id
-    genProto Address cname = id
-    genProto Dynamic cname = id
-    genProto Wrapper cname = error "foreign import wrapper not yet supported."
+    genProto CCast   = id
+    genProto Address = id
+    genProto Dynamic = id
+    genProto Wrapper = error "foreign import wrapper not yet supported."
 
     cArg a n = indent . cArgDecl a n
     modname  = (reverse . unpackPS . extractM) hname
@@ -289,12 +290,14 @@ strForeign f@(Foreign Exported _ _ _ cname hname arity args res) =
 
 ---- foreign import ----
 
+cArgDecl :: Arg -> Int -> ShowS
 cArgDecl (FunPtr t) n = cResType (last t) . parens (star . narg n)
                         . parens (listsep comma (map cTypename (init t)))
 cArgDecl Unit       n = comment (cTypename Unit . space . narg n)
 cArgDecl arg        n = cTypename arg . space . narg n
 
-cArgDefn Unit n =
+cArgDefn :: Arg -> Int -> ShowS
+cArgDefn Unit _n =
     id
 cArgDefn arg n =
     indent . word "nodeptr = C_GETARG1" . parens (shows n) . semi .
@@ -302,36 +305,43 @@ cArgDefn arg n =
     indent . narg n . showString " = " .
     parens (cTypename arg) . cConvert arg . semi
 
+cResDecl :: Res -> ShowS
 cResDecl (FunPtr t) = indent . cResType (last t) . parens (star . word "result")
                       . parens (listsep comma (map cTypename (init t))) . semi
 cResDecl Unit = id
 cResDecl arg  = indent . cTypename arg . space . word "result" . semi
 
+cCall :: String -> Int -> Res -> ShowS
 cCall cname arity res =
       indent . (case res of
                     Unit -> id
                     _    -> word "result = ") .
       word cname .  parens (listsep comma (map narg [1..arity])) . semi
 
+cCast :: Int -> Res -> ShowS
 cCast arity res =
     if arity /= 1 then
       error ("\"foreign import cast\" has wrong arity.")
     else
       indent . word "result = " . parens (cResType res) . parens (narg 1) . semi
 
+cAddr :: String -> Res -> ShowS
 cAddr cname res =
     indent . word "result = " . parens (cResType res) . word "&" .
     word cname . semi
 
+cFunAddr :: String -> ShowS
 cFunAddr cname =
     indent . word "result = " . word cname . semi
 
+cDynamic :: Int -> Res -> ShowS
 cDynamic arity res =
       indent . (case res of
                     Unit -> id
                     _    -> word "result = ") .
       word "(*arg1)" .  parens (listsep comma (map narg [2..arity])) . semi
 
+cFooter :: ShowS -> Arg -> ShowS
 cFooter profinfo arg =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . profinfo . word ")" . semi .
@@ -340,12 +350,15 @@ cFooter profinfo arg =
 
 ---- foreign export ----
 
+cCodeDecl :: String -> [Arg] -> Res -> ShowS
 cCodeDecl cname args res =
     cResType res . space . word cname . space .
       parens (listsep comma (zipWith cArgDecl args [1..]))
 
+cResType :: Res -> ShowS
 cResType res = cTypename res
 
+hCall :: Int -> TokenId -> [Arg] -> ShowS
 hCall arity hname args =
     indent . word "NodePtr nodeptr, vap, args" . squares (shows arity) . semi .
     indent . word "C_CHECK" .
@@ -355,14 +368,15 @@ hCall arity hname args =
     indent . word "*Hp = " . parens (word "Node") . 
         word "C_VAPTAG" . parens (localname hname) . semi .
     indent . word "Hp += 1+EXTRA" . semi .
-    foldr (.) id (zipWith hArg2 args [1..]) .
+    foldr (.) id (zipWith hArg2 args [1 :: Int ..]) .
     indent . word "nodeptr = evalExport(vap)" . semi .
     indent . word "IND_REMOVE(nodeptr)" . semi
   where 
     hArg1 arg n = indent . word "args" . squares (shows (n-1)) . space .
                   equals . space . hConvert arg (narg n) . semi
-    hArg2 arg n = indent . word "*Hp++ = (Node)args" . squares (shows (n-1)) . semi
+    hArg2 _   n = indent . word "*Hp++ = (Node)args" . squares (shows (n-1)) . semi
 
+hResult :: Res -> ShowS
 hResult Unit = id	-- allow for IO ()
 hResult res  = indent . word "return" . space . cConvert res . semi
 
@@ -394,6 +408,7 @@ cTypename ForeignObj   = word "void*"	-- deprecated
 cTypename PackedString = word "char*"	-- non-standard
 cTypename Integer      = word "NodePtr"	-- non-standard
 cTypename (Unknown _)  = word "NodePtr"	-- for passing Haskell heap values
+-- cTypename x = error ("*** cTypename [" ++ show x ++ "]")
 
 cConvert :: Arg -> ShowS
 cConvert Int          = word "GET_INT_VALUE(nodeptr)"
@@ -446,29 +461,34 @@ hConvert ForeignObj   s =
   warning ("foreign import/export should not return ForeignObj type.\n") s
 hConvert PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
 hConvert Integer      s = s
-hConvert Unit         s = word "nhc_mkUnit()"
+hConvert Unit         _ = word "nhc_mkUnit()"
 hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched
 
-castConvert :: Arg -> ShowS -> ShowS
-castConvert arg s = hConvert arg (parens (cTypename arg) . s)
-
+openparen, closeparen, opencurly, closecurly, semi,
+   nl, space, equals, comma, star, indent :: ShowS
 openparen  = showChar '('
 closeparen = showChar ')'
 opencurly  = showChar '{'
 closecurly = showChar '}'
-parens s   = openparen . s . closeparen
-strquote s = showChar '"' . s . showChar '"'
-squares s  = showChar '[' . s . showChar ']'
 semi       = showChar ';' . nl
 nl         = showChar '\n'
 space      = showChar ' '
 equals     = showChar '='
-word       = showString
 comma      = showChar ','
-dot        = showChar '.'
 star       = showChar '*'
-listsep s x= if length x > 0 then foldr1 (\l r-> l . s . r) x else id
 indent     = space . space
-narg n     = word "arg" . shows n
-comment s  = word "/*" . space . s . space . word "*/"
 
+parens, squares, strquote, comment :: ShowS -> ShowS
+parens   s = openparen . s . closeparen
+squares  s = showChar '[' . s . showChar ']'
+strquote s = showChar '"' . s . showChar '"'
+comment  s = word "/*" . space . s . space . word "*/"
+
+word :: String -> ShowS
+word = showString
+
+narg :: Int -> ShowS
+narg n = word "arg" . shows n
+
+listsep :: ShowS -> [ShowS] -> ShowS
+listsep s x = if length x > 0 then foldr1 (\l r -> l . s . r) x else id
