@@ -388,7 +388,8 @@ nhcDbgTrans flags modidl mrps expFun userDefault tidFun
 
 
 {-
-Translate list comprehensions, do notation, etc, to core.
+Create selectors for record fields.
+(replace DeclConstrs by definitions for the selectors)
 -} 
 nhcRemove :: Flags 
           -> PackedString 
@@ -412,6 +413,8 @@ nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe
 
 
 {- 
+First replace class and instance declarations by their type and method 
+declarations; also fix arity of method definitions.
 Strongly Connected Component analysis 
 -}
 nhcScc :: Flags 
@@ -442,7 +445,8 @@ nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt
 
 
 {- 
-Type inference 
+Type inference.
+Also remove do notation and record expressions.
 -}
 nhcType :: Flags 
         -> [Int] 

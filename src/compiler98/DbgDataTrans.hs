@@ -67,10 +67,20 @@ dTopDecls (DeclsParse ds) =
 
 dTopDecl :: Decl Int -> DbgDataTransMonad [Decl Id]
 
+dTopDecl d@(DeclTypeRenamed pos id) = 
+  lookupName pos id >>>= \(Just (InfoData _ _ _ nt _)) ->
+  dNewType nt >>>= \nt' ->
+  showNT nt >>>= \ntstr ->
+  showNT nt' >>>= \ntpstr ->
+  dTrace ("Type syn  " ++ ntstr ++ " changed to " ++ ntpstr) $
+  updateSynType id nt' >>>
+  unitS [d]
+
+{-
 --dTopDecl d@(DeclType (Simple tid _ _) t) = 
 -- type synonym definitions are removed earlier by the compiler
 -- and replaced by the following annotation
---   not anymore! O.C.
+--   not anymore! so the following equation is probably superfluous
 dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
     lookupName noPos tid >>>= \(Just (InfoData _ _ _ nt _)) ->
     dNewType nt >>>= \nt' ->
@@ -87,6 +97,8 @@ dTopDecl d@(DeclAnnot (DeclIgnore _) [AnnotArity (_, tid) _]) =
 -}
     updateSynType tid nt' >>>
     unitS [DeclIgnore "Type Synonym"]
+-}
+
 {- supperfluous, because DeclData is replaced by DeclConstrs by rename
 dTopDecl (DeclData mb ctx simple constrs tycls) =
   dTrace ("DbgDataTrans.dTopDecl.DeclData") $
@@ -188,7 +200,7 @@ dDecl d@(DeclVarsType vars ctx ty) =
       dCtxType noPos ctx ty >>>= \(ctx', ty') ->
       wrapRT noPos ty' >>>= \ty'' ->
       showVarsType d >>>= \svt1 ->
-      showVarsType (DeclVarsType vars ctx' ty'') >>>= \svt2 ->
+--    showVarsType (DeclVarsType vars ctx' ty'') >>>= \svt2 ->
       let checkForCAF (pos, id) =
             getArity id >>>= \arity ->
             if False {-arity == 0-} {- assumes id is not a caf, wrong? -}
@@ -280,22 +292,22 @@ dExp (ExpList pos es) =
   unitS (ExpList pos) =>>> dExps es
 dExp (ExpVar pos id) = 
   unitS (ExpVar pos id)
-dExp (ExpScc s e) = 
-  error "ExpScc not supported when debugging"
 dExp (ExpDo pos stmts) = 
   dRemoveDo pos stmts
-dExp (ExpFatbar _ _) = 
-  error "ExpFatbar not supported when debugging"
-dExp ExpFail = 
-  error "ExpFail not supported when debugging"
 dExp (ExpRecord _ _) = 
   error "ExpRecord not supported when debugging"
-dExp (ExpInfixList _ _) = 
+dExp (ExpScc s e) = -- never used in compiler
+  error "ExpScc not supported when debugging"
+dExp (ExpFatbar _ _) =  -- never used in compiler
+  error "ExpFatbar not supported when debugging"
+dExp ExpFail = -- never used in compiler
+  error "ExpFail not supported when debugging"
+dExp (ExpInfixList _ _) = -- doesn't exist here anymore
   error "ExpInfixList not supported when debugging"
-dExp (ExpVarOp _ _) = 
+dExp (ExpVarOp _ _) =  -- doesn't exist here anymore
   error "ExpVarOp not supported when debugging"
-dExp (ExpConOp _ _) 
-  = error "ExpConOp not supported when debugging"
+dExp (ExpConOp _ _) = -- doesn't exist here anymore
+  error "ExpConOp not supported when debugging"
 dExp e = unitS e
 
 
@@ -374,7 +386,8 @@ Type translating functions
 -}
 
 {-
-Translate a type. All entities are wrapped in the RT type
+Translate a type. Only modifies all embedded funtion types:
+  t1 -> t2  ==> Trace -> (R t1 -> R t2)
 -}
 dType :: Type Id -> DbgDataTransMonad (Type Id)
 
@@ -405,6 +418,7 @@ wrapRTtvars pos =
   unitS (\(t, tvs) -> (TypeCons pos rid [t], tvs))
 -}
 
+{- wrap data constructor R around given type. -}
 wrapRT :: Pos -> Type Id -> DbgDataTransMonad (Type Id)
 
 wrapRT pos t =
@@ -414,7 +428,7 @@ wrapRT pos t =
 
 {-
 Translate a type with context. 
-All type entities are wrapped in the RT type.
+All embedded funtion types are transformed.
 Context is left unchanged.
 -}
 dCtxType :: Pos -> a -> Type Id -> DbgDataTransMonad (a,Type Id)
@@ -459,10 +473,12 @@ dNT t =
     lookupId TCon t_Arrow >>>= \arrow ->
     lookupId TCon tTrace >>>= \trail ->
     lookupId TCon tR >>>= \rt ->
+{- superfluous
     lookupId TCon t_List >>>= \bilist ->
     lookupId TCon tList >>>= \list ->
     lookupId TSyn tString >>>= \string ->
     lookupId TCon tRString >>>= \rstring ->
+-}
     let dt (NTcons id ts) = 
             mapS dt ts >>>= \ts' ->
 	    if id == arrow then
@@ -481,6 +497,7 @@ dNT t =
     in  dt t 
 
 
+{- Wrap type constructor R around given type. -}
 wrapNTRT :: NT -> DbgDataTransMonad NT
 
 wrapNTRT nt =
@@ -500,6 +517,7 @@ wrapRNewType (NewType free exist ctxs ts) =
            (reverse (map (\t -> NTcons rt [t]) rts) ++ [t]))
 
 
+{- t  ==> SR -> (Trace -> R t) -}
 topLevelNT :: NT -> DbgDataTransMonad NT
 
 topLevelNT nt =
@@ -615,7 +633,7 @@ showNT (NewType free exist ctxs nts)  =
      ++ mixSpace (map (niceNT Nothing state al) nts), s)
   where 
   al = arg ++ zip (map snd ctxs) (map (('_':).(:[])) ['a'..'z']) 
-       -- a-z is to short!
+       -- a-z is too short!
   arg = mkAL free
 
 
@@ -663,6 +681,8 @@ updateClassType i tid ie nt ms ds at =
     let st' = updateAT st i (\_ -> InfoClass i tid ie nt ms ds at) in
     Threaded (IntState unique rps st' errors) constrs
 
+
+updateSynType :: Id -> NewType -> a -> Threaded -> Threaded
 
 updateSynType tid nt = 
   \inh (Threaded (IntState unique rps st errors) constrs) ->

@@ -4,7 +4,10 @@ import Extra(Pos(..),mixComma,mixSpace)
 import PPLib
 import Syntax
 import StrSyntax
-import IntState(IntState)
+import IntState(IntState,lookupIS)
+import Nice(niceInt,niceNT,mkAL)
+import Info(Info(InfoData))
+import NT(NewType(NewType))
 
 
 {-
@@ -56,8 +59,20 @@ ppDepend d p (DeclsNoRec decl)  =
 ppDepend d p (DeclsRec   decls) =
   pp "--     recursive" `nl` ppVertSemi (map (ppDecl d p) decls)
 
+
+--ppDecl :: (StrId a, Show a) => Bool -> IntState -> Decl a -> Doc
+
 ppDecl d p (DeclType s t) =
   pp ("type " ++ strTypeSimple d p s ++ " = " ++ strType d p t)
+
+ppDecl d p (DeclTypeRenamed pos tyconid) =
+  pp ("type " ++ niceInt Nothing p tyconid (' ' : mixSpace (map snd al)) ++ 
+        " = " ++ niceNT Nothing p al nt)
+  where
+  Just (InfoData _ _ _ newType _) = lookupIS p tyconid
+  NewType univQuantTyVars _ _ [nt] = newType
+  al = mkAL univQuantTyVars
+
 ppDecl d p (DeclDataPrim pos conid size) =
   pp ("data primitive " ++ ppPos d pos ++ (pStd p) conid ++ " = " ++ show size)
 ppDecl d p (DeclData dk ctxs s [] ds) =
@@ -153,6 +168,9 @@ ppStmt d p (StmtLet ds) =
 ppPat x = ppExp x
  
 ppPos d pos = if d then "{"++show pos++"}" else ""
+
+
+ppExp :: (StrId a, Show a) => Bool -> IntState -> Exp a -> Doc
 
 ppExp d p (ExpLambda    pos pats e) =
   pp (ppPos d pos ++ "(\\ ") `cl` 

@@ -3,7 +3,20 @@ module Syntax(module Syntax, Pos(..){-,PackedString-},TokenId) where
 import Extra(Pos(..),strChr,strStr)
 import PackedString(PackedString)
 import TokenId(TokenId)
+import Id(Id)
 import Ratio
+
+{-
+Note that that some syntactic constructs contain the syntactic construct 
+"Type". However, the rename pass replaces this representation by the internal
+type representation "NewType" and "NT". So the syntactic constructs that
+use "Type" are removed by the renaming pass or the type representation is only
+half translated (TokenId -> Id). Are the latter still used later?
+
+It probably would have been better if the whole syntax had been paramterised
+with respect to the type representation; but such an additional parameter 
+would also be tiresome.
+-}
 
 data Module id =
 --     module modid [export] where { impdecls; fixdecls; topdecls }
@@ -72,8 +85,12 @@ data DeclsDepend id =
      | DeclsRec   [Decl id]
 
 data Decl id =
-       -- type   simple  = type
        DeclType (Simple id) (Type id)
+       -- for type synonym: type   simple  = type
+     | DeclTypeRenamed Pos Id
+       -- renamer replaces DeclType by this.
+       -- the type is in the symbol table, referenced by Id
+
        -- {Nothing = newtype, Just False = data, Just True = data unboxed}
        -- context => simple = constrs 
        -- deriving (tycls)
@@ -112,9 +129,10 @@ data Decl id =
      | DeclFixity (FixDecl id)
 
 
-data ClassCode ctx id =
-   CodeClass Pos id 		   -- cls
- | CodeInstance Pos id id [id] [ctx] [id]  -- cls typ arg ctxs methods
+data ClassCode ctx id = -- introduced by RmClasses
+   CodeClass Pos id  -- class id
+ | CodeInstance Pos id id [id] [ctx] [id]  
+   -- class id, typ id, args, ctxs, method ids
 
 
 data Annot id = AnnotArity (Pos,id) Int
@@ -167,27 +185,33 @@ data Stmt id =
   | StmtBind (Exp id) (Exp id)	-- pat <- exp
   | StmtLet (Decls id)		-- let { decls ; }
 
-data Exp id =
-      ExpScc            String (Exp id)
+
+type Pat id = Exp id
+
+data Exp id =  -- used both for expressions and patterns
+      ExpScc            String (Exp id) 
+      -- ^ never used! should probably be removed
     | ExpDict           (Exp id)         -- hack to mark dictionary arguments
     | ExpLambda         Pos [(Pat id)] (Exp id)  -- \ pat ... pat -> exp
     | ExpLet            Pos (Decls id) (Exp id)  -- let { decls ; } in exp
     | ExpDo             Pos [Stmt id]            -- do { stmts ; }
     | ExpCase           Pos (Exp id) [Alt id]    -- case exp of { alts; }
     | ExpFatbar         (Exp id) (Exp id)
+      -- ^ never used! should probably be removed
     | ExpFail
+      -- ^ never used! should probably be removed
     | ExpIf             Pos (Exp id) (Exp id) (Exp id) 	
                         -- if exp then exp else exp
     | ExpType           Pos (Exp id) [Context id] (Type id)
                         -- exp :: context => type
---- Above only in expressions
+--- Above only in expressions, not in patterns
     | ExpRecord	        (Exp id) [Field id]
     | ExpApplication    Pos [Exp id]
-    | ExpInfixList      Pos [Exp id] -- Temporary removed during rename
     | ExpVar            Pos id
     | ExpCon            Pos id
-    | ExpVarOp          Pos id
-    | ExpConOp          Pos id
+    | ExpInfixList      Pos [Exp id] -- Temporary, introduced by parser because
+    | ExpVarOp          Pos id       -- it does not know precedence and 
+    | ExpConOp          Pos id       -- associativity; removed by rename
     | ExpLit            Pos (Lit Boxed)
     | ExpList           Pos [Exp id]
 --- after typechecker
@@ -255,7 +279,6 @@ data Qual id =
 --	 let decls
     | QualLet (Decls id)
 
-type Pat id = Exp id
 
 --------------------
 

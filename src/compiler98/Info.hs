@@ -97,7 +97,7 @@ data Info =
   | InfoField     -- field name
                   Id           -- unique
                   TokenId      -- token for name
-                  [(Id,Int)]   -- icon_offs
+                  [(Id,Int)]   -- [(data constructor, offset for this constr.)]
                   Id           -- iData
                   Id           -- iSel	
                   -- unique tid [(constructor,offset)] type selector
@@ -225,6 +225,12 @@ depthI (InfoData   unique tid exp nt dk) =
 	(DataTypeSynonym unboxed depth) -> Just depth
 	_ -> Nothing
 depthI _ = Nothing
+
+
+typeSynonymBodyI :: Info -> Maybe NewType
+
+typeSynonymBodyI (InfoData _ _ _ nt (DataTypeSynonym _ _)) = Just nt
+typeSynonymBodyI _ = Nothing
 
 
 updTypeSynonym :: Bool -> Int -> Info -> Info

@@ -1,6 +1,6 @@
 {- ---------------------------------------------------------------------------
-Functions to convert an identifier (either TokenId or Unique) into a
-printable string.
+Functions to convert an identifier (either TokenId or Unique) 
+or a simple syntactic construct into a printable string.
 -}
 module StrSyntax where
 
@@ -8,6 +8,7 @@ import Lex
 import Syntax
 import Extra(mix,mixComma,mixSpace,strChr,strStr)
 import TokenId(TokenId)
+import Id(Id)
 import IntState(IntState,strIS)
 import PackedString (unpackPS)
 
@@ -22,7 +23,7 @@ instance StrId TokenId where  -- state is error here!
   pType b state pos tid [] = show tid
   pType b state pos tid ts = "(" ++ show tid ++ " " ++ mixSpace (map (strType b state) ts) ++ ")"
 
-instance StrId Int where
+instance StrId Int {-Id-} where
   pStd state i = strIS state i
   pFix state i = strIS state i
   pType b state pos i [] = strIS state i
@@ -113,13 +114,16 @@ strContexts d p cxs  = " (" ++ mixComma (map (strContext d p) cxs) ++ ") => "
 strContext d p (Context pos c (_,v)) =
         (pStd p) c ++ " " ++  't':show v
 
-strSimple d p (Simple pos id ids) = pStd p id ++ " " ++ mixSpace (map ((pStd p).snd) ids)
-strTypeSimple d p (Simple pos id ids) = pStd p id ++ " " ++ mixSpace (map (('t':).show.snd) ids)
+strSimple d p (Simple pos id ids) = 
+  pStd p id ++ " " ++ mixSpace (map ((pStd p).snd) ids)
+strTypeSimple d p (Simple pos id ids) = 
+  pStd p id ++ " " ++ mixSpace (map (('t':).show.snd) ids)
 
 strInst d p t = strType d p t
 
 
 strVarsType d p (DeclVarsType ids cxs t) =
-        mixComma (map ((pStd p).snd) ids) ++ " :: " ++ strContexts d p cxs ++ strType d p t
+  mixComma (map ((pStd p).snd) ids) ++ " :: " ++ strContexts d p cxs 
+    ++ strType d p t
 
 {- End Module StrSyntax -----------------------------------------------------}

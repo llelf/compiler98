@@ -1,11 +1,12 @@
 module IExtract
-	( countArrows, defFixity, defFixFun, fixFun, fixOne, freeType
-	, iextractClass
-	, iextractData, iextractDataPrim, iextractInstance, iextractType, iextractVarsType
-	, needFixity, tvPosTids, tvTids
-	-- re-exported from ImportState
-	, getNeedIS,putModidIS
-	) where
+  ( countArrows, defFixity, defFixFun, fixFun, fixOne, freeType
+  , iextractClass
+  , iextractData, iextractDataPrim, iextractInstance, iextractType
+  , iextractVarsType
+  , needFixity, tvrPosTids, tvPosTids, tvTids
+    -- re-exported from ImportState
+  , getNeedIS,putModidIS
+  ) where
 
 import List
 import TokenId(TokenId(..),t_Arrow,t_Tuple,ensureM,dropM,forceM,rpsPrelude)
@@ -417,14 +418,26 @@ transType free (TypeStrict pos typ)    = unitS NTstrict =>>>  transType free typ
 
 -----
 
+{- 
+Number identifiers, beginning with 1.;
+return renaming mapping and renamed list 
+-}
+
+tvrPosTids :: [(Pos,TokenId)] -> ([(TokenId,Id)], [(Pos, Id)])
+
+tvrPosTids tv = (tvTids tokens, zip positions [1..])
+  where
+  (positions, tokens) = unzip tv
+
+
 {- Number identifiers, beginning with 1. First drop positions. -}
-tvPosTids :: [(Pos,TokenId)] -> [(TokenId,Int)]
+tvPosTids :: [(Pos,TokenId)] -> [(TokenId,Id)]
 
 tvPosTids tv = tvTids (map snd tv)
 
 
 {- Number identifiers, beginning with 1. -}
-tvTids :: [TokenId] -> [(TokenId,Int)]
+tvTids :: [TokenId] -> [(TokenId,Id)]
 
 tvTids tv = zip tv [1..] 
 

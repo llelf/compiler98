@@ -1,4 +1,14 @@
-module TypeLib where
+{- ---------------------------------------------------------------------------
+Various functions for type checking:
+- error messages
+...
+-}
+module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
+               ,typeIdentDict,debugTranslating,getIdent,getTypeErrors,typeError
+               ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
+               ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
+               ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK
+               ,newIdent,getState,typeOfMain) where
 
 import Memo
 import NT
@@ -23,6 +33,8 @@ import Error
 import Nice
 import Bind(identPat)
 import PrimCode({-rpsEval,-}rpsseq)
+
+import Extra(trace)
 
 msgPat pat err =
   "Type error " ++ err ++ "\nwhen unifying pattern at " ++ strPos (getPos pat) ++ " with its expression.\n"
@@ -54,6 +66,9 @@ msgIf exp1 exp2 err =
 
 msgLit pos typ err no =
   "Type error " ++ err ++ "\nwhen processing overloaded " ++ typ ++ " at " ++ strPos pos ++ ".\n"
+
+
+msgApply :: HasPos a => [a] -> String -> Int -> String
 
 msgApply es err no =
   "Type error " ++ err ++ "\nwhen trying to apply function at " ++  (strPos . getPos . head) es ++ " to its " 
@@ -122,12 +137,34 @@ typeOfMain flags tidFun (DeclsScc depends) state =
    findMain (d:ds) = findMain ds
 
 
-typeUnify errFun t1 t2  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
-      case unify state phi (t1,t2) of
-        Right phi -> let t1' = subst phi t1 in seq t1' (t1',TypeState state phi ctxs ectxsi)
-        Left  (phi,str) ->
-          case uniqueIS state of
-            (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs ectxsi)
+typeUnify :: ShowS -> NT -> NT -> TypeDown -> TypeState -> (NT,TypeState)
+
+typeUnify errFun t1 t2  
+  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) 
+  up@(TypeState state phi ctxs ectxsi) =
+    {-
+    trace ("\n\n1: " ++ 
+           niceNT Nothing state (map (\x -> (x, 'a':show x)) [1..]) t1) $
+    trace ("\n\n2: " ++ 
+           niceNT Nothing state (map (\x -> (x, 'a':show x)) [1..]) t2) $
+    -}
+    case unify state phi (t1,t2) of
+      Right phi' -> let t1' = subst phi t1 in 
+                      {-
+                      trace ("\n\n3: " ++ 
+                             niceNT Nothing state 
+                               (map (\x -> (x, 'a':show x)) [1..]) t1') $
+                      -}
+                      seq t1' (t1',TypeState state phi' ctxs ectxsi)
+      Left  (phi',str) ->
+        case uniqueIS state of
+          (unique,state) -> 
+             (NTany unique  -- new type variable as result to continue
+                            -- despite error
+             ,TypeState (addError state (errFun str)) phi' ctxs ectxsi)
+
+
+typeUnifyMany :: ShowS -> [NT] -> TypeDown -> TypeState -> (NT,TypeState)
 
 typeUnifyMany errFun []  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
   case uniqueIS state of
@@ -138,6 +175,11 @@ typeUnifyMany errFun ts@(t:_) down@(TypeDown env tidFun defaults ctxDict envDict
         Left  (phi,str) ->
           case uniqueIS state of
             (unique,state) -> (NTany unique,TypeState (addError state (errFun str)) phi ctxs ectxsi)
+
+
+typeUnifyApply :: (String -> Int -> String) 
+               -> [NT] 
+               -> TypeDown -> TypeState -> (NT,TypeState)
 
 typeUnifyApply errFun (f:xs)  down@(TypeDown env tidFun defaults ctxDict envDict dbgtrans) up@(TypeState state phi ctxs ectxsi) =
   seq nextTvar (unifyApply state phi f (zip [1 .. ] xs))

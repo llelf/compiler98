@@ -34,15 +34,15 @@ import Id(Id)
 data RenameState =
       RenameState
         Flags				-- flags
-	Int				-- unique
-	(Int,PackedString)		-- modid
-	[AssocTree (TokenId,IdKind) Int] -- stack of rename (name -> unique)
-	(AssocTree (TokenId,IdKind) Int) -- active rename (name	-> unique)
-	(AssocTree Int Info)		-- symboltable (unique -> info)
-	[(Int,[(Pos,Int)])]		-- derived   [(con,[(pos,cls)])]
-	(Maybe [Int])			-- defaults
+	Id				-- unique
+	(Id,PackedString)		-- modid
+	[AssocTree (TokenId,IdKind) Id] -- stack of rename (name -> unique)
+	(AssocTree (TokenId,IdKind) Id) -- active rename (name	-> unique)
+	(AssocTree Id Info)		-- symboltable (unique -> info)
+	[(Id,[(Pos,Id)])]		-- derived   [(con,[(pos,cls)])]
+	(Maybe [Id])			-- defaults
 	[String]			-- errors
-	[Int]				-- type Synonyms
+	[Id]				-- type Synonyms
 
 --- The selectors for (qualFun,expFun,fixity) are defined
 --- in PreImp and used here and in Fixity
@@ -55,7 +55,18 @@ type RenameToken = (PackedString -> Int -> TokenId -> TokenId
                    ,TokenId -> (InfixClass TokenId,Int)
                    ) 
 
+type RenameToken2 = (PackedString -> Int -> TokenId -> TokenId
+                   ,TokenId -> TokenId
+                   ,TokenId -> IdKind -> IE
+                   ) 
+
 type RenameMonad a = State RenameToken RenameState a RenameState
+
+type RenameRMonad a b = State a RenameState b RenameState
+
+type RenameMonadEmpty = State0 RenameToken RenameState RenameState
+
+type RenameRMonadEmpty a = State0 a RenameState RenameState
 
 {-
 Destruct rename state to obtain all its elements we are interested in.
@@ -347,7 +358,7 @@ popScope _
   ,RenameState flags unique rps rts rt st derived defaults errors needCheck)
 
 
-renameError :: String -> a -> b -> RenameState -> (a,RenameState)
+renameError :: String -> a -> RenameMonad a
 
 renameError err r fix 
   (RenameState flags unique rps rst rt st derived defaults errors needCheck) =
@@ -454,7 +465,7 @@ bindTid pos kind tid _
 			      needCheck)
 
 
-bindNK :: Pos -> a -> RenameState -> (TokenId,RenameState)
+bindNK :: Pos -> RenameMonad TokenId
 
 bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) =
   let tid = visible (show unique)
@@ -494,7 +505,7 @@ checkPuns pos down renameState@(RenameState flags unique irps rts rt st derived 
 Checks if given identifier (kind, token) is already known as active name.
 It is used to check if a field have already been included in the bindings
 -}
-checkTid :: a -> IdKind -> TokenId -> b -> RenameState -> (Bool,RenameState)
+checkTid :: Pos -> IdKind -> TokenId -> RenameRMonad a Bool
 
 checkTid pos kind tid _ 
   renameState@(RenameState flags unique rps rts rt st derived defaults 
@@ -513,7 +524,7 @@ transTypes :: [(TokenId,Int)]
            -> [Id] 
            -> [Context TokenId] 
            -> [Type TokenId]
-           -> State RenameToken RenameState NewType RenameState 
+           -> RenameMonad NewType
 
 transTypes al free ctxs ts =
   unitS (NewType free []) =>>> 
@@ -533,12 +544,7 @@ transContext al (Context pos cid (vpos,vid)) =
   unitS pair =>>> uniqueTid pos TClass cid =>>> uniqueTVar vpos al vid
 
 
-transType :: [(TokenId,Int)] 
-          -> Type TokenId
-          -> (PackedString -> Int -> TokenId -> TokenId,TokenId -> TokenId
-             ,TokenId -> IdKind -> IE,TokenId -> (InfixClass TokenId,Int)) 
-          -> RenameState 
-          -> (NT,RenameState)
+transType :: [(TokenId,Int)] -> Type TokenId -> RenameMonad NT
 
 transType al (TypeApp  t1 t2) = 
   unitS NTapp =>>> transType al t1 =>>> transType al t2
@@ -580,9 +586,7 @@ Add a type synonym to symboltable. (It must be already in renaming table.)
 
 defineType :: TokenId      {- type synonym -}
            -> NewType      {- the type it is defined to denote -}
-           -> RenameToken
-           -> RenameState 
-           -> RenameState
+           -> RenameMonad Id  -- id of the type synonym
 
 defineType tid nt down 
   (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
@@ -590,11 +594,11 @@ defineType tid nt down
   let realtid = ensureM rps tid
       key = (tid,TSyn)
   in case lookupAT rt key of
-       Just u -> RenameState flags unique irps rts rt
-		   (addAT st combInfo u {-(realtid,TSyn)-} 
-                      (InfoData u realtid (sExp down tid TSyn) nt 
-                         (DataTypeSynonym False 0)))
-		   derived defaults errors (u:needCheck)
+       Just u -> (u, RenameState flags unique irps rts rt
+		     (addAT st combInfo u {-(realtid,TSyn)-} 
+                        (InfoData u realtid (sExp down tid TSyn) nt 
+                           (DataTypeSynonym False 0)))
+		     derived defaults errors (u:needCheck))
 
 
 {- 
@@ -631,8 +635,7 @@ defineClass pos tid nt mds down
                (err:errors) needCheck
 
 
-defineDataPrim :: TokenId -> NewType -> Int 
-               -> State RenameToken RenameState Id RenameState
+defineDataPrim :: TokenId -> NewType -> Int -> RenameMonad Id 
 
 defineDataPrim tid nt size down 
   (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
@@ -655,7 +658,7 @@ defineData :: Maybe Bool {- Nothing: newtype, Just False: data unboxed,
            -> TokenId    {- type constructor -}
            -> NewType    {- defined type (coded with type variables) -}
            -> [Id]       {- data constructors -} 
-           -> State RenameToken RenameState Id RenameState
+           -> RenameMonad Id
 
 defineData d tid nt cs down 
   (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors 
@@ -684,7 +687,7 @@ defineMethod :: Pos {- position of type declaration -}
              -> NewType {- method type -}
              -> Int {- method arity -} 
              -> Id {- class to which method belongs -} 
-             -> State RenameToken RenameState Id RenameState
+             -> RenameMonad Id
 
 defineMethod  pos tid nt arity classId down 
   (RenameState flags unique irps@(_,rps) rts rt st derived defaults 
@@ -760,19 +763,12 @@ localTid rps u tid = mkQual3 (Visible rps) (t_Tuple u) tid
 
 
 {- if token is not qualified make it qualified with given module name -}
-globalTid :: PackedString -> a -> TokenId -> TokenId
+globalTid :: PackedString -> Id -> TokenId -> TokenId
 
 globalTid rps u tid = ensureM rps tid
 
 
-defineVar :: TokenId 
-          -> (PackedString -> Int -> TokenId -> TokenId
-             ,a
-             ,TokenId -> IdKind -> IE
-             ,TokenId -> (InfixClass TokenId,Int)
-             ) 
-          -> RenameState 
-          -> (Id,RenameState)
+defineVar :: TokenId -> RenameMonad Id
 
 defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let key = (tid,Var)
@@ -785,7 +781,7 @@ defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st derived def
 				 derived defaults errors needCheck)
 
 
-defineDefaultMethod :: TokenId -> a -> RenameState -> (Id,RenameState)
+defineDefaultMethod :: TokenId -> RenameMonad Id
 
 defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let realtid = mkQualD rps tid
@@ -801,7 +797,7 @@ defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st d
 			 derived defaults errors needCheck)
 
 
-defineInstMethod :: TokenId -> a -> RenameState -> (Id,RenameState)
+defineInstMethod :: TokenId -> RenameMonad Id
 
 defineInstMethod tid  down (RenameState flags unique irps@(_,rps) rts rt st derived defaults errors needCheck) = 
   let realtid = mkQual2 (t_Tuple unique) (ensureM rps tid)

@@ -19,6 +19,8 @@ import State
 import AssocTree
 import PackedString(PackedString, unpackPS, packString)
 import Id(Id)
+import TypeUnify(expand)
+import Info(typeSynonymBodyI)
 
 
 {- table for source references and identifiers refered to from the trace -}
@@ -45,6 +47,13 @@ data Threaded = Threaded
 
 type DbgTransMonad a = State Inherited Threaded a Threaded
 
+
+{- obtain the internal state -}
+
+getIntState :: DbgTransMonad IntState
+
+getIntState inherited threaded@(Threaded intState _ _) = (intState,threaded)
+ 
 
 {-
 Used to add the special prelude for debugging to the import list.
@@ -138,6 +147,7 @@ dDecls (DeclsParse ds) =
 
 dDecl :: Decl Id -> DbgTransMonad [Decl Id]
 
+dDecl d@(DeclTypeRenamed _ _) = unitS [d]
 dDecl d@(DeclDefault tys) = unitS [d]
 dDecl d@(DeclVarsType vars ctx ty) = unitS [d] 
 dDecl (DeclPat (Alt pat [(g, e)] decls)) =
@@ -192,11 +202,13 @@ dDecl d@(DeclFun pos id fundefs) =
     if isCMethod info then
       dMethod info pos id funName fundefs
     else
+      getIntState >>>= \intState ->
       let arity = getArity fundefs
       in case arity of
-           0 -> dCaf pos id funName fundefs (unwrapNT 0 True (ntI info))
+           0 -> dCaf pos id funName fundefs 
+                  (unwrapNT intState 0 True (ntI info))
            _ -> dFun pos id funName arity fundefs 
-                  (unwrapNT arity False (ntI info))
+                  (unwrapNT intState arity False (ntI info))
 dDecl d@(DeclIgnore _) = unitS [d]
 dDecl d@(DeclError _) = unitS [d]
 dDecl d@(DeclAnnot _ _) = unitS [d]
@@ -330,38 +342,47 @@ dFun :: Pos -> Id -> String -> Int -> [Fun Id] -> NewType
      -> DbgTransMonad [Decl Int]
    
 dFun pos id funName arity fundefs nt =
-    lookupVar pos (t_fun arity) >>>= \fun ->
-    lookupCon pos tNTId >>>= \ntid ->
-    setArity 2 id >>>
-    newVar pos >>>= \redex ->
-    newVar pos >>>= \sr ->
-    -- buildFun pos id (arity+1) [redex] funName fun redex fundefs
-    addNewName (arity+1) True funName nt >>>= \wrappedfun ->	    
-    newVars pos (arity+1) >>>= \(newredex:fp) ->
-    setD newredex >=>
-    lookupId Con tTrue >>>= \true ->
-    lookupId Var t_otherwise >>>= \otherwise ->
-    checkPrimitive fundefs >>>= \prim ->
-    (case prim of
-        Nothing -> dFunClauses funName true otherwise fundefs
---        Nothing -> mapS dFunClause fundefs
-        Just fundefs -> unitS (fundefs, [])
---        Just fundefs -> unitS (fundefs)
-    ) >>>= \(fundefs', newdecls) ->
---    ) >>>= \(fundefs') ->
-    mkFailExpr pos >>>= \fpexp ->
-    noGuard >>>= \ng ->
-    let fpclause = Fun (newredex:fp) [(ng, fpexp)] (DeclsParse [])
-    in unitS ([DeclFun pos id [Fun [sr, redex]
-                                  [(ng, 
-                                    ExpApplication pos 
-				        [fun,
-					 ExpApplication pos 
-					     [ntid, ExpLit pos (LitInt Boxed id)],
-					 --eStr pos (stripPrelude funName),
-					 ExpVar pos wrappedfun, sr, redex])]
-				  (DeclsParse [DeclFun pos wrappedfun (fundefs'++[fpclause])])]] ++ newdecls)
---				  (DeclsParse [DeclFun pos wrappedfun (fundefs'++[fpclause])])]])
+  lookupVar pos (t_fun arity) >>>= \fun ->
+  lookupCon pos tNTId >>>= \ntid ->
+  setArity 2 id >>>
+  newVar pos >>>= \redex ->
+  newVar pos >>>= \sr ->
+  -- buildFun pos id (arity+1) [redex] funName fun redex fundefs
+  addNewName (arity+1) True funName nt >>>= \wrappedfun ->	    
+  newVars pos (arity+1) >>>= \(newredex:fp) ->
+  setD newredex >=>
+  lookupId Con tTrue >>>= \true ->
+  lookupId Var t_otherwise >>>= \otherwise ->
+  checkPrimitive fundefs >>>= \prim ->
+  (case prim of
+    Nothing -> dFunClauses funName true otherwise fundefs
+--  Nothing -> mapS dFunClause fundefs
+    Just fundefs -> unitS (fundefs, [])
+--  Just fundefs -> unitS (fundefs)
+  ) >>>= \(fundefs', newdecls) ->
+--) >>>= \(fundefs') ->
+  mkFailExpr pos >>>= \fpexp ->
+  noGuard >>>= \ng ->
+  let fpclause = Fun (newredex:fp) [(ng, fpexp)] (DeclsParse [])
+  in unitS ([DeclFun pos id [Fun [sr, redex]
+       [(ng 
+        ,ExpApplication pos 
+	   [fun
+	   ,ExpApplication pos 
+	      [ntid, ExpLit pos (LitInt Boxed id)]
+		     --eStr pos (stripPrelude funName),
+	   ,ExpVar pos wrappedfun, sr, redex]
+       )]
+       (DeclsParse (prependTypeSigIfExists pos wrappedfun
+                   [DeclFun pos wrappedfun (fundefs'++[fpclause])]))]
+      ] ++ newdecls)
+--     (DeclsParse [DeclFun pos wrappedfun (fundefs'++[fpclause])])]])
+  where
+  --prependTypeSigIfExists :: Pos -> Id -> ([Decl Id] -> [Decl Id])
+  prependTypeSigIfExists pos wrappedFun =
+    case nt of
+      NoType -> \x->x
+      _      -> (DeclIgnore "Type signature" :)
 
 
 {-
@@ -456,6 +477,9 @@ dPrim pos id id' arity =
                     , ExpVar pos id', sr, redex])]
                (DeclsParse []))
 
+
+dGuardedExprs :: [(Exp Id,Exp Id)] -> DbgTransMonad (Exp Id)
+
 dGuardedExprs [] = 
     getFail >>>= \fail ->
     newVar noPos >>>= \t ->
@@ -471,8 +495,14 @@ dGuardedExprs ((g, e):ges) =
     makeSourceRef pos >>>= \sr ->
     unitS (ExpApplication pos [guard, sr, g', ExpLambda pos [t] e', ges'])
 
+
+addAppTrace :: Exp a -> Exp a -> Exp a
+
 addAppTrace (ExpApplication pos (f:es)) t = ExpApplication pos (f:t:es)
 addAppTrace f t = ExpApplication noPos [f, t]
+
+
+namePat :: Exp Id -> DbgTransMonad (Exp Id,Exp Id)
 
 namePat e@(ExpVar p v) = unitS (e, e)
 namePat e@(PatAs p v pat) = unitS (ExpVar p v, e)
@@ -495,6 +525,9 @@ canFail true otherwise ((ExpVar _ cid, _):gdes) =
     (otherwise /= cid) && canFail true otherwise gdes
 canFail true otherwise (_:gdes) = canFail true otherwise gdes
 
+
+checkPrimitive :: [Fun Id] -> DbgTransMonad (Maybe [Fun Id])
+
 checkPrimitive [Fun ps [(gd, ExpApplication pos (ExpVar p id:f:es))] decls] =
     lookupId Var t_prim >>>= \primid ->
     if id == primid then
@@ -509,18 +542,34 @@ checkPrimitive [Fun ps [(gd, ExpApplication pos (ExpVar p id:f:es))] decls] =
         unitS Nothing
 checkPrimitive _ = unitS Nothing
 
+
+mkFailExpr :: Pos -> DbgTransMonad (Exp Id)
+
 mkFailExpr pos =
     lookupVar pos t_fatal >>>= \fatal ->
     getD >>>= \redex ->
     unitS (ExpApplication pos [fatal, redex])
 
+
+dCafClause :: Fun Id -> DbgTransMonad (Fun Id)
+
 dCafClause (Fun ps gdses decls) = 
-    unitS Fun =>>> dPats ps =>>> mapS dGdEs gdses =>>> dDecls decls -- ps should be empty
+    unitS Fun =>>> dPats ps =>>> mapS dGdEs gdses =>>> dDecls decls 
+    -- ps should be empty
 
 dFunClause (Fun ps gdses decls) = 
-    unitS Fun =>>> (unitS (:) =>>> getD =>>> dPats ps) =>>> mapS dGdEs gdses =>>> dDecls decls
+    unitS Fun =>>> 
+    (unitS (:) =>>> getD =>>> dPats ps) =>>> 
+    mapS dGdEs gdses =>>> 
+    dDecls decls
+
+
+dGdEs :: (Exp Id,Exp Id) -> DbgTransMonad (Exp Id,Exp Id)
 
 dGdEs (gd, e) = unitS pair =>>> dGuard gd =>>> dExp False e
+
+
+dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
 
 dExps cr es = mapS (dExp cr) es
 
@@ -528,7 +577,8 @@ dExps cr es = mapS (dExp cr) es
 {-
 
 -}
-dExp :: Bool -> Exp Id -> DbgTransMonad (Exp Id)
+-- dExp :: Bool -> Exp Id -> DbgTransMonad (Exp Id)
+-- Hugs doesn't work with this correct type declaration
 
 dExp cr (ExpLambda pos pats e) = 
     newVar pos >>>= \redex ->
@@ -923,17 +973,24 @@ mkInfo (Left u) str arity nt =
 {-
 Wraps off most of the SRs, Traces and Rs.
 e.g. 
-unwrapNT 0 True (R Bool) = R Bool
+unwrapNT 0 True (SR -> Trace -> R Bool) = R Bool
+unwrapNT 0 False (SR -> Trace -> R Bool) = Trace -> R Bool
 unwrapNT 1 False (SR -> Trace -> R(Trace -> R Int -> R Bool)) = 
   Trace -> R Int -> R Bool
 unwrapNT 2 False 
   (SR -> Trace -> R(Trace -> R Int -> R(Trace -> R Char -> R Int))) =
   Trace -> R Int -> R Char -> R Int
--}
-unwrapNT :: Int -> Bool -> NewType -> NewType
 
-unwrapNT arity isCaf nt@NoType = nt
-unwrapNT arity isCaf 
+Assumes that input type has form
+  SR -> Trace -> R (tyn)
+  tyn = Trace -> R (any type) -> R (ty(n-1))
+  ty0 = any type
+Expands type synonyms if necessary to obtain this type
+-}
+unwrapNT :: IntState -> Int -> Bool -> NewType -> NewType
+
+unwrapNT intState arity isCaf nt@NoType = nt
+unwrapNT intState arity isCaf 
   (NewType free exist ctxs [NTcons arrow [sr, NTcons _ [t, rt]]]) = 
     NewType free exist ctxs (if isCaf 
                                then [dStripR arity rt] 
@@ -942,8 +999,14 @@ unwrapNT arity isCaf
   dStripR 0 t = t
   dStripR n (NTcons rt [NTcons a1 [t, NTcons a2 [a, b]]]) 
     | a1 == arrow && a1 == a2 = NTcons arrow [a, dStripR (n-1) b]
-  dStripR n t@(NTcons rt [a]) = t
-unwrapNT arity isCaf nt = error ("unwrapNT: strange type: " ++ show nt)
+  dStripR n (NTcons rt [NTcons tysyn tys]) = 
+    -- type my contain type synonym instead of the function arrow
+    dStripR n (NTcons rt [expand nt tys])
+    where
+    nt = dropJust . typeSynonymBodyI . dropJust . lookupIS intState $ tysyn
+  dStripR n t@(NTcons rt [a]) = error ("dStripR: strange type: " ++ show t)
+unwrapNT intState arity isCaf nt = 
+  error ("unwrapNT: strange type: " ++ show nt)
 
 
 {-

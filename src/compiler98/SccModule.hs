@@ -77,12 +77,13 @@ map_sDecl (DeclForeignImp pos str fun arity cast typ x: r) =
 map_sDecl (DeclForeignExp pos str fun typ : r) =
         (DeclForeignExp pos str fun typ ,([fun],emptySet)): map_sDecl r
 
-map_sDecl (DeclType simpleid typeid:_) = error "map_sDecl: DeclType"
+map_sDecl (DeclType simpleid typeid: _) = error "map_sDecl: DeclType"
+map_sDecl (DeclTypeRenamed pos id : r) = map_sDecl r
 map_sDecl (DeclConstrs pos id pidid:_) = error "map_sDecl: DeclConstrs"
 map_sDecl (DeclClass pos cid id1 id2 did:_) = error "map_sDecl: DeclClass"
 map_sDecl (DeclInstance pos cid id1 id2 did:_) = error "map_sDecl: DeclInstance"
 map_sDecl (DeclError s:_) = error "map_sDecl: DeclError"
---map_sDecl (DeclAnnot did aid:r) = map_sDecl r -- Ignore, intr in Rename...
+-- map_sDecl (DeclAnnot did aid:r) = map_sDecl r -- Ignore, introduced in Rename...
 map_sDecl (x: r) = error ("map_sDecl (_ at " ++ strPos (getPos x) ++ ":r)\n")
 
 map_sFun [] = []

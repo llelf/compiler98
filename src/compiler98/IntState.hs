@@ -13,6 +13,8 @@ import PackedString(PackedString,packString,unpackPS)
 import Info
 import MergeSort(group)
 import Reduce(Reduce)
+import Id(Id)
+
 
 data IntState = 
       IntState
@@ -110,13 +112,13 @@ addIS u info state@(IntState unique rps st errors) =
 
 
 {- Lookup identifier in symbol table -} 
-lookupIS :: IntState -> Int -> Maybe Info
+lookupIS :: IntState -> Id -> Maybe Info
 
 lookupIS (IntState unique rps st errors) i = lookupAT st i
 
 
 {- Update info for identifier in symbol table -}
-updateIS :: IntState -> Int -> (Info -> Info) -> IntState
+updateIS :: IntState -> Id -> (Info -> Info) -> IntState
 
 updateIS (IntState unique rps st errors) i upd =
   IntState unique rps (updateAT st i upd) errors
@@ -146,7 +148,7 @@ strIS state i =
 
 
 {- Give token of identifier -}
-tidIS :: IntState -> Int -> TokenId
+tidIS :: IntState -> Id -> TokenId
 
 tidIS state i =
    case lookupIS state i of

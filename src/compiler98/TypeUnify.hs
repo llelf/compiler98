@@ -1,4 +1,4 @@
-module TypeUnify(unify,unifyr) where
+module TypeUnify(unify,unifyr,expand) where
 
 import NT(NT(..),NewType(..),freeNT,strNT)
 import IdKind
@@ -9,6 +9,11 @@ import TokenId(TokenId(..))
 import PackedString(PackedString)
 import Info
 import IntState
+import Id(Id)
+
+
+unify :: IntState -> Tree (Id,NT) -> (NT,NT) 
+      -> Either (Tree (Id,NT),String) (Tree (Id,NT))
 
 unify state phi (t1@(NTany tvn1),t2) =
   case applySubst phi tvn1 of
@@ -42,14 +47,21 @@ unify state phi (t1@(NTcons c1 ts1),t2@(NTcons c2 ts2)) =
        else
          case lookupIS state c1 of
            Just info ->
-             Left (phi, "can not unify " ++ show (tidI info) ++ " with " ++ show (length ts1) ++ " and " ++ show (length ts2) ++ " arguments")
+             Left (phi, "can not unify " ++ show (tidI info) ++ " with " ++ 
+                        show (length ts1) ++ " and " ++ show (length ts2) ++ 
+                        " arguments")
   else
     case (unifyExpand state c1,unifyExpand state c2) of
-      (Left s1       ,Left s2       )          -> Left (phi,"type clash between " ++ s1 ++ " and " ++ s2)
-      (Left  _       ,Right (d2,nt2))          -> unify state phi (t1            ,expand nt2 ts2)
-      (Right (d1,nt1),Left _        )          -> unify state phi (expand nt1 ts1,t2            )
-      (Right (d1,nt1),Right (d2,nt2)) | d2<=d1 -> unify state phi (expand nt1 ts1,t2            )
-      (Right (d1,nt1),Right (d2,nt2))          -> unify state phi (t1            ,expand nt2 ts2)
+      (Left s1       ,Left s2       )          -> 
+        Left (phi,"type clash between " ++ s1 ++ " and " ++ s2)
+      (Left  _       ,Right (d2,nt2))          -> 
+        unify state phi (t1            ,expand nt2 ts2)
+      (Right (d1,nt1),Left _        )          -> 
+        unify state phi (expand nt1 ts1,t2            )
+      (Right (d1,nt1),Right (d2,nt2)) | d2<=d1 -> 
+        unify state phi (expand nt1 ts1,t2            )
+      (Right (d1,nt1),Right (d2,nt2))          -> 
+        unify state phi (t1            ,expand nt2 ts2)
 
 unify state phi (t1@(NTcons c1 ts1),t2@(NTapp ta2 tb2)) =
   case expandAll state t1 of
@@ -149,6 +161,9 @@ expandAll state t@(NTcons tcon ts) =
     Right (d,nt) -> expandAll state (expand nt ts)
 expandAll state t = t
 
+
+unifyExpand :: IntState -> Id -> Either String (Int,NewType)
+
 unifyExpand state tcon =
     case lookupIS state tcon of
       Just info ->
@@ -156,7 +171,14 @@ unifyExpand state tcon =
           Just d -> Right (d,ntI info)
 	  Nothing -> Left (show (tidI info))
 
+
+expand :: NewType -> [NT] -> NT
+
 expand (NewType free [] ctxs [nt]) ts = subst (list2Subst (zip free ts)) nt
+
+
+extendV :: IntState -> Tree (Id,NT) -> Id -> NT 
+        -> Either (Tree (Id,NT),String) (Tree (Id,NT))
 
 extendV state phi tvn t@(NTcons c _) =
   if unboxedIS state c then

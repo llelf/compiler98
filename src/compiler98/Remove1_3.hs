@@ -1,8 +1,10 @@
 {- ---------------------------------------------------------------------------
-Translate list comprehensions, do notation, etc, to core.
-
+Three functions for removing some syntactic sugar:
+removeDecls: create selectors for record fields
+removeDo: remove do notation
+removeExpRecord: remove record expressions (construction and updating)
 -}
-module Remove1_3(removeDo,removeExpRecord,removeDecls) where
+module Remove1_3(removeDecls,removeDo,removeExpRecord) where
 
 import Syntax
 import State
@@ -19,17 +21,57 @@ import List
 import Id(Id)
 
 
----- Done before Scc
+{- ---------------------------------------------------------------------------
+Create selectors for record fields.
+Done before strongly connected components analysis.
+-}
 
+type SelectorMonad a = Exp Id -> ([Id],IntState) -> (a,([Id],IntState))
+
+{-
+Replace DeclConstrs in the declarations by definitions for selectors.
+Also collect identifiers of all field names.
+-}
 removeDecls :: Decls Id -> ((TokenId,IdKind) -> Id) -> IntState 
-            -> (Decls Id,[Id],IntState)
+            -> (Decls Id   -- modified declarations
+               ,[Id]       -- identifiers of all field names
+               ,IntState)
 
 removeDecls (DeclsParse decls) tidFun state =
   case mapS removeDecl decls (ExpCon noPos (tidFun (tTrue,Con))) ([],state) of
     (decls,(zcons,state)) -> (DeclsParse (concat decls),zcons,state)
 
-onePos v 1 (x:xs) = v:xs
-onePos v n (x:xs) = x: onePos v (n-1 ::Int) xs
+
+{-
+Replace a single DeclConstrs by definitions for selectors.
+-}
+removeDecl :: Decl Id -> SelectorMonad [Decl Id]
+
+removeDecl (DeclConstrs pos zcon cs) =
+  remember zcon >>>= \_ ->
+  mapS mkSel cs
+removeDecl d = unitS [d]
+
+
+{-
+Create the definition for a given selector identfier. 
+-}
+mkSel :: (Pos -- point of definition of selector, i.e in type definition
+         ,Id  -- field name id
+         ,Id) -- selector name id
+         -> SelectorMonad (Decl Int)
+
+mkSel (pos,field,selector) = 
+  r13Info field >>>= \  (InfoField unique tid icon_offs iData iSel) ->
+  mapS (mkFun pos) icon_offs >>>= \ alts ->
+  unitS (DeclFun pos selector alts)
+
+{-
+Make one equation of a selector for given data constructor and offset
+-}
+mkFun :: Pos 
+      -> (Id,Int) -- (data constructor, offset)
+      -> SelectorMonad (Fun Id)
 
 mkFun pos (c,i) =
   r13True >>>= \ true ->
@@ -40,34 +82,55 @@ mkFun pos (c,i) =
       vars = take (arityI conInfo) (repeat wildcard)  
                -- arityI safe for constructors :-)
   in
-    unitS (Fun [ExpApplication pos (ExpCon pos c:onePos var i vars)] 
+    unitS (Fun [ExpApplication pos (ExpCon pos c : onePos var i vars)] 
              [(true,var)] (DeclsParse []))
 
 
+{-
+Replace list element at given index by given new element.
+-}
+onePos :: a -> Int -> [a] -> [a]
 
+onePos v 1 (x:xs) = v:xs
+onePos v n (x:xs) = x: onePos v (n-1 ::Int) xs
+
+
+{-
+Get expression for True
+-}
+r13True :: SelectorMonad (Exp Id)
 r13True    true thread = (true,thread)
+
+
+r13Info :: Id -> SelectorMonad Info
+
 r13Info    i down thread@(zcon,state) = (dropJust (lookupIS state i),thread)
+
+
+{- get a new unique id -}
+r13Unique :: SelectorMonad Id
+
 r13Unique  down  thread@(zcon,state) = 
   case uniqueIS state of
    (u,state) -> (u,(zcon,state))
 
-remember zcon down thread@(zcons,state) = (zcon:zcons,state)
 
-mkSel (pos,field,selector) = 
-  r13Info field >>>= \  (InfoField unique tid icon_offs iData iSel) ->
-  mapS (mkFun pos) icon_offs >>>= \ alts ->
-  unitS (DeclFun pos selector alts)
+remember :: Id -> SelectorMonad ()
+
+remember zcon down thread@(zcons,state) = ((),(zcon:zcons,state))
 
 
-removeDecl :: Decl Id -> Exp Id -> ([Id],IntState) 
-           -> ([Decl Id],([Id],IntState))
 
-removeDecl (DeclConstrs pos zcon cs) =
-  remember zcon >>>
-  mapS mkSel cs
-removeDecl d = unitS [d]
+{- ---------------------------------------------------------------------------
+Remove syntactic sugar of do notation.
+Done after strongly connected components analysis,
+more precisely: called by type checker
+-}
 
--------- Done after Scc
+{-
+Remove syntactic sugar of do notation.
+-}
+removeDo :: [Stmt Id] -> TypeMonad (Exp Id)
 
 removeDo [StmtExp exp] = unitS exp
 removeDo (StmtExp exp:r) =
@@ -104,6 +167,12 @@ removeDo (StmtBind pat exp:r) =
 								       ,Alt (PatWildcard pos) [(eTrue,eFail)] (DeclsScc [])
 								       ])])
 
+
+{-
+Test if matching the given pattern cannot fail.
+-}
+nofail :: IntState -> Pat Id -> Bool
+
 nofail state (ExpCon pos con) =
   case lookupIS state con of
     Just (InfoConstr unique tid fix nt fields iType) ->
@@ -120,16 +189,38 @@ nofail state (PatIrrefutable pos pat) = True
 nofail state _ = False
 
 
+{- ---------------------------------------------------------------------------
+Remove record expressions.
+Done after strongly connected components analysis,
+more precisely: called by type checker
+-}
+
+fieldInfo :: Field Id 
+          -> TypeMonad (Id  -- type constructor
+                       ,([(Id,Int)] -- data constructors with offsets for field
+                        ,Exp Id))   -- expressions from "field=exp"
+
 fieldInfo (FieldExp pos field exp) =
   getState >>>= \ state ->
   case lookupIS state field of
-    Just (InfoField unique tid icon_offs idata iSel) -> unitS  (idata,(icon_offs,exp))
+    Just (InfoField unique tid icon_offs idata iSel) -> 
+      unitS  (idata,(icon_offs,exp))
 
+
+fixArg :: Eq a => [(a,b)] -> (b,a) -> b
 
 fixArg given (def,i) =
   case lookup i given of
     Just e -> e
     Nothing -> def
+
+
+{- construct alternative for record updating for one data constructor -}
+fixAlt :: Pos 
+       -> Exp Id  -- expression "True" 
+       -> [Exp Id]   -- arguments for offsets
+       -> (Id,[Int]) -- (data constructor, offsets)
+       -> TypeMonad (Alt Id)
 
 fixAlt pos true exps (con,offsets) =
   getState >>>= \ state ->
@@ -144,6 +235,9 @@ fixAlt pos true exps (con,offsets) =
 						(zip vars nargs)))]
 	   (DeclsScc []))
 
+
+getOffsets :: [[(Id,Int)]] -> Id -> Either (Id,[Maybe Int]) (Id,[Int])
+
 getOffsets icon_offs con =
   let offsets   = map (\ icon_off -> lookup con icon_off) icon_offs
   in if all isJust offsets
@@ -151,6 +245,11 @@ getOffsets icon_offs con =
      else Left (con,offsets)
 
 
+{-
+Replace record expression exp{field1=exp1,...} by a non-record expression.
+Used for record patterns as well.
+(in fact, undefined constructor arguments are filled with wildcard patterns)
+-}
 removeExpRecord :: Exp Id -> [Field Id] -> TypeMonad (Exp Id)
 
 removeExpRecord e@(ExpRecord exp' fields') fields = 
@@ -174,7 +273,7 @@ removeExpRecord exp [] =
 removeExpRecord exp fields =
   getState >>>= \ state ->
   mapS fieldInfo fields >>>= \ coes@((t,_):_) ->
-      if firstIsEqual coes
+      if firstIsEqual coes -- all fields belong to same data type
       then
 	let (icon_offs,exps) = unzip (map snd coes)
 	    pos = getPos exp
@@ -189,6 +288,7 @@ removeExpRecord exp fields =
       else typeError (errField2 state fields)
 
 
+{- Test if all first components are equal. -}
 firstIsEqual :: Eq a => [(a,b)] -> Bool
 
 firstIsEqual [] = True
@@ -232,3 +332,4 @@ errField4 pos =
   "The update of the expression at " ++ strPos pos ++ 
   " uses an empty list of fields."
 
+{- End Remove1_3 ------------------------------------------------------------}

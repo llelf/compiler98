@@ -1,4 +1,4 @@
-module Type(typeTopDecls,bindType) where
+module Type(typeTopDecls) where
 
 import List(partition)
 import TokenId
@@ -7,8 +7,12 @@ import SyntaxPos
 import IdKind
 import State
 import NT
-import TypeLib
-import TypeEnv
+import TypeLib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
+              ,typeIdentDict,debugTranslating,getIdent,getTypeErrors
+              ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
+              ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
+              ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK)
+import TypeEnv(initEnv,envDecls,tvarsInEnv,envPats,envPat)
 import Extra
 import MergeSort(group,unique)
 import TypeSubst
@@ -17,17 +21,18 @@ import TypeData
 import PackedString(PackedString,packString,unpackPS)
 import Info
 import IntState
-import TypeUtil
-import TypeUnify
+import TypeUtil(ntIS)
+import TypeUnify(unify)
 import Nice
 import Bind(identPat)
 import Extract(type2NT)
 import AssocTree
 import Tree234
 import Remove1_3
+import Id(Id)
 
---import PPSyntax		-- just for debugging
---import StrSyntax	-- just for debugging
+--import PPSyntax   -- just for debugging
+--import StrSyntax  -- just for debugging
 
 typeTopDecls tidFun defaults state code dbgtrans topdecls =
   let defaults' =
@@ -54,6 +59,12 @@ typeCode (CodeInstance pos cls typ _ _ ms) tidFun state =
 	,state)
 
 
+typeTopDeclScc :: Decls Id 
+               -> ((TokenId,IdKind) -> Int) 
+               -> [Id] -> Bool -> a 
+               -> IntState 
+               -> (Decls Id,IntState)
+
 typeTopDeclScc (DeclsScc xs) tidFun defaults dbgtrans finalState state =
      case mapS typeDepend xs (TypeDown initEnv tidFun defaults [] [] dbgtrans) (TypeState state idSubst initCtxs []) of
 	(xs,TypeState state phi ctxs ectxsi) -> (DeclsScc (concat xs),state)
@@ -75,6 +86,9 @@ typeDepend (DeclsRec ds13) =
   unitS (map DeclsNoRec dicts ++ [DeclsRec ds])
 
 --- ======== The hairy part
+
+typeScc :: [Decl Id] 
+        -> TypeDown -> TypeState -> (([Decl Id],[Decl Id]),TypeState)
 
 typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(TypeState state phi inCtxs ectxsi) = 
   let -- ctxs should only get up but the monad can not handle that!
@@ -160,14 +174,15 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
 
       (decls'',state3) = mapS bindType decls' (globalTVars,trueExp,localCtxsi,phiEnvHere,defaults) state2
   in
---	strace ("usedCtx = " ++ show (map fst usedCtx)) $
---	strace ("globalCtxs = " ++ show globalCtxs) $
---	strace ("localCtxs0 = " ++ show localCtxs0) $
---	strace ("existCtxs = " ++ show existCtxs) $
---	strace ("phi'' = " ++ show phi'') $
---	strace ("ctxs'' = " ++ show ctxs'') $
---	strace ("phiCtxs = " ++ show phiCtxs) $
-
+{-
+	strace ("usedCtx = " ++ show (map fst usedCtx)) $
+	strace ("globalCtxs = " ++ show globalCtxs) $
+	strace ("localCtxs0 = " ++ show localCtxs0) $
+	strace ("existCtxs = " ++ show existCtxs) $
+	strace ("phi'' = " ++ show phi'') $
+	strace ("ctxs'' = " ++ show ctxs'') $
+	strace ("phiCtxs = " ++ show phiCtxs) $
+-}
      ((declsDict,decls''),TypeState state3 (stripSubst phi'' nextTvar) (outCtxs++inCtxs) existCtxsi)
 
 
@@ -177,7 +192,11 @@ isExist (NTexist _) = True
 isExist _           = False
 
 
-bindType :: Decl Int -> ([Int], Exp Int, [((Int, NT), Int)], [(Int, NT)], [Int]) -> IntState -> (Decl Int, IntState)
+bindType :: Decl Id 
+         -> ([Int], Exp Int, [((Int, NT), Int)], [(Int, NT)], [Int]) 
+         -> IntState 
+         -> (Decl Id, IntState)
+
 bindType decl@(DeclPat (Alt pat gdexps decls)) down@(globalTVars,trueExp,[],envHere,defaults) state = -- No context for left hand patterns!
   case mapS0 checkType (identPat pat) down state of
     state -> (decl,state)
@@ -342,11 +361,22 @@ typeDecl (DeclPat (Alt pat gdexps decls)) =
 --  checkExist [] eTVar >>> 
   unitS (DeclPat (Alt pat gdexps decls))
 typeDecl (DeclFun pos fun funs) =
-  typeIdentDef id pos fun        >>>= \ (_,funT) -> 
+  typeIdentDef id pos fun >>>= \ (_,funT) -> 
   typeNewTVar >>>= \retT ->
   getIdent (t_Arrow,TCon) >>>= \arrow ->
-  mapS (typeFun fun arrow funT retT) funs        >>>= \funs ->
+  mapS (typeFun fun arrow funT retT) funs >>>= \funs ->
+  {-
+  typeIdentDef id pos fun >>>= \ (_,funT) -> 
+  (\down up@(TypeState state _ _ _) -> 
+     trace ('\n':'\n': niceInt Nothing state fun 
+            ('\n': niceNT Nothing state (map (\x -> (x, 'a':show x)) [1..]) funT))
+     (True,up)) >>>= \True ->
+  -}
   unitS (DeclFun pos fun funs)
+
+
+typeFun :: Id -> Id -> NT -> NT -> Fun Id 
+        -> State TypeDown TypeState (Fun Id) TypeState
 
 typeFun fun arrow funT retT (Fun args13 gdexps decls) =
   mapS fixPat13 args13   >>>= \ args ->
@@ -357,6 +387,14 @@ typeFun fun arrow funT retT (Fun args13 gdexps decls) =
   case unzip3 args of
     (args,argsT,eTVar) -> 
        typeUnify (msgFun gdexps) funT (funType arrow (argsT++[retT])) >>>= \_ ->
+       {-
+       (\down up@(TypeState state _ _ _) -> 
+         trace ("\n\ntypeFun: " ++ show (length argsT) ++ "  " ++ 
+                niceInt Nothing state fun 
+               ('\n': niceNT Nothing state 
+                        (map (\x -> (x, 'a':show x)) [1..]) funT))
+               (True,up)) >>>= \True ->
+       -}
        typeDeclScc decls    >>>= \decls ->
        typeGdExps gdexps  >>>= \(gdexps,gdexpsT) ->
        typeUnify (msgFun gdexps) retT gdexpsT >>>= \_ ->
@@ -420,6 +458,8 @@ typeAlt (Alt pat13 gdexps decls) =
   unitS (Alt pat gdexps decls,(patT,gdexpsT))
 
 
+typeExp :: Exp Id -> TypeDown -> TypeState -> ((Exp Id,NT),TypeState)
+
 typeExp (ExpRecord exp fields) = removeExpRecord exp fields >>>= typeExp
 typeExp (ExpDo pos stmts) = removeDo stmts >>>= typeExp
 typeExp (ExpCase pos exp alts) =
@@ -443,11 +483,11 @@ typeExp (ExpIf pos cond exp1 exp2)   =
   unitS (ExpIf pos cond exp1 exp2,t)
 
 typeExp (ExpApplication pos es)   =
-  mapS typeExp es >>>= \es ->
-  case unzip es of
-    (es,esT) -> 
-      typeUnifyApply (msgApply es) esT >>>= \ t ->
-      unitS (ExpApplication pos es,t)
+  mapS typeExp es >>>= \es' ->
+  case unzip es' of
+    (es'',esT) -> 
+      typeUnifyApply (msgApply es'') esT >>>= \ t ->
+      unitS (ExpApplication pos es'',t)
 
 typeExp e@(ExpVar pos ident)        =
   typeIdentDict (ExpVar pos) pos ident
@@ -584,15 +624,21 @@ typePat e                         = error ("typePat " ++ strPos (getPos e))
 -------------------
 
 -- fixPat13 change 1.3 patterns into 1.2 patterns
+-- that is, it removes record patterns.
 -- No InfixList at this point!
 
 fixDecl13 (DeclPat (Alt pat gdexps decls)) = fixPat13 pat >>>= \ pat -> unitS (DeclPat (Alt pat gdexps decls))
 fixDecl13 decl = unitS decl
 
-fixPat13 (ExpRecord	 exp fields)  = removeExpRecord exp fields >>>= fixPat13
-fixPat13 (ExpApplication pos pats)    = unitS (ExpApplication pos) =>>> mapS fixPat13 pats
-fixPat13 (ExpList        pos pats)    = unitS (ExpList pos)        =>>> mapS fixPat13 pats
-fixPat13 (PatAs          pos tid pat) = unitS (PatAs pos tid)      =>>> fixPat13 pat
-fixPat13 (PatIrrefutable pos pat)     = unitS (PatIrrefutable pos) =>>> fixPat13 pat
+fixPat13 (ExpRecord	 exp fields)  = 
+  removeExpRecord exp fields >>>= fixPat13
+fixPat13 (ExpApplication pos pats)    = 
+  unitS (ExpApplication pos) =>>> mapS fixPat13 pats
+fixPat13 (ExpList        pos pats)    = 
+  unitS (ExpList pos)        =>>> mapS fixPat13 pats
+fixPat13 (PatAs          pos tid pat) = 
+  unitS (PatAs pos tid)      =>>> fixPat13 pat
+fixPat13 (PatIrrefutable pos pat)     = 
+  unitS (PatIrrefutable pos) =>>> fixPat13 pat
 fixPat13 pat  = unitS pat
 

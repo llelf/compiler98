@@ -1,3 +1,10 @@
+{- ---------------------------------------------------------------------------
+Remove class and instance declarations from declarations of a module,
+that is, replace them by their type and method declarations.
+Create separate list for information about class and instance declarations.
+Also changes arity of method definitions according to the arity in the symbol
+table (why?; arity in the symbol table is number of function arrows in type)
+-}
 module RmClasses(rmClasses) where
 
 import IdKind
@@ -8,6 +15,18 @@ import State
 import Bind(identDecl)
 import TokenId(tTrue,qualify)
 import PackedString(unpackPS)
+import Id(Id)
+
+
+type RmClassMonad a = (String,Id -> Exp Id) -> IntState -> (a,IntState)
+type RmClassMonad2 a b = a -> IntState -> (b,IntState)
+
+
+{- main function of the module -}
+rmClasses :: ((TokenId,IdKind) -> Id) -> IntState -> Decls Id 
+          -> ([ClassCode a Id] -- separate list about class and instance decls
+             ,Decls Id         -- modified decls, without class and inst. decls
+             ,IntState)
 
 rmClasses tidFun state (DeclsParse topdecls) =
   case mapS rmClass topdecls (unpackPS (mrpsIS state)
@@ -16,16 +35,22 @@ rmClasses tidFun state (DeclsParse topdecls) =
       case unzip codedecls of
 	(code,decls) -> (concat code,DeclsParse (concat decls),state)
 
+
+rmClass :: Decl Id -> RmClassMonad ([ClassCode a Id],[Decl Id])
+
 rmClass (DeclClass pos ctx cls arg (DeclsParse decls)) =
   mapS fixArity decls >>>= \ decls ->
   unitS ([CodeClass pos cls] ,decls)
 rmClass (DeclInstance pos ctx cls (TypeCons _ typ _) (DeclsParse decls)) =
   mapS fixArity decls >>>= \ decls ->
   unitS ([CodeInstance pos cls typ [] [] (concatMap identDecl decls)],decls)
-rmClass decl                              = unitS ([],[decl])
+rmClass decl = unitS ([],[decl])
 
 
-fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_)) (rstr,true) state = 
+fixArity :: Decl Id -> RmClassMonad (Decl Id)
+
+fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_)) 
+  (rstr,true) state = 
   let wantArity = (arityVI . dropJust . lookupIS state) fun -- don't count ctx
       hasArity = length args
   in if wantArity == hasArity then
@@ -59,9 +84,12 @@ fixArity decl _ state = (decl,state)
 --  case splitAt keep args of 
 --    (fargs,largs) -> Fun fargs (map ( \ (g,e) -> (g,ExpLambda pos largs e)) gdexps) decls
 
+toFew :: Pos -> Int -> Fun Id -> RmClassMonad2 a (Fun Id)
+
 toFew pos add (Fun args gdexps decls) _ state =
     case uniqueISs state [1 .. add] of
       (newi,state) ->
         let eargs = map (ExpVar pos . snd) newi
 	in  (Fun (args++eargs) (map ( \ (g,e) -> (g,ExpApplication pos (e:eargs))) gdexps) decls,state)
   
+{- End RmClasses ------------------------------------------------------------}

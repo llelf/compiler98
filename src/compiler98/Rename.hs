@@ -19,7 +19,7 @@ import RenameLib(ImportState,RenameState,RenameToken,RenameMonad
                 ,transType,defineDefaultMethod,defineInstMethod,uniqueTVar
                 ,defineField,defineConstr,checkPuns,bindNK)
 import Fixity(fixInfixList)
-import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
+import IExtract(tvrPosTids,tvPosTids,freeType,tvTids,countArrows,defFixFun)
 import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt
               ,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
 import State
@@ -202,12 +202,20 @@ renameDecl :: Decl TokenId -> RenameMonad (Decl Id)
 renameDecl (DeclType (Simple pos tid tvs) typ) =
   let al = tvPosTids tvs
   in transTypes al (map snd al) [] [typ] >>>= \nt ->
-     defineType tid nt >>>  {- = \d -> -}
+     defineType tid nt >>>= \d ->  -- extend symbol table
+     unitS (DeclTypeRenamed pos d) -- new abstract syntax construct
+
+{-
+renameDecl (DeclType (Simple pos tid tvs) typ) =
+  let al = tvPosTids tvs
+  in transTypes al (map snd al) [] [typ] >>>= \nt ->
+     defineType tid nt >>>= \d -> 
      -- gross hack
      -- remove definition of type synonym from syntax tree
-     unitS (DeclIgnore "Type Synonym")
---   unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
+--   unitS (DeclIgnore "Type Synonym")
+     unitS (DeclAnnot (DeclIgnore "Type Synonym") [AnnotArity (pos, d) 0])
      -- in a way such that it can still be recognised in DbgDataTrans
+-}
 
 renameDecl (DeclDataPrim  pos tid size) =
   uniqueTid pos TCon tid >>>= \ i ->

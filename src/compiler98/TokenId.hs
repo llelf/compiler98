@@ -20,7 +20,7 @@ data TokenId =
    | Qualified2 TokenId TokenId	
      -- token with: class token, type token for a dictionary?
    | Qualified3 TokenId TokenId TokenId
-     -- token for method in instance: class token, type token, variable token
+     -- token for method in instance: class token, type token, method token
    deriving (Eq,Ord)
 
 

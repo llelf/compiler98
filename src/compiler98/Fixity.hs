@@ -1,3 +1,7 @@
+{- ---------------------------------------------------------------------------
+Restructure expressions with infix operators according to associativity and
+precedence.
+-}
 module Fixity(fixInfixList) where
 
 import PackedString(PackedString,packString,unpackPS)
@@ -77,7 +81,7 @@ harder pos (ipop@((inf,pri),(op,_)):ops) kind op' =
 stripExp (ExpVar _ o) = o
 stripExp (ExpCon _ o) = o
 
-rebuild (_,(op,2)) (e1:e2:es) =                ExpApplication (getPos op) [op,e2,e1]:es
+rebuild (_,(op,2)) (e1:e2:es) = ExpApplication (getPos op) [op,e2,e1]:es
 rebuild ((InfixPre fun,_) ,(op,_)) (e1:es) =
         ExpApplication (getPos op) [ExpVar (getPos op) fun,e1]:es
 rebuild (_,(op,n)) es =
@@ -88,21 +92,34 @@ leftFixity InfixL = True
 leftFixity (InfixPre _) = True
 leftFixity _ = False      		--- !!! Cheating Infix is InfixR
 
--------------------------
+{-
+Main function of the module.
+-}
+fixInfixList :: [Exp TokenId] -> RenameMonad (Exp TokenId)
 
 fixInfixList [] = error "I: fixInfix []"
 fixInfixList ees@(ExpVarOp pos op:es) =
   fixTid Var op >>>= \ fix ->
         case fix of
 	  (InfixPre a,l) -> reorder ees
-	  _ -> reorder es >>>= \ exp -> unitS (ExpLambda pos [ExpVar pos t_x] (ExpApplication pos [ExpVar pos op, ExpVar pos t_x, exp]))
+	  _ -> reorder es >>>= \ exp -> 
+               unitS (ExpLambda pos [ExpVar pos t_x] 
+                        (ExpApplication pos 
+                           [ExpVar pos op, ExpVar pos t_x, exp]))
 fixInfixList ees@(ExpConOp pos op:es) =
   fixTid Con op >>>= \ fix ->
         case fix of
 	  (InfixPre a,l) -> reorder ees
-	  _ -> reorder es >>>= \ exp -> unitS (ExpLambda pos [ExpVar pos t_x] (ExpApplication pos [ExpCon pos op, ExpVar pos t_x, exp]))
+	  _ -> reorder es >>>= \ exp -> 
+               unitS (ExpLambda pos [ExpVar pos t_x] 
+                        (ExpApplication pos 
+                           [ExpCon pos op, ExpVar pos t_x, exp]))
 fixInfixList ees =
   case last ees of
-    ExpConOp pos op -> reorder (init ees) >>>= \ exp -> unitS (ExpApplication pos [ExpCon pos op,exp])
-    ExpVarOp pos op -> reorder (init ees) >>>= \ exp -> unitS (ExpApplication pos [ExpVar pos op,exp])
+    ExpConOp pos op -> reorder (init ees) >>>= \ exp -> 
+                       unitS (ExpApplication pos [ExpCon pos op,exp])
+    ExpVarOp pos op -> reorder (init ees) >>>= \ exp -> 
+                       unitS (ExpApplication pos [ExpVar pos op,exp])
     _ -> reorder ees
+
+{- --------------------------------------------------------------------------}

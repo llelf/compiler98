@@ -1,7 +1,10 @@
 {- ---------------------------------------------------------------------------
 
+The bindDecls and bindPat function are used by Rename.
+
 The ident* functions collect all identifiers bound within the respective
 syntactic construct.
+They are used by several modules.
 -}
 module Bind(Pos,Decls,Decl,Exp,bindDecls,bindPat,identDecl,identPat) where
 
@@ -12,26 +15,26 @@ import TokenId(TokenId)
 import Syntax(Decls(..),Decl(..),Exp(..),Constr(..),Field(..),Simple(..)
              ,Alt(..),Fun(..))
 import SyntaxPos(Pos,HasPos(getPos))
-import RenameLib(RenameState,bindTid,checkTid)
+import RenameLib(RenameRMonadEmpty,RenameState,bindTid,checkTid)
 
 
 ------------------------
 
 {-
 Add all identifiers (variables, type constructors, class ids, 
-data constructors,...) that bound/defined in the syntactic construct
+data constructors,...) that are bound/defined in the syntactic construct
 to the active names in renameState.
 Does not look at local declarations of variable definitions 
 (different scope) but at methods of classes and instances.
 Adds error message to renameState in case of redefinition of an identifier.
 -}
 
-bindDecls :: Decls TokenId -> a -> RenameState -> RenameState
+bindDecls :: Decls TokenId -> RenameRMonadEmpty a
 
 bindDecls (DeclsParse decls) =  mapS0 bindDecl decls
 
 
-bindDecl :: Decl TokenId -> a -> RenameState -> RenameState
+bindDecl :: Decl TokenId -> RenameRMonadEmpty a
 
 bindDecl  (DeclType (Simple pos tid tvs) typ) =
     bindTid pos TSyn tid
@@ -68,12 +71,12 @@ bindDecl  (DeclAnnot decl str) = error "DeclAnnot"
 ---- =====
 
 
-bindMethods :: Decls TokenId -> a -> RenameState -> RenameState
+bindMethods :: Decls TokenId -> RenameRMonadEmpty a
 
 bindMethods (DeclsParse decls) =  mapS0 bindMethod decls
 
 
-bindMethod :: Decl TokenId -> a -> RenameState -> RenameState
+bindMethod :: Decl TokenId -> RenameRMonadEmpty a
 
 bindMethod (DeclVarsType posidents ctxs typ) =  
   mapS0 ( \ (pos,tid) -> bindTid pos Method tid) posidents
@@ -84,7 +87,7 @@ bindMethod _ = unitS0
 -----------------
 
 
-bindConstr :: Constr TokenId -> a -> RenameState -> RenameState
+bindConstr :: Constr TokenId -> RenameRMonadEmpty a
 
 bindConstr (Constr                pos tid fieldtypes) = 
   bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
@@ -92,7 +95,7 @@ bindConstr (ConstrCtx forall ctxs pos tid fieldtypes) =
   bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
 
 
-bindFieldVar :: Maybe [(Pos,TokenId)] -> a -> RenameState -> RenameState
+bindFieldVar :: Maybe [(Pos,TokenId)] -> RenameRMonadEmpty a
 
 bindFieldVar Nothing = unitS0
 bindFieldVar (Just posidents) = 
@@ -103,7 +106,7 @@ bindFieldVar (Just posidents) =
 {-
 bindPat does not bind Constr!
 -}
-bindPat :: IdKind -> Exp TokenId -> a -> RenameState -> RenameState
+bindPat :: IdKind -> Exp TokenId -> RenameRMonadEmpty a
 
 bindPat kind (ExpScc            str exp) = error "ExpScc in bindPat!"
 bindPat kind (ExpLambda         pos pats exp) = error "ExpLambda in bindPat!"
@@ -137,7 +140,7 @@ bindPat kind (PatNplusK         pos tid tid' int _ _) = bindTid pos kind tid
 Binds variables bound in field expression.
 Does not bind field names.
 -}
-bindField :: Field TokenId -> a -> RenameState -> RenameState
+bindField :: Field TokenId -> RenameRMonadEmpty a
 
 bindField (FieldExp pos tid pat) = {- bindTid pos Var tid >>> -} 
   bindPat Var pat
