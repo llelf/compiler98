@@ -51,7 +51,8 @@ main = do
                          writeBack gfile lfile config'
     ["default",hc] -> do config' <- mkDefault config hc
                          writeBack gfile lfile config'
-    ["list",hc]    -> do putStrLn ("")
+    ["list",hc]    -> do let cc = matchCompiler hc config
+                         putStrLn (show cc)
     _ -> do hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
                  ++"       hmake-config [configfile] [add|delete|default] hc\n"
                  ++"                  -- hc is name/path of a Haskell compiler")
@@ -69,10 +70,10 @@ main = do
                   ++"              -- hc is name/path of a Haskell compiler\n"
                   ++"  default configfile is:\n    "++g)
                  exitWith (ExitFailure 1)
-        [file,"new"]  -> return (file, Nothing, tail args)
-        [file,"list"] -> return (file, Nothing, tail args)
-        [file,_,_]    -> return (file, Nothing, tail args)
-        ["list"] ->
+        (file:"new":_)  -> return (file, Nothing, tail args)
+        (file:"list":_) -> return (file, Nothing, tail args)
+        [file,_,_]      -> return (file, Nothing, tail args)
+        ("list":_) ->
              let (g,l) = defaultConfigLocation False in return (g, l, args)
         _ -> let (g,l) = defaultConfigLocation True in return (g, l, args)
 
@@ -113,13 +114,14 @@ newConfigFile (gpath,lpath) = do
   (path,config) <-
       case lpath of
         Just lo -> do hPutStrLn stderr
-                        ("hmake-config: Starting new personal config file.")
+                        ("hmake-config: Starting new personal config file in"
+                         ++"\n  "++lo)
                       gconf <- safeReadConfig gpath
                       return (lo, HmakeConfig {defaultCompiler=
                                                      defaultCompiler gconf
                                               ,knownCompilers=[]})
         Nothing -> do hPutStrLn stderr
-                        ("hmake-config: Starting new config file from scratch.")
+                        ("hmake-config: Starting new config file in\n  "++gpath)
                       return (gpath, HmakeConfig {defaultCompiler="unknown"
                                                  ,knownCompilers=[]})
   catch (writeFile path (show config))
