@@ -10,11 +10,11 @@ shift
 
 # We need a working `echo' command: Solaris2.6 and HP/UX may not have it.
 case `echo -n hello | wc -c | ( read n ; echo $n )` in
-    5) echo-n () { echo -n "$@"; } ;;
+    5) echon () { echo -n "$@"; } ;;
     *) LOCAL=${LOCAL-`dirname $0`}
        if [ -x $LOCAL/echo ]
-       then echo-n () { $LOCAL/echo -n "$@"; }
-       else echo-n () { echo "$@"; }
+       then echon () { $LOCAL/echo -n "$@"; }
+       else echon () { echo "$@"; }
        fi ;;
 esac
 
@@ -29,11 +29,11 @@ then
     case $1 in
       -syslib|-package) shift
                case $1 in
-                 lang) echo-n " -syslib exts";;
-                 text) echo-n " -syslib misc";;
-                 *)    echo-n " -syslib $1" ;;
+                 lang) echon " -syslib exts";;
+                 text) echon " -syslib misc";;
+                 *)    echon " -syslib $1" ;;
                esac ;;
-      *) echo-n " $1" ;;
+      *) echon " $1" ;;
     esac
     shift
   done
@@ -48,11 +48,11 @@ then
     case $1 in
       -syslib|-package) shift
                case $1 in
-                 exts) echo-n " -syslib lang";;
+                 exts) echon " -syslib lang";;
                  misc) ;;
-                 *)    echo-n " -syslib $1" ;;
+                 *)    echon " -syslib $1" ;;
                esac ;;
-      *) echo-n " $1" ;;
+      *) echon " $1" ;;
     esac
     shift
   done
@@ -67,11 +67,11 @@ then
     case $1 in
       -syslib) shift
                case $1 in
-                 exts) echo-n " -package lang";;
+                 exts) echon " -package lang";;
                  misc) ;;
-                 *)    echo-n " -package $1" ;;
+                 *)    echon " -package $1" ;;
                esac ;;
-      *) echo-n " $1" ;;
+      *) echon " $1" ;;
     esac
     shift
   done
