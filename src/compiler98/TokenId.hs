@@ -207,6 +207,8 @@ t_readCon0	= qualImpRev  "_readCon0"
 t_readConInfix	= qualImpRev  "_readConInfix"
 t_readCon	= qualImpRev  "_readCon"
 t_readConArg	= qualImpRev  "_readConArg"
+t_readField 	= qualImpRev  "_readField"
+t_readFinal 	= qualImpRev  "_readFinal"
 
 tshowsPrec      = qualImpRev  "showsPrec"
 tshowsType      = qualImpRev  "showsType"

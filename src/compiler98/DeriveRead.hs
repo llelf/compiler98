@@ -1,5 +1,6 @@
 module DeriveRead(deriveRead) where
 
+import Maybe
 import Syntax
 import MkSyntax(mkInt)
 import IntState
@@ -7,7 +8,9 @@ import Kind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tFalse,tTrue,tRead,treadParen,treadsPrec,t_greater,t_append,t_readCon0,t_readCon,t_readConArg,t_readConInfix,isTidOp,dropM)
+import TokenId(TokenId,tFalse,tTrue,tRead,treadParen,treadsPrec
+              ,t_greater,t_append,t_readCon0,t_readCon,t_readConArg
+              ,t_readConInfix,t_readField,t_readFinal,isTidOp,dropM)
 import Nice(showsOp,showsVar)
 
 deriveRead tidFun cls typ tvs ctxs pos =
@@ -38,6 +41,7 @@ mkReadExp expD expR tidFun pos constrInfo =
   let 
       conTid = dropM (tidI constrInfo)      
       con = ExpCon pos (uniqueI constrInfo)
+      fields = fieldsI constrInfo
   in
     if isTidOp conTid then
       let expConOp = ExpLit pos (LitString Boxed (showsOp conTid ""))
@@ -62,7 +66,8 @@ mkReadExp expD expR tidFun pos constrInfo =
 					     nts
 				      ,expR]
 
-    else
+    else if any isNothing fields	-- ordinary constructor
+    then
       let expConVar = ExpLit pos (LitString Boxed (showsVar conTid ""))
           expFalse = ExpCon pos (tidFun (tFalse,Con))
       in
@@ -78,3 +83,35 @@ mkReadExp expD expR tidFun pos constrInfo =
 					     (ExpApplication pos [ExpVar pos (tidFun (t_readCon,Var)), con, expConVar]) 
 					     nts
 				      ,expR]
+
+    else	-- constructor with named fields
+      let expConVar = ExpLit pos (LitString Boxed (showsVar conTid ""))
+          expFalse = ExpCon pos (tidFun (tFalse,Con))
+          expReadField = ExpVar pos (tidFun (t_readField,Var))
+          expReadFinal k = ExpApplication pos
+              [ExpVar pos (tidFun (t_readFinal,Var))
+              ,ExpLit pos (LitString Boxed "}")
+              ,k]
+          expLabel prefix label k = ExpApplication pos
+              [expReadField
+              ,ExpLit pos (LitString Boxed prefix)
+              ,ExpLit pos (LitString Boxed (showsVar (dropM (tidI label)) ""))
+              ,k]
+	  (NewType _ _ _ (_:nts)) = ntI constrInfo -- get list, 1 elem per arg
+	  readConArg = ExpVar pos (tidFun (t_readConArg,Var))
+          prefixes = "{": replicate (length nts - 1) ","
+      in
+        mapS (getInfo.fromJust) fields >>>= \labels->
+        unitS $
+	  ExpApplication pos
+              [ExpVar pos (tidFun (treadParen,Var))
+	      ,ExpApplication pos
+                  [ExpVar pos (tidFun (t_greater,Var)), expD, mkInt pos 9]
+              ,expReadFinal
+                  (foldr (\(p,l) a -> expLabel p l a)
+                         (ExpApplication pos
+                             [ExpVar pos (tidFun (t_readCon,Var))
+                             ,con ,expConVar])
+                         (reverse (zip prefixes labels)))
+              ,expR]
+

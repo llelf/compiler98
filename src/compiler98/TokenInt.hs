@@ -48,21 +48,29 @@ tokenAllways = 	[(Var,t_undef)
 tokenMonad =	[(Var,t_gtgt),(Var,t_gtgteq),(Var,t_zero)]
 tokenBounded =	[(TClass,tBounded),(Var,tminBound),(Var,tmaxBound)]
 tokenEnum =	[(TClass,tEnum)
-		,(Var,ttoEnum),(Var,tfromEnum),(Var,tenumFrom),(Var,tenumFromThen)
-		,(Var,t_toEnum),(Var,t_fromEnum),(Var,t_enumFromTo),(Var,t_enumFromThenTo)]
-tokenEq =	[(TClass,tEq),(Var,t_fromEnum),(Var,t_equalequal),(Var,t_andand)]
+		,(Var,ttoEnum),(Var,tfromEnum),(Var,tenumFrom)
+                ,(Var,tenumFromThen)
+		,(Var,t_toEnum),(Var,t_fromEnum),(Var,t_enumFromTo)
+                ,(Var,t_enumFromThenTo)]
+tokenEq =	[(TClass,tEq),(Var,t_fromEnum),(Var,t_equalequal)
+                ,(Var,t_andand)]
 tokenEval =	[(Var,tseq)]  -- seq is now standalone, without class Eval
 tokenIx =	[(TClass,tIx)
 		,(Var,trange),(Var,tindex),(Var,tinRange)
 		,(Var,t_tupleRange),(Var,t_tupleIndex),(Var,t_andand)
 		,(Var,t_enumRange),(Var,t_enumIndex),(Var,t_enumInRange)]
-tokenOrd =	[(TClass,tOrd),(Var,t_fromEnum),(Var,t_equalequal),(Var,t_lessthan),(Var,t_lessequal)
-		,(Var,t_andand),(Var,t_pipepipe),(Var,tcompare),(Con,tLT),(Con,tEQ),(Con,tGT)]
+tokenOrd =	[(TClass,tOrd),(Var,t_fromEnum),(Var,t_equalequal)
+                ,(Var,t_lessthan),(Var,t_lessequal)
+		,(Var,t_andand),(Var,t_pipepipe),(Var,tcompare)
+                ,(Con,tLT),(Con,tEQ),(Con,tGT)]
 tokenRead =	[(TClass,tRead)
-		,(Var,treadsPrec),(Var,treadParen),(Var,t_append),(Var,t_greater)
-		,(Var,t_readCon0),(Var,t_readConInfix),(Var,t_readCon),(Var,t_readConArg)]
+		,(Var,treadsPrec),(Var,treadParen),(Var,t_append)
+                ,(Var,t_greater)
+		,(Var,t_readCon0),(Var,t_readConInfix),(Var,t_readCon)
+                ,(Var,t_readConArg),(Var,t_readField),(Var,t_readFinal)]
 tokenShow =	[(TClass,tShow)
-	      	,(Var,tshowsType),(Var,tshowsPrec),(Var,tshowParen),(Var,tshowString),(Var,tshowChar),(Var,t_lessthan)
+	      	,(Var,tshowsType),(Var,tshowsPrec),(Var,tshowParen)
+                ,(Var,tshowString),(Var,tshowChar),(Var,t_lessthan)
 		,(Var,t_dot)]
 {- MALCOLM additions: -}
 tokenBinary    = [(TClass,tBinary)
