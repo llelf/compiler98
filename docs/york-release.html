@@ -1,8 +1,8 @@
-<html><head><title>York release of nhc98</title></head>
+<html><head><title>Release 1.00 of nhc98</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1>York release of nhc98</h1></center>
+<center><h1>Release 1.00 of nhc98</h1></center>
 
 <hr>
 
@@ -26,7 +26,9 @@
   (although they are still rather faster than <em>Hugs</em>).</dd>
 
 <dt><em>Because you're a software developer.</em></dt>
-<dd>  Fed up waiting for <em>ghc</em> to compile your programs?
+<dd> nhc98 comes with comprehensive tool support - hmake, hi, greencard,
+  heap profiling, and <em>two</em> debuggers.
+  Are you fed up waiting for <em>ghc</em> to compile your programs?
   <em>nhc98</em> can be pretty quick at compiling, even though it
   is not as fast as <em>hbc</em>.  For development work, it can also
   provide a useful check that you are sticking to the Haskell 98
@@ -35,40 +37,34 @@
 <dt><em>Because your programs have strange space behaviour.</em></dt>
 <dd>
   <em>nhc98</em> has the most advanced heap profiler in the Haskell
-  world, allowing you to observe in very fine detail exactly what is
+  world [4], allowing you to observe in very fine detail exactly what is
   happening to the heap.  Profile types include producer, construction,
   retainer, biography, and lifetime - and any combination thereof.</dd>
 
 <dt><em>Because your program crashes, or produces the wrong output.</em></dt>
 <dd>
-  <em>nhc98</em> has advanced tracing facilities,
-  based on a reduction trail browser.  Browsing proceeds
+  <em>nhc98</em> has <em>two</em> sets of debugging facilities.
+  First, Andy Gill's <a href="http://www.haskell.org/hood/">HOOD</a>
+  library together with his XML-based debugging browser.
+  Second, York's advanced <em>Hat</em> tracing system based on
+  redex trails [2,3], also with a graphical browser.  In <em>Hat</em>,
+  browsing proceeds
   <em>backwards</em> from the error message or suspicious output value,
   observing and exploring the reduction history of parts of the
   computation.  By answering the question "What function application caused
   the evaluation of this expression?" at each stage, it is possible to
-  narrow down program bugs quickly.  (The tracer is still part
+  narrow down program bugs quickly.  (<em>Hat</em> is still part
   of ongoing research, and will continue to be developed for some
   time.)</dd>
 
 </dl>
 
 
-<h3>Novel features of <em>nhc98</em></h3>
+<h3>What language extensions does <em>nhc98</em> support?</h3>
 <p>
-Features of <em>nhc98</em> which are not necessarily available in all
-other Haskell systems include: binary data representations; the
-<em>GreenCard</em> foreign language interface; the new common primitive
-FFI; computational traces; time profiling; and portable compilation via
-C.
+Extensions of the Haskell'98 language available in <em>nhc98</em> include:
 
 <ul>
-<li>
-  <em>nhc98</em> can generate code for <em>tracing (debugging) your
-  computations</em>.  A tutorial describing how to use the tracer is
-  <a href="tracer.html">now available</a>.  See also references [2] and
-  [3].  This prototype tracer will continue to be developed further.
-
 <li>
   <em>Binary data representations.</em> In summary, an additional library
   module provides bit-stream operations and a new Binary class for which
@@ -77,45 +73,12 @@ C.
   <a href="libs/Binary.html">this documentation</a>.
 
 <li>
-  <em>GreenCard</em> is a preprocessor for interfacing to C libraries.  It was
-  developed for ghc and hugs, and is now available for <em>nhc98</em>.  See
-  <a href="greencard-york.html">this page</a> for details.  The newer common
-  <a href="ffi.html">primitive FFI</a> is also now available.
+  The new common <a href="ffi.html">primitive FFI</a>.
 
 <li>
-  Advanced facilities for heap-profiling programs.  See tutorial paper [4].
-
-<li>
-  Basic facilities for time-profiling programs.
-
-<li>
-  Existential types.
-
-<li>
-  Finally, with a little extra work, <em>nhc98</em> can be used as a
-  cross-compiler for other machines, including embedded systems.  It can
-  generate bytecode in a portable ANSI-C format.
+  Local forall quantification on datatypes.
 
 </ul>
-
-
-<h3>Why are there York and Chalmers releases?</h3>
-<p>
-The Chalmers release of <em>nhc13</em> froze in October 1996.
-Although Niklas is continuing to refine <em>nhc</em> at Chalmers, (playing
-with new language features, fixing bugs and so on), his time available
-for working on <em>nhc</em> is limited, so he prefers to spend it on
-exciting new development rather than on the tedious business of
-producing distribution packages.
-<p>
-At York, we are engaged in programming languages research which
-has resulted in additional development of <em>nhc98</em>, mainly
-focussed on adding new compiler features, libraries, and tools.
-We incorporate Niklas's latest work, and will continue to do so.
-Currently, the York release is the only distribution of <em>nhc98</em>.
-<p>
-There is another version of <em>nhc13</em> (modified to compile a research
-dialect of Haskell) available elsewhere (location currently unknown).
 
 
 <h4>References</h4>
@@ -151,7 +114,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.12.22<br>
+2000.09.15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
