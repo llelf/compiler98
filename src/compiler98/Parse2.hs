@@ -224,6 +224,8 @@ parseInst' =
         `orelse`
     mkAppInst `parseAp` conid `ap` many varid
         `orelse`
+    (\pos-> TypeCons pos t_Arrow []) `parseAp` k_rarrow
+        `orelse`
 --    (TypeCons noPos (t_Tuple 0) []) `parseChk` lpar `chk` rpar
 --        `orelse`
     parse (TypeCons noPos (t_Tuple 0) [])

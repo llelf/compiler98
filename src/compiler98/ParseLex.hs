@@ -4,9 +4,9 @@ import Lex
 import Lexical
 import Syntax(Lit(..),Boxed(..),Exp(..),Alt,Pat(..),Decls,Context,Type,Stmt,Field)
 import ParseLib
-import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple,
-               tforall,tdot,
-               t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast,t_noproto)
+import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
+              ,tforall,tdot,t_Arrow
+              ,t_foreign,t_export,t_ccall,t_stdcall,t_unsafe,t_cast,t_noproto)
 
 
 lit a = literal (a::Lex)
@@ -46,6 +46,7 @@ k_unboxed = lvarid tunboxed "unboxed"
 k_as = lvarid tas "as"
 k_forall = lvarid tforall "forall"
 k_dot = lvarop tdot "dot"
+k_rarrow = lvarop t_Arrow "->"
 
 -- "special" identifiers for FFI which are not (all) language keywords.
 k_foreign = lvarid t_foreign "foreign"
