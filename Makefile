@@ -1,7 +1,7 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre15x
+VERSION = 1.0pre16
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
@@ -25,9 +25,11 @@ PRELUDEA = \
 	src/prelude/Debug/Makefile* src/prelude/Debug/*.hs \
 	src/prelude/Directory/Makefile* src/prelude/Directory/*.hs \
 	src/prelude/Directory/*.gc \
+	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
+	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
 	src/prelude/Interrupt/Makefile* src/prelude/Interrupt/*.hs \
 	src/prelude/Ix/Makefile* src/prelude/Ix/*.hs
 PRELUDEB = \
@@ -48,8 +50,7 @@ PRELUDEB = \
 	src/prelude/Ratio/Makefile* src/prelude/Ratio/*.hs \
 	src/prelude/System/Makefile* src/prelude/System/*.hs \
 	src/prelude/Time/Makefile* src/prelude/Time/*.hs \
-	src/prelude/Time/*.gc \
-	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs
+	src/prelude/Time/*.gc
 PRELUDEC = \
 	src/prelude/Array/*.c \
 	src/prelude/Bit/*.c \

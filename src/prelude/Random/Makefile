@@ -42,7 +42,7 @@ ${MAINOBJ}: ${OBJDIR}/%.o : %.hs
 ${CFILES}: %.c : %.hs
 	$(HC) -C $(HFLAGS) $<
 ${MAINCFILE}: %.c : %.hs
-	$(HC) -C -P../NonStd/ +CTS -lib -CTS $<
+	$(HC) -C -cpp +CTS -lib -CTS $<
 
 
 ${THISLIB}.o : ${THISLIB}.hs ${OBJS}
