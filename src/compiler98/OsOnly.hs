@@ -3,7 +3,7 @@ module OsOnly
   , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
   ) where
 
-isPrelude str = take (7::Int) str == "Prelude"
+isPrelude str = {-take (7::Int)-} str == "Prelude"
 
 fixRootDir isUnix s =
  let rs = reverse s
