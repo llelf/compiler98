@@ -3,13 +3,15 @@ module IExtract
   , iextractClass
   , iextractData, iextractDataPrim, iextractInstance, iextractType
   , iextractVarsType
+  , addPreludeTupleInstances
   , needFixity, tvrPosTids, tvPosTids, tvTids
     -- re-exported from ImportState
   , getNeedIS,putModidIS
   ) where
 
 import List
-import TokenId(TokenId(..),t_Arrow,t_Tuple,ensureM,dropM,forceM,rpsPrelude)
+import TokenId(TokenId(..),t_Arrow,t_Tuple,ensureM,dropM,forceM,rpsPrelude
+		,tEq,tOrd,tBounded,tRead,tShow,visible)
 import State
 import IdKind
 import Syntax
@@ -23,6 +25,10 @@ import Syntax
 import OsOnly(isPrelude)
 import ImportState
 import Id(Id)
+
+--import PrettyLib	-- debugging output only
+--import PrettySyntax	-- debugging output only
+
 
 -- The spike doesn't disappear if rt' is forced, instead memory usage increases!
 --- ===========================
@@ -294,6 +300,9 @@ importInstance cls con free ctxs _ importState@(ImportState visible unique orps 
 	      st' -> seq st' (ImportState visible unique orps rps needI rt st' insts fixity errors)
 
 storeInstance al cls con ctxs _ importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
+--strace ("storeInstance:\n  "++prettyPrintSimple 70 ppContexts ctxs
+--		++"\n  "++show cls
+--		++"\n  "++show con) $
   let realcls = ensureM rps cls
       realcon = ensureM rps con
       same (realcls',realcon',_,_) = realcls == realcls' && realcon == realcon'
@@ -422,13 +431,34 @@ iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
     else
       storeInstance al cls con ctxs -- otherwise save the instance for later
 
+-- addPreludeTupleInstances is an efficiency hack.
+-- It takes a long time to parse the Prelude.hi file, and adding large
+-- numbers of tuple instances to the .hi file increases compile-times
+-- by 30% or more.
+-- Omitting them from the .hi file and adding them by hand here, therefore
+-- gives a big time saving.
+addPreludeTupleInstances :: () -> ImportState -> ImportState
+addPreludeTupleInstances =
+  let mkCtx c v = Context noPos c (noPos,v)
+      tuple cls n = let vars = map (visible.(:[])) (take n ['a'..]) in
+                    storeInstance (tvTids vars)
+					cls
+					(TupleId n)
+					(map (mkCtx cls) vars)
+  in
+    mapS0 (tuple tEq) [2..15] >>>
+    mapS0 (tuple tOrd) [2..15] >>>
+    mapS0 (tuple tBounded) [2..15] >>>
+    mapS0 (tuple tRead) [2..15] >>>
+    mapS0 (tuple tShow) [2..15]
+
+
+---
+
 iextractVarsType  expFun v q postidanots ctxs typ =
    let al = tvTids (snub (freeType typ))
    in transTypes al (map snd al) ctxs [typ] >>>= \ nt ->
       mapS0 ( \ ((pos,tid),annots) -> importVar v q tid (expFun v q tid Var) nt annots) postidanots
-
-
-
 
 ---
 
