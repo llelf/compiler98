@@ -1,7 +1,6 @@
 module Config where
 
 import Compiler
-import Local (globalConfigFileDir)
 import System (getEnv)
 import Directory (doesFileExist)
 #if defined(__NHC__)
@@ -98,7 +97,8 @@ defaultConfigLocation = unsafePerformIO $ do
               if ok
                 then return loc
                 else ioError (userError ""))
-          (\e-> return (globalConfigFileDir++"/"++machine++"/hmakerc"))
+          (\e-> do global <- getEnv "HMAKEDIR"
+                   return (global++"/"++machine++"/hmakerc"))
 
 
 matchCompiler :: String -> HmakeConfig -> CompilerConfig

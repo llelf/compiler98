@@ -3,7 +3,6 @@ module Main where
 
 import Compiler (HC(..))
 import Config
-import Local (globalConfigFileDir)
 import Directory (doesDirectoryExist,doesFileExist,removeFile,getPermissions
                  ,Permissions(..),renameFile)
 import System (system,exitWith,ExitCode(..),getArgs,getEnv,getProgName)
@@ -61,11 +60,12 @@ main = do
       case args of
         [file,_,_] -> do config <- parseConfigFile machine file
                          return (config, file, tail args)
-        [] -> do hPutStrLn stderr ("Usage: hmake-config"
+        [] -> do global <- getEnv "HMAKEDIR"
+                 hPutStrLn stderr ("Usage: hmake-config"
                               ++" [configfile] [add|delete|default] hc\n"
                               ++"    -- hc is name/path of a Haskell compiler\n"
                               ++"    -- default configfile is "
-                              ++globalConfigFileDir++"/"++machine++"/hmakerc")
+                              ++global++"/"++machine++"/hmakerc")
                  exitWith (ExitFailure 1)
         _ -> do home <- getEnv "HOME"
                 let path = home++"/.hmakerc/"++machine
@@ -77,7 +77,8 @@ main = do
       catch (safeReadConfig path)
             (\e-> if isDoesNotExistError e
                   then do
-                    let global = globalConfigFileDir++"/"++machine++"/hmakerc"
+                    globalDir <- getEnv "HMAKEDIR"
+                    let global = globalDir++"/"++machine++"/hmakerc"
                     hPutStrLn stderr ("hmake-config: Warning"
                                       ++"\n    Config file '"++path
                                       ++"' not found."

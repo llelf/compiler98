@@ -7,11 +7,11 @@ MKCONFIG = $(DST)/MkConfig$(EXE)
 TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs SymTab.hs \
-	  Output.hs Order.hs ListUtil.hs Getmodtime.hs Local.hs \
+	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
           MkProg.hs IsPrefixOf.hs Compiler.hs PreProcessor.hs
 CPPSRCS = Argv.hs Graph.hs GetDep.hs ParseLib.hs Compat.hs Imports.hs \
 	  Config.hs
-CFGSRCS = Local.hs Config.hs Compiler.hs
+CFGSRCS = Config.hs Compiler.hs
 
 OBJS    = $(patsubst %.hs, $(OBJDIR)/%.$O, $(SRCS))
 CPPOBJS = $(patsubst %.hs, $(OBJDIR)/%.$O, $(CPPSRCS))
@@ -39,7 +39,6 @@ config:
 	sh $(BUILDDIR)/hmake3.config
 cfiles: clean $(CFILES) $(CPPCFILES) Older.$C MkConfig.$C
 fromC: $(OBJDIR)
-	$(HC) $(HFLAGS) -C Local.hs	# patch local configuration first
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
 	$(HC) $(HFLAGS)    -o $(MKCONFIG) -d $(OBJDIR) MkConfig.$C $(CFGCFILES)
@@ -102,17 +101,15 @@ ${OBJDIR}/GetDep.$O:	GetDep.hs ${OBJDIR}/Getmodtime.$O ${OBJDIR}/Imports.$O \
 			${OBJDIR}/FileName.$O ${OBJDIR}/Unlit.$O \
 			${OBJDIR}/Argv.$O ${OBJDIR}/PreProcessor.$O \
 			${OBJDIR}/Config.$O 
-${OBJDIR}/Config.$O:	Config.hs ${OBJDIR}/Compiler.$O ${OBJDIR}/Local.$O
+${OBJDIR}/Config.$O:	Config.hs ${OBJDIR}/Compiler.$O
 ${OBJDIR}/Compiler.$O:	Compiler.hs 
 ${OBJDIR}/ListUtil.$O:	ListUtil.hs 
-${OBJDIR}/Local.$O:	Local.hs
 ${OBJDIR}/Argv.$O:	Argv.hs ${OBJDIR}/ListUtil.$O ${OBJDIR}/Compiler.$O \
 			${OBJDIR}/Config.$O 
 ${OBJDIR}/MkProg.$O:	MkProg.hs ${OBJDIR}/Argv.$O ${OBJDIR}/GetDep.$O \
 			${OBJDIR}/Getmodtime.$O ${OBJDIR}/ListUtil.$O \
 			${OBJDIR}/Order.$O ${OBJDIR}/Output.$O 
-${OBJDIR}/MkConfig.$O:	MkConfig.hs ${OBJDIR}/Compiler.$O ${OBJDIR}/Config.$O \
-			${OBJDIR}/Local.$O
+${OBJDIR}/MkConfig.$O:	MkConfig.hs ${OBJDIR}/Compiler.$O ${OBJDIR}/Config.$O
 ${OBJDIR}/Older.$O:	Older.hs
 ifeq "hbc" "$(HC)"
 ${OBJDIR}/Argv.$O:	${OBJDIR}/IsPrefixOf.$O
@@ -126,13 +123,13 @@ endif
 # C-files dependencies.		-- (needs updating)
 Argv.$C:    ListUtil.$C Compiler.$C Config.$C
 Compat.$C:  ListUtil.$C QSort.$C
-Config.$C:  Compiler.$C Local.$C  
+Config.$C:  Compiler.$C
 FileName.$C:Argv.$C
 GetDep.$C:  Getmodtime.$C Imports.$C FileName.$C Unlit.$C Argv.$C
 Graph.$C:   Compat.$C ListUtil.$C
 Imports.$C: SymTab.$C ParseLib.$C ListUtil.$C
 MkProg.$C:  Argv.$C GetDep.$C Getmodtime.$C ListUtil.$C Order.$C Output.$C
-MkConfig.$C:Compiler.$C Config.$C Local.$C
+MkConfig.$C:Compiler.$C Config.$C
 Order.$C:   Compat.$C Graph.$C ListUtil.$C Tsort.$C Utils.$C
 Output.$C:  ListUtil.$C FileName.$C Argv.$C PreProcessor.$C Config.$C
 Tsort.$C:   Compat.$C
