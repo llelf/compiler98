@@ -105,19 +105,22 @@ However, <em>hmake</em> understands and strips the following options.
 <p>
 <em>Hmake</em> also makes use of some compiler options if you specify them.
 (That is, the options are used by <em>hmake</em> as well as being
-passed on to the compiler.)
+passed on to the compiler, with suitable translation if necessary.)
 <center>
 <table border=1 width=400><tr>
 <td><b>-d</b><em>objdir</em></td>
 	<td>Search for (and compile) object files in(to) a separate objdir.</td>
 </tr><tr>
-<td><b>-P</b><em>dir</em></td>
-	<td>Search <em>dir</em> for prelude/stdlib interface files.</td>
-</tr><tr>
 <td><b>-I</b><em>dir</em><br>
     <b>-i</b><em>dir</em></td>
 	<td>Search <em>dir</em> for imported modules - compile them
 	if necessary, and link against the resulting <em>.o</em> files.</td>
+</tr><tr>
+<td><b>-P</b><em>dir</em></td>
+	<td>Search <em>dir</em> for interface files for imported modules.
+	    If an interface is found here, don't look for a source file to
+	    compile or link against.
+	    (hmake assumes it is the prelude or a package module).</td>
 </tr></table>
 </center>
 
@@ -185,7 +188,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2002-01-23<br>
+Information last updated: 2002-03-25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
