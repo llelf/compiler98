@@ -159,8 +159,6 @@ parseForeign =
                `orelse`
              (k_safe `revChk` conv Safe)
                `orelse`
-             (k_threadsafe `revChk` conv ThreadSafe)
-               `orelse`
              (parse noPos `revChk` conv Safe)	-- default is Safe
   conv tf   = parse (noPos,tf)
   calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)

@@ -144,11 +144,10 @@ data Decl id =
      | DeclFixity (FixDecl id)
 
 -- for foreign imports/exports
-data Safety = Unsafe | Safe | ThreadSafe
+data Safety = Unsafe | Safe
 instance Show Safety where
   showsPrec _ Unsafe     = showString "unsafe"
   showsPrec _ Safe       = id
-  showsPrec _ ThreadSafe = showString "threadsafe"
 
 -- supported foreign calling conventions
 data CallConv = C | Cast | Noproto | Haskell | Other String deriving Eq

@@ -7,7 +7,7 @@ import ParseLib
 import TokenId(TokenId,isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
               ,t_foreign,t_export,t_ccall,t_haskell,t_unsafe,t_cast,t_noproto
-              ,t_stdcall,t_cplusplus,t_dotnet,t_jvm,t_safe,t_threadsafe
+              ,t_stdcall,t_cplusplus,t_dotnet,t_jvm,t_safe
               ,tinterface,thiding,tqualified)
 
 
@@ -65,7 +65,6 @@ k_jvm = lvarid t_jvm "jvm"
 k_haskellcall = lvarid t_haskell "haskell"
 k_safe = lvarid t_safe "safe"
 k_unsafe = lvarid t_unsafe "unsafe"
-k_threadsafe = lvarid t_threadsafe "threadsafe"
 k_noproto = lvarid t_noproto "noproto"
 k_cast = lvarid t_cast "cast"
 
