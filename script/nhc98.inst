@@ -64,6 +64,7 @@ CINCDIRS=""
 HINCDIRS=""
 CPPFLAGS=${CPPFLAGS-""}
 #OBJDIR=
+#HIDIR=
 HISUFFIX="hi"
 OSUFFIX="o"
 CSUFFIX="hc"
@@ -128,7 +129,7 @@ checkPragmas () {
 }
 
 # Define a function for processing command-line arguments.  It will
-# also be used for dealing with {-# OPTIONS_COMPILE #-} pragmas on
+# also be used for dealing with {-# OPTIONS_NHC98 #-} pragmas on
 # a per-file basis.
 processArgs () {
   while test "'$1'" != "''" 
@@ -139,6 +140,10 @@ processArgs () {
                exit 0;;
     -o-suffix=*)  OSUFFIX=`echo $1 | cut -c11-` ;;
     -hc-suffix=*) CSUFFIX=`echo $1 | cut -c12-` ;;
+    -hi-suffix=*) HISUFFIX=`echo $1 | cut -c12-` ;;
+    -osuf ) shift; OSUFFIX=$1;;
+    -hcsuf) shift; CSUFFIX=$1;;
+    -hisuf) shift; HISUFFIX=$1;;
     -p    ) PROF=p
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
@@ -167,9 +172,9 @@ processArgs () {
             OSUFFIX="z.o"
             CSUFFIX="z.c"
             ;;
-    -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
-    +rts  ) USINGRTS=1;;
-    -rts  ) USINGRTS=0;;
+    -98|+98)COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
+#    +rts  ) USINGRTS=1;;
+#    -rts  ) USINGRTS=0;;
     +RTS  ) shift
 	    while  test "'$1'" != "''" 
 	    do 
@@ -191,15 +196,18 @@ processArgs () {
 	    done;;
     -o    ) shift; AOUT=$1;;
     -d    ) shift; OBJDIR=$1;;
+    -odir ) shift; OBJDIR=$1;;
+    -hidir) shift; HIDIR=$1;;
     -o-dir=*)   OBJDIR=`echo $1 | cut -c8-` ;;
+    -hi-dir=*)  HIDIR=`echo $1 | cut -c9-` ;;
     -bigEnd)    ENDIAN="-DHIGH_BYTE_FIRST" ;;
     -littleEnd) ENDIAN="-DLOW_BYTE_FIRST"  ;;
     -nomain)    MAINROUTINE="" ;;
     -noansiC)   CPPAS=${CPPDEFAULT}
                 COMPFLAGS=$COMPFLAGS" "$1;;
-    -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries	# not needed
-                NHC98INCDIR=$NHC98INCDIR/libraries	# not needed
-                COMPFLAGS=$COMPFLAGS" "$1;;
+#   -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries	# not needed
+#               NHC98INCDIR=$NHC98INCDIR/libraries	# not needed
+#               COMPFLAGS=$COMPFLAGS" "$1;;
     -package)   shift; package=$1;
                 PACKAGES=$PACKAGES" $package"
                 if [ -d $NHC98INCDIR/packages/$package ]
@@ -269,18 +277,19 @@ then OSUFFIX=$TRACE$TPROF".o"
 fi
 
 
-# Define a function for deciding where to place object files.
-findObjDir () {
+# Define a function for deciding where to place object/.hi files.
+findDir () {
     dirname=$1
-    case $dirname in
-      /*)   echo ${OBJDIR-$dirname};;
-      ../*) echo ${OBJDIR-$dirname};;
-      ./*)  echo ${OBJDIR-$dirname};;
-      *)    if [ -z "$OBJDIR" ]
-            then echo $dirname
-            else echo $OBJDIR/$dirname
-            fi;;
-    esac
+    default=$2
+    if [ -z "$default" ]
+    then echo $dirname
+    else case $dirname in
+           /*)   echo $default;;
+           ../*) echo $default;;
+           ./*)  echo $default;;
+           *)    echo $default/$dirname;;
+         esac
+    fi
 }
 
 
@@ -296,7 +305,7 @@ case $GRFILES in
     *.gc  ) BASENAME=`basename $1 .gc` ;;
     esac
     DIRNAME=`dirname $1`
-    objdir=`findObjDir "$DIRNAME"`
+    objdir=`findDir "$DIRNAME" "$OBJDIR"`
 
     GRFILE=$DIRNAME/$BASENAME.gc
     HSFILE=$DIRNAME/${BASENAME}_.hs
@@ -392,7 +401,8 @@ case $COMPFILES in
     esac
 
     DIRNAME=`dirname $1`
-    objdir=`findObjDir "$DIRNAME"`
+    objdir=`findDir "$DIRNAME" "$OBJDIR"`
+    hidir=`findDir "$DIRNAME" "$HIDIR"`
 
     if test $GR -eq 0
     then
@@ -401,7 +411,7 @@ case $COMPFILES in
       POSTGRFILE=${DIRNAME}/${BASENAME}_.hs
     fi
 
-    HIFILE=$DIRNAME/$BASENAME.$HISUFFIX
+    HIFILE=$hidir/$BASENAME.$HISUFFIX
     TMPHIFILE=$TMP/$BASENAME.$$.$HISUFFIX
 
     TMPCPPPREFILE=$TMP/$BASENAME.$$.hs
@@ -453,7 +463,7 @@ case $COMPFILES in
     fi
 
 # Now all of the following section goes into a subshell, because the options
-# read from {-# OPTIONS_COMPILE #-} only apply to that individual file.
+# read from {-# OPTIONS_NHC98 #-} only apply to that individual file.
     (
 
     if test $HSRC -ne 0
