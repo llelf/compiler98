@@ -291,6 +291,12 @@ int main (void) { test(); }
   else echo "Executables need .exe suffix?               yes (detected)"
   fi
 
+  TRUE=/bin/true
+  if [ ! -x $TRUE ]
+  then TRUE=/usr/bin/true
+       echo "Found /usr/bin/true not /bin/true"
+  fi
+
 else	# do the following only in binary distributions
   if [ -f lib/$MACHINE/config ]
   then
@@ -324,6 +330,7 @@ then
       echo "READLINE=\"$READLINE\"";
       echo "EXE=$EXE";
       echo "GHCSYM=`cat targets/$MACHINE/ghcsym`";
+      echo "TRUE=$TRUE";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Adding build scripts for hmake, hmake-config, and hi to"
