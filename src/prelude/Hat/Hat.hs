@@ -194,21 +194,21 @@ data Tuple15 a b c d e f g h i j k l m n o =
   Tuple15 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k) 
     (R l) (R m) (R n) (R o)
 
-aTuple0 = mkAtomCon tPrelude 0 3 "()"
-aTuple2 = mkAtomCon tPrelude 0 3 "(,)" 
-aTuple3 = mkAtomCon tPrelude 0 3 "(,,)"
-aTuple4 = mkAtomCon tPrelude 0 3 "(,,,)"
-aTuple5 = mkAtomCon tPrelude 0 3 "(,,,,)"
-aTuple6 = mkAtomCon tPrelude 0 3 "(,,,,,)"
-aTuple7 = mkAtomCon tPrelude 0 3 "(,,,,,,)"
-aTuple8 = mkAtomCon tPrelude 0 3 "(,,,,,,,)"
-aTuple9 = mkAtomCon tPrelude 0 3 "(,,,,,,,,)"
-aTuple10 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,)"
-aTuple11 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,)"
-aTuple12 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,)"
-aTuple13 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,)"
-aTuple14 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,)"
-aTuple15 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,,)"
+aTuple0 = mkAtomCon tPrelude 0 3 ""
+aTuple2 = mkAtomCon tPrelude 0 3 "," 
+aTuple3 = mkAtomCon tPrelude 0 3 ",,"
+aTuple4 = mkAtomCon tPrelude 0 3 ",,,"
+aTuple5 = mkAtomCon tPrelude 0 3 ",,,,"
+aTuple6 = mkAtomCon tPrelude 0 3 ",,,,,"
+aTuple7 = mkAtomCon tPrelude 0 3 ",,,,,,"
+aTuple8 = mkAtomCon tPrelude 0 3 ",,,,,,,"
+aTuple9 = mkAtomCon tPrelude 0 3 ",,,,,,,,"
+aTuple10 = mkAtomCon tPrelude 0 3 ",,,,,,,,,"
+aTuple11 = mkAtomCon tPrelude 0 3 ",,,,,,,,,,"
+aTuple12 = mkAtomCon tPrelude 0 3 ",,,,,,,,,,,"
+aTuple13 = mkAtomCon tPrelude 0 3 ",,,,,,,,,,,,"
+aTuple14 = mkAtomCon tPrelude 0 3 ",,,,,,,,,,,,,"
+aTuple15 = mkAtomCon tPrelude 0 3 ",,,,,,,,,,,,,,"
 toTuple0 :: Trace -> R Tuple0 -> ()
 toTuple0 h (R Tuple0 _) = ()
 
