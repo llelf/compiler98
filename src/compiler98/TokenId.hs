@@ -191,6 +191,7 @@ tInt            = qualImpRev  "Int"
 tIntHash        = qualImpRev  "Int#"
 
 
+t_flip          = qualImpRev  "flip"
 tminus          = qualImpRev  "-"
 tident          = qualImpRev  "id"
 tnegate         = qualImpRev  "negate"

@@ -8,7 +8,7 @@ import PackedString(PackedString,packString,unpackPS)
 import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos
-import TokenId(TokenId(..),t_Lambda,t_x)
+import TokenId(TokenId(..), t_x, t_flip)
 import IdKind(IdKind(..))
 import State
 import AssocTree
@@ -108,18 +108,18 @@ fixInfixList ees@(ExpVarOp pos op:es) =
 	  (InfixPre a,l) -> reorder ees
 	  _ -> reorder es >>>= \ exp -> 
                invertCheck pos op fix exp >>>
-               unitS (ExpLambda pos [ExpVar pos t_x] 
-                        (ExpApplication pos 
-                           [ExpVar pos op, ExpVar pos t_x, exp]))
+               unitS (ExpApplication pos 
+                       [ExpVar pos t_flip, ExpVar pos op, exp])
+               -- desugaring with flip better than lambda for reading a trace
 fixInfixList ees@(ExpConOp pos op:es) =
   fixTid Con op >>>= \ fix ->
         case fix of
 	  (InfixPre a,l) -> reorder ees
 	  _ -> reorder es >>>= \ exp -> 
                invertCheck pos op fix exp >>>
-               unitS (ExpLambda pos [ExpVar pos t_x] 
-                        (ExpApplication pos 
-                           [ExpCon pos op, ExpVar pos t_x, exp]))
+               unitS (ExpApplication pos 
+                       [ExpVar pos t_flip, ExpCon pos op, exp]) 
+               -- desugaring with flip better than lambda for reading a trace
 fixInfixList ees =
   case last ees of
     ExpConOp pos op -> reorder (init ees) >>>= \ exp -> 

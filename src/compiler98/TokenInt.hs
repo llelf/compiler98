@@ -75,7 +75,7 @@ tokenAllways = 	[(Var,t_undef)
 		,(Var,t_otherwise)
 	        ,(Var,terror),(Var,tident)
                 ,(Var,t_apply1),(Var,t_apply2),(Var,t_apply3),(Var,t_apply4)
-                ,(Var,t_id)]
+                ,(Var,t_id),(Var,t_flip)]
 tokenMonad =	[(Var,t_gtgt),(Var,t_gtgteq),(Var,t_zero)]
 tokenBounded =	[(TClass,tBounded),(Var,tminBound),(Var,tmaxBound)]
 tokenEnum =	[(TClass,tEnum)
