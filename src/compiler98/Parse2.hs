@@ -72,7 +72,7 @@ parseImpSpec =
 parseEntity =
     (uncurry EntityTyConCls) `parseAp` aconid `chk` lpar `chk` dotdot `chk` rpar
 	`orelse`
-    ( \ (pos,x) -> EntityTyCon pos x []) `parseAp` aconid `chk` tuple0
+    (\(pos,x) -> EntityTyCon pos x []) `parseAp` aconid `chk` tuple0
         `orelse`
     (uncurry EntityTyCon) `parseAp` aconid `chk` lpar `ap` (manySep comma conid) `chk` rpar
 	`orelse`

@@ -1,23 +1,32 @@
 module ParseLib(-- defined in ParseCore
-                Pos(..),ParseError(..),ParseResult(..),ParseBad(..),ParseGood(..),Parser(..)
-               ,initError,initBad,initGood      -- Start values for parseError,parseBad, parseGood
+                Pos(..), ParseError(..), ParseResult(..)
+               ,ParseBad(..), ParseGood(..), Parser(..)
+               ,initError,initBad,initGood      -- Start values for parseError,
+						-- parseBad, parseGood
 	       ,parseit
-               ,parse,ap,chk,orelse,into        -- The core
+               ,parse, ap, chk, orelse, into    -- The core
                ,token                           -- parse terminal
                ,parseFail                       -- Failing parser
                 -- defined in ParseLib
                ,revAp                           -- Apply snd to fst
                ,revChk                          -- Check fst
                ,cases                           -- Muliple chk
-               ,parseAp,parseChk                -- parse & (ap | chk)
-               ,apCut,chkCut,intoCut            -- No return if fst succeed
+               ,parseAp, parseChk               -- parse & (ap | chk)
+               ,apCut, chkCut, intoCut          -- No return if fst succeed
                ,literal                         -- Parse literal
-	       ,optional,Maybe 			-- Zero or one item
-               ,many,some                       -- Zero/one or more items. Cut after each item.
-               ,manySep,someSep                 -- Zero/one or more items with separator. Cut after each item.
-               ,manysSep,somesSep               -- Zero/one or more items with one or more separators. Cut after each item.
-               ,rcurl                           -- Parse '}' and fix one if needed and possible.
-               ,parseRest                       -- Always true, returns rest of the input
+	       ,optional, Maybe 		-- Zero or one item
+               ,many, some                      -- Zero/one or more items.
+						-- Cut after each item.
+               ,manySep, someSep                -- Zero/one or more items with
+						-- separator.  Cut after each
+						-- item.
+               ,manysSep, somesSep              -- Zero/one or more items with
+						-- one or more separators. Cut
+						-- after each item.
+               ,rcurl                           -- Parse '}' and fix one if
+						-- needed and possible.
+               ,parseRest                       -- Always true, returns rest
+						-- of the input
                ) where
 
 import Lex
