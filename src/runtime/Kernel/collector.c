@@ -675,7 +675,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 #if TRACE
     hat_exit("Out of heap.",0,-1);
 #endif
-    exit(-1);
+    nhc_abort("Insufficient heap memory.");
   }
 
 #if 0

@@ -15,6 +15,23 @@
 extern Node FN_Prelude_46_95startDbg[];
 #endif
 
+/* In this variable an error handler can be registered.
+ * The error message is passed to it.
+ */
+
+void (*haskellErrorHandler)(char *errorMsg) = NULL;
+
+/* This function is always used when an error of a Haskell program
+ * is or cannot be caught by the Haskell program.
+ * It is not (yet) used for nhc internal errors (e.g. wrong bytecode)
+ */
+void nhc_abort(char *errorMsg) 
+{
+  fprintf(stderr,"%s\n",errorMsg);
+  if (haskellErrorHandler)
+     (*haskellErrorHandler)(errorMsg);
+  exit(-1);
+}
 
 /****/
 

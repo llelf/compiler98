@@ -459,6 +459,12 @@ void run(NodePtr toplevel)
 	  sp[0] = nodeptr;
 	if(GET_TAG(nodeptr) & VAP_TAG && !CINFO_NEED(GET_CINFO(nodeptr))) {
 	  if (ZAPPED(nodeptr)) {
+            nhc_abort("Black hole detected.");
+	    /* The following out-commented commands basically just build
+             * a call to `error "Black hole detected."' in Haskell memory
+             * an call it; so the result is the same.
+             */
+#if 0
 #ifdef DBGTRANS
             extern void dbg_blackhole();
 	    dbg_blackhole();
@@ -489,6 +495,7 @@ void run(NodePtr toplevel)
 	      exit(-1);
 	    }
 	    nodeptr = sp[0];
+#endif
 #endif
 	  }
 	

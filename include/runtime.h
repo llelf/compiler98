@@ -240,6 +240,8 @@ extern int year;
 
 /* functions */
 
+void nhc_abort(char *errorMsg); 
+
 extern Node FN_Prelude_46blackhole[];
 extern Node CF__95Builtin_46hputc_95ok[];
 extern Node CF__95Driver_46_95toplevel[];
