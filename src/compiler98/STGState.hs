@@ -65,6 +65,11 @@ incDepthIf True  down up@(Thread prof fun maxDepth fds state (e:env) lateenv d h
       else
         (d',Thread prof fun maxDepth fds state (((-1,Stack d'):e):env) lateenv d' h dhs fs)
 
+{- ----
+-- Niklas reckons that the updTOS code here is completely useless,
+-- so we're following his advice and replacing it with a lifted identity.
+-- ----
+
 -- NOTE why is old_i sometimes -1, and if not why did the old code change i?
 updTOS False i down up = up
 updTOS True  i down up@(Thread prof fun maxDepth fds state (((old_i,w):e):env) lateenv d h dhs fs) | old_i == -1 =
@@ -72,6 +77,13 @@ updTOS True  i down up@(Thread prof fun maxDepth fds state (((old_i,w):e):env) l
 updTOS True  i down up@(Thread prof fun maxDepth fds state (((old_i,w):e):env) lateenv d h dhs fs) | old_i == i = up
 updTOS _ i down up@(Thread prof fun maxDepth fds state (e:env) lateenv d h dhs fs) =
    strace ("nhc98 is in deep trouble and might produce faulty code for "++show i++" \n  fun= " ++ show fun ++ "  e = " ++ show e ++ "\n") $ up
+-}
+
+-- However, I'm going to keep the warning just in case it's useful.
+updTOS True i down up@(Thread prof fun maxDepth fds state (((oi,w):e):env) lateenv d h dhs fs)
+    | oi!=i && oi != -1  =
+   strace ("Warning: nhc98 might produce faulty code for "++show i++" \n  fun= " ++ show fun ++ "  e = " ++ show e ++ "\n") $ up
+updTOS _ i down up = up
 
 incDepth down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   case d + 1 of
