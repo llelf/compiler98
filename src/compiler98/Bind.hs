@@ -91,7 +91,8 @@ bindPat kind (PatIrrefutable    pos pat) = bindPat kind pat
 bindPat kind (PatNplusK         pos tid tid' int _ _) = bindTid pos kind tid
 
 bindField (FieldExp pos tid pat) = {- bindTid pos Var tid >>> -} bindPat Var pat
---bindField (FieldPun pos tid) = bindTid pos Var tid	-- H98 removes
+bindField (FieldPun pos tid)     = bindTid pos Var tid
+--bindField (FieldPun pos tid)   = bindTid pos Var tid	-- H98 removes
 
 
 --------------------------------------
