@@ -4,7 +4,7 @@ module Foreign
   , ImpExp(..)
   ) where
 
-import Maybe (fromJust)
+import Maybe (fromJust,isNothing)
 import List (find,isPrefixOf,isSuffixOf)
 import PackedString (PackedString,unpackPS)
 import Syntax
@@ -44,8 +44,9 @@ instance Show Style where
 instance Show Foreign where
   showsPrec p (Foreign ie proto style incl cname hname arity args res) =
     word "foreign" . space . shows ie . space . shows style . space .
-    showChar '"' . word cname . showChar '"' .
-    space .  shows hname . space . shows arity . showString " :: " .
+    showChar '"' . maybe id (\i-> word i . space) incl . word cname .
+    showChar '"' . space .
+    shows hname . space . shows arity . showString " :: " .
     showString (mix " -> " (map show args)) .
     showString " -> " . shows res
 
@@ -107,7 +108,7 @@ toForeign symboltable memo callconv ie cname arity var =
     (args,res) = searchType symboltable memo info
     (cfunc,style,include) = case callconv of Cast -> (hnameStr,CCast,Nothing)
                                              _    -> parseEntity cname hnameStr
-    proto = (callconv/=Noproto)
+    proto = (callconv/=Noproto) && (isNothing include)
     arity' = if arity==length args then arity
              else error ("foreign function: arity does not match: "
                          ++hnameStr++" has "++show arity
@@ -218,6 +219,9 @@ findFirst f (x:xs) =
 strForeign :: Foreign -> ShowS
 strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
     nl . comment (shows f) . nl .
+    maybe id
+          (\i-> word "#include " . showChar '"' . word i . showChar '"' . nl)
+          incl .
     (if proto then genProto style cname else id) .
     word "#ifdef PROFILE" . nl .
     word "static SInfo" . space . word profinfo . space . equals . space .
