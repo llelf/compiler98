@@ -199,7 +199,8 @@ isRenamingFor :: AssocTree Int Info -> Info -> NewType
 isRenamingFor st (InfoData  unique tid exp nt (DataTypeSynonym _ depth)) = nt
 isRenamingFor st info@(InfoData  unique tid exp nt (DataNewType _ constrs)) =
     case constrs of
-      []  -> error ("Cannot find constructor for newtype: "++show info)
+      []  -> error ("Problem with type of a foreign imported function:\n"
+                    ++"Cannot find constructor for newtype: "++show info)
       [c] -> case lookupAT st c of
                Just i  -> ntI i
                Nothing -> error ("Cannot find info for newtype constructor: "
