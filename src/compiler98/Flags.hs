@@ -18,6 +18,7 @@ module Flags
   ,sNplusK,sPuns,sPreludes,sIncludes,sImport,sILex,sPart,sLib
   ,sDbgTrusted,sTprof,sFunNames,sDepend,sRealFile,sShowType
   ,sShowWidth,sShowIndent,sShowQualified,sHiSuffix
+  ,sHatAuxFile,sHatTransFile,sHatFileBase
   ) where
 
 import IO

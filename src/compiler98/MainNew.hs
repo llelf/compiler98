@@ -31,9 +31,7 @@ import RenameLib(getSymbolTableRS,RenameState,getErrorsRS)
 import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
                  ParseResult(..),parseit)
 
-import Flags
-{- correct import list does not work with current nhc 
-            (Flags,processArgs,pF
+import Flags(Flags,processArgs,pF
             ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
             ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
             ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
@@ -42,9 +40,8 @@ import Flags
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
--}
 import SyntaxPos	-- DW
-import PrettySyntax(prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
+import PrettySyntax(prettyPrintTokenId,prettyPrintId -- ,prettyPrintTraceId
                    ,ppModule,ppTopDecls,ppClassCodes)
 import StrPos(strPCode)
 
@@ -98,9 +95,9 @@ import PackedString(PackedString, unpackPS)
 
 import Foreign(Foreign,strForeign)
 import ReportImports(reportFnImports)
-import AuxFile(toAuxFile)
-import AuxLabelAST(auxLabelSyntaxTree)
-import TraceTrans(traceTrans,maybeStripOffQual)
+--import AuxFile(toAuxFile)
+--import AuxLabelAST(auxLabelSyntaxTree)
+--import TraceTrans(traceTrans,maybeStripOffQual)
 
 
 --import NonStdProfile
@@ -155,6 +152,7 @@ main' args = do
   pF (sParse flags) "Parse" (prettyPrintTokenId flags ppModule parsedPrg) 
 
 
+{- Now in hat-trans only.
   {-
   -- Read and write auxiliary information files (for tracing).
   -- Then relabel the syntax tree with the auxiliary information.
@@ -175,6 +173,7 @@ main' args = do
             (sHatFileBase flags) newprog)))
     putStrLn ("Wrote " ++ sHatTransFile flags)
     exitWith (ExitSuccess)
+-}
 
   -- (Module _ (Visible modid) _ _ _ _) <- return parsedPrg
   -- Insert check that sPart flags or modid == sourcefile ???
