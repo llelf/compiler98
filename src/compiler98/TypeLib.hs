@@ -12,16 +12,14 @@ module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
 
 import NT
 import TypeEnv(lookupEnv)
-import Extra(assocDef,pair,strPos,Pos(..),noPos,snub,dropJust,isJust,mapSnd)
+import Extra(assocDef,strPos,snub,mapSnd)
 import Syntax
-import State(State0(..))
 import IdKind
-import TokenId(TokenId(..),t_Arrow,tmain,tIO,t_Tuple,rpsPrelude)
+import TokenId(t_Arrow,tmain,tIO,t_Tuple)
 import Flags
 import SyntaxPos
 import TypeSubst
 import TypeUnify
-import TypeCtx
 import TypeData
 import IntState
 import TypeUtil
@@ -29,10 +27,6 @@ import Info
 import IO
 import Error
 import Nice
-import Bind(identPat)
-import PrimCode({-rpsEval,-}rpsseq)
-
-import Extra(trace)
 
 msgPat pat err =
   "Type error " ++ err ++ "\nwhen unifying pattern at " ++ strPos (getPos pat) ++ " with its expression.\n"
@@ -282,7 +276,7 @@ typePatCon' pos ident down@(TypeDown env tidFun defaults ctxDict envDict) up@(Ty
       	   in
              case dictAndArrows (tidFun (t_Arrow,TCon)) pos state [] nt' of
 	       (ictxs,nt,state) -> 
-	          let (is,ctxs') = unzip (ictxs ++ eictxs)
+	          let (_,ctxs') = unzip (ictxs ++ eictxs)
 	              nt' = subst phi nt
 	          in seq nt' ((ExpCon pos ident,nt',map (ExpVar pos . fst) eictxs,exist),TypeState state phi (ctxs'++ctxs) (ectxsi ++ inEctxsi))
 

@@ -3,9 +3,9 @@ module PosAtom(posAtom) where
 import IntState
 import PosCode -- hiding (isPosAtom)
 import State
-import TokenId(TokenId,tidPos,tunknown)
-import Extra(dropJust,unionSet,removeSet,pair,strPos,Pos(..),strace)
-import TokenId(TokenId,visible)
+import TokenId(tidPos,tunknown)
+import Extra(dropJust,unionSet,removeSet,pair)
+import TokenId(visible)
 import SyntaxPos
 
 -- isPosAtom x = True -- A (not so) small lie
@@ -46,9 +46,6 @@ atomBinding (fun,PosPrimitive pos fn) =
   unitS [(fun,PosPrimitive pos fn)]
 atomBinding (fun,PosForeign pos fn t c ie) =
   unitS [(fun,PosForeign pos fn t c ie)]
-
-isntPrim (PosPrim _ _) = False
-isntPrim _ = True
 
 -- Forgot why I do this! The isPosAtom used was forced to be true due to local definition?
 flattenExp fun pos envs exp =
@@ -128,7 +125,6 @@ ensureAtom exp =
   else
     atomAdd (getPos exp) exp 
 
-atomGlobal b down up@(AtomState state bs) = AtomState state (b:bs)
 atomTop down up@(AtomState state bs) = (bs,AtomState state [])
 
 atomAdd pos exp down@(AtomDown tid env) up@(AtomState state bs) =
@@ -138,6 +134,7 @@ atomAdd pos exp down@(AtomDown tid env) up@(AtomState state bs) =
       ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) 0 (tidPos tid pos) True) state) bs --PHtprof
       )
 
+{-
 atomAddG pos exp down@(AtomDown tid env) up@(AtomState state bs) =
   case uniqueIS state of
     (u,state) ->
@@ -147,6 +144,7 @@ atomAddG pos exp down@(AtomDown tid env) up@(AtomState state bs) =
          ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) (length pnewenv) (tidPos tid pos) True) state) --PHtprof
 		 ((u,PosLambda pos [] pnewenv exp): bs)
          )
+-}
 
 atomStrict con  down@(AtomDown tid env) up@(AtomState state bs) =
   ((strictI . dropJust . lookupIS state) con, up)

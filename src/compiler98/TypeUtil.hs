@@ -3,11 +3,8 @@ module TypeUtil (cvi2typedict, ntIS, unboxedIS)  where
 import NT
 import TypeSubst
 import TypeData
-import SysDeps(PackedString,packString,unpackPS)
-import Info
 import IntState
 import Extra(assocDef,snub)
-import Syntax
 
 -- ntIS returns NoType if identifier doesn't exist
 

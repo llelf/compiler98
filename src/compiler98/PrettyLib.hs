@@ -69,10 +69,6 @@ The often used combination of group and nest.
 groupNest :: Int -> Doc -> Doc
 groupNest indentation doc = group (nest indentation doc)
 
-
-doubleQuotes :: String -> Doc
-doubleQuotes s = text ('"' : s ++ "\"")
-
 parens :: Doc -> Doc
 parens doc = text "(" <> doc <> text ")"
 

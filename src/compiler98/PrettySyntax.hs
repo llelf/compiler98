@@ -11,9 +11,9 @@ module PrettySyntax
   , ppType, ppContexts, ppSimple, ppDecl
   ) where 
 
-import Extra(Pos(..),noPos)
+import Extra(noPos)
 import PrettyLib
-import Syntax hiding (noDecls)
+import Syntax hiding (noDecls,TokenId)
 import TokenId(TokenId(..),extractV,t_Arrow,t_List)
 import Id(Id)
 import IntState(IntState,strIS,lookupIS)
@@ -163,9 +163,6 @@ fSpace = fdelimiter " "
 
 fComma :: Doc
 fComma = fdelimiter "" <> text ","
-
-fSemi :: Doc
-fSemi = fdelimiter ";"
 
 dSemiSpace :: Doc
 dSemiSpace = delimiter "; "
@@ -712,16 +709,6 @@ ppField info (FieldExp pos var exp) =
     ppExp info exp
 ppField info (FieldPun pos var) =
   ppPos info pos <> ppIdAsVar info var
-
-
-ppQual :: PPInfo a -> Qual a -> Doc
-ppQual info (QualExp e) = ppExp info e
-ppQual info (QualPatExp pat e) =
-  groupNestS info $
-    ppPat info pat <> dSpace <> text "<- " <>  ppExp info e
-ppQual info (QualLet ds) =
-  groupNestS info $ text "let" <> dSpace <> ppDecls info ds 
-
 
 
 ppAlt :: PPInfo a -> String -> Alt a -> Doc

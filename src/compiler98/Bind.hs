@@ -10,12 +10,12 @@ module Bind(Pos,Decls,Decl,Exp,bindDecls,bindPat,identDecl,identPat) where
 
 import State((>>>),(>>>=),mapS0,unitS0)
 import IdKind(IdKind(..))
-import Extra(strPos,noPos)
+import Extra(strPos)
 import TokenId(TokenId)
 import Syntax(Decls(..),Decl(..),Exp(..),Constr(..),Field(..),Simple(..)
              ,Alt(..),Fun(..))
 import SyntaxPos(Pos,HasPos(getPos))
-import RenameLib(RenameRMonadEmpty,RenameState,bindTid,checkTid)
+import RenameLib(RenameRMonadEmpty,bindTid,checkTid)
 
 
 ------------------------
@@ -177,13 +177,6 @@ Argument must be a pattern, not an arbitrary expression.
 -}
 identPat :: Exp a -> [(Pos,a)]
 identPat pat = identPat' pat () []
-
-{-
-Same as above for a list of patterns.
--}
-identPats :: [Exp a] -> [(Pos,a)]
-identPats pats = mapS0 identPat' pats () []
-
 
 identPat' :: Exp a -> b -> [(Pos,a)] -> [(Pos,a)]
 

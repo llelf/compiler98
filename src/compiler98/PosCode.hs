@@ -1,6 +1,6 @@
 module PosCode(module Prim, module PosCode, Pos) where
 
-import Extra(Pos(..),noPos)
+import Extra(noPos)
 import Prim
 import Foreign (ImpExp)
 import Syntax (CallConv)

@@ -11,7 +11,7 @@ import IdKind
 import NT
 import State
 import DeriveLib(syntaxType,syntaxCtxs)
-import TokenId(TokenId,tTrue,tShow,tshowParen,tshowChar,tshowString
+import TokenId(tTrue,tShow,tshowParen,tshowChar,tshowString
               ,tshowsType,tshowsPrec,t_lessthan,t_dot,dropM,isTidOp,visImport)
 import Nice(showsOp,showsVar)
 import Id(Id)

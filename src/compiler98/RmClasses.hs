@@ -7,7 +7,6 @@ table (why?; arity in the symbol table is number of function arrows in type)
 -}
 module RmClasses(rmClasses) where
 
-import IdKind
 import IntState
 import Syntax
 import Extra(dropJust)

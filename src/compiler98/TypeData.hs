@@ -9,10 +9,9 @@ import IntState(IntState)
 import TokenId(TokenId)
 import NT(NT)
 import IdKind(IdKind)
-import Extra(Pos(..))
+import Extra(Pos)
 import Syntax (Exp)
 import AssocTree
-import Id(Id)
 
 data TypeDown =
       TypeDown

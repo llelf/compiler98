@@ -21,8 +21,7 @@ import SyntaxUtil(infixFun)
 
 import Overlap(Overlap)
 import Info(IE)
-import SysDeps(PackedString,unpackPS)
-import ImportState(ImportState)
+import SysDeps(PackedString)
 
 
 needProg :: Flags
@@ -300,8 +299,6 @@ needType (TypeApp t1 t2) = needType t1 >>> needType t2
 needType (TypeCons  pos hs types) = needTid pos TCon hs >>> mapR needType types
 needType (TypeVar   pos hs)       = unitR
 needType (TypeStrict pos typ)     = needType typ
-
-needSig (Sig posidents typ) = needType typ
 
 needSimple kind (Simple pos hs posidents) = needTid pos kind hs -- posidents are typevariables!
 

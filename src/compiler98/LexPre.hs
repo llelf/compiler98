@@ -2,13 +2,11 @@ module LexPre(lexPre,PosTokenPre) where
 
 import Char(isSpace,isDigit,isAlpha)
 
-import Extra(snd3)
-import Error(errorLC)
 import Lex
 import LexLow
 import LexStr	-- includes: tab,lexChr
-import SysDeps(PackedString,packString,unpackPS,isAlphaNum)
-import TokenId(TokenId,t_List,t_Arrow,t_Pair,t_Tuple)
+import SysDeps(PackedString,packString,isAlphaNum)
+import TokenId(t_List,t_Arrow,t_Tuple)
 
 type PosTokenPre = (PackedString,Int,Int,Lex)
 

@@ -25,7 +25,7 @@ import IExtract(freeType)
 import Extra(snub,strPos,mixLine,isJust,dropJust,mixCommaAnd,isNothing)
 import Bind(identPat)
 import SyntaxPos(Pos,HasPos(getPos))
-import AssocTree(Tree,lookupAT)
+import AssocTree(lookupAT)
 import Id(Id)
 
 

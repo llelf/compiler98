@@ -19,8 +19,6 @@ import MergeSort(group,unique)
 import TypeSubst
 import TypeCtx
 import TypeData
-import SysDeps(PackedString,packString,unpackPS)
-import Info
 import IntState
 import TypeUtil(ntIS)
 import TypeUnify(unify)
@@ -101,11 +99,11 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict)
       (nextTvar,_) = uniqueIS state -- take a look at the next type variable
 
       envHere :: [(Int, NT)]
-      (envHere,up'@(TypeState state' phi' ctxs' ectxsi')) =
+      (envHere,up') =
 		envDecls decls () (TypeState state phi initCtxs [])
 
       decls' :: [Decl Int]
-      (decls',up''@(TypeState state'' phi'' ctxs'' existCtxsi)) =
+      (decls', TypeState state'' phi'' ctxs'' existCtxsi) =
 		mapS typeDecl decls
                      (TypeDown (envHere++env) tidFun defaults
                                (usedCtx ++ ctxsDict)
@@ -298,7 +296,6 @@ bindType decl@(DeclFun pos fun funs)
 
     (given@(NewType givenFree [] givenCtx [givenNT]),state) -> 
       let derivedNT = assocDef envHere (error "171")  fun
-	  derivedFree = filter (`notElem` globalTVars) (snub (freeNT derivedNT))
       in
       case unify state idSubst (derivedNT,givenNT) of 
         Left (phi,err) ->
@@ -592,8 +589,6 @@ typeExp (ExpList  pos es)         =
      typeUnifyMany (msgList es) esT >>>= \t ->
      getIdent (t_List,TCon)     >>>= \tcon ->
      unitS (ExpList pos es,NTcons tcon [t])
- where
-  mapL = map :: ((a->b) -> [a] -> [b])
 
 typeExp (ExpLambda pos pats13 exp)  =
 --  phiMark >>>= \ mark ->
@@ -666,8 +661,6 @@ typePat (ExpList  pos es)         =
      typeUnifyMany (msgList es) esT >>>= \t ->
      getIdent (t_List,TCon)     >>>= \tcon ->
      unitS (ExpList pos es,NTcons tcon [t],concat eTVar)
- where
-  mapL = map :: ((a->b) -> [a] -> [b])
 
 typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
                                    -- free variables really are free !!!

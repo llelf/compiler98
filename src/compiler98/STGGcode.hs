@@ -1,13 +1,10 @@
 module STGGcode where -- (stgGcode) where
 
-import Extra(strace,pair,isJust,dropJust)
+import Extra(isJust,dropJust)
 import State
-import IntState hiding (IdKind)
 import PosCode
-import SyntaxPos
 import Gcode
-import GcodeLow(con0,cap0,caf,fun,extra)
-import StrPos
+import GcodeLow(con0,cap0,caf)
 import STGState
 import STGBuild
 import Foreign(ImpExp(..))
@@ -55,7 +52,7 @@ gBindingTop (fun,PosForeign pos fn str c ie) =
 
 gExp (PosExpLet pos bindings exp) =
    \ down (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs) ->
-    let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack' fs')
+    let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' _ _ _ heap' depthstack' fs')
             = mapS stgBodyPush bindings
                    down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack fs)
                    

@@ -9,30 +9,22 @@ module Main where
 
 import IO
 import System
-import Monad(when)
 
-import Scc
 import Error
 
 import AssocTree
 import Memo
-import Syntax
+import Syntax hiding (TokenId)
 import PosCode
 
-import OsOnly
-import Extra(Pos(..),mix,mixSpace,jRight,jLeft,noPos,strPos,showErr,mixLine,
-             pair,fst3,thd3,trace)
-import State(State0(..))
-import ImportState(ImportState,Info,IE,initIS,getSymbolTableIS,getErrIS
+import Extra(mixSpace,strPos,showErr,mixLine,thd3)
+import ImportState(ImportState,initIS,getSymbolTableIS,getErrIS
                   ,getRenameTableIS)
-import IntState(IntState,dummyIntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
-import NeedLib(initNeed)
-import RenameLib(getSymbolTableRS,RenameState,getErrorsRS)
-import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..),
-                 ParseResult(..),parseit)
+import IntState(IntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
+import ParseCore(parseit)
 
 import Flags(Flags,processArgs,pF
-            ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
+            ,sRealFile,sProfile,sUnlit,sSourceFile,sUnderscore,sLex
             ,sNeed,sParse,sIRename,sIBound,sINeed
             ,sIIBound,sIINeed,sRBound,sRename,sDBound,sDerive
             ,sEBound,sIIRename
@@ -40,21 +32,17 @@ import Flags(Flags,processArgs,pF
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
             ,sGcode,sGcodeFix,sGcodeOpt1,sGcodeMem,sGcodeOpt2,sGcodeRel)
-import SyntaxPos	-- DW
 import PrettySyntax(prettyPrintTokenId,prettyPrintId
                    ,ppModule,ppTopDecls,ppClassCodes)
 import StrPos(strPCode)
 
-import TokenId(TokenId(..),t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
-import IdKind(IdKind(..))
+import TokenId(TokenId(..))
 import Id(Id)
-import Lex(Lex,LexAnnot)  -- need show
 
 import Unlit(unlit)
-import Lexical(PosToken(..),PosTokenPre(..),LexState(..),lexical)
+import Lexical(lexical)
 import Parse(parseProg)
 import Need(needProg)
-import Overlap(Overlap,Resolution)
 import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS,addPreludeTupleInstances)
 import Rename(rename)

@@ -8,16 +8,14 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tTrue,t_Tuple,t_Colon,t_List,
+import TokenId(t_Tuple,t_Colon,t_List,
                tBinary,t_get,t_put,t_getF,t_sizeOf,
                t_putBits,t_getBits,t_getBitsF,
-               t_gtgt,t_gtgteq,t_return,t_ltlt,t_plus,dropM)
-import Nice(showsOp,showsVar)
+               t_gtgt,t_gtgteq,t_return,t_ltlt,t_plus)
 
 deriveBinary tidFun cls typ tvs ctxs pos =
  getUnique >>>= \d ->
- let expD = ExpVar pos d
-     iPut  = tidFun (t_put,Method)
+ let iPut  = tidFun (t_put,Method)
      iGet  = tidFun (t_get,Method)
      iFGet = tidFun (t_getF,Method)
      iSize = tidFun (t_sizeOf,Method)

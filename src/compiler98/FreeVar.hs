@@ -2,10 +2,8 @@ module FreeVar(freeVar) where
 
 import State
 import PosCode
-import SyntaxPos
-import Extra(singletonSet,emptySet,unionSet,removeSet,strPos,noPos,Pos(..),pair,dropJust)
+import Extra(singletonSet,emptySet,unionSet,removeSet,noPos,pair,dropJust)
 import IntState
-import IdKind
 --------- ===========
 
 data FreeDown =

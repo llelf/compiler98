@@ -1,13 +1,8 @@
 module STGState where
 
-import Extra(pair,isJust,dropJust,strace)
-import State
+import Extra(dropJust)
 import IntState
-import PosCode
-import SyntaxPos
 import Gcode
-import GcodeLow(con0,cap0,caf,fun,extra)
-import StrPos
 import Foreign
 
 data Where = Arg Int | Stack Int | Heap Int | HeapLate | Direct Gcode

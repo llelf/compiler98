@@ -1,6 +1,6 @@
 module Syntax(module Syntax, Pos, TokenId) where
 
-import Extra(Pos(..),strChr,strStr)
+import Extra(Pos,strChr,strStr)
 import SysDeps(PackedString)
 import TokenId(TokenId)
 import Id(Id)

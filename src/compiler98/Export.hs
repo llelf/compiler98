@@ -4,15 +4,13 @@ Builds the contents of the interface file
 module Export(Flags,PackedString,IntState,buildInterface) where
 
 import List
-import Info
 import NT
-import IntState
+import IntState hiding (InfixClass)
 import Scc
 import AssocTree
 import Extra
 import TokenId
-import SysDeps(PackedString,packString,unpackPS)
-import MergeSort(unique)
+import SysDeps(PackedString,unpackPS)
 import Syntax(InfixClass(..))
 import Nice
 import IExtract(defFixity)
@@ -49,7 +47,6 @@ export flags state =
 			foldr (fixInst state (sPrelude flags) unique) 
                               r (listAT insts))
                     [] usedCls
-      mrps = mrpsIS state
   in case uniqueISs state insts of
     (insts,state) ->
       let 
@@ -158,13 +155,6 @@ fixInst state keep unique (con,(free,ctxs)) r =
   else
     r
 
-dropDepend [] = []
-dropDepend (NoRec d:r) = d : dropDepend r 
-dropDepend (Rec ds:r) = ds ++ dropDepend r
-
-getModule (Qualified m n) = Just m
-getModule _ = Nothing
-
 fixInfo keep state ds (NoRec n) = fixInfo' keep state ds n
 fixInfo keep state ds (Rec ns) = concatMap (fixInfo' keep state ds) ns
 
@@ -226,14 +216,6 @@ strExport modidl state (fixs,exps) =
   showsFix mrps (tid,(inf,l)) =  
     shows inf . showChar ' ' . shows l 
     . showChar ' ' . showsOp (fixTid mrps tid) . showString ";\n"
-
-
-  showsExp :: PackedString -> [Info] -> String -> String
-
-  showsExp rps infos =
-    showString "{-# NEED"
-    . foldr ((.).showsNeed rps) id infos . showString " #-}\n"
-    . foldr ((.).showsInfo rps) id infos
 
   showsHide :: a 
             -> (Bool,Bool,Maybe PackedString,[Info]) 

@@ -5,7 +5,7 @@ Also defines tokenIds for identifiers that are hardcoded into the compiler.
 module TokenId(module TokenId) where
 
 import Char(isUpper)
-import Extra(mix,isNhcOp,Pos(..),strPos)
+import Extra(isNhcOp,Pos,strPos)
 import SysDeps(PackedString, unpackPS, packString)
 
 

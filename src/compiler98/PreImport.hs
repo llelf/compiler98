@@ -3,27 +3,21 @@
 -}
 module PreImport (HideDeclIds,qualRename,preImport) where
 
-import List(partition,sortBy,nub,intersect,(\\))
+import List(nub,intersect,(\\))
 import TokenId(TokenId(..),tPrelude,tNHCInternal
 		,t_Arrow,ensureM,forceM,dropM
-		,rpsPrelude,rpsBinary,t_List,isTidCon)
-import SysDeps(PackedString,packString,unpackPS)
-import Syntax
+		,rpsPrelude,t_List,isTidCon)
+import SysDeps(PackedString,packString)
+import Syntax hiding (TokenId)
 import IdKind
 import AssocTree
 import Extra
 import Memo
-import ParseI
 import Flags
-import OsOnly
-import Scc
 import IExtract
-import Info
-import NeedLib(NeedTable)
-import ImportState(ImportState)
+import Info hiding (TokenId)
 import PreImp(HideDeclIds,HideDeclType,HideDeclData,HideDeclDataPrim
-             ,HideDeclClass,HideDeclInstance,HideDeclInstance
-             ,HideDeclVarsType)
+             ,HideDeclClass,HideDeclInstance,HideDeclVarsType)
 
 
 -- internal, fully coalesced import declaration

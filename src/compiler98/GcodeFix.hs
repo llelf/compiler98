@@ -1,15 +1,14 @@
 module GcodeFix(gcodeFixInit,gcodeFix,gcodeFixFinish) where
 
 import Gcode
-import IntState(strIS,tidIS,IntState,uniqueIS,lookupIS,globalIS,arityIS,miIS)
+import IntState(uniqueIS,lookupIS,globalIS,arityIS,miIS)
 import Memo
 import AssocTree
 import TokenId (TokenId(..))
-import SysDeps (PackedString)
 import State
-import Info
+import Info hiding (TokenId)
 import Extra
-import GcodeLow(con0,cap0,caf,fun,string,profstatic,profproducer,profconstructor,profmodule,tprofmodule,tprofmodulesub,proftype,consttable,lowInteger,extra,wsize,align)
+import GcodeLow(cap0,caf,fun,string,profstatic,profproducer,profconstructor,profmodule,tprofmodule,tprofmodulesub,consttable,lowInteger,extra,wsize,align)
 import GcodeSpec(fixProfstatic,compilerProfstatic)
 import Flags
 
@@ -24,9 +23,6 @@ data Thread = Thread
        (Memo Int)  -- used labels
        Int [Gcode] -- before 
        Int [Gcode] -- after
-
-
-type GcodeFixMonad a = State Down Thread a Thread
 
 
 gcodeFixInit :: IntState -> Flags -> (IntState,(AssocTree a b,(AssocTree [Char] Int,[(Int,Gcode)])))
@@ -49,7 +45,6 @@ gcodeFixInit state flags =
 gcodeFix flags state (profstate,stringstate) gcode =
   let prof  = sProfile flags
       tprof = sTprof flags
-      part  = sPart  flags
       funnames = prof || tprof || sFunNames flags
       thread = (tprof,funnames,prof,state,profstate,stringstate)
   in case {- mapS -} fixOne gcode () thread of

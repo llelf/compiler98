@@ -6,7 +6,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tTrue,tIx,trange,tindex,tinRange,t_enumRange,t_enumIndex,t_enumInRange
+import TokenId(tIx,trange,tindex,tinRange,t_enumRange,t_enumIndex,t_enumInRange
 	,t_tupleRange,t_andand,t_tupleIndex,t_Tuple,dropM)
 import Extra(strPos)
 

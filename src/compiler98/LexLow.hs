@@ -5,10 +5,9 @@ module LexLow(lexId,isLexId
 import Ratio
 import Char(isAlpha,isUpper,isLower,isDigit)
 
-import HbcOnly(makeDouble)
 import Lex
-import SysDeps(PackedString,packString,unpackPS,isAlphaNum)
-import TokenId(TokenId,visible,qualify,t_List)
+import SysDeps(isAlphaNum)
+import TokenId(visible,qualify,t_List)
 import Extra(isNhcOp)
 
 data LEX_LOW =		-- the trailing String is the rest of the input
@@ -142,7 +141,7 @@ toVarOp rop =
     ">-" -> L_MinusGreater
     _    -> L_AVAROP (visible rop)
 
-
+{-
 -- This version of toVar is no longer used - the local definition in
 -- lexId above is now used instead.
 toVar rid@(i:d) =
@@ -202,7 +201,7 @@ toVar rid@(i:d) =
   then L_Underscore
 
   else L_AVARID (visible rid)
-
+-}
 
 ---- read number
 

@@ -7,7 +7,7 @@ import Id(Id)
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,t_fromEnum,tFalse,tTrue,tEq,t_equalequal,t_andand)
+import TokenId(t_fromEnum,tFalse,tTrue,tEq,t_equalequal,t_andand)
 
 deriveEq :: ((TokenId,IdKind) -> Id) -> Id -> Id -> [Int] -> [(Id,Id)] -> Pos 
          -> a -> IntState -> (Decl Id,IntState)

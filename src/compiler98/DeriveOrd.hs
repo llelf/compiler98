@@ -6,7 +6,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,t_fromEnum,tFalse,tTrue,tOrd,t_equalequal,t_lessthan,t_lessequal,tcompare,tLT,tEQ,tGT,t_andand,t_pipepipe)
+import TokenId(t_fromEnum,tTrue,tOrd,t_equalequal,t_lessthan,t_lessequal,tcompare,tLT,tEQ,tGT,t_andand,t_pipepipe)
 
 deriveOrd tidFun cls typ tvs ctxs pos =
  getUnique >>>= \x ->
@@ -125,8 +125,6 @@ mkOrdFunCompare expTrue expCompare expLT expEQ expGT tidFun pos constrInfo =
              unitS (ExpVar pos x,ExpVar pos y))
              nts >>>= \ (v@(l,r):vars) ->
       let (lvs,rvs) = unzip vars
-	  expAnd = ExpVar pos (tidFun (t_andand,Var))
-	  expOr = ExpVar pos (tidFun (t_pipepipe,Var))
       in  
         unitS (
 	  Fun [ExpApplication pos (con:lvs++[l])

@@ -76,8 +76,7 @@ module Flags
   ) where
 
 import IO
-import OsOnly(fixRootDir,fixTypeFile,fixObjectFile
-             ,fixHatAuxFile,fixHatTransFile,fixHatFileBase)
+import OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
 import List(isPrefixOf)
 import Char(isDigit)
 

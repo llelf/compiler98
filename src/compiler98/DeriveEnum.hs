@@ -6,7 +6,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tTrue,tEnum,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,t_fromEnum,t_toEnum,t_enumFromTo,t_enumFromThenTo)
+import TokenId(tEnum,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,t_fromEnum,t_toEnum,t_enumFromTo,t_enumFromThenTo)
 import Extra(strPos)
 
 deriveEnum tidFun cls typ tvs ctxs pos =
@@ -16,8 +16,7 @@ deriveEnum tidFun cls typ tvs ctxs pos =
   then
     deriveError ("Nhc can only derive Enum for enumeration types (" ++ strPos pos ++ ")")
   else
-    let expTrue = ExpCon pos (tidFun (tTrue,Con))
-        expLast = ExpLit pos (LitInt Boxed (length constrInfos -1))
+    let expLast = ExpLit pos (LitInt Boxed (length constrInfos -1))
         nt = NewType tvs [] ctxs [NTcons typ (map NTvar tvs)]
         tidTyp = tidI typInfo
     in

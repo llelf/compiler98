@@ -3,16 +3,15 @@ Parser for Haskell 98 Syntax
 -}
 module Parse(parseProg) where
 
-import Extra(pair,triple,noPos,Pos(..),isJust,strace,strPos)
+import Extra(pair,noPos,strace,strPos)
 import Lex
-import Lexical(PosTokenPre(..),LexState(..),PosToken(..))
+import Lexical(PosToken)
 import Syntax
-import MkSyntax	( mkAppExp, mkAppInst, mkCase, mkDeclClass
+import MkSyntax	( mkAppExp, mkCase, mkDeclClass
 	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
 	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
 	, mkExpListComp, mkIf, mkInfixList
-	, mkInstList, mkInt, mkParExp, mkParInst, mkParType
-	, mkTypeList, mkPatNplusK -- , mkParLhs
+	, mkParExp, mkPatNplusK -- , mkParLhs
 	)
 import Parse2
 import ParseLib
@@ -89,10 +88,6 @@ parseTopDecl =
    `orelse`
    parseDecl)
 
-
-parseSig :: Parser (Sig TokenId) [PosToken] a 
-parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  
-  parseStrict parseType
 
 parseFunDeps :: Parser [FunDep TokenId] [PosToken] a
 parseFunDeps =

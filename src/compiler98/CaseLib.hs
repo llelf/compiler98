@@ -1,17 +1,13 @@
 module CaseLib where
 
-import Extra(Pos(..),noPos,strPos,pair,sndOf,dropJust)
+import Extra(noPos,sndOf)
 import Syntax
-import SysDeps(PackedString,packString,unpackPS)
-import SyntaxPos
 import PosCode
-import State
 import IntState
 import AssocTree
 import IdKind
 import TokenId
 import NT
-import Bind(identPat)
 import Info
 
 type ExpI = Exp Int
@@ -99,9 +95,7 @@ caseTuple s down  up@(state,t2i) =
     Nothing ->
       case uniqueIS state of
   	(u,state) ->
-          let free = [1 .. s]
-	      tvars = map NTvar free
-              info = InfoName u tid s tid False --PHtprof
+          let info = InfoName u tid s tid False --PHtprof
           in (u,(addIS u info state,addAT t2i sndOf tid u))
 
 caseAdd :: Info -> Down -> Thread -> Thread

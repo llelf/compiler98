@@ -4,26 +4,19 @@
 module Import (Flags,ImportState,PackedString,TokenId,IdKind,HideDeclIds
               ,readFirst,importOne) where
 
-import AssocTree(AssocTree)
 import IO
 import Memo
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,unpackPS)
 import Flags
 import OsOnly(fixImportNames,isPrelude)
 import Extra
-import Syntax(Module,ImpDecl,Type,Decls,Decl,FixId,InfixClass(..),Simple
-             ,Context,Constr)
-import Lex(Lex)
-import TokenId(TokenId(..),tPrelude,rpsPrelude,extractV)
-import ParseCore(Parser(..),ParseBad(..),ParseError(..),ParseGood(..)
-                ,ParseResult(..),parseit)
+import TokenId(TokenId(..),extractV)
+import ParseCore(parseit)
 import ParseI
-import Lexical(PosToken(..),PosTokenPre(..),LexState(..),lexical)
-import State
+import Lexical(PosToken,lexical)
 import Error
 import IExtract
 import ImportState(ImportState,putModid2IS)
-import IntState(dummyIntState)
 import IdKind(IdKind)
 import PreImp(HideDeclIds)
 

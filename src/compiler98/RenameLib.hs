@@ -7,21 +7,21 @@ module RenameLib(module RenameLib
 
 import List
 import TokenId(TokenId(..),t_Tuple,ensureM,mkQual2,visible,mkQual3,mkQualD
-              ,extractV,rpsPrelude,forceM)
-import Syntax
+              ,rpsPrelude,forceM)
+import Syntax hiding (TokenId)
 import Scc
 import NT
 import Extra
 
 import AssocTree
-import ImportState
+import ImportState hiding (TokenId)
 import IntState(checkNT)
-import IExtract(tvPosTids,tvTids,freeType,fixOne,fixFun)
+import IExtract(fixOne,fixFun)
 import State
 import IdKind
 import PreImp(sExp,sQual,sLG,sFix)
-import SysDeps(PackedString,packString,unpackPS)
-import Info
+import SysDeps(PackedString,unpackPS)
+import Info hiding (TokenId)
 import SyntaxPos
 import TokenInt
 import OsOnly(isPrelude)
@@ -857,7 +857,6 @@ defineInstMethod tid  down (RenameState flags unique irps@(_,rps)
                                         errors needCheck) = 
   let realtid = mkQual2 (t_Tuple unique) (ensureM rps tid)
                 -- this is obscure! why a tuple with the size of unique?
-      key = (tid,MethodInstance)
   in (unique,RenameState flags (unique+1) irps rts rt
 		 (addAT st combInfo  unique {-(realtid,MethodInstance)-}
                         (InfoIMethod unique realtid NoType Nothing (0::Int)))

@@ -6,16 +6,15 @@ Also removes data constructors defined by newtype.
 module FixSyntax(fixSyntax) where
 
 import AssocTree(AssocTree)
-import List(intersperse)
-import Extra(Pos(..),noPos,strPos,pair,dropJust,strace)
+import Extra(dropJust)
 import Syntax
 import IdKind(IdKind(..))
 import State
-import IntState(IntState,lookupIS,tidIS,strIS)
+import IntState(IntState,lookupIS,tidIS)
 import TokenId
-import Info(Info,isData,isMethod)
+import Info(isData,isMethod)
 import FSLib(FSMonad,startfs,fsState,fsExpAppl,fsClsTypSel,fsExp2,fsId
-            ,fsRealData,fsList,fsTidFun)
+            ,fsRealData,fsList)
 import Ratio
 import Machine
 import Id(Id)

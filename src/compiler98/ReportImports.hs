@@ -4,7 +4,6 @@ import AssocTree(listAT)
 import List(nub,groupBy,intersperse,sortBy)
 import SysDeps(unpackPS)
 import TokenId (extractM,extractV)
-import Info
 import IntState
 
 reportImports :: String -> IntState -> [String]

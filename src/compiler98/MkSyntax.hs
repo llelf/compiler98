@@ -10,7 +10,7 @@ module MkSyntax
 	, mkTypeList, mkPatNplusK, mkParLhs
 	) where
 
-import Extra(Pos(..),noPos,strPos)
+import Extra(noPos)
 import TokenId
 import Syntax
 import SyntaxPos(HasPos(getPos))
@@ -65,16 +65,7 @@ notOp (ExpVarOp _ _) = False
 notOp _ = True
 
 --mkRevTypeArrow p a b = TypeCons p t_Arrow [b,a]
-mkTypeArrow a p b = TypeCons p t_Arrow [a,b]
 mkTypeList p t = TypeCons p t_List [t]
-
-
-mkExpTrue :: Exp TokenId
-mkExpTrue  = ExpCon noPos tTrue
-
-mkExpFalse :: Exp TokenId
-mkExpFalse = ExpCon noPos tFalse
-
 
 mkIf pos c e1 e2 = ExpIf pos c e1 e2
 mkCase pos exp alts = ExpCase pos exp alts 

@@ -5,9 +5,8 @@ definitions.
 module Derive (derive) where
 
 import List(sort)
-import MergeSort(unique)
 import TokenId
-import Extra(pair,triple,noPos,snub,mixCommaAnd,strPos,Pos(..)
+import Extra(pair,snub,mixCommaAnd,strPos
             ,isNothing,dropJust,mapSnd)
 import NT
 import Syntax
@@ -63,7 +62,7 @@ derive tidFun state derived (DeclsParse topdecls) =
   work :: [(Id,(Pos,Id))] -> [(((Int,Int),([Int],[(Int,Int)])),(Pos,[NT]))]
   work preWork = solve state (map (startDeriving tidFun state) preWork)
 
-
+{-
 copyInst :: Id -> Id -> (Pos,Id) -> IntState -> IntState
 copyInst tcon realtcon (pos,cls) state =
   case lookupAT ((instancesI . dropJust . lookupIS state) cls) realtcon of
@@ -74,7 +73,7 @@ copyInst tcon realtcon (pos,cls) state =
          " for newtype " ++ strIS state tcon ++ 
          " is not possible as no instance exist for the isomorphic type" ++ 
          strIS state realtcon)
-
+-}
 
 checkSC :: IntState -> Memo (Id,Id) -> (Id,(Pos,Id)) -> [String] -> [String]
 checkSC state willDerive (con,(pos,cls)) errors =
@@ -150,7 +149,7 @@ deriveOne state tidFun (((cls,typ),(tvs,ctxs)),(pos,types))
 startDeriving tidFun state (con,(pos,cls)) | checkClass state cls tBounded =
   case lookupIS state con of
     Just conInfo -> 
-      let (NewType free [] ctx nt) = ntI conInfo
+      let (NewType free [] ctx _) = ntI conInfo
           fstAndlst [] = []
           fstAndlst [x] = [x]
           fstAndlst xs = [head xs,last xs]
@@ -160,7 +159,7 @@ startDeriving tidFun state (con,(pos,cls)) | checkClass state cls tBounded =
 startDeriving tidFun state (con,(pos,cls)) =
   case lookupIS state con of
     Just conInfo -> 
-      let (NewType free [] ctx nt) = ntI conInfo
+      let (NewType free [] ctx _) = ntI conInfo
           types = (snub . concatMap ( ( \ (NewType free [] ctxs nts) -> init nts) . ( \ (Just info) -> ntI info) .  lookupIS state) . constrsI) conInfo
       in (((cls,con),(free,map (pair cls) free ++ ctx)),(pos,types))
 

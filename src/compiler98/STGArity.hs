@@ -1,13 +1,8 @@
 module STGArity(stgArity) where
 
-import Extra(pair,noPos)
-import Syntax
 import State
 import IntState
-import TokenId
 import PosCode
-import SyntaxPos
-import SysDeps(PackedString,packString,unpackPS)
 
 stgArity state code = 
   case mapS arityBinding code () (state,[],()) of

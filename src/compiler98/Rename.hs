@@ -9,9 +9,8 @@ module Rename(ctxs2NT, fixInstance, rename) where
 
 import List
 import Syntax
-import Extra(pair,isJust,dropJust,strace,strPos)
 import Bind(bindPat,bindDecls,identPat)
-import RenameLib(ImportState,RenameState,RenameToken,RenameMonad
+import RenameLib(ImportState,RenameState,RenameMonad
                 ,keepRS,is2rs,renameError
                 ,popScope,pushScope,globalTid,fixFixityRS,localTid,defineType
                 ,transTypes,defineDataPrim,uniqueTid,defineDerived,defineData
@@ -19,18 +18,15 @@ import RenameLib(ImportState,RenameState,RenameToken,RenameMonad
                 ,transType,defineDefaultMethod,defineInstMethod,uniqueTVar
                 ,defineField,defineConstr,checkPuns,bindNK)
 import Fixity(fixInfixList)
-import IExtract(tvrPosTids,tvPosTids,freeType,tvTids,countArrows,defFixFun)
-import TokenId(TokenId,t_x,t_Tuple,tTrue,t_error,extractV,t_gtgt
-              ,t_gtgteq{-,tEval-},t_lessequal,t_subtract)
+import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
+import TokenId(tTrue,t_error,extractV{-,tEval-},t_lessequal,t_subtract)
 import State
 import IdKind
 import Extra
 import NT
 import IntState
-import ImportState(methodsI,uniqueI,tidI)
 import AssocTree
-import TokenInt
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,unpackPS)
 import SyntaxPos
 import SyntaxUtil(infixFun,isTypeVar)
 import Id(Id)
@@ -562,7 +558,7 @@ renameConstr typtid al ctxs resType@(NTcons bt _)
 
 renameConstr typtid al ctxs resType@(NTcons bt _) 
                             (ConstrCtx forall ectxs' pos tid fieldtypes) =
-  let ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
+  let -- ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
             -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ 
             -- concat $ map (freeType . snd) fieldtypes
@@ -679,7 +675,6 @@ renameExp (PatNplusK pos tid _ k _ _) =
     let leq = ExpVar pos t_lessequal
         sub = ExpVar pos t_subtract
         n'  = ExpVar pos tid'
-        n   = ExpVar pos tid 
     in
     unitS (PatNplusK pos) =>>>
       uniqueTid pos Var tid =>>>

@@ -1,6 +1,5 @@
 module DeriveRead(deriveRead) where
 
-import Maybe
 import Extra
 import Syntax
 import MkSyntax(mkInt)
@@ -9,7 +8,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tFalse,tTrue,tRead,treadParen,treadsPrec
+import TokenId(tFalse,tTrue,tRead,treadParen,treadsPrec
               ,t_greater,t_append,t_readCon0,t_readCon,t_readConArg
               ,t_readConInfix,t_readField,t_readFinal,isTidOp,dropM)
 import Nice(showsOp,showsVar)
@@ -20,7 +19,6 @@ deriveRead tidFun cls typ tvs ctxs pos =
  let expD = ExpVar pos d
      expR = ExpVar pos r
      ireadsPrec = tidFun (treadsPrec,Method)
-     expTrue = ExpCon pos (tidFun (tTrue,Con))
      expAppend = ExpVar pos (tidFun (t_append,Var))
  in
   getInfo typ >>>= \ typInfo -> 
@@ -87,7 +85,6 @@ mkReadExp expD expR tidFun pos constrInfo =
 
     else	-- constructor with named fields
       let expConVar = ExpLit pos (LitString Boxed (showsVar conTid ""))
-          expFalse = ExpCon pos (tidFun (tFalse,Con))
           expReadField = ExpVar pos (tidFun (t_readField,Var))
           expReadFinal k = ExpApplication pos
               [ExpVar pos (tidFun (t_readFinal,Var))
@@ -99,7 +96,6 @@ mkReadExp expD expR tidFun pos constrInfo =
               ,ExpLit pos (LitString Boxed (showsVar (dropM (tidI label)) ""))
               ,k]
 	  (NewType _ _ _ (_:nts)) = ntI constrInfo -- get list, 1 elem per arg
-	  readConArg = ExpVar pos (tidFun (t_readConArg,Var))
           prefixes = "{": replicate (length nts - 1) ","
       in
         mapS (getInfo.fromJust) fields >>>= \labels->

@@ -30,8 +30,7 @@ module ParseLib(-- defined in ParseCore
                ) where
 
 import Lex
-import Lexical(PosToken(..),lexicalCont,PosTokenPre(..),LexState(..))
-import SysDeps(PackedString)
+import Lexical(PosToken,lexicalCont)
 import ParseCore
 
 infixl 5 `parseAp`

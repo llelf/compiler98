@@ -6,8 +6,7 @@ import IdKind
 import NT
 import State
 import DeriveLib
-import TokenId(TokenId,tminBound,tmaxBound,tBounded,tTrue)
-import Extra(strPos)
+import TokenId(tminBound,tmaxBound,tBounded,tTrue)
 
 deriveBounded tidFun cls typ tvs ctxs pos =
  getInfo typ >>>= \ typInfo -> 
@@ -29,8 +28,7 @@ deriveBounded tidFun cls typ tvs ctxs pos =
 
 
 mkBound expTrue pos constrInfo methodBound funBound =
- let con = ExpCon pos (uniqueI constrInfo)
- in case ntI constrInfo of
+ case ntI constrInfo of
      NewType _ _ _ [nt] -> -- This constructor has no arguments
        DeclFun pos methodBound
 	 [Fun [] (Unguarded (ExpCon pos (uniqueI constrInfo))) (DeclsParse [])]

@@ -4,15 +4,12 @@ precedence.
 -}
 module Fixity(fixInfixList) where
 
-import SysDeps(PackedString,packString,unpackPS)
-import Extra(Pos(..),strPos,pair)
-import Syntax
+import Extra(strPos)
+import Syntax hiding (TokenId)
 import SyntaxPos
-import TokenId(TokenId(..), t_x, t_flip)
+import TokenId(TokenId(..), t_flip)
 import IdKind(IdKind(..))
 import State
-import AssocTree
-import PreImp
 import RenameLib
 
 
@@ -85,20 +82,11 @@ harder pos (ipop@((inf,pri),(op,_)):ops) kind op' =
       Infix      -> renameError ("Infix operator at " ++ strPos pos ++ " is non-associative.") (Just (ipop,ops))
   else unitS Nothing
 
-
-stripExp (ExpVar _ o) = o
-stripExp (ExpCon _ o) = o
-
 rebuild (_,(op,2)) (e1:e2:es) = ExpApplication (getPos op) [op,e2,e1]:es
 rebuild ((InfixPre fun,_) ,(op,_)) (e1:es) =
         ExpApplication (getPos op) [ExpVar (getPos op) fun,e1]:es
 rebuild (_,(op,n)) es =
         error ("Not enough arguments at " ++ strPos (getPos op))
-
-leftFixity InfixDef = True
-leftFixity InfixL = True
-leftFixity (InfixPre _) = True
-leftFixity _ = False      		--- !!! Cheating Infix is InfixR
 
 {-
 Main function of the module.

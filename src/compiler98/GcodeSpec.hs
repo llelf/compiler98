@@ -2,8 +2,8 @@ module GcodeSpec(gcodeZCon,fixProfstatic,compilerProfstatic) where
 
 import IntState 
 import Gcode
-import GcodeLow(con0,profconstructor,profstatic,profconstructor,profproducer,profmodule,proftype)
-import Extra(dropJust,strace)
+import GcodeLow(con0,profstatic,profconstructor,profproducer,profmodule)
+import Extra(dropJust)
 
 gcodeZCon prof state [] = []
 gcodeZCon prof state (d:ccs) =

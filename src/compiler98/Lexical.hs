@@ -1,7 +1,7 @@
 module Lexical(lexical,lexicalCont,Lex
                 ,LexState,PosToken,PosTokenPre,Pos) where
 
-import Extra(Pos(..),toPos,strPos)
+import Extra(Pos,toPos,strPos)
 import Lex
 import LexPre
 import SysDeps(PackedString,packString,unpackPS)

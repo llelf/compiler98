@@ -3,14 +3,10 @@ Internal state of the compiler used from need analysis until renaming
 -}
 module ImportState (module ImportState, module Info, Decl) where
 
-import SysDeps(PackedString,packString,unpackPS)
-import NT
-import IdKind
-import Syntax(InfixClass,Decl)
+import SysDeps(PackedString,packString)
+import Syntax(Decl)
 import AssocTree
 import Memo
-import TokenId
-import Extra(Pos(..))
 import Info
 
 data  ImportState =

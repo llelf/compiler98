@@ -14,9 +14,8 @@ import Syntax
 import ParseLib
 import ParseLex
 import Parse2
-import TokenId(tNEED,TokenId(..),tinterface)
+import TokenId(tNEED,,tinterface)
 import PreImp
-import List (intersperse)
 
 data ParseI st tid declneed rest =
 	  ParseEof  st

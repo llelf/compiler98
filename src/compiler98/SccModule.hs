@@ -3,9 +3,8 @@ module SccModule(sccTopDecls) where
 import List
 import Scc
 import Syntax
-import Extra(pair,Set(..),emptySet,unionSet,singletonSet,removeSet,strPos,assocDef)
+import Extra(pair,emptySet,unionSet,singletonSet,removeSet,strPos,assocDef)
 import SyntaxPos
-import Bind(identDecl)
 
 ----  A simple monad
 

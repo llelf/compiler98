@@ -10,22 +10,18 @@ module IExtract
   ) where
 
 import List
-import TokenId(TokenId(..),t_Arrow,t_Tuple,ensureM,dropM,forceM,rpsPrelude
+import TokenId(TokenId(..),t_Arrow,ensureM,dropM,forceM
 		,tEq,tOrd,tBounded,tRead,tShow,visible,tUnknown,tunknown)
 import State
 import IdKind
-import Syntax
 import Extra
-import NeedLib
 import AssocTree
 import Memo
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString)
 import NT
-import Syntax
-import OsOnly(isPrelude)
-import ImportState
+import Syntax hiding (TokenId)
+import ImportState hiding (TokenId)
 import Id(Id)
-import Info(patchIE)
 
 --import PrettyLib	-- debugging output only
 --import PrettySyntax	-- debugging output only
@@ -61,11 +57,6 @@ fixOne rps (InfixPre var,level,[fixid]) fix_err@(fix,err) =
 fixOne rps (fixClass,level,ids) fixity_err =
   let fl = (fixClass,level)
   in foldr  (fixAdd fl) fixity_err (map (fixTid rps) ids)
-
-changeType Infix = Infix
-changeType InfixDef = InfixDef
-changeType InfixL = InfixL
-changeType InfixR = InfixR
 
 fixTid rps (FixCon _ tid) = ensureM rps tid
 fixTid rps (FixVar _ tid) = ensureM rps tid
@@ -618,7 +609,7 @@ transConstr q al free ctxs needed resType@(NTcons bt _) (Constr pos cid types) =
   unitS c
 transConstr q al free ctxs needed resType@(NTcons bt _) 
                                   (ConstrCtx forall ectxs' pos cid types) = 
-  let ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
+  let -- ce = map ( \( Context _ _ [(_,v)]) -> v) ectxs'
       e =  map snd forall 
 -- filter (`notElem` (map fst al)) $ snub $ (ce ++) $ concat
 --                                                $ map (freeType . snd) types

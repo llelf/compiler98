@@ -6,13 +6,13 @@ module NeedLib(initNeed,needit,NeedLib,pushNeed,popNeed,bindTid,needTid
 --	      ,TokenId,IdKind,Memo(..),Tree) where
 
 import Memo
-import TokenId(TokenId(..),t_error,tTrue)
+import TokenId(TokenId(..))
 import TokenInt(tokenAllways,tokenMain)
 import IdKind
 import AssocTree
 import Extra
-import Overlap (Overlap(..),addOverlap)
-import Syntax
+import Overlap (Overlap,addOverlap)
+import Syntax hiding (TokenId)
 
 -- Added in H98: the overlap table, which allows for later resolution of
 -- shared module aliases.

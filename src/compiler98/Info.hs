@@ -7,7 +7,7 @@ module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos
 import IdKind(IdKind)
 import TokenId(TokenId)
 import NT
-import Extra(Pos(..),sndOf,strace)
+import Extra(Pos,sndOf,strace)
 import SysDeps(PackedString)
 import AssocTree
 import Syntax(InfixClass(..))

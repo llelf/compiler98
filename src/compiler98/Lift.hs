@@ -8,12 +8,10 @@ import List
 import State
 import PosCode
 import SyntaxPos
-import Extra (removeSet,emptySet,unionSet,removeSet,noPos,strPos
-             ,Pos(..),dropJust,strace,pair)
+import Extra (emptySet,unionSet,removeSet,noPos,dropJust,strace,pair)
 import IntState
 import TokenId
 import IdKind
-import NT
 --------- ===========
 
 data LiftDown =
@@ -47,7 +45,6 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid)
       (declsInLift,declsInStay) = partition liftIt bindingsIn
 
       definedLift = map fst declsInLift
-      definedStay = map fst declsInStay
 
       envLift = foldr unionSet emptySet 
 		(map (expandEnv transIn)
@@ -57,8 +54,6 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid)
                                 definedLift))
 
       transNew = map (`pair` envLift) definedLift ++ transIn
-
-      args = map (PosVar pos) envLift
 
       (declsOutLift,LiftThread _ scInLift state1) =
 		 mapS liftBinding declsInLift (LiftDown True tidFun ptid)

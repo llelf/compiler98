@@ -8,7 +8,6 @@ import List(sort)
 import Ratio
 import Extra
 import Syntax
-import SysDeps(PackedString,packString,unpackPS)
 import SyntaxPos
 import PosCode
 import State
@@ -16,7 +15,6 @@ import IntState
 import AssocTree
 import IdKind
 import TokenId
-import NT
 import Bind(identPat)
 import Info
 import CaseLib
@@ -164,12 +162,6 @@ oneSel t tuplecon pis ((pos,ident),index) =
                    [PosAltCon pos tuplecon
                         (map (pair pos . snd) gunki)
                         (PosVar pos (map snd gunki !! (index-1::Int)))]))
-
-
-oneId :: PosExp -> (Pos,Int) -> CaseFun (Int,PosLambda)
-oneId t (pos,ident) =
-  unitS (ident
-	,PosLambda pos [] [] t)
 
 
 onePat :: Pos -> ExpI -> Maybe ExpI -> Rhs Id -> CaseFun PosExp

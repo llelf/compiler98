@@ -6,8 +6,6 @@ import PosCode
 import State
 import IntState
 import AssocTree
-import TokenId
-import Info
 import CaseLib
 import SyntaxPos
 import SyntaxUtil
@@ -42,9 +40,6 @@ getTrans :: ExpI -> [Int]
 getTrans (ExpVar _ ident) = [ident]
 getTrans (PatAs _ ident p) = ident : getTrans p
 getTrans _ = []
-
-fstPat :: Fun Int -> ExpI
-fstPat (Fun (p:ps) gdexps decls) = p
 
 isIf :: ExpI -> Bool
 isIf p = not (isVar p || isCon p || isExpInt p || isNK p || isExpIrr p)

@@ -15,18 +15,12 @@ module GcodeLowC
 #define HUGSFLOAT
 #endif
 
-import Char
-
 import Gcode
-import GcodeLow (offsetSize
-                ,shortNeedheap,shortNeedstack,shortPush,shortPop
+import GcodeLow (shortNeedheap,shortNeedstack,shortPush,shortPop
                 ,shortPushArg,shortZapArg,shortHeapCval,shortHeap
                 ,fun,foreignfun,showId)
-import Extra(strStr,splitIntegral,SplitIntegral(..))
-import IntState(strIS,IntState,dummyIntState)
 import EmitState
 import Prim(strPrim)
-import Machine
 #if defined(NATIVE)
 import Native
 #elif defined(NHCFLOAT)

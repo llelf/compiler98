@@ -3,16 +3,15 @@ The FSMonad and some helper functions for FixSyntax
 -}
 module FSLib(module FSLib, TokenId) where
 
-import Syntax
+import Syntax hiding (TokenId)
 import IdKind
-import Info
+import Info hiding (TokenId,NewType)
 import State
 import AssocTree
-import Extra(Pos(..),noPos,sndOf,dropJust)
-import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,tRatio,tRatioCon
-              ,t_id)
-import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS,updateIS)
-import NT(NewType(..),NT)
+import Extra(noPos,sndOf,dropJust)
+import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,t_id)
+import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS)
+import NT(NewType(..))
 import Id(Id)
 
 type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)

@@ -148,9 +148,6 @@ strCtxs ctxs = "(" ++ mixComma (map ( \ (c,v) -> show c ++ ' ':strTVar v ) ctxs)
 strTVs [] = ""
 strTVs tvs =  "\\/ " ++ mixSpace (map strTVar tvs) ++ " . "
 
-strTVarsCtxsNT tvs ctxs nt =  
-  strTVs tvs ++ strCtxs ctxs ++ strNT show strTVar nt
-
 strTVarsCtxsNTs tvs ctxs [] =  strTVs tvs ++ strCtxs ctxs ++ " -"
 strTVarsCtxsNTs tvs ctxs nts =  
   strTVs tvs ++ strCtxs ctxs ++ mix " -> " (map (strNT show strTVar) nts)

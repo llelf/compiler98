@@ -4,8 +4,8 @@ They substitute NTs for Ids.
 -}
 module TypeSubst(Substitute(..),idSubst,AssocTree,Tree,substEnv,substCtxs,stripSubst,addSubst,applySubst,list2Subst,strace,substNT) where 
 
-import NT(NT(..),NewType(..),freeNT)
-import Extra(fstOf,dropJust,strace)
+import NT(NT(..),NewType(..))
+import Extra(dropJust,strace)
 import TypeData
 import AssocTree
 import Id(Id)

@@ -13,7 +13,7 @@ module GcodeLow
 
 import Gcode
 import Extra(strStr,splitIntegral,SplitIntegral(..))
-import IntState(strIS,IntState,dummyIntState)
+import IntState(strIS,dummyIntState)
 import Prim(strPrim)
 import Machine
 import SysDeps(isAlphaNum)

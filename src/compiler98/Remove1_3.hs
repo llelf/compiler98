@@ -11,11 +11,10 @@ module Remove1_3(removeDecls,mkSel,removeDo,translateExpRecord) where
 import Syntax
 import State
 import IntState
-import TokenId(TokenId,t_gtgt,t_gtgteq,tfail)
-import TypeLib(getState,newIdent,getIdent,typeError)
+import TokenId(t_gtgt,t_gtgteq,tfail)
+import TypeLib(getState,newIdent,getIdent)
 import SyntaxPos
 import TypeData(TypeMonad)
-import NT
 import IdKind
 import Extra(strPos,dropJust,isJust,isNothing,mixCommaAnd,noPos,dropRight
             ,isRight)

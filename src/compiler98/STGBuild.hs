@@ -2,17 +2,12 @@ module STGBuild(stgExpPush,stgBodyPush) where
 
 import Extra
 import State
-import IntState hiding (IdKind)
 import PosCode
-import SyntaxPos
 import Gcode
-import GcodeLow(con0,cap0,caf,fun,extra,profconstructor)
-import StrPos
+import GcodeLow(con0,cap0,caf)
 import STGState(Where(Arg,Stack,Heap,HeapLate,Direct),Thread(Thread)
                ,updTOS,popEnv,updHeap,getExtra,incDepthIf,gArity
-               ,lateWhere,gWhereAbs,gState)
-import Machine(wsize)
-
+               ,lateWhere,gWhereAbs)
 
 stgExpPush :: PosExp -> State a Thread [Gcode] Thread
 
@@ -36,7 +31,7 @@ buildExp pu (PosExpLet pos bindings exp) =
   \ down
     (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs)
     ->
-     let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' env' _ depth' heap' depthstack' fs')
+     let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' _ _ depth' heap' depthstack' fs')
             = mapS (buildBody False) bindings
                    down (Thread prof fun maxDepth failstack state newEnv (addLate:lateenv) depth heap depthstack fs)
                    

@@ -5,14 +5,12 @@ a respective bytecode.
 -}
 module PrimCode(primCode{-,rpsEval-},rpsseq) where
 
-import Extra(pair,Pos(..),noPos,strPos,strace)
-import Syntax
+import Extra(pair)
 import State
 import IntState
 import TokenId
 import PosCode
-import SyntaxPos
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString)
 import IdKind
 import Id(Id)
 
@@ -315,11 +313,6 @@ rpsFloat  = impRev "Float"
 
 -------------------
 
-enumPrim met =
-       if met == rpstoEnum   then Just CHR
-  else if met == rpsfromEnum then Just ORD
-  else Nothing
-
 rpstoEnum   = impRev "toEnum"
 rpsfromEnum = impRev "fromEnum"
 
@@ -389,11 +382,6 @@ fractionalPrim met =
 rpsslash = impRev "/"
 
 --------------
-
-evalPrim :: PackedString -> Maybe Prim
-evalPrim met =
-       if met == rpsseq then Just SEQ
-  else Nothing
 
 rpsseq = impRev "_seq"
 

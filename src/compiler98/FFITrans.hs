@@ -19,7 +19,6 @@ import IntState
 import Syntax
 import State
 import NT
-import AssocTree
 import Id
 import Extract   (type2NT)
 import TypeSubst (substNT)
@@ -94,7 +93,7 @@ copyPrim id cname lookup state =
             cname'  = if null cname then reverse (unpackPS name) else cname
         in ((i, cname'), state2)
   where
-    (Just (InfoVar _ (Qualified m name) ie fix nt ar)) = lookupIS state id
+    (Just (InfoVar _ (Qualified m name) _ fix _ ar)) = lookupIS state id
 
 
 -- Report whether the result type is IO, after expanding all type synonyms.

@@ -2,9 +2,7 @@ module LexStr(tab,lexStr,lexChr) where
 
 import Char
 
-import Extra(Pos(..))
 import Error(errorLC)
-import Lex
 import LexLow
 
 tab :: Int -> Int

@@ -6,10 +6,9 @@ module IntState(module IntState, module Info) where
 
 import AssocTree
 import NT
-import IdKind
-import TokenId(TokenId,mkQual3,mkQualD,dropM)
+import TokenId(mkQual3,mkQualD,dropM)
 import Extra
-import SysDeps(PackedString,packString,unpackPS)
+import SysDeps(PackedString,packString)
 import Info
 import MergeSort(group)
 import Reduce(Reduce)

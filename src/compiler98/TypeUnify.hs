@@ -3,15 +3,9 @@ The main unification functions for NTs
 -}
 module TypeUnify(unify,unifyr) where
 
-import NT(NT(..),NewType(..),freeNT,strNT,anyVarNT)
-import IdKind
+import NT(NT(..),NewType(..),freeNT,anyVarNT)
 import TypeSubst
-import TypeUtil
-import TypeData
-import TokenId(TokenId(..))
-import SysDeps(PackedString)
-import Info
-import IntState
+import IntState hiding (NewType)
 import Id(Id)
 
 

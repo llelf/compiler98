@@ -1,7 +1,5 @@
 module State where
 
-import Extra(pair)
-
 #if defined(__HASKELL98__)
 #define  EVAL(b)
 #else

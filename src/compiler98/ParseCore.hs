@@ -7,7 +7,7 @@ module ParseCore(Pos,ParseError,ParseResult,ParseBad,ParseGood,Parser
                ,maxError                        -- Keep "best" error message
                ) where
 
-import Extra(noPos,Pos(..))
+import Extra(noPos,Pos)
 
 infixl 5 `ap`
 infixl 5 `chk`

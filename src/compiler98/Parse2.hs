@@ -5,16 +5,15 @@ module Parse2
   , bigModId
   ) where
 
-import Extra(pair,triple,noPos,Pos(..))
-import Lex
-import Syntax
+import Extra(pair,triple)
+import Lex hiding (TokenId)
+import Syntax hiding (TokenId)
 import MkSyntax
 import ParseLib
 import ParseLex
 import SyntaxPos
-import TokenId(t_Arrow,t_Tuple,TokenId(..))
-import SysDeps (PackedString,packString,unpackPS)
-import List (intersperse)
+import TokenId(t_Arrow,TokenId(..))
+import SysDeps (packString,unpackPS)
 
 parseExports =
     Just `parseChk` lpar `apCut` manySep comma parseExport `chk` 

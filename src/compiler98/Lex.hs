@@ -1,6 +1,6 @@
 module Lex(Lex(..),LexAnnot(..),TokenId) where
 
-import Extra(strStr,strChr,rep)
+import Extra(strStr,strChr)
 import TokenId(TokenId)
 import Ratio
 
