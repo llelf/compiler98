@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 CONFIGVERSION="v1.0 pre-release 18xtn (date 0004xx)"
-HMAKEVERSION="v1.7.2 (date 000207)"
+HMAKEVERSION="1.8-erik (000515)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -580,14 +580,15 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/rtb
     echo -n "greencard "
     sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
-    sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/greencard
+    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/greencard
+    echo -n "hi "
+    ln $BINDIR/greencard $BINDIR/hi
     echo -n "hp2graph "
     rm -f $BINDIR/hp2graph; ln $BINDIR/greencard $BINDIR/hp2graph
     echo -n "harch "
     cp script/harch $BINDIR
     echo
-    chmod +x $BINDIR/nhc98 $BINDIR/hmake $BINDIR/rtb $BINDIR/greencard $BINDIR/hp2graph $BINDIR/harch
+    chmod +x $BINDIR/nhc98 $BINDIR/hmake $BINDIR/rtb $BINDIR/greencard $BINDIR/hp2graph $BINDIR/harch $BINDIR/hi
   else
     echo 'Not (re-)installing scripts'
   fi

@@ -8,7 +8,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-HMAKEVERSION="v1.8 (date 0005xx)"
+HMAKEVERSION="1.8-erik (000515)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -305,8 +305,11 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$LIBDIR/$MACHINE/hmake.config
     echo -n "harch "
     cp script/harch $BINDIR
+    echo -n "hi "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hi.inst |\
+    sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hi
     echo
-    chmod +x $BINDIR/hmake $BINDIR/harch
+    chmod +x $BINDIR/hmake $BINDIR/harch $BINDIR/hi
   else
     echo 'Not (re-)installing scripts'
   fi

@@ -6,7 +6,7 @@ VERSION = 1.0pre18xtn
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
 
-HVERSION = 1.7.2
+HVERSION = 1.8-erik
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
@@ -133,7 +133,8 @@ GREENCARDC = src/greencard/*.c
 HP2GRAPH = src/hp2graph/Makefile* src/hp2graph/README \
 	   src/hp2graph/doc src/hp2graph/*.[hc1]
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
-	src/hmake/HISTORY src/hmake/Summary*
+	src/hmake/HISTORY src/hmake/Summary* \
+	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.c
 RUNTIME = \
 	src/Makefile.inc \
@@ -155,7 +156,7 @@ RUNTIME = \
 RUNTIMET = \
 	src/tracer/Makefile* \
 	src/tracer/runtime/Makefile* \
-	src/tracer/runtime/*.[ch] targets/traceui
+	src/tracer/runtime/*.[ch]
 TRACEUI = src/tracer/ui/*
 INCLUDE = include/*.hi include/*.h include/*.gc include/tracer/*.hi
 DOC = docs/*
@@ -250,12 +251,15 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
+	cd src/interpreter;    $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=hbc install
+	cd src/interpreter;    $(MAKE) HC=hbc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install
+	cd src/interpreter;    $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 $(TARGDIR)/$(MACHINE)/hp2graph: $(HP2GRAPH)
@@ -312,6 +316,7 @@ $(TARGDIR)/$(MACHINE)/cgreencard: $(GREENCARDC)
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/cgreencard
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
+	cd src/interpreter;    $(MAKE) BUILDWITH=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
 script/errnogen.c: script/GenerateErrNo.hs
@@ -401,7 +406,7 @@ $(TARGDIR)/greencardC: $(GREENCARD)
 	cd src/greencard;  $(MAKE) cfiles
 	touch $(TARGDIR)/greencardC
 $(TARGDIR)/hmakeC: $(HMAKE)
-	cd src/hmake;  $(MAKE) cfiles
+	cd src/hmake;        $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 
 
@@ -413,11 +418,11 @@ HMFILE  = src/hmake/Makefile.toplevel
 HAUX1   = Makefile.inc COPYRIGHT
 HAUX2   = src/Makefile*
 HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
-	  script/harch script/confhc
+	  script/harch script/hi.inst script/confhc
 HMAN    = man/hmake.1 docs/hmake
 HCONF   = hmake-configure
 HBIN    = lib/$(MACHINE)/MkProg lib/$(MACHINE)/Older \
-	  targets/$(MACHINE)/config.cache
+	  lib/$(MACHINE)/hi targets/$(MACHINE)/config.cache
 
 hmakeDist:
 	rm -f hmake-$(HVERSION).tar hmake-$(HVERSION).tar.gz
