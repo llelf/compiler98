@@ -1,8 +1,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include "haskell2c.h"
+#include <errno.h>
 
-/* cGetEnv :: CString -> PackedString */
+/* cGetEnv :: CString -> Either Int PackedString */
 
 C_HEADER(cGetEnv)
 {
@@ -21,8 +22,9 @@ C_HEADER(cGetEnv)
   } else
 #endif
     { src = getenv(getPackedString(nodeptr));
-      if(!src)  src = "";
-      nodeptr = mkPackedString(strlen(src),src);
+      if(!src) { /*src = "";*/
+             nodeptr = mkLeft(mkInt(ENOENT));
+      }else{ nodeptr = mkRight(mkPackedString(strlen(src),src)); }
     }
 #ifdef PROFILE
   if(record) {
