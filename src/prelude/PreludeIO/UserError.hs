@@ -3,5 +3,5 @@ module Prelude where
 import DIOError
 
 userError :: String -> IOError
-userError s = IOErrorUser s
+userError s = UserError "call to function `userError'" s
  

@@ -1,7 +1,7 @@
 module Prelude where
 
 import DIO
-import DIOError(IOError(..))   -- problem with cycle [Prelude _DIO]
+import DIOError(IOError(..))
 -- import CMonad
 
 #if !defined(TRACING)
@@ -27,7 +27,7 @@ instance Monad IO where
     return a = IO (primReturn a)
                where
                  primReturn a w = Right a
-    fail s   = IO (\w -> Left (IOErrorUser s))
+    fail s   = IO (\w -> Left (UserError "call to function `fail'" s))
 
 
 {-

@@ -1,8 +1,6 @@
 module IO (hFlush) where
 
 import DHandle
-import DIOError
-import HGetFileName
 import FFI
 
 #if !defined(TRACING)
@@ -13,7 +11,7 @@ hFlush h = do
     i <- hFlushC h
     if i/=0 then do
         errno <- getErrNo
-        throwIOError "hFlush" (hGetFileName h) (Just h) errno
+        throwIOError "hFlush" Nothing (Just h) errno
       else
         return ()
 
@@ -25,7 +23,7 @@ hFlush (Handle h) = do
     i <- hFlushC h
     if i/=0 then do
         errno <- getErrNo
-        throwIOError "hFlush" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hFlush" Nothing (Just (Handle h)) errno
       else
         return ()
 

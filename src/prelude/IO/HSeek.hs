@@ -2,8 +2,6 @@ module IO (hSeek) where
 
 import SeekMode
 import DHandle
-import DIOError
-import HGetFileName
 import FFI
 
 #if !defined(TRACING)
@@ -15,7 +13,7 @@ hSeek h s i = do
     x <- hSeekC h (fromEnum s) i
     if x/=0 then do
         errno <- getErrNo
-        throwIOError ("hSeek"++show s++" "++show i) (hGetFileName h) (Just h) errno
+        throwIOError ("hSeek "++show s++" "++show i) Nothing (Just h) errno
       else
         return ()
 
@@ -28,7 +26,7 @@ hSeek (Handle h) s i = do
     x <- hSeekC h (fromEnum s) i
     if x/=0 then do
         errno <- getErrNo
-        throwIOError ("hSeek"++show s++" "++show i) (hGetFileName h)
+        throwIOError ("hSeek "++show s++" "++show i) Nothing
                                                  (Just (Handle h)) errno
       else
         return ()

@@ -1,22 +1,14 @@
 module Prelude (IOError(..)) where
 
-import PackedString
 import IO (Handle)
 import DErrNo
 
-data IOError 
-        = IOErrorUser      String 
-        | IOErrorSystem    PackedString Int	-- error in system() call
-        | IOErrorOpen      PackedString PackedString Int
-	| IOErrorEOF       Handle String
-        | IOErrorHIsEOF    Handle Int
-        | IOErrorHFileSize Handle Int
-        | IOErrorHFlush    Handle Int
-        | IOErrorHSeek     Handle Int
-        | IOErrorHGetPosn  Handle Int
-        | IOErrorHSetPosn  Handle Int
-	| IOErrorHGetBuffering Handle Int        
-	| IOErrorHSetBuffering Handle Int        
-        | IOErrorC         String (Maybe String) ErrNo	-- error taken from C's errno
-
-
+data IOError
+	--             operation  filename     file         error-code
+        = IOError       String (Maybe String) (Maybe Handle) ErrNo
+	--             operation  file
+	| EOFError      String   Handle
+	--             location
+	| PatternError  String
+	--             location  message
+	| UserError     String   String

@@ -19,7 +19,7 @@ import DIOError
 
 returnEither :: String -> Maybe String -> Int -> a -> IO a
 returnEither cmd file err val =
-  if err == -1 then readErrNo () >>= ioError . IOErrorC cmd file
+  if err == -1 then readErrNo () >>= ioError . IOError cmd file Nothing
                else return val
 
 patchIOError :: String -> IO Int -> IO ()

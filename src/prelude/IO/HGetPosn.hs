@@ -3,8 +3,6 @@ module IO (hGetPosn) where
 import DHandle
 import DHandlePosn
 import FFI
-import DIOError
-import HGetFileName
 
 #if !defined(TRACING)
 foreign import hGetPosnC :: Handle -> IO Addr
@@ -14,7 +12,7 @@ hGetPosn h = do
     a <- hGetPosnC h
     if a==nullAddr then do
         errno <- getErrNo
-        throwIOError "hGetPosn" (hGetFileName h) (Just h) errno
+        throwIOError "hGetPosn" Nothing (Just h) errno
       else do
         f <- makeForeignObj a (free a)
         return (HandlePosn f)
@@ -27,7 +25,7 @@ hGetPosn (Handle h) = do
     a <- hGetPosnC h
     if a==nullAddr then do
         errno <- getErrNo
-        throwIOError "hGetPosn" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hGetPosn" Nothing (Just (Handle h)) errno
       else do
         f <- makeForeignObj a (free a)
         return (HandlePosn f)

@@ -9,6 +9,6 @@ hGetFileName h = Just (fromCString (hGetFileNameC h))
 
 #else
 foreign import hGetFileNameC :: ForeignObj -> CString
-hGetFileName h = Just (fromCString (hGetFileNameC h))
+hGetFileName (Handle h) = Just (fromCString (hGetFileNameC h))
 
 #endif

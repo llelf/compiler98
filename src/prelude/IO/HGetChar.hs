@@ -12,7 +12,7 @@ hGetChar h    = IO (\world -> input h)
  where
   input h = let c = cHGetChar h
             in if c < 0 then
-                 Left (IOErrorEOF h "hGetChar")
+                 Left (EOFError "hGetChar" h)
                else
                  Right (toEnum c)
 
@@ -28,7 +28,7 @@ hGetChar (Handle h)    = IO (const (input h))
  where
   input h = let c = cHGetChar h
             in if c < 0 then
-                 Left (IOErrorEOF (Handle h) "hGetChar")
+                 Left (EOFError "hGetChar" (Handle h))
                else
                  Right (toEnum c)
 

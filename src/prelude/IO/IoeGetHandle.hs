@@ -4,16 +4,6 @@ import DHandle
 import DIOError
 
 ioeGetHandle :: IOError -> Maybe Handle
-ioeGetHandle (IOErrorUser             str)       = Nothing
-ioeGetHandle (IOErrorSystem           str errno) = Nothing
-ioeGetHandle (IOErrorOpen       file mode errno) = Nothing
-ioeGetHandle (IOErrorEOF           handle op)    = Just handle
-ioeGetHandle (IOErrorHIsEOF        handle errno) = Just handle
-ioeGetHandle (IOErrorHFileSize     handle errno) = Just handle
-ioeGetHandle (IOErrorHFlush        handle errno) = Just handle
-ioeGetHandle (IOErrorHSeek         handle errno) = Just handle
-ioeGetHandle (IOErrorHGetPosn      handle errno) = Just handle
-ioeGetHandle (IOErrorHSetPosn      handle errno) = Just handle
-ioeGetHandle (IOErrorHGetBuffering handle errno) = Just handle
-ioeGetHandle (IOErrorHSetBuffering handle errno) = Just handle
-ioeGetHandle (IOErrorC cmd maybefile errno)      = Nothing
+ioeGetHandle (IOError cmd maybefile maybehandle errno) = maybehandle
+ioeGetHandle (EOFError op handle)                      = Just handle
+ioeGetHandle _                                         = Nothing

@@ -3,5 +3,5 @@ module IO (isUserError) where
 import DIOError
 
 isUserError  :: IOError -> Bool
-isUserError (IOErrorUser str) = True
+isUserError (UserError loc str) = True
 isUserError ioerror = False

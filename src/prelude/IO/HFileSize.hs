@@ -1,8 +1,6 @@
 module IO (hFileSize) where
 
 import DHandle
-import DIOError
-import HGetFileName
 import FFI
 
 #if !defined(TRACING)
@@ -13,7 +11,7 @@ hFileSize h = do
     i <- primHFileSizeC h
     if i == -1 then do
         errno <- getErrNo
-        throwIOError "hFileSize" (hGetFileName h) (Just h) errno
+        throwIOError "hFileSize" Nothing (Just h) errno
       else
         return i
 
@@ -25,7 +23,7 @@ hFileSize (Handle h) = do
     i <- primHFileSizeC h
     if i == -1 then do
         errno <- getErrNo
-        throwIOError "hFileSize" (hGetFileName h) (Just (Handle h)) errno
+        throwIOError "hFileSize" Nothing (Just (Handle h)) errno
       else
         return i
 #endif

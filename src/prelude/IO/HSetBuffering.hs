@@ -2,8 +2,6 @@ module IO (hSetBuffering) where
 
 import DHandle
 import BufferMode
-import DIOError
-import HGetFileName
 import FFI
 
 #if !defined(TRACING)
@@ -15,7 +13,7 @@ hSetBuffering h b = do
     x <- hSetBufferingC h b
     if x/=0 then do
         errno <- getErrNo
-        throwIOError ("hSetBuffering "++show b) (hGetFileName h) (Just h) errno
+        throwIOError ("hSetBuffering "++show b) Nothing (Just h) errno
       else
         return ()
 
@@ -29,7 +27,7 @@ hSetBuffering (Handle h) b = do
     x <- hSetBufferingC h b
     if x/=0 then do
         errno <- getErrNo
-        throwIOError ("hSetBuffering "++show b) (hGetFileName h)
+        throwIOError ("hSetBuffering "++show b) Nothing
                                              (Just (Handle h)) errno
       else
         return ()

@@ -2,7 +2,6 @@ module IO (openFile) where
 
 import DHandle (Handle(..))
 import IOMode
---import DIOError
 import FFI
 
 foreign import openFileC :: CString -> Int -> IO Addr

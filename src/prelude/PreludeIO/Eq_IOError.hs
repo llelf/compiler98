@@ -4,6 +4,8 @@ import DIOError
 import DErrNo
 
 instance Eq IOError where
-  (IOErrorUser str)      == (IOErrorUser str')	=  str == str'
-  (IOErrorC _ _ e)	 == (IOErrorC _ _ e')	=    e == e'
+  (IOError _ _ _ e)	== (IOError _ _ _ e')	=    e == e'
+  (EOFError x _)	== (EOFError y _)	=    x == y
+  (PatternError str)	== (PatternError str')	=  str == str'
+  (UserError _ str)	== (UserError _ str')	=  str == str'
   _ == _ = False
