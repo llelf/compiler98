@@ -30,5 +30,5 @@ can'tOpenAnyOf name filename ioError =
     exit
 
 errorLC  l c msg =
-  error ("Error: line "++show l ++", column " ++ show c ++ ": " ++ msg++"\n")
+  error ("Error at line "++show l ++", column " ++ show c ++ ": " ++ msg++"\n")
 
