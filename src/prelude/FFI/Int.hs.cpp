@@ -7,6 +7,8 @@ module FFI
   , Int64
   ) where
 
+{- Note explicit braces and semicolons here - layout is corrupted by cpp. -}
+
 {import FFIBuiltin (Int8, Int16, Int32, Int64)
 ;import Numeric    (readSigned,readDec,showSigned,showIntBase)
 
@@ -26,15 +28,19 @@ module FFI
 
 #define FOREIGNS(T)	\
 ; foreign import primEq##T		:: T -> T  -> Bool	\
+; foreign import primLt##T		:: T -> T  -> Bool	\
 ; foreign import primLe##T		:: T -> T  -> Bool	\
+; foreign import primGt##T		:: T -> T  -> Bool	\
+; foreign import primGe##T		:: T -> T  -> Bool	\
 ; foreign import primAdd##T		:: T -> T  -> T		\
+; foreign import primSub##T		:: T -> T  -> T		\
 ; foreign import primMul##T		:: T -> T  -> T		\
 ; foreign import primAbs##T		:: T       -> T		\
 ; foreign import primSignum##T		:: T       -> T		\
 ; foreign import primQuot##T		:: T -> T  -> T		\
 ; foreign import primRem##T		:: T -> T  -> T		\
-; foreign cast   primToEnum##T		:: Int     -> T		\
-; foreign cast primFromEnum##T		:: T       -> Int	\
+; foreign import primToEnum##T		:: Int     -> T		\
+; foreign import primFromEnum##T	:: T       -> Int	\
 ; foreign import prim##T##FromInteger	:: Integer -> T		\
 ; foreign import prim##T##ToInteger	:: T       -> Integer
 
@@ -46,12 +52,16 @@ module FFI
 
 #define INSTANCE_ORD(T)		\
 ; instance Ord T where		\
-    { (<=) = primLe##T		\
+    { (<)  = primLt##T		\
+    ; (<=) = primLe##T		\
+    ; (>)  = primGt##T		\
+    ; (>=) = primGe##T		\
     }
 
 #define INSTANCE_NUM(T)			\
 ; instance Num T where			\
     { (+) = primAdd##T			\
+    ; (-) = primSub##T			\
     ; (*) = primMul##T			\
     ; abs = primAbs##T			\
     ; signum = primSignum##T		\
