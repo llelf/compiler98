@@ -93,9 +93,11 @@ hPutStr_ByChar (FileDesc *f, NodePtr s)
             break;
       case 1: /* (:) */
             chr = GET_POINTER_ARG1(src,1);
+            C_PUSH(src);
             C_PUSH(chr);
             C_EVALTOS(chr);
             chr = C_POP();
+            src = C_POP();
             IND_REMOVE(chr);
             c = GET_CHAR_VALUE(chr);
             err = fputc(c,f->fp);
@@ -135,9 +137,11 @@ hPutStr_ByLine (FileDesc *f, NodePtr s)
               break;
         case 1: /* (:) */
               chr = GET_POINTER_ARG1(src,1);
+              C_PUSH(src);
               C_PUSH(chr);
               C_EVALTOS(chr);
               chr = C_POP();
+              src = C_POP();
               IND_REMOVE(chr);
               *dstptr = GET_CHAR_VALUE(chr);
               switch (*dstptr++) {
@@ -203,9 +207,11 @@ hPutStr_ByBuff (FileDesc *f, NodePtr s, int reqsize)
               break;
         case 1: /* (:) */
               chr = GET_POINTER_ARG1(src,1);
+              C_PUSH(src);
               C_PUSH(chr);
               C_EVALTOS(chr);
               chr = C_POP();
+              src = C_POP();
               IND_REMOVE(chr);
               *dstptr++ = GET_CHAR_VALUE(chr);
               src = GET_POINTER_ARG1(src,2);
