@@ -1,7 +1,13 @@
 module Prelude where
 
+-- WARNING: all expressions here must use ONLY definitions from here.
+-- Do not use ordinary Prelude functions - they are not available.
+-- Do not use syntax (e.g. n+k patterns) which might be translated
+--    by the compiler to normal Prelude functions.
+
+
 --import PackedString(unpackPS, PackedString(..), packString)
-import Ratio (Ratio)
+import Ratio (Ratio,(%))
 
 sameAs :: a -> a -> Bool
 x `sameAs` y = cPointerEquality (E x) (E y)
@@ -14,7 +20,7 @@ data NmType =
      NTInt Int
    | NTChar Char
    | NTInteger Integer
-   | NTRational Rational
+   | NTRational Integer Integer		-- changed from Rational
    | NTFloat Float
    | NTDouble Double
    | NTId Int
@@ -31,7 +37,7 @@ data NmType =
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
     toNm :: Trace -> a -> SR -> Trace
-    toNm t v sr = Nm t NTDummy sr	-- for safety, never actually required
+    toNm t v sr = Nm t NTDummy sr	-- for safety, we hope never required
 instance NmCoerce Int where
     toNm t v sr = Nm t (NTInt v) sr
 instance NmCoerce Char where
@@ -45,11 +51,7 @@ instance NmCoerce Double where
 instance NmCoerce Bool where
     toNm t False sr = Nm t (NTConstr 0) sr
     toNm t True  sr = Nm t (NTConstr 1) sr
-instance (NmCoerce a, NmCoerce b) => NmCoerce (a,b) where
-    toNm t (x,y) sr = Ap t (TCons (Nm t NTTuple sr)
-                            (TCons (toNm t x sr)
-                             (TCons (toNm t y sr)
-                              TNil))) sr
+
 {-
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
@@ -901,6 +903,24 @@ noIfTrace (Sat t _) = trustedFun t
 noIfTrace (Ind ct _) = trustedFun t
 -}
 
+-- These four functions are dummies, introduced by the tracing compiler
+-- and then eliminated again before code generation.
+fromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
+fromConInteger sr t x = R 1 Root
+
+patFromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
+patFromConInteger sr t x = R 1 Root
+
+fromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
+fromConRational sr t x = R 1 Root
+
+patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
+patFromConRational sr t x = R 1 Root
+----
+
+rPatBool :: R Bool -> Bool	-- used in the transformation of lit patterns
+rPatBool (R v _) = v
+
 indir :: Trace -> R a -> R a
 indir t (R v t') = R v (Ind t t')
 
@@ -913,29 +933,33 @@ conChar sr t c = R c (Nm t (NTChar c) sr)
 conInteger :: SR -> Trace -> Integer -> R Integer
 conInteger sr t b = R b (Nm t (NTInteger b) sr)
 
-fromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
-fromConInteger sr t x = R 1 Root
-
-patFromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
-patFromConInteger sr t x = R 1 Root
-
-fromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
-fromConRational sr t x = R 1 Root
-
-patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
-patFromConRational sr t x = R 1 Root
-
-rPatBool :: R Bool -> Bool
-rPatBool (R v _) = v
-
-conRational :: SR -> Trace -> Rational -> R Rational
-conRational sr t b = R b (Nm t (NTRational b) sr)
-
 conFloat :: SR -> Trace -> Float -> R Float
 conFloat sr t b = R b (Nm t (NTFloat b) sr)
 
 conDouble :: SR -> Trace -> Double -> R Double
 conDouble sr t b = R b (Nm t (NTDouble b) sr)
+
+conRational :: SR -> Trace -> Integer -> Integer
+               -> (SR -> Trace -> R (Trace -> R Integer
+                                     -> R (Trace -> R Integer -> R Rational)))
+               -> R Rational
+conRational sr t n d percent =
+  (\(R r _)->  R r (Nm t (NTRational n d) sr))
+  (pap2 sr t (percent sr t) (conInteger sr t n) (conInteger sr t d))
+
+{-
+conSpecialiseRatio :: Integral a =>
+            (SR -> Trace -> R (Trace -> R a
+                               -> R (Trace -> R a -> R (Ratio a))))
+            -> (SR -> Trace -> R (Trace -> R Integer
+                                  -> R (Trace -> R Integer -> R Rational)))
+conSpecialiseRatio percent sr t =
+    R (\_ ri1->  let (R f1 _) = percent sr t
+                     (R f2 _) = f1 t ri1
+                 in R (\_ ri2-> f2 t ri2) t
+      ) t
+-}
+         
 
 con0 sr t cn nm =
   R cn (Nm t nm sr)
@@ -1090,6 +1114,7 @@ value (R v _) = v
 -- Combinator for using primitives:   prim_n
 -- This implementation is not yet correct - the trace for
 -- the value returned by the primitive is available too early.
+--  (Actually, I believe that is fixed now?)
 prim0 nm rf sr t = 
   let tf = Nm t nm sr
   in (\(R v vt)->
