@@ -82,10 +82,10 @@ $(OBJDIR)/hatlib.a: $(THOROBJS)
 
 # Thorsten's haskell tools
 $(DEST)/hat-observe: Hatobserve.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
-	$(LOCAL)hmake -nhc98 -K10M +CTS -H20M -CTS Hatobserve $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
+	$(HMAKE) -hc=$(LOCAL)nhc98 -K10M +CTS -H20M -CTS Hatobserve $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
 	mv $(OBJDIR)/Hatobserve $(DEST)/hat-observe
 
 $(DEST)/hat-detect: Hatdetect.hs HatTrie.hs HatTrace.gc HatExpressionTree.hs PrettyExp.hs PrettyLib.hs $(OBJDIR)/hatlib.a
-	$(LOCAL)hmake -nhc98 -K10M +CTS -H20M -CTS Hatdetect $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
+	$(HMAKE) -hc=$(LOCAL)nhc98 -K10M +CTS -H20M -CTS Hatdetect $(OBJDIR)/hatlib.a -d$(OBJDIR) $(shell echo $(LIBCOMPAT))
 	mv $(OBJDIR)/Hatdetect $(DEST)/hat-detect
 
