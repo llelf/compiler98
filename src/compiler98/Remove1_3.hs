@@ -35,7 +35,7 @@ Also collect identifiers of all field names.
 -}
 removeDecls :: Decls Id -> ((TokenId,IdKind) -> Id) -> IntState 
             -> (Decls Id   -- modified declarations
-               ,[Id]       -- identifiers of all field names
+               ,[Id]       -- identifiers of all data constructors
                ,IntState)
 
 removeDecls (DeclsParse decls) tidFun state =

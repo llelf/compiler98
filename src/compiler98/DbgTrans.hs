@@ -10,8 +10,9 @@ import TokenId
 import DbgId(t_R,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal,t_rPatBool
             ,t_lazySat,t_fun,t_tfun,t_primn,t_tprimn
-            ,t_prim,t_ap,t_rap,t_tap,t_trap,t_cn,t_con,t_pa,t_indir
-            ,t_if,t_rif,t_guard
+            ,t_prim,t_ap,t_rap,t_tap,t_trap
+            ,t_cn,t_con,t_pa,t_tcon,t_tpa,t_indir
+            ,t_if,t_rif,t_guard,t_mkNoSR
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
             ,t_conFloat,t_conCons,t_tfun
@@ -814,7 +815,7 @@ dSuspectExp cr parent (ExpApplication pos (f:es)) =
   case f of
     ExpCon _ _ ->            
       dSuspectExps parent es >>>= \es' ->
-      saturateConstr parent f es'
+      saturateSuspectConstr parent f es'
     _ ->
       lookupVar pos ((if cr then t_ap else t_rap) (length es)) >>>= \apply ->
       makeSourceRef pos >>>= \sr -> 
@@ -824,10 +825,70 @@ dSuspectExp cr parent (ExpList pos es) =
   lookupCon pos t_Colon >>>= \consid ->
   dSuspectExps parent es >>>= \es' ->
   foldS 
-    (\e es -> wrapConst parent consid [e, es])
-    (lookupCon pos t_List >>>= \nil -> wrapConst parent nil []) es'
-dSuspectExp cr parent e =
-  dExp cr parent e
+    (\e es -> wrapSuspectConst parent consid [e, es])
+    (lookupCon pos t_List >>>= \nil -> wrapSuspectConst parent nil []) es'
+dSuspectExp cr parent e@(ExpCon pos id) = saturateSuspectConstr parent e []
+dSuspectExp cr parent e@(ExpVar pos id) = 
+  getIdArity id >>>= \arity ->
+  case arity of
+    Nothing -> -- Must be a lambdabound variable
+      if cr 
+        then unitS e
+	else 
+	  lookupVar pos t_indir >>>= \indir ->
+	  unitS (ExpApplication pos [indir, parent, e])
+    Just n -> -- A letbound or global function
+      makeSourceRef pos >>>= \sr ->
+      unitS (ExpApplication pos [e, sr, parent]) 
+dSuspectExp cr parent e@(ExpLit pos (LitString _ s)) = 
+  -- calling a combinator `litString pos s' impossible, because
+  -- the list data type (s) cannot be used there.
+  -- The following is somewhat expensive. But it works...
+  -- At least the list constructor (:) is shared in the trace.
+  lookupCon pos t_Colon >>>= \cons ->
+  lookupCon pos t_List >>>= \nil ->
+  lookupVar pos t_conCons >>>= \conCons ->
+  makeSourceRef pos >>>= \sr -> 
+  let ExpCon _ consId = cons in
+  makeNTConstr pos consId >>>= \ntconstr ->
+  makeNm pos parent ntconstr sr >>>= \consName ->
+  addNewName 0 True "consTrace" NoType >>>= \consTrId ->
+  dSuspectExp cr parent nil >>>= \nil' ->
+  let cons' :: Char -> Exp Id -> Exp Id
+      cons' c rs = ExpApplication pos [conCons, sr, parent, cons
+                                      ,ExpVar pos consTrId
+                                      ,ExpLit pos (LitChar Boxed c), rs]
+  in unitS $ ExpLet pos 
+               (DeclsParse [DeclFun pos consTrId 
+                             [Fun [] (Unguarded consName) (DeclsParse []) ]]) 
+               (foldr cons' nil' s)
+{- old: Simpler, but leads to slightly larger expressions.
+    lookupCon pos t_Colon >>>= \consid ->
+    lookupCon pos t_List >>>= \nilid ->
+    let rs = (map (ExpLit pos . LitChar Boxed) s) in
+    dExp True (foldr (\c cs -> ExpApplication pos [consid, c, cs]) nilid rs)
+-}
+dSuspectExp cr parent e@(ExpLit pos (LitInteger b i)) = 
+    -- Remove this after typechecking
+    lookupVar pos t_fromConInteger >>>= \fci ->
+    makeSourceRef pos >>>= \sr -> 
+    unitS (ExpApplication pos [fci, sr, parent, e])
+dSuspectExp cr parent e@(ExpLit pos (LitRational b i)) = 
+    -- Remove this after typechecking
+    lookupVar pos t_fromConRational >>>= \fcr ->
+    makeSourceRef pos >>>= \sr -> 
+    unitS (ExpApplication pos [fcr, sr, parent, e])
+dSuspectExp cr parent e@(ExpLit pos lit) = 
+    dLit lit >>>= \constr ->
+    makeSourceRef pos >>>= \sr -> 
+    unitS (ExpApplication pos [constr, sr, parent, e])
+    where dLit (LitInt _ _) = lookupVar pos t_conInt
+          dLit (LitChar _ _) = lookupVar pos t_conChar
+          dLit (LitInteger _ _) = lookupVar pos t_conInteger
+	  dLit (LitRational _ _) = lookupVar pos t_conRational
+	  dLit (LitDouble _ _) = lookupVar pos t_conDouble
+	  dLit (LitFloat _ _) = lookupVar pos t_conFloat
+dSuspectExp cr parent e = error ("dExp: no match")
 
 
 dSuspectExps :: Exp Id -> [Exp Id] -> DbgTransMonad [Exp Id]
@@ -897,21 +958,84 @@ dTrustExp cr parent hidParent (ExpApplication pos (f:es)) =
   case f of
     ExpCon _ _ ->            
       dTrustExps parent hidParent es >>>= \es' ->
-      saturateConstr (if cr then hidParent else parent) f es'
+      saturateTrustConstr (if cr then hidParent else parent) f es'
     _ ->
       lookupVar pos ((if cr then t_tap else t_trap) (length es)) >>>= \apply ->
-      makeSourceRef pos >>>= \sr -> 
       dTrustExps parent hidParent (f:es) >>>= \fes ->
       unitS (ExpApplication pos 
-               (apply:sr:(if cr then hidParent else parent):fes))
+               (apply:(if cr then hidParent else parent):fes))
 dTrustExp cr parent hidParent (ExpList pos es) = 
   lookupCon pos t_Colon >>>= \consid ->
   dTrustExps parent hidParent es >>>= \es' ->
   foldS 
-    (\e es -> wrapConst hidParent consid [e, es])
-    (lookupCon pos t_List >>>= \nil -> wrapConst hidParent nil []) es'
-dTrustExp cr parent hidParent e =
-  dExp cr (if cr then hidParent else parent) e
+    (\e es -> wrapTrustConst hidParent consid [e, es])
+    (lookupCon pos t_List >>>= \nil -> wrapTrustConst hidParent nil []) es'
+dTrustExp cr parent hidParent e@(ExpCon pos id) = 
+  saturateTrustConstr (if cr then hidParent else parent) e []
+dTrustExp cr parent hidParent e@(ExpVar pos id) = 
+  getIdArity id >>>= \arity ->
+  case arity of
+    Nothing -> -- Must be a lambdabound variable
+      if cr 
+        then unitS e
+	else 
+	  lookupVar pos t_indir >>>= \indir ->
+	  unitS (ExpApplication pos [indir, hidParent, e])
+    Just n -> -- A letbound or global function
+      lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+      unitS (ExpApplication pos [e, mkNoSR, if cr then hidParent else parent]) 
+dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) = 
+  -- calling a combinator `litString pos s' impossible, because
+  -- the list data type (s) cannot be used there.
+  -- The following is somewhat expensive. But it works...
+  -- At least the list constructor (:) is shared in the trace.
+  lookupCon pos t_Colon >>>= \cons ->
+  lookupCon pos t_List >>>= \nil ->
+  lookupVar pos t_conCons >>>= \conCons ->
+  let ExpCon _ consId = cons in
+  makeNTConstr pos consId >>>= \ntconstr ->
+  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+  let tParent = if cr then hidParent else parent in
+  makeNm pos tParent ntconstr mkNoSR >>>= \consName ->
+  addNewName 0 True "consTrace" NoType >>>= \consTrId ->
+  dTrustExp cr parent hidParent nil >>>= \nil' ->
+  let cons' :: Char -> Exp Id -> Exp Id
+      cons' c rs = ExpApplication pos [conCons, mkNoSR, tParent, cons
+                                      ,ExpVar pos consTrId
+                                      ,ExpLit pos (LitChar Boxed c), rs]
+  in unitS $ ExpLet pos 
+               (DeclsParse [DeclFun pos consTrId 
+                             [Fun [] (Unguarded consName) (DeclsParse []) ]]) 
+               (foldr cons' nil' s)
+{- old: Simpler, but leads to slightly larger expressions.
+    lookupCon pos t_Colon >>>= \consid ->
+    lookupCon pos t_List >>>= \nilid ->
+    let rs = (map (ExpLit pos . LitChar Boxed) s) in
+    dExp True (foldr (\c cs -> ExpApplication pos [consid, c, cs]) nilid rs)
+-}
+dTrustExp cr parent hidParent e@(ExpLit pos (LitInteger b i)) = 
+  -- Remove this after typechecking
+  lookupVar pos t_fromConInteger >>>= \fci ->
+  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+  unitS (ExpApplication pos [fci, mkNoSR, if cr then hidParent else parent, e])
+dTrustExp cr parent hidParent e@(ExpLit pos (LitRational b i)) = 
+  -- Remove this after typechecking
+  lookupVar pos t_fromConRational >>>= \fcr ->
+  lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+  unitS (ExpApplication pos [fcr, mkNoSR, if cr then hidParent else parent, e])
+dTrustExp cr parent hidParent e@(ExpLit pos lit) = 
+    dLit lit >>>= \constr ->
+    lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+    unitS (ExpApplication pos 
+             [constr, mkNoSR, if cr then hidParent else parent, e])
+    where dLit (LitInt _ _) = lookupVar pos t_conInt
+          dLit (LitChar _ _) = lookupVar pos t_conChar
+          dLit (LitInteger _ _) = lookupVar pos t_conInteger
+	  dLit (LitRational _ _) = lookupVar pos t_conRational
+	  dLit (LitDouble _ _) = lookupVar pos t_conDouble
+	  dLit (LitFloat _ _) = lookupVar pos t_conFloat
+dTrustExp cr parent hidParent e = error ("dExp: no match")
+
 
 
 dTrustExps :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad [Exp Id]
@@ -953,72 +1077,6 @@ dTrustRhs cr parent hidParent true otherw (Guarded gdExps) =
     unitS (ExpApplication noPos [rPatBool,cond'],e')
 
 
-dExp :: Bool -> Exp Id -> Exp Id -> DbgTransMonad (Exp Id)
-
-dExp cr parent e@(ExpCon pos id) = saturateConstr parent e []
-dExp cr parent e@(ExpVar pos id) = 
-  getIdArity id >>>= \arity ->
-  case arity of
-    Nothing -> -- Must be a lambdabound variable
-      if cr 
-        then unitS e
-	else 
-	  lookupVar pos t_indir >>>= \indir ->
-	  unitS (ExpApplication pos [indir, parent, e])
-    Just n -> -- A letbound or global function
-      makeSourceRef pos >>>= \sr ->
-      unitS (ExpApplication pos [e, sr, parent]) 
-dExp cr parent e@(ExpLit pos (LitString _ s)) = 
-  -- calling a combinator `litString pos s' impossible, because
-  -- the list data type (s) cannot be used there.
-  -- The following is somewhat expensive. But it works...
-  -- At least the list constructor (:) is shared in the trace.
-  lookupCon pos t_Colon >>>= \cons ->
-  lookupCon pos t_List >>>= \nil ->
-  lookupVar pos t_conCons >>>= \conCons ->
-  makeSourceRef pos >>>= \sr -> 
-  let ExpCon _ consId = cons in
-  makeNTConstr pos consId >>>= \ntconstr ->
-  makeNm pos parent ntconstr sr >>>= \consName ->
-  addNewName 0 True "consTrace" NoType >>>= \consTrId ->
-  dExp cr parent nil >>>= \nil' ->
-  let cons' :: Char -> Exp Id -> Exp Id
-      cons' c rs = ExpApplication pos [conCons, sr, parent, cons
-                                      ,ExpVar pos consTrId
-                                      ,ExpLit pos (LitChar Boxed c), rs]
-  in unitS $ ExpLet pos 
-               (DeclsParse [DeclFun pos consTrId 
-                             [Fun [] (Unguarded consName) (DeclsParse []) ]]) 
-               (foldr cons' nil' s)
-{- old: Simpler, but leads to slightly larger expressions.
-    lookupCon pos t_Colon >>>= \consid ->
-    lookupCon pos t_List >>>= \nilid ->
-    let rs = (map (ExpLit pos . LitChar Boxed) s) in
-    dExp True (foldr (\c cs -> ExpApplication pos [consid, c, cs]) nilid rs)
--}
-dExp cr parent e@(ExpLit pos (LitInteger b i)) = 
-    -- Remove this after typechecking
-    lookupVar pos t_fromConInteger >>>= \fci ->
-    makeSourceRef pos >>>= \sr -> 
-    unitS (ExpApplication pos [fci, sr, parent, e])
-dExp cr parent e@(ExpLit pos (LitRational b i)) = 
-    -- Remove this after typechecking
-    lookupVar pos t_fromConRational >>>= \fcr ->
-    makeSourceRef pos >>>= \sr -> 
-    unitS (ExpApplication pos [fcr, sr, parent, e])
-dExp cr parent e@(ExpLit pos lit) = 
-    dLit lit >>>= \constr ->
-    makeSourceRef pos >>>= \sr -> 
-    unitS (ExpApplication pos [constr, sr, parent, e])
-    where dLit (LitInt _ _) = lookupVar pos t_conInt
-          dLit (LitChar _ _) = lookupVar pos t_conChar
-          dLit (LitInteger _ _) = lookupVar pos t_conInteger
-	  dLit (LitRational _ _) = lookupVar pos t_conRational
-	  dLit (LitDouble _ _) = lookupVar pos t_conDouble
-	  dLit (LitFloat _ _) = lookupVar pos t_conFloat
-dExp cr parent e = error ("dExp: no match")
-
-
 {- conversion of case alternative into function definition alternative -}
 alt2Fun :: Alt a -> Fun a
 alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls 
@@ -1028,12 +1086,13 @@ alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls
 Transform data constructor application.
 Number of arguments may be smaller than arity of the data constructor.
 -}
-saturateConstr :: Exp Id      -- parent
+saturateSuspectConstr :: 
+                  Exp Id      -- parent
                -> Exp Id      -- data constructor
                -> [Exp Id]    -- arguments (already transformed)
                -> DbgTransMonad (Exp Id) -- transformed constructor application
 
-saturateConstr parent c@(ExpCon pos id) args =
+saturateSuspectConstr parent c@(ExpCon pos id) args =
   --trace ("<<< " ++ show id' ++ " -> " ++ show id) $
   getConArity id >>>= \arity ->
   --trace ("Arity for " ++ show id ++ " is " ++ show arity) $
@@ -1044,20 +1103,47 @@ saturateConstr parent c@(ExpCon pos id) args =
     makeSourceRef pos >>>= \sr ->
     unitS (ExpApplication pos (pan:c:cn:sr:parent:ntconstr:args))
    else
-    wrapConst parent c args
+    wrapSuspectConst parent c args
+
+
+saturateTrustConstr :: 
+                  Exp Id      -- parent
+               -> Exp Id      -- data constructor
+               -> [Exp Id]    -- arguments (already transformed)
+               -> DbgTransMonad (Exp Id) -- transformed constructor application
+
+saturateTrustConstr parent c@(ExpCon pos id) args =
+  --trace ("<<< " ++ show id' ++ " -> " ++ show id) $
+  getConArity id >>>= \arity ->
+  --trace ("Arity for " ++ show id ++ " is " ++ show arity) $
+  if arity > length args then -- Unsaturated constructor
+    makeNTConstr pos id >>>= \ntconstr ->
+    lookupVar pos (t_cn (arity - length args)) >>>= \cn ->
+    lookupVar pos (t_tpa (length args)) >>>= \pan ->
+    unitS (ExpApplication pos (pan:c:cn:parent:ntconstr:args))
+   else
+    wrapSuspectConst parent c args
 
 
 {-
 Transform constructor application where number of arguments
 equals arity of constructor. The arguments have already been transformed.
 -}
-wrapConst :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
+wrapSuspectConst :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
 
-wrapConst parent c@(ExpCon pos cid) args =
+wrapSuspectConst parent c@(ExpCon pos cid) args =
   lookupVar pos (t_con (length args)) >>>= \con ->
   makeNTConstr pos cid >>>= \ntconstr ->
   makeSourceRef pos >>>= \sr ->
   unitS (ExpApplication pos (con:sr:parent:c:ntconstr:args))
+
+
+wrapTrustConst :: Exp Id -> Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
+
+wrapTrustConst parent c@(ExpCon pos cid) args =
+  lookupVar pos (t_tcon (length args)) >>>= \con ->
+  makeNTConstr pos cid >>>= \ntconstr ->
+  unitS (ExpApplication pos (con:parent:c:ntconstr:args))
 
 
 {- Unused, string is transformed on a per character basis 

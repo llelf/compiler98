@@ -1,17 +1,18 @@
 module DbgId(tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE,
-             t_mkTRoot,t_mkTNm,t_hide,
+            t_mkTRoot,t_mkTNm,t_hide,
              {- t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden,-}
              t_lazySat,
              t_ap, t_rap, t_tap, t_trap, t_patvar, t_caf
             , t_fun, t_tfun, t_primn, t_tprimn
             , t_guard, t_if, t_rif
-            ,t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
+            ,t_cn, t_pa, t_con, t_tpa, t_tcon, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
 	     t_conCons, t_indir,
 	     t_conFloat, t_fromConInteger, t_patFromConInteger, t_fatal, 
 	     t_fromConRational, t_patFromConRational
 	     ,t_debugger, t_prim, t_rseq, t_cSeq
-             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkSR,t_mkNTId,t_mkNTConstr
+             ,t_mkSR',t_mkNoSR
+             ,t_mkNTId',t_mkNTConstr',t_mkSR,t_mkNTId,t_mkNTConstr
              ,t_mkNTLambda,t_mkNTCase
 	     ,tNTId, tNTConstr, tCase, tIf, tGuard, tLambda, tNmType,
 	     tDbgPrelude,tDbgPreludeCore,tNmCoerce,tokenDbg)
@@ -30,6 +31,7 @@ tSR		= qualImp "SR"
 tDNum           = qualImp "Num"
 t_mkTRoot       = qualImp "mkTRoot"
 t_mkTNm         = qualImp "mkTNm"
+t_mkNoSR        = qualImp "mkNoSR"
 t_mkSR'         = qualImp "mkSR'"
 t_mkNTId'       = qualImp "mkNTId'"
 t_mkNTConstr'   = qualImp "mkNTConstr'"
@@ -63,6 +65,8 @@ t_pap n		= qualImp ("pap" ++ show n)
 t_cn n		= qualImp ("cn" ++ show n)
 t_pa n		= qualImp ("pa" ++ show n)
 t_con n		= qualImp ("con" ++ show n)
+t_tpa n		= qualImp ("tpa" ++ show n)
+t_tcon n	= qualImp ("tcon" ++ show n)
 t_primn n	= qualImp ("prim" ++ show n)
 t_tprimn n      = qualImp ("tprim" ++ show n)
 t_indir		= qualImp "indir"
@@ -119,6 +123,7 @@ tokenDbg = [(TCon, tTrace),
 	    (TClass, tNmCoerce),
             (Var, t_mkTRoot),
             (Var, t_mkTNm),
+            (Var, t_mkNoSR),
             (Var, t_mkSR'),
             (Var, t_mkNTId'),
             (Var, t_mkNTConstr'),
@@ -189,6 +194,8 @@ tokenDbg = [(TCon, tTrace),
 	   ++ [(Var,  t_cn n)    | n <- [1..8]]
 	   ++ [(Var,  t_pa n)    | n <- [0..4]]
 	   ++ [(Var,  t_con n)   | n <- [0..12]]
+	   ++ [(Var,  t_tpa n)   | n <- [0..4]]
+	   ++ [(Var,  t_tcon n)  | n <- [0..12]]
 	   ++ [(Var,  t_primn n) | n <- [0..12]]
 	   ++ [(Var,  t_tprimn n)| n <- [0..12]]
 	   ++ [(TCon, t_Tuple n) | n <- [2..12]]	   

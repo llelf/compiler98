@@ -67,7 +67,7 @@ CTrace*
 primTRoot (void)
 {
     HIDE(fprintf(stderr,"primTRoot\n");)
-    return mkTrace((FileOffset)0,True,False);  /* test: hidden was False */
+    return mkTrace((FileOffset)0,True,False); /* test: trustedness was False */
 }
 
 CTrace*
