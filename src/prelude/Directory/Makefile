@@ -34,7 +34,7 @@ ${OBJDIR}:
 objdir: ${OBJDIR}
 ${MAINOBJ}: ${OBJS}
 clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
+	rm -f ${OBJDIR}/*.o *.hi *.o *_.hs *.c *.s
 
 
  
