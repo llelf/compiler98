@@ -7,6 +7,7 @@ import Directory
 import List
 
 import HmakeConfig
+import SimpleLineEditor (delChars, done, getLineEdited)
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
@@ -18,14 +19,14 @@ main = do
   putStrLn (replicate 43 ' '++ "... Using compiler "++show defaultCompiler++" ...\n")
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
+  hSetBuffering stdin NoBuffering
   load opts defaultCompiler "Prelude"
   toplevel opts defaultCompiler ["Prelude"]
 
-done = return ()
 
 toplevel options compiler modules = do
   putStr (head modules ++ "> ")
-  s <- getLine
+  s <- getLineEdited
   if (null s || all isSpace s) then done else
     case head s of
       ':' -> let ws = words (tail s) in
@@ -93,12 +94,9 @@ compile options compiler file continue = do
 --debug ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
   ok <- system ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
   case ok of
-    ExitSuccess -> do putStr (delete "[Compiling...")
+    ExitSuccess -> do delChars "[Compiling..."
                       continue
     _           -> putStrLn "...failed]"
- where
-  delete []     = ""
-  delete (_:xs) = "\BS \BS" ++ delete xs
 
 run file args = system (file++" "++unwords args) >> done
 

@@ -3,7 +3,7 @@ include Makefile.inc
 OBJDIR = ${BUILDDIR}/obj/interpreter
 TARGET = ${DST}/hi$(EXE)
 
-SRCS   = hi.hs HmakeConfig.hs
+SRCS   = hi.hs HmakeConfig.hs SimpleLineEditor.hs
 
 
 ifeq "${HC}" "ghc"
