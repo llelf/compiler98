@@ -578,7 +578,7 @@ tDecl scope traced parent (DeclPat (Alt pat rhs decls)) =
     DeclFun pos (nameTransLetVar id)
       [Fun [useSR,parent]
         (Unguarded (ExpApplication pos
-          [combConstUse pos,useSR,parent,ExpVar pos (nameShare id)]))
+          [combConstUse pos traced,useSR,parent,ExpVar pos (nameShare id)]))
         noDecls]
 
   projDef :: (Pos,TraceId) -> Decl TokenId
@@ -690,7 +690,7 @@ tHaskellPrimitive pos hasId fnId arity ty
      ,DeclFun pos (nameTransLetVar fnId)
        [Fun [sr,parent] 
          (Unguarded (ExpApplication pos
-           [combConstUse pos,sr,parent,ExpVar pos shareId]))
+           [combConstUse pos False,sr,parent,ExpVar pos shareId]))
          noDecls]]
     ,[DeclFun pos shareId
        [Fun []
@@ -797,7 +797,7 @@ tCaf scope traced parent pos id rhs localDecls =
   ([DeclFun pos (nameTransLetVar id)
      [Fun [useSR,useParent] 
        (Unguarded (ExpApplication pos 
-         [combConstUse pos,useSR,useParent,id'])) 
+         [combConstUse pos traced,useSR,useParent,id'])) 
        noDecls]
    ,DeclFun pos idId'
      [Fun [] 
@@ -1912,8 +1912,9 @@ combApply pos traced a =
 combFun :: Pos -> Bool -> Arity -> Exp TokenId
 combFun pos traced a = ExpVar pos ((if traced then tokenFun else tokenUFun) a)
 
-combConstUse :: Pos -> Exp TokenId
-combConstUse pos = ExpVar pos tokenConstUse
+combConstUse :: Pos -> Bool -> Exp TokenId
+combConstUse pos traced = 
+  ExpVar pos (if traced then tokenConstUse else tokenUConstUse)
 
 combConstDef :: Pos -> Bool -> Exp TokenId 
 combConstDef pos traced = 
@@ -2042,6 +2043,8 @@ tokenCn = mkTracingTokenArity "cn"
 
 tokenConstUse :: TokenId
 tokenConstUse = mkTracingToken "constUse"
+tokenUConstUse :: TokenId
+tokenUConstUse = mkTracingToken "uconstUse"
 
 tokenConstDef :: TokenId
 tokenConstDef = mkTracingToken "constDef"
