@@ -28,10 +28,13 @@ module IO (
 
 import Ix
 import DHandle(Handle)
+import Eq_Handle
+import Show_Handle
 import PreludeBuiltin(stdin,stdout,stderr)
 
 import DHandlePosn
 import Eq_HandlePosn
+import Show_HandlePosn
 import IOMode
 import BufferMode
 import SeekMode

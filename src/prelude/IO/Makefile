@@ -8,7 +8,7 @@ COMMON_SRCS = \
 	HFlush.hs         HPrint.hs        HSetPosn.hs \
         IsEOF.hs          SeekMode.hs      BufferMode.hs \
         HGetChar.hs       HPutChar.hs                     \
-        IsEOFError.hs     Eq_HandlePosn.hs HGetContents.hs \
+        IsEOFError.hs     HGetContents.hs \
         HPutStr.hs        IOMode.hs        IsUserError.hs   \
 	HClose.hs         HGetPosn.hs      HSeek.hs \
         IoeGetFileName.hs OpenFile.hs      HFileSize.hs \
@@ -16,6 +16,8 @@ COMMON_SRCS = \
                           HGetFileName.hs  HPutStrLn.hs \
 	NotDoneYet.hs                                    \
 	IoeGetErrorString.hs	HGetLine.hs	\
+	Eq_Handle.hs      Eq_HandlePosn.hs \
+	Show_Handle.hs    Show_HandlePosn.hs \
 	IsIOErrors.hs     Try.hs           Bracket.hs	Bracket_.hs
 
 SRCS	= ${COMMON_SRCS} \
@@ -55,7 +57,8 @@ ${OBJDIR}/HGetFileName.$O:   ${OBJDIR}/DHandle.$O
 ${OBJDIR}/HFileSize.$O:      ${OBJDIR}/DHandle.$O ${OBJDIR}/HGetFileName.$O 
 ${OBJDIR}/OpenFile.$O:       ${OBJDIR}/DHandle.$O ${OBJDIR}/IOMode.$O ${OBJDIR}/HClose.$O 
 ${OBJDIR}/HClose.$O:         ${OBJDIR}/DHandle.$O 
-${OBJDIR}/Eq_HandlePosn.$O:  ${OBJDIR}/DHandlePosn.$O 
+${OBJDIR}/Eq_Handle.$O:      ${OBJDIR}/DHandle.$O 
+${OBJDIR}/Eq_HandlePosn.$O:  ${OBJDIR}/DHandlePosn.$O ${OBJDIR}/Eq_Handle.$O
 
 # C deps.
 NotDoneYet.c: DHandle.c 
