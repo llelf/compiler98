@@ -33,6 +33,10 @@ getExp ops exps (e:es) =
 	  (InfixPre a,l) -> getExp (stackPrefix fix (ExpVar pos o):ops) exps es
     _ ->
       getOp ops (e:exps) es
+getExp ops [] [] =
+   error ("Problem with infix section at unknown location.")
+getExp ops (e:es) [] =
+   error ("Problem with infix section at "++strPos (getPos e))
 
 getOp ops exps [] = finish ops exps
 getOp ops exps ees@(ExpConOp pos op:es) =
@@ -103,6 +107,7 @@ fixInfixList ees@(ExpVarOp pos op:es) =
         case fix of
 	  (InfixPre a,l) -> reorder ees
 	  _ -> reorder es >>>= \ exp -> 
+               invertCheck pos op fix exp >>>
                unitS (ExpLambda pos [ExpVar pos t_x] 
                         (ExpApplication pos 
                            [ExpVar pos op, ExpVar pos t_x, exp]))
@@ -111,6 +116,7 @@ fixInfixList ees@(ExpConOp pos op:es) =
         case fix of
 	  (InfixPre a,l) -> reorder ees
 	  _ -> reorder es >>>= \ exp -> 
+               invertCheck pos op fix exp >>>
                unitS (ExpLambda pos [ExpVar pos t_x] 
                         (ExpApplication pos 
                            [ExpCon pos op, ExpVar pos t_x, exp]))
@@ -121,5 +127,26 @@ fixInfixList ees =
     ExpVarOp pos op -> reorder (init ees) >>>= \ exp -> 
                        unitS (ExpApplication pos [ExpVar pos op,exp])
     _ -> reorder ees
+
+-- 'invertCheck' checks for priority inversion in an operator section.
+invertCheck pos1 op1 (fix1,pri1) exp =
+  case exp of
+    ExpApplication _ (ExpVar pos2 op2: es) -> check Var pos2 op2
+    ExpApplication _ (ExpCon pos2 op2: es) -> check Con pos2 op2
+    _ -> unitS0
+  where
+    check kind pos2 op2 =
+      fixTid kind op2 >>>= \(fix2,pri2) ->
+      if pri2 < pri1 then
+        error ("Fixity problem:\n  "
+              ++show op1++" used at "++strPos pos1++" has precedence "
+              ++show pri1++",\n  "
+              ++show op2++" used at "++strPos pos2++" has precedence "
+              ++show pri2++".\n  "
+              ++"The partially applied operator "++show op1
+              ++" should have lower precedence\n  "
+              ++"than the fully-applied operator "
+              ++show op2++" used inside the section.\n")
+      else unitS0
 
 {- --------------------------------------------------------------------------}
