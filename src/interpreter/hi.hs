@@ -235,7 +235,7 @@ scope file mod = do
 -}
 
 #if defined(__HBC__)
-banner = "hi - hmake interactive                (Version: "++hmakeversion++")"
+banner = "hi - hmake interactive                (Version: "++hmakeVersion++")"
 help   = "hi - help command does not work in hbc"
 
 #else
