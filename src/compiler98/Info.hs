@@ -35,11 +35,13 @@ isExported IEsel  = False
 isExported _      = True
 
 
-combIE IEall  _ = IEall
-combIE _ IEall  = IEall
-combIE IEnone i = i
-combIE i IEnone = i
-combIE _      i = i
+combIE IEall  _     = IEall
+combIE _      IEall = IEall
+combIE IEnone i     = i
+combIE i     IEnone = i
+combIE IEsome IEabs = IEsome
+combIE IEabs IEsome = IEsome
+combIE _      i     = i
 
 data DataKind = 
     DataTypeSynonym Bool  -- True <-> unboxed after expansion
