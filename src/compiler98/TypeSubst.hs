@@ -8,7 +8,6 @@ import NT(NT(..),NewType(..),freeNT)
 import Extra(fstOf,dropJust,strace)
 import TypeData
 import AssocTree
-import Tree234
 import Id(Id)
 
 

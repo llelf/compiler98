@@ -1,9 +1,8 @@
 module Depend(depend) where
 
+import AssocTree(listAT)
 import Flags (Flags,sDepend,sPrelude,sSourceFile,sUnix)
 import IntState
-import Memo
-import Tree234
 import Extra
 import OsOnly
 import TokenId
@@ -17,7 +16,10 @@ depend flags state rt =
       sourcefile = sSourceFile flags
       (rootdir,filename) = fixRootDir isUnix sourcefile
     in writeFile (fixDependFile isUnix rootdir filename)
-                 ((unlines . filter (not . null) . map (strId (sPrelude flags) state . head . dropRight . snd) . treeMapList (:)) rt)
+                 ((unlines
+                  . filter (not . null)
+                  . map (strId (sPrelude flags) state . head . dropRight . snd)
+                  . listAT) rt)
   else
     return ()
 

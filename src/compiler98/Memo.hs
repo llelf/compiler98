@@ -1,24 +1,28 @@
-module Memo(Memo(..),initM,elemM,lookupM,addM,useM,Tree) where
+module Memo(Memo,initM,listM,fromListM,elemM,lookupM,addM) where
 
 import Tree234
 
-type Memo a = Tree a
+newtype Memo a = Memo (Tree a)
 
-initM = initTree
+initM :: Memo a
+initM = Memo initTree
 
-elemM tree value = 
+listM :: Memo a -> [a]
+listM (Memo m) = treeMapList (:) m
+
+fromListM :: Ord a => [a] -> Memo a
+fromListM es = foldl addM initM es
+
+elemM :: Ord a => Memo a -> a -> Bool
+elemM (Memo tree) value = 
   treeSearch False (\_ -> True) (compare value) tree
 
-lookupM tree value =
+lookupM :: Ord a => Memo a -> a -> Maybe a
+lookupM (Memo tree) value =
   treeSearch Nothing Just (compare value) tree
 
-addM tree value =
-  treeAdd comb compare value tree
+addM :: Ord a => Memo a -> a -> Memo a
+addM (Memo tree) value =
+  Memo $ treeAdd comb compare value tree
  where
   comb a b = b
-
-
-useM tree value =
-    case lookupM tree value of
-	Nothing -> (addM tree value,value)
-	Just v  -> (tree,v)

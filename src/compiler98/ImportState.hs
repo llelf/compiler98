@@ -5,7 +5,7 @@ module ImportState
 	(module ImportState
 	,module Info 
 --	,PackedString
-	,Memo(..),TokenId,AssocTree(..),Tree,Decl,InfixClass,IdKind
+	,TokenId,Decl,InfixClass,IdKind
         ,NewType,Pos(..)) where
 
 import PackedString(PackedString,packString,unpackPS)
@@ -17,7 +17,6 @@ import Memo
 import TokenId
 import Extra(Pos(..))
 import Info
-import Tree234
 
 data  ImportState =
       ImportState
@@ -25,7 +24,7 @@ data  ImportState =
 	Int			 -- unique
 	PackedString		 -- modid of interface file
 	PackedString		 -- modid of this section of the interface file
-	(Memo (TokenId,IdKind))	 -- needI
+	(Memo TokenId)           -- needI
 	(AssocTree (TokenId,IdKind) (Either [Pos] [Int]))	
         -- ^ rename (name -> unique)
 	(AssocTree (TokenId,IdKind) Info)			
@@ -41,10 +40,10 @@ data  ImportState =
 
 
 {- initial import state -}
-initIS :: Tree ((TokenId,IdKind),[Pos]) -> ImportState
+initIS :: AssocTree (TokenId,IdKind) [Pos] -> ImportState
 initIS rt = 
-  ImportState False 1 (packString "???") (packString "???") initM 
-    (treeMap ( \ (k,v) -> (k,Left v)) rt) initAT [] (error "no fixity") []
+  ImportState False 1 (packString "???") (packString "???") initM
+    (mapAT Left rt) initAT [] (error "no fixity") []
 
 
 {- put modid of interface file into import state -}

@@ -4,7 +4,6 @@ for producing traces for debugging.
 -}
 module DbgDataTrans(dbgDataTrans) where
 
-import Tree234
 import Extra(trace,noPos,pair,snub,mixSpace,assocDef)
 import IdKind
 import TokenId
@@ -707,7 +706,7 @@ updateClassType :: Id
                 -> NewType 
                 -> [Id] 
                 -> [Id] 
-                -> Tree (Int,([Int],[(Int,Int)])) 
+                -> AssocTree Int ([Int],[(Int,Int)])
                 -> a 
                 -> Threaded -> Threaded
 

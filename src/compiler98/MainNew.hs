@@ -14,8 +14,8 @@ import Monad(when)
 import Scc
 import Error
 
-import Tree234
 import AssocTree
+import Memo
 import Syntax
 import PosCode
 
@@ -201,7 +201,7 @@ main' args = do
 		--    ]
             <- catchError info ("In file: "++sSourceFile flags) id
   pF (sNeed flags) "Need (after reading source module)"  
-            (show (treeMapList (:) need)) 
+            (show (listAT need)) 
 
 
   {- Parse interface files for imported modules.  -}
@@ -233,7 +233,7 @@ main' args = do
   pF (sRename flags) "Declarations after rename and fixity:" 
         (prettyPrintId flags state ppTopDecls decls) 
   pF (sRBound flags) "Symbol table after rename and fixity:"  
-        (mixLine (map show (treeMapList (:) (getSymbolTable state))))
+        (mixLine (map show (listAT (getSymbolTable state))))
   catchError (getErrorsIS state) "Errors after renaming" mixLine
 
 
@@ -260,7 +260,7 @@ main' args = do
   pF (sDerive flags) "Declarations after deriving:" 
           (prettyPrintId flags state ppTopDecls decls) 
   pF (sDBound flags) "Symbol table after deriving:"  
-         (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
+         (mixLine (map show (listAT (getSymbolTable state)))) 
 
 
   {-
@@ -290,7 +290,7 @@ main' args = do
   state	-- :: IntState
            <- return (extract decls state)
   pF (sEBound flags) "Symbol table after extract:"  
-           (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
+           (mixLine (map show (listAT (getSymbolTable state)))) 
   catchError (getErrorsIS state) "Errors after extract phase" mixLine
 
 
@@ -359,7 +359,7 @@ main' args = do
   pF (sType flags) "Declarations after type deriving:" 
          (prettyPrintId flags state ppTopDecls decls) 
   pF (sTBound flags) "Symbol table after type deriving:"  
-         (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
+         (mixLine (map show (listAT (getSymbolTable state)))) 
   catchError (getErrorsIS state) "Errors after type inference/checking" mixLine
 
 
@@ -391,7 +391,7 @@ main' args = do
   pF (sFixSyntax flags) "Declarations after fixSyntax"
           (prettyPrintId flags state ppTopDecls (DeclsParse decls))
   pF (sFSBound flags) "Symbol table after fixSyntax:"  
-          (mixLine (map show (treeMapList (:) (getSymbolTable state))))
+          (mixLine (map show (listAT (getSymbolTable state))))
 
 
   {-
@@ -412,7 +412,7 @@ main' args = do
   pF (sCase flags) "Declarations after case:"  
           (strPCode (strISInt state) decls) 
   pF (sCBound flags) "Symbol table after case:"  
-          (mixLine (map show (treeMapList (:) (getSymbolTable state))))
+          (mixLine (map show (listAT (getSymbolTable state))))
 
 
   {- Expand primitives -}
@@ -424,7 +424,7 @@ main' args = do
   pF (sPrim flags) "Declarations after prim expand:" 
           (strPCode (strISInt state) decls) 
   pF (sPBound flags) "Symbol table after prim expand:"  
-          (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
+          (mixLine (map show (listAT (getSymbolTable state)))) 
 
 
   {- Determine free variables (for lambda lifting) -}
@@ -452,7 +452,7 @@ main' args = do
   pF (sLift flags) "Declarations after lambda lifting:" 
      (strPCode (strISInt state) decls) 
   pF (sLBound flags) "Symbol table after lambda lifting:"  
-     (mixLine (map show (treeMapList (:) (getSymbolTable state)))) 
+     (mixLine (map show (listAT (getSymbolTable state)))) 
 
     
   {- Do arity grouping again -}
@@ -470,7 +470,7 @@ main' args = do
           <- return (posAtom state decls)
   pF (sAtom flags) "Declarations after atom:" (strPCode (strISInt state) decls)
   pF (sABound flags) "Symbol table after atom:"  
-     (mixLine (map show (treeMapList (:) (getSymbolTable state))))
+     (mixLine (map show (listAT (getSymbolTable state))))
 
 
   {-
@@ -563,7 +563,7 @@ main' args = do
 --------
 
 
-type FixState = (Tree ((Id,Id),Id), (Tree (String,Id), [(Id,Gcode)]))
+type FixState = (AssocTree (Id,Id) Id, (AssocTree String Id, [(Id,Gcode)]))
 
 
 {-
@@ -645,7 +645,7 @@ generateCode handle flags foreigns state fixState eslabs escode (decl:decls)
 nhcImport :: Flags 
           -> ImportState 
           -> [(PackedString
-              ,   (PackedString,PackedString,Tree (TokenId,IdKind)) 
+              ,   (PackedString,PackedString, Memo TokenId)
                -> [[TokenId]] 
                -> Bool
               ,HideDeclIds
@@ -655,13 +655,11 @@ nhcImport :: Flags
 nhcImport flags importState [] = do
   --beginPhase "import []"
   pF (sINeed flags) "Need after all imports"    
-             (show (treeMapList (:)  (thd3 (getNeedIS importState)))) 
+             (show (listM (thd3 (getNeedIS importState)))) 
   pF (sIBound flags) "Symbol table after import"  
-             (mixLine (map show (treeMapList 
-                                   (:) (getSymbolTableIS importState)))) 
+             (mixLine (map show (listAT (getSymbolTableIS importState)))) 
   pF (sIRename flags) "Rename table after import"  
-             (mixLine (map show (treeMapList 
-                                   (:) (getRenameTableIS importState)))) 
+             (mixLine (map show (listAT (getRenameTableIS importState)))) 
   catchError (getErrIS importState) "Errors after importing module" mixLine
   return importState
 
@@ -671,11 +669,11 @@ nhcImport flags importState (x:xs) = do
   let fname = (reverse . unpackPS . (\(y,_,_)->y)) x
   importState <- importOne flags importState x 
   pF (sIINeed flags) ("Intermediate need after import "++fname)
-       (show (treeMapList (:)  (thd3 (getNeedIS importState))))
+       (show (listM (thd3 (getNeedIS importState))))
   pF (sIIBound flags) ("Intermediate symbol table after import "++fname)
-       (mixLine (map show (treeMapList (:) (getSymbolTableIS importState))))
+       (mixLine (map show (listAT (getSymbolTableIS importState))))
   pF (sIIRename flags) ("Intermediate rename table after import "++fname)
-       (mixLine (map show (treeMapList (:) (getRenameTableIS importState)))) 
+       (mixLine (map show (listAT (getRenameTableIS importState)))) 
   nhcImport flags importState xs
     
 

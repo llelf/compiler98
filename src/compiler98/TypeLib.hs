@@ -10,7 +10,6 @@ module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
                ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK
                ,newIdent,getState,setState,typeOfMain) where
 
-import Memo
 import NT
 import TypeEnv(lookupEnv)
 import Extra(assocDef,pair,strPos,Pos(..),noPos,snub,dropJust,isJust,mapSnd)

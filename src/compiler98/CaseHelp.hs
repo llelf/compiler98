@@ -5,7 +5,6 @@ import Syntax
 import PosCode
 import State
 import IntState
-import Tree234
 import AssocTree
 import TokenId
 import Info
@@ -121,7 +120,7 @@ sortCon funs =
 stableSort :: [(Int, b)] -> [(Int, [b])]
 stableSort xs = -- I hope !!
  let add (c,f) t = addAT t (++) c [f]
- in treeMapList (:) (foldr add initAT xs)
+ in listAT (foldr add initAT xs)
 
 
 needLet (PatternVar  patfuns) = any (not . null . getTrans . fst) patfuns

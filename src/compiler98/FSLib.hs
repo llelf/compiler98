@@ -1,7 +1,7 @@
 {- ---------------------------------------------------------------------------
 The FSMonad and some helper functions for FixSyntax
 -}
-module FSLib(module FSLib, AssocTree(..), Tree, TokenId) where
+module FSLib(module FSLib, TokenId) where
 
 import Syntax
 import IdKind
@@ -20,7 +20,7 @@ type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)
                   , Bool             -- tracing?
                   , (TokenId,IdKind) -> Id) --tidFun
 
-type Threaded = (IntState,Tree (TokenId,Id))
+type Threaded = (IntState, AssocTree TokenId Id)
 
 type FSMonad a = State Inherited Threaded a Threaded
 
@@ -30,7 +30,7 @@ startfs :: Bool		-- are we dealing with trace-transformed code?
         -> Decls Id 
         -> IntState
         -> ((TokenId,IdKind) -> Id) 
-        -> (a,IntState,Tree (TokenId,Id))
+        -> (a, IntState, AssocTree TokenId Id)
 
 startfs trace fs x state tidFun =
       let down = ( ( ExpCon noPos (tidFun (t_List,Con))	 
@@ -41,8 +41,7 @@ startfs trace fs x state tidFun =
 		 , tidFun
 		 )
 
-	  up =	(state
-		    ,initAT)
+	  up = (state, initAT)
       in
 	case fs x down up of
 	 (x,(state,t2i)) -> (x,state,t2i)
@@ -103,16 +102,16 @@ fsClsTypSel pos cls typ sel down  up@(state,t2i) =
 
 
 fsExp2 :: Pos -> Id -> Id -> a 
-       -> (IntState,Tree (TokenId,Int)) 
-       -> (Exp Int,(IntState,Tree (TokenId,Int)))
+       -> (IntState, AssocTree TokenId Int)
+       -> (Exp Int, (IntState, AssocTree TokenId Int))
 
 fsExp2 pos cls i = 
   unitS (ExpVar pos) =>>> fsExp2i pos cls i
 
 
 fsExp2i :: Pos -> Id -> Id -> a 
-        -> (IntState,Tree (TokenId,Id)) 
-        -> (Id,(IntState,Tree (TokenId,Id)))
+        -> (IntState, AssocTree TokenId Id)
+        -> (Id, (IntState, AssocTree TokenId Id))
 
 
 fsExp2i pos cls i down  up@(state,t2i) = 

@@ -57,7 +57,7 @@ rename :: Flags
             , (TokenId,IdKind) -> Maybe Id  -- tidFunSafe
             , [(Id,[(Pos,Id)])]             -- derived
             , Maybe [Id]                    -- userDefault
-            , Tree ((TokenId,IdKind),Either [Pos] [Id])  -- rename tree?
+            , AssocTree (TokenId,IdKind) (Either [Pos] [Id])  -- rename tree?
             )
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =
@@ -65,7 +65,8 @@ rename flags mrps qualFun expFun inf topdecls importState overlap =
          :: (Either [String] (TokenId -> TokenId
                              ,TokenId -> IdKind -> IE
                              ,RenameState
-                             ,Tree ((TokenId,IdKind),Either [Pos] [Int]))) of
+                             ,AssocTree (TokenId,IdKind)
+                                        (Either [Pos] [Int]))) of
     Right (qualFun,expFun,state,irt) ->
       case renameTopDecls inf topdecls qualFun expFun state
              :: (Decls Int,RenameState) of

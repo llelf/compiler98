@@ -13,7 +13,6 @@ import Scc
 import NT
 import Extra
 
-import Tree234(treeMap,treeMapList)
 import AssocTree
 import ImportState
 import IntState(checkNT)
@@ -69,7 +68,7 @@ keepRS :: RenameState
        -> (Int
           ,((TokenId,IdKind) -> Int,(TokenId,IdKind) -> Maybe Int)
           ,(Int,PackedString)
-          ,Tree (Int,Info)      -- the symbol table
+          ,AssocTree Int Info   -- the symbol table
           ,[(Int,[(Pos,Int)])]  -- derived
           ,Maybe [Int]          -- user defined defaults for Num classes
           ,[String])            -- errors
@@ -82,7 +81,7 @@ keepRS (RenameState flags unique rps rts rt st derived
     Left x ->
       (unique,getInts (lookupAll (rt:rts)),rps,st,derived,defaults,errors ++ x)
   where
-  checkTypes :: Tree (Id,Info) -> [Id] -> Either [String] (Tree (Id,Info))
+  checkTypes :: AssocTree Id Info -> [Id] -> Either [String] (AssocTree Id Info)
   checkTypes st needCheck =
     case foldls (checkPrep st) ([],[]) needCheck of   
       -- !!! Do these checks at defining site only !!!
@@ -129,7 +128,7 @@ keepRS (RenameState flags unique rps rts rt st derived
   Determines for given newtype type constructor, if the renamed type
   is unboxed. Returns Nothing if definition is circular.
   -}
-  isUnBoxedNT :: Tree (Id,Info) -- symboltable
+  isUnBoxedNT :: AssocTree Id Info -- symboltable
               -> [(Id,Id)]  -- for every newtype type constructor 
                             -- the top type constructor of the renamed type
               -> [Id]       -- accumulates newtype type constructors
@@ -195,7 +194,7 @@ keepRS (RenameState flags unique rps rts rt st derived
   either to list about type synonyms or list about newtypes.
   Type constructor must be for type synonym or newtype.
   -}
-  checkPrep :: Tree (Id,Info) -- symboltable
+  checkPrep :: AssocTree Id Info -- symboltable
             -> ([(Id,[Id])],[(Id,Id)]) 
                -- 1 synonym list: type constructor, type cons occuring in rhs
                -- 2 newtype list: type constructor, top type constructor
@@ -251,7 +250,7 @@ is2rs :: Flags
                 (TokenId -> TokenId
                 ,a
                 ,RenameState
-                ,Tree ((TokenId,IdKind),Either [Pos] [Int])
+                ,AssocTree (TokenId, IdKind) (Either [Pos] [Int])
                 )
 
 is2rs flags mrps qualFun expFun overlap 
@@ -271,7 +270,7 @@ is2rs flags mrps qualFun expFun overlap
   case deAlias qualFun overlap irt of
     ([],qf) ->
       case foldls reorderFun 
-             (treeMap deRight irt,addAT initAT ignore unique minfo) 
+             (mapAT deRight irt,addAT initAT ignore unique minfo) 
              (listAT st) of
         (rt,ts) ->
             Right (qf
@@ -281,8 +280,8 @@ is2rs flags mrps qualFun expFun overlap
                   ,irt)
     (xs,_) -> Left xs
  where
-  deRight (k,Right (v:_)) = (k,v)
-  deRight (k,Left _)      = (k,error ("Tripped over aliased identifier"))
+  deRight (Right (v:_)) = v
+  deRight (Left _)      = error ("Tripped over aliased identifier")
   pmrps = if (isPrelude . reverse . unpackPS) mrps then rpsPrelude else mrps
   mtid = Visible pmrps
   minfo = InfoName unique mtid 0 mtid False --PHtprof
@@ -346,7 +345,7 @@ fixFixityRS oldfix (RenameState flags unique irps@(_,rps) rts rt st
 --------------------  End duplication
 
 
-getSymbolTableRS :: RenameState -> Tree (Id,Info)
+getSymbolTableRS :: RenameState -> AssocTree Id Info
 getSymbolTableRS (RenameState flags unique rps rts rt st
                               derived defaults errors needCheck) =
   st

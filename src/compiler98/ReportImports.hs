@@ -1,11 +1,11 @@
 module ReportImports where
 
+import AssocTree(listAT)
 import List(nub,groupBy,intersperse,sortBy)
 import PackedString(unpackPS)
 import TokenId (extractM,extractV)
 import Info
 import IntState
-import Tree234
 
 reportImports :: String -> IntState -> [String]
 reportImports m =
@@ -14,7 +14,7 @@ reportImports m =
   map moduleName .
   filter ((m/=).moduleName) .
   concatMap (possibleTid.snd) .
-  treeMapList (:) .
+  listAT .
   getSymbolTable
 
 reportFnImports :: String -> IntState -> [String]
@@ -27,7 +27,7 @@ reportFnImports m =
   filter (("Prelude"/=).moduleName) .
   filter ((m/=).moduleName) .
   concatMap (possibleTid.snd) .
-  treeMapList (:) .
+  listAT .
   getSymbolTable
 
 moduleName :: TokenId -> String

@@ -5,6 +5,7 @@ Also removes data constructors defined by newtype.
 -}
 module FixSyntax(fixSyntax) where
 
+import AssocTree(AssocTree)
 import List(intersperse)
 import Extra(Pos(..),noPos,strPos,pair,dropJust,strace)
 import Syntax
@@ -13,7 +14,7 @@ import State
 import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId
 import Info(Info,isData,isMethod)
-import FSLib(FSMonad,Tree,startfs,fsState,fsExpAppl,fsClsTypSel,fsExp2,fsId
+import FSLib(FSMonad,startfs,fsState,fsExpAppl,fsClsTypSel,fsExp2,fsId
             ,fsRealData,fsList,fsTidFun,fsTracing)
 import Ratio
 import Machine
@@ -47,7 +48,7 @@ fixSyntax :: Bool	-- are we dealing with trace-transformed code?
           -> ((TokenId,IdKind) -> Id) 
           -> ([Decl Id]  -- modified declarations
              ,IntState   -- modified internal state
-             ,Tree (TokenId,Id))
+             ,AssocTree TokenId Id)
 
 fixSyntax trace topdecls state tidFun =
   startfs trace fsTopDecls topdecls state tidFun

@@ -79,7 +79,7 @@ copyInst tcon realtcon (pos,cls) state =
          strIS state realtcon)
 
 
-checkSC :: IntState -> Tree (Id,Id) -> (Id,(Pos,Id)) -> [String] -> [String]
+checkSC :: IntState -> Memo (Id,Id) -> (Id,(Pos,Id)) -> [String] -> [String]
 checkSC state willDerive (con,(pos,cls)) errors =
   case lookupIS state cls of
     Just info ->

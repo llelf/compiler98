@@ -1,10 +1,12 @@
 {- ---------------------------------------------------------------------------
 -- Read and process the interface file of one imported module.
 -}
-module Import (Flags,ImportState,PackedString,Tree,TokenId,IdKind,HideDeclIds
+module Import (Flags,ImportState,PackedString,TokenId,IdKind,HideDeclIds
               ,readFirst,importOne) where
 
+import AssocTree(AssocTree)
 import IO
+import Memo
 import PackedString(PackedString,packString,unpackPS)
 import Flags
 import OsOnly(fixImportNames,isPrelude)
@@ -22,7 +24,6 @@ import Error
 import IExtract
 import ImportState(ImportState,putModid2IS)
 import IntState(dummyIntState)
-import Tree234(Tree)
 import IdKind(IdKind)
 import PreImp(HideDeclIds)
 
@@ -78,7 +79,7 @@ Read and process the interface file of one imported module.
 importOne :: Flags 
           -> ImportState 
           -> ( PackedString
-             , (PackedString,PackedString,Tree (TokenId,IdKind)) 
+             , (PackedString, PackedString, Memo TokenId)
                 -> [[TokenId]] -> Bool
              , HideDeclIds) 
           -> IO ImportState
@@ -110,7 +111,7 @@ importOne flags importState (mrps,needFun,hideFun) = do
 -- down ((Memo TokenId -> [[TokenId]] -> Bool)
 
 importCont' :: ImportState 
-            -> ((PackedString,PackedString,Tree (TokenId,IdKind)) 
+            -> ((PackedString, PackedString, Memo TokenId)
                   -> [[TokenId]] -> Bool) 
             -> HideDeclIds
             -> a 			-- module name

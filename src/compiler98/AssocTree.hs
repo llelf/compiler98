@@ -1,5 +1,5 @@
 module AssocTree
-  ( AssocTree(..)
+  ( AssocTree
   , Tree
   , initAT	-- :: AssocTree k v
   , listAT	-- :: AssocTree k v -> [(k,v)]
@@ -11,17 +11,21 @@ module AssocTree
 		--	 AssocTree k v -> k -> Maybe v
   , updateAT 	-- :: Ord k =>
 		--	 AssocTree k v -> k -> (v->v) -> AssocTree k v
+  , mapAT       -- :: (v -> w) -> AssocTree k v -> AssocTree k w
   ) where
 
 import Tree234
 
-type AssocTree k v = Tree (k,v)
+newtype AssocTree k v = AssocTree (Tree (k,v))
+
+instance (Show k, Show v) => Show (AssocTree k v) where
+  show t = show (listAT t)
 
 initAT :: AssocTree k v
-initAT = initTree
+initAT = AssocTree initTree
 
 listAT :: AssocTree k v -> [(k,v)]
-listAT t = treeMapList (:) t
+listAT (AssocTree t) = treeMapList (:) t
 
 reorderAT :: (AssocTree k v -> (j,u) -> AssocTree k v)
 	 -> AssocTree j u -> AssocTree k v
@@ -33,20 +37,22 @@ cmp1 key (key',value) = compare key key'
 cmp2 key _ (key',value) = compare key key'
 
 addAT :: Ord k => AssocTree k v -> (v->v->v) -> k -> v -> AssocTree k v
-addAT t comb key value = 
-  treeAdd combine (cmp2 key) (key,value) t
+addAT (AssocTree t) comb key value = 
+  AssocTree $ treeAdd combine (cmp2 key) (key,value) t
  where
    combine (k1,v1) (k2,v2) = (k2,comb v1 v2)
 
 lookupAT :: Ord k => AssocTree k v -> k -> Maybe v
-lookupAT t key = 
+lookupAT (AssocTree t) key = 
    treeSearch Nothing ok (cmp1 key) t
   where
    ok (key,value) = Just value
 
 updateAT :: Ord k => AssocTree k v -> k -> (v->v) -> AssocTree k v
-updateAT t key upd = 
-  treeUpdate update (cmp1 key) t
+updateAT (AssocTree t) key upd = 
+  AssocTree $ treeUpdate update (cmp1 key) t
  where
    update (k1,v1) = (k1,upd v1)
 
+mapAT :: (v -> w) -> AssocTree k v -> AssocTree k w
+mapAT f (AssocTree t) = AssocTree $ treeMap (\(k, v) -> (k, f v))  t

@@ -28,7 +28,6 @@ import Nice
 import Bind(identPat)
 import Extract(type2NT)
 import AssocTree
-import Tree234
 import Remove1_3
 import Id(Id)
 
@@ -312,7 +311,7 @@ bindType decl@(DeclFun pos fun funs)
 	Right phi ->
 	  let phis = ( foldr (\ (k,v) t -> addAT t (++) k [v]) initAT
                      . map fixSubst 
-                     . treeMapList (:)
+                     . listAT
                      ) phi
 
               al = mkAL (givenFree ++ freeNT derivedNT)
@@ -324,10 +323,10 @@ bindType decl@(DeclFun pos fun funs)
               fixSubst p = p
 
               one2many phi = ( filter ((/= 1).length.snd)
-                             . treeMapList (:)) phis
+                             . listAT) phis
               freebound phi = ( filter ((`elem` givenFree).fst)
                               . filter ((== 1).length . snd)
-                              . treeMapList (:)
+                              . listAT
                               ) phis
 
               safePhi phi v =

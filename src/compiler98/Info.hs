@@ -9,7 +9,6 @@ import TokenId(TokenId)
 import NT
 import Extra(Pos(..),sndOf,strace)
 import PackedString(PackedString)
-import Tree234
 import AssocTree
 import Syntax(InfixClass(..))
 import Id(Id)
@@ -322,7 +321,7 @@ methodsI :: Info -> [(Int,Int)]
 methodsI (InfoClass u tid ie nt ms ds inst) = zip ms ds
 
 
-instancesI :: Info -> Tree (Int,([Int],[(Int,Int)]))
+instancesI :: Info -> AssocTree Int ([Int],[(Int,Int)])
 instancesI (InfoClass u tid e nt ms ds inst) = inst
 instancesI info@(InfoUsedClass u uses inst) = 
   strace ("***instanceI(1) "++show info++"\n") inst
@@ -362,7 +361,7 @@ addInstanceI con free ctxs (InfoUsed u uses) =
 -}
 joinInsts :: AssocTree Int a -> AssocTree Int a -> AssocTree Int a
 joinInsts inst inst' =
-  foldr (\(k,v) inst -> addAT inst sndOf k v) inst (treeMapList (:) inst')
+  foldr (\(k,v) inst -> addAT inst sndOf k v) inst (listAT inst')
 
 
 {- Determine constructors of a type from the info of the type -}

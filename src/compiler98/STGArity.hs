@@ -8,8 +8,6 @@ import TokenId
 import PosCode
 import SyntaxPos
 import PackedString(PackedString,packString,unpackPS)
-import Memo
-import Tree234
 
 stgArity state code = 
   case mapS arityBinding code () (state,[],()) of

@@ -12,7 +12,6 @@ import SyntaxPos
 import PosCode
 import State
 import IntState
-import Tree234
 import AssocTree
 import IdKind
 import TokenId
@@ -31,7 +30,7 @@ import Id(Id)
 
 
 caseTopLevel :: String 
-             -> Tree (TokenId,Id) 
+             -> AssocTree TokenId Id
              -> [ClassCode (Exp Id) Id] 
              -> [Decl Id] 
              -> IntState 

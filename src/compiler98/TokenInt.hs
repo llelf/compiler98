@@ -15,7 +15,6 @@ import DbgId (tokenDbg)
 import AssocTree
 import Info
 import Extra (sndOf)
-import Tree234 (treeMapList)
 import Id (Id)
 
 {-
@@ -30,7 +29,7 @@ getInts :: ((TokenId,IdKind) -> Maybe Id)
            )
 
 getInts tidk2i =
-  case length (treeMapList (:) assocTree) of  -- force evaluation of tree
+  case length (listAT assocTree) of  -- force evaluation of tree
     0 -> error "What??? (in TokenInt)\n"
     _ -> (getIntsUnsafe assocTree,lookupAT assocTree)
  where
@@ -43,8 +42,8 @@ getInts tidk2i =
                 ++ tokenBinary ++ tokenNplusK ++ tokenFFI)  --MALCOLM modified
 
    fix :: (IdKind,TokenId) 
-       -> Tree ((TokenId,IdKind),Id) 
-       -> Tree ((TokenId,IdKind),Id)
+       -> AssocTree (TokenId,IdKind) Id
+       -> AssocTree (TokenId,IdKind) Id
 
    fix (k,tid) t =
       case tidk2i (tid,k) of

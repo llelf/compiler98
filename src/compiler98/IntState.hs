@@ -190,7 +190,7 @@ addError :: IntState -> [Char] -> IntState
 addError (IntState unique rps st errors) err = 
   IntState unique rps st (err:errors)
 
-getSymbolTable :: IntState -> Tree (Int,Info)
+getSymbolTable :: IntState -> AssocTree Int Info
 getSymbolTable (IntState unique rps st errors) = st
 
 mrpsIS (IntState unique (i,rps) st errors) = rps

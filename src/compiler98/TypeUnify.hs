@@ -15,8 +15,8 @@ import IntState
 import Id(Id)
 
 
-unify :: IntState -> Tree (Id,NT) -> (NT,NT) 
-      -> Either (Tree (Id,NT),String) (Tree (Id,NT))
+unify :: IntState -> AssocTree Id NT -> (NT,NT) 
+      -> Either (AssocTree Id NT, String) (AssocTree Id NT)
 
 unify state phi (t1@(NTany tvn1),t2) =
   case applySubst phi tvn1 of
@@ -142,8 +142,8 @@ unify state phi (t1@(NTexist e),t2@(NTvar tvn2)) =
 unify state phi _ = error "unify phi _"
 
 
-unifyl :: IntState -> Tree (Id,NT) -> [(NT,NT)] 
-       -> Either (Tree (Id,NT),String) (Tree (Id,NT))
+unifyl :: IntState -> AssocTree Id NT -> [(NT,NT)] 
+       -> Either (AssocTree Id NT, String) (AssocTree Id NT)
 
 unifyl state phi eqns = foldr unify' (Right phi) eqns
         where
@@ -153,8 +153,8 @@ unifyl state phi eqns = foldr unify' (Right phi) eqns
 
 {- unify a list of NTs from left to right -}
 
-unifyr :: IntState -> Tree (Id,NT) -> [NT] 
-       -> Either (Tree (Id,NT),String) (Tree (Id,NT))
+unifyr :: IntState -> AssocTree Id NT -> [NT] 
+       -> Either (AssocTree Id NT, String) (AssocTree Id NT)
 
 unifyr state phi [] = Right phi
 unifyr state phi [e] = Right phi
@@ -201,8 +201,8 @@ expand :: NewType -> [NT] -> NT
 expand (NewType free [] ctxs [nt]) ts = subst (list2Subst (zip free ts)) nt
 
 
-extendV :: IntState -> Tree (Id,NT) -> Id -> NT 
-        -> Either (Tree (Id,NT),String) (Tree (Id,NT))
+extendV :: IntState -> AssocTree Id NT -> Id -> NT 
+        -> Either (AssocTree Id NT, String) (AssocTree Id NT)
 
 extendV state phi tvn t@(NTcons c _) =
   if unboxedIS state c then

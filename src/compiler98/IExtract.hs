@@ -94,7 +94,7 @@ transTid pos kind tid _
   in  case lookupAT st key of 
         Just info -> (uniqueI info,importState)
         Nothing -> (unique, ImportState visible (unique+1) orps rps 
-                              (addM needI key)
+                              (addM needI (fst key))
 			      rt
 			      (addAT st combInfo key 
                                 (InfoUsed unique [(kind,tid,rps,pos)]))
@@ -295,9 +295,9 @@ addFixityNeed key (InfixPre tid,_)
 	case lookupAT rt ikey of -- so ensure that its replacement also exists,
                                  -- and force the need for it, nice if we had
                                  -- the real position but we don't.
-          Just u  -> ImportState visible unique orps rps (addM needI ikey)
+          Just u  -> ImportState visible unique orps rps (addM needI (fst ikey))
                                  rt st insts fixity errors
-          Nothing -> ImportState visible unique orps rps (addM needI ikey)
+          Nothing -> ImportState visible unique orps rps (addM needI (fst ikey))
                                  (addAT rt fstOf ikey (Left [noPos]))
                                  st insts fixity errors
     Nothing -> importState

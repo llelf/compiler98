@@ -11,7 +11,6 @@ module Overlap
 import TokenId(TokenId)
 import IdKind
 import AssocTree
-import Tree234
 import Extra
 import List (delete)
 
@@ -49,7 +48,7 @@ deAlias qf o rt =
     (foldr findUndef err flatrt, newqf)
   where
     (err,o') = resolveOverlaps o flatrt
-    flatrt   = treeMapList (:) rt
+    flatrt   = listAT rt      
 
     findUndef (key, Left poss) err = checkNonUnique key poss err
     findUndef (key, Right _)   err = err
@@ -66,7 +65,7 @@ deAlias qf o rt =
           (Just (ResolvedTo,alias,others)) -> mkErrorOVD key poss alias others: err
 
     newqf t =
-        case lookupAT (foldr buildqf initAT (treeMapList (:) o')) t of
+        case lookupAT (foldr buildqf initAT (listAT o')) t of
 		-- if in resolution table, use newly-resolved qual-renaming
             (Just t') -> t'
 		-- if not in resolution table, use original qual-renaming

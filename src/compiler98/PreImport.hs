@@ -11,9 +11,8 @@ import PackedString(PackedString,packString,unpackPS)
 import Syntax
 import IdKind
 import AssocTree
-import Memo
-import Tree234(treeMapList)
 import Extra
+import Memo
 import ParseI
 import Flags
 import OsOnly
@@ -129,12 +128,12 @@ qualRename modid impdecls = qualRename' qTree
 
 ---- ===================================
 
-preImport :: Flags -> TokenId -> Tree (TokenId,IdKind) 
+preImport :: Flags -> TokenId -> Memo TokenId
           -> Maybe [Export TokenId] -> [ImpDecl TokenId] 
           -> Either String
                ((TokenId->Bool) -> TokenId -> IdKind -> IE
                ,[(PackedString
-                 ,(PackedString,PackedString,Tree (TokenId,IdKind)) 
+                 ,(PackedString, PackedString, Memo TokenId)
                     -> [[TokenId]] 
                     -> Bool
                  ,HideDeclIds
@@ -192,7 +191,7 @@ transImport impdecls = impdecls'
 	   -> [ImpDecl TokenId]
 	   -> [(TokenId, ImportedNamesInScope)]
 
-  traverse acc True  []      = treeMapList (:) acc
+  traverse acc True  []      = listAT acc
   traverse acc False []      = traverse acc False [Import (noPos,tPrelude)
 							  (Hiding [])]
   traverse acc prel (x:xs)  =
@@ -306,11 +305,11 @@ reExportTid modname exportAT mustBeQualified tid kind =
 -- hideDeclInstance,hideDeclVarsType) are defined in PreImp and used in ParseI
 -}
 
-mkNeed :: Tree (TokenId,IdKind)  
-       -> Tree ((TokenId,IdKind),IE) 
-       -> IntImpDecl 
+mkNeed :: Memo TokenId
+       -> AssocTree (TokenId,IdKind) IE
+       -> IntImpDecl
        -> ( PackedString
-          , (PackedString, PackedString, Tree (TokenId,IdKind)) 
+          , (PackedString, PackedString, Memo TokenId)
                -> [[TokenId]] -> Bool
           , HideDeclIds
           )
@@ -338,14 +337,14 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
 --    strace ("needFun: "++show (fst3 x)++"/"++show (snd3 x)++" "
 --            ++show y++" "++show result) $ result
   needFun (orps,rps,needI) ns@(n:_) =
-        isJust (lookupAT needI (ensureM rps n))
+        elemM needI (ensureM rps n)
 				-- is used by other interface (real name)
 				-- (only check first name = type or class)
      || any (\n-> imported n &&
-                    (  (isJust . lookupAT needM . forceM orps) n
+                    (  (elemM needM . forceM orps) n
               			-- used qualified and imported (un)qualified
                     || (not (q n)) &&
-                          (  (isJust . lookupAT needM . dropM) n
+                          (  (elemM needM . dropM) n
               			-- used unqualified and imported unqualified
                           || reExportModule
               			-- reexported whether used or not

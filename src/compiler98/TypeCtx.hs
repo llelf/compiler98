@@ -10,7 +10,6 @@ import AssocTree
 import Syntax
 import TypeData
 import State
-import Tree234
 
 initCtxs = []
 
@@ -207,9 +206,8 @@ oneDefault (tvar,cis) (pos,trueExp,defaults) state =
 -- buildDefaults :: Pos -> [((Int,NT),Int)] -> Exp Int -> [Int] -> IntState
 --                  -> ([(Decl Int)],IntState)
 buildDefaults pos defaultCtxsi trueExp defaults state =
-  let setup = treeMapList (:)
-                          (foldr (\((c,nt),i) t -> addAT t (++) (stripNT nt)
-                                                         [(c,i)])
-                                 initAT defaultCtxsi)
+  let setup = listAT (foldr (\((c,nt),i) t -> addAT t (++) (stripNT nt)
+                                                    [(c,i)])
+                            initAT defaultCtxsi)
       (defaultDecls,state') = mapS oneDefault setup (pos,trueExp,defaults) state
   in (concat defaultDecls,state')

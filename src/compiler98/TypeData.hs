@@ -12,7 +12,6 @@ import IdKind(IdKind)
 import Extra(Pos(..))
 import Syntax (Exp)
 import AssocTree
-import Tree234
 import Id(Id)
 
 data TypeDown =

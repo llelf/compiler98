@@ -10,7 +10,6 @@ import IntState
 import Scc
 import AssocTree
 import Extra
-import Tree234(treeMapList)
 import TokenId
 import PackedString(PackedString,packString,unpackPS)
 import MergeSort(unique)
@@ -35,16 +34,14 @@ export :: Flags
        -> IntState 
        -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])])
 export flags state =
-  let infoExport = (filter (isExported . expI) . treeMapList ((:).snd) 
-                    . getSymbolTable) 
-                   state
+  let symbols = map snd . listAT . getSymbolTable
+      infoExport = (filter (isExported . expI) . symbols) state
       insts = (foldr (\(InfoClass  unique tid exp nt ms ds insts) r -> 
 			foldr (fixInst state (sPrelude flags || notPrelude tid)
                                        unique) 
-                              r (treeMapList (:) insts)) []
+                              r (listAT insts)) []
 	      . filter isClass
-	      . treeMapList ((:).snd)
-	      . getSymbolTable
+              . symbols
 	      ) state
       mrps = mrpsIS state
   in case uniqueISs state insts of

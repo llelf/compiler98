@@ -7,7 +7,6 @@ import SyntaxPos
 import PosCode
 import State
 import IntState
-import Tree234
 import AssocTree
 import IdKind
 import TokenId
@@ -27,9 +26,9 @@ type Down = (ExpI -> ExpI
 	    ,(TokenId,IdKind) -> Int
 	    ,PosExp
 	    ,[Char]
-	    , Tree (Int, Int)
+	    , AssocTree Int Int
 	    )
-type Thread = (IntState, Tree (TokenId, Int))
+type Thread = (IntState, AssocTree TokenId Int)
 
 type CaseFun a = Down -> Thread -> (a,Thread)
 

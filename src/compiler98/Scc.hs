@@ -6,7 +6,6 @@ import MergeSort(mergeSort)
 import Extra(sndOf)
 import Memo
 import AssocTree
-import Tree234
 
 type Set a = Memo a
 
@@ -14,7 +13,7 @@ emptySet = initM
 listSet xs = foldr (flip addM) initM xs
 addSet as a = if elemM as a then as else addM as a 
 member a as = elemM as a
-set2list as = treeMapList (:) as
+set2list as = listM as
 
 {-
 type Set a = [a]

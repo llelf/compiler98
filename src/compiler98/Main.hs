@@ -13,7 +13,6 @@ import System
 import Scc
 import Error
 
-import Tree234
 import AssocTree
 import Syntax
 import PosCode

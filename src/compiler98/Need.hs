@@ -2,9 +2,10 @@
 Perform "need" analysis (which imported entities are required?) 
 -}
 module Need(Flags,Module,TokenId,NeedTable,HideDeclIds,PackedString,IdKind
-           ,Tree
            ,needProg) where
 
+import AssocTree
+import Memo
 import Reduce
 import NeedLib(NeedLib,initNeed,needit,popNeed,pushNeed,bindTid,needTid
               ,NeedTable)
@@ -18,7 +19,6 @@ import Flags(Flags(sDbgPrelude,sDbgTrans))
 import SyntaxPos
 import Extra
 import SyntaxUtil(infixFun)
-import Tree234
 
 import Overlap(Overlap)
 import Info(IE)
@@ -34,7 +34,7 @@ needProg :: Flags
             , Either [Char] 
                 ( (TokenId->Bool) -> TokenId -> IdKind -> IE
                 , [ ( PackedString
-                    , (PackedString, PackedString, Tree (TokenId,IdKind)) 
+                    , (PackedString, PackedString, Memo TokenId)
                          -> [[TokenId]] -> Bool
                     , HideDeclIds
                     )
@@ -49,7 +49,8 @@ needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
        (need,overlap) -> ( need
                          , qualFun
                          , overlap
-                         , preImport flags modidl (treeMap fst need) 
+                         , preImport flags modidl
+                                     (fromListM [i | ((i,_),_) <- listAT need])
                                      exports impdecls
                          )
 

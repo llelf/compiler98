@@ -10,7 +10,6 @@ import TokenId(TokenId,t_error,tTrue)
 import TokenInt(tokenAllways,tokenMain)
 import IdKind
 import AssocTree
-import Tree234
 import Extra
 import Overlap (Overlap(..),addOverlap)
 
@@ -29,12 +28,8 @@ data NeedLib = NeedLib (TokenId -> [TokenId])	-- qualified renaming
 
 
 initNeed :: Bool -> NeedTable
-
-initNeed b = treeMap (`pair`[]) (initNeed' b)
-  where initNeed' True  = foldr fun (initNeed' False) tokenMain
-	initNeed' False = foldr fun initM tokenAllways
-        fun (k,t) m = addM m (t,k)
-
+initNeed b = foldr (\(k,t) a -> addAT a sndOf (t,k) []) initAT initNeed'
+  where initNeed' = tokenAllways ++ (if b then tokenMain else [])
 
 needit :: (NeedLib -> NeedLib) 
        -> (TokenId -> [TokenId]) 
