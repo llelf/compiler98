@@ -250,9 +250,8 @@ configure Ghc ghcpath = do
             else do ioError (userError ("Can't find ghc includes at\n  "
                                         ++incdir1++"\n  "++incdir2))
     else do -- 5.00 and above
-      pkgcfg <- runAndReadStdout (escape ghcpath++" -v 2>&1 | head -2 "
-                                  ++"| tail -1 | cut -c28- | head -1")
-      let libdir  = dirname (escape pkgcfg)
+      pkgcfg <- runAndReadStdout (escape ghcpath++" --print-libdir")
+      let libdir  = escape pkgcfg
           incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
@@ -263,9 +262,12 @@ configure Ghc ghcpath = do
           let ghcpkg = if ok then ghcpkg0 else dirname fullpath++"/ghc-pkg"
        -- pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
           pkgs <- runAndReadStdout (ghcpkg++" -l")
-          let pkgsOK = filter (`elem`["std","base","haskell98"]) (deComma pkgs)
+          let pkgsOK = filter (\p-> any (`isPrefixOf` p)
+                                        ["std","base","haskell98"])
+                              (deComma pkgs)
           idirs <- mapM (\p-> runAndReadStdout
-                                  (ghcpkg++" --show-package="++p
+                                  (ghcpkg++" --show-package="
+                                   ++deVersion (ghcsym>=604) p
                                    ++" --field=import_dirs"))
                         pkgsOK
           return config{ includePaths = pkgDirs libdir (nub idirs) }
@@ -282,9 +284,14 @@ configure Ghc ghcpath = do
     pkgDirs libdir dirs =
         map (\dir-> if "$libdir" `isPrefixOf` dir
                     then libdir++drop 7 dir
+                    else if "[\"" `isPrefixOf` dir
+                    then drop 2 (init (init dir))
                     else dir)
             (concatMap words dirs)
     deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
+    deVersion False pkg = pkg
+    deVersion True  pkg = let (suf,pref) = span (/='-') (reverse pkg)
+                          in case pref of "" -> pkg; _ -> reverse (tail pref)
 
 configure Nhc98 nhcpath = do
   fullpath <- which id nhcpath

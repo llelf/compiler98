@@ -29,6 +29,12 @@ import List (partition,intersperse,isPrefixOf)
 import Char (isDigit)
 import Monad (when,foldM)
 
+-- Missing from List library
+elemBy        :: (a -> a -> Bool) -> a -> [a] -> Bool
+elemBy eq _ []          =  False
+elemBy eq x (y:ys)      =  x `eq` y || elemBy eq x ys
+
+
 -- | Work out the import directories for a bunch of packages.
 packageDirs :: CompilerConfig  -- ^ Which compiler, where it's located, etc.
             -> [String]        -- ^ The packages
@@ -43,9 +49,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
     if ghcsym < (500::Int) then
       []
     else unsafePerformIO $ do
-      pkgcfg <- runAndReadStdout (ghc++" -v 2>&1 | head -2 | tail -1 |"
-                                  ++" cut -c28- | head -1")
-      let libdir  = dirname (escape pkgcfg)
+      pkgcfg <- runAndReadStdout (ghc++" --print-libdir")
+      let libdir  = escape pkgcfg
           incdir1 = libdir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
@@ -53,7 +58,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
           let ghcpkg = matching ghc (ghcPkg ghc (compilerVersion config))
        -- pkgs <- runAndReadStdout (ghcpkg++" --list-packages")
           pkgs <- runAndReadStdout (ghcpkg++" -l")
-          let (ok,bad) = partition (`elem` deComma pkgs) packages
+          let (ok,bad) = partition (\p-> elemBy versionMatch p (deComma pkgs))
+                                   packages
           when (not (null bad))
                (hPutStrLn stderr ("\nWarning: package(s) "
                                  ++concat (intersperse ", " bad)
@@ -68,6 +74,8 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
     pkgDirs libdir dirs =
         map (\dir-> if "$libdir" `isPrefixOf` dir
                     then libdir++drop 7 dir
+                    else if "[\"" `isPrefixOf` dir
+                    then drop 2 (init (init dir))
                     else dir)
             (concatMap words dirs)
     deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
@@ -75,6 +83,14 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
         if '/' `elem` path then dirname path++"/"++cmd else cmd
     ghcPkg ghc ver =
         if '-' `elem` basename ghc then "ghc-pkg-"++ver else "ghc-pkg"
+    p `versionMatch` q = case extractPkgVersion p of
+                           (p,"") -> p == fst (extractPkgVersion q)
+                           _      -> p == q
+    extractPkgVersion :: String -> (String,String)
+    extractPkgVersion p =
+        let p' = case p of ('(':ps)-> init ps; _-> p;
+            (suf,pref) = span (/='-') (reverse p')
+        in case pref of "" -> (p',""); _-> (reverse (tail pref), reverse suf)
 
 -- nhc98 <= 1.16 stores package imports under its default incdir.
 --       >= 1.17 stores package imports under $incdir/packages.
