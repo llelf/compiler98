@@ -189,7 +189,7 @@ readFirst opts name demand =
      file <- readFile source
      return (Just ((tpp,ths,thi,tobj),path,source,pp,file,lit file))
    where opath = if null (goalDir opts) then path else (goalDir opts)
-         tmod = if hat opts then ('T':) else id
+         tmod = if hat opts then ("Hat/"++) else id
 
 
 readTime :: FilePath -> IO When
