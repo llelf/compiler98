@@ -22,15 +22,15 @@ HC = $(LOCAL)nhc98
 HFLAGS = $(shell echo $(BUILDOPTS)) #-$(CFG)
 
 ifeq "nhc98" "$(HC)"
-HEAP = -H2M
+HEAP = -H4M
 endif
 
 all: $(TARGETS)
 install: $(TARGETS)
 cfiles: $(CFILES) $(CPPCFILES) Older.c
 fromC: $(OBJDIR)
-	$(HC) $(HFLAGS) $(HEAP) -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
-	$(HC) $(HFLAGS)         -o $(OLDER)  -d $(OBJDIR) Older.c
+	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
+	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.c
 	strip $(MKPROG) $(OLDER)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.o *.hi *.c

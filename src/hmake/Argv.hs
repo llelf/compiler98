@@ -1,9 +1,10 @@
 module Argv(Goal(..),DecodedArgs(..),decode,stripGoal) where
 import ListUtil(lconcatMap)
-import List (isPrefixOf)
 #if !defined(__HBC__)
+import List (isPrefixOf)
 import IO (hPutStrLn,stderr)
 #else
+import IsPrefixOf
 import IO (hPutStr,hPutChar,stderr)
 hPutStrLn h x = hPutStr h x >> hPutChar h '\n'
 #endif
