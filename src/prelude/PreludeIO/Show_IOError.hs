@@ -10,7 +10,7 @@ instance  Show IOError  where
 		showString "I/O error:\n  action :  " .
 		showString cmd .
 		(case mbfilename of
-		    Just fn -> showString "\n  on file:  \"" . showString fn
+		    Just fn -> showString "\n  on file:  " . showString fn
 		    Nothing ->
 		        (case mbhandle of
 		            Nothing -> id
@@ -18,7 +18,7 @@ instance  Show IOError  where
 		                (case hGetFileName handle of
 		                    Nothing -> id
 		                    Just fn ->
-					showString "\n  on file:  \"" .
+					showString "\n  on file:  " .
 					showString fn))) .
 		showString "\n  gave   :  " .
 		shows errno . showString " (" .
