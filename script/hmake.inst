@@ -63,12 +63,14 @@ hcflags=""	# compiler flags only
 ctflags=""	# protected compiler flags
 rtflags=""	# protected compiler run-time flags
 hmrtflags=""	# hmake run-time flags
+	# 'portable Hat' flags (passed to hat-trans by MkProg)
 TPROF=0
 TRACE=0
 
 
 # Also assume compiler/linker flags from the environment
 #  HFLAGS, LDFLAGS, CPPFLAGS
+#  HATFLAGS:  'portable Hat' flags (passed to hat-trans by MkProg)
 
 while [ "$1" != "" ]
 do
@@ -144,6 +146,7 @@ do
          TPROF=1 ;;
     -C) hcflags=$hcflags" $1";
         hmflags=$hmflags" -o-suffix=hc" ;;
+    -trusted) HATFLAGS=$HATFLAGS" $1" ;;
 
     # mainly GHC flags
     -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
@@ -193,9 +196,9 @@ fi
 #   (2) the user's personal config file
 #   (3) the system-wide config file
 #
-if [ "$COMP" = "" ]
+if [ -z "$COMP" ]
 then
-  if [ -f $configfile ]
+  if [ -f "$configfile" ]
   then COMP=`grep defaultCompiler $configfile | cut -d'"' -f2`
   else
     if [ -f $HOME/.hmakerc/$MACHINE ]
@@ -264,6 +267,7 @@ esac
 HFLAGS="$rtflags$ctflags$hcflags$flags $HFLAGS"
 
 export HC HFLAGS OLDER LDFLAGS	# MkProg expects these variables to be set.
+export HATFLAGS			# ditto
 export CPPFLAGS			# cpp usually expects this variable.
 export MACHINE			# nhc98 script is faster if this is set.
 
