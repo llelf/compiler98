@@ -14,7 +14,7 @@ case $# in
 esac
 
 cat $input |\
-  tail +4  |\
+  tail +17  |\
   sed -e "/^.*UNUSED_INSTRUCTIONS.*$/d" \
       -e "/^.*Case.*/d"	\
       -e "/^\\\\$/d" \
@@ -26,10 +26,10 @@ cat $input |\
   ( echo "#ifndef _BYTECODE_O_H_" ;
     echo "#define _BYTECODE_O_H_" ;
     echo '/* This file defines an obsolete form of the bytecode, used by the' ;
-    echo '* non-ANSI-C (assembler) backend of the compiler.  This obsolete' ;
-    echo '* form can maintained in sync with the "real" bytecode (if the' ;
-    echo '* "real" bytecode changes) by running the file  script/mangler.' ;
-    echo '*/' ;
+    echo ' * non-ANSI-C (assembler) backend of the compiler.  This obsolete' ;
+    echo ' * form can be maintained in sync with the "real" bytecode (if the' ;
+    echo ' * "real" bytecode changes) by running the file  script/mangler.' ;
+    echo ' */' ;
     echo; cat; echo;
     echo "#endif" ) |\
   ( if [ -z "$output" ]
