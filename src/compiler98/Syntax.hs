@@ -131,7 +131,7 @@ data Decl id =
        -- vars :: context => type
      | DeclVarsType [(Pos,id)] [Context id] (Type id)
      | DeclPat (Alt id)
-     | DeclFun Pos id [Fun id]
+     | DeclFun Pos id [Fun id] -- "var = ..." is a DeclFun, not a DeclPat
 --   | DeclSelect id Int id  
        -- ^ introduced with pattern elimination (id = select Int id)
 --     Used for unimplemented things

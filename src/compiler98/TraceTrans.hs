@@ -34,7 +34,7 @@ import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
-               ,tTokenAndAnd,tTokenEqualEqual)
+               ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus)
 import AuxFile (AuxiliaryInfo) -- needed only for hbc's broken import mechanism
 import List (isPrefixOf,union,partition)
 import Char (isAlpha,digitToInt)
@@ -456,7 +456,7 @@ tDecl traced parent (DeclPat (Alt pat rhs decls)) =
   resultTraceId = nameTrace2 firstId
   tuple = mkTupleExp noPos (ExpVar noPos resultTraceId : patVars')
   patPosIds = map (\(ExpVar pos id) -> (pos,id)) patVars
-  (patVars',[]) = tPats patVars 
+  (patVars',[],[]) = tPats patVars 
   patVars = getPatVars pat
   pat'' = case pat' of
            ExpApplication p [r,v,_] -> 
@@ -688,32 +688,34 @@ tFun :: Bool -- traced
      -> Fun TraceId -> (Fun TokenId,ModuleConsts)
 -- Definition similar to tGuardedExps
 tFun traced cr parent contExp (Fun pats rhs decls) =
-  if null conditions
+  if null conditions  -- implies null patsDecls
     then (Fun pats' (Unguarded rhs') decls',declsConsts `withLocal` rhsConsts)
     else
       (Fun pats' (Unguarded 
         (ExpCase pos cond
           [Alt (wrapExp pos guardValue guardTrace)
             (Unguarded
-              (ExpLet pos
-                (DeclsParse
-                  [DeclFun pos newParentId
-                    [Fun []
-                      (Unguarded (mkConstGuard pos parent guardTrace traced)) 
-                    noDecls]])
-                (ExpIf pos guardValue rhs' 
-                  (continuationToExp newParent contExp))))
-            noDecls]))
+              (ExpIf pos guardValue rhs' 
+                (continuationToExp newParent contExp)))
+            (DeclsParse 
+              (DeclFun pos newParentId
+                [Fun [] (Unguarded (mkConstGuard pos parent guardTrace traced))
+                  noDecls]
+              :patsDecls'))]))
         decls'
-      ,pos `addPos` condConsts `merge` declsConsts `withLocal` rhsConsts)  
-      -- condConsts contains positions of the boolean expression
+      ,pos `addPos` condConsts `merge` patsDeclsConsts `merge` declsConsts 
+       `withLocal` rhsConsts)  
+      -- condConsts contains positions of the boolean expressions
+      -- patsDeclsConsts contains positions of the bound variables
   where
   pos = getPos pats
   guardValue = ExpVar pos guardValueId
   guardTrace = ExpVar pos guardTraceId
   newParent = ExpVar pos newParentId
   (newParentId:guardValueId:guardTraceId:_) = namesFromPos pos
-  (pats',conditions) = tPats pats
+  (pats',conditions,patsDecls) = tPats pats
+  (DeclsParse patsDecls',patsDeclsConsts) = 
+    tDecls traced newParent (DeclsParse patsDecls) 
   (cond,condConsts) = tExp traced False parent (foldr1 andExp conditions)
   (rhs',rhsConsts) = 
     tRhs traced cr (if null conditions then parent else newParent) contExp rhs
@@ -1123,53 +1125,66 @@ removeDo (StmtBind pat e : stmts) =
   pos = getPos e
 
 
-mapCombine :: (a -> (b,[c])) -> [a] -> ([b],[c])
-mapCombine f = (\(p,es) -> (p,concat es)) . unzip . map f
+mapCombine3 :: (a -> (b,[c],[d])) -> [a] -> ([b],[c],[d])
+mapCombine3 f = (\(p,es,ds) -> (p,concat es,concat ds)) . unzip3 . map f
 
-tPats :: [Pat TraceId] -> ([Pat TokenId],[Exp TraceId])
-tPats = mapCombine tPat
+-- the first part of the result is transformed pattern
+-- the transformation has to remove numeric constants and
+-- n+k patterns from a pattern, because numeric arguments are
+-- wrapped and hence translating into constants and n+k patterns is impossible.
+-- Furthermore we want their reductions in the trace as well.
+-- the second part contains boolean expressions that are
+-- implicitly tested in the original pattern but have to be made
+-- explicit in the transformed program, e.g.
+-- tPats 3 = (x,{x==3},{})
+-- the third part contains definitions of numeric variables 
+-- that orginate from n+k patterns
+-- e.g.: tPats (n+2) = (x,{x>=2},{n=x-2})
+tPats :: [Pat TraceId] -> ([Pat TokenId],[Exp TraceId],[Decl TraceId])
+tPats = mapCombine3 tPat
 
-tPat :: Pat TraceId -> (Pat TokenId,[Exp TraceId])
-tPat (ExpRecord pat fields) = (ExpRecord pat' fields',patExps ++ fieldsExps)
+tPat :: Pat TraceId -> (Pat TokenId,[Exp TraceId],[Decl TraceId])
+tPat (ExpRecord pat fields) = 
+  (ExpRecord pat' fields',patExps++fieldsExps,patDecls++fieldsDecls)
   where
-  (pat',patExps) = tPat pat
-  (fields',fieldsExps) = mapCombine tField fields
+  (pat',patExps,patDecls) = tPat pat
+  (fields',fieldsExps,fieldsDecls) = mapCombine3 tField fields
   tField (FieldExp pos id pat) = 
-    (FieldExp pos (nameTransField id) pat',patExps)
+    (FieldExp pos (nameTransField id) pat',patExps,patDecls)
     where
-    (pat',patExps) = tPat pat
+    (pat',patExps,patDecls) = tPat pat
 tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
   (wrapExp pos 
     (ExpApplication pos (ExpCon pos2 (nameTransCon id) : pats'))
     (PatWildcard pos)
-  ,patsExps)
+  ,patsExps,patsDecls)
   where
-  (pats',patsExps) = tPats pats
+  (pats',patsExps,patsDecls) = tPats pats
   -- negative numeric literals are represented as (negate number):
 tPat (ExpApplication _ [_,ExpLit pos (LitInteger boxed i)]) =
   tPat (ExpLit pos (LitInteger boxed (-i)))
 tPat (ExpApplication _ [_,ExpLit pos (LitRational boxed r)]) =
   tPat (ExpLit pos (LitRational boxed (-r)))
 tPat (ExpApplication _ [_,ExpLit pos _]) = error "tPat: app expLit"
-tPat (ExpVar pos id) = (ExpVar pos (nameTransVar id),[])
+tPat (ExpVar pos id) = (ExpVar pos (nameTransVar id),[],[])
 tPat (ExpCon pos id) = 
-  (wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos),[])
+  (wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos),[],[])
 tPat (ExpLit pos (LitString _ s)) =
   tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
 tPat (ExpLit pos lit@(LitChar _ _)) = 
-  (wrapExp pos (ExpLit pos lit) (PatWildcard pos),[]) 
+  (wrapExp pos (ExpLit pos lit) (PatWildcard pos),[],[]) 
 tPat e@(ExpLit pos lit) = -- only LitInteger and LitRational left
   (ExpVar pos (nameTransVar tid)
   ,[ExpApplication pos 
-     [ExpVar pos tTokenEqualEqual,ExpVar pos tid,e]])
+     [ExpVar pos tTokenEqualEqual,ExpVar pos tid,e]]
+  ,[])
   where
-  tid = mkLambdaBound id
-  id:_ = namesFromPos pos
+  tid = mkLambdaBound (nameFromPos pos)
 tPat (ExpList pos pats) = tPat . mkTList pos $ pats
-tPat (PatAs pos id pat) = (PatAs pos (nameTransVar id) pat',patExps)
+tPat (PatAs pos id pat) = (PatAs pos (nameTransVar id) pat',patExps,patDecls)
   where
-  (pat',patExps) = tPat pat
-tPat (PatWildcard pos) = (PatWildcard pos,[])  -- type change
+  (pat',patExps,patDecls) = tPat pat
+tPat (PatWildcard pos) = (PatWildcard pos,[],[])  -- type change
 tPat (PatIrrefutable pos pat) = 
   if null patExps 
     then
@@ -1177,12 +1192,22 @@ tPat (PatIrrefutable pos pat) =
          ExpApplication pos' [r,p',t'] -> 
            ExpApplication pos' [r,PatIrrefutable pos p',t']
          x -> x
-      ,[])
+      ,[],[])
     else error "Numeric literal inside ~ is currently not implemented."
   where
-  (pat',patExps) = tPat pat 
-tPat (PatNplusK pos id id' k comp neg) = error "Cannot trace n+k patterns"
-tPat _ = error "tPat: unknown pattern"
+  (pat',patExps,patDecls) = tPat pat 
+tPat (PatNplusK pos id _ k _ _) = 
+  (ExpVar pos (nameTransVar tid2)
+  ,[ExpApplication pos 
+     [ExpVar pos tTokenGreaterEqual,var2,k]]
+  ,[DeclFun pos id
+     [Fun []
+       (Unguarded (ExpApplication pos [ExpVar pos tTokenMinus,var2,k]))
+       noDecls]])
+  where
+  var2 = ExpVar pos tid2
+  tid2 = mkLambdaBound (nameFromPos pos)
+tPat p = error ("tPat: unknown pattern at " ++ strPos (getPos p))
 
 -- convert a list of expressions into a list expression (with TraceIds)
 mkTList :: Pos -> [Exp TraceId] -> Exp TraceId
@@ -1354,6 +1379,10 @@ nameFuns = prefixNames 'y' '>'
 -- infinite list of var ids made from one id (for naming arguments)
 nameArgs :: TraceId -> [TokenId]
 nameArgs = prefixNames 'z' '^'
+
+-- a single id made from a position (different from below)
+nameFromPos :: Pos -> TokenId
+nameFromPos pos = mkUnqualifiedTokenId . ('v':) . showsEncodePos pos $ "n"
 
 -- infinite list of ids made from a position
 namesFromPos :: Pos -> [TokenId]

@@ -257,6 +257,7 @@ t_equalequal    = qualImpPrel  "=="
 t_lessequal     = qualImpPrel  "<="
 t_lessthan      = qualImpPrel  "<"
 t_greater       = qualImpPrel  ">"
+t_greaterequal  = qualImpPrel  ">="
 
 tseq 	        = qualImpPrel  "seq"
 

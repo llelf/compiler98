@@ -9,11 +9,11 @@ module TraceId
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
   , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
-  ,tTokenAndAnd,tTokenEqualEqual -- :: TraceId
+  ,tTokenAndAnd,tTokenEqualEqual,tTokenGreaterEqual,tTokenMinus -- :: TraceId
   ) where
 
 import TokenId (TokenId,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
-               ,t_andand,t_equalequal)
+               ,t_andand,t_equalequal,t_greaterequal,tminus)
 import AuxFile (AuxiliaryInfo(..),Fixity(..),emptyAux)
 
 {-
@@ -84,4 +84,10 @@ tTokenAndAnd = t_andand `plus` emptyAux{args=2}
 
 tTokenEqualEqual :: TraceId
 tTokenEqualEqual = t_equalequal `plus` emptyAux
+
+tTokenGreaterEqual :: TraceId
+tTokenGreaterEqual = t_greaterequal `plus` emptyAux
+
+tTokenMinus :: TraceId
+tTokenMinus = tminus `plus` emptyAux
 
