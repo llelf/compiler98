@@ -14,7 +14,7 @@ hGetPosn h = do
         errno <- getErrNo
         throwIOError "hGetPosn" Nothing (Just h) errno
       else do
-        f <- makeForeignObj a (free a)
+        f <- newForeignObj a (free (Ptr a))
         return (HandlePosn h f)
 
 #else
@@ -27,7 +27,7 @@ hGetPosn h@(Handle hfo) = do
         errno <- getErrNo
         throwIOError "hGetPosn" Nothing (Just h) errno
       else do
-        f <- makeForeignObj a (free a)
+        f <- newForeignObj a (free (Ptr a))
         return (HandlePosn h f)
 
 #endif
