@@ -84,8 +84,9 @@ partitions f (x:xs) =
     gB f (f x) [x] xs
   where
     gB f v a [] = [reverse a]
-    gB f v a (x:xs) = if f x == v then gB f v (x:a) xs else reverse a : gB f (f x) [x] xs
-
+    gB f v a (x:xs) = if f x == v
+                      then gB f v (x:a) xs
+                      else reverse a : gB f (f x) [x] xs
 
 ----------
 
@@ -181,8 +182,8 @@ strChr' del c = if isPrint c
                  then if c == del 
                       then "\\" ++ [c]
                       else [c]
-                 else
-                      "\\" ++ map (toEnum . (+(fromEnum '0'))) (ctoo (fromEnum c))
+                 else "\\" ++ map (toEnum . (+(fromEnum '0')))
+                                  (ctoo (fromEnum c))
                     where ctoo c = [(c `div` 64),(c `div` 8) `mod` 8,c `mod` 8]
                           
 strChr :: Char -> String 
@@ -193,11 +194,12 @@ strStr s = "\"" ++ concatMap (strChr' '"') s ++ "\""
 
 -----------------------
 showErr :: (Pos,String,[String]) -> String
-showErr (pos,token,strs) =  strPos pos ++ (" Found " ++ token ++
-                                             case nub strs of
-					           [] -> " but no token can be accepted here."
-  		                                   [x] -> " but expected a " ++ x
-						   xs  -> " but expected one of " ++ mix " " xs)
+showErr (pos,token,strs) =
+    strPos pos ++ (" Found " ++ token ++
+    case nub strs of
+           [] -> " but no token can be accepted here."
+           [x] -> " but expected a " ++ x
+	   xs  -> " but expected one of " ++ mix " " xs)
 
 ------------------------
 isNhcOp :: Char -> Bool
