@@ -120,6 +120,13 @@ static SInfo handleProfInfo = { "Runtime","<Handle>","IO.Handle"};
 
 #endif
 
+#if defined(DEBUG)
+#define SHOW(x)	x
+static char *instr_names[];
+#else
+#define SHOW(x)
+#endif
+
 
 void run(NodePtr toplevel)
 {
@@ -136,7 +143,9 @@ void run(NodePtr toplevel)
 #  undef ins
 #  define Dispatch	Break;
 #  define Case(x)	l##x
-#  define Break		register_instr(*ip); goto *labs[*ip++]
+#  define Break		SHOW(fprintf(stderr,"%s\t\t",instr_names[*ip]);) \
+			SHOW(fprintf(stderr,"hp=0x%x sp=0x%x fp=0x%x ip=0x%x\n",hp,sp,fp,ip);) \
+			register_instr(*ip); goto *labs[*ip++]
 #  define EndDispatch	
 #else
 #  define Dispatch	switch (*ip++) {
@@ -228,6 +237,8 @@ void run(NodePtr toplevel)
 	int gc = 0;
 	ip = (CodePtr) ALIGNPTR(ip);
 	fun = *(Primitive*)ip;
+        SHOW(fprintf(stderr,"\tPRIMITIVE 0x%x\n",(int)fun);)
+        fflush(stderr);
 	ip += sizeof(Primitive);
 #ifdef TPROF	/*PH*/
         if (tprof)
@@ -863,7 +874,7 @@ void run(NodePtr toplevel)
 	}
 #endif
 
-      /*fprintf(stderr,"HGETS:    c=%d '%c'\n",c,c);*/
+        SHOW(fprintf(stderr,"HGETS:    c=%d '%c'\n",c,c);)
 
         if (c==-1) {
           nodeptr = GET_NIL();
@@ -1060,7 +1071,7 @@ int sizeofNode(Node tag) {
 
 #endif
 
-#ifdef BYTECODE_PROF
+#if defined(BYTECODE_PROF) || defined(DEBUG)
 #  undef ins
 static char *instr_names[] = {
  "DUMMY_FOR_ZERO",
@@ -1249,7 +1260,9 @@ static char *instr_names[] = {
 
  "ENDCODE"
 };
+#endif
 
+#ifdef BYTECODE_PROF
 #if PAIR
 void instr_prof_init() {
   int i,j;
