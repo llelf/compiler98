@@ -238,8 +238,6 @@ void getChildrenForRek(HatFile handle,
 	//appTrace  = getParent();            // fileoffset of App-trace
 	funTrace  = getAppFun();            // function-trace
 	srcref    = getSrcRef();            // get srcref
-	//appTrace  = hatFollowHidden(handle,
-	//			    appTrace); // follow along hidden to find parent
 	
 	appTrace = getHatParent(handle,current,parentTrace);
 	/*	if (getNodeType(handle,hatFollowSATs(handle,funTrace))!=HatApplication) {
@@ -278,6 +276,7 @@ void getChildrenForRek(HatFile handle,
 	  printf("APP at 0x%x is child of 0x%x\n",current,parentTrace);debugLines++;
 	}
 #endif
+	satc=hatFollowSATs(handle,result);
 	if ((isChild==0)||(isTopLevel(handle,appTrace)==0)) { // isIForGUARD)) {
 	  // isChild check is not enough, 'cause then and else clauses 
 	  // of IF's (and GUARDs) are at the parent...
@@ -288,7 +287,6 @@ void getChildrenForRek(HatFile handle,
 	  getChildrenForRek(handle,nl,parentTrace,appTrace,hash,initialCAF);
 	}
 
-	satc=hatFollowSATs(handle,result);
 	if ((satc!=0)&&(getNodeType(handle,satc)==HatSATA)) isChild=0; // forget this one, if
 	// its result is a SATA (unevaluated!) nothing to ask for...
 

@@ -15,9 +15,10 @@ typedef unsigned long filepointer;
 typedef int BOOL;
 typedef int HatFile;
 
-char*         hatFilename  (char* name);  // add proper file extension, if missing
+char*         hatFileExtension (char* name);  // add proper file extension, if missing
 HatFile       hatOpenFile  (char* name);  // open file, return internal handle
 void          hatCloseFile (HatFile h);   // close file in internal handle
+char*         hatFileName  (HatFile h);   // return file name represented by handler
 unsigned long hatFileSize  (HatFile h);   // return size of file
 
 filepointer   hatErrorPoint(HatFile h);   // return the error entry point, if

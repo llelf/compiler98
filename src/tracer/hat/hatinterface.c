@@ -35,6 +35,7 @@ typedef struct {
   unsigned long foff;     /* if buf_n>0, this is offset in f of buf[0] */
   unsigned long filesize;
   struct stat statBuf;
+  char* filename;
 } filehandler;
 
 int hatHandleCount = 0,currentHandle=-1;
@@ -83,11 +84,12 @@ HatFile hatNewHandle() {
   hatHandle = newHandles;
   hatHandle[hatHandleCount-1].bufsize = MAXBUFSIZE;
   hatHandle[hatHandleCount-1].buf = (char*) calloc(MAXBUFSIZE,1);
+  hatHandle[hatHandleCount-1].filename = NULL;
   return hatHandleCount-1;
 }
 
 /* make proper file extension, if missing */
-char* hatFilename(char* name) {
+char* hatFileExtension(char* name) {
   if (strstr(name,".hat")!=NULL) return newStr(name);
   else {
     char* newstr=(char*) malloc((strlen(name)+5)*sizeof(char));
@@ -1349,13 +1351,13 @@ int hatTestHeader(HatFile h) {
 /* open file for reading, save in internal file descriptor */
 HatFile hatOpenFile(char* name) {
   int f;
-  name = hatFilename(name);
+  name = hatFileExtension(name);
   f = open(name, 0);
   if (f!=-1) {
     int handle = hatNewHandle();
     stat(name, &(hatHandle[handle].statBuf));
     hatHandle[handle].filesize = hatHandle[handle].statBuf.st_size;
-    freeStr(name);
+    hatHandle[handle].filename = name;
     hatHandle[handle].buf_n = 0; // set buffer pointers appropriately. buf_n=0 buffer currently empty
     hatHandle[handle].boff = 0;  // at position 0 in buffer
     hatHandle[handle].foff = 0;  // at position 0 in file
@@ -1376,8 +1378,12 @@ void hatCloseFile(HatFile h) {
   //printf("Closing file %u\n",handle);
   close(hatHandle[h].f);
   free(hatHandle[h].buf);
+  freeStr(hatHandle[h].filename);
   if (h==currentHandle) {
     currentHandle = -1;
   }
 }
 
+char* hatFileName(HatFile h) {
+  return hatHandle[h].filename;
+}

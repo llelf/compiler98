@@ -1,6 +1,6 @@
 import HatTrace
 import HatTrie
-import HatExpression
+import HatExpressionTree
 import Maybe
 import System
 import Char(isDigit,digitToInt,toUpper)
@@ -35,7 +35,7 @@ checkArguments arguments =
 getStartReduction :: HatTrace -> [String] -> HatNode
 getStartReduction hattrace arguments =
     if ((length arguments)==3) then
-       let adr = remoteToNode hattrace (head (drop 2 arguments)) in
+       let adr = fromRemoteRep hattrace (head (drop 2 arguments)) in
 	   if (isValidNode adr) then adr else
 	      (getStartReduction hattrace [])
      else
@@ -73,15 +73,14 @@ type StateType = ([HatNode],[(HatNode,LinExpr,Bool)], -- type for state of sessi
 		  Int,Int,Bool,Bool,Bool)
 
 showIdent :: HatNode -> String
-showIdent node = hatCExpressionStr node 0 10
+showIdent node = hatCExpressionStr False 10 node
 
 showRed :: Bool -> Int -> HatNode -> String
 showRed verboseMode precision node =
-    let v = if verboseMode then 1 else 0;
-	s1 = (hatCExpressionStr node v precision);
+    let s1 = (hatCExpressionStr verboseMode precision node);
 	res = (hatResult node);
 	s2 = if (isValidNode res) then
-                (" = "++(hatCExpressionStr res v precision))
+                (" = "++(hatCExpressionStr verboseMode precision res))
 	      else
 	        ""
 	in
@@ -91,12 +90,12 @@ showRed verboseMode precision node =
 -- and the value of the users answer (Yes=True, No=False)
 addToRecentNodes :: [(HatNode,LinExpr,Bool)] -> HatNode -> Bool -> [(HatNode,LinExpr,Bool)]
 addToRecentNodes recentNodes node answerYes =
-    (node,linearizeExpr (lazyExpression 100 node),answerYes):recentNodes
+    (node,linearizeExpr (toHatExpressionTree 100 node),answerYes):recentNodes
 
 -- check, whether node is less general than an earlier given answer
 memoizeCheck :: [(HatNode,LinExpr,Bool)] -> HatNode -> Maybe Bool
 memoizeCheck recentNodes node = (memoizeCheck' recentNodes
-				 (linearizeExpr (lazyExpression 100 node)))
+				 (linearizeExpr (toHatExpressionTree 100 node)))
   where
    memoizeCheck' [] _ = Nothing
    memoizeCheck' ((_,expr2,answer):recentNodes) expr1 =
@@ -254,16 +253,17 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 					  questnumber,newprec,nverbose,nmemo,True)
                    else
                     let lmo = hatLeftmost child;
-			(row,column,modname,modsrcpos,_) =
-			    if (isInvalidNode lmo) then (0,0,"","",False) else
-			       (fromJust (hatSourceRef lmo)) in
+			src = if (isInvalidNode lmo) then HatNoSourceRef else
+			       (hatSourceRef lmo) in
 	             do
                      putStrLn "\nErroneous reduction: "
 		     putStrLn (showRed verboseMode precision child)
 		     putStrLn ("\nBug found within the body of function: \""++
 			       (showIdent lmo)++"\"")
-		     putStrLn ("line "++(show row)++", column "++(show column)++
-			       " in module \""++modname++"\", file: \""++modsrcpos++
+		     putStrLn ("line "++(show (row src))++", column "++
+			       (show (column src))++
+			       " in module \""++(moduleName src)++
+			       "\", file: \""++(moduleFile src)++
 			       "\"\n")
 		     putStr ("Press 'q' to quit, any other key to go back to question "++
 			     (show questnumber)++": ")
@@ -299,8 +299,8 @@ doCommand cmd s hatfile@(file,_) state@((child:children),recentNodes,trusted,pos
 	     else return ()
 	  interactive hatfile state
     | (cmd=="R")||(cmd=="REDEX") =     -- handle "redex" command
-	let lhsID = nodeToRemote child;
-	    rhsID = nodeToRemote (hatResult child) in
+	let lhsID = toRemoteRep child;
+	    rhsID = toRemoteRep (hatResult child) in
 	do
           putStr "Trace left-hand-side (lhs) or rhs? (L/R): "
 	  lhs <- getLine

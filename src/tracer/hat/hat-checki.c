@@ -25,7 +25,7 @@ int main (int argc, char *argv[])
     fprintf(stderr,"\nusage: hat-checki file-name\n");
     exit(1);
   }
-  fname = hatFilename(argv[1]);
+  fname = hatFileExtension(argv[1]);
   if ((handle=hatOpenFile(fname))==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);

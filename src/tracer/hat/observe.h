@@ -29,16 +29,20 @@ ObserveQuery newObserveQueryIdent(
 	     BOOL recursiveFilter, // =1: omit recursive applications
 	     BOOL showProgress);   // =1: show progress indicator (0-100%)
 
- /* create a query to observe all values at a given source position.
-    The source position is given by the moduleName and the line/column
-    position.
-    If moduleName is NULL, the main module is searched, that is the module,
-    in which the main CAF was defined. */
-
+  /* create a query to observe all values at a given source position.
+     The source position is given by the moduleName and the line/column
+     position.
+     If moduleName is NULL, the main module is searched, that is the module,
+     in which the main CAF was defined. */
 ObserveQuery newObserveQuerySource(int handle,
 				   char* moduleName,
 				   unsigned long line,unsigned long column,
 				   BOOL showProgress);
+
+  /* newQuery: creates a query on a hat file, searching for all observable
+     identifiers and modules within the file. */
+ObserveQuery newObservableQuery(int handle,
+				BOOL showProgress);
 
 void         freeObserveQuery(ObserveQuery query); // end query, free memory
 

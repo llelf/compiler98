@@ -21,6 +21,13 @@
 
 //#define showNodeInfo // show additional information about file offsets
 
+// observe an identifier
+#define IDENTMODE      0
+// observe values at a source position
+#define SRCMODE        1
+// observe all observable identifiers/modules
+#define OBSERVABLEMODE 2
+
 typedef struct {
   HashTable* htable;
   filepointer identifierNode;
@@ -30,7 +37,7 @@ typedef struct {
   filepointer moduleRef;
   int recursiveMode;
   unsigned long fsz,lsz;
-  int srcSearchMode;
+  int searchMode;
   int found;
   int finished;
   int showProgress;
@@ -38,6 +45,7 @@ typedef struct {
 } _ObserveQuery;
 
 
+// new query to observe all applications of identifierNode within the trace file
 ObserveQuery newObserveQuery(int handle,
 		       filepointer identifierNode,
 		       filepointer topIdentifierNode,
@@ -52,11 +60,25 @@ ObserveQuery newObserveQuery(int handle,
   newQ->recursiveMode = recursiveMode;
   newQ->showProgress = showProgress;
   newQ->currentOffset = hatSeqFirst(handle);// identifierNode;
+  newQ->searchMode = IDENTMODE;
   //if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
   newQ->fsz = hatFileSize(handle)/1000;
   if (newQ->fsz==0) newQ->fsz = 1;
   //if (newQ->fsz<20000) newQ->lsz=200;
   //printf("new query: %u\n",identifierNode);
+  return ((ObserveQuery) newQ);
+}
+
+// new query to observe all observable identifiers/modules in the trace file
+ObserveQuery newObservableQuery(int handle,BOOL showProgress) {
+  _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
+  newQ->handle = handle;
+  newQ->htable = NULL;
+  newQ->showProgress = showProgress;
+  newQ->currentOffset = hatSeqFirst(handle);
+  newQ->searchMode = OBSERVABLEMODE;
+  newQ->fsz = hatFileSize(handle)/1000;
+  if (newQ->fsz==0) newQ->fsz = 1;
   return ((ObserveQuery) newQ);
 }
 
@@ -100,7 +122,7 @@ ObserveQuery newObserveQuerySource(int handle,
   _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
   newQ->handle = handle;
   newQ->htable = newHashTable(80000);
-  newQ->srcSearchMode = 1;
+  newQ->searchMode = SRCMODE;
   newQ->line = line;
   newQ->column = column;
   newQ->showProgress = showProgress;
@@ -123,7 +145,8 @@ ObserveQuery newObserveQuerySource(int handle,
 }
 
 void freeObserveQuery(ObserveQuery query) {
-  freeHashTable(((_ObserveQuery*) query)->htable);
+  if (((_ObserveQuery*) query)->htable) // OBSERVALE queries have no hash table
+    freeHashTable(((_ObserveQuery*) query)->htable);
   ((_ObserveQuery*) query)->htable = NULL;
   free(query);
 }
@@ -144,10 +167,20 @@ HatFile observeHatFile(ObserveQuery query) {
   return ((_ObserveQuery*) query)->handle;
 }
 
-void queryCleanOutput(ObserveQuery query) {
+void queryCleanProgress(ObserveQuery query) {
   if (((_ObserveQuery*) query)->showProgress) {
     fprintf(stderr,"\b\b\b\b    \b\b\b\b");
     //fflush(stderr);
+  }
+}
+
+void updateProgress(_ObserveQuery* query,filepointer currentOffset) {
+  if ((query->showProgress)&&
+      ((currentOffset/10)/((_ObserveQuery*) query)->fsz > 
+       ((_ObserveQuery*) query)->lsz)) {
+    ((_ObserveQuery*) query)->lsz = (currentOffset/10)/((_ObserveQuery*) query)->fsz;
+    fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
+    fflush(stderr);
   }
 }
 
@@ -164,14 +197,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
     fprintf(stderr,"\b\b\b\b%3u%%",query->lsz);
   }
   while (!hatSeqEOF(handle,currentOffset)) {
-
-    if ((query->showProgress)&&
-	((currentOffset/10)/((_ObserveQuery*) query)->fsz > 
-	 ((_ObserveQuery*) query)->lsz)) {
-      ((_ObserveQuery*) query)->lsz = (currentOffset/10)/((_ObserveQuery*) query)->fsz;
-      fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
-      fflush(stderr);
-    }
+    updateProgress(query,currentOffset);
 
     nodeType = getNodeType(handle,currentOffset);
     switch (nodeType) {
@@ -205,7 +231,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 		  if (result!=0) {
 		    query->currentOffset = currentOffset;
 		    query->found++;
-		    queryCleanOutput((ObserveQuery)query);
+		    queryCleanProgress((ObserveQuery)query);
 		    return currentOffset; //result;
 		  }
 		}
@@ -214,7 +240,7 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 	      if (lmoType==HatConstructor) {
 		query->currentOffset = currentOffset;
 		query->found++;
-		queryCleanOutput((ObserveQuery)query);
+		queryCleanProgress((ObserveQuery)query);
 		return currentOffset;
 	      }
 	  }
@@ -227,7 +253,41 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
     }
   }
   ((_ObserveQuery*) query)->finished = 1;
-  queryCleanOutput((ObserveQuery)query);
+  queryCleanProgress((ObserveQuery)query);
+  return 0;
+}
+
+// find all observable identifiers and all Modules within the TraceFile
+filepointer nextObservable(_ObserveQuery* query) {
+  unsigned long p,currentOffset;
+  char nodeType;
+  int handle = query->handle;
+
+  currentOffset = hatSeqNext(handle,query->currentOffset);
+  if (query->showProgress) fprintf(stderr,"\b\b\b\b%3u%%",query->lsz);
+  while (!hatSeqEOF(handle,currentOffset)) {
+    updateProgress(query,currentOffset);
+
+    nodeType = getNodeType(handle,currentOffset);
+    switch (nodeType) {
+    case HatIdentifier:
+      if (isTopLevel(handle,currentOffset)) {
+	query->currentOffset = currentOffset;
+	query->found++;
+	queryCleanProgress((ObserveQuery)query);
+	return currentOffset;
+      }
+      break;
+    case HatModule:
+      query->currentOffset = currentOffset;
+      query->found++;
+      queryCleanProgress((ObserveQuery)query);
+      return currentOffset;
+    }
+    currentOffset = hatSeqNext(handle,currentOffset);
+  }
+  ((_ObserveQuery*) query)->finished = 1;
+  queryCleanProgress((ObserveQuery)query);
   return 0;
 }
 
@@ -246,8 +306,11 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
   int recursiveMode = ((_ObserveQuery*) query)->recursiveMode;
   int handle = ((_ObserveQuery*) query)->handle;
 
-  if (((_ObserveQuery*) query)->srcSearchMode) {
+  switch (((_ObserveQuery*) query)->searchMode) {
+  case SRCMODE: // use function to find next value at source reference
     return nextObserveSrcMode((_ObserveQuery*) query);
+  case OBSERVABLEMODE: // use function to find next observable identifier/module
+    return nextObservable((_ObserveQuery*) query);
   }
 
   currentOffset = hatSeqNext(handle,((_ObserveQuery*) query)->currentOffset);
@@ -255,13 +318,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
   }
   while (!hatSeqEOF(handle,currentOffset)) {
-    if ((((_ObserveQuery*) query)->showProgress)&&
-	((currentOffset/10)/((_ObserveQuery*) query)->fsz > 
-	 ((_ObserveQuery*) query)->lsz)) {
-      ((_ObserveQuery*) query)->lsz = (currentOffset/10)/((_ObserveQuery*) query)->fsz;
-      fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
-      fflush(stderr);
-    }
+    updateProgress(query,currentOffset);
 
     nodeType = getNodeType(handle,currentOffset);
     switch (nodeType) {
@@ -290,7 +347,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 		     (isDirectDescendantOf(handle,currentOffset,topIdentifierNode)))) {
 		  ((_ObserveQuery*) query)->currentOffset = currentOffset;
 		  ((_ObserveQuery*) query)->found++;
-		  queryCleanOutput(query);
+		  queryCleanProgress(query);
 		  return currentOffset;
 		}
 	      }
@@ -313,7 +370,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	  } else {  // makes no sense to print equation of form "identifier = identifier"
 	    ((_ObserveQuery*) query)->currentOffset = currentOffset;
 	    ((_ObserveQuery*) query)->found++;
-	    queryCleanOutput(query);
+	    queryCleanProgress(query);
 	    return currentOffset;
 	  }
 	  currentOffset = hatSeqNext(handle,satc); // skip the satc node
@@ -325,7 +382,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     }
   }
   ((_ObserveQuery*) query)->finished = 1;
-  queryCleanOutput(query);
+  queryCleanProgress(query);
   //fprintf(stderr,"bufferMisses: %u, bufferHits: %u\n",bufferMisses,bufferHits);
   return 0;
 }

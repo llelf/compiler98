@@ -11,7 +11,6 @@ module HatTrie (
 where
 
 import HatTrace
-import HatExpression
 import Maybe
 import Char(isAlpha,isAlphaNum,isDigit)
 
@@ -43,18 +42,24 @@ dropLast [] = []
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
 -- convert an equation to a linear representation: a list of constructors
-linearizeEquation :: HatExpression -> LinExpr
-linearizeEquation appl = (linearizeExpr' appl)++(LRHS:(linearizeExpr' (res appl)))++
-			 [LNodeAdr (ref appl)]
+linearizeEquation :: HatRep a => a -> LinExpr
+linearizeEquation appl =
+    let res = hatResult appl in
+	      (_linearizeExpr appl)++
+	      (LRHS:(_linearizeExpr res))++
+	      [LNodeAdr (toHatNode appl)]
 
 -- convert an expression to a linear representation
-linearizeExpr :: HatExpression -> LinExpr
-linearizeExpr e = (linearizeExpr' e)++[LNodeAdr (ref e)]
+linearizeExpr :: HatRep a => a -> LinExpr
+linearizeExpr e = (_linearizeExpr e)++[LNodeAdr (toHatNode e)]
 
-linearizeExpr' :: HatExpression -> LinExpr
-linearizeExpr' (HatApplication _ _ fun args _) = 
-    let linargs = (foldl (++) [] (map linearizeExpr' args)); -- convert arguments
-	funexpr = (linearizeExpr' fun) in                    -- convert function
+
+_linearizeExpr e = linearizeExpr' (hatNodeType e) e
+-- linearizeExpr' :: HatRep a => HatNodeType -> a -> LinExpr -- type, must be derived by NHC
+linearizeExpr' HatApplNode e =
+    let linargs = (foldl (++) []
+		   (map _linearizeExpr (hatApplArgs e))); -- convert arguments
+	funexpr = (_linearizeExpr (hatApplFun e)) in                    -- convert function
 	 if (isLAppl' (head funexpr)) then                   -- flat representation
           ((dropLast funexpr)++linargs++[LLastArg])    -- get rid of LLastArg in funexpr
           else -- function is not an application: enclose arguments with First-/LastArg
@@ -62,27 +67,27 @@ linearizeExpr' (HatApplication _ _ fun args _) =
      where isLAppl' LAppl = True
 	   isLAppl' _ = False
 
-linearizeExpr' (HatConstant _ _ fun _) = (linearizeExpr' fun)
-linearizeExpr' (HatIdentifier _ name _) = [LIdent name]
-linearizeExpr' (HatConstructor _ name _) = [LConstr name]
-linearizeExpr' (HatSAT_A _ _) = [LSATA]
-linearizeExpr' (HatSAT_B _ _) = [LSATB]
-linearizeExpr' (HatHidden _ _) = [LHidden]
-linearizeExpr' (HatProj _ _ value) = (linearizeExpr' value)
-linearizeExpr' (HatCase _) = [LCase]
-linearizeExpr' (HatLambda _) = [LLambda]
-linearizeExpr' (HatInt _ i) = [LInt i]
-linearizeExpr' (HatInteger _ i) = [LInteger i]
-linearizeExpr' (HatChar _ c) = [LChar c]
-linearizeExpr' (HatRational _ r) = [LRational r]
-linearizeExpr' (HatFloat _ f) = [LFloat f]
-linearizeExpr' (HatDouble _ d) = [LDouble d]
-linearizeExpr' (HatString _ s) = [LString s]
-linearizeExpr' (HatIf _) = [LIf]
-linearizeExpr' (HatGuard _) = [LGuard]
-linearizeExpr' (HatContainer node) = [LContainer] -- node
-linearizeExpr' (HatNone node) = [LNone]
-linearizeExpr' _ = error "linearizeExpr': unknown constructor"
+linearizeExpr' HatConstantNode    e = _linearizeExpr (hatApplFun e)
+linearizeExpr' HatIdentNode       e = [LIdent (hatName e)]
+linearizeExpr' HatConstrNode      e = [LConstr (hatName e)]
+linearizeExpr' HatSAT_ANode       _ = [LSATA]
+linearizeExpr' HatSAT_BNode       _ = [LSATB]
+linearizeExpr' HatHiddenNode      _ = [LHidden]
+linearizeExpr' HatProjNode        e = _linearizeExpr (hatProjValue e)
+linearizeExpr' HatCaseNode        _ = [LCase]
+linearizeExpr' HatLambdaNode      _ = [LLambda]
+linearizeExpr' HatIntNode         e = [LInt (hatValueInt e)]
+linearizeExpr' HatIntegerNode     e = [LInteger (hatValueInteger e)]
+linearizeExpr' HatCharNode        e = [LChar (hatValueChar e)]
+linearizeExpr' HatRationalNode    e = [LRational (hatValueRational e)]
+linearizeExpr' HatFloatNode       e = [LFloat (hatValueFloat e)]
+linearizeExpr' HatDoubleNode      e = [LDouble (hatValueDouble e)]
+linearizeExpr' HatCStringNode     e = [LString (hatValueString e)]
+linearizeExpr' HatIfNode          _ = [LIf]
+linearizeExpr' HatGuardNode       _ = [LGuard]
+linearizeExpr' HatContainerNode   _ = [LContainer] -- node
+linearizeExpr' HatInvalidNode     _ = [LNone]
+linearizeExpr' _                  _ = error "linearizeExpr': unknown constructor"
 
 
 ---------------------------------------------------------------------------

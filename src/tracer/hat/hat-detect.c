@@ -52,7 +52,7 @@ int main (int argc, char *argv[])
     fprintf(stderr,"       algorithmic debugging on a hat redex trace file\n\n");
     exit(1);
   }
-  traceFileName = hatFilename(argv[1]);
+  traceFileName = hatFileExtension(argv[1]);
   if ((filehandle=hatOpenFile(traceFileName))==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
