@@ -24,8 +24,21 @@ then
   exit 1
 fi
 
-# Fix a broken 'mv' command on Cygwin
+# Fix a broken 'mv' command on Cygwin.
 mv () { { cp $1 $2 && rm $1; } || echo "Warning: can't move $1 to $2"; }
+
+## Fix an absolute Cygwin path to an absolute native Windows path.
+## (Also copes with options like -I/path etc.)
+## This routine is only strictly required when the compiler proper
+## was built with GHC/mingw32.
+#if echo $MACHINE | grep -y CYGWIN >/dev/null
+#then filepath() { case $1 in
+#                    -?/*) echo `cygpath -w $1` | tr '\\' '/';;
+#                    /*)   echo `cygpath -w $1` | tr '\\' '/';;
+#                    *)    echo $1;;
+#                  esac; }
+#else filepath() { echo $1; }
+#fi
 
 # If USINGRTS is non-zero then flags to the runtime is enclosed in
 #     +RTS runtimeflags -RTS,
@@ -45,7 +58,8 @@ COMPFILES=""
 COMPFLAGS=""
 RUNFLAGS=""
 EXTRALIB=""
-LIBDIRS=""
+CINCDIRS=""
+HINCDIRS=""
 CPPFLAGS=${CPPFLAGS-""}
 #OBJDIR=
 HISUFFIX="hi"
@@ -67,6 +81,7 @@ GREENCARD=${GREENCARD-"$NHC98LIBDIR/$MACHINE/greencard-nhc98 -"}
 GREENCARDOPTS=${GREENCARDOPTS}" -tnhc98"
 GRCC="${CC} -I${NHC98INCDIR}/"
 
+PACKAGES=
 
 VFLAG=0 
 MFLAG=0 
@@ -80,7 +95,6 @@ ASFLAGS=""
 PROF=
 TPROF=
 TRACE=
-IMPORT="-P${NHC98INCDIR}"
  
 NOLINK=0
 PRECPP=0
@@ -134,7 +148,6 @@ processArgs () {
     -cpp  ) PRECPP=1;;
     -c    ) NOLINK=1;;
     -T)     TRACE=T
-	    #IMPORT=-P${NHC98INCDIR}/tracer/	-- no longer a different dir
             COMPFLAGS=$COMPFLAGS" -dbgtrans -hi-suffix=T.hi"
             LDLAST=$LDLAST$LIBCOMPAT
             HISUFFIX="T.hi"
@@ -182,11 +195,25 @@ processArgs () {
     -newlibs)   NHC98LIBDIR=$NHC98LIBDIR/libraries
                 NHC98INCDIR=$NHC98INCDIR/libraries
                 COMPFLAGS=$COMPFLAGS" "$1;;
+    -package)   shift; package=$1;
+                PACKAGES=$PACKAGES" $package"
+                if [ -d $NHC98INCDIR/$package ]
+                then
+                  COMPFLAGS=$COMPFLAGS" -P$NHC98INCDIR/$package"
+                else
+                  echo >&2 "Warning: -package $package interfaces not found."
+                fi
+                ;;
     -H*   ) HEAP=`echo $1 | cut -c3-` ;;
     -[Ll]*) EXTRALIB=$EXTRALIB" "$1;;
-    -i*   ) LIBDIRS=$LIBDIRS" -I"`echo $1 | cut -c3-` ;;
-    -I*   ) LIBDIRS=$LIBDIRS" "$1;;
+    -i*   ) CINCDIRS=$CINCDIRS" -I"`echo $1 | cut -c3-`
+            HINCDIRS=$HINCDIRS" -I"`echo $1 | cut -c3-` ;;
+    -I*   ) CINCDIRS=$CINCDIRS" "$1
+#           HINCDIRS=$HINCDIRS" "`filepath $1` ;;
+            HINCDIRS=$HINCDIRS" "$1 ;;
     -s    ) LDFLAGS=$LDFLAGS" "$1;;
+#   -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "`filepath $1`
+#           COMPFLAGS=$COMPFLAGS" "`filepath $1`;;
     -P*   ) GREENCARDOPTS=$GREENCARDOPTS" "$1
             COMPFLAGS=$COMPFLAGS" "$1;;
     -D*   ) CPPFLAGS=$CPPFLAGS" "$1;;
@@ -229,7 +256,7 @@ else
   RUNFLAGS=$RUNFLAGS" -"
 fi
 
-# Fix OSUFFIX for trpof _and_ tracing
+# Fix OSUFFIX for tprof _and_ tracing
 if test $TPFLAG -eq 1
 then OSUFFIX=$TRACE$TPROF".o"
 fi
@@ -277,9 +304,11 @@ case $GRFILES in
     fi
     if test $VFLAG -eq 1
     then
-      echo `basename $GREENCARD` $GREENCARDOPTS $IMPORT $GRFILE
+#     echo `basename $GREENCARD` $GREENCARDOPTS -P`filepath $NHC98INCDIR` `filepath $GRFILE`
+      echo `basename $GREENCARD` $GREENCARDOPTS -P$NHC98INCDIR $GRFILE
     fi
-    $GREENCARD $GREENCARDOPTS $IMPORT $GRFILE
+#   $GREENCARD $GREENCARDOPTS -P`filepath $NHC98INCDIR` `filepath $GRFILE`
+    $GREENCARD $GREENCARDOPTS -P$NHC98INCDIR $GRFILE
     if test $? -ne 0
     then
       echo "`basename $GREENCARD` failed on $GRFILE"
@@ -305,9 +334,9 @@ case $GRFILES in
       then
         if test $VFLAG -eq 1
         then
-          echo $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -x c -o $GROFILE $GRCFILE
+          echo $GRCC $ENDIAN $CPPFLAGS $CINCDIRS -c -x c -o $GROFILE $GRCFILE
         fi
-        $GRCC $ENDIAN $CPPFLAGS $LIBDIRS -c -x c -o $GROFILE $GRCFILE
+        $GRCC $ENDIAN $CPPFLAGS $CINCDIRS -c -x c -o $GROFILE $GRCFILE
         if test $? -ne 0
         then
           echo C compilation failed on ${BASENAME}_.$CSUFFIX after `basename $GREENCARD`
@@ -450,9 +479,11 @@ case $COMPFILES in
 
       if test $VFLAG -eq 1
       then
-        echo  `basename $COMP` $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
+#       echo  $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -P`filepath ${NHC98INCDIR}` `filepath $HSFILE` `filepath $POSTGRFILE` `filepath $TMPHIFILE` `filepath $TMPCPPASFILE`
+        echo  $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -P${NHC98INCDIR} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
       fi
-      $COMP $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
+#     $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -P`filepath ${NHC98INCDIR}` `filepath $HSFILE` `filepath $POSTGRFILE` `filepath $TMPHIFILE` `filepath $TMPCPPASFILE`
+      $COMP $RUNFLAGS $COMPFLAGS $HINCDIRS $UNLIT -P${NHC98INCDIR} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
 
       if test $? -ne 0
       then
@@ -519,9 +550,9 @@ case $COMPFILES in
       then
         if test $VFLAG -eq 1
         then
-          echo $CPPAS $ENDIAN $CPPASFLAGS $LIBDIRS $TMPCPPASFILE -o $TMPASFILE
+          echo $CPPAS $ENDIAN $CPPASFLAGS $CINCDIRS $TMPCPPASFILE -o $TMPASFILE
 	fi
-	$CPPAS $ENDIAN $CPPASFLAGS $LIBDIRS $TMPCPPASFILE -o $TMPASFILE
+	$CPPAS $ENDIAN $CPPASFLAGS $CINCDIRS $TMPCPPASFILE -o $TMPASFILE
 	if test $CSRC -eq 0
         then
           if test $VFLAG -eq 1
@@ -599,7 +630,7 @@ then
 LDLIBS=$MAINROUTINE" "$NHC98LIBDIR/$MACHINE/mutlib$SUF.o" "$NHC98LIBDIR/$MACHINE/mutator$SUF.o" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/libdebug$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a" "$NHC98LIBDIR/$MACHINE/Prelude$SUF.a" "$NHC98LIBDIR/$MACHINE/Runtime$SUF.a
 fi
 
-#for LIBFLAG in $LIBDIRS
+#for LIBFLAG in $HINCDIRS
 #do
 #  LIBDIR=`echo $LIBFLAG | sed 's/-i//'`
 #  if test -r $LIBDIR/$MACHINE/lib$SUF.a
@@ -618,6 +649,16 @@ fi
 #    fi
 #  fi
 #done
+
+for package in $PACKAGES
+do
+  if [ -r $NHC98LIBDIR/$MACHINE/libHS$package$SUF.a ]
+  then
+    LDLIBS=$NHC98LIBDIR/$MACHINE/libHS$package$SUF.a" "$LDLIBS
+  else
+    echo >&2 "Warning: -package $package library $SUF not found."
+  fi
+done
 
 if test $TPFLAG -eq 1
 then
@@ -641,7 +682,7 @@ tprof () {
   LDFILES=""
   TPL=""
   if test $VFLAG -eq 1
-  then echo "Generating tprof lables";
+  then echo "Generating tprof labels";
   fi
   while test "'$1'" != "''" 
   do
