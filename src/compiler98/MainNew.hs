@@ -644,11 +644,10 @@ generateCode handle flags foreigns state fixState eslabs escode (decl:decls)
 {- Parse interface files for imported modules -}
 nhcImport :: Flags 
           -> ImportState 
-          -> [(PackedString
-              ,   (PackedString,PackedString, Memo TokenId)
-               -> [[TokenId]] 
-               -> Bool
-              ,HideDeclIds
+          -> [( PackedString
+              , (PackedString, PackedString, Memo TokenId)
+                  -> [[TokenId]] -> Bool
+              , HideDeclIds
               )] 
           -> IO ImportState
 
