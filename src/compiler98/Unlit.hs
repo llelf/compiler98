@@ -1,22 +1,26 @@
 module Unlit(unlit) where
 
--- Part of the following code is from "Report on the Programming Language Haskell",
--- version 1.2, appendix C.
+-- Part of the following code is from
+-- "Report on the Programming Language Haskell",
+--   version 1.2, appendix C.
 
 import Char
 
-data Classified = Program String | Blank | Comment | Include Int String | Pre String
+data Classified = Program String | Blank | Comment
+                | Include Int String | Pre String
 
 classify :: [String] -> [Classified]
 classify []                = []
 classify (('\\':x):xs) | x == "begin{code}" = Blank : allProg xs
-   where allProg [] = []  -- Should give an error message, but I have no good position information.
+   where allProg [] = []  -- Should give an error message,
+                          -- but I have no good position information.
          allProg (('\\':x):xs) |  x == "end{code}" = Blank : classify xs
 	 allProg (x:xs) = Program x:allProg xs
 classify (('>':x):xs)      = Program (' ':x) : classify xs
 classify (('#':x):xs)      = (case words x of
-                                (line:file:_) | all isDigit line -> Include (read line) file
-                                _                                -> Pre x
+                                (line:file:_) | all isDigit line
+                                   -> Include (read line) file
+                                _  -> Pre x
                              ) : classify xs
 classify (x:xs) | all isSpace x = Blank:classify xs
 classify (x:xs)                 = Comment:classify xs
@@ -29,7 +33,10 @@ unclassify Blank       = ""
 unclassify Comment     = ""
 
 unlit :: String -> String -> String
-unlit file lhs = (unlines . map unclassify . adjecent file (0::Int) Blank . classify) (lines lhs)
+unlit file lhs = (unlines
+                 . map unclassify
+                 . adjecent file (0::Int) Blank
+                 . classify) (inlines lhs)
 
 adjecent :: String -> Int -> Classified -> [Classified] -> [Classified]
 adjecent file 0 _             (x              :xs) = x : adjecent file 1 x xs -- force evaluation of line number
@@ -47,3 +54,15 @@ adjecent file n _             []                    = []
 message "\"\"" n p c = "Line "++show n++": "++p++ " line before "++c++" line.\n"
 message []     n p c = "Line "++show n++": "++p++ " line before "++c++" line.\n"
 message file   n p c = "In file " ++ file ++ " at line "++show n++": "++p++ " line before "++c++" line.\n"
+
+
+-- Re-implementation of 'lines', for better efficiency (but decreased laziness).
+-- Also, importantly, accepts non-standard DOS and Mac line ending characters.
+inlines s = lines' s id
+  where
+  lines' []             acc = [acc []]
+  lines' ('\n':'\^M':s) acc = acc [] : lines' s id
+  lines' ('\n':s)       acc = acc [] : lines' s id
+  lines' ('\^M':s)      acc = acc [] : lines' s id
+  lines' (c:s)          acc = lines' s (acc . (c:))
+
