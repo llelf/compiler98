@@ -2,6 +2,7 @@ module Main where
 
 import IO
 import Binary
+import qualified Binary
 import Directory
 import System
 
