@@ -11,7 +11,7 @@ import PackedString(PackedString,packString,unpackPS)
 import Extra(Pos(..),strPos,pair)
 import Syntax
 import SyntaxPos
-import TokenId(TokenId(..), t_x, t_y, t_flip, visImport)
+import TokenId(TokenId(..), t_x, t_y, t_flip, tminus, tnegate, visImport)
 import AssocTree
 import PreImp
 import AuxFile
@@ -25,17 +25,16 @@ fixInfixList :: AuxTree -> [Exp TokenId] -> Exp TokenId
 fixInfixList env [] = error "I: fixInfix []"
 fixInfixList env ees@(ExpVarOp pos op:es) =
   let fix = lookupFix env Var op
-  in case fix of
-	(Pre a,l) -> reorder env ees
-	_ -> let exp' = reorder env es
-                 exp  = invertCheck pos op fix env exp'
---           in ExpLambda pos [varx,vary] 
+      exp' = reorder env es
+      exp  = invertCheck pos op fix env exp'
+--in ExpLambda pos [varx,vary] 
 --                  (ExpApplication pos [ExpVar pos op,vary,varx])
 --  where
 --  varx = ExpVar pos t_x
 --  vary = ExpVar pos t_y
-             in (ExpApplication pos 
-                     [ExpVar pos t_flip, ExpVar pos op, exp])
+  in if op == tminus
+     then (ExpApplication pos [ExpVar pos tnegate, exp])
+     else (ExpApplication pos [ExpVar pos t_flip, ExpVar pos op, exp])
              -- desugaring with flip better than lambda for reading a trace
 fixInfixList env ees@(ExpConOp pos op:es) =
   let fix = lookupFix env (Con "") op

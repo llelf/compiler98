@@ -235,7 +235,7 @@ module Prelude
 (Method "Monad" "return",Has{args=(-1),fixity=Def,priority=9,letBound=True})
 (Method "Num" "*",Has{args=(-1),fixity=L,priority=7,letBound=True})
 (Method "Num" "+",Has{args=(-1),fixity=L,priority=6,letBound=True})
-(Method "Num" "-",Has{args=(-1),fixity=(Pre "negate"),priority=6,letBound=True})
+(Method "Num" "-",Has{args=(-1),fixity=L,priority=6,letBound=True})
 (Method "Num" "abs",Has{args=(-1),fixity=Def,priority=9,letBound=True})
 (Method "Num" "fromInteger",Has{args=(-1),fixity=Def,priority=9,letBound=True})
 (Method "Num" "negate",Has{args=(-1),fixity=Def,priority=9,letBound=True})
