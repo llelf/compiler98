@@ -1,49 +1,49 @@
 
-NodePtr mkCInt(Int i);
-#define sizeCInt 1
+NodePtr nhc_mkCInt(Int i);
+#define nhc_sizeCInt 1
 
-#define mkBool(b) (b?mkTrue():mkFalse())
-#define sizeBool 0
+#define nhc_mkBool(b) (b?nhc_mkTrue():nhc_mkFalse())
+#define nhc_sizeBool 0
 
-#define mkChar(c) ((NodePtr)GET_CHAR(c))
-#define sizeChar 0
+#define nhc_mkChar(c) ((NodePtr)GET_CHAR(c))
+#define nhc_sizeChar 0
 
-extern NodePtr mkHandlePosn(fpos_t *);
-extern fpos_t *getHandlePosn(NodePtr);
-#define sizeHandlePosn (1+EXTRA+((sizeof(fpos_t)+sizeof(Node)-1)/sizeof(Node)))
+extern NodePtr nhc_mkHandlePosn(fpos_t *);
+extern fpos_t *nhc_getHandlePosn(NodePtr);
+#define nhc_sizeHandlePosn (1+EXTRA+((sizeof(fpos_t)+sizeof(Node)-1)/sizeof(Node)))
 
-extern NodePtr mkSmallIntegerU(Int i);
-#define sizeSmallIntegerU (1+EXTRA+1)
+extern NodePtr nhc_mkSmallIntegerU(Int i);
+#define nhc_sizeSmallIntegerU (1+EXTRA+1)
 
-extern NodePtr mkInt(Int i);
-#define sizeInt (1+EXTRA+1)
+extern NodePtr nhc_mkInt(Int i);
+#define nhc_sizeInt (1+EXTRA+1)
 
-extern NodePtr mkDouble(double d);
-#define sizeDouble (1+EXTRA+2)
+extern NodePtr nhc_mkDouble(double d);
+#define nhc_sizeDouble (1+EXTRA+2)
 
-extern NodePtr mkFloat(float f);
-#define sizeFloat (1+EXTRA+1)
+extern NodePtr nhc_mkFloat(float f);
+#define nhc_sizeFloat (1+EXTRA+1)
 
-int sizePackedString(int length);
-NodePtr allocPackedString(int length);
-void copyPackedString(int length, NodePtr dst, char *src);
-NodePtr mkPackedString(int length, char *str);
-char *getPackedString(NodePtr n);
+int nhc_sizePackedString(int length);
+NodePtr nhc_allocPackedString(int length);
+void nhc_copyPackedString(int length, NodePtr dst, char *src);
+NodePtr nhc_mkPackedString(int length, char *str);
+char *nhc_getPackedString(NodePtr n);
 
-#define mkString(s)   mkPackedString((s==(char*)0?1:strlen(s)+1),s)	/* MW */
-extern NodePtr mkForeign(void *x, gcCval f);		/* MW */
-extern NodePtr mkStablePtr(NodePtr x);			/* MW */
-extern NodePtr getStablePtr(NodePtr x);			/* MW */
+#define nhc_mkString(s)   nhc_mkPackedString((s==(char*)0?1:strlen(s)+1),s)	/* MW */
+extern NodePtr nhc_mkForeign(void *x, gcCval f);		/* MW */
+extern NodePtr nhc_mkStablePtr(NodePtr x);			/* MW */
+extern NodePtr nhc_getStablePtr(NodePtr x);			/* MW */
 
-#define mkInt8(i)	mkInt((char)i)
-#define mkInt16(i)	mkInt((short)i)
-#define mkInt32(i)	mkInt((long)i)
-extern NodePtr mkInt64(long long i);
-#define sizeInt64 (1+EXTRA+2)
+#define nhc_mkInt8(i)	nhc_mkInt((char)i)
+#define nhc_mkInt16(i)	nhc_mkInt((short)i)
+#define nhc_mkInt32(i)	nhc_mkInt((long)i)
+extern NodePtr nhc_mkInt64(long long i);
+#define nhc_sizeInt64 (1+EXTRA+2)
 
-#define mkWord8(i)	mkInt(i)
-#define mkWord16(i)	mkInt(i)
-#define mkWord32(i)	mkInt(i)
-#define mkWord64(i)	mkInt64(i)
+#define nhc_mkWord8(i)	nhc_mkInt(i)
+#define nhc_mkWord16(i)	nhc_mkInt(i)
+#define nhc_mkWord32(i)	nhc_mkInt(i)
+#define nhc_mkWord64(i)	nhc_mkInt64(i)
 
-extern long long get_64bit_value (NodePtr n);
+extern long long nhc_get_64bit_value (NodePtr n);
