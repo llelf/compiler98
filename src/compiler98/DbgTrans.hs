@@ -1,6 +1,6 @@
 {- ---------------------------------------------------------------------------
 Transforms all value definitions of a program 
-for producing traces for debugging.
+to produce traces for debugging.
 -}
 module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
 
@@ -13,7 +13,7 @@ import DbgId(t_R,t_mkTRoot,t_mkTNm
             ,t_if,t_rif,t_guard
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
-            ,t_conFloat,t_conCons,
+            ,t_conFloat,t_conCons
             ,t_fromConInteger,t_fromConRational
             ,t_patFromConInteger,t_patFromConRational)
 import IntState(IntState(IntState),addIS,arityIS,arityVI,lookupIS,strIS
