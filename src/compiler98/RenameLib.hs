@@ -103,7 +103,7 @@ keepRS (RenameState flags unique rps rts rt st derived
                                     (updateAT st u (updNewType False)
                                     ,("Newtype " ++ 
                                       (show . tidI . dropJust . lookupAT st) u 
-                                      ++ " is circular.") : err)
+                                      ++ " could be circular.") : err)
 			  ) (st,[]) newType of
 	        (st,err@(_:_)) -> Left err
 	 	(st,[]) -> Right (snd (foldls fixDepth (0::Int,st) sccSyn))
@@ -162,11 +162,17 @@ keepRS (RenameState flags unique rps rts rt st derived
                       case (ntI . dropJust . lookupAT st) coni of
                         (NewType _ _ _ [NTcons u' _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
-                        _ -> error "when renaming: newtype of imported newtype"
+                        _ -> strace 
+                         ("Warning: renaming newtype of imported newtype:\n"++
+                          "  Real type of "++show(tidI info)++
+                                                          " is not visible.\n"++
+                          "  I might get boxed/unboxed info wrong.")
+                          (Just False)
                     [] -> strace 
                      ("Warning: when renaming newtype of imported newtype:\n"++
                       "  Real type of "++show(tidI info)++" is not visible.\n"++
                       "  I might get boxed/unboxed info wrong.") (Just False)
+      Nothing -> Nothing	-- possibly not circular at all
 
   isUnBoxedTS st u = -- No circular dependency when this function is called
     case lookupAT st u of
@@ -210,9 +216,10 @@ keepRS (RenameState flags unique rps rts rt st derived
 	      (coni:_) ->
 		 case (ntI . dropJust . lookupAT st ) coni of
   	           (NewType _ [] _ [NTcons c _,res]) -> (synType,(u,c):newType)
+  	           (NewType _ [] _ [NTvar v,res]) -> (synType,(u,v):newType)
                    _ -> error ("Couldn't find rhs of newtype: " ++
                                show (tidI info)++
-                               "\nTwo conflicting datatype definitions?")
+                               "\nTwo conflicting newtype definitions?")
 	      [] -> (synType,newType) -- !!! Not a good solution !!!
       Nothing -> error ("Couldn't find definition for newtype "++show u)
 
