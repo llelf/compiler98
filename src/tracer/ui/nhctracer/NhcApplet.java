@@ -42,7 +42,7 @@ public class NhcApplet extends Applet {
     }
     TraceFrame traceFrame = new TraceFrame(host,
 					   port,
-					   "Haskell Tracer", 
+					   "Haskell Redex Trail Browser", 
 					   "Jan Sparud",
 					   "Version -0.01 alpha");
     traceFrame.setSize(600, 700);

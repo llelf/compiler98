@@ -55,7 +55,7 @@ public class FontDialog extends Dialog {
 	g.fillRect(0, 0, getSize().width, getSize().height);
 	g.setColor(Color.black);
 	g.setFont(new Font(fontname.getSelectedItem(), style, size));
-	g.drawString("Haskell Tracer", 10, g.getFontMetrics().getHeight()+10);
+	g.drawString("Haskell Redex Trail Browser", 10, g.getFontMetrics().getHeight()+10);
 	ui.normalfont = new Font(fontname.getSelectedItem(), style, size);
 	ui.normalfm = getFontMetrics(ui.normalfont);
 	f.mainPanel.dbgPanel.repaint();
