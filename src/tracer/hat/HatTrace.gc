@@ -29,9 +29,9 @@ module HatTrace (
 	toUndefined,  -- return an undefined node of the same class instance
 	hatNodeType,  -- return type of redex trail node
 	hatParent,    -- return parent of redex trail node
-	hatApplFun,   -- return node for function of an application node
+	hatApplFun,   -- return node for function of an application/constant node
 	hatApplArgs,  -- get list of arguments of an application node
-	hatApplInfix, -- get infix priority of an application
+	hatInfix,     -- get infix priority of an constructor/identifier node
 	hatResult,    -- get result of an application (type complete only)
 	hatName,      -- get name of a name/identifier/constructor node
 	hatProjValue, -- return original parent of projection node
@@ -54,6 +54,8 @@ module HatTrace (
 
  isValidNode,  -- test if node is valid
  isInvalidNode,-- test if node is invalid
+ hatInvalidNode,-- return an invalid hat node
+
  toRemoteRep,  -- convert any HatRep to command-line represenation (in order to pass to
 	       -- another hat tool)
  fromRemoteRep,-- convert command-line represenation to node (in order to accept an
@@ -104,7 +106,7 @@ type RefNumber       = Int         -- internal only
 type HatNodeInternal = (HatTrace,RefNumber)           -- internal only
 
 data HatNode         = HatNode (HatTrace,RefNumber) | -- exported as abstract type only
-		       Invalid
+		       HatInvalid
 
 -- exportet data types (exported with constructors)
 data HatNodeType     = HatApplNode      | HatConstantNode |
@@ -139,7 +141,7 @@ class Show a => HatRep a where
   hatParent        :: a -> a
   hatApplFun       :: a -> a
   hatApplArgs      :: a -> [a]
-  hatApplInfix     :: a -> HatInfixType
+  hatInfix         :: a -> HatInfixType
   hatResult        :: a -> a
   hatName          :: a -> String
   hatProjValue     :: a -> a
@@ -199,11 +201,11 @@ class Show a => HatRep a where
 
 _toHatNode :: HatNodeInternal -> HatNode
 _toHatNode expr@(_,nodenumber) =
-    if (nodenumber == 0) then Invalid else HatNode expr
+    if (nodenumber == 0) then HatInvalid else HatNode expr
 
 _fromHatNode :: HatNode -> HatNodeInternal
 _fromHatNode (HatNode v) = v
-_fromHatNode Invalid = error "_fromHatNode on Invalid node!" -- should never occur
+_fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never occur
 
 %dis maybeHatNode x y = <_fromHatNode / _toHatNode > (int x, int y)
 
@@ -634,13 +636,13 @@ foreignObserveToList hattrace f =
 -- define Eq and Show instances for HatNode
 
 instance Eq HatNode where
-  Invalid == Invalid = True
+  HatInvalid == HatInvalid = True
   (HatNode (a,b)) == (HatNode (c,d)) =
       ((intForeignObjAddr a)==(intForeignObjAddr c))&&(b==d)
   _ == _ = False
 
 instance Show HatNode where
-  show Invalid  = "Invalid"
+  show HatInvalid  = "Invalid"
   show (HatNode (hattrace,node)) =
       (show (intForeignObjAddr hattrace))++":"++(show node)
 --------------------------------------------------------------------------
@@ -651,6 +653,8 @@ isValidNode node = (hatNodeType node)/=HatInvalidNode
 
 isInvalidNode :: HatRep a => a -> Bool
 isInvalidNode node = (hatNodeType node)==HatInvalidNode
+
+hatInvalidNode = HatInvalid  -- don't export structure of HatNode, just a value!
 
 -- convert any HatRep to external representation (in order to pass it as an command-line
 -- argument to another hat tool).
@@ -665,7 +669,7 @@ toRemoteRep exp = if (isValidNode exp) then
 -- argument from another hat tool).
 fromRemoteRep :: HatTrace -> String -> HatNode
 fromRemoteRep hattrace s = let i = stoi s in
-				  if (isNothing i) then Invalid else
+				  if (isNothing i) then HatInvalid else
 					 (HatNode (hattrace,(fromJust i)))
   where stoi s = stoi' 0 s
 	stoi' i [] =  Just i
@@ -726,8 +730,8 @@ _hatApplArgs (HatNode expr@(hattrace,h)) = gethatArgs 0 (c_hatApplArity expr)
 _hatApplArgs _ = error "Call to \"hatApplArgs\" with \"Invalid\" node."
 
 -- get infix priority and type of an application node
-_hatApplInfix :: HatNode -> HatInfixType
-_hatApplInfix (HatNode expr) = 
+_hatInfix :: HatNode -> HatInfixType
+_hatInfix (HatNode expr) = 
   let infixP = (c_hatInfixValue expr) in 
    toInfixType' (infixP `mod` 4) (infixP `div` 4)
   where
@@ -735,7 +739,7 @@ _hatApplInfix (HatNode expr) =
    toInfixType' 1 infixP = HatInfixR infixP
    toInfixType' 2 infixP = HatInfixL infixP
    toInfixType' _ _      = HatNoInfix
-_hatApplInfix _ = error "Call to \"hatApplInfix\" with \"Invalid\" node."
+_hatInfix _ = error "Call to \"hatInfix\" with \"Invalid\" node."
 
 -- get type of application (Applied,Blackholed,Complete,Value) 
 _hatApplType :: HatNode -> Maybe HatApplType
@@ -776,7 +780,7 @@ hatTraceNext :: HatRep a => a -> HatNode
 hatTraceNext exp =
     let node = toHatNode exp;
 	HatNode (hattrace,_) = node in
-	if (isInvalidNode node) then Invalid else
+	if (isInvalidNode node) then HatInvalid else
 	   _toHatNode (hattrace,c_hatNext (_fromHatNode node))
 
 -- get leftmost outermost symbol of an application (returns an identifier/constructor)
@@ -907,13 +911,13 @@ printCReductionList precision (e:list) =
 
 instance HatRep HatNode where
   toHatNode node   = node
-  toUndefined _    = Invalid
+  toUndefined _    = HatInvalid
   hatParent        = _hatParent
   hatApplFun       = _hatApplFun
   hatApplArgs      = _hatApplArgs
   hatResult        = _hatResult
   hatName          = fromJust . _hatName
-  hatApplInfix     = _hatApplInfix
+  hatInfix         = _hatInfix
   hatProjValue     = _hatProjRef
   hatValueInt      = c_hatInt . _fromHatNode
   hatValueChar     = c_hatChar . _fromHatNode

@@ -78,12 +78,13 @@ data HatExpressionTree =
 		     deriving Show
 
 instance HatRep HatExpressionTree where
-  toHatNode        = ref
-  toUndefined a    = HatNone (toHatNode (toUndefined a))
+  toHatNode (HatNone _) = hatInvalidNode
+  toHatNode a      = ref a
+  toUndefined a    = HatNone (toHatNode a)
   hatParent        = parent
   hatApplFun       = fun
   hatApplArgs      = args
-  hatApplInfix     = infixType
+  hatInfix         = infixType
   hatResult        = res
   hatName          = name
   hatProjValue     = projValue
@@ -141,10 +142,10 @@ _toHatExpressionTree precision node = toHatExpression' precision (hatNodeType no
 		 _toHatExpressionTree newprec r))
        toHatExpression' _ HatConstrNode = (HatConstructor node 
 					  (hatName node)
-					  (hatApplInfix node))
+					  (hatInfix node))
        toHatExpression' _ HatIdentNode = (HatIdentifier node
 					 (hatName node)
-					 (hatApplInfix node))
+					 (hatInfix node))
        toHatExpression' prec HatConstantNode =  
 	   let parent = (hatParent node);
 	       newprec = prec-1 in
@@ -280,8 +281,8 @@ pPrint previousnodes precision topInfix expr
     prettyPrint' _ HatHiddenNode    = ("<Hidden>",HatNoInfix,[])
     prettyPrint' _ HatSAT_ANode     = ("_",HatNoInfix,[])
     prettyPrint' _ HatSAT_BNode     = ("_|_",HatNoInfix,[])
-    prettyPrint' _ HatConstrNode    = ((hatName expr),(hatApplInfix expr),[])
-    prettyPrint' _ HatIdentNode     = ((hatName expr),(hatApplInfix expr),[])
+    prettyPrint' _ HatConstrNode    = ((hatName expr),(hatInfix expr),[])
+    prettyPrint' _ HatIdentNode     = ((hatName expr),(hatInfix expr),[])
     prettyPrint' _ HatIntNode       = (show (hatValueInt expr),     HatNoInfix,[])
     prettyPrint' _ HatCharNode      = (show (hatValueChar expr),    HatNoInfix,[])
     prettyPrint' _ HatIntegerNode   = (show (hatValueInteger expr), HatNoInfix,[])
@@ -363,7 +364,7 @@ instance HatRep a => HatRep (HatLimit a) where
   hatParent (Limit p n)        = (toHatLimit (p-1) (hatParent n))
   hatApplFun (Limit p n)       = (toHatLimit (p-1) (hatApplFun n))
   hatApplArgs (Limit p n)      = (map (toHatLimit (p-1))) (hatApplArgs n)
-  hatApplInfix (Limit p n)     = hatApplInfix n
+  hatInfix (Limit p n)         = hatInfix n
   hatResult (Limit p n)        = toHatLimit (p-1) (hatResult n)
   hatName (Limit p n)          = hatName n
   hatProjValue (Limit p n)     = toHatLimit (p-1) (hatProjValue n)
