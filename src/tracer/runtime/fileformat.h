@@ -146,6 +146,57 @@ CTrace*		primTAp12	(CTrace* tap, CTrace* tfn
                                                , CTrace* targ12
                                                , FileOffset sr);
 
+CTrace*		primTAp13	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
+                                               , CTrace* targ11
+                                               , CTrace* targ12
+                                               , CTrace* targ13
+                                               , FileOffset sr);
+
+CTrace*		primTAp14	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
+                                               , CTrace* targ11
+                                               , CTrace* targ12
+                                               , CTrace* targ13
+                                               , CTrace* targ14
+                                               , FileOffset sr);
+
+CTrace*		primTAp15	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
+                                               , CTrace* targ11
+                                               , CTrace* targ12
+                                               , CTrace* targ13
+                                               , CTrace* targ14
+                                               , CTrace* targ15
+                                               , FileOffset sr);
+
 CTrace*		primTNm		(CTrace* tnm, CNmType* nm, FileOffset sr);
 CTrace*		primTInd	(CTrace* t1, CTrace* t2);
 CTrace*		primTHidden	(CTrace* t1);

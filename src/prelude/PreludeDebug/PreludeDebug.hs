@@ -287,6 +287,24 @@ ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
   in  lazySat (pap11 sr t t' (rf t' a) b c d e f g h i j k l) t'
 
+ap13 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) =  
+  let t' = mkTAp13 t tf at bt ct dt et ft gt ht it jt kt lt mt sr
+  in  lazySat (pap12 sr t t' (rf t' a) b c d e f g h i j k l m) t'
+
+ap14 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =  
+  let t' = mkTAp14 t tf at bt ct dt et ft gt ht it jt kt lt mt nt sr
+  in  lazySat (pap13 sr t t' (rf t' a) b c d e f g h i j k l m n) t'
+
+ap15 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
+  let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot sr
+  in  lazySat (pap14 sr t t' (rf t' a) b c d e f g h i j k l m n o) t'
+
 
 {- trusted: -}
 
@@ -390,6 +408,30 @@ tap12 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt mkNoSR
          in  lazySat (tpap11 t t' (rf t' a) b c d e f g h i j k l) t'
 
+tap13 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) =  
+  if trustedFun tf 
+    then lazySatLonely (tpap12 t t (rf t a) b c d e f g h i j k l m) t
+    else let t' = mkTAp13 t tf at bt ct dt et ft gt ht it jt kt lt mt mkNoSR
+         in  lazySat (tpap12 t t' (rf t' a) b c d e f g h i j k l m) t'
+
+tap14 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =  
+  if trustedFun tf 
+    then lazySatLonely (tpap13 t t (rf t a) b c d e f g h i j k l m n) t
+    else let t' = mkTAp14 t tf at bt ct dt et ft gt ht it jt kt lt mt nt mkNoSR
+         in  lazySat (tpap13 t t' (rf t' a) b c d e f g h i j k l m n) t'
+
+tap15 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
+  if trustedFun tf 
+    then lazySatLonely (tpap14 t t (rf t a) b c d e f g h i j k l m n o) t
+    else let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot mkNoSR
+         in  lazySat (tpap14 t t' (rf t' a) b c d e f g h i j k l m n o) t'
+
 
 {- 
 Combinators for n-ary applications in a projective context 
@@ -462,6 +504,24 @@ rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      k@(R _ kt) l@(R _ lt) =  
   let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
   in  pap11 sr t t' (rf t' a) b c d e f g h i j k l
+
+rap13 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) =  
+  let t' = mkTAp13 t tf at bt ct dt et ft gt ht it jt kt lt mt sr
+  in  pap12 sr t t' (rf t' a) b c d e f g h i j k l m
+
+rap14 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =  
+  let t' = mkTAp14 t tf at bt ct dt et ft gt ht it jt kt lt mt nt sr
+  in  pap13 sr t t' (rf t' a) b c d e f g h i j k l m n
+
+rap15 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
+  let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot sr
+  in  pap14 sr t t' (rf t' a) b c d e f g h i j k l m n o
 
 
 -- trusted:
@@ -560,6 +620,30 @@ trap12 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
     then tpap11 t t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt mkNoSR
 	 in  eagerSat (tpap11 t t' (rf t' a) b c d e f g h i j k l) t'
+
+trap13 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) =  
+  if trustedFun tf 
+    then tpap12 t t (rf t a) b c d e f g h i j k l m
+    else let t' = mkTAp13 t tf at bt ct dt et ft gt ht it jt kt lt mt mkNoSR
+	 in  eagerSat (tpap12 t t' (rf t' a) b c d e f g h i j k l m) t'
+
+trap14 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =  
+  if trustedFun tf 
+    then tpap13 t t (rf t a) b c d e f g h i j k l m n
+    else let t' = mkTAp14 t tf at bt ct dt et ft gt ht it jt kt lt mt nt mkNoSR
+	 in  eagerSat (tpap13 t t' (rf t' a) b c d e f g h i j k l m n) t'
+
+trap15 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =  
+  if trustedFun tf 
+    then tpap14 t t (rf t a) b c d e f g h i j k l m n o
+    else let t' = mkTAp15 t tf at bt ct dt et ft gt ht it jt kt lt mt nt ot mkNoSR
+	 in  eagerSat (tpap14 t t' (rf t' a) b c d e f g h i j k l m n o) t'
 
 
 {- 
@@ -668,6 +752,30 @@ pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt sr
          in  eagerSat (pap10 sr p t' (rf t' a) b c d e f g h i j k) t'
 
+pap12 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) =
+  if t `sameAs` tf 
+    then pap11 sr p t (rf t a) b c d e f g h i j k l
+    else let t' = mkTAp12 p tf at bt ct dt et ft gt ht it jt kt lt sr
+         in  eagerSat (pap11 sr p t' (rf t' a) b c d e f g h i j k l) t'
+
+pap13 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) m@(R _ mt) =
+  if t `sameAs` tf 
+    then pap12 sr p t (rf t a) b c d e f g h i j k l m
+    else let t' = mkTAp13 p tf at bt ct dt et ft gt ht it jt kt lt mt sr
+         in  eagerSat (pap12 sr p t' (rf t' a) b c d e f g h i j k l m) t'
+
+pap14 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
+  if t `sameAs` tf 
+    then pap13 sr p t (rf t a) b c d e f g h i j k l m n
+    else let t' = mkTAp14 p tf at bt ct dt et ft gt ht it jt kt lt mt nt sr
+         in  eagerSat (pap13 sr p t' (rf t' a) b c d e f g h i j k l m n) t'
+
 
 -- trusted:
 
@@ -771,6 +879,30 @@ tpap11 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
     then tpap10 p t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt mkNoSR
          in  eagerSat (tpap10 p t' (rf t' a) b c d e f g h i j k) t'
+
+tpap12 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) =
+  if t `sameAs` tf `myOr` trustedFun tf
+    then tpap11 p t (rf t a) b c d e f g h i j k l
+    else let t' = mkTAp12 p tf at bt ct dt et ft gt ht it jt kt lt mkNoSR
+         in  eagerSat (tpap11 p t' (rf t' a) b c d e f g h i j k l) t'
+
+tpap13 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) m@(R _ mt) =
+  if t `sameAs` tf `myOr` trustedFun tf
+    then tpap12 p t (rf t a) b c d e f g h i j k l m
+    else let t' = mkTAp13 p tf at bt ct dt et ft gt ht it jt kt lt mt mkNoSR
+         in  eagerSat (tpap12 p t' (rf t' a) b c d e f g h i j k l m) t'
+
+tpap14 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                       f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                       k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
+  if t `sameAs` tf `myOr` trustedFun tf
+    then tpap13 p t (rf t a) b c d e f g h i j k l m n
+    else let t' = mkTAp14 p tf at bt ct dt et ft gt ht it jt kt lt mt nt mkNoSR
+         in  eagerSat (tpap13 p t' (rf t' a) b c d e f g h i j k l m n) t'
 
 
 {-
@@ -1027,6 +1159,96 @@ fun12 nm rf sr t =
         t)
       (mkTNm t nm sr)
 
+fun13 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m -> rf t a b c d e f g h i j k l m)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (mkTNm t nm sr)
+
+fun14 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m ->
+                              R (\t n -> rf t a b c d e f g h i j k l m n)
+                                t)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (mkTNm t nm sr)
+
+fun15 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m ->
+                              R (\t n ->
+                                R (\t o -> rf t a b c d e f g h i j k l m n o)
+                                  t)
+                                t)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (mkTNm t nm sr)
+
 
 -- version for trusted functions:
 
@@ -1223,6 +1445,99 @@ tfun12 nm rf sr t =
         t)
       (optMkTNm t nm sr)
 
+tfun13 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m -> rf t (mkTHidden t)
+                                          a b c d e f g h i j k l m)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun14 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m ->
+                              R (\t n -> rf t (mkTHidden t)
+                                            a b c d e f g h i j k l m n)
+                                t)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
+tfun15 nm rf sr t = 
+  mkR (\t a ->
+      R (\t b ->
+        R (\t c ->
+          R (\t d ->
+            R (\t e ->
+              R (\t f ->
+                R (\t g ->
+                  R (\t h ->
+                    R (\t i ->
+                      R (\t j ->
+                        R (\t k ->
+                          R (\t l ->
+                            R (\t m ->
+                              R (\t n ->
+                                R (\t o -> rf t (mkTHidden t)
+                                              a b c d e f g h i j k l m n o)
+                                  t)
+                                t)
+                              t)
+                            t)
+                          t)
+                        t)
+                      t)
+                    t)
+                  t)
+                t)
+              t)
+            t)
+          t)
+        t)
+      (optMkTNm t nm sr)
+
 
 -- These four functions are dummies, introduced by the tracing compiler
 -- and then eliminated again before code generation.
@@ -1337,6 +1652,24 @@ con12 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   mkR (cn a b c d e f g h i j k l)
     (mkTAp12 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt sr)
 
+con13 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) =
+  mkR (cn a b c d e f g h i j k l m)
+    (mkTAp13 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt sr)
+
+con14 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
+  mkR (cn a b c d e f g h i j k l m n)
+    (mkTAp14 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt nt sr)
+
+con15 sr t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =
+  mkR (cn a b c d e f g h i j k l m n o)
+    (mkTAp15 t (mkTNm t nm sr) at bt ct dt et ft gt ht it jt kt lt mt nt ot sr)
+
 
 -- trusted
 -- without source references
@@ -1395,6 +1728,27 @@ tcon12 t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                  k@(R _ kt) l@(R _ lt) =
   mkR (cn a b c d e f g h i j k l)
     (mkTAp12 t (mkTNm t nm mkNoSR) at bt ct dt et ft gt ht it jt kt lt mkNoSR)
+
+tcon13 t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) =
+  mkR (cn a b c d e f g h i j k l m)
+    (mkTAp13 t (mkTNm t nm mkNoSR)
+               at bt ct dt et ft gt ht it jt kt lt mt mkNoSR)
+
+tcon14 t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) =
+  mkR (cn a b c d e f g h i j k l m n)
+    (mkTAp14 t (mkTNm t nm mkNoSR)
+               at bt ct dt et ft gt ht it jt kt lt mt nt mkNoSR)
+
+tcon15 t cn nm a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                 f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                 k@(R _ kt) l@(R _ lt) m@(R _ mt) n@(R _ nt) o@(R _ ot) =
+  mkR (cn a b c d e f g h i j k l m n o)
+    (mkTAp15 t (mkTNm t nm mkNoSR)
+               at bt ct dt et ft gt ht it jt kt lt mt nt ot mkNoSR)
 
 {-
 Combinators for calling foreign functions:   prim_n
@@ -1605,6 +1959,102 @@ prim12 nm rf sr t =
       t1)
     (mkTNm t nm sr)
 
+prim13 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                              primEnter sr t13 (rf a b c d e f 
+                                                         g h i j k l m))
+                            t12)
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (mkTNm t nm sr)
+
+prim14 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                            R (\t14 (R n nt)->
+                                primEnter sr t14 (rf a b c d e f 
+                                                         g h i j k l m n))
+                              t13)
+                            t12)
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (mkTNm t nm sr)
+
+prim15 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                            R (\t14 (R n nt)->
+                              R (\t15 (R o ot)->
+                                  primEnter sr t15 (rf a b c d e f 
+                                                         g h i j k l m n o))
+                                t14)
+                              t13)
+                            t12)
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (mkTNm t nm sr)
+
 
 -- trusted:
 
@@ -1797,6 +2247,102 @@ tprim12 nm rf sr t =
                         R (\t12 (R l lt)->
                             primEnter sr t12 (rf a b c d e f 
                                                              g h i j k l))
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim13 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                              primEnter sr t13 (rf a b c d e f 
+                                                         g h i j k l m))
+                            t12)
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim14 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                            R (\t14 (R n nt)->
+                                primEnter sr t14 (rf a b c d e f 
+                                                         g h i j k l m n))
+                              t13)
+                            t12)
+                          t11)
+                        t10)
+                      t9)
+                    t8)
+                  t7)
+                t6)
+              t5)
+            t4)
+          t3)
+        t2)
+      t1)
+    (optMkTNm t nm sr)
+
+tprim15 nm rf sr t = 
+  mkR (\t1 (R a at)->
+    R (\t2 (R b bt)->
+      R (\t3 (R c ct)->
+        R (\t4 (R d dt)->
+          R (\t5 (R e et)->
+            R (\t6 (R f ft)->
+              R (\t7 (R g gt)->
+                R (\t8 (R h ht)->
+                  R (\t9 (R i it)->
+                    R (\t10 (R j jt)->
+                      R (\t11 (R k kt)->
+                        R (\t12 (R l lt)->
+                          R (\t13 (R m mt)->
+                            R (\t14 (R n nt)->
+                              R (\t15 (R o ot)->
+                                  primEnter sr t15 (rf a b c d e f 
+                                                         g h i j k l m n o))
+                                t14)
+                              t13)
+                            t12)
                           t11)
                         t10)
                       t9)

@@ -8,22 +8,21 @@ EXTRA_C_FLAGS	=
 
 COMMON_SRCS = \
 	AndAnd.hs       ApplyM.hs       AsTypeOf.hs         Seq.hs \
-	CBounded.hs     Bounded_2.hs    Bounded_3.hs        Bounded_4.hs \
-        Bounded_5.hs    Bounded_6.hs    Bounded_7.hs        Bounded_Bool.hs \
+	CBounded.hs     Bounded_2.hs    Bounded_3.hs        Bounded_Bool.hs \
 	Bounded_Char.hs Bounded_Int.hs  Bounded_Ordering.hs Bounded_Unit.hs \
 	CEnum.hs        CEq.hs          CFloating.hs        CFractional.hs \
         CFunctor.hs     CIntegral.hs    CIx.hs              CMonad.hs \
         CNum.hs         COrd.hs         CReal.hs            CRealFloat.hs \
         CRealFrac.hs    Compose.hs      Const.hs            Curry.hs \
-        D10.hs          D11.hs          D12.hs              D2.hs \
-        D3.hs           D4.hs           D5.hs               D6.hs \
-        D7.hs           D8.hs           D9.hs               DBool.hs \
+	D2.hs 		D3.hs           D4.hs               D5.hs \
+	D6.hs 		D7.hs           D8.hs               D9.hs \
+	D10.hs		D11.hs		D12.hs		    D13.hs \
+	D14.hs		D15.hs				    DBool.hs \
         DEither.hs      DList.hs        DMaybe.hs           DOrdering.hs \
         DUnit.hs        Dollar.hs       DollarBang.hs       Either.hs \
         Enum_Bool.hs    Enum_Char.hs    Enum_Double.hs      Enum_Float.hs \
         Enum_Int.hs     Enum_Integer.hs Enum_Ordering.hs    Enum_Unit.hs \
-        Eq_2.hs         Eq_3.hs         Eq_4.hs             Eq_5.hs \
-        Eq_6.hs         Eq_7.hs                             Eq_Bool.hs \
+        Eq_2.hs         Eq_3.hs       			    Eq_Bool.hs \
         Eq_Char.hs      Eq_Double.hs    Eq_Either.hs        Eq_Float.hs \
         Eq_Int.hs       Eq_Integer.hs   Eq_List.hs          Eq_Maybe.hs \
         Eq_Ordering.hs  Eq_Unit.hs      Error.hs            Even.hs \
@@ -37,8 +36,7 @@ COMMON_SRCS = \
         Monad_Maybe.hs  Not.hs          NumRaise.hs         Num_Double.hs \
         Num_Float.hs    Num_Int.hs      Num_Integer.hs      NumericEnumFrom.hs \
         NumericEnumFromThen.hs          Odd.hs              OrOr.hs \
-        Ord_2.hs        Ord_3.hs        Ord_4.hs            Ord_5.hs \
-        Ord_6.hs        Ord_7.hs                            Ord_Bool.hs \
+        Ord_2.hs        Ord_3.hs        		    Ord_Bool.hs \
         Ord_Char.hs     Ord_Double.hs   Ord_Either.hs       Ord_Float.hs \
         Ord_Int.hs      Ord_Integer.hs  Ord_List.hs         Ord_Maybe.hs \
         Ord_Ordering.hs Ord_Unit.hs     Otherwise.hs \
@@ -52,6 +50,7 @@ COMMON_SRCS = \
 	_EnumFromThen.hs _EnumFromThenTo.hs \
 	_EnumFromTo.hs _EnumFromToDec.hs _EnumFromToInc.hs _EnumInRange.hs \
 	_EnumIndex.hs _EnumRange.hs
+
 
 # The following are used for the normal Prelude
 SRCS = ${COMMON_SRCS} \

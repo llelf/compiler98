@@ -65,9 +65,6 @@ module Prelude (
     ,module Compose
     ,module Const
     ,module Curry
-    ,module D10
-    ,module D11
-    ,module D12
     ,module D2
     ,module D3
     ,module D4
@@ -76,6 +73,12 @@ module Prelude (
     ,module D7
     ,module D8
     ,module D9
+    ,module D10
+    ,module D11
+    ,module D12
+    ,module D13
+    ,module D14
+    ,module D15
     ,module DBool
     ,module DEither
     ,module DList
@@ -201,9 +204,6 @@ import CRealFrac
 import Compose
 import Const
 import Curry
-import D10
-import D11
-import D12
 import D3
 import D4
 import D5
@@ -211,6 +211,12 @@ import D6
 import D7
 import D8
 import D9
+import D10
+import D11
+import D12
+import D13
+import D14
+import D15
 import DEither
 import DMaybe
 import DOrdering
@@ -228,7 +234,6 @@ import Enum_Ordering
 import Enum_Unit
 import Eq_2
 import Eq_3
-import Eq_4
 import Eq_Bool
 import Eq_Char
 import Eq_Double
@@ -273,7 +278,6 @@ import Odd
 import OrOr
 import Ord_2
 import Ord_3
-import Ord_4
 import Ord_Bool
 import Ord_Char
 import Ord_Either

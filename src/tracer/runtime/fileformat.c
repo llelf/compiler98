@@ -433,6 +433,138 @@ primTAp12 (CTrace* tap, CTrace* tfn
     return mkTrace(fo,tfn->trust,False);
 }
 
+CTrace*
+primTAp13 (CTrace* tap, CTrace* tfn
+                        , CTrace* targ1
+                        , CTrace* targ2
+                        , CTrace* targ3
+                        , CTrace* targ4
+                        , CTrace* targ5
+                        , CTrace* targ6
+                        , CTrace* targ7
+                        , CTrace* targ8
+                        , CTrace* targ9
+                        , CTrace* targ10
+                        , CTrace* targ11
+                        , CTrace* targ12
+                        , CTrace* targ13
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimTAp13 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x0d,HatFile);
+    fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ2->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ3->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ4->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ5->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ6->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ7->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ8->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ9->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ10->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ11->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ12->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ13->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    HatCounter += 2 + (16*sizeof(FileOffset));
+    return mkTrace(fo,tfn->trust,False);
+}
+
+CTrace*
+primTAp14 (CTrace* tap, CTrace* tfn
+                        , CTrace* targ1
+                        , CTrace* targ2
+                        , CTrace* targ3
+                        , CTrace* targ4
+                        , CTrace* targ5
+                        , CTrace* targ6
+                        , CTrace* targ7
+                        , CTrace* targ8
+                        , CTrace* targ9
+                        , CTrace* targ10
+                        , CTrace* targ11
+                        , CTrace* targ12
+                        , CTrace* targ13
+                        , CTrace* targ14
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimTAp14 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x0e,HatFile);
+    fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ2->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ3->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ4->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ5->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ6->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ7->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ8->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ9->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ10->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ11->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ12->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ13->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ14->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    HatCounter += 2 + (17*sizeof(FileOffset));
+    return mkTrace(fo,tfn->trust,False);
+}
+
+CTrace*
+primTAp15 (CTrace* tap, CTrace* tfn
+                        , CTrace* targ1
+                        , CTrace* targ2
+                        , CTrace* targ3
+                        , CTrace* targ4
+                        , CTrace* targ5
+                        , CTrace* targ6
+                        , CTrace* targ7
+                        , CTrace* targ8
+                        , CTrace* targ9
+                        , CTrace* targ10
+                        , CTrace* targ11
+                        , CTrace* targ12
+                        , CTrace* targ13
+                        , CTrace* targ14
+                        , CTrace* targ15
+                        , FileOffset sr)
+{
+    FileOffset fo;
+    fo = htonl(HatCounter);
+    HIDE(fprintf(stderr,"\tprimTAp15 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
+    fputc(((Trace<<5) | TAp),HatFile);
+    fputc(0x0f,HatFile);
+    fwrite(&(tap->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(tfn->ptr),   sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ1->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ2->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ3->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ4->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ5->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ6->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ7->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ8->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ9->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ10->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ11->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ12->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ13->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ14->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&(targ15->ptr), sizeof(FileOffset), 1, HatFile);
+    fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
+    HatCounter += 2 + (18*sizeof(FileOffset));
+    return mkTrace(fo,tfn->trust,False);
+}
+
 
 
 

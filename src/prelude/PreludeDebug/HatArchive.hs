@@ -2,7 +2,8 @@ module Prelude
   (Trace,trustedFun,trustedNm,hidden,NmType,SR
   ,E(E),myseq,sameAs
   ,mkTRoot,mkTAp1,mkTAp2,mkTAp3,mkTAp4,mkTAp5,mkTAp6,mkTAp7,mkTAp8,mkTAp9
-  ,mkTAp10,mkTAp11,mkTAp12,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC
+  ,mkTAp10,mkTAp11,mkTAp12,mkTAp13,mkTAp14,mkTAp15
+  ,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC
   ,mkTSatALonely,mkTSatBLonely,mkTSatCLonely
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble
   ,mkNTId',mkNTId,mkNTConstr',mkNTConstr,mkNTTuple,mkNTFun,mkNTCase
@@ -193,6 +194,66 @@ foreign import "primTAp12"
 	-> Trace	-- arg 10
 	-> Trace	-- arg 11
 	-> Trace	-- arg 12
+	-> SR		-- src ref
+	-> Trace	-- result
+
+foreign import "primTAp13"
+ mkTAp13 :: Trace		-- trace of application
+	-> Trace	-- fn
+	-> Trace	-- arg 1
+	-> Trace	-- arg 2
+	-> Trace	-- arg 3
+	-> Trace	-- arg 4
+	-> Trace	-- arg 5
+	-> Trace	-- arg 6
+	-> Trace	-- arg 7
+	-> Trace	-- arg 8
+	-> Trace	-- arg 9
+	-> Trace	-- arg 10
+	-> Trace	-- arg 11
+	-> Trace	-- arg 12
+	-> Trace	-- arg 13
+	-> SR		-- src ref
+	-> Trace	-- result
+
+foreign import "primTAp14"
+ mkTAp14 :: Trace		-- trace of application
+	-> Trace	-- fn
+	-> Trace	-- arg 1
+	-> Trace	-- arg 2
+	-> Trace	-- arg 3
+	-> Trace	-- arg 4
+	-> Trace	-- arg 5
+	-> Trace	-- arg 6
+	-> Trace	-- arg 7
+	-> Trace	-- arg 8
+	-> Trace	-- arg 9
+	-> Trace	-- arg 10
+	-> Trace	-- arg 11
+	-> Trace	-- arg 12
+	-> Trace	-- arg 13
+	-> Trace	-- arg 14
+	-> SR		-- src ref
+	-> Trace	-- result
+
+foreign import "primTAp15"
+ mkTAp15 :: Trace		-- trace of application
+	-> Trace	-- fn
+	-> Trace	-- arg 1
+	-> Trace	-- arg 2
+	-> Trace	-- arg 3
+	-> Trace	-- arg 4
+	-> Trace	-- arg 5
+	-> Trace	-- arg 6
+	-> Trace	-- arg 7
+	-> Trace	-- arg 8
+	-> Trace	-- arg 9
+	-> Trace	-- arg 10
+	-> Trace	-- arg 11
+	-> Trace	-- arg 12
+	-> Trace	-- arg 13
+	-> Trace	-- arg 14
+	-> Trace	-- arg 15
 	-> SR		-- src ref
 	-> Trace	-- result
 
