@@ -1,3 +1,7 @@
+#ifndef _MUTLIB_H
+#define _MUTLIB_H
+
+#include "runtime.h"
 
 extern Node ints[];
 extern Node chars[];
@@ -71,3 +75,5 @@ void mk_float(NodePtr p,float f);
 float get_float_value(NodePtr p);
 void mk_double(NodePtr p,double f);
 double get_double_value(NodePtr p);
+
+#endif
