@@ -16,5 +16,10 @@ then
   exit 1
 fi
 
+case $MACHINE in
+  ix86-CYGWIN*) CYGSHELL=`cygpath -w $SHELL | tr "\\\\\\\\" "/"`
+                export CYGSHELL;;
+esac
+
 # Now let's get started.
 exec $HMAKEDIR/$MACHINE/HInteractive $@
