@@ -112,21 +112,22 @@ fatal primitive 1 :: Trace -> a
 --cGetFunNm primitive 1 :: a -> NmType
 --cCheckEvaluation primitive 1 :: E a -> _Value
 cPointerEquality primitive 2 :: E a -> E a -> Bool
-cEnter primitive 3 :: NmType -> Trace -> E a -> a
+--cEnter primitive 3 :: NmType -> Trace -> E a -> a
+cEnter primitive 2 :: Trace -> E a -> a
 cInitializeDebugger primitive 1 :: E a -> a
 --trusted primitive 2 :: Trace -> Trace -> Bool
 --trust primitive 1 :: Trace -> Bool
 
-enter :: NmType -> Trace -> a -> a
-enter nm t e = cEnter nm t (E e)
+enter :: Trace -> a -> a
+enter t e = cEnter t (E e)
 
 {-
 counterpart to 'enter' for primitives: ensures that the result trace
 is fully evaluated (the trace contains the result value).
 -}
-primEnter :: NmCoerce a => SR -> NmType -> Trace -> a -> R a
-primEnter sr nm t e = let v  = enter nm t e
-                          vn = toNm t v sr
+primEnter :: NmCoerce a => SR -> Trace -> a -> R a
+primEnter sr t e = let v  = enter t e
+                       vn = toNm t v sr
                       in v `myseq` vn
 
 
@@ -673,25 +674,25 @@ fun0 :: NmType -> (Trace -> R r) -> SR -> Trace -> R r
 
 fun0 nm rf sr t = 
   let t' = mkTNm t nm sr
-  in t' `myseq` enter nm t' (rf t)  -- t here correct?
+  in t' `myseq` enter t' (rf t)  -- t here correct?
 
 fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace 
      -> R (Trace -> R a -> R r)
 
 fun1 nm rf sr t = 
-  mkR (\t a -> enter nm t (rf t a))
+  mkR (\t a -> enter t (rf t a))
       (mkTNm t nm sr)
 
 fun2 nm rf sr t = 
   mkR (\t a ->
-      R (\t b -> enter nm t (rf t a b))
+      R (\t b -> enter t (rf t a b))
         t)
       (mkTNm t nm sr)
 
 fun3 nm rf sr t = 
   mkR (\t a ->
       R (\t b ->
-        R (\t c -> enter nm t (rf t a b c))
+        R (\t c -> enter t (rf t a b c))
           t)
         t)
       (mkTNm t nm sr)
@@ -700,7 +701,7 @@ fun4 nm rf sr t =
   mkR (\t a ->
       R (\t b ->
         R (\t c ->
-          R (\t d -> enter nm t (rf t a b c d))
+          R (\t d -> enter t (rf t a b c d))
             t)
           t)
         t)
@@ -713,7 +714,7 @@ fun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace
 fun1 nm rf sr t = 
   mkR (\t a -> let sat = mkTSatA t
                in mkR (mkTSatB sat `myseq` 
-                        case (enter nm t (rf t a)) of 
+                        case (enter t (rf t a)) of 
                           R v vt ->
                             v `myseq` 
                             mkTSatC sat vt `myseq` 
@@ -725,7 +726,7 @@ fun2 nm rf sr t =
   mkR (\t a ->
       R (\t b -> let sat = mkTSatA t
                  in mkR (mkTSatB sat `myseq` 
-                          case (enter nm t (rf t a b)) of 
+                          case (enter t (rf t a b)) of 
                             R v vt ->
                               v `myseq` 
                               mkTSatC sat vt `myseq` 
@@ -739,7 +740,7 @@ fun3 nm rf sr t =
       R (\t b ->
         R (\t c -> let sat = mkTSatA t
                    in mkR (mkTSatB sat `myseq` 
-                            case (enter nm t (rf t a b c)) of 
+                            case (enter t (rf t a b c)) of 
                               R v vt ->
                                 v `myseq` 
                                 mkTSatC sat vt `myseq` 
@@ -755,7 +756,7 @@ fun4 nm rf sr t =
         R (\t c ->
           R (\t d -> let sat = mkTSatA t
                    in mkR (mkTSatB sat `myseq` 
-                            case (enter nm t (rf t a b c d)) of 
+                            case (enter t (rf t a b c d)) of 
                               R v vt ->
                                 v `myseq` 
                                 mkTSatC sat vt `myseq` 
@@ -772,7 +773,7 @@ fun5 nm rf sr t =
       R (\t b ->
         R (\t c ->
           R (\t d ->
-            R (\t e -> enter nm t (rf t a b c d e))
+            R (\t e -> enter t (rf t a b c d e))
               t)
             t)
           t)
@@ -785,7 +786,7 @@ fun6 nm rf sr t =
         R (\t c ->
           R (\t d ->
             R (\t e ->
-              R (\t f -> enter nm t (rf t a b c d e f))
+              R (\t f -> enter t (rf t a b c d e f))
                 t)
               t)
             t)
@@ -800,7 +801,7 @@ fun7 nm rf sr t =
           R (\t d ->
             R (\t e ->
               R (\t f ->
-                R (\t g -> enter nm t (rf t a b c d e f g))
+                R (\t g -> enter t (rf t a b c d e f g))
                   t)
                 t)
               t)
@@ -817,7 +818,7 @@ fun8 nm rf sr t =
             R (\t e ->
               R (\t f ->
                 R (\t g ->
-                  R (\t h -> enter nm t (rf t a b c d e f g h))
+                  R (\t h -> enter t (rf t a b c d e f g h))
                     t)
                   t)
                 t)
@@ -836,7 +837,7 @@ fun9 nm rf sr t =
               R (\t f ->
                 R (\t g ->
                   R (\t h ->
-                    R (\t i -> enter nm t (rf t a b c d e f g h i))
+                    R (\t i -> enter t (rf t a b c d e f g h i))
                       t)
                     t)
                   t)
@@ -857,7 +858,7 @@ fun10 nm rf sr t =
                 R (\t g ->
                   R (\t h ->
                     R (\t i ->
-                      R (\t j -> enter nm t (rf t a b c d e f g 
+                      R (\t j -> enter t (rf t a b c d e f g 
                                                            h i j))
                         t)
                       t)
@@ -881,7 +882,7 @@ fun11 nm rf sr t =
                   R (\t h ->
                     R (\t i ->
                       R (\t j ->
-                        R (\t k -> enter nm t (rf t a b c d e f g 
+                        R (\t k -> enter t (rf t a b c d e f g 
                                                              h i j k))
                           t)
                         t)
@@ -907,7 +908,7 @@ fun12 nm rf sr t =
                     R (\t i ->
                       R (\t j ->
                         R (\t k ->
-                          R (\t l -> enter nm t (rf t a b c d e f g 
+                          R (\t l -> enter t (rf t a b c d e f g 
                                                                h i j k l))
                             t)
                           t)
@@ -1045,12 +1046,12 @@ prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
 
 prim0 nm rf sr t = 
   let tf = mkTNm t nm sr
-  in primEnter sr nm tf rf  -- primEnter strict in tf
+  in primEnter sr tf rf  -- primEnter strict in tf
 
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 
 prim1 nm rf sr t = 
-  mkR (\t (R a at) -> primEnter sr nm t (rf a))
+  mkR (\t (R a at) -> primEnter sr t (rf a))
     (mkTNm t nm sr)
 
 
@@ -1059,14 +1060,14 @@ prim2 :: NmCoerce r =>
 
 prim2 nm rf sr t = 
   mkR (\t (R a at)->
-    R (\t (R b bt)-> primEnter sr nm t (rf a b))
+    R (\t (R b bt)-> primEnter sr t (rf a b))
       t)
     (mkTNm t nm sr)
 
 prim3 nm rf sr t = 
   mkR (\t (R a at)->
     R (\t (R b bt)->
-      R (\t (R c ct)-> primEnter sr nm t (rf a b c))
+      R (\t (R c ct)-> primEnter sr t (rf a b c))
         t)
       t)
     (mkTNm t nm sr)
@@ -1075,7 +1076,7 @@ prim4 nm rf sr t =
   mkR (\t (R a at)->
     R (\t (R b bt)->
       R (\t (R c ct)->
-        R (\t (R d dt)-> primEnter sr nm t (rf a b c d))
+        R (\t (R d dt)-> primEnter sr t (rf a b c d))
           t)
         t)
       t)
@@ -1087,7 +1088,7 @@ prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)
 prim1 nm rf sr t = 
   mkR (\t (R a at) -> let sat = mkTSatA t
                       in mkR (mkTSatB sat `myseq` 
-                               case (primEnter sr nm t (rf a)) of 
+                               case (primEnter sr t (rf a)) of 
                                  R v vt ->
                                    v `myseq` 
                                    mkTSatC sat vt `myseq` 
@@ -1103,7 +1104,7 @@ prim2 nm rf sr t =
   mkR (\t (R a at)->
     R (\t (R b bt)-> let sat = mkTSatA t
                      in  mkR (mkTSatB sat `myseq` 
-                               case (primEnter sr nm t (rf a b)) of 
+                               case (primEnter sr t (rf a b)) of 
                                  R v vt ->
                                    v `myseq` 
                                    mkTSatC sat vt `myseq` 
@@ -1117,7 +1118,7 @@ prim3 nm rf sr t =
     R (\t (R b bt)->
       R (\t (R c ct)-> let sat = mkTSatA t
                        in  mkR (mkTSatB sat `myseq` 
-                                 case (primEnter sr nm t (rf a b c)) of 
+                                 case (primEnter sr t (rf a b c)) of 
                                    R v vt ->
                                      v `myseq` 
                                      mkTSatC sat vt `myseq` 
@@ -1133,7 +1134,7 @@ prim4 nm rf sr t =
       R (\t (R c ct)->
         R (\t (R d dt)-> let sat = mkTSatA t
                          in  mkR (mkTSatB sat `myseq` 
-                                   case (primEnter sr nm t (rf a b c d)) of 
+                                   case (primEnter sr t (rf a b c d)) of 
                                      R v vt ->
                                        v `myseq` 
                                        mkTSatC sat vt `myseq` 
@@ -1150,7 +1151,7 @@ prim5 nm rf sr t =
     R (\t (R b bt)->
       R (\t (R c ct)->
         R (\t (R d dt)->
-          R (\t (R e et)-> primEnter sr nm t (rf a b c d e))
+          R (\t (R e et)-> primEnter sr t (rf a b c d e))
             t)
           t)
         t)
@@ -1163,7 +1164,7 @@ prim6 nm rf sr t =
       R (\t (R c ct)->
         R (\t (R d dt)->
           R (\t (R e et)->
-            R (\t (R f ft)-> primEnter sr nm t (rf a b c d e f))
+            R (\t (R f ft)-> primEnter sr t (rf a b c d e f))
               t)
             t)
           t)
@@ -1179,7 +1180,7 @@ prim7 nm rf sr t =
           R (\t (R e et)->
             R (\t (R f ft)->
               R (\t (R g gt)-> 
-                  primEnter sr nm t (rf a b c d e f g))
+                  primEnter sr t (rf a b c d e f g))
                 t)
               t)
             t)
@@ -1197,7 +1198,7 @@ prim8 nm rf sr t =
             R (\t (R f ft)->
               R (\t (R g gt)->
                 R (\t (R h ht)-> 
-                    primEnter sr nm t (rf a b c d e f g h))
+                    primEnter sr t (rf a b c d e f g h))
                   t)
                 t)
               t)
@@ -1217,7 +1218,7 @@ prim9 nm rf sr t =
               R (\t7 (R g gt)->
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
-                      primEnter sr nm t9 (rf a b c d e f g h i))
+                      primEnter sr t9 (rf a b c d e f g h i))
                     t8)
                   t7)
                 t6)
@@ -1239,7 +1240,7 @@ prim10 nm rf sr t =
                 R (\t8 (R h ht)->
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
-                        primEnter sr nm t10 (rf a b c d e f 
+                        primEnter sr t10 (rf a b c d e f 
                                                          g h i j))
                       t9)
                     t8)
@@ -1264,7 +1265,7 @@ prim11 nm rf sr t =
                   R (\t9 (R i it)->
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
-                          primEnter sr nm t11 (rf a b c d e f 
+                          primEnter sr t11 (rf a b c d e f 
                                                            g h i j k))
                         t10)
                       t9)
@@ -1291,7 +1292,7 @@ prim12 nm rf sr t =
                     R (\t10 (R j jt)->
                       R (\t11 (R k kt)->
                         R (\t12 (R l lt)->
-                            primEnter sr nm t12 (rf a b c d e f 
+                            primEnter sr t12 (rf a b c d e f 
                                                              g h i j k l))
                           t11)
                         t10)

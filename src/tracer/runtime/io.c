@@ -287,6 +287,7 @@ C_HEADER(cEnter)
     char *mod = NULL, *name;
     int defpos, pri;
 
+#if 0
     reductions++;
     if ((traceGcStat > 0) && ((reductions % traceGcStat) == 0)) {
 	extern NodePtr hpLowLimit;
@@ -295,13 +296,16 @@ C_HEADER(cEnter)
 	/* 2+EXTRA == GCEXTRA as defined in runtime/Kernel/mark.h */
 	fprintf(traceGcFd, "%d %d\n", reductions, Hp-&hpLowLimit[2+EXTRA]); 
     }
+#endif
 
-    dbg_last_trace = C_GETARG1(2);
+    dbg_last_trace = C_GETARG1(1);
     IND_REMOVE(dbg_last_trace);
 
 
+#if 0
     if ((traceBreak > 0) && (reductions > traceBreak))
 	interrupted++;
+#endif
 
     if (interrupted) {
         CNmType* nt;
@@ -321,6 +325,7 @@ C_HEADER(cEnter)
         haskellEnd();
         exit(0);
     }
+#if 0
     if (trace_enter) {
 	showSymbol(C_GETARG1(1), &mod, &name, &defpos, &pri);
 	fprintf(stderr, "Entering %s.%s\n", mod, name);
@@ -338,8 +343,9 @@ C_HEADER(cEnter)
     }
     if (trace_singlestep) 
 	startDbg(C_GETARG1(2), FALSE);
+#endif
 
-    nodeptr = C_GETARG1(3);
+    nodeptr = C_GETARG1(2);
     IND_REMOVE(nodeptr);
     C_RETURN(GET_POINTER_ARG1(nodeptr,1));
 }
