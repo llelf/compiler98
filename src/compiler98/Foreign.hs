@@ -41,18 +41,19 @@ instance Show Foreign where
 
 data Arg = Int8  | Int16  | Int32  | Int64
          | Word8 | Word16 | Word32 | Word64
-         | Float | Double | Char   | Bool | PackedString
+         | Float | Double | Char   | Bool | PackedString   | Int
          | Addr  | StablePtr | ForeignObj | Unknown String | Unit
 
 instance Show Arg where
   showsPrec p Int8         = showString "FFI.Int8"
   showsPrec p Int16        = showString "FFI.Int16"
-  showsPrec p Int32        = showString "Prelude.Int"
+  showsPrec p Int32        = showString "FFI.Int32"
   showsPrec p Int64        = showString "FFI.Int64"
   showsPrec p Word8        = showString "FFI.Word8"
   showsPrec p Word16       = showString "FFI.Word16"
   showsPrec p Word32       = showString "FFI.Word32"
   showsPrec p Word64       = showString "FFI.Word64"
+  showsPrec p Int          = showString "Prelude.Int"
   showsPrec p Float        = showString "Prelude.Float"
   showsPrec p Double       = showString "Prelude.Double"
   showsPrec p Char         = showString "Prelude.Char"
@@ -108,7 +109,7 @@ searchType st arrow info =
     toTid t = Pure (Unknown (show t))  -- error ("Unrecognised NT: "++show t)
 		-- (Pure Unknown) lets polymorphic heap-values across unmolested
 
-    toArg t | t==tInt        = Int32
+    toArg t | t==tInt        = Int
             | t==tWord       = Word32
             | t==tBool       = Bool
             | t==tChar       = Char
@@ -293,15 +294,16 @@ hResult res =
 ---- shared between foreign import/export ----
 
 cTypename :: Arg -> ShowS
-cTypename Bool         = word "int"
-cTypename Int8         = word "char"
-cTypename Int16        = word "short"
-cTypename Int32        = word "long"
-cTypename Int64        = word "long long"
-cTypename Word8        = word "unsigned char"
-cTypename Word16       = word "unsigned short"
-cTypename Word32       = word "unsigned long"
-cTypename Word64       = word "unsigned long long"
+cTypename Int          = word "HsInt"
+cTypename Bool         = word "HsBool"
+cTypename Int8         = word "HsInt8"
+cTypename Int16        = word "HsInt16"
+cTypename Int32        = word "HsInt32"
+cTypename Int64        = word "HsInt64"
+cTypename Word8        = word "HsWord8"
+cTypename Word16       = word "HsWord16"
+cTypename Word32       = word "HsWord32"
+cTypename Word64       = word "HsWord64"
 cTypename Float        = word "float"
 cTypename Double       = word "double"
 cTypename Char         = word "char"
@@ -313,15 +315,16 @@ cTypename Unit         = word "void"
 cTypename (Unknown _)  = word "NodePtr"	-- for passing Haskell heap values
 
 cConvert :: Arg -> ShowS
+cConvert Int          = word "GET_INT_VALUE(nodeptr)"
 cConvert Bool         = word "GET_BOOL_VALUE(nodeptr)"
-cConvert Int8         = word "GET_CHAR_VALUE(nodeptr)"
+cConvert Int8         = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Int16        = word "GET_16BIT_VALUE(nodeptr)"
-cConvert Int32        = word "GET_INT_VALUE(nodeptr)"
-cConvert Int64        = word "GET_64BIT_VALUE(nodeptr)"
-cConvert Word8        = word "GET_CHAR_VALUE(nodeptr)"
+cConvert Int32        = word "GET_32BIT_VALUE(nodeptr)"
+cConvert Int64        = word "get_64bit_value(nodeptr)"
+cConvert Word8        = word "GET_8BIT_VALUE(nodeptr)"
 cConvert Word16       = word "GET_16BIT_VALUE(nodeptr)"
-cConvert Word32       = word "GET_INT_VALUE(nodeptr)"
-cConvert Word64       = word "GET_64BIT_VALUE(nodeptr)"
+cConvert Word32       = word "GET_32BIT_VALUE(nodeptr)"
+cConvert Word64       = word "get_64bit_value(nodeptr)"
 cConvert Float        = word "get_float_value(nodeptr)"
 cConvert Double       = word "get_double_value(nodeptr)"
 cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
@@ -333,15 +336,16 @@ cConvert Unit         = word "0"
 cConvert (Unknown _)  = word "nodeptr"
 
 hConvert :: Arg -> ShowS -> ShowS
+hConvert Int          s = word "mkInt" . parens s
 hConvert Bool         s = word "mkBool" . parens s
-hConvert Int8         s = word "mkChar" . parens s
-hConvert Int16        s = word "mkInt" . parens s
-hConvert Int32        s = word "mkInt" . parens s
-hConvert Int64        s = word "mkInt" . parens s
-hConvert Word8        s = word "mkChar" . parens s
-hConvert Word16       s = word "mkInt" . parens s
-hConvert Word32       s = word "mkInt" . parens s
-hConvert Word64       s = word "mkInt" . parens s
+hConvert Int8         s = word "mkInt8" . parens s
+hConvert Int16        s = word "mkInt16" . parens s
+hConvert Int32        s = word "mkInt32" . parens s
+hConvert Int64        s = word "mkInt64" . parens s
+hConvert Word8        s = word "mkWord8" . parens s
+hConvert Word16       s = word "mkWord16" . parens s
+hConvert Word32       s = word "mkWord32" . parens s
+hConvert Word64       s = word "mkWord64" . parens s
 hConvert Float        s = word "mkFloat" . parens s
 hConvert Double       s = word "mkDouble" . parens s
 hConvert Char         s = word "mkChar" . parens s

@@ -880,7 +880,7 @@ dumpCodeEnd handle flags state eslabs escode foreigns gcode =
   if null foreigns 
     then return ()
     else do
-           hPutStr handle "\n#include <haskell2c.h>\n" 
+           hPutStr handle "\n#include <haskell2c.h>\n#include <HsFFI.h>\n" 
            mapM_ (\f-> hPutStr handle (strForeign f "")) foreigns
   hClose handle
 
