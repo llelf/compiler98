@@ -59,7 +59,7 @@ packageDirs config@(CompilerConfig{ compilerStyle=Nhc98
     if ok
       then do
         (good,bad) <- foldM (\(g,b) d->
-                             do let dir = incdir++d
+                             do let dir = incdir++"/"++d
                                 ok <- doesDirectoryExist dir
                                 return (if ok then (dir:g, b) else (g, d:b)))
                             ([],[]) packages
