@@ -36,6 +36,20 @@ first.  To get read-only access to our repository:
      The checked-out source tree for <em>nhc98</em> will appear in a
      directory called <tt>nhc</tt>.  You can rename this directory to
      whatever you like, CVS won't mind.
+<li> You also need to collect the common Haskell libraries from a
+     different CVS server:
+<pre>
+      $ cvs -d :pserver:anoncvs@glass.cse.ogi.edu:/cvs checkout fpconfig
+      $ cd fptools
+      $ cvs checkout libraries
+      $ cd ..
+</pre>
+     Then, move the libraries directory to the right location within
+     the nhc98 tree and delete the remaining fptools stuff:
+<pre>
+      $ mv fptools/libraries nhc/src/libraries
+      $ rm -r fptools
+</pre>
 <li> From then on, you should no longer need the <em>-d</em> option,
      and commands like
 <pre>
@@ -109,7 +123,11 @@ address for an initial checkout of the tree:
 <pre>
       $ cvs -d :ext:username@hinken.sparud.net:/usr/src/master checkout nhc
 </pre>
-All the other instruction are the same, except that developers also
+and for write-access to the libraries tree, you need the address
+<pre>
+      $ cvs -d :ext:username@cvs.haskell.org:/home/cvs/root checkout fpconfig
+</pre>
+All the other instructions are the same, except that developers also
 have permission to commit changes to the repository.
 
 
@@ -121,7 +139,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.05.01<br>
+This page last modified: 2002.10.09<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
