@@ -3,7 +3,10 @@ module IO (hPutStr) where
 import DHandle
 import HPutChar
 
-#if !defined(TRACING)
+#if 0
+-- previously #if !defined(TRACING)
+-- but in some cases (typically the compiler itself), this is a big
+-- space loss.
 import GreenCard (toCString,PackedString)
 
 foreign import hPutStrC :: Handle -> PackedString -> IO ()
