@@ -1,8 +1,8 @@
-<html><head><title>Release 1.10 of nhc98</title></head>
+<html><head><title>Release 1.12 of nhc98</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1>Release 1.10 of nhc98</h1></center>
+<center><h1>Release 1.12 of nhc98</h1></center>
 
 <hr>
 
@@ -11,8 +11,9 @@
 <dl>
 <dt><em>Because it is easy to install.</em></dt>
 <dd> Some people find <em>ghc</em> and <em>hbc</em> difficult to install
-  on their machine.  <em>nhc98</em> is about as easy to setup
-  as Hugs, and it is as portable too.</dd>
+  on their machine, particularly if their machine is not a unix PC.
+  <em>nhc98</em> is very easy to configure and build, even for new machines
+  which have never seen a Haskell compiler before.</dd>
 
 <dt><em>Because you have a small machine.</em></dt>
 <dd>  <em>nhc98</em> is designed for space-efficiency.  Compile the same
@@ -22,12 +23,13 @@
   <em>very</em> much smaller.  (With the <em>nhc98</em> Binary library [1]
   you can compress your heap data in addition to the normal savings.)
   Expect to pay a speed penalty though - programs produced by
-  <em>nhc98</em> run slower than with <em>ghc</em> or <em>hbc</em>
-  (although they are still rather faster than <em>Hugs</em>).</dd>
+  <em>nhc98</em> run between 2x and 6x slower than with <em>ghc</em>
+  or <em>hbc</em> (although they are still rather faster than
+  <em>Hugs</em>).</dd>
 
 <dt><em>Because you're a software developer.</em></dt>
 <dd> nhc98 comes with comprehensive tool support - hmake, hi, greencard,
-  heap profiling, and <em>two</em> debuggers.
+  heap and time profiling, and <em>two</em> debuggers.
   Are you fed up waiting for <em>ghc</em> to compile your programs?
   <em>nhc98</em> can be pretty quick at compiling, even though it
   is not as fast as <em>hbc</em>.  For development work, it can also
@@ -47,15 +49,20 @@
   First, Andy Gill's <a href="http://www.haskell.org/hood/">HOOD</a>
   library together with his XML-based debugging browser.
   Second, York's advanced <em>Hat</em> tracing system based on
-  redex trails [2,3], also with a graphical browser.  In <em>Hat-trail</em>,
-  browsing proceeds
+  advanced redex trails [2,3], which gives you much, much more.
+  The Hat system provides three different and complementary browsing
+  tools for exploring the runtime behaviour of your program.
+  <em>hat-observe</em> gives you HOOD-like observations of the
+  behaviour of functions, but with no need to annotate the program
+  being studied.  In <em>hat-trail</em>, browsing proceeds
   <em>backwards</em> from the error message or suspicious output value,
   observing and exploring the reduction history of parts of the
   computation.  By answering the question "What function application caused
   the evaluation of this expression?" at each stage, it is possible to
-  narrow down program bugs quickly.  (<em>Hat</em> is still part
-  of ongoing research, and will continue to be developed for some
-  time.)</dd>
+  narrow down program bugs quickly.  Finally, <em>hat-detect</em> is
+  an algorithmic debugger which asks you questions about the program
+  and then automatically pinpoints the source of an error.
+  </dd>
 
 </dl>
 
@@ -94,7 +101,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.10.23<br>
+This page last updated: 2002.03.13<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -7,9 +7,9 @@
 <hr>
 
 <p>
-The latest stable release is 1.10, available in various distribution
+The latest stable release is 1.12, available in various distribution
 formats (listed below).  Important patches for the stable version
-are also provided.  The development tree is at version 1.11,
+are also provided.  The development tree is at version 1.13,
 and is only available by <a href="cvs.html">CVS</a>.  Bugfixes
 and important changes to the system are described in the <a
 href="status.html">release notes</a> for each version.
@@ -30,6 +30,22 @@ instructions</a>.
                     <th>version</th> <th>date</th> <th>size</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.12.tar.gz">
+      Sources (.tar.gz)</a></td>
+  <td>any</td>
+  <td>1.12</td>
+  <td>2002-03-15</td>
+  <td>7.9Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.12-ix86-Linux.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>ix86-Linux</td>
+  <td>1.12</td>
+  <td>2002-03-15</td>
+  <td>7.4Mb</td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.10.tar.gz">
       Sources (.tar.gz)</a></td>
   <td>any</td>
@@ -37,7 +53,7 @@ instructions</a>.
   <td>2001-10-19</td>
   <td>7.1Mb</td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-ix86-Linux.tar.gz">
       Executable (.tar.gz)</a></td>
   <td>ix86-Linux</td>
@@ -45,15 +61,15 @@ instructions</a>.
   <td>2001-10-19</td>
   <td>5.9Mb</td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="http://www.freebsd.org/cgi/ports.cgi?query=nhc98&stype=all">
       Sources+Executable</a></td>
   <td>ix86-FreeBSD-4.4</td>
   <td>1.10</td>
   <td>2002-01-03</td>
-  <td></td></tr>
+  <td> </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-1.src.rpm">
       Sources (.rpm)</a></td>
   <td>any</td>
@@ -61,61 +77,13 @@ instructions</a>.
   <td>2001-10-25</td>
   <td>6.8Mb</td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.10-1.i386.rpm">
       Executable (.rpm)</a></td>
   <td>ix86-Linux (RH7.2)</td>
   <td>1.10</td>
   <td>2001-10-25</td>
   <td>4.9Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.08.tar.gz">
-      Sources (.tar.gz)</a></td>
-  <td>any</td>
-  <td>1.08</td>
-  <td>2001-09-25</td>
-  <td>7.1Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.08-ix86-Linux.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.08</td>
-  <td>2001-09-25</td>
-  <td>5.9Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.08-sparc-solaris2.tar.gz">
-      Executable (.tar.gz)</a></td>
-  <td>sparc-solaris2</td>
-  <td>1.08</td>
-  <td>2001-09-25</td>
-  <td>6.6Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.08-basic-freebsd.tgz">
-      Executable (.tar.gz)<br><font size=-1>(basic compiler)</font></a></td>
-  <td>ix86-FreeBSD-4.4</td>
-  <td>1.08</td>
-  <td>2001-10-04</td>
-  <td>2.0Mb</td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.08-with_tracer-freebsd.tgz">
-      Executable (.tar.gz)<br><font size=-1>(with tracer)</font></a></td>
-  <td>ix86-FreeBSD-4.4</td>
-  <td>1.08</td>
-  <td>2001-10-04</td>
-  <td>4.8Mb</td></tr>
-
-<tr bgcolor=#ffdddd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.06.tar.gz">
-      Sources (.tar.gz)</a></td>
-  <td>any</td>
-  <td>1.06</td>
-  <td>2001-06-08</td>
-  <td>5.7Mb</td></tr>
 
 </table>
 </center>
@@ -212,14 +180,22 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor=#ddffdd>
+  <td></td>
+  <td>nhc98 v1.12</td>
+  <td></td>
+  <td>There are no patches for version 1.12 yet.  All of the following
+      patches are for the older version 1.10.
+      </td></tr>
+
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-IO">
       IO</a></td>
   <td>nhc98 v1.10</td>
-  <td>2001-12-17</td>
+  <td>2001-12-18</td>
   <td>The IO library did not re-export the PreludeIO definitions.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-lhs">
       lhs</a></td>
   <td>nhc98 v1.10</td>
@@ -228,7 +204,7 @@ be comprehensive, but if you have any problems, please mail
       reverses the preference.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-patterns">
       patterns</a></td>
   <td>nhc98 v1.10</td>
@@ -239,7 +215,7 @@ be comprehensive, but if you have any problems, please mail
       on the LHS.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-commas">
       commas</a></td>
   <td>nhc98 v1.10</td>
@@ -247,7 +223,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Allow an empty import/export decl with a single stray comma.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-blockbuffer">
       blockbuffer</a></td>
   <td>nhc98 v1.10</td>
@@ -256,7 +232,7 @@ be comprehensive, but if you have any problems, please mail
       exactly when the buffer is full.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-keywords">
       keywords</a></td>
   <td>nhc98 v1.10</td>
@@ -265,7 +241,7 @@ be comprehensive, but if you have any problems, please mail
       the language - they are significant only in certain positions.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-counter">
       counter</a></td>
   <td>nhc98 v1.10</td>
@@ -274,7 +250,7 @@ be comprehensive, but if you have any problems, please mail
       in long-running computations.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-hp2graph">
       hp2graph</a></td>
   <td>nhc98 v1.10</td>
@@ -282,7 +258,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Workaround for a rare buffer problem in hp2graph.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-arrow">
       arrow</a></td>
   <td>nhc98 v1.10</td>
@@ -290,7 +266,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Accept `instance ClassName (Prelude.->)' in source and interface files.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-MacOSX">
       MacOS X</a></td>
   <td>nhc98 v1.10</td>
@@ -298,7 +274,7 @@ be comprehensive, but if you have any problems, please mail
   <td>Bugfix to pass PowerPC endianness into the build on a MacOS X machine.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-hiding">
       hiding</a></td>
   <td>nhc98 v1.10</td>
@@ -307,7 +283,7 @@ be comprehensive, but if you have any problems, please mail
       is hidden on import, the hidden variable should not be re-exported.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-Array">
       Array</a></td>
   <td>nhc98 v1.10</td>
@@ -316,36 +292,12 @@ be comprehensive, but if you have any problems, please mail
       `FN_Ix_46_95_46Unknown_46variable'" when using library Array.
       </td></tr>
 
-<tr bgcolor=#ddffdd>
+<tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.10-ghc5.02">
       ghc5.02</a></td>
   <td>nhc98 v1.10</td>
   <td>2001-10-23</td>
   <td>Update configuration script (again) to detect ghc-5.02 correctly.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-ghc5.02">
-      ghc5.02</a></td>
-  <td>nhc98 v1.08</td>
-  <td>2001-10-02</td>
-  <td>Update configuration script to detect ghc-5.02 correctly.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-hmake">
-      hmake</a></td>
-  <td>nhc98 v1.08</td>
-  <td>2001-09-26</td>
-  <td>When hmake detects an error, the message should go to stderr, not stdout.
-      </td></tr>
-
-<tr bgcolor=#ffffdd>
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.08-hat-makefile">
-      hat-makefile</a></td>
-  <td>nhc98 v1.08</td>
-  <td>2001-09-26</td>
-  <td>Hat tools failed to build, due to missing path to hmake.
       </td></tr>
 
 </table>
@@ -362,7 +314,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2002.01.08<br>
+This page last modified: 2002.03.14<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
