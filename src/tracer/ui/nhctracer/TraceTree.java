@@ -4,12 +4,12 @@ import java.awt.*;
 import java.util.Vector;
 
 public class TraceTree extends Object {
-  EDTNode node;
-  Vector traces;
-  Trace parent;
-  int index;
-  int height;
-  int layers;
+  EDTNode node;		// a root expression
+  Vector traces;	// traces for some of its subexpressions
+  Trace parent;		// a parent trace to which this tree belongs
+  int index;		// position among all trees of the parent
+  int height;		// in pixels when drawn on screen
+  int layers;		// of underlining beneath the root expression (?)
 
   public TraceTree(Trace parent) {
     this.parent = parent;
@@ -34,21 +34,15 @@ public class TraceTree extends Object {
   }
 
   public Trace inTrace(int trefnr) {
-    try {
-      if (traces != null) {
-	for (int i = 0; i < traces.size(); i++) {
-	  Trace trace = (Trace)traces.elementAt(i);
-	  TraceTree tree = (TraceTree)trace.trees.elementAt(0);
-	  if (tree.node.refnr == trefnr)
-	    return trace;
-	}
+    if (traces != null) {
+      for (int i = 0; i < traces.size(); i++) {
+	Trace trace = (Trace)traces.elementAt(i);
+	TraceTree tree = (TraceTree)trace.trees.elementAt(0);
+	if (tree.node.refnr == trefnr)
+	  return trace;
       }
-      return null;
-    } catch (ArrayIndexOutOfBoundsException e) {
-      System.err.println("inTrace: bad index\n" + e);
-      System.exit(-1);
-      return null;
     }
+    return null;
   }
 
   public Object inside(UI ui, int x, int y, int x0, int y0) {
@@ -58,7 +52,8 @@ public class TraceTree extends Object {
     cy += ui.normalfm.getHeight() + 2*layers + 4;
     if (y <= cy)
       return node.inside(ui, x, y, x0, y0);
-    for (int i = 0; i < traces.size(); i++) {
+    // component traces are displayed last to first
+    for (int i = traces.size()-1; i >= 0; i--) {
       Trace trace = (Trace)traces.elementAt(i);
       h = trace.height;
       if (!trace.hidden && y <= cy+h)
@@ -78,7 +73,8 @@ public class TraceTree extends Object {
 
     maxw = x + node.paint(g, ui, x, y, refnr, trefnr, irefnr);
     cy += ui.normalfm.getHeight() + 2*layers + 4;
-    for (i = 0; i < traces.size(); i++) {
+    // component traces are displayed last to first
+    for (i = traces.size()-1; i >= 0; i--) {
       Trace trace = (Trace)traces.elementAt(i);
       if (!trace.hidden) {
 	d = trace.paint(g, ui, x, cy, refnr, trefnr, irefnr);

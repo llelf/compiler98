@@ -45,11 +45,7 @@ public class NhcTracer extends Applet {
       demoPanel = new DemoPanel(this);
       add(demoPanel);
     } else {
-      TraceFrame traceFrame = new TraceFrame(host,
-					     port,
-					     "Haskell Redex Trail Browser", 
-					     "Jan Sparud",
-					     "Version -0.01 alpha");
+      TraceFrame traceFrame = new TraceFrame(host,port);
       traceFrame.setSize(600, 700);
       traceFrame.setVisible(true);
       String script = System.getProperty("nhctracer.script");

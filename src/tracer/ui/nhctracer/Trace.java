@@ -26,8 +26,11 @@ public class Trace extends Object {
       Object result;
       Trace trace;
 	
-      if (x >= x0 && x <= x0+2*RADIUS && y >= y0)
+      // only the arrowhead of the trace bar itself is selectable
+      if (x >= x0 && x <= x0+2*RADIUS &&
+          y >= y0+height-ui.normalfm.getHeight()/3)
 	return this;
+      // other selections in component trees of the trace
       for (int i = 0; i < trees.size(); i++) {
 	TraceTree tree = (TraceTree)trees.elementAt(i);	    
 	if (y < cy+tree.height)

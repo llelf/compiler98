@@ -10,26 +10,21 @@ import java.net.*;
 public class TraceFrame extends Frame {
   MenuBar menuBar;
   
-  Menu fileMenu, editMenu, optionMenu, viewMenu, demoMenu, helpMenu;
+  Menu fileMenu, optionMenu;  // viewMenu, demoMenu, helpMenu;
   
   // File menu items
-  MenuItem newWindowItem, serverItem, createScriptItem, endScriptItem;
-  MenuItem runScriptItem, msgScriptItem, loadDemoItem, printItem, exitItem;
+  MenuItem /* newWindowItem, */ serverItem, createScriptItem, endScriptItem;
+  MenuItem runScriptItem, msgScriptItem, /* loadDemoItem, printItem, */ exitItem;
   
-  // Edit menu items
-  MenuItem copyItem, cutItem, pasteItem;
-
   // Options menu items
   MenuItem fontItem;
 
   // Help menu items
-  MenuItem aboutItem;
+  // MenuItem aboutItem;
   
   int port;
   String host;
-  String appTitle;
-  String appAuthor;
-  String appVersion;
+  String appTitle = "Hat 1.0";
 
   MainPanel mainPanel;
 
@@ -40,21 +35,16 @@ public class TraceFrame extends Frame {
   TraceFrame me;
   PrintWriter script;
   ActionHandler handler;
-  DemoHandler demoHandler;
+  // DemoHandler demoHandler;
   Hashtable demoTable;
   boolean listenersEnabled = true;
 
   public TraceFrame(String host,
-		    int port, 
-		    String appTitle, 
-		    String appAuthor, 
-		    String appVersion) {
+		    int port) {
 
     this.port = port;
     this.host = host == null ? "localhost" : host;
     this.appTitle = appTitle;
-    this.appAuthor = appAuthor;
-    this.appVersion = appVersion;
     me = this;
 
     menuBar = new MenuBar(); 
@@ -63,39 +53,46 @@ public class TraceFrame extends Frame {
     menuBar.setFont(new Font("Helvetica", Font.PLAIN, 14));
 	
     fileMenu = new Menu("File"); menuBar.add(fileMenu);
-    editMenu = new Menu("Edit"); menuBar.add(editMenu);
+    // editMenu = new Menu("Edit"); menuBar.add(editMenu);
     optionMenu = new Menu("Options"); menuBar.add(optionMenu);
-    viewMenu = new Menu("View"); menuBar.add(viewMenu);
-    demoMenu = new Menu("Demo");
-    helpMenu = new Menu("Help"); //menuBar.add(helpMenu);
+    // viewMenu = new Menu("View"); menuBar.add(viewMenu);
+    // demoMenu = new Menu("Demo");
+    // helpMenu = new Menu("Help"); //menuBar.add(helpMenu);
 	
     handler = new ActionHandler();
-    demoHandler = new DemoHandler();
-    newWindowItem = createMenuItem("New window", fileMenu, handler, true, null);
-    serverItem = createMenuItem("Change server/port", fileMenu, handler, true, null);
-    createScriptItem = createMenuItem("Create script", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_S));
-    endScriptItem = createMenuItem("End script", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_E));
-    runScriptItem = createMenuItem("Run script", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_R));
-    msgScriptItem = createMenuItem("Add script message", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_M));
-    loadDemoItem = createMenuItem("Load demo programs", fileMenu, handler, true, null);
-    printItem = createMenuItem("Print", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_P));
+    // demoHandler = new DemoHandler();
+    // newWindowItem = createMenuItem("New window", fileMenu, handler, true, null);
+    serverItem =
+      createMenuItem("Change server/port", fileMenu, handler, true,
+                     null);
+    createScriptItem =
+      createMenuItem("Create script", fileMenu, handler, true,
+                     new MenuShortcut(KeyEvent.VK_S));
+    endScriptItem =
+      createMenuItem("End script", fileMenu, handler, true,
+                     new MenuShortcut(KeyEvent.VK_E));
+    runScriptItem =
+      createMenuItem("Run script", fileMenu, handler, true,
+                     new MenuShortcut(KeyEvent.VK_R));
+    msgScriptItem =
+      createMenuItem("Add script message", fileMenu, handler, true,
+                     new MenuShortcut(KeyEvent.VK_M));
+    // loadDemoItem = createMenuItem("Load demo programs", fileMenu, handler, true, null);
+    // printItem = createMenuItem("Print", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_P));
     exitItem = createMenuItem("Exit", fileMenu, handler, true, null);
-    copyItem = createMenuItem("Copy", editMenu, handler, false, null);
-    cutItem = createMenuItem("Cut", editMenu, handler, false, null);
-    pasteItem = createMenuItem("Paste", editMenu, handler, false, null);
 
     fontItem = createMenuItem("Select font", optionMenu, handler, true, null);
 
-    optionMenu.add(createCheckboxMenuItem(Options.memoise, true));
-    optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
-    optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
-    optionMenu.add(createCheckboxMenuItem(Options.dumprefs, true));
-    optionMenu.add(createCheckboxMenuItem(Options.arrow, true));
-    optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.memoise, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.dumprefs, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.arrow, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
     
-    aboutItem = createMenuItem("About", helpMenu, handler, true, null);
+    // aboutItem = createMenuItem("About", helpMenu, handler, true, null);
 
-    menuBar.setHelpMenu(helpMenu);
+    // menuBar.setHelpMenu(helpMenu);
 	
     setTitle(appTitle);
 
@@ -111,58 +108,16 @@ public class TraceFrame extends Frame {
     pb.add(connect);
     pb.add(disconnect);
 
-    /*    
-    JPanel p1 = new JPanel(new BorderLayout());
-    p1.add(pb, BorderLayout.NORTH);
-    p1.add(dbgPanel, BorderLayout.CENTER);
-    p1.add(status, BorderLayout.SOUTH);
-
-    tabPanel = new JTabbedPane() {
-      public Dimension getMinimumSize() {
-	return new Dimension(400, 300);
-      }
-    };
-
-    tabPanel.addTab("Program output", outputPanel);
-    tabPanel.addTab("Source code", viewer);
-    */
-
     setLayout(new BorderLayout());
-    //add(p1, BorderLayout.CENTER);
-    //add(tabPanel, BorderLayout.SOUTH);
 
     add(pb, BorderLayout.NORTH);
     add(mainPanel, BorderLayout.CENTER);
-    //add(tabPanel, BorderLayout.SOUTH);
     
     addWindowListener(new WindowAdapter() {
       public void windowClosing(WindowEvent e) {
 	me.dispose();
       }
     });
-
-    /*
-    MosaicPanel mp = new MosaicPanel();
-    add(pb, BorderLayout.NORTH);
-    add(mp, BorderLayout.CENTER);
-
-    MosaicLayout layout = new MosaicLayout();
-    mp.setLayout(layout);
-    layout.setConstraints("Horz", 
-       new MosaicConstraints(MosaicConstraints.CENTER, 
-			     MosaicConstraints.HORIZONTAL, 1 ) );
-    layout.setConstraints("Vert", 
-       new MosaicConstraints(MosaicConstraints.CENTER, 
-			     MosaicConstraints.VERTICAL, 1 ) );
-    layout.setConstraints("Sticky", 
-       new MosaicConstraints(MosaicConstraints.CENTER, 
-			     MosaicConstraints.BOTH, 1 ) );
-
-    layout.setPos(0, 0, 0, 0);
-    mp.add("Sticky", p1);
-    layout.setPos(0, 1, 0, 0);
-    mp.add("Sticky", tabPanel);
-    */
     
     Script.registerItemTypes();
   }
@@ -235,6 +190,7 @@ public class TraceFrame extends Frame {
     }
   }
 
+  /*
   class DemoHandler implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
       Object url = demoTable.get(evt.getActionCommand());
@@ -245,6 +201,7 @@ public class TraceFrame extends Frame {
       }
     }
   }
+  */
 
   class ActionHandler implements ActionListener {
     public void actionPerformed(ActionEvent evt) {
@@ -263,12 +220,12 @@ public class TraceFrame extends Frame {
 	    host = sd.server;
 	    port = sd.port;
 	  }
-	} else if (target == newWindowItem) {
+	} /* else if (target == newWindowItem) {
 	  TraceFrame traceFrame = 
-	    new TraceFrame(host, port, appTitle, appAuthor, appVersion);
+	    new TraceFrame(host, port);
 	  traceFrame.setSize(600, 700);
 	  traceFrame.setVisible(true);
-	} else if (target == createScriptItem) {
+	} */ else if (target == createScriptItem) {
 	  FileDialog fd = new FileDialog(me, "Create script file", FileDialog.SAVE);
 	  fd.setFilenameFilter(new ScriptFilter());
 	  fd.setVisible(true);
@@ -313,7 +270,8 @@ public class TraceFrame extends Frame {
 	    fontDialog = new FontDialog(me, mainPanel.dbgPanel.ui);
 	  else
 	    fontDialog.show();
-	} else if (target == loadDemoItem) {
+	}
+       /* else if (target == loadDemoItem) {
 	  mainPanel.status.setText("Loading demo programs from the demo server, please wait...");
 	  try {
 	    String serverURL = System.getProperty("nhctracer.demoserver");
@@ -353,6 +311,7 @@ public class TraceFrame extends Frame {
 	} else if (target == aboutItem) {
 	  AboutDialog about = new AboutDialog(me, appTitle, appAuthor, appVersion);
 	}
+	*/
       } else if (target == connect) {
 	if (serverConnection == null) {
 	  mainPanel.status.setText("Connecting to server. Please wait.");
@@ -388,6 +347,7 @@ public class TraceFrame extends Frame {
   }
 }
 
+/*
 class AboutDialog extends Dialog implements ActionListener {
   public AboutDialog(Frame parent, String title, String author, String version) {
     super(parent, title, true);
@@ -430,3 +390,4 @@ class AboutDialog extends Dialog implements ActionListener {
     dispose();
   }  
 }
+*/

@@ -40,11 +40,7 @@ public class NhcApplet extends Applet {
 	System.err.println("Bad port number " + portStr + ", using default.");
       }
     }
-    TraceFrame traceFrame = new TraceFrame(host,
-					   port,
-					   "Haskell Redex Trail Browser", 
-					   "Jan Sparud",
-					   "Version -0.01 alpha");
+    TraceFrame traceFrame = new TraceFrame(host,port);
     traceFrame.setSize(600, 700);
     traceFrame.setVisible(true);
   }

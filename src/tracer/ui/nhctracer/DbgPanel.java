@@ -5,7 +5,6 @@ import java.awt.event.*;
 import java.applet.*;
 import java.util.Vector;
 import java.io.*;
-//import com.sun.java.swing.*;
 
 public class DbgPanel extends Panel /* implements Runnable */ {
   TraceFrame frame;
@@ -22,11 +21,10 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   EDTNode selectedNode = null;
   public static int START_X = 0;
   public static int START_Y = 0;
-  Image offscreen;
-  Dimension offscreensize;
-  Graphics offgraphics;
-  int canvas_width, canvas_height;
-  int tree_height = 1, tree_width = 1;
+  // Image offscreen;
+  // Dimension offscreensize;
+  // Graphics offgraphics;
+  Image nullScreen;
   Connection serverConnection;
   UI ui;
   NodeTable nodeTable;
@@ -36,11 +34,9 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   int mouseX, mouseY;
   MouseMotionHandler mmhandler;
   MouseHandler mhandler;
-  KeyHandler khandler;
+  // KeyHandler khandler;
 
-  //    public DbgPanel(Frame parent) {
   public DbgPanel(TraceFrame _frame, MainPanel _mainPanel) {
-    //public DbgPanel(SourceViewer viewer, Status status) {
     super();
     me = this;
     this.frame = _frame;
@@ -62,7 +58,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     canvas.setBackground(getBackground());
     canvas.addMouseMotionListener(mmhandler = new MouseMotionHandler());
     canvas.addMouseListener(mhandler = new MouseHandler());
-    canvas.addKeyListener(khandler = new KeyHandler());
+    // canvas.addKeyListener(khandler = new KeyHandler());
 
     nodeTable = new NodeTable();
 
@@ -75,22 +71,13 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     scrollpane = new ScrollPane();
     scrollpane.add(canvas);
 
-    //scrollpane.setBackground(getBackground());
-    //scrollpane.add(canvas);
-
-    //status = new Status("Not connected");
-	
     this.setLayout(new BorderLayout());
     this.add(scrollpane, BorderLayout.CENTER);
-    //this.add("South", status);
 
     bgc = Color.white;
     fgc = Color.red;
     lc = Color.black;
     mbgc = Color.cyan;
-    // setBackground(Color.lightGray);
-
-    //setPreferredSize(new Dimension(600, 300));
 
     trace = null;
   }
@@ -98,13 +85,13 @@ public class DbgPanel extends Panel /* implements Runnable */ {
   void disableListeners() {
     canvas.removeMouseMotionListener(mmhandler);
     canvas.removeMouseListener(mhandler);
-    canvas.removeKeyListener(khandler);
+    // canvas.removeKeyListener(khandler);
   }
 
   void enableListeners() {
     canvas.addMouseMotionListener(mmhandler);
     canvas.addMouseListener(mhandler);
-    canvas.addKeyListener(khandler);
+    // canvas.addKeyListener(khandler);
   }
 
   public void connected() {
@@ -120,6 +107,10 @@ public class DbgPanel extends Panel /* implements Runnable */ {
     }
   }
 
+  // a secret key that may have worked once, when
+  // an old paint method printed to file instead
+  // if doPrint was set
+  /*
   class KeyHandler extends KeyAdapter {
     public void keyPressed(KeyEvent evt) {
       switch (evt.getKeyChar()) {
@@ -131,7 +122,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       }
     }
   }
-
+  */
+  
   class MouseMotionHandler extends MouseMotionAdapter {
     public void mouseMoved(MouseEvent evt) {
       mouseX = evt.getX();
@@ -145,19 +137,20 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	if (lastNode != null) {
 	  lastNode.color = Color.black;
 	  lastNode = null;
+	  status.setText("");
 	  repaint();
 	}
       } else {
 	if (obj != lastNode) {
-	  if  (lastNode != null)
+	  if  (lastNode != null) {
 	    lastNode.color = Color.black;
+	    status.setText("");
+	  }
 	  if (obj instanceof EDTNode) {
 	    ((EDTNode)obj).color = Color.blue;
 	    lastNode = (EDTNode)obj;	    
 	    if ((frame != null) && (frame.script != null))
 	      frame.script.println(new ScriptNodeSelect(lastNode.path()));
-	    //System.err.println(trace.find(lastNode.path()).dump());
-	    //log("SELNODE " + lastNode.pathStr());
 	  } else if (obj instanceof Trace) {
 	    Trace t = (Trace)obj;
 	    EDTNode newNode = ((TraceTree)t.trees.elementAt(t.trees.size()-1)).node;
@@ -193,23 +186,37 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       if (trace == null)
 	return;
       
+      // determine the selected object
       Object obj;
+      if (x < 0) obj = scriptObj;  // running a script
+      else obj = trace.inside(ui, x+ui.dx, y+ui.dy, START_X, START_Y);
+      if (obj == null) return;
       
-      if (x < 0) // True when running a script
-	obj = scriptObj;
-      else
-	obj = trace.inside(ui, x+ui.dx, y+ui.dy, START_X, START_Y);
-		
-      if (obj == null)
-	return;
-
-      // If expanding the toplevel expression, expand the tree instead
+      // remember current scrolling position
+      // Point scrollPt = scrollpane.getScrollPosition();
+      
+      // Selecting the last whole expression in a trace spine
+      // extends the trace itself.  Selecting any other whole
+      // expression winds back the trace to make that expression
+      // the last.
       if (obj instanceof EDTNode) {
 	EDTNode node = (EDTNode)obj;
 	if (node.parent == null &&
 	    ((modifiers & 
-	      (InputEvent.BUTTON3_MASK | InputEvent.BUTTON3_MASK)) == 0))
-	  obj = node.tree.parent;
+	      (InputEvent.BUTTON2_MASK | InputEvent.BUTTON3_MASK)) == 0)) {
+	      int n = node.tree.parent.trees.size();
+	      if (node.tree.index == n-1) {
+	        obj = node.tree.parent;
+              } else {
+	        node.tree.parent.trees.setSize(node.tree.index + 1);
+		// repaint();
+		// scrollpane.doLayout();
+		// scrollpane.setScrollPosition(scrollPt);
+		// scrollpane.invalidate();
+		// scrollpane.validate();return;
+		return; 
+	      }
+        }
       }
 
       if (obj instanceof Trace) {
@@ -244,10 +251,14 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      frame.script.println(new ScriptNodeDefRef());
 	    if (sr.col > 0) {
 	      status.waitCursor();
-	      viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	      try {
+	        viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	      } catch (ArrayIndexOutOfBoundsException e) {
+	    	status.setText("No source reference to definition");
+	      }
 	      status.normalCursor();
-	    } else {
-	      status.setText("Selected component has no source code definition");
+            } else {
+	      status.setText("No source reference to definition");
 	    }
 	  }
 	} else if ((modifiers & InputEvent.BUTTON3_MASK) != 0) {	// Right click
@@ -256,10 +267,14 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
 	      frame.script.println(new ScriptNodeSourceRef());
-	    viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	    try {
+	      viewer.showSourceLocation(serverConnection, sr.file, sr.line, sr.col);
+	    } catch (ArrayIndexOutOfBoundsException e) {
+	      status.setText("No source reference");
+            }
 	    status.normalCursor();
 	  } else {
-	    status.setText("Selected component has no source reference");
+	    status.setText("No source reference");
 	  }
 	} else if ((modifiers & InputEvent.BUTTON2_MASK) != 0 &&
 		   (modifiers & InputEvent.SHIFT_MASK) != 0) { // Shift-middle click
@@ -268,7 +283,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	  else
 	    if (!HString.tryStringify(selectedNode))
 	      status.setText("Selected component is not a string");
-	  repaint();
+	  // repaint();
 	} else if ((modifiers & InputEvent.BUTTON2_MASK) != 0) {	// Middle click
 	  if (selectedNode instanceof CutOffTree) { // Expand it
 	    CutOffTree cot = (CutOffTree)selectedNode;
@@ -280,12 +295,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    serverConnection.out.println(selectedNode.refnr + " X");
 	    EDTParser parser = new EDTParser(serverConnection, nodeTable);
 	    EDTNode n = parser.parseEDTNode(cot.parent, cot.tree, cot.index);
-	    try {
-	      ((EDTStructuredNode)cot.parent).args.setElementAt(n, cot.index);
-	    } catch (ArrayIndexOutOfBoundsException e) {
-	      System.err.println("parent index bad: " +  e);
-	      System.exit(1);
-	    }
+	    ((EDTStructuredNode)cot.parent).args.setElementAt(n, cot.index);
 	    status.setText("");
 	    status.normalCursor();
 	  } else {
@@ -302,10 +312,6 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	    selectedNode.setTrace(t);
 	    status.setText("");
 	  } else {
-	    //		    if (selectedNode instanceof Pruned) {
-	    //		        status.setText("Pruned nodes have no trace");
-	    //			return true;
-	    //		    }
 	    status.setText("Expanding");
 	    status.waitCursor();
 	    if ((frame != null) && (frame.script != null))
@@ -316,13 +322,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      serverConnection.out.println(selectedNode.refnr + " X");
 	      EDTParser parser = new EDTParser(serverConnection, nodeTable);
 	      EDTNode n = parser.parseEDTNode(cot.parent, cot.tree, cot.index);
-	      try {
-		cot.parent.args.setElementAt(n, cot.index);
-	      } catch (ArrayIndexOutOfBoundsException e) {
-		System.err.println("parent index bad: " +  e);
-		System.exit(1);
-		status.setText("");
-	      }
+	      cot.parent.args.setElementAt(n, cot.index);
 	    } else {
 	      if (selectedNode.trefnr == 0) {
 		status.setText("The selected component has no trace");
@@ -347,18 +347,64 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	      }
 	    }
 	  }
-	  //System.err.println(selectedNode.trace.trees.size());
 	  status.normalCursor();
-	  repaint();
+	  // repaint();
 	}
       }      
+      // scrollpane.doLayout();
+      // scrollpane.setScrollPosition(scrollPt);
+      // scrollpane.invalidate();
+      // scrollpane.validate();
     }
   }
 
-  public void paint(Graphics g) {
+public void paint(Graphics g) { 
+    
+    // First determine the appropriate size for the offscreen buffer.
+    // It must be large enough for the trace, if any.
+    
+    Dimension offsize;
+    Dimension cansize = canvas.getSize();
+    if (trace == null) offsize = cansize;
+    else {
+      if (nullScreen == null) nullScreen = createImage(1,1);
+      offsize = trace.paint(nullScreen.getGraphics(),ui,0,0,-1,-1,-1);
+      offsize.width += 24;
+      offsize.height += 24;
+    }
+    if (offsize.width < cansize.width) offsize.width = cansize.width;
+    if (offsize.height < cansize.height) offsize.height = cansize.height;
+    
+    // Now paint the trace onto the off-screen buffer.
+    
+    Image offscreen = createImage(offsize.width,offsize.height);
+    Graphics offgraphics = offscreen.getGraphics();
+    offgraphics.setFont(ui.normalfont);
+    offgraphics.setColor(getBackground());
+    offgraphics.fillRect(0, 0, offsize.width, offsize.height);
+    int refnr, trefnr, irefnr;
+    if (lastNode != null) {
+      refnr  = lastNode.refnr;
+      trefnr = lastNode.trefnr;
+      irefnr = lastNode.irefnr;
+    } else 
+      refnr = trefnr = irefnr = -1;
+    if (trace != null)
+      trace.paint(offgraphics, ui, 0, 0, refnr, trefnr, irefnr);
+    
+    // Finally, transfer the off-screen image to the canvas, which
+    // may need to be enlarged.
+    
+    if (cansize.width < offsize.width || cansize.height < offsize.height)
+      canvas.setSize(offsize);
+    canvas.getGraphics().drawImage(offscreen,0,0,null);
+}
+
+/*
+public void paint{Graphics g) {
     Dimension d = canvas.getSize();
     int start_x = START_X, start_y = START_Y;
-
+    
     if ((offscreen == null) || (d.width != offscreensize.width) || 
 	(d.height != offscreensize.height)) {
       offscreen = createImage(d.width, d.height);
@@ -366,7 +412,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	System.err.println("Cannot allocate offscreen buffer of size "+
 			   d.width + "x" + d.height + ".");
 	return;
-	/* System.exit(-1); */
+	// System.exit(-1);
       }
       offscreensize = d;
     }
@@ -402,8 +448,8 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       // Reserve some extra space below and to the right
       extents.width += 24;
       extents.height += 24;
-      if (!extents.equals(d) && !me.doPrint)
-	canvas.setSize(extents);
+      // if (!extents.equals(d) && !me.doPrint)
+      //   canvas.setSize(extents);
     }
     if (me.doPrint) {
       if (Options.arrow.getState()) { // Paint a cursor?
@@ -419,7 +465,7 @@ public class DbgPanel extends Panel /* implements Runnable */ {
 	offgraphics.drawLine(mouseX+ui.dx, mouseY+ui.dy, mouseX+ui.dx+h+2, mouseY+ui.dy+h+2);
 	//offgraphics.drawLine(mouseX+ui.dx+1, mouseY+ui.dy, mouseX+ui.dx+13, mouseY+12+ui.dy);
       }
-      /*
+      // begin comment
       try {
 	if (fd == null)
 	  fd = new FileDialog(frame, "Create GIF image", FileDialog.SAVE);
@@ -435,12 +481,14 @@ public class DbgPanel extends Panel /* implements Runnable */ {
       } catch (AWTException e) {
 	System.err.println("Couldn't create GIF encoder: " + e);
       }
-      */
+      // end comment
       offgraphics.dispose();
       me.doPrint = false;
-    } else
+    } else {
       canvas.getGraphics().drawImage(offscreen, 0, 0, null);
+    }
   }
+*/
   
   public Dimension getPreferredSize() {
     return new Dimension(400, GetParams.getInt("nhctracer.dwpHeight", 300));

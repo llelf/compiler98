@@ -55,10 +55,10 @@ public class FontDialog extends Dialog {
 	g.fillRect(0, 0, getSize().width, getSize().height);
 	g.setColor(Color.black);
 	g.setFont(new Font(fontname.getSelectedItem(), style, size));
-	g.drawString("Haskell Redex Trail Browser", 10, g.getFontMetrics().getHeight()+10);
-	ui.normalfont = new Font(fontname.getSelectedItem(), style, size);
-	ui.normalfm = getFontMetrics(ui.normalfont);
-	f.mainPanel.dbgPanel.repaint();
+	g.drawString("123 abc ABC", 10, g.getFontMetrics().getHeight()+10);
+	// ui.normalfont = new Font(fontname.getSelectedItem(), style, size);
+	// ui.normalfm = getFontMetrics(ui.normalfont);
+	// f.mainPanel.dbgPanel.repaint();
       }
     };
 
@@ -119,18 +119,13 @@ public class FontDialog extends Dialog {
 
     fontsize.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent ae) {
-	try {
-	  size = Integer.parseInt(fontsize.getText());
-	} catch (NumberFormatException e) {
-	  size = 0;
-	}
-	fontsize.setText(""+size);
-	display.repaint();
+        readFontSize();
       }
     });
 
     ok.addActionListener(new ActionListener() {
       public void actionPerformed(ActionEvent e) {
+	readFontSize();
 	ui.normalfont = new Font(fontname.getSelectedItem(), style, size);
 	ui.normalfm = getFontMetrics(ui.normalfont);
 	f.mainPanel.dbgPanel.repaint();
@@ -141,7 +136,7 @@ public class FontDialog extends Dialog {
       public void actionPerformed(ActionEvent e) {
 	ui.normalfont = savedfont;
 	ui.normalfm = getFontMetrics(ui.normalfont);
-	f.mainPanel.dbgPanel.repaint();
+	// f.mainPanel.dbgPanel.repaint();
 	setVisible(false);
       }
     });
@@ -157,5 +152,16 @@ public class FontDialog extends Dialog {
   public void setVisible(boolean visible) {
     init();
     super.setVisible(visible);
+  }
+
+  void readFontSize() {
+  // capture new font size from numeral in text field
+    try {
+     size = Integer.parseInt(fontsize.getText());
+    } catch (NumberFormatException e) {
+     size = ui.normalfont.getSize();
+    }
+    fontsize.setText(""+size);
+    display.repaint();
   }
 }
