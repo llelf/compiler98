@@ -1,8 +1,7 @@
 include Makefile.inc
 
 THISLIB = Prelude
-SEARCH	= -P$(LOW) -P../Ratio -P../PreludeList -P../PreludeText \
-	  -P../PreludeIO -P../PreludeDebug
+SEARCH	= -P$(LOW) -P../Ratio -P../PreludeList -P../PreludeText -P../PreludeIO 
 ifeq "$(BUILDCOMP)" "hbc"
 EXTRA_H_FLAGS	= -prelude +RTS -A2M -H32M -RTS
 else
