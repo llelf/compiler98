@@ -45,6 +45,7 @@ fromC: $(OBJDIR)
 
 
 paper.ps: paper.dvi
-	dvips paper.dvi -O -1.0cm,-2.6cm -o paper.ps
+	#dvips paper.dvi -O -1.0cm,-2.6cm -o paper.ps
+	dvips paper.dvi -o paper.ps
 paper.dvi: paper.tex
 	latex paper.tex

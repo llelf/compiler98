@@ -27,7 +27,8 @@ main = do
   options <- getArgs
   let opts = options ++ defaultOptions defaultCompiler
   putStrLn banner
-  putStrLn (replicate 43 ' '++ "... Using compiler "++show defaultCompiler++" ...\n")
+  putStrLn (replicate 43 ' '++
+            "... Using compiler "++show defaultCompiler++" ...\n")
   putStrLn ("Type :? for help")
   hSetBuffering stdout NoBuffering
   hSetBuffering stdin NoBuffering
@@ -57,13 +58,13 @@ evaluate expr ("main":args) state =
   case scope state of
     Nothing ->
         let mod = head (modules state) in
-        compile mod state (run ("./"++mod) args)
+        compile True mod state (run ("./"++mod) args)
     Just _  -> do
         let tmpfile = "/tmp/Main"
         f <- openFile (tmpfile++".hs") WriteMode
         hPutStr f (fromJust (scopeText state) ++ "\nmain = _ain\n")
         hClose f
-        compile tmpfile state (run tmpfile args)
+        compile True tmpfile state (run tmpfile args)
 evaluate expr _ state = do
   let tmpfile = "/tmp/Main"
   let modtext = fromMaybe "" (scopeText state)
@@ -83,17 +84,40 @@ evaluate expr _ state = do
     "\n           _                   -> putStrLn shown" ++
     "\n")
   hClose f
-  compile tmpfile state (run tmpfile [])
+  compile True tmpfile state (run tmpfile [])
+
+showtype expr ("main":args) state =
+  case scope state of
+    Nothing ->
+        let mod = head (modules state) in
+        compile False mod (state{options=(options state)++["-showtype"]}) done
+    Just _  -> do
+        let tmpfile = "/tmp/Main"
+        f <- openFile (tmpfile++".hs") WriteMode
+        hPutStr f (fromJust (scopeText state) ++ "\nmain = _ain\n")
+        hClose f
+        compile False tmpfile (state{options=(options state)++["-showtype"]}) done
+showtype expr _ state = do
+  let tmpfile = "/tmp/Main"
+  let modtext = fromMaybe "" (scopeText state)
+  let scopem  = maybeToList (scope state)
+  f <- openFile (tmpfile++".hs") WriteMode
+  hPutStr f (
+    "module Main where\n\n" ++
+    concatMap (\m-> "import "++m++"\n") (modules state \\ scopem) ++
+    modtext ++ "\nmain = "++ expr ++ "\n")
+  hClose f
+  compile False tmpfile (state{options=(options state)++["-showtype"]}) done
 
 
-compile file state continue = do
-  putStr "[Compiling..."
+compile flag file state continue = do
+  if flag then putStr "[Compiling..." else done
   ok <- system ("hmake -"++show (compiler state)++" -I. "
                 ++unwords (options state)++" "++file++" >/dev/null")
   case ok of
-    ExitSuccess -> do delChars "[Compiling..."
+    ExitSuccess -> do if flag then delChars "[Compiling..." else done
                       continue
-    _           -> putStrLn "...failed]"
+    _           -> if flag then putStrLn "...failed]" else done
 
 run file args = system (file++" "++unwords args) >> done
 
@@ -124,6 +148,13 @@ commands ws state = let target = tail ws in do
            loadScope state mod (\text-> toplevel (state { scope=(Just mod)
                                                     , scopeText=(Just text)}))
        )
+--command "observe"
+--     (if null target || length target > 1 then do
+--         putStrLn "You must give a single function name (from this module) to observe."
+--      else let fn = head target in do
+--         makeObserve state fn (\text-> toplevel (state { scope=(Just mod)
+--                                                  , scopeText=(Just text)}))
+--     )
   command "edit"
       (if null target then
          case scope state of
@@ -134,6 +165,9 @@ commands ws state = let target = tail ws in do
                loadAll state done
       )
   command "type"
+      (if compiler state == Nhc98 then showtype (unwords target) target state
+       else putStrLn ":type command only supported for nhc98 compiler")
+{-
       (do let tmpfile = "/tmp/Main"
           f <- openFile (tmpfile++".hs") WriteMode
           hPutStr f (
@@ -143,8 +177,9 @@ commands ws state = let target = tail ws in do
             "\n       in putStrLn ("++ nonstdShowsType (compiler state)++" expr \"\")"++
             "\n")
           hClose f
-          compile tmpfile state (run tmpfile [])
+          compile True tmpfile state (run tmpfile [])
       )
+-}
   command "cd"
       (if null target then do
             dir <- getCurrentDirectory
@@ -178,6 +213,14 @@ commands ws state = let target = tail ws in do
                putStrLn ("Compiler "++head target++" not known/configured")
                putStrLn ("Current compiler: "++show (compiler state))
       )
+  command "trace"
+      (let newopts = ((options state) \\ defaultOptions (compiler state))
+                                      ++ defaultOptions Nhc98 ++ ["-T"]
+       in do
+            makeclean ".o" (modules state)
+            makeclean ".hi" (modules state)
+            let newstate = state {options=newopts, compiler=Nhc98}
+            loadAll newstate (toplevel newstate))	-- explicit return
   command "?" (putStrLn help)
   putStrLn ("[Unknown command :"++head ws++"]")
  where
@@ -220,7 +263,7 @@ load :: State -> String -> IO () -> IO ()
 load state mod success =
   findF (\lit file success->
          do putStr ("[Found module... "++file++"] ")
-            compile file state (putChar '\n')
+            compile True file state (putChar '\n')
             success ())
         (\hifile success->
          do putStrLn ("[Std   module... "++hifile++"]")
@@ -230,8 +273,8 @@ loadScope :: State -> String -> (String->IO ()) -> IO ()
 loadScope state =
   findF (\lit file success-> let litf = if lit then (unlit file) else id in
          do putStrLn ("[Entering scope of module... "++file++"]")
-            compile file state (do content <- readFile file
-                                   success (lexmodule (litf content))))
+            compile True file state (do content <- readFile file
+                                        success (lexmodule (litf content))))
         (\hifile success->
            putStrLn ("[Cannot enter std module... "++hifile++"]"))
         state

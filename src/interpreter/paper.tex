@@ -1,1092 +1,423 @@
-\documentclass[a4paper]{article}
+\documentclass[a4paper]{llncs}
 
-\setlength{\textwidth}{162mm}
-\setlength{\textheight}{254mm}
-\setlength{\oddsidemargin}{1cm}
-\setlength{\evensidemargin}{1cm}
+%% \setlength{\textwidth}{162mm}
+%% \setlength{\textheight}{254mm}
+%% \setlength{\oddsidemargin}{1cm}
+%% \setlength{\evensidemargin}{1cm}
 
-\title{{\em hi} -- an Interactive Haskell Development System, in Haskell}
-\author{Malcolm Wallace \\ University of York, UK}
-\date{1st June 2000}
+\title{{\em hi} -- hmake interactive -- \\Compiler or Interpreter?}
+\subtitle{{\em DRAFT}}
+\author{Malcolm Wallace}
+\institute{University of York, UK}
+\date{Draft - 7th August 2000}
 
 \begin{document}
 \maketitle
 
 
-\section{Introduction}
+\section{Interpreters vs. compilers}
 
-\subsection{Interpreters vs. compilers}
+%%%  Intro to benefits of interactive systems.   (snip from earlier draft)
 
-There are widely recognised benefits to using an interactive language
-interpreter as a development environment over the traditional batch
-compiler.  In the context of the Haskell language, {\em Hugs} is widely
-preferred over the available compilers for at least the following
-reasons:
+After writing some code in some programming language, usually a
+programmer wants to run the code on a real machine.  In general, there
+are two main routes available for translating human-readable program
+text into machine-runnable bit-sequences: a compiler or an interpreter.
+To a first approximation, a compiler translates all the code at
+once before any of it can be run, whereas an interpreter translates
+only one instruction at a time, as it is needed, interspersing the
+translation activity with the activity of the program itself.  A pure
+interpreter generally runs code much slower than a compiled program,
+but tends to have advantages in space-usage and in facilitating
+interactive development through eliminating the waiting time before
+a program can be run.
 
-$\bullet$  It produces runnable code extremely quickly.
+Of course, in the real world there is actually more of a spectrum of
+possibilities available to the implementor of the language system,
+lying somewhere between these two poles.  Various tradeoffs between
+compilation speed, runtime speed, space usage, interactivity, and other
+factors all contribute to a rich spread of implementations in practice.
 
-$\bullet$  The runnable code may be slow, but it is usually good enough.
+For instance, byte-code systems use an intermediate language, located
+in complexity somewhere between the source text and the machine code.
+They need both a compilation phase from the source to the intermediate
+level, performed once only, and a interpretation phase, where each
+intermediate instruction is translated at runtime and immediately
+executed.  The benefit is reduced code size, at the cost of slower
+runtime, compared with a compiled program.  Compared to a pure
+interpreter, code size is similar, but runtime speed is faster.
 
-$\bullet$  It is very portable to all kinds of machines.
+Another variation is dynamic (just-in-time) compilation, first reported
+in the 1970s, and recently popularised by several Java systems.
+This is similar to a byte-code system, except that a much larger
+section of the intermediate code is translated at runtime.  This can
+both reduce the amount of jumping between translation and execution,
+and also allow a certain amount of dynamic re-use of code that has
+already been translated on-the-fly.  Together, these effects can
+dramatically boost runtime speed performance whilst retaining the
+advantages of smaller code-size.
 
-\ \ \ \ --
-           So it is available everywhere.
+At a rather different level of thinking, on-line partial evaluation
+is a further technique that can (in many cases) regain the speed
+benefits of a compiled program starting with just an interpreter for
+the language.
 
-\ \ \ \ --
-           It can be configured and built by a novice in minutes.
+However this paper examines the interpreter/compiler distinction from
+a slightly different angle, focusing on the importance of interactive
+program development.  The interactive, tentative style of writing small
+programs which gradually grow larger and more complex is traditionally
+supported much better by interpretive systems than by compilers.
+For instance, in the context of the Haskell language, the Hugs
+system is widely preferred by users over the available compilers
+(hbc, ghc, nhc98).
 
-\ \ \ \ --
-           It requires very few extra libraries/tools to get going.
+No doubt there is a variety of reasons for this preference,
+amongst them the fact that Hugs is relatively small, portable, and
+easy to install.  However we hypothesise that the main attraction
+is interaction.  In Hugs, it is very easy to ask {\em what if?}
+questions -- just try out your brand new function by applying it
+to some test data in an expression typed at the command line, and
+the answer comes back almost immediately.  Or perhaps you want the
+system to tell you the most general type of a function, or in which
+module you can find it, or what methods belong to a class, or what
+instances of a class are available.  All of this information is
+readily available with simple commands.
 
-$\bullet$ It is relatively small.
+Yet there is no inherent reason why interactive development should
+be limited to interpreters -- in a language such as C which lacks
+a commonly-available interpreter, programmers are familiar with
+an edit-compile-run cycle for testing individual functions within
+programs.  And of course compilers generate, read, and manipulate
+all the same kinds of type and class information as interpreters --
+in Haskell, compilers even dump module {\em interface files} which
+act as a store for a lot of this information.
 
-$\bullet$ It has a well-written user manual.
+The key missing element is making these facilities easy to access
+quickly, by eliminating tedious mechanical steps such as invoking the
+compiler with the right options, or maintaining the {\em Makefile} for
+a multi-module project, and so on.  In this paper we describe a small
+interactive text-based user interface, {\em hi} (hmake interactive),
+that mimics most of the features of Hugs, yet which is simply a thin
+layer over any ordinary Haskell compiler (and a couple of other common
+tools) which do the real work behind the scenes.
 
-\noindent
-and of course
+The possible benefits of this approach to providing an interactive
+development environment are:
 
-$\bullet$
-    It is interactive.
-
-\ \ \ \ --
-      \parbox[t]{150mm}{
-        Meaning that one can test expressions, large or small,
-        at the command line, getting a rapid answer to whatif? questions.}
-
-$\bullet$
-    Its user environment is pleasant, especially for novices.
-
-\ \ \ \ --
-      Module imports are chased automatically.
-
-\ \ \ \ --
-      Types can be reported for individual expressions.
-
-\ \ \ \ --
-      More detailed information can be requested about any name.
-
-\ \ \ \ --
-      Any definition can be found and edited quickly.
-
-\noindent
-By contrast, there is a perception (not necessarily accurate) that
-compilers have the opposite attributes:
-
-$\bullet$
-    They are slow to generate code.
-
-$\bullet$
-  \parbox[t]{155mm}{
-    The generated code is fast, but the extra speed may not be
-      critical during program development.}
-
-$\bullet$
-    They tend to have machine dependencies.
-
-\ \ \ \ --
-      \parbox[t]{150mm}{
-        Usually a compiler bootstraps with itself, which
-        immediately creates a portability problem for new machines.}
-
-\ \ \ \ --
-      Configuring and building a compiler is often non-trivial.
-
-\ \ \ \ --
-      And may require other tools like perl, gmp, etc.
-
-$\bullet$
-    They tend to be large.
-
-$\bullet$
-    Documentation quality varies between compilers.
-
-$\bullet$
-    They are batch oriented.
-
-\ \ \ \ --
-      \parbox[t]{150mm}{
-        Meaning that you expect your program to work already, more or less.
-        It is very tedious to test out a series of whatif? expressions.}
-
-$\bullet$
-    They have an unfriendly interface.
-
-\ \ \ \ --
-      Users must write Makefiles to get multi-module projects going.
-
-\ \ \ \ --
-      \parbox[t]{150mm}{
-        Tools to report useful information such as types, class methods,
-        etc, are either non-existent, or primitive and disjointed.}
-
-\ \ \ \ --
-      \parbox[t]{150mm}{
-        They rely on the user having fluency in an external environment
-        (e.g.\ the Unix shell) to search for and edit definitions, and
-        indeed to invoke the compiler itself.}
-
-\subsection{Combined systems}
-
-Despite the essential differences between interpreters and compilers,
-many users and implementers seem keen to combine the benefits of both
-approaches.  The {\em hbc} compiler from Chalmers has long had the
-{\em hbi} interpreter, and there has been much effort spent recently
-on combining {\em Hugs} with {\em ghc}.  What are the possible
-benefits of a combined interpreter/compiler?
-
-$\bullet$
-  \parbox[t]{155mm}{
-    It can generate slow code quickly, or fast code more slowly,
-      allowing the user to tailor their development environment
-      to retain a fast interactive turnaround time, whilst achieving
-      better runtime performance in those parts of the code where it
-      is really needed.}
-
-$\bullet$
-  \parbox[t]{155mm}{
-    Writing code that is portable across different language implementations
-      is trickier than one might hope.  An integrated interpreter/compiler
-      reduces these difficulties when trying to move code from the
-      interactive development stage to a polished final product.}
-
-$\bullet$
-  \parbox[t]{155mm}{
-    The friendly environment of the interpreter is co-opted (to a
-      certain extent) for compiled code; for instance type queries,
-      searching for definitions, and so on, become available.}
-
-
-\subsection{A different approach}
-\noindent
-However, a different approach to integration is possible.
-
-We start with the observation that not all compilers are equal.
-For instance, {\em nhc98} falls somewhere between {\em Hugs} and
-{\em ghc} on the performance spectrum -- it has fast compilation times
-compared with {\em ghc} (though not as fast as {\em Hugs}), and the
-speed of the generated code is fast compared with {\em Hugs} (though
-not as fast as {\em ghc}).  Also, like {\em Hugs}, {\em nhc98} is very
-portable to new machines, and just as easy to configure and build.
-In many respects, all {\em nhc98} lacks is the convenient, friendly,
-interactive front-end.
-
-The second important observation is that many of the other features
-of {\em Hugs} can be provided by external tools -- for instance,
-a compiler can produce code; the {\em hmake} program can chase
-module dependencies; a lightweight database can track information
-about constructors, classes, and other names.  The primary feature
-unique to {\em Hugs} is that it integrates all these tools coherently.
-The interactive interface it provides is perhaps more important to
-the developer than the incidental fact that the code is interpreted.
-
-So the question arises, is it possible to provide a lightweight
-interactive development environment that is as friendly as the {\em
-Hugs} interface, but which is really just a small wrapper over an
-existing compiler?
-
-The answer is yes, and this paper is the description of just such
-a wrapper.  It is modelled closely on {\em Hugs} as far as style
-and the user-experience are concerned, but the bulk of the work is
-actually done underneath by batch tools.  One of the nice outcomes of
-this strategy is that it is easy to switch backends.  Module-chasing
-and recompilation is managed totally by the {\em hmake} tool, which
-gives us the freedom to layer our wrapper on top of {\em any} of the
-currently available Haskell compilers.  It is even possible to change
-compiler from within the interface: this ability is immensely useful
-when testing whether code is truely {\em standard} and {\em portable}.
-
-The new interface, called {\em hmake interactive} or {\em hi} for
-short, is completely generic, seamlessly extending a common and
-familiar interaction style to embrace the more powerful facilities
-of the various compilers.  It allows an easy ``step up'' from
-interpretation to compilation.  (However, for brevity throughout this
-paper we will continue to use the word ``interpreter'' with the common
-meaning of an interactive development system, despite the fact that
-the underlying technology is not an interpreter at all!)
-
-Of course the wrapper is written in Haskell, so it is short and
-somewhat specificational in style.  (This paper is the literate
-version of the program.)  This means that it is easy to read, modify,
-and extend.  We hope that other people will take this program and
-use it as a basis from which to customise their own interface.
-We also hope that others will provide generic program development
-tools that can simply ``plug in'' to this interface -- there is no need
-to understand (still less implement) either a whole compiler or a
-whole interpreter in order to experiment.
-
-Another useful aspect of this paper is that in some sense it
-specifies the semantic relation between a compiler and interpreter.
-We demonstrate that the evaluation of an expression by an interpreter,
-within the scope of a particular module, is semantically equivalent
-to the evaluation of a particular compiled program that is obtained
-from the original module by transformation.
+\begin{itemize}
+\item
+  The friendly familiar environment of Hugs is retained.
+\item
+  It allows an easy ``step up'' from an interpreter to compiled code.
+\item
+  Depending on the compiler chosen, it can generate slow code quickly,
+  or fast code more slowly, allowing the user to tailor their environment
+  to suit their needs.
+\item
+  It can help the user to write code that is portable across compiler
+  implementations, easing the transition between development and a
+  final polished product.
+\item
+  Because the interface itself is small and written in Haskell, it is
+  comparatively easy to add new features at will.
+\end{itemize}
 
 
 
 
-\section{The basic operation of an interpreter}
+\section{A hybrid: hmake interactive}
 
-As already mentioned, this paper is a literate version of the
-source code of the {\em hmake interactive} interpreter.  You can
-execute this paper!  Lines beginning with a birdtrack ({\tt >})
-are program lines.
+{\em hi} -- hmake interactive -- is a small program, itself written
+in Haskell, which imitates many of the interactive features of Hugs.
+In this section, we give a brief description of its facilities by
+comparison with Hugs.  To make the user feel right at home, we even
+have a similar start-up banner and prompt:
+
+{\small
+\begin{verbatim}
+__   __                 __           _____________________________________
+||   ||  ______    ___  || _  ____   hmake interactive (hi):
+||___|| || || ||  ___|| ||/  ||__||     Copyright (c) May 2000
+||---|| || || || ||__|| ||\_ ||__    http://www.cs.york.ac.uk/fp/hmake/
+||   ||                              Report bugs to: malcolm@cs.york.ac.uk
+||   || Version: 1.9 (000708)        -------------------------------------
+                                         ... Using compiler nhc98 ...
+
+Type :? for help
+[Std   module... /grp/haskell/include/nhc98/Prelude.hi]
+Prelude> 
+\end{verbatim}
+}
+
+Underlying this interface is a very basic set of tools.  When the
+user types an expression, the interface generates a small program
+whose {\tt main} function is simply the evaluation of the expression
+-- possibly wrapped within a {\tt print} statement if it does not
+already have an I/O type.  Previously, the user has ``loaded'' into
+the interactive environment, some modules containing definitions of
+functions used in the expression, just as in Hugs.  The generated
+program must of course also import these ``loaded'' modules.
+
+The generated program is then handed to the batch tool {\em hmake},
+which ensures that all the imported modules are compiled (recursively),
+and then invokes the compiler on the program itself.  Finally the
+executable program is run, connected to the terminal for standard
+input and output.  If there are any errors in compilation or execution,
+these are presented exactly as the particular compiler reports them,
+without terminating the interactive session.
+
+It can immediately be seen that {\em hi} is an extremely thin layer on
+top of the real compilation tools -- in fact it knows next to nothing
+about parsing Haskell, and certainly needs no advanced capabilities
+such as type-checking or code generation.
+
+\subsection{Features of {\em hi} in common with Hugs}
+
+To illustrate the features of {\em hi} that it shares with Hugs, here
+is the complete list of commands reported by {\em hi}'s help command:
 
 \begin{verbatim}
-
-> module Main where
-> 
-> import IO
-> import System
-> import Char
-> import Directory
-> import List
-> 
-> import HmakeConfig
-
+  <expr>              evaluate expression
+  :?                  display this list of commands
+  :quit               quit
+  :load mod [mod...]  load modules (note, not filenames)
+  :load               clear all modules
+  :reload             repeat last load command
+  :also mod [mod...]  load additional modules (note, not filenames)
+  :module mod         set module scope for evaluating expressions
+  :edit file          edit filename
+  :edit               edit current module
+  :cd dir             change directory
+  :cd                 show current directory
+  :dir                list current directory
+  :hc compiler        set Haskell compiler to use
+  :set options        set hmake/compiler options
+  :unset options      remove hmake/compiler options
+  :!command           shell escape
 \end{verbatim}
 
-The main job of an interpreter (at least in the sense of an interactive
-development environment) is to present a so-called ``read-eval-print
-loop'' to the user.  In {\em hi}, the startup banner will seem familiar
-to users of the {\em Hugs} interpreter.  Before entering the top-level
-loop, we must at least load the Prelude.
+Of these, the {\tt :hc} command is essentially the only new feature
+not found in Hugs (see subsection below).  Everything else is
+standard manipulation of the interactive environment (in essence
+the maintenance of a set of currently-available modules), and the
+evaluation of expressions within this environment.
+
+
+\subsection{Features of Hugs lacking in {\em hi}}
+
+Some features of Hugs that do not yet have a corresponding
+implementation in {\em hi} are as follows (extracted from Hugs'
+help command):
 
 \begin{verbatim}
-
-> banner = "\ 
-> \__   __                 __             _____________________________________
-> ||   ||  ______    ___  || _  ____     hmake interactive (hi):
-> ||___|| || || ||  ___|| ||/  ||__||       Copyright (c) May 2000
-> ||---|| || || || ||__|| ||\\_ ||__         http://www.cs.york.ac.uk/fp/hmake/
-> ||   ||                                Report bugs to: malcolm@cs.york.ac.uk
-> ||   || Version: "++hmakeVersion++"    -------------------------------------"
->
-> main = do
->   options <- getArgs
->   let opts = options ++ defaultOptions defaultCompiler
->   putStrLn banner
->   putStrLn (replicate 43 ' '++
->             "... Using compiler "++show defaultCompiler++" ...\n")
->   putStrLn ("Type :? for help")
->   hSetBuffering stdout NoBuffering
->   load opts defaultCompiler "Prelude"
->   toplevel opts defaultCompiler ["Prelude"]
-
+  :project <filename> use project file
+  :type <expr>        print type of expression
+  :names [pat]        list names currently in scope
+  :info <names>       describe named objects
+  :browse <modules>   browse names defined in <modules>
+  :find <name>        edit module containing definition of name
+  :gc                 force garbage collection
+  :version            print Hugs version
 \end{verbatim}
 
-Within the top-level loop, we keep a state which consists of the
-current compiler, current options, and currently loaded modules.
-The user's prompt is the name of the most recently loaded module.
-The user can type a single line of input to the interpreter, which
-is either an expression to evaluate, or a command.
-
-Commands begin with a colon character, followed by a command name,
-possibly followed by arguments.  A later section discusses the commands
-available.  (For historical reasons, the shell escape command {\tt :!}
-differs from all other commands in that its arguments are not separated
-from the command name by whitespace.  Hence, it is treated specially
-here.  Everything directly following the exclamation mark is passed
-to the shell for execution.)
-
-\begin{verbatim}
-
-> toplevel options compiler modules = do
->   putStr (head modules ++ "> ")
->   s <- getLine
->   if (null s || all isSpace s) then done else
->     case head s of
->       ':' -> let ws = words (tail s) in
->              if (null ws) then done else
->                case head (head ws) of
->                  '!' -> do e <- system (unwords ((tail (head ws)):tail ws))
->                            done
->                  _   -> commands ws options compiler modules
->       _   -> evaluate s options compiler modules
->   toplevel options compiler modules
-> 
-> done = return ()
-
-\end{verbatim}
-
-
-
-
-
-\section{Evaluation of an expression}
-
-Evaluation of an expression can take one of three forms.
-
-First, if the current module is {\tt Main} and the user chooses simply to
-run the function {\tt Main.main}, then it makes sense for the rest
-of the expression to contain command-line arguments to that program.
-Indeed, it could also contain directions to the program's runtime
-system, for instance to set a heapsize, or enable profiling.  In this
-case, the most recently loaded module is simply compiled and run
-with the rest of the line as arguments.
-
-\begin{verbatim}
-
-> evaluate expr options compiler modules | "main " `isPrefixOf` expr = do
->   compile options compiler (head modules)
->      (run ("./"++head modules) (tail (words expr)))
-
-\end{verbatim}
-
-The rather more frequent case however, will be where the user is
-testing small functions within the large set of functions available
-from the currently selected modules.  In this situation, in order to
-feed the expression correctly through a compiler, we need to generate
-a small {\tt Main} module whose {\tt main} function evaluates the
-user's expression.  This {\tt Main} module (rather obviously) imports
-the user's current collection of modules, and is then simply compiled
-and run.
-
-However, we need to be careful: we insist that there must be a method
-for displaying the result of the expression, so unlike in {\em Hugs},
-the user's expression must have a result type within the standard
-{\tt Show} class.  Furthermore, the user is permitted to enter an
-expression of {\em any} type, but should its type happen to be {\tt
-IO a}, the I/O program should not be displayed, but rather it should
-be run.  So there are two little tricks required: first, to distinguish
-I/O programs from simple expressions we have a non-standard instance
-of the {\tt Show} class for {\tt IO a}; and second, in the case where
-the expression is {\em not} of type {\tt IO a} we need to fool the
-typechecker into allowing that expression to be ``run'' in the dead
-branch of the {\tt case} statement! -- hence the non-standard {\tt
-coerce} function.
-
-\begin{verbatim}
-
-> evaluate expr options compiler modules = do
->   let tmpfile = "/tmp/Main"
->   f <- openFile (tmpfile++".hs") WriteMode
->   hPutStr f (
->     "module Main where\n\n" ++
->     concatMap (\m-> "import "++m++"\n") modules ++
->     "\n" ++ nonstdCoerce compiler ++
->     "\n" ++ nonstdShow compiler ++
->     "\nmain = let expr  = (" ++ expr ++ ")" ++
->     "\n           shown = show expr" ++
->     "\n       in case shown of" ++
->     "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
->     "\n           _                   -> putStrLn shown" ++
->     "\n")
->   hClose f
->   compile options compiler tmpfile (run tmpfile [])
-
-\end{verbatim}
-
-The third and final case is where the user wishes to test an expression
-within the scope of a particular module.  That is, to avoid the
-restriction of testing only functions that are {\em exported} from
-modules, the user may wish to ``enter'' a module and test local
-definitions not visible outside that module.
-
-This is possibly the most complex case, but again it is relatively
-straightforward to specify, this time by transformation of the selected
-module rather than generation of a new {\tt Main}.
-
-First, the module's header (if any) is removed and replaced with a
-simple {\tt module Main where}.  Then, any existing function called
-{\tt main} is removed (or renamed).  Any extra modules currently
-``loaded'' by the user are imported, since the test expression may
-use them.  Finally, a new {\tt main} function is constructed exactly
-as above.
-
-\begin{verbatim}
-
-> **** code goes here ****
-
-\end{verbatim}
-
-(We do not display the full code for scoped evaluation here, just the
-outline.  The un-literator is standard, appearing in early versions of
-the Haskell Report.  Both the simple code parser and the transformer
-which removes or renames syntactic components are straightforward
-enough to write, but somewhat tedious to read.)
-
-
-\section{Manipulating modules}
-
-Within the interactive environment, the user has some control over
-which modules are in scope, involving a process of loading, compiling,
-and running various modules.
-
-To load several modules at once, each is loaded individually.
-(For stylistic reasons noted elsewhere, the list to be loaded is always
-presented in reverse order, so we have to reverse it again here.)
-
-\begin{verbatim}
-
-> loadAll options compiler modules =
->   mapM_ (load options compiler) (reverse modules)
-
-\end{verbatim}
-
-For each named module, we try looking in the current directory for a
-normal Haskell file, first with the literate extension {\tt .lhs},
-then with the ordinary extension {\tt .hs}, then with a GreenCard
-extension {\tt .gc}.  If all of those fail, then we look for the module
-amongst the standard prelude and libraries, using an appropriate
-search path for the current compiler.  If even that fails, then we
-display an error.
-
-\begin{verbatim}
-
-> load options compiler mod = do
->   normal ".lhs" (
->     normal ".hs" (
->       normal ".gc" (
->         foldr  prelude
->               (putStrLn ("[Module "++mod++" not found...]"))
->               (preludePaths compiler))))
-
-\end{verbatim}
-
-The procedure for discovering a normal file is continuation-based
--- if the file exists it is compiled and the search stops, otherwise
-the fall-through continuation is invoked.
-
-\begin{verbatim}
-
->  where
->   normal :: String -> IO () -> IO ()
->   normal ext continue = do
->     let file = mod++ext
->     exist <- doesFileExist file
->     if exist then do
->         putStr ("[Found module... "++file++"] ")
->         compile options compiler file (putChar '\n')
->       else continue
-
-\end{verbatim}
-
-The procedure for discovering a standard prelude or library module
-follows a similar model.   Here however, the file extension is
-{\tt .hi} for an interface file, and of course the standard modules
-do not need to be compiled -- they are simply available.
-
-\begin{verbatim}
-
->   prelude :: String -> IO () -> IO ()
->   prelude pp continue = do
->     hi <- doesFileExist (pp++"/"++mod++".hi")
->     if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
->           else continue
-
-\end{verbatim}
-
-When compiling a module, the compiler is not called directly.  Rather,
-the batch tool {\em hmake} is used to establish any dependencies of
-the module, and ensure all modules it imports are also compiled.
-Such dependencies are not reported, but neither does the user have to
-ask for them by name.  {\em Hmake} issues all calls to the currently
-selected compiler with the current options, ensuring that only
-modules that have changed since the last compile, or which depend
-on a changed module, are re-built.  Hence, although the first time
-a module is loaded it may appear slow to the user, on subsequent
-occasions loading can be almost instantaneous.
-
-Should the attempted compilation fail for any reason, we print a
-message to that effect, and of course the particular compiler's own
-diagnostics will also appear on the user's screen.  If the compilation
-succeeds, the informational progress message (``Compiling...'') is
-deleted from the screen, and the success-continuation is invoked.
-
-\begin{verbatim}
-
-> compile options compiler file continue = do
->   putStr "[Compiling..."
->   ok <- system ("hmake -"++show compiler++" -I. "
->                 ++unwords options++" "++file++" >/dev/null")
->   case ok of
->     ExitSuccess -> do putStr (delete "[Compiling...")
->                       continue
->     _           -> putStrLn "...failed]"
->  where
->   delete []     = ""
->   delete (_:xs) = "\BS \BS" ++ delete xs
-
-\end{verbatim}
-
-Running a program could not be simpler: we just ask the system to
-do it for us with command-line arguments as supplied.
-
-\begin{verbatim}
-
-> run file args = system (file++" "++unwords args) >> done
-
-\end{verbatim}
-
-Occasionally, it is necessary to remove object and interface files,
-particularly when switching between compilers.  To remove a whole
-bunch of modules at once based on the file extension, we test
-for the existence of each file before removing it simply to avoid
-spurious error messages.
-
-\begin{verbatim}
-
-> makeclean ext modules = mapM_ (clean ext) modules
->   where
->   clean ext mod = do
->     let file = mod++ext
->     exist <- doesFileExist file
->     if exist then do
->         putStrLn ("[Removing    ... "++file++"]")
->         catch (removeFile file) print
->       else done
-
-\end{verbatim}
-
-
-
-\section{Commands}
-
-{\em Hmake interactive} aims to provide an interface that is comparable
-to {\em Hugs}, as is illustrated by the command help-text.  In this
-section we describe how each command is implemented.
-
-\begin{verbatim}
-
-> help = "\ 
-> \Commands (can be abbreviated to first letter):
->   <expr>              evaluate expression
->   :quit               quit
->   :Quit               quit
->   :load mod [mod...]  load modules (note, not filenames)
->   :load               clear all modules
->   :reload             repeat last load command
->   :also mod [mod...]  load additional modules (note, not filenames)
->   :module mod         set module scope for evaluating expressions
->   :edit file          edit filename
->   :edit               edit current module
->   :cd dir             change directory
->   :cd                 show current directory
->   :dir                list current directory
->   :hc compiler        set Haskell compiler to use
->   :set options        set hmake/compiler options
->   :unset options      remove hmake/compiler options
->   :!command           shell escape"
-
-\end{verbatim}
-
-Commands are presented as a list of words, and are interpreted in the
-context of an environment containing option strings, the current
-compiler, and the current list of modules.  Each command consists of
-a single word (with colon elided), possibly followed by some words
-establishing the target of the command.  The user can abbreviate all
-commands to any prefix of the command word.  In this presentation we
-use the success-continuation model: if a test for an individual
-command succeeds, we invoke the associated continuation action and
-then return immediately to the top-level command loop; otherwise when
-the test fails, control falls through to the next item in the {\em
-do} procedure.
-
-\begin{verbatim}
-
-> commands :: [String] -> [String] -> Compiler -> [String] -> IO ()
-> commands ws options compiler modules =
->   let target = tail ws 
->       command :: String -> IO () -> IO ()
->       command name action =
->         if head ws `isPrefixOf` name then
->           do action
->              toplevel options compiler modules
->         else done
->       quit = do
->          putStrLn "[Leaving hmake interactive...]"
->          exitWith ExitSuccess
->       indent = mapM_ (\x-> putStrLn ("  "++x))
->   in
-
-\end{verbatim}
-
-Of paramount importance to the first-time user of any interactive system
-is the knowledge of how to get out!  For this reason, the {\tt :quit}
-command should always be the first item taught in any tutorial guide.
-A help command is the obvious second priority.
-
-\begin{verbatim}
-
->   do
->   command "quit" quit
->   command "Quit" quit
->   command "?" (putStrLn help)
-
-\end{verbatim}
-
-The semantics of the {\em Hugs} {\tt :load} command is that with
-no arguments it removes all loaded modules and reverts to just the
-prelude.  Given a list of modules to load, it starts with the prelude
-and adds them one by one.  Notice that here we keep the current list
-of modules in reverse order -- this is simply for the convenience
-elsewhere of reading the topmost module off the head of the list.
-
-A small further point of interest here is that the {\tt :load} command
-has an explicit tail-call to the top-level command loop, rather than
-allowing the normal return defined within the {\tt command} procedure.
-This is because we wish to alter the environment for future commands
-(in this instance, by replacing the current list of modules).
-
-\begin{verbatim}
-
->   command "load"
->       (let mods = if null target then ["Prelude"]
->                   else (reverse ("Prelude":target))
->        in do loadAll options compiler mods
->              toplevel options compiler mods
->       )
-
-\end{verbatim}
-
-The {\tt :also} command differs from the {\tt :load} command solely in
-that it {\em adds} the named modules to the current list rather than
-replacing it.
-
-\begin{verbatim}
-
->   command "also"
->       (let mods = if null target then ["Prelude"]
->                   else (reverse target ++ modules)
->        in do loadAll options compiler mods
->              toplevel options compiler mods
->        )
-
-\end{verbatim}
-
-The {\tt :reload} command is used to force the interpreter to scan
-through the current list of modules again, typically due to having
-edited a module externally, that is, outside the knowledge of
-the interpreter.  Here we can simply rely on the batch {\em hmake}
-to recognise such changes and deal with them appropriately.
-
-\begin{verbatim}
-
->   command "reload"
->        (loadAll options compiler modules)
-
-\end{verbatim}
-
-If given no arguments, the {\tt :edit} command is assumed to refer
-to the most-recently loaded module.  After editing, it is necessary
-to reload just that module.  However, if the files to edit were
-explicitly named, then it is safest to reload everything -- don't
-forget that {\em hmake} ensures that only the changed files are
-actually re-compiled.
-
-\begin{verbatim}
-
->   command "edit"
->       (if null target then do
->            e <- system ("$EDITOR " ++ head modules ++ ".hs")
->            load options compiler (head modules)
->        else do
->            e <- system ("$EDITOR " ++ unwords target)
->            loadAll options compiler modules
->       )
-
-\end{verbatim}
-
-To change working directory, use the {\tt :cd} command.  If no
-directory is specified, then the current directory is reported instead.
-
-\begin{verbatim}
-
->   command "cd"
->       (if null target then do
->             dir <- getCurrentDirectory
->             putStrLn ("Current directory: "++dir)
->        else catch (setCurrentDirectory (head target)) print
->       )
-
-\end{verbatim}
-
-{\em Hugs} does not have a builtin directory listing command --
-you are assumed capable of using a shell escape for such purposes.
-But to illustrate the ease with which the user can tailor their
-own interactive environment, even if only trivially, {\em hi} has
-the {\tt :dir} command.
-
-\begin{verbatim}
-
->   command "dir" (getDirectoryContents "." >>= indent)
-
-\end{verbatim}
-
-The {\tt :set} command is used to add options to the current option list.
-With no arguments, it displays the current option list.  It should be
-noted that these options are actually passed to the batch {\em hmake},
-and are not used at all in the interactive system {\em hi} per se.
-And indeed, of the options passed to {\em hmake}, the vast majority
-are actually passed on directly to the underlying compiler.  Thus,
-the meaning of individual option strings is to be found in
-your compiler's documentation, not here!
-
-(Note again here the explicit tail-call to the top-level loop,
-ensuring that the change to the environment state is carried forward.)
-
-\begin{verbatim}
-
->   command "set"
->       (do putStrLn ("Current settings:\n  "++unwords (options++target))
->           toplevel (options++target) compiler modules)
-
-\end{verbatim}
-
-To remove options from the current environment, we just use the quick
-and dirty $\backslash\backslash$ operation from the {\em List} library.
-
-\begin{verbatim}
-
->   command "unset"
->       (do let newopts = options \\ target
->           putStrLn ("Current settings:\n  "++unwords newopts)
->           toplevel newopts compiler modules)
-
-\end{verbatim}
-
-One of the most interesting facilities of {\em hi} is the ability
-to switch between backend compilers on-the-fly during a session.
-This ability is invaluable for highlighting portability issues in
-Haskell code.
-
-Given no arguments, the {\tt :hc} command reports the current compiler.
-If the command's argument corresponds to a known compiler, then we not
-only switch the name of the current compiler stored in the environment,
-but we also switch between sets of default options for each compiler.
-Because neither interface files nor object files are compatible
-between different compilers, these are removed for all modules in the
-currently-loaded list.  Then all modules are reloaded, necessitating
-a complete rebuild with the newly selected compiler.
-
-\begin{verbatim}
-
->   command "hc"
->       (if null target then putStrLn ("Current compiler: "++show compiler)
->        else let newcomp = toComp (head target)
->                 newopts = (options \\ defaultOptions compiler)
->                                    ++ defaultOptions newcomp
->             in
->             if compilerKnown newcomp then do
->                makeclean ".o" modules
->                makeclean ".hi" modules
->                loadAll newopts newcomp modules
->                toplevel newopts newcomp modules	-- explicit return
->             else do
->                putStrLn ("Compiler "++head target++" not known/configured")
->                putStrLn ("Current compiler: "++show compiler)
->       )
-
-\end{verbatim}
-
-Finally, if none of the commands has yet matched, this {\em do} block
-falls through to an error message.  Although there is no explicit
-tail-call to the top-level loop here at the end, within the calling
-context this function returns to the top-level loop anyway.
-
-\begin{verbatim}
-
->   putStrLn ("[Unknown command :"++head ws++"]")
-
-\end{verbatim}
-
-
-\section{Shortcomings}
-
-Of course, there are several very useful facilities provided by {\em
-Hugs} that are missing in {\em hi}.  Some of them are listed here.
-
-The {\tt :type} command reports the type of an expression.
-We experimented with one way to achieve the same effect in {\em hi},
-based on a small library extension implemented only by {\em hbc}
-and {\em nhc98}, namely the {\em showsType} method as a member of the
-{\em Show} class.  This proved unsatisfactory due to the monomorphism
-restriction -- although simple expressions seemed correct, polymorphic
-ones were flattened by the defaulting mechanism: for example the
-command {\tt :type map} dutifully reported:
-
-\begin{verbatim}
-   map :: (Integer->Integer) -> [Integer] -> [Integer]
-\end{verbatim}
-
-The underlying problem is that {\em hi} does not have direct access to
-a full parser and typechecker for Haskell.\footnote{One of the goals of
-the combined {\em Hugs/ghc} project is the Haskell Execution Platform
--- a programmatic interface allowing exactly this direct access to
-individual components of the compiler.}  Although one could imagine
-coding these components into {\em hi}, this would conflict with the
-design philosophy that difficult jobs are shunted to external tools.
-An alternative approach might be to suggest that compiler implementers
-provide a suitable commandline switch to report exactly the information
-required -- this might add a handful of lines to each compiler,
-but avoids adding hundreds of lines to {\em hi}.
-
-The {\tt :info} command in {\em Hugs} reports a wealth of information
-about any name that is in scope, appropriate to whether it is a
-datatype, constructor, class member, function or operator.  {\em hi}
-could in theory parse every module's interface file when loading that
-module, store this information (and more) in a look-up table, and
-present it to the user.  The different
-interface file formats used by different compilers make this job
-tedious, but the problem is not insurmountable.  This mini-database
-would additionally provide exactly the information needed to implement
-the {\tt :find}, {\tt :names} and {\tt :browse} commands.  For some
-compilers, such as {\em hbc} or {\em ghc}, additional information
-about strictness and inlining could also be retrieved from the interface
-file and presented to the user.
-
-Interrupt-handling is non-existent in {\em hi}.  That is to say, typing
-ctrl-C does not halt a running computation as in {\em Hugs}, rather
-it exits the interpreter itself, leaving the computation running as
-a separate process!  This is ugly, and the only excuse for not fixing
-it yet is lack of time.
-
+The use of project files is essentially obsolete -- Hugs now does
+full module-chasing based on {\tt import} declarations in files,
+whereas {\em hi} calls the batch tool {\em hmake} to achieve the
+same goal.
+
+Otherwise, the main omission within {\em hi} is of the various
+commands that provide extra information about function names --
+their types, which module they reside in, and so on.  In principle,
+it would be straightforward to harvest this information from the
+module interface files produced by all Haskell compilers.  (The only
+reason we have not done so yet is lack of time to write the parsers
+needed for each different interface format.)
+
+The {\tt :type} command is slightly more involved, because in Hugs
+it can report the type of any expression, not just of a static
+function name.  Even this could be provided by {\em hi} without
+having to re-implement Haskell's type system, through a similar
+mechanism as expressions are evaluated, viz. generate a small
+module containing the expression, compile it, then harvest the
+type information from the module interface file.
+
+
+\subsection{Features of {\em hi} lacking in Hugs}
+
+The one major feature of {\em hi} that goes beyond the facilities that
+Hugs can offer is the ability to change Haskell compiler on-the-fly
+within the interactive environment (the {\tt :hc} command).  This can
+be very helpful for verifying the portability of code across compilers.
+The command's implementation is fairly obvious - just remove all
+object and interface files pertinent to the current set of modules,
+and call the {\em hmake} compilation management tool with the new
+compiler to rebuild everything.
+
+
+\section{Program transformation}
+\subsection{A clue to the semantics of interpreter/compiler distinctions}
+
+The most interesting parts of {\em hi} are those which manipulate
+program source code.  By viewing these as restricted forms of program
+transformation, we can perhaps shed a little light on the exact
+semantics of evaluating an expression in an interpretive environment,
+as distinct from evaluating a program built by a compiler.
+
+There are two main places where program code is ``transformed''
+within {\em hi}: the evaluation of an expression in the environment
+of a particular set of modules; and the evaluation of an expression
+inside the scope of a single module.  These differ: in the first case,
+the expression can refer only to entities exported from the modules
+in question; in the second, the expression may additionally refer
+to entities defined inside (but not exported from) the module whose
+scope is entered.
+
+In the first case, the ``transformation'' is degenerate -- essentially
+the expression is embedded textually within a skeleton program.
+
+In the second case, the transformation is more interesting.  Starting
+from the module within whose scope the expression is entered, we first
+remove the module header and export list (if one exists), replacing it
+with {\tt module Main where}.  Now, if a {\tt main} function already
+exists within the module, we remove (or rename) it.  Finally, we add a
+new {\tt main} function whose definition is the expression of interest.
+
+
+\subsection{Providing extra features}
+
+Taking the idea of program transformation within the interactive
+system a little further, it is not hard to see how to provide new
+facilities of extra benefit to the programmer.  As an example, Andy
+Gill's Haskell Object Observation Debugger is a very useful recent
+addition to the programmer's toolkit.  The programmer uses it by
+adding tracing ``probes'' to the source code of his program.  However,
+in practice this can be disruptive to the original program, making it more
+difficult for the human eye to read.  So perhaps an interactive system
+could add these ``probes'' automatically?
+
+But of course.  By a simple internal program transformation, {\em hi}
+can add a probe to a function definition without altering the original
+source file at all.  The command {\tt :observe ident} places a HOOD
+observation on the given identifier inside the scope of a module.
+The original definition is renamed, and a new definition introduced
+which wraps a call to the debugging observation primitive around a call
+to the renamed function.
+
+
+
+\section{Evaluation}
+\subsection{Speed}
+
+One of the first objections to {\em hi} from Hugs users is that
+surely it must seem very slow.  After all, Hugs is renowned for
+its almost instantaneous loading/compilation time, whereas the most
+widely used Haskell compiler ({\em ghc}) is renowned for its slow
+compilation times!  However, not all compilers are equal: for instance
+{\em nhc98} falls somewhere between these two extremes -- compilation
+is faster than ghc (though not as fast as Hugs), and runtime speed is
+faster than Hugs (though not as fast as ghc).
+
+In practice, the turnaround time for loading and compiling a
+medium-sized module with {\em nhc98} is well under one second on a
+fairly recent 500MHz Intel-based PC under Linux -- well within the
+tolerances of most users.
+
+In addition, because {\em hi} uses {\em hmake} as its underlying
+compilation manager, it is frequently the case that modules which have
+been compiled once (and do not change) do not need to be recompiled,
+in which case they can be loaded immediately.
+
+Finally, because compiled code runs faster than code being interpreted
+by Hugs, there is a tradeoff between increased compilation waiting
+time and decreased runtime, which in many cases comes out in favour
+of the compilers.
+
+
+\subsection{Ability to use different compilers}
+
+Because it can use {\em any} Haskell compiler, {\em hi} encourages the
+programmer to experiment with a range of tradeoffs between compile-time
+speed, runtime speed, code size and runtime heap usage, across the
+interpretive/compiled spectrum of available language implementations.
+
+The ability of the individual user to tune his or her interactive
+response times in this manner is very attractive.  Because the same
+interactive interface can be used with many backends, the barrier to
+trying out different compilers is lowered, and it becomes easier to
+find the optimal combination of tools for a particular project and
+a particular programmer's temperament.
+
+
+\subsection{Productivity}
+
+Writing the {\em hi} interactive environment was relatively quick and
+easy, given the existence of most of the underlying tools that do the
+real work.  See Table 1 for a rough breakdown of the effort spent.
+The hardest part of the implementation was configuring {\em hi} to
+use all three different possible compiler backends, due to three or
+four small but non-standard extensions to Haskell'98 used in the code
+transformation scheme.  The Unlit module (for stripping literate code)
+was taken directly from an implementation given in early versions of
+the Haskell report.
+
+\begin{table}
+\begin{center}
+\begin{tabular}{lrl}
+
+\multicolumn{1}{c}{module} & \multicolumn{1}{c}{LoC} & \multicolumn{1}{c}{time}
+  \\
+    HInteractive	& 299	& 2x afternoons \\
+    HmakeConfig		& 160	& 2x days \\
+    LexModule		&  86	& 1x afternoon \\
+    SimpleLineEditor	&  74	& 1x day \\
+    Unlit	 	&  65	& none \\
+ \hline
+    total		& 684	& 1x week \\
+\end{tabular}
+\caption{Size of code / time to write}
+\end{center}
+\end{table}
+
+
+\section{Related Work}
+
+\begin{itemize}
+\item
+  hbi -- the first Haskell compiler/interpreter hybrid.
+\item
+  Hugs/ghc -- a recent combined interpreter and compiler for Haskell.
+\item
+  GUI Integrated Development Environments (e.g. MS Visual Studio)
+\end{itemize}
 
 \section{Conclusions}
 
-We have presented the code for {\em hi}, a small interactive
-development environment for Haskell, written in Haskell.  It mimics the
-popular {\em Hugs} interface, yet allows the use of any of the commonly
-available Haskell compilers.  The level of interactive performance
-perceived by the user will depend on the particular compiler selected,
-but different compilers give different trade-offs between compilation
-speed and final code speed, so the user has some choice.  On a new
-PC machine, a compiler like {\em nhc98} or {\em hbc} generally gives
-turnaround times of under one second.
+Haskell is an excellent language for scripting.  It took a very
+short time to achieve a useful working prototype of a simple tool,
+based on stringing calls to other tools together in a sensible manner.
 
-The design philosophy is to rely on external tools for most of the
-real work of compilation.  This slightly restricts the number of
-features that are currently supported, but we hope it also serves
-as an inspiration to other hackers to write small tools that can
-be either be used in batch mode or ``plugged in'' to the interactive
-system.
+Re-use of other software, when possible, is highly desirable.  In {\em
+hi}, we used three existing compilers and an existing compilation
+manager as backends, rather than writing our own from scratch.
+We also heavily re-used the user-interface design of Hugs, without
+actually using any of its code.  While significantly reducing the
+time taken to produce the software, it also significantly reduces
+the unfamiliarity barrier to users who might wish to try out the
+software.
 
+A user-interface does not have to be complex to be useful.  One great
+benefit of writing the user-interface in Haskell is that, due to
+its conciseness and clarity, it is very easy to extend.  Users can
+add features they desire reasonably quickly and easily, and do it
+themselves without having to rely on an external authority to guide
+them into the intricacies of the code.
 
-\section*{Appendix: Backend Configuration}
+Although {\em hi} is a text based interface, one can imagine that a GUI
+interface would not be much harder to write in a functional language,
+given a suitable graphical toolkit (cf. the Lambada language which
+links Haskell with Java libraries, also GTK+HS and hGLUT which link
+Haskell with particular GUI libraries implemented in C).
 
-And that is (almost) all there is to say about {\em hi}.  Except that
-there is actually a non-trivial amount of code required to configure
-{\em hi} for any particular set of possible compiler backends.
-This Appendix gives a literate-code outline of the configuration
-modules for {\em hi}.  The first module, {\tt HmakeConfig}, performs
-generic configuration tasks, and is fixed.  It encapsulates the various
-differences between compilers that are relevant to the implementation
-of {\em hi}.  The second module, {\tt LocalConfig}, tailors the
-configuration to a particular local installation, and is either
-automatically generated during the installation process, or modified
-to the user's taste.
-
-\begin{verbatim}
-
-> module HmakeConfig where
-> 
-> import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
->                     hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
-
-\end{verbatim}
-
-{\em Hmake} permits the use of certain environment variables to
-override the default configuration settings, so {\em hi} must
-follow the same scheme to avoid mismatches.  The non-standard
-extension {\tt unsafePerformIO} is very handy to encapsulate
-the reading of the external environment here.  We define an infix
-function {\tt withDefault} to prefer the value of an environment
-variable if it is set and non-empty, otherwise to use the configured
-default.
-
-\begin{verbatim}
-
-> #ifdef __HBC__
-> import UnsafePerformIO
-> #endif
-> #ifdef __NHC__
-> import IOExtras (unsafePerformIO)
-> #endif
-> #ifdef __GLASGOW_HASKELL__
-> import IOExts (unsafePerformIO)
-> #endif
-> import System
-> 
-> withDefault name def = unsafePerformIO $
->    catch (do val <- getEnv name
->              if null val then return def else return val)
->          (\e-> return def)
-
-\end{verbatim}
-
-We know of three main Haskell compilers that might be available on
-any particular machine.
-
-\begin{verbatim}
-
-> data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
-> toComp "nhc98" = Nhc98
-> toComp "ghc"   = Ghc
-> toComp "hbc"   = Hbc
-> toComp x       = Unknown x
-> instance Show Compiler where
->   showsPrec p Nhc98 = showString "nhc98"
->   showsPrec p Ghc   = showString "ghc"
->   showsPrec p Hbc   = showString "hbc"
->   showsPrec p (Unknown x) = showString x
-
-\end{verbatim}
-
-Of those that might be available, we need to establish which compilers
-are actually present.
-
-\begin{verbatim}
-
-> knownCompilers  = (if ghcKnown then (Ghc:) else id)
->                    ((if hbcKnown then (Hbc:) else id)
->                     ((if nhcKnown then (Nhc98:) else id) []))
-> compilerKnown c = c `elem` knownCompilers
-
-\end{verbatim}
-
-Each compiler has non-standard extensions, which of course live
-in different locations.
-
-\begin{verbatim}
-
-> preludePaths c  = case c of
->     Nhc98 -> [nhc98incdir]
->     Hbc   -> hbcincpath
->     Ghc   -> ghcincpath
->     _     -> []
-> nonstdCoerce c  = case c of
->     Nhc98 -> "import NonStdUnsafeCoerce\n\ 
->               \coerce=unsafeCoerce"
->     Hbc   -> "#define coerce coerceNotFound"
->     Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
->              \coerce :: a -> b\ncoerce = unsafeCoerce#"
->     _     -> ""
-> nonstdShow c  = case c of
->     Nhc98 -> ""
->     Hbc   -> "instance Show (IO a) where\n\ 
->              \  showsPrec p x = showString \"<<IO action>>\""
->     Ghc   -> "instance Show (IO a) where\n\ 
->              \  showsPrec p x = showString \"<<IO action>>\""
->     _     -> ""
-> defaultOptions c = case c of
->     Nhc98 -> []
->     Hbc   -> []
->     Ghc   -> ["-fglasgow-exts"]
->     _     -> []
-
-\end{verbatim}
-
-The local configuration defines a default compiler to use, but we
-prefer the environment variable {\tt HC} if it is set.
-
-\begin{verbatim}
-
-> defaultCompiler = toComp ("HC" `withDefault` defaultHc)
-
-\end{verbatim}
-
-Each compiler stores its standard prelude and library interface files
-in separate locations.
-
-\begin{verbatim}
-
-> hbcincpath =
->   let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
->   in [root++"/hlib1.3", root++"/hbc_library1.3"]
-> nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
-> ghcincpath =
->   let ghcincdir = "GHCINCDIR" `withDefault` ghcdir
->   in
->   if ghclang < 5 then
->       -- ghc before Haskell'98
->       [ghcincdir]
->   else if ghcver < 406 then
->       -- ghc for Haskell'98, prior to hslibs
->       [ghcincdir++"/std"        ,ghcincdir++"/exts"
->       ,ghcincdir++"/misc"       ,ghcincdir++"/posix"]
->   else
->       -- ghc for Haskell'98, with new hslibs
->       [ghcincdir++"/std"        ,ghcincdir++"/data"
->       ,ghcincdir++"/lang"       ,ghcincdir++"/misc"
->       ,ghcincdir++"/net"        ,ghcincdir++"/num"
->       ,ghcincdir++"/text"       ,ghcincdir++"/util"
->       ,ghcincdir++"/win32"      ,ghcincdir++"/posix"]
-
-\end{verbatim}
-
-Finally, the local configuration module tells us which compilers
-are actually detected as being present on a particular machine,
-what their versions are, where the base directories are located,
-and which one to use as the default compiler.
-
-\begin{verbatim}
-
-> module LocalConfig where
-> hmakeversion = "1.8 or better"
-> builtby = "ghc"
-> ghcKnown =  True
-> hbcKnown =  True
-> nhcKnown =  True
-> hbcdir = "/usr/local/lib/lmlc"
-> nhc98dir = "/usr/local/include/nhc98"
-> ghcdir = "/usr/local/lib/ghc-4.06/imports"
-> ghcver = 406
-> ghclang =  5
-> defaultHc = builtby
-
-\end{verbatim}
-
+\section*{References}
 
 \end{document}
-
-
-
-
-
-
-
-
-
-
-
-
-> 
-> {-
-> -- scopedEvaluate allows you to play with _unexported_ functions from the
-> -- current module.  This currently requires the restriction that "main" is
-> -- not otherwise defined in this module.
-> scopedEvaluate expr options compiler modules = do
->   -- Ok, this isn't fully implemented yet, but the basic scenario is
->   -- to copy the module to /tmp/Main.hs, removing a "module ... where"
->   -- header if it exists (could replace with "module Main where", but
->   -- that is unnecessary).  Add a "main = ..." definition to the end
->   -- of the module, compile and run.  Additionally, it would be nice to
->   -- search for an existing "main" definition and rename it to "_main",
->   -- but that is (a) harder, and (b) potentially time-consuming.
->   let tmpfile = "/tmp/Main"
->   system ("echo module Main where >"++tmpfile++".hs")
->   -- system ("cat " ...)
->   hPutStr f (
->     "module Main where\n\n" ++
->     concatMap (\m-> "import "++m++"\n") modules ++
->     "\n" ++ nonstdCoerce compiler ++
->     "\n" ++ nonstdShow compiler ++
->     "\nmain = let expr  = (" ++ expr ++ ")" ++
->     "\n           shown = show expr" ++
->     "\n       in case shown of" ++
->     "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
->     "\n           _                   -> putStrLn shown" ++
->     "\n")
->   hClose f
->   compile options compiler tmpfile (run tmpfile [])
->   where
-> -}
-
-
-
-
-
-
-
-
-
