@@ -102,11 +102,16 @@ else
 fi
 NEWHEAP=$HEAP
 
+MOREEVIL=no
 case $CCC in	# versions of gcc >= 3.3 require extra evil in the evil mangler!
   *gcc*) if $CCC --version | head -1 | grep "3.3" >/dev/null
          then MOREEVIL=yes
-         else MOREEVIL=no
          fi ;;
+esac
+case $OS in	# Apple's gcc requires special treatment
+  Darwin*) if $CCC --version | head -1 | grep "3.3" >/dev/null
+           then MOREEVIL=yes
+           fi;;
 esac
 
 while [ "$1" != "" ]
