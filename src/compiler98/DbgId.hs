@@ -2,7 +2,8 @@ module DbgId(tTrace, t_R, tSR, {- tSR2, tSR3,-} tDNum, tE,
              t_mkTRoot,t_mkTNm,t_hide,
              {- t_Ap, t_Nm, t_Ind, t_Root, t_Sat, t_Pruned, t_Hidden,-}
              t_lazySat,
-             t_ap, t_rap, t_patvar, t_caf, t_fun, t_tfun, t_primn, t_tprimn
+             t_ap, t_rap, t_tap, t_trap, t_patvar, t_caf
+            , t_fun, t_tfun, t_primn, t_tprimn
             , t_guard, t_if, t_rif
             ,t_cn, t_pa, t_con, t_trust, t_rPatBool, t_pap,
 	     t_conInt, t_conChar, t_conInteger, t_conRational, t_conDouble, 
@@ -55,6 +56,8 @@ t_fun n		= qualImp ("fun" ++ show n)
 t_tfun n        = qualImp ("tfun" ++ show n)
 t_ap n		= qualImp ("ap" ++ show n)
 t_rap n		= qualImp ("rap" ++ show n)
+t_tap n		= qualImp ("tap" ++ show n)
+t_trap n	= qualImp ("trap" ++ show n)
 t_pap n		= qualImp ("pap" ++ show n)
 -- t_c n		= qualImp ("c" ++ show n)
 t_cn n		= qualImp ("cn" ++ show n)
@@ -179,12 +182,14 @@ tokenDbg = [(TCon, tTrace),
            ++ [(Var,  t_tfun n)  | n <- [0..12]]
 	   ++ [(Var,  t_ap n)    | n <- [1..12]]
 	   ++ [(Var,  t_rap n)   | n <- [1..12]]
+	   ++ [(Var,  t_tap n)   | n <- [1..12]]
+	   ++ [(Var,  t_trap n)  | n <- [1..12]]
 	   ++ [(Var,  t_pap n)   | n <- [1..10]]
 --	   ++ [(Var,  t_c n)     | n <- [1..12]]
 	   ++ [(Var,  t_cn n)    | n <- [1..8]]
 	   ++ [(Var,  t_pa n)    | n <- [0..4]]
 	   ++ [(Var,  t_con n)   | n <- [0..12]]
-	   ++ [(Var,  t_primn n)  | n <- [0..12]]
-	   ++ [(Var,  t_tprimn n) | n <- [0..12]]
+	   ++ [(Var,  t_primn n) | n <- [0..12]]
+	   ++ [(Var,  t_tprimn n)| n <- [0..12]]
 	   ++ [(TCon, t_Tuple n) | n <- [2..12]]	   
 	   ++ [(Con,  t_Tuple n) | n <- [2..12]]

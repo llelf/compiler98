@@ -221,67 +221,50 @@ optMkTNm t nm sr =
     else mkTNm t nm sr
 
 {- combinators for n-ary application in a non-projective context. -}
+-- suspected:
 
 ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
 ap1 sr t (R rf tf) a@(R _ at) = 
-  let t' = if trusted t tf
-             then hide t
-             else mkTAp1 t tf at sr
+  let t' = mkTAp1 t tf at sr
   in  lazySat (rf t' a) t'
 
 ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp2 t tf at bt sr
+  let t' = mkTAp2 t tf at bt sr
   in  lazySat (pap1 sr t t' (rf t' a) b) t'
 
 ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp3 t tf at bt ct sr
+  let t' = mkTAp3 t tf at bt ct sr
   in  lazySat (pap2 sr t t' (rf t' a) b c) t'
 
 
 ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp4 t tf at bt ct dt sr
+  let t' = mkTAp4 t tf at bt ct dt sr
   in  lazySat (pap3 sr t t' (rf t' a) b c d) t'
 
 
 ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp5 t tf at bt ct dt et sr
+  let t' = mkTAp5 t tf at bt ct dt et sr
   in  lazySat (pap4 sr t t' (rf t' a) b c d e) t'
 
 ap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp6 t tf at bt ct dt et ft sr
+  let t' = mkTAp6 t tf at bt ct dt et ft sr
   in  lazySat (pap5 sr t t' (rf t' a) b c d e f) t'
 
 ap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp7 t tf at bt ct dt et ft gt sr
+  let t' = mkTAp7 t tf at bt ct dt et ft gt sr
   in  lazySat (pap6 sr t t' (rf t' a) b c d e f g) t'
 
 ap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp8 t tf at bt ct dt et ft gt ht sr
+  let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
   in  lazySat (pap7 sr t t' (rf t' a) b c d e f g h) t'
 
 ap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp9 t tf at bt ct dt et ft gt ht it sr
+  let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
   in  lazySat (pap8 sr t t' (rf t' a) b c d e f g h i) t'
 
 
@@ -293,23 +276,112 @@ ap10 :: SR -> Trace
 
 ap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+  let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
   in  lazySat (pap9 sr t t' (rf t' a) b c d e f g h i j) t'
 
 ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) = 
-  let t' = if trusted t tf 
-             then hide t
-             else mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+  let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
   in  lazySat (pap10 sr t t' (rf t' a) b c d e f g h i j k) t'
 
 ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                     k@(R _ kt) l@(R _ lt) =  
-  let t' = if trusted t tf 
+  let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
+  in  lazySat (pap11 sr t t' (rf t' a) b c d e f g h i j k l) t'
+
+
+{- trusted: -}
+
+tap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
+
+tap1 sr t (R rf tf) a@(R _ at) = 
+  let t' = if trustedFun tf
+             then hide t
+             else mkTAp1 t tf at sr
+  in  lazySat (rf t' a) t'
+
+tap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp2 t tf at bt sr
+  in  lazySat (pap1 sr t t' (rf t' a) b) t'
+
+tap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp3 t tf at bt ct sr
+  in  lazySat (pap2 sr t t' (rf t' a) b c) t'
+
+
+tap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp4 t tf at bt ct dt sr
+  in  lazySat (pap3 sr t t' (rf t' a) b c d) t'
+
+
+tap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp5 t tf at bt ct dt et sr
+  in  lazySat (pap4 sr t t' (rf t' a) b c d e) t'
+
+tap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                   f@(R _ ft) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp6 t tf at bt ct dt et ft sr
+  in  lazySat (pap5 sr t t' (rf t' a) b c d e f) t'
+
+tap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                   f@(R _ ft) g@(R _ gt) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp7 t tf at bt ct dt et ft gt sr
+  in  lazySat (pap6 sr t t' (rf t' a) b c d e f g) t'
+
+tap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                   f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp8 t tf at bt ct dt et ft gt ht sr
+  in  lazySat (pap7 sr t t' (rf t' a) b c d e f g h) t'
+
+tap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                   f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp9 t tf at bt ct dt et ft gt ht it sr
+  in  lazySat (pap8 sr t t' (rf t' a) b c d e f g h i) t'
+
+
+tap10 :: SR -> Trace 
+     -> R (Fun a (Fun b (Fun c (Fun d (Fun e (Fun f (Fun g (Fun h 
+        (Fun i (Fun j r)))))))))) 
+     -> R a -> R b -> R c -> R d -> R e -> R f -> R g -> R h -> R i -> R j 
+     -> R r 
+
+tap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+  in  lazySat (pap9 sr t t' (rf t' a) b c d e f g h i j) t'
+
+tap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) = 
+  let t' = if trustedFun tf 
+             then hide t
+             else mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+  in  lazySat (pap10 sr t t' (rf t' a) b c d e f g h i j k) t'
+
+tap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                    k@(R _ kt) l@(R _ lt) =  
+  let t' = if trustedFun tf 
              then hide t
              else mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
   in  lazySat (pap11 sr t t' (rf t' a) b c d e f g h i j k l) t'
@@ -323,89 +395,155 @@ because the skipped trace node has the same type as the
 parent redex.
 -}
 
+-- suspected:
 
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
 rap1 sr t (R rf tf) a@(R _ at) = 
-  if trusted t tf 
-    then rf t a
-    else let t' = mkTAp1 t tf at sr
-	 in  rf t' a
+  let t' = mkTAp1 t tf at sr
+  in  rf t' a
 
 
 rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
 
 rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
-  if trusted t tf 
-    then pap1 sr t t (rf t a) b
-    else let t' = mkTAp2 t tf at bt sr
-         in  pap1 sr t t' (rf t' a) b
+  let t' = mkTAp2 t tf at bt sr
+  in  pap1 sr t t' (rf t' a) b
 
 rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
-  if trusted t tf 
-    then pap2 sr t t (rf t a) b c
-    else let t' = mkTAp3 t tf at bt ct sr
- 	 in  pap2 sr t t' (rf t' a) b c
+  let t' = mkTAp3 t tf at bt ct sr
+  in pap2 sr t t' (rf t' a) b c
 
 rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
-  if trusted t tf 
-    then pap3 sr t t (rf t a) b c d
-    else let t' = mkTAp4 t tf at bt ct dt sr
-	  in pap3 sr t t' (rf t' a) b c d
+  let t' = mkTAp4 t tf at bt ct dt sr
+  in pap3 sr t t' (rf t' a) b c d
 
 rap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
-  if trusted t tf 
-    then pap4 sr t t (rf t a) b c d e
-    else let t' = mkTAp5 t tf at bt ct dt et sr
-	 in  pap4 sr t t' (rf t' a) b c d e
+  let t' = mkTAp5 t tf at bt ct dt et sr
+  in  pap4 sr t t' (rf t' a) b c d e
 
 rap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) = 
-  if trusted t tf 
-    then pap5 sr t t (rf t a) b c d e f
-    else let t' = mkTAp6 t tf at bt ct dt et ft sr
-         in  pap5 sr t t' (rf t' a) b c d e f
+  let t' = mkTAp6 t tf at bt ct dt et ft sr
+  in  pap5 sr t t' (rf t' a) b c d e f
 
 rap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) = 
-  if trusted t tf 
-    then pap6 sr t t (rf t a) b c d e f g
-    else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
-	 in  pap6 sr t t' (rf t' a) b c d e f g
+  let t' = mkTAp7 t tf at bt ct dt et ft gt sr
+  in  pap6 sr t t' (rf t' a) b c d e f g
 
 rap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
-  if trusted t tf 
-    then pap7 sr t t (rf t a) b c d e f g h
-    else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
-	 in  pap7 sr t t' (rf t' a) b c d e f g h
+  let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
+  in  pap7 sr t t' (rf t' a) b c d e f g h
 
 rap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
-  if trusted t tf 
-    then pap8 sr t t (rf t a) b c d e f g h i
-    else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
-	 in  pap8 sr t t' (rf t' a) b c d e f g h i
+  let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
+  in  pap8 sr t t' (rf t' a) b c d e f g h i
 
 rap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
-  if trusted t tf 
-    then pap9 sr t t (rf t a) b c d e f g h i j
-    else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-	 in  pap9 sr t t' (rf t' a) b c d e f g h i j
+  let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+  in  pap9 sr t t' (rf t' a) b c d e f g h i j
 
 rap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) = 
-  if trusted t tf 
-    then pap10 sr t t (rf t a) b c d e f g h i j k
-    else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-	 in  pap10 sr t t' (rf t' a) b c d e f g h i j k
+  let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+  in  pap10 sr t t' (rf t' a) b c d e f g h i j k
 
 rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
                      k@(R _ kt) l@(R _ lt) =  
-  if trusted t tf 
+  let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
+  in  pap11 sr t t' (rf t' a) b c d e f g h i j k l
+
+
+-- trusted:
+
+trap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
+
+trap1 sr t (R rf tf) a@(R _ at) = 
+  if trustedFun tf 
+    then rf t a
+    else let t' = mkTAp1 t tf at sr
+	 in  rf t' a
+
+
+trap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
+
+trap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
+  if trustedFun tf 
+    then pap1 sr t t (rf t a) b
+    else let t' = mkTAp2 t tf at bt sr
+         in  pap1 sr t t' (rf t' a) b
+
+trap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+  if trustedFun tf 
+    then pap2 sr t t (rf t a) b c
+    else let t' = mkTAp3 t tf at bt ct sr
+ 	 in  pap2 sr t t' (rf t' a) b c
+
+trap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
+  if trustedFun tf 
+    then pap3 sr t t (rf t a) b c d
+    else let t' = mkTAp4 t tf at bt ct dt sr
+	  in pap3 sr t t' (rf t' a) b c d
+
+trap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
+  if trustedFun tf 
+    then pap4 sr t t (rf t a) b c d e
+    else let t' = mkTAp5 t tf at bt ct dt et sr
+	 in  pap4 sr t t' (rf t' a) b c d e
+
+trap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) = 
+  if trustedFun tf 
+    then pap5 sr t t (rf t a) b c d e f
+    else let t' = mkTAp6 t tf at bt ct dt et ft sr
+         in  pap5 sr t t' (rf t' a) b c d e f
+
+trap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) = 
+  if trustedFun tf 
+    then pap6 sr t t (rf t a) b c d e f g
+    else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
+	 in  pap6 sr t t' (rf t' a) b c d e f g
+
+trap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
+  if trustedFun tf 
+    then pap7 sr t t (rf t a) b c d e f g h
+    else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
+	 in  pap7 sr t t' (rf t' a) b c d e f g h
+
+trap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
+  if trustedFun tf 
+    then pap8 sr t t (rf t a) b c d e f g h i
+    else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
+	 in  pap8 sr t t' (rf t' a) b c d e f g h i
+
+trap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
+  if trustedFun tf 
+    then pap9 sr t t (rf t a) b c d e f g h i j
+    else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
+	 in  pap9 sr t t' (rf t' a) b c d e f g h i j
+
+trap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) = 
+  if trustedFun tf 
+    then pap10 sr t t (rf t a) b c d e f g h i j k
+    else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
+	 in  pap10 sr t t' (rf t' a) b c d e f g h i j k
+
+trap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
+                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
+                     k@(R _ kt) l@(R _ lt) =  
+  if trustedFun tf 
     then pap11 sr t t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
 	 in  pap11 sr t t' (rf t' a) b c d e f g h i j k l

@@ -10,7 +10,7 @@ import TokenId
 import DbgId(t_R,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal,t_rPatBool
             ,t_lazySat,t_fun,t_tfun,t_primn,t_tprimn
-            ,t_prim,t_ap,t_rap,t_cn,t_con,t_pa,t_indir
+            ,t_prim,t_ap,t_rap,t_tap,t_trap,t_cn,t_con,t_pa,t_indir
             ,t_if,t_rif,t_guard
             ,t_mkSR',t_mkNTId',t_mkNTConstr',t_mkNTLambda,t_mkNTCase
             ,t_conInt,t_conChar,t_conInteger,t_conRational,t_conDouble
@@ -899,7 +899,7 @@ dTrustExp cr parent hidParent (ExpApplication pos (f:es)) =
       dTrustExps parent hidParent es >>>= \es' ->
       saturateConstr (if cr then hidParent else parent) f es'
     _ ->
-      lookupVar pos ((if cr then t_ap else t_rap) (length es)) >>>= \apply ->
+      lookupVar pos ((if cr then t_tap else t_trap) (length es)) >>>= \apply ->
       makeSourceRef pos >>>= \sr -> 
       dTrustExps parent hidParent (f:es) >>>= \fes ->
       unitS (ExpApplication pos 
