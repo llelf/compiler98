@@ -141,7 +141,7 @@ followTrace(FileOffset fo, FileOffset *pbot, int *pind)
     while (1) {
       if (!fo) return fo;	/* when trace is Root */
       freadAt(fo,&c,sizeof(char),1,HatFile);
-      switch (c) {
+      switch (c&8 ? c-8 : c) {  /* clear no-APP bit if set */
         case TInd:
             arg1=readFO();	/* fst of indirection */
             arg2=readFO();	/* snd of indirection */
