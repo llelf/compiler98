@@ -5,7 +5,6 @@ module Floats
   , doubleToInt1
   ) where
 
-foreign import floatToInt   :: Float -> Int
-foreign import doubleToInt0 :: Double -> Int
-foreign import doubleToInt1 :: Double -> Int
-
+foreign import ccall floatToInt   :: Float -> Int
+foreign import ccall doubleToInt0 :: Double -> Int
+foreign import ccall doubleToInt1 :: Double -> Int
