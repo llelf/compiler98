@@ -284,7 +284,7 @@ is2rs flags mrps qualFun expFun overlap
   deRight (k,Left _)      = (k,error ("Tripped over aliased identifier"))
   pmrps = if (isPrelude . reverse . unpackPS) mrps then rpsPrelude else mrps
   mtid = Visible pmrps
-  minfo = InfoName unique mtid 0 mtid
+  minfo = InfoName unique mtid 0 mtid False --PHtprof
 
   reorderFun (rt,at) (key,info) =
     let u = uniqueI info

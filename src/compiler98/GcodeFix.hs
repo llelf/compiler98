@@ -10,7 +10,7 @@ import DbgId(t_R)
 import State
 import Info
 import Extra
-import GcodeLow(con0,cap0,caf,fun,string,profstatic,profproducer,profconstructor,profmodule,proftype,consttable,lowInteger,extra,wsize,align)
+import GcodeLow(con0,cap0,caf,fun,string,profstatic,profproducer,profconstructor,profmodule,tprofmodule,tprofmodulesub,proftype,consttable,lowInteger,extra,wsize,align)
 import GcodeSpec(fixProfstatic,compilerProfstatic)
 import Flags
 
@@ -94,7 +94,7 @@ fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings
               (capTable a ++
 	       DATA_GLB consttable clabel :
 	       label fun fn :
-	       (if tprof then [DATA_W 0] else []) ++	-- PH
+               (if tprof then tpgcode info state else []) ++
                g:concat gs  ++
 	       ALIGN_CONST:
 	       (case align 8 (-nbs * wsize) of
@@ -111,7 +111,13 @@ fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings
 	       reverse as
 	      ,(prof,state,profstatics,strings))
 
-
+--PHtprof
+tpgcode :: Info -> IntState -> [Gcode]
+tpgcode info state = let mod = (miIS state)
+                         sub = case info of
+                               (InfoName _ _ _ _ True) -> tprofmodulesub
+                               otherwise               -> tprofmodule
+                     in [DATA_GLB sub mod]
 
 capTable a = 
   let fill = align wsize (2 * a + 2) `div` 2   -- one extra table item compared to arity
@@ -150,7 +156,7 @@ emit g = emits [g]
 
 conInfo i down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
   case lookupIS state i of
-    Just (InfoName u (TupleId a) t _) -> ((a,0),thread) -- !!! NR the only constructors that can use InfoName is tuples !!!
+    Just (InfoName u (TupleId a) t _ _) -> ((a,0),thread) -- !!! NR the only constructors that can use InfoName is tuples !!! --PHtprof
     Just cinfo@(InfoConstr _ _ _ _ _ idata) ->
       case lookupIS state idata of
 	Just info  ->

@@ -12,7 +12,6 @@
 #include "mutlib.h"
 #include "mark.h"
 
-
 #if defined(__GNUC__) && !defined(DEBUG)
 #  define USE_GCC_LABELS 1
 #else
@@ -52,7 +51,7 @@ extern sigjmp_buf exit_mutator;
 NodePtr  Hp;
 NodePtr *Sp;
 NodePtr *Fp;
-CodePtr  Ip;	/*PH*/
+CodePtr  Ip;
 
 #if 0
 #define INSTR(x)  fprintf(stderr,"eval: %s\n",x)
@@ -137,9 +136,10 @@ void run(NodePtr toplevel)
   NodePtr *sp,  *fp,  hp;
   NodePtr vapptr;
   NodePtr nodeptr;
-  CodePtr ip;		/* -- now global -PH (also shadow locally, MW) */
+  CodePtr ip;
   NodePtr *constptr;
 
+  TPROF_SETUP
 
 #if USE_GCC_LABELS
 #  define ins(x)	&&l##x
@@ -158,22 +158,15 @@ void run(NodePtr toplevel)
 #  define EndDispatch	}
 #endif
 
-
-#ifdef TPROF	/*PH*/
-  int cancel_enter;
-  int cancelarr[] = {131,125,126,33};
-  int **enterPtr;
-  enterPtr = ((int**) malloc(sizeof(int**)));
-#endif
-
   sp = Sp;
   fp = Fp;
   hp = Hp;
 
 #ifdef TPROF
-  ip = (CodePtr)(LEAVE+NS);    /* +NS   (DAVID) PH */
+  ip = (CodePtr)(LEAVE+NS);   /* +NS (DAVID) */
+  TPROF_RUN;
 #else
-  ip = (CodePtr)(LEAVE);    /* +NS   (DAVID) */
+  ip = (CodePtr)(LEAVE);
 #endif
   vapptr = toplevel;
 
@@ -181,6 +174,7 @@ void run(NodePtr toplevel)
 
   for(;;) {
   NextInst:
+
 
 #if TRACE
     if(traceSp&1) prStack(sp,fp,vapptr,constptr,traceFlag,traceDepth);
@@ -203,15 +197,6 @@ void run(NodePtr toplevel)
     if(insCount)
       countIns(ip);
 #endif
-#ifdef TPROF	/*PH*/
-    if (tprof) { /* Checking that we _really_ want to count an enter */
-      if (cancel_enter)
-      if (*ip==cancelarr[cancel_enter-1])
-        cancel_enter++;
-      else
-        cancel_enter=0;
-    }
-#endif
 
     Dispatch
 
@@ -219,7 +204,7 @@ void run(NodePtr toplevel)
     Case(NEEDHEAP_P1):  { Int i = *ip++;      HEAP_CHECK_VAP(i); } Break;
     Case(NEEDHEAP_P2):  { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i);} Break;
       /* !!! Need stack !!! */
-    Case(NEEDSTACK_I16):  { HEAP_CHECK_VAP(16); } Break;
+    Case(NEEDSTACK_I16):  { HEAP_CHECK_VAP(16); TPROF_NEEDSTACK_I16; } Break;
     Case(NEEDSTACK_P1):  { Int i = *ip++;      HEAP_CHECK_VAP(i); } Break;
     Case(NEEDSTACK_P2): { Int i = HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8); ip+=2; HEAP_CHECK_VAP(i); } Break;
       
@@ -244,15 +229,9 @@ void run(NodePtr toplevel)
         SHOW(fprintf(stderr,"\tPRIMITIVE 0x%x\n",(int)fun);)
         fflush(stderr);
 	ip += sizeof(Primitive);
-#ifdef TPROF	/*PH*/
-        if (tprof)
-          tprofEnterGreencard((CodePtr*)FINFO_CODE(GET_FINFO(vapptr)),
-                              (char *)constptr[-1]);
+        TPROF_GREENCARD_ENTER;
         CALL_C(fun);
-        if (tprof) tprofExitGreencard();
-#else
-	CALL_C(fun);
-#endif
+        TPROF_GREENCARD_EXIT;
       }
       /* PRIMITIVE is always followed by RETURN_EVAL, so we elide the */
       /* bytecode and jump direct.  (Later, let's not generate the */
@@ -338,6 +317,7 @@ void run(NodePtr toplevel)
 	IND_REMOVE(nodeptr);
 	UPDATE_PROFINFO(nodeptr)
 	*sp = (NodePtr) GET_POINTER_ARG1(nodeptr,index);
+        TPROF_SELECT;
       } goto return_eval;
 
     Case(UNPACK):
@@ -468,6 +448,7 @@ void run(NodePtr toplevel)
       nodeptr =GET_POINTER_ARG1(vapptr,1);
       IND_REMOVE(nodeptr);
       *--sp = nodeptr;
+      TPROF_SELECTOR_EVAL;
       /* Fall through to EVAL */
     Case(EVAL):
       INSTR("evalToS");
@@ -521,22 +502,10 @@ void run(NodePtr toplevel)
 	    fprintf(stderr,"<ENTER %s>\n",(char *)constptr[-1]);
 	  }
 #endif
-
 	  ip       = FINFO_CODE(GET_FINFO(vapptr));
-#ifdef TPROF	/*PH*/
-          if(tprof) {
-            *enterPtr = (int*)(FINFO_ENTERPTR(GET_FINFO(vapptr)));
-            tprofRecordEnter((CodePtr*)ip, (char*)constptr[-1], enterPtr);
-            cancel_enter=1;
-          }
-#endif
-	}
-#ifdef TPROF	/*PH*/
-        if (cancel_enter==5) {
-          tprofUnrecordEnter();
-          cancel_enter=0;
+          TPROF_EVAL;
         }
-#endif
+        TPROF_EVAL_END;
       } Break;
 
  Case(RETURN):
@@ -559,6 +528,7 @@ void run(NodePtr toplevel)
     nodeptr = *sp++;
     UPDATE_VAP(nodeptr);
     POP_STATEVP;
+    TPROF_RETURN_EVAL;
     goto EvalTOS;
 
 #ifdef PROFILE

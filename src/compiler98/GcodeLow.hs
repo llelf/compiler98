@@ -6,7 +6,8 @@ module GcodeLow
 	,gcodeDump,gcodeHeader
 	,lowInteger,extra
 	,wsize,con0,cap0,caf,fun,cfun,string,consttable,foreignfun
-	,profstatic,profmodule,proftype,profproducer,profconstructor,align
+	,profstatic,profmodule,tprofmodule,tprofmodulesub
+        ,proftype,profproducer,profconstructor,align
 	,fixStr,showId
 	) where
 
@@ -44,6 +45,8 @@ profmodule = "PM_"
 proftype = "PT_"
 profproducer = "PP_"
 profconstructor = "PC_"
+tprofmodule = "TM_"
+tprofmodulesub = "TMSUB_"
 
 groupW [] = []
 groupW xs = case splitAt wsize xs of

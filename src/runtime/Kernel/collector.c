@@ -79,8 +79,13 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
     fprintf(stderr,"This garbage collector only works if IND_TAG == 0\n");
     exit(-1);
   }
-#if PROFILE
+
+#if defined(PROFILE) || defined(TPROF)
+#if TPROF
+  if((tprof||gcData) && !timeSample) {
+#else
   if(profile && !timeSample) {
+#endif
     profileHpLimit = hpStart + (Int)profileInterval;
   } else {
     profileHpLimit = hpEnd;  /* always greater than sp */
@@ -88,6 +93,12 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 #endif
   hpLowLimit[0] = (Node)CONSTR(0,1,0); /* used for gc ! */
   hpLowLimit[1+EXTRA] = (Node)&hpLowLimit[0];
+#if TPROF
+  /*hpBase = &hpLowLimit[GCEXTRA];*/
+  if(gcData) {
+    fprintf(gdFILE,"HPSP %8d\n",totalSize-tableSize);
+  }
+#endif
   *ihp = &hpLowLimit[GCEXTRA];
 
 }
@@ -218,6 +229,9 @@ void flipStack(NodePtr *sp)
   NodePtr *sptr;
   for(sptr = sp; sptr < spStart; ) {
     NodePtr *fp;
+#if phCh
+    sptr++;
+#endif
     sptr++;
     fp = (NodePtr *)*sptr++; /* Fetch fp */
 
@@ -476,11 +490,12 @@ again:
 #endif
 
 #if defined(PROFILE) || defined(TPROF)
+  double thisGcStart;
   NodePtr hpsave = hp;
   int collectinfo =  size<= 0 || (NodePtr)sp >= profileHpLimit; /* called Gc because of profiler */
   pactive = collectinfo;
 #ifdef TPROF
-  if (tprof && timeSample) tprofRecordGC();	/*PH*/
+  if (timeSample) tprofRecordGC();	        /*PH*/
   if(!tprof && collectinfo && timeSample)	/*PH*/
     timeSample = FREEZE_TIME;
 #else
@@ -512,6 +527,10 @@ again:
     double t = (double)runTime.l/(double)HZ;
     fprintf(proFILE,"MARK %8.2f\n",t);
   }
+#endif
+
+#ifdef TPROF
+  if(gcData) thisGcStart = (double)gcTime.l/(double)HZ; /* PH */
 #endif
 
   if(size) timerStart(&gcTime);
@@ -673,6 +692,11 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 
   if(size) timerStop(&gcTime);
 
+#ifdef TPROF
+  if(gcData)
+    fprintf(gdFILE,"POINT %8d %8d %8d %7.3f\n",hpTotal,hp-&hpLowLimit[GCEXTRA],spStart-sp,(double)gcTime.l/(double)HZ-thisGcStart);
+#endif
+
 #if defined(PROFILE) || defined(TPROF)
 
 #ifdef PROFILE
@@ -682,7 +706,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
   if(profile) { 
 #endif
 #else
-  if(tprof) { 
+  if(tprof||gcData) { 
 #endif
     if(pactive) { /* This stop was due to profiling */
       pactive = 0;
@@ -699,11 +723,15 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
       } else {
 	profileHpLimit = hp + (Int)profileInterval;
 #ifdef TPROF
-        if (tprof) tprofRecordTick((CodePtr *)ip);	/*PH*/
+        if (tprof) tprofRecordTick();	/*PH*/
 #endif
       }
     } else {
+#ifdef TPROF
+      if(gcData<2 && !(timeSample)) profileHpLimit -= hpsave-hp;
+#else
       profileHpLimit -= hpsave-hp; /* Adjust limit because of changed hp */
+#endif
     }
   }
 #endif
@@ -762,8 +790,8 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
   /* runDeferredGCs(); 	/* process pending finalisers now we have heap space */
 
 #ifdef TPROF
+  if(timeSample) tprofRecordGC();	        /*PH*/
   if(!tprof && size) timerStart(&runTime);	/*PH*/
-  if(tprof && timeSample) tprofRecordGC();	/*PH*/
 #else
   if(size) timerStart(&runTime);
 #endif

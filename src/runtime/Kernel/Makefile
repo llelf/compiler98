@@ -13,6 +13,7 @@ ASRCS += profile.c remark.c xmem.c retainer.c timer.c
 endif
 ifneq "${TPROF}" ""
 ASRCS += tprof.c timer.c
+TPLOBJS = $(patsubst %,${OBJDIR}/tpl%Builtin.o,1 2 3)
 endif
 
 OOBJS = $(patsubst %.c,${OBJDIR}/%.o,${OSRCS})
@@ -45,8 +46,22 @@ nolinks:
 xxx: 
 	echo ${BUILDDIR}
 
+ifeq "${TPROF}" ""
+
 ${ARCHIVE}: ${AOBJS}
 	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${AOBJS})
+else
+
+${ARCHIVE}: ${AOBJS} ${TPLOBJS}
+	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${TPLOBJS} ${AOBJS})
+
+
+${TPLOBJS}:
+	echo "int TMIP_$(patsubst ${OBJDIR}/tpl%.o,%,$@)[] = {0};" \
+	> ${OBJDIR}/tpltmp.c
+	${CC} -c ${CFLAGS} -o $@ ${OBJDIR}/tpltmp.c
+	rm ${OBJDIR}/tpltmp.c
+endif
 
 all: links bytecode_o.h ${OOBJS} ${ARCHIVE}
 

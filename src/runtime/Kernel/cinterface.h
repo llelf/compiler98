@@ -50,7 +50,7 @@ typedef void (*Primitive)(NodePtr);
 #define C_PUSH(n)      *--Sp = (n)
 #define C_POP()       (*Sp++)
 
-#if PROFILE
+#if defined(PROFILE) || defined(TPROF)
 #define C_CHECK(c)   if((Hp+(c)+BUFFER>(NodePtr)Sp)||(Hp+(c)+BUFFER>profileHpLimit)){C_GC(c);} 
 #define C_CHECK_STMT(c,stmt)   if((Hp+(c)+BUFFER>(NodePtr)Sp)||(Hp+(c)+BUFFER>profileHpLimit)){C_GC(c);stmt} 
 #else
@@ -62,6 +62,7 @@ typedef void (*Primitive)(NodePtr);
      *--Sp = (NodePtr)Fp; *--Sp=(NodePtr)C_CODE;Fp=Sp; \
      Hp = callGc((c),Hp,Sp,Fp);     \
      Sp++;Fp=(NodePtr*)*Sp++;IND_REMOVE(_ivapptr);
+
 #endif
 
 extern NodePtr evalExport(NodePtr arg);

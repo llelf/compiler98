@@ -97,7 +97,7 @@ fsClsTypSel pos cls typ sel down  up@(state,t2i) =
 	       (u,state) ->
 		 let   -- !!! Arity of selector doesn't look right !!!
 		    arity = (arityIM . dropJust . lookupIS state) sel + (length . snd . dropJust . lookupAT (instancesI clsInfo)) typ
-		    info = InfoName  u tid arity tid
+		    info = InfoName  u tid arity tid False --PHtprof
 --                    info = InfoMethod  u tid (InfixDef,9) NoType (Just arity) cls
 		 in (ExpVar pos u,(addIS u info state,addAT t2i sndOf tid u))
 

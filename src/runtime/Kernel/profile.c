@@ -66,14 +66,7 @@ void timertick(int i)
     sampleflag = (milliseconds >= nextsampletime);
     if (sampleflag) {
 /*    fprintf(stderr,"timertick %6d %6d\n",milliseconds,nextsampletime); */
-      if (tprof) {			/*PH*/
-        timeSample = FREEZE_TIME; /* cannot wait for next heap allocation PH */
-        timerStop(&runTime);		/*PH*/
-        tprofRecordTick((CodePtr*)Ip);	/*PH*/ 
-        timeSample = ACTIVE_TIME;	/*PH*/
-        timerStart(&runTime);		/*PH*/
-      } else
-        profileHpLimit = 0;
+      profileHpLimit = 0;
       nextsampletime += 1000*profileInterval;
     }
   }

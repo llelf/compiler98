@@ -135,7 +135,7 @@ atomAdd pos exp down@(AtomDown tid env) up@(AtomState state bs) =
   case uniqueIS state of
     (u,state) ->
       ((PosVar pos u,[(u,PosLambda pos (map (pair pos) (filter (`elem` env) (freePosExp exp))) [] exp)])
-      ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) 0 (tidPos tid pos)) state) bs
+      ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) 0 (tidPos tid pos) True) state) bs --PHtprof
       )
 
 atomAddG pos exp down@(AtomDown tid env) up@(AtomState state bs) =
@@ -144,7 +144,7 @@ atomAddG pos exp down@(AtomDown tid env) up@(AtomState state bs) =
       let newenv = filter (`elem` env) (freePosExp exp) 
           pnewenv = map (pair pos) newenv
       in (PosLambda pos pnewenv [] (PosExpThunk pos (PosVar pos u: map (uncurry PosVar) pnewenv))
-         ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) (length pnewenv) (tidPos tid pos)) state)
+         ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) (length pnewenv) (tidPos tid pos) True) state) --PHtprof
 		 ((u,PosLambda pos [] pnewenv exp): bs)
          )
 

@@ -48,5 +48,5 @@ possibleTid (InfoMethod unique tid fix nt annot iClass)  = []
 possibleTid (InfoIMethod unique tid nt annot iMethod)    = []
 possibleTid (InfoDMethod unique tid nt annot iClass)     = []
 possibleTid (InfoInstance unique  nt iClass)             = []
-possibleTid (InfoName _ tid _ _)			 = [tid]
+possibleTid (InfoName _ tid _ _ _)			 = [tid] --PHtprof
 

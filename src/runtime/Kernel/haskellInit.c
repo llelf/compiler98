@@ -254,7 +254,6 @@ void haskellInit (int argc, char **argv)
 			   "-i must be followed by number of words or time in seconds between profile sample!\n");
 		   exit(-1);
 		 }
-	    /*	     fprintf(stderr,"profileInterval = %g\n",profileInterval); */
 	    if(profileInterval < 0) {
 	      profileInterval = -profileInterval;
 	      timeSample = 1;
@@ -311,24 +310,27 @@ void haskellInit (int argc, char **argv)
 	    }
 	    break;
 #endif
-          case 't':          /*PH*/
+          case 't':
 #ifdef TPROF
 #ifdef PROFILE
-            if (!profile) { /* -t  List will be sorted by module,ticks,enters */
-              tprof = 1;    /* -tt List will be sorted by ticks,enters        */
-            }               /* -te List will be sorted by enters,ticks        */
+            if (!profile) { /* -tmt List by module,ticks,enters  <default -t> */
+              tprof = 1;    /* -tme by module,enters,ticks                    */
+            }               /* -te  by enters,ticks  and  -tt by time.enters  */
 #else                       /* -tp List will include enter percentages        */
-            tprof = 1;      /* -tep by tick,enters including enter %  etc...  */
+            tprof = 1;      /* -ttp by tick,enters including enter %  etc...  */
 #endif                                  /* Args following -t in quotes give   */
-            if (argv[i][2]) {           /* Module names that the user wishes  */
-              tprofInclude(argv[i]+2);  /* to collapse/expand eg -t"-Ph +IO"  */
-                                        /* will collapse Ph and expand IO     */
-            }                           /* "+all" and "-all" are valid        */
-            break;                      /* default: "-Prelude -System -IO"    */
+	    tprofTMInit();              /* Module names that the user wishes  */
+            if (argv[i][2]) {           /* to collapse/expand eg -t "-Ph +IO" */
+              tprofInclude(argv[i]+2);  /* will collapse Ph and expand IO     */   
+            }                           /* "+all" & "-all" are valid, default */
+            break;                      /* is to expand only user modules     */
+
+          case 'G':
+            gcData = 1;
 #else
             fprintf(stderr, "Program has not been compiled for time profiling - ignoring -t[option]\n");
-            break;
 #endif
+            break;
 
 #if INSCOUNT
 	  case 'I':
@@ -415,6 +417,11 @@ void haskellInit (int argc, char **argv)
   }
 #endif
 
+#ifdef TPROF
+  if(gcData) gcDataStart(argc,argv);  /*PH*/
+  if(tprof) tprofStart();
+#endif
+
   initForeignObjs();
   initGc(hpSize,&Hp,spSize,&Sp);
   stableInit();  /*MW*/
@@ -424,11 +431,9 @@ void haskellInit (int argc, char **argv)
   timerClear(&gcTime);
   timerStart(&totalTime);
 
+
 #ifdef PROFILE
   if(profile) profile_start(argc,argv);
-#endif
-#ifdef TPROF
-  if(tprof) tprofStart(argc,argv);	/*PH*/
 #endif
 
   timerStart(&runTime);
@@ -443,7 +448,8 @@ void haskellInit (int argc, char **argv)
 int haskellEnd (int argc, char **argv) {
   timerStop(&runTime);
 #ifdef TPROF
-  if(tprof) tprofStop();	/*PH*/
+  if(tprof) tprofStop(argc,argv);	/*PH*/
+  if(gcData) gcDataStop(Hp);
 #endif
 #ifdef PROFILE
   if(profile) profile_stop(Hp);

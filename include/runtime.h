@@ -75,7 +75,7 @@ typedef UInt  *Finfo;
 extern NodePtr  Hp;
 extern NodePtr *Sp;
 extern NodePtr *Fp;
-extern CodePtr  Ip;	/*PH*/
+extern CodePtr  Ip;
 
 extern char **Argv;
 extern int Argc;
@@ -364,17 +364,92 @@ typedef struct USER_GC {
 extern void add_user_gc(markfun, flipfun);
 
 #ifdef TPROF
-/* tprof.c */
+extern CodePtr *ipref;
 extern int tprof;
-extern void tprofStart(int, char **);
-extern void tprofStop(void);
-void tprofInclude(char *);
-void tprofRecordEnter(CodePtr *, char *, int **);
-void tprofUnrecordEnter(void);
-void tprofRecordTick(CodePtr *);
-void tprofEnterGreencard(CodePtr *,char *);
-void tprofExitGreencard(void);
-void tprofRecordGC(void);
+extern int gcData;
+/* Needed by main.c or haskellInit */
+extern void tprofTMInit(void);
+extern void tprofInclude(char *);
+extern void tprofStart(void);
+extern void tprofStop(int, char **);
+extern void gcDataStart(int, char **);
+extern void gcDataStop(NodePtr);
+/* Needed by collector.c and/or timer.c */
+extern FILE *gdFILE;
+extern void tprofRecordTick(void);
+extern void tprofRecordGC(void);
+/* tprof.c <-> tprofprel?.o or tprofusr.o */
+extern void tprofTMInit(void);
+extern void tprofInitTree(CodePtr, char *, int *);
+extern void tprofTMIncludeUsr(char *, int);
+extern void tprofTMIncludeUsrSubfn(void);
+extern void tprofTMIncludePrel(char *, int);
+extern void tprofTMIncludePrelSubfn(void);
+extern int  tprofTMInitTreeUsr(void);
+extern int  tprofTMInitTreePrel1(void);
+extern int  tprofTMInitTreePrel2(void);
+extern int  tprofTMInitTreePrel3(void);
+/* Needed by mutator.c */
+extern void tprofRecordEnter(char*, int **);
+extern void tprofEnterGreencard(CodePtr,char *);
+extern void tprofExitGreencard(void);
+extern int *last_tick;
+extern int cancel_enter;
+extern int **enterPtr;
+#define TPROF_SETUP \
+  int canceling_enters = 0;
+#define TPROF_RUN \
+  ipref = &ip;
+#define TPROF_CANCEL_ENTERS(num) \
+  if (canceling_enters)  /* Check that we _really_ wanted to */ \
+    if (cancel_enter==1) cancel_enter++;  /* count an enter */ \
+    else { \
+      cancel_enter=0; \
+      canceling_enters=0; \
+      last_tick = NULL; \
+    }
+#define TPROF_NEEDSTACK_I16 TPROF_CANCEL_ENTERS(1)
+#define TPROF_SELECTOR_EVAL TPROF_CANCEL_ENTERS(2)
+#define TPROF_SELECT        TPROF_CANCEL_ENTERS(3)
+#define TPROF_RETURN_EVAL   TPROF_CANCEL_ENTERS(4)
+#define TPROF_GREENCARD_ENTER \
+  if(tprof) \
+    tprofEnterGreencard((CodePtr)FINFO_CODE(GET_FINFO(vapptr)), \
+                        (char *)constptr[-1]);
+#define TPROF_GREENCARD_EXIT \
+  ipref = &ip; \
+  tprofExitGreencard();
+#define TPROF_EVAL \
+  enterPtr = (int**) FINFO_ENTERPTR(GET_FINFO(vapptr)); \
+  if (**enterPtr==-1) { /* First enter for this function  */ \
+    tprofRecordEnter((char*)constptr[-1], enterPtr); \
+  } \
+  else                  /* no need to search the tree :-) */ \
+    (**enterPtr)++; \
+  cancel_enter=1; \
+  canceling_enters=1; \
+  last_tick = NULL;
+#define TPROF_EVAL_END \
+  if (canceling_enters) { \
+    if (cancel_enter==5) { \
+      (**enterPtr)--; \
+      if (last_tick != NULL)  \
+        (*last_tick)--; \
+      cancel_enter=0; \
+      canceling_enters=0; \
+    } \
+  }
+#else
+#define TPROF_SETUP 
+#define TPROF_RUN 
+#define TPROF_NEEDSTACK_I16 
+#define TPROF_SELECTOR_EVAL 
+#define TPROF_SELECT 
+#define TPROF_RETURN_EVAL 
+#define TPROF_GREENCARD_ENTER 
+#define TPROF_GREENCARD_EXIT 
+#define TPROF_EVAL 
+#define TPROF_EVAL_END 
 #endif
 
 #if defined(PROFILE) || defined(TPROF)

@@ -182,7 +182,7 @@ basic-ghc: $(PRAGMA) runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-$(CC):   runtime prelude-$(CC) pragma-$(CC) compiler-$(CC) \
 		 greencard-$(CC) hmake-$(CC)
 
-all-$(BUILDCOMP): basic-$(BUILDCOMP) profile tracer $(TARGDIR)/hood #timeprof
+all-$(BUILDCOMP): basic-$(BUILDCOMP) profile timeprof tracer $(TARGDIR)/hood
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude

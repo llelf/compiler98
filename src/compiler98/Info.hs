@@ -134,6 +134,7 @@ data Info =
                   TokenId      -- token for name
                   Int          -- arity
                   TokenId      
+                  Bool         --PHtprof indicates subfn
     -- inserted late to hold name and arity for some functions 
     -- (second TokenId is profname )
   deriving (Show)
@@ -155,7 +156,7 @@ z (InfoMethod unique tid fix nt annot iClass) =
 z (InfoIMethod unique tid nt annot iMethod) =
 z (InfoDMethod unique tid nt annot iClass) =
 z (InfoInstance unique  nt iClass) =
-z (InfoName pos unique tid Int ptid) =
+z (InfoName pos unique tid Int ptid subfn) =  --PHtprof
 -}
 
 clearI :: a -> Info
@@ -297,7 +298,7 @@ uniqueI (InfoMethod  unique _ _ _ _ _) = unique
 uniqueI (InfoIMethod  unique _ _ _ _) = unique
 uniqueI (InfoDMethod  unique _ _ _ _) = unique
 uniqueI (InfoInstance unique _ _) = unique
-uniqueI (InfoName  unique _ _ _) = unique
+uniqueI (InfoName  unique _ _ _ _) = unique --PHtprof
 
 
 tidI :: Info -> TokenId
@@ -310,7 +311,7 @@ tidI (InfoField   u tid icon_offs iData iSel) = tid
 tidI (InfoMethod  u tid _ _ _ _) = tid
 tidI (InfoIMethod  u tid _ _ _) = tid
 tidI (InfoDMethod  u tid _ _ _) = tid
-tidI (InfoName  u tid _ _) = tid
+tidI (InfoName  u tid _ _ _) = tid --PHtprof
 tidI info = error ("tidI (Info.hs) called with bad info:\n" ++ show info)
 
 
@@ -375,7 +376,7 @@ joinInsts inst inst' =
 {- Determine constructors of a type from the info of the type -}
 constrsI :: Info -> [Int]
 
-constrsI (InfoName  unique tid i ptid) = [unique]   
+constrsI (InfoName  unique tid i ptid _) = [unique]   --PHtprof
   -- ^this is a lie! but it is consistent with belongstoI :-)
 constrsI (InfoData   unique tid exp nt dk) =
       case dk of
@@ -444,7 +445,7 @@ arityVI (InfoConstr  unique tid fix (NewType _ _ _ nts) fields iType) = length n
 arityVI (InfoMethod  unique tid fix nt (Just arity) iClass) = 1
 arityVI (InfoIMethod  unique tid nt (Just arity) iMethod) = arity
 arityVI (InfoDMethod  unique tid nt (Just arity) iClass) = arity 
-arityVI (InfoName  unique tid arity ptid) = arity
+arityVI (InfoName  unique tid arity ptid _) = arity --PHtprof
 
 -- arity with context
 arityI (InfoVar     unique tid fix exp (NewType _ _ ctxs _) (Just arity)) =  
@@ -459,7 +460,7 @@ arityI (InfoMethod  unique tid fix nt (Just arity) iClass) = 1
 -- length ctxs + arity
 arityI (InfoDMethod  unique tid  (NewType _ _ ctxs _) (Just arity) iClass) = 
   length ctxs + arity + 1  {- 1 is for the dictionary -}
-arityI (InfoName  unique tid arity ptid) = arity
+arityI (InfoName  unique tid arity ptid _) = arity --PHtprof
 arityI info =  error ("arityI " ++ show info)
 
 arityIM (InfoMethod  unique tid fix (NewType _ _ ctx _) (Just arity) iClass) =
@@ -480,7 +481,7 @@ belongstoI (InfoIMethod  unique tid nt annot iMethod) = iMethod
   -- ^Maybe ought to be it's own function
 belongstoI (InfoDMethod  unique tid nt annot iClass) = iClass
 belongstoI (InfoInstance unique  nt iClass) = iClass
-belongstoI (InfoName  unique tid i ptid) = unique   
+belongstoI (InfoName  unique tid i ptid _) = unique   --PHtprof
   -- ^this is a lie! but it is consistent with constrsI :-)
 belongstoI info =  error ("belongstoI " ++ show info)
 
@@ -495,5 +496,5 @@ profI (InfoField   u tid icon_offs iData iSel) = tid
 profI (InfoMethod  u tid _ _ _ _) = tid
 profI (InfoIMethod  u tid _ _ _) = tid
 profI (InfoDMethod  u tid _ _ _) = tid
-profI (InfoName  u tid _ ptid) = ptid
+profI (InfoName  u tid _ ptid _) = ptid --PHtprof
 profI info = error ("profII (Info.hs) " ++ show info)

@@ -102,7 +102,7 @@ caseTuple s down  up@(state,t2i) =
   	(u,state) ->
           let free = [1 .. s]
 	      tvars = map NTvar free
-              info = InfoName u tid s tid
+              info = InfoName u tid s tid False --PHtprof
           in (u,(addIS u info state,addAT t2i sndOf tid u))
 
 caseAdd :: Info -> Down -> Thread -> Thread

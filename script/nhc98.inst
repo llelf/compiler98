@@ -69,6 +69,7 @@ GRCC="${CC} -I${NHC98INCDIR}/"
 
 VFLAG=0 
 MFLAG=0 
+TPFLAG=0
 KEEPS=0
 KEEPC=0
 AS="${CC} -c"
@@ -130,7 +131,10 @@ processArgs () {
             OSUFFIX="T.o"
             ;;
     -t)     TPROF=t
+            TPFLAG=1
             COMPFLAGS=$COMPFLAGS" -tprof"
+            GRCC=$GRCC" -DTPROF"
+            CPPASFLAGS=$CPPASFLAGS" -DTPROF "
             OSUFFIX="t.o"
             ;;
     -98)    COMPFLAGS=$COMPFLAGS" -nkpat -underscore -nopuns";;
@@ -521,7 +525,10 @@ then
   MAINROUTINE=$MAINROUTINE$CFG.o
 fi
 
+if test $TPFLAG -eq 0
+then
 LDLIBS=$MAINROUTINE" "$NHC98LIBDIR/$MACHINE/mutlib$CFG.o" "$NHC98LIBDIR/$MACHINE/mutator$CFG.o" "$NHC98LIBDIR/$MACHINE/Prelude$CFG.a" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$NHC98LIBDIR/$MACHINE/Prelude$CFG.a" "$NHC98LIBDIR/$MACHINE/libdebug$CFG.a" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$NHC98LIBDIR/$MACHINE/Prelude$CFG.a" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a
+fi
 
 for LIBFLAG in $LIBDIRS
 do
@@ -543,26 +550,72 @@ do
   fi
 done
 
+if test $TPFLAG -eq 1
+then
+   LLPREL=$NHC98LIBDIR/$MACHINE/tp*$CFG.a
+   LDLIBS=$TMP/tprofusr$$.o" "$NHC98LIBDIR/$MACHINE/tprofprel1.o
+   LDLIBS=$LDLIBS" "$MAINROUTINE
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/mutlib$CFG.o
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/mutator$CFG.o
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$LLPREL
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/tprofprel2.o
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/libdebug$CFG.a
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$LLPREL
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/tprofprel3.o
+   LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$LLPREL
+fi
+# Define a function for creating tprof usr lables
+tprof () {
+  if test $VFLAG -eq 1
+  then echo "Generating tprof usr lables";
+  fi
+echo "${NHC98BINDIR}/tprofprel 0 $@ > $TMP/tprofusr$$.c"
+  ${NHC98BINDIR}/tprofprel 0 $@ > $TMP/tprofusr$$.c
+  $CC -x c -c -o $TMP/tprofusr$$.o $TMP/tprofusr$$.c
+  rm -f $TMP/tprofusr$$.c
+  while test "'$1'" != "''" 
+  do
+    echo "int TMIP_$1[] = {0};" | cat > $TMP/tpl$1.c
+    $CC -x c -c -o $TMP/tpl$1.o $TMP/tpl$1.c
+    rm -f $TMP/tpl$1.c
+    if test "'$1'" != "''" 
+    then
+      shift
+    fi
+  done
+}
 
 if test $KEEPS -eq 0 -a $KEEPC -eq 0 -a $NOLINK -eq 0 -a $MFLAG -eq 0
 then
    case $LDFILES in
    ""  ) echo "nhc98: error: no source, object or archive file specified"; 
          exit 1;;
-   *   ) if test $VFLAG -eq 1
-	 then
-	   echo "$NHC98LIBDIR/$MACHINE/nhc98heap $HEAP | $CC -x c -c -o $TMP/nhc$$.o -";
-	 fi
-	 $NHC98LIBDIR/$MACHINE/nhc98heap $HEAP >$TMP/nhc$$.c
+   *   ) if test $TPFLAG -eq 1
+         then tprof $LDFIRST $LDFILES
+         fi
+         if test $VFLAG -eq 1
+         then
+           echo "$NHC98LIBDIR/$MACHINE/nhc98heap $HEAP | $CC -x c -c -o $TMP/nhc$$.o -";
+         fi
+         $NHC98LIBDIR/$MACHINE/nhc98heap $HEAP >$TMP/nhc$$.c
          $CC -x c -c -o $TMP/nhc$$.o $TMP/nhc$$.c
          if test $VFLAG -eq 1
-	 then
-	   echo $LD -o $AOUT $LDFLAGS $LDFIRST $LDFILES $EXTRALIB $LDLIBS $TMP/nhc$$.o $LDLAST;
-	 fi
-	 $LD -o $AOUT $LDFLAGS $LDFIRST $LDFILES $EXTRALIB $LDLIBS $TMP/nhc$$.o $LDLAST
+         then
+           echo $LD -o $AOUT $LDFLAGS $LDFIRST $LDFILES $EXTRALIB $LDLIBS $TMP/nhc$$.o $LDLAST;
+         fi
+         $LD -o $AOUT $LDFLAGS $LDFIRST $LDFILES $EXTRALIB $LDLIBS $TMP/nhc$$.o $LDLAST
          if test $VFLAG -eq 1
-	 then echo rm -f $TMP/nhc$$.o $TMP/nhc$$.c
+         then echo rm -f $TMP/nhc$$.o $TMP/nhc$$.c
          fi
          rm -f $TMP/nhc$$.o $TMP/nhc$$.c
+         if test $TPFLAG -eq 1
+         then
+           if test $VFLAG -eq 1
+           then 
+             echo rm -f $TMP/tpl*$$.o $TMP/tprofusr$$.o
+           fi
+           rm -f $TMP/tpl*.o $TMP/tprofusr$$.o
+         fi
    esac
 fi
+

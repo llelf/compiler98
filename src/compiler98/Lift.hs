@@ -69,7 +69,7 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid) up@(LiftThread transIn
 updateInfo ptid (fun, PosLambda pos envs args exp) state =
  let arity = length args
  in updateIS state fun (\ info -> let tid = tidI info
-				  in  (seq tid (InfoName fun tid arity (tidPos ptid pos))))
+				  in  (seq tid (InfoName fun tid arity (tidPos ptid pos) True ))) --PHtprof
 
 addArgs newargs (fun, PosLambda pos envs args exp) =
   (fun, PosLambda pos [] (map (pair pos) newargs++args) exp) 
@@ -96,7 +96,7 @@ liftLambda pos envs args exp down@(LiftDown strict tidFun ptid) up@(LiftThread t
       (fun,state2) = uniqueIS stateIn
       tid = (visible (reverse ("LAMBDA" ++ show fun))) -- Not exported
       newSC = scHere:scIn
-      newState = seq tid $ addIS fun (InfoName fun tid arity (tidPos ptid pos)) state2
+      newState = seq tid $ addIS fun (InfoName fun tid arity (tidPos ptid pos) True) state2 --PHtprof
 
   in (PosExpApp pos (PosVar pos fun:map (uncurry PosVar) newEnvs)
      ,LiftThread transIn newSC newState

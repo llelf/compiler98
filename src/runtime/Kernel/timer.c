@@ -26,11 +26,11 @@ static int nextsampletime = 0;
 void timertickignore(int i)
 {
 #ifdef __CYGWIN32__
-  signal(SIGALRM,timertickignore);	/*PH*/
+  signal(SIGALRM,timertickignore);
 #else
-  signal(SIGVTALRM,timertickignore);	/*PH*/
+  signal(SIGVTALRM,timertickignore);
 #endif
-  return;	/*PH - don't do anything on a tick*/
+  return;
 }
 #endif
 
@@ -40,9 +40,9 @@ void timertick(int i)
   int sampleflag;
 #ifdef TPROF
 #ifdef __CYGWIN32__
-  signal(SIGALRM,timertickignore);	/*PH*/
+  signal(SIGALRM,timertickignore);
 #else
-  signal(SIGVTALRM,timertickignore);	/*PH*/
+  signal(SIGVTALRM,timertickignore);
 #endif
 #endif
   if (timeSample == ACTIVE_TIME) { /* clock is frozen during sampling */
@@ -50,10 +50,10 @@ void timertick(int i)
     milliseconds += RATE/1000;          /* another tick (ms) */
     sampleflag = (milliseconds >= nextsampletime);
     if (sampleflag) {
-/*    fprintf(stderr,"timertick %6d %6d\n",milliseconds,nextsampletime); */
+      /* fprintf(stderr,"timertick %6d %6d\n",milliseconds,nextsampletime); */
 #ifdef TPROF
-      if (tprof)	/*PH*/
-        tprofRecordTick((CodePtr*)Ip);    
+      if (tprof)
+        tprofRecordTick();
       else
 #endif
         profileHpLimit = 0;

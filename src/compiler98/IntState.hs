@@ -218,7 +218,7 @@ globalIS state i =
   globalI (InfoMethod  unique tid fix nt annot iClass) = True
   globalI (InfoIMethod  unique tid nt annot iMethod) = True
   globalI (InfoDMethod  unique tid nt annot iClass) = True
-  globalI (InfoName  unique tid arity ptid) = False
+  globalI (InfoName  unique tid arity ptid _) = False --PHtprof
 
   globalI' (Just (InfoData   unique tid IEall nt dk)) = True
   globalI' _ = False

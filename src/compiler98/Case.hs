@@ -118,7 +118,7 @@ caseDeclPatAs (PatAs p v pat) gdexps decls =
   caseState >>>= \ state ->
   caseAdd 
     (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
-      (getPos pat)) 0  tunknown) >>>
+      (getPos pat)) 0  tunknown True) >>> --PHtprof
   caseDeclPatFix (getPos pat,newId) pat (Unguarded (ExpVar p v)) decls
         >>>= \ innerpats->
   caseDecls decls (onePat p pat Nothing gdexps) >>>= \ exp ->
@@ -128,7 +128,7 @@ caseDeclPatAs pat gdexps decls =
   caseState >>>= \ state ->
   caseAdd 
     (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
-      (getPos pat)) 0  tunknown) >>>
+      (getPos pat)) 0  tunknown True) >>> --PHtprof
   caseDeclPatFix (getPos pat,newId) pat gdexps decls
 
 
@@ -389,7 +389,7 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
       in caseTuple (length pis) >>>= \ tupleCon ->
 	 caseUnique >>>= \ tupleId ->
 	 caseState >>>= \ state ->
-	 caseAdd (InfoName tupleId ((forceM (mrpsIS state) . visible . strPos . getPos) pat) 0 tunknown) >>>
+	 caseAdd (InfoName tupleId ((forceM (mrpsIS state) . visible . strPos . getPos) pat) 0 tunknown True) >>> --PHtprof
 	 mapS (oneSel (PosVar pos tupleId) tupleCon pis) (zip pis [1..]) >>>= \ sels ->
 	 matchCase pos ce
 	   [Alt pat 

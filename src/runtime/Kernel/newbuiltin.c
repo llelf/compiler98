@@ -52,6 +52,10 @@ extern unsigned PC_IO_46stdout[];
 extern unsigned PC_IO_46stderr[];
 #endif
 
+#ifdef TPROF
+extern unsigned TM_Builtin[];  /* PH */
+#endif
+
 #ifdef DBGTRANS
 extern unsigned fo_stdin_node[];
 extern unsigned stdin_t[];
@@ -106,7 +110,7 @@ unsigned Start_World[] = {
 };
 unsigned FN_Prelude_46primLeave[] = {
 #ifdef TPROF
-  0,		/* DAVID/PH */
+  useLabel(TM_Builtin),
 #endif
   bytes2word(EXIT,ENDCODE,0,0)	/* DAVID */
 
@@ -131,7 +135,7 @@ unsigned F0_Prelude_46primLeave[] = {
 };
 unsigned FN_Builtin_46primUnpackCString[] = {
 #ifdef TPROF
-  0,		/* DAVID/PH */
+  useLabel(TM_Builtin),
 #endif
   bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,STRING,RETURN)
 , bytes2word(ENDCODE,0,0,0)	/* DAVID */
@@ -162,7 +166,7 @@ unsigned PROF_46primUnpackCString[] = {
 };
 unsigned FN_Builtin_46hgets[] = {
 #ifdef TPROF
-  0,		/* DAVID/PH */
+  useLabel(TM_Builtin),
 #endif
   bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,HGETS,RETURN)
 , bytes2word(ENDCODE,0,0,0)	/* DAVID */

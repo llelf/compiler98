@@ -1,9 +1,4 @@
-/* tprof.c
- *   Author: Phil Hassall
- *           University of York
- *           Spring 1998
- */
-
+/* tprof.c */
 #include <string.h>
 #include "runtime.h"
 #include "newmacros.h"  /* only for DIR_DEL macro ! */
@@ -11,34 +6,41 @@
 #define MAX_HEIGHT(x,y) (x>y ? x : y)
 #define CMP_KEY(x,y) (x==y ? 0 : ((x<y) ? -1 : 1))
 #define MAX_FILE_NAME 80
-#define MAX_MODULES 200
+#define IGNORE_DRIVER 1 /* 1 => Ignore _Driver */
 
-/* No need to do any ifdef PROFILE as this only included in Profile version */
+int listedby;
+#define TICKSPERMOD 0 /* Default */
+#define TICKS 1
+#define ENTERSPERMOD 2
+#define ENTERS 3
+#define LISTEDBYTICKS ((listedby==TICKS)||(listedby==TICKSPERMOD))
+#define LISTEDBYENTERS ((listedby==ENTERS)||(listedby==ENTERSPERMOD))
+#define LISTEDBYPERMOD ((listedby==TICKSPERMOD)||(listedby==ENTERSPERMOD))
 
 int tprof;
+CodePtr *ipref;
+int gcData;
 FILE *tpFILE;
-int collapse_mode;
-int listedby;
+FILE *gdFILE;
+int gem_wants_the_ticks;
 int enter_percentages;
-int combine_System_IO;
-int total_enters;
-int total_ticks;
-int total_g_enters;
-int total_g_ticks;
+int assign_subfn_enters;
 int in_greencard;
 int collecting_garbage;
-int collect_garbage_enters;
-int collect_garbage_ticks;
+int *last_tick;
+extern timer gcTime;
+extern timer totalTime;
+extern timer runTime;
+extern Int hpTotal;
+extern NodePtr hpBase;
+int cancel_enter = 0;
+int **enterPtr;
 
-/****************************************************** AVL tree functions */
-
-typedef struct avl
-{
+typedef struct avl {
   struct avl *left, *right;
   int height;
-  CodePtr *address;
+  CodePtr address;
   char *funname;
-  char *module;
   int *enters;
   int ticks;
   int g_enters;
@@ -47,50 +49,45 @@ typedef struct avl
 
 AVLnode *address_AVL_root;
 AVLnode *last_right_taken;
-AVLnode *last_entered_node;
+AVLnode *lastn_tree;
 int **enterPtrTmp;
-int *last_enter;
-int *penultimate_enter;
 int *in_greencard_ticks;
-int assign_subfn_enters;
-int *junk_enters;
 
-struct moduletotals {
-  char *module;
-  int enters;
-  int ticks;
-} moduleTotals[MAX_MODULES];
+typedef struct subtree {
+  AVLnode **tot;
+  AVLnode **root;
+} Subtree;
 
-int tprofModules_size;
-struct tproftotals {
-  char *module;
-  int already_made_node;
-  AVLnode *node;
-} tprofModules[MAX_MODULES];
+struct sums {
+  int total_enters;
+  int total_ticks;
+  int nonZeroTotalTicks;
+  int total_g_enters;
+  int total_g_ticks;
+  int collect_garbage_enters;
+  int collect_garbage_ticks;
+} Sums;
 
-int moduleTotals_size;
-char *last_module_printed = "Talyllyn";
+struct mods {
+  int premods;
+  int usrmods;
+  int maxmod;
+} Mods;
 
-char *tprofModDefaults[] = {"System","IO","Prelude"};
-int tprofModDefaultsUse[] = {1,1,1};
-int tprofModDefaults_size = 3;
-
-static int get_height_AVL(AVLnode *tree)
-{ 
+static int get_height_AVL(AVLnode *tree) { 
   if (tree == NULL)
     return(-1);
   else
     return(tree->height);
 }
 
-static void set_height_AVL(AVLnode *tree)
-{ 
+static void set_height_AVL(AVLnode *tree) { 
   if (tree != NULL)
-    tree->height = 1 + MAX_HEIGHT(get_height_AVL(tree->left), get_height_AVL(tree->right));
+    tree->height = 1 + 
+      MAX_HEIGHT(get_height_AVL(tree->left), get_height_AVL(tree->right));
 }
 
-static void right_rotate_AVL(AVLnode **tree)
-{
+static void right_rotate_AVL(AVLnode **tree) {
   AVLnode *old_root, *old_left, *middle;
   
   old_root = *tree;
@@ -103,8 +100,7 @@ static void right_rotate_AVL(AVLnode **tree)
   set_height_AVL(old_left);
 }
 
-static void left_rotate_AVL(AVLnode **tree)
-{
+static void left_rotate_AVL(AVLnode **tree) {
   AVLnode *old_root, *old_right, *middle;
 
   old_root = *tree;
@@ -117,133 +113,110 @@ static void left_rotate_AVL(AVLnode **tree)
   set_height_AVL(old_right);
 }
 
-static void double_right_rotate_AVL(AVLnode **tree)
-{
+static void double_right_rotate_AVL(AVLnode **tree) {
   left_rotate_AVL(&((*tree)->left));
   right_rotate_AVL(tree);
 }
 
-static void double_left_rotate_AVL(AVLnode **tree)
-{
+static void double_left_rotate_AVL(AVLnode **tree) {
   right_rotate_AVL(&((*tree)->right));
   left_rotate_AVL(tree);
 }
 
-static void balance_AVL(AVLnode **tree)
-{
+static void balance_AVL(AVLnode **tree) {
   int left_height,right_height;
   AVLnode *subtree;
 
   left_height = get_height_AVL((*tree)->left);
   right_height = get_height_AVL((*tree)->right);
-  if (left_height > right_height+1)
-    {
-      subtree = (*tree)->left;
-      left_height = get_height_AVL(subtree->left);
-      right_height = get_height_AVL(subtree->right);
-      if (left_height >= right_height)
-        {          
-	  right_rotate_AVL(tree);   
-	}
-      else
-        {
-          double_right_rotate_AVL(tree);
-        }
-    }
+  if (left_height > right_height+1) {
+    subtree = (*tree)->left;
+    left_height = get_height_AVL(subtree->left);
+    right_height = get_height_AVL(subtree->right);
+    if (left_height >= right_height) 
+      right_rotate_AVL(tree);   
+    else 
+      double_right_rotate_AVL(tree);
+  }
   else
-  if (left_height+1 < right_height)
-    {
+    if (left_height+1 < right_height) {
       subtree = (*tree)->right;
       left_height = get_height_AVL(subtree->left);
       right_height = get_height_AVL(subtree->right);
       if (right_height >= left_height)
-        {
-          left_rotate_AVL(tree);
-        }
+        left_rotate_AVL(tree);
       else
-        {
-          double_left_rotate_AVL(tree);
-        }
+        double_left_rotate_AVL(tree);       
     }
 }
 
-static void init_AVL(AVLnode **tree)
-{ 
+static void init_AVL(AVLnode **tree) { 
   *tree = NULL;
 }
 
-static void insert_info_address_AVL(AVLnode **tree, CodePtr *address, char *funname, int insert_mode)
-{
+static void insert_by_address_AVL(AVLnode **tree, CodePtr address, 
+                                  char *funname, int insert_mode, 
+                                  int setup) {
   AVLnode *newtree;
   int cmp;
-  char *moduledot;
 
-  if (*tree == NULL) {
-    if (insert_mode==1) {
-      newtree = (AVLnode *) malloc(sizeof(AVLnode));
+  if (*tree==NULL) {
+    if (insert_mode) {
+      if(NULL == (newtree = (AVLnode*) malloc(sizeof(AVLnode)))) {
+        fprintf(stderr,"Not enough memory for tprof.\n");
+        exit(-1);
+      }
       newtree->left = NULL;
       newtree->right = NULL;
       newtree->height = 0;
-      (newtree->address) = address;
-      moduledot = strchr(funname,'.');
-      *moduledot = '\0';
-      newtree->module = funname;
-      newtree->funname = moduledot+1;
-      newtree->enters = *enterPtrTmp;
-      *(newtree->enters) = 1;
+      (newtree->address) = address;  
+      newtree->funname = funname;
+      if (setup)
+	newtree->enters = *enterPtrTmp;
+      else {
+        if(NULL == (newtree->enters = (int*) malloc(sizeof(int)))) {
+          fprintf(stderr,"Not enough memory for tprof.\n");
+          exit(-1);
+        }
+	*enterPtrTmp = newtree->enters;
+	*(newtree->enters) = 1;
+      }
       newtree->g_enters = 0;
       newtree->ticks = 0;
       newtree->g_ticks = 0;
       *tree = newtree;
-      penultimate_enter = last_enter;
-      last_enter = (*tree)->enters;
-      last_entered_node = *tree;
     }
     else {
       if (last_right_taken == NULL) 
-	fprintf(stderr,"Oops, trying to record enter/tick into an empty AVL tree");
+	fprintf(stderr,"Trying to record tick into an empty tprof tree.\n");
       else {
-	if (insert_mode>2) {
-	  int *lrt_enters;
-	  lrt_enters = last_right_taken->enters;
-	  *enterPtrTmp = lrt_enters;
-	  (**enterPtrTmp)++;
-	  penultimate_enter = last_enter;
-	  last_enter = *enterPtrTmp;
+	if (in_greencard) {
+	  last_right_taken->g_enters++;
+	  in_greencard_ticks = &(last_right_taken->g_ticks);
+          if (cancel_enter) last_tick = &(last_right_taken->g_ticks);
 	}
-	else
-	  if (insert_mode == 2) {
-	    last_right_taken->g_enters++;
-	    in_greencard_ticks = &(last_right_taken->g_ticks);
-	  }
-	  else
-	    last_right_taken->ticks++;
+	else {
+	  last_right_taken->ticks++;
+          if (cancel_enter) last_tick = &(last_right_taken->ticks);
+        }
       }
     }
   }
   else {
     cmp = CMP_KEY(address,(*tree)->address);
-    if (cmp == 0) {
-      if (insert_mode) {
-	if (insert_mode == 2) {
-	  (*tree)->g_enters++;
-	  in_greencard_ticks = &((*tree)->g_ticks);
-	}
-	else
-	  (*((*tree)->enters))++;
-	penultimate_enter = last_enter;
-	last_enter = (*tree)->enters;
+    if (cmp==0)
+      if (in_greencard) {
+	(*tree)->g_enters++;
+	in_greencard_ticks = &((*tree)->g_ticks);
       }
-      else {
+      else
 	(*tree)->ticks++;
-      }
-    }
     else {
-      if (cmp < 0)
-	insert_info_address_AVL(&((*tree)->left), address, funname, insert_mode);
+      if (cmp==-1)
+	insert_by_address_AVL(&((*tree)->left), address, funname, insert_mode, setup);
       else {
-	if (insert_mode!=1) last_right_taken = *tree;
-	insert_info_address_AVL(&((*tree)->right), address, funname, insert_mode);
+	if (!insert_mode) last_right_taken = *tree;
+	insert_by_address_AVL(&((*tree)->right), address, funname, insert_mode, setup);
       }
       set_height_AVL(*tree);
       balance_AVL(tree);
@@ -251,60 +224,26 @@ static void insert_info_address_AVL(AVLnode **tree, CodePtr *address, char *funn
   }
 }
 
-static void module_totals(AVLnode *node)
-{ 
-  int i;
-
-  total_enters   += *(node->enters);
-  total_ticks    += node->ticks+node->g_ticks;
-  total_g_enters += node->g_enters;
-  total_g_ticks  += node->g_ticks;
-
-  for (i=0;i<moduleTotals_size;i++) {
-    if (strcmp(moduleTotals[i].module,node->module)==0) {
-      moduleTotals[i].enters += *(node->enters);
-      moduleTotals[i].ticks  += node->ticks+node->g_ticks;
-      break;
-    }
-  }
-  if (i==moduleTotals_size) {
-    moduleTotals[moduleTotals_size].module   = node->module;
-    moduleTotals[moduleTotals_size].enters   = *(node->enters);
-    moduleTotals[moduleTotals_size++].ticks  = node->ticks+node->g_ticks;
-  }
-  if (moduleTotals_size==MAX_MODULES) {
-    fprintf(stderr,"Array of Module names > MAX_MODULES");
-    exit(-1);
-  }
-}
-
-static void insert_node_ticks_AVL(AVLnode **tree, AVLnode **node)
-{  
-  int cmp;
+static void insert_by_key_AVL(AVLnode **tree, AVLnode **node) {
+  int cmp = 0;
 
   if (*tree == NULL) {
     *tree = *node;
-    module_totals(*tree);
   }
   else {
-    if (!listedby) {    /* Order by module name      */
-      cmp = strcmp((*node)->module,(*tree)->module);
-    }
-    else
-      cmp = 0;
-    if (listedby!=2) {        /* listedby==0 or 1          */
+    if (LISTEDBYTICKS) {      /* listed by time            */
       if (cmp == 0) {         /* Order by ticks (normal+g) */
 	cmp = CMP_KEY((*tree)->ticks+(*tree)->g_ticks,(*node)->ticks+(*node)->g_ticks);
 	if (cmp == 0) {       /* Order by enters           */
-	  cmp = CMP_KEY(*((*tree)->enters),*((*node)->enters));
+	  cmp = CMP_KEY((*((*tree)->enters)),(*((*node)->enters)));
 	  if (cmp == 0)       /* Order by funname          */
 	    cmp = strcmp((*node)->funname,(*tree)->funname);
 	}
-      }  
+      }
     }
-    else {                    /* listedby==2               */
+    else {                    /* listed by enters          */
       if (cmp == 0) {         /* Order by enters           */
-	cmp = CMP_KEY(*((*tree)->enters),*((*node)->enters));
+        cmp = CMP_KEY((*((*tree)->enters)),(*((*node)->enters)));
 	if (cmp == 0) {       /* Order by ticks (normal+g) */
 	  cmp = CMP_KEY((*tree)->ticks+(*tree)->g_ticks,(*node)->ticks+(*node)->g_ticks);
 	  if (cmp == 0)       /* Order by funname          */
@@ -313,234 +252,399 @@ static void insert_node_ticks_AVL(AVLnode **tree, AVLnode **node)
       }  
     }
     if (cmp < 0)                                          
-      insert_node_ticks_AVL(&((*tree)->left), node);
-    else 
-      insert_node_ticks_AVL(&((*tree)->right), node);
-    set_height_AVL(*tree);
-    balance_AVL(tree); 
+      insert_by_key_AVL(&((*tree)->left), node);
+    else
+      insert_by_key_AVL(&((*tree)->right), node);
   }
 }
 
-static void discard_AVL(AVLnode **tree)
-{                                        /* Not "delete node and rebalance" as    */
-  AVLnode *left_sub, *right_sub, *root;  /* I never need to do that.  This simply */
-                                         /* frees up memory when I'm done with it */
-  if (*tree != NULL) {                
-    discard_AVL(&((*tree)->left));  
+static void discard_AVL(AVLnode **tree) {
+  AVLnode *left_sub, *right_sub, *root;
+  if (*tree != NULL) {
+    discard_AVL(&((*tree)->left));
     discard_AVL(&((*tree)->right));
     free(root->funname);
-    free(root->module);
     free(root);
     *tree = NULL;
   }
 }
 
-static int collapse_module(char *module)
-{
+static void print_AVL_raw(AVLnode *tree, FILE *fp, int tab) {
   int i;
-  if(collapse_mode==3) return 0;
-  for (i=0;i<tprofModules_size;i++) {
-    if (strcmp(module,tprofModules[i].module)==0)
-      return (i+1);
-  }
-  if(collapse_mode==2) {
-    tprofModules[tprofModules_size++].module = module;
-    return tprofModules_size;
-  }
-  return 0;
-}
-
-static void print_AVL_summary_info(char *module, int collapsed, FILE *fp)
-{
-  int i;
-  char sp;
-
-  if (combine_System_IO && (strcmp(module,"System")==0)) {
-    module = strdup("System & IO");
-  }
-  if (!(combine_System_IO && (strcmp(module,"IO")==0))) {
-    if(strlen(module)<7) sp='\t'; else sp=' ';
-    for (i=0;i<moduleTotals_size;i++) {
-      if (strcmp(moduleTotals[i].module,module)==0) {
-	if(!collapsed)
-	  fprintf(fp, "\n----------------------------------------------------------");
-	if (listedby==2)
-	  if (enter_percentages)
-	      fprintf(fp, "\n%s%c\tEnters = %d (%.1f%%)\tTime = %.1f%%\n", module, sp, moduleTotals[i].enters, 100*((float) (moduleTotals[i].enters))/total_enters, 100*((float) (moduleTotals[i].ticks))/total_ticks);
-	  else
-	    fprintf(fp, "\n%s%c\tEnters = %d\tTime = %.1f%%\n", module, sp, moduleTotals[i].enters, 100*((float) (moduleTotals[i].ticks))/total_ticks);
-	else
-	  if (enter_percentages)
-	    fprintf(fp, "\n%s%c\tTime = %.1f%%\tEnters = %d (%.1f%%)\n", module, sp, 100*((float) (moduleTotals[i].ticks))/total_ticks, moduleTotals[i].enters, 100*((float) (moduleTotals[i].enters))/total_enters);
-	  else
-	    fprintf(fp, "\n%s%c\tTime = %.1f%%\tEnters = %d\n", module, sp, 100*((float) (moduleTotals[i].ticks))/total_ticks, moduleTotals[i].enters);
-	if(!collapsed)
-	  fprintf(fp, "----------------------------------------------------------\n");
-	break;
-      }
-    }
-  }
-}
-
-static void print_AVL_info(AVLnode *tree, FILE *fp)
-{
-  if (!collapse_module(tree->module)) {
-    if (strcmp("_Driver",tree->module)!=0) {
-      if (listedby!=2)
-	fprintf(fp, "%.1f\t", 100*((float) (tree->ticks+tree->g_ticks))/total_ticks);
-      if (tree->g_enters)
-	fprintf(fp, "%d\t", tree->g_enters);
-      else
-	fprintf(fp, "%d\t", *(tree->enters));
-      if (listedby==2)
-	fprintf(fp, "%.1f\t", 100*((float) (tree->ticks+tree->g_ticks))/total_ticks);
-      if (listedby) {
-	if (tree->g_enters)
-	  fprintf(fp, "*%s.",  tree->module);
-	else
-	  fprintf(fp, " %s.",  tree->module);
-      }
-      if (!listedby)
-	if (tree->g_enters)
-	  fprintf(fp, "*%s\n", tree->funname);
-	else
-	  fprintf(fp, " %s\n", tree->funname);
-      else
-	fprintf(fp, "%s\n", tree->funname);
-    }
-  }
-}
-
-static void print_AVL_node(AVLnode *tree, FILE *fp)
-{
   if (tree != NULL) {
-    print_AVL_node(tree->left, fp);
-    if (!listedby && (strcmp(tree->module,last_module_printed)!=0)) {
-      if (!collapse_module(tree->module)) {
-	if (strcmp("_Driver",tree->module)!=0)
-	  print_AVL_summary_info(tree->module, 0, fp);
-	last_module_printed = tree->module;
-      }
+    print_AVL_raw(tree->left, fp, tab+1);
+    for (i=0; i<tab; i++) {
+      fprintf(stderr, " ");
     }
-    print_AVL_info(tree,fp);
-    print_AVL_node(tree->right, fp);
+    fprintf(stderr, "%p\t%s\t%d\t%d\t%d,%d\n", tree->address, 
+            tree->funname, tree->ticks, *(tree->enters), 
+            tree->g_enters, tree->g_ticks);
+    print_AVL_raw(tree->right, fp, tab+1);
   }
+  return;
 }
 
-static int rearrange_AVL(AVLnode **tick_tree, AVLnode **address_tree)
-{ 
+
+static void print_AVL_info(AVLnode *tree, char *module, FILE *fp)
+{
+  int dotpos = -1;
+
+  if (LISTEDBYTICKS) {
+    fprintf(fp, "%.1f\t", 
+            100*((float) (tree->ticks+tree->g_ticks))/Sums.nonZeroTotalTicks);
+    if (gem_wants_the_ticks) fprintf(fp, "[%d]\t", tree->ticks+tree->g_ticks);
+  }
+
+  if (tree->g_enters) fprintf(fp, "%d\t", tree->g_enters);
+  else fprintf(fp, "%d\t", *(tree->enters));
+
+  if (LISTEDBYENTERS) {
+    fprintf(fp, "%.1f\t", 
+            100*((float) (tree->ticks+tree->g_ticks))/Sums.nonZeroTotalTicks);
+    if (gem_wants_the_ticks) fprintf(fp, "[%d]\t", tree->ticks+tree->g_ticks);
+  }
+
+  if (tree->g_enters) fprintf(fp, "*");
+  else fprintf(fp, " ");
+
+  if (LISTEDBYPERMOD) {
+    dotpos = strlen(module);
+    if ((strncmp(tree->funname,module,dotpos)!=0) || 
+        (*(tree->funname+dotpos)!='.'))
+      dotpos = -1;
+  }
+  fprintf(fp, "%s\n", (tree->funname)+dotpos+1);  
+}
+
+static char* print_AVL_node(AVLnode *tree, Subtree *subtree, 
+                            char *module, int norc, FILE *fp) {
+  char *fnp;
+  char sp;
+  char *mod = module;
+  if (tree != NULL) {
+    mod = print_AVL_node(tree->left, subtree, mod, norc, fp);
+    fnp = tree->funname;
+    if (norc) {
+      int dispn = (*fnp=='n') && (LISTEDBYPERMOD);
+      mod = fnp+3;
+      if(strlen(mod)<7) sp='\t'; else sp=' ';
+      if (dispn)
+        fprintf(fp, 
+              "\n----------------------------------------------------------");
+      if (dispn || (*fnp=='c')) {
+        if(LISTEDBYENTERS) {
+          fprintf(fp, "\n%s%c\t Enters = %-10d", mod, sp, *(tree->enters));
+          if(enter_percentages) 
+            fprintf(fp, " (%.1f%%)", 
+                    100*((float) *(tree->enters))/Sums.total_enters);
+          fprintf(fp, "\tTime = %.1f%%", 
+                  100*((float) tree->ticks)/Sums.nonZeroTotalTicks);
+          if (gem_wants_the_ticks) fprintf(fp, "\t[%d]",tree->ticks);
+          fprintf(fp, "\n");
+        }
+        else {
+          fprintf(fp, "\n%s%c\t Time = %.1f%%", mod, sp, 
+                  100*((float) tree->ticks)/Sums.nonZeroTotalTicks, 
+                  *(tree->enters));
+          if (gem_wants_the_ticks) fprintf(fp, "\t[%d]",tree->ticks);
+          fprintf(fp, "\tEnters = %-10d", *(tree->enters));
+          if(enter_percentages) 
+            fprintf(fp, " (%.1f%%)", 
+                    100*((float) *(tree->enters))/Sums.total_enters);
+          fprintf(fp, "\n");
+        }
+        if (dispn)
+          fprintf(fp, 
+              "----------------------------------------------------------\n");
+      }
+      if (*fnp=='n')
+        print_AVL_node(*(subtree[tree->height].root), subtree, mod, 0, fp);
+    }
+    else
+      print_AVL_info(tree, mod, fp);
+    mod = print_AVL_node(tree->right, subtree, mod, norc, fp);
+  }
+  return mod;
+}
+
+int rearrange_AVL(AVLnode **address_tree, int mod, Subtree *subtree) {
   AVLnode **lft, **rht;
+  char *fnp;
 
   if (*address_tree != NULL) {
-    lft = &((*address_tree)->left); 
-    if (*lft != NULL) rearrange_AVL(tick_tree, lft);
+    if(NULL == (lft = (AVLnode**) malloc(sizeof(AVLnode*)))) {
+      fprintf(stderr,"Not enough memory for tprof.\n");
+      exit(-1);
+    }
+    if(NULL == (rht = (AVLnode**) malloc(sizeof(AVLnode*)))) {
+      fprintf(stderr,"Not enough memory for tprof.\n");
+      exit(-1);
+    }
+    *lft = (*address_tree)->left; 
+    *rht = (*address_tree)->right;
     ((*address_tree)->left) = NULL;
-    rht = &((*address_tree)->right);
-    if (*rht != NULL) rearrange_AVL(tick_tree, rht);
     ((*address_tree)->right) = NULL;
-    insert_node_ticks_AVL(tick_tree, address_tree);
-  }
-}
 
-void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp)
-{ 
-  AVLnode *ticks_AVL_root;
-  int i;
+    if (*lft != NULL) mod = rearrange_AVL(lft, mod, subtree);
+    free(lft);
 
-  if (*tree != NULL) {
-    init_AVL(&ticks_AVL_root);
-    rearrange_AVL(&ticks_AVL_root, tree);
-    tree = &ticks_AVL_root;
-    if(combine_System_IO) {
-      int system, io;
-      for (i=0;i<moduleTotals_size;i++) {
-	if(strcmp(moduleTotals[i].module,"System")==0)
-	  system=i;
-	if(strcmp(moduleTotals[i].module,"IO")==0)
-	  io=i;
-	}
-      moduleTotals[system].module = strdup("System & IO");
-      moduleTotals[system].enters += moduleTotals[io].enters;
-      moduleTotals[system].ticks  += moduleTotals[io].ticks;
-      moduleTotals[io].module = moduleTotals[moduleTotals_size-1].module;
-      moduleTotals[io].enters = moduleTotals[moduleTotals_size-1].enters;
-      moduleTotals[io].ticks  = moduleTotals[moduleTotals_size-1].ticks;
-      moduleTotals_size--;
-    }
-    total_ticks += collect_garbage_ticks;
-    if (total_ticks==0) total_ticks=1;
-    if (listedby && collapse_mode!=2) {
-      if (listedby==1) {
-	fprintf(fp, "\nTime\tEnters\t Function\n");
-	fprintf(fp, "----------------------------------------------------------\n");
-      }
-      else {
-	fprintf(fp, "\nEnters\tTime\t Function\n");
-	fprintf(fp, "----------------------------------------------------------\n");
-      }
-    }
-    print_AVL_node(*tree, fp);
-
-    if (collapse_mode!=3)
-      for (i=0;i<tprofModules_size;i++) { /* Summarise any collapsed modules */
-	print_AVL_summary_info(tprofModules[i].module, 1, fp);
-      }
-
-    fprintf(fp, "\n");
-    if(listedby==2) {
-      if(total_g_enters)
-	if(enter_percentages)
-	  fprintf(fp, "GreenCard\tEnters = %d (%.1f%%)\tTime = %.1f%%\n\n", total_g_enters, 100*((float) total_g_enters)/total_enters, 100*((float) total_g_ticks)/total_ticks);
-	else
-	  fprintf(fp, "GreenCard\tEnters = %d\tTime = %.1f%%\n\n", total_g_enters, 100*((float) total_g_ticks)/total_ticks);
-      if(enter_percentages)
-	fprintf(fp, "GarbageCollect\tEnters = %d (%.1f%%)\tTime = %.1f%%\n\nTime figures based on %d samples\n\n", collect_garbage_enters, 100*((float) collect_garbage_enters)/total_enters, 100*((float) collect_garbage_ticks)/total_ticks, total_ticks);
+    fnp = (*address_tree)->funname;
+    if ((*fnp=='n') || (*fnp=='c')) {
+      if ((*(fnp+1)=='n') || (*(fnp+1)=='c'))
+        mod = Mods.maxmod++;
       else
-	fprintf(fp, "GarbageCollect\tEnters = %d\tTime = %.1f%%\n\nTime figures based on %d samples\n\n", collect_garbage_enters, 100*((float) collect_garbage_ticks)/total_ticks, total_ticks);
+        mod = 10*(*(fnp+1)-48)+(*(fnp+2)-48);     
+      if ((*fnp=='n') && !(LISTEDBYPERMOD) && (mod>0)) {
+        mod = 1;
+      }
+      (*address_tree)->height = mod;
+      if (*fnp=='n') { /* 'n' */
+        if (*(subtree[mod].tot) == NULL) {
+          *((*address_tree)->enters) = 0;
+          *subtree[mod].tot = *address_tree;
+        }
+        lastn_tree = *(subtree[mod].tot); 
+      }
+      else { /* 'c' */
+        if (*(subtree[mod].tot) == NULL) {
+          *subtree[mod].tot = *address_tree;
+        }
+        else {
+          (*subtree[mod].tot)->ticks     += (*address_tree)->ticks;
+          (*subtree[mod].tot)->g_enters  += (*address_tree)->g_enters;
+          (*subtree[mod].tot)->g_ticks   += (*address_tree)->g_ticks;    
+        }
+      }
     }
     else {
-      if(enter_percentages) {
-	if(total_g_enters)
-	  fprintf(fp, "GreenCard\tTime = %.1f%%\tEnters = %d (%.1f%%)\n\n", 100*((float) total_g_ticks)/total_ticks, total_g_enters, 100*((float) total_g_enters)/total_enters);
-	fprintf(fp, "GarbageCollect\tTime = %.1f%%\tEnters = %d (%.1f%%)\n\nTime figures based on %d samples\n\n", 100*((float) collect_garbage_ticks)/total_ticks, collect_garbage_enters, 100*((float) collect_garbage_enters)/total_enters, total_ticks);
+      int e  = *((*address_tree)->enters);
+      int ge = (*address_tree)->g_enters;
+      if (e+ge>0) {
+        *(lastn_tree->enters) += e;
+        lastn_tree->ticks     += (*address_tree)->ticks;
+        lastn_tree->g_enters  += ge;
+        lastn_tree->g_ticks   += (*address_tree)->g_ticks;
+        insert_by_key_AVL(subtree[mod].root, address_tree);
       }
-      else {
-	if(total_g_enters)
-	  fprintf(fp, "GreenCard\tTime = %.1f%%\tEnters = %d\n\n", 100*((float) total_g_ticks)/total_ticks, total_g_enters);
-	fprintf(fp, "GarbageCollect\tTime = %.1f%%\tEnters = %d\n\nTime figures based on %d samples\n\n", 100*((float) collect_garbage_ticks)/total_ticks, collect_garbage_enters, total_ticks);
+    }
+    if (*rht != NULL) mod = rearrange_AVL(rht, mod, subtree);
+    free(rht);
+  }
+  return mod;
+}
+
+void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
+  AVLnode *c_ticks_AVL_root;
+  AVLnode *n_ticks_AVL_root;
+  Subtree subtree[Mods.premods+Mods.usrmods+1];
+
+  int i, nonZeroTotalTicks;
+  char *c;
+
+  if (*tree != NULL) {
+    init_AVL(&c_ticks_AVL_root);
+    init_AVL(&n_ticks_AVL_root);
+    for (i=0;i<Mods.premods+Mods.usrmods+1;i++) {
+      if(NULL == (subtree[i].tot = (AVLnode**) malloc(sizeof(AVLnode*)))) {
+        fprintf(stderr,"Not enough memory for tprof.\n");
+        exit(-1);
       }
+      *(subtree[i].tot) = NULL;
+      if(NULL == (subtree[i].root = (AVLnode**) malloc(sizeof(AVLnode*)))) {
+        fprintf(stderr,"Not enough memory for tprof.\n");
+        exit(-1);
+      }
+      *(subtree[i].root) = NULL;
+    }
+    Mods.maxmod = Mods.premods;
+    /* print_AVL_raw(*tree, fp, 0); */
+    i = rearrange_AVL(tree, 0, subtree);
+    Sums.total_ticks  += Sums.collect_garbage_ticks;
+    Sums.total_enters += Sums.collect_garbage_enters;
+    if (!(LISTEDBYPERMOD)) {
+      if (listedby==TICKS)
+        fprintf(fp, "\nTime\tEnters\t Function\n");
+      else
+        fprintf(fp, "\nEnters\tTime\t Function\n");
+      fprintf(fp, 
+              "----------------------------------------------------------\n");
+    }
+    for (i=IGNORE_DRIVER;i<Mods.premods+Mods.usrmods;i++)
+      if (*(subtree[i].tot) != NULL) {
+        AVLnode **tmp = subtree[i].tot;
+        if (*((*tmp)->enters)+(*tmp)->g_enters>0) {
+          if (*((*tmp)->funname)=='n')
+            insert_by_key_AVL(&n_ticks_AVL_root, tmp);
+          else
+            insert_by_key_AVL(&c_ticks_AVL_root, tmp);
+          Sums.total_ticks    += (*tmp)->ticks     + (*tmp)->g_ticks;
+          Sums.total_enters   += *((*tmp)->enters) + (*tmp)->g_enters;
+          Sums.total_g_ticks  += (*tmp)->g_ticks;
+          Sums.total_g_enters += (*tmp)->g_enters;
+        }
+      }
+
+    if (Sums.total_ticks)
+      Sums.nonZeroTotalTicks = Sums.total_ticks;
+    else
+      Sums.nonZeroTotalTicks = 1;
+
+    c = print_AVL_node(n_ticks_AVL_root, subtree, "", 1, fp);
+    c = print_AVL_node(c_ticks_AVL_root, subtree, "", 1, fp);
+    fprintf(fp, "\n");
+
+    if(LISTEDBYENTERS) {
+      if(Sums.total_g_enters) {
+        fprintf(fp, "GreenCard\t Enters = %-10d", Sums.total_g_enters);
+        if(enter_percentages) 
+          fprintf(fp, " (%.1f%%)", 
+                  100*((float) Sums.total_g_enters)/Sums.total_enters);
+        fprintf(fp, "\tTime = %.1f%%\n\n", 
+                100*((float) Sums.total_g_ticks)/Sums.nonZeroTotalTicks);
+      }
+      fprintf(fp, "GarbageCollect\t Enters = %-10d", 
+              Sums.collect_garbage_enters);
+      if(enter_percentages)
+          fprintf(fp, " (%.1f%%)", 
+                  100*((float) Sums.collect_garbage_enters)/Sums.total_enters);
+      fprintf(fp, "\tTime = %.1f%%\n\nTime figures based on %d samples\n\n",
+              100*((float) Sums.collect_garbage_ticks)/Sums.nonZeroTotalTicks, 
+              Sums.total_ticks);
+    }
+    else {
+      if(Sums.total_g_enters) {
+        fprintf(fp, "GreenCard\t Time = %.1f%%\tEnters = %-10d", 
+                100*((float) Sums.total_g_ticks)/Sums.nonZeroTotalTicks, 
+                Sums.total_g_enters);
+        if(enter_percentages) 
+          fprintf(fp, " (%.1f%%)", 
+                  100*((float) Sums.total_g_enters)/Sums.total_enters);
+        fprintf(fp, "\n\n");
+      }
+      fprintf(fp, "GarbageCollect\t Time = %.1f%%\tEnters = %-10d", 
+              100*((float) Sums.collect_garbage_ticks)/Sums.nonZeroTotalTicks, 
+              Sums.collect_garbage_enters);
+      if(enter_percentages)
+        fprintf(fp, " (%.1f%%)", 
+                100*((float) Sums.collect_garbage_enters)/Sums.total_enters);
+      fprintf(fp, "\n\nTime figures based on %d samples\n\n", 
+              Sums.total_ticks);
     }
   }
 }
-
-#if 0
-void show_AVL_structure(AVLnode **tree, int level, FILE *fp)
-{ 
-  int i;                             /* V.useful for Phil's debugging, */
-                                     /* but could be removed now       */
-  if (*tree) {
-    show_AVL_structure(&((*tree)->right), level+1, fp);
-
-    for (i=0; i<level; i++)
-      fprintf(fp, "  ");
-    fprintf(fp, " %s\n", (*tree)->funname);
-    
-    show_AVL_structure(&((*tree)->left), level+1, fp);
-  }
-}
-#endif
 
 /****************************************************** tprof stuff */
 
-void tprofStart(int argc, char **argv)
+void tprofStart(void)
+{
+  if(!timeSample && !profileInterval) {
+    timeSample=1;
+    profileInterval = (double) 0.2; /* 200ms */
+  }
+  if(timeSample) {
+#if defined(__arm) || defined(__CYGWIN32__)
+    fprintf(stderr,"No timed profiling availible on this machine.\n");
+    exit(-1);
+#else
+    setuptimer();
+#endif
+  }
+  init_AVL(&address_AVL_root);
+  if (assign_subfn_enters) {
+    tprofTMIncludePrelSubfn();
+    tprofTMIncludeUsrSubfn();
+  }
+  Mods.usrmods = tprofTMInitTreeUsr();
+  Mods.premods = tprofTMInitTreePrel3();
+  Mods.premods = tprofTMInitTreePrel2();
+  Mods.premods = tprofTMInitTreePrel1();
+  return;
+}
+
+void tprofInclude(char *module)
+{
+  int mod_len,i,j,k;
+  int listpermod=0;
+  char *args;
+
+  mod_len = strlen(module);
+  args = module;
+  for(i=0;i<mod_len;i++) {
+    switch (*(args+i)) {
+    case 'm':
+      listpermod = 1;
+      break;
+    case 't':
+      listedby = TICKS;
+      break;
+    case 'e':
+      listedby = ENTERS;
+      break;
+    case 'p':
+      enter_percentages = 1;
+      break;
+    case 'l': /* Was just l (LAMBDA) for subfns */
+    case 's': /* but s seems more obvious */
+    case 'f': /* and malcolm mentions f on the webpage */
+      assign_subfn_enters = 1;
+      break;
+    case 'g':
+      gem_wants_the_ticks = 1;
+      break;
+    case ' ': break;
+    case '+': 
+    case '-':
+      for(j=i;j<mod_len;j++) {
+	if (*(args+j)==' ' || (j==mod_len-1)) {
+	  if (j!=mod_len-1) *(args+j)='\0';
+	  if (*(args+i)=='-') {
+            tprofTMIncludePrel(args+i+1,0);
+	    tprofTMIncludeUsr(args+i+1,0);
+          }
+	  else {
+	    tprofTMIncludePrel(args+i+1,-1);
+	    tprofTMIncludeUsr(args+i+1,-1);
+          }
+	  i=j;
+	  break;
+	}
+      }
+      break;
+    default: {
+        fprintf(stderr,"\n Unknown Flag.\tValid flags: -t, -tt, -tme, -tp, -ttp, etc...\n");
+        exit(-1);
+      }
+    }
+  }
+  if (listpermod) {
+    if (listedby==TICKS)
+      listedby = TICKSPERMOD;
+    if (listedby==ENTERS)
+      listedby = ENTERSPERMOD;
+  }
+}
+
+void tprofInitTree(CodePtr address, char *funname, int *enterPtr)
+{
+  enterPtrTmp = &enterPtr;
+  fflush(stderr);
+  insert_by_address_AVL(&address_AVL_root, address, funname, 1, 1);
+  return;
+}
+
+void tprofStop(int argc, char **argv)
 {
   int i;
   char fname[MAX_FILE_NAME];
+  char *str;
+
+  timeSample++; /* No more timer exceptions */
+  stoptimer();
+
 #ifdef __arm
   strcpy(fname, argv[0]);
   strcat(fname, "_tp");
 #else
-  char *str;
   if(0 == (str = strrchr(argv[0], DIR_DEL))) {
     strcpy(fname, argv[0]);
   } else {
@@ -548,7 +652,6 @@ void tprofStart(int argc, char **argv)
   }
   strcat(fname, ".tp");
 #endif
-
   if(0 == (tpFILE = fopen(fname, "w"))) {
     fprintf(stderr, "%s can't open \"%s\" for profile data.\n", argv[0], fname);
     exit(-1);
@@ -564,212 +667,112 @@ void tprofStart(int argc, char **argv)
   time(&t);
   fprintf(tpFILE, "DATE %s\n", asctime(localtime(&t)));
   }
-  init_AVL(&address_AVL_root);
 
-  if(!timeSample && !profileInterval) {
-    timeSample=1;
-    profileInterval = (double) 0.02;
-  }
-  if(timeSample) {
-#if defined(__arm) || defined(__CYGWIN32__)
-    fprintf(stderr,"No timed profiling availible on this machine.\n");
-    exit(-1);
-#else
-    setuptimer();
-#endif
-  }
-  if (tprofModDefaultsUse[0] && tprofModDefaultsUse[1] && (collapse_mode<2)) {
-    tprofModules[tprofModules_size++].module = strdup("System");
-    tprofModules[tprofModules_size++].module = strdup("IO");
-    combine_System_IO = 1;
-  }
-  for (i=2*combine_System_IO;i<tprofModDefaults_size; i++) {
-    if (tprofModDefaultsUse[i])
-      tprofModules[tprofModules_size++].module = tprofModDefaults[i];
-  }
-  junk_enters = (int*) malloc(sizeof(int*));
-  *junk_enters = 0;
-}
-
-void tprofInclude(char *module)
-{
-  int mod_len,i,j,k;
-  char *args;
-
-  mod_len = strlen(module);
-  args = module;
-  for(i=0;i<mod_len;i++) {
-    switch (*(args+i)) {
-    case 't': {
-      listedby = 1;
-    } break;
-    case 'e': { 
-      listedby = 2;
-    } break;
-    case 'p': { 
-      enter_percentages = 1;
-    } break;
-    case 's': { 
-      assign_subfn_enters = 1;
-    } break;
-    case 'f': { 
-      assign_subfn_enters = 2;
-    } break;
-    case ' ': break;
-    case '+': 
-    case '-': {
-      for(j=i;j<mod_len;j++) {
-	if (*(args+j)==' ' || (j==mod_len-1)) {
-	  if (j!=mod_len-1) *(args+j)='\0';
-	  if (*(args+i)=='-')
-	    tprofModules[tprofModules_size++].module = args+i+1;
-	  for (k=0; k<tprofModDefaults_size; k++)
-	    if (strcmp(tprofModDefaults[k],args+i+1)==0)
-	      tprofModDefaultsUse[k] = 0;
-	  collapse_mode=1;
-	  if (tprofModules_size==MAX_MODULES) {
-	    fprintf(stderr,"Array of Module names > MAX_MODULES");
-	  }
-	  if(strcmp(args+i,"-all")==0) {
-	    collapse_mode=2;
-	  }
-	  if(strcmp(args+i,"+all")==0) {
-	    collapse_mode=3;
-	  }
-	  i=j;
-	  break;
-	}
-      }
-    } break;
-    default: {
-      fprintf(stderr,"\n Unknown Flag.\tValid flags: -t, -tt, -te, -tp, -ttp, etc...\n");
-      exit(-1);
-    }
-    }
-  }
-}
-
-void tprofStop(void)
-{
-  timeSample++; /* No more timer exceptions */
-  stoptimer();
   output_AVL_as_orderd_table(&address_AVL_root, tpFILE);
-  /*  discard_AVL(&address_AVL_root);*/
+
   fclose(tpFILE);
 }
 
-void tprofRecordEnter(CodePtr *address, char *funname, int **enterPtr)
-{
-  char *funnamecolon;
-  char *moduledot;
-  int collapse_node_pos;
-  int i;
-
+void tprofRecordEnter(char *funname, int **enterPtr) {
   timeSample = FREEZE_TIME;
-  last_right_taken = address_AVL_root;  
-
-  if (**enterPtr==0) {  /*  First enter for this function */
-    moduledot = strchr(funname,'.');
-    *moduledot = '\0';
-    collapse_node_pos = collapse_module(funname);
-    *moduledot = '.';
-    if(collapse_node_pos) { /* collapsing */
-      if(tprofModules[collapse_node_pos-1].already_made_node) { 
-	AVLnode *module_node; /* No need for new node */
-	module_node = tprofModules[collapse_node_pos-1].node;
-	(*(module_node->enters))++;
-	penultimate_enter = last_enter;
-	last_enter = module_node->enters;
-	if (address < module_node->address)
-	  module_node->address = address;
-	*enterPtr = module_node->enters;
-      }
-      else { /* Really do need a new node, but store it for later savings */
-	enterPtrTmp = enterPtr;
-	insert_info_address_AVL(&address_AVL_root, address, funname, 1);
-	tprofModules[collapse_node_pos-1].node = (AVLnode*) malloc(sizeof(AVLnode*));
-	tprofModules[collapse_node_pos-1].node = last_entered_node;
-	tprofModules[collapse_node_pos-1].already_made_node = 1;
-      }
-    }
-    else { /* not collapsing */
-      enterPtrTmp = enterPtr;
-      funnamecolon = strchr(funname,':');
-      if ((assign_subfn_enters==2) || (funnamecolon==NULL)) /* deal with : enters */
-	insert_info_address_AVL(&address_AVL_root, address, funname, 1);
-      else
-	if(assign_subfn_enters)
-	  insert_info_address_AVL(&address_AVL_root, address, funname, 3);
-	else {
-	  *enterPtr = junk_enters;
-	  /*	  **enterPtr = -1;*/
-	  penultimate_enter = last_enter;
-	  last_enter = *enterPtr;
-	}
-    }
-  }
-  /*  else {
-      if (**enterPtr<0) {  /* not counting enters here at all */
-  /*   penultimate_enter = last_enter;
-       last_enter = *enterPtr;    
-       }*/
-  else {  /* no need to search the tree :-) */
-    (**enterPtr)++;
-    penultimate_enter = last_enter;
-    last_enter = *enterPtr;
-  }
-  timeSample = ACTIVE_TIME;
-  return;
-}
-
-void tprofUnrecordEnter(void)
-{
-  timeSample = FREEZE_TIME;
-  *last_enter--;
-  last_enter = penultimate_enter;
+  enterPtrTmp = enterPtr;
+  last_right_taken = address_AVL_root;
+  insert_by_address_AVL(&address_AVL_root, *ipref, funname, 1, 0);    
   timeSample = ACTIVE_TIME;
 }
 
-void tprofEnterGreencard(CodePtr *address, char *funname)
-{
+void tprofEnterGreencard(CodePtr address, char *funname) {
   timeSample = FREEZE_TIME;
   in_greencard = 1;
-  insert_info_address_AVL(&address_AVL_root, address, "greencard", 2);
+  last_right_taken = address_AVL_root;
+  insert_by_address_AVL(&address_AVL_root, address, "", 0, 0);
   timeSample = ACTIVE_TIME;
 }
 
-void tprofExitGreencard(void)
-{
+void tprofExitGreencard(void) {
   in_greencard = 0;
 }
 
-void tprofRecordGC(void)
-{
+void tprofRecordGC(void) {
   timeSample = FREEZE_TIME;
   if (collecting_garbage)
     collecting_garbage=0;
   else {
     collecting_garbage=1;
-    collect_garbage_enters++;
+    Sums.collect_garbage_enters++;
   }
   timeSample = ACTIVE_TIME;
 }
 
-void tprofRecordTick(CodePtr *address)
-{
+void tprofRecordTick(void) {
+  /* fprintf(stderr,"TICK"); */
   timeSample = FREEZE_TIME;
-  if (in_greencard) {
+  if (in_greencard)
     *in_greencard_ticks++;
-  }
-  else {
-    if (collecting_garbage) {
-      collect_garbage_ticks++;
-    } 
+  else
+    if (collecting_garbage)
+      Sums.collect_garbage_ticks++; 
     else {
       last_right_taken = address_AVL_root;
-      insert_info_address_AVL(&address_AVL_root, address, "tick", 0);    
+      insert_by_address_AVL(&address_AVL_root, *ipref, "", 0, 0);
     }
-  }  
   timeSample = ACTIVE_TIME;
   return;
 }
+
+void gcDataStart(int argc, char **argv)
+{
+  int i;
+  char fname[MAX_FILE_NAME];
+#ifdef __arm
+  strcpy(fname, argv[0]);
+  strcat(fname, "_gd");
+#else
+  char *str;
+  if(0 == (str = strrchr(argv[0], DIR_DEL))) {
+    strcpy(fname, argv[0]);
+  } else {
+    strcpy(fname, str+1);
+  }
+  strcat(fname, ".gd");
+#endif
+  if(0 == (gdFILE = fopen(fname, "w"))) {
+    fprintf(stderr, "%s can't open \"%s\" for GC data.\n", argv[0], fname);
+    exit(-1);
+  }
+  fprintf(gdFILE, "JOB ");
+  for(i=0; i<argc; ) {
+    fputs(argv[i], gdFILE);
+    i++;
+    fputc(' ', gdFILE);
+  }
+  fprintf(gdFILE, ";\n");
+  { time_t t;
+  time(&t);
+  fprintf(gdFILE, "DATE \"%s\"\n", asctime(localtime(&t)));
+  }
+
+  fprintf(gdFILE, "HPSIZE %8d\n", hpSize);
+
+
+  if(profileInterval)
+    fprintf(gdFILE, "PROFINTERVAL %8d\n", profileInterval);
+  else {
+    profileInterval = (double)hpSize+spSize;
+    gcData = 2;
+  }
+}
+
+void gcDataStop(NodePtr hp) {
+  /* Last data point might be needed */
+  fprintf(gdFILE,"POINT %8d %8d %8d %7.3f\n",hp-hpBase+hpTotal,0,0,0.0);  
+
+  fprintf(gdFILE,"GCTIME %7.2f\n",(double)gcTime.l/(double)HZ);
+  fprintf(gdFILE,"RUNTIME %7.2f\n",(double)runTime.l/(double)HZ);
+  fprintf(gdFILE,"TOTALTIME %7.2f\n",(double)totalTime.l/(double)HZ);
+  if(totalTime.h || gcTime.h || runTime.h)
+    fprintf(gdFILE,"TIMERWRAPPED\n");
+  fclose(gdFILE);
+}
+
+
