@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 NHC98VERSION="v1.13 (CVS snapshot 2002-05-27)"
-HMAKEVERSION="3.04 (2002-05-17)" export HMAKEVERSION
+HMAKEVERSION="3.05 (2002-06-06)" export HMAKEVERSION
 HATVERSION="1.13" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
@@ -380,6 +380,17 @@ int main (void) { test(); }
   fi
   rm -f rd.c rd.out
 
+  echo -n "Testing for the glib library: "
+  if glib-config --version >/dev/null 2>&1
+  then
+    echo '              yes (detected)'
+  else
+    echo '              NOT FOUND'
+    echo 'WARNING: the hat browsing tools cannot be built without glib.'
+    echo '    Glib-1.2 is freely available via   http://www.gtk.org/'
+    exit 1
+  fi
+
   echo -n "Reading /usr/include/errno.h: "
   if [ ! -d src/prelude/$MACHINE ]
   then
@@ -695,7 +706,7 @@ else	# [ "$INSTALL" = "yes" ]
       else echo ' (exists)'
       fi
     fi
-    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . --exclude ghc --exclude nhc98 ) |\
+    { ( cd $BUILDLIBDIR/$MACHINE/; tar cvf - . --exclude hatlib ) |\
       ( cd $DESTDIR$LIBDIR/$MACHINE; tar xf - ) ; } 2>&1 | sed -e 's/^/	/'
     if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
