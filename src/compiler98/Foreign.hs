@@ -70,6 +70,12 @@ toForeign symboltable memo cast ie cname arity var =
     info = fromJust (lookupAT symboltable var)
     hname = tidI info
     (args,res) = searchType symboltable memo info
+-- Crazy idea:
+--  (arity',args') = if arity==0 && ioResult' res then (1,[Unit])
+--                   else (arity,args)
+-- to try to get round the CAF problem for f :: IO () which only gets
+-- evaluated once at runtime.  But this doesn't solve it, because we
+-- really need to transform all *uses* of f as well.  Eeek!
 
 searchType :: AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
 searchType st (arrow,io) info =
@@ -98,7 +104,7 @@ searchType st (arrow,io) info =
             | t==tForeign    = ForeignObj
             | t==tStablePtr  = StablePtr
             | t==tAddr       = Addr
-            | t==(t_Tuple 0) = Unit
+            | t==(t_Tuple 0) = Unit	-- possibly unwise? no void args in C
             | t==tInt8       = Int8
             | t==tInt16      = Int16
             | t==tInt32      = Int32
@@ -125,9 +131,11 @@ searchType st (arrow,io) info =
     (dropRes [] . map toTid . toList . getNT . ntI) info
 
 ioResult :: Foreign -> Bool
-ioResult (Foreign _ _ _ _ _ _ (IOResult _)) = True
-ioResult (Foreign _ _ _ _ _ _ IOVoid)       = True
-ioResult (Foreign _ _ _ _ _ _ (Pure _))     = False
+ioResult (Foreign _ _ _ _ _ _ res) = ioResult' res
+
+ioResult' (IOResult _) = True
+ioResult' IOVoid       = True
+ioResult' (Pure _)     = False
 
 ----
 type ForeignMemo = (Int,Int)
@@ -165,6 +173,8 @@ strForeign f@(Foreign Imported cast cname hname arity args res) =
       listsep semi (zipWith cArg args [1..]) . semi .
       foldr (.) id (zipWith cArgDefn args [1..]) . nl .
       (if cast then cCast arity res
+       else if length args == 1 && noarg (head args)
+       then cCall realcname 0 res
        else cCall realcname arity res) . nl .
       cFooter res .
     closecurly . nl
@@ -174,13 +184,15 @@ strForeign f@(Foreign Imported cast cname hname arity args res) =
       case cname of
         "" -> (reverse . unpackPS . extractV) hname
         _  -> cname
+    noarg Unit = True
+    noarg _    = False
 
 strForeign f@(Foreign Exported _ cname hname arity args res) =
     nl . showString "/*" . space . shows f . space . showString "*/" . nl .
     cCodeDecl realcname args res . space .
     opencurly . nl .
       --cResDecl res .
-      hCall arity hname args (ioResult f) .
+      hCall arity hname args (ioResult' res) .
       hResult res .
     closecurly . nl
   where
@@ -192,9 +204,13 @@ strForeign f@(Foreign Exported _ cname hname arity args res) =
 
 ---- foreign import ----
 
+cArgDecl Unit n =
+    comment (cTypename Unit . space . narg n)
 cArgDecl arg n =
     cTypename arg . space . narg n
 
+cArgDefn Unit n =
+    id
 cArgDefn arg n =
     indent . word "nodeptr = C_GETARG1" . parens (shows n) . semi .
     indent . word "IND_REMOVE(nodeptr)" . semi .
@@ -362,4 +378,5 @@ comma      = showChar ','
 listsep s x= if length x > 0 then foldr1 (\l r-> l . s . r) x else id
 indent     = space . space
 narg n     = word "arg" . shows n
+comment s  = word "/* " . s . word " */"
 
