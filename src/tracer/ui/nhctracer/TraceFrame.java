@@ -63,9 +63,9 @@ public class TraceFrame extends Frame {
     //   createMenuItem("Change server/port", fileMenu, handler, true,
     //                  null);
     connectToTraceItem =
-      createMenuItem("Connect to trace", fileMenu, handler, true, null);
+      createMenuItem("Open trace file", fileMenu, handler, true, null);
     disconnectItem =
-      createMenuItem("Disconnect", fileMenu, handler, true, null);
+      createMenuItem("Close trace file", fileMenu, handler, true, null);
     createScriptItem =
       createMenuItem("Create script", fileMenu, handler, true,
                      new MenuShortcut(KeyEvent.VK_S));
@@ -224,7 +224,7 @@ public class TraceFrame extends Frame {
       if (target instanceof MenuItem) {
 	if (target == connectToTraceItem) {
 	  FileDialog fd =
-	    new FileDialog(me, "Connect to trace", FileDialog.LOAD);
+	    new FileDialog(me, "Open trace file", FileDialog.LOAD);
 	  fd.setVisible(true);
 	  if (fd.getFile() != null) {
 	    connectToTrace(fd.getDirectory()+fd.getFile(),"");
