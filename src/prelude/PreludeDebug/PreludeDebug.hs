@@ -6,10 +6,12 @@ module Prelude where
 --    by the compiler to normal Prelude functions.
 
 
---import PackedString(unpackPS, PackedString(..), packString)
+import PackedString(PackedString)
 import Ratio (Ratio)
 import DIO		-- needed for attaching traces to prim I/O operations.
 import DEither		-- traced version needed, as for DIO.
+import FFIBuiltin (Addr,ForeignObj,StablePtr)
+import PreludeBuiltin (Vector)
 
 sameAs :: a -> a -> Bool
 x `sameAs` y = cPointerEquality (E x) (E y)
@@ -35,6 +37,7 @@ data NmType =
    | NTCString Int
    | NTIf
    | NTGuard
+   | NTContainer
 
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
@@ -53,6 +56,18 @@ instance NmCoerce Double where
 instance NmCoerce Bool where
     toNm t False sr = R False (Nm t (NTConstr 0) sr)
     toNm t True  sr = R True  (Nm t (NTConstr 1) sr)
+instance NmCoerce () where
+    toNm t v sr = R v (Nm t (NTConstr 0) sr)
+instance NmCoerce Addr where
+    toNm t v sr = R v (Nm t NTContainer sr)
+instance NmCoerce (StablePtr a) where
+    toNm t v sr = R v (Nm t NTContainer sr)
+instance NmCoerce ForeignObj where
+    toNm t v sr = R v (Nm t NTContainer sr)
+instance NmCoerce PackedString where
+    toNm t v sr = R v (Nm t NTContainer sr)
+instance NmCoerce (Vector a) where
+    toNm t v sr = R v (Nm t NTContainer sr)
 
 --instance NmCoerce a => NmCoerce (IO a) where
 --    toNm t (IOPrim (R v _)) sr =
@@ -175,6 +190,20 @@ setOutputContext sr t =
        t
 
 _tprim_setOutputContext primitive 2 :: Trace -> E (R a) -> R a
+
+{-
+storeTrailToo :: SR -> Trace -> R (Trace -> R (Trace -> R a -> R b)
+                                         -> R (Trace -> R a -> R b))
+storeTrailToo sr t0 =
+    R (\t1 xf@(R rf rft) ->
+        R (\t2 a@(R ra rat) ->
+            ap1 sr t2 xf (R a t2))
+          t1)
+      t0
+-}
+
+
+-- ---------------------------------------------------------- --
 
 hidden h@(Hidden _) = h
 hidden t            = Hidden t
