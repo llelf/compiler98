@@ -844,6 +844,7 @@ fun6 nm rf sr t =
             t)
           t)
         t)
+      (mkTNm t nm sr)
 
 fun7 nm rf sr t = 
   mkR (\t a ->
