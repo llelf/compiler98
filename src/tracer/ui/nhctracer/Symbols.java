@@ -4,6 +4,9 @@ import java.awt.*;
 
 public class Symbols {
 
+  static String infinity = "\u221F";
+  static String ellipsis = "\u22EF";
+
   public static int drawPlaceholder(Graphics g, UI ui, int x, int y) {
     int width = ui.normalfm.charWidth('m');
     int w = width * 5 / 6;
@@ -47,6 +50,22 @@ public class Symbols {
     g.drawLine(
       x0+width-ui.dx, topline-ui.dy,
       x0+width-ui.dx, baseline-ui.dy);
+    return width;
+  }
+  
+  public static int drawWithout(Graphics g, UI ui, int x0, int y0) {
+    int width = ui.normalfm.charWidth('m');
+    int baseline = y0 + ui.normalfm.getHeight();
+    int topline = baseline - ui.normalfm.getAscent()*5/6;
+    g.drawLine(
+      x0+width-ui.dx, (baseline+topline)/2-ui.dy,
+      x0-ui.dx, topline-ui.dy);
+    g.drawLine(
+      x0+width-ui.dx, (baseline+topline)/2-ui.dy,
+      x0-ui.dx, baseline-ui.dy);
+    g.drawLine(
+      x0-ui.dx, topline-ui.dy,
+      x0-ui.dx, baseline-ui.dy);
     return width;
   }
   

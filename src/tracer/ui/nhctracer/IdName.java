@@ -38,7 +38,7 @@ public class IdName extends EDTNode {
     if (name.equals("")) c=' '; else c = this.name.charAt(0);
     infix = !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') ||
 	      (c >= '0' && c <= '9') || c == '(' || c == '[' || 
-	      c == '\'' || c == ',' || c == '_' || this.name == "\\");
+	      c == '\'' || c == ',' || c == '_' || this.name.equals("\\"));
     if (c==',') tupleConsArity = name.length()+1;
     else tupleConsArity = -1;
     if (c=='e') {
@@ -97,7 +97,8 @@ public class IdName extends EDTNode {
     g.setColor(color);
     FontMetrics fm = g.getFontMetrics();
     int x = x0;
-    if (infix &&
+    if (name.equals("\\")
+    || infix &&
        (index > 0 || (parent != null &&
                       parent.args.size() != 3))
     || tupleConsArity > 0 &&
@@ -110,6 +111,9 @@ public class IdName extends EDTNode {
     if (name.equals("[]")) {
       g.drawString("[ ]", x-ui.dx, y0-ui.dy+fm.getHeight());
       x += fm.stringWidth("[ ]");
+    } else if (name.equals("\\")) {
+      g.drawString("\\\u22EF", x-ui.dx, y0-ui.dy+fm.getHeight());
+      x += fm.stringWidth("\\\u22EF");
     } else {
       g.drawString(name, x-ui.dx, y0-ui.dy+fm.getHeight());
       x += fm.stringWidth(name);

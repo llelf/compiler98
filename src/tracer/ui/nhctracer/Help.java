@@ -121,9 +121,9 @@ public class Help extends Frame {
 		
 	y += 2*d;
 	Symbols.drawWithin(g,ui,x,y-d);
-	g.drawString("links conditional or case to parent redex", x+tab, y);
+	g.drawString("introduces if/case/guard after parent context", x+tab, y);
         y += d;
-	g.drawString("(read it as `within')", x+tab,y);
+	g.drawString("(read it as `and within that')", x+tab,y);
 	 	
 	y += 2*d;
 	Symbols.drawPlaceholder(g,ui,x,y-d);

@@ -15,6 +15,8 @@ public class Option implements ItemListener {
 
   public void toggle() {
     state = !state;
+    if (name.equals("Show source line numbers"))
+      MainPanel.viewer.reload();
   }
 
   public void setState(boolean state) {

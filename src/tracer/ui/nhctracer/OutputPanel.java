@@ -76,7 +76,7 @@ public class OutputPanel extends Panel {
     } else {
       EDTParser parser = new EDTParser(serverConnection, dbgPanel.nodeTable);
       output = parser.parseOutput();
-      tabPanel.select("Program output");
+      tabPanel.select("Program output", "stdout");
       repaint();
     }
   }

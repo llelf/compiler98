@@ -50,14 +50,33 @@ public class CharList extends EDTStructuredNode {
       g.setColor(Color.black);
       g.drawString("\"", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
       x += ui.normalfm.charWidth('\"');
-      EDTNode cons = this;
+
+      EDTNode cons = this;      
       EDTStructuredNode node;
+      int len = 0;
+      while (cons instanceof EDTStructuredNode) {
+        len++;
+	node = (EDTStructuredNode)cons;    
+        cons = (EDTNode)node.args.elementAt(2);
+      }
+      int plen = StringDialog.endLengths;
+      if (plen == 0) plen = len;
+
+      int i = 1;
+      cons = this;
       do {
 	node = (EDTStructuredNode)cons;
-	IdName ch = (IdName)node.args.elementAt(1);
-	String s = ch.name.substring(1, ch.name.length()-1);
-	g.drawString(s, x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
-	x += ui.normalfm.stringWidth(s);
+	if (i-1 < plen || len-i < plen) {
+	  IdName ch = (IdName)node.args.elementAt(1);
+	  String s = ch.name.substring(1, ch.name.length()-1);
+	  g.drawString(s, x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+	  x += ui.normalfm.stringWidth(s);
+	} else if (i == plen+1) {
+	  g.drawString(Symbols.ellipsis,
+	    x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());
+	  x += ui.normalfm.stringWidth(Symbols.ellipsis);
+	}
+	i++;
       } while ((cons = (EDTNode)node.args.elementAt(2))
                 instanceof EDTStructuredNode);
       g.drawString("\"", x-ui.dx, y0-ui.dy+ui.normalfm.getHeight());

@@ -80,6 +80,7 @@ public abstract class EDTStructuredNode extends EDTNode {
     int i, w;
     int cx;
     int spacew = ui.normalfm.charWidth(' ');
+    int applyw = spacew * 2;
     EDTNode arg;
     String s;
     boolean isInfix = ((EDTNode)args.elementAt(0)).infix;
@@ -168,8 +169,8 @@ public abstract class EDTStructuredNode extends EDTNode {
 	for (i = 0; i < args.size(); i++) {
 	  arg = (EDTNode)args.elementAt(i);
 	  if (i > 0) {
-	    if (x <= cx+spacew) return this;
-	    cx += spacew;
+	    if (x <= cx+applyw) return this;
+	    cx += applyw;
 	  }
 	  w = arg.width;
 	  if (x <= cx+w)
@@ -185,6 +186,7 @@ public abstract class EDTStructuredNode extends EDTNode {
   public int paint(Graphics g, UI ui, int x0, int y0,
                    int refnr, int trefnr, int irefnr, int drefnr) {
     int spacew = ui.normalfm.charWidth(' ');
+    int applyw = spacew * 2;
     EDTNode arg;
     int i, x;
     boolean isInfix = ((EDTNode)args.elementAt(0)).infix;
@@ -278,8 +280,8 @@ public abstract class EDTStructuredNode extends EDTNode {
       x += arg.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr);
       for (i = 1; i < args.size(); i++) {
 	arg = (EDTNode)args.elementAt(i);
-	x += spacew +
-	     arg.paint(g, ui, x+spacew, y0, refnr, trefnr, irefnr, drefnr);
+	x += applyw +
+	     arg.paint(g, ui, x+applyw, y0, refnr, trefnr, irefnr, drefnr);
       }
     }
     width = x-x0;

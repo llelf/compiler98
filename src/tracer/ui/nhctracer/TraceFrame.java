@@ -18,17 +18,18 @@ public class TraceFrame extends Frame {
     exitItem;
   
   // Options menu items
-  MenuItem fontItem;
+  MenuItem chooseFontItem, chooseStringLenItem;
 
   // Help menu items
   MenuItem mouseHelpItem, highlightHelpItem, symbolHelpItem;
    
   int port;
   String host;
-  String appTitle = "Hat 1.04 Trail Browser";
+  String appTitle = "Hat 1.08 Trail Browser";
 
   MainPanel mainPanel;
 
+  StringDialog stringDialog;
   FontDialog fontDialog;
   Button connect;
   Button disconnect;
@@ -80,12 +81,15 @@ public class TraceFrame extends Frame {
     // printItem = createMenuItem("Print", fileMenu, handler, true, new MenuShortcut(KeyEvent.VK_P));
     exitItem = createMenuItem("Exit", fileMenu, handler, true, null);
 
-    fontItem = createMenuItem("Select font", optionMenu, handler, true, null);
+    chooseFontItem = createMenuItem("Choose font", optionMenu, handler, true, null);
+    chooseStringLenItem =
+      createMenuItem("Choose string-length limit", optionMenu, handler, true, null);
 
+    optionMenu.add(createCheckboxMenuItem(Options.lineNos, true));
     // optionMenu.add(createCheckboxMenuItem(Options.memoise, false));
     
-    // optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
-    optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
+    optionMenu.add(createCheckboxMenuItem(Options.showcase, true));
+    // optionMenu.add(createCheckboxMenuItem(Options.tracecomm, true));
     // optionMenu.add(createCheckboxMenuItem(Options.highshare, true));
     // optionMenu.add(createCheckboxMenuItem(Options.oarrow, true));
     
@@ -277,11 +281,16 @@ public class TraceFrame extends Frame {
 	} else if (target == exitItem) {
 	  stop();
 	  System.exit(0);
-	} else if (target == fontItem) {
+	} else if (target == chooseFontItem) {
 	  if (fontDialog == null)
 	    fontDialog = new FontDialog(me, mainPanel.dbgPanel.ui);
 	  else
 	    fontDialog.show();
+	} else if (target == chooseStringLenItem) {
+	  if (stringDialog == null)
+	    stringDialog = new StringDialog(me, mainPanel.dbgPanel.ui);
+	  else
+	    stringDialog.show();
 	} else if (target == mouseHelpItem) {
 	  new Help("mouse clicks", mainPanel.dbgPanel.ui);
 	} else if (target == highlightHelpItem) {

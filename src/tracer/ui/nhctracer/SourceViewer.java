@@ -17,7 +17,7 @@ public class SourceViewer extends Panel {
 	this.status = status;
  	setLayout(new BorderLayout());
 
-	viewer = new TextArea(); //(12, 80);
+	viewer = new TextArea();
 	add(viewer, BorderLayout.CENTER);
 	viewer.setEditable(false);
 	viewer.setFont(GetParams.getFont("nhctracer.sourcefont",
@@ -29,10 +29,19 @@ public class SourceViewer extends Panel {
         this.tabPanel = tabPanel;
     }
 
+    public void reload() {
+	viewer.setText("");
+        files.clear();
+	if (currentFile != null)
+	  showSourceLocation(
+	    currentFile.conn, currentFile.name,
+	    currentFile.row, currentFile.col);	
+    }
+
     public void reset() {
 	viewer.setText("");
-	currentFile = null;
         files.clear();
+	currentFile = null;
     }
 
     public void showSelection() {
@@ -44,13 +53,10 @@ public class SourceViewer extends Panel {
 	getToolkit().sync();
 	if (filename != null && readFile(conn, filename)) {
 	    markPosition(r-1, c);
+	    currentFile.row = r;
+	    currentFile.col = c;
 	}
 	getToolkit().sync();
-    }
-
-    public void noSourceLocation() {
-	viewer.setText("");
-	currentFile = null;
     }
 
     public String replaceTabs(String s) {
@@ -88,13 +94,19 @@ public class SourceViewer extends Panel {
 
 	    fi.lines = new Vector(50, 50);
 	    fi.contents = "";
+	    fi.name = filename;
+	    fi.conn = conn;
 	    viewer.setText("");
 
 	    try {
-		int chars = 0;
-		while ((line = file.readLine()) != null && !line.equals("<EOF>")) {
-		    int i;
+		int chars = 0;  int lineNo = 1;
+		while ((line = file.readLine()) != null &&
+		       !line.equals("<EOF>")) {
 		    line = replaceTabs(line);
+		    if (Options.lineNos.getState()) {
+		      line = padLeft(4,lineNo) + "  " + line;
+		      lineNo++;
+		    }
 		    fi.contents = fi.contents + line + "\n";
 		    fi.lines.addElement(new Integer(chars));
 		    chars += line.length()+1;
@@ -110,11 +122,19 @@ public class SourceViewer extends Panel {
 	status.setText("");
 	return true;
     }
+    
+    String padLeft(int w, int i) {
+      String s = Integer.toString(i);
+      if (s.length() > w) s = "";
+      while (s.length() < w) s = " "+s;
+      return s;
+    }
 
     public void markPosition(int r, int c) {
         Integer i = (Integer)currentFile.lines.elementAt(r);
+	if (Options.lineNos.getState()) c += 6;
 	viewer.select(i.intValue() + c-1, i.intValue() + c);
-	tabPanel.select("Source code");
+	tabPanel.select("Source code", currentFile.name);
     }
 
     public static void fail(Exception e, String msg) {
@@ -127,6 +147,10 @@ public class SourceViewer extends Panel {
 class FileInfo {
   Vector lines;
   String contents;
+  String name;
+  Connection conn;
+  int row;
+  int col;
 
   public FileInfo() {
   }

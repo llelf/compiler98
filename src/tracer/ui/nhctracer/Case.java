@@ -54,15 +54,16 @@ public class Case extends EDTStructuredNode {
     int cx = x0;
     EDTNode se = (EDTNode)args.elementAt(0);
     EDTNode ctxt = (EDTNode)args.elementAt(1);
-    if (cx < x0) return null;
+    if (x <= cx+ctxt.width) return ctxt.inside(ui,x,y,cx,y0);
     if (Options.showcase.getState()) {
+      int space = ui.normalfm.charWidth(' ');
+      cx += ctxt.width + space + Symbols.maxWidth(ui) + space;
+      if (x < cx) return null;
       cx += ui.normalfm.stringWidth(key);
       if (x <= cx) return this;
       if (x <= cx+se.width) return se.inside(ui, x, y, cx, y0);      
-      cx += se.width + ui.normalfm.stringWidth(" m ");
-      if (x <= cx) return null;
     }
-    return ctxt.inside(ui, x, y, cx, y0);
+    return null;
   }
 
   public int paint(Graphics g, UI ui, int x0, int y0,
@@ -79,15 +80,16 @@ public class Case extends EDTStructuredNode {
     g.setColor(color);
     FontMetrics fm = g.getFontMetrics();
     int x = x0;
+    x += ctxt.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr); 
     if (Options.showcase.getState()) {
+      g.setColor(Color.black);
+      int space = ui.normalfm.charWidth(' ');
+      x += space + Symbols.drawWithout(g, ui, x+space, y0) + space;
+      g.setColor(color);
       g.drawString(key, x-ui.dx, y0-ui.dy+fm.getHeight());
       x += fm.stringWidth(key);
       x += se.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr); 
-      g.setColor(Color.black);
-      int space = ui.normalfm.charWidth(' ');
-      x += space + Symbols.drawWithin(g, ui, x+space, y0) + space;
     }
-    x += ctxt.paint(g, ui, x, y0, refnr, trefnr, irefnr, drefnr); 
     width = x-x0;
     g.setFont(ui.normalfont);
     annotate(g, ui, x0, y0, refnr, trefnr, irefnr, drefnr);

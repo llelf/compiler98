@@ -26,8 +26,8 @@ public class TabbedPanel extends Panel {
 
   // select
   // Display a component in the panel
-  void select(String n) {
-    tab.choose(n);
+  void select(String n, String e) {
+    tab.choose(n, e);
     disp.choose(n);
   }
 
@@ -42,6 +42,7 @@ class TabSelector extends Canvas
 {
   Color hi, lo;
   Vector name = new Vector();
+  Vector extraname = new Vector();
   int chosen = 0;
   Font font = new Font("timesRoman", Font.PLAIN, 14);
   Font chfont = new Font(font.getName(), Font.BOLD, 14);
@@ -54,13 +55,15 @@ class TabSelector extends Canvas
 
   void addItem(String n) {
     name.addElement(n);
+    extraname.addElement(null);
     paint(getGraphics());
   }
 
-  void choose(String n) {
+  void choose(String n, String e) {
     for(int i=0; i<name.size(); i++)
       if (((String)name.elementAt(i)).equals(n)) {
 	chosen = i;
+	extraname.setElementAt(e, i);
 	paint(getGraphics());
       }
   }
@@ -104,6 +107,8 @@ class TabSelector extends Canvas
       else 
 	g.setFont(font);
       String str = (String)name.elementAt(i);
+      if (extraname.elementAt(i) != null)
+        str = str + " (" + (String)extraname.elementAt(i) + ")";
       int textw = g.getFontMetrics().stringWidth(str);
       int texth = g.getFontMetrics().getHeight();
       if (textw < tw-5)

@@ -1,10 +1,12 @@
 package nhctracer;
 
 public class Options {
+  public static Option lineNos =
+    new Option("Show source line numbers", false);
   public static Option memoise =
     new Option("Memoise unfolded structures", false);
   public static Option showcase =
-    new Option("Show case/guard/if-redexes", true);
+    new Option("Show case/guard/if expressions", true);
   public static Option tracecomm =
     new Option("Trace hat-connect communication", false);
   public static Option dumprefs =

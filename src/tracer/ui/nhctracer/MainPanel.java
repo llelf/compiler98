@@ -9,7 +9,7 @@ import java.io.*;
 public class MainPanel extends Panel {
   DbgPanel dbgPanel;
   OutputPanel outputPanel;
-  SourceViewer viewer;
+  static SourceViewer viewer;
   Status status;
   TabbedPanel tabPanel;
   TraceFrame frame;
