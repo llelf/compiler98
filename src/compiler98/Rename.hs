@@ -97,6 +97,7 @@ groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
   groupFun' :: Eq a => [Decl a] -> [Decl a]
 
   groupFun' [] = []
+  groupFun' (d@(DeclFun _ _ [Fun [] _ _]):r) = d: groupFun' r
   groupFun' (DeclFun pos fun funs:r) =
     DeclFun pos fun (funs++funs'):    groupFun' r'
     where 
@@ -112,16 +113,16 @@ groupFun (DeclsParse decls) = DeclsParse (groupFun' decls)
 
   groupFun'' :: Eq a => a -> [Fun a] -> [Decl a] -> ([Fun a],[Decl a])
 
-  groupFun'' fun a (DeclFun pos fun' funs:r) | fun == fun' =
-    groupFun'' fun (a++funs) r
-  groupFun'' fun a  (d@(DeclPat (Alt (ExpVar pos fun') gdexps w)):r) = 
-    groupFun'' fun a  (DeclFun pos fun' [Fun [] gdexps w]:r)
-  groupFun'' fun a dr@(DeclPat (Alt (ExpInfixList pos es) gdexps w):r) = 
+  groupFun'' fun acc (DeclFun pos fun' funs:r) | fun == fun' =
+    groupFun'' fun (acc++funs) r
+  groupFun'' fun acc  (d@(DeclPat (Alt (ExpVar pos fun') gdexps w)):r) = 
+    groupFun'' fun acc  (DeclFun pos fun' [Fun [] gdexps w]:r)
+  groupFun'' fun acc dr@(DeclPat (Alt (ExpInfixList pos es) gdexps w):r) = 
     case infixFun es of
-      Nothing -> (a,dr)
+      Nothing -> (acc,dr)
       Just (e1,pos',fun',e2) -> 
-        groupFun'' fun a  (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
-  groupFun'' fun a r = (a,r)
+        groupFun'' fun acc  (DeclFun pos' fun' [Fun [e1,e2] gdexps w]:r)
+  groupFun'' fun acc r = (acc,r)
 
 
 {-
