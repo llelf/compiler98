@@ -8,10 +8,11 @@ module TraceId
   , arity		-- :: TraceId -> Maybe Int
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
+  , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail -- :: TraceId
   ) where
 
-import TokenId (TokenId)
-import AuxFile (AuxiliaryInfo(..),Fixity(..))
+import TokenId (TokenId,t_Colon,t_List,t_gtgt,t_gtgteq,tfail)
+import AuxFile (AuxiliaryInfo(..),Fixity(..),emptyAux)
 
 {-
 data TraceId = Keep	{ tokenId :: TokenId }
@@ -26,7 +27,7 @@ type TraceId = (TokenId, Maybe AuxiliaryInfo)
 -- construction functions
 
 just :: TokenId -> TraceId
-just t = (t, Nothing)
+just t = (t, Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
 
 plus :: TokenId -> AuxiliaryInfo -> TraceId
 t `plus` aux = (t, Just aux)
@@ -53,3 +54,22 @@ fixPriority (_,Just info) = encode (fixity info) (priority info)
     encode R       n = 1 + (n*4)
     encode None    n = 0 + (n*4)
     encode (Pre _) n = 0 + (n*4)
+
+
+-- TraceId versions of some hardcoded tokens 
+
+tTokenCons :: TraceId
+tTokenCons = t_Colon `plus` emptyAux{args=2}
+
+tTokenNil :: TraceId
+tTokenNil = t_List `plus` emptyAux{args=0}
+
+tTokenGtGt :: TraceId
+tTokenGtGt = t_gtgt `plus` emptyAux{args=2}
+
+tTokenGtGtEq :: TraceId
+tTokenGtGtEq = t_gtgteq `plus` emptyAux{args=2}
+
+tTokenFail :: TraceId
+tTokenFail = tfail `plus` emptyAux{args=1}
+

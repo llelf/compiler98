@@ -4,7 +4,7 @@ It does lots of head-standing to try to ensure
 that things happen in the right order (due to lazy evaluation), that
 error messages get reported correctly, and to be as space-efficient as
 possible.
--}
+-} 
 module Main where
 
 import IO
@@ -96,10 +96,11 @@ import GcodeSpec(gcodeZCon)
 import Depend(depend)
 import PackedString(PackedString, unpackPS)
 
-import Foreign (Foreign,strForeign)
-import ReportImports
-import AuxFile
-import AuxLabelAST
+import Foreign(Foreign,strForeign)
+import ReportImports(reportFnImports)
+import AuxFile(toAuxFile)
+import AuxLabelAST(auxLabelSyntaxTree)
+import TraceTrans(traceTrans)
 
 
 --import NonStdProfile
@@ -152,7 +153,10 @@ nhcAux flags (Right parsedProg) = do
       then do toAuxFile flags (sAuxFile flags) parsedProg
             --putStrLn (prettyPrintTokenId flags ppModule parsedProg)
               newprog <- auxLabelSyntaxTree flags parsedProg
-              putStrLn (prettyPrintTraceId flags ppModule newprog)
+              putStrLn (prettyPrintTraceId flags ppModule newprog) 
+              putStrLn "----------------------------------"    
+              putStrLn (prettyPrintTokenId flags ppModule 
+                         (traceTrans (sSourceFile flags) newprog))
               exitWith (ExitSuccess)
       else return ()
     nhcNeed flags parsedProg

@@ -349,11 +349,11 @@ dRemoveDo p (StmtBind pat exp:r) =
       unitS (ExpApplication pos 
               [ExpVar pos gtgteq, exp', ExpLambda pos [pat] exp2])
     else
-      lookupId Var t_zero >>>= \ zero ->
+      lookupId Var tfail >>>= \ fail ->
       lookupId Con tTrue >>>= \ true ->
       newVar pos >>>= \ x ->
       let eTrue = ExpCon pos true
-          eFail = ExpApplication pos [ExpVar pos zero
+          eFail = ExpApplication pos [ExpVar pos fail
                                      ,ExpLit pos (LitString Boxed 
                                      "pattern-match failure in do expression")]
       in unitS (ExpApplication pos 

@@ -11,7 +11,7 @@ module Remove1_3(removeDecls,mkSel,removeDo,translateExpRecord) where
 import Syntax
 import State
 import IntState
-import TokenId(TokenId,t_gtgt,t_gtgteq,t_zero)
+import TokenId(TokenId,t_gtgt,t_gtgteq,tfail)
 import TypeLib(getState,newIdent,getIdent,typeError)
 import SyntaxPos
 import TypeData(TypeMonad)
@@ -147,12 +147,13 @@ removeDo (StmtBind pat exp:r) =
   in
     if nofail state pat
     then  
+      -- this is only an optimisation; the else-case is never wrong
       unitS (ExpApplication pos [ExpVar pos gtgteq, exp, ExpLambda pos [pat] exp2])
     else
-      getIdent (t_zero,Var) >>>= \ zero ->	-- In H98, this is `fail'
+      getIdent (tfail,Var) >>>= \ fail -> 
       newIdent >>>= \ x ->
       let eX = ExpVar pos x
-          eFail = ExpApplication pos [ExpVar pos zero
+          eFail = ExpApplication pos [ExpVar pos fail
                                      ,ExpLit pos (LitString Boxed "pattern-match failure in do expression")]
       in unitS 
            (ExpApplication pos 

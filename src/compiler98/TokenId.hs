@@ -181,7 +181,7 @@ tMain           = visImpRev  "Main"
 
 t_gtgteq        = qualImpRev  ">>="
 t_gtgt	        = qualImpRev  ">>"
-t_zero	        = qualImpRev  "fail"
+tfail	        = qualImpRev  "fail"
 t_error  	= qualImpRev  "error"
 t_undef         = qualImpRev  "undefined"
 tfromInteger    = qualImpRev  "fromInteger"
