@@ -108,7 +108,7 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.hc src/interpreter/*.hc
 CPPHS = src/cpphs/Makefile* src/cpphs/*.hs src/cpphs/docs src/cpphs/tests \
-	src/cpphs/*.hc src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
+	src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
 RUNTIME = \
 	src/Makefile.inc \
 	src/runtime/Makefile* \
