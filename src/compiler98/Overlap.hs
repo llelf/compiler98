@@ -115,15 +115,15 @@ mkErrorND (tid,Method) poss =
   "The identifier " ++ show tid ++ " instantiated at "
   ++ mix "," (map strPos poss) ++ " does not belong to this class."
 mkErrorND (tid,kind) poss =
-  show kind ++ ' ':show tid ++ " used at " ++ mix "," (map strPos poss)
+  show kind ++ ' ':show tid ++ " used at " ++ mix ", " (map strPos poss)
   ++ " is not defined."
 
 mkErrorOVND (tid,kind) poss alias others =
-  show kind ++ ' ':show alias ++ " used at " ++ mix "," (map strPos poss)
+  show kind ++ ' ':show alias ++ " used at " ++ mix ", " (map strPos poss)
   ++ " cannot be resolved:\n  none of " ++ showList (tid:others) " is defined."
 
 mkErrorOVD (tid,kind) poss alias others =
-  show kind ++ ' ':show alias ++ " used at " ++ mix "," (map strPos poss)
+  show kind ++ ' ':show alias ++ " used at " ++ mix ", " (map strPos poss)
   ++ " is the correct qualified resolution for all of:\n  "
   ++ showList (tid:others) ",\n but there is still some unknown problem."
 
