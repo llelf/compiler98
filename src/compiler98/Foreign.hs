@@ -12,7 +12,7 @@ import Info
 import NT
 import TokenId
 import AssocTree
-import Extra (mix,trace)
+import Extra (mix,warning)
 import GcodeLow (fun,foreignfun,fixStr)
 
 
@@ -128,7 +128,9 @@ searchType st arrow info =
             | t==tWord32     = Word32
             | t==tWord64     = Word64
             | t==tPackedString  = PackedString
-            | otherwise      = trace ("Warning: foreign import/export has non-primitive type: "++show t++"\n") (Unknown (show t))
+            | otherwise      =
+                    warning ("foreign import/export has non-primitive type: "
+                             ++show t++"\n") (Unknown (show t))
 
     getNT (NewType _ _ _ [nt]) = nt
     getNT (NewType _ _ _ (nt:_)) = nt
@@ -354,7 +356,7 @@ hConvert Addr         s = word "mkInt" . parens (word "(int)" . s)
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
 hConvert ForeignObj   s =
-  trace ("Warning: foreign import/export should not return ForeignObj type.\n")
+  warning ("foreign import/export should not return ForeignObj type.\n")
                           s
 hConvert Unit         s = word "mkUnit()"
 hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched

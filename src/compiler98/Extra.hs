@@ -20,6 +20,9 @@ strace msg c = if length msg == 0
 	       then  c
 	       else trace msg c
 
+warning s v = trace ("Warning: "++s) v
+--warning s v = v
+
 fstOf a b = a
 sndOf a b = b
 
