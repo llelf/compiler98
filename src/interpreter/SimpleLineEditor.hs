@@ -20,18 +20,17 @@ module SimpleLineEditor
   , restore		--	:: IO ()
   , getLineEdited	--	:: String -> IO (Maybe String)
   , delChars		--	:: String -> IO ()
-  , testIt		--	:: IO ()
   ) where
 
 import IO
 import Monad (when)
-import Char
-import System.IO.Unsafe (unsafePerformIO)
-import Data.IORef
-import Maybe
-import System (system)
+import Char (isSpace)
 #if USE_READLINE
 import Readline
+#else
+import Data.IORef (IORef, newIORef, readIORef, writeIORef)
+import System (system)
+import System.IO.Unsafe (unsafePerformIO)
 #endif
 
 -- | Set up the environment so that the terminal passes characters directly
@@ -46,7 +45,7 @@ initialise = do
     hSetBuffering stdout NoBuffering
     hSetBuffering stdin  NoBuffering
 #if USE_READLINE
-    Readline.initialize
+    initialize
 #endif
 
 -- | Restore the environment so that the terminal is usable in normal
@@ -112,12 +111,12 @@ getLineEdited prompt = do
         Move L   -> if not (null s) then putStr ("\BS") >> gl s 1 hist
                     else gl s 0 hist
         History  -> case hist of
-                      (fut, [])     -> gl s 0 hist
+                      (_fut, [])    -> gl s 0 hist
                       (fut, p:past) -> do delChars s
                                           putStr (reverse p)
                                           gl p 0 (s:fut, past)
         Future   -> case hist of
-                      ([], past)    -> gl s 0 hist
+                      ([], _past)   -> gl s 0 hist
                       (f:fut, past) -> do delChars s
                                           putStr (reverse f)
                                           gl f 0 (fut, s:past)
@@ -158,13 +157,13 @@ getLineEdited prompt = do
                            putStr (replicate n1 '\BS')
                            gl s n hist
         History  -> case hist of
-                      (fut, [])     -> gl s n hist
+                      (_fut, [])    -> gl s n hist
                       (fut, p:past) -> do putStr (replicate n ' ')
                                           delChars s
                                           putStr (reverse p)
                                           gl p 0 (s:fut, past)
         Future   -> case hist of
-                      ([], past)    -> gl s n hist
+                      ([], _past)   -> gl s n hist
                       (f:fut, past) -> do putStr (replicate n ' ')
                                           delChars s
                                           putStr (reverse f)
@@ -178,7 +177,7 @@ getLineEdited prompt = do
 -- currently have a key binding for that.
 data LineCmd = Char Char | Move Cursor | Delete Cursor
              | Accept | Cancel | History | Future | NoOp
-data Cursor  = L | R | WordL | WordR | Begin | End
+data Cursor  = L | R | Begin | End -- not implemented yet: | WordL | WordR
 
 -- This little lexer for keystrokes does a reasonable job, but there
 -- are plenty of problems.  E.g. the backspace key might generate a
@@ -186,22 +185,21 @@ data Cursor  = L | R | WordL | WordR | Begin | End
 -- position.  Behaviour is highly dependent on terminal settings I imagine.
 lineCmd :: IO LineCmd
 lineCmd = do
-    c <- hGetChar stdin
-    case c of
+    c1 <- hGetChar stdin
+    case c1 of
       '\n'   -> putChar '\n' >> return Accept
       '\^K'  -> putChar '\n' >> return Cancel
       '\DEL' -> return (Delete L)
       '\BS'  -> return (Delete L)
-      '\^H'  -> return (Delete L)
       '\^L'  -> return (Move R)
       '\^[' -> do
-        c <- hGetChar stdin
-        case c of
+        c2 <- hGetChar stdin
+        case c2 of
           'k' -> return History
           'j' -> return Future
           '[' -> do
-              c <- hGetChar stdin
-              case c of
+              c3 <- hGetChar stdin
+              case c3 of
                 'D' -> return (Move L)
                 'C' -> return (Move R)
                 'A' -> return History
@@ -220,23 +218,26 @@ lineCmd = do
                             _   -> return NoOp
                 _   -> return NoOp
           'O' -> do
-              c <- hGetChar stdin
-              case c of
+              c3 <- hGetChar stdin
+              case c3 of
                 'D' -> return (Move L)
                 'C' -> return (Move R)
                 'A' -> return History
                 'B' -> return Future
                 _   -> return NoOp
           _   -> return NoOp
-      _ -> return (Char c)
+      _ -> return (Char c1)
 
-#endif -- USE_READLINE
+#endif /* USE_READLINE */
 
+{-
 -- | A simple interactive test for the line-editing functionality.
 
 -- (This illustrates the necessary use of 'initialise' and 'restore'
 --  as brackets around the editing loop.)
+testIt :: IO ()
 testIt = initialise >> loop >> restore
   where loop = do l <- getLineEdited "prompt> "
                   when (isJust l) (putStrLn (fromJust l))
                   when (l/=Just "quit") loop
+-}
