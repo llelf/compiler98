@@ -62,10 +62,13 @@ leximports fp =
                ++" open comments {- but no matching close -}")
 
     endstring ('\\':'\\':cs) = '\\':'\\': endstring cs
-    endstring ('\\':'"':cs) = '\\':'"': endstring cs
+    endstring ('\\':'"':cs)  = '\\':'"': endstring cs
+    endstring ('\\':w:cs)    | isSpace w = stringgap cs
     endstring ('"':cs) = '"': nestcomment 0 cs
     endstring (c:cs)   = c  : endstring cs
     endstring []       = []
+    stringgap ('\\':cs) = endstring cs
+    stringgap (c:cs)    = stringgap cs
 
     getmodnames (x:xs)
       | null x || all isSpace x  = getmodnames xs
