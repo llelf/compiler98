@@ -71,6 +71,7 @@ GRCC="${CC} -I${NHC98INCDIR}/"
 VFLAG=0 
 MFLAG=0 
 TPFLAG=0
+HXFLAG=0
 KEEPS=0
 KEEPC=0
 AS="${CC} -c"
@@ -112,6 +113,8 @@ processArgs () {
   while test "'$1'" != "''" 
   do
     case $1 in
+    -hx   ) HXFLAG=1
+            COMPFLAGS=$COMPFLAGS" -hx" ;;
     -p    ) PROF=p
             COMPFLAGS=$COMPFLAGS" -profile"
             GRCC=$GRCC" -DPROFILE"
@@ -302,6 +305,7 @@ HSRC=
 CSRC=
 SSRC=
 GR=
+HX=
 case $COMPFILES in
 ""   ) ;; 
 *    )
@@ -311,25 +315,25 @@ case $COMPFILES in
   do
     CSUF=$CSUFFIX
     case $1 in
-    *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0;
+    *.s   ) UNLIT="";       HSRC=0; CSRC=0; SSRC=1; GR=0 HX=0;
                               BASENAME=`basename $1 .s`   ;;
-    *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+    *.hc  ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .hc`  CSUF=hc ;;
-    *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+    *.T.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .T.c` CSUF=T.c ;;
-    *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+    *.p.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .p.c` CSUF=p.c ;;
-    *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+    *.z.c ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .z.c` CSUF=z.c ;;
-    *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0;
+    *.c   ) UNLIT="";       HSRC=0; CSRC=1; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .c`   CSUF=c ;;
-    *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
+    *.hs_ ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0 HX=1;
                               BASENAME=`basename $1 _.hs_` ;;
-    *.gc  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=1;
+    *.gc  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=1 HX=0;
                               BASENAME=`basename $1 .gc`  ;;
-    *.hs  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0;
+    *.hs  ) UNLIT="";       HSRC=1; CSRC=0; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .hs`  ;;
-    *.lhs ) UNLIT="-unlit"; HSRC=1; CSRC=0; SSRC=0; GR=0;
+    *.lhs ) UNLIT="-unlit"; HSRC=1; CSRC=0; SSRC=0; GR=0 HX=0;
                               BASENAME=`basename $1 .lhs` ;;
     esac
 
@@ -433,6 +437,15 @@ case $COMPFILES in
       if test $? -ne 0
       then
 	exit 1
+      fi
+
+      if test $HXFLAG -eq 1
+      then
+        if test $HX -eq 1
+        then
+          mv $DIRNAME/${BASENAME}_.hx $DIRNAME/${BASENAME}.hx
+        fi
+        exit 0
       fi
 
       if test $PRECPP -ne 0
