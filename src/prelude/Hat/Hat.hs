@@ -53,7 +53,7 @@ noPos = 0
 -- ----------------------------------------------------------------------------
 
 openTrace :: String -> IO ()
-openTrace progname = openTrace' `useString` progname
+openTrace progname = withString progname openTrace'
 
 foreign import "openTrace"
   openTrace' :: CString -> IO () 
@@ -1355,7 +1355,7 @@ foreign import "primModule"
   mkModule' :: CString -> CString -> ModuleTraceInfo
 
 outputTrace :: Trace -> String -> IO ()
-outputTrace trace output = outputTrace' trace `useString` output
+outputTrace trace output = withString output (outputTrace' trace)
 
 foreign import "outputTrace"
   outputTrace' :: Trace -> CString -> IO ()
