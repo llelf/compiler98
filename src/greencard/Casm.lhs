@@ -111,7 +111,7 @@ baseTyToRtn PackedString v = "mkString("++v++")"
 baseTyToRtn Word         v = "mkInt("++v++")"
 baseTyToRtn Addr         v = "mkAddr("++v++")"
 baseTyToRtn StablePtr    v = "mkStablePtr(stableRef("++v++"))"
-baseTyToRtn (Foreign f)  v = "mkInt((int)allocForeignObj((void*)"++v++",(gcCval)"++f++",0))"
+baseTyToRtn (Foreign f)  v = "mkInt((int)allocForeignObj((void*)"++v++",(gcCval)"++f++",gcNow))"
 
 \end{code}
 
