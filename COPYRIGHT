@@ -35,21 +35,21 @@ Cpphs is distributed under the terms of the GNU LGPL.
 The HOOD Observe library and graphical browser are
 (c) copyright to Andy Gill, 2000.
 The HOOD graphical browser incorporates open source Java components
-(c) copyright MicroStar Inc, 1999.  (Please read their separate licenses.)
+(c) copyright MicroStar Inc, 1999.  (Please read their separate licences.)
 
 The Random library is copied direct from Hugs, which has a separate
-BSD-style license.  That implementation of Random is
+BSD-style licence.  That implementation of Random is
 (c) copyright Lennart Augustsson, with modifications by Sigbjorn Finne.
 Some parts of the implementation of the Time library were also
 contributed by Lennart.
 
 The hierarchical libraries base package is
 (c) copyright the University of Glasgow, and is distributed under
-a separate BSD-style license.
+a separate BSD-style licence.
 
 Other hierarchical libraries packages are
 (c) copyright their respective authors, and are distributed
-under varying license conditions.  Please see individual package
+under varying licence conditions.  Please see individual package
 documentation for details.
 
 
