@@ -5,7 +5,8 @@ module AuxLabelAST
 
 import List (nubBy)
 import Char (isUpper)
-import AuxTypes(Environment,mkIdentMap,useIdentMap,AuxiliaryInfo(letBound))
+import AuxTypes(Environment,mkIdentMap,useIdentMap,Identifier(..)
+               ,AuxiliaryInfo(letBound))
 import AuxFile(Visibility,PatSort(Refutable,Irrefutable)
               ,extendEnv,getImports,addPat,foldrPat)
 import AuxFixity(fixInfixList)
@@ -56,26 +57,34 @@ vi = \_-> True
 -- is decided by the caller, but for `lookEnv', it is decided by the
 -- environment.
 
-letVar :: Environment -> TokenId -> TraceId
-letVar (env,identMap) id =
+useEnvironment :: Environment -> TokenId -> Maybe AuxiliaryInfo
+useEnvironment (env,identMap) id =
   let v = useIdentMap identMap id in
-  case lookupAT env v of
+  case v of
+    -- a field may be shadowed by a normal variable
+    -- hence have to search for such a variable first
+    Field _ name -> case lookupAT env (Var name) of
+                      Just info -> Just info
+                      Nothing -> lookupAT env v
+    _ -> lookupAT env v
+
+letVar :: Environment -> TokenId -> TraceId
+letVar env id =
+  case useEnvironment env id of
     Just info | letBound info -> id `plus` info
-    _ -> error ("AuxLabelAST.letVar: "++show v++" not let-bound in env")
+    _ -> error ("AuxLabelAST.letVar: "++show id++" not let-bound in env")
 
 lookEnv :: Environment -> TokenId -> TraceId
-lookEnv (env,identMap) id =
-  let v = useIdentMap identMap id in
-  case lookupAT env v of
+lookEnv env id =
+  case useEnvironment env id of
     Just info -> id `plus` info
     _ -> case id of
            -- this is a horrible hack to by-pass qualified names.
-           Qualified _ x -> let v' = useIdentMap identMap (Visible x) in
-                            case lookupAT env v' of
+           Qualified _ x -> case useEnvironment env (Visible x) of
                               Just info -> id `plus` info
-                              _ -> error ("AuxLabelAST.lookEnv: "++show v
+                              _ -> error ("AuxLabelAST.lookEnv: "++show id
                                           ++" not in environment")
-           _ -> error ("AuxLabelAST.lookEnv: "++show v++" not in environment")
+           _ -> error ("AuxLabelAST.lookEnv: "++show id++" not in environment")
 
 
 -- The class `Relabel' walks the abstract syntax tree, relabelling all
