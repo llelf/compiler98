@@ -1,6 +1,12 @@
 #ifndef _BYTECODE_O_H_
 #define _BYTECODE_O_H_
 
+/* This file defines an obsolete form of the bytecode, used by the
+ * non-ANSI-C (assembler) backend of the compiler.  This obsolete form
+ * can maintained in sync with the "real" bytecode (if the "real" bytecode
+ * changes) by running the file  script/mangler.
+ */
+
 #define DUMMY_FOR_ZERO 0
 #define NEEDHEAP_P1 1
 #define NEEDHEAP_P2 2
