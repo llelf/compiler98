@@ -101,7 +101,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/hi.inst script/hat-trail.inst \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
-	 script/echo.c script/hood.inst \
+	 script/echo.c script/hood.inst script/tprofprel \
 	 lib/hat-trail.jar lib/hood.jar \
 	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.c
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \

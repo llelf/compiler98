@@ -290,18 +290,19 @@ static void print_AVL_info(AVLnode *tree, char *module, FILE *fp)
   int dotpos = -1;
 
   if (LISTEDBYTICKS) {
-    fprintf(fp, "%.1f\t", 
+    fprintf(fp, "  %5.1f  ", 
             100*((float) (tree->ticks+tree->g_ticks))/Sums.nonZeroTotalTicks);
-    if (gem_wants_the_ticks) fprintf(fp, "[%d]\t", tree->ticks+tree->g_ticks);
+    if (gem_wants_the_ticks) fprintf(fp, "[%d]  ", tree->ticks+tree->g_ticks);
   }
 
-  if (tree->g_enters) fprintf(fp, "%d\t", tree->g_enters);
-  else fprintf(fp, "%d\t", *(tree->enters));
+  if (tree->g_enters) fprintf(fp, "%10d  ", tree->g_enters);
+  else fprintf(fp, "%10d  ", *(tree->enters));
 
   if (LISTEDBYENTERS) {
-    fprintf(fp, "%.1f\t", 
+    fprintf(fp, "  %5.1f  ", 
             100*((float) (tree->ticks+tree->g_ticks))/Sums.nonZeroTotalTicks);
-    if (gem_wants_the_ticks) fprintf(fp, "[%d]\t", tree->ticks+tree->g_ticks);
+    if (gem_wants_the_ticks) 
+      fprintf(fp, "[%10d]  ", tree->ticks+tree->g_ticks);
   }
 
   if (tree->g_enters) fprintf(fp, "*");
@@ -333,29 +334,36 @@ static char* print_AVL_node(AVLnode *tree, Subtree *subtree,
               "\n----------------------------------------------------------");
       if (dispn || (*fnp=='c')) {
         if(LISTEDBYENTERS) {
-          fprintf(fp, "\n%s%c\t Enters = %-10d", mod, sp, *(tree->enters));
+          fprintf(fp, "\n%s%c\t %10d calls", mod, sp, *(tree->enters));
           if(enter_percentages) 
-            fprintf(fp, " (%.1f%%)", 
+            fprintf(fp, "   %5.1f%% calls", 
                     100*((float) *(tree->enters))/Sums.total_enters);
-          fprintf(fp, "\tTime = %.1f%%", 
+          fprintf(fp, "\t%5.1f%% time", 
                   100*((float) tree->ticks)/Sums.nonZeroTotalTicks);
           if (gem_wants_the_ticks) fprintf(fp, "\t[%d]",tree->ticks);
           fprintf(fp, "\n");
         }
         else {
-          fprintf(fp, "\n%s%c\t Time = %.1f%%", mod, sp, 
+          fprintf(fp, "\n%s%c\t %5.1f%% time", mod, sp, 
                   100*((float) tree->ticks)/Sums.nonZeroTotalTicks, 
                   *(tree->enters));
           if (gem_wants_the_ticks) fprintf(fp, "\t[%d]",tree->ticks);
-          fprintf(fp, "\tEnters = %-10d", *(tree->enters));
+          fprintf(fp, "\t%10d calls", *(tree->enters));
           if(enter_percentages) 
-            fprintf(fp, " (%.1f%%)", 
+            fprintf(fp, "   %5.1f%% calls", 
                     100*((float) *(tree->enters))/Sums.total_enters);
           fprintf(fp, "\n");
         }
-        if (dispn)
+        if (dispn) {
           fprintf(fp, 
               "----------------------------------------------------------\n");
+          if(LISTEDBYENTERS)
+            fprintf(fp, 
+              "   # calls   %% time                                       \n");
+          else
+            fprintf(fp, 
+              " %% time     # calls                                       \n");
+        }
       }
       if (*fnp=='n')
         print_AVL_node(*(subtree[tree->height].root), subtree, mod, 0, fp);
@@ -395,7 +403,7 @@ int rearrange_AVL(AVLnode **address_tree, int mod, Subtree *subtree) {
       else
         mod = 10*(*(fnp+1)-48)+(*(fnp+2)-48);     
       if ((*fnp=='n') && !(LISTEDBYPERMOD) && (mod>0)) {
-        mod = 1;
+        mod = Mods.premods+1;
       }
       (*address_tree)->height = mod;
       if (*fnp=='n') { /* 'n' */
@@ -463,9 +471,9 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
     Sums.total_enters += Sums.collect_garbage_enters;
     if (!(LISTEDBYPERMOD)) {
       if (listedby==TICKS)
-        fprintf(fp, "\nTime\tEnters\t Function\n");
+        fprintf(fp, "\n %% time     # calls           \n");
       else
-        fprintf(fp, "\nEnters\tTime\t Function\n");
+        fprintf(fp, "\n   # calls   %% time           \n");
       fprintf(fp, 
               "----------------------------------------------------------\n");
     }
@@ -495,37 +503,37 @@ void output_AVL_as_orderd_table(AVLnode **tree, FILE *fp) {
 
     if(LISTEDBYENTERS) {
       if(Sums.total_g_enters) {
-        fprintf(fp, "GreenCard\t Enters = %-10d", Sums.total_g_enters);
+        fprintf(fp, "GreenCard\t %10d calls", Sums.total_g_enters);
         if(enter_percentages) 
-          fprintf(fp, " (%.1f%%)", 
+          fprintf(fp, "   %5.1f%% calls", 
                   100*((float) Sums.total_g_enters)/Sums.total_enters);
-        fprintf(fp, "\tTime = %.1f%%\n\n", 
+        fprintf(fp, "\t%5.1f%% time\n\n", 
                 100*((float) Sums.total_g_ticks)/Sums.nonZeroTotalTicks);
       }
-      fprintf(fp, "GarbageCollect\t Enters = %-10d", 
+      fprintf(fp, "GarbageCollect\t %10d calls", 
               Sums.collect_garbage_enters);
       if(enter_percentages)
-          fprintf(fp, " (%.1f%%)", 
-                  100*((float) Sums.collect_garbage_enters)/Sums.total_enters);
-      fprintf(fp, "\tTime = %.1f%%\n\nTime figures based on %d samples\n\n",
+        fprintf(fp, "   %5.1f%% calls", 
+                100*((float) Sums.collect_garbage_enters)/Sums.total_enters);
+      fprintf(fp, "\t%5.1f%% time\n\nTime figures based on %d samples\n\n",
               100*((float) Sums.collect_garbage_ticks)/Sums.nonZeroTotalTicks, 
               Sums.total_ticks);
     }
     else {
       if(Sums.total_g_enters) {
-        fprintf(fp, "GreenCard\t Time = %.1f%%\tEnters = %-10d", 
+        fprintf(fp, "GreenCard\t %5.1f%% time\t%10d calls", 
                 100*((float) Sums.total_g_ticks)/Sums.nonZeroTotalTicks, 
                 Sums.total_g_enters);
         if(enter_percentages) 
-          fprintf(fp, " (%.1f%%)", 
+          fprintf(fp, "   %5.1f%% calls", 
                   100*((float) Sums.total_g_enters)/Sums.total_enters);
         fprintf(fp, "\n\n");
       }
-      fprintf(fp, "GarbageCollect\t Time = %.1f%%\tEnters = %-10d", 
+      fprintf(fp, "GarbageCollect\t %5.1f%% time\t%10d calls", 
               100*((float) Sums.collect_garbage_ticks)/Sums.nonZeroTotalTicks, 
               Sums.collect_garbage_enters);
       if(enter_percentages)
-        fprintf(fp, " (%.1f%%)", 
+        fprintf(fp, "   %5.1f%% calls", 
                 100*((float) Sums.collect_garbage_enters)/Sums.total_enters);
       fprintf(fp, "\n\nTime figures based on %d samples\n\n", 
               Sums.total_ticks);
@@ -539,7 +547,7 @@ void tprofStart(void)
 {
   if(!timeSample && !profileInterval) {
     timeSample=1;
-    profileInterval = (double) 0.2; /* 200ms */
+    profileInterval = (double) 0.1; /* 100ms */
   }
   if(timeSample) {
 #if defined(__arm) || defined(__CYGWIN32__)
@@ -577,18 +585,19 @@ void tprofInclude(char *module)
     case 't':
       listedby = TICKS;
       break;
-    case 'e':
+    case 'e': /* Was just e for enters   */
+    case 'c': /* refered to as calls now */
       listedby = ENTERS;
       break;
-    case 'p':
+    case 'p': /* percentages for calls as well as for time */
       enter_percentages = 1;
-      break;
-    case 'l': /* Was just l (LAMBDA) for subfns */
-    case 's': /* but s seems more obvious */
-    case 'f': /* and malcolm mentions f on the webpage */
+      break;  
+    case 'l': /* Count sub-function (lambda lifted) entries separately */
+    case 's': /* Was just l (LAMBDA) for subfns but s seems more       */
+    case 'f': /* obvious and Malcolm mentions f on the webpage         */
       assign_subfn_enters = 1;
       break;
-    case 'g':
+    case 'g': /* Display the actual number of ticks, not just % time */
       gem_wants_the_ticks = 1;
       break;
     case ' ': break;
@@ -611,7 +620,7 @@ void tprofInclude(char *module)
       }
       break;
     default: {
-        fprintf(stderr,"\n Unknown Flag.\tValid flags: -t, -tt, -tme, -tp, -ttp, etc...\n");
+        fprintf(stderr,"\n Unknown Flag.\tValid flags: -t, -tt, -tmc, etc...\n");
         exit(-1);
       }
     }

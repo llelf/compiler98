@@ -564,25 +564,37 @@ then
    LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/tprofprel3.o
    LDLIBS=$LDLIBS" "$NHC98LIBDIR/$MACHINE/Runtime$CFG.a" "$LLPREL
 fi
-# Define a function for creating tprof usr lables
+
+# Create tprof usr labels
 tprof () {
+  LDFILES=""
+  TPL=""
   if test $VFLAG -eq 1
-  then echo "Generating tprof usr lables";
+  then echo "Generating tprof lables";
   fi
-echo "${NHC98BINDIR}/tprofprel 0 $@ > $TMP/tprofusr$$.c"
-  ${NHC98BINDIR}/tprofprel 0 $@ > $TMP/tprofusr$$.c
-  $CC -x c -c -o $TMP/tprofusr$$.o $TMP/tprofusr$$.c
-  rm -f $TMP/tprofusr$$.c
   while test "'$1'" != "''" 
   do
-    echo "int TMIP_$1[] = {0};" | cat > $TMP/tpl$1.c
-    $CC -x c -c -o $TMP/tpl$1.o $TMP/tpl$1.c
-    rm -f $TMP/tpl$1.c
+    TPO=`basename $1 .$OSUFFIX`
+    TPHI=`dirname $1`"/"$TPO.$HISUFFIX
+    if test -e $TPHI
+    then
+      TPLAB=`head -1 $TPHI | cut -d' ' -f2`
+      TPL=$TPL" "$TPLAB
+      LDFILES=$LDFILES" "$TMP/tpl$TPO.o" "$1
+      echo "int TMIP_$TPLAB[] = {0};" | cat > $TMP/tpl$TPO.c
+      $CC -x c -c -o $TMP/tpl$TPO.o $TMP/tpl$TPO.c
+      rm -f $TMP/tpl$TPO.c
+    else
+      LDFILES=$LDFILES" "$1
+    fi
     if test "'$1'" != "''" 
     then
       shift
     fi
   done
+  ${NHC98BINDIR}/tprofprel 0 $TPL > $TMP/tprofusr$$.c
+  $CC -x c -c -o $TMP/tprofusr$$.o $TMP/tprofusr$$.c
+  rm -f $TMP/tprofusr$$.c
 }
 
 if test $KEEPS -eq 0 -a $KEEPC -eq 0 -a $NOLINK -eq 0 -a $MFLAG -eq 0
@@ -591,7 +603,7 @@ then
    ""  ) echo "nhc98: error: no source, object or archive file specified"; 
          exit 1;;
    *   ) if test $TPFLAG -eq 1
-         then tprof $LDFIRST $LDFILES
+         then tprof $LDFILES
          fi
          if test $VFLAG -eq 1
          then

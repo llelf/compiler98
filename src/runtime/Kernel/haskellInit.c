@@ -313,17 +313,17 @@ void haskellInit (int argc, char **argv)
           case 't':
 #ifdef TPROF
 #ifdef PROFILE
-            if (!profile) { /* -tmt List by module,ticks,enters  <default -t> */
-              tprof = 1;    /* -tme by module,enters,ticks                    */
-            }               /* -te  by enters,ticks  and  -tt by time.enters  */
-#else                       /* -tp List will include enter percentages        */
-            tprof = 1;      /* -ttp by tick,enters including enter %  etc...  */
-#endif                                  /* Args following -t in quotes give   */
-	    tprofTMInit();              /* Module names that the user wishes  */
-            if (argv[i][2]) {           /* to collapse/expand eg -t "-Ph +IO" */
-              tprofInclude(argv[i]+2);  /* will collapse Ph and expand IO     */   
-            }                           /* "+all" & "-all" are valid, default */
-            break;                      /* is to expand only user modules     */
+            if (!profile) { /* -tmt order by module then ticks <default>    */
+              tprof = 1;    /* -tmc order by module then calls (then ticks) */
+            }               /* -tc  order by calls then ticks               */
+#else                       /* -tt  order by time  then calls         etc.  */
+            tprof = 1;
+#endif                                 /* Args following -t in quotes give   */
+	    tprofTMInit();             /* Module names that the user wishes  */
+            if (argv[i][2]) {          /* to collapse/expand eg. -t"-Ph +IO" */
+              tprofInclude(argv[i]+2); /* will collapse Ph and expand IO     */
+            }                          /* "+all" & "-all" are valid, default */
+            break;                     /* is to expand only user modules     */
 
           case 'G':
             gcData = 1;
