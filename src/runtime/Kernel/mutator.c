@@ -21,18 +21,22 @@
 
 #ifdef BYTECODE_PROF
 /* for profiling bytecode instruction pairs/triples */
-#define PAIR 1		/* for triples, PAIR=0 */
+#define PAIR 0		/* for pairs, PAIR=1, for triples, PAIR=0 */
 #if PAIR
+static int           total_instr_count=0;
 static int           instr_pair[ENDCODE+1][ENDCODE+1];
 static unsigned char last_instr=EVAL;
-#define register_instr(x)     instr_pair[last_instr][x]++; last_instr=x
+#define register_instr(x)     instr_pair[last_instr][x]++; last_instr=x; \
+				total_instr_count++
 #else
+static int           total_instr_count=0;
 static int           instr_triple[ENDCODE+1][ENDCODE+1][ENDCODE+1];
 static unsigned char last_instr=EVAL;
 static unsigned char penu_instr=EVAL;
 #define register_instr(x)     instr_triple[penu_instr][last_instr][x]++; \
 				penu_instr=last_instr; \
-				last_instr=x
+				last_instr=x; \
+				total_instr_count++
 #endif
 #else
 #define register_instr(x)
@@ -1281,9 +1285,10 @@ void instr_prof_results() {
         fprintf(stderr,"(%3d,%3d) %9d\t%s..%s\n",i,j,
                   instr_pair[i][j],
                   instr_names[i],instr_names[j]);
-        }
+      }
     }
   }
+  fprintf(stderr,"\nTotal instruction count = %d\n",total_instr_count);
 }
 #else
 void instr_prof_init() {
@@ -1310,6 +1315,7 @@ void instr_prof_results() {
       }
     }
   }
+  fprintf(stderr,"\nTotal instruction count = %d\n",total_instr_count);
 }
 
 #endif /*PAIR*/
