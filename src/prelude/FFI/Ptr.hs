@@ -57,7 +57,7 @@ nullPtr :: Ptr a
 nullPtr  = intToPtr 0
 
 plusPtr :: Ptr a -> Int -> Ptr b
-plusPtr a i = intToPtr (ptrToInt a + 1)
+plusPtr a i = intToPtr (ptrToInt a + i)
 
 alignPtr :: Ptr a -> Int -> Ptr a
 alignPtr a i = intToPtr (let j = ptrToInt a in j + (j`rem`i))
