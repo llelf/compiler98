@@ -17,10 +17,10 @@ void interactive();
 char* fname;
 int verboseMode = 0;
 unsigned int precision = 30;
+HatFile handle;
 
 main (int argc, char *argv[])
 {
-  int handle;
   if (argc!=2) {
     fprintf(stderr,"\nusage: hat-checki file-name\n");
     exit(1);
@@ -30,7 +30,7 @@ main (int argc, char *argv[])
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);
   }
-  if (hatTestHeader()) {
+  if (hatTestHeader(handle)) {
     
     interactive(0);
 
@@ -108,18 +108,17 @@ int isCmd(char* s,char* s1,char* s2) {
 char fixpribuf[FIXPRIMAX+1];
 
 char *getfixpriStr() {
-  int b = (int)(getInfixPrio());
-  switch (b % 4) {
-  case 0:
-    sprintf(fixpribuf, "infix %d", b/4);
+  switch (getAppInfixType()) {
+  case INFIX:
+    sprintf(fixpribuf, "infix %d", getAppInfixPrio());
     break;
-  case 1:
-    sprintf(fixpribuf, "infixr %d", b/4);
+  case INFIXR:
+    sprintf(fixpribuf, "infixr %d", getAppInfixPrio());
     break;
-  case 2:
-    sprintf(fixpribuf, "infixl %d", b/4);
+  case INFIXL:
+    sprintf(fixpribuf, "infixl %d", getAppInfixPrio());
     break;
-  case 3:
+  case NOINFIX:
     sprintf(fixpribuf, "");
     break;
   }
@@ -129,8 +128,7 @@ char *getfixpriStr() {
 filepointer printNode(unsigned long offset) {
   char b,showAble=0;
   unsigned long next;
-  hatSeekNode(offset);
-  b = getNodeType();
+  b = getNodeType(handle,offset);
   switch (hi3(b)) {
   case TR:
     printf("TR 0x%x: ", offset);
@@ -142,7 +140,7 @@ filepointer printNode(unsigned long offset) {
 	showAble = 1;
 	printf("Application: ");
 	printf("AppTrace 0x%x, ",getParent());
-	printf("AppFun 0x%x, ",getFunTrace());
+	printf("AppFun 0x%x, ",getAppFun());
 	printf("Arguments [");
 	while (i++<arity) {
 	  printf("TR 0x%x",getAppArgument(i-1));
@@ -155,13 +153,13 @@ filepointer printNode(unsigned long offset) {
       showAble = 1;
       printf(" Name: ");
       printf("TR 0x%x, ", getParent());
-      printf("NT 0x%x, ", getNmType());
+      printf("NT 0x%x, ", getNameType());
       printf("SR 0x%x ", getSrcRef());
       break;
     case IND:
       printf(" Indirection: ");
       printf("TR 0x%x, ", getParent());
-      printf("TR 0x%x ", getValueTrace());
+      printf("TR 0x%x ", getProjValue());
       break;
     case HIDDEN:
       showAble = 1;
@@ -296,25 +294,23 @@ filepointer printNode(unsigned long offset) {
 	   hi3(b), offset);
   }
   printf("\n");
-  hatSeqNext();
-  next = hatNodeNumber();
-
+  next = hatSeqNext(handle,offset);
 
   if (showAble) {
     unsigned long satc;
     char *appstr;
     ExprNode* exp;
 
-    exp = buildExpr(offset,verboseMode,precision);
+    exp = buildExpr(handle,offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,1);
     
-    satc = getResult(followSATs(offset));
+    satc = getResult(handle,hatFollowSATs(handle,offset));
     hatSeekNode(satc);
     if ((isSAT(satc))&&(satc!=offset)) {
       printf("corresponding SAT at: 0x%x\n\n",satc);
       printf("reduction: %s = ",appstr);
       freeStr(appstr);
-      exp = buildExpr(satc,verboseMode,precision);
+      exp = buildExpr(handle,satc,verboseMode,precision);
       appstr = prettyPrintExpr(exp,1);
       printf("%s\n",appstr);
     } else {
@@ -322,17 +318,16 @@ filepointer printNode(unsigned long offset) {
     }
     freeStr(appstr);
   }
-  hatSeekNode(next);
   return next;
 }
 
-void interactive(unsigned long current) {
+void interactive(filepointer current) {
   char command[255];
   int toplevel=0;
   unsigned long adr,next;
 
   toplevel = (current==0);
-  if (current == 0) current = hatNodeNumber();
+  if (current == 0) current = hatNodeNumber(handle);
   while (1) {
     next = 0;
     if (current!=0) next=printNode(current);
@@ -352,7 +347,7 @@ void interactive(unsigned long current) {
 	  }
 	} else {
 	  if (isCmd(command,"follow","f")) {
-	    adr = followSATs(current);
+	    adr = hatFollowSATs(handle,current);
 	  } else {
 	    adr = atol(command);
 	    if (adr==0) {

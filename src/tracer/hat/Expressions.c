@@ -131,7 +131,8 @@ int getExprInfixPrio(ExprNode* e) {
 #define CUT_MESSAGE "<CUT>"
 
 /* building expression at given offset from hat file */
-ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precision) {
+ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
+		       unsigned int precision) {
 //#define DebugbuildExpr
   char b;
   unsigned long p;
@@ -148,8 +149,8 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 #ifdef DebugbuildExpr
     printf("building expression... 0x%x\n",fileoffset);
 #endif
-    fileoffset=followTrace(fileoffset); // follow the trace along all SATs and indirections
-    b = getNodeType();
+    fileoffset=hatFollowTrace(handle,fileoffset); // follow the trace along all SATs and indirections
+    b = getNodeType(handle,fileoffset);
 #ifdef DebugbuildExpr
     printf("node type: %i\n",b);
 #endif
@@ -166,7 +167,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 	exp = newExprNode(TRAPP);
 	exp->v.appval = apn;
 
-	functionOffset = getFunTrace();
+	functionOffset = getAppFun();
 #ifdef DebugbuildExpr
 	printf("Found application of arity: %i\n",arity);
 #endif
@@ -175,7 +176,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 	  // abuse pointers for storing the fileoffsets temporarily
 	}
 	// build function
-	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose,precision-1));
+	setAppNodeFun(apn,fun=buildExprRek(handle,functionOffset,verbose,precision-1));
 	/* special workaround for IO(_) follows: show operation behind HIDDEN node,
 	   to give atleast some information about the kind of IO performed */
 	if ((fun)&&(fun->type==MESSAGE)&&(strcmp(fun->v.message,CUT_MESSAGE)==0)) {
@@ -184,8 +185,9 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
 	  IdentNode* id = fun->v.identval;
 	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
-	    unsigned long hidden = followSATs((unsigned long) getAppNodeArg(apn,0));
-	    if (getNodeType()==TRHIDDEN) {
+	    unsigned long hidden = hatFollowSATs(handle,
+						 (filepointer) getAppNodeArg(apn,0));
+	    if (getNodeType(handle,hidden)==TRHIDDEN) {
 	      setAppNodeArg(apn,0,(ExprNode*) (getParent()));
 	    }
 	  }
@@ -197,7 +199,8 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 	  printf("building argument %i\n",i);
 #endif
 	  // exchange arguments containing fileoffsets against the built expressions
-	  setAppNodeArg(apn,i-1,buildExprRek((unsigned long) getAppNodeArg(apn,i-1),
+	  setAppNodeArg(apn,i-1,buildExprRek(handle,
+					     (unsigned long) getAppNodeArg(apn,i-1),
 					     verbose,precision-1));
 	}
 	return exp;
@@ -207,24 +210,23 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
       int infix,infixprio;
       exp = newExprNode(b);
       s=getName();
-      infix=getInfixPrio();
-      infixprio = infix / 4;
-      infix = infix % 4;
+      infixprio=getAppInfixPrio();
+      infix = getAppInfixType();
       if (strcmp(s,",")==0) {
 	s=newStr(",");
 	infix=0;
       } else {
-	if (infix==3) infixprio=32768;
+	if (infix==NOINFIX) infixprio=32768;
 	s=newStr(s);  // read name of identifier/constructor
       }
       exp->v.identval = newIdentNode(s,infix,infixprio);
       return exp;
     }
     case TRNAM: // Name
-      fileoffset=getNmType(); // read NmType -> follow this link to build 
+      fileoffset=getNameType(); // read NmType -> follow this link to build 
       break;
     case TRIND: //  Indirection
-      fileoffset=getValueTrace(); // follow this link for prettyPrint
+      fileoffset=getProjValue(); // follow this link for prettyPrint
       break;
     case NTINT:
       exp = newExprNode(b);
@@ -269,7 +271,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
       if (verbose) {
 	p = getParent();
 	exp = newExprNode(TRSATA);
-	exp->v.expr = buildExprRek(p,verbose,precision);
+	exp->v.expr = buildExprRek(handle,p,verbose,precision);
 	return exp;
       } else
 	return NULL;
@@ -280,7 +282,7 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
       return exp;
     default:
       fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x, handle: %u\n",
-	      b, hatNodeNumber(),hatCurrentHandle());
+	      b,fileoffset,handle);
       return NULL; //exit(1);
     }
   }
@@ -288,9 +290,9 @@ ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precisi
 }
 
 /* build expression at given offset in file */
-ExprNode* buildExpr(unsigned long fileoffset,int verbose,
+ExprNode* buildExpr(HatFile handle,unsigned long fileoffset,int verbose,
 		    unsigned int precision) {
-  return buildExprRek(fileoffset,verbose,precision);
+  return buildExprRek(handle,fileoffset,verbose,precision);
 }
 
 /*********************************************************************/
@@ -495,7 +497,6 @@ char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
       }
     }
   case NTIDENTIFIER:
-    //if (functionDepth>=showEvalUpToDepth) return newStr("_");
   case NTCONSTRUCTOR:
     return newStr(exp->v.identval->name);
   case NTINTEGER:
@@ -919,11 +920,12 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
   }
 }
 
-void showNode(unsigned long fileoffset,int verboseMode,unsigned int precision) {
+void showNode(HatFile handle,filepointer fileoffset,int verboseMode,
+	      unsigned int precision) {
   char *appstr;
   ExprNode* exp;
 
-  exp = buildExpr(fileoffset,verboseMode,precision);
+  exp = buildExpr(handle,fileoffset,verboseMode,precision);
   appstr = prettyPrintExpr(exp,1);
   printf(appstr);
   freeExpr(exp);
@@ -931,24 +933,24 @@ void showNode(unsigned long fileoffset,int verboseMode,unsigned int precision) {
 }
 
 //#define showAppNode
-unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode,
+unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verboseMode,
 			       unsigned int precision) {
   char *appstr;
   char *resstr;
   ExprNode* exp;
   unsigned long satc = 0;
 
-  exp = buildExpr(fileoffset,verboseMode,precision);
+  exp = buildExpr(handle,fileoffset,verboseMode,precision);
   appstr = prettyPrintExpr(exp,1);
   freeExpr(exp);
 
-  satc = getResult(fileoffset);  // find SATC for the application!
+  satc = getResult(handle,fileoffset);  // find SATC for the application!
 
   if (satc!=0) {
 #ifdef showAppNode
     printf("(0x%x): ",fileoffset);
 #endif
-    exp = buildExpr(hatNodeNumber(),verboseMode,precision);
+    exp = buildExpr(handle,satc,verboseMode,precision);
     resstr = prettyPrintExpr(exp,1); // don't show any level of unevaluated functions
     freeExpr(exp);
     printf(appstr);
@@ -959,3 +961,6 @@ unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode,
   freeStr(appstr);
   return satc;
 }
+
+
+

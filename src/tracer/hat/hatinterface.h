@@ -10,47 +10,58 @@
 #ifndef hatinterface
 #define hatinterface
 
+
 typedef unsigned long filepointer;
 typedef int BOOL;
 typedef int HatFile;
 
-char*         hatFilename(char* name);   // make proper file extension, if missing
-HatFile       hatOpenFile(char* name);   // open file for reading, return internal handle
+char*         hatFilename(char* name);   // add proper file extension, if missing
+HatFile       hatOpenFile(char* name);   // open file, return internal handle
 void          hatCloseFile(HatFile h);   // close file in internal handle
-void          hatSwitchToHandle(HatFile h);  // switch to hatfile of given handle
-HatFile       hatCurrentHandle();        // return current handle (or if non active -1)
-BOOL          hatTestHeader();           // check header information
+unsigned long hatFileSize(HatFile h);    // return size of file
+BOOL          hatTestHeader(HatFile h);  // check header information
 
-unsigned long hatFileSize();             // return size of file
-void          hatSeekNode(filepointer nodenumber);// set new file position
-filepointer   hatNodeNumber();           // return position in file
-filepointer   hatMainCAF();              // return the main CAF of the trace
+filepointer   hatMainCAF(HatFile h);     // return the main CAF of the trace
+
+filepointer   hatSeqFirst(HatFile h);    // go to the first node in the trace file
+filepointer   hatSeqNext(HatFile h,      // jump to next node in sequential order
+			 filepointer nodenumber);
+BOOL          hatSeqEOF(HatFile h,       // check for EOF
+			filepointer nodenumber);
+
+filepointer   hatNodeNumber(HatFile h);  // return position in file
+void          hatSeekNode(HatFile h,     // set position in file
+			  filepointer ofs);
 
 /*********************************************************************/
-/* Routines to extract values encoded as one or more bytes.          */
+/* Routines to extract information from the structure.               */
 /*                                                                   */
 /*********************************************************************/
 
+filepointer   getResult(HatFile handle,
+			filepointer nodenumber);    // get result node of an application
 
-void          hatSeqFirst();         // go to the first node in the trace file
-void          hatSeqNext();          // jump to next node in sequential order
-BOOL          hatSeqEOF();           // check for EOF
 
-char          getNodeType();         // get type of node
+char          getNodeType(HatFile h,
+			  filepointer nodenumber); // get type of node
+
 
 filepointer   getParent();           // get trace to node's parent
 
 int           getAppArity();         // get arity of an application node
 filepointer   getAppArgument(int i); // get argument of an application node
-filepointer   getFunTrace();         // get function's trace of an application node
-char          getInfixPrio();        // get infix priority of an application node
+filepointer   getAppFun();           // get function's trace of an application node
+char          getAppInfixType();     // get infix type of an application node
+char          getAppInfixPrio();     // get infix priority of an application node
 
-filepointer   getNmType();           // get NameType
-filepointer   getValueTrace();       // get value trace of an indirection (projection)
+filepointer   getNameType();         // get type reference of a name node
+
+filepointer   getProjValue();        // get value trace of an indirection (projection)
 
 filepointer   getSrcRef();           // get pointer to source reference
 
 char          getCharValue();        // get value of a char node
+char*         getStringValue();      // get value of a CString node
 int           getIntValue();         // get value of an int node
 int           getIntegerValue();     // get value of an integer node
 char*         getRationalValue();    // get value of a rational node
@@ -67,21 +78,46 @@ int           getPosnColumn();       // get column position in source
 int           getPosnRow();          // get row position in source
 char*         getPosnStr();          // get position in source as a formatted string
 
-filepointer   getResult(filepointer nodenumber);    // get result node of an application
+
+/*********************************************************************/
+/* Routines for convenience: testing                                 */
+/*                                                                   */
+/*********************************************************************/
+
+BOOL          isDirectDescendantOf(HatFile handle,
+				   filepointer nodenumber,filepointer parent);
+BOOL          isDescendantOf(HatFile handle,
+			     filepointer nodenumber,filepointer parent);
+BOOL          isCAF(HatFile handle,filepointer nodenumber);
+BOOL          isTopLevel(HatFile handle,filepointer srcref);
 
 
-filepointer   followHidden(filepointer nodenumber); // follow along hidden traces
-filepointer   followTrace(filepointer nodenumber);  // follow trace to app or name nodes
+/*********************************************************************/
+/* Routines for convenience: following traces                        */
+/*                                                                   */
+/*********************************************************************/
 
-filepointer   leftmostOutermost(filepointer nodenumber);
+filepointer   hatFollowHidden(HatFile handle, // follow along hidden traces
+			      filepointer nodenumber);
+filepointer   hatFollowTrace(HatFile handle,  // follow trace to app or name nodes
+			     filepointer nodenumber);
+filepointer   hatFollowSATs(HatFile handle,filepointer fileoffset);
+filepointer   hatLMO(HatFile handle,          // return leftmost outermost symbol
+		     filepointer nodenumber); // of application 
 
-BOOL          isDirectDescendantOf(filepointer nodenumber,filepointer parent);
-BOOL          isDescendantOf(filepointer nodenumber,filepointer parent);
-BOOL          isCAF(filepointer nodenumber);
-BOOL          isTopLevel(filepointer srcref);
 
-char*         getLocation(filepointer nodenumber);    // show source location of
-                                                      // application/name
-char*         getFunLocation(filepointer nodenumber); // show source location of the
-                                                      // applied's function definition
+/*********************************************************************/
+/* Routines for convenience: Locations as strings                    */
+/*                                                                   */
+/*********************************************************************/
+
+char*         hatLocationStr(HatFile handle,             // show source location of
+			     filepointer nodenumber);    // application/name
+char*         hatFunLocationStr(HatFile handle,          // show source location of the
+				filepointer nodenumber); // applied's function definition
+
 #endif
+
+
+
+

@@ -120,7 +120,7 @@ void freeList(NodeList *nl) {
 }
 
 /* show pretty printing of all nodes (and their results) in the list */
-void showPretty(NodeList *nl,int verboseMode,unsigned int precision) {
+void showPretty(HatFile handle,NodeList *nl,int verboseMode,unsigned int precision) {
   hNodePtr e;
   FunTable results = newFunTable();
   e = nl->first;
@@ -130,10 +130,10 @@ void showPretty(NodeList *nl,int verboseMode,unsigned int precision) {
       unsigned long lngth = listLength(nl);
       unsigned long satc,lsz = 0,built = 0;
       while (e!=NULL) {
-	satc=getResult(e->fileoffset);  // find SATC for the application!
+	satc=getResult(handle,e->fileoffset);  // find SATC for the application!
 	if (isSAT()) {
-	  ExprNode* r=buildExpr(satc,verboseMode,precision);
-	  ExprNode* a=buildExpr(e->fileoffset,verboseMode,precision);
+	  ExprNode* r=buildExpr(handle,satc,verboseMode,precision);
+	  ExprNode* a=buildExpr(handle,e->fileoffset,verboseMode,precision);
 	  addToFunTable(results,a,r,e->fileoffset);
 	}
 	e=e->next;

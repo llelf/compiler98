@@ -17,10 +17,11 @@
 #include "hashtable.h"
 #include "observe.h"
 #include "hatgeneral.h"
+#include "detect.h"
 
 #define HASH_TABLE_SIZE 3000
 
-void checkmainCAF();
+void checkmainCAF(HatFile handle);
 
 char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
@@ -42,13 +43,12 @@ main (int argc, char *argv[])
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
   }
-  if (hatTestHeader()) {
+  if (hatTestHeader(filehandle)) {
     userTrustedList = newList();
     CAFList = newList();
     memorizedFunsYes = newFunTable();
     memorizedFunsNo = newFunTable();
-    checkmainCAF();
-
+    checkmainCAF(filehandle);
   }
   hatCloseFile(filehandle);
 }
@@ -154,21 +154,22 @@ int verboseMode = 0;
 int memorizeMode = 1;
 
 /* returns 1 for yes, 0 for no, 2 for ? */
-int askForApp(int *question,unsigned long appofs,unsigned long resofs,int reconsider) {
+int askForApp(HatFile handle,int *question,unsigned long appofs,
+	      unsigned long resofs,int reconsider) {
   int success=0;
   char answer[11];
   int c,err,retval=-1;
   ExprNode *appNode,*resNode;
   char *pp1,*pp2;
   char isCAF=0;
-  unsigned long lmost = leftmostOutermost(appofs);
+  unsigned long lmost = hatLMO(handle,appofs);
 
   if (isUserTrusted(lmost)) return 1;
   isCAF = (resofs == 0);
-  if (isCAF) resofs = getResult(appofs);
+  if (isCAF) resofs = getResult(handle,appofs);
 
-  appNode = buildExpr(appofs,verboseMode,precision);
-  resNode = buildExpr(resofs,verboseMode,precision);
+  appNode = buildExpr(handle,appofs,verboseMode,precision);
+  resNode = buildExpr(handle,resofs,verboseMode,precision);
 
   if (memorizeMode) {
     c=getMemorizedAnswer(appNode,resNode);
@@ -228,7 +229,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 		appendToList(nl,newAdr);
 		{
 		  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
-		  askNodeList(0,nl,1,hash);
+		  askNodeList(handle,0,nl,1,hash);
 		  freeHashTable(hash);
 		}
 		printf("\nResuming previous session.\n");
@@ -297,8 +298,8 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	      precision = precision+step;
 	      freeExpr(appNode);
 	      freeExpr(resNode);
-	      appNode = buildExpr(appofs,verboseMode,precision);
-	      resNode = buildExpr(resofs,verboseMode,precision);
+	      appNode = buildExpr(handle,appofs,verboseMode,precision);
+	      resNode = buildExpr(handle,resofs,verboseMode,precision);
 	      printf("precision now %i",precision);
 	    } else printf("Precision already at minimum level.\n");
 	  }
@@ -309,8 +310,8 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	  if (verboseMode) printf("ON\n"); else printf("OFF\n");
 	  freeExpr(appNode);
 	  freeExpr(resNode);
-	  appNode = buildExpr(appofs,verboseMode,precision);
-	  resNode = buildExpr(resofs,verboseMode,precision);
+	  appNode = buildExpr(handle,appofs,verboseMode,precision);
+	  resNode = buildExpr(handle,resofs,verboseMode,precision);
 	  break;
 	case 'M':
 	  memorizeMode = 1-memorizeMode;
@@ -370,7 +371,8 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
   return retval;
 }
 
-int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash) {
+int askNodeList(HatFile handle,int question,NodeList* results,
+		int isTopSession,HashTable* hash) {
   unsigned long satc;
   int success,askAgain,question_old,first_question;
   NodeList* children=NULL;
@@ -386,30 +388,30 @@ int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash)
       askAgain = 0;
       question_old = question;
       if (isInList(CAFList,e->fileoffset)==0) {
-	answer=askForApp(&question,e->fileoffset,0,0);
-	if (isCAF(e->fileoffset)) {
+	answer=askForApp(handle,&question,e->fileoffset,0,0);
+	if (isCAF(handle,e->fileoffset)) {
 	  insertInList(CAFList,e->fileoffset);
 	}
       } else answer=1;
       if ((answer!=1)&&(answer<10)){
-	satc=getResult(e->fileoffset);
+	satc=getResult(handle,e->fileoffset);
 	children = newList();
 	{
 	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
-	  getChildrenFor(children,e->fileoffset,satc,hash);
+	  getChildrenFor(handle,children,e->fileoffset,satc,hash);
 	  freeHashTable(hash);
 	}
-	success = askNodeList(question,children,0,hash);
+	success = askNodeList(handle,question,children,0,hash);
 	if (success>=10) {answer=success;success=0;}
 	if (answer==2) {
 	question = question_old;
-	answer = askForApp(&question,e->fileoffset,0,1);
+	answer = askForApp(handle,&question,e->fileoffset,0,1);
 	}
 	if (answer==0) {
 	  char *tmp;
 	  printf("\nError located!\nBug found in: ");
-	  showReduction(e->fileoffset,getResult(e->fileoffset),verboseMode);
-	  tmp = getLocation(e->fileoffset);
+	  showReduction(e->fileoffset,getResult(handle,e->fileoffset),verboseMode);
+	  tmp = hatLocationStr(handle,e->fileoffset);
 	  printf(tmp);
 	  freeStr(tmp);
 	  printf("\n\n");
@@ -457,13 +459,12 @@ int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash)
   return success;
 }
 
-void checkmainCAF() {
+void checkmainCAF(HatFile handle) {
   int success;
   HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
-  addBeforeList(results,hatMainCAF());
-  // findmainCAF(results);
-  askNodeList(0,results,2,hash);
+  addBeforeList(results,hatMainCAF(handle));
+  askNodeList(handle,0,results,2,hash);
   freeHashTable(hash);
   quit();
 }

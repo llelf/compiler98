@@ -37,10 +37,11 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   int maxarity = -1;
   int arity,arityProblem = 0,found=0;
   filepointer currentOffset;
+  HatFile handle = observeHatFile(query);
 
   currentOffset = nextObserveQueryNode(query);
   while (currentOffset != 0) {
-    ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
+    ExprNode* a=buildExpr(handle,currentOffset,verboseMode,precision);
     arity = getExprArity(a);
     if (arity>=maxarity) {
       if ((arity>maxarity)&&(maxarity!=-1)) {
@@ -52,7 +53,7 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
 #ifdef showNodeInfo
       printf("(%u) ",currentOffset);
 #endif
-      showAppAndResult(currentOffset,verboseMode,precision);
+      showAppAndResult(handle,currentOffset,verboseMode,precision);
       found++;
     }
     freeExpr(a);
@@ -117,7 +118,7 @@ main (int argc, char *argv[])
     fprintf(stderr, "cannot open trace file %s\n\n",fname);
     exit(1);
   }
-  if (hatTestHeader()) {
+  if (hatTestHeader(handle)) {
     ObserveQuery query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
     if (observeIdentifier(query)==0) {
       printf("No toplevel identifier named \"%s\" found!\n",ident);

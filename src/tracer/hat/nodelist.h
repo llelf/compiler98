@@ -26,7 +26,7 @@ int           isInList(NodeList *nl,unsigned long foffset);     // check for val
 void          freeList(NodeList *nl);
 unsigned long listLength(NodeList *nl);
 void          showList(NodeList *nl);                           // show values in list
-void          showPretty(NodeList *nl,int verbosemode,
+void          showPretty(HatFile handle,NodeList *nl,int verbosemode,
 			 unsigned int precision);               // show pretty print
 
 

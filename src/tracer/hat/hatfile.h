@@ -150,5 +150,11 @@
 
 #define MESSAGE 255  // local definition for expressions only
 
+
+#define INFIX 0
+#define INFIXR 1
+#define INFIXL 2
+#define NOINFIX 3
+
 #endif
 

@@ -65,7 +65,8 @@ int        getExprArity(ExprNode* e);
 int        getExprInfixPrio(ExprNode* e);
 
 
-ExprNode*  buildExpr(filepointer nodenumber,int verbose, // build expression tree
+ExprNode*  buildExpr(HatFile handle,
+		     filepointer nodenumber,int verbose, // build expression tree
 		     unsigned int precision);            // in memory
 
 /* return pretty print of the expression */

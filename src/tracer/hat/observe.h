@@ -48,3 +48,5 @@ filepointer observeIdentifier(ObserveQuery query);
 filepointer observeTopIdentifier(ObserveQuery query);
 
 unsigned long observedNodes(ObserveQuery query);
+
+HatFile     observeHatFile(ObserveQuery query); // return HatFile handler
