@@ -117,8 +117,8 @@ Run <tt>./configure</tt> with any <a href=config.html>options</a> you
 require.  (You should supply installation directory options at this
 stage.)  This will attempt to detect any existing Haskell compilers and
 guess which one to build <em>nhc98</em> with.  If you have more than one
-available, we will choose, in order of preference, <em>hbc</em>, then
-<em>ghc</em>.  If neither of these is found, <em>nhc98</em> will be
+available, we will choose, in order of preference, <em>ghc</em>, then
+<em>hbc</em>.  If neither of these is found, <em>nhc98</em> will be
 built from the bootstrapping C sources included in the package.  (You
 can build <em>nhc98</em> using an earlier version of <em>nhc98</em> if
 you really want, but for speed reasons we don't configure that by
@@ -131,13 +131,19 @@ over which components of the system are built, try running <tt>make
 help</tt> for a list of useful individual targets.
 
 <p>
-The time taken to build nhc98 depends on which compiler you are using,
-and whether you have asked for just the basic system or the full system.
-On a 150Mhz Pentium, a basic build with <em>gcc</em> takes ten minutes,
-whilst a full build with <em>ghc</em> takes 4-5 hours.  These are the
-two extremes - <em>ghc</em> is much slower than <em>hbc</em> in the
-early stages, but slightly faster once the <em>nhc98comp</em> compiler
-has been built.
+The time taken to build nhc98 depends on your machine, which compiler
+you are using, and whether you have asked for just the basic system or
+the full system.  On a newish 500Mhz Pentium II, a basic build with
+<em>gcc</em> takes three minutes, whereas a full build with <em>ghc</em>
+takes 57 minutes.  On an older 150Mhz Pentium laptop, a basic build
+with <em>gcc</em> takes ten minutes, and a full build with <em>ghc</em>
+takes 4-5 hours.  This illustrates the extremes.
+
+<P>
+As a guide, <em>ghc</em> tends to be much slower than <em>hbc</em>
+in the early stages of the build, but rather faster once the
+<em>nhc98comp</em> compiler has been built - this evens out so that a
+full build eventually takes roughly the same time with either compiler.
 
 <p>
 Finally, when you have built all the components you require,
@@ -180,7 +186,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.03.20<br>
+This page last modified: 2000.06.05<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

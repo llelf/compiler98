@@ -9,13 +9,15 @@
 <p>
 <b>nhc98</b> supersedes
 <a href="http://www.cs.york.ac.uk/fp/nhc13/"><b>nhc13</b></a>,
-but as yet is not fully compliant with the Haskell 98 standard.  Here
+and is pretty close to being compliant with the Haskell 98 standard.  Here
 is a complete list of the known deficiencies in <em>nhc98</em>.
 
 <ul>
-<li> Some of the new Library functions remain unimplemented.  (Runtime
-     warnings are provided for all unimplemented functions.)  The main
-     functions currently missing are in Time, CPUTime, and a few from IO.
+<li> A small number of the new Library functions remain unimplemented.
+     (Runtime warnings are provided for all unimplemented functions.)
+     The main functions currently missing are those which manipulate
+     TimeDiffs in the Time Library, and a few of the more obscure IO
+     library functions.
 
 <li> The simple context restriction has not yet been removed.
 
@@ -25,6 +27,9 @@ is a complete list of the known deficiencies in <em>nhc98</em>.
 <li> The monomorphism restriction is not implemented.
 
 <li> The Unicode character set is not supported.
+
+<li> Derived instances of Show/Read for datatypes with named fields do
+     not show/read the fieldnames.
 
 </ul>
 
@@ -58,7 +63,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.02.07<br>
+2000.06.05<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -49,6 +49,9 @@
       the ansi-C backend.  A workaround is to use the <em>-noansiC</em>
       flag (provided you are using a machine for which we have direct
       assembly language support, i.e. arm, hppa, sparc, x86, mips, alpha).</dd>
+<dt><em>ghc-4.06 bug</em></dt>
+  <dd>If you build nhc98 using ghc-4.06, all code using Floats and Doubles
+      is broken.  This is due to a bug in ghc, due to be fixed in 4.07.</dd>
 </dl>
 
 
@@ -158,7 +161,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.03.20<br>
+2000.06.02<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

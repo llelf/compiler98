@@ -1,46 +1,56 @@
-<html><head><title>hmake interactive!</title></head>
+<html><head><title>hmake interactive</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1><em>hmake interactive!</em></h1></center>
+<center><h1><em>hi</em> - hmake interactive</h1></center>
 
 <hr>
 <p>
-<em>Hmake interactive!</em> is an interpreter-like environment that
-you can wrap over any common Haskell compiler to achieve an interactive
-development style.
+<em>Hmake interactive</em>, or <em>hi</em> for short, is an
+interpreter-like environment that you can wrap over any common Haskell
+compiler to achieve an interactive development style.
 
 <p>
-It deliberately looks and feels a lot like Mark Jones' Hugs
+It deliberately looks and feels a lot like Mark Jones' <em>Hugs</em>
 interpreter.  The difference is that you get real compiled code,
 compiled by your favorite compiler - you can even change compiler
 on the fly, to check your code's portability!
 
 <p>
 Of course, one of the reasons people prefer Hugs over a compiler is
-that Hugs generates runnable code very quickly compared to, say, ghc.
-But all compilers are not equal - for instance, nhc98 is pretty
-fast at generating code.  On a newish 500Mhz Pentium, <em>hmake
-interactive!</em> compiles an expression typed at the commandline in
-about one second with nhc98.  And if you compare compile time with
-running time, nhc98's compiled code runs between 2-5 times faster
-than Hugs, so you can easily end up with a net gain.
+that <em>Hugs</em> generates runnable code very quickly compared to,
+say, <em>ghc</em>.  But all compilers are not equal - for instance,
+<em>nhc98</em> is pretty fast at generating code.  On a newish
+500Mhz Pentium, <em>hi</em> compiles an expression
+typed at the command-line in about one second with <em>nhc98</em>.
+And if you compare compile time with running time, <em>nhc98</em>'s
+compiled code runs between 2-5 times faster than <em>Hugs</em>,
+so you can easily end up with a net gain.
 
 <p>
-An even bigger potential advantage of <em>hmake interactive!</em>
-is that it uses a smart recompilation strategy.  Big programs are
-the ones on which you would most like to use a compiler, for the
-benefit of speedy code.  However, in big projects, compile times
-are long, so you really only want to recompile the modules you have
-edited and those which depend on them.  Writing Makefiles is tedious
-and error-prone, so Hugs is a reasonable alternative.  But because
-<em>hmake interactive!</em> is just an interface to the standard
-<em>hmake</em>, you get the benefit of its recompilation analysis
-to rebuild only what is necessary, so you can reduce compile-times
-significantly, whilst still achieving full compiled-code speed,
-and what's more, you also have the Hugs-like ability to test small
-expressions at the command-line.
+An even bigger potential advantage of <em>hi</em> is that it uses a
+smart recompilation strategy.  Big programs are the ones on which you
+would most like to use a compiler, for the benefit of speedy code.
+However, in big projects, compile times are long, so you really
+only want to recompile the modules you have edited and those which
+depend on them.  Writing Makefiles is tedious and error-prone, so
+<em>Hugs</em> is often seen as an easier alternative.  But because
+<em>hi</em> is just an interface to the standard <em>hmake</em>,
+you get the benefit of its recompilation analysis to rebuild only
+what is necessary, so you can reduce compile-times significantly,
+whilst still achieving full compiled-code speed, and what's more,
+you also have the <em>Hugs</em>-like ability to test small expressions
+at the command-line.
 
+<p>
+To use <em>hmake interactive</em>, just grab, build, and install
+<em>hmake</em>, then type <em>hi</em>.
+
+<p>
+If you want to know a little bit more about <em>hi</em>, there is
+a draft paper describing its implementation, written as a literate
+program.  <a href="ftp://ftp.cs.york.ac.uk/pub/malcolm/hw00-draft.html">
+Paper details.</a>
 
 
 <hr>
@@ -50,7 +60,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-05-12<br>
+Information last updated: 2000-06-02<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

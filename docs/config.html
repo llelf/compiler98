@@ -10,7 +10,12 @@
 <p>
 The automatic configuration and installation utility, called
 <em>configure</em>, should always be used to prepare for building or
-installing <b>nhc98</b>.  You can choose your own configuration options,
+installing <b>nhc98</b>.  Unlike many configuration utilities, this
+one can be run safely at any time to change any options - it will never
+leave your system in an inconsistent state.
+
+<p>
+You can choose your own configuration options,
 but the default behaviour is to prepare to build the components of
 <b>nhc98</b> under the
 <tt>targets</tt> directory, and to install those components under
@@ -27,7 +32,7 @@ executables from different architectures do not interfere with each
 other.  If you have any existing installations of Haskell compilers,
 we search for those and configure <em>hmake</em> to use them.  We also
 guess which compiler you will use to build <em>nhc98</em> - in order of
-preference: <em>hbc</em>, then <em>ghc</em>, then <em>gcc</em> (or your
+preference: <em>ghc</em>, then <em>hbc</em>, then <em>gcc</em> (or your
 own C compiler).
 
 <p>
