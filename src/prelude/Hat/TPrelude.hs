@@ -11,8 +11,8 @@ data List a = Cons (R a) (T.R (List a)) | List
   -- type constructor and empty list constructor need to have same name,
   -- because transformation doesn't distinguish the two
 
-aCons = T.mkAtomId tMain 0 21 ":"
-aList = T.mkAtomId tMain 0 3 "[]"
+aCons = T.mkAtomCon tMain 0 21 ":"
+aList = T.mkAtomCon tMain 0 3 "[]"
 
 type Char = Prelude.Char
 
@@ -27,7 +27,7 @@ oputStr :: T.SR -> T.Trace
 oputStr pputStr tputStr =
   T.fun1 a8v1putStr wputStr pputStr tputStr
 
-a8v1putStr = T.mkAtomId tMain 0 3 "putStr"
+a8v1putStr = T.mkAtomIdToplevel tMain 0 3 "putStr"
 
 wputStr :: Trace -> T.R String -> T.R (IO ())
 wputStr t os = R (do

@@ -33,7 +33,11 @@ C_HEADER(fatal)
 
 void
 dbg_blackhole()
-{ hat_exit("Blackhole detected.", (CTrace*)dbg_last_trace, 2); }
+{
+  CTrace ct;
+  ct.ptr = readCurrentSatB(); 
+  hat_exit("Blackhole detected.", &ct, 2); 
+}
 
 void
 hat_interrupted()
