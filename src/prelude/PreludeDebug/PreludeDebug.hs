@@ -891,8 +891,7 @@ patFromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
 patFromConInteger sr t x = R 1 Root
 
 rPatBool :: R Bool -> Bool
-rPatBool (R True _) = True
-rPatBool (R False _) = False
+rPatBool (R v _) = v
 
 conRational :: SR -> Trace -> Rational -> R Rational
 conRational sr t b = R b (Nm t (NTRational b) sr)
