@@ -5,7 +5,8 @@ export MACHINE
 include targets/$(MACHINE)/config.cache
 
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
-	src/hmake/HISTORY src/hmake/Summary*
+	src/hmake/HISTORY src/hmake/Summary* \
+	src/interpreter/Makefile* src/interpreter/*.hs
 
 LIBDIR  = lib
 TARGDIR = targets
@@ -18,11 +19,10 @@ all:   all-${BUILDWITH}
 help:
 	@echo "Common targets include:        all install clean realclean config"
 	@echo "For a specific build-compiler: all-hbc  all-ghc  all-nhc98 all-gcc"
-	@echo "  (other subtargets: hmake_b hmake_g hmake_n chmake)"
 
 config:
 	./configure --config
-install:
+install: all
 	./configure --install
 
 all-hbc:   hmake_b
@@ -37,15 +37,19 @@ $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
 
 $(TARGDIR)/$(MACHINE)/hmake_n: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install
+	cd src/interpreter;    $(MAKE) BUILDWITH=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake_n
 $(TARGDIR)/$(MACHINE)/hmake_b: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=hbc install
+	cd src/interpreter;    $(MAKE) BUILDWITH=hbc install
 	touch $(TARGDIR)/$(MACHINE)/hmake_b
 $(TARGDIR)/$(MACHINE)/hmake_g: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install
+	cd src/interpreter;    $(MAKE) BUILDWITH=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake_g
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
+	@echo "hmake interactive cannot currently be built from C sources"
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
 
@@ -53,7 +57,8 @@ $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 ##### cleanup
 
 clean:
-	cd src/hmake;           $(MAKE) clean
+	cd src/hmake;          $(MAKE) clean
+	cd src/interpreter;    $(MAKE) clean
 
 realclean: clean
 	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
