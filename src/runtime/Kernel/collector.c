@@ -58,6 +58,12 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
   *isp = spStart = (NodePtr *) bitTable;
   spEnd = spStart - spSize;
 
+  if ((long)hpEnd>0xc0000000) {
+    fprintf(stderr,"OS allocated a heap in high memory (>0xc0000000)\n");
+    fprintf(stderr,"    which breaks this program's run-time system.\n");
+    fprintf(stderr,"  hpStart=0x%x, hpEnd=0x%x\n",hpStart,hpEnd);
+    exit(-1);
+  }
   if(spEnd <= (NodePtr*)hpStart) {
     fprintf(stderr,"No space left for the heap!\n");
     exit(-1);
