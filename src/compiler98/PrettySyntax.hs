@@ -3,9 +3,12 @@ Convert abstract syntax tree (or parts of it) into
 a structured document for pretty printing.
 -}
 
-module PrettySyntax (prettyPrintTokenId, prettyPrintId,simplePrintId
-                    ,ppModule,ppTopDecls,ppClassCodes
-                    ,ppType,ppContexts,ppSimple,ppDecl) where 
+module PrettySyntax
+  ( PPInfo(..)
+  , prettyPrintTokenId, prettyPrintId, simplePrintId
+  , ppModule, ppTopDecls, ppClassCodes
+  , ppType, ppContexts, ppSimple, ppDecl
+  ) where 
 
 import Extra(Pos(..),noPos)
 import PrettyLib
