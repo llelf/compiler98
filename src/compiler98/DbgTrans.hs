@@ -988,10 +988,10 @@ dSuspectExp cr parent (ExpRecord exp fields) =
     (Right transExp,state') -> setIntState state' >>> 
                                dSuspectExp cr parent transExp
     (Left errorMsg,state') -> error errorMsg  
-dSuspectExp cr parent (PatWildcard pos) = -- introduced by translateExpRecord
+dSuspectExp cr parent (PatWildcard pos) = 
+  -- introduced by translateExpRecord (meaning = undefined)
   lookupVar pos t_undef >>>= \undefined ->
-  makeSourceRef pos >>>= \sr ->
-  unitS (ExpApplication pos [undefined,sr,parent])
+  dSuspectExp cr parent undefined
 dSuspectExp cr parent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -1150,10 +1150,9 @@ dTrustExp cr parent hidParent (ExpRecord exp fields) =
                                dTrustExp cr parent hidParent transExp
     (Left errorMsg,state') -> error errorMsg  
 dTrustExp cr parent hidParent (PatWildcard pos) = 
-  -- introduced by translateExpRecord
+  -- introduced by translateExpRecord (meaning = undefined)
   lookupVar pos t_undef >>>= \undefined ->
-  makeSourceRef pos >>>= \sr ->
-  unitS (ExpApplication pos [undefined,sr,if cr then hidParent else parent])
+  dTrustExp cr parent hidParent undefined
 dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
