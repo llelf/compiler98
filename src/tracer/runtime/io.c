@@ -78,6 +78,16 @@ C_HEADER(_tprim_chPutChar)
                             mkSR())));
 }
 
+void
+chPutChar (FileDesc* a, char c)
+{
+    putc(c, a->fp);		/* real output */
+    putc(c, HatOutput);		/* copy of output */
+    fwrite(&outputContext, sizeof(FileOffset), 1, HatBridge);
+				/* link trace to output */
+    return;
+}
+
 C_HEADER(_tprim_chGetChar)
 {
     NodePtr handleR, np, result;
