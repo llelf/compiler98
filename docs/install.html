@@ -139,23 +139,32 @@ without targets builds everything.)
 <p>
 The time taken to build nhc98 depends on your machine, which compiler
 you are using, and whether you have asked for just the basic system or
-some extra components.  Here are some sample build times in minutes:
+some extra components.  Here are some sample build times:
 
 <center>
 <table border=1><tr>
+    <td></td>
+    <td colspan=4>ix86-Linux machine:</td>
+</tr><tr>
     <th></th>
-    <th colspan=3>i686 (500Mhz) Linux</th>
+    <th colspan=2>500MHz</th>
+    <th colspan=2>2.4GHz</th>
 </tr><tr>
     <th>build<br>compiler</th>
-    <th>basic only</th><th>all</th>
+    <th>basic</th><th>all</th>
+    <th>basic</th><th>all</th>
 </tr><tr>
-    <td>gcc</td><td align=right>9</td><td align=right>26</td>
+    <td>gcc</td><td align=right>9m</td><td align=right>26m</td>
+                <td align=right>4m</td><td align=right>12m</td>
 </tr><tr>
-    <td>ghc</td><td align=right>31</td><td align=right>71</td>
+    <td>ghc</td><td align=right>31m</td><td align=right>1h11</td>
+                <td align=right>10m</td><td align=right>26m</td>
 </tr><tr>
     <td>hbc</td><td align=right>-</td><td align=right>-</td>
+                <td align=right>12m</td><td align=right>27m</td>
 </tr><tr>
-    <td>nhc98</td><td align=right>50</td><td align=right>213</td>
+    <td>nhc98</td><td align=right>50m</td><td align=right>3h33</td>
+                <td align=right>23m</td><td align=right>1h15</td>
 </tr></table>
 </center>
 
@@ -201,7 +210,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 7th March 2003<br>
+This page last modified: 28th June 2004<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
