@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "fileformat.h"
+#include "cinterface.h"
 
 /* Remaining problems include (at least) the following:
  *   . All Integer values are faked to zero for now.
@@ -678,7 +679,6 @@ primSameTrace (FileOffset t1, FileOffset t2)
 {
     return (t1==t2);
 }
-
 
 
 FileOffset
