@@ -312,7 +312,7 @@ readSRAt (FileOffset fo)
 Ident*
 readNmTypeAt (FileOffset fo)
 {
-  char c, buf[256];
+  char c, buf[256];  
   Ident *id = (Ident*)malloc(sizeof(Ident));
 
   /* defaults */
@@ -421,7 +421,7 @@ readNmTypeAt (FileOffset fo)
 		  id->idname = strdup(buf);
 		} break;
     case NTGuard:
-		{ sprintf(buf,"guard");
+		{ sprintf(buf,"|");
 		  id->idname = strdup(buf);
 		} break;
     case NTContainer:
@@ -444,22 +444,28 @@ readNmTypeAt (FileOffset fo)
  * stack trace" program.
  */
 FileOffset
-readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
+readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix
+            ,int followHidden, int depth)
 {
-  char c, buf[256];
+  char c, buf[10000];  /* fixed size no final solution */
   FileOffset parent;
 
   *infix = 3;	/* default */
 
+  if (depth <= 0) {
+    *expr = strdup("·");
+    return fo;
+  }
+
   if (fo) {
     freadAt(fo,&c,sizeof(char),1,HatFile);
-    if ((c<0x00) || (c>0x07)) {
+    if ((c<0x00) || (c>0xe) || ((c > 0x7) && (c < 0xc))) {
       fprintf(stderr,"%s: expected a Trace descriptor at position 0x%x\n"
-                    ,progname,fo);
+                    ,progname,fo,c);
       exit(1);
     }
     HIDE(fprintf(stderr,"readTraceAt 0x%x -> tag 0x%x\n",fo,c);)
-    switch (c&0x1f) {
+    switch (c&0x17) {  /* consider only lower bits 0,1,2 and 4 */
       case TAp:
 		{ int i, dummy;
 		  FileOffset foExprs[20], foSR;
@@ -473,10 +479,11 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
                   }
 		  foSR = readFO();
 		  for (i=0; i<=c; i++) {
-		    (void)readTraceAt(foExprs[i],&(exprs[i]),sr,&(fixexp[i]));
+		    (void)readTraceAt(foExprs[i],&(exprs[i]),sr,&(fixexp[i])
+                                     ,False,depth-1);
                   }
 		  *infix = fixexp[0];
-		  if (isInfix(fixexp[0])) {
+		  if (isInfix(fixexp[0]) && c >= 2) {
 		    sprintf(buf,"%s"
 			,infixPrint(exprs[1],fixexp[1],exprs[0],fixexp[0]
 					,exprs[2],fixexp[2]));
@@ -485,6 +492,11 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
 		      strcat(buf,exprs[i]);
                     }
 		  } else {	/* no fixity */
+                    if (strcmp(exprs[0],"if")==0 || 
+                        strcmp(exprs[0],"|")==0 || 
+                        strcmp(exprs[0],"case")==0) {
+		      c = 1;
+                    }
 		    sprintf(buf,"(%s",exprs[0]);
 		    for (i=1; i<=c; i++) {
 		      strcat(buf," ");
@@ -518,17 +530,24 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
       case TInd:
 		{ parent = readFO();	/* throw first away */
 		  parent = readFO();
-		  return readTraceAt(parent, expr, sr, infix);
+		  return readTraceAt(parent, expr, sr, infix, followHidden
+                                    ,depth);
 		} break;
       case THidden:
 		{ parent = readFO();
-		  sprintf(buf,"·");
-		  *expr = strdup(buf);
-		  return parent;
+		  if (!followHidden) {
+		    sprintf(buf,"·");
+		    *expr = strdup(buf);
+		    return parent; 
+                  } else {
+                    return readTraceAt(parent, expr, sr, infix, followHidden
+                                      ,depth);
+                  }
 		} break;
       case TSatA:
 		{ parent = readFO();
-		  return readTraceAt(parent, expr, sr, infix);
+		  return readTraceAt(parent, expr, sr, infix, followHidden
+                                    ,depth);
 		} break;
       case TSatB:
 		{ parent = readFO();
@@ -538,7 +557,8 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
 		} break;
       case TSatC:
 		{ parent = readFO();
-		  return readTraceAt(parent, expr, sr, infix);
+		  return readTraceAt(parent, expr, sr, infix, followHidden
+                                    ,depth);
 		} break;
       default: break;
     }
@@ -576,7 +596,7 @@ checkSATkind (FileOffset fo)
 char*
 infixPrint (char* str1, int arg1, char* strfn, int fn, char* str2, int arg2)
 {
-  char buf[256];
+  char buf[10000]; /* fixed size no final solution */
 
   if (!isInfix(arg1))
       sprintf(buf,"%s",str1);

@@ -1,5 +1,5 @@
 % Created: 13.9.2000
-% Last Update: 27.4.2001
+% Last Update: 14.5.2001
 
 \documentclass[12pt]{article}
 
@@ -24,7 +24,7 @@
 
 \title{Hat Users' Manual, Version 1.4}
 \author{The ART Team}
-\date{27 April 2001}
+\date{15 May 2001}
 \maketitle
 \vspace{-8ex}
 
@@ -44,15 +44,15 @@ This tracing method is unsuitable for a lazy functional language such as Haskell
 
 Tracing a program with Hat consists of two phases: First the specially compiled program runs as normal, except that additionally a trace is written to file. Second, after the program has terminated, the trace is viewed with a tool. 
 
- This trace consists of high-level information about the computation. Hat includes four tools, \texttt{hat-stack}, \texttt{hat-trail}, \texttt{hat-observe} and \texttt{hat-detect}, that enable viewing the trace in different ways. Because the trace describes the whole computation, the viewing tools can show fragments of the computation independent of the evaluation order. For example, function arguments can be shown in fully evaluated form, as values, and it is possible to go backwards from the program output up to the initial call of the function \texttt{main}.
-
 Hat can be used for programs that terminate normally, that terminate with an error message or that terminate when interrupted by the programmer.
 
+ The trace consists of high-level information about the computation. It describes each reduction, that is, the replacements of an instance of a left-hand side of an equation by an instance of its right-hand side, and the relation of the reduction to other reductions.
 
-The trace produced by Hat shows the relationships between the expressions that were reduced by the computation (\emph{redexes}) and the values the computation yielded. A redex is an application of a function to arguments, for example \texttt{length [1+5,2+5]}. Hat does not show the function arguments as unevaluated as they were actually passed in the computation, for example \texttt{map (+5) [1,2]}, but as far evaluated as they are at the end of the computation, for example \texttt{[1+5,2+5]}. The trace describes which redex through its reduction caused the creation of which other redexes and values. The former redex is called the \emph{parent} redex of the latter redexes and values. We call the whole trace of Hat a \emph{redex trail}.
-
-Because the trace describes the parent relationship between all redexes and values created by a computation, it may be a huge graph. Hence the programmer views the trace with an interactive browser program with a graphical user interface selectively viewing only those parts of the trace that are of interest.
-Viewing the trace starts with the program output or the expression that led to program abortion. The programmer demands to see parents of given expressions and thus walks \emph{backwards} through the trace.
+Because the trace describes the whole computation, it is huge. Hence the programmer uses tools to selectively view the fragments of the trace that are of interest.
+Currently Hat includes four tools, \texttt{hat-stack}, \texttt{hat-observe}, \texttt{hat-detect} and \texttt{hat-trail} for that purpose. Each tool shows fragments of the computation in a particular way, highlighting a specific aspect.
+The tools show fragments of the computation independent of the evaluation order:
+Some tools enable the programmer to go backwards from the program output up to the initial call of the function \texttt{main}.
+All tools show function arguments in fully evaluated form, that is, they show for example an application as \texttt{length [1+5,2+5]} instead of \texttt{length (map (+5) [1,2])}, although in the actual computation the latter appeared.
 
 
 %==============================================================================
@@ -109,6 +109,17 @@ If you want to trust a module, then compile it with the options
 \texttt{-T -trusted} (an object file that has been compiled without any tracing option cannot be used). By default the \texttt{Prelude} and the standard libraries are trusted. 
 
 
+%==============================================================================
+
+\section{Hat-Stack}
+
+%==============================================================================
+
+\section{Hat-Observe}
+
+%==============================================================================
+
+\section{Hat-Detect}
 
 %==============================================================================
 
@@ -124,7 +135,7 @@ main = print (7*6)
 The output is \texttt{42}. The parent of \texttt{42} is the redex \texttt{print 42}. The parent of \texttt{print 42} is \texttt{main}. The redex \texttt{main} has no parent, because the computation started with its evaluation. The parent of the \texttt{42} in the expression \texttt{print 42} is \texttt{7*6}. The parent of the redex \texttt{7*6} is \texttt{main}. Hat-trail shows these informations as follows:
 
 
-Every subexpression (except top-level constants like \texttt{main}) has a parent. In the example the parent of \texttt{*} is also \texttt{main}. However, as the \texttt{42} in \texttt{print 42} demonstrates, the parent of every subexpression of an expression can be different.
+Every subexpression (if it is not a top-level constant such as \texttt{main}) has a parent. In the example the parent of \texttt{*} is also \texttt{main}. However, as the \texttt{42} in \texttt{print 42} demonstrates, the parent of every subexpression of an expression can be different.
 
 \emph{This user manual definitely requires screen shots that demonstrate what is explained in the text. For the moment, please use the system at the same time as you are reading this manual.}
 
@@ -502,17 +513,6 @@ redexes, as they have been
 shown between control-flow information for \texttt{case}, conditions or guards and the redex they belong to.
 \end{description}
 
-%==============================================================================
-
-\section{Hat-Observe}
-
-%==============================================================================
-
-\section{Hat-Detect}
-
-%==============================================================================
-
-\section{Hat-Stack}
 
 %==============================================================================
 

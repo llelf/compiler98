@@ -41,7 +41,7 @@ Ident*		readNmTypeAt	(FileOffset fo);
 SrcRef*		readSRAt	(FileOffset fo);
 
 FileOffset	readTraceAt	(FileOffset fo, char** expr, SrcRef** sr
-				,int* infix);
+				,int* infix,int followHidden,int depth);
 char*		infixPrint	( char* str1, int arg1
 				, char* strfn, int fn
 				, char* str2, int arg2);

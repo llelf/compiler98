@@ -5,7 +5,8 @@
 #include "hat.h"
 #include "utils.h"
 
-#define MAX_DEPTH 32
+#define MAX_DEPTH 64
+#define MAX_EXP_DEPTH 6
 
 int
 main (int argc, char** argv)
@@ -21,9 +22,12 @@ main (int argc, char** argv)
     parent = errorRoot;
     fprintf(stdout,"Virtual stack trace:\n");
     while (parent) {
-      parent = readTraceAt(parent,&expr,&sr,&infix);
-      fprintf(stdout,"    %s\t\t(%s: line-%d/col-%d)\n"
-                    ,expr,sr->srcname,sr->line,sr->column);
+      parent = readTraceAt(parent,&expr,&sr,&infix,True,MAX_EXP_DEPTH);
+      if (sr)
+        fprintf(stdout,"    %s\t\t(%s: line-%d/col-%d)\n"
+                      ,expr,sr->srcname,sr->line,sr->column);
+      else
+        fprintf(stdout,"    %s\t\t(no source reference)\n",expr);        
       if (i++ > MAX_DEPTH) parent=0;
     }
   } else {
