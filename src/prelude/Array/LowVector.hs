@@ -18,7 +18,7 @@ foreign import primUpdateVectorC :: Int -> _E a -> Vector a -> IO ()
 #else
 _tprim_copyVector primitive 2 :: Trace -> R (Vector a) -> R (Vector a)
 copyVector v = _prim _tprim_copyVector v
-primNewVectorC = _mkIOok1 copyVector
+primCopyVectorC = _mkIOok1 copyVector
 
 _tprim_newVector primitive 3 :: Trace -> R Int -> R (_E a) -> R (Vector a)
 newVectorIO size val = _prim _tprim_newVector size val
