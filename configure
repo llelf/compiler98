@@ -12,12 +12,21 @@ NHC98VERSION="v1.17 (CVS version)"
 HMAKEVERSION="3.09 (2004-11-13)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
-PACKAGES="base parsec haskell-src QuickCheck HaXml"
+# (remember to keep in sync with PACKAGES defn in top-level Makefile)
+PACKAGES="base parsec haskell-src QuickCheck HaXml HUnit Cabal"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
 else OS=unknown
 fi
+
+case $0 in
+  ./configure) ;;
+  configure) ;;
+  *) echo "Error: The nhc98 configuration utility must be invoked from"
+     echo "       within the directory where it is located."
+     exit 1 ;;
+esac
 
 # Note for people building binary packages of nhc98:
 # The variable INSTALLDIR, default /usr/local, changed with --prefix=
