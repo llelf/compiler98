@@ -320,6 +320,7 @@ typedef struct {
   int bm,size;
   FILE *fp;
   int fdesc;
+  char *path;
 } FileDesc;
 
 typedef struct FOREIGNOBJ {
