@@ -155,7 +155,7 @@ tif sr (R iv it) e1 e2 t =
 {- 
 Same as above for projective context 
 Know that the if expression has to be evaluated.
-Hence need no SAT.
+Hence need no lazy SAT.
 -}
 trif :: SR -> R Bool -> (Trace -> R a) -> (Trace -> R a) -> Trace -> R a
 
@@ -163,7 +163,7 @@ trif sr (R iv it) e1 e2 t =
   if trustedFun t 
     then if iv then e1 t else e2 t
     else let t' = mkTAp2 t (mkTNm t mkNTIf sr) it t sr
-         in  t' `myseq` if iv then e1 t' else e2 t'
+         in  t' `myseq` eagerSat (if iv then e1 t' else e2 t') t'
 
 
 {- used by _Driver -}
@@ -462,7 +462,7 @@ trap1 t (R rf tf) a@(R _ at) =
   if trustedFun tf 
     then rf t a
     else let t' = mkTAp1 t tf at mkNoSR
-	 in  rf t' a
+	 in  eagerSat (rf t' a) t'
 
 
 trap2 :: Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
@@ -471,60 +471,60 @@ trap2 t (R rf tf) a@(R _ at) b@(R _ bt) =
   if trustedFun tf 
     then tpap1 t t (rf t a) b
     else let t' = mkTAp2 t tf at bt mkNoSR
-         in  tpap1 t t' (rf t' a) b
+         in  eagerSat (tpap1 t t' (rf t' a) b) t'
 
 trap3 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   if trustedFun tf 
     then tpap2 t t (rf t a) b c
     else let t' = mkTAp3 t tf at bt ct mkNoSR
- 	 in  tpap2 t t' (rf t' a) b c
+ 	 in  eagerSat (tpap2 t t' (rf t' a) b c) t'
 
 trap4 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   if trustedFun tf 
     then tpap3 t t (rf t a) b c d
     else let t' = mkTAp4 t tf at bt ct dt mkNoSR
-	  in tpap3 t t' (rf t' a) b c d
+	  in eagerSat (tpap3 t t' (rf t' a) b c d) t'
 
 trap5 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   if trustedFun tf 
     then tpap4 t t (rf t a) b c d e
     else let t' = mkTAp5 t tf at bt ct dt et mkNoSR
-	 in  tpap4 t t' (rf t' a) b c d e
+	 in  eagerSat (tpap4 t t' (rf t' a) b c d e) t'
 
 trap6 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) = 
   if trustedFun tf 
     then tpap5 t t (rf t a) b c d e f
     else let t' = mkTAp6 t tf at bt ct dt et ft mkNoSR
-         in  tpap5 t t' (rf t' a) b c d e f
+         in  eagerSat (tpap5 t t' (rf t' a) b c d e f) t'
 
 trap7 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) = 
   if trustedFun tf 
     then tpap6 t t (rf t a) b c d e f g
     else let t' = mkTAp7 t tf at bt ct dt et ft gt mkNoSR
-	 in  tpap6 t t' (rf t' a) b c d e f g
+	 in  eagerSat (tpap6 t t' (rf t' a) b c d e f g) t'
 
 trap8 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   if trustedFun tf 
     then tpap7 t t (rf t a) b c d e f g h
     else let t' = mkTAp8 t tf at bt ct dt et ft gt ht mkNoSR
-	 in  tpap7 t t' (rf t' a) b c d e f g h
+	 in  eagerSat (tpap7 t t' (rf t' a) b c d e f g h) t'
 
 trap9 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   if trustedFun tf 
     then tpap8 t t (rf t a) b c d e f g h i
     else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it mkNoSR
-	 in  tpap8 t t' (rf t' a) b c d e f g h i
+	 in  eagerSat (tpap8 t t' (rf t' a) b c d e f g h i) t'
 
 trap10 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
   if trustedFun tf 
     then tpap9 t t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt mkNoSR
-	 in  tpap9 t t' (rf t' a) b c d e f g h i j
+	 in  eagerSat (tpap9 t t' (rf t' a) b c d e f g h i j) t'
 
 trap11 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -532,7 +532,7 @@ trap11 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if trustedFun tf 
     then tpap10 t t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt mkNoSR
-	 in  tpap10 t t' (rf t' a) b c d e f g h i j k
+	 in  eagerSat (tpap10 t t' (rf t' a) b c d e f g h i j k) t'
 
 trap12 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -540,7 +540,7 @@ trap12 t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if trustedFun tf 
     then tpap11 t t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt mkNoSR
-	 in  tpap11 t t' (rf t' a) b c d e f g h i j k l
+	 in  eagerSat (tpap11 t t' (rf t' a) b c d e f g h i j k l) t'
 
 
 {- 
@@ -562,70 +562,54 @@ pap1 sr p t (R rf tf) a@(R _ at) =
   if t `sameAs` tf 
     then rf t a
     else let t' = mkTAp1 p tf at sr
-         in  t' `myseq` rf t' a
+         in  t' `myseq` eagerSat (rf t' a) t'
 
 pap2 sr p t (R rf tf) a@(R _ at) b@(R _ bt) =
   if t `sameAs` tf 
     then pap1 sr p t (rf t a) b
     else let t' = mkTAp2 p tf at bt sr
-         in  pap1 sr p t' (rf t' a) b
+         in  eagerSat (pap1 sr p t' (rf t' a) b) t'
+
 
 pap3 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  let t' = if t `sameAs` tf 
-             then t
-             else mkTAp3 p tf at bt ct sr
-  in case (rf t' a) of
-       (R rf tf) -> 
-         let t'' = if t' `sameAs` tf
-                     then t'
-                     else mkTAp2 p tf bt ct sr
-         in case (rf t'' b) of
-              (R rf tf) ->
-                if t'' `sameAs` tf 
-                  then rf t'' c
-                  else let t''' = mkTAp1 p tf ct sr
-                       in  t''' `myseq` rf t''' c
- 
-{- original:
-pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
   if t `sameAs` tf 
-    then pap2 sr t (rf t a) b c
-    else let t' = mkTAp3 t tf at bt ct sr
-         in pap2 sr t' (rf t' a) b c
--}
+    then pap2 sr p t (rf t a) b c
+    else let t' = mkTAp3 p tf at bt ct sr
+         in eagerSat (pap2 sr p t' (rf t' a) b c) t'
+
 
 pap4 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
   if t `sameAs` tf 
     then pap3 sr p t (rf t a) b c d
     else let t' = mkTAp4 p tf at bt ct dt sr
-         in  pap3 sr p t' (rf t' a) b c d
+         in  eagerSat (pap3 sr p t' (rf t' a) b c d) t'
 
 pap5 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
   if t `sameAs` tf 
     then pap4 sr p t (rf t a) b c d e
     else let t' = mkTAp5 p tf at bt ct dt et sr
-         in  pap4 sr p t' (rf t' a) b c d e
+         in  eagerSat (pap4 sr p t' (rf t' a) b c d e) t'
 
 pap6 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) =
   if t `sameAs` tf 
     then pap5 sr p t (rf t a) b c d e f
     else let t' = mkTAp6 p tf at bt ct dt et ft sr
-         in  pap5 sr p t' (rf t' a) b c d e f
+         in  eagerSat (pap5 sr p t' (rf t' a) b c d e f) t'
 
 pap7 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) =
   if t `sameAs` tf 
     then pap6 sr p t (rf t a) b c d e f g
     else let t' = mkTAp7 p tf at bt ct dt et ft gt sr
-         in  pap6 sr p t' (rf t' a) b c d e f g
+         in  eagerSat (pap6 sr p t' (rf t' a) b c d e f g) t'
 
 pap8 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) h@(R _ ht) =
   if t `sameAs` tf 
     then pap7 sr p t (rf t a) b c d e f g h
     else let t' = mkTAp8 p tf at bt ct dt et ft gt ht sr
-         in  pap7 sr p t' (rf t' a) b c d e f g h
+         in  eagerSat (pap7 sr p t' (rf t' a) b c d e f g h) t'
 
 
 pap9 :: SR -> Trace -> Trace
@@ -639,14 +623,14 @@ pap9 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf 
     then pap8 sr p t (rf t a) b c d e f g h i
     else let t' = mkTAp9 p tf at bt ct dt et ft gt ht it sr
-         in  pap8 sr p t' (rf t' a) b c d e f g h i
+         in  eagerSat (pap8 sr p t' (rf t' a) b c d e f g h i) t'
 
 pap10 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
   if t `sameAs` tf 
     then pap9 sr p t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 p tf at bt ct dt et ft gt ht it jt sr
-         in pap9 sr p t' (rf t' a) b c d e f g h i j
+         in eagerSat (pap9 sr p t' (rf t' a) b c d e f g h i j) t'
 
 pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -654,7 +638,7 @@ pap11 sr p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf 
     then pap10 sr p t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt sr
-         in  pap10 sr p t' (rf t' a) b c d e f g h i j k 
+         in  eagerSat (pap10 sr p t' (rf t' a) b c d e f g h i j k) t'
 
 
 -- trusted:
@@ -675,62 +659,52 @@ tpap1 p t (R rf tf) a@(R _ at) =
   if t `sameAs` tf `myOr` trustedFun tf
     then rf t a
     else let t' = mkTAp1 p tf at mkNoSR
-         in  t' `myseq` rf t' a
+         in  t' `myseq` eagerSat (rf t' a) t'
 
 tpap2 p t (R rf tf) a@(R _ at) b@(R _ bt) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap1 p t (rf t a) b
     else let t' = mkTAp2 p tf at bt mkNoSR
-         in  tpap1 p t' (rf t' a) b
+         in  eagerSat (tpap1 p t' (rf t' a) b) t'
 
 tpap3 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
-  let t' = if t `sameAs` tf `myOr` trustedFun tf
-             then t
-             else mkTAp3 p tf at bt ct mkNoSR
-  in case (rf t' a) of
-       (R rf tf) -> 
-         let t'' = if t' `sameAs` tf `myOr` trustedFun tf
-                     then t'
-                     else mkTAp2 p tf bt ct mkNoSR
-         in case (rf t'' b) of
-              (R rf tf) ->
-                if t'' `sameAs` tf `myOr` trustedFun tf
-                  then rf t'' c
-                  else let t''' = mkTAp1 p tf ct mkNoSR
-                       in  t''' `myseq` rf t''' c
- 
+  if t `sameAs` tf `myOr` trustedFun tf
+    then tpap2 p t (rf t a) b c
+    else let t' = mkTAp3 p tf at bt ct mkNoSR
+         in  eagerSat (tpap2 p t' (rf t' a) b c) t'
+
 tpap4 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap3 p t (rf t a) b c d
     else let t' = mkTAp4 p tf at bt ct dt mkNoSR
-         in  tpap3 p t' (rf t' a) b c d
+         in  eagerSat (tpap3 p t' (rf t' a) b c d) t'
 
 tpap5 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap4 p t (rf t a) b c d e
     else let t' = mkTAp5 p tf at bt ct dt et mkNoSR
-         in  tpap4 p t' (rf t' a) b c d e
+         in  eagerSat (tpap4 p t' (rf t' a) b c d e) t'
 
 tpap6 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap5 p t (rf t a) b c d e f
     else let t' = mkTAp6 p tf at bt ct dt et ft mkNoSR
-         in  tpap5 p t' (rf t' a) b c d e f
+         in  eagerSat (tpap5 p t' (rf t' a) b c d e f) t'
 
 tpap7 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap6 p t (rf t a) b c d e f g
     else let t' = mkTAp7 p tf at bt ct dt et ft gt mkNoSR
-         in  tpap6 p t' (rf t' a) b c d e f g
+         in  eagerSat (tpap6 p t' (rf t' a) b c d e f g) t'
 
 tpap8 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                       f@(R _ ft) g@(R _ gt) h@(R _ ht) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap7 p t (rf t a) b c d e f g h
     else let t' = mkTAp8 p tf at bt ct dt et ft gt ht mkNoSR
-         in  tpap7 p t' (rf t' a) b c d e f g h
+         in  eagerSat (tpap7 p t' (rf t' a) b c d e f g h) t'
 
 
 tpap9 :: Trace -> Trace
@@ -744,14 +718,14 @@ tpap9 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap8 p t (rf t a) b c d e f g h i
     else let t' = mkTAp9 p tf at bt ct dt et ft gt ht it mkNoSR
-         in  tpap8 p t' (rf t' a) b c d e f g h i
+         in  eagerSat (tpap8 p t' (rf t' a) b c d e f g h i) t'
 
 tpap10 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap9 p t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 p tf at bt ct dt et ft gt ht it jt mkNoSR
-         in tpap9 p t' (rf t' a) b c d e f g h i j
+         in eagerSat (tpap9 p t' (rf t' a) b c d e f g h i j) t'
 
 tpap11 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                        f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -759,7 +733,7 @@ tpap11 p t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf `myOr` trustedFun tf
     then tpap10 p t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 p tf at bt ct dt et ft gt ht it jt kt mkNoSR
-         in  tpap10 p t' (rf t' a) b c d e f g h i j k 
+         in  eagerSat (tpap10 p t' (rf t' a) b c d e f g h i j k) t'
 
 
 {-
@@ -770,8 +744,6 @@ and used for fun_n, prim_n.
 lazySat :: R a -> Trace -> R a
 
 lazySat x t = 
--- if hidden t then (let R v vt = x in R v vt) else 
-  -- avoid SAT for trusted stuff, but not sure this is always correct
   let sat = mkTSatA t
   in mkR (mkTSatB sat `myseq` -- mark entering of evaluation
           case x of -- create trace for (unevaluated x/v)
@@ -780,6 +752,23 @@ lazySat x t =
               mkTSatC sat vt `myseq` -- set trace for evaluated v
               v) -- return value
        sat
+
+
+{-
+Creates a Sat but not for the purpose of assuring that the trace component
+for a possibly unevaluated expression exists.
+The given wrapped expression is evaluated before it is returned.
+-}
+eagerSat :: R a -> Trace -> R a
+
+eagerSat x t =
+  let sat = mkTSatA t
+  in sat `myseq` mkTSatB sat `myseq`
+     case x of
+       R v vt ->
+         v `myseq`
+         mkTSatC sat vt `myseq`
+         x
 
 
 -- The following combinator is currently not used.

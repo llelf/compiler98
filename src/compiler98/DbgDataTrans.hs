@@ -110,7 +110,6 @@ dTopDecl (DeclData mb ctx simple constrs tycls) =
 -}
 dTopDecl d@(DeclConstrs pos id fieldIds) = 
   dTrace ("DbgDataTrans.dTopDecl.DeclConstrs" ++ show fieldIds) $
-  mapS0 addFieldSelector fieldIds >>>
   lookupName noPos id >>>= \(Just idinfo) ->
     case idinfo of
       InfoData did tid ie nt dk ->
@@ -130,9 +129,6 @@ dTopDecl d@(DeclConstrs pos id fieldIds) =
   --error ("dDecl: DeclConstrs " ++ show pos ++ " " ++ idstr ++ " " 
   --       ++ show fieldIds ++ "\n" ++ show idinfo)
   where
-  addFieldSelector (pos,fieldName,fieldSelector) = 
-    addConstrField pos fieldSelector
-  
   transformConstr constr =
     lookupName noPos constr >>>= \(Just info) ->
     case info of
@@ -399,6 +395,7 @@ dAlt (Alt pat rhs decls) =
 Type translating functions
 -}
 
+
 {-
 Translate a type. Only modifies all embedded funtion types:
   t1 -> t2  ==> Trace -> (R t1 -> R t2)
@@ -599,6 +596,7 @@ isHigherOrder cvar (NewType free exist ctxs ts) =
   snt (NTstrict t) = "(NTstrict " ++ snt t ++ ")"
   snt (NTvar id) = "(NTvar " ++ show id ++ ")"
   snt (NTany id) = "(NTany " ++ show id ++ ")"
+
 
 
 -- Utility functions

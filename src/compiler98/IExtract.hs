@@ -83,16 +83,31 @@ fixAdd fl tid fix_err@(fix,err) =
 
 ---- ===========================
 
+{- Return Id for given token of given kind. If no Id exists then 
+   create new Id -}
+transTid :: Pos -> IdKind -> TokenId 
+         -> a -> ImportState -> (Id,ImportState)
 
-transTid pos kind tid _  importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
+transTid pos kind tid _  
+  importState@(ImportState visible unique orps rps needI rt st insts 
+                 fixity errors) =
   let key =  (ensureM rps tid,kind)
   in  case lookupAT st key of 
         Just info -> (uniqueI info,importState)
-        Nothing -> (unique, ImportState visible (unique+1) orps rps (addM needI key)
-				rt
-				(addAT st combInfo key (InfoUsed unique [(kind,tid,rps,pos)])) insts fixity errors)
+        Nothing -> (unique, ImportState visible (unique+1) orps rps 
+                              (addM needI key)
+			      rt
+			      (addAT st combInfo key 
+                                (InfoUsed unique [(kind,tid,rps,pos)]))
+                              insts fixity errors)
 
-existTid kind tid _  importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
+
+{- Test if Id for given token of given kind exists -}
+existTid :: IdKind -> TokenId -> a -> ImportState -> (Bool,ImportState)
+
+existTid kind tid _  
+  importState@(ImportState visible unique orps rps needI rt st insts 
+                 fixity errors) =
   let key =  (ensureM rps tid,kind)
   in  case lookupAT st key of 
         Just info -> (True,importState)
@@ -100,6 +115,9 @@ existTid kind tid _  importState@(ImportState visible unique orps rps needI rt s
 	  
 
 --  return nothing
+
+importData :: Bool -> Bool -> TokenId -> IE -> NewType -> DataKind 
+  -> a -> ImportState -> ImportState
 
 importData v q tid expIn nt dk _ importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
   let realtid = ensureM rps tid
@@ -123,6 +141,10 @@ importData v q tid expIn nt dk _ importState@(ImportState visible unique orps rp
 	 in (ImportState visible (unique+1) orps rps needI rt'
 			(addAT st combInfo key (InfoData unique realtid exp nt dk)) insts fixity errors)
 
+
+importClass :: Bool -> Bool -> TokenId -> IE -> NewType -> [Id] 
+            -> a -> ImportState -> ImportState
+
 importClass v q tid expIn nt ms _ importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
   let realtid = ensureM rps tid
       key = (realtid,TClass)
@@ -145,28 +167,58 @@ importClass v q tid expIn nt ms _ importState@(ImportState visible unique orps r
 	 in (ImportState visible (unique+1) orps rps needI rt'
 			(addAT st combInfo key (InfoClass unique realtid exp nt ms [] initAT)) insts fixity errors)
 
+
+importField :: Bool -> Bool 
+            -> [Id] -- free type variables 
+            -> [(Id,Id)]  -- type context (predicates)
+            -> Id  -- type constructor 
+            -> Id  -- data constructor
+            -> ((Maybe (a,TokenId,b),NT),Int) 
+            -> c -> ImportState -> ImportState
+
 importField v q free ctxs bt c ((Nothing,_),nt) down importState = importState
-importField v q free ctxs bt c ((Just (p,tid,_),nt),i) down importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
+importField v q free ctxs bt c ((Just (p,tid,_),nt),i) down 
+  importState@(ImportState visible unique orps rps needI rt st insts 
+                 fixity errors) =
   let realtid = ensureM rps tid
       key = (realtid,Field)
   in case lookupAT st key of
        Just (InfoUsed u _) -> -- Selectors can never be InfoUsed
-	 let rt' = addRT visible v q unique tid orps Var (addRT visible v q u tid orps Field rt)
-	 in (ImportState visible (unique+1) orps rps needI rt' (addAT (addAT st combInfo (realtid,Var)
-					     		(InfoVar  unique realtid (fixity realtid) IEnone (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
-							combInfo key (InfoField  u realtid [(c,i)] bt unique)) insts fixity errors)
+	 let rt' = addRT visible v q unique tid orps Var 
+                     (addRT visible v q u tid orps Field rt)
+	 in (ImportState visible (unique+1) orps rps needI rt' 
+              (addAT -- add field name
+                (addAT st combInfo (realtid,Var) -- add selector
+		  (InfoVar  unique realtid (fixity realtid) IEnone 
+                    (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) 
+                    (Just 1)))
+		combInfo key (InfoField u realtid [(c,i)] bt unique)) 
+              insts fixity errors)
        Just (InfoField u' realtid' cis' bt' sel') -> 
 	 let rt' =  rt
 	 in  seq rt' ( -- $ here doesn't work, there is an error somwhere !!!
 	   if (c,i) `elem` cis'
-	   then (ImportState visible unique orps rps needI rt' st insts fixity errors)
-	   else (ImportState visible unique orps rps needI rt' (addAT st fstOf key (InfoField u' realtid' ((c,i):cis') bt' sel')) insts fixity errors))
+	   then (ImportState visible unique orps rps needI rt' st insts 
+                  fixity errors)  -- unchanged, just a bit strict
+	   else (ImportState visible unique orps rps needI rt' 
+                  (addAT st fstOf key -- update field name 
+                    (InfoField u' realtid' ((c,i):cis') bt' sel')) 
+                    insts fixity errors))
        _ -> 
-	 let rt' = addRT visible v q (unique+1) tid orps Var (addRT visible v q unique tid orps Field rt)
+	 let rt' = addRT visible v q (unique+1) tid orps Var 
+                     (addRT visible v q unique tid orps Field rt)
 	 in (ImportState visible (unique+2) orps rps needI rt'
-				(addAT (addAT st combInfo (realtid,Var)
-					     (InfoVar  (unique+1) realtid (fixity realtid) IEnone (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) (Just 1)))
-				       combInfo key (InfoField  unique realtid [(c,i)] bt (unique+1))) insts fixity errors)
+	      (addAT -- add field name
+                (addAT st combInfo (realtid,Var) -- add selector
+		  (InfoVar  (unique+1) realtid (fixity realtid) IEnone 
+                    (NewType free [] ctxs [NTcons bt (map NTvar free),nt]) 
+                    (Just 1)))
+		combInfo key (InfoField unique realtid [(c,i)] bt (unique+1)))
+              insts fixity errors)
+
+
+importVar :: Bool -> Bool -> TokenId -> IE -> NewType -> Maybe Int 
+          -> a -> ImportState -> ImportState
 
 importVar v q tid exp nt annots _ importState@(ImportState visible unique orps rps needI rt st insts fixity errors) =
   let realtid = ensureM rps tid
@@ -403,26 +455,36 @@ transConstr v q al free ctxs resType@(NTcons bt _) (Constr pos cid types) =
   mapS (transFieldType al) types >>>= \ntss ->
   let all = concat ntss
       nts = map snd all
-      ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+      ifs = map 
+              ((\ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst)
+              all
   in
-    importConstr v q cid (NewType free [] ctxs (nts++[resType])) ifs bt >>>= \ c ->
-    mapS0 (importField v q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
-    unitS c
-transConstr v q al free ctxs resType@(NTcons bt _) (ConstrCtx forall ectxs' pos cid types) = 
- let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
-     e =  map snd forall -- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ concat $ map (freeType . snd) types
-     es = zip e [1 + length al .. ]
- in
+  importConstr v q cid (NewType free [] ctxs (nts++[resType])) ifs bt 
+    >>>= \ c ->
+  mapS0 (importField v q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
+  unitS c
+transConstr v q al free ctxs resType@(NTcons bt _) 
+  (ConstrCtx forall ectxs' pos cid types) = 
+  let ce = map ( \( Context _ _ (_,v)) -> v) ectxs'
+      e =  map snd forall 
+-- filter (`notElem` (map fst al)) $ snub $  (ce ++) $ concat $ map (freeType . snd) types
+      es = zip e [1 + length al .. ]
+  in
   mapS (transFieldType (es++al)) types >>>= \ntss ->
   let all = concat ntss
       nts = map snd all
-      ifs = map ( ( \ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst) all
+      ifs = map 
+              ((\ v -> case v of Just (p,tid,i) -> Just i; _ -> Nothing) . fst)
+              all
       exist = map snd es
   in
-    mapS (transContext (es++al)) ectxs' >>>= \ ectxs ->
-    importConstr v q cid (NewType (map snd al ++ exist) exist ctxs (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) ifs bt >>>= \ c ->
-    mapS0 (importField v q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
-    unitS c
+  mapS (transContext (es++al)) ectxs' >>>= \ ectxs ->
+  importConstr v q cid 
+    (NewType (map snd al ++ exist) exist ctxs 
+      (map ( \ (c,v) -> NTcontext c v) ectxs ++ nts++[resType])) ifs bt 
+    >>>= \ c ->
+  mapS0 (importField v q free ctxs bt c) (zip all [ 1:: Int ..]) >>>
+  unitS c
 
 ---
 
@@ -438,24 +500,47 @@ transFieldType al (Just posidents,typ) =
                     unitS (Just (p,v,i),typ))  posidents
 
 
-transTypes :: [(TokenId,Int)] -> [Id] -> [Context TokenId] -> [Type TokenId] -> () -> ImportState -> (NewType,ImportState)
+{- transform a syntactic type with context into an internal NewType -}
+transTypes :: [(TokenId,Int)] -> [Id] -> [Context TokenId] -> [Type TokenId] 
+           -> () -> ImportState -> (NewType,ImportState)
 
 transTypes al free ctxs ts =
-  unitS (NewType free []) =>>> mapS (transContext al) ctxs =>>> mapS (transType al) ts
+  unitS (NewType free []) =>>> 
+  mapS (transContext al) ctxs 
+  =>>> mapS (transType al) ts
 
 
-transTVar :: (Show a, Eq a) => Int -> [(a,Int)] -> a 
+{- transform a syntactic type variable (TokenId) into an internal type variable
+   (NT), using the given mapping -}
+transTVar :: Pos -> [(TokenId,Pos)] -> TokenId 
           -> () -> ImportState -> (NT,ImportState)
 
 transTVar pos al v =
   unitS NTvar =>>> uniqueTVar pos al v
 
+
+{- transform syntactic type variable (TokenId) into internal type variable
+   (Id), using the given mapping -}
+uniqueTVar :: Pos -> [(TokenId,Pos)] -> TokenId 
+           -> () -> ImportState -> (Id,ImportState)
+
 uniqueTVar pos al v =
   case lookup v al of
     Just v -> unitS v
-    Nothing -> importError ("Unbound type variable " ++ show v ++ " at " ++ strPos pos) (0::Int)
+    Nothing -> importError 
+                 ("Unbound type variable " ++ show v ++ " at " ++ strPos pos) 
+                 (0::Int)
 
-transContext al (Context pos cid (vpos,vid)) = unitS pair =>>> transTid pos TClass cid =>>> uniqueTVar vpos al vid
+
+{- transform syntactic context into internal context -}
+transContext :: [(TokenId,Pos)] -> Context TokenId 
+             -> () -> ImportState -> ((Id,Id),ImportState)
+
+transContext al (Context pos cid (vpos,vid)) = 
+  unitS pair =>>> transTid pos TClass cid =>>> uniqueTVar vpos al vid
+
+
+countArrows :: Type TokenId -> Int
 
 countArrows (TypeCons pos tid [a,f]) =
   if tid == t_Arrow 
@@ -464,13 +549,16 @@ countArrows (TypeCons pos tid [a,f]) =
 countArrows _ = 0::Int
 
 
+{- transform a syntactic type into an internal NT type -}
 transType :: [(TokenId,Int)] -> Type TokenId 
           -> () -> ImportState -> (NT,ImportState)
 
-transType free (TypeApp  t1 t2) = unitS NTapp =>>> transType free t1 =>>> transType free t2
-transType free (TypeCons  pos hs types) = unitS NTcons =>>> transTid pos TCon hs =>>> mapS (transType free) types
-transType free (TypeVar   pos v)       = transTVar pos free v
-transType free (TypeStrict pos typ)    = unitS NTstrict =>>>  transType free typ
+transType free (TypeApp  t1 t2) = 
+  unitS NTapp =>>> transType free t1 =>>> transType free t2
+transType free (TypeCons  pos hs types) = 
+  unitS NTcons =>>> transTid pos TCon hs =>>> mapS (transType free) types
+transType free (TypeVar   pos v)    = transTVar pos free v
+transType free (TypeStrict pos typ) = unitS NTstrict =>>>  transType free typ
 
 -----
 

@@ -1,10 +1,11 @@
 {- ---------------------------------------------------------------------------
 Three functions for removing some syntactic sugar:
 removeDecls: create selectors for record fields
+  mkSel: create a single selector for a named field
 removeDo: remove do notation
 removeExpRecord: remove record expressions (construction and updating)
 -}
-module Remove1_3(removeDecls,removeDo,removeExpRecord) where
+module Remove1_3(removeDecls,mkSel,removeDo,removeExpRecord) where
 
 import Syntax
 import State
@@ -60,7 +61,7 @@ Create the definition for a given selector identfier.
 mkSel :: (Pos -- point of definition of selector, i.e in type definition
          ,Id  -- field name id
          ,Id) -- selector name id
-         -> SelectorMonad (Decl Int)
+         -> SelectorMonad (Decl Id)
 
 mkSel (pos,field,selector) = 
   r13Info field >>>= \  (InfoField unique tid icon_offs iData iSel) ->

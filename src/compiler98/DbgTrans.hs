@@ -7,7 +7,7 @@ module DbgTrans(SRIDTable,debugTrans, dbgAddImport) where
 import Extra(Pos, noPos, pair, fromPos, strPos, dropJust, trace)
 import IdKind(IdKind(Con,Var,TCon))
 import TokenId
-import DbgId(t_R,tSR,t_mkTRoot,t_mkTNm 
+import DbgId(t_R,tSR,tTrace,t_mkTRoot,t_mkTNm 
             ,t_rseq,t_fatal,t_rPatBool
             ,t_lazySat,t_fun,t_tfun,t_primn,t_tprimn
             ,t_prim,t_ap,t_rap,t_tap,t_trap
@@ -31,6 +31,7 @@ import Id(Id)
 import Info(typeSynonymBodyI,IE(IEsel))
 import TypeSubst(substNT)
 import Nice(niceNewType)
+import Remove1_3(mkSel)
 import Flags(Flags,sDbgTrusted)
 import List  -- (zipWith3)
 
@@ -69,6 +70,10 @@ getIntState :: DbgTransMonad IntState
 
 getIntState inherited threaded@(Threaded intState _ _) = (intState,threaded)
  
+setIntState :: IntState -> Inherited -> Threaded -> Threaded
+
+setIntState intState inherited threaded@(Threaded _ srt idt) = 
+  Threaded intState srt idt
 
 {-
 Used to add the special prelude for debugging to the import list.
@@ -139,7 +144,15 @@ dTopDecl trusted root d@(DeclInstance pos ctx id inst decls) =
     (if trusted then dTrustDecls else dSuspectDecls) root decls
 dTopDecl _ _ d@(DeclType id t) = unitS [d]
 dTopDecl _ _ d@(DeclData mb ctx id contrs tycls) = unitS [d]
-dTopDecl _ _ d@(DeclConstrs pos id constrids) = unitS [d]
+dTopDecl trusted root d@(DeclConstrs pos id constrids) = 
+  -- derive field selector definitions as usual and subsequently transform them
+  getIntState >>>= \intState ->
+  case mapS mkSel constrids () ([],intState) of
+    (selDecls,(_,intState')) -> 
+      setIntState intState' >>>
+      mapS ((if trusted then dTrustDecl else dSuspectDecl) root) selDecls 
+        >>>= \selDeclss' ->
+      unitS (DeclConstrs pos id [] : concat selDeclss')
 dTopDecl trusted root d = (if trusted then dTrustDecl else dSuspectDecl) root d
 
 
@@ -837,27 +850,9 @@ dSuspectExp cr parent e@(ExpVar pos id) =
 	  lookupVar pos t_indir >>>= \indir ->
 	  unitS (ExpApplication pos [indir, parent, e])
     Just n -> -- A letbound or global function
-      isFieldSelector id >>>= \isSelector ->
-      if isSelector 
-        then
-          lookupVar pos (t_fun 1) >>>= \fun1 ->
-          lookupVar pos (t_indir) >>>= \indir ->
-          lookupCon pos (t_R) >>>= \r ->
-          newVar pos >>>= \selParent ->
-          newVar pos >>>= \record ->
-          makeNTId pos id >>>= \selectorname ->
-          makeSourceRef pos >>>= \sr ->
-          unitS 
-            (ExpApplication pos 
-              [fun1,selectorname
-              ,(ExpLambda pos [selParent,ExpApplication pos 
-                                           [r,record,PatWildcard pos]] 
-                 (ExpApplication pos 
-                   [indir,selParent,ExpApplication pos [e,record]]))
-              ,sr,parent]) 
-        else
-          makeSourceRef pos >>>= \sr ->
-          unitS (ExpApplication pos [e, sr, parent]) 
+      patchFieldSelectorType id >>>
+      makeSourceRef pos >>>= \sr ->
+      unitS (ExpApplication pos [e, sr, parent]) 
 dSuspectExp cr parent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -1003,30 +998,12 @@ dTrustExp cr parent hidParent e@(ExpVar pos id) =
         then unitS e
 	else 
 	  lookupVar pos t_indir >>>= \indir ->
-	  unitS (ExpApplication pos [indir, hidParent, e])
+	  unitS (ExpApplication pos [indir, parent, e])
     Just n -> -- A letbound or global function
-      isFieldSelector id >>>= \isSelector ->
-      if isSelector 
-        then
-          lookupVar pos (t_tfun 1) >>>= \tfun1 ->
-          lookupVar pos (t_indir) >>>= \indir ->
-          lookupCon pos (t_R) >>>= \r ->
-          newVar pos >>>= \selParent ->
-          newVar pos >>>= \record ->
-          makeNTId pos id >>>= \selectorname ->
-          makeSourceRef pos >>>= \sr ->
-          unitS 
-            (ExpApplication pos 
-              [tfun1,selectorname
-              ,(ExpLambda pos [selParent,PatWildcard pos
-                              ,ExpApplication pos [r,record,PatWildcard pos]] 
-                 (ExpApplication pos 
-                   [indir,selParent,ExpApplication pos [e,record]]))
-              ,sr,parent]) 
-        else
-          lookupVar pos t_mkNoSR >>>= \mkNoSR ->
-          unitS (ExpApplication pos 
-                  [e, mkNoSR, if cr then hidParent else parent]) 
+      patchFieldSelectorType id >>>
+      lookupVar pos t_mkNoSR >>>= \mkNoSR ->
+      unitS (ExpApplication pos 
+              [e, mkNoSR, if cr then hidParent else parent]) 
 dTrustExp cr parent hidParent e@(ExpLit pos (LitString _ s)) = 
   -- calling a combinator `litString pos s' impossible, because
   -- the list data type (s) cannot be used there.
@@ -1479,27 +1456,38 @@ getIdArity id =
 	Just info -> (Just (arityVI info){-(arityIS istate id)-}, s)
 
 
-{- 
-Most gruesome test to determine if an identifier is a field selector
-of a record. 
+{-
+A bit of a hack.
+The type of an imported field selector is derived by nhc from the
+data type definition. However, the transformed selector has a different
+type. Hence we test if a used variable is a selector. If it is, then
+we transform the type (only the first time we come across it).
 -}
-isFieldSelector :: Id -> DbgTransMonad Bool
-isFieldSelector id =
-  \(Inherited lookupPrel) s@(Threaded istate _ _) ->
+patchFieldSelectorType :: Id -> Inherited -> Threaded -> Threaded
+patchFieldSelectorType id =
+  \(Inherited lookupPrel) s@(Threaded istate srt idt) ->
   case lookupIS istate id of
-    Just (InfoVar _ _ _ IEsel _ _) -> 
-        -- id is field selector of record defined in this module
-        (True,s)
-{- bad:
-   also recognises cafs as selectors, because 
-   cafs ignore the SR and Trace argument and hence are polymorphic
-   in these arguments.
-    Just (InfoVar _ _ _ _ (NewType _ _ _ nts) _) 
-      | (lookupPrel (tSR,TCon)) `notElem` concatMap consNT nts ->
+    Just info@(InfoVar un tok fix ie (NewType all ex ctx [rec,res]) _) ->
         -- id is field selector of record defined in imported module
-        (True,s)
--}
-    _ -> (False,s)
+        -- (IExtract.importField constructs the type of the selector
+        --  in this form; there seem to be no types of other variables
+        --  of this form)
+      let arrow = lookupPrel (t_Arrow,TCon)
+          sr = lookupPrel (tSR,TCon)
+          trace = lookupPrel (tTrace,TCon)
+          r = lookupPrel (t_R,TCon)
+      in
+      Threaded 
+        (updateIS istate id 
+          (\_ -> InfoVar un tok fix ie
+                   (NewType all ex ctx 
+                     [NTcons arrow 
+                       [NTcons sr [],NTcons arrow 
+                         [NTcons trace [], NTcons r 
+                           [NTcons arrow [NTcons trace [],NTcons arrow 
+                             [NTcons r [rec],res]]]]]]) 
+                    (Just 2))) srt idt
+    _ -> s
 
 
 getArity :: [Fun a] -> Int
