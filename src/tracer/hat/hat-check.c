@@ -29,6 +29,8 @@
 #define SATB 5
 #define SATC 6
 
+#define SATNOAPP 8
+
 #define MD 1
 
 #define SUSPECT 0
@@ -184,11 +186,6 @@ unsigned long trspace[7];    /* ditto */
 unsigned int reachcount[4];
 unsigned int reachtrcount[7];
 
-#ifdef EXTRAS
-unsigned long ptrcount;      /* counter for pointers */
-unsigned long pcount;        /* counter for null or short backward pointers */
-#endif
-
 initstats() {
   int k;
   for (k=0; k<4; k++) {
@@ -201,9 +198,6 @@ initstats() {
     reachtrcount[k] = 0;
     trspace[k] = 0L;
   }
-#ifdef EXTRAS
-  ptrcount = 0L; pcount = 0L;
-#endif
 }
 
 float pc(unsigned long i, unsigned long j) {
@@ -266,13 +260,6 @@ reportstats() {
   if (rmode) printf("%7.1f", pc(grandreachcount,grandcount));
   printf("%10u   %-20s%12u%10.1f\n",
     grandcount, "whole trace file", grandspace, pc(grandspace,grandspace));
-#ifdef EXTRAS
-  putchar('\n');
-  printf("%10u   %-20s%12u%10.1f\n",
-    ptrcount, "pointers (all kinds)", ptrcount*4, pc(ptrcount*4,grandspace));
-  printf("%10u   %-20s%12u%10.1f\n",
-    pcount, "point back <(2^15)b", pcount*4, pc(pcount*4,grandspace));
-#endif
 }
 
 unsigned long byteoffset() {
@@ -448,15 +435,6 @@ void newtagat(char *t, unsigned long offset) {
 void dopointer(int okzero,
                int requiretag, unsigned long requireoffset,
                int contexttag, unsigned long contextoffset) {
-#ifdef EXTRAS
-  if (smode) {
-    ptrcount++;
-    if (requireoffset == 0 || (requireoffset < contextoffset &&
-                               requireoffset+32768 > contextoffset)) {
-      pcount++;
-    }
-  }
-#endif
   if (vmode && !okzero && requireoffset == 0) {
       fprintf(stderr, "bad zero pointer in %s 0x%x\n",
 	    tag2str(contexttag), contextoffset);     
@@ -527,6 +505,7 @@ nextnode() {
     switch (k) {
     case TR: {
       int trk = lo5(b);
+      if (trk & SATNOAPP) trk -= SATNOAPP;
       if (trk > SATC) {
         fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
 	        trk, offset);
@@ -747,6 +726,7 @@ markfrom(unsigned long root, char *buf) {
       switch (k) {
       case TR: {
 	int trk = lo5(*buf);
+	if (trk & SATNOAPP) trk -= SATNOAPP;
 	if (trk > SATC) {
           fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
 	          trk, root);
