@@ -4,8 +4,6 @@ module Prelude
 #if 0
   , _mkIOok13, _mkIOok14, _mkIOok15
 #endif
-  , _mkIOwf0,  _mkIOwf1,  _mkIOwf2,  _mkIOwf3, _mkIOwf4,  _mkIOwf5
-  , _mkIOwf6,  _mkIOwf7,  _mkIOwf8,  _mkIOwf9, _mkIOwf10, _mkIOwf11, _mkIOwf12
   ) where
 
 import DIO
@@ -14,13 +12,6 @@ import DIO
 --        monadic IO action, eliminating sharing of results etc.
 -- These are intended to be applied by machine-generated code only.
 -- Arities: 0-15
---
---
--- mkIOwf functions lift any potentially-failing pure function
---        (expressed by the Either type) into the IO monad.
---        Required: an injection function for the error value.
--- These are intended to be applied by hand.
--- Arities: 0-12
 
 
 _mkIOok0 :: (()->a) -> IO a	-- Note: no CAFs allowed!
@@ -74,46 +65,3 @@ _mkIOok15 fn = \a b c d e f g h i j k l m n o->
                IO (\_->Right $! fn a b c d e f g h i j k l m n o)
 #endif
 
-
-_mkIOwf0  :: (z->IOError) -> (()->Either z a) -> IO a	-- Note: not a CAF
-_mkIOwf1  :: (z->IOError) -> (b->Either z a) -> (b->IO a)
-_mkIOwf2  :: (z->IOError) -> (c->b->Either z a) -> (c->b->IO a)
-_mkIOwf3  :: (z->IOError) -> (d->c->b->Either z a) -> (d->c->b->IO a)
-_mkIOwf4  :: (z->IOError) -> (e->d->c->b->Either z a) -> (e->d->c->b->IO a)
-_mkIOwf5  :: (z->IOError) -> (f->e->d->c->b->Either z a)
-                          -> (f->e->d->c->b->IO a)
-_mkIOwf6  :: (z->IOError) -> (g->f->e->d->c->b->Either z a)
-                          -> (g->f->e->d->c->b->IO a)
-_mkIOwf7  :: (z->IOError) -> (h->g->f->e->d->c->b->Either z a)
-                          -> (h->g->f->e->d->c->b->IO a)
-_mkIOwf8  :: (z->IOError) -> (i->h->g->f->e->d->c->b->Either z a)
-                          -> (i->h->g->f->e->d->c->b->IO a)
-_mkIOwf9  :: (z->IOError) -> (j->i->h->g->f->e->d->c->b->Either z a)
-                          -> (j->i->h->g->f->e->d->c->b->IO a)
-_mkIOwf10 :: (z->IOError) -> (k->j->i->h->g->f->e->d->c->b->Either z a)
-                          -> (k->j->i->h->g->f->e->d->c->b->IO a)
-_mkIOwf11 :: (z->IOError) -> (l->k->j->i->h->g->f->e->d->c->b->Either z a)
-                          -> (l->k->j->i->h->g->f->e->d->c->b->IO a)
-_mkIOwf12 :: (z->IOError) -> (m->l->k->j->i->h->g->f->e->d->c->b->Either z a)
-                          -> (m->l->k->j->i->h->g->f->e->d->c->b->IO a)
-
-_mkIOwf0  z fn = IO (\_->mapLeft z $! fn ())
-_mkIOwf1  z fn = \a-> IO (\_->mapLeft z $! fn a)
-_mkIOwf2  z fn = \a b-> IO (\_->mapLeft z $! fn a b)
-_mkIOwf3  z fn = \a b c-> IO (\_->mapLeft z $! fn a b c)
-_mkIOwf4  z fn = \a b c d-> IO (\_->mapLeft z $! fn a b c d)
-_mkIOwf5  z fn = \a b c d e-> IO (\_->mapLeft z $! fn a b c d e)
-_mkIOwf6  z fn = \a b c d e f-> IO (\_->mapLeft z $! fn a b c d e f)
-_mkIOwf7  z fn = \a b c d e f g-> IO (\_->mapLeft z $! fn a b c d e f g)
-_mkIOwf8  z fn = \a b c d e f g h-> IO (\_->mapLeft z $! fn a b c d e f g h)
-_mkIOwf9  z fn = \a b c d e f g h i->
-                 IO (\_->mapLeft z $! fn a b c d e f g h i)
-_mkIOwf10 z fn = \a b c d e f g h i j->
-                 IO (\_->mapLeft z $! fn a b c d e f g h i j)
-_mkIOwf11 z fn = \a b c d e f g h i j k->
-                 IO (\_->mapLeft z $! fn a b c d e f g h i j k)
-_mkIOwf12 z fn = \a b c d e f g h i j k l->
-                 IO (\_->mapLeft z $! fn a b c d e f g h i j k l)
-
-mapLeft f (Left a)  = Left (f a)
-mapLeft f (Right b) = Right b	-- can't just reuse val - change of type
