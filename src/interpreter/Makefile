@@ -6,7 +6,8 @@ SRCS =	$(MACHINE)/hi.hs $(MACHINE)/HmakeConfig.hs $(MACHINE)/LocalConfig.hs
 ifeq "${BUILDWITH}" "ghc"
 HFLAGS = -fglasgow-exts -syslib lang
 export HFLAGS
-else
+endif
+ifeq "${BUILDWITH}" "hbc"
 endif
 
 all: $(PROG)
