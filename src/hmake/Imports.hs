@@ -56,6 +56,7 @@ leximports fp =
     nestcomment 0 ('\'':'"':'\'':cs)  = '\'':'"':'\'': nestcomment 0 cs
     nestcomment 0 ('\\':'"':cs)       = '\\':'"': nestcomment 0 cs
     nestcomment 0 ('"':cs)            = '"': endstring cs
+    nestcomment 0 (';':cs)            = '\n': nestcomment 0 cs	-- HACK
     nestcomment 0 (c:cs)              = c: nestcomment 0 cs
     nestcomment 0 []                  = []
     nestcomment n []                  =
@@ -75,10 +76,19 @@ leximports fp =
     getmodnames (x:xs)
       | null x || all isSpace x  = getmodnames xs
       | otherwise =
-        let ws = concatMap words (x:xs)	-- allow for import spanning several lines.
-        in if not (null ws) && head ws == "import" then
-               modname (tail ws): getmodnames xs
-           else getmodnames xs
+        case concatMap words (x:xs) of
+          ("import":ws)  -> modname ws: getmodnames xs
+				-- allow for import spanning several lines.
+          ("data":ws)    -> []	-- truncate search at first non-import keyword
+          ("type":ws)    -> []
+          ("class":ws)   -> []
+          ("infix":ws)   -> []
+          ("infixl":ws)  -> []
+          ("infixr":ws)  -> []
+          ("newtype":ws) -> []
+          ("default":ws) -> []
+          ("instance":ws)-> []
+          _              -> getmodnames xs	-- non-keyword: continue search
     getmodnames [] = []
 
     modname ws =
