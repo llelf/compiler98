@@ -5,6 +5,10 @@ module StrPos(strPCode,strPExp) where
 
 import Extra(mixLine,mixSpace)
 import PosCode
+#if defined(__HBC__)
+import Foreign -- for ImpExp's Show instance
+import Syntax  -- for CallConv's Show instance
+#endif
 
 strPCode p code = mixLine (map (strPBinding p "") code)
 
