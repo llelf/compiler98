@@ -4,10 +4,11 @@ include Makefile.inc
 VERSION = 1.01
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
-#   (A trailing x or + means this version has not been released yet.)
+#   (odd minor number = CVS version;  even minor number = release version)
 
 HVERSION = 2.02
 # HVERSION is the separate version number for hmake.
+#   (odd/even minor number is irrelevant - all are release versions)
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
@@ -27,7 +28,7 @@ PRELUDEA = \
 	src/prelude/Debug/Makefile* src/prelude/Debug/*.hs \
 	src/prelude/Directory/Makefile* src/prelude/Directory/*.hs \
 	src/prelude/Directory/*.gc \
-	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs \
+	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
 	src/prelude/Haskell/Makefile* src/prelude/Haskell/*.hs \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
@@ -454,9 +455,11 @@ clean: cleanhi
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
 	cd src/interpreter;     $(MAKE) clean
+	rm -f  script/hmake-PRAGMA.o
 	rm -rf $(TARGDIR)/$(MACHINE)/obj*	# all object files
 
 cleanhi:
+	rm -f  script/hmake-PRAGMA.hi
 	cd src/prelude; $(MAKE) cleanhi
 	cd src/prelude; $(MAKE) CFG=T cleanhi
 
@@ -465,6 +468,7 @@ cleanC:
 	rm -f src/greencard/*.c
 	rm -f src/hmake/*.c
 	rm -f src/interpreter/*.c
+	rm -f script/hmake-PRAGMA.c
 	cd src/prelude;		$(MAKE) cleanC
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC
 
@@ -475,4 +479,5 @@ realclean: clean cleanC
 	cd $(TARGDIR)/$(MACHINE);  rm -f hmake.config config.cache
 	rm -rf src/prelude/$(MACHINE)
 	rm -rf $(LIBDIR)/$(MACHINE)
+	rm -f  script/hmake-PRAGMA.o script/hmake-PRAGMA.hi
 	rm -f  script/nhc98 script/greencard script/hmake
