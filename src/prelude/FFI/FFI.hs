@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.2 2000/01/28 15:37:32 malcolm Exp $
+   $Id: FFI.hs,v 1.3 2000/02/15 16:16:20 malcolm Exp $
 -}
 
 module FFI
@@ -43,7 +43,7 @@ module FFI
 -- ,writeForeignFinalizer -- :: ForeignObj ->  Addr        -> IO ()
   , foreignObjToAddr      -- :: ForeignObj -> IO Addr
 -- ,addrToForeignObj      -- :: Addr       -> IO ForeignObj 
-       
+
    -------------------------------------------------------------------
   , StablePtr             -- abstract
   , makeStablePtr         -- :: a -> IO (StablePtr a)
@@ -51,6 +51,11 @@ module FFI
   , freeStablePtr         -- :: StablePtr a -> IO ()
   , stablePtrToAddr       -- :: StablePtr a -> Addr
   , addrToStablePtr       -- :: Addr -> StablePtr a
+
+   -------------------------------------------------------------------
+  , CString		-- abstract
+  , toCString		-- :: String  -> CString
+  , fromCString		-- :: CString -> String
   ) where
 
 --import Int		-- not complete yet
@@ -58,6 +63,7 @@ module FFI
 import Addr		-- new
 import ForeignObj	-- new, note: type of finalizers is still wrong.
 import StablePtr	-- new
+import CString		-- nhc98-only
 import FixIO (fixIO)	-- part of IOExts, but IOExts depends on FFI.
 import Monad (when)
 

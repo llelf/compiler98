@@ -5,7 +5,7 @@ THISLIB = FFI
 SRCS	= \
 	Addr.hs ForeignObj.hs Ptr.hs ShowsIntBase.hs StablePtr.hs
 
-NotYetSRCS = Int.hs
+NotYetSRCS = Int.hs Word.hs
 
 
 OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
@@ -18,7 +18,7 @@ MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
 HIFILES = $(patsubst %.hs, %.hi, ${SRCS} ${MAINSRC})
 
 PARTFLAGS = -part 		# -prelude -redefine
-LIBFLAGS  = +CTS -lib -CTS -P../IOExtras/
+LIBFLAGS  = +CTS -lib -CTS -P../IOExtras/ -P../LowB/
 
 
 all:  ${OBJS} ${MAINOBJ}
