@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+#include <fcntl.h>
 #include "hatinterface.h"
 #include "hatgeneral.h"
 
@@ -98,7 +100,7 @@ int checkParameters(char* str,char* allowed) {
 char* hatFilename(char* name) {
   if (strstr(name,".hat")!=NULL) return newStr(name);
   else {
-    char* newstr=(char*) malloc(strlen(name)+5,sizeof(char));
+    char* newstr=(char*) malloc((strlen(name)+5)*sizeof(char));
     strcpy(newstr,name);
     strcat(newstr,".hat");
     return newstr;
@@ -434,7 +436,6 @@ void skipNode(char nodeType) {
 /* follow the trace along SATs, indirections and TRNAMEs */
 filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
   char nodeType;
-  filepointer p;
   
   while (1) {
     //printf("following Trace... 0x%x\n",fileoffset);
@@ -458,7 +459,6 @@ filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
 /* follow the trace along HIDDEN traces */
 filepointer hatFollowHidden(HatFile handle,filepointer fileoffset) {
   char nodeType;
-  filepointer p;
   
   while (1) {
     nodeType = getNodeType(handle,fileoffset);
@@ -473,7 +473,6 @@ filepointer hatFollowHidden(HatFile handle,filepointer fileoffset) {
 /* follow the trace along SATs */
 filepointer hatFollowSATs(HatFile handle,filepointer fileoffset) {
   char nodeType;
-  filepointer p;
   
   while (1) {
     nodeType = getNodeType(handle,fileoffset);
@@ -529,7 +528,7 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
 char* hatLocationStr(HatFile handle,filepointer fileoffset) {
   char nodeType;
   char *s,*tmp;
-  filepointer old = hatNodeNumber(handle),posn;
+  filepointer old = hatNodeNumber(handle);
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
@@ -583,7 +582,7 @@ char* hatLocationStr(HatFile handle,filepointer fileoffset) {
 char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
   char nodeType;
   char *s,*tmp;
-  filepointer old = hatNodeNumber(handle),posn;
+  filepointer old = hatNodeNumber(handle);
   while (1) {
     fileoffset = hatFollowSATs(handle,fileoffset);
     nodeType=getNodeType(handle,fileoffset);
@@ -635,7 +634,7 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
   }
 }
 
-int isTrusted(HatFile handle,filepointer srcref) {
+BOOL isTrusted(HatFile handle,filepointer srcref) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);
   while (1) {
@@ -684,7 +683,7 @@ int isTrusted(HatFile handle,filepointer srcref) {
 }
 
 int isCAF(HatFile handle,filepointer fileoffset) {
-  char nodeType,i;
+  char nodeType;
   filepointer old = hatNodeNumber(handle);
   nodeType=getNodeType(handle,fileoffset);
   hatSeekNode(handle,old);
@@ -900,7 +899,6 @@ void prepareBuffer(int bytes) {
 }
 
 int getAppArity() {
-  char c;
   prepareBuffer(1);
   return buf[boff+1];
 }

@@ -5,7 +5,9 @@
 /**************************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 #include "hatfile.h"
 #include "Expressions.h"
 #include "hatgeneral.h"
@@ -49,7 +51,7 @@ ExprNode* getAppNodeArg(AppNode* a,int i) {
 }
 
 IdentNode* newIdentNode(char* name,int infix,int prio) {
-  IdentNode* id = (IdentNode*) malloc(1,sizeof(IdentNode));
+  IdentNode* id = (IdentNode*) malloc(sizeof(IdentNode));
   id->name = name;
   id->infixtype = infix;
   id->infixpriority = prio;
@@ -160,7 +162,7 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
 	int i=0,arity;
 	AppNode* apn;
 	ExprNode* fun;
-	unsigned long localoffset,functionOffset;
+	unsigned long functionOffset;
 	arity=getAppArity();
 	apn=newAppNode(arity);
 
@@ -238,7 +240,7 @@ ExprNode* buildExprRek(HatFile handle,unsigned long fileoffset,int verbose,
       return exp;
     case NTDOUBLE:
       exp = newExprNode(b);
-      exp->v.doubleval = (double*) malloc(1,sizeof(double));
+      exp->v.doubleval = (double*) malloc(sizeof(double));
       *(exp->v.doubleval) = getDoubleValue();
       return exp;
     case NTRATIONAL:
@@ -324,7 +326,6 @@ char* prettyChar(char c) {
 char* getStringExpr(ExprNode* exp) {
 // #define DebugStringExpr  // enable this switch to get debug info
   char *s1,*s2;
-  char c;
   ExprNode* first;
 #ifdef DebugStringExpr
   printf("inside getStringExpr\n");
@@ -344,7 +345,6 @@ char* getStringExpr(ExprNode* exp) {
     printf("type...\n");if (first!=NULL) printf("is: %u\n",first->type);
 #endif
     if ((first!=NULL)&&(first->type==NTCHAR)) {
-      char* pp;
       s1 = prettyChar(first->v.charval);
     } else 
       return NULL;
@@ -374,8 +374,6 @@ char minibuf[256];
 /* pretty printing routine, called recursively */
 char* printRekExpr(ExprNode* exp,int verbose,int topInfixprio) {
   //#define DebugPrintExpr  // enable switch to get debug info
-  char b;
-  unsigned long p;
   char* s1;
   char* s2;
   if (exp==NULL) return newStr("_");
@@ -571,7 +569,6 @@ char* prettyPrintExpr(ExprNode* exp,int verboseMode) {
 */
 int compareExpr(ExprNode* e1, ExprNode* e2) {
   int c,cmp=0;
-  int dc=0;
 
   if ((e1==NULL)&&(e2==NULL)) return 0;
   if (e1==NULL) return -1;
@@ -626,7 +623,7 @@ int getColumnWidth(char* column) {
 }
 
 char* newCentreStr(char* str,int width) {
-  char* s = (char*) malloc(width+1,sizeof(char));
+  char* s = (char*) malloc((width+1)*sizeof(char));
   int len = strlen(str);
   int l;
   memset(s,' ',width);
@@ -692,7 +689,7 @@ char* addColumns(char* column1,char* column2) {
     int w,cflag,n;
     char* column;
     if (column1!=NULL) {column=column1;w=w2;cflag=1;} else {w=w1;column=column2;cflag=2;}
-    empty=(char*) malloc(w+1,sizeof(char));
+    empty=(char*) malloc((w+1)*sizeof(char));
     memset(empty,' ',w);
     empty[w]=0; // set terminator
     while (column!=NULL) {
@@ -726,8 +723,6 @@ char* addColumns(char* column1,char* column2) {
 /* pretty printing routine, called recursively */
 char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
   //#define DebugTreePrint  // enable switch to get debug info
-  char b;
-  unsigned long p;
   char* s1;
   char* s2;
   char* fun;

@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "Expressions.h"
 #include "FunTable.h"
 #include "hatinterface.h"
@@ -80,7 +81,6 @@ HatFile observeHatFile(ObserveQuery query) {
 filepointer nextObserveQueryNode(ObserveQuery query) {
   unsigned long p,currentOffset;
   char nodeType;
-  int arity;
   HashTable* htable = ((_ObserveQuery*) query)->htable;
   unsigned long identifierNode = ((_ObserveQuery*) query)->identifierNode;
   unsigned long topIdentifierNode = ((_ObserveQuery*) query)-> topIdentifierNode;
@@ -103,7 +103,6 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
     switch (nodeType) {
     case TRAPP:
       {
-	int arity = getAppArity();
 	filepointer apptrace;
 	apptrace = getParent();  // fileoffset of App-trace
 	p = getAppFun();         // fileoffset of Function-trace
@@ -166,7 +165,7 @@ void findNodes(HatFile handle,
 	       unsigned long *identNode,
 	       unsigned long *topIdentNode,
 	       BOOL showProgress) {
-  unsigned long identifierNode = 0,p,currentOffset,fsz,lsz=0;
+  unsigned long identifierNode = 0,currentOffset,fsz,lsz=0;
   unsigned long topIdentifierNode = 0;
   char nodeType;
   fsz = hatFileSize(handle)/1000;
@@ -240,6 +239,6 @@ FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
     }
     currentOffset = nextObserveQueryNode(query);
   }
-  checkArities(results); // remove partial applications with missing arguments
+  FunTableCheckArities(results); // remove partial applications with missing arguments
   return results;
 }

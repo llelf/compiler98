@@ -11,12 +11,15 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "Expressions.h"
 #include "hatinterface.h"
 #include "FunTable.h"
 #include "hatgeneral.h"
 
 //#define doStatistics
+
+int getline(char s[], int max);
 
 typedef struct lnode* FunTablePtr;
 
@@ -201,7 +204,7 @@ int isInFunTable(FunTable ftable,ExprNode* funAppl,ExprNode* res) {
   return 0; // not im memory yet!
 }
 
-void checkArities(FunTable ftable) {
+void FunTableCheckArities(FunTable ftable) {
   int arity,maxarity=0;
   _FunTable *h,*p;
 

@@ -53,22 +53,6 @@ main (int argc, char *argv[])
   hatCloseFile(filehandle);
 }
 
-int getline(char s[], int max) {
-  int c,i;
-  fflush(stdout);
-  c=getchar();
-  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
-    if (c==-1) {
-      i--;
-    } else {
-      s[i]=c;
-    }
-    c=getchar();
-  }
-  s[i]=0;
-  return i;
-}
-
 void quit() {
   printf("\n\nOk, Goodbye!\n");
   exit(0);

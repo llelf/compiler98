@@ -47,7 +47,7 @@ $(DEST)/hat-check: hat-check.c
 
 
 # Thorsten's libraries and tools
-THORFLAGS = -g
+THORFLAGS = -g -Wall
 LINKFLAGS = -lncurses -g
 
 $(THOROBJS) : $(OBJDIR)/%.o : %.c

@@ -11,10 +11,12 @@
 /*********************************************************************/
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* reserve space on heap for given string - and copy */
 char* newStr(char* str) {
-  char* h = (char*) malloc(strlen(str)+1,sizeof(char));
+  char* h = (char*) malloc((strlen(str)+1)*sizeof(char));
   strcpy(h,str);
   return h;
 }
@@ -26,7 +28,7 @@ char* catStr (char* s1, char* s2, char* s3) {
   if (s1 == NULL) return NULL;
   if (s2) x = x + strlen (s2);
   if (s3) x = x + strlen (s3);
-  H = (char*) malloc(x,sizeof(char));
+  H = (char*) malloc(x*sizeof(char));
   strcpy (H,s1);
   if (s2) strcat (H,s2);
   if (s3) strcat (H,s3);

@@ -7,6 +7,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "Expressions.h"
 #include "hatinterface.h"
 #include "FunTable.h"
@@ -14,7 +15,7 @@
 
 /* return an empty list */
 NodeList* newList() {
-  NodeList* e = (NodeList*) calloc(1, sizeof(NodeList)); // sets both pointers to NULL!
+  return (NodeList*) calloc(1, sizeof(NodeList)); // sets both pointers to NULL!
 }
 
 /* append to lists end */
@@ -127,8 +128,7 @@ void showPretty(HatFile handle,NodeList *nl,int verboseMode,unsigned int precisi
 
   if (e==NULL) printf("FUNCTION TABLE EMPTY\n"); else
     {
-      unsigned long lngth = listLength(nl);
-      unsigned long satc,lsz = 0,built = 0;
+      unsigned long satc;
       while (e!=NULL) {
 	satc=getResult(handle,e->fileoffset);  // find SATC for the application!
 	if (isSAT(handle,satc)) {

@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include "Expressions.h"
 #include "hatinterface.h"
 #include "FunTable.h"
@@ -107,7 +108,6 @@ void getChildrenFor(HatFile handle,
 		    HashTable* hash) {
   char nodeType;
   unsigned long satc=0,result,orig_current=current;
-  int question_old=0;
   {
     if (isInHashTable(hash,current)) return;
     if (current==0) return;
@@ -164,7 +164,6 @@ void getChildrenFor(HatFile handle,
 	  { 
 	    int trusted = isTrusted(handle,funTrace);
 	    int toplevel = isTopLevel(handle,funTrace);
-	    int isOk=1;
 	    if ((trusted==0)&&(toplevel)) {
 #ifdef DebuggetChildrenFor
 	      printf("Function at %u is not trusted.\n",funTrace);

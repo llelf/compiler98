@@ -5,13 +5,15 @@
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
 #include <stdio.h>
+#include <stdlib.h>
 #include "hashtable.h"
 
 HashTable* newHashTable(unsigned long size) {
-  HashTable* h = (HashTable*) malloc(1,sizeof(HashTable));
+  HashTable* h = (HashTable*) malloc(sizeof(HashTable));
   h->hashArray = (HashElement**) calloc(size,sizeof(HashElement*));
   h->size = size;
   h->count = 0;
+  return h;
 }
 
 void freeHashTable(HashTable* h) {
@@ -20,7 +22,7 @@ void freeHashTable(HashTable* h) {
 }
 
 HashElement* newHashElement(unsigned long value) {
-  HashElement* e = (HashElement*) malloc(1,sizeof(HashElement));
+  HashElement* e = (HashElement*) malloc(sizeof(HashElement));
   e->value = value;
   e->next = NULL;
 }

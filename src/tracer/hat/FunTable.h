@@ -25,4 +25,6 @@ void          getFunTableEntry(FunTable l,long i,
 			       ExprNode** appl,
 			       ExprNode** res);
 
+void          FunTableCheckArities(FunTable ftable);
+
 unsigned long showFunTable(FunTable l);
