@@ -52,6 +52,7 @@ data LevelId a = TopId a | LocalId a
 -- newNameVar, nameArity, hsFromInt, addInt
 
 data Inherited = Inherited 
+                   PackedString  -- reversed module name
                    ((TokenId, IdKind) -> Id) -- lookupPrel
 
 data Threaded = Threaded 
@@ -115,7 +116,7 @@ debugTrans flags istate lookupPrel modidl modid impdecls decls (Just constrs) =
     lookupPrel
   where 
   initDebugTranslate f istate lookupPrel = 
-    case f (Inherited lookupPrel) 
+    case f (Inherited modidl lookupPrel) 
            (Threaded istate (1, [0]) (map TopId constrs)) of
       (decls', Threaded istate' srt idt) -> 
         (decls', istate', Just (srt, idt, impdecls, reverse (unpackPS modidl)))
@@ -1454,14 +1455,15 @@ mapS2 f xs = mapS f xs >>>= \com -> unitS (mapSnd concat (unzip com))
 newPatBinding :: Pos -> Pat Id -> DbgTransMonad (Pat Id,[Decl Id])
 newPatBinding pos p = 
   newVar pos >>>= \patVar ->
-  mapS0 turnIntoLetVar (collectPatVars p) >>> 
+  mapS0 (turnIntoLetVar pos) (collectPatVars p) >>> 
   unitS (patVar, [DeclPat (Alt p (Unguarded patVar) noDecls)])
 
 
-turnIntoLetVar :: Id -> a -> Threaded -> Threaded
-turnIntoLetVar id = \_ (Threaded istate srt idt) ->
-  let info = InfoVar id (visible (reverse ("irrefutableDummy"++show id))) 
-               IEnone (InfixDef,0) NoType Nothing
+turnIntoLetVar :: Pos -> Id -> Inherited -> Threaded -> Threaded
+turnIntoLetVar pos id = \(Inherited modidl _) (Threaded istate srt idt) ->
+  let info = InfoVar id 
+       (Qualified modidl (packString (reverse ("irrefutableDummy_" ++ show pos ++ "_" ++ show id)))) 
+               IEnone (InfixDef,9) NoType Nothing
       istate' = addIS id info istate
   in Threaded istate' srt idt
   
@@ -1484,6 +1486,7 @@ collectPatVars _ = []
 
 addDecls :: [Decl id] -> Decls id -> Decls id
 addDecls ds (DeclsParse d2s) = DeclsParse (ds++d2s)
+addDecls ds (DeclsScc []) = DeclsParse ds -- introduced by translateRecordExp
 
 
 isIrrefutablePat :: Pat Id -> DbgTransMonad Bool
@@ -1582,11 +1585,11 @@ makeTuple pos es =
 
 
 lookupId kind ident = 
-  \(Inherited lookupPrel) s -> (lookupPrel (ident, kind), s)
+  \(Inherited _ lookupPrel) s -> (lookupPrel (ident, kind), s)
 lookupVar pos ident =  
-  \(Inherited lookupPrel) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
+  \(Inherited _ lookupPrel) s -> (ExpVar pos (lookupPrel (ident, Var)), s)
 lookupCon pos ident =  
-  \(Inherited lookupPrel) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
+  \(Inherited _ lookupPrel) s -> (ExpCon pos (lookupPrel (ident, Con)), s)
 lookupName ident = 
   \_ s@(Threaded istate _ _) -> (lookupIS istate ident, s)
 lookupNameStr ident = 
@@ -1751,7 +1754,7 @@ getIdArity id =
 -}
 patchFieldSelectorType :: Id -> Inherited -> Threaded -> Threaded
 patchFieldSelectorType id =
-  \(Inherited lookupPrel) s@(Threaded istate srt idt) ->
+  \(Inherited _ lookupPrel) s@(Threaded istate srt idt) ->
   case lookupIS istate id of
     Just info@(InfoVar un tok ie fix (NewType all ex ctx [rec,res]) _) ->
         -- id is field selector of record defined in imported module
@@ -1809,7 +1812,7 @@ setPositions srt = \_ s@(Threaded istate _ idt) -> Threaded istate srt idt
 
 {- Make a node expression of type Trace, NmType or SR.  -}
 makeSourceRef :: Pos -> DbgTransMonad (SRExp)
-makeSourceRef p i@(Inherited lookupPrel) s@(Threaded is (nsr, srs) idt) 
+makeSourceRef p i@(Inherited _ lookupPrel) s@(Threaded is (nsr, srs) idt) 
   | p == noPos = lookupVar noPos t_mkNoSR i s
   | rowcol == head srs =
     (ExpApplication p [ExpVar p sr3, ExpLit p (LitInt Boxed nsr)], s)
