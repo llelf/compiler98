@@ -1288,7 +1288,6 @@ main() {
 #endif
   printf("module DErrNo where\n\n");
   printf("{- Automatically generated from /usr/include/errno.h -}\n\n");
-  printf("#if !defined(TRACING)\n");
   printf("data ErrNo =\n");
   printf("    Edummy\n");
   for (i=1; i<=max; i++) {
@@ -1401,13 +1400,6 @@ main() {
   sep = ',';
 #endif
   printf(" ]\n");
-  printf("\n#else\n\n");
-  printf("data ErrNo = ErrNo Int deriving (Eq,Ord,Show)\n\n");
-  printf("instance Enum ErrNo where\n");
-  printf("    fromEnum (ErrNo i) = i\n");
-  printf("    toEnum i           = ErrNo i\n\n");
-  printf("eqErrNo :: ErrNo -> ErrNo -> Bool\n");
-  printf("eqErrNo a b = a==b\n\n");
-  printf("#endif\n\n");
+  printf("\n\n");
   exit(0);
 }
