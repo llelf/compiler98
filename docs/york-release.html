@@ -1,8 +1,8 @@
-<html><head><title>Release 1.08 of nhc98</title></head>
+<html><head><title>Release 1.10 of nhc98</title></head>
 <body bgcolor=#ffffff>
 <table><tr><td width=500>
 
-<center><h1>Release 1.08 of nhc98</h1></center>
+<center><h1>Release 1.10 of nhc98</h1></center>
 
 <hr>
 
@@ -19,7 +19,7 @@
   program under either <em>ghc</em> or <em>hbc</em>, and compare it with
   that produced by <em>nhc98</em>.  Generally, <em>nhc98</em> produces
   much smaller executables, and runtime space usage is also
-  <em>very</em> much smaller.  (With the <em>nhc98</em> Binary library
+  <em>very</em> much smaller.  (With the <em>nhc98</em> Binary library [1]
   you can compress your heap data in addition to the normal savings.)
   Expect to pay a speed penalty though - programs produced by
   <em>nhc98</em> run slower than with <em>ghc</em> or <em>hbc</em>
@@ -60,36 +60,6 @@
 </dl>
 
 
-<h3>What language extensions does <em>nhc98</em> support?</h3>
-<p>
-Extensions of the Haskell'98 language available in <em>nhc98</em> include:
-
-<ul>
-<li>
-  <em>Binary data representations.</em> In summary, an additional library
-  module provides bit-stream operations and a new Binary class for which
-  the compiler fully supports "deriving" clauses.
-  Fuller details can be found in [1] and in
-  <a href="libs/Binary.html">this documentation</a>.
-
-<li>
-  The new common <a href="ffi.html">primitive FFI</a>.
-
-<li>
-  The IOExtras library, containing IORefs, IOArrays, trace,
-  unsafePerformIO, etc.
-
-<li>
-  Andy Gill's Observe.lhs library, used for HOOD debugging.
-
-<li>
-  Local forall quantification on datatypes.
-
-<li>
-  Extended module namespaces, of the form Long.Hierarchical.Module.Name.
-
-</ul>
-
 
 <h4>References</h4>
 <p>
@@ -124,7 +94,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2001.04.25<br>
+2001.10.23<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
