@@ -22,6 +22,24 @@ then
   exit 1
 fi
 
+usage() {
+  echo 'Usage: hmake [compiler] [options] (module|program)* [object...]'
+  echo '       compiler     choose -ghc, -hbc, -nhc98, or -hc=comp'
+  echo '       --version    show version information and quit'
+  echo '       -q           quiet (do not echo commands)'
+  echo '       -n           noexec (echo but do not execute commands)'
+  echo '       -g           show graph of dependencies (implies noexec)'
+  echo '       -M           show Makefile format dependencies'
+  echo '       -Md          show Makefile format dependencies, wrt -d option'
+  echo '       -dobjdir     use objdir for object files'
+  echo '       -clean       just remove all relevant .o files'
+  echo '       -realclean   just remove all relevant .o and .hi files'
+  echo '       -*           other options are passed through to the compiler'
+  echo '       module       modules (.hs, .lhs, .gc) are compiled'
+  echo '       program      programs are compiled and linked'
+  echo '       object       objects (.o, .a) are linked into a program only'
+}
+
 # Fix an absolute Cygwin path to an absolute native Windows path.
 # (Also copes with options like -I/path etc.)
 # This routine is only strictly required when the MkProg executable
@@ -78,6 +96,8 @@ while [ "$1" != "" ]
 do
   case $1 in
     --version) echo "$0: $INSTALLVER"
+               exit 0;;
+    --help)    usage
                exit 0;;
 
     # Flags to hmake itself
@@ -190,23 +210,7 @@ fi
 
 # Throw an error if there is nothing specified to compile.
 if [ "$modules" = "" ]
-then
-  echo 'Usage: hmake [compiler] [options] (module|program)* [object...]'
-  echo '       compiler     choose -ghc, -hbc, -nhc98, or -hc=comp'
-  echo '       --version    show version information and quit'
-  echo '       -q           quiet (do not echo commands)'
-  echo '       -n           noexec (echo but do not execute commands)'
-  echo '       -g           show graph of dependencies (implies noexec)'
-  echo '       -M           show Makefile format dependencies'
-  echo '       -Md          show Makefile format dependencies, wrt -d option'
-  echo '       -dobjdir     use objdir for object files'
-  echo '       -clean       just remove all relevant .o files'
-  echo '       -realclean   just remove all relevant .o and .hi files'
-  echo '       -*           other options are passed through to the compiler'
-  echo '       module       modules (.hs, .lhs, .gc) are compiled'
-  echo '       program      programs are compiled and linked'
-  echo '       object       objects (.o, .a) are linked into a program only'
-  exit 1
+then usage; exit 1
 fi
 
 # Ensure we know the default compiler to use if none was specified, by

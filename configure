@@ -541,6 +541,7 @@ then
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake
     echo -n "hmake-config "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake-config.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BUILDBINDIR|"   >$BUILDBINDIR/hmake-config
     echo -n "hi "
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hi.inst |\
@@ -671,6 +672,7 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake
     echo "	hmake-config"
     sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hmake-config.inst |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" |\
     sed -e "s|ScriptDir|$BINDIR|"  >$DESTDIR$BINDIR/hmake-config
     echo "	hi"
     sed -e "s|ExecutableDir|$HMAKELIBDIR|" script/hi.inst |\
