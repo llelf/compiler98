@@ -17,8 +17,10 @@
 		a module cannot be found, it now shows where the
 		demand for the module arose, and which directories
 		were searched.
-        <li> Added knowledge of extended file suffixes like <em>.p_o</em>,
-		<em>.T_o</em>, and <em>.T_hi</em> to <em>hmake</em>.
+        <li> Added knowledge of extended file suffixes like <em>.p.o</em>,
+		<em>.T.o</em>, and <em>.T.hi</em> to <em>hmake</em>.
+        <li> Fixed a bug in the generation of Makefile dependencies in
+		the presence of a <em>-I</em> option.
 	</ul>
 </td></tr><tr>
 
@@ -181,7 +183,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-12-05<br>
+Information last updated: 2001-01-04<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

@@ -9,6 +9,7 @@ FIXED:
 ======
 
  1: Importing qualified names.
+ 5: Bizarre error on seq interacting with classes.
  6: Internal error on incorrect program ("0" where "t Int" should be).
  7: Parsing an integer literal as a Double.
  8: Strictness annotations combining with seq.
@@ -16,6 +17,7 @@ FIXED:
 10: Importing/exporting classes without any methods (pedantic).
 11: Printing doubles less than 0.1.
 12: Supplying a function to seq as its second argument.
+13: Using an imported renaming type to define a second renaming type.
 14: Translating do-notation for a pattern of the form `[a]'.
 
 STILL TO FIX:
@@ -24,8 +26,6 @@ STILL TO FIX:
 [2: Precursor to (3).]
  3: Type checking: default declarations.
  4? Overloaded cafs are treated as functions (debatable "problem").
- 5: Bizarre error on seq interacting with classes.
-13: Using an imported renaming type to define a second renaming type.
 15? Re-defining Prelude entities should strictly speaking cause an error.
 16? Importing qualified Prelude and then using an unqualified Prelude entity.
 17: Contexts required in let-bindings.
