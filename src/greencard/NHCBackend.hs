@@ -338,7 +338,7 @@ clean (Constructor c) = False
 clean (Declare cty d) = True
 clean (Exp e)         = True
 clean (Record n ns)   = False
-clean (Tuple)         = True
+clean (Tuple)         = False		-- previously True (until 2001-05-24)
 clean (UserDIS f t)   = False
 clean (Var v)         = True
 
