@@ -14,7 +14,7 @@ import SysDeps(PackedString,unpackPS)
 import Syntax(InfixClass(..))
 import Nice
 import IExtract(defFixity)
-import Flags(Flags(sPrelude))
+import Flags(Flags, sPrelude)
 import Memo
 
 --import NonStdProfile -- only for debugging the compiler

@@ -3,7 +3,7 @@
 module RenameLib(module RenameLib
 	,AssocTree
 	,Tree ,ImportState,NT,NewType,IE,Either,Info
-	,Maybe,Flags(..)) where
+	,Maybe,Flags) where
 
 import List
 import TokenId(TokenId(..),t_Tuple,ensureM,mkQual2,visible,mkQual3,mkQualD

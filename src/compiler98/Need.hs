@@ -14,7 +14,7 @@ import IdKind
 import PreImport(HideDeclIds,qualRename,preImport)
 import TokenId
 import TokenInt
-import Flags(Flags())
+import Flags(Flags)
 import SyntaxPos
 import Extra
 import SyntaxUtil(infixFun)
