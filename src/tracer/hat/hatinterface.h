@@ -112,7 +112,10 @@ filepointer   hatFollowTrace(HatFile handle,  // follow trace to app or name nod
 filepointer   hatFollowSATs(HatFile handle,filepointer fileoffset);
 filepointer   hatLMO(HatFile handle,          // return leftmost outermost symbol
 		     filepointer nodenumber); // of application 
-
+filepointer   hatLMOName(HatFile handle,      // return leftmost outermost symbol
+			 filepointer nodenumber); // represented by its name node
+filepointer   hatInitialCAF(HatFile handle,   // find the top-most CAF which initially
+			    filepointer fileoffset); // demanded evaluation of fileoffset
 
 /*********************************************************************/
 /* Routines for convenience: Locations as strings                    */

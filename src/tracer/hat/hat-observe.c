@@ -69,14 +69,20 @@ void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
   }
 }
 
+// extern bufferMisses;
+// extern bufferHits;
+
 int main (int argc, char *argv[])
-{ int verbosemode=0,uniquemode=1,recursivemode=0;
+{ int verbosemode=0,uniquemode=1,recursivemode=0,sourceRefMode=0;
   int c = 1,err=0,paramerr=0,handle;
   unsigned int precision = 100;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
+  unsigned long line=0,column=0;
+  char* moduleName = NULL;
+
   ObserveQuery query;
   while (c<argc) {
-    err = checkParameters(argv[c],"vxur"); // check for supported parameters
+    err = checkParameters(argv[c],"vxurs"); // check for supported parameters
     if (err==1) { // not a parameter!
       err=0;
       break;
@@ -87,6 +93,7 @@ int main (int argc, char *argv[])
     }
     //if (strchr(argv[c],'i')!=NULL) interactmode=1;
     if (strchr(argv[c],'v')!=NULL) verbosemode=1;
+    if (strchr(argv[c],'s')!=NULL) sourceRefMode=1;
     if ((sub=strchr(argv[c],'x'))!=NULL) {
       if (*(++sub)!='u') {
 	err = 2;
@@ -98,6 +105,18 @@ int main (int argc, char *argv[])
     if (strchr(argv[c],'r')!=NULL) recursivemode=1;
     c++;
   }
+  if (sourceRefMode) { // moduleName line column file
+    if ((argc-c>=3)||(argc-c<=4)) {
+      if (argc-c==4) moduleName=argv[c++];
+      line = atoi(argv[c]);
+      column = atoi(argv[c+1]);
+      fname = argv[c+2];
+      if ((line==0)||(column==0)) {
+	fprintf(stderr,"line/column position need to be greater than 0.\n");
+	err=1;
+      }
+    } else err=1;
+  } else
   if (argc-c==4) {
     if (strcmp(argv[c+1],"in")!=0) paramerr = 1;
     else {ident = argv[c];topIdent = argv[c+2];fname = argv[c+3];}
@@ -125,34 +144,51 @@ int main (int argc, char *argv[])
     fprintf(stderr, "format of file unknwon/not supported %s\n\n",fname);
     exit(1);
   }
-  query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
-  if (observeIdentifier(query)==0) {
-    printf("No toplevel identifier named \"%s\" found!\n",ident);
-    exit(1);
-  }
-  if ((topIdent!=NULL)&&(observeTopIdentifier(query)==0)) {
-    printf("No toplevel identifier named \"%s\" found!\n",topIdent);
-    exit(1);
-  }
-  if (uniquemode) {
-    unsigned long c;
-    FunTable results = observeUnique(query,verbosemode,precision);
-    c = FunTableLength(results);
-    if (c==0)	{
-      fprintf(stderr,"No matching applications of \"%s\" found!\n",ident);
-    } else {
-      unsigned long total = observedNodes(query);
-      fprintf(stderr,"%i unique application(s) found (%i in total).\n",c,total);
-      if (c>20) {
-	char answer[10];
-	fprintf(stderr,"Show all %i applications? ",c);
-	if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
-      }
-      showFunTable(results,precision);
+  if (sourceRefMode) {
+    filepointer h;
+    query = newObserveQuerySource(handle,moduleName,line,column,1);
+    while (h=nextObserveQueryNode(query)) {
+      filepointer fun;
+      printf("(%u) ",h);
+      fun = hatLMO(handle,h);
+      if (getNodeType(handle,fun)==HatConstructor) {
+	showNode(handle,h,verbosemode,precision);
+	printf("\n");
+      } else
+	showAppAndResult(handle,h,verbosemode,precision);
     }
-    freeFunTable(results);
   } else {
-    showObserveAll(query,verbosemode,precision);
+    query = newObserveQueryIdent(handle,ident,topIdent,recursivemode,1);
+    if (observeIdentifier(query)==0) {
+      printf("No toplevel identifier named \"%s\" found!\n",ident);
+      exit(1);
+    }
+    if ((topIdent!=NULL)&&(observeTopIdentifier(query)==0)) {
+      printf("No toplevel identifier named \"%s\" found!\n",topIdent);
+      exit(1);
+    }
+    if (uniquemode) {
+      unsigned long c;
+      FunTable results = observeUnique(query,verbosemode,precision);
+      c = FunTableLength(results);
+      if (c==0)	{
+	fprintf(stderr,"No matching applications of \"%s\" found!\n",ident);
+      } else {
+	unsigned long total = observedNodes(query);
+	fprintf(stderr,"%i unique application(s) found (%i in total).\n",c,total);
+	if (c>20) {
+	  char answer[10];
+	  fprintf(stderr,"Show all %i applications? ",c);
+	  if ((getline(answer,9)==0)||(toupper(answer[0])=='N')) exit(0);
+	}
+	showFunTable(results,precision);
+      }
+      freeFunTable(results);
+    } else {
+      showObserveAll(query,verbosemode,precision);
+    
+      //fprintf(stderr,"buffer misses: %i  buffer hits: %i\n",bufferMisses,bufferHits);
+    }
   }
   freeObserveQuery(query);
   hatCloseFile(handle);

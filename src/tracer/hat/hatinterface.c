@@ -135,6 +135,12 @@ filepointer hatNodeNumber(HatFile h) {
 
 /* Routines to extract values encoded as one or more bytes. */
 
+// #define countPageMiss
+
+#ifdef countPageMiss
+int bufferMiss = 0;
+#endif
+
 /* read one byte from file */
 char nextbyte() {
   char c;
@@ -142,6 +148,9 @@ char nextbyte() {
     foff += buf_n;
     boff -= buf_n;    // reduce boff appropriately
     buf_n = read(f,buf,bufsize);
+#ifdef countPageMiss
+    bufferMiss++;
+#endif
     //if (buf_n==0) { fprintf(stderr, "unexpected end of trace file\n"); exit(1); }
     
   }
@@ -440,7 +449,7 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
   char nodeType;
   filepointer p,satc;
 
-  while (1) {
+  while (fileoffset!=0) {
     hatSeekNode(handle,fileoffset);
     nodeType =  seenextbyte(); // identify isolated SATs! (getNodeType doesn't)
     switch (nodeType) {
@@ -450,14 +459,18 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
       if (isSAT(handle,satc)) { // success! found the SATC!
  	return satc;
       }
-      else fileoffset = p; // follow parent!
+      if ((getNodeType(handle,satc)==HatApplication)&& // does an App Node follow?
+	  (getAppFun()==fileoffset)) { // Attention: following App node references this one
+	return 0; // no result available! It's just a partial application
+      }
+      fileoffset = p; // follow parent!
       break;
     case TRNAM:   // for finding CAFs. SATc should be behind the TRNAM
       p=getParent();
       satc = hatSeqNext(handle,fileoffset);
       if (isSAT(handle,satc)) return satc;
-      fileoffset=p;
-      break;
+      return 0; // for TRNAMs: SATC must be immediately after the node, do not
+      // search its parents!
     default: {
 	filepointer newfileoffset=hatFollowTrace(handle,fileoffset);
 	if (newfileoffset == fileoffset) {
@@ -468,6 +481,7 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
       }
     }
   }
+  return 0;
 }
 
 /* show location in source file of this application/symbol */
@@ -755,6 +769,32 @@ filepointer hatLMOName(HatFile handle,filepointer fileoffset) {
   }
 }
 
+filepointer hatInitialCAF(HatFile handle,filepointer fileoffset) {
+  filepointer prev = 0;
+  filepointer old = hatNodeNumber(handle);
+  char nodeType;
+
+  while (fileoffset!=0) {
+    prev = fileoffset;
+    nodeType=getNodeType(handle,fileoffset);
+    switch(nodeType) {
+    case HatHidden:
+    case HatSATC:
+    case HatProjection:
+    case TRNAM:
+    case HatApplication:{
+      fileoffset = getParent();
+      break;
+    }
+    default:
+      hatSeekNode(handle,old);
+      return 0;
+    }
+  }
+  hatSeekNode(handle,old);
+  return prev;
+}
+
 int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
   char nodeType;
   filepointer old = hatNodeNumber(handle);
@@ -782,7 +822,13 @@ int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
     case HatProjection: // right implementation?
       fileoffset=getParent();
       break;
-    case TRNAM:
+    case HatName:
+      if (getNameType()==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      fileoffset = getParent();
+      break;
     case HatApplication:{
       filepointer newoffs;
       newoffs = getAppFun(); //Parent();
@@ -831,6 +877,13 @@ int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer paren
     case HatProjection:
       fileoffset=getParent(); //getProjTrace(); // right implementation?
       break;
+    case HatName:
+      if (getNameType()==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      fileoffset = getParent();
+      break;
     case HatApplication:{
       filepointer newoffs;
       newoffs = getAppFun();
@@ -869,8 +922,8 @@ filepointer hatMainCAF(HatFile h) {
 	satc = hatSeqNext(h,currentOffset);
 	if ((srcref!=0)&&(isSAT(h,satc))) {  // SATC behind TRNAM?
 	  // found a CAF!
-	  if (isTrusted(h,srcref)) printf("isTrusted\n");
-	  if (isTopLevel(h,currentOffset)==0) printf("main is not top-level!\n");
+	  //if (isTrusted(h,srcref)) printf("isTrusted\n");
+	  //if (isTopLevel(h,currentOffset)==0) printf("main is not top-level!\n");
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
 	    filepointer lmo = hatLMO(h,currentOffset);

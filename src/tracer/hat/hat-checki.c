@@ -310,16 +310,22 @@ filepointer printNode(unsigned long offset) {
   next = hatSeqNext(handle,offset);
 
   if (showAble) {
-    unsigned long satc;
+    filepointer satc=0;
     char *appstr;
+    filepointer lmo;
     ExprNode* exp;
 
     exp = buildExpr(handle,offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,precision,1);
     
-    satc = getResult(handle,hatFollowSATs(handle,offset));
-    if ((isSAT(handle,satc))&&(satc!=offset)) {
-      printf("corresponding SAT at: 0x%x\n\n",satc);
+    lmo = hatLMO(handle,offset);
+    if ((lmo!=0)&&(getNodeType(handle,lmo)==HatIdentifier)) {
+     satc = getResult(handle,hatFollowSATs(handle,offset));
+     if ((isSAT(handle,satc))&&(satc!=offset)) {
+       printf("corresponding SAT at: 0x%x\n\n",satc);
+     }
+    }
+    if (satc) {
       printf("reduction: %s = ",appstr);
       freeStr(appstr);
       exp = buildExpr(handle,satc,verboseMode,precision);

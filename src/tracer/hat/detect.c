@@ -71,6 +71,7 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   filepointer old = hatNodeNumber(handle);
 
   if (parent==0) return 0;
+  //printf("einstieg: %u\n",nodenumber);
   while (nodenumber!=0) {
     nodeType=getNodeType(handle,nodenumber);
     switch(nodeType) {
@@ -80,12 +81,27 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
     case HatSATC:
       nodenumber=getParent();
       if (nodenumber==parent) {
+	hatSeekNode(handle,old);
 	return 1;
       }
       break;
     case HatName:
     case HatApplication:{
-      nodenumber = getParent();
+      //printf("node: %u\n",nodenumber);
+      if (nodeType==HatApplication) {
+	filepointer fun = getAppFun();
+	if (getNodeType(handle,hatFollowSATs(handle,fun))!=HatApplication) {
+	  // should match equivalent test
+	  nodenumber = hatLMOName(handle,fun);         // in getChildrenRek!
+	}
+      }
+      //printf("lmo: %u\n",nodenumber);
+      if (nodenumber!=0) {
+	//printf("type: %u\n",
+	getNodeType(handle,nodenumber);
+        nodenumber=getParent();
+      }
+      // nodenumber = getParent();
       if (nodenumber==parent) {
 	hatSeekNode(handle,old);
 	return 1;
@@ -105,20 +121,22 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
   return 0;
 }
 
-// #define DebuggedtChildrenFor
+//#define DebuggedtChildrenFor
 
 #ifdef DebuggedtChildrenFor
 int debugLines = 0;
 #endif
 
-void getChildrenFor(HatFile handle,
-		    NodeList* nl,unsigned long parentTrace,unsigned long current,
-		    HashTable* hash) {
+void getChildrenForRek(HatFile handle,
+		       NodeList* nl,filepointer parentTrace,filepointer current,
+		       HashTable* hash,filepointer initialCAF) {
   char nodeType;
-  unsigned long satc=0,result,orig_current=current;
+  filepointer satc=0,result,orig_current=current;
   {
     if (current==parentTrace) return; // GUARD expressions: parent is an argument at the
     // same time: avoid loops!
+    if (current==initialCAF) return;  // never consider the CAF which resulted in the
+    // evaluation of the edtparent! This is not a child, but the top-most parent!
     if (isInHashTable(hash,current)) return;
     if (current==0) return;
     addToHashTable(hash,current);
@@ -147,9 +165,23 @@ void getChildrenFor(HatFile handle,
 	appTrace  = getParent();            // fileoffset of App-trace
 	funTrace  = getAppFun();            // function-trace
 	srcref    = getSrcRef();            // get srcref
-	appTrace  = hatFollowHidden(handle,
-				    appTrace); // follow along hidden to find parent
+	//appTrace  = hatFollowHidden(handle,
+	//			    appTrace); // follow along hidden to find parent
 	
+	if (getNodeType(handle,hatFollowSATs(handle,funTrace))!=HatApplication) {
+	  // note: this test should match the test in isChildOf
+	  // if fun is not an application, take the parent of the leftmost node
+	  appTrace = hatLMOName(handle,funTrace);
+	  if (appTrace!=0) {
+	    if (getNodeType(handle,appTrace)==HatName) {
+	      appTrace = getParent();
+	    }
+	    else appTrace=0;
+	  }
+	} else {
+	  // fun is an application: we'll investigate this application node later!
+	  appTrace = hatFollowHidden(handle,appTrace);
+	}
 	switch (getNodeType(handle,funTrace)) {
 	case HatIf:
 	case HatGuard:isIForGUARD = 1;arity=1; // reduce arity to 1 (2nd value is parent!)
@@ -174,22 +206,27 @@ void getChildrenFor(HatFile handle,
 #ifdef DebuggedtChildrenFor
 	  printf("checking parent of 0x%x\n",current);debugLines++;
 #endif
-	  getChildrenFor(handle,nl,parentTrace,appTrace,hash);
+	  getChildrenForRek(handle,nl,parentTrace,appTrace,hash,initialCAF);
 	}
 
 	satc=hatFollowSATs(handle,result);
-	if (getNodeType(handle,satc)==HatSATA) isChild=0; // forget this one, if
+	if ((satc!=0)&&(getNodeType(handle,satc)==HatSATA)) isChild=0; // forget this one, if
 	// its result is a SATA (unevaluated!) nothing to ask for...
 
 	if (isChild) { //(appTrace==parentTrace) {
 	  int i=0;
+
+	  // check evaluation of (partial) function
+	  getChildrenForRek(handle,nl,parentTrace,funTrace,hash,initialCAF);
+
+	  // check all its arguments
 	  while (i++<arity) {
 #ifdef DebuggedtChildrenFor
 	    printf("checking arg %i of 0x%x\n",i,current);debugLines++;
 #endif
 	    hatSeekNode(handle,current);
 	    p = getAppArgument(i-1);
-	    getChildrenFor(handle,nl,parentTrace,p,hash);
+	    getChildrenForRek(handle,nl,parentTrace,p,hash,initialCAF);
 	  }
 	}
 	
@@ -208,12 +245,12 @@ void getChildrenFor(HatFile handle,
 	      printf("Function at 0x%x is not trusted.\n",funTrace);debugLines++;
 	      printf("Toplevel: %i\n",toplevel);debugLines++;
 #endif
-	      if ((satc!=current)&&(!isInList(nl,current))) {
+	      if ((satc!=0)&&(satc!=current)&&(!isInList(nl,current))) {
 		insertInList(nl,current);
 	      }
 	    } else {
 	      if (satc!=current)
-		getChildrenFor(handle,nl,current,satc,hash);
+		getChildrenForRek(handle,nl,current,satc,hash,initialCAF);
 	    }
 	  }
 	}
@@ -250,19 +287,19 @@ void getChildrenFor(HatFile handle,
 	else current = newcurrent;
       }
     }
-    getChildrenFor(handle,nl,parentTrace,current,hash);
+    getChildrenForRek(handle,nl,parentTrace,current,hash,initialCAF);
     //removeFromHashTable(hash,orig_current);
     return;
     case HatProjection:
       current = getParent();
-      getChildrenFor(handle,nl,parentTrace,current,hash);
+      getChildrenForRek(handle,nl,parentTrace,current,hash,initialCAF);
       //removeFromHashTable(hash,orig_current);
       return;
     case HatHidden:
     case HatSATA: // not evaluated expression
     case HatSATB:
       current = getParent();
-      getChildrenFor(handle,nl,parentTrace,current,hash);
+      getChildrenForRek(handle,nl,parentTrace,current,hash,initialCAF);
       //removeFromHashTable(hash,orig_current);
       return;
     default: {
@@ -273,7 +310,7 @@ void getChildrenFor(HatFile handle,
 	}
 	else current = newcurrent;
       }
-      getChildrenFor(handle,nl,parentTrace,current,hash);
+      getChildrenForRek(handle,nl,parentTrace,current,hash,initialCAF);
       //removeFromHashTable(hash,orig_current);
       return;
     }
@@ -282,13 +319,21 @@ void getChildrenFor(HatFile handle,
   return;
 }
 
+void getChildrenFor(HatFile handle,
+		    NodeList* nl,filepointer edtnode,
+		    HashTable* hash) {
+  filepointer result = getResult(handle,edtnode);
+  if (edtnode) { // does any result exist?
+    getChildrenForRek(handle,nl,edtnode,result,hash,hatInitialCAF(handle,edtnode));
+  }
+}
+
 int getEDTchildren(HatFile handle,filepointer parentTrace,int **childrenArray) {
-  unsigned long current = getResult(handle,parentTrace);
   HashTable* hash = newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   int l;
 
-  getChildrenFor(handle,results,parentTrace,current,hash);
+  getChildrenFor(handle,results,parentTrace,hash);
   l = listLength(results);
   // printf("New!\n");
   {

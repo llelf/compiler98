@@ -218,7 +218,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
     else printf("   (Y/?Y/?N/N): ");
     if (getline(answer,50)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YARNQT?HVUMGOC*0123456789+-#",c)==NULL) { // was answer a valid character?
+      if (strchr("RYNQT?HVUMGOC*0123456789+-#",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
 	if (strlen(answer)>1) {
@@ -325,7 +325,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  printf("   Ok. All functions are untrusted again.\n");
 	  break;
 	case 'A':
-	case 'R':
+	  //case 'R':
 	  {
 	    char* treeP;
 	    if (c=='A') treeP = treePrint(appNode,verboseMode,0);
@@ -334,6 +334,22 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	    freeStr(treeP);
 	  }
 	  break;
+	case 'R':{
+	  char ch[10];
+	  filepointer expr;
+	  char* cmd;
+	  printf("Starting Redex Trail browser for left-hand-side (lhs) or rhs? (L/R): ");
+	  getline(ch,9);
+	  
+	  if (toupper(ch[0])=='L') sprintf(ch,"%i",appofs);else
+	    if (toupper(ch[0])=='R') sprintf(ch,"%i",resofs);else break;
+	  cmd = catStr("hat-trail ",traceFileName," -remote ");
+	  printf("\n");
+	  replaceStr(&cmd,cmd,ch,"&");
+	  if (system(cmd)!=0) printf("ERROR: Unable to execute hat-trail.\n");
+	  freeStr(cmd);
+	  break;
+	}
 	case '+':
 	case '-':
 	  {
@@ -411,6 +427,7 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  printf("     'Clear'    or 'c' to clear all memorized answers.\n");
 	  printf("     'Verbose'  or 'v' to toggle verbose mode.\n");
 	  printf("     'Go <n>'   or '<n>' to go back to question <n>.\n");
+	  printf("     'Redex'    or 'r' to start the redex trail browser.\n");
 	  //printf("     'Observe'  or 'o' to observe all applications of the current function.\n");
 	  printf("\n     '+[n]'     or '-[n]' to increase or decrease the output precision [by n].\n");
 	  printf("\n     'Quit'     or 'q' to leave the tool.\n");
@@ -424,35 +441,8 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
   return retval;
 }
 
-filepointer topMost(HatFile handle,filepointer fileoffset) {
-  filepointer prev = 0;
-  filepointer old = hatNodeNumber(handle);
-  char nodeType;
-
-  while (fileoffset!=0) {
-    prev = fileoffset;
-    nodeType=getNodeType(handle,fileoffset);
-    switch(nodeType) {
-    case HatHidden:
-    case HatSATC:
-    case HatProjection:
-    case TRNAM:
-    case HatApplication:{
-      fileoffset = getParent();
-      break;
-    }
-    default:
-      hatSeekNode(handle,old);
-      return 0;
-    }
-  }
-  hatSeekNode(handle,old);
-  return prev;
-}
-
 int askNodeList(HatFile handle,int question,NodeList* results,
 		int isTopSession,HashTable* hash) {
-  unsigned long satc;
   int success,askAgain,question_old,first_question,postponeMode=0;
   NodeList *children=NULL,*postList=newList();
   char s[2];
@@ -475,14 +465,12 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	insertInList(postList,question_old+1); // add the question number to postponed
       }
       if ((answer!=1)&&(answer!=3)&&(answer<10)){
-	satc=getResult(handle,e->fileoffset);
 	children = newList();
 	{
 	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
-	  getChildrenFor(handle,children,e->fileoffset,satc,hash);
+	  getChildrenFor(handle,children,e->fileoffset,hash);
 	  freeHashTable(hash);
 	  removeFromList(children,mainCAF); // never consider the main CAF a child of anything
-	  removeFromList(children,topMost(handle,e->fileoffset));
 	}
 	success = askNodeList(handle,question,children,0,hash);
 	if (success>=10) {answer=success;success=0;}
