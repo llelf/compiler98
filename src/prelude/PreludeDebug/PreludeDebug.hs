@@ -30,6 +30,29 @@ data NmType =
 
 -- toNm required to coerce return value from a primitive into a Trace structure
 class NmCoerce a where
+    toNm :: Trace -> a -> SR -> Trace
+    toNm t v sr = Nm t NTDummy sr	-- for safety, never actually required
+instance NmCoerce Int where
+    toNm t v sr = Nm t (NTInt v) sr
+instance NmCoerce Char where
+    toNm t v sr = Nm t (NTChar v) sr
+instance NmCoerce Integer where
+    toNm t v sr = Nm t (NTInteger v) sr
+instance NmCoerce Float where
+    toNm t v sr = Nm t (NTFloat v) sr
+instance NmCoerce Double where
+    toNm t v sr = Nm t (NTDouble v) sr
+instance NmCoerce Bool where
+    toNm t False sr = Nm t (NTConstr 0) sr
+    toNm t True  sr = Nm t (NTConstr 1) sr
+instance (NmCoerce a, NmCoerce b) => NmCoerce (a,b) where
+    toNm t (x,y) sr = Ap t (TCons (Nm t NTTuple sr)
+                            (TCons (toNm t x sr)
+                             (TCons (toNm t y sr)
+                              TNil))) sr
+{-
+-- toNm required to coerce return value from a primitive into a Trace structure
+class NmCoerce a where
     toNm :: a -> NmType
     toNm = const NTDummy	-- for safety, should never actually be required
 instance NmCoerce Int where
@@ -45,6 +68,9 @@ instance NmCoerce Double where
 instance NmCoerce Bool where
     toNm False = NTConstr 0
     toNm True  = NTConstr 1
+instance NmCoerce (a,b) where
+    toNm _ = NTTuple
+-}
 
 -- Don't change the order!!!
 data Trace =
@@ -91,8 +117,11 @@ enter nm t e = cEnter nm t (E e)
 -- is fully evaluated at exactly the same time as the result value.
 primEnter :: NmCoerce a => SR -> NmType -> Trace -> a -> R a
 primEnter sr nm t e = let v  = enter nm t e
-                          vn = toNm v 
-                      in v `myseq` vn `myseq` (R v (Nm t vn sr))
+                          vn = toNm t v sr
+                      in v `myseq` vn `myseq` (R v vn)
+--primEnter sr nm t e = let v  = enter nm t e
+--                          vn = toNm v 
+--                      in v `myseq` vn `myseq` (R v (Nm t vn sr))
 
 getRedexes :: R a -> Trace
 getRedexes (R _ t) = t
@@ -889,6 +918,12 @@ fromConInteger sr t x = R 1 Root
 
 patFromConInteger :: (Prelude.Num a) => SR -> Trace -> Integer -> R a
 patFromConInteger sr t x = R 1 Root
+
+fromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
+fromConRational sr t x = R 1 Root
+
+patFromConRational :: (Prelude.Fractional a) => SR -> Trace -> Rational -> R a
+patFromConRational sr t x = R 1 Root
 
 rPatBool :: R Bool -> Bool
 rPatBool (R v _) = v
