@@ -402,7 +402,7 @@ void haskellInit (int argc, char **argv)
     strcat(filename,".hat");		/* the .hat file holds the archive */
     HatFile = fopen(filename,"w");	/* of redex trails */
     p = ftell(HatFile);
-    fprintf(HatFile,"Hat v01");		/* initialise file */
+    fprintf(HatFile,"Hat%s",VERSION);	/* initialise file */
     fputc(0,HatFile);
     fwrite(&p,sizeof(unsigned),1,HatFile);
     fwrite(&p,sizeof(unsigned),1,HatFile);
