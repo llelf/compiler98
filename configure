@@ -227,6 +227,7 @@ echo "I am guessing that you will want to build nhc98 with $BUILDWITH"
 case $BUILDWITH in
   hbc|xtc)  RTSFLAG=no;;
   ghc|nhc)  RTSFLAG=yes;;
+  gcc)      RTSFLAG=yes;;
 esac
 if [ "$RTSFLAG" = "yes" ]
 then echo "  so nhc98comp uses RTS delimiters."
@@ -343,10 +344,7 @@ then
   ) >$BUILDLIBDIR/$MACHINE/config
 
   echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
-  #sed -e "s|InstallVer|$CONFIGVERSION|" script/hmakeconfig.inst |\
-  #sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDLIBDIR/hmake.config
-  sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
-  cat                                  >$BUILDLIBDIR/hmake.config
+  sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
 
   echo -n "Adding build scripts to $BUILDBINDIR...    "
   echo -n "nhc98 "
@@ -406,9 +404,8 @@ else	# [ "$INSTALL" = "yes" ]
     then ( cd $LIBDIR/$VERSION; mv MkProg Older $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
-   #sed -e "s|InstallVer|$CONFIGVERSION|" script/hmakeconfig.inst |\
-   #sed -e "s|IncludeDir|$INCDIR|" >$HLIBDIR/hmake.config
     sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
     echo -n "config "
     ( echo "ENDIAN=$ENDIAN";

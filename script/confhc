@@ -167,8 +167,20 @@ if [ "$HBCDIR" = "" ];
 then
   if [ "$GHCDIR" = "" ];
   then
-    echo -n nhc98
-    BUILDHMAKE=nhc98
+    if [ "$NHC98DIR" = "" ];
+    then
+      if [ "$NHC13DIR" = "" ];
+      then
+        echo -n gcc
+        BUILDHMAKE=gcc
+      else
+        echo -n nhc13
+        BUILDHMAKE=nhc13
+      fi
+    else
+      echo -n nhc98
+      BUILDHMAKE=nhc98
+    fi
   else
     echo -n ghc
     BUILDHMAKE=ghc
