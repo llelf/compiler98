@@ -406,12 +406,15 @@ main' args = do
   --hSetBuffering handle LineBuffering
   (eslabs	-- :: EmitState
    ,escode)	-- :: EmitState
-       <- if (sAnsiC flags) 
-          then do
-             let eslabs = emitWord Labels "42" (startEmitState Labels)
-                 escode = emitWord Code   "42" (startEmitState Code)
-             return (foldr (\a b-> gcodeGather Labels state b a) eslabs zcons
-                    ,foldr (\a b-> gcodeGather Code   state b a) escode zcons)
+       <- let eslabs = startEmitState Labels
+              escode = startEmitState Code in
+          if (sAnsiC flags) 
+          then if null zcons then return (eslabs,escode)
+               else return (foldr (\a b-> gcodeGather Labels state b a)
+                                  (emitWord Labels "42" eslabs) zcons
+                           ,foldr (\a b-> gcodeGather Code   state b a)
+                                  (emitWord Code "42" escode) zcons
+                           )
           else do
             catch (hPutStr handle (gcodeHeader 
                      (foldr ( \ a b -> foldr (gcodeDump state) b a) 
@@ -422,7 +425,7 @@ main' args = do
                                     ++ sObjectFile flags ++ ":" 
                                     ++ show ioerror ++ "\n")  
                                  exit) 
-            return (startEmitState Labels, startEmitState Code)
+            return (eslabs, escode)
 
 
   {- Generate Gcode for functions -} 
