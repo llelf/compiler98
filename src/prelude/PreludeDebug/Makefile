@@ -7,6 +7,10 @@ SEARCH	= -I../PreludeIO -I../Prelude
 SRCS	= 
 SRCS_T	=
 
+ifeq "${BUILDWITH}" "hbc"
+HEAP = +RTS -H64M -A8M -RTS
+endif
+
 
 # Here are the main rules.
 include ../Makefile.common
@@ -15,7 +19,7 @@ include ../Makefile.common
 # Here are some extra rules.
 extra: ${OBJDIR}/${THISLIB}.o
 ${OBJDIR}/${THISLIB}.o: ${THISLIB}.hs ${OBJDIR}/../Prelude/DEither.o
-	${HC} ${PROF} ${SEARCH} -part -prelude -redefine -c -o $@ $<
+	${HC} ${HEAP} ${SEARCH} -part -prelude -redefine -c -o $@ $<
 
 ${OBJDIR}/../PreludeIO/DIO.o:
 	cd ../PreludeIO; ${MAKE} ${BUILDDIR}/${OBJ}/prelude/PreludeIO/DIO.o
