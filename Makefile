@@ -1,5 +1,6 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
+.SUFFIXES: 		# To remove default rules like .cpp -> C++
 
 VERSION = 1.01
 # When incrementing the version number, don't forget to change the
