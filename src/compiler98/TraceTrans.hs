@@ -667,14 +667,13 @@ wrapValInstDecl pos contexts ty constrs =
       (Unguarded (wrapExp pos var consAppTrace)) noDecls
     where
     consAppTrace = 
-      if numOfArgs == 0 then fun
+      if numOfArgs == 0 
+        then ExpApplication pos
+               [ExpVar pos tokenMkExpValueUse,parent,sr,funAtom]
         else ExpApplication pos .
-               (ExpVar pos (tokenMkExpApp numOfArgs) :) . (parent :) .
-                (sr :) . (fun :) $ traces 
-    fun = 
-      ExpApplication pos 
-        [ExpVar pos tokenMkExpValueUse
-        ,parent,sr,ExpVar pos (nameTraceInfoCon consId)]
+               (ExpVar pos (tokenMkExpValueApp numOfArgs) :) . (parent :) .
+                (sr :) . (funAtom :) $ traces 
+    funAtom = ExpVar pos (nameTraceInfoCon consId)
     consApp =
       if numOfArgs == 0 then ExpCon pos (tokenId consId)
         else ExpApplication pos . (ExpCon pos (tokenId consId) :) .
@@ -2048,8 +2047,8 @@ tokenMkAtomConstructor withFields =
 tokenMkAtomVariable :: TokenId
 tokenMkAtomVariable = mkTracingToken "mkVariable"
 
-tokenMkExpApp :: Arity -> TokenId
-tokenMkExpApp = mkTracingTokenArity "mkApp"
+tokenMkExpValueApp :: Arity -> TokenId
+tokenMkExpValueApp = mkTracingTokenArity "mkValueApp"
 
 tokenMkExpValueUse :: TokenId
 tokenMkExpValueUse = mkTracingToken "mkValueUse"
