@@ -390,7 +390,6 @@ mkTInd t1 t2 =
             (trustedFun t1)
             False
 mkTHidden t1 = 
-    if hidden t1 then t1 else			-- collapse Hidden chains
     mkTrace (primTHidden (traceptr t1))
             (trustedFun t1)
             True

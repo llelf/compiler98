@@ -16,231 +16,28 @@ import PreludeBuiltin (Vector)
 
 import HatArchive
 
-{-
--- begin HatArchive
-data Trace =
-     Ap Trace Traces SR
-   | Nm Trace NmType SR
-   | Ind Trace Trace
-   | Root
-   | Sat Trace Trace
-   | Pruned
-   | Hidden Trace
-
-data NmType =
-     NTInt Int
-   | NTChar Char
-   | NTInteger Integer
-   | NTRational Rational
-   | NTFloat Float
-   | NTDouble Double
-   | NTId Int		-- compiler hack - actually a struct IdEntry at runtime
-   | NTConstr Int	-- compiler hack - actually a struct IdEntry at runtime
-   | NTTuple		-- unused
-   | NTFun
-   | NTCase
-   | NTLambda 
-   | NTDummy   
-   | NTCString Int
-   | NTIf
-   | NTGuard
-   | NTContainer	-- introduced by MW for Handle/Vector/StablePtr etc.
-
-data SR = SR | SR2 Bool Int | SR3 Int 		-- SR2 no longer used
-
-data Traces = 
-     TNil
-   | TCons Trace Traces 
-
-trustedFun :: Trace -> Bool
-trustedFun t = False
-
-hidden :: Trace -> Bool
-hidden t = False
-
-mkTRoot :: Trace
-mkTRoot = Root
-
-mkTAp1 :: Trace -> Trace -> Trace -> SR -> Trace
-mkTAp1 t tf ta sr = t `myseq` tf `myseq` 
-  ta `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta TNil)) sr
-
-mkTAp2 :: Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp2 t tf ta tb sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb TNil))) sr
-
-mkTAp3 :: Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp3 t tf ta tb tc sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc TNil)))) sr
-
-mkTAp4 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp4 t tf ta tb tc td sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td TNil))))) sr
-
-mkTAp5 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-       -> SR -> Trace
-mkTAp5 t tf ta tb tc td te sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te TNil)))))) sr
-
-mkTAp6 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-       -> Trace -> SR -> Trace
-mkTAp6 t tf ta tb tc td te tf sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf TNil))))))) sr
-
-mkTAp7 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-       -> Trace -> Trace -> SR -> Trace
-mkTAp7 t tf ta tb tc td te tf tg sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg TNil)))))))) sr
-
-mkTAp8 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-       -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp8 t tf ta tb tc td te tf tg th sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` th `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg (TCons th TNil))))))))) sr
-
-mkTAp9 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-       -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp9 t tf ta tb tc td te tf tg th ti sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` th `myseq` ti `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg (TCons th (TCons ti TNil)))))))))) sr
-
-mkTAp10 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-        -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp10 t tf ta tb tc td te tf tg th ti tj sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` th `myseq` ti `myseq` tj `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
-       (TCons tj TNil))))))))))) sr
-
-mkTAp11 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-        -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> SR -> Trace
-mkTAp11 t tf ta tb tc td te tf tg th ti tj tk sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` th `myseq` ti `myseq` tj `myseq` tk `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
-       (TCons tj (TCons tk TNil)))))))))))) sr
-
-mkTAp12 :: Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-        -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace -> Trace 
-        -> SR -> Trace
-mkTAp12 t tf ta tb tc td te tf tg th ti tj tk tl sr = t `myseq` tf `myseq` 
-  ta `myseq` tb `myseq` tc `myseq` td `myseq` te `myseq` tf `myseq` 
-  tg `myseq` th `myseq` ti `myseq` tj `myseq` tk `myseq` tl `myseq` sr `myseq`
-  Ap t (TCons tf (TCons ta (TCons tb (TCons tc (TCons td 
-       (TCons te (TCons tf (TCons tg (TCons th (TCons ti 
-       (TCons tj (TCons tk (TCons tl TNil))))))))))))) sr
-
-mkTNm :: Trace -> NmType -> SR -> Trace
-mkTNm t nm sr = t `myseq` nm `myseq` sr `myseq` Nm t nm sr
-
-mkTInd :: Trace -> Trace -> Trace
-mkTInd t1 t2 = t1 `myseq` t2 `myseq` Ind t1 t2
-
-mkTHidden :: Trace -> Trace
-mkTHidden t = t `myseq` Hidden t
-
-mkTSatA :: Trace -> Trace
-mkTSatA t = t `myseq` Sat t Root   -- wrong!
-
-mkTSatB :: Trace -> ()
-mkTSatB sat = ()   -- wrong!
-
-mkTSatC :: Trace -> Trace -> ()
-mkTSatC sat t = t `myseq` ()   -- wrong!
-
-mkNTInt :: Int -> NmType
-mkNTInt n = NTInt n
-
-mkNTChar :: Char -> NmType
-mkNTChar c = NTChar c
-
-mkNTInteger :: Integer -> NmType
-mkNTInteger i = NTInteger i
-
-mkNTRational :: Rational -> NmType
-mkNTRational r = NTRational r
-
-mkNTFloat :: Float -> NmType
-mkNTFloat f = NTFloat f
-
-mkNTDouble :: Double -> NmType
-mkNTDouble d = NTDouble d
-
-mkNTId' :: Int -> NmType
-mkNTId' n = NTId n   -- arity must be 1 for STGBuild to work correctly
-
-mkNTConstr' :: Int -> NmType
-mkNTConstr' n = NTConstr n  -- arity must be 1 for STGBuild to work correctly
-
-mkNTFun :: NmType
-mkNTFun = NTFun
-
-mkNTCase :: NmType
-mkNTCase = NTCase
-
-mkNTLambda :: NmType
-mkNTLambda = NTLambda
-
-mkNTIf :: NmType
-mkNTIf = NTIf
-
-mkNTGuard :: NmType
-mkNTGuard = NTGuard
-
-mkNTContainer :: NmType
-mkNTContainer = NTContainer
-
-
-mkNoSR :: SR
-mkNoSR = SR
-
-mkSR' :: Int -> SR  -- dummy to be replaced in STGBuild
-mkSR' n = SR
-
-
-{- Test if two traces are identical, i.e. the very same filepointer. -}
-sameAs :: Trace -> Trace -> Bool
-x `sameAs` y = cPointerEquality (E x) (E y)
-
--- end HatArchive
--}
 
 {-
 Invariant: the trace argument of R is always fully evaluated.
 Trace arguments that are passed to functions are always fully evaluated.
-(really?)
+No, not for pap: pap will force evaluation immediately.
 -}
 
 data R a = R a Trace
 
+{- unused
 instance Eq a => Eq (R a) where
     R x _ == R y _ = x == y
 
 instance Ord a => Ord (R a)
+-}
 
 type Fun a b = Trace -> R a -> R b
 
 
 {- data constructor R strict in trace argument -}
 mkR :: a -> Trace -> R a
-mkR x t = t `myseq` R x t
+mkR x t = t `_seq` R x t
 
 
 -- used internally by cCheckEvaluation
@@ -394,7 +191,7 @@ _tprim_setOutputContext primitive 2 :: Trace -> E (R a) -> R a
 
 {- Mark trace as incomplete due to trusting. -}
 hide :: Trace -> Trace
-hide t = if hidden t then t else mkTHidden t
+hide t = if hidden t then t else mkTHidden t -- collapse Hidden chains
 
 
 {- Check if function and application trace are trusted. -}
@@ -408,6 +205,40 @@ False `tand` _ = False
 {- combinators for n-ary application in a non-projective context. -}
 ap1 :: SR -> Trace -> R (Trace -> R a -> R r) -> R a -> R r 
 
+
+ap1 sr t (R rf tf) a@(R _ at) = 
+  let t' = if trustedFun tf `tand` trustedFun t
+             then (if hidden t then t else mkTHidden t)
+             else mkTAp1 t tf at sr
+  in  t' `myseq` rf t' a
+
+ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
+  let t' = if trustedFun tf `tand` trustedFun t
+             then (if hidden t then t else mkTHidden t)
+             else mkTAp2 t tf at bt sr
+  in  case (rf t' a) of
+        (R rf tf) -> if t' `sameAs` tf 
+                       then rf t' b
+                       else let t'' = mkTAp1 t' tf bt sr
+                            in  t'' `myseq` rf t'' b
+
+ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+  let t' = if trustedFun tf `tand` trustedFun t
+             then (if hidden t then t else mkTHidden t)
+             else mkTAp3 t tf at bt ct sr
+  in  case (rf t' a) of
+        (R rf tf) -> 
+          let t'' = if t' `sameAs` tf 
+                      then t' 
+                      else mkTAp2 t' tf bt ct sr
+          in case (rf t'' b) of
+               (R rf tf) ->
+                 if t'' `sameAs` tf 
+                   then rf t'' c
+                   else let t''' = mkTAp1 t'' tf ct sr
+                        in  t''' `myseq` rf t''' c
+
+{-
 ap1 sr t (R rf tf) a@(R _ at) = 
   let t' = if trusted t tf
              then hide t
@@ -418,53 +249,54 @@ ap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) =
   let t' = if trusted t tf 
              then hide t
              else mkTAp2 t tf at bt sr
-  in  t' `myseq` pap1 sr t' (rf t' a) b
+  in  pap1 sr t' (rf t' a) b
 
 ap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp3 t tf at bt ct sr
-  in  t' `myseq` pap2 sr t' (rf t' a) b c
+  in  pap2 sr t' (rf t' a) b c
+-}
 
 ap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp4 t tf at bt ct dt sr
-  in  t' `myseq` pap3 sr t' (rf t' a) b c d
+  in  pap3 sr t' (rf t' a) b c d
 
 ap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp5 t tf at bt ct dt et sr
-  in  t' `myseq` pap4 sr t' (rf t' a) b c d e
+  in  pap4 sr t' (rf t' a) b c d e
 
 ap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp6 t tf at bt ct dt et ft sr
-  in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
+  in  pap5 sr t' (rf t' a) b c d e f
 
 ap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp7 t tf at bt ct dt et ft gt sr
-  in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
+  in  pap6 sr t' (rf t' a) b c d e f g
 
 ap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp8 t tf at bt ct dt et ft gt ht sr
-  in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
+  in  pap7 sr t' (rf t' a) b c d e f g h
 
 ap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                    f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   let t' = if trusted t tf 
              then hide t
              else mkTAp9 t tf at bt ct dt et ft gt ht it sr
-  in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
+  in  pap8 sr t' (rf t' a) b c d e f g h i
 
 
 ap10 :: SR -> Trace 
@@ -478,7 +310,7 @@ ap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-  in  t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
+  in  pap9 sr t' (rf t' a) b c d e f g h i j
 
 ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -486,7 +318,7 @@ ap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-  in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k
+  in  pap10 sr t' (rf t' a) b c d e f g h i j k
 
 ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -494,7 +326,7 @@ ap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   let t' = if trusted t tf 
              then hide t
              else mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
-  in  t' `myseq` pap11 sr t' (rf t' a) b c d e f g h i j k l
+  in  pap11 sr t' (rf t' a) b c d e f g h i j k l
 
 
 {- 
@@ -505,6 +337,45 @@ because the skipped trace node has the same type as the
 parent redex.
 -}
 
+rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
+
+rap1 sr t (R rf tf) a@(R _ at) = 
+  if trustedFun tf `tand` trustedFun t
+    then rf t a
+    else let t' = mkTAp1 t tf at sr
+	 in  t' `myseq` rf t' a
+
+
+rap2 :: SR -> Trace -> R (Fun a (Fun b r)) -> R a -> R b -> R r
+
+rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) = 
+  let t' = if trustedFun tf `tand` trustedFun t 
+             then t
+             else  mkTAp2 t tf at bt sr
+  in case (rf t' a) of
+       (R rf tf) ->
+         if t' `sameAs` tf 
+           then rf t' b
+           else let t'' = mkTAp1 t' tf bt sr
+                in  t'' `myseq` rf t'' b
+
+rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
+  let t' = if trustedFun tf `tand` trustedFun t
+             then t
+             else mkTAp3 t tf at bt ct sr
+  in  case (rf t' a) of
+        (R rf tf) ->
+          let t'' =  if t' `sameAs` tf 
+                       then t'
+                       else mkTAp2 t' tf bt ct sr
+          in case (rf t'' b) of
+               (R rf tf) ->
+                 if t'' `sameAs` tf 
+                   then rf t'' c
+                   else let t''' = mkTAp1 t'' tf ct sr
+                        in  t''' `myseq` rf t''' c
+
+{- original:
 rap1 :: SR -> Trace -> R (Fun a r) -> R a -> R r
 
 rap1 sr t (R rf tf) a@(R _ at) = 
@@ -520,60 +391,61 @@ rap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) =
   if trusted t tf 
     then pap1 sr t (rf t a) b
     else let t' = mkTAp2 t tf at bt sr
-         in  t' `myseq` pap1 sr t' (rf t' a) b
+         in  pap1 sr t' (rf t' a) b
 
 rap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) = 
   if trusted t tf 
     then pap2 sr t (rf t a) b c
     else let t' = mkTAp3 t tf at bt ct sr
- 	 in  t' `myseq` pap2 sr t' (rf t' a) b c
+ 	 in  pap2 sr t' (rf t' a) b c
+-}
 
 rap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) = 
   if trusted t tf 
     then pap3 sr t (rf t a) b c d
     else let t' = mkTAp4 t tf at bt ct dt sr
-	  in t' `myseq` pap3 sr t' (rf t' a) b c d
+	  in pap3 sr t' (rf t' a) b c d
 
 rap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) = 
   if trusted t tf 
     then pap4 sr t (rf t a) b c d e
     else let t' = mkTAp5 t tf at bt ct dt et sr
-	 in  t' `myseq` pap4 sr t' (rf t' a) b c d e
+	 in  pap4 sr t' (rf t' a) b c d e
 
 rap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) = 
   if trusted t tf 
     then pap5 sr t (rf t a) b c d e f
     else let t' = mkTAp6 t tf at bt ct dt et ft sr
-         in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
+         in  pap5 sr t' (rf t' a) b c d e f
 
 rap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) = 
   if trusted t tf 
     then pap6 sr t (rf t a) b c d e f g
     else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
-	 in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
+	 in  pap6 sr t' (rf t' a) b c d e f g
 
 rap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) = 
   if trusted t tf 
     then pap7 sr t (rf t a) b c d e f g h
     else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
-	 in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
+	 in  pap7 sr t' (rf t' a) b c d e f g h
 
 rap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) = 
   if trusted t tf 
     then pap8 sr t (rf t a) b c d e f g h i
     else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
-	 in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
+	 in  pap8 sr t' (rf t' a) b c d e f g h i
 
 rap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) = 
   if trusted t tf 
     then pap9 sr t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-	 in  t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
+	 in  pap9 sr t' (rf t' a) b c d e f g h i j
 
 rap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -581,7 +453,7 @@ rap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if trusted t tf 
     then pap10 sr t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-	 in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k
+	 in  pap10 sr t' (rf t' a) b c d e f g h i j k
 
 rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -589,7 +461,7 @@ rap12 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if trusted t tf 
     then pap11 sr t (rf t a) b c d e f g h i j k l
     else let t' = mkTAp12 t tf at bt ct dt et ft gt ht it jt kt lt sr
-	 in  t' `myseq` pap11 sr t' (rf t' a) b c d e f g h i j k l
+	 in  pap11 sr t' (rf t' a) b c d e f g h i j k l
 
 
 {- 
@@ -614,46 +486,64 @@ pap2 sr t (R rf tf) a@(R _ at) b@(R _ bt) =
   if t `sameAs` tf 
     then pap1 sr t (rf t a) b
     else let t' = mkTAp2 t tf at bt sr
-         in  t' `myseq` pap1 sr t' (rf t' a) b
+         in  pap1 sr t' (rf t' a) b
 
+pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
+  let t' = if t `sameAs` tf 
+             then t
+             else mkTAp3 t tf at bt ct sr
+  in case (rf t' a) of
+       (R rf tf) -> 
+         let t'' = if t' `sameAs` tf
+                     then t'
+                     else mkTAp2 t' tf bt ct sr
+         in case (rf t'' b) of
+              (R rf tf) ->
+                if t'' `sameAs` tf 
+                  then rf t'' c
+                  else let t''' = mkTAp1 t'' tf ct sr
+                       in  t''' `myseq` rf t''' c
+ 
+{- original:
 pap3 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) =
   if t `sameAs` tf 
     then pap2 sr t (rf t a) b c
     else let t' = mkTAp3 t tf at bt ct sr
-         in t' `myseq` pap2 sr t' (rf t' a) b c
+         in pap2 sr t' (rf t' a) b c
+-}
 
 pap4 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) =
   if t `sameAs` tf 
     then pap3 sr t (rf t a) b c d
     else let t' = mkTAp4 t tf at bt ct dt sr
-         in  t' `myseq` pap3 sr t' (rf t' a) b c d
+         in  pap3 sr t' (rf t' a) b c d
 
 pap5 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et) =
   if t `sameAs` tf 
     then pap4 sr t (rf t a) b c d e
     else let t' = mkTAp5 t tf at bt ct dt et sr
-         in  t' `myseq` pap4 sr t' (rf t' a) b c d e
+         in  pap4 sr t' (rf t' a) b c d e
 
 pap6 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) =
   if t `sameAs` tf 
     then pap5 sr t (rf t a) b c d e f
     else let t' = mkTAp6 t tf at bt ct dt et ft sr
-         in  t' `myseq` pap5 sr t' (rf t' a) b c d e f
+         in  pap5 sr t' (rf t' a) b c d e f
 
 pap7 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) =
   if t `sameAs` tf 
     then pap6 sr t (rf t a) b c d e f g
     else let t' = mkTAp7 t tf at bt ct dt et ft gt sr
-         in  t' `myseq` pap6 sr t' (rf t' a) b c d e f g
+         in  pap6 sr t' (rf t' a) b c d e f g
 
 pap8 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                     f@(R _ ft) g@(R _ gt) h@(R _ ht) =
   if t `sameAs` tf 
     then pap7 sr t (rf t a) b c d e f g h
     else let t' = mkTAp8 t tf at bt ct dt et ft gt ht sr
-         in  t' `myseq` pap7 sr t' (rf t' a) b c d e f g h
+         in  pap7 sr t' (rf t' a) b c d e f g h
 
 
 pap9 :: SR -> Trace 
@@ -667,14 +557,14 @@ pap9 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf 
     then pap8 sr t (rf t a) b c d e f g h i
     else let t' = mkTAp9 t tf at bt ct dt et ft gt ht it sr
-         in  t' `myseq` pap8 sr t' (rf t' a) b c d e f g h i
+         in  pap8 sr t' (rf t' a) b c d e f g h i
 
 pap10 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt) =
   if t `sameAs` tf 
     then pap9 sr t (rf t a) b c d e f g h i j
     else let t' = mkTAp10 t tf at bt ct dt et ft gt ht it jt sr
-         in t' `myseq` pap9 sr t' (rf t' a) b c d e f g h i j
+         in pap9 sr t' (rf t' a) b c d e f g h i j
 
 pap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
                      f@(R _ ft) g@(R _ gt) h@(R _ ht) i@(R _ it) j@(R _ jt)
@@ -682,7 +572,7 @@ pap11 sr t (R rf tf) a@(R _ at) b@(R _ bt) c@(R _ ct) d@(R _ dt) e@(R _ et)
   if t `sameAs` tf 
     then pap10 sr t (rf t a) b c d e f g h i j k
     else let t' = mkTAp11 t tf at bt ct dt et ft gt ht it jt kt sr
-         in  t' `myseq` pap10 sr t' (rf t' a) b c d e f g h i j k 
+         in  pap10 sr t' (rf t' a) b c d e f g h i j k 
 
 
 
@@ -703,6 +593,15 @@ lazySat x t =
               v) -- return value
        sat
 
+{- without SatB and C:
+lazySat x t = 
+  let sat = mkTSatA t
+  in mkR (
+          case x of -- create trace for (unevaluated x/v)
+            R v vt ->
+              v) -- return value
+       sat
+-}
 
 -- The following combinator is currently not used.
 -- It should be used to not to loose information about pattern bindings.
@@ -1025,7 +924,7 @@ prim0 :: NmCoerce r => NmType -> r -> SR -> Trace -> R r
 
 prim0 nm rf sr t = 
   let tf = mkTNm t nm sr
-  in tf `myseq` lazySat (primEnter sr nm tf rf) tf
+  in lazySat (primEnter sr nm tf rf) tf  -- primEnter strict in tf
 
 
 prim1 :: NmCoerce r => NmType -> (a -> r) -> SR -> Trace -> R (Fun a r)

@@ -48,7 +48,7 @@ extern Node chars[];
 
 
 #if PROFILE
-#define HEAP_CHECK_VAP(c) if((hp+(c)+BUFFER>(NodePtr)sp)||(hp+(c)+BUFFER>profileHpLimit)){FORCE_GC(c);}
+#define HEAP_CHECK_VAP(c) /* FORCE_GC(0) OC*/ ; if((hp+(c)+BUFFER>(NodePtr)sp)||(hp+(c)+BUFFER>profileHpLimit)){FORCE_GC(c);}
 #define HEAP_CHECK_VAP_STMT(c,stmt) if((hp+(c)+BUFFER>(NodePtr)sp)||(hp+(c)+BUFFER>profileHpLimit)){FORCE_GC(c);stmt}
 #define HEAP_CHECK_VAP_STMT2(c,stmt1,stmt2) if((hp+(c)+BUFFER>(NodePtr)sp)||(hp+(c)+BUFFER>profileHpLimit)){stmt1 FORCE_GC(c);stmt2}
 #else

@@ -145,6 +145,7 @@ TARGDIR= targets
 TARGETS= runtime bootprelude prelude greencard hp2graph \
 	 profruntime profprelude \
 	 timeruntime timeprelude \
+	 timetraceruntime timetraceprelude \
 	 traceruntime traceprelude \
 	 compiler-nhc compiler-hbc compiler-ghc \
 	 hmake-nhc hmake-hbc hmake-ghc \
@@ -188,6 +189,7 @@ all-gcc: basic-gcc profile tracer-nhc $(TARGDIR)/hood #timeprof
 
 profile: profruntime profprelude hp2graph
 timeprof: timeruntime timeprelude
+timetraceprof: timetraceruntime timetraceprelude
 tracer-nhc: tracecompiler-nhc traceruntime traceprelude $(TARGDIR)/traceui
 tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
 tracer-ghc: tracecompiler-ghc traceruntime traceprelude $(TARGDIR)/traceui
@@ -275,6 +277,18 @@ $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
 $(TARGDIR)/traceui: lib/rtb.jar
 	touch $(TARGDIR)/traceui
+
+
+
+$(TARGDIR)/$(MACHINE)/timetraceruntime: $(RUNTIME) $(RUNTIMET)
+	cd src/runtime;        $(MAKE) CFG=tT install
+	cd src/tracer/runtime; $(MAKE) CFG=tT install
+	touch $(TARGDIR)/$(MACHINE)/timetraceruntime
+$(TARGDIR)/$(MACHINE)/timetraceprelude: $(PRELUDEA) $(PRELUDEB)
+	cd src/prelude;	       $(MAKE) CFG=tT install
+	touch $(TARGDIR)/$(MACHINE)/timetraceprelude
+
+
 
 $(TARGDIR)/hood: lib/hood.jar
 	touch $(TARGDIR)/hood
