@@ -11,7 +11,7 @@ int
 main (int argc, char** argv)
 {
   char *expr; Ident* msg; SrcRef* sr;
-  int i=0;
+  int i=0, infix;
   FileOffset parent;
 
   initialise(argc,argv);
@@ -21,9 +21,9 @@ main (int argc, char** argv)
     parent = errorRoot;
     fprintf(stdout,"Virtual stack trace:\n");
     while (parent) {
-      parent = readTraceAt(parent,&expr,&sr);
-      fprintf(stdout,"    %s\t\t(at line-%d/col-%d in %s)\n"
-                    ,expr,sr->line,sr->column,sr->srcname);
+      parent = readTraceAt(parent,&expr,&sr,&infix);
+      fprintf(stdout,"    %s\t\t(%s: line-%d/col-%d)\n"
+                    ,expr,sr->srcname,sr->line,sr->column);
       if (i++ > MAX_DEPTH) parent=0;
     }
   } else {

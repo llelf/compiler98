@@ -37,6 +37,16 @@ Ident*		readIdentifierAt(FileOffset fo);
 Ident*		readNmTypeAt	(FileOffset fo);
 SrcRef*		readSRAt	(FileOffset fo);
 
-FileOffset	readTraceAt	(FileOffset fo, char** expr, SrcRef** sr);
+FileOffset	readTraceAt	(FileOffset fo, char** expr, SrcRef** sr
+				,int* infix);
+char*		infixPrint	( char* str1, int arg1
+				, char* strfn, int fn
+				, char* str2, int arg2);
+
+#define isInfix(fix)  ((fix%4)!=3)
+#define isInfixL(fix) ((fix%4)==2)
+#define isInfixR(fix) ((fix%4)==1)
+#define isInfixN(fix) ((fix%4)==0)
+#define priority(fix) (fix/4)
 
 #endif

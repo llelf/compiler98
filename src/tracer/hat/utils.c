@@ -384,10 +384,12 @@ readNmTypeAt (FileOffset fo)
  * stack trace" program.
  */
 FileOffset
-readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
+readTraceAt (FileOffset fo, char** expr, SrcRef** sr, int* infix)
 {
   char c, buf[256];
   FileOffset parent;
+
+  *infix = 3;	/* default */
 
   if (fo) {
     freadAt(fo,&c,sizeof(char),1,HatFile);
@@ -399,9 +401,10 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
     HIDE(fprintf(stderr,"readTraceAt 0x%x -> tag 0x%x\n",fo,c);)
     switch (c&0x1f) {
       case TAp:
-		{ int i;
+		{ int i, dummy;
 		  FileOffset foExprs[20], foSR;
 		  char* exprs[20];
+		  int  fixexp[20];
 		  fread(&c,sizeof(char),1,HatFile);
 		  parent = readFO();
                   HIDE(fprintf(stderr,"enter parent of 0x%x -> 0x%x\n",fo,parent);)
@@ -410,14 +413,30 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
                   }
 		  foSR = readFO();
 		  for (i=0; i<=c; i++) {
-		    (void)readTraceAt(foExprs[i],&(exprs[i]),sr);
+		    (void)readTraceAt(foExprs[i],&(exprs[i]),sr,&(fixexp[i]));
                   }
-		  sprintf(buf,"(%s",exprs[0]);
-		  for (i=1; i<=c; i++) {
-		    strcat(buf," ");
-		    strcat(buf,exprs[i]);
-                  }
-		  strcat(buf,")");
+		  *infix = fixexp[0];
+		  if (isInfix(fixexp[0])) {
+		    sprintf(buf,"%s"
+			,infixPrint(exprs[1],fixexp[1],exprs[0],fixexp[0]
+					,exprs[2],fixexp[2]));
+		    for (i=3; i<=c; i++) {
+		      strcat(buf," ");
+		      strcat(buf,exprs[i]);
+                    }
+		  } else {	/* no fixity */
+		    sprintf(buf,"(%s",exprs[0]);
+		    for (i=1; i<=c; i++) {
+		      strcat(buf," ");
+		      if (isInfix(fixexp[i])) {
+		        strcat(buf,"(");
+		        strcat(buf,exprs[i]);
+		        strcat(buf,")");
+		      } else
+		        strcat(buf,exprs[i]);
+                    }
+		    strcat(buf,")");
+		  }
 		  *expr = strdup(buf);
                   *sr   = readSRAt(foSR);
                   HIDE(fprintf(stderr,"return parent of 0x%x -> 0x%x\n",fo,parent);)
@@ -429,7 +448,8 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
 		  parent = readFO();
                   foExpr = readFO();
                   foSR   = readFO();
-		  id    = readNmTypeAt(foExpr);
+		  id     = readNmTypeAt(foExpr);
+		  *infix = id->priority;
 		  sprintf(buf,"%s",id->idname);
 		  *expr = strdup(buf);
                   *sr   = readSRAt(foSR);
@@ -438,7 +458,7 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
       case TInd:
 		{ parent = readFO();	/* throw first away */
 		  parent = readFO();
-		  return readTraceAt(parent, expr, sr);
+		  return readTraceAt(parent, expr, sr, infix);
 		} break;
       case THidden:
 		{ parent = readFO();
@@ -448,7 +468,7 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
 		} break;
       case TSatA:
 		{ parent = readFO();
-		  return readTraceAt(parent, expr, sr);
+		  return readTraceAt(parent, expr, sr, infix);
 		} break;
       case TSatB:
 		{ parent = readFO();
@@ -458,7 +478,7 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
 		} break;
       case TSatC:
 		{ parent = readFO();
-		  return readTraceAt(parent, expr, sr);
+		  return readTraceAt(parent, expr, sr, infix);
 		} break;
       default: break;
     }
@@ -471,6 +491,7 @@ readTraceAt (FileOffset fo, char** expr, SrcRef** sr)
 
 
 
+/* NOT USED */
 /* checkSATkind() returns 0==error, 1==A, 2==B, 3==C, for the kind of
  * SAT pointed to by fo.  The trace must already be a SAT.
  */
@@ -488,4 +509,43 @@ checkSATkind (FileOffset fo)
                       ,progname,fo);
         return 0; break;
   }
+}
+
+
+/* print an infix expression correctly according to the given priorities. */
+char*
+infixPrint (char* str1, int arg1, char* strfn, int fn, char* str2, int arg2)
+{
+  char buf[256];
+
+  if (!isInfix(arg1))
+      sprintf(buf,"%s",str1);
+  else if (priority(arg1) > priority(fn))
+      sprintf(buf,"%s",str1);
+  else if (priority(arg1) < priority(fn))
+      sprintf(buf,"(%s)",str1);
+  else if (isInfixN(fn))
+      sprintf(buf,"(%s)",str1);
+  else
+      sprintf(buf,"%s",str1);
+
+  strcat(buf,strfn);
+
+  if (!isInfix(arg2)) {
+      strcat(buf,str2);
+  } else if (priority(arg2) > priority(fn)) {
+      strcat(buf,str2);
+  } else if (priority(arg2) < priority(fn)) {
+      strcat(buf,"(");
+      strcat(buf,str2);
+      strcat(buf,")");
+  } else if (isInfixN(fn)) {
+      strcat(buf,"(");
+      strcat(buf,str2);
+      strcat(buf,")");
+  } else {
+      strcat(buf,str2);
+  }
+
+  return strdup(buf);
 }
