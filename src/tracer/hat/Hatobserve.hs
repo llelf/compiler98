@@ -422,15 +422,19 @@ doCommand cmd s hatfile@(_,hattrace) state@(lastObserved,
    let (opts,p) = (options (unwords (tail (words s))));
        pattern1 = (stringLex p);
        (maybeident,pattern2) = (last2 pattern1);
-       (ident2,pattern) =
+       (ident2,(pattern,patternError)) =
 	   if ((length maybeident)==2)&&((head maybeident)=="in") then
                   (head (tail maybeident),(stringLinExpr pattern2))
 		  else ("",(stringLinExpr pattern1));
        fun = (lmoFun pattern)
       in
+       if (null patternError)==False then
+         (putStrLn ("ERROR in pattern: "++patternError)) >>
+         (interactive hatfile state)
+        else
         do
          putStrLn ("searching for: "++fun++(if ident2/="" then " in "++ident2 else ""))
-	 putStrLn ""
+         putStrLn ""
 
          let newObserved = makeObserve hattrace (verboseMode || ('v' `elem` opts))
 			   (recursiveMode || ('r' `elem` opts)) False

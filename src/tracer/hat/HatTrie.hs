@@ -19,7 +19,9 @@ data LinExprElement = LAppl | LConstr String | LIdent String |
 	       LInt Int | LInteger Integer | LChar Char | LRational Rational |
                LFloat Float | LDouble Double | LString String | LIf | LGuard |
 	       LContainer |
-               LFirstArg | LLastArg | LRHS | LNodeAdr HatNode | LNone deriving Show
+               LFirstArg | LLastArg | LRHS | LNodeAdr HatNode | LNone
+               deriving (Show,Eq)
+
 type LinExpr = [LinExprElement]
 
 data TrieElement = TAppl Trie | TConstr String Trie |
@@ -399,6 +401,24 @@ dropArgument l = dropArgument' l 0 0 -- drop one argument
   dropArgument' [] i _ | i==0 = (Just [])
                        | otherwise = Nothing
 
+-- return tuple of first argument and rest
+firstArgument :: LinExpr -> (LinExpr,LinExpr)
+firstArgument l = firstArgument' [] l 0 0 -- drop one argument
+ where
+  firstArgument' firsts all@(LRHS:_) i dropped =
+      if (i>0)||(dropped==0) then ([],(reverse firsts)++all) else
+         (reverse firsts, all)
+  firstArgument' firsts all@(LLastArg:r) i dropped = 
+      if (i>0) then firstArgument' (LLastArg:firsts) r (i-1) 1 else
+        if (dropped==0) then ([],(reverse (LLastArg:firsts))++all) else
+           (reverse firsts,LLastArg:all)
+  firstArgument' firsts (LAppl:r) i _ =
+   firstArgument' (LAppl:firsts) r (i+1) 1-- skip application within argument!
+  firstArgument' firsts (e:r) i _ | i==0 = (reverse (e:firsts), r)
+			  | otherwise = firstArgument' (e:firsts) r i 1
+  firstArgument' firsts [] i _ | i==0 = (reverse firsts, [])
+                       | otherwise = ([],reverse firsts)
+
 sameValue :: Rational -> LinExprElement -> Bool
 sameValue r1 (LRational r) = r1==r
 sameValue r1 (LInt i)      = r1==(toRational i)
@@ -449,39 +469,65 @@ lhs = takeWhile (\x -> x/="=")
 rhs :: [String] -> [String]
 rhs l = let r = dropWhile (\x -> x/="=") l in (if (null r) then [] else (tail r))
 
-stringLinExpr :: [String] -> LinExpr -- (LinExpr,LinExpr)
-stringLinExpr [] = [] -- ([],[])
+-- accepts strings, parses it to LinExpr or returns an error as a string
+stringLinExpr :: [String] -> (LinExpr,String)
+stringLinExpr [] = ([],[])
 stringLinExpr s =
   let l = (lhs s);
-      r = (rhs s) in
-      if (null r) then topAppl l else
-	 (topAppl l)++(LRHS:(topAppl r))
+      r = (rhs s);
+      lp = parse l;
+      lr = parse r in
+      if (null r) then lp else
+      if (null (snd lp)) then
+        if (null (snd lr)) then
+          ((fst lp)++(LRHS:(fst lr)), "")
+         else
+	  ([], snd lr) -- return error message
+       else
+        ([], snd lp) -- return error message
   where
-    topAppl l = if ((length l)>1)&&(((head l) `elem` ["(","["])==False) then
-		(LAppl:(lin' [0] [] l))++[LLastArg] else (lin' [] [] l)
-    lin' funs brackets ("(":r) = LAppl:(lin' (((length brackets)+1):funs)
-					(('(',1):brackets) r)
+    parse l =
+      if ((length l)>1)&&(((head l) `elem` ["(","["])==False) then
+	 let lexp = lin' [0] [] l in
+           ((LAppl:(testInfix (fst lexp)))++[LLastArg], snd lexp)
+       else
+         (lin' [] [] l)
+    lin' funs brackets ("(":r) =
+      let lexp = (lin' (((length brackets)+1):funs) (('(',1):brackets) r) in
+        (LAppl:(testInfix (fst lexp)), snd lexp)
     lin' funs (('(',_):brackets) (")":r) =
        if (funs/=[])&&((head funs)==(length brackets)) then
-	  LLastArg:LFirstArg:(lin' (drop 1 funs) brackets r)
+          let lexp=(lin' (drop 1 funs) brackets r) in
+	    (LLastArg:LFirstArg:(fst lexp), snd lexp)
         else
-          LLastArg:(lin' funs brackets r)
-    lin' funs _ ("(":r) = error "Parenthesis mismatch!"
+          let lexp=(lin' funs brackets r) in
+            (LLastArg:(fst lexp), snd lexp)
+    lin' funs _ ("(":r) = ([],"Parenthesis mismatch!")
     lin' funs brackets ("[":r) =
-	       LAppl:LConstr ":":LFirstArg:(lin' funs (('[',1):brackets) r)
+          let lexp=(lin' funs (('[',1):brackets) r) in
+	     (LAppl:LConstr ":":LFirstArg:(fst lexp), snd lexp)
     lin' funs (('[',c):brackets) ("]":r) = 
-	       (LConstr "[]":(replicate c LLastArg))++(lin' funs brackets r)
-    lin' funs _ ("]":_) = error "Parenthesis mismatch!"
+          let lexp=(lin' funs brackets r) in
+	       ((LConstr "[]":(replicate c LLastArg))++(fst lexp), snd lexp)
+    lin' funs _ ("]":_) = ([],"Parenthesis mismatch!")
     lin' funs (('[',c):brackets) (",":r) =
-	       LAppl:LConstr ":":LFirstArg:(lin' funs (('[',c+1):brackets) r)
-    lin' funs brackets (('\'':c:'\'':[]):r) = LChar c:(lin' funs brackets r)
-    lin' funs brackets (('"':s):r) = (makeString s)++(lin' funs brackets r)
+          let lexp=(lin' funs (('[',c+1):brackets) r) in
+	       (LAppl:LConstr ":":LFirstArg:(fst lexp), snd lexp)
+    lin' funs brackets (('\'':c:'\'':[]):r) =
+          let lexp=(lin' funs brackets r) in
+	       (LChar c:(fst lexp), snd lexp)
+    lin' funs brackets (('"':s):r) =
+          let lexp=(lin' funs brackets r) in
+               ((makeString s)++(fst lexp), snd lexp)
     lin' funs brackets (s:r) =
       if (funs/=[])&&((head funs)==(length brackets)) then
-       (token' s):LFirstArg:(lin' (drop 1 funs) brackets r) else
-       (token' s):(lin' funs brackets r)
+        let lexp=(lin' (drop 1 funs) brackets r) in
+          ((token' s):LFirstArg:(fst lexp), snd lexp)
+       else
+        let lexp=(lin' funs brackets r) in
+	   ((token' s):(fst lexp), snd lexp)
     lin' funs brackets [] =
-      if (null brackets) then [] else error "Unbalanced parenthesis!"
+      if (null brackets) then ([],[]) else ([],"Unbalanced parenthesis!")
     token' "_|_" = LSATB
     token' "_" = LSATA
     token' all@(c:_) =
@@ -490,7 +536,30 @@ stringLinExpr s =
        else (LConstr all)
     makeString [] = LConstr "[]":[]
     makeString "\"" = LConstr "[]":[]
-    makeString (c:r) = (LAppl:LConstr ":":LFirstArg:LChar c:(makeString r))++(LLastArg:[])
+    makeString (c:r) = (LAppl:LConstr ":":LFirstArg:LChar c:(makeString r))++
+			   (LLastArg:[])
+    testInfix :: LinExpr -> LinExpr
+    testInfix lexp =
+       let (f,r1) = (firstArgument lexp);
+           (sec,r) = if ((null r1==False)&&((head r1)==LFirstArg)) then
+                          firstArgument (tail r1)
+                         else ([],r1)
+           isInfix = if (null sec==False) then 
+                       (isInfixOp sec)
+                      else False in
+         if (isInfix) then
+              --error ("Infix: "++(show ([lexp,sec,f,r])))
+             sec++(LFirstArg:(f++r))
+          else
+            lexp
+    isInfixOp [] = False
+    isInfixOp (LFirstArg:r) = isInfixOp r
+    isInfixOp ((LConstr s):_) = isInfixName s
+    isInfixOp ((LIdent s):_) = isInfixName s
+    isInfixOp _ = False -- (error ("infixOp: "++(show s)))
+    isInfixName (c:_) = c `elem` ['`',':','+','-','*','/','&','|','%',
+			        '.',',','<','>','=']
+    isInfixName _ = False
 
 
 
