@@ -15,7 +15,7 @@ type2NT transforms type from syntax tree into interal type.
 module Extract(IntState,Decls,extract,type2NT) where
 
 import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Rhs(..),Exp(..),Stmt(..)
-             ,Alt(..))
+             ,Alt(..),Field(..))
 import IntState(IntState,lookupIS,depthI,strIS,addError,superclassesI
                ,instancesI,updVarArity,updVarNT)
 import NT(NT(..),NewType(..))
@@ -167,8 +167,13 @@ extractExp (ExpType           pos exp ctxs typ)   = extractExp exp
 --- Above only in expressions
 extractExp (ExpApplication   pos exps)  = mapR extractExp exps
 extractExp (ExpList          pos exps)  = mapR extractExp exps
+extractExp (ExpRecord        exp fields)=
+  extractExp exp >>> mapR extractField fields
 extractExp e                            = unitR
 
+extractField :: Field Id -> Reduce IntState IntState
+extractField (FieldExp _ _ exp) = extractExp exp
+extractField (FieldPun _ _) = unitR
 
 extractStmt :: Stmt Id -> Reduce IntState IntState
 
