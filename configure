@@ -545,10 +545,14 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hsc2hs.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hsc2hs
+    echo -n "cpphs "
+    if [ ! -f $BUILDBINDIR/cpphs ]
+    then ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/cpphs
+    fi
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hmake-config
-    chmod +x $BUILDBINDIR/hsc2hs
+    chmod +x $BUILDBINDIR/hsc2hs $BUILDBINDIR/cpphs
 
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
@@ -674,11 +678,14 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	hp2graph"
     rm -f $DESTDIR$BINDIR/hp2graph;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/hp2graph
+    echo "	cpphs"
+    rm -f $DESTDIR$BINDIR/cpphs;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/cpphs
     echo
     chmod a+rx $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod a+rx $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod a+rx $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
-    chmod a+rx $DESTDIR$BINDIR/hmake-config
+    chmod a+rx $DESTDIR$BINDIR/hmake-config $DESTDIR/$BINDIR/cpphs
     chmod a+rx $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
