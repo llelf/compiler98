@@ -6,6 +6,7 @@ module ForeignObj
   ) where
 
 import FFIBuiltin (ForeignObj,Addr)
+import IOExtras (unsafePerformIO)
 
 -- Note that the type of makeForeignObj expects the finalizer to already
 -- have been applied to the Addr, and here we also need to wrap it inside
