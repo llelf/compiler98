@@ -1,0 +1,43 @@
+		------------------------------------
+		hat-1.12, nhc98-1.12, and hmake-3.02
+		------------------------------------
+
+We are pleased to announce a new release of Hat, the Haskell tracing
+(an debugging) system, together with supporting releases of the nhc98
+compiler and the hmake compilation manager.
+
+This release of Hat is a major release.  It incorporates new
+trace-browsing tools, and for the first time has support to compile
+programs for tracing with GHC in addition to nhc98.
+
+for information on hat:       http://www.cs.york.ac.uk/fp/hat/
+for information on nhc98:     http://www.cs.york.ac.uk/fp/nhc98/
+for information on hmake:     http://www.cs.york.ac.uk/fp/hmake/
+for downloads:                http://www.cs.york.ac.uk/fp/nhc98/download.html
+
+(Hat and hmake are packaged together with nhc98 in a single download.)
+
+If you haven't already tried out the Hat tracing system, now is a
+good time to have a go!  New features worth noting are:
+
+  * There is a new tutorial introduction to Hat, showing how to
+    generate program traces and how to explore them.
+
+  * All the interactive trace browsing tools are implemented in
+    Haskell, including a new, simpler, textual version of hat-trail.
+    They all inter-operate, and use a similar command syntax.
+
+  * The trace-generating machinery can now be used with GHC in addition
+    to nhc98:  just use `hmake -ghc -hat' instead of `hmake -nhc98 -T'.
+    (However, for the moment, you still need to download and install
+    the nhc98 distribution, even when you intend to trace programs
+    only with GHC.)
+
+In addition there have also been many minor bugfixes to nhc98 and hmake.
+
+Bug reports should be sent to  nhc-bugs@haskell.org.
+Discussion of the Hat system belongs on  nhc-users@haskell.org.
+
+Regards,
+    The Hat team at York
+
