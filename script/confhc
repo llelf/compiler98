@@ -96,21 +96,24 @@ fi
 
 # There may be another version of ghc to look for.
 COMP=$1
-if [ -n "$COMP" -a "`basename $COMP | cut -c1-3`" = "ghc" ]
+if [ -n "$COMP" ]
 then
-  VER=`basename $COMP | cut -c5-`
-  if [ -n "$VER" -a "$VER" != "$GHCVERSION" ]
+  if [ "`basename $COMP | cut -c1-3`" = "ghc" ]
   then
-    echo -n "  Looking for $COMP...   "
-    if which $COMP >/dev/null 2>&1
+    VER=`basename $COMP | cut -c5-`
+    if [ -n "$VER" -a "$VER" != "$GHCVERSION" ]
     then
-      GHC2KNOWN=`which $COMP`
-      GHC2VERSION=`${GHC2KNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
-      ghcsym ${GHC2KNOWN} targets/$MACHINE/ghcsym;
-    fi
-    if [ "$GHC2KNOWN" = "" ]
-    then  echo "(not found)"
-    else  echo "found ${GHC2VERSION}"
+      echo -n "  Looking for $COMP...   "
+      if which $COMP >/dev/null 2>&1
+      then
+        GHC2KNOWN=`which $COMP`
+        GHC2VERSION=`${GHC2KNOWN} --version 2>&1 | sed 's/^.*version[ ]*\([0-9.]*\).*/\1/'`
+        ghcsym ${GHC2KNOWN} targets/$MACHINE/ghcsym;
+      fi
+      if [ "$GHC2KNOWN" = "" ]
+      then  echo "(not found)"
+      else  echo "found ${GHC2VERSION}"
+      fi
     fi
   fi
 fi
@@ -131,22 +134,25 @@ else  echo "(not found)"
 fi
 
 # There may be another version of nhc98 to look for.
-if [ -n "$COMP" -a "`basename $COMP | cut -c1-5`" = "nhc98" ]
+if [ -n "$COMP" ]
 then
-  VER=`basename $COMP | cut -c7-`
-  if [ -n "$VER" -a "$VER" != "$NHCVERSION" ]
+  if [ -n "$COMP" -a "`basename $COMP | cut -c1-5`" = "nhc98" ]
   then
-    echo -n "  Looking for $COMP...   "
-    if which $COMP >/dev/null 2>&1
+    VER=`basename $COMP | cut -c7-`
+    if [ -n "$VER" -a "$VER" != "$NHCVERSION" ]
     then
-      NHC2KNOWN=`which $COMP`
-      NHC2VERSION=`${NHC2KNOWN} --version | head -1 | cut -d' ' -f2`
-      NHC2SYM=`echo $NHC2VERSION | tr ".va" " " | ( read x y z; echo $x$y; )`
-      echo $NHC2SYM >targets/$MACHINE/nhcsym;
-    fi
-    if [ "$NHC2KNOWN" = "" ]
-    then  echo "(not found)"
-    else  echo "found ${NHC2VERSION}"
+      echo -n "  Looking for $COMP...   "
+      if which $COMP >/dev/null 2>&1
+      then
+        NHC2KNOWN=`which $COMP`
+        NHC2VERSION=`${NHC2KNOWN} --version | head -1 | cut -d' ' -f2`
+        NHC2SYM=`echo $NHC2VERSION | tr ".va" " " | ( read x y z; echo $x$y; )`
+        echo $NHC2SYM >targets/$MACHINE/nhcsym;
+      fi
+      if [ "$NHC2KNOWN" = "" ]
+      then  echo "(not found)"
+      else  echo "found ${NHC2VERSION}"
+      fi
     fi
   fi
 fi
