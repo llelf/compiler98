@@ -518,6 +518,7 @@ void pruneOne(NodePtr np)
  
 void pruneStackAndOutput(NodePtr *sp)
 {
+#if 0
   NodePtr *sptr;
   extern void otMap(void (*f)(NodePtr));
 
@@ -532,10 +533,12 @@ void pruneStackAndOutput(NodePtr *sp)
     }
   }
   otMap(pruneOne);
+#endif
 }
 
 void prunePrunedStackAndOutput(NodePtr *sp)
 {
+#if 0
   NodePtr *sptr;
   extern void otMap(void (*f)(NodePtr));
 
@@ -550,6 +553,7 @@ void prunePrunedStackAndOutput(NodePtr *sp)
     }
   }
   otMap(prunePrunedNode);
+#endif
 }
 
 void pruneCafs()

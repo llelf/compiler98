@@ -27,7 +27,7 @@ int traceIp,traceSp,traceHp,traceFlag;
 int traceDepth = 1;
 int traceGcStat = 0;
 FILE *traceGcFd = NULL;
-FILE *HatFile;
+FILE *HatFile, *HatOutput, *HatBridge;
 #endif
 #if INSCOUNT
 int insCount;
@@ -387,21 +387,28 @@ void haskellInit (int argc, char **argv)
 
 #ifdef DBGTRANS
   {
-    fpos_t p;
+    unsigned p = 0;
     char filename[256];
-    extern void dumpNewModInfo(FILE*, void*);
-    extern void *MODULE_Main, NMOD_Prelude;
+  /*extern void dumpNewModInfo(FILE*, void*); */
+  /*extern void *MODULE_Main, NMOD_Prelude; */
     strcpy(filename,argv[0]);
-    strcat(filename,".hat");
-    HatFile = fopen(filename,"w");
-    fgetpos(HatFile,&p);
+    strcat(filename,".hat");		/* the .hat file holds the archive */
+    HatFile = fopen(filename,"w");	/* of redex trails */
+    p = ftell(HatFile);
     fprintf(HatFile,"Hat v01");		/* initialise file */
     fputc(0,HatFile);
-    fwrite(&p,sizeof(fpos_t),1,HatFile);
-    fwrite(&p,sizeof(fpos_t),1,HatFile);
+    fwrite(&p,sizeof(unsigned),1,HatFile);
+    fwrite(&p,sizeof(unsigned),1,HatFile);
   /*dumpNewModInfo(HatFile,MODULE_Main); */
   /*dumpNewModInfo(HatFile,&NMOD_Prelude); */
     fflush(HatFile);
+
+    strcpy(filename,argv[0]);		/* the .output file is a copy of */
+    strcat(filename,".hat.output");	/* stdout */
+    HatOutput = fopen(filename,"w");
+    strcpy(filename,argv[0]);		/* the .bridge file links the output */
+    strcat(filename,".hat.bridge");	/* to the archived trails */
+    HatBridge = fopen(filename,"w");
   }
 #endif
 
@@ -474,6 +481,8 @@ int haskellEnd (int argc, char **argv) {
 
 #ifdef DBGTRANS
   fclose(HatFile);
+  fclose(HatOutput);
+  fclose(HatBridge);
 #endif
 
   return exit_code;
