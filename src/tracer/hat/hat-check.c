@@ -103,7 +103,7 @@ main (int argc, char *argv[])
   stat(filename, &statbuf);
   filesize = statbuf.st_size;
   f = open(filename, (rmode ? 2 : 0));
-  if (f==-1) { fprintf(stderr, "cannot open trace file %s",filename); exit(1); }
+  if (f==-1) { fprintf(stderr, "cannot open trace file %s\n",filename); exit(1); }
   if (rmode) {
     markfromheader(buffer);
     strcat(filename, ".bridge");
@@ -483,37 +483,37 @@ nodes() {
 	switch (trk) {
 	case APP:
           { int arity = readarity();
-	    if (amode) printf("Application %d\t\t",arity);
+	    if (amode) printf(" Application %d \t",arity);
 	    for (; arity-- > -2;)
 	      dopointer(TR, readpointer(), TR, offset);
 	  }
 	  dopointer(SR, readpointer(), TR, offset);
 	  break;
 	case NAM:
-          if (amode) printf(" Name\t\t\t");
+          if (amode) printf(" Name          \t");
           dopointer(TR, readpointer(), TR, offset);
 	  dopointer(NT, readpointer(), TR, offset);
 	  dopointer(SR, readpointer(), TR, offset);
 	  break;
 	case IND:
-          if (amode) printf(" Indirection\t\t");
+          if (amode) printf(" Indirection   \t");
 	  dopointer(TR, readpointer(), TR, offset);
 	  dopointer(TR, readpointer(), TR, offset);
 	  break;
 	case HIDDEN:
-          if (amode) printf(" Hidden\t\t\t");
+          if (amode) printf(" Hidden        \t");
 	  dopointer(TR, readpointer(), TR, offset);
 	  break;
 	case SATA:
-          if (amode) printf(" SAT(A) \t\t");
+          if (amode) printf(" SAT(A)        \t");
 	  dopointer(TR, readpointer(), TR, offset);
 	  break;
 	case SATB:
-          if (amode) printf(" SAT(B) \t\t");
+          if (amode) printf(" SAT(B)        \t");
 	  dopointer(TR, readpointer(), TR, offset);
 	  break;
 	case SATC:
-          if (amode) printf(" SAT(C) \t\t");
+          if (amode) printf(" SAT(C)        \t");
 	  dopointer(TR, readpointer(), TR, offset);
 	  break;
 	}
@@ -555,7 +555,7 @@ nodes() {
           { double d = readdouble(); if (amode) printf("DOUBLE %g", d); }
 	  break;
 	case IDENTIFIER:
-          { char *s = readstring(); if (amode) printf("identifier\t\t%s ", s); }
+          { char *s = readstring(); if (amode) printf("identifier    \t%s ", s); }
 	  { unsigned long modinfo = readpointer();
 	    char *fp = readfixpri();
 	    if (*fp!='\0' && amode) printf("%s ", fp);
@@ -564,7 +564,7 @@ nodes() {
           }
 	  break; 
 	case CONSTRUCTOR:
-          { char *s = readstring(); if (amode) printf("constructor\t\t%s", s); }
+          { char *s = readstring(); if (amode) printf("constructor   \t%s ", s); }
 	  { unsigned long modinfo = readpointer();
 	    char *fp = readfixpri();
 	    if (*fp!='\0' && amode) printf("%s ", fp);
@@ -606,7 +606,7 @@ nodes() {
 	}
 	break;
       case SR:
-	if (amode) printf("SR 0x%x:  Source reference\t", offset);
+	if (amode) printf("SR 0x%x:  Source reference  \t", offset);
 	dopointer(MD, readpointer(), SR, offset);
 	{ char *p = readposn(); if (amode) printf(" %s", p); }
 	break;
