@@ -8,7 +8,7 @@ AR = ar
 LD = ld
 
 
-VERSION = 1.16
+VERSION = 1.17
 # When incrementing the nhc98 version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -17,7 +17,7 @@ HMAKEVERSION = 3.07
 # HMAKEVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
-HATVERSION = 2.02
+HATVERSION = 2.03
 # HATVERSION is the separate version number for hat.
 #   (odd minor number = CVS version;  even minor number = release version)
 
