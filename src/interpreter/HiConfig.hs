@@ -18,7 +18,7 @@ tmpfile :: String
 tmpfile =
     let tmp = "TEMP" `withDefault` "/tmp" in
     if windows
-      then (tmp++"\\Main")
+      then (tmp++"/Main")
       else unsafePerformIO $ do
              p <- getProcessID
              return (tmp++"/Main"++show p)
