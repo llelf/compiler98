@@ -7,7 +7,8 @@ EXTRA_C_FLAGS	=
 
 SRCS	= \
 	Addr.hs ForeignObj.hs Ptr.hs ShowsIntBase.hs StablePtr.hs
-SRCS_T	=
+SRCS_T	= \
+	Addr.hs ForeignObj.hs Ptr.hs ShowsIntBase.hs
 
 NotYetSRCS = Int.hs Word.hs
 

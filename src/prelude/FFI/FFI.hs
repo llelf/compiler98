@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.4 2000/08/22 11:37:49 malcolm Exp $
+   $Id: FFI.hs,v 1.5 2000/10/26 17:19:27 malcolm Exp $
 -}
 
 module FFI
@@ -41,12 +41,12 @@ module FFI
 -- ,writeForeignAddr      -- :: ForeignObj -> Addr         -> IO ()
 -- ,writeForeignFinalizer -- :: ForeignObj -> (Addr->IO()) -> IO ()
 -- ,writeForeignFinalizer -- :: ForeignObj ->  Addr        -> IO ()
-  , foreignObjToAddr      -- :: ForeignObj -> IO Addr
+  , foreignObjToAddr      -- :: ForeignObj -> Addr
 -- ,addrToForeignObj      -- :: Addr       -> IO ForeignObj 
    ,withForeignObj        -- :: ForeignObj -> (Addr -> IO a) -> IO a
    ,touchForeignObj       -- :: ForeignObj -> IO ()
 
-
+#if !defined(TRACING)
    -------------------------------------------------------------------
   , StablePtr             -- abstract
   , makeStablePtr         -- :: a -> IO (StablePtr a)
@@ -54,7 +54,7 @@ module FFI
   , freeStablePtr         -- :: StablePtr a -> IO ()
   , stablePtrToAddr       -- :: StablePtr a -> Addr
   , addrToStablePtr       -- :: Addr -> StablePtr a
-
+#endif
    -------------------------------------------------------------------
   , CString		-- abstract
   , toCString		-- :: String  -> CString
@@ -64,10 +64,12 @@ module FFI
 --import Int		-- not complete yet
 --import Word		-- not complete yet
 import Addr		-- new
-import ForeignObj	-- new, note: type of finalizers is still wrong.
+import ForeignObj	-- new
+#if !defined(TRACING)
 import StablePtr	-- new
+#endif
 import CString		-- nhc98-only
-import FixIO (fixIO)	-- part of IOExts, but IOExts depends on FFI.
+import FixIO (fixIO)	-- part of IOExtras, but IOExtras depends on FFI.
 import Monad (when)
 
 ----------------------------------------------------------------------
