@@ -2,8 +2,12 @@
 case $1 in
   base)
 	echo Data Debug Control Control/Monad System System/IO System/Console
-	echo Text Text/PrettyPrint Text/Html Text/Show
+	echo Text Text/PrettyPrint Text/Html Text/Show Text/ParserCombinators
 	echo Foreign Foreign/Marshal Foreign/C NHC
+	;;
+  Cabal)
+	echo Distribution Distribution/Compat Distribution/PreProcess
+	echo Distribution/Simple
 	;;
   fgl)
 	echo Data Data/Graph Data/Graph/Inductive Data/Graph/Inductive/Monad
