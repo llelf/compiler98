@@ -418,6 +418,7 @@ int haskellEnd (int argc, char **argv) {
   if(profile) profile_stop(Hp);
 #endif
 
+  /* runDeferredGCs();		/* need to run finalisers (?) */
 
   timerStop(&totalTime);
   fflush(stdout);

@@ -167,6 +167,26 @@ C_HEADER(primForeignObj)
   C_RETURN(nodeptr);
 }
 
+/* The following FFI function *is* visible to the Haskell world.         */
+/* -- Note, we assume that the finaliser already has `unsafePerformIO'   */
+/*      wrapped around it, so its type is really (), not even IO ().     */
+/*      Furthermore, it is wrapped in a box so that the primitive call   */
+/*      (which evaluates all args to WHNF) does not execute it straight  */
+/*      away!                                                            */
+/* -- Note also that, normally one *cannot* return a ForeignObj complete */
+/*      to the Haskell world.  nhc98 does allow it, but this is the only */
+/*      occasion where it actually makes sense.                          */
+
+/* foreign import makeForeignObjC :: Addr -> a -> IO Addr                */
+void *primForeignObjC (void *addr, NodePtr fbox)
+{
+  ForeignObj *fo;
+  NodePtr finalise;
+  finalise = GET_POINTER_ARG1(fbox,1);
+  fo = allocForeignObj(addr, (gcCval)mkStablePtr(finalise), gcLater);
+  return (void*)fo;
+}
+
 static StablePtr pending[MAX_FOREIGNOBJ];  /* queue for pending finalisers */
 static int       pendingIdx=0;
 
@@ -184,6 +204,14 @@ void runDeferredGCs (void)
   int i;
   NodePtr n;
   CodePtr IP=Ip;		/* save global instruction pointer */
+  static int alreadyRunning=0;	/* need lock in case a finaliser triggers GC! */
+
+  if (alreadyRunning) {
+    fprintf(stderr,"Warning: running ForeignObj finalisers has triggered another GC!\n");
+    return;
+  } else alreadyRunning=1;	/* grab mutex lock before entering */
+
+  fprintf(stderr,"runDeferredGCs: %d finalisers to process\n",pendingIdx);
 
   for (i=1; i<=pendingIdx; i++) {/* traverse the queue */
     n = stableRef(pending[i]);
@@ -195,5 +223,6 @@ void runDeferredGCs (void)
   }
   Ip=IP;			/* restore global instruction pointer */
   pendingIdx = 0;		/* finally, reset the queue */
+  alreadyRunning = 0;		/* and release the mutex lock */
 }
 

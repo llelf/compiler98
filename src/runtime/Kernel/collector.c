@@ -38,10 +38,10 @@ Int hpMoved;
 Int hpMaxSurvive;
 int nogc;
 
-/*    hpStart                                                                 hpEnd */
-/*          hpBase                                                                  */
-/*    hpLowLimit                          hpLimit    bitTable                       */
-/*                    hp                                                            */
+/*    hpStart                                                          hpEnd */
+/*          hpBase                                                           */
+/*    hpLowLimit                   hpLimit    bitTable                       */
+/*                    hp                                                     */
 
 void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 {
@@ -93,13 +93,13 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 
 void finishGc(NodePtr hp,int verbose)
 {
-  /* runDeferredGCs(); 	-- process pending finalisers now we have heap space */
   if(verbose) {
     fprintf(stderr,"\n\nUsed  %ld words of heap.\n",hp-hpBase+hpTotal);
     fprintf(stderr,"Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
     fprintf(stderr,"%d words to next gc.\n",hpLimit-hp);
     fprintf(stderr,"Max live after gc: %ld words.\n",hpMaxSurvive);
   }
+  /* runDeferredGCs(); 	-- process pending finalisers now we have heap space */
 }
 
 NodePtr prevLow,prevHigh;
@@ -536,10 +536,10 @@ again:
   }
 
 
-/*    hpStart                                                                 hpEnd */
-/*          hpBase                                                                  */
-/*    hpLowLimit                                                            hpLimit */
-/*                    hp                                                            */
+/*    hpStart                                                          hpEnd */
+/*          hpBase                                                           */
+/*    hpLowLimit                                                     hpLimit */
+/*                    hp                                                     */
 
   prevLow = hpLowLimit;
   prevHigh = hpLimit;
@@ -746,7 +746,9 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 	  goto again;
       }
   }
-#endif  
+#endif
+
+  /* runDeferredGCs(); 	/* process pending finalisers now we have heap space */
 
 #ifdef TPROF
   if(!tprof && size) timerStart(&runTime);	/*PH*/
