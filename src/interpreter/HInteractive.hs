@@ -13,6 +13,7 @@ import HiConfig
 import SimpleLineEditor (delChars, getLineEdited, initialise, restore)
 import LexModule
 import Unlit
+import Platform (shell)
 
 --debug x = putStrLn ("DEBUG: "++x)
 debug x = return ()
@@ -70,7 +71,7 @@ toplevel state = do
           ':' -> let ws = words (tail s) in
                  if (null ws) then done else
                  case head (head ws) of
-                   '!' -> system (unwords ((tail (head ws)):tail ws)) >> done
+                   '!' -> shell (unwords ((tail (head ws)):tail ws)) >> done
                    _   -> commands ws state
           _   -> evaluate s (words s) state
      toplevel state
@@ -132,7 +133,7 @@ showtype expr _ state = do
 
 compile flag file state continue = do
   if flag then putStr "[Compiling..." else done
-  ok <- system (hmake ++" -hc="++compilerPath (compiler state)++" -I. "
+  ok <- shell (hmake ++" -hc="++compilerPath (compiler state)++" -I. "
                 ++(case cfgfile state of {Just f-> ("-f "++f++" "); _->"";})
                 ++unwords (options state)++" "++file++" >/dev/null")
   case ok of
@@ -141,7 +142,7 @@ compile flag file state continue = do
     _           -> if flag then putStrLn "...failed]" else done
 
 run file args = do
-  ok <- system (file++" "++unwords args)
+  ok <- shell (file++" "++unwords args)
   case ok of
     ExitFailure e -> putStrLn ("Expression failed with exit code "++show e)
     _ -> return ()
@@ -187,7 +188,7 @@ commands ws state = let target = tail ws in do
              Nothing  -> let mod = head (modules state) in
                          edit state mod (load state mod done)
              Just mod -> edit state mod (loadScope state mod (\_->done))
-       else do e <- system ("${EDITOR-vi} " ++ unwords target)
+       else do e <- shell ("${EDITOR-vi} " ++ unwords target)
                loadAll state done
       )
   command "type"
@@ -319,14 +320,14 @@ loadScope state =
 
 edit :: State -> String -> IO () -> IO ()
 edit state mod success =
-  findF (\lit file success-> system ("${EDITOR-vi} " ++ file) >> success ())
+  findF (\lit file success-> shell ("${EDITOR-vi} " ++ file) >> success ())
         (\hifile success->
            putStrLn ("[Cannot edit system file... "++hifile++"]"))
         state mod (\()->success)
 
 
---makeclean ".o"  modules = system ("hmake -clean -nhc98 "++unwords modules)
---makeclean ".hi" modules = system ("hmake -realclean -nhc98 "++unwords modules)
+--makeclean ".o"  modules = shell ("hmake -clean -nhc98 "++unwords modules)
+--makeclean ".hi" modules = shell ("hmake -realclean -nhc98 "++unwords modules)
 
 makeclean ext modules = mapM_ (clean ext) modules
   where

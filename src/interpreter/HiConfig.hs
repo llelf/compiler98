@@ -10,7 +10,7 @@ module HiConfig where
 
 import Compiler
 import Config
-import Platform (getProcessID,unsafePerformIO,withDefault,windows)
+import Platform (getProcessID,unsafePerformIO,withDefault,windows,escape)
 import System
 
 -- Generate a temporary filename unique to this process.
@@ -18,7 +18,7 @@ tmpfile :: String
 tmpfile =
     let tmp = "TEMP" `withDefault` "/tmp" in
     if windows
-      then (tmp++"/Main")
+      then (escape tmp++"/Main")
       else unsafePerformIO $ do
              p <- getProcessID
              return (tmp++"/Main"++show p)

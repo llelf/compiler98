@@ -22,7 +22,7 @@ module Platform
   , getProcessID
   ) where
 
-import System (getEnv)
+import System (getEnv,system)
 import List (isPrefixOf)
 
 #ifdef __HBC__
@@ -53,7 +53,10 @@ withDefault name def = unsafePerformIO $
 -- Some variables imported from the shell environment
 builtby = "BUILTBY" `withDefault` "unknown"
 machine = "MACHINE" `withDefault` "unknown"
+cygshel = "SHELL" `withDefault` "/cygwin/bin/bash"
 windows = "ix86-CYGWIN" `isPrefixOf` machine
 exe prg = if windows then prg++".exe" else prg
 escape  = if windows then map (\c-> if c=='\\' then '/' else c) else id
 
+shell cmd = if windows then system (cygshel++" -cl \""++cmd++"\"")
+                       else system cmd
