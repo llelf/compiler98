@@ -3,6 +3,7 @@ module StrPos(strPCode,strPExp) where
 import Extra(mixLine,mixSpace)
 import PosCode
 import SyntaxPos
+import Syntax (FSpec)
 import Foreign(ImpExp(..))
 
 strPCode p code = mixLine (map (strPBinding p "") code)
