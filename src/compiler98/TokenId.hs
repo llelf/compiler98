@@ -43,6 +43,9 @@ mkUnqualifiedTokenId = visible . reverse
 mkQualifiedTokenId :: String -> String -> TokenId
 mkQualifiedTokenId mod name = qualify (reverse mod) (reverse name)
 
+getUnqualified :: TokenId -> String
+getUnqualified = reverse . unpackPS . extractV
+
 isTidOp :: TokenId -> Bool
 isTidOp (TupleId s) = False
 isTidOp tid = 

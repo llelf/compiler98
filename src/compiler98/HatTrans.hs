@@ -8,6 +8,7 @@ module Main where
 import IO
 import System
 import Monad(when)
+import List(isPrefixOf)
 
 import Error
 import Syntax
@@ -21,7 +22,8 @@ import Flags (Flags,processArgs,pF,sUnderscore,sRealFile,sSourceFile,sUnlit
 import PrettySyntax(prettyPrintTokenId,prettyPrintId,prettyPrintTraceId
                    ,ppModule,ppTopDecls,ppClassCodes)
 
-import TokenId(TokenId(..),t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
+import TokenId(TokenId(..),getUnqualified
+              ,visible,t_Arrow,t_List,tPrelude,tminus,tnegate,tTrue)
 import IdKind(IdKind(..))
 import Id(Id)
 import Lex(Lex,LexAnnot)  -- need show
@@ -117,9 +119,18 @@ implicitlyImportPrelude flags
   (Module pos modId exports imports fixities decls) =
   Module pos modId exports imports' fixities decls
   where 
-  imports' = if sPrelude flags || any ((==) tPrelude . importedModule) imports
-               then imports
-               else Import (noPos,tPrelude) (Hiding []) : imports
+  imports' = 
+    if sPrelude flags && "Prelude" `isPrefixOf` getUnqualified modId
+      then imports 
+      else
+        ImportQ (noPos,visible (reverse "PreludeBasic")) (Hiding []) :
+        -- import implementation of Prelude qualified
+        -- use this for transformation-introduced Prelude identifiers
+        -- even some internal identifiers that are not part of the Prelude
+        -- (e.g. for deriving of instances)
+          (if any ((==) tPrelude . importedModule) imports
+            then imports
+            else Import (noPos,tPrelude) (Hiding []) : imports)
 
 
 {- End Module Main ----------------------------------------------------------}

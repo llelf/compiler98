@@ -139,11 +139,6 @@ tImpDecls modId decls =
     -- actually should hide Prelude as far as possible using
     -- ImportQ (noPos,tPrelude) (NoHiding [])
     -- but nhc98 needs access to original Prelude for desugaring
-    :ImportQ (noPos,visible (reverse "TPreludeBasic")) (Hiding [])
-    -- import implementation of Prelude qualified
-    -- use this for transformation-introduced Prelude identifiers
-    -- even some internal identifiers that are not part of the Prelude
-    -- (e.g. for deriving of instances)
     :ImportQas (noPos,Visible tracingModule) 
        (noPos,Visible tracingModuleShort) (Hiding [])
     :map tImpDecl decls
