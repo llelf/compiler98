@@ -1,26 +1,84 @@
 #!/bin/sh
 #	fixghc:  a small script to patch up the -syslib changes between
-#		versions 4.04 and 4.06 of ghc.
+#		versions 4.04, 4.06, and 4.08 of ghc.
 
+case $# in
+  0) exit 1;;
+esac
 ghcversion=$1
 shift
 
-if [ $ghcversion -ge 406 ]
+# We need a working `echo' command: Solaris2.6 and HP/UX may not have it.
+case `echo -n hello | wc -c | ( read n ; echo $n )` in
+    5) echo-n () { echo -n "$@"; } ;;
+    *) LOCAL=${LOCAL-`dirname $0`}
+       if [ -x $LOCAL/echo ]
+       then echo-n () { $LOCAL/echo -n "$@"; }
+       else echo-n () { echo "$@"; }
+       fi ;;
+esac
+
+
+# We permit arguments to arrive in any format (4.04, 4.06, or 4.08),
+# and translate to the format specified by the first arg.
+
+if [ $ghcversion -le 405 ]
+then
+  while test "'$1'" != "''" 
+  do
+    case $1 in
+      -syslib|-package) shift
+               case $1 in
+                 lang) echo-n " -syslib exts";;
+                 text) echo-n " -syslib misc";;
+                 *)    echo-n " -syslib $1" ;;
+               esac ;;
+      *) echo-n " $1" ;;
+    esac
+    shift
+  done
+  echo
+  exit 0
+fi
+
+if [ $ghcversion -gt 405 -a $ghcversion -lt 408 ]
+then
+  while test "'$1'" != "''" 
+  do
+    case $1 in
+      -syslib|-package) shift
+               case $1 in
+                 exts) echo-n " -syslib lang";;
+                 misc) ;;
+                 *)    echo-n " -syslib $1" ;;
+               esac ;;
+      *) echo-n " $1" ;;
+    esac
+    shift
+  done
+  echo
+  exit 0
+fi
+
+if [ $ghcversion -ge 408 ]
 then
   while test "'$1'" != "''" 
   do
     case $1 in
       -syslib) shift
                case $1 in
-                 exts) echo -n " -syslib lang";;
+                 exts) echo-n " -package lang";;
                  misc) ;;
-                 *)    echo -n " -syslib $1" ;;
+                 *)    echo-n " -package $1" ;;
                esac ;;
-      *) echo -n " $1" ;;
+      *) echo-n " $1" ;;
     esac
     shift
   done
   echo
-else
-  echo "$@"
+  exit 0
 fi
+
+# stand-by default case
+echo "$@"
+exit 0

@@ -41,6 +41,11 @@ else
 fi
 
 
+# Remove whitespace and slashes.
+PROCESSOR=`echo $PROCESSOR | tr '/ 	' '.'`
+OS=`echo $OS | tr '/ 	' '-'`
+REL=`echo $REL | tr '/ 	' '-'`
+
 # Canonicalise equivalent processor families to one representative member.
 case $PROCESSOR in
   i[345678]86)	PROCESSOR=ix86;;
@@ -55,7 +60,7 @@ case $OS in
   Linux)	;;
   CYGWIN*)      ;;
   *BSD)		;;
-  BSD/OS)	OS="BSD-OS"$REL ;;
+# BSD/OS)	OS="BSD-OS"$REL ;;	-- removed by slash->dash translation.
   SunOS)	case $REL in
 		  3*) OS=SunOS3;;
 		  4*) OS=SunOS4;;
