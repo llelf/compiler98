@@ -660,7 +660,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
 
   if(hp+size >= (NodePtr)sp) { /* !!! hpLimit */
     fprintf(stderr,"The program ran out of heap memory.");
-    fprintf(stderr,"  (Current heapsize is %d bytes.)\n",hpSize);
+    fprintf(stderr,"  (Current heapsize is %d bytes.)\n",hpSize*sizeof(int));
     fprintf(stderr,"You can set a bigger size with e.g. +RTS -H4M -RTS");
     fprintf(stderr," (4M = four megabytes).");
     fprintf(stderr,"GC stats:\n  ");
