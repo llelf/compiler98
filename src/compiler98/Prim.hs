@@ -11,6 +11,7 @@ data Prim =
     | ABS	PrimOp
     | SIGNUM    PrimOp
     | EXP	PrimOp
+    | POW	PrimOp
     | LOG	PrimOp
     | SQRT	PrimOp
     | SIN	PrimOp
@@ -51,6 +52,7 @@ strPrim (MUL    op) 	= strPrimOp "MUL"    op
 strPrim (ABS    op) 	= strPrimOp "ABS"    op
 strPrim (SIGNUM op) 	= strPrimOp "SIGNUM" op
 strPrim (EXP    op) 	= strPrimOp "EXP"    op
+strPrim (POW    op) 	= strPrimOp "POW"    op
 strPrim (LOG    op) 	= strPrimOp "LOG"    op
 strPrim (SQRT   op) 	= strPrimOp "SQRT"   op
 strPrim (SIN    op) 	= strPrimOp "SIN"    op

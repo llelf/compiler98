@@ -119,6 +119,8 @@ static int i_signum_f[1];
 static int i_signum_d[1];
 static int i_exp_f[1];
 static int i_exp_d[1];
+static int i_pow_f[1];
+static int i_pow_d[1];
 static int i_log_f[1];
 static int i_log_d[1];
 static int i_sqrt_f[1];
@@ -304,6 +306,8 @@ void genericByteIns (CodePtr ip, fun op0, fun op1, fun op2, fun opdef)
   case SIGNUM_D: op0(ip,"SIGNUM_D",i_signum_d); break;
   case EXP_F: op0(ip,"EXP_F",i_exp_f); break;
   case EXP_D: op0(ip,"EXP_D",i_exp_d); break;
+  case POW_F: op0(ip,"POW_F",i_pow_f); break;
+  case POW_D: op0(ip,"POW_D",i_pow_d); break;
   case LOG_F: op0(ip,"LOG_F",i_log_f); break;
   case LOG_D: op0(ip,"LOG_D",i_log_d); break;
   case SQRT_F: op0(ip,"SQRT_F",i_sqrt_f); break;

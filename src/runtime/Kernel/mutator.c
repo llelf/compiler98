@@ -615,6 +615,17 @@ void run(NodePtr toplevel)
   Case(MUL_F): PRIM_OP2_FLOAT(*);
   Case(SLASH_F): PRIM_OP2_FLOAT(/);
 
+  Case(POW_F):
+    { NodePtr nodeptr = *sp++;
+	float a,b;
+	IND_REMOVE(nodeptr); ASSERT_F(ip,nodeptr) UPDATE_PROFINFO(nodeptr) a = get_float_value(nodeptr);
+	nodeptr = *sp++;
+	IND_REMOVE(nodeptr); ASSERT_F(ip,nodeptr) UPDATE_PROFINFO(nodeptr) b = get_float_value(nodeptr);
+	mk_float(hp, (float)pow((double)a,(double)b));
+	INIT_PROFINFO(hp,&float2ProfInfo)
+	*--sp = hp; hp += SIZE_FLOAT;
+    } Break;
+
 #define PRIM_OP1_FLOAT(op) \
     { NodePtr nodeptr = *sp++; \
 	float a;                 \
@@ -670,6 +681,17 @@ void run(NodePtr toplevel)
   Case(SUB_D): PRIM_OP2_DOUBLE(-);
   Case(MUL_D): PRIM_OP2_DOUBLE(*);
   Case(SLASH_D): PRIM_OP2_DOUBLE(/);
+
+  Case(POW_D):
+    { NodePtr nodeptr = *sp++;
+	double a,b;
+	IND_REMOVE(nodeptr); ASSERT_D(ip,nodeptr) UPDATE_PROFINFO(nodeptr) a = get_double_value(nodeptr);
+	nodeptr = *sp++;
+	IND_REMOVE(nodeptr); ASSERT_D(ip,nodeptr) UPDATE_PROFINFO(nodeptr) b = get_double_value(nodeptr);
+	mk_double(hp, pow(a,b));
+	INIT_PROFINFO(hp,&double2ProfInfo)
+	*--sp = hp; hp += SIZE_DOUBLE;
+    } Break;
 
 #define PRIM_OP1_DOUBLE(op) \
     { NodePtr nodeptr = *sp++; \
@@ -1185,7 +1207,10 @@ static char *instr_names[] = {
  "PUSH_ZAP_ARG_I3",
  "PUSH_ZAP_ARG",
 
- "ENDCODE"
+ "ENDCODE",
+
+ "POW_F",
+ "POW_D"
 };
 #endif
 

@@ -13,9 +13,11 @@ instance  Floating Double where
     asin x              =  asin x       -- MAGIC
     acos x              =  acos x       -- MAGIC
     atan x              =  atan x       -- MAGIC
+    x ** y              =  x ** y       -- MAGIC
     sinh x              = fromRational (1%2) * (exp x - exp (-x))
     cosh x              = fromRational (1%2) * (exp x + exp (-x))
     tanh x              = (a-b)/(a+b) where a = exp x ; b = exp (-x)
     asinh x = log (x + sqrt (1+x*x))
     acosh x = log (x + (x+1) * sqrt ((x-1)/(x+1)))
     atanh x = log ((x+1) / sqrt (1 - x*x))
+

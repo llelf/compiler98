@@ -198,7 +198,10 @@
  ins(PUSH_ZAP_ARG_I3),	\
  ins(PUSH_ZAP_ARG),	\
 \
- ins(ENDCODE)
+ ins(ENDCODE),		\
+\
+ ins(POW_F),		\
+ ins(POW_D)
 
 
 #define UNUSED_INSTRUCTIONS	\

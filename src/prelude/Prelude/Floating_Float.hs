@@ -13,6 +13,7 @@ instance  Floating Float where
     asin x		=  asin x	-- MAGIC
     acos x		=  acos x	-- MAGIC
     atan x		=  atan x	-- MAGIC
+    x ** y		=  x ** y	-- MAGIC
     sinh x              = 0.5  * (exp x - exp (-x))
     cosh x              = 0.5  * (exp x + exp (-x))
     tanh x              = (af-bf)/(af+bf) where af = exp x ; bf = exp (-x)

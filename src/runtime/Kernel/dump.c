@@ -144,6 +144,8 @@ void prByteIns (CodePtr ip)
   case SIGNUM_D: fprintf(stderr," SIGNUM_D \n"); break;
   case EXP_F: fprintf(stderr," EXP_F \n"); break;
   case EXP_D: fprintf(stderr," EXP_D \n"); break;
+  case POW_F: fprintf(stderr," POW_F \n"); break;
+  case POW_D: fprintf(stderr," POW_D \n"); break;
   case LOG_F: fprintf(stderr," LOG_F \n"); break;
   case LOG_D: fprintf(stderr," LOG_D \n"); break;
   case SQRT_F: fprintf(stderr," SQRT_F \n"); break;

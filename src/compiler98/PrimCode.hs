@@ -360,6 +360,7 @@ floatingPrim met =
   else if met == rpsasin then Just ASIN
   else if met == rpsacos then Just ACOS
   else if met == rpsatan then Just ATAN
+  else if met == rpspow then  Just POW
   else Nothing
 
 rpsexp = impRev "exp"
@@ -371,6 +372,7 @@ rpstan = impRev "tan"
 rpsasin = impRev "asin"
 rpsacos = impRev "acos"
 rpsatan = impRev "atan"
+rpspow = impRev "**"
 
 --------------
 
