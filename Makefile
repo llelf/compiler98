@@ -398,7 +398,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 		$(TARGDIR)/heappreludeC $(TARGDIR)/preludeC \
 		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
 		$(TARGDIR)/pragmaC $(TARGDIR)/hsc2hsC $(TARGDIR)/librariesC \
-		$(TARGDIR)/cpphsC \
+		$(TARGDIR)/cpphsC hoodui \
 		nolinks cleantest
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
