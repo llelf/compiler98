@@ -161,6 +161,7 @@ void haskellInit (int argc, char **argv)
 	  case 'H':
 	    if(argv[i][2]) hpSize = (Int)numArg(SIZE_UNIT,&argv[i][2]); break;
 	  case 'V':
+	  case 'K':
 	    if(argv[i][2]) spSize = (Int)numArg(SIZE_UNIT,&argv[i][2]); break;
 
 	  case 'd':
