@@ -717,7 +717,7 @@ primNTConstr (IdEntry *id)
 {
     if (id->fileoffset) {
         HIDE(fprintf(stderr,"\tprimNTConstr \"%s\" -> (cached)\n",id->name);)
-        return mkCNmType(NTConstr,id->fileoffset,id->srcmod->trusted);
+	return mkCNmType(NTConstr,id->fileoffset,False); /* id->srcmod->trusted */
     } else {
         FileOffset fo;
         int i;

@@ -1192,7 +1192,7 @@ saturateTrustConstr parent c@(ExpCon pos id) args =
     lookupVar pos (t_tpa (length args)) >>>= \pan ->
     unitS (ExpApplication pos (pan:c:cn:parent:ntconstr:args))
    else
-    wrapSuspectConst parent c args
+    wrapTrustConst parent c args
 
 
 {-
