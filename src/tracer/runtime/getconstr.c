@@ -74,7 +74,7 @@ NodePtr mkTAp1(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr sr)
   ta1p = GET_INT_VALUE(ta1);
   srp  = GET_INT_VALUE(sr);
   rp   = primTAp1(tp,tfp,ta1p,srp);
-  fprintf(stderr,"getconstr.c: mkTAp1\n");
+  /*fprintf(stderr,"getconstr.c: mkTAp1\n");*/
   return mkInt(rp);
 }
 NodePtr mkTAp2(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr ta2, NodePtr sr)
@@ -86,7 +86,7 @@ NodePtr mkTAp2(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr ta2, NodePtr sr)
   ta2p = GET_INT_VALUE(ta2);
   srp  = GET_INT_VALUE(sr);
   rp   = primTAp2(tp,tfp,ta1p,ta2p,srp);
-  fprintf(stderr,"getconstr.c: mkTAp2\n");
+  /*fprintf(stderr,"getconstr.c: mkTAp2\n");*/
   return mkInt(rp);
 }
 #endif
@@ -111,7 +111,7 @@ NodePtr mkTNm(NodePtr t, CNmType nm, NodePtr sr)
   tp  = GET_INT_VALUE(t);
   srp = GET_INT_VALUE(sr);
   rp  = primTNm(tp,nm,srp);
-  fprintf(stderr,"getconstr.c: mkTNm\n");
+  /*fprintf(stderr,"getconstr.c: mkTNm\n");*/
   return mkInt(rp);
 }
 #endif
@@ -135,7 +135,7 @@ NodePtr mkTInd(NodePtr t1, NodePtr t2)
   t1p = GET_INT_VALUE(t1);
   t2p = GET_INT_VALUE(t2);
   rp  = primTInd(t1p,t2p);
-  fprintf(stderr,"getconstr.c: mkTInd\n");
+  /*fprintf(stderr,"getconstr.c: mkTInd\n");*/
   return mkInt(rp);
 }
 #endif
@@ -249,7 +249,7 @@ C_HEADER(cSeq)
 {
   NodePtr nodeptr, np;
 
-  /*fprintf(stderr, "cSeq used\n");*/
+  /*fprintf(stderr, "\tcSeq\n");*/
   nodeptr = C_GETARG1(2);
   IND_REMOVE(nodeptr);
   nodeptr = GET_POINTER_ARG1(nodeptr,1);
@@ -355,7 +355,7 @@ C_HEADER(_tprim_unpackPS)
 
 CNmType mkNmWithArg(int tag, NodePtr x)
 {
-    fprintf(stderr,"getconstr.c: mkNmWithArg\n");
+    /*fprintf(stderr,"getconstr.c: mkNmWithArg\n");*/
     return (CNmType)0;
 #if 0
     NodePtr n = C_ALLOC(1+EXTRA+1);
@@ -370,7 +370,7 @@ CNmType mkNmWithArg(int tag, NodePtr x)
 
 CNmType mkNm(int tag)
 {
-    fprintf(stderr,"getconstr.c: mkNm\n");
+    /*fprintf(stderr,"getconstr.c: mkNm\n");*/
     return (CNmType)0;
 #if 0
     NodePtr n = C_ALLOC(1+EXTRA);
