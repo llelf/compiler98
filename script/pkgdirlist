@@ -7,6 +7,9 @@ case $1 in
   parsec)
 	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
 	;;
+  haskell-src)
+	echo Language Language/Haskell
+	;;
   network)
 	echo Network
 	;;
