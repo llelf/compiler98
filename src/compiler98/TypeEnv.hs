@@ -9,11 +9,11 @@ import IntState
 import Bind(identPat)
 import Extra(mapSnd)
 
+-- environment represented as a list of (Id,NT) pairs
 initEnv = []
-
+lookupEnv a b = lookup a b
 tvarsInEnv env = concatMap (freeNT . snd) env
 
-lookupEnv a b = lookup a b
 
 envDecls decls  _ (TypeState state phi ctxs ectxsi) =
   case mapS0 envDecl' decls () ([],[],state) of
