@@ -1,1 +1,20 @@
-Full details of the install process are in docs/install.html.
+The short version is:
+
+  $ ./configure   [ --prefix=/my/installation ]
+  $ make
+  $ make install
+
+which provides you with the basic nhc98 compiler in /usr/local,
+[or in /my/installation if you used the --prefix= option].
+If you want slightly more control, try
+
+  $ make help
+
+which will give you a list of other build targets.  The default
+target is 'basic' which gives you the basic system.  'make all'
+gives you heap profiling and tracing in addition.
+
+**********************************************************************
+**** Full details of the install process are in docs/install.html ****
+**********************************************************************
+

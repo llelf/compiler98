@@ -20,8 +20,8 @@ CCC=${CC-gcc}
 PWD=`pwd`
 INSTALLDIR=/usr/local
 
-RTSMESSAGE='(default)'
-RTSFLAG=yes
+#RTSMESSAGE='(default)'
+#RTSFLAG=yes
 HEAP=100000
 
 BUILDLIBDIR=$PWD/lib
@@ -46,8 +46,8 @@ NEWHEAP=$HEAP
 while [ "$1" != "" ]
 do
   case $1 in
-    +rts) RTSFLAG=yes; RTSMESSAGE='(option +rts chosen)' ;;
-    -rts) RTSFLAG=no; RTSMESSAGE='(option -rts chosen)' ;;
+ #  +rts) RTSFLAG=yes; RTSMESSAGE='(option +rts chosen)' ;;
+ #  -rts) RTSFLAG=no; RTSMESSAGE='(option -rts chosen)' ;;
     -H*)      NEWHEAP=`echo $1 | cut -c3-` ;;
     --heap=*) NEWHEAP=`echo $1 | cut -c8-` ;;
     +lib) LIB=yes ;;
@@ -79,7 +79,7 @@ do
   echo "  --help / -h          Display these options and quit"
   echo "  --version / -v       Display versions of `basename $0` and nhc98"
   echo
-  echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
+ #echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
   echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
   echo
   echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
@@ -221,17 +221,22 @@ then
   fi
 fi
 
-
 echo
+BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-11`
+echo "I am guessing that you will want to build nhc98 with $BUILDWITH"
+case $BUILDWITH in
+  hbc|xtc)  RTSFLAG=no;;
+  ghc|nhc)  RTSFLAG=yes;;
+esac
 if [ "$RTSFLAG" = "yes" ]
-then echo -n "nhc98comp uses RTS delimiters "
-else echo -n "nhc98comp does not use RTS delimiters "
+then echo "  so nhc98comp uses RTS delimiters."
+else echo "  so nhc98comp does not use RTS delimiters."
 fi
-echo $RTSMESSAGE
+# echo $RTSMESSAGE
 
 if [ "$EXE" = "" ]
-then echo "executables do not have .exe suffix (detected)"
-else echo "executables need .exe suffix (detected)"
+then echo "Executables do not have .exe suffix (detected)"
+else echo "Executables need .exe suffix (detected)"
 fi
 
 echo -n "This machine's endian-ness is: "
@@ -324,6 +329,7 @@ then
 
   echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
   ( echo "ENDIAN=$ENDIAN";
+    echo "BUILDWITH=$BUILDWITH";
     case $RTSFLAG in
       no)  echo "USINGRTS=0" ;;
       yes) echo "USINGRTS=1" ;;
@@ -345,6 +351,7 @@ then
   echo -n "Adding build scripts to $BUILDBINDIR...    "
   echo -n "nhc98 "
   sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
+  ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
   sed -e "s|ArchDir |$BUILDBINDIR/|" |\
   sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
   echo -n "hmake "
@@ -464,6 +471,7 @@ else	# [ "$INSTALL" = "yes" ]
     fi
     echo -n "    nhc98 "
     sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
+    ( if [ "$RTSFLAG" = "yes" ]; then sed -e "s|greencard -|greencard|"; else cat; fi ) |\
     sed -e "s|ArchDir ||" |\
     sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98
     echo -n "hmake "
@@ -527,13 +535,13 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   if [ "$MANDIR" != "$INSTALLDIR/man/man1" ]; then echo "MANDIR=$MANDIR" ; fi;
   if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
   echo "DOCDIR=$DOCDIR" ;
-  echo "HBCDIR=$HBCDIR" ;
-  echo "GHCDIR=$GHCDIR" ;
+  if [ "$HBCDIR" != "" ]; then echo "HBCDIR=$HBCDIR" ; fi;
+  if [ "$GHCDIR" != "" ]; then echo "GHCDIR=$GHCDIR" ; fi;
   echo "BUILDDIR=$BUILDDIR" ;
  #echo "BUILDLIBDIR=$BUILDLIBDIR" ;
  #echo "BUILDINCDIR=$BUILDINCDIR" ;
   echo "VERSION=$VERSION" ;
-  echo "RTSMESSAGE=\"$RTSMESSAGE\"" ;
+ #echo "RTSMESSAGE=\"$RTSMESSAGE\"" ;
   echo "RTSFLAG=$RTSFLAG" ;
   echo "CC=$CCC" ;
   echo "ENDIAN=$ENDIAN" ;

@@ -5,6 +5,15 @@
 <center><h1>Installing nhc98</h1></center>
 
 <hr>
+<h3>The Brief Version</h3>
+<p>
+If you are in a hurry to get started, here's the brief version of the
+install procedure:
+<pre>
+    $ ./configure  [ --prefix=/usr/local ]
+    $ make all
+    $ make install
+</pre>
 
 <h3>System Requirements</h3>
 <p>
@@ -58,7 +67,7 @@ in <a href="status.html">docs/status.html</a>.
 <h3>Configuration</h3>
 <p>
 An automatic configuration utility is supplied, called
-<em>nhc98config</em>.  In brief, the default behaviour is to build under
+<em>configure</em>.  In brief, the default behaviour is to build under
 the current directory, in <tt>targets</tt>,
 and to install various components under
 <tt>/usr/local</tt>, in the subdirectories <tt>bin</tt>,
@@ -69,31 +78,23 @@ brief details, and see the page about <a href=config.html>configuration
 options</a> for full details.
 
 <p>
-<b>Important:</b> The config script no longer configures <em>hmake</em>
-for use with other Haskell compilers.  If <em>nhc98</em> is the only
-compiler you've got, then there's nothing to worry about.  If however
-you intend to build <em>nhc98</em> using <em>hbc</em> or <em>ghc</em>
-(or you happen to have them anyway and would like to use <em>hmake</em>
-with those compilers), please follow these instructions.  <em>Before</em>
-running <tt>nhc98config</tt> with either of the <tt>--build</tt> or
-<tt>--install</tt> options, you must edit the file
-<tt>script/hmakeconfig.inst</tt>.  This file has its own instructions.
-You are likely to need to change either or both of the definitions for
-LMLDIR and GHCINCDIR.
-
+<b>Important:</b> The config script searches your system for other
+Haskell compilers.  If it guesses wrongly, you can edit the file
+<tt>script/hmake.config</tt> to fix things up, then re-run
+<em>configure</em>.  Your changes will not be undone.
 
 <h3>Installing from a binary distribution</h3>
 <p>
 Simply run
 <pre>
-    ./nhc98config -rts --install
+    ./configure
+    make install
 </pre>
-to install <b>nhc98</b>.  The default location is under <tt>/usr/local</tt>,
-but you may alter the installation location using other
-<a href=config.html>configuration options</a>.  (The use of the
-<tt>-rts</tt> flag indicates that <em>nhc98comp</em> (the compiler
-proper) was built with <em>hbc</em>, rather than bootstrapped with
-<b>nhc98</b> itself or <em>ghc</em>.)
+to install <b>nhc98</b>.  The default location is under
+<tt>/usr/local</tt>, but you may alter the installation location using
+either of the <tt>--prefix=</tt> or <tt>--installdir=</tt> options
+to <em>configure</em>.  There are various other
+<a href=config.html>configuration options</a> also.
 
 
 <h3>Building and installing from any sources</h3>
@@ -118,7 +119,7 @@ To build <b>nhc98</b> using just a C compiler, follow these
 instructions:
 <ul>
 <li>
-  Run <tt>./nhc98config</tt> with any <a href=config.html>options</a>
+  Run <tt>./configure</tt> with any <a href=config.html>options</a>
   you require.  (You should supply installation directory options at
   this stage.)
 <li>
@@ -163,44 +164,48 @@ It is possible to build for a 64-bit machine (e.g. the DEC Alpha), but
 this is not yet handled automatically by the configuration script.
 <p>
 To build from scratch, you will need another Haskell compiler e.g.
-<em>hbc</em> or <em>ghc</em>.  The Makefiles assume you have this
-other compiler on your <tt>PATH</tt>
+<em>hbc</em>, <em>ghc</em>, or an older version of <em>nhc98</em>.
+We assume you have this other compiler on your <tt>PATH</tt>
 <p>
-For building with <em>hbc</em>,
-from the top directory, first run <tt>./nhc98config -rts</tt> with any other
-<a href=config.html>configuration options</a> you require.
-For building with <em>ghc</em>,
-from the top directory, first run <tt>./nhc98config +rts</tt> with any other
-<a href=config.html>configuration options</a> you require.
-Then type <tt>make withHBC</tt> or <tt>make withGHC</tt>.
-This will build components in the following order:
+First, run <tt>./configure</tt> with any <a href=config.html>configuration
+options</a> you require.  Your system will be searched for existing Haskell
+compilers.  If you have more than one available, we will choose, in order
+of preference, <em>hbc</em>, then <em>ghc</em>, then <em>nhc98</em>, to
+build the new <em>nhc98</em>.
+
+<p>
+If you type <tt>make</tt> or <tt>make basic</tt>,
+the system will build in the following order:
 <dl>
-<dd> the <b>hmake</b> compilation tool built with <em>hbc</em> or <em>ghc</em>,
-<dd> the <b>nhc98</b> compiler built with <em>hmake</em> and <em>hbc</em> or <em>ghc</em>,
 <dd> the runtime system built with <em>gcc</em>,
+<dd> the <b>hmake</b> compilation tool,
+<dd> the <em>GreenCard</em> preprocessor,
+<dd> the <b>nhc98</b> compiler built using <em>hmake</em>,
 <dd> the standard prelude and libraries built with the fresh <b>nhc98</b>,
-<dd> the <em>GreenCard</em> preprocessor built with <b>nhc98</b>,
-<dd> the York binary libraries built with <b>nhc98</b> and <em>GreenCard</em>,
-<dd> the <em>hp2graph</em> profiling visualisation tool built with <em>gcc</em>.
+<dd> the York extension libraries built with <b>nhc98</b> and <em>GreenCard</em>.
 </dl>
 <p>
-  If you wish to use the extensive heap profiling abilities of <b>nhc98</b>,
-  you now need to recompile for heap profiling (with the fresh <b>nhc98</b>)
-  the runtime system, standard prelude, and libraries, by typing
-  <tt>make profile</tt>.
+This gives you the basic compilation system.  If you ask for
+<tt>make all</tt>, then the following components will also be built:
+<dl>
+<dd> the heap-profiling runtime system,
+<dd> the heap-profiling prelude and libraries,
+<dd> the <em>hp2graph</em> profiling visualisation tool,
+<dd> the tracing compiler,
+<dd> the trace browser,
+<dd> the tracing runtime system,
+<dd> the tracing prelude and libraries.
+</dl>
 <p>
-  Also, if you wish to use the <b>nhc98</b> tracer or time profiling,
-  you now need to recompile various components for tracing by typing
-  <tt>make tracer_b</tt> (if building with <em>hbc</em>),
-  <tt>make tracer_g</tt> (if building with <em>ghc</em>),
-  and/or <tt>make timeprof</tt> (no compiler differences).
+  If you want finer control over which components of the system are built,
+  try typing <tt>make help</tt> for a list of useful individual targets.
 <p>
-The whole sequence (including the profiling and tracing versions) takes
-a long time - sample times are from 3.5 hours on a 150MHz Pentium under
-Linux 2.0.29, to 15 hours on an old 50MHz microSparc under SunOS 4.1.3_U1.
-The time taken also depends on which compiler you use - <em>ghc</em> is
-much slower than <em>hbc</em> in the early stages, but slightly faster
-once the <em>nhc98comp</em> compiler has been built.
+The whole sequence (including the profiling and tracing components) takes
+a long time - one sample time is 3.5 hours on a 150MHz Pentium under
+Linux 2.0.29 building with hbc.
+The time taken depends highly on which compiler you use - <em>ghc</em>
+is much slower than <em>hbc</em> in the early stages, but slightly
+faster once the <em>nhc98comp</em> compiler has been built.
 
 <p>
 Finally type <tt>make install</tt>, and if you worry about disk usage,
@@ -241,7 +246,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-1999.09.16<br>
+This page last modified: 1999.10.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

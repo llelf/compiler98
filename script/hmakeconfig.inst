@@ -4,6 +4,7 @@
 # Copy at $HOME/.hmakerc overrides installation-wide config.
 
 INSTALLVER="InstallVer"
+BUILTBY=
 
 # USINGRTS decides how run-time system options should be passed to hmake
 # itself (***Note: NOT to the compiler called by hmake).  Possible values
@@ -11,7 +12,10 @@ INSTALLVER="InstallVer"
 #        minus     first on commandline, trailed by -
 # If you compiled hmake with ghc or nhc13/98, USINGRTS should be rts.
 # If you compiled hmake with hbc or xtc,      USINGRTS should be minus.
-USINGRTS=
+case $BUILTBY in
+  ghc|nhc*) USINGRTS=rts;;
+  hbc|xtc) USINGRTS=minus;;
+esac
 
 # Add or remove Haskell compilers to this list.  It defines the
 # commandline options that allow you to select a compiler at make-time.

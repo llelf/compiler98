@@ -37,7 +37,11 @@ PRELUDEDIR=${SRCDIR}/prelude
 LIBDIR=${NHC98BASEDIR}/lib
 DST=${LIBDIR}/${MACHINE}
 
+### This is a very important step: get the local configuration
+
 include ${DST}/config
+
+###
 
 DCFG=
 TRACING=$(findstring T,${CFG})

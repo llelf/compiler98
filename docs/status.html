@@ -20,9 +20,13 @@
   <td>prelude + libraries</td>
   <td>heap profiling</td>
   <td>hp2graph</td>
+  <td>GreenCard</td>
+  <td>hmake</td>
 </tr><tr>
   <th bgcolor=#eeeeee>quality</th>
   <td bgcolor=#ffffdd>pre-release</td>
+  <td bgcolor=#ddffdd>release</td>
+  <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ddffdd>release</td>
@@ -33,6 +37,8 @@
   <td>1999-09-16</td>
   <td>1997</td>
   <td>1996</td>
+  <td>1999-01-28</td>
+  <td>1999-09-15</td>
 </tr>
 </table>
 </center>
@@ -40,35 +46,29 @@
 <p>
 <b>Newer components.</b>
 Relatively recent additions to the compiler are the tracing compiler,
-trace browser, time profiler, GreenCard, and hmake.
+trace browser, and time profiler.
 
 <p>
 <center>
 <table border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>component</th>
-  <td>hmake</td>
   <td>binary library</td>
-  <td>tracing facilities</td>
+  <td>tracing compiler/libraries</td>
   <td>trace browser</td>
-  <td>GreenCard</td>
   <td>time profiling</td>
 </tr><tr>
   <th bgcolor=#eeeeee>quality</th>
   <td bgcolor=#ddffdd>release</td>
-  <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ffdddd>alpha</td>
   <td bgcolor=#ffffdd>beta</td>
-  <td bgcolor=#ddffdd>release</td>
   <td bgcolor=#ffdddd>alpha</td>
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>1999-09-15</td>
   <td>1998-11-26</td>
   <td>1999-10-08</td>
-  <td>1998-10-20</td>
-  <td>1999-01-28</td>
+  <td>1999-10-08</td>
   <td>1998-06-03</td>
 </tr>
 </table>
@@ -132,8 +132,8 @@ by anonymous FTP from
 </center>
 
 <p>
-<b>Known to compile for at least: </b> ix86-Linux-2.*.*, sparc-solaris-2.*,
-mips-IRIX-5.3, mips-Ultrix-4.5, sparc-SunOS-4.*, ix86-CYGWIN32-NT-4.0.
+<b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, sparc-solaris2,
+mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN32-NT4.
 <p>
 <b>Important note:</b> pre-releases are usually distributed in Haskell source
 form only.  C sources and binary packages normally follow a full release.
@@ -179,11 +179,13 @@ comprehensive, but if you have any problems, please mail
 <ul>
 <li> Update: Compiling programs for tracing now works again, although
              tracing versions of the Prelude and Libraries are still
-             not fully up-to-date with Haskell'98.
+             not fully up-to-date with Haskell'98.  The trace browser
+             now has a scripting facility to record your tracing activity
+             for later replay.
 <li> Update: The removal of named field punning in Haskell'98 has
              turned out to be unpopular.  We plan to support punning
-             again as a default language extension (but it is turned
-             off in -98 mode.)
+             again as a default language extension (turned off in -98 mode),
+             but for the moment we have improved the error messages.
 <li> Update: The old 'nhc98config' is now simplified and called 'configure'.
              This means that "./configure; make; make install" should now
              work as expected.
@@ -283,7 +285,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 1999.10.08<br>
+This page last modified: 1999.10.12<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

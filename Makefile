@@ -4,6 +4,7 @@ include Makefile.inc
 VERSION = 1.0pre10x
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
+#   (A trailing x means this version has not been released yet.)
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
@@ -77,14 +78,12 @@ PRELUDEC = \
 	src/prelude/Time/*.c
 PRELUDET = \
 	src/tracer/prelude/Makefile* \
-	src/tracer/prelude/*.hi \
 	src/tracer/prelude/*/Makefile* \
 	src/tracer/prelude/Char/*.hs \
 	src/tracer/prelude/DontKnow/*.hs \
 	src/tracer/prelude/IO/*.hs \
 	src/tracer/prelude/List/*.hs \
 	src/tracer/prelude/LowB/*.hs \
-	src/tracer/prelude/LowB/LowSystem.hi \
 	src/tracer/prelude/Maybe/*.hs \
 	src/tracer/prelude/NonStd/*.hs \
 	src/tracer/prelude/PackedString/*.hs \
@@ -97,6 +96,8 @@ PRELUDET = \
 	src/tracer/prelude/System/*.hs \
 	src/tracer/prelude/Text/*.hs
 
+#	src/tracer/prelude/LowB/LowSystem.hi \
+#	src/tracer/prelude/*.hi \
 #	src/tracer/prelude/Array/*.hs \
 #	src/tracer/prelude/Complex/*.hs \
 #	src/tracer/prelude/Debug/*.hs \
@@ -159,9 +160,13 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 
 ##### compiler build + install scripts
 
-default:
-	@echo "No target specified - try one of: withHBC withGHC withNHC"
-	@echo "                                  fromC install config clean"
+basic: basic-${BUILDWITH}
+all:   all-${BUILDWITH}
+help:
+	@echo "Common targets include:        basic all install clean realclean config"
+	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc"
+	@echo "                               all-hbc   all-ghc   all-nhc"
+	@echo "                               fromC"
 	@echo "  (other subtargets: runtime prelude profile timeprof hp2graph"
 	@echo "                     compiler_b compiler_g compiler_n"
 	@echo "                     tracer_b tracer_g tracer_n "
@@ -173,11 +178,14 @@ config:
 install:
 	./configure --install
 
-#all: runtime compiler prelude greencard hmake hp2graph profile tracer
-withNHC: runtime hmake_n greencard_n compiler_n prelude hp2graph
-withHBC: runtime hmake_b greencard_b compiler_b prelude hp2graph
-withGHC: runtime hmake_g greencard_g compiler_g prelude hp2graph
+basic-nhc: runtime hmake_n greencard_n compiler_n prelude
+basic-hbc: runtime hmake_b greencard_b compiler_b prelude
+basic-ghc: runtime hmake_g greencard_g compiler_g prelude
+all-nhc: basic-nhc profile hp2graph tracer_n   #timeprof
+all-hbc: basic-hbc profile hp2graph tracer_b   #timeprof
+all-ghc: basic-ghc profile hp2graph tracer_g   #timeprof
 fromC: runtime cprelude ccompiler cgreencard hp2graph chmake
+
 profile: profruntime profprelude
 timeprof: timeruntime timeprelude
 tracer_n: tracecompiler_n traceruntime traceprelude $(TARGDIR)/traceui
