@@ -22,7 +22,7 @@ debug x = return ()
 done = return ()
 
 data State = S { options  :: [String]
-               , config   :: HmakeConfig
+               , config   :: PersonalConfig
                , compiler :: CompilerConfig
                , cfgfile  :: Maybe FilePath	-- the hmake configfile
                , modules  :: [String]
@@ -32,11 +32,12 @@ data State = S { options  :: [String]
 
 main = do
   options <- getArgs
-  (cfg,file,options) <- case options of
-                          ("-f":file:opts) -> do cfg <- safeReadConfig file
-                                                 return (cfg,Just file,opts)
-                          _ -> do cfg <- safeReadConfig defaultConfigLocation
-                                  return (cfg,Nothing,options)
+  (cfg,file,options) <-
+      case options of
+        ("-f":file:opts) -> do cfg <- readPersonalConfig (file,Nothing)
+                               return (cfg, Just file, opts)
+        _ -> do cfg <- readPersonalConfig (defaultConfigLocation False)
+                return (cfg,Nothing,options)
   let defaultComp = usualCompiler cfg
       opts = options ++ extraHiOptions defaultComp
   putStrLn banner
@@ -141,7 +142,12 @@ compile flag file state continue = do
                       continue
     _           -> if flag then putStrLn "...failed]" else done
 
-run file args = system (file++" "++unwords args) >> done
+run file args = do
+  ok <- system (file++" "++unwords args)
+  case ok of
+    ExitFailure e -> putStrLn ("Expression failed with exit code "++show e)
+    _ -> return ()
+  done
 
 commands :: [String] -> State -> IO ()
 commands ws state = let target = tail ws in do
@@ -227,7 +233,7 @@ commands ws state = let target = tail ws in do
           putStrLn ((concat . intersperse ("\n     ")
                     . reverse . sort
                     . map (\cc->compilerPath cc++"\t("++compilerVersion cc++")")
-                    . knownCompilers . config) state)
+                    . knownComps . config) state)
        else if compilerKnown (head target) (config state) then do
                let newcomp = matchCompiler (head target) (config state)
                    newopts = ((options state)
