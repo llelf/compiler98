@@ -24,6 +24,14 @@ case $PWD in	# path mangling required for CYGWIN
   //?/*)   PWD=`echo $PWD | sed -e "s|^//||" | sed -e "s|^[^/]|&:|"` ;;
 esac
 
+# We need a working `echo' command: at least Solaris2.6 may not have it.
+case `echo -n hello | wc -c` in
+    5) ;;
+    *) echo "The builtin 'echo' command doesn't do '-n' - emulating it."
+       ${CC-gcc} -o script/echo script/echo.c
+       echo () { $PWD/script/echo $* } ;;
+esac
+
 BUILDWITH=
 
 BUILDLIBDIR=$PWD/lib

@@ -13,11 +13,19 @@ HBCDIR=
 GHCDIR=
 NHC13DIR=
 NHC98DIR=
-# ToDo: If any of these variables are already set, we should skip the tests
-# for that compiler.
+# ToDo: If any of these variables are already set, should we skip the tests
+# for that compiler?
+
+
+# We need a working `echo' command: at least Solaris2.6 may not have it.
+#   (The calling script must have already compiled our emulated 'echo'.)
+case `echo -n hello | wc -c` in
+    5) ;;
+    *) echo () { $PWD/script/echo $* } ;;
+esac
 
 # We need a working `which' command: CYGWIN at least doesn't have it.
-if which which >/dev/null 2>&1
+if which which >/dev/null 2>&1  && ( which which | grep -v Warning >/dev/null )
 then
   echo -n ""
 else
@@ -32,6 +40,7 @@ else
       done; exit 1 )
   }
 fi
+
 
 # There are a variety of possible schemes for distinguishing
 # architecture-specific files across a shared heterogeneous network.
@@ -277,7 +286,7 @@ echo >>$CONFIGHS "ghclang = \
            2.*)  echo 3 ;;
            3.*)  echo 4 ;;
            4.*)  echo 5 ;;
-           *)    echo 6 ;;
+           *)    echo 0 ;;
      esac`"
 echo >>$CONFIGHS "defaultHc = builtby -- \"nhc98\""
 

@@ -58,6 +58,8 @@ do
                exit 0;;
 
     # Flags to hmake itself
+    -clean)        hmflags=$hmflags" $1" ;;
+    -realclean)    hmflags=$hmflags" $1" ;;
     -keepPrelude)  hmflags=$hmflags" $1" ;;
     -n)  hmflags=$hmflags" -q"; exec=cat ;;
     -q)  hmflags=$hmflags" $1" ;;
@@ -132,7 +134,10 @@ then
   echo '       -n           noexec (echo but do not execute commands)'
   echo '       -g           show graph of dependencies (implies noexec)'
   echo '       -M           show Makefile format dependencies'
+  echo '       -Md          show Makefile format dependencies, wrt -d option'
   echo '       -dobjdir     use objdir for object files'
+  echo '       -clean       just remove all relevant .o files'
+  echo '       -realclean   just remove all relevant .o and .hi files'
   echo '       -*           other options are passed through to the compiler'
   echo '       module       modules (.hs, .lhs, .gc) are compiled'
   echo '       program      programs are compiled and linked'

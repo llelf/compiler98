@@ -126,7 +126,8 @@ DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
          script/hmakeconfig.inst script/hi.inst script/rtb.inst lib/rtb.jar \
          script/nhc98heap.c script/harch script/confhc script/mangler \
-	 script/errnogen.c script/GenerateErrNo.hs script/fixghc
+	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
+	 script/echo.c
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.c
@@ -316,7 +317,7 @@ $(TARGDIR)/$(MACHINE)/cgreencard: $(GREENCARDC)
 	touch $(TARGDIR)/$(MACHINE)/greencard $(TARGDIR)/$(MACHINE)/cgreencard
 $(TARGDIR)/$(MACHINE)/chmake: $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC
-	cd src/interpreter;    $(MAKE) BUILDWITH=nhc98 install
+	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/chmake
 
 script/errnogen.c: script/GenerateErrNo.hs
@@ -418,7 +419,8 @@ HMFILE  = src/hmake/Makefile.toplevel
 HAUX1   = Makefile.inc COPYRIGHT
 HAUX2   = src/Makefile*
 HSCRIPT = script/hmake.inst script/hmakeconfig.inst \
-	  script/harch script/hi.inst script/confhc
+	  script/harch script/hi.inst script/confhc \
+	  script/echo.c
 HMAN    = man/hmake.1 docs/hmake
 HCONF   = hmake-configure
 HBIN    = lib/$(MACHINE)/MkProg lib/$(MACHINE)/Older \

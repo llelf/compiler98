@@ -74,7 +74,7 @@ realclean: clean
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(OBJDIR)/last${TRACING} $(SRCS)
 	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) Main
-	mv $(OBJDIR)/Main $(TARGET)
+	mv $(OBJDIR)/Main$(EXE) $(TARGET)
 	strip $(TARGET)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
