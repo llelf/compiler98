@@ -166,7 +166,7 @@ instance RealFloat T where { \
 
 
 
-BASIC_TYPE(CChar,Char)
+INTEGRAL_TYPE(CChar,Int8)
 INTEGRAL_TYPE(CSChar,Int8)
 INTEGRAL_TYPE(CUChar,Word8)
 INTEGRAL_TYPE(CShort,Int16)
