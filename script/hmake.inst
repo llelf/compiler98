@@ -175,7 +175,10 @@ case $USINGRTS in
   rts)   hmrtflags="+RTS $hmrtflags -RTS" ;;
 esac
 
-HC="$COMP"
+if which $COMP >/dev/null 2>&1
+then HC="$COMP"
+else HC="$SCRIPTDIR/$COMP"	# quick hack to enable in-place builds
+fi
 hmflags="$hmflags $PRELUDEPATH $CPPSYMBOLS"
 hcflags="$hcflags $EXTRACOMPILERFLAGS"
 HFLAGS="$rtflags$ctflags$hcflags$flags $HFLAGS"

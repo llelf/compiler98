@@ -159,3 +159,7 @@ compilerstyle () {
     *)     KNOWN=no ;;
   esac
 }
+
+# Finally, export some symbols to hmake interactive.
+export INSTALLVER BUILTBY ghcknown hbcknown nhc98known
+export GHCINCDIR HBCDIR NHC98INCDIR ghcsym GHC COMP

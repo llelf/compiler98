@@ -264,31 +264,32 @@ cat script/hmakeconfig.inst |\
 ) |\
 sed -e "s|^BUILTBY=$|BUILTBY=${BUILDHMAKE}|" >targets/$MACHINE/hmake.config
 
-CONFIGHS=src/interpreter/$MACHINE/LocalConfig.hs
-echo "  Now I'm creating $CONFIGHS"
-mkdir -p src/interpreter/$MACHINE
-echo >$CONFIGHS  "module LocalConfig where"
-echo >>$CONFIGHS "hmakeversion = \"$VERSION\""
-echo >>$CONFIGHS "builtby = \"$BUILDHMAKE\""
-echo >>$CONFIGHS "ghcKnown = " \
-    `if [ "$GHCDIR" = "" ]; then echo "False"; else echo "True"; fi`
-echo >>$CONFIGHS "hbcKnown = " \
-    `if [ "$HBCDIR" = "" ]; then echo "False"; else echo "True"; fi`
-echo >>$CONFIGHS "nhcKnown = " \
-    `if [ "$NHC98DIR" = "" ]; then echo "False"; else echo "True"; fi`
-echo >>$CONFIGHS "hbcdir = \"$HBCDIR/`method $HBCEXT $HBCMETHOD`\""
-echo >>$CONFIGHS "nhc98dir = \"$NHC98DIR\""
-echo >>$CONFIGHS "ghcdir = \"$GHCINCDIR\""
-echo >>$CONFIGHS "ghcver = ${GHCSYM-0}"
-echo >>$CONFIGHS "ghclang = \
-    `case $GHCVER in
-           0.29) echo 2 ;;
-           2.*)  echo 3 ;;
-           3.*)  echo 4 ;;
-           4.*)  echo 5 ;;
-           *)    echo 0 ;;
-     esac`"
-echo >>$CONFIGHS "defaultHc = builtby -- \"nhc98\""
+### Delete all LocalConfig.hs references.
+#CONFIGHS=src/interpreter/$MACHINE/LocalConfig.hs
+#echo "  Now I'm creating $CONFIGHS"
+#mkdir -p src/interpreter/$MACHINE
+#echo >$CONFIGHS  "module LocalConfig where"
+#echo >>$CONFIGHS "hmakeversion = \"$VERSION\""
+#echo >>$CONFIGHS "builtby = \"$BUILDHMAKE\""
+#echo >>$CONFIGHS "ghcKnown = " \
+#    `if [ "$GHCDIR" = "" ]; then echo "False"; else echo "True"; fi`
+#echo >>$CONFIGHS "hbcKnown = " \
+#    `if [ "$HBCDIR" = "" ]; then echo "False"; else echo "True"; fi`
+#echo >>$CONFIGHS "nhcKnown = " \
+#    `if [ "$NHC98DIR" = "" ]; then echo "False"; else echo "True"; fi`
+#echo >>$CONFIGHS "hbcdir = \"$HBCDIR/`method $HBCEXT $HBCMETHOD`\""
+#echo >>$CONFIGHS "nhc98dir = \"$NHC98DIR\""
+#echo >>$CONFIGHS "ghcdir = \"$GHCINCDIR\""
+#echo >>$CONFIGHS "ghcver = ${GHCSYM-0}"
+#echo >>$CONFIGHS "ghclang = \
+#    `case $GHCVER in
+#           0.29) echo 2 ;;
+#           2.*)  echo 3 ;;
+#           3.*)  echo 4 ;;
+#           4.*)  echo 5 ;;
+#           *)    echo 0 ;;
+#     esac`"
+#echo >>$CONFIGHS "defaultHc = builtby -- \"nhc98\""
 
 echo
 echo "If I got something wrong, you can edit"

@@ -1,5 +1,33 @@
 #!/bin/sh
 #	simple redirection script to find the correct executable
 #	for this machine architecture
+#	(also ensures that hi's config is identical to hmake)
 MACHINE=${MACHINE-"`ScriptDir/harch`"}
+HMAKEDIR=${HMAKEDIR-ExecutableDir}
+
+if [ ! -d $HMAKEDIR/$MACHINE ]
+then
+  echo "`basename $0` is not installed/configured for $MACHINE."
+  echo "  See your system administrator, or install it yourself from"
+  echo "  http://www.cs.york.ac.uk/fp/hmake/"
+  exit 1
+fi
+
+# Some important configuration:
+# First try user's home directory, then machine-specific config, then
+# installation-wide config.  At least one of these must exist!
+if [ -f $HOME/.hmakerc ]
+then . $HOME/.hmakerc
+else
+  if [ -f $HMAKEDIR/$MACHINE/hmake.config ]
+  then . $HMAKEDIR/$MACHINE/hmake.config
+  else
+    if [ -f $HMAKEDIR/hmake.config ]
+    then . $HMAKEDIR/hmake.config
+    else echo "hmake: Important configuration file is missing!"; exit 1
+    fi
+  fi
+fi
+
+# Now let's get started.
 exec ExecutableDir/$MACHINE/`basename $0` $@
