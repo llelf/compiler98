@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <signal.h>
 
 #define TR 0
 
@@ -75,6 +76,7 @@ int smode = 0;       /* statistics -- counts and space usage for node types */
 int amode = 0;       /* ascii -- show archive in a `readable' text format */
 int nmode = 0;       /* node -- show node at given offset in text format */
 int rmode = 0;       /* reachable -- show how many nodes are reachable */
+int xmode = 0;       /* exit mode -- cleanup after signal to halt */
 
 unsigned filesize = 0; /* used in precondition for seeks ... */
 struct stat statbuf;   /* ... to catch seek beyond EOF */
@@ -85,6 +87,20 @@ char filename[FILENAMESIZE];
 /* byte buffer for use in reachability mark-phase */
 #define BUFFERSIZE 100000
 char buffer[BUFFERSIZE];
+
+/* signal handler -- only installed for -r */
+void restoretags(int signum) {
+  fprintf(stderr, "hat-check cleaning up -- please wait\n");
+  amode = 0; rmode = 0; smode = 0; vmode = 0;
+  xmode = 1;
+  lseek(f,0L,0);
+  n = read(f, buf, BUFSIZE);
+  boff = 0;
+  foff = 0L;
+  header();
+  nodes();
+  exit(1);
+}
 
 main (int argc, char *argv[])
 {
@@ -126,6 +142,8 @@ main (int argc, char *argv[])
     nextoffset = 0L;
   }
   if (rmode) {
+    signal(SIGINT, restoretags);
+    signal(SIGQUIT, restoretags);
     markfromheader(buffer);
     strcat(filename, ".bridge");
     markfromoutput(filename,buffer);
@@ -488,7 +506,7 @@ nextnode() {
   unsigned long offset = nextoffset;
   char b = nextbyte();
   int marked;
-  if (rmode) {
+  if (rmode || xmode) {
     marked = ismarked(b);
     if (marked) {
       cleartag(&b);
@@ -502,7 +520,7 @@ nextnode() {
       fprintf(stderr, "strange high-bits tag %d at byte offset 0x%x\n",
                       k, offset);
       exit(1);
-    } else {
+    } else if (smode) {
       count[k]++;
       if (rmode && marked) reachcount[k]++;
     }
@@ -513,7 +531,7 @@ nextnode() {
         fprintf(stderr, "strange low-bits tag %d in TR 0x%x\n",
 	        trk, offset);
         exit(1);
-      } else {
+      } else if (smode) {
         trcount[trk]++;
 	if (rmode && marked) reachtrcount[trk]++;
       }
@@ -555,7 +573,7 @@ nextnode() {
 	dopointer(NONZERO,   TR, readpointer(), TR, offset);
 	break;
       }
-      trspace[trk] += byteoffset() - offset;
+      if (smode) trspace[trk] += byteoffset() - offset;
       break;
     }
     case MD:
@@ -651,7 +669,7 @@ nextnode() {
     }
     if (amode) printf("\n");
     nextoffset = byteoffset();
-    space[k] += nextoffset - offset;
+    if (smode) space[k] += nextoffset - offset;
   }
 }
 
@@ -794,4 +812,6 @@ markfrom(unsigned long root, char *buf) {
   }
 }
 
+  
+  
 
