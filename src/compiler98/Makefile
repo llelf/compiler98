@@ -6,7 +6,7 @@ include Makefile.inc
 
 OBJDIR = ${BUILDDIR}/obj/compiler98
 TARGET = ${DST}/nhc98comp${EXE}
-HATTRANS = ${DST}/hat-trans
+HATTRANS = ${DST}/hat-trans${EXE}
 
 SRCS = \
 	AssocTree.hs Bind.hs Case.hs CaseHelp.hs CaseLib.hs CaseOpt.hs \
@@ -40,8 +40,18 @@ GCOBJS = $(patsubst %.gc, $(OBJDIR)/%.$O, ${GCSRCS}) $(patsubst %.gc,$(OBJDIR)/%
 
 #CPPFILES=FixSyntax STGBuild STGGcode	#GcodeLowC
 #DBGOBJS=$(patsubst %, $(OBJDIR)/%.$O, ${CPPFILES})
+HATSRCS = TraceDerive.hs TraceTrans.hs SyntaxUtil.hs AuxLabelAST.hs \
+	AuxFixity.hs Overlap.hs DbgId.hs TokenInt.hs NeedLib.hs IExtract.hs \
+	State.hs ImportState.hs PreImp.hs ParseI.hs Memo.hs Import.hs \
+	AuxFile.hs ParseLex.hs ParseLib.hs Parse2.hs SyntaxPos.hs \
+	MkSyntax.hs Parse.hs LexStr.hs LexLow.hs LexPre.hs Lexical.hs \
+	Unlit.hs Lex.hs AuxTypes.hs TraceId.hs Nice.hs Reduce.hs \
+	MergeSort.hs Info.hs IdKind.hs NT.hs Tree234.hs AssocTree.hs \
+	IntState.hs PrettyLib.hs PrettySyntax.hs OsOnly.hs Flags.hs \
+	ParseCore.hs Id.hs TokenId.hs HbcOnly.hs Extra.hs Syntax.hs \
+	Error.hs HatTrans.hs
 
-HC = nhc98
+HC = nhc98	# can be overridden by caller with 'make HC=...'
 
 ifeq "hbc" "${HC}"
 HMAKEFLAGS := -H32M
@@ -59,8 +69,9 @@ endif
 HMAKEFLAGS += $(shell echo $(BUILDOPTS)) # $(DBGFLAG)
 
 
-all: ${TARGET} ${HATTRANS}
-install: ${TARGET} ${HATTRANS}
+all: ${TARGET} #${HATTRANS}
+hat-trans: ${HATTRANS}
+install: ${TARGET} #${HATTRANS}
 objdir: ${OBJDIR}
 cfiles: $(OBJDIR)/$(HC)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
@@ -76,11 +87,11 @@ clean:
 realclean: clean
 	rm -f *.hc *.c $(TARGET)
 
-$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS) # $(OBJDIR)/last${TRACING}
+$(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	strip $(TARGET)
-$(HATTRANS): $(TARGET)
+$(HATTRANS): ${OBJDIR} $(OBJDIR)/$(HC) $(HATSRCS)
 	$(HMAKE) -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
 	mv $(OBJDIR)/HatTrans$(EXE) $(HATTRANS)
 	strip $(HATTRANS)
@@ -90,10 +101,6 @@ $(OBJDIR)/$(HC):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc
 	$(MAKE) clean
 	touch "$(OBJDIR)/$(HC)"
-#$(OBJDIR)/last${TRACING}:
-#	rm -f $(OBJDIR)/last $(OBJDIR)/lastT
-#	rm -f $(DBGOBJS)
-#	touch $(OBJDIR)/last${TRACING}
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
 	$(CC) -c -o $@ $<
