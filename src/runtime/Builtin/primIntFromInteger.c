@@ -26,3 +26,18 @@ C_HEADER(primIntFromInteger)
   }
   C_RETURN(res);
 }
+
+int primIntFromIntegerC (NodePtr integer)
+{
+  Int tag,size,result;
+  tag = *integer;
+  size = CONINFO_LARGESIZES(tag);
+  if(!size) {
+    result = 0;
+  } else {
+    result = GET_INT_VALUE(integer);
+    if(CONINFO_LARGEEXTRA(tag))
+      result = -result;
+  }
+  return (result);
+}
