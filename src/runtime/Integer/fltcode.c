@@ -10,7 +10,7 @@
 #define FLT_DIGITS 24
 #endif
 
-#if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(bsdi) || defined(__alpha) || defined(__CYGWIN32__)
+#if defined(sequent) || defined(sun) || defined(mips) || defined(hp300) || defined(_IBMR2) || defined(linux) || defined(__386BSD__) || defined(bsdi) || defined(__alpha) || defined(__CYGWIN32__) || defined(__OpenBSD__)
 #define IEEE
 #endif
 #if defined(__sgi) || defined(sun) || defined(hp300) || defined(_IBMR2)
