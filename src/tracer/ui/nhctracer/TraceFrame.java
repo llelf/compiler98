@@ -199,7 +199,7 @@ public class TraceFrame extends Frame {
     doDisconnect();
     try {
       if (startnode!="") {startnode=" -remote "+startnode;}
-      Runtime.getRuntime().exec("hat-connect "+filename+startnode);
+      Runtime.getRuntime().exec("hat-connect "+port+" "+filename+startnode);
       Thread.sleep(100);
       doConnect();
     } catch (IOException ex) {
