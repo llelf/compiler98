@@ -94,7 +94,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
-	 script/hsc2hs.inst script/template-hsc.h \
+	 script/hsc2hs.inst src/hsc2hs/template-hsc.h \
 	 hmake.spec nhc98.spec script/pkgdirlist lib/hood.jar 
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
@@ -240,7 +240,7 @@ $(TARGDIR)/$(MACHINE)/greencard-ghc: $(GREENCARD)
 
 
 $(TARGDIR)/$(MACHINE)/hsc2hs: $(HSC2HS)
-	cd src/hsc2hs;         $(MAKE) HC=$(BUILDWITH) all
+	cd src/hsc2hs;         $(MAKE) -f Makefile.nhc98 HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/hsc2hs
 
 $(TARGDIR)/$(MACHINE)/cpphs: $(CPPHS)
@@ -340,7 +340,7 @@ $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
 $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC): $(HSC2HS) $(HSC2HSC)
-	cd src/hsc2hs;         $(MAKE) fromC
+	cd src/hsc2hs;         $(MAKE) -f Makefile.nhc98 fromC
 	touch $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC)
 $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGES};\
@@ -442,7 +442,7 @@ $(TARGDIR)/greencardC: $(GREENCARD)
 	cd src/greencard;  $(MAKE) cfiles
 	touch $(TARGDIR)/greencardC
 $(TARGDIR)/hsc2hsC: $(HSC2HS)
-	cd src/hsc2hs;     $(MAKE) cfiles
+	cd src/hsc2hs;     $(MAKE) -f Makefile.nhc98 cfiles
 	touch $(TARGDIR)/hsc2hsC
 $(TARGDIR)/cpphsC: $(HSC2HS)
 	cd src/cpphs;      $(MAKE) -f Makefile.nhc98 cfiles

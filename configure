@@ -545,6 +545,7 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hsc2hs.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/hsc2hs
+    cp src/hsc2hs/template-hsc.h $BUILDBINDIR
     echo -n "cpphs "
     if [ ! -f $BUILDBINDIR/cpphs ]
     then ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/cpphs
