@@ -112,7 +112,6 @@ void finishGc(NodePtr hp,int verbose)
     fprintf(stderr,"%d words to next gc.\n",hpLimit-hp);
     fprintf(stderr,"Max live after gc: %ld words.\n",hpMaxSurvive);
   }
-  /* runDeferredGCs(); 	-- process pending finalisers now we have heap space */
 }
 
 NodePtr prevLow,prevHigh;
@@ -788,8 +787,6 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
       }
   }
 #endif
-
-  /* runDeferredGCs(); 	/* process pending finalisers now we have heap space */
 
 #ifdef TPROF
   if(timeSample) tprofRecordGC();	        /*PH*/

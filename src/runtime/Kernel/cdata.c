@@ -89,6 +89,7 @@ void freeForeignObj(ForeignObj *cd)
 
 void *derefForeignObj(ForeignObj *cd)
 {
+  /*fprintf(stderr,"derefForeignObj: fo=0x%x cval=0x%x\n",cd,cd->cval);*/
   return cd->cval;
 }
 
@@ -208,6 +209,15 @@ void *primForeignObjC (void *addr, NodePtr fbox)
   return nhc_mkCInt((int)fo);
 }
 
+/* foreign import makeForeignPtrC :: Ptr a -> FunPtr () -> IO ForeignPtr */
+void *primForeignPtrC (void *addr, gcCval finaliser)
+{
+  ForeignObj *fo;
+  fo = allocForeignObj(addr, finaliser, gcNow);
+  /*fprintf(stderr,"primForeignObjC: addr=0x%x finaliser=0x%x fo=0x%x\n",addr,finaliser,fo);*/
+  return nhc_mkCInt((int)fo);
+}
+
 #if 0
 /* 'addrToHandle' is very tricky!  The Addr *must* be a pointer to   */
 /* a ForeignObj that has already been allocated in C-land.  This     */
@@ -240,7 +250,7 @@ C_HEADER(reallyFreeForeignObj)
 }
 
 static StablePtr pending[MAX_FOREIGNOBJ];  /* queue for pending finalisers */
-static int       pendingIdx=0;
+       int       pendingIdx=0;
 
 void deferGC (StablePtr finalise)
 {
@@ -253,18 +263,19 @@ void deferGC (StablePtr finalise)
 
 void runDeferredGCs (void)
 {
-  int i;
-  NodePtr n;
-  CodePtr IP=Ip;		/* save global instruction pointer */
-  NodePtr *SP=Sp;		/*                   stack pointer */
-  NodePtr *FP=Fp;		/*                   frame pointer */
-
   static int alreadyRunning=0;	/* need lock in case a finaliser triggers GC! */
 
   if (alreadyRunning) {
     fprintf(stderr,"Warning: running ForeignObj finalisers has triggered another GC!\n");
     return;
   } else alreadyRunning=1;	/* grab mutex lock before entering */
+
+  {
+  int i;
+  NodePtr n;
+  CodePtr IP=Ip;		/* save global instruction pointer */
+  NodePtr *SP=Sp;		/*                   stack pointer */
+  NodePtr *FP=Fp;		/*                   frame pointer */
 
   fprintf(stderr,"runDeferredGCs: %d finalisers to process\n",pendingIdx);
 
@@ -280,6 +291,7 @@ void runDeferredGCs (void)
   Sp=SP;			/*                      stack pointer */
   Fp=FP;			/*                      frame pointer */
   pendingIdx = 0;		/* finally, reset the queue */
+  }
   alreadyRunning = 0;		/* and release the mutex lock */
 }
 
