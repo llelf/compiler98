@@ -1,6 +1,7 @@
 #include <string.h>
 #include "haskell2c.h"
 #include "getconstr.h"
+#include "fileformat.h"
 
 
 

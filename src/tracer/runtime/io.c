@@ -1,4 +1,5 @@
 #include "ui.h"
+#include "fileformat.h"
 
 extern int traceGcStat;
 extern int traceBreak;
@@ -61,8 +62,9 @@ C_HEADER(_tprim_chPutChar)
     unit_t = mkTNm(t, mkNmUnit(), mkSR());
 
     C_RETURN (mkR(mkRight(mkR(mkUnit(), unit_t)),
-		  mkTAp(t, mkCons(mkTNm(t, mkNmRight(), mkSR()), 
-				  mkCons(unit_t, mkNil())), mkSR())));
+		  mkTAp1(t, mkTNm(t, mkNmRight(), mkSR()), 
+			    unit_t,
+                            mkSR())));
 }
 
 C_HEADER(_tprim_chGetChar)
@@ -135,8 +137,9 @@ C_HEADER(_tprim_HClose)
     unit_t = mkTNm(t, mkNmUnit(), mkSR());
 
     C_RETURN (mkR(mkRight(mkR(mkUnit(), unit_t)),
-		  mkTAp(t, mkCons(mkTNm(t, mkNmRight(), mkSR()), 
-				  mkCons(unit_t, mkNil())), mkSR())));
+		  mkTAp1(t, mkTNm(t, mkNmRight(), mkSR()), 
+			    unit_t,
+                            mkSR())));
 }
 
 #define CAPPLY 0

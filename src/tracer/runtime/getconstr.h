@@ -1,6 +1,9 @@
 #ifndef GETCONSTR_H
 #define GETCONSTR_H
 
+#include "fileformat.h"
+
+#if 0
 /* Don't change anything here!!! (See runtimeB/Kernel/builtins.c) */
 #define NTInt		0
 #define NTChar		1
@@ -22,6 +25,7 @@
 /* NTTrusted == NTId + 16 */
 #define NTTrusted 	22
 
+#endif
 
 #if 0
 typedef enum {NTInt		/* Int */,
@@ -39,31 +43,33 @@ typedef enum {NTInt		/* Int */,
 	      NTDummy} NTTags;
 #endif
 
-extern Node D_Prelude_46_91_93[];
 extern Node D_Prelude_46_58[];
+extern Node D_Prelude_46_91_93[];
 extern Node D_Prelude_46False[];
 extern Node D_Prelude_46True[];
-extern Node D_Prelude_46_91_93[];
+extern Node D__40_41[];
 extern Node D_Prelude_46Right[];
 
-#define mkNmInt(x) mkNmWithArg(NTInt, x)
-#define mkNmBool(x) (CONINFO_NUMBER(*x) == 0 ? (&D_Prelude_46False[0]) : (&D_Prelude_46True[0]))
-#define mkNmChar(x) mkNmWithArg(NTChar, x)
+#define mkNmInt(x)	primNTInt(GET_INT_VALUE(x))
+#define mkNmBool(x)	primNTId((IdEntry*)(CONINFO_NUMBER(*x) == 0 ? (&D_Prelude_46False[0]) : (&D_Prelude_46True[0])))
+#define mkNmChar(x)	primNTChar(GET_CHAR_VALUE(x))
 #if 0
-#define mkNmFun(x) mkNmWithArg(NTFun, x)
+#define mkNmFun(x)	mkNmWithArg(NTFun, x)
 #endif
-#define mkNmCons() (&D_Prelude_46_58[0])
-#define mkNmNil() (&D_Prelude_46_58[0])
-#define mkNmUnit() (&D_Prelude_46_91_93[0])
-#define mkNmRight() (&D_Prelude_46Right[0])
-#define mkNmTuple() mkNm(NTTuple)
-#define mkNmVector() mkNm(NTContainer)
+#define mkNmCons()	primNTId((IdEntry*)&D_Prelude_46_58[0])
+#define mkNmNil()	primNTId((IdEntry*)&D_Prelude_46_91_93[0])
+#define mkNmUnit()	primNTId((IdEntry*)&D__40_41[0])
+#define mkNmRight()	primNTId((IdEntry*)&D_Prelude_46Right[0])
+#define mkNmTuple()	primNTTuple()
+#define mkNmVector()	primNTContainer()
+#define mkNmCString(x)	primNTCString(x)
 
-NodePtr mkNmWithArg(int tag, NodePtr x);
-NodePtr mkNm(int tag);
+CNmType mkNmWithArg(int tag, NodePtr x);
+CNmType mkNm(int tag);
 NodePtr mkR(NodePtr v, NodePtr t);
-NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr);
-NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr);
+NodePtr mkTAp1(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr sr);
+NodePtr mkTAp2(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr ta2, NodePtr sr);
+NodePtr mkTNm(NodePtr t, CNmType nm, NodePtr sr);
 NodePtr mkTInd(NodePtr t1, NodePtr t2);
 
 NodePtr shortCircuitSelectors(NodePtr node);

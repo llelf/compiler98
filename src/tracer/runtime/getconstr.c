@@ -3,11 +3,13 @@
 #include "haskell2c.h"
 #include "bytecode.h"
 #include "getconstr.h"
+#include "fileformat.h"
 
 #ifndef TRUE
 #define TRUE	1
 #define FALSE	0
 #endif
+
 
 NodePtr mkhString(char *s)
 {
@@ -50,6 +52,7 @@ NodePtr mkTNil()
 #endif
 
 
+#if 0
 NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr)
 {
   NodePtr n = C_ALLOC(1+EXTRA+3);
@@ -62,10 +65,36 @@ NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr)
   n[EXTRA+3] = (Node)sr;
   return n;
 }
+#else
+NodePtr mkTAp1(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr sr)
+{
+  unsigned tp, tfp, ta1p, srp, rp;
+  tp   = GET_INT_VALUE(t);
+  tfp  = GET_INT_VALUE(tf);
+  ta1p = GET_INT_VALUE(ta1);
+  srp  = GET_INT_VALUE(sr);
+  rp   = primTAp1(tp,tfp,ta1p,srp);
+  fprintf(stderr,"getconstr.c: mkTAp1\n");
+  return mkInt(rp);
+}
+NodePtr mkTAp2(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr ta2, NodePtr sr)
+{
+  unsigned tp, tfp, ta1p, ta2p, srp, rp;
+  tp   = GET_INT_VALUE(t);
+  tfp  = GET_INT_VALUE(tf);
+  ta1p = GET_INT_VALUE(ta1);
+  ta2p = GET_INT_VALUE(ta2);
+  srp  = GET_INT_VALUE(sr);
+  rp   = primTAp2(tp,tfp,ta1p,ta2p,srp);
+  fprintf(stderr,"getconstr.c: mkTAp2\n");
+  return mkInt(rp);
+}
+#endif
 
+#if 0
 NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr)
 {
-  NodePtr n = C_ALLOC(1+EXTRA+3);
+  NodePtr n = C_ALLOC(1+EXTRA+1);
   n[0] = CONSTR(TagNm, 3, 0);
 #ifdef PROFILE
   INIT_PROFINFO(n, &dummyProfInfo)
@@ -75,7 +104,19 @@ NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr)
   n[EXTRA+3] = (Node)sr;
   return n;
 }
+#else
+NodePtr mkTNm(NodePtr t, CNmType nm, NodePtr sr)
+{
+  unsigned tp, srp, rp;
+  tp  = GET_INT_VALUE(t);
+  srp = GET_INT_VALUE(sr);
+  rp  = primTNm(tp,nm,srp);
+  fprintf(stderr,"getconstr.c: mkTNm\n");
+  return mkInt(rp);
+}
+#endif
 
+#if 0
 NodePtr mkTInd(NodePtr t1, NodePtr t2)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
@@ -87,6 +128,18 @@ NodePtr mkTInd(NodePtr t1, NodePtr t2)
   n[EXTRA+2] = (Node)t2;
   return n;
 }
+#else
+NodePtr mkTInd(NodePtr t1, NodePtr t2)
+{
+  unsigned t1p, t2p, rp;
+  t1p = GET_INT_VALUE(t1);
+  t2p = GET_INT_VALUE(t2);
+  rp  = primTInd(t1p,t2p);
+  fprintf(stderr,"getconstr.c: mkTInd\n");
+  return mkInt(rp);
+}
+#endif
+
 
 NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
 {
@@ -96,12 +149,12 @@ NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
       l = mkRString(sr, t, GET_POINTER_ARG1(str, 2));
       ch = GET_POINTER_ARG1(str, 1);
       IND_REMOVE(ch);
-      c = mkR(ch, mkTNm(t, mkNmChar(mkChar(GET_CHAR_VALUE(ch))), sr));
+      c = mkR(ch, mkTNm(t, mkNmChar(ch), sr));
       return mkR(mkCons(c, l), 
-		 mkTAp(t, mkCons(mkTNm(t, mkNmCons(), sr),
-				 mkCons(GET_POINTER_ARG1(c, 2),
-					mkCons(GET_POINTER_ARG1(l, 2),
-					       mkNil()))), sr));
+		 mkTAp2(t, mkTNm(t, mkNmCons(), sr),
+			   (GET_POINTER_ARG1(c, 2)),
+			   (GET_POINTER_ARG1(l, 2)),
+			   sr));
   } else {
       return mkR(mkNil(), mkTNm(t, mkNmNil(), sr));
   }
@@ -162,6 +215,7 @@ C_HEADER(_tprim_ToEnum)
     NodePtr a = C_GETARG1(2);
     int i;
 
+    fprintf(stderr,"getconstr.c: toEnum\n");
     /* fprintf(stderr, "prim_toEnum called\n");*/
     IND_REMOVE(a);
     a = GET_POINTER_ARG1(a, 1);
@@ -241,7 +295,8 @@ C_HEADER(_tprim_packString)
   res = C_ALLOC(3+EXTRA+1+EXTRA+swords);
   res[0] = CONSTRR(0, 2, 0);
   res[EXTRA+1] = (Node)&res[EXTRA+3];
-  res[EXTRA+2] = (Node)mkTNm(C_GETARG1(1), mkNmWithArg(NTCString, (Node*)&res[EXTRA+3]), mkSR());
+  res[EXTRA+2] = (Node)mkTNm(C_GETARG1(1), mkNmCString((char*)&res[EXTRA+3]),
+mkSR());
 #ifdef PROFILE
   INIT_PROFINFO(res, &dummyProfInfo)
 #endif
@@ -298,8 +353,11 @@ C_HEADER(_tprim_unpackPS)
   C_RETURN(res);
 }
 
-NodePtr mkNmWithArg(int tag, NodePtr x)
+CNmType mkNmWithArg(int tag, NodePtr x)
 {
+    fprintf(stderr,"getconstr.c: mkNmWithArg\n");
+    return (CNmType)0;
+#if 0
     NodePtr n = C_ALLOC(1+EXTRA+1);
     n[0] = CONSTR(tag, 1, 0);
 #ifdef PROFILE
@@ -307,16 +365,21 @@ NodePtr mkNmWithArg(int tag, NodePtr x)
 #endif
     n[EXTRA+1] = (Node)x;
     return n;
+#endif
 }
 
-NodePtr mkNm(int tag)
+CNmType mkNm(int tag)
 {
+    fprintf(stderr,"getconstr.c: mkNm\n");
+    return (CNmType)0;
+#if 0
     NodePtr n = C_ALLOC(1+EXTRA);
     n[0] = CONSTR(tag, 0, 0);
 #ifdef PROFILE
     INIT_PROFINFO(n, &dummyProfInfo)
 #endif
     return n;
+#endif
 }
 
 #if 0
