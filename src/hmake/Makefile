@@ -131,7 +131,7 @@ endif
 
 
 # C-files dependencies.		-- (needs updating)
-Argv.$C:    ListUtil.$C Compiler.$C Config.$C
+Argv.$C:    ListUtil.$C Compiler.$C Config.$C PackageConfig.$C
 Compat.$C:  ListUtil.$C QSort.$C
 Config.$C:  Compiler.$C
 FileName.$C:Argv.$C
@@ -144,3 +144,4 @@ Order.$C:   Compat.$C Graph.$C ListUtil.$C Tsort.$C Utils.$C
 Output.$C:  ListUtil.$C FileName.$C Argv.$C PreProcessor.$C Config.$C
 Tsort.$C:   Compat.$C
 Utils.$C:   Compat.$C ListUtil.$C
+PackageConfig.$C:	Compiler.$C Config.$C RunAndReadStdout.$C
