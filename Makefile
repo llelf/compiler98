@@ -98,10 +98,11 @@ COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 COMPILERC = src/compiler98/*.c
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
-         script/hmakeconfig.inst script/hi.inst script/rtb.inst lib/rtb.jar \
+         script/hmakeconfig.inst script/hi.inst script/hat-trail.inst \
          script/nhc98heap.c script/harch script/confhc script/mangler \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
-	 script/echo.c script/hood.inst lib/hood.jar \
+	 script/echo.c script/hood.inst \
+	 lib/hat-trail.jar lib/hood.jar \
 	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.c
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
@@ -263,7 +264,7 @@ $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
-$(TARGDIR)/traceui: lib/rtb.jar $(HATTOOLS)
+$(TARGDIR)/traceui: lib/hat-trail.jar $(HATTOOLS)
 	touch $(TARGDIR)/traceui
 
 
@@ -282,7 +283,7 @@ $(TARGDIR)/$(MACHINE)/hat: $(HATTOOLS)
 	touch $(TARGDIR)/$(MACHINE)/hat
 
 
-lib/rtb.jar: $(TRACEUI)
+lib/hat-trail.jar: $(TRACEUI)
 	cd src/tracer/ui;      $(MAKE) CFG=T install
 lib/hood.jar: $(HOODUI)
 	cd src/tracer/hoodui;  $(MAKE) install
