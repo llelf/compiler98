@@ -1,7 +1,7 @@
 #include <string.h>
 #include "haskell2c.h"
 
-/* primPackString :: Int -> [String] -> PackedString */
+/* primPackString :: Int -> [Char] -> PackedString */
 
 #ifdef PROFILE
 static SInfo nodeProfInfo = { "Builtin","Builtin.primPackString","PackedString.PackedString"};
@@ -17,7 +17,7 @@ C_HEADER(primPackString)
   IND_REMOVE(res);
   length = GET_INT_VALUE(res);
 
-  size = (length + sizeof(Node) -1) / sizeof(Node);
+  size = (length +1 + sizeof(Node) -1) / sizeof(Node);
   extra = size * sizeof(Node) - length;
 
   res = C_ALLOC(1+EXTRA+size);
@@ -34,6 +34,7 @@ C_HEADER(primPackString)
     *dstptr++ = GET_CHAR_VALUE(chr);
     src = GET_POINTER_ARG1(src,2);
   }
+  *dstptr = 0;	/* MW, 13.07.2000: ensure null termination? */
   C_RETURN(res);
 }	
 
