@@ -1,0 +1,568 @@
+#!/bin/sh
+#	nhc98config -- prepare to compile/install nhc98
+#	author:   Malcolm.Wallace@cs.york.ac.uk
+#       (nhc13config - March 1998)
+#       (nhc98config - May 1999)
+
+CONFIGVERSION="v1.0 pre-release 9 (date 990916)"
+
+if which uname >/dev/null
+then OS=`uname -s`
+else OS=unknown
+fi
+#REL=`uname -r`
+#PROCESSOR=`script/harch`
+#MACHINE=$PROCESSOR-$OS-$REL
+
+MACHINE=`script/harch`
+VERSION=$MACHINE
+CCC=${CC-gcc}
+PWD=`pwd`
+INSTALLDIR=/usr/local
+
+RTSMESSAGE='(default)'
+RTSFLAG=yes
+HEAP=100000
+
+BUILDLIBDIR=$PWD/lib
+BUILDINCDIR=$PWD/include
+BUILDBINDIR=$PWD/script
+BUILDTARGDIR=$PWD/targets
+BUILDDIR=$BUILDTARGDIR
+
+BUILD=yes
+INSTALL=no
+LIB=yes
+BIN=yes
+INC=yes
+MAN=yes
+DOCS=no
+
+if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+then		# cached settings override defaults above
+  . $BUILDTARGDIR/$MACHINE/config.cache
+fi
+NEWHEAP=$HEAP
+
+while [ "$1" != "" ]
+do
+  case $1 in
+    +rts) RTSFLAG=yes; RTSMESSAGE='(option +rts chosen)' ;;
+    -rts) RTSFLAG=no; RTSMESSAGE='(option -rts chosen)' ;;
+    -H*)      NEWHEAP=`echo $1 | cut -c3-` ;;
+    --heap=*) NEWHEAP=`echo $1 | cut -c8-` ;;
+    +lib) LIB=yes ;;
+    -lib) LIB=no ;;
+    +bin) BIN=yes ;;
+    -bin) BIN=no ;;
+    +inc) INC=yes ;;
+    -inc) INC=no ;;
+    +man) MAN=yes ;;
+    -man) MAN=no ;;
+    +docs) DOCS=yes ;;
+    -docs) DOCS=no ;;
+#   --useprocessor=*) PROCESSOR=`echo "$1" | cut -c16-`
+#                     VERSION=$PROCESSOR-$OS-$REL ;;
+#   --useversion=*) REL=`echo "$1" | cut -c14-`
+#                   VERSION=$PROCESSOR-$OS-$REL ;;
+    --builddir=*)   BUILDDIR=`echo "$1" | cut -c12-` ;;
+    --installdir=*) INSTALLDIR=`echo "$1" | cut -c14-` ;;
+    --bindir=*)  BINDIR=`echo "$1" | cut -c10-` ;;
+    --libdir=*)  LIBDIR=`echo "$1" | cut -c10-` ;;
+    --incdir=*)  INCDIR=`echo "$1" | cut -c10-` ;;
+    --mandir=*)  MANDIR=`echo "$1" | cut -c10-` ;;
+    --docdir=*)  DOCDIR=`echo "$1" | cut -c10-` ;;
+#   --javadir=*) JAVADIR=`echo "$1" | cut -c11-` ;;
+#   --hbcdir=*)  HBCDIR=`echo "$1" | cut -c10-` ;;
+#   --ghcdir=*)  GHCDIR=`echo "$1" | cut -c10-` ;;
+    --build)     BUILD=yes; INSTALL=no ;;
+    --install)   BUILD=no;  INSTALL=yes ;;
+    --config)    BUILD=no;  INSTALL=no ;;
+    --help|-h)
+  echo "`basename $0` options:     [default in brackets]"
+  echo "  --build              Configure and prepare for build [default]"
+  echo "  --config             Configure only (+ show config report)"
+  echo "  --install            Install now"
+  echo "  --help / -h          Display these options and quit"
+  echo "  --version / -v       Display versions of `basename $0` and nhc98"
+  echo
+  echo "  [+/-]rts             Compiler does/doesn't expect RTS delimiters [+rts]"
+  echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
+# echo "  --useversion=num     Install binaries from given OS version as if current"
+# echo "  --useprocessor=id    Install binaries for given processor as if current"
+# echo
+# echo "  --javadir=dir        Find Java installation in dir [/usr/local/jdk1.1.3]"
+# echo "  --hbcdir=dir         Find hbc/LML installation in dir [/usr/local/lib/lmlc]"
+# echo "  --ghcdir=dir         Find ghc installation in dir [/usr/local/lib/ghc]"
+  echo
+  echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
+  echo "  --installdir=rootdir Use rootdir for installation [/usr/local]"
+  echo "  --bindir=dir         Install scripts in dir [rootdir/bin]"
+  echo "  --libdir=dir         Install libraries in dir [rootdir/lib/nhc98]"
+  echo "  --incdir=dir         Install interfaces in dir [rootdir/include/nhc98]"
+  echo "  --mandir=dir         Install man pages in dir [rootdir/man/man1]"
+  echo "  --docdir=dir         Install html docs in dir [/usr/doc/nhc98]"
+  echo
+  echo "  [+/-]bin             Do/don't (re-)install scripts [+bin]"
+  echo "  [+/-]lib             Do/don't (re-)install executables [+lib]"
+  echo "  [+/-]inc             Do/don't (re-)install interface files [+inc]"
+  echo "  [+/-]man             Do/don't (re-)install man pages [+man]"
+  echo "  [+/-]docs            Do/don't (re-)install html docs [-docs]"
+            exit 0 ;;
+    --version|-v) echo "`basename $0`: $CONFIGVERSION"
+                  echo "nhc98:       $INSTALLVER"
+                  echo '  [' $INSTALLINFO ']'
+                  exit 0 ;;
+    *) echo "`basename $0`: unrecognised option $1"
+       echo '    (use --help for option information)'
+       exit 1 ;;
+  esac
+  shift
+done
+
+echo Configuring for nhc98... '[' $CONFIGVERSION ']'
+if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+then
+  echo "Starting with earlier config in targets/$MACHINE/config.cache"
+  echo '[' $INSTALLINFO ']'
+  echo '  (but cmdline options have precedence)'
+fi
+
+if [ "$INSTALL" = "no" -a "$BUILD" = "no" ]
+then INSTALLINFO=${INSTALLINFO-"configured for $MACHINE by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"}
+else INSTALLINFO="configured for $MACHINE by $USER@`uname -n` on `date | cut -c9-10` `date | cut -c5-8,25-`"
+fi
+
+HLIBDIR=${LIBDIR-$INSTALLDIR/lib/hmake}
+LIBDIR=${LIBDIR-$INSTALLDIR/lib/nhc98}
+BINDIR=${BINDIR-$INSTALLDIR/bin}
+INCDIR=${INCDIR-$INSTALLDIR/include/nhc98}
+MANDIR=${MANDIR-$INSTALLDIR/man/man1}
+DOCDIR=${DOCDIR-/usr/doc/nhc98}
+#JAVADIR=${JAVADIR-/usr/local/jdk1.1.3}
+#HBCDIR=${HBCDIR-/usr/local/lib/lmlc}
+#GHCDIR=${GHCDIR-/usr/local/lib/ghc}
+if [ "$OS" = "CYGWIN32_NT" -o "$OS" = "CYGWIN32_95" ]
+then EXE=.exe
+else EXE=
+fi
+if [ "$OS" = "SunOS" ]
+then LIBSOCKET=" -lsocket"
+else LIBSOCKET=""
+fi
+if [ "$OS" = "NetBSD" ]
+then LIBCOMPAT=" -lcompat"
+else LIBCOMPAT=""
+fi
+
+echo
+echo "Configuration report:"
+echo "  (Installation directories are not created/checked at this stage.)"
+echo "  (You can re-run nhc98config to change settings before proceeding.)"
+echo -n "Config directory:     $BUILDTARGDIR/$MACHINE"
+if [ ! -d $BUILDTARGDIR/$MACHINE ]
+then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
+else echo ' (exists)'
+fi
+#echo "Java directory:       $JAVADIR"
+#echo "hbc/LML directory:    $HBCDIR"
+#echo "ghc directory:        $GHCDIR"
+#echo
+echo "Build directory:      $BUILDDIR"
+echo "Install root:         $INSTALLDIR"
+if [ "$LIB" = "yes" ]
+then
+  echo "hmake binaries:       $HLIBDIR/$VERSION"
+  echo "nhc98 binaries/libs:  $LIBDIR/$VERSION"
+  if [ "$VERSION" != "$MACHINE" ]
+  then
+    echo "      also linked to: $LIBDIR/$MACHINE"
+  fi
+else
+  echo "Executables and libs: (none)"
+fi
+if [ "$INC" = "yes" ]
+then
+  echo "Interfaces/includes:  $INCDIR"
+else
+  echo "Interfaces/includes:  (none)"
+fi
+if [ "$BIN" = "yes" ]
+then
+  echo "Scripts:              $BINDIR"
+else
+  echo "Scripts:              (none)"
+fi
+if [ "$MAN" = "yes" ]
+then
+  echo "Man pages:            $MANDIR"
+else
+  echo "Man pages:            (none)"
+fi
+if [ "$DOCS" = "yes" ]
+then
+  echo "Html documents:       $DOCDIR"
+else
+  echo "Html documents:       (none)"
+fi
+
+if [ "$RTSFLAG" = "yes" ]
+then echo -n "nhc98comp uses RTS delimiters "
+else echo -n "nhc98comp does not use RTS delimiters "
+fi
+echo $RTSMESSAGE
+
+if [ "$EXE" = "" ]
+then echo "executables do not have .exe suffix (detected)"
+else echo "executables need .exe suffix (detected)"
+fi
+
+echo -n "This machine's endian-ness is: "
+if [ "$ENDIAN" = "" ]
+then
+  cat >endian.c <<!!!
+main() {
+  union {
+    unsigned i;
+    char s[4];
+  } convert;
+  convert.i = 0x32;
+  if (convert.s[0]==0x32) {
+    puts("-DLOW_BYTE_FIRST");
+  } else {
+    puts("-DHIGH_BYTE_FIRST");
+  }
+}
+!!!
+  $CCC -o endian endian.c
+  ENDIAN=`./endian`
+  rm -f endian endian.c
+  echo -n "$ENDIAN "
+  echo '(detected) '
+else
+  echo -n "$ENDIAN "
+  echo '(cached) '
+fi
+
+echo -n "Default heap for compiled programs is: "
+if [ "$HEAP" != "$NEWHEAP" ]
+then cat >heap.c <<!!!
+main(int argc, char **argv)
+{
+  int prefix = 1;
+  int i = 0;
+  char *s;
+  if (argc!=2) {
+    puts("100000");
+    exit(1);
+  }
+  s = argv[1];
+  while(isdigit(*s)) {
+    i = i*10 + *s++ - '0';
+  }
+
+  switch(*s) {
+  case 'k': 
+  case 'K': prefix *= 1000;    s++; break;
+  case 'm':
+  case 'M': prefix *=  1000000; s++; break;
+  }
+
+  switch(*s) {
+    case 'b': case 'B': s++; i = i*prefix/sizeof(unsigned); break;
+    case 'w': case 'W': s++; i = i*prefix; break;
+    default: i = i*prefix/sizeof(unsigned); break;
+  }
+
+  printf("%d\n",i);
+  exit(0);
+}
+!!!
+  $CCC -o heap heap.c
+  HEAP=`./heap $NEWHEAP`
+  rm -f heap heap.c
+  echo -n "$HEAP words "
+  echo '(calculated) '
+  sed -e "s|DefaultHeap|$HEAP words|" docs/limits.html.inst >docs/limits.html
+  if [ -d lib/$VERSION ]
+  then
+    echo "Creating new lib/$VERSION/nhc98heap ..."
+    sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >./nhc98heap.c
+    $CCC -o lib/$VERSION/nhc98heap nhc98heap.c
+    rm -f nhc98heap.c
+  else
+    echo "Creating new src/runtime/nhc98heap.c ..."
+    sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
+  fi
+else
+  echo -n "$HEAP words "
+  echo '(cached) '
+fi
+
+echo
+
+
+if [ "$BUILD" = "yes" ]
+then
+
+  echo "Build directories are now created/checked."
+  echo "Build directory root is:"
+  echo "    $BUILDDIR"
+  echo "Object files build in:"
+  echo -n "    $BUILDDIR/$MACHINE"
+  if [ ! -d $BUILDDIR/$MACHINE ]
+  then mkdir -p $BUILDDIR/$MACHINE;  echo ' (created)'
+  else echo ' (exists)'
+  fi
+  echo "Executables and object lib files end up in:"
+  echo -n "    $BUILDLIBDIR/$MACHINE"
+  if [ ! -d $BUILDLIBDIR/$MACHINE ]
+  then mkdir -p $BUILDLIBDIR/$MACHINE;  echo ' (created)'
+  else echo ' (exists)'
+  fi
+
+  echo "Adding Makefile config script to $BUILDLIBDIR/$MACHINE..."
+  echo "  config "
+  ( echo "ENDIAN=$ENDIAN";
+    case $RTSFLAG in
+      no)  echo "USINGRTS=0" ;;
+      yes) echo "USINGRTS=1" ;;
+    esac;
+    echo "INSTALLVER=\"$CONFIGVERSION\"";
+    echo "INSTALLINFO=\"$INSTALLINFO\"";
+   #echo "HEAP=\"-DHEAPSIZE=$HEAP\"";
+    echo "BUILDBASEDIR=$BUILDDIR";
+   #echo "JAVADIR=$JAVADIR";
+    echo "EXE=$EXE";
+    echo "CC=$CCC";
+  ) >$BUILDLIBDIR/$MACHINE/config
+
+  echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
+  sed -e "s|InstallVer|$CONFIGVERSION|" script/hmakeconfig.inst |\
+  sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDLIBDIR/hmake.config
+
+  echo "Adding preliminary build scripts to $BUILDBINDIR..."
+  echo -n "  nhc98 "
+  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/nhc98.inst |\
+  sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+  sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/nhc98
+  echo -n "hmake "
+  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/hmake.inst |\
+  sed -e "s|ArchDir |$BUILDBINDIR/|"   >$BUILDBINDIR/hmake
+  echo -n "greencard "
+  sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
+  sed -e "s|ArchDir |$BUILDBINDIR/|" |\
+  sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard
+  echo
+  chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/hmake $BUILDBINDIR/greencard
+  echo "Creating src/runtime/nhc98heap.c ..."
+  sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
+
+else
+if [ "$INSTALL" = "yes" ]
+then
+
+  echo "Installation directories are now created/checked."
+  echo "Install directory root is:"
+  echo "    $INSTALLDIR"
+
+  if [ "$LIB" = "yes" ]
+  then
+    echo "Executables and object lib files go into:"
+    echo -n "    $LIBDIR/$VERSION"
+    if [ ! -d $LIBDIR/$VERSION ]
+    then mkdir -p $LIBDIR/$VERSION;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    if [ $LIBDIR != $HLIBDIR ]
+    then
+      echo -n "    $HLIBDIR/$VERSION"
+      if [ ! -d $HLIBDIR/$VERSION ]
+      then mkdir -p $HLIBDIR/$VERSION;  echo ' (created)'
+      else echo ' (exists)'
+      fi
+    fi
+    if [ "$VERSION" != "$MACHINE" ]
+    then
+      if [ -d $LIBDIR/$MACHINE -o -d $HLIBDIR/$MACHINE ]
+      then
+        echo "*** Directory already exists for $MACHINE in $LIBDIR"
+        echo "*** Cannot proceed.  (Suggest you remove directory and re-run.)"
+        exit 1
+      fi
+      echo "    Linking $MACHINE to $VERSION"
+      ln -sf $LIBDIR/$VERSION $LIBDIR/$MACHINE
+      ln -sf $HLIBDIR/$VERSION $HLIBDIR/$MACHINE
+    fi
+    echo -n "    "
+    ( cd $BUILDLIBDIR/$VERSION; tar cf - . ) | ( cd $LIBDIR/$VERSION; tar xvf - )
+    if [ $HLIBDIR != $LIBDIR ]
+    then ( cd $LIBDIR/$VERSION; mv MkProg Older $HLIBDIR/$VERSION )
+    fi
+    echo -n "hmake.config "
+    sed -e "s|InstallVer|$CONFIGVERSION|" script/hmakeconfig.inst |\
+    sed -e "s|IncludeDir|$BUILDINCDIR|" >$HLIBDIR/hmake.config
+    echo -n "config "
+    ( echo "ENDIAN=$ENDIAN";
+      case $RTSFLAG in
+        no)  echo "USINGRTS=0" ;;
+        yes) echo "USINGRTS=1" ;;
+      esac;
+      echo "INSTALLVER=\"$CONFIGVERSION\"";
+      echo "INSTALLINFO=\"$INSTALLINFO\"";
+      echo "LIBSOCKET=\"$LIBSOCKET\"";
+      echo "LIBCOMPAT=\"$LIBCOMPAT\"";
+     #echo "JAVADIR=$JAVADIR";
+      echo "EXE=$EXE";
+      echo "CC=$CCC";
+    ) >$LIBDIR/$VERSION/config
+    echo -n "nhctracer.jar "
+    cp $BUILDLIBDIR/nhctracer.jar $LIBDIR
+    echo
+  else
+    echo 'Not (re-)installing executables and library files'
+  fi
+
+  if [ "$INC" = "yes" ]
+  then
+    echo "Interface and include-files go into:"
+    echo -n "    $INCDIR"
+    if [ ! -d $INCDIR ]
+    then mkdir -p $INCDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    "
+    for file in $BUILDINCDIR/*
+    do
+      echo -n "`basename $file` "
+      if [ -f $file ]; then cp $file $INCDIR; fi
+    done
+    echo
+    echo "Tracer interface files go into:"
+    echo -n "    $INCDIR/tracer"
+    if [ ! -d $INCDIR/tracer ]
+    then mkdir -p $INCDIR/tracer;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    "
+    for file in $BUILDINCDIR/tracer/*
+    do
+      echo -n "`basename $file` "
+      cp $file $INCDIR/tracer
+    done
+    echo
+  else
+    echo 'Not (re-)installing interface and include files'
+  fi
+
+  if [ "$BIN" = "yes" ]
+  then 
+    echo "Scripts go into:"
+    echo -n "    $BINDIR"
+    if [ ! -d $BINDIR ]
+    then mkdir -p $BINDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    nhc98 "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98.inst |\
+    sed -e "s|ArchDir ||" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98
+    echo -n "hmake "
+    sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
+    sed -e "s|ArchDir ||"  >$BINDIR/hmake
+#   sed -e "s|NhcDir|$INCDIR|" |\
+#   sed -e "s|HbcDir|$HBCDIR|" |\
+#   sed -e "s|GhcDir|$GHCDIR|" >$BINDIR/hmake
+    echo -n "nhc98tracer "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/nhc98tracer.inst |\
+    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/nhc98tracer
+    echo -n "greencard "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/greencard.inst |\
+    sed -e "s|ArchDir ||" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$BINDIR/greencard
+    echo -n "hp2graph "
+    rm -f $BINDIR/hp2graph; ln $BINDIR/greencard $BINDIR/hp2graph
+    echo -n "harch "
+    cp script/harch $BINDIR
+    echo
+    chmod +x $BINDIR/nhc98 $BINDIR/hmake $BINDIR/nhc98tracer $BINDIR/greencard $BINDIR/hp2graph $BINDIR/harch
+  else
+    echo 'Not (re-)installing scripts'
+  fi
+
+  if [ "$MAN" = "yes" ]
+  then
+    echo "Man pages go into:"
+    echo -n "    $MANDIR"
+    if [ ! -d $MANDIR ]
+    then mkdir -p $MANDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    echo -n "    "
+    for file in man/*
+    do
+      echo -n "`basename $file` "
+      cp $file $MANDIR
+    done
+    echo
+  else
+    echo 'Not (re-)installing man pages'
+  fi
+
+  if [ "$DOCS" = "yes" ]
+  then
+    echo "Html documents go into:"
+    echo -n "    $DOCDIR"
+    if [ ! -d $DOCDIR ]
+    then mkdir -p $DOCDIR;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    ( cd docs; tar cf - . ) | ( cd $DOCDIR; tar xf - )
+  else
+    echo 'Not (re-)installing html documents'
+  fi
+
+else
+
+  echo "No build-preparation and no installation performed."
+
+fi
+fi
+
+echo "Saving current configuration in targets/$MACHINE/config.cache"
+( echo "INSTALLDIR=$INSTALLDIR" ;
+  if [ "$INCDIR" != "$INSTALLDIR/include/nhc98" ]; then echo "INCDIR=$INCDIR" ; fi;
+  if [ "$LIBDIR" != "$INSTALLDIR/lib/nhc98" ]; then echo "LIBDIR=$LIBDIR" ; fi;
+  if [ "$MANDIR" != "$INSTALLDIR/man/man1" ]; then echo "MANDIR=$MANDIR" ; fi;
+  if [ "$BINDIR" != "$INSTALLDIR/bin" ]; then echo "BINDIR=$BINDIR" ; fi;
+  echo "DOCDIR=$DOCDIR" ;
+ #echo "JAVADIR=$JAVADIR" ;
+ #echo "HBCDIR=$HBCDIR" ;
+ #echo "GHCDIR=$GHCDIR" ;
+  echo "BUILDDIR=$BUILDDIR" ;
+ #echo "BUILDLIBDIR=$BUILDLIBDIR" ;
+ #echo "BUILDINCDIR=$BUILDINCDIR" ;
+  echo "VERSION=$VERSION" ;
+  echo "RTSMESSAGE=\"$RTSMESSAGE\"" ;
+  echo "RTSFLAG=$RTSFLAG" ;
+  echo "CC=$CCC" ;
+  echo "ENDIAN=$ENDIAN" ;
+  echo "HEAP=$HEAP" ;
+  echo "LIB=$LIB" ;
+  echo "BIN=$BIN" ;
+  echo "INC=$INC" ;
+  echo "MAN=$MAN" ;
+  echo "DOCS=$DOCS" ;
+  echo "EXE=$EXE" ;
+  echo "INSTALLVER=\"$CONFIGVERSION\"" ;
+  echo "INSTALLINFO=\"$INSTALLINFO\"" ;
+) >$BUILDTARGDIR/$MACHINE/config.cache
+
+echo "Done."
+if [ "$INSTALL" = "yes" ]
+then
+  echo
+  echo "    Please ensure $BINDIR is in your PATH variable."
+fi
+echo
+exit 0

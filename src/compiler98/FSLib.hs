@@ -1,0 +1,82 @@
+module FSLib(module FSLib, AssocTree(..), Tree, TokenId) where
+
+import Syntax
+import Kind
+import Info
+import State
+import AssocTree
+import Extra(Pos(..),noPos,sndOf,dropJust)
+import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon, t_List, tRatio, tRatioCon, tident)
+import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS,updateIS)
+import NT(NewType(..),NT)
+
+startfs fs x state tidFun =
+      let down = ((ExpCon noPos (tidFun (t_List,Con))		-- expList  nil
+		  ,ExpCon noPos (tidFun (t_Colon,Con))		--	    cons
+		  )
+		  ,ExpVar noPos (tidFun (tident,Var))		-- expId
+		  ,tidFun
+		  )
+
+	  up =	(state
+		    ,initAT)
+      in
+	case fs x down up of
+	 (x,(state,t2i)) -> (x,state,t2i)
+
+fsList down@(expList,expId,tidFun) up =
+  (expList,up)
+
+fsId down@(expList,expId,tidFun) up =
+  (expId,up)
+
+fsState down up@(state,t2i) =
+  (state,up)
+
+fsTidFun down@(expList,expId,tidFun) up =
+  (tidFun,up)
+
+fsRealData con down up@(state,t2i) =
+  ((isRealData . dropJust . lookupIS state . belongstoI . dropJust . lookupIS state) con,up)
+
+fsExpAppl pos [x] = unitS x
+fsExpAppl pos xs = unitS (ExpApplication pos xs)
+
+fsClsTypSel pos cls typ sel down  up@(state,t2i) = 
+  case lookupIS state cls of
+   Just clsInfo ->
+     case lookupIS state typ of
+       Just typInfo ->
+	 let tid = mkQual3  (tidI clsInfo) (tidI typInfo) (tidIS state sel)
+	 in case lookupAT t2i tid of
+	   Just i -> (ExpVar pos i,up)
+	   Nothing ->
+	     case uniqueIS state of
+	       (u,state) ->
+		 let   -- !!! Arity of selector doesn't look right !!!
+		    arity = (arityIM . dropJust . lookupIS state) sel + (length . snd . dropJust . lookupAT (instancesI clsInfo)) typ
+		    info = InfoName  u tid arity tid
+--                    info = InfoMethod  u tid (InfixDef,9) NoType (Just arity) cls
+		 in (ExpVar pos u,(addIS u info state,addAT t2i sndOf tid u))
+
+fsExp2 pos cls i = 
+  unitS (ExpVar pos) =>>> fsExp2i pos cls i
+
+fsExp2i pos cls i down  up@(state,t2i) = 
+  case lookupIS state cls of
+   Just clsInfo ->
+     case lookupIS state i of
+       Just clsdatInfo ->
+	 let tid = mkQual2  (tidI clsInfo)  (tidI clsdatInfo)
+     	 in case lookupAT t2i tid of           
+	   Just i ->  (i,up)
+	   Nothing ->
+	     case uniqueIS state of
+	       (u,state) ->
+		 if isClass clsdatInfo
+		 then    -- Exp2 is either superclass (Ord.Eq) taking one argument ...
+		    (u,(addIS u (InfoMethod  u tid (InfixDef,9) NoType (Just 1) cls) state,addAT t2i sndOf tid u))
+		 else -- ... or instance (Eq.Int) argument depends on type
+		    let arity = (length . snd . dropJust . lookupAT (instancesI clsInfo)) i   -- snd instead of fst !!!
+		    in seq arity (u,(addIS u (InfoVar  u tid (InfixDef,9) IEall NoType (Just arity)) state,addAT t2i sndOf tid u))
+
