@@ -23,11 +23,13 @@ module Hat
   ,cn1,cn2,cn3,cn4,cn5,cn6,cn7,cn8
   ,pa0,pa1,pa2,pa3,pa4
   ,mkTRoot,mkTNm
-  ,mkSourceRef,mkAtomCon,mkAtomId,mkAtomIdToplevel,mkModule
+  ,mkSourceRef,mkNoSourceRef,mkAtomCon,mkAtomId,mkAtomIdToplevel,mkModule
+  ,mkTHidden
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble,mkNTTuple
   ,mkNTFun,mkNTCase,mkNTLambda,mkNTDummy,mkNTCString,mkNTIf,mkNTGuard
   ,mkNTContainer,mkNTRational
   ,openTrace,closeTrace,outputTrace,fatal
+  ,Pos,noPos
   ) where
 
 -- import Prelude (Int,Char,Integer,Float,Double,Rational,String,IO
@@ -37,11 +39,11 @@ module Hat
 import Ratio (numerator,denominator)
 
 import PackedString (PackedString,packString) -- NONPORTABLE
-import FFI (Addr,ForeignObj,StablePtr
-           ,Int8,Int16,Int32,Int64,Word8,Word16,Word32,Word64)
-import MagicTypes (Vector,NmType,CStructure) 
+import MagicTypes (NmType,CStructure) -- NONPORTABLE
   -- magic C-type living in Haskell heap
 
+type Pos = Int
+noPos = 0
 
 -- ----------------------------------------------------------------------------
 
@@ -76,65 +78,13 @@ type Fun a b = Trace -> R a -> R b
 mkR :: a -> Trace -> R a
 mkR x t = t `Prelude.seq` R x t
 
-
--- toNm required to coerce return value from a foreign function
+-- ----------------------------------------------------------------------------
+-- toNm used to coerce primitive return value from a foreign function
 -- into a Trace structure
+-- simplifies transformation; also in n+k patterns don't know exact type
+-- relies on transformed type just being a type synonym for untraced type
 class NmCoerce a where
-    toNm :: Trace -> a -> SR -> R a
---    toNm t v sr = mkR v (mkTNm t mkNTDummy sr)	
---    -- for safety, we hope never required
-instance NmCoerce Int where
-    toNm t v sr = conInt sr t v
-instance NmCoerce Char where
-    toNm t v sr = conChar sr t v
-instance NmCoerce Integer where
-    toNm t v sr = conInteger sr t v
-instance NmCoerce Float where
-    toNm t v sr = conFloat sr t v
-instance NmCoerce Double where
-    toNm t v sr = conDouble sr t v
-instance NmCoerce Bool where
-    toNm t False sr = mkR False (mkTNm t mkNTDummy sr)  -- BOGUS NTs
-    toNm t True  sr = mkR True  (mkTNm t mkNTDummy sr)
-instance NmCoerce Ordering where
-    toNm t LT sr = mkR LT (mkTNm t mkNTDummy sr)
-    toNm t EQ sr = mkR EQ (mkTNm t mkNTDummy sr)
-    toNm t GT sr = mkR GT (mkTNm t mkNTDummy sr)
-instance NmCoerce () where
-    toNm t v sr = mkR v (mkTNm t mkNTDummy sr)
-instance NmCoerce Addr where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
-instance NmCoerce (StablePtr a) where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
-instance NmCoerce ForeignObj where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
-instance NmCoerce PackedString where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
-instance NmCoerce (Vector a) where
-    toNm t v sr = mkR v (mkTNm t mkNTContainer sr)
-{- Pattern matching on the trace that has been written to file is
-definitely impossible. However, this FFI extension should be different
-anyway.
-instance NmCoerce (Either a b) where
-    toNm t (Left  (R v (Nm _ nm x))) sr = 
-      let t' = mkR v (mkTNm t nm x) in t' `Prelude.seq` mkR (Left t') t
-    toNm t (Right (R v (Nm _ nm x))) sr = 
-      let t' = mkR v (mkTNm t nm x) in t' `Prelude.seq` mkR (Right t') t
--}
-
--- These types use dummies for now.  Ideally, we want to convert them to
--- either Int or Integer (depending on size), but we can't do that yet
--- because the instances of fromIntegral are only available in traced
--- versions!
-instance NmCoerce Int8
-instance NmCoerce Int16
-instance NmCoerce Int32
-instance NmCoerce Int64
-instance NmCoerce Word8
-instance NmCoerce Word16
-instance NmCoerce Word32
-instance NmCoerce Word64
-
+  toNm :: Trace -> a -> SR -> R a
 
 
 {-
@@ -1378,6 +1328,9 @@ foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
 -- new combinators for portable transformation:
 
 newtype ModuleTraceInfo = MTI Int
+
+mkNoSourceRef :: SR
+mkNoSourceRef = SR 0
 
 foreign import "primSourceRef"
   mkSourceRef :: ModuleTraceInfo -> Int -> SR

@@ -789,7 +789,7 @@ tExp cr parent (ExpLit pos (LitString _ s)) =
   tExp cr parent (ExpList pos (map (ExpLit pos . LitChar Boxed) s))
 tExp cr parent (ExpLit pos lit) =
   (ExpApplication pos [tLit lit,mkSRExp pos,parent,ExpLit pos lit]
-  ,emptyModuleConsts)
+  ,pos `addPos` emptyModuleConsts)
   where
   tLit (LitInt _ _) = ExpVar pos tokenConInt
   tLit (LitChar _ _) = ExpVar pos tokenConChar
@@ -1145,7 +1145,13 @@ getUnqualified = reverse . unpackPS . extractV . tokenId
 updateToken :: (String -> String) -> TraceId -> TokenId
 updateToken f traceId = 
   case tokenId (traceId) of
-    t@(TupleId _) -> t
+    t@(TupleId 0) -> if f "" == "a" 
+                       then Qualified transPreludeModule 
+                              (packString . reverse . f $ "Tuple0")
+                       else t
+    t@(TupleId n) -> Qualified 
+                       transPreludeModule 
+                       (packString . reverse . f $ ("Tuple"++show n)) 
     Visible n     -> 
       Visible (packString . reverse . f . unqual $ n) 
     Qualified m n -> 
@@ -1154,6 +1160,7 @@ updateToken f traceId =
         (packString . reverse . f . unqual $ n) 
     _             -> error "TraceTrans: updateToken"
   where
+  transPreludeModule = packString . reverse . updateModule $ "Prelude"
   updateModule (name@"Main") = name -- if module is `Main', then unchanged
   updateModule name = modulePrefix : name
   unqual :: PackedString -> String
