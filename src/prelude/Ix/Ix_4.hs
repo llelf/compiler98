@@ -4,7 +4,7 @@ import RangeSize
 
 instance  (Ix a1, Ix a2, Ix a3, Ix a4) => Ix (a1,a2,a3,a4)  where
     range ((l1,l2,l3,l4),(u1,u2,u3,u4)) =
-          [(i1,i2,i3,l4) | i1 <- range (l1,u1),
+          [(i1,i2,i3,i4) | i1 <- range (l1,u1),
                            i2 <- range (l2,u2),
                            i3 <- range (l3,u3),
                            i4 <- range (l4,u4)]
