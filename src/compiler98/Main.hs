@@ -191,7 +191,7 @@ Parse interface files for imported modules
 nhcImport :: Flags 
           -> PackedString 
           -> (TokenId -> [TokenId]) 
-          -> (Bool -> Bool -> TokenId -> IdKind -> IE) 
+          -> ((TokenId->Bool) -> TokenId -> IdKind -> IE) 
           -> Module TokenId 
           -> ImportState 
           -> Overlap 
