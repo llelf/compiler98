@@ -256,7 +256,7 @@ extern Node Start_World[];
 extern Node FN_Builtin_46primLeave[];
 extern Node CF_Prelude_46_95zap_95arg[];
 extern Node CF_Prelude_46_95zap_95stack[];
-/*extern Node FN_Prelude_46Monad_46Prelude_46IO_46return[]; replaced by: */
+extern Node FN_Prelude_46Monad_46Prelude_46IO_46return[];
 extern Node FN_Prelude_46_95ioReturn[];
 extern Node FN_IOExtras_46unsafePerformIO[];
 
@@ -275,8 +275,8 @@ extern Node FN_IOExtras_46unsafePerformIO[];
 #define CON_NIL ((Node)C0_Prelude_46_91_93)
 #define ZAP_ARG_NODE ((NodePtr) CF_Prelude_46_95zap_95arg)
 #define ZAP_STACK_NODE ((NodePtr) CF_Prelude_46_95zap_95stack)
-/*#define IORETURN ((Node)FN_Prelude_46Monad_46Prelude_46IO_46return) rplcd/by*/
-#define IORETURN ((Node)FN_Prelude_46_95ioReturn)
+#define IORETURN ((Node)FN_Prelude_46Monad_46Prelude_46IO_46return)
+/*#define IORETURN ((Node)FN_Prelude_46_95ioReturn)  -- removed again*/
 #define PERFORMIO ((Node)FN_IOExtras_46unsafePerformIO)
 
 #define C_CODE ((Code)FN_Prelude_46primLeave)
