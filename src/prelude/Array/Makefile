@@ -1,55 +1,26 @@
 include Makefile.inc
 
-THISLIB = Array
-REQ     = -P../List/ -P../Ix/
+THISLIB	= Array
+SEARCH	= -P../List -P../Ix
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	=
 
 SRCS	= \
-	AMap.hs        Assocs.hs      Eq_Array.hs    ListArray.hs   Show_Array.hs \
+	AMap.hs        Assocs.hs      Eq_Array.hs    ListArray.hs   \
+	Show_Array.hs \
 	Accum.hs       Bounds.hs      Index.hs       Ord_Array.hs   \
 	AccumArray.hs  DArray.hs      Indices.hs     Read_Array.hs  \
 	ArrayFun.hs    Elems.hs       IxMap.hs       Replace.hs     \
 	ArrayLow.hs
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-HFLAGS = -part
+SRCS_T	=
 
 
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
-${MAINOBJ}: ${OBJS}
-
- 
-.SUFFIXES: .hs .o .c
-
-.hs.o:
-	$(HC) -c -P../List/ -P../Ix/ $(HFLAGS) $<
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c -P../List/ -P../Ix/ $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS -P../Ix/ -o $@ $<
-${CFILES}: %.c : %.hs
-	$(HC) -C -P../List/ -P../Ix/ $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -CTS -P../Ix/ $<
+# Here are the main rules.
+include ../Makefile.common
 
 
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 
 ${OBJDIR}/AMap.o: AMap.hs ${OBJDIR}/DArray.o ${OBJDIR}/ArrayFun.o ${OBJDIR}/Index.o ${OBJDIR}/Bounds.o
 ${OBJDIR}/Accum.o: Accum.hs ${OBJDIR}/DArray.o ${OBJDIR}/Replace.o ${OBJDIR}/Index.o

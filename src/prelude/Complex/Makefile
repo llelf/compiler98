@@ -1,6 +1,9 @@
 include Makefile.inc
 
-THISLIB = Complex
+THISLIB	= Complex
+SEARCH	=
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	=
 
 SRCS	= \
 	ImagPart.hs            Read_Complex.hs \
@@ -9,52 +12,15 @@ SRCS	= \
 	DComplex.hs            Num_Complex.hs         Show_Complex.hs \
 	Eq_Complex.hs          Phase.hs               \
 	Fractional_Complex.hs  Polar.hs
+SRCS_T	=
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-HFLAGS = -part
-#HEAP = +RTS -H2M -RTS
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
 
-
- 
-.SUFFIXES: .hs .c .o
-.hs.o:
-	$(HC) -c $(HFLAGS) $<
-.hs.c:
-	$(HC) -C $(HFLAGS) $<
-
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS -o $@ $<
-
-${CFILES}: %.c : %.hs
-	$(HC) -C $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -CTS $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 ${OBJDIR}/Cis.o: Cis.hs ${OBJDIR}/DComplex.o
 ${OBJDIR}/Conjugate.o: Conjugate.hs ${OBJDIR}/DComplex.o
 ${OBJDIR}/Eq_Complex.o: Eq_Complex.hs ${OBJDIR}/DComplex.o
@@ -87,3 +53,4 @@ Fractional_Complex.c: DComplex.c Num_Complex.c
 Num_Complex.c:        DComplex.c Magnitude.c Eq_Complex.c Show_Complex.c
 Read_Complex.c:       DComplex.c
 Show_Complex.c:       DComplex.c RealPart.c
+

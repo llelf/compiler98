@@ -38,11 +38,11 @@ import Read_3
 import Read_4
 import Read_Bool
 import Read_Char
-import Read_Double
-import Read_Either
-import Read_Float
 import Read_Int
+import Read_Double
+import Read_Float
 import Read_Integer
+import Read_Either
 import Read_List
 import Read_Maybe
 import Read_Ordering
@@ -61,7 +61,7 @@ import Show_Double
 import Show_Either
 import Show_Float
 --import Show_Fun
---import Show_IO
+import Show_IO
 import Show_Int
 import Show_Integer
 import Show_List
@@ -71,3 +71,4 @@ import Show_Unit
 import Shows
 import TReadS
 import TShowS
+

@@ -1,11 +1,13 @@
 include Makefile.inc
 
-THISLIB = Binary
+THISLIB	= Binary
+SEARCH	=
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	=
 
-HSSRCS = \
+SRCS	= \
 	Bin.hs CBinary.hs Instances.hs LeftLeft.hs \
-	PutAt.hs PutAtEnd.hs GetAt.hs GetFAt.hs	# SizedBin.hs
-GCSRCS	= \
+	PutAt.hs PutAtEnd.hs GetAt.hs GetFAt.hs \
 	BinHandle.gc BinPtr.gc GetBitsF.gc GetBits.gc PutBits.gc \
 	AlignBin.gc BinIOMode.gc BinLocation.gc \
 	ClearBits.gc CloseBin.gc CompareBin.gc \
@@ -13,72 +15,18 @@ GCSRCS	= \
 	EndBin.gc EqualsBin.gc \
 	FreezeBin.gc IsEOFBin.gc \
 	OpenBin.gc SkipBits.gc StdMem.gc SizeBin.gc \
-	SeekBin.gc TellBin.gc		# SizeofBin.gc DirectPut.gc
-CSRCS = cLowBinary.c
+	SeekBin.gc TellBin.gc \
+	cLowBinary.c
+	# SizedBin.hs \
+	# SizeofBin.gc DirectPut.gc
+SRCS_T	=
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC	= ${THISLIB}.hs
-
-HSOBJS = $(patsubst %.hs,${OBJDIR}/%.o,${HSSRCS})
-GCOBJS = $(patsubst %.gc,${OBJDIR}/%.o,${GCSRCS})
-COBJS = $(patsubst %.c,${OBJDIR}/%.o,${CSRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-OBJS = ${COBJS} ${GCOBJS} ${HSOBJS}
-
-HSCFILES = $(patsubst %.hs,%.c,${HSSRCS})
-GCCFILES = $(patsubst %.gc,%.c,${GCSRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-ALL_CFILES = ${HSCFILES} ${GCCFILES} ${MAINCFILE}
-
-IO  = ../IO/
-DIO = ../PreludeIO/
-PB  = ../PreludeBin/
-
-HFLAGS = -part -redefine
+# Here are the main rules.
+include ../Makefile.common
 
 
-all: ${OBJS} ${MAINOBJ}
-boot:
-cfiles: ${ALL_CFILES}
-fromC:
-	$(HC) -c -d $(OBJDIR) *.c
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	-rm -f ${OBJDIR}/*.o *.hi *.o *_.hs *_.c ${ALL_CFILES}
-
- 
-.SUFFIXES: .hs .o .gc .c
-#.hs.o:
-#	$(HC) -c $(HFLAGS) $<
-#.gc.o:
-#	$(HC) -c $(HFLAGS) $<
-#.c.o:
-#	$(CC) -c $<
-
-${HSOBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -o $@ $<
-${GCOBJS}: ${OBJDIR}/%.o : %.gc
-	${HC} -c ${HFLAGS} -o $@ $<
-${COBJS}: ${OBJDIR}/%.o : %.c
-	$(CC) -c -I$(INCDIR) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -redefine -lib -CTS -o $@ $<
-
-${HSCFILES}: %.c : %.hs
-	$(HC) -C $(HFLAGS) $<
-${GCCFILES}: %.c : %.gc
-	${HC} -C ${HFLAGS} $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -redefine -lib -CTS $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
-
+# Here are the dependencies.
 ${OBJDIR}/cLowBinary.o: cLowBinary.h cLowBinary.c
 ${OBJDIR}/AlignBin.o: AlignBin.gc cLowBinary.h ${OBJDIR}/BinHandle.o
 ${OBJDIR}/BinHandle.o: BinHandle.gc

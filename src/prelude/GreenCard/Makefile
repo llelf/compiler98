@@ -1,46 +1,29 @@
 include Makefile.inc
 
+EXCLUDE_THISLIB_HS = yes
 THISLIB = GreenCard
+SEARCH	= -P$(LOW) -P../PreludeIO
 
-SRCS	=
-
-
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC	= ${THISLIB}.gc
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.gc,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.gc,%.c,${MAINSRC})
-
-LOW = ../LowB/
-IO = ../PreludeIO/
-HFLAGS = -P./ -part -redefine
+SRCS	= 
+SRCS_T	=
 
 
-all: ${OBJS} ${MAINOBJ}
-boot:
-cfiles: ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) *.c
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s *_.hs
+# Here are the main rules.
+include ../Makefile.common
 
 
- 
-.SUFFIXES: .hs .o .gc .c
-.hs.o:
-	$(HC) -P$(LOW) -P$(IO) -c $(HFLAGS) $<
-.gc.o:
-	$(HC) -P$(LOW) -P$(IO) -c $(HFLAGS) $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.gc
-	$(HC) -c -P$(LOW) -P$(IO) $(HFLAGS) +CTS -lib -CTS -o $@ $<
-${MAINCFILE}: %.c : %.gc
-	$(HC) -C -P$(LOW) -P$(IO) $(HFLAGS) +CTS -lib -CTS $<
+# Here are some extra rules.
+extra: ${OBJDIR}/${THISLIB}.o
+
+ifneq "${TRACING}" "T"
+${OBJDIR}/${THISLIB}.o: ${THISLIB}.gc
+	$(HC) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+${THISLIB}.c : ${THISLIB}.gc
+	$(HC) -C $(LIB_FLAGS) $(EXTRA_H_FLAGS) $<
+else
+${OBJDIR}/${THISLIB}.o: ${THISLIB}.gc
+	$(TR_COMPILE) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+endif
 
 
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.

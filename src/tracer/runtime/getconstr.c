@@ -247,6 +247,28 @@ C_HEADER(_tprim_FromEnum)
 }
 
 #ifdef PROFILE
+static SInfo ToEnumProfInfo = { "Builtin","Builtin.prim_toEnum","Prelude._toEnum"};
+#endif
+
+C_HEADER(_tprim_ToEnum)
+{
+    NodePtr result;
+    
+    NodePtr t = C_GETARG1(1);
+    NodePtr a = C_GETARG1(2);
+    int i;
+
+    /* fprintf(stderr, "prim_toEnum called\n");*/
+    IND_REMOVE(a);
+    a = GET_POINTER_ARG1(a, 1);
+    IND_REMOVE(a);
+    i = GET_INT_VALUE(a);
+    result = C_ALLOC(1+EXTRA);
+    result[0] = CONSTR(i,0,0);
+    C_RETURN(mkR(result, mkTNm(t, mkNm(i), mkSR())));
+}
+
+#ifdef PROFILE
 static SInfo IntFromIntegerProfInfo = { "Builtin","Builtin.primIntFromInteger","Prelude.Int"};
 #endif
 
@@ -410,6 +432,29 @@ C_HEADER(_tprim_packString)
   }
   *sp = '\0';
   /* fprintf(stderr, "packString: '%s'\n", &res[3+EXTRA+1+EXTRA]);*/
+  C_RETURN(res);
+}
+
+C_HEADER(_tprim_unpackPS)
+{
+  NodePtr src, sp, res, rp;
+  int len = 0;  char c;
+  src = C_GETARG1(2); /* src is a wrapped PackedString */
+  IND_REMOVE(src);
+  src = GET_POINTER_ARG1(src, 1);
+  IND_REMOVE(src);
+  sp = (char *)&src[3+EXTRA+1+EXTRA];
+  c = *sp++;
+  res = mkCons(mkChar(c),0);
+  rp = &res[EXTRA+2];
+  while (*sp!='\0') {	/* build ordinary string */
+    c = *sp++;
+    *rp = (Node)mkCons(mkChar(c),0);
+    rp = &((NodePtr)(*rp))[EXTRA+2];
+  }
+  *rp = (Node)mkNil();
+
+  res = mkRString(0,0,res);	/* wrap it at the end */
   C_RETURN(res);
 }
 

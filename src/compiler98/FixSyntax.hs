@@ -95,7 +95,8 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType), sr,
 	                             ExpLit p (LitInt b (fromInteger i))])
         else if tidIS state qType == tInteger then
 	    unitS (ExpApplication p [ExpVar p (tidFun (t_conInteger, Var)), sr, t, l])
-	else error ("fsExp: strange expr(1) at "++ strPos p)
+	else error ("fsExp: strange expr(1) at "++ strPos p ++
+                    "\n  ctx is Num, literal on rhs is not Int or Integer")
     else if tidIS state fci == t_patFromConInteger then
         fsTidFun >>>= \tidFun -> 
         if tidIS state qType == tInt then
@@ -103,11 +104,13 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(Exp2 _ qNum qType), sr,
 	                             ExpLit p (LitInt b (fromInteger i)), t])
         else if tidIS state qType == tInteger then
 	    unitS (ExpApplication p [ExpCon p (tidFun (tR, Con)), l, t])
-	else error ("fsExp: strange expr(5) at "++ strPos p)
+	else error ("fsExp: strange expr(5) at "++ strPos p ++
+                    "\n  definite ctx, pat on lhs is not Int or Integer")
     else error ("fsExp: strange expr(2) at " ++ strPos p ++
-                "\nfci=" ++ show t_fromConInteger ++
-                "\npfci=" ++ show t_patFromConInteger ++
-                "\n?=" ++ show(tidIS state fci))
+                "\n  definite ctx, neither a lhs pat nor a rhs literal" ++
+                "\n  fci=" ++ show t_fromConInteger ++
+                "\n  pfci=" ++ show t_patFromConInteger ++
+                "\n  ?=" ++ show(tidIS state fci))
 fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(ExpVar _ _), sr, t, l@(ExpLit p2 (LitInteger b i))]) =
     fsState >>>= \state ->
     if tidIS state fci == t_fromConInteger then
@@ -117,8 +120,11 @@ fsExp exp@(ExpApplication p [ExpVar _ fci, ExpDict dict@(ExpVar _ _), sr, t, l@(
 				                          dict, sr, t],
 				 ExpApplication p [ExpVar p (tidFun (t_conInteger, Var)), 
 				                   sr, t, l]])
-    else if tidIS state fci == t_patFromConInteger then error ("fsExp: strange expr(4) at "++strPos p)
-    else error ("fsExp: strange expr(3) at "++ strPos p)
+    else if tidIS state fci == t_patFromConInteger then
+         error ("fsExp: strange expr(4) at "++strPos p ++
+                "\n  variable ctx, pat on lhs is Integer (tough!)")
+    else error ("fsExp: strange expr(3) at "++ strPos p ++
+                "\n  variable ctx, neither a lhs pat nor a rhs literal")
 #endif
 --- fromInteger {Int Integer Float Double} constant
 fsExp exp@(ExpApplication pos [v@(ExpVar _ qfromInteger),(ExpDict v2@(Exp2 _ qNum qType)),l@(ExpLit pl (LitInteger b i))]) =

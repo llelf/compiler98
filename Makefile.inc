@@ -14,7 +14,8 @@ ifeq "" "${MKDIR}"
 MKDIR:=$(shell pwd)
 endif
 
-LOCAL = $(MKDIR)/script/
+TOPDIR= $(MKDIR)
+LOCAL = $(TOPDIR)/script/
 export LOCAL
 
 ifeq "" "${BUILDBASEDIR}"
@@ -24,17 +25,17 @@ endif
 MACHINE := $(shell $(LOCAL)harch)
 export MACHINE
 HC = $(LOCAL)nhc98
+export HC
 
 OBJ=obj${CFG}
-NHC98BASEDIR=${MKDIR}
-SCRIPTDIR=${NHC98BASEDIR}/script
+SCRIPTDIR=${LOCAL}
 BUILDDIR=${BUILDBASEDIR}/${MACHINE}
-INCDIR=${NHC98BASEDIR}/include
-SRCDIR=${NHC98BASEDIR}/src
-TRACEDIR=${SRCDIR}/tracer
-RUNTIMEDIR=${SRCDIR}/runtime
-PRELUDEDIR=${SRCDIR}/prelude
-LIBDIR=${NHC98BASEDIR}/lib
+INCDIR=${TOPDIR}/include
+SRCDIR=${TOPDIR}/src
+#TRACEDIR=${SRCDIR}/tracer
+#RUNTIMEDIR=${SRCDIR}/runtime
+#PRELUDEDIR=${SRCDIR}/prelude
+LIBDIR=${TOPDIR}/lib
 DST=${LIBDIR}/${MACHINE}
 
 ### This is a very important step: get the local configuration

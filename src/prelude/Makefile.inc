@@ -5,14 +5,35 @@ MKDIR:=$(patsubst %/$(notdir ${MKDIR}),%, ${MKDIR})
 endif
 include ${MKDIR}/Makefile.inc
 
-LOW = ../LowB/
 
 ifeq "p" "${PROFILING}"
-HC := $(LOCAL)nhc98 -p $(NHEAP)
+HC := $(LOCAL)nhc98 -cpp -p
 else
-HC := $(LOCAL)nhc98
+HC := $(LOCAL)nhc98 -cpp
 endif
 
 ifeq "t" "${TPROF}"
 HC += -t
 endif
+
+ifneq "${TRACING}" "T"
+
+LOW = ../LowB/
+
+else	#### tracing
+
+LOW = ../LowT/
+COMPILE      = ${HC} -c -part -redefine \
+		-dbgprelude -trusted -P${INCDIR}/tracer/ \
+		-DTRACING
+DBG_COMPILE  = ${HC} -T -c -part -redefine \
+		-dbgtrans -trusted -P${INCDIR}/tracer/ \
+		-DTRACING
+PLAIN_COMPILE= ${HC} -c -part -redefine -dbgprelude
+
+X_COMPILE    = ${HC} -dbgprelude -trusted -P${INCDIR}/tracer -DTRACING
+TR_COMPILE   = ${HC} -T -dbgtrans -trusted -P${INCDIR}/tracer -DTRACING
+PL_COMPILE   = ${HC} -dbgprelude
+
+endif
+

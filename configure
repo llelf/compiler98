@@ -7,7 +7,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.0 pre-release 18x (date 000425)"
+CONFIGVERSION="v1.0 pre-release 18xtn (date 0004xx)"
 HMAKEVERSION="v1.7.2 (date 000207)"
 
 if uname >/dev/null 2>&1
@@ -35,8 +35,7 @@ GHCSYM=
 BUILDLIBDIR=$PWD/lib
 BUILDINCDIR=$PWD/include
 BUILDBINDIR=$PWD/script
-BUILDTARGDIR=$PWD/targets
-BUILDDIR=$BUILDTARGDIR
+BUILDDIR=$PWD/targets
 
 INSTALL=no
 LIB=yes
@@ -45,9 +44,13 @@ INC=yes
 MAN=yes
 DOCS=no
 
-if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+if [ -f targets/$MACHINE/config.cache ]
 then		# cached settings override defaults above
-  . $BUILDTARGDIR/$MACHINE/config.cache
+  . targets/$MACHINE/config.cache
+else
+  if [ ! -d targets/$MACHINE ]
+  then mkdir -p targets/$MACHINE
+  fi
 fi
 NEWHEAP=$HEAP
 
@@ -93,11 +96,11 @@ do
   echo "  --heap=num / -Hnum   Configure compiled programs' default heap [400kb]"
   echo "  --buildwith=comp     Build nhc98 with given compiler [detected]"
   echo "  --buildopts=flags    Give extra flags needed by your build compiler [none]"
+  echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
  #echo
  #echo "  --hbcdir=dir         Tell hmake about hbc/LML installation in dir [detected]"
  #echo "  --ghcdir=dir         Tell hmake about ghc installation in dir [detected]"
   echo
-  echo "  --builddir=dir       Build intermediate object files under dir [./targets]"
   echo "  --prefix=rootdir     |"
   echo "  --installdir=rootdir | Use rootdir as base for installation [/usr/local]"
   echo "  --bindir=dir         Install scripts in dir [rootdir/bin]"
@@ -125,7 +128,7 @@ do
 done
 
 echo Configuring for nhc98... '[' $CONFIGVERSION ']'
-if [ -f $BUILDTARGDIR/$MACHINE/config.cache ]
+if [ -f targets/$MACHINE/config.cache ]
 then
   echo "Starting with earlier config in targets/$MACHINE/config.cache"
   echo '[' $INSTALLINFO ']'
@@ -156,9 +159,10 @@ esac
 # Configure hmake
 echo "--------"
 echo Configuring hmake... '[' $HMAKEVERSION ']'
-if [ -f script/hmake.config ]
+if [ -f targets/$MACHINE/hmake.config ]
 then
-  echo "  hmake has already been configured once.  (Remove file script/hmake.config"
+  echo "  hmake has already been configured once.  (Remove file"
+  echo "    targets/$MACHINE/hmake.config"
   echo "    and run `basename $0` again if you want to re-do that step.)"
 # echo "  hbc/LML directory:    $HBCDIR"
 # echo "  ghc directory:        $GHCDIR"
@@ -217,10 +221,10 @@ then
   then
     echo
     echo "Now we check/create your build directories:"
-    echo "Build directory root:  $BUILDDIR"
-    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
-    if [ ! -d $BUILDTARGDIR/$MACHINE ]
-    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created)'
+    echo "Config directory:      targets/$MACHINE"
+    echo -n "Build directory root:  $BUILDDIR"
+    if [ ! -d $BUILDDIR ]
+    then mkdir -p $BUILDDIR;  echo ' (created)'
     else echo ' (exists)'
     fi
     echo -n "Object files build in: $BUILDDIR/$MACHINE"
@@ -236,9 +240,9 @@ then
   else
     echo
     echo "Checking your binary distribution for integrity:"
-    echo -n "Config directory:      $BUILDTARGDIR/$MACHINE"
-    if [ ! -d $BUILDTARGDIR/$MACHINE ]
-    then mkdir -p $BUILDTARGDIR/$MACHINE;  echo ' (created ok)'
+    echo -n "Config directory:      targets/$MACHINE"
+    if [ ! -d targets/$MACHINE ]
+    then mkdir -p targets/$MACHINE;  echo ' (created ok)'
     else echo ' (exists)'
     fi
     echo -n "Executables and libs:  $BUILDLIBDIR/$MACHINE"
@@ -258,12 +262,12 @@ if [ -d src ]
 then
   if [ "$BUILDWITH" = "" ]
   then
-    BUILDWITH=`grep "^BUILTBY=" script/hmake.config | cut -c9-`
+    BUILDWITH=`grep "^BUILTBY=" targets/$MACHINE/hmake.config | cut -c9-`
     echo "I am guessing that you want to build nhc98 with $BUILDWITH"
   else
     echo "You are going to build nhc98 with $BUILDWITH"
   fi
-  GHCSYM=`grep "^ghcsym=" script/hmake.config | cut -c8-10`
+  GHCSYM=`grep "^ghcsym=" targets/$MACHINE/hmake.config | cut -c8-10`
   case $BUILDWITH in
     hbc|xtc)  RTSFLAG=no;;
     ghc|nhc)  RTSFLAG=yes;;
@@ -311,13 +315,21 @@ main() {
   fi
 
   echo -n "Reading /usr/include/errno.h: "
+  if [ ! -d src/prelude/$MACHINE ]
+  then
+     mkdir src/prelude/$MACHINE
+     cp src/prelude/Makefile.machinedepend src/prelude/$MACHINE/Makefile
+     cp src/prelude/PreludeIO/Makefile.inc src/prelude/$MACHINE/Makefile.inc
+     cp src/prelude/DErrNo.hs src/prelude/$MACHINE
+     cp src/prelude/DErrNo.c  src/prelude/$MACHINE
+  fi
   $CCC -o errnogen script/errnogen.c && ./errnogen >DErrNo.hs && rm -f ./errnogen
-  if diff DErrNo.hs src/prelude/PreludeIO/DErrNo.hs >/dev/null
+  if diff DErrNo.hs src/prelude/$MACHINE/DErrNo.hs >/dev/null
   then
     rm -f DErrNo.hs
     echo 'no change'
   else
-    mv DErrNo.hs src/prelude/PreludeIO/DErrNo.hs
+    mv DErrNo.hs src/prelude/$MACHINE/DErrNo.hs
     echo 'updated DErrNo.hs'
   fi
 
@@ -411,14 +423,14 @@ then
       echo "GHCSYM=$GHCSYM";
     ) >$BUILDLIBDIR/$MACHINE/config
 
-    echo "Updating hmake config script in $BUILDLIBDIR/hmake.config..."
+    echo "Updating hmake config script in $BUILDLIBDIR/$MACHINE/hmake.config..."
     if [ "$BUILDWITH" = "gcc" ]
     then
-      sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+      sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
       sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-      sed -e "s|^nhc98incdir=|nhc98incdir=$BUILDINCDIR \#|" >$BUILDLIBDIR/hmake.config
+      sed -e "s|^nhc98incdir=|nhc98incdir=$BUILDINCDIR \#|" >$BUILDLIBDIR/$MACHINE/hmake.config
     else
-      sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config >$BUILDLIBDIR/hmake.config
+      sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config >$BUILDLIBDIR/$MACHINE/hmake.config
     fi
 
     echo -n "Adding build scripts to $BUILDBINDIR...    "
@@ -485,11 +497,11 @@ else	# [ "$INSTALL" = "yes" ]
     then ( cd $LIBDIR/$VERSION; mv MkProg Older $HLIBDIR/$VERSION )
     fi
     echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
-    cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR	# patch local config also
+    cp $HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR/$MACHINE	# patch local config also
     #echo -n "config "	# Now simply re-use build config.
     #( echo "ENDIAN=$ENDIAN";
     #  case $RTSFLAG in
@@ -558,10 +570,10 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|ExecutableDir|$HLIBDIR|" script/hmake.inst |\
     sed -e "s|ScriptDir|$BINDIR|"  >$BINDIR/hmake
     echo -n "hmake.config "
-    sed -e "s|InstallVer|$HMAKEVERSION|" script/hmake.config |\
+    sed -e "s|InstallVer|$HMAKEVERSION|" targets/$MACHINE/hmake.config |\
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
-    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/hmake.config
+    sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$HLIBDIR/$MACHINE/hmake.config
     echo -n "rtb "
     sed -e "s|ExecutableDir|$LIBDIR|" script/rtb.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -642,7 +654,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   echo "EXE=$EXE" ;
   echo "INSTALLVER=\"$CONFIGVERSION\"" ;
   echo "INSTALLINFO=\"$INSTALLINFO\"" ;
-) >$BUILDTARGDIR/$MACHINE/config.cache
+) >targets/$MACHINE/config.cache
 
 echo "Done."
 if [ "$INSTALL" = "yes" ]

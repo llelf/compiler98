@@ -29,7 +29,7 @@ showFloat' x =
 		  	     else (m', sig', e'   )
     m' :: Int
     m'		= ceiling
-		      ((fromIntegral w * log (fromInteger b)) / log 10 :: Double)
+		      ((fromIntegral w * log (fromInteger b)) / log (fromInteger 10) :: Double)
 		  + 1
 
     (sig', e')	= if	  sig1 >= (10::Integer)^m' then ((round (t/10))::Integer, e1+1)

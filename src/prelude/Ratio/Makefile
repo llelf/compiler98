@@ -1,6 +1,7 @@
 include Makefile.inc
 
-THISLIB = Ratio
+THISLIB	= Ratio
+SEARCH	=
 
 SRCS	= \
         DRatio.hs            TRational.hs \
@@ -10,55 +11,19 @@ SRCS	= \
 	ApproxRational.hs    RatioCon.hs \
 	Denominator.hs       Numerator.hs \
         Prec.hs              Reduce.hs
+SRCS_T	= ${SRCS}
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-HFLAGS = -part -redefine # -prelude # -P../Prelude/ 
-#HEAP = +RTS -H2M -RTS
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f $(OBJDIR)/*.o *.hi *.o *.c *.s
-
-
- 
-.SUFFIXES: .hs .o .c
-.hs.o:
-	$(HC) -c $(HFLAGS) $<
-
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -redefine -CTS -o $@ $<
-# removed -P../Prelude/ from above compile line
-
-${CFILES}: %.c : %.hs
-	$(HC) -C $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -redefine -CTS $<
-# removed -P../Prelude/ from above compile line
-
+# Here are some extra rules.
 ../Prelude/%.hi : ../Prelude/%.hs
 	cd ../Prelude; ${MAKE} $@
 
 
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 
 ${OBJDIR}/Fractional_Ratio.o : Fractional_Ratio.hs ${OBJDIR}/RatioCon.o
 ${OBJDIR}/Num_Ratio.o : Num_Ratio.hs ${OBJDIR}/Reduce.o
@@ -74,3 +39,4 @@ Num_Ratio.c : Num_Ratio.hs Reduce.c
 RatioCon.c : RatioCon.hs Reduce.c
 Show_Ratio.c : Show_Ratio.hs Prec.c
 Read_Ratio.c : Read_Ratio.hs Prec.c RatioCon.c
+

@@ -1,36 +1,50 @@
 module IO (
-     Handle, HandlePosn,
-     IOMode(ReadMode,WriteMode,AppendMode,ReadWriteMode),
-     BufferMode(NoBuffering,LineBuffering,BlockBuffering),
-     SeekMode(AbsoluteSeek,RelativeSeek,SeekFromEnd),
-     stdin, stdout, stderr, openFile, hClose, hFileSize, hIsEOF, isEOF,
-     hSetBuffering, hGetBuffering, hFlush, hGetPosn, hSetPosn, hSeek, 
-     hWaitForInput, hReady,  hGetChar, hGetLine,
-     hLookAhead, hGetContents, hPutChar, hPutStr, hPutStrLn, hPrint,
-     hIsOpen, hIsClosed, hIsReadable, hIsWritable, hIsSeekable,
-     isAlreadyExistsError, isDoesNotExistError,
-     isAlreadyInUseError, isFullError, isEOFError,
-     isIllegalOperation, isPermissionError, isUserError, 
-     ioeGetErrorString, ioeGetHandle, ioeGetFileName,
-     try, bracket, bracket_,
+     Handle
+#if !defined(TRACING)
+    ,HandlePosn
+    ,IOMode(ReadMode,WriteMode,AppendMode,ReadWriteMode)
+    ,BufferMode(NoBuffering,LineBuffering,BlockBuffering)
+    ,SeekMode(AbsoluteSeek,RelativeSeek,SeekFromEnd)
+#endif
+    ,stdin, stdout, stderr, hClose
+#if !defined(TRACING)
+    ,openFile, hFileSize, hIsEOF, isEOF
+    ,hSetBuffering, hGetBuffering, hFlush, hGetPosn, hSetPosn, hSeek
+    ,hWaitForInput, hReady, hGetLine, hLookAhead
+#endif
+    ,hGetChar
+    ,hGetContents, hPutChar, hPutStr, hPutStrLn, hPrint
+#if !defined(TRACING)
+    ,hIsOpen, hIsClosed, hIsReadable, hIsWritable, hIsSeekable
+    ,isAlreadyExistsError, isDoesNotExistError
+    ,isAlreadyInUseError, isFullError, isEOFError
+    ,isIllegalOperation, isPermissionError, isUserError
+    ,ioeGetErrorString, ioeGetHandle, ioeGetFileName
+    ,try, bracket, bracket_
 
-     hGetFileName,			-- not standard Haskell'98
-     SocketType(..), openSocket		-- not standard Haskell'98
+    ,hGetFileName			-- not standard Haskell'98
+    ,SocketType(..), openSocket		-- not standard Haskell'98
+#endif
   ) where
 
+#if !defined(TRACING)
 import Ix
 import LowIO
+#endif
 
 import PreludeBuiltin(Handle,stdin,stdout,stderr)
 
+#if !defined(TRACING)
 import DHandlePosn
 import Eq_HandlePosn
 import IOMode
 import BufferMode
 import SeekMode
+#endif
 
-import OpenFile
 import HClose
+#if !defined(TRACING)
+import OpenFile
 import HFileSize
 import HIsEOF
 import IsEOF
@@ -41,15 +55,22 @@ import HFlush
 import HGetPosn
 import HSetPosn
 import HSeek
+import HGetLine
+#endif
 
 import HGetChar
-import HGetLine
 import HGetContents
 import HPutChar
 import HPutStr
 import HPutStrLn
 import HPrint
 
+import IsIOErrors
+import Try
+import Bracket
+import Bracket_
+
+#if !defined(TRACING)
 import IsEOFError
 import IsUserError
 
@@ -60,6 +81,7 @@ import IoeGetFileName
 import HGetFileName
 import OpenSocket
 import DSocket
+#endif
 
 import NotDoneYet
 

@@ -2,12 +2,17 @@ module Prelude (
     (->),Double,Char,Integer,Float,Int
     ,_eqDouble,_eqInteger,_eqFloat   -- Should not be visible (case stmts)
     ,_leInteger,_subInteger          -- Also should not be visible (for n+k)
+#if !defined(TRACING)
     ,_hPutChar,_hGetChar
+#endif
     ,_readCon0, _readConArg, _readCon, _readConInfix -- Don't know why I must be explicit
 
     ,module PreludeList
     ,module PreludeText
     ,module PreludeIO
+#if defined(TRACING)
+    ,module PreludeDebug
+#endif
 
     ,module _EnumFromThen
     ,module _EnumFromThenTo
@@ -22,8 +27,10 @@ module Prelude (
     ,module _Foldr
     ,module _FromEnum
     ,module _ToEnum
+#if !defined(TRACING)
     ,module _TupleIndex
     ,module _TupleRange
+#endif
     ,module _Apply1
     ,module _Apply2
     ,module _Apply3
@@ -50,8 +57,8 @@ module Prelude (
     ,Show(..)
 
     --,Ratio
-    --,Rational
-    --,(%)
+    ,Rational
+    ,(%)
 
     ,module Compose
     ,module Const
@@ -80,15 +87,15 @@ module Prelude (
     ,module Even
     ,module Flip
     ,module FractionalRaise
-    ,module FromIntegral
     ,module RealToFrac
+    ,module FromIntegral
     ,module Fst
     ,module Gcd
     ,module Id
     ,module Lcm
     ,module MapM
     ,module MapM_
-    ,module Maybe
+    ,module Maybefun
     ,module Not
     ,module NumRaise
     ,module NumericEnumFrom
@@ -129,10 +136,15 @@ import Id
 import PreludeList
 import PreludeText
 import PreludeIO
+#if defined(TRACING)
+import PreludeDebug
+#endif
 
---import Ratio(Ratio,Rational,(%))	-- needed for literal Rationals
+import Ratio(Rational,(%))	-- needed for literal Rationals
 
+#if !defined(TRACING)
 import Ix  -- to get all Ix instances
+#endif
 
 -- Shouldn't be visible, but they are:-(
 import _EnumFromThen
@@ -149,8 +161,10 @@ import _Foldr
 import _FromEnum
 import _NplusK
 import _ToEnum
+#if !defined(TRACING)
 import _TupleIndex
 import _TupleRange
+#endif
 import _Apply1
 import _Apply2
 import _Apply3
@@ -229,8 +243,8 @@ import Floating_Float
 import FractionalRaise
 import Fractional_Double
 import Fractional_Float
-import FromIntegral
 import RealToFrac
+import FromIntegral
 import Fst
 import Functor_List
 import Functor_Maybe
@@ -240,7 +254,7 @@ import Integral_Integer
 import Lcm
 import MapM
 import MapM_
-import Maybe
+import Maybefun
 import Monad_List
 import Monad_Maybe
 import Not
@@ -258,8 +272,8 @@ import Ord_3
 import Ord_4
 import Ord_Bool
 import Ord_Char
-import Ord_Double
 import Ord_Either
+import Ord_Double
 import Ord_Float
 import Ord_Int
 import Ord_Integer
@@ -284,5 +298,4 @@ import Subtract
 import Uncurry
 import Undefined
 import Until
-
 

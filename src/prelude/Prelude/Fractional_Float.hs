@@ -1,5 +1,6 @@
 module Prelude(Fractional(..)) where
 
+#if !defined(TRACING)
 import Numerator
 import Denominator
 import RatioCon
@@ -18,4 +19,13 @@ instance  Fractional Float  where
         	                                / fromInteger (denominator x))
 	              b     = floatRadix x'
 
+#else
 
+import Ratio((%),numerator,denominator)
+
+instance  Fractional Float  where
+  x / y = _prim _tprim_FractionalFloatDivide x y
+
+_tprim_FractionalFloatDivide primitive 3 :: Trace -> R Float -> R Float -> R Float
+
+#endif

@@ -1,6 +1,9 @@
 include Makefile.inc
 
-THISLIB = Char
+THISLIB	= Char
+SEARCH	= -P../Numeric -P../PreludeList
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	=
 
 SRCS	= \
         AsciiTab.hs Chr.hs Ord.hs IsDigit.hs DigitToInt.hs IntToDigit.hs \
@@ -10,50 +13,21 @@ SRCS	= \
         LexLitChar.hs ReadLitChar.hs ShowLitChar.hs \
         ToLower.hs ToUpper.hs
 
+SRCS_T	= \
+	AsciiTab.hs Chr.hs Ord.hs IsDigit.hs DigitToInt.hs IntToDigit.hs \
+	IsLatin1.hs IsSpace.hs IsUpper.hs \
+	IsAscii.hs IsControl.hs \
+	IsHexDigit.hs IsLower.hs IsOctDigit.hs IsPrint.hs \
+	IsAlpha.hs IsAlphaNum.hs \
+	ShowLitChar.hs \
+	ToLower.hs ToUpper.hs \
+	LexLitChar.hs ReadLitChar.hs
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-HFLAGS = -P../Numeric/ -P../PreludeList/ -part
-#HEAP = +RTS -H2M -RTS
-
-
-
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
- 
+# Here are the main rules.
+include ../Makefile.common
 
 
-.SUFFIXES: .hs .o .c
-.hs.o:
-	$(HC) -c $(HFLAGS) $<
-
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS -o $@ $<
-
-${CFILES}: %.c : %.hs
-	$(HC) -C $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -CTS $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 
 ${OBJDIR}/IsAlpha.o : IsAlpha.hs ${OBJDIR}/IsUpper.o ${OBJDIR}/IsLower.o
 ${OBJDIR}/IsAlphaNum.o : IsAlphaNum.hs ${OBJDIR}/IsAlpha.o ${OBJDIR}/IsDigit.o
@@ -71,6 +45,7 @@ ToLower.c: ToLower.hs IsUpper.c
 ToUpper.c: ToUpper.hs IsLower.c
 LexLitChar.c: LexLitChar.hs ../Numeric/LexDigits.hi
 ReadLitChar.c: ReadLitChar.hs ../Numeric/ReadDec.hi ../Numeric/ReadOct.hi ../Numeric/ReadHex.hi
+
 
 ## Yucky .hi stuff to deal with mutual dependencies.
 

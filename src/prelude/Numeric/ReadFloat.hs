@@ -6,7 +6,11 @@ import LexDigits
 --import Fractional_Ratio
 import Ratio
 
+#if !defined(TRACING)
 readFloat:: (RealFloat a) => ReadS a
+#else
+readFloat:: (RealFloat a) => String -> [(a,String)]
+#endif
 readFloat r = [(fromRational ((n%1)*10^^(k-d)), t) | (n,d,s) <- readFix r,
 						     (k,t)   <- readExp s]
               where readFix r = [(read (ds++ds'), length ds', t)

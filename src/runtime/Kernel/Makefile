@@ -1,6 +1,6 @@
 include Makefile.inc
 
-VPATH = $(INCDIR)
+#VPATH = $(INCDIR)
 
 OBJDIR=${BUILDDIR}/${OBJ}/runtime/Kernel
 
@@ -48,7 +48,7 @@ xxx:
 ${ARCHIVE}: ${AOBJS}
 	cd ${OBJDIR}; $(AR) $(ARFLAGS) $@ $(patsubst ${OBJDIR}/%,%,${AOBJS})
 
-all: links bytecode_o.h ${OBJS} ${ARCHIVE}
+all: links bytecode_o.h ${OOBJS} ${ARCHIVE}
 
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}

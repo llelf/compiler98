@@ -1,54 +1,34 @@
 include Makefile.inc
 
-THISLIB = NonStd
+EXCLUDE_THISLIB_HS = yes
+THISLIB	= NonStd
+SEARCH	= -P$(LOW)
 
-SRCS = \
+SRCS	=
+SRCS_T	=
+LIBSRCS = \
 	NonStdUnsafeCoerce.hs \
 	NonStdProfile.hs \
 	NonStdEval.hs  \
 	NonStdTrace.hs \
-	Warning.hs
-GCSRCS = NonStdGetPID.gc
+	Warning.hs \
+	NonStdGetPID.gc
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-GCOBJS = $(patsubst %.gc,${OBJDIR}/%.o,${GCSRCS})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-GCCFILES = $(patsubst %.gc,%.c,${GCSRCS})
-
-HFLAGS = -P./ -P../LowB/
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS} ${GCOBJS}
-boot: ${OBJS}
-cfiles: ${CFILES} ${GCCFILES}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${GCCFILES}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s *_.hs
+# Here are some extra rules.
+HOBJS	= $(patsubst %.hs, ${OBJDIR}/%.o, $(filter %.hs, ${LIBSRCS}))
+GOBJS	= $(patsubst %.gc, ${OBJDIR}/%.o, $(filter %.gc, ${LIBSRCS}))
+
+extra:	${HOBJS} ${GOBJS}
+${HOBJS}: ${OBJDIR}/%.o : %.hs
+	$(HC) -c $(LIB_FLAGS) -o $@ $<
+${GOBJS}: ${OBJDIR}/%.o : %.gc
+	$(HC) -c $(LIB_FLAGS) -o $@ $<
 
 
- 
-#.SUFFIXES: .hs .c .o
-#.hs.o:
-#	$(HC) -c +CTS -lib -CTS $(HFLAGS) $<
-#.hs.c:
-#	$(HC) -C +CTS -lib -CTS $(HFLAGS) $<
 
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c +CTS -lib -CTS $(HFLAGS) -o $@ $<
-${GCOBJS}: ${OBJDIR}/%.o : %.gc
-	$(HC) -c +CTS -lib -CTS $(HFLAGS) -o $@ $<
-
-${CFILES}: %.c : %.hs
-	$(HC) -C +CTS -lib -CTS $(HFLAGS) $<
-${GCCFILES}: %.c : %.gc
-	$(HC) -C +CTS -lib -CTS $(HFLAGS) $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.

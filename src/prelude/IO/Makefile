@@ -1,6 +1,7 @@
 include Makefile.inc
 
-THISLIB = IO
+THISLIB	= IO
+SEARCH	= -P../PreludeIO -P$(LOW) -P../$(MACHINE)
 
 SRCS	= \
 	HFlush.hs         HPrint.hs        HSetPosn.hs \
@@ -13,54 +14,26 @@ SRCS	= \
         HIsEOF.hs         HSetBuffering.hs IoeGetHandle.hs \
         HGetBuffering.hs  HGetFileName.hs  HPutStrLn.hs \
 	NotDoneYet.hs     DSocket.hs       OpenSocket.hs \
-	IoeGetErrorString.hs	HGetLine.hs
+	IoeGetErrorString.hs	HGetLine.hs	\
+	IsIOErrors.hs     Try.hs           Bracket.hs	Bracket_.hs
+
+SRCS_T	= \
+	HPrint.hs \
+        HGetChar.hs       HPutChar.hs      \
+        HGetContents.hs   \
+        HPutStr.hs        \
+	HClose.hs         \
+	HPutStrLn.hs	\
+	Try.hs           Bracket.hs	Bracket_.hs
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-LOW = ../LowB/
-HFLAGS = -part
-#HEAP = +RTS -H2M -RTS
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
-
-
- 
-.SUFFIXES: .hs .o .c
-.hs.o:
-	$(HC) -P../PreludeIO/ -P$(LOW) -c $(HFLAGS) $<
-
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c -P../PreludeIO/ -P$(LOW) $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS -P$(LOW) -o $@ $<
-
-${CFILES}: %.c : %.hs
-	$(HC) -C -P../PreludeIO/ -P$(LOW) $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -CTS -P$(LOW) $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
-
+# Here are the dependencies.
 ${OBJDIR}/Eq_HandlePosn.o: Eq_HandlePosn.hs ${OBJDIR}/DHandlePosn.o
 
+# C deps.
 Eq_HandlePosn.c: DHandlePosn.c
 

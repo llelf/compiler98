@@ -1,7 +1,7 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre18x
+VERSION = 1.0pre18xtn
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
@@ -12,7 +12,7 @@ HVERSION = 1.7.2
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \
-	src/prelude/Main.hi src/prelude/Makefile* \
+	src/prelude/Main.hi src/prelude/Main_t.hi src/prelude/Makefile* \
 	src/prelude/Array/Makefile* src/prelude/Array/*.hs \
 	src/prelude/Bit/Makefile* src/prelude/Bit/*.hs \
 	src/prelude/Binary/Makefile* src/prelude/Binary/*.hs \
@@ -23,6 +23,7 @@ PRELUDEA = \
 	src/prelude/CPUTime/*.gc \
 	src/prelude/Char/Makefile* src/prelude/Char/*.hs \
 	src/prelude/Complex/Makefile* src/prelude/Complex/*.hs \
+	src/prelude/DErrNo.hs \
 	src/prelude/Debug/Makefile* src/prelude/Debug/*.hs \
 	src/prelude/Directory/Makefile* src/prelude/Directory/*.hs \
 	src/prelude/Directory/*.gc \
@@ -37,6 +38,7 @@ PRELUDEB = \
 	src/prelude/List/Makefile* src/prelude/List/*.hs \
 	src/prelude/Locale/Makefile* src/prelude/Locale/*.hs \
 	src/prelude/LowB/Makefile* src/prelude/LowB/*.hs \
+	src/prelude/LowT/Makefile* src/prelude/LowT/*.hs \
 	src/prelude/Maybe/Makefile* src/prelude/Maybe/*.hs \
 	src/prelude/Monad/Makefile* src/prelude/Monad/*.hs \
 	src/prelude/NonStd/Makefile* src/prelude/NonStd/*.hs \
@@ -44,6 +46,7 @@ PRELUDEB = \
 	src/prelude/Numeric/Makefile* src/prelude/Numeric/*.hs \
 	src/prelude/PackedString/Makefile* src/prelude/PackedString/*.hs \
 	src/prelude/Prelude/Makefile* src/prelude/Prelude/*.hs \
+	src/prelude/PreludeDebug/Makefile* src/prelude/PreludeDebug/*.hs \
 	src/prelude/PreludeIO/Makefile* src/prelude/PreludeIO/*.hs \
 	src/prelude/PreludeList/Makefile* src/prelude/PreludeList/*.hs \
 	src/prelude/PreludeText/Makefile* src/prelude/PreludeText/*.hs \
@@ -60,6 +63,7 @@ PRELUDEC = \
 	src/prelude/CPUTime/*.c \
 	src/prelude/Char/*.c \
 	src/prelude/Complex/*.c \
+	src/prelude/DErrNo.c \
 	src/prelude/Debug/*.c \
 	src/prelude/Directory/*.c \
 	src/prelude/GreenCard/*.c \
@@ -173,11 +177,12 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
+tracer: tracer-${BUILDCOMP}
 help:
 	@echo "Common targets include:        basic all install clean realclean config"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
-	@echo "  (other subtargets: runtime prelude profile timeprof hp2graph"
+	@echo "  (other subtargets: runtime prelude profile timeprof tracer hp2graph"
 	@echo "                     compiler-hbc  compiler-ghc  compiler-nhc"
 	@echo "                     tracer-hbc    tracer-ghc    tracer-nhc"
 	@echo "                     hmake-hbc     hmake-ghc     hmake-nhc"
@@ -192,10 +197,10 @@ basic-nhc: runtime hmake-nhc greencard-nhc compiler-nhc prelude
 basic-hbc: runtime hmake-hbc greencard-hbc compiler-hbc prelude
 basic-ghc: runtime hmake-ghc greencard-ghc compiler-ghc prelude
 basic-gcc: runtime cprelude ccompiler cgreencard chmake
-all-nhc: basic-nhc profile hp2graph tracer-nhc   #timeprof
-all-hbc: basic-hbc profile hp2graph tracer-hbc   #timeprof
-all-ghc: basic-ghc profile hp2graph tracer-ghc   #timeprof
-all-gcc: basic-gcc profile hp2graph tracer-nhc   #timeprof
+all-nhc: basic-nhc profile hp2graph cleanhi tracer-nhc   #timeprof
+all-hbc: basic-hbc profile hp2graph cleanhi tracer-hbc   #timeprof
+all-ghc: basic-ghc profile hp2graph cleanhi tracer-ghc   #timeprof
+all-gcc: basic-gcc profile hp2graph cleanhi tracer-nhc   #timeprof
 
 profile: profruntime profprelude
 timeprof: timeruntime timeprelude
@@ -204,6 +209,9 @@ tracer-hbc: tracecompiler-hbc traceruntime traceprelude $(TARGDIR)/traceui
 tracer-ghc: tracecompiler-ghc traceruntime traceprelude $(TARGDIR)/traceui
 
 $(TARGETS): % : $(TARGDIR)/$(MACHINE)/%
+
+cleanhi:
+	cd src/prelude; $(MAKE) cleanhi
 
 $(TARGDIR)/$(MACHINE)/runtime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) install nhc98heap$(EXE)
@@ -259,7 +267,7 @@ $(TARGDIR)/$(MACHINE)/profruntime: $(RUNTIME)
 	cd src/tracer/runtime; $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profruntime
 $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
-	cd src/prelude;        $(MAKE) CFG=p install  #cleanhi 
+	cd src/prelude;        $(MAKE) CFG=p install
 	touch $(TARGDIR)/$(MACHINE)/profprelude
 
 $(TARGDIR)/$(MACHINE)/tracecompiler-nhc: $(COMPILER)
@@ -275,8 +283,8 @@ $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 	cd src/runtime;        $(MAKE) CFG=T install
 	cd src/tracer/runtime; $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceruntime
-$(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDET)
-	cd src/tracer/prelude; $(MAKE) CFG=T install
+$(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
+	cd src/prelude;	       $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
 $(TARGDIR)/traceui: $(TRACEUI)
 	cd src/tracer/ui;      $(MAKE) CFG=T install
@@ -295,6 +303,9 @@ $(TARGDIR)/$(MACHINE)/cprelude: $(PRELUDEC)
 	touch $(TARGDIR)/$(MACHINE)/bootprelude $(TARGDIR)/$(MACHINE)/cprelude
 $(TARGDIR)/$(MACHINE)/ccompiler: $(COMPILERC)
 	cd src/compiler98;     $(MAKE) fromC
+	cd src/prelude/$(MACHINE); $(MAKE) clean all	# Patch machine-specific parts.
+	cd src/prelude;        $(MAKE) relink
+	cd src/compiler98;     $(MAKE) relink
 	touch $(TARGDIR)/$(MACHINE)/ccompiler
 $(TARGDIR)/$(MACHINE)/cgreencard: $(GREENCARDC)
 	cd src/greencard;      $(MAKE) fromC
@@ -362,7 +373,7 @@ srcDist: $(TARGDIR)/preludeC $(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDI
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEA)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEB)
 	tar rf nhc98src-$(VERSION).tar $(PRELUDEC)
-	tar rf nhc98src-$(VERSION).tar $(PRELUDET)
+	#tar rf nhc98src-$(VERSION).tar $(PRELUDET)
 	tar rf nhc98src-$(VERSION).tar $(TRACEUI)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARD)
 	tar rf nhc98src-$(VERSION).tar $(GREENCARDC)
@@ -444,19 +455,23 @@ hmakeBinDist:
 clean:
 	#cd data2c;             $(MAKE) clean
 	cd src/compiler98;      $(MAKE) clean
-	cd src/runtime;         $(MAKE) clean;        $(MAKE) CFG=p  clean; $(MAKE) CFG=t clean
-	cd src/prelude;         $(MAKE) clean;        $(MAKE) CFG=p  clean; $(MAKE) CFG=t clean
-	cd src/tracer/runtime;  $(MAKE) CFG=T clean;  $(MAKE) CFG=pT clean
-	cd src/tracer/prelude;  $(MAKE) CFG=T clean;  $(MAKE) CFG=pT clean
 	cd src/greencard;       $(MAKE) clean
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
+	rm -rf $(TARGDIR)/$(MACHINE)/obj*
 
-realclean: clean
+cleanC:
+	rm -f src/compiler98/*.c
+	rm -f src/greencard/*.c
+	rm -f src/hmake/*.c
+	cd src/prelude;		$(MAKE) cleanC
+	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC traceui
+
+realclean: clean cleanC
 	#cd data2c;        $(MAKE) realclean
 	cd src/compiler98; $(MAKE) realclean
 	cd $(TARGDIR)/$(MACHINE);  rm -f $(TARGETS)
-	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC traceui
-	rm -f $(LIBDIR)/$(MACHINE)/*
-	rm -f $(TARGDIR)/$(MACHINE)/config.cache
-	rm -f script/nhc98 script/greencard script/hmake
+	cd $(TARGDIR)/$(MACHINE);  rm -f hmake.config config.cache
+	rm -rf src/prelude/$(MACHINE)
+	rm -rf $(LIBDIR)/$(MACHINE)
+	rm -f  script/nhc98 script/greencard script/hmake

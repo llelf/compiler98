@@ -3,7 +3,6 @@ module System where
 import CString
 import DIOError(IOError(IOErrorSystem))
 import DIO
-import DErrNo
 import System
 
 cSystem primitive 1 :: CString -> Either Int ExitCode
@@ -21,4 +20,7 @@ int cSystem (char *cmd) {
     if (err==-1) return errno;
 }
 
+import DErrNo
+
 foreign import "cSystem" cSystem :: CString -> IO 
+-}

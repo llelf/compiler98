@@ -16,3 +16,4 @@ ioeGetHandle (IOErrorHGetPosn      handle errno) = Just handle
 ioeGetHandle (IOErrorHSetPosn      handle errno) = Just handle
 ioeGetHandle (IOErrorHGetBuffering handle errno) = Just handle
 ioeGetHandle (IOErrorHSetBuffering handle errno) = Just handle
+ioeGetHandle (IOErrorC cmd maybefile errno)      = Nothing

@@ -1,11 +1,14 @@
 include Makefile.inc
 
+OBJDIR = ${BUILDDIR}/${OBJ}/prelude
+PRELUDE = Prelude
+ARFLAGS = cr
+ARCHIVE=${DST}/${PRELUDE}${CFG}.a
+
 ifneq "${TRACING}" "T"
 
-OBJDIR=${BUILDDIR}/${OBJ}/prelude
-
 FSTSUBDIRS = Char Ratio Numeric
-PRELSUBDIRS = LowB PreludeList PreludeIO PreludeText Prelude
+PRELSUBDIRS = $(MACHINE) LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
 LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI IOExtras
 
@@ -17,16 +20,13 @@ SUBDIRBOOT=$(patsubst %,%.boot,${BOOTSUBDIRS})
 SUBDIRCFILES=$(patsubst %,%.cfiles,${SUBDIRS})
 SUBDIRFROMC=$(patsubst %,%.fromC,${SUBDIRS})
 SUBDIRCLEAN=$(patsubst %,%.clean,${SUBDIRS})
-SUBDIROBJDIR=$(patsubst %,%.objdir,${SUBDIRS})
+SUBDIRCLEANC=$(patsubst %,%.cleanC,${SUBDIRS})
 XXX=$(patsubst %,%.xxx,${SUBDIRS})
 
 SUBDIROBJS = $(patsubst %,${OBJDIR}/%/*.o,${SUBDIRS})
 BOOTOBJS = $(patsubst %,${OBJDIR}/%/*.o,${BOOTSUBDIRS})
-OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS})
+OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
 
-PRELUDE = Prelude
-ARFLAGS = cr
-ARCHIVE=${DST}/${PRELUDE}${CFG}.a
 
 
 all: ${ARCHIVE}
@@ -36,7 +36,7 @@ prel: $(patsubst %,%.make,${PRELSUBDIRS})
 boot: ${OBJDIR} ${OBJDIRS} ${SUBDIRBOOT}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o  #BOOTOBJS
 	ranlib ${ARCHIVE}
-objdir: ${OBJDIR} ${SUBDIROBJDIR}
+objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: ${SUBDIRCFILES}
 fromC: ${OBJDIR} ${OBJDIRS} ${SUBDIRFROMC}
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $(ARCHIVE) */*.o  #SUBDIROBJS
@@ -46,6 +46,7 @@ realclean: clean
 	rm $(ARCHIVE)
 cleanhi:
 	-rm -f */*.hi
+cleanC: ${SUBDIRCLEANC}
  
 
 %.make: 
@@ -58,8 +59,8 @@ cleanhi:
 	cd $(patsubst %.fromC,%,$@); $(MAKE) fromC
 %.clean: 
 	cd $(patsubst %.clean,%,$@); ${MAKE} clean
-%.objdir: 
-	cd $(patsubst %.objdir,%,$@); ${MAKE} objdir
+%.cleanC: 
+	cd $(patsubst %.cleanC,%,$@); ${MAKE} cleanC
 %.xxx: 
 	cd $(patsubst %.xxx,%,$@); cp ../../Makefile.inc .
 
@@ -71,6 +72,9 @@ ${OBJDIRS}: ${OBJDIR}/% :
 	mkdir -p $@ || /bin/true
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
+	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ */*.o  #SUBDIROBJS
+	ranlib $@
+relink:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o  #SUBDIROBJS
 	ranlib ${ARCHIVE}
 
@@ -122,8 +126,55 @@ ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRTARGETS}
 #	mv -f $(INCDIR)/GreenCard.hi $(INCDIR)/GreenCard.hi.BAK	# MW
 #	cp GreenCard/GreenCard.hi $(INCDIR)/GreenCard.hi	# MW
 
+else	#### tracing
 
-else
-all install objdir clean boot:
-	@echo "No normal prelude created when building for tracing"
+
+.SUFFIXES: .subdir
+SUBDIRS= Char Ratio Numeric $(MACHINE) LowT \
+	PreludeDebug PreludeList PreludeIO PreludeText Prelude \
+	Maybe List System IO PackedString
+NOTYET= Array Complex Directory Interrupt Ix 
+
+#SUBDIROBJS=$(patsubst %,${OBJ}/%/*.o,${SUBDIRS})
+SUBDIRSMK=$(patsubst %,%.subdir,${SUBDIRS})
+SUBDIRSINSTALL=$(patsubst %,%.install,${SUBDIRS})
+OBJDIRS = $(patsubst %,${OBJDIR}/%,${SUBDIRS} DErrNo)
+CLEANDIRS=$(patsubst %,%.clean,${SUBDIRS})
+MKFILES=$(patsubst %,%.mkfiles,${SUBDIRS})
+HICLEAN=$(patsubst %,%.hiclean,${SUBDIRS})
+
+
+all: ${ARCHIVE}
+install: ${ARCHIVE}
+hiclean: ${HICLEAN}
+clean: ${CLEANDIRS}
+realclean: clean
+	rm -f ${ARCHIVE}
+mkfiles: ${MKFILES}
+objdir: ${OBJDIR}
+
+
+%.mkfiles:
+	rm $(patsubst %.mkfiles,%,$@)/obj
+%.clean:
+	cd $(patsubst %.clean,%,$@); ${MAKE} clean
+%.hiclean:
+	cd $(patsubst %.hiclean,%,$@); ${MAKE} hiclean
+%.subdir:
+	cd $(patsubst %.subdir,%,$@); ${MAKE} all
+%.install:
+	cd $(patsubst %.install,%,$@); ${MAKE} install
+
+
+${OBJDIRS}: ${OBJDIR}/% : %
+	mkdir -p $@ || /bin/true
+${OBJDIR}:
+	mkdir -p ${OBJDIR} || /bin/true
+
+${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
+	rm -f $@
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.o
+	ranlib $@
+
+
 endif

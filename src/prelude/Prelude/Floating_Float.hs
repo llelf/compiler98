@@ -2,7 +2,9 @@ module Prelude(Floating(..)) where
 
 --import qualified Ratio
 
-instance  Floating Float  where
+instance  Floating Float
+#if !defined(TRACING)
+                         where
     pi			=  3.1415926535897932 -- 384626433832795028841972 -- Enough decimals
     exp	x		=  exp x	-- MAGIC
     log	x		=  log x	-- MAGIC
@@ -19,4 +21,4 @@ instance  Floating Float  where
     asinh x = log (x + sqrt (1+x*x))
     acosh x = log (x + (x+1) * sqrt ((x-1)/(x+1)))
     atanh x = log ((x+1) / sqrt (1 - x*x))
-
+#endif

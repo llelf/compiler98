@@ -1,6 +1,7 @@
 include Makefile.inc
 
-THISLIB = PackedString
+THISLIB	= PackedString
+SEARCH	= -P$(LOW)
 
 SRCS	= \
 	Index.hs            Span.hs \
@@ -15,51 +16,15 @@ SRCS	= \
 	Foldl.hs            Read_PackedString.hs  Unwords.hs \
 	Foldr.hs            Reverse.hs            Words.hs \
 	Head.hs             Show_PackedString.hs
+SRCS_T	= \
+	DPackedString.hs PackString.hs UnpackPS.hs
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-LOW = ../LowB/
-HFLAGS = -part
-#HEAP = +RTS -H2M -RTS
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS} ${MAINOBJ}
-boot: ${OBJS} ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f ${OBJDIR}/*.o *.hi *.o *.c *.s
- 
-
-
-.SUFFIXES: .hs .o .c
-.hs.o:
-	$(HC) -c -P$(LOW) $(HFLAGS) $<
-
-${OBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c -P$(LOW) $(HFLAGS) -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS  -P$(LOW) -o $@ $<
-
-${CFILES}: %.c : %.hs
-	$(HC) -C -P$(LOW) $(HFLAGS) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) +CTS -lib -CTS  -P$(LOW) $<
-
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 
 ${OBJDIR}/Append.o: Append.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/UnpackPS.o ${OBJDIR}/PackString.o
 ${OBJDIR}/Break.o: Break.hs ${OBJDIR}/DPackedString.o ${OBJDIR}/Span.o
@@ -132,3 +97,4 @@ Eval_PackedString.c: DPackedString.c
 Ord_PackedString.c:  DPackedString.c Eq_PackedString.c 
 Read_PackedString.c: DPackedString.c 
 Show_PackedString.c: DPackedString.c 
+

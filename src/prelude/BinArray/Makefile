@@ -1,78 +1,29 @@
 include Makefile.inc
 
-THISLIB = BinArray
+THISLIB	= BinArray
+SEARCH	= -P../Binary -I../Binary
+EXTRA_H_FLAGS	=
+EXTRA_C_FLAGS	= -I../Binary
 
-HSSRCS  = UnboxedArray.hs
-GCSRCS  = AllocUBA.gc DUnboxedArray.gc RUBA.gc GetUBAEnd.gc Binary_UBA.gc \
-          GetUBAFree.gc WUBA.gc
-CSRCS   = cLowUnboxedArray.c
+SRCS	= \
+	UnboxedArray.hs \
+	AllocUBA.gc DUnboxedArray.gc RUBA.gc GetUBAEnd.gc Binary_UBA.gc \
+	GetUBAFree.gc WUBA.gc \
+	cLowUnboxedArray.c
+SRCS_T	=
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC	= ${THISLIB}.hs
-
-HSOBJS = $(patsubst %.hs,${OBJDIR}/%.o,${HSSRCS})
-GCOBJS = $(patsubst %.gc,${OBJDIR}/%.o,${GCSRCS})
-COBJS = $(patsubst %.c,${OBJDIR}/%.o,${CSRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-
-OBJS = ${GCOBJS} ${HSOBJS} ${COBJS}
-
-HSCFILES = $(patsubst %.hs,%.c,${HSSRCS})
-GCCFILES = $(patsubst %.gc,%.c,${GCSRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-BIN = ../Binary/
-HFLAGS = -part
-CFLAGS = -I$(INCDIR)
-CC = gcc
- 
-all: ${OBJS} ${MAINOBJ}
-boot:
-cfiles: cfilescheck ${HSCFILES} ${GCCFILES} ${MAINCFILE}
+# Here are some extra rules.
+cfiles: cfilescheck
 cfilescheck:
-	cp $(INCDIR)/Binary.hi $(BIN)	# big hack around compiler bug!
-fromC:
-	$(HC) -c -d $(OBJDIR) -I$(BIN) *.c
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	-rm -f ${OBJDIR}/*.o *.hi *.o *_.hs *_.c ${HSCFILES} ${GCCFILES} ${MAINCFILE}
+	cp $(INCDIR)/Binary.hi ../Binary	# big hack around compiler bug!
 
 
-
-.SUFFIXES: .c .hs .gc .o
-
-#.hs.o:
-#	$(HC) -c $(HFLAGS) -P$(BIN) $<
-#.gc.o:
-#	$(HC) -c $(HFLAGS) -P$(BIN) $<
-#.c.o:
-#	$(CC) -c $(CFLAGS) $<
-##.hs.c:
-##	$(HC) -C $(HFLAGS) -P$(BIN) $<
-
-${HSOBJS}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -P$(BIN) -o $@ $<
-${GCOBJS}: ${OBJDIR}/%.o : %.gc
-	${HC} ${HFLAGS} -I$(INCDIR)/ -P$(BIN) -I$(BIN) -c -o $@ $<
-${COBJS}: ${OBJDIR}/%.o : %.c
-	$(CC) -c ${CFLAGS} -o $@ $<
-${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(NHEAP) +CTS -lib -CTS -o $@ $<
-
-${HSCFILES}: %.c : %.hs
-	$(HC) -C $(HFLAGS) -P$(BIN) $<
-${GCCFILES}: %.c : %.gc
-	${HC} -C ${HFLAGS} -P$(BIN) -I$(BIN) $<
-${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(NHEAP) $(HFLAGS) -P$(BIN) +CTS -lib -CTS $<
+# Here are the main rules.
+include ../Makefile.common
 
 
-
-# I know that they depend on .hi, but make is stupid :-(
+# Here are the dependencies.
 ${OBJS}: cLowUnboxedArray.h
 
 ${OBJDIR}/AllocUBA.o: AllocUBA.gc ${OBJDIR}/DUnboxedArray.o

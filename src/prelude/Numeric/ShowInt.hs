@@ -1,6 +1,10 @@
 module Numeric where
 
+#if !defined(TRACING)
 showInt	:: (Integral a) => a -> ShowS
+#else
+showInt	:: (Integral a) => a -> String -> String
+#endif
 showInt n r
     | n < 0 = error "Numeric.showInt: can't show negative numbers"
     | otherwise =

@@ -1,21 +1,23 @@
 module List
-  (insert ,insertBy
-  ,sort ,sortBy
-  ,find ,findIndices ,findIndex
-  ,delete ,deleteBy ,deleteFirsts ,deleteFirstsBy ,(\\)
+  (delete ,deleteBy ,deleteFirsts ,deleteFirstsBy ,(\\)
   ,elemBy ,elemIndex ,elemIndexBy ,elemIndices
+  ,find ,findIndices ,findIndex
   ,genericDrop ,genericLength ,genericReplicate
   ,genericSplitAt ,genericTake ,genericIndex
-  ,isPrefixOf ,isSuffixOf
   ,group ,groupBy
   ,inits ,intersect ,intersectBy ,intersperse ,lookupBy
+  ,insert ,insertBy
+  ,isPrefixOf ,isSuffixOf
   ,mapAccumL ,mapAccumR ,maximumBy ,minimumBy
   ,notElemBy ,nub ,nubBy
-  ,partition ,permutations ,products
-  ,subsequences ,sums ,tails ,transpose 
-  ,union
+  ,partition ,permutations
+  ,sort ,sortBy
+  ,subsequences ,tails ,transpose 
+  ,sums ,products
+  ,unfoldr ,union, unionBy
   ,unzip4 ,unzip5 ,unzip6 ,unzip7
-  ,zip4 ,zip5 ,zip6 ,zip7 ,zipWith4 ,zipWith5 ,zipWith6 ,zipWith7
+  ,zip4 ,zip5 ,zip6 ,zip7
+  ,zipWith4 ,zipWith5 ,zipWith6 ,zipWith7
   ) where
 
 
@@ -62,10 +64,12 @@ import Partition
 import Permutations
 import Products
 import Subsequences
-import Sums
 import Tails
 import Transpose
+import Sums
+import Unfoldr
 import Union
+import UnionBy
 import Unzip4
 import Unzip5
 import Unzip6

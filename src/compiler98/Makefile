@@ -64,6 +64,9 @@ fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.c
 	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
 	strip $(TARGET)
+relink:
+	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.o
+	strip $(TARGET)
 clean:
 	rm -f $(OBJDIR)/*.o *.o *.hi
 realclean: clean

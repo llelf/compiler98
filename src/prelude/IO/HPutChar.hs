@@ -1,6 +1,7 @@
 module IO where
 
-import IO
+import DIO
+import PreludeBuiltin(Handle)
 import LowIO(primHPutChar)
 
 hPutChar              :: Handle -> Char -> IO ()

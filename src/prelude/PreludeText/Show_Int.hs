@@ -1,6 +1,6 @@
 module Prelude (Show(..)) where
 
-import Numeric(showSigned,showInt)
+--import Numeric(showSigned{-,showInt-})
 
 instance Show Int where
 
@@ -9,9 +9,13 @@ instance Show Int where
 
   showsPrec p x =
     if x < 0 then showParen (p > 6)
+#if !defined(TRACING)
       (showChar '-' . if x == minBound
                       then showString "2147483648" -- WARNING 32bit
                       else showPosInt (negate x))
+#else
+      (showChar '-' . showPosInt (negate x))
+#endif
     else 
       showPosInt x
    where

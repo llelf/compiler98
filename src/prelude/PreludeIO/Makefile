@@ -1,72 +1,65 @@
 include Makefile.inc
 
-THISLIB = PreludeIO
+THISLIB	= PreludeIO
+SEARCH	= -P$(LOW) -P../$(MACHINE)
+EXTRA_H_FLAGS	= -prelude
+EXTRA_C_FLAGS	=
 
-SRCS	= DErrNo.hs StrError.hs \
+SRCS	= \
+	StrError.hs \
 	Eq_IOError.hs    Monad_IO.hs      ReadLn.hs 	\
 	AppendFile.hs    Print.hs         Show_IOError.hs \
 	Catch.hs         Functor_IO.hs    PutStrLn.hs      TFilePath.hs    \
 	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
 	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs
+SRCS_T	=\
+	DIO.hs DIOError.hs GetChar.hs GetContents.hs Interact.hs \
+	Monad_IO.hs PutChar.hs PutStr.hs PutStrLn.hs IoError.hs UserError.hs \
+	TFilePath.hs WriteFile.hs Catch.hs GetLine.hs Print.hs Show_IOError.hs \
+	Eq_IOError.hs Functor_IO.hs
+NTSRCS= StdIO.hs
+NOTDONE= AppendFile.hs Eq_IOError.hs Functor_IO.hs \
+	 ReadFile.hs ReadIO.hs ReadLn.hs \
+	 StrError.hs
 
 
-OBJDIR = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
-MAINSRC = ${THISLIB}.hs
-
-OBJS = $(patsubst %.hs,${OBJDIR}/%.o,${SRCS})
-MAINOBJ = $(patsubst %.hs,${OBJDIR}/%.o,${MAINSRC})
-CFILES = $(patsubst %.hs,%.c,${SRCS})
-MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
-
-HFLAGS = -P${LOW} -P./ -part -redefine	# -prelude
-#HEAP = +RTS -H2M -RTS
+# Here are the main rules.
+include ../Makefile.common
 
 
-all:  ${OBJS}  ${MAINOBJ}
-boot: ${OBJS}  ${MAINOBJ}
-cfiles: ${CFILES} ${MAINCFILE}
-fromC:
-	$(HC) -c -d $(OBJDIR) ${CFILES} ${MAINCFILE}
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
-objdir: ${OBJDIR}
-${MAINOBJ}: ${OBJS}
-clean:
-	rm -f *.hi ${OBJDIR}/*.o *.o *.c *.s
- 
+# Here are some extra rules.
+NTOBJS=$(patsubst %.hs,${OBJDIR}/%.o,${NTSRCS})
+
+ifeq "T" "${TRACING}"
+extra: ${NTOBJS}
+$(NTOBJS): ${OBJDIR}/%.o: %.hs
+	$(X_COMPILE) -c $(PART_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
+endif
 
 
-.SUFFIXES: .hs .o .c
 
-${OBJS} ${MAINOBJ}: ${OBJDIR}/%.o : %.hs
-	$(HC) -c $(HFLAGS) -o $@ $<
-
-${CFILES} ${MAINCFILE}: %.c : %.hs
-	$(HC) -C $(HFLAGS) $<
-
-#../Prelude/%.hi : ../Prelude/%.hs
-#	cd ../Prelude; ${MAKE} $@
-
-
-# I know that they depoend on .hi, but make is stupid :-(
+# Here are the dependencies.
 ${OBJDIR}/Catch.o:        ${OBJDIR}/DIO.o
-${OBJDIR}/Eq_IOError.o:   ${OBJDIR}/DIOError.o ${OBJDIR}/DErrNo.o
-${OBJDIR}/Fail.o:         ${OBJDIR}/DIO.o
+${OBJDIR}/Eq_IOError.o:   ${OBJDIR}/DIOError.o #${OBJDIR}/DErrNo.o
+${OBJDIR}/IoError.o:      ${OBJDIR}/DIO.o
 ${OBJDIR}/Monad_IO.o:     ${OBJDIR}/DIO.o ${OBJDIR}/DIOError.o # ../Prelude/CMonad.hi
 ${OBJDIR}/Functor_IO.o:   # ../Prelude/CFunctor.hi
-${OBJDIR}/Show_IOError.o: ${OBJDIR}/DIOError.o ${OBJDIR}/DErrNo.o ${OBJDIR}/StrError.o
+${OBJDIR}/Show_IOError.o: ${OBJDIR}/DIOError.o #${OBJDIR}/DErrNo.o
+ifneq "T" "${TRACING}"
+${OBJDIR}/Show_IOError.o: ${OBJDIR}/StrError.o
+endif
 ${OBJDIR}/UserError.o:    ${OBJDIR}/DIOError.o
-${OBJDIR}/DIOError.o:     ${OBJDIR}/DErrNo.o
+${OBJDIR}/DIOError.o:     #${OBJDIR}/DErrNo.o
 
 
 # And now for C-files dependencies.
 Catch.c:        DIO.c
-Eq_IOError.c:   DIOError.c DErrNo.c
-Fail.c:         DIO.c
+Eq_IOError.c:   DIOError.c #DErrNo.c
+IoError.c:      DIO.c
 Monad_IO.c:     DIO.c DIOError.c # ../Prelude/CMonad.hi
 Functor_IO.c:   # ../Prelude/CFunctor.hi
-Show_IOError.c: DIOError.c DErrNo.c StrError.c
+Show_IOError.c: DIOError.c StrError.c #DErrNo.c 
 UserError.c:    DIOError.c
-DIOError.c:	DErrNo.c
+DIOError.c:	#DErrNo.c
 

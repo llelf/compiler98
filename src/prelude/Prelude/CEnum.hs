@@ -1,5 +1,7 @@
 module Prelude where
 
+import Subtract
+
 class Enum a where
     succ, pred          :: a -> a
     toEnum		:: Int -> a
@@ -17,7 +19,7 @@ class Enum a where
 			  in
   			    case compare ni mi of
 			      LT -> _enumFromToIncC ni 1 mi
-			      EQ -> [n]
+			      EQ -> n:[]
 			      GT -> []
 
     enumFromThenTo n n' m = let ni  = fromEnum n
@@ -35,7 +37,7 @@ _enumFromToDecC :: (Enum a) => Int -> Int -> Int -> [a]
 _enumFromToDecC n s m =
   case compare n m of
     LT -> []
-    EQ -> [toEnum n]
+    EQ -> toEnum n : []
     GT -> toEnum n : _enumFromToDecC (n+s) s m
 
 
@@ -43,7 +45,7 @@ _enumFromToIncC :: (Enum a) => Int -> Int -> Int -> [a]
 _enumFromToIncC n s m =
   case compare n m of
     LT -> toEnum n : _enumFromToIncC (n+s) s m
-    EQ -> [toEnum n]
+    EQ -> toEnum n : []
     GT -> []
 
 

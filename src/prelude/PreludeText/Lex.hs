@@ -4,8 +4,12 @@ import Char(isSpace,isAlpha,isDigit,isAlphaNum)
 import LexDigits
 import LexLitChar
 
-
+#if !defined(TRACING)
 lex 	    		:: ReadS String
+#else
+lex 	    		:: String -> [(String,String)]
+#endif
+
 lex ""			= [("","")]
 lex (c:s) | isSpace c	= lex (dropWhile isSpace s)
 lex ('\'':s)		= [('\'':ch++"'", t) | (ch,'\'':t)  <- lexLitChar s,

@@ -3,8 +3,10 @@ module Ratio where
 
 import DRatio
 import Reduce
+#if !defined(TRACING)
 import Eq_Ratio
 import Show_Ratio
+#endif
 
 instance  (Integral a)	=> Num (Ratio a)  where
     (x:%y) + (x':%y')	=  reduce (x*y' + x'*y) (y*y')

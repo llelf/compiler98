@@ -13,9 +13,10 @@ class  (Fractional a) => Floating a  where
     sinh, cosh, tanh	:: a -> a
     asinh, acosh, atanh :: a -> a
 
+#if !defined(TRACING)
     x ** y		=  exp (log x * y)
     logBase x y		=  log y / log x
-    sqrt x		=  x ** fromRational (1%2)	--0.5		-- fromRational (1 :% 2)
+    sqrt x		=  x ** fromRational (1%2)	-- 0.5
     tan  x		=  sin  x / cos  x
     tanh x		=  sinh x / cosh x
-
+#endif

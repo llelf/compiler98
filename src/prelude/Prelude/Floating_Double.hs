@@ -1,6 +1,8 @@
 module Prelude(Floating(..)) where
 
-instance  Floating Double  where
+instance  Floating Double
+#if !defined(TRACING)
+                          where
     pi                  =  3.1415926535897932384626433832795028841972
     exp x               =  exp x        -- MAGIC
     log x               =  log x        -- MAGIC
@@ -17,3 +19,4 @@ instance  Floating Double  where
     asinh x = log (x + sqrt (1+x*x))
     acosh x = log (x + (x+1) * sqrt ((x-1)/(x+1)))
     atanh x = log ((x+1) / sqrt (1 - x*x))
+#endif

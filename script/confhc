@@ -209,7 +209,7 @@ fi
 echo " to build hmake."
 
 export HBCDIR GHCDIR NHC13DIR NHC98DIR BUILDHMAKE
-echo "  Now I'm creating script/hmake.config for your installation."
+echo "  Now I'm creating targets/$MACHINE/hmake.config for your installation."
 cat script/hmakeconfig.inst |\
 ( if [ "$HBCDIR" = "" ];
   then cat
@@ -250,10 +250,12 @@ cat script/hmakeconfig.inst |\
        sed -e "s|^nhc98known=no$|nhc98known=yes|"
   fi
 ) |\
-sed -e "s|^BUILTBY=$|BUILTBY=${BUILDHMAKE}|" >script/hmake.config
+sed -e "s|^BUILTBY=$|BUILTBY=${BUILDHMAKE}|" >targets/$MACHINE/hmake.config
 
-echo "If I got something wrong, you can edit script/hmake.config by"
-echo "   hand and run 'configure' again. (I will not undo your changes.)"
+echo "If I got something wrong, you can edit"
+echo "   targets/$MACHINE/hmake.config"
+echo "   by hand and run 'configure' again.  (I will not undo your changes.)"
+echo "   (You can force me to auto-configure hmake again by removing that file.)"
 echo "Done."
 exit 0
 

@@ -1,9 +1,9 @@
-module Ratio where
---module Ratio(Read(..)) where
+module Ratio(Read(..)) where
+--module Ratio where
 
-import DRatio
-import Prec
-import RatioCon
+import DRatio	(Ratio)
+import Prec	(prec)
+import RatioCon	((%))
 
 instance  (Read a,Integral a) => Read (Ratio a)  where
     readsPrec p  =  readParen (p > prec)

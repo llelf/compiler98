@@ -1,6 +1,10 @@
 module Prelude where
 
+#if !defined(TRACING)
 _readConInfix :: (Read a,Read b) => Int -> Int -> Int -> Int -> (a -> b -> c) -> String -> ReadS c 
+#else
+_readConInfix :: (Read a,Read b) => Int -> Int -> Int -> Int -> (a -> b -> c) -> String -> String -> [(c,String)]
+#endif
 _readConInfix d p lp rp con str = 
     readParen (d > p)
        (\ r -> [(con u v,s2) | 

@@ -1,6 +1,8 @@
 module IO where
 
-import IO
+import DIO
+import PreludeBuiltin(Handle)
+import HPutChar
 
 hPutStr               :: Handle -> String -> IO ()
 hPutStr h []          = return ()

@@ -11,6 +11,7 @@ cprogHeader =
   "  char *errs[2000];\n" ++
   "  char *dups[20];\n" ++
   "  int   dupi[20];\n" ++
+  "  char  sep;\n" ++
   "  for (i=0; i<2000; i++) {\n" ++
   "    errs[i]=(char*)0;\n" ++
   "  }\n" ++
@@ -31,6 +32,7 @@ cppify symbol =
 cprogFooter =
   "  printf(\"module DErrNo where\\n\\n\");\n" ++
   "  printf(\"{- Automatically generated from /usr/include/errno.h -}\\n\\n\");\n" ++
+  "  printf(\"#if !defined(TRACING)\\n\");\n" ++
   "  printf(\"data ErrNo =\\n\");\n" ++
   "  printf(\"    Edummy\\n\");\n" ++
   "  for (i=1; i<=max; i++) {\n" ++
@@ -65,8 +67,32 @@ cprogFooter =
   "    printf(\"eqErrNo %s %s = True\\n\",errs[dupi[j]],dups[j]);\n" ++
   "  }\n" ++
   "  printf(\"eqErrNo a b = a==b\\n\\n\");\n" ++
+  ioErrors "alreadyexists" ["EEXIST", "EISDIR"] ++
+  ioErrors "doesnotexist"  ["ENOENT", "ESRCH", "ENXIO", "ENODEV"] ++
+  ioErrors "alreadyinuse"  ["EBUSY",  "ETXTBSY"] ++
+  ioErrors "full"          ["ENOSPC", "EDQUOT"] ++
+  ioErrors "illegalop"     ["EPERM",  "ESPIPE"] ++
+  ioErrors "nopermission"  ["EPERM",  "EACCES", "EROFS"] ++
+  "  printf(\"\\n#else\\n\\n\");\n" ++
+  "  printf(\"data ErrNo = ErrNo Int deriving (Eq,Ord,Show)\\n\\n\");\n" ++
+  "  printf(\"instance Enum ErrNo where\\n\");\n" ++
+  "  printf(\"    fromEnum (ErrNo i) = i\\n\");\n" ++
+  "  printf(\"    toEnum i           = ErrNo i\\n\\n\");\n" ++
+  "  printf(\"eqErrNo :: ErrNo -> ErrNo -> Bool\\n\");\n" ++
+  "  printf(\"eqErrNo a b = a==b\\n\\n\");\n" ++
+  "  printf(\"#endif\\n\\n\");\n" ++
   "  exit(0);\n" ++
   "}\n"
+
+ioErrors name symbols =
+  "  sep = ' ';\n" ++
+  "  printf(\""++name++" = [\");\n" ++
+  concatMap (\symbol->
+      "#ifdef "++symbol++"\n" ++
+      "  printf(\"%c "++symbol++"\",sep);\n" ++
+      "  sep = ',';\n" ++
+      "#endif\n") symbols ++
+  "  printf(\" ]\\n\");\n"
 
 possibleErrNos =
 -- beginning of linux symbols

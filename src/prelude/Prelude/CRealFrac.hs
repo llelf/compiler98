@@ -7,6 +7,7 @@ class  (Real a, Fractional a) => RealFrac a  where
     truncate, round	:: (Integral b) => a -> b
     ceiling, floor	:: (Integral b) => a -> b
   
+#if !defined(TRACING)
     truncate x		=  case properFraction x of (m,_) -> m
     
     round x		=  case properFraction x of
@@ -20,4 +21,5 @@ class  (Real a, Fractional a) => RealFrac a  where
     
     floor x		=  case properFraction x of (n,r) -> if r < 0 then n - 1 else n
 
+#endif
 

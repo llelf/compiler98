@@ -1,6 +1,6 @@
 include Makefile.inc
 
-OBJDIR = ${BUILDDIR}/${OBJ}/tracer/runtime
+OBJDIR = ${BUILDDIR}/${OBJ}/runtime
 
 apa:
 	@echo "TRACING = ${TRACING}"

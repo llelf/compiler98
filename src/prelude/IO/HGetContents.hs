@@ -1,7 +1,9 @@
 module IO where
 
-import IO
+import DIO
+import PreludeBuiltin(Handle)
 import LowIO(primHGetContents)
+
 
 hGetContents          :: Handle -> IO String
 hGetContents h         = primHGetContents h
