@@ -205,8 +205,8 @@ configure Ghc ghcpath = do
 
 configure Nhc98 nhcpath = do
   fullpath <- which nhcpath
-  nhcversion <- runAndReadStdout (nhcpath ++ " --version 2>&1 | head -1 | "
-                                  ++"cut -d' ' -f2")
+  nhcversion <- runAndReadStdout (nhcpath
+                                  ++" --version 2>&1 | cut -d' ' -f2 | head -1")
   dir <- runAndReadStdout ("grep ^NHC98INCDIR "++fullpath
                            ++ "| cut -c27- | cut -d'}' -f1")
   return CompilerConfig { compilerStyle = Nhc98
@@ -218,12 +218,13 @@ configure Nhc98 nhcpath = do
 			, isHaskell98   = True
 			}
 configure Hbc hbcpath = do
+  let field n = "| cut -d' ' -f"++show n++" | head -1"
   fullpath <- which hbcpath
-  wibble <- runAndReadStdout (hbcpath ++ " -v 2>&1 | cut -d' ' -f2")
+  wibble <- runAndReadStdout (hbcpath ++ " -v 2>&1 " ++ field 2)
   hbcversion <-
       case wibble of
-        "version" -> runAndReadStdout (hbcpath ++ " -v 2>&1 | cut -d' ' -f3")
-        _         -> runAndReadStdout (hbcpath ++ " -v 2>&1 | cut -d' ' -f4")
+        "version" -> runAndReadStdout (hbcpath ++ " -v 2>&1 " ++ field 3)
+        _         -> runAndReadStdout (hbcpath ++ " -v 2>&1 " ++ field 4)
   dir <- catch (getEnv "HBCDIR")
                (\e-> catch (getEnv "LMLDIR")
                            (\e-> return "/usr/local/lib/lmlc"))
