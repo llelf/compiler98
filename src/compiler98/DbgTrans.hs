@@ -291,7 +291,7 @@ dCaf pos id cafName fundefs nt =
     makeSourceRef pos >>>= \sr ->
     setArity 2 id >>>
     addNewName 0 True "nt" NoType >>>= \t' ->
-    addNewName 0 True "tr" NoType >>>= \tr ->
+--    addNewName 0 True "tr" NoType >>>= \tr ->
     addNewName 0 True cafName nt >>>= \nid ->
     getD >>>= \redex ->                  -- Use the surrounding redex
     setD (ExpVar pos t') >=>
@@ -299,7 +299,7 @@ dCaf pos id cafName fundefs nt =
     newVar pos >>>= \v ->
     newVar pos >>>= \ot ->
     noGuard >>>= \ng ->
-    let tre = ExpVar pos tr
+    let -- tre = ExpVar pos tr 
 	nte = {-ExpIf pos tre redex-} 
               (ExpApplication pos 
 		 [nm, redex, ExpApplication pos 
@@ -317,6 +317,7 @@ dCaf pos id cafName fundefs nt =
            [Fun [PatWildcard pos, PatWildcard pos] 
                 [(ng, ExpVar pos nid)] (DeclsParse [])
            ]
+        -- id _ _ = nid
         ,DeclFun pos nid 
            [Fun [] 
              [(ng, ExpCase pos e 
@@ -326,14 +327,21 @@ dCaf pos id cafName fundefs nt =
              )]
 	     (DeclsParse
 	        (DeclFun pos t' [Fun [] [(ng, nte)] (DeclsParse [])] 
-                :DeclFun pos tr [Fun [] [(ng
-                                         ,ExpApplication pos [trust, redex])]
-		                   (DeclsParse [])
-                                ]
+--                :DeclFun pos tr [Fun [] [(ng
+--                                         ,ExpApplication pos [trust, redex])]
+--		                   (DeclsParse [])
+--                                ]
                 :decls
                 )
              )
            ]
+        {- 
+        id = case e {- transformed rhs -} of
+               ~(R v ot) -> R (v (Sat t' ot))
+          where
+          t' = Nm redex (NTId id) sr
+          decls
+        -}
         ]
 
 {-
@@ -574,6 +582,12 @@ dGdEs :: (Exp Id,Exp Id) -> DbgTransMonad (Exp Id,Exp Id)
 dGdEs (gd, e) = unitS pair =>>> dGuard gd =>>> dExp False e
 
 
+{-
+First argument True iff the context of the expression is such if the
+expression is just a variable, the expression including context is
+not a projection.
+-}
+
 dExps :: Bool -> [Exp Id] -> DbgTransMonad [Exp Id]
 
 dExps cr es = mapS (dExp cr) es
@@ -661,7 +675,8 @@ dExp cr (ExpIf pos c e1 e2) =
 	dExp False c >>>= \c' ->
         unitS (ExpApplication pos [value, c'])
 -}
-dExp cr (ExpType pos e ctx t)       = unitS (\e' -> ExpType pos e' ctx t) =>>> dExp cr e
+dExp cr (ExpType pos e ctx t) = 
+  unitS (\e' -> ExpType pos e' ctx t) =>>> dExp cr e
 dExp cr (ExpApplication pos (f:es))     = 
     case f of
         ExpCon _ _ ->            
@@ -674,7 +689,7 @@ dExp cr (ExpApplication pos (f:es))     =
             unitS (ExpApplication pos (apply:sr:trail:fes))
 dExp cr e@(ExpCon pos id) = saturateConstr e []
 dExp cr e@(ExpVar pos id) = 
-    lookupName id >>>= \name ->
+--    lookupName id >>>= \name ->
     getIdArity id >>>= \arity ->
     case arity of
         Nothing -> -- Must be a lambdabound variable
@@ -729,6 +744,10 @@ dExp cr (ExpList pos es) =
 dExp cr e = error ("dExp: no match")
 
 
+{-
+Transform data constructor application.
+Number of arguments may be smaller than arity of the data constructor.
+-}
 saturateConstr :: Exp Id      -- data constructor
                -> [Exp Id]    -- arguments of the data constructor
                -> DbgTransMonad (Exp Id) -- transformed constructor application
@@ -765,6 +784,10 @@ dGuard e =
     unitS (ExpApplication noPos [value, e'])
 
 
+{-
+Transform constructor application where number of arguments
+equals arity of constructor. The arguments have already been transformed.
+-}
 wrapConst :: Exp Id -> [Exp Id] -> DbgTransMonad (Exp Id)
 
 wrapConst c@(ExpCon pos cid) args =
