@@ -141,6 +141,7 @@ qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
 qualImpFFI = Qualified rpsFFI     . packString . reverse
 qualImpPS  = Qualified rpsPS      . packString . reverse
+qualImpIOE = Qualified rpsIOE     . packString . reverse
 --pqualImpRev = Qualified rpsPrelude . packString . reverse
 
 rpsPrelude      = (packString . reverse ) "Prelude"
@@ -149,6 +150,7 @@ rpsRatio        = (packString . reverse ) "Ratio"
 --rpsDPrelude      = (packString . reverse ) "DPrelude"
 rpsFFI          = (packString . reverse ) "FFIBuiltin"
 rpsPS           = (packString . reverse ) "PackedString"
+rpsIOE          = (packString . reverse ) "IOExtras"
 
 
 isUnit (TupleId 0) = True
@@ -346,6 +348,7 @@ tWord16		= qualImpFFI  "Word16"
 tWord32		= qualImpFFI  "Word32"
 tWord64		= qualImpFFI  "Word64"
 tPackedString	= qualImpPS   "PackedString"
+tunsafePerformIO= visImpRev   "unsafePerformIO"
 
 {- more FFI -}
 t_mkIOok n      = visImpRev   ("_mkIOok"++show (n::Int))

@@ -51,7 +51,7 @@ ffiDecl d@(DeclForeignImp pos cname id _ cast typ x) =
     examineType pos typ   >>>= \(isIO,nt,typ',arity,adjarity)->
     if isIO then
       copyPrim id cname          >>>= \(id',cname') ->
-      makeWrapper pos id' arity  >>>= \code->
+      makeIWrapper pos id' arity >>>= \code->
       updVar pos id' (NewType (snub (freeType typ)) [] [] [nt]) adjarity >>>
       unitS [ DeclForeignImp pos cname' id' adjarity cast typ' x
             , DeclVarsType [(pos,id)] [] typ
@@ -60,11 +60,28 @@ ffiDecl d@(DeclForeignImp pos cname id _ cast typ x) =
     else
       updVar pos id (NewType (snub (freeType typ)) [] [] [nt]) arity >>>
       unitS [d]
+ffiDecl d@(DeclForeignExp pos cname id typ) =
+    examineType pos typ   >>>= \(isIO,nt,typ',arity,adjarity)->
+    if isIO then
+      copyPrim id cname         >>>= \(id',cname')->
+      makeEWrapper pos id arity >>>= \code->
+      unitS [ DeclForeignExp pos cname' id' typ'
+            , DeclVarsType [(pos,id)] [] typ
+            , DeclFun pos id' [code]
+            ]
+    else
+      updVar pos id (NewType (snub (freeType typ)) [] [] [nt]) arity >>>
+      unitS [d]
 ffiDecl d = unitS [d]
 
 
--- Copy original prim to new symtable location leaving original slot
--- for the new wrapper.  Return the new ID, together with the proper
+-- For foreign imports with IO type:
+--     Copy original prim to new symtable location leaving original slot
+--     for the new wrapper.
+-- For foreign exports with IO type:
+--     Wrapped function for export is placed in new symtable location,
+--     leaving original slot untouched.
+-- In either case, return the new ID, together with the proper
 -- C name for the foreign function (if it was originally blank, we must
 -- use the Haskell name).
 copyPrim :: Id -> String -> FFIMonad (Id,String)
@@ -134,14 +151,27 @@ examineType pos t lookup state =
       )
     , state)
 
-makeWrapper :: Pos -> Id -> Int -> FFIMonad (Fun Id)
-makeWrapper pos ffn arity lookup state =
+makeIWrapper :: Pos -> Id -> Int -> FFIMonad (Fun Id)
+makeIWrapper pos ffn arity lookup state =
     ( Fun [] [(ExpCon pos (lookup (tTrue,Con))
               ,ExpApplication pos [ExpVar pos (lookup (t_mkIOok arity,Var))
                                   ,ExpVar pos ffn]
               )]
              (DeclsParse [])
     , state )
+
+makeEWrapper :: Pos -> Id -> Int -> FFIMonad (Fun Id)
+makeEWrapper pos hfn arity lookup state =
+    let (vs, state1) = uniqueISs state [1..arity]
+        args = map (ExpVar pos . snd) vs
+    in
+    ( Fun args [(ExpCon pos (lookup (tTrue,Con))
+                ,ExpApplication pos
+                    [ExpVar pos (lookup (tunsafePerformIO,Var))
+                    ,ExpApplication pos (ExpVar pos hfn:args)]
+                )]
+               (DeclsParse [])
+    , state1 )
 
 -- updVar :: Pos -> Int -> NewType -> FFIMonad ()
 updVar pos id nt ar lookup state =
