@@ -1,7 +1,7 @@
 module List where
 
 genericDrop             :: (Integral i) => i -> [a] -> [a]
-#if !defined(TRACING)
+#if 1
 genericDrop 0 xs        =  xs
 #else
 genericDrop n xs | n==0 =  xs

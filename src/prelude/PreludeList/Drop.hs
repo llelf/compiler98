@@ -7,7 +7,7 @@ drop			:: Int -> [a] -> [a]
 --drop n (x:xs) | n>0 = drop (n-1) xs
 --drop _ _          = error "PreludeList.drop: negative argument"
 
-#if !defined(TRACING)
+#if 1
 drop n xs 
     | n<0  = error "PreludeList.drop: negative argument"  -- xs
     | n>=0 = drop' n xs

@@ -6,7 +6,7 @@ take		      :: Int -> [a] -> [a]
 --take n (x:xs) | n>0 = x : take (n-1) xs
 --take _ _            = error "PreludeList.take: negative argument"
 
-#if !defined(TRACING)
+#if 1
 take n xs
     | n<0  = error "PreludeList.take: negative argument"  -- []
     | n>=0 = take' n xs

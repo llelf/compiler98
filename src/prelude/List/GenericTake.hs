@@ -1,7 +1,7 @@
 module List where
 
 genericTake             :: (Integral i) => i -> [a] -> [a]
-#if !defined(TRACING)
+#if 1
 genericTake 0 _         =  []
 #else
 genericTake n _ | n==0  =  []

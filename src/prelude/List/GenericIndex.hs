@@ -1,7 +1,7 @@
 module List where
 
 genericIndex             :: (Integral i) => [a] -> i -> a
-#if !defined(TRACING)
+#if 1
 genericIndex (x:_) 0      = x
 #else
 genericIndex (x:_) n | n==0 = x

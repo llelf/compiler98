@@ -1,7 +1,7 @@
 module List where
 
 genericSplitAt          :: (Integral i) => i -> [b] -> ([b],[b])
-#if !defined(TRACING)
+#if 1
 genericSplitAt 0 xs     =  ([],xs)
 #else
 genericSplitAt n xs | n==0  =  ([],xs)
