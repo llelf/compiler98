@@ -20,7 +20,7 @@ data LinExprElement = LAppl | LConstr String | LIdent String |
 	       LInt Int | LInteger Integer | LChar Char | LRational Rational |
                LFloat Float | LDouble Double | LString String | LIf | LGuard |
 	       LContainer |
-               LFirstArg | LLastArg | LRHS | LNodeAdr HatNode | LNone
+               LFirstArg | LLastArg | LRHS | LNodeAdr HatNode | LNone deriving Show
 type LinExpr = [LinExprElement]
 
 data TrieElement = TAppl Trie | TConstr String Trie |
@@ -334,18 +334,18 @@ compareExpr (LHidden:r1) (LHidden:r2) = compareExpr r1 r2
 compareExpr (LCase:r1) (LCase:r2) = compareExpr r1 r2
 compareExpr (LLambda:r1) (LLambda:r2) = False
 compareExpr (LNone:r1) (LNone:r2) = True
-compareExpr (LInt i:r1) (v:r2) | (toRational i)==(numValue v) 
+compareExpr (LInt i:r1) (v:r2) | (sameValue (toRational i) v) 
 				   = compareExpr r1 r2
                                | otherwise = False
-compareExpr (LInteger i:r1) (v:r2)  | (toRational i)==(numValue v)
+compareExpr (LInteger i:r1) (v:r2)  | (sameValue (toRational i) v)
 					= compareExpr r1 r2
                                     | otherwise = False
-compareExpr (LRational r:r1) (v:r2) | r==(numValue v) = compareExpr r1 r2
+compareExpr (LRational r:r1) (v:r2) | (sameValue r v) = compareExpr r1 r2
                                     | otherwise = False
-compareExpr (LFloat f:r1) (v:r2)  | (toRational f)==(numValue v) 
+compareExpr (LFloat f:r1) (v:r2)  | (sameValue (toRational f) v) 
 				      = compareExpr r1 r2
                                   | otherwise = False
-compareExpr (LDouble d:r1) (v:r2) | (toRational d)==(numValue v) 
+compareExpr (LDouble d:r1) (v:r2) | (sameValue (toRational d) v) 
 				      = compareExpr r1 r2
                                   | otherwise = False
 
@@ -387,13 +387,13 @@ dropArgument l = dropArgument' l 0 0 -- drop one argument
   dropArgument' [] i _ | i==0 = (Just [])
                        | otherwise = Nothing
 
-numValue :: LinExprElement -> Rational
-numValue (LRational r) = r
-numValue (LInt i) = (toRational i)
-numValue (LInteger i) = (toRational i)
-numValue (LFloat f) = (toRational f)
-numValue (LDouble d) = (toRational d)
-numValue _ = error "numValue not fully implemented!"
+sameValue :: Rational -> LinExprElement -> Bool
+sameValue r1 (LRational r) = r1==r
+sameValue r1 (LInt i)      = r1==(toRational i)
+sameValue r1 (LInteger i)  = r1==(toRational i)
+sameValue r1 (LFloat f)    = r1==(toRational f)
+sameValue r1 (LDouble d)   = r1==(toRational d)
+sameValue _ _              = False
 
 ---------------------------------------------------------------------------
 ---------------------------------------------------------------------------
