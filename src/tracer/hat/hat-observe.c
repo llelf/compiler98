@@ -11,13 +11,48 @@
 #include <string.h>
 #include "Expressions.h"
 #include "FunTable.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "hashtable.h"
 #include "observe.h"
+#include "hatgeneral.h"
+
+
+void showObserveAll(ObserveQuery query,int verboseMode,int precision) {
+  int maxarity = -1;
+  int arity,arityProblem = 0,found=0;
+  filepointer currentOffset;
+
+  currentOffset = nextQueryNode(query);
+  while (currentOffset != 0) {
+    ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
+    arity = getExprArity(a);
+    if (arity>=maxarity) {
+      if ((arity>maxarity)&&(maxarity!=-1)) {
+	arityProblem=found;
+	printf("Partial applications detected. Ignore all lines above!\n");
+	printf("------------------------------------------------------\n");
+      }
+      maxarity = arity;
+#ifdef showNodeInfo
+      printf("(%u) ",currentOffset);
+#endif
+      showAppAndResult(currentOffset,verboseMode,precision);
+      found++;
+    }
+    freeExpr(a);
+    currentOffset = nextQueryNode(query);
+  }
+  if (arityProblem>0) {
+    printf("\nAttention: Due to partial applications the first %i line(s)\n",
+	   arityProblem);
+    printf("are missing arguments - please ignore them!\n");
+    printf("Use the -u option to see the correct applications only.\n\n");
+  }
+}
 
 main (int argc, char *argv[])
 { int verbosemode=0,uniquemode=1,recursivemode=0;
-  int c = 1,err=0,paramerr=0;
+  int c = 1,err=0,paramerr=0,handle;
   unsigned int precision = 30;
   char *fname=NULL,*ident=NULL,*topIdent=NULL,*sub;
   while (c<argc) {
@@ -62,16 +97,19 @@ main (int argc, char *argv[])
     fprintf(stderr,"           applications, missing arguments. \n\n");
     exit(1);
   }
-  if (openfile(fname)<0) {
+  if ((handle=hatOpenFile(fname))<0) {
     fprintf(stderr, "cannot open trace file %s\n\n",fname);
     exit(1);
   }
-  if (testheader()) {
-    FunTable* results = newFunTable();
-    observeIdentifier(ident,topIdent,verbosemode,uniquemode,recursivemode,
-		      precision,results);
-    if (uniquemode) showFunTable(results);
-    freeFunTable(results);
+  if (hatTestHeader()) {
+    ObserveQuery query = newIdentifierQuery(handle,ident,topIdent,recursivemode,1);
+    if (uniquemode) {
+      FunTable results = observeUnique(query,verbosemode,precision);
+      showFunTable(results);
+      freeFunTable(results);
+    } else {
+      showObserveAll(query,verbosemode,precision);
+    }
   }
-  closefile();
+  hatCloseFile(handle);
 }

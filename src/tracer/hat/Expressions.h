@@ -6,6 +6,8 @@
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
 
+#include "hatinterface.h"
+
 /* types for syntax tree of expressions */
 typedef struct expnode *ExprPtr;
 
@@ -62,6 +64,10 @@ void       freeExpr(ExprNode* e); /* free the entire structure */
 int        getExprArity(ExprNode* e);
 int        getExprInfixPrio(ExprNode* e);
 
+
+ExprNode*  buildExpr(filepointer nodenumber,int verbose, // build expression tree
+		     unsigned int precision);            // in memory
+
 /* return pretty print of the expression */
 char*      prettyPrintExpr(ExprNode* exp,int verboseMode);
 
@@ -72,19 +78,5 @@ char*      prettyPrintExpr(ExprNode* exp,int verboseMode);
            2 if expressions incomparable
 */
 int        compareExpr(ExprNode* e1, ExprNode* e2);
-
-/* basic functions for allocating and freeing strings on heap */ 
-
-/* reserve space on heap for given string - and copy */
-char*      newStr(char* str);
-
-/* append strings and reserve space for the result string */
-char*      catStr (char* s1, char* s2, char* s3);
-
-/* replace string in s with the concatenation of s1,s2 and s3 */
-void       replaceStr(char** s,char* s1,char *s2,char* s3);
-
-/* free memory space */
-void       freeStr(char* s);
 
 char* treePrint(ExprNode* exp,int verbose,int topInfixprio);

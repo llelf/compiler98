@@ -11,11 +11,12 @@
 #include <string.h>
 #include <ctype.h>
 #include "Expressions.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "FunTable.h"
 #include "nodelist.h"
 #include "hashtable.h"
 #include "observe.h"
+#include "hatgeneral.h"
 
 #define HASH_TABLE_SIZE 3000
 
@@ -23,10 +24,11 @@ void checkmainCAF();
 
 char*     traceFileName=NULL;
 NodeList* userTrustedList = NULL; // list of trusted functions
-FunTable* memorizedFunsYes = NULL;
-FunTable* memorizedFunsNo = NULL;
+FunTable memorizedFunsYes = NULL;
+FunTable memorizedFunsNo = NULL;
 NodeList* CAFList = NULL;
 unsigned int precision = 30;
+int filehandle;
 
 main (int argc, char *argv[])
 {
@@ -35,12 +37,12 @@ main (int argc, char *argv[])
     fprintf(stderr,"       algorithmic debugging on a hat redex trace file\n\n");
     exit(1);
   }
-  traceFileName = filename(argv[1]);
-  if (openfile(traceFileName)<0) {
+  traceFileName = hatFilename(argv[1]);
+  if ((filehandle=hatOpenFile(traceFileName))<0) {
     fprintf(stderr, "cannot open trace file %s\n\n",traceFileName);
     exit(1);
   }
-  if (testheader()) {
+  if (hatTestHeader()) {
     userTrustedList = newList();
     CAFList = newList();
     memorizedFunsYes = newFunTable();
@@ -48,7 +50,23 @@ main (int argc, char *argv[])
     checkmainCAF();
 
   }
-  closefile();
+  hatCloseFile(filehandle);
+}
+
+int getline(char s[], int max) {
+  int c,i;
+  fflush(stdout);
+  c=getchar();
+  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
+    if (c==-1) {
+      i--;
+    } else {
+      s[i]=c;
+    }
+    c=getchar();
+  }
+  s[i]=0;
+  return i;
 }
 
 void quit() {
@@ -108,32 +126,24 @@ void showReduction(unsigned long application,unsigned long result,int verbose) {
 /* observing function applications                                     */
 /***********************************************************************/
 
-FunTable* currentFTable;
-int currentFTablePos;
-FunTable* currentFTablePtr;
+FunTable currentFTable;
 
 char* getFunTableStr(int i) {
   char *appstr,*resstr;
-  if (i<currentFTablePos) {
-    currentFTablePos=0;
-    currentFTablePtr=currentFTable;
-  }
-  while ((currentFTablePtr!=NULL)&&(i>currentFTablePos)) {
-    currentFTablePtr=currentFTablePtr->next;
-    currentFTablePos++;
-  }
-  if (currentFTablePtr==NULL) return newStr("");
-  appstr = prettyPrintExpr(currentFTablePtr->funAppl,1);
-  resstr = prettyPrintExpr(currentFTablePtr->res,1);
+  ExprNode *app,*res;
+  filepointer nodenumber;
+  
+  getFunTableEntry(currentFTable,i,&nodenumber,&app,&res);
+  if (nodenumber==0) return newStr("");
+  appstr = prettyPrintExpr(app,1);
+  resstr = prettyPrintExpr(res,1);
   replaceStr(&appstr,appstr," = ",resstr);
   freeStr(resstr);
   return appstr;
 }
 
-long showFunTablePaged(FunTable* l) {
-  currentFTable=l->next;
-  currentFTablePtr=l->next;
-  currentFTablePos=0;
+long showFunTablePaged(FunTable l) {
+  currentFTable=l;
   return menu("choose any equation and press <RETURN> or <Q> to cancel",
 	      FunTableLength(l),&getFunTableStr);  
 }
@@ -155,7 +165,7 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 
   if (isUserTrusted(lmost)) return 1;
   isCAF = (resofs == 0);
-  if (isCAF) resofs = findAppSAT(appofs);
+  if (isCAF) resofs = getResult(appofs);
 
   appNode = buildExpr(appofs,verboseMode,precision);
   resNode = buildExpr(resofs,verboseMode,precision);
@@ -192,14 +202,16 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
 	case 'O': 
 	  {
 	    unsigned long newAdr,newSAT,selected;
-	    FunTable* results = newFunTable();
-
-	    seek(lmost);
-	    observeNode(lmost,0,verboseMode,1,0,precision,results);
+	    FunTable results;
+	    ObserveQuery query;
+	    query = newQuery(filehandle,lmost,0,0,1);
+	    results = observeUnique(query,verboseMode,precision);
 	    selected=showFunTablePaged(results);
 	    if (selected>=0) {
-	      newAdr=getFunTableFileOffs(results,selected);
+	      ExprNode* dummy;
+	      getFunTableEntry(results,selected,&newAdr,&dummy,&dummy);
 	    } else newAdr=0;
+	    freeQuery(query);
 	    freeFunTable(results);
 
 	    if ((newAdr>0)&&(newAdr!=appofs)) {
@@ -358,125 +370,6 @@ int askForApp(int *question,unsigned long appofs,unsigned long resofs,int recons
   return retval;
 }
 
-/*
-int readCAFsFromFile(NodeList* nl) {
-  int n,f;
-  unsigned long b;
-  char* caffilename=catStr(traceFileName,".caf",NULL);
-
-  f = open(caffilename,0);
-  if (f==-1) return 0; // no file with CAFs!
-  n=read(f,&b,4);
-  if ((n!=4)||(ntohl(b)!=hatStatBuf.st_mtime)) {
-    close(f);
-    return 0; // hat file is new!
-  }
-  n=read(f,&b,4);
-  while (n==4) {
-    appendToList(nl,ntohl(b));
-    n=read(f,&b,4);
-  }
-  close(f);
-  return 1;
-}
-
-void writeCAFsToFile(NodeList* nl) {
-  NodeElement* e;
-  int n,f;
-  unsigned long b;
-  char* caffilename=catStr(traceFileName,".caf",NULL);
-
-  f = creat(caffilename,0666);
-  if (f==-1) return;
-  b=htonl(hatStatBuf.st_mtime);
-  n=write(f,&b,4);
-  e=nl->first;
-  while (e!=NULL) {
-    b=htonl(e->fileoffset);
-    write(f,&b,4);
-    e=e->next;
-  }
-  close(f);
-  } */
-
-void findmainCAF(NodeList* nl) {
-  unsigned long currentOffset,srcref,fsz,lsz=0,satc;
-  char nodeType;
-  int bigFileMode = 0;
-  
-  /*
-    if (readCAFsFromFile(nl)==1) {
-    return; // ok, read simply read them from disk!
-    }
-  */
-
-  fsz = filesize()/1000;
-  
-
-  fsz = 1; // dummy: don't show progress during search (is terribly quick)
-
- 
-  if (fsz<20000) lsz=200;else {
-    bigFileMode=1;
-    fprintf(stderr,"Searching entire hat file for CAFs.\n");
-    fprintf(stderr,"Please be patient, this might take a while...\n");
-    fprintf(stderr,"  0%%");
-    fflush(stderr); // force printing to screen, even though LF is still missing...
-  }
-  if (fsz==0) fsz=1;
-    
-  while (more()) {
-    currentOffset = byteoffset();
-
-    if ((bigFileMode)&&((currentOffset/10)/fsz>lsz)) {
-      lsz = (currentOffset/10)/fsz;
-      fprintf(stderr,"\b\b\b\b%3u%%",lsz);
-      fflush(stderr);
-    }
-    nodeType = getNodeType();
-    switch (nodeType) {
-    case TRNAM: // Name
-      if (getTrace()==0) { // is parent 0?
-	srcref = getSrcRef();
-	nextNode();
-	satc = byteoffset();
-	if ((srcref!=0)&&(isSAT(satc))) {  // SATC behind TRNAM?
-	  // found a CAF!
-	  if (isTrusted(srcref)) printf("isTrusted\n");
-	  if (isTopLevel(currentOffset)==0) printf("not top-level!\n");
-	  if ((isTrusted(srcref)==0)&&
-	      (isTopLevel(currentOffset))) {
-	    // only search for "main" (new!)
-	    unsigned long lmo = leftmostOutermost(currentOffset);
-	    seek(lmo);
-	    if ((lmo!=0)&&(getNodeType()==NTIDENTIFIER)&&
-		(strcmp(getName(),"main")==0)) {
-	      addBeforeList(nl,currentOffset);
-	      
-	      return;
-	    }
-	    seek(satc);
-	  }
-	}
-      } else nextNode();
-      break;
-    default:
-      nextNode();
-      break;
-    }
-  }
-  if (bigFileMode) {
-    fprintf(stderr,"\nWriting CAFs to file for next session...\n");
-  }
-
-  /* writeCAFsToFile(nl); */
-
-  if (bigFileMode)  {
-    fprintf(stderr,"\b\b\b\b");
-    fflush(stderr);
-  }
-}
-
 int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash) {
   unsigned long satc;
   int success,askAgain,question_old,first_question;
@@ -499,7 +392,7 @@ int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash)
 	}
       } else answer=1;
       if ((answer!=1)&&(answer<10)){
-	satc=findAppSAT(e->fileoffset);
+	satc=getResult(e->fileoffset);
 	children = newList();
 	{
 	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
@@ -513,10 +406,13 @@ int askNodeList(int question,NodeList* results,int isTopSession,HashTable* hash)
 	answer = askForApp(&question,e->fileoffset,0,1);
 	}
 	if (answer==0) {
+	  char *tmp;
 	  printf("\nError located!\nBug found in: ");
-	  showReduction(e->fileoffset,findAppSAT(e->fileoffset),verboseMode);
-	  showLocation(e->fileoffset);
-	  printf("\n");
+	  showReduction(e->fileoffset,getResult(e->fileoffset),verboseMode);
+	  tmp = getLocation(e->fileoffset);
+	  printf(tmp);
+	  freeStr(tmp);
+	  printf("\n\n");
 	  printf("\nPress 'q' to quit, any other key to go back to question %i:",
 		 question_old+1);
 	  getline(s,2);
@@ -565,7 +461,8 @@ void checkmainCAF() {
   int success;
   HashTable* hash=newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
-  findmainCAF(results);
+  addBeforeList(results,hatMainCAF());
+  // findmainCAF(results);
   askNodeList(0,results,2,hash);
   freeHashTable(hash);
   quit();

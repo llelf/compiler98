@@ -7,21 +7,22 @@
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
 
-typedef struct lnode* FunTablePtr;
 
-typedef struct lnode {
-  ExprNode* funAppl;
-  ExprNode* res;
-  unsigned long fileoffset;
-  FunTablePtr next;
-} FunTable;
+typedef struct _FunTable* FunTable;
 
-FunTable*     newFunTable();
-void          freeFunTable(FunTable* e);
-int           FunTableLength(FunTable* e);
-void          addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,
-			    unsigned long fileoffset);
-void          showFunTable(FunTable* l);
-long          showFunTablePaged(FunTable* l);
-int           isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res);
-unsigned long getFunTableFileOffs(FunTable*l,long i);
+FunTable      newFunTable();
+void          freeFunTable(FunTable e);
+
+int           FunTableLength(FunTable e);
+
+void          addToFunTable(FunTable l,ExprNode* funAppl,ExprNode* res,
+			    filepointer nodenumber);
+
+int           isInFunTable(FunTable p,ExprNode* funAppl,ExprNode* res);
+
+void          getFunTableEntry(FunTable l,long i,
+			       filepointer* fp,
+			       ExprNode** appl,
+			       ExprNode** res);
+
+void          showFunTable(FunTable l);

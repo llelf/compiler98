@@ -1,5 +1,5 @@
 /**************************************************************************/
-/* hatfileops.h: general operations on hat files                          */
+/* hatinterface.h: general operations on hat files                        */
 /*                                                                        */
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
@@ -7,8 +7,8 @@
 /* include constants for tags in hat files */
 #include "hatfile.h"
 
-#ifndef hatfileops
-#define hatfileops
+#ifndef hatinterface
+#define hatinterface
 
 typedef unsigned long filepointer;
 typedef int BOOL;

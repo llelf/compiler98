@@ -1,5 +1,5 @@
 /**************************************************************************/
-/* hatfileops.c: general operations on hat files                          */
+/* hatinterface.c: general operations on hat files                        */
 /*                                                                        */
 /* Thorsten Brehm, 4/2001                                                 */
 /**************************************************************************/
@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <string.h>
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "hatgeneral.h"
 
 /* routines providing interface to the hat archive file. */

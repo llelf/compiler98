@@ -7,7 +7,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "Expressions.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
+#include "hatgeneral.h"
 
 /* Main driver and routines to providing basic interface to archive file.
  */
@@ -19,22 +20,40 @@ unsigned int precision = 30;
 
 main (int argc, char *argv[])
 {
+  int handle;
   if (argc!=2) {
     fprintf(stderr,"\nusage: hat-checki file-name\n");
     exit(1);
   }
-  fname = filename(argv[1]);
-  if (openfile(fname)==-1) {
+  fname = hatFilename(argv[1]);
+  if ((handle=hatOpenFile(fname))==-1) {
     fprintf(stderr, "cannot open trace file %s\n\n",argv[1]);
     exit(1);
   }
-  if (testheader()) {
-
+  if (hatTestHeader()) {
+    
     interactive(0);
 
   }
-  closefile();
+  hatCloseFile(handle);
 }
+
+int getline(char s[], int max) {
+  int c,i;
+  fflush(stdout);
+  c=getchar();
+  for (i=0;(i<max-1) && (c!=EOF) && (c!='\n');i++) {
+    if (c==-1) {
+      i--;
+    } else {
+      s[i]=c;
+    }
+    c=getchar();
+  }
+  s[i]=0;
+  return i;
+}
+
 /*
 void showOutput() {
   unsigned long p =  
@@ -107,10 +126,10 @@ char *getfixpriStr() {
   return fixpribuf;
 }
 
-unsigned long printNode(unsigned long offset) {
+filepointer printNode(unsigned long offset) {
   char b,showAble=0;
   unsigned long next;
-  seek(offset);
+  hatSeekNode(offset);
   b = getNodeType();
   switch (hi3(b)) {
   case TR:
@@ -122,7 +141,7 @@ unsigned long printNode(unsigned long offset) {
 	int arity = getAppArity();
 	showAble = 1;
 	printf("Application: ");
-	printf("AppTrace 0x%x, ",getTrace());
+	printf("AppTrace 0x%x, ",getParent());
 	printf("AppFun 0x%x, ",getFunTrace());
 	printf("Arguments [");
 	while (i++<arity) {
@@ -135,49 +154,49 @@ unsigned long printNode(unsigned long offset) {
     case NAM:
       showAble = 1;
       printf(" Name: ");
-      printf("TR 0x%x, ", getTrace());
+      printf("TR 0x%x, ", getParent());
       printf("NT 0x%x, ", getNmType());
       printf("SR 0x%x ", getSrcRef());
       break;
     case IND:
       printf(" Indirection: ");
-      printf("TR 0x%x, ", getTrace());
+      printf("TR 0x%x, ", getParent());
       printf("TR 0x%x ", getValueTrace());
       break;
     case HIDDEN:
       showAble = 1;
       printf(" Hidden: ");
-      printf("TR 0x%x", getTrace());
+      printf("TR 0x%x", getParent());
       break;
     case SATA:
       showAble = 1;
       printf(" SAT(A): ");
-      printf("TR 0x%x", getTrace());
+      printf("TR 0x%x", getParent());
       break;
     case SATAIS:
       showAble = 1;
       printf(" isolated SAT(A): ");
-      printf("TR 0x%x", getTrace());
+      printf("TR 0x%x", getParent());
       break;
     case SATB:
       showAble = 1;
       printf(" SAT(B): ");
-      printf("TR 0x%x\t", getTrace());
+      printf("TR 0x%x\t", getParent());
       break;
     case SATBIS:
       showAble = 1;
       printf(" isolated SAT(B): ");
-      printf("TR 0x%x\t", getTrace());
+      printf("TR 0x%x\t", getParent());
       break;
     case SATC:
       showAble = 1;
       printf(" SAT(C): ");
-      printf("TR 0x%x", getTrace());
+      printf("TR 0x%x", getParent());
       break;
     case SATCIS:
       showAble = 1;
       printf(" isolated SAT(C): ");
-      printf("TR 0x%x", getTrace());
+      printf("TR 0x%x", getParent());
       break;
     default:
       printf("strange low-bits tag %d in TR 0x%x\n",
@@ -277,8 +296,9 @@ unsigned long printNode(unsigned long offset) {
 	   hi3(b), offset);
   }
   printf("\n");
-  nextNode();
-  next = byteoffset();
+  hatSeqNext();
+  next = hatNodeNumber();
+
 
   if (showAble) {
     unsigned long satc;
@@ -288,8 +308,8 @@ unsigned long printNode(unsigned long offset) {
     exp = buildExpr(offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,1);
     
-    satc = findAppSAT(followSATs(offset));
-    seek(satc);
+    satc = getResult(followSATs(offset));
+    hatSeekNode(satc);
     if ((isSAT(satc))&&(satc!=offset)) {
       printf("corresponding SAT at: 0x%x\n\n",satc);
       printf("reduction: %s = ",appstr);
@@ -302,7 +322,7 @@ unsigned long printNode(unsigned long offset) {
     }
     freeStr(appstr);
   }
-  seek(next);
+  hatSeekNode(next);
   return next;
 }
 
@@ -312,7 +332,7 @@ void interactive(unsigned long current) {
   unsigned long adr,next;
 
   toplevel = (current==0);
-  if (current == 0) current = byteoffset();
+  if (current == 0) current = hatNodeNumber();
   while (1) {
     next = 0;
     if (current!=0) next=printNode(current);

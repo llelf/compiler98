@@ -11,37 +11,75 @@
 #include <string.h>
 #include "Expressions.h"
 #include "FunTable.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "hashtable.h"
 #include "menu.h"
-
+#include "observe.h"
 // optional switch
 
 
 //#define showNodeInfo // show additional information about file offsets
 
-
-void checkNodes(unsigned long identifierNode,
-		unsigned long topIdentifierNode,
-		FunTable* result,int verboseMode,int uniqueMode,
-		int recursiveMode,unsigned int precision) {
-  unsigned long p,progress=0,currentOffset,fsz,lsz=0;
+typedef struct {
+  HashTable* htable;
+  unsigned long identifierNode;
+  unsigned long topIdentifierNode;
+  int recursiveMode;
+  unsigned long currentOffset;
+  unsigned long fsz;
+  unsigned long lsz;
   char nodeType;
-  HashTable* htable = newHashTable(80000);
-  int arityProblem=0,arity,maxarity = -1;
-  int found = 0;
-  fsz = filesize()/1000;
-  if (fsz<20000) lsz=200;
-  /* else if (uniqueMode) {
-    fprintf(stderr,"  0%%");
-    fflush(stderr); // force printing to screen, even though LF is still missing...
-    }*/
-  if (fsz==0) fsz=1;
-  while (more()) {
-    currentOffset = byteoffset();
-    if ((uniqueMode)&&((currentOffset/10)/fsz>lsz)) {
-      lsz = (currentOffset/10)/fsz;
-      fprintf(stderr,"\b\b\b\b%3u%%",lsz);
+  int found;
+  int finished;
+  int showProgress;
+  int handle;
+} _ObserveQuery;
+
+
+ObserveQuery newQuery(int handle,
+		       filepointer identifierNode,
+		       filepointer topIdentifierNode,
+		       BOOL recursiveMode,
+		       BOOL showProgress) {
+  _ObserveQuery* newQ = (_ObserveQuery*) calloc(1,sizeof(_ObserveQuery));
+  hatSwitchToHandle(handle);
+  newQ->handle = handle;
+  newQ->htable = newHashTable(80000);
+  newQ->identifierNode = identifierNode;
+  newQ->topIdentifierNode = topIdentifierNode;
+  newQ->recursiveMode = recursiveMode;
+  newQ->showProgress = showProgress;
+  newQ->currentOffset = identifierNode;
+  if (topIdentifierNode>identifierNode) newQ->currentOffset = topIdentifierNode;
+  newQ->fsz = hatFileSize()/1000;
+  if (newQ->fsz==0) newQ->fsz = 1;
+  if (newQ->fsz<20000) newQ->lsz=200;
+  return ((ObserveQuery) newQ);
+}
+
+void freeQuery(ObserveQuery query) {
+  freeHashTable(((_ObserveQuery*) query)->htable);
+  ((_ObserveQuery*) query)->htable = NULL;
+  free(query);
+}
+
+filepointer nextQueryNode(ObserveQuery query) {
+  unsigned long p,currentOffset;
+  char nodeType;
+  int arity;
+  HashTable* htable = ((_ObserveQuery*) query)->htable;
+  unsigned long identifierNode = ((_ObserveQuery*) query)->identifierNode;
+  unsigned long topIdentifierNode = ((_ObserveQuery*) query)-> topIdentifierNode;
+  int recursiveMode = ((_ObserveQuery*) query)->recursiveMode;
+
+  hatSwitchToHandle(((_ObserveQuery*) query)->handle);
+  hatSeekNode(((_ObserveQuery*) query)->currentOffset);
+  hatSeqNext();
+  while (!hatSeqEOF()) {
+    currentOffset = hatNodeNumber();
+    if ((((_ObserveQuery*) query)->showProgress)&&((currentOffset/10)/((_ObserveQuery*) query)->fsz>((_ObserveQuery*) query)->lsz)) {
+      ((_ObserveQuery*) query)->lsz = (currentOffset/10)/((_ObserveQuery*) query)->fsz;
+      fprintf(stderr,"\b\b\b\b%3u%%",((_ObserveQuery*) query)->lsz);
       fflush(stderr);
     }
     nodeType = getNodeType();
@@ -50,120 +88,84 @@ void checkNodes(unsigned long identifierNode,
       {
 	int arity = getAppArity();
 	unsigned long apptrace;
-	apptrace = getTrace();  // fileoffset of App-trace
-	p = getFunTrace();      // fileoffset of Function-trace
+	apptrace = getParent();  // fileoffset of App-trace
+	p = getFunTrace();       // fileoffset of Function-trace
 	if (isInHashTable(htable,p)) {
-	  unsigned long old  = byteoffset();
-	  unsigned long satc = findAppSAT(currentOffset);  // find SATC for the application!	  
+	  unsigned long old  = hatNodeNumber();
+	  unsigned long satc = getResult(currentOffset);  // find SATC for the application!	  
 	  if (isSAT(satc)) {
 	    if (followSATs(satc)==currentOffset) {
 	      addToHashTable(htable,currentOffset); // remember partial application
 	      addToHashTable(htable,satc);
-	    } else
-	      if (uniqueMode) {
-		addToHashTable(htable,currentOffset);
-		if (((recursiveMode==0)||(isDescendantOf(apptrace,identifierNode)==0))&&
-		    ((topIdentifierNode==0)||
-		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
-		  ExprNode* r=buildExpr(satc,verboseMode,precision);
-		  ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
-		  arity = getExprArity(a);
-		  if (arity>=maxarity) {
-		    addToFunTable(result,a,r,currentOffset);
-		    maxarity=arity;
-		  } else {
-		    freeExpr(r);
-		    freeExpr(a);
-		  }
-		}
-	      } else {
-		addToHashTable(htable,currentOffset);
-		if (((recursiveMode==0)||(isDescendantOf(apptrace,identifierNode)==0))&&
-		    ((topIdentifierNode==0)||
-		     (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
-		  ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
-		  arity = getExprArity(a);
-		  if (arity>=maxarity) {
-		    if ((arity>maxarity)&&(maxarity!=-1)) {
-		      arityProblem=found;
-		      printf("Partial applications detected. Ignore all lines above!\n");
-		      printf("------------------------------------------------------\n");
-		    }
-		    maxarity = arity;
-#ifdef showNodeInfo
-		    printf("(%u) ",currentOffset);
-#endif
-		    showAppAndResult(currentOffset,verboseMode,precision);
-		    found++;
-		  }
-		  freeExpr(a);
-		}
+	    } else {
+	      addToHashTable(htable,currentOffset);
+	      if (((recursiveMode==0)||(isDescendantOf(apptrace,identifierNode)==0))&&
+		  ((topIdentifierNode==0)||
+		   (isDirectDescendantOf(apptrace,topIdentifierNode)))) {
+		((_ObserveQuery*) query)->currentOffset = currentOffset;
+		((_ObserveQuery*) query)->found++;
+		return currentOffset;
 	      }
+	    }
 	  }
-	  seek(old);
+	  hatSeekNode(old);
 	}
       }
-      nextNode();
+      hatSeqNext();
       break;
     case TRNAM: // Name
       if ((getNmType()==identifierNode)&&(identifierNode!=0)) {
 	//printf("found name reference for identifier at: %u\n",p);
 	addToHashTable(htable,currentOffset);
-	nextNode();
-	if (isSAT(byteoffset())) {  // SATC behind TRNAM?
+	hatSeqNext();
+	if (isSAT(hatNodeNumber())) {  // SATC behind TRNAM?
 	  // found a CAF!
-	  unsigned long satc = byteoffset();
+	  unsigned long satc = hatNodeNumber();
 	  if (followSATs(satc)==currentOffset) { // save this satc for future reference
 	    addToHashTable(htable,satc);
 	  } else {  // makes no sense to print equation of form "identifier = identifier"
-	    if (uniqueMode) {
-	      ExprNode* r=buildExpr(satc,verboseMode,precision);
-	      ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
-	      addToFunTable(result,a,r,currentOffset);
-	    } else { // print CAF and its value
-	      showAppAndResult(currentOffset,verboseMode,precision);
-	    }
+	    ((_ObserveQuery*) query)->currentOffset = currentOffset;
+	    ((_ObserveQuery*) query)->found++;
+	    return currentOffset;
+	    
 	  }
-	  seek(satc); // go to satc
-	  nextNode(); // skip this node
+	  hatSeekNode(satc); // go to satc
+	  hatSeqNext(); // skip this node
 	}
-      } else nextNode();
+      } else hatSeqNext();
       break;
     default:
-      nextNode();
+      hatSeqNext();
     }
   }
-  if ((uniqueMode)&&(lsz<200)) {
+  ((_ObserveQuery*) query)->finished = 1;
+  if ((((_ObserveQuery*) query)->showProgress)&&(((_ObserveQuery*) query)->lsz<200)) {
     fprintf(stderr,"\b\b\b\b");
     fflush(stderr);
   }
-  if (arityProblem>0) {
-    printf("\nAttention: Due to partial applications the first %i line(s)\n",arityProblem);
-    printf("are missing arguments - please ignore them!\n");
-    printf("Use the -u option to see the correct applications only.\n\n");
-  }
+  return 0;
 }
 
 void findNodes(char* identifier,
 	       char* topIdentifier,
 	       unsigned long *identNode,
 	       unsigned long *topIdentNode,
-	       int uniqueMode) {
-  unsigned long identifierNode = 0,p,progress=0,currentOffset,fsz,lsz=0;
+	       BOOL showProgress) {
+  unsigned long identifierNode = 0,p,currentOffset,fsz,lsz=0;
   unsigned long topIdentifierNode = 0;
   char nodeType;
-  fsz = filesize()/1000;
+  fsz = hatFileSize()/1000;
   if (fsz<20000) lsz=200;
-  else if (uniqueMode) {
+  else if (showProgress) {
     fprintf(stderr,"  0%%");
     fflush(stderr); // force printing to screen, even though LF is still missing...
   }
   if (fsz==0) fsz=1;
-  seek(0);
-  while ((more())&&(identifierNode==0)&&((topIdentifierNode==0)||
+  hatSeqFirst();
+  while ((!hatSeqEOF())&&(identifierNode==0)&&((topIdentifierNode==0)||
 					 (topIdentifier==NULL))) {
-    currentOffset = byteoffset();
-    if ((uniqueMode)&&((currentOffset/10)/fsz>lsz)) {
+    currentOffset = hatNodeNumber();
+    if ((showProgress)&&((currentOffset/10)/fsz>lsz)) {
       lsz = (currentOffset/10)/fsz;
       fprintf(stderr,"\b\b\b\b%3u%%",lsz);
       fflush(stderr);
@@ -186,57 +188,43 @@ void findNodes(char* identifier,
 	}
       }
     }
-    nextNode();
+    hatSeqNext();
   }
   *identNode=identifierNode;
   *topIdentNode=topIdentifierNode;
 }
 
-unsigned long observeNode(unsigned long identifierNode,unsigned long topIdentifierNode,
-			  int verbosemode,int uniqueMode,int recursivemode,
-			  unsigned int precision,FunTable* results) {
-  unsigned long result=0;
-
-  checkNodes(identifierNode,topIdentifierNode,
-	     results,verbosemode,uniqueMode,recursivemode,precision);
-  if (uniqueMode) { 
-    checkArities(results); // remove partial applications with missing arguments
-  }
-}
-
-void observeIdentifier(char* ident,char* topIdent,
-		       int verbosemode,int uniqueMode,int recursivemode,
-		       unsigned int precision,FunTable* results) {
+ObserveQuery newIdentifierQuery(int handle,char* ident,char* topIdent,
+				 BOOL recursiveMode,BOOL showProgress) {
   unsigned long identifierNode=0,topIdentifierNode=0;
   
-  findNodes(ident,topIdent,&identifierNode,&topIdentifierNode,uniqueMode);
-  observeNode(identifierNode,topIdentifierNode,verbosemode,uniqueMode,recursivemode,
-	      precision,results);
+  hatSwitchToHandle(handle);
+  findNodes(ident,topIdent,&identifierNode,&topIdentifierNode,showProgress);
+  return newQuery(handle,identifierNode,topIdentifierNode,
+		  recursiveMode,showProgress);
 }
 
+// get table of all unique observations
+FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
+  FunTable results = newFunTable();
+  filepointer currentOffset;
+  int arity,maxarity = -1;
 
-int getObserve(char* ident,char* topIdent,
-	       int verbosemode,int uniqueMode,int recursivemode,
-	       unsigned int precision,int **childrenArray) {
-  FunTable* results=newFunTable();
-  int l;
-
-  observeIdentifier(ident,topIdent,verbosemode,uniqueMode,recursivemode,
-		    precision,results);
-  l = FunTableLength(results);
-  //printf("New Observe: %i for %s\n",l,ident);
-  {
-    int i=0;
-    FunTable *e = results->next;
-    *childrenArray = (int*) calloc(l+1,sizeof(long));
-    while (i<l) {
-      (*childrenArray)[i]=e->fileoffset;
-      i++;
-      e=e->next;
+  currentOffset = nextQueryNode(query);
+  while (!((_ObserveQuery*) query)->finished) {
+    unsigned long satc = getResult(currentOffset);
+    ExprNode* r=buildExpr(satc,verboseMode,precision);
+    ExprNode* a=buildExpr(currentOffset,verboseMode,precision);
+    arity = getExprArity(a);
+    if (arity>=maxarity) {
+      addToFunTable(results,a,r,currentOffset);
+      maxarity=arity;
+    } else {
+      freeExpr(r);
+      freeExpr(a);
     }
-    (*childrenArray)[i]=-1;
-    //printf("observed %i\n",i);
+    currentOffset = nextQueryNode(query);
   }
-  freeFunTable(results);
-  return l;
+  checkArities(results); // remove partial applications with missing arguments
+  return results;
 }

@@ -12,18 +12,28 @@
 #include <stdio.h>
 #include <string.h>
 #include "Expressions.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "FunTable.h"
+#include "hatgeneral.h"
 
 //#define doStatistics
 
-FunTable* newFunTable() {
-  FunTable* l = (FunTable*) calloc(1,sizeof(FunTable));
+typedef struct lnode* FunTablePtr;
+
+typedef struct lnode {
+  ExprNode* funAppl;
+  ExprNode* res;
+  filepointer fileoffset;
+  FunTablePtr next;
+} _FunTable;
+
+FunTable newFunTable() {
+  FunTable l = (FunTable) calloc(1,sizeof(_FunTable));
+  return l;
 }
 
-void freeFunTable(FunTable* e) {
-  FunTable* l;
-  l=e;
+void freeFunTable(FunTable ftable) {
+  _FunTable *e,*l = (_FunTable*) ftable;
   while (l!=NULL) {
     e=l;
     l=l->next;
@@ -33,9 +43,9 @@ void freeFunTable(FunTable* e) {
   }
 }
 
-int FunTableLength(FunTable* l) {
+int FunTableLength(FunTable ftable) {
   int c=0;
-  l=l->next;
+  _FunTable* l=((_FunTable*) ftable)->next;
   while (l!=NULL) {
     c++;
     l=l->next;
@@ -44,9 +54,10 @@ int FunTableLength(FunTable* l) {
 }
 
 unsigned long thesame = 0,smaller = 0, moregeneral=0,uncomparable=0;
-void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,unsigned long fileoffset) {
-  FunTable* p;
-  FunTable* e = newFunTable();
+void addToFunTable(FunTable ftable,ExprNode* funAppl,ExprNode* res,filepointer fileoffset) {
+  _FunTable* p;
+  _FunTable* e = (_FunTable*) newFunTable();
+  _FunTable* l = (_FunTable*) ftable;
 
   if (e==NULL) {
     fprintf(stderr,"Tried to reserve memory.\n");
@@ -79,15 +90,15 @@ void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,unsigned long fil
 	  if ((c1<=0)&&(c2>=0)) { // same or less general as in memory! 
 	    // remark: for result it's just the other way round! remember more specific
 	    // value!
-	    freeFunTable(e);
+	    freeFunTable((FunTable) e);
 	    if ((c1==0)&&(c2==0)) thesame++;else smaller++;
 	    return;
 	  }
 	  if ((c1>=0)&&(c2<=0)) {  // new entry is more general!
-	    FunTable* t = p->next;
+	    _FunTable* t = p->next;
 	    p->next = p->next->next;
 	    t->next = NULL;
-	    freeFunTable(t);
+	    freeFunTable((FunTable) t);
 	    moregeneral++;
 	  } else
 	    p=p->next;
@@ -96,15 +107,17 @@ void addToFunTable(FunTable* l,ExprNode* funAppl,ExprNode* res,unsigned long fil
     }
     if (p->next==NULL) { // add entry to table!
       p->next = e;
-    } else freeFunTable(e);
+    } else freeFunTable((FunTable) e);
   }
 }
 
-void showFunTable_internal(FunTable* l,int mode) {
+void showFunTable_internal(FunTable ftable,int mode) {
   char* appstr;
   char* resstr;
   unsigned long c=0;
   char buf[5];
+  _FunTable* l = (_FunTable*) ftable;
+
   if ((l==NULL)||(l->next==NULL)) printf("FUNCTION TABLE EMPTY\n"); else
     { 
       l=l->next;
@@ -130,20 +143,49 @@ void showFunTable_internal(FunTable* l,int mode) {
     }
 }
 
-void showFunTable(FunTable* l) {
+void showFunTable(FunTable l) {
   showFunTable_internal(l,0);
 }
 
-unsigned long getFunTableFileOffs(FunTable*l,long i) {
-  l=l->next;
+FunTable _FunTablecurrent,_FunTablelast=NULL;
+int _FunTablePos;
+
+void getFunTableEntry(FunTable ftable,long i,
+		      filepointer* fp,
+		      ExprNode** appl,
+		      ExprNode** res) {
+  _FunTable* l;
+  if ((_FunTablelast == ftable)&&(i>=_FunTablePos)) {
+    int tmp;
+    l=(_FunTable*) _FunTablecurrent; // remember previous position
+    tmp = i;
+    i = i-_FunTablePos; // remaining steps to be done
+    _FunTablePos = tmp;
+  } else {
+    l=((_FunTable*) ftable)->next;
+    _FunTablePos = i;
+  }
   while ((l!=NULL)&&(i-->0)) l=l->next;
-  if (l==NULL) return 0;
-  return l->fileoffset;
+  if (l==NULL) {
+    _FunTablelast = NULL;
+    (*fp) = 0;
+    (*appl) = NULL;
+    (*res) = NULL;
+    return;
+  }
+  _FunTablelast = ftable;
+  _FunTablecurrent = (FunTable) l;
+  (*fp) = l->fileoffset;
+  (*appl) = l->funAppl;
+  (*res) = l->res;
+  return;
 }
 
-int isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res) {
+int isInFunTable(FunTable ftable,ExprNode* funAppl,ExprNode* res) {
   int c1=0,c2=0;
-  while (p->next!=NULL) { // while incomparable and not end of list
+  _FunTable* p;
+  p = (_FunTable*) ftable;
+  while (((_FunTable*) p)->next!=NULL) { // while incomparable and not end of list
     c1 = compareExpr(p->next->funAppl,funAppl);
     if (c1!=2) { // c1=!2 => comparable!
       c2 = compareExpr(p->next->res,res);
@@ -158,11 +200,11 @@ int isInFunTable(FunTable* p,ExprNode* funAppl,ExprNode* res) {
   return 0; // not im memory yet!
 }
 
-void checkArities(FunTable* ftable) {
+void checkArities(FunTable ftable) {
   int arity,maxarity=0;
-  FunTable *h,*p;
+  _FunTable *h,*p;
 
-  p=ftable;
+  p=(_FunTable*) ftable;
   while (p->next!=NULL) {
     arity = getExprArity(p->next->funAppl);
     if (arity>maxarity) maxarity = arity;
@@ -170,16 +212,16 @@ void checkArities(FunTable* ftable) {
       h=p->next;
       p->next = p->next->next;
       h->next=NULL;
-      freeFunTable(h);
+      freeFunTable((FunTable) h);
     } else p=p->next;
   }
-  p=ftable;
+  p=(_FunTable*) ftable;
   while (p->next!=NULL) { // now make sure to clear all smaller arities
     if (getExprArity(p->next->funAppl)<maxarity) {
       h=p->next;
       p->next =  p->next->next;
       h->next = NULL;
-      freeFunTable(h);
+      freeFunTable((FunTable) h);
     } else p=p->next;
   }
 }

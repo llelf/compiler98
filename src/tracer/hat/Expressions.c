@@ -8,46 +8,7 @@
 #include <string.h>
 #include "hatfile.h"
 #include "Expressions.h"
-
-/*********************************************************************/
-/* basic functions for strings on heap                               */
-/*                                                                   */
-/*********************************************************************/
-
-/* reserve space on heap for given string - and copy */
-char* newStr(char* str) {
-  char* h = (char*) malloc(strlen(str)+1,sizeof(char));
-  strcpy(h,str);
-  return h;
-}
-
-/* append strings and reserve space for the result string */
-char* catStr (char* s1, char* s2, char* s3) {
-  int x = strlen (s1) + 1;
-  char* H;
-  if (s1 == NULL) return NULL;
-  if (s2) x = x + strlen (s2);
-  if (s3) x = x + strlen (s3);
-  H = (char*) malloc(x,sizeof(char));
-  strcpy (H,s1);
-  if (s2) strcat (H,s2);
-  if (s3) strcat (H,s3);
-  return H;
-}
-
-/* free memory space */
-void freeStr(char* s) {
-  free(s);
-}
-
-/* replace string in s with the concatenation of s1,s2 and s3 */
-void replaceStr(char** s,char* s1,char *s2,char* s3) {
-  char* sneu=catStr(s1,s2,s3);
-  if (*s != NULL) freeStr(*s);
-  (char*) *s = sneu;
-}
-
-/*********************************************************************/
+#include "hatgeneral.h"
 
 AppNode* newAppNode(int arity) {
   AppNode* a = (AppNode*) calloc(1,sizeof(AppNode));
@@ -165,6 +126,175 @@ int getExprInfixPrio(ExprNode* e) {
     return 0;
   }
 }
+
+
+#define CUT_MESSAGE "<CUT>"
+
+/* building expression at given offset from hat file */
+ExprNode* buildExprRek(unsigned long fileoffset,int verbose,unsigned int precision) {
+//#define DebugbuildExpr
+  char b;
+  unsigned long p;
+  ExprNode* exp=NULL;
+  char *s;
+
+  if (precision==0) {
+    exp = newExprNode(MESSAGE);
+    exp->v.message = newStr(CUT_MESSAGE);
+    return exp; // nesting reached the given boundary!
+  }
+
+  while (fileoffset!=0) {
+#ifdef DebugbuildExpr
+    printf("building expression... 0x%x\n",fileoffset);
+#endif
+    fileoffset=followTrace(fileoffset); // follow the trace along all SATs and indirections
+    b = getNodeType();
+#ifdef DebugbuildExpr
+    printf("node type: %i\n",b);
+#endif
+    switch (b) {
+    case TRAPP: // Application
+      {
+	int i=0,arity;
+	AppNode* apn;
+	ExprNode* fun;
+	unsigned long localoffset,functionOffset;
+	arity=getAppArity();
+	apn=newAppNode(arity);
+
+	exp = newExprNode(TRAPP);
+	exp->v.appval = apn;
+
+	functionOffset = getFunTrace();
+#ifdef DebugbuildExpr
+	printf("Found application of arity: %i\n",arity);
+#endif
+	while (i++<arity) {  // now read all argument pointers into memory
+	  setAppNodeArg(apn,i-1,(ExprNode*) getAppArgument(i-1)); // do something nasty
+	  // abuse pointers for storing the fileoffsets temporarily
+	}
+	// build function
+	setAppNodeFun(apn,fun=buildExprRek(functionOffset,verbose,precision-1));
+	/* special workaround for IO(_) follows: show operation behind HIDDEN node,
+	   to give atleast some information about the kind of IO performed */
+	if ((fun)&&(fun->type==MESSAGE)&&(strcmp(fun->v.message,CUT_MESSAGE)==0)) {
+	  return fun; // function was cut off -> whole application is cut off!
+	} else
+	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
+	  IdentNode* id = fun->v.identval;
+	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
+	    unsigned long hidden = followSATs((unsigned long) getAppNodeArg(apn,0));
+	    if (getNodeType()==TRHIDDEN) {
+	      setAppNodeArg(apn,0,(ExprNode*) (getParent()));
+	    }
+	  }
+	}
+	/* workaround for IO(_) ends */
+	i=0;
+	while (i++<arity) {
+#ifdef DebugbuildExpr
+	  printf("building argument %i\n",i);
+#endif
+	  // exchange arguments containing fileoffsets against the built expressions
+	  setAppNodeArg(apn,i-1,buildExprRek((unsigned long) getAppNodeArg(apn,i-1),
+					     verbose,precision-1));
+	}
+	return exp;
+	}
+    case NTIDENTIFIER:
+    case NTCONSTRUCTOR: {
+      int infix,infixprio;
+      exp = newExprNode(b);
+      s=getName();
+      infix=getInfixPrio();
+      infixprio = infix / 4;
+      infix = infix % 4;
+      if (strcmp(s,",")==0) {
+	s=newStr(",");
+	infix=0;
+      } else {
+	if (infix==3) infixprio=32768;
+	s=newStr(s);  // read name of identifier/constructor
+      }
+      exp->v.identval = newIdentNode(s,infix,infixprio);
+      return exp;
+    }
+    case TRNAM: // Name
+      fileoffset=getNmType(); // read NmType -> follow this link to build 
+      break;
+    case TRIND: //  Indirection
+      fileoffset=getValueTrace(); // follow this link for prettyPrint
+      break;
+    case NTINT:
+      exp = newExprNode(b);
+      exp->v.intval = getIntValue();
+      return exp;
+    case NTCHAR:
+      exp = newExprNode(b);
+      exp->v.charval = getCharValue();
+      return exp;
+    case NTDOUBLE:
+      exp = newExprNode(b);
+      exp->v.doubleval = (double*) malloc(1,sizeof(double));
+      *(exp->v.doubleval) = getDoubleValue();
+      return exp;
+    case NTRATIONAL:
+    case NTINTEGER:
+      exp = newExprNode(b);
+      exp->v.intval = getIntegerValue();
+      return exp;
+    case NTFLOAT:
+      exp = newExprNode(b);
+      exp->v.floatval = getFloatValue();
+      return exp;
+    case NTTUPLE:
+    case NTFUN:
+    case NTCASE:
+    case NTLAMBDA:
+    case NTDUMMY:
+    case NTCSTRING:
+    case NTIF:
+    case NTGUARD:
+    case NTCONTAINER:
+      return newExprNode(b);
+    case TRHIDDEN:
+      if (verbose) {
+	exp = newExprNode(MESSAGE);
+	exp->v.message = newStr("\253HIDDEN\273");
+	return exp;
+      } else return NULL;
+    case TRSATAIS:
+    case TRSATA: // unevaluated expression
+      if (verbose) {
+	p = getParent();
+	exp = newExprNode(TRSATA);
+	exp->v.expr = buildExprRek(p,verbose,precision);
+	return exp;
+      } else
+	return NULL;
+    case TRSATBIS:
+    case TRSATB:
+      exp = newExprNode(b);
+      exp->v.intval = getParent();
+      return exp;
+    default:
+      fprintf(stderr, "(buildExprRek) strange tag %d in 0x%x, handle: %u\n",
+	      b, hatNodeNumber(),hatCurrentHandle());
+      return NULL; //exit(1);
+    }
+  }
+  return NULL;
+}
+
+/* build expression at given offset in file */
+ExprNode* buildExpr(unsigned long fileoffset,int verbose,
+		    unsigned int precision) {
+  return buildExprRek(fileoffset,verbose,precision);
+}
+
+/*********************************************************************/
+
 
 /*********************************************************************/
 /* pretty printing routines for expressions                          */
@@ -788,3 +918,43 @@ char* treePrint(ExprNode* exp,int verbose,int topInfixprio) {
   }
 }
 
+void showNode(unsigned long fileoffset,int verboseMode,unsigned int precision) {
+  char *appstr;
+  ExprNode* exp;
+
+  exp = buildExpr(fileoffset,verboseMode,precision);
+  appstr = prettyPrintExpr(exp,1);
+  printf(appstr);
+  freeExpr(exp);
+  freeStr(appstr);
+}
+
+//#define showAppNode
+unsigned long showAppAndResult(unsigned long fileoffset,int verboseMode,
+			       unsigned int precision) {
+  char *appstr;
+  char *resstr;
+  ExprNode* exp;
+  unsigned long satc = 0;
+
+  exp = buildExpr(fileoffset,verboseMode,precision);
+  appstr = prettyPrintExpr(exp,1);
+  freeExpr(exp);
+
+  satc = getResult(fileoffset);  // find SATC for the application!
+
+  if (satc!=0) {
+#ifdef showAppNode
+    printf("(0x%x): ",fileoffset);
+#endif
+    exp = buildExpr(hatNodeNumber(),verboseMode,precision);
+    resstr = prettyPrintExpr(exp,1); // don't show any level of unevaluated functions
+    freeExpr(exp);
+    printf(appstr);
+    printf(" = %s\n",resstr); // print value of SAT!
+
+    freeStr(resstr);
+  }
+  freeStr(appstr);
+  return satc;
+}

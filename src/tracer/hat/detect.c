@@ -7,12 +7,58 @@
 #include <stdio.h>
 #include <string.h>
 #include "Expressions.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "FunTable.h"
 #include "nodelist.h"
 #include "hashtable.h"
 
 #define HASH_TABLE_SIZE 3000
+
+// checks, whether nodenumber is a child of parent. It is a child of parent,
+// if the nodenumber's parentTrace equals parent or if its parent is a non-toplevel
+// node which in turn is a child of parent (or so on recursively)
+int isChildOf(unsigned long nodenumber,unsigned long parent) {
+  char nodeType;
+  unsigned long old = hatNodeNumber();
+
+  if (parent==0) return 0;
+  while (nodenumber!=0) {
+    hatSeekNode(nodenumber);
+    nodeType=getNodeType();
+    switch(nodeType) {
+    case TRHIDDEN:
+    case TRSATA:
+    case TRSATB:
+    case TRSATC:
+    case TRSATCIS:
+    case TRSATBIS:
+    case TRSATAIS:
+      nodenumber=getParent();
+      if (nodenumber==parent) {
+	return 1;
+      }
+      break;
+    case TRNAM:
+    case TRAPP:{
+      nodenumber = getParent();
+      if (nodenumber==parent) {
+	hatSeekNode(old);
+	return 1;
+      }
+      if (isTopLevel(nodenumber)) {
+	hatSeekNode(old);
+	return 0;
+      }
+      break;
+    }
+    default:
+      hatSeekNode(old);
+      return 0;
+    }
+  }
+  hatSeekNode(old);
+  return 0;
+}
 
 //#define DebuggetChildrenFor
 void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current,
@@ -25,9 +71,9 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
     if (current==0) return;
     addToHashTable(hash,current);
 
-    result=findAppSAT(current);
+    result=getResult(current);
 
-    seek(current);
+    hatSeekNode(current);
     nodeType = getNodeType();
 #ifdef DebuggetChildrenFor
     printf("nodeType at %u is %i, searching %u, resulting %u\n",current,nodeType,
@@ -39,7 +85,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
 	unsigned long srcref,p,funTrace,appTrace;
 	int arity,isChild;
 	arity     = getAppArity();
-	appTrace  = getTrace();             // fileoffset of App-trace
+	appTrace  = getParent();             // fileoffset of App-trace
 	funTrace  = getFunTrace();          // function-trace
 	srcref    = getSrcRef();            // get srcref
 	appTrace  = followHidden(appTrace); // follow along hidden to find parent
@@ -47,8 +93,8 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
 	isChild   = isChildOf(current,parentTrace);
 	if ((appTrace==parentTrace)&&(isChild==0)) {
 	  printf("That's odd: %u %u %u\n",current,parentTrace,appTrace);
-	  printf("AppTrace: %u\n",getTrace());
-	  printf("AppTrace: %u\n",getTrace());
+	  printf("AppTrace: %u\n",getParent());
+	  printf("AppTrace: %u\n",getParent());
 	  //isChild = 1;
 	}
 
@@ -61,7 +107,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
 #ifdef DebuggetChildrenFor
 	    printf("checking arg %i of %u\n",i,current);
 #endif
-	    seek(current);
+	    hatSeekNode(current);
 	    p = getAppArgument(i-1);
 	    getChildrenFor(nl,parentTrace,p,hash);
 	  }
@@ -95,7 +141,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
       removeFromHashTable(hash,orig_current);
       return;
     case TRNAM: {
-      unsigned long p = getTrace();
+      unsigned long p = getParent();
       unsigned long srcref = getSrcRef();
       unsigned long newcurrent;
 
@@ -123,7 +169,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
     removeFromHashTable(hash,orig_current);
     return;
     case TRIND:
-      current = getTrace();
+      current = getParent();
       getChildrenFor(nl,parentTrace,current,hash);
       removeFromHashTable(hash,orig_current);
       return;
@@ -132,7 +178,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
     case TRSATAIS:
     case TRSATB:
     case TRSATBIS:
-      current = getTrace();
+      current = getParent();
       getChildrenFor(nl,parentTrace,current,hash);
       removeFromHashTable(hash,orig_current);
       return;
@@ -154,7 +200,7 @@ void getChildrenFor(NodeList* nl,unsigned long parentTrace,unsigned long current
 }
 
 int getEDTchildren(unsigned long parentTrace,int **childrenArray) {
-  unsigned long current = findAppSAT(parentTrace);
+  unsigned long current = getResult(parentTrace);
   HashTable* hash = newHashTable(HASH_TABLE_SIZE);
   NodeList* results=newList();
   int l;

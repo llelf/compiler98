@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "Expressions.h"
-#include "hatfileops.h"
+#include "hatinterface.h"
 #include "FunTable.h"
 #include "nodelist.h"
 
@@ -130,7 +130,7 @@ void showPretty(NodeList *nl,int verboseMode,unsigned int precision) {
       unsigned long lngth = listLength(nl);
       unsigned long satc,lsz = 0,built = 0;
       while (e!=NULL) {
-	satc=findAppSAT(e->fileoffset);  // find SATC for the application!
+	satc=getResult(e->fileoffset);  // find SATC for the application!
 	if (isSAT()) {
 	  ExprNode* r=buildExpr(satc,verboseMode,precision);
 	  ExprNode* a=buildExpr(e->fileoffset,verboseMode,precision);

@@ -4,8 +4,8 @@ OBJDIR	= ${BUILDDIR}/${OBJ}/hat
 DEST	= $(LIBDIR)/$(MACHINE)
 
 MALCLIBS = nodecache.c minisocklib.c utils.c browsercomms.c
-THORLIBS = detect.c nodelist.c menu.c hatfileops.c FunTable.c Expressions.c \
-           hashtable.c observe.c
+THORLIBS = detect.c nodelist.c menu.c hatinterface.c FunTable.c Expressions.c \
+           hashtable.c observe.c hatgeneral.c
 
 MALCOBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(MALCLIBS))
 THOROBJS = $(patsubst %.c,$(OBJDIR)/%.o,$(THORLIBS))
@@ -52,23 +52,22 @@ LINKFLAGS = -lncurses -g
 
 $(THOROBJS) : $(OBJDIR)/%.o : %.c
 	$(CC) -c $(THORFLAGS) -o $@ $<
-$(OBJDIR)/hatfileops.o: hatfileops.h hatfile.h \
-			$(OBJDIR)/FunTable.o $(OBJDIR)/Expressions.o \
-			$(OBJDIR)/nodelist.o
-$(OBJDIR)/FunTable.o: FunTable.h $(OBJDIR)/Expressions.o $(OBJDIR)/menu.o hatfileops.h
-$(OBJDIR)/Expressions.o: Expressions.h hatfile.h
+$(OBJDIR)/hatinterface.o: hatinterface.h hatfile.h $(OBJDIR)/nodelist.o
+$(OBJDIR)/FunTable.o: FunTable.h $(OBJDIR)/Expressions.o $(OBJDIR)/menu.o $(OBJDIR)/hatinterface.o
+$(OBJDIR)/Expressions.o: Expressions.h hatfile.h $(OBJDIR)/hatinterface.o
 $(OBJDIR)/hashtable.o: hashtable.h
-$(OBJDIR)/observe.o : $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o
+$(OBJDIR)/observe.o : $(OBJDIR)/hatinterface.o $(OBJDIR)/hashtable.o
 $(OBJDIR)/menu.o : menu.h $(OBJDIR)/Expressions.o
-$(OBJDIR)/nodelist.o : nodelist.h FunTable.h hatfileops.h Expressions.h
-$(OBJDIR)/detect.o : detect.h FunTable.h hatfileops.h Expressions.h nodelist.h hashtable.h
-$(DEST)/hat-detect: hat-detect.c $(OBJDIR)/hatfileops.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o
+$(OBJDIR)/nodelist.o : nodelist.h FunTable.h hatinterface.h Expressions.h
+$(OBJDIR)/hatgeneral.o : hatgeneral.h hatgeneral.c
+$(OBJDIR)/detect.o : detect.h FunTable.h hatinterface.h Expressions.h nodelist.h hashtable.h
+$(DEST)/hat-detect: hat-detect.c $(OBJDIR)/hatinterface.o $(OBJDIR)/observe.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
 	$(CC) $(LINKFLAGS) hat-detect.c $(THOROBJS) \
 		-o $(DEST)/hat-detect
-$(DEST)/hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatfileops.o $(OBJDIR)/hashtable.o $(OBJDIR)/detect.o
+$(DEST)/hat-observe: hat-observe.c $(OBJDIR)/observe.o $(OBJDIR)/hatinterface.o $(OBJDIR)/hashtable.o $(OBJDIR)/detect.o $(OBJDIR)/Expressions.o $(OBJDIR)/hatgeneral.o $(OBJDIR)/FunTable.o
 	$(CC) $(LINKFLAGS) hat-observe.c $(THOROBJS) $(ncurses) \
 		-o $(DEST)/hat-observe
-$(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatfileops.o
+$(DEST)/hat-checki: hat-checki.c $(OBJDIR)/hatinterface.o $(OBJDIR)/hatgeneral.o
 	$(CC) $(LINKFLAGS) hat-checki.c $(THOROBJS) $(ncurses) \
 		-o $(DEST)/hat-checki
 
