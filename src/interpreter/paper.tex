@@ -166,31 +166,37 @@ convenient, friendly, interactive front-end.
 
 The second important observation is that many of the other features
 of Hugs can be provided by external tools - for instance, a compiler
-can produce code; the hmake program can chase module dependencies;
+can produce code; the {\em hmake} program can chase module dependencies;
 a lightweight database can track information about constructors,
 classes, and other names.  The primary feature unique to Hugs is that
-it integrates all these tools coherently.
+it integrates all these tools coherently.  The interactive interface
+it provides is perhaps more important to the developer than the
+incidental fact that the code is interpreted.
 
 So the question arises, is it possible to provide a lightweight
 interactive development environment that is as friendly as the Hugs
-interface, but which is really just a small wrapper over a compiler?
+interface, but which is really just a small wrapper over an existing
+compiler?
 
 The answer is yes, and this paper is the description of just such
 a wrapper.  It is modelled closely on Hugs as far as style and the
 user-experience are concerned, but the bulk of the work is actually
 done underneath by batch tools.  One of the nice outcomes of this
 strategy is that it is easy to switch backends.  Module-chasing and
-recompilation is managed totally by the {\tt hmake} tool, which
+recompilation is managed totally by the {\em hmake} tool, which
 gives us the freedom to layer our wrapper on top of {\em any} of the
 currently available Haskell compilers.  It is even possible to change
 compiler from within the interface: this ability is immensely useful
-when testing the portability of code.
+when testing whether code is truely {\em standard} and {\em portable}.
 
 The new interface, called {\em hmake interactive} or {\em hi}
 for short, is completely generic, seamlessly extending a common and
 familiar interaction style to embrace the more powerful facilities of
 the various compilers.  It allows an easy "step up" from interpretation
-to compilation.
+to compilation.  (However, for brevity throughout this paper we will
+continue to use the word ``interpreter'' with the common meaning of an
+interactive development system, despite the fact that the underlying
+technology is not an interpreter at all!)
 
 Of course the wrapper is written in Haskell, so it is short and
 somewhat specificational in style.  (This paper is the literate
@@ -214,8 +220,136 @@ from the original module by transformation.
 
 \section*{The basic operation of an interpreter}
 
+As already mentioned, this paper is a literate version of the
+source code of the {\em hmake interactive} interpreter.  You can
+execute this paper! --- lines beginning with a birdtrack ({\tt >})
+are program lines.
+
+\begin{verbatim}
+
+> module Main where
+> 
+> import IO
+> import System
+> import Char
+> import Directory
+> import List
+> import Maybe
+> 
+> import HmakeConfig
+
+\end{verbatim}
+
+The main job of an interpreter (at least in the sense of an interactive
+development environment) is to present a so-called ``read-eval-print
+loop'' to the user.  In {\em hi}, the startup banner will seem familiar
+to users of the Hugs interpreter.  Before entering the top-level loop,
+we must at least load the Prelude.
+
+\begin{verbatim}
+
+> banner = "\ 
+> \__   __                 __             _____________________________________
+> ||   ||  ______    ___  || _  ____     hmake interactive (hi):
+> ||___|| || || ||  ___|| ||/  ||__||       Copyright (c) May 2000
+> ||---|| || || || ||__|| ||\\_ ||__         http://www.cs.york.ac.uk/fp/hmake/
+> ||   ||                                Report bugs to: malcolm@cs.york.ac.uk
+> ||   || Version: "++hmakeVersion++"    -------------------------------------"
+>
+> main = do
+>   options <- getArgs
+>   let opts = options ++ defaultOptions defaultCompiler
+>   putStrLn banner
+>   putStrLn (replicate 43 ' '++
+>             "... Using compiler "++show defaultCompiler++" ...\n")
+>   putStrLn ("Type :? for help")
+>   hSetBuffering stdout NoBuffering
+>   load opts defaultCompiler "Prelude"
+>   toplevel opts defaultCompiler ["Prelude"]
+
+\end{verbatim}
+
+Within the top-level loop, we keep a state which consists of the
+current compiler, current options, and currently loaded modules.
+The user's prompt is the name of the most recently loaded module.
+The user can type a single line of input to the interpreter, which
+is either an expression to evaluate, or a command.
+
+Commands begin with a colon character, followed by a command name,
+possibly followed by arguments.  A later section discusses the commands
+available.  (For historical reasons, the shell escape command {\em :!}
+differs from all other commands in that its arguments are not separated
+from the command name by whitespace.  Hence, it is treated specially
+here.  Everything directly following the exclamation mark is passed
+to the shell for execution.)
+
+\being{verbatim}
+
+> toplevel options compiler modules = do
+>   putStr (head modules ++ "> ")
+>   s <- getLine
+>   if (null s || all isSpace s) then done else
+>     case head s of
+>       ':' -> let ws = words (tail s) in
+>              if (null ws) then done else
+>                case head (head ws) of
+>                  '!' -> do e <- system (unwords ((tail (head ws)):tail ws))
+>                            done
+>                  _   -> commands ws options compiler modules
+>       _   -> evaluate s options compiler modules
+>   toplevel options compiler modules
+> 
+> done = return ()
+
+\end{verbatim}
+
+
 
 \section*{Evaluation of an expression}
+
+Evaluation of an expression can take one of three forms.
+
+First, if the current module is Main and the user chooses simply to
+run the function {\em Main.main}, then it makes sense for the rest
+of the expression to contain command-line arguments to that program.
+Indeed, it could also contain directions to the program's runtime
+system, for instance to set a heapsize, or enable profiling.  In this
+case, the most recently loaded module is simply compiled and run
+with the rest of the line as arguments.
+
+\begin{verbatim}
+
+> evaluate expr options compiler modules | "main" `isPrefixOf` expr = do
+>   compile options compiler (head modules)
+>      (run ("./"++head modules) (tail (words expr)))
+
+\end{verbatim}
+
+The rather more frequent case however, will be where the user is
+testing small functions within the larger conglomeration.
+
+\begin{verbatim}
+
+> evaluate expr options compiler modules = do
+>   let tmpfile = "/tmp/Main"
+>   f <- openFile (tmpfile++".hs") WriteMode
+>   hPutStr f (
+>     "module Main where\n\n" ++
+>     concatMap (\m-> "import "++m++"\n") modules ++
+>     "\n" ++ nonstdCoerce compiler ++
+>     "\n" ++ nonstdShow compiler ++
+>     "\nmain = let expr  = (" ++ expr ++ ")" ++
+>     "\n           shown = show expr" ++
+>     "\n       in case shown of" ++
+>     "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
+>     "\n           _                   -> putStrLn shown" ++
+>     "\n")
+>   hClose f
+>   compile options compiler tmpfile (run tmpfile [])
+
+\end{verbatim}
+
+
 
 
 \section*{Commands}
@@ -232,459 +366,404 @@ from the original module by transformation.
 
 
 
-module Main where
-
-import IO
-import System
-import Char
-import Directory
-import List
-import Maybe
-
-import HmakeConfig
-
---debug x = putStrLn ("DEBUG: "++x)
-debug x = return ()
-
-main = do
-  options <- getArgs
-  let opts = options ++ defaultOptions defaultCompiler
-  putStrLn banner
-  putStrLn (replicate 43 ' '++ "... Using compiler "++show defaultCompiler++" ...\n")
-  putStrLn ("Type :? for help")
-  hSetBuffering stdout NoBuffering
-  load opts defaultCompiler "Prelude"
-  toplevel opts defaultCompiler ["Prelude"]
-
-done = return ()
-
-toplevel options compiler modules = do
-  putStr (head modules ++ "> ")
-  s <- getLine
-  if (null s || all isSpace s) then done else
-    case head s of
-      ':' -> let ws = words (tail s) in
-             if (null ws) then done else
-               case head (head ws) of
-                 '!' -> do e <- system (unwords ((tail (head ws)):tail ws))
-                           done
-                 _   -> commands ws options compiler modules
-      _   -> evaluate s options compiler modules
-  toplevel options compiler modules
-
-evaluate expr options compiler modules | "main" `isPrefixOf` expr = do
-  compile options compiler (head modules)
-     (run ("./"++head modules) (tail (words expr)))
-evaluate expr options compiler modules = do
-  let tmpfile = "/tmp/Main"
-  f <- openFile (tmpfile++".hs") WriteMode
-  hPutStr f (
-    "module Main where\n\n" ++
-    concatMap (\m-> "import "++m++"\n") modules ++
-    "\n" ++ nonstdCoerce compiler ++
-    "\n" ++ nonstdShow compiler ++
-    "\nmain = let expr  = (" ++ expr ++ ")" ++
-    "\n           shown = show expr" ++
-    "\n       in case shown of" ++
-    "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
-    "\n           _                   -> putStrLn shown" ++
-    "\n")
-  hClose f
-  compile options compiler tmpfile (run tmpfile [])
-
-{-
--- scopedEvaluate allows you to play with _unexported_ functions from the
--- current module.  This currently requires the restriction that "main" is
--- not otherwise defined in this module.
-scopedEvaluate expr options compiler modules = do
-  -- Ok, this isn't fully implemented yet, but the basic scenario is
-  -- to copy the module to /tmp/Main.hs, removing a "module ... where"
-  -- header if it exists (could replace with "module Main where", but
-  -- that is unnecessary).  Add a "main = ..." definition to the end
-  -- of the module, compile and run.  Additionally, it would be nice to
-  -- search for an existing "main" definition and rename it to "_main",
-  -- but that is (a) harder, and (b) potentially time-consuming.
-  let tmpfile = "/tmp/Main"
-  system ("echo module Main where >"++tmpfile++".hs")
-  -- system ("cat " ...)
-  hPutStr f (
-    "module Main where\n\n" ++
-    concatMap (\m-> "import "++m++"\n") modules ++
-    "\n" ++ nonstdCoerce compiler ++
-    "\n" ++ nonstdShow compiler ++
-    "\nmain = let expr  = (" ++ expr ++ ")" ++
-    "\n           shown = show expr" ++
-    "\n       in case shown of" ++
-    "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
-    "\n           _                   -> putStrLn shown" ++
-    "\n")
-  hClose f
-  compile options compiler tmpfile (run tmpfile [])
-  where
--}
-
-compile options compiler file continue = do
-  putStr "[Compiling..."
---debug ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
-  ok <- system ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
-  case ok of
-    ExitSuccess -> do putStr (delete "[Compiling...")
-                      continue
-    _           -> putStrLn "...failed]"
- where
-  delete []     = ""
-  delete (_:xs) = "\BS \BS" ++ delete xs
-
-run file args = system (file++" "++unwords args) >> done
-
-commands :: [String] -> [String] -> Compiler -> [String] -> IO ()
-commands ws options compiler modules =
-  let target = tail ws in
-  do
-  command "quit" quit
-  command "Quit" quit
-  command "load"
-      (let mods = if null target then ["Prelude"]
-                  else (reverse ("Prelude":target))
-       in do loadAll options compiler mods
-             toplevel options compiler mods	-- explicit return with new module list
-      )
-  command "also"
-      (let mods = if null target then ["Prelude"]
-                  else (reverse target ++ modules)
-       in do loadAll options compiler mods
-             toplevel options compiler mods	-- explicit return with new module list
-       )
-  command "reload"
-       (do -- makeclean ".o" modules	-- NO, let hmake rebuild from changes
-           loadAll options compiler modules)
-  command "edit"
-      (if null target then do
-           e <- system ("$EDITOR " ++ head modules ++ ".hs")
-           load options compiler (head modules)
-       else do
-           e <- system ("$EDITOR " ++ unwords target)
-           loadAll options compiler modules
-      )
-  command "type"
-      ( do
-          let tmpfile = "/tmp/Main"
-          f <- openFile (tmpfile++".hs") WriteMode
-          hPutStr f (
-            "module Main where\n\n" ++
-            concatMap (\m-> "import "++m++"\n") modules ++
-            "\nmain = let expr  = (" ++ unwords target ++ ")" ++
-            "\n       in putStrLn ("++ nonstdShowsType compiler++" expr \"\")"++
-            "\n")
-          hClose f
-          compile options compiler tmpfile (run tmpfile [])
-      )
-  command "cd"
-      (if null target then do
-            dir <- getCurrentDirectory
-            putStrLn ("Current directory: "++dir)
-       else catch (setCurrentDirectory (head target)) print
-      )
-  command "dir" (getDirectoryContents "." >>= indent)
-  command "ls" (getDirectoryContents "." >>= indent)
-  command "pwd" (getCurrentDirectory >>= putStrLn)
-  command "set"
-      (do putStrLn ("Current settings:\n  "++concat (intersperse " " (options++target)))
-          toplevel (options++target) compiler modules)
-  command "unset"
-      (do let newopts = options \\ target
-          putStrLn ("Current settings:\n  "++concat (intersperse " " newopts))
-          toplevel newopts compiler modules)
-  command "hc"
-      (if null target then putStrLn ("Current compiler: "++show compiler)
-       else let newcomp = toComp (head target)
-                newopts = (options \\ defaultOptions compiler)
-                                   ++ defaultOptions newcomp
-            in
-            if compilerKnown newcomp then do
-               makeclean ".o" modules
-               makeclean ".hi" modules
-               loadAll newopts newcomp modules
-               toplevel newopts newcomp modules	-- explicit return
-            else do
-               putStrLn ("Compiler "++head target++" not known/configured")
-               putStrLn ("Current compiler: "++show compiler)
-      )
-  command "?" (putStrLn help)
-  putStrLn ("[Unknown command :"++head ws++"]")
- where
-  command :: String -> IO () -> IO ()
-  command name action =
-    if head ws `isPrefixOf` name then
-      do action
-         toplevel options compiler modules
-    else done
-  quit = do
-     putStrLn "[Leaving hmake interactive...]"
-     exitWith ExitSuccess
-  indent = mapM_ (\x-> putStrLn ("  "++x))
-
-loadAll options compiler modules =
-  mapM_ (load options compiler) (reverse modules)
-
-load options compiler mod = do
-  normal ".lhs" (
-    normal ".hs" (
-      normal ".gc" (
-        foldr  prelude
-              (putStrLn ("[Module "++mod++" not found...]"))
-              (preludePaths compiler))))
- where
-  normal :: String -> IO () -> IO ()
-  normal ext continue = do
-    let file = mod++ext
-    exist <- doesFileExist file
-    if exist then do
-        putStr ("[Found module... "++file++"] ")
-        compile options compiler file (putChar '\n')
-      else continue
-  prelude :: String -> IO () -> IO ()
-  prelude pp continue = do
-    hi <- doesFileExist (pp++"/"++mod++".hi")
-    if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
-          else continue
-
-makeclean ext modules = mapM_ (clean ext) modules
-  where
-  clean ext mod = do
-    let file = mod++ext
-    exist <- doesFileExist file
-    if exist then do
-        putStrLn ("[Removing    ... "++file++"]")
-        catch (removeFile file) print
-      else done
-
---fromOpt prefix opt =
---  if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
-
-{-
-scope file mod = do
-  system ("sed -e '/^module .* where.*/d' "++file++" >/tmp/"++file)
-  return ("/tmp/"++file)
--}
-
-#if defined(__HBC__)
-banner = "hi - hmake interactive                (Version: "++hmakeVersion++")"
-help   = "hi - help command does not work in hbc"
-
-#else
-banner = "\ 
-\__   __                 __             _____________________________________
-||   ||  ______    ___  || _  ____     hmake interactive (hi):
-||___|| || || ||  ___|| ||/  ||__||       Copyright (c) May 2000
-||---|| || || || ||__|| ||\\_ ||__         http://www.cs.york.ac.uk/fp/hmake/
-||   ||                                Report bugs to: malcolm@cs.york.ac.uk
-||   || Version: "++hmakeVersion++"    -------------------------------------"
-
-
-help = "\ 
-\Commands (can be abbreviated to first letter):
-  <expr>		evaluate expression
-  :type <expr>	 	show type of expression [nhc98 only]
-  :quit			quit
-  :Quit			quit
-  :load mod [mod...]	load modules (note, not filenames)
-  :load 		clear all modules
-  :reload 		repeat last load command
-  :also mod [mod...]	load additional modules (note, not filenames)
-  :module mod		set module scope for evaluating expressions
-  :edit file	 	edit filename
-  :edit 	 	edit current module
-  :cd dir		change directory
-  :cd 			show current directory
-  :dir 			list current directory
-  :hc compiler		set Haskell compiler to use
-  :set options		set hmake/compiler options
-  :unset options	remove hmake/compiler options
-  :!command 		shell escape"
-#endif
-
-
-
--- This module controls the configuration parameters for hmake-interactive
--- by (1) allowing environment variables to override default settings
---    (2) taking care of the small differences between Haskell compilers
-module HmakeConfig where
-
--- Known Haskell compilers and their locations are all automatically
--- generated into LocalConfig.
-import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
-                    hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
-
-#ifdef __HBC__
-import UnsafePerformIO
-#endif
-#ifdef __NHC__
-import IOExtras (unsafePerformIO)
-#endif
-#ifdef __GLASGOW_HASKELL__
-import IOExts (unsafePerformIO)
-#endif
-import System
-
--- Get an environment variable if it exists, or default to given string
-withDefault name def = unsafePerformIO $
-   catch (do val <- getEnv name
-             if null val then return def else return val)
-         (\e-> return def)
-
--- What compilers are possible choices?
-data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
-toComp "nhc98" = Nhc98
-toComp "ghc"   = Ghc
-toComp "hbc"   = Hbc
-toComp x       = Unknown x
-instance Show Compiler where
-  showsPrec p Nhc98 = showString "nhc98"
-  showsPrec p Ghc   = showString "ghc"
-  showsPrec p Hbc   = showString "hbc"
-  showsPrec p (Unknown x) = showString x
-
--- Which compilers do we actually have available?
-knownCompilers  = (if ghcKnown then (Ghc:) else id)
-                   ((if hbcKnown then (Hbc:) else id)
-                    ((if nhcKnown then (Nhc98:) else id) []))
-compilerKnown c = c `elem` knownCompilers
-
--- What are the differences between compilers?
-preludePaths c  = case c of
-    Nhc98 -> [nhc98incdir]
-    Hbc   -> hbcincpath
-    Ghc   -> ghcincpath
-    _     -> []
-nonstdCoerce c  = case c of
-    Nhc98 -> "import NonStdUnsafeCoerce\n\ 
-              \coerce=unsafeCoerce"
-    Hbc   -> "#define coerce coerceNotFound"
-    Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
-             \coerce :: a -> b\ncoerce = unsafeCoerce#"
-    _     -> ""
-nonstdShow c  = case c of
-    Nhc98 -> ""
-    Hbc   -> "instance Show (IO a) where\n\ 
-             \  showsPrec p x = showString \"<<IO action>>\""
-    Ghc   -> "instance Show (IO a) where\n\ 
-             \  showsPrec p x = showString \"<<IO action>>\""
-    _     -> ""
-nonstdShowsType c  = case c of
-    Nhc98 -> "showsType"
-    Hbc   -> "Operation'showsType'Unknown"
-    Ghc   -> "Operation'showsType'Unknown"
-    _     -> ""
-defaultOptions c = case c of
-    Nhc98 -> []
-    Hbc   -> []
-    Ghc   -> ["-fglasgow-exts"]
-    _     -> []
-
-
--- Ensure that a string has a fixed length by truncating or padding with space
-fixlength n s | len > n   = take n s
-              | otherwise = s ++ replicate (n-len) ' '
-  where len = length s
-
-hmakeVersion = fixlength 18 hmakeversion
-
-
--- This defines the default compiler hmake will call if none is specified
--- on the commandline.  (First look in the HC variable from the environment,
--- and if it is empty, then select the compiler we used to build hmake.
--- Actually defaultHc, set in LocalConfig, can be either the config variable
--- "builtby" or simply "nhc98".)
-defaultCompiler = toComp ("HC" `withDefault` defaultHc)
-
-
--- hbc, set up for either Haskell 1.3 or Haskell 98
---     LMLDIR/HBCDIR is the base directory of your hbc installation
---     hbcincpath is a list of directories containing .hi files
-
-hbcincpath =
-  let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
-  in [root++"/hlib1.3", root++"/hbc_library1.3"]
 
 
 
 
--- nhc98
---     nhc98incdir is a single directory containing standard .hi files
-
-nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
 
 
 
 
--- GHC, set up for various versions of the Haskell language
---     ghcincdir could be a single directory containing standard .hi files:
---  e.g.  ghcincdir=/usr/lib/ghc-3.02/lib/imports
---     or ghcincdir could be the base for...
---     ghcincpath containing multiple dirs each of which contains .hi files:
---  e.g.  ghcincdir=/usr/lib/ghc-4.04/imports
---        ghcincpath=$ghcincdir/exts $ghcincdir/text
+> 
+> {-
+> -- scopedEvaluate allows you to play with _unexported_ functions from the
+> -- current module.  This currently requires the restriction that "main" is
+> -- not otherwise defined in this module.
+> scopedEvaluate expr options compiler modules = do
+>   -- Ok, this isn't fully implemented yet, but the basic scenario is
+>   -- to copy the module to /tmp/Main.hs, removing a "module ... where"
+>   -- header if it exists (could replace with "module Main where", but
+>   -- that is unnecessary).  Add a "main = ..." definition to the end
+>   -- of the module, compile and run.  Additionally, it would be nice to
+>   -- search for an existing "main" definition and rename it to "_main",
+>   -- but that is (a) harder, and (b) potentially time-consuming.
+>   let tmpfile = "/tmp/Main"
+>   system ("echo module Main where >"++tmpfile++".hs")
+>   -- system ("cat " ...)
+>   hPutStr f (
+>     "module Main where\n\n" ++
+>     concatMap (\m-> "import "++m++"\n") modules ++
+>     "\n" ++ nonstdCoerce compiler ++
+>     "\n" ++ nonstdShow compiler ++
+>     "\nmain = let expr  = (" ++ expr ++ ")" ++
+>     "\n           shown = show expr" ++
+>     "\n       in case shown of" ++
+>     "\n           ('<':'<':'I':'O':_) -> coerce expr" ++
+>     "\n           _                   -> putStrLn shown" ++
+>     "\n")
+>   hClose f
+>   compile options compiler tmpfile (run tmpfile [])
+>   where
+> -}
+> 
+> compile options compiler file continue = do
+>   putStr "[Compiling..."
+> --debug ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
+>   ok <- system ("hmake -"++show compiler++" -I. "++unwords options++" "++file++" >/dev/null")
+>   case ok of
+>     ExitSuccess -> do putStr (delete "[Compiling...")
+>                       continue
+>     _           -> putStrLn "...failed]"
+>  where
+>   delete []     = ""
+>   delete (_:xs) = "\BS \BS" ++ delete xs
+> 
+> run file args = system (file++" "++unwords args) >> done
+> 
+> commands :: [String] -> [String] -> Compiler -> [String] -> IO ()
+> commands ws options compiler modules =
+>   let target = tail ws in
+>   do
+>   command "quit" quit
+>   command "Quit" quit
+>   command "load"
+>       (let mods = if null target then ["Prelude"]
+>                   else (reverse ("Prelude":target))
+>        in do loadAll options compiler mods
+>              toplevel options compiler mods	-- explicit return with new module list
+>       )
+>   command "also"
+>       (let mods = if null target then ["Prelude"]
+>                   else (reverse target ++ modules)
+>        in do loadAll options compiler mods
+>              toplevel options compiler mods	-- explicit return with new module list
+>        )
+>   command "reload"
+>        (do -- makeclean ".o" modules	-- NO, let hmake rebuild from changes
+>            loadAll options compiler modules)
+>   command "edit"
+>       (if null target then do
+>            e <- system ("$EDITOR " ++ head modules ++ ".hs")
+>            load options compiler (head modules)
+>        else do
+>            e <- system ("$EDITOR " ++ unwords target)
+>            loadAll options compiler modules
+>       )
+>   command "type"
+>       ( do
+>           let tmpfile = "/tmp/Main"
+>           f <- openFile (tmpfile++".hs") WriteMode
+>           hPutStr f (
+>             "module Main where\n\n" ++
+>             concatMap (\m-> "import "++m++"\n") modules ++
+>             "\nmain = let expr  = (" ++ unwords target ++ ")" ++
+>             "\n       in putStrLn ("++ nonstdShowsType compiler++" expr \"\")"++
+>             "\n")
+>           hClose f
+>           compile options compiler tmpfile (run tmpfile [])
+>       )
+>   command "cd"
+>       (if null target then do
+>             dir <- getCurrentDirectory
+>             putStrLn ("Current directory: "++dir)
+>        else catch (setCurrentDirectory (head target)) print
+>       )
+>   command "dir" (getDirectoryContents "." >>= indent)
+>   command "ls" (getDirectoryContents "." >>= indent)
+>   command "pwd" (getCurrentDirectory >>= putStrLn)
+>   command "set"
+>       (do putStrLn ("Current settings:\n  "++concat (intersperse " " (options++target)))
+>           toplevel (options++target) compiler modules)
+>   command "unset"
+>       (do let newopts = options \\ target
+>           putStrLn ("Current settings:\n  "++concat (intersperse " " newopts))
+>           toplevel newopts compiler modules)
+>   command "hc"
+>       (if null target then putStrLn ("Current compiler: "++show compiler)
+>        else let newcomp = toComp (head target)
+>                 newopts = (options \\ defaultOptions compiler)
+>                                    ++ defaultOptions newcomp
+>             in
+>             if compilerKnown newcomp then do
+>                makeclean ".o" modules
+>                makeclean ".hi" modules
+>                loadAll newopts newcomp modules
+>                toplevel newopts newcomp modules	-- explicit return
+>             else do
+>                putStrLn ("Compiler "++head target++" not known/configured")
+>                putStrLn ("Current compiler: "++show compiler)
+>       )
+>   command "?" (putStrLn help)
+>   putStrLn ("[Unknown command :"++head ws++"]")
+>  where
+>   command :: String -> IO () -> IO ()
+>   command name action =
+>     if head ws `isPrefixOf` name then
+>       do action
+>          toplevel options compiler modules
+>     else done
+>   quit = do
+>      putStrLn "[Leaving hmake interactive...]"
+>      exitWith ExitSuccess
+>   indent = mapM_ (\x-> putStrLn ("  "++x))
+> 
+> loadAll options compiler modules =
+>   mapM_ (load options compiler) (reverse modules)
+> 
+> load options compiler mod = do
+>   normal ".lhs" (
+>     normal ".hs" (
+>       normal ".gc" (
+>         foldr  prelude
+>               (putStrLn ("[Module "++mod++" not found...]"))
+>               (preludePaths compiler))))
+>  where
+>   normal :: String -> IO () -> IO ()
+>   normal ext continue = do
+>     let file = mod++ext
+>     exist <- doesFileExist file
+>     if exist then do
+>         putStr ("[Found module... "++file++"] ")
+>         compile options compiler file (putChar '\n')
+>       else continue
+>   prelude :: String -> IO () -> IO ()
+>   prelude pp continue = do
+>     hi <- doesFileExist (pp++"/"++mod++".hi")
+>     if hi then putStrLn ("[Std   module... "++pp++"/"++mod++".hi]")
+>           else continue
+> 
+> makeclean ext modules = mapM_ (clean ext) modules
+>   where
+>   clean ext mod = do
+>     let file = mod++ext
+>     exist <- doesFileExist file
+>     if exist then do
+>         putStrLn ("[Removing    ... "++file++"]")
+>         catch (removeFile file) print
+>       else done
+> 
+> --fromOpt prefix opt =
+> --  if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
+> 
+> {-
+> scope file mod = do
+>   system ("sed -e '/^module .* where.*/d' "++file++" >/tmp/"++file)
+>   return ("/tmp/"++file)
+> -}
+> 
+> #if defined(__HBC__)
+> banner = "hi - hmake interactive                (Version: "++hmakeVersion++")"
+> help   = "hi - help command does not work in hbc"
+> 
+> #else
 
 
--- Depending on compiler version, we have to choose interface paths.
---   ghcver is the value of __GLASGOW_HASKELL__
---   ghclang takes the values 2,3,4,5, corresponding to 1.2, 1.3, 1.4 and 98.
+> 
+> 
+> help = "\ 
+> \Commands (can be abbreviated to first letter):
+>   <expr>		evaluate expression
+>   :type <expr>	 	show type of expression [nhc98 only]
+>   :quit			quit
+>   :Quit			quit
+>   :load mod [mod...]	load modules (note, not filenames)
+>   :load 		clear all modules
+>   :reload 		repeat last load command
+>   :also mod [mod...]	load additional modules (note, not filenames)
+>   :module mod		set module scope for evaluating expressions
+>   :edit file	 	edit filename
+>   :edit 	 	edit current module
+>   :cd dir		change directory
+>   :cd 			show current directory
+>   :dir 			list current directory
+>   :hc compiler		set Haskell compiler to use
+>   :set options		set hmake/compiler options
+>   :unset options	remove hmake/compiler options
+>   :!command 		shell escape"
+> #endif
+> 
+> 
+> 
+> -- This module controls the configuration parameters for hmake-interactive
+> -- by (1) allowing environment variables to override default settings
+> --    (2) taking care of the small differences between Haskell compilers
+> module HmakeConfig where
+> 
+> -- Known Haskell compilers and their locations are all automatically
+> -- generated into LocalConfig.
+> import LocalConfig (hmakeversion, builtby, ghcKnown, hbcKnown, nhcKnown,
+>                     hbcdir, nhc98dir, ghcdir, ghcver, ghclang, defaultHc)
+> 
+> #ifdef __HBC__
+> import UnsafePerformIO
+> #endif
+> #ifdef __NHC__
+> import IOExtras (unsafePerformIO)
+> #endif
+> #ifdef __GLASGOW_HASKELL__
+> import IOExts (unsafePerformIO)
+> #endif
+> import System
+> 
+> -- Get an environment variable if it exists, or default to given string
+> withDefault name def = unsafePerformIO $
+>    catch (do val <- getEnv name
+>              if null val then return def else return val)
+>          (\e-> return def)
+> 
+> -- What compilers are possible choices?
+> data Compiler = Nhc98 | Ghc | Hbc | Unknown String deriving (Eq)
+> toComp "nhc98" = Nhc98
+> toComp "ghc"   = Ghc
+> toComp "hbc"   = Hbc
+> toComp x       = Unknown x
+> instance Show Compiler where
+>   showsPrec p Nhc98 = showString "nhc98"
+>   showsPrec p Ghc   = showString "ghc"
+>   showsPrec p Hbc   = showString "hbc"
+>   showsPrec p (Unknown x) = showString x
+> 
+> -- Which compilers do we actually have available?
+> knownCompilers  = (if ghcKnown then (Ghc:) else id)
+>                    ((if hbcKnown then (Hbc:) else id)
+>                     ((if nhcKnown then (Nhc98:) else id) []))
+> compilerKnown c = c `elem` knownCompilers
+> 
+> -- What are the differences between compilers?
+> preludePaths c  = case c of
+>     Nhc98 -> [nhc98incdir]
+>     Hbc   -> hbcincpath
+>     Ghc   -> ghcincpath
+>     _     -> []
+> nonstdCoerce c  = case c of
+>     Nhc98 -> "import NonStdUnsafeCoerce\n\ 
+>               \coerce=unsafeCoerce"
+>     Hbc   -> "#define coerce coerceNotFound"
+>     Ghc   -> "import PrelGHC(unsafeCoerce#)\n\ 
+>              \coerce :: a -> b\ncoerce = unsafeCoerce#"
+>     _     -> ""
+> nonstdShow c  = case c of
+>     Nhc98 -> ""
+>     Hbc   -> "instance Show (IO a) where\n\ 
+>              \  showsPrec p x = showString \"<<IO action>>\""
+>     Ghc   -> "instance Show (IO a) where\n\ 
+>              \  showsPrec p x = showString \"<<IO action>>\""
+>     _     -> ""
+> nonstdShowsType c  = case c of
+>     Nhc98 -> "showsType"
+>     Hbc   -> "Operation'showsType'Unknown"
+>     Ghc   -> "Operation'showsType'Unknown"
+>     _     -> ""
+> defaultOptions c = case c of
+>     Nhc98 -> []
+>     Hbc   -> []
+>     Ghc   -> ["-fglasgow-exts"]
+>     _     -> []
+> 
+> 
+> -- Ensure that a string has a fixed length by truncating or padding with space
+> fixlength n s | len > n   = take n s
+>               | otherwise = s ++ replicate (n-len) ' '
+>   where len = length s
+> 
+> hmakeVersion = fixlength 18 hmakeversion
+> 
+> 
+> -- This defines the default compiler hmake will call if none is specified
+> -- on the commandline.  (First look in the HC variable from the environment,
+> -- and if it is empty, then select the compiler we used to build hmake.
+> -- Actually defaultHc, set in LocalConfig, can be either the config variable
+> -- "builtby" or simply "nhc98".)
+> defaultCompiler = toComp ("HC" `withDefault` defaultHc)
+> 
+> 
+> -- hbc, set up for either Haskell 1.3 or Haskell 98
+> --     LMLDIR/HBCDIR is the base directory of your hbc installation
+> --     hbcincpath is a list of directories containing .hi files
+> 
+> hbcincpath =
+>   let root = "HBCDIR" `withDefault` ("LMLDIR" `withDefault` hbcdir)
+>   in [root++"/hlib1.3", root++"/hbc_library1.3"]
+> 
+> 
+> 
+> 
+> -- nhc98
+> --     nhc98incdir is a single directory containing standard .hi files
+> 
+> nhc98incdir= "NHC98INCDIR" `withDefault` nhc98dir
+> 
+> 
+> 
+> 
+> -- GHC, set up for various versions of the Haskell language
+> --     ghcincdir could be a single directory containing standard .hi files:
+> --  e.g.  ghcincdir=/usr/lib/ghc-3.02/lib/imports
+> --     or ghcincdir could be the base for...
+> --     ghcincpath containing multiple dirs each of which contains .hi files:
+> --  e.g.  ghcincdir=/usr/lib/ghc-4.04/imports
+> --        ghcincpath=$ghcincdir/exts $ghcincdir/text
+> 
+> 
+> -- Depending on compiler version, we have to choose interface paths.
+> --   ghcver is the value of __GLASGOW_HASKELL__
+> --   ghclang takes the values 2,3,4,5, corresponding to 1.2, 1.3, 1.4 and 98.
+> 
+> ghcincpath =
+>   let ghcincdir = "GHCINCDIR" `withDefault` ghcdir
+>   in
+>   if ghclang < 5 then
+>       -- ghc before Haskell'98
+>       [ghcincdir]
+>   else if ghcver < 406 then
+>       -- ghc for Haskell'98, prior to hslibs
+>       [ghcincdir++"/std"
+>       ,ghcincdir++"/exts"
+>       ,ghcincdir++"/misc"
+>       ,ghcincdir++"/posix"]
+>   else
+>       -- ghc for Haskell'98, with new hslibs
+>       [ghcincdir++"/std"
+>       ,ghcincdir++"/data"
+>       ,ghcincdir++"/lang"
+>       ,ghcincdir++"/misc"
+>       ,ghcincdir++"/net"
+>       ,ghcincdir++"/num"
+>       ,ghcincdir++"/text"
+>       ,ghcincdir++"/util"
+>       ,ghcincdir++"/win32"
+>       ,ghcincdir++"/posix"]
+> 
+> 
+> 
+> {-
+> -- From here on down, definitions are added by the config script.
+> -- Change these if you like, but be warned that re-running the
+> -- autoconfiguring step will erase your changes.
+> hmakeversion
+> builtby
+> ghcKnown
+> hbcKnown
+> nhcKnown
+> hbcdir
+> nhc98dir
+> ghcdir
+> ghcver
+> ghclang
+> defaultHc
+> -}
+> 
+> 
+> module LocalConfig where
+> hmakeversion = "1.8 or better"
+> builtby = "ghc"
+> ghcKnown =  True
+> hbcKnown =  True
+> nhcKnown =  True
+> hbcdir = "/usr/malcolm/local/lib/lmlc"
+> nhc98dir = "/usr/malcolm/local/include/nhc98"
+> ghcdir = "/usr/malcolm/local/lib/ghc-4.06/imports"
+> ghcver = 406
+> ghclang =     5
+> defaultHc = builtby
 
-ghcincpath =
-  let ghcincdir = "GHCINCDIR" `withDefault` ghcdir
-  in
-  if ghclang < 5 then
-      -- ghc before Haskell'98
-      [ghcincdir]
-  else if ghcver < 406 then
-      -- ghc for Haskell'98, prior to hslibs
-      [ghcincdir++"/std"
-      ,ghcincdir++"/exts"
-      ,ghcincdir++"/misc"
-      ,ghcincdir++"/posix"]
-  else
-      -- ghc for Haskell'98, with new hslibs
-      [ghcincdir++"/std"
-      ,ghcincdir++"/data"
-      ,ghcincdir++"/lang"
-      ,ghcincdir++"/misc"
-      ,ghcincdir++"/net"
-      ,ghcincdir++"/num"
-      ,ghcincdir++"/text"
-      ,ghcincdir++"/util"
-      ,ghcincdir++"/win32"
-      ,ghcincdir++"/posix"]
-
-
-
-{-
--- From here on down, definitions are added by the config script.
--- Change these if you like, but be warned that re-running the
--- autoconfiguring step will erase your changes.
-hmakeversion
-builtby
-ghcKnown
-hbcKnown
-nhcKnown
-hbcdir
-nhc98dir
-ghcdir
-ghcver
-ghclang
-defaultHc
--}
-
-
-module LocalConfig where
-hmakeversion = "1.8 or better"
-builtby = "ghc"
-ghcKnown =  True
-hbcKnown =  True
-nhcKnown =  True
-hbcdir = "/usr/malcolm/local/lib/lmlc"
-nhc98dir = "/usr/malcolm/local/include/nhc98"
-ghcdir = "/usr/malcolm/local/lib/ghc-4.06/imports"
-ghcver = 406
-ghclang =     5
-defaultHc = builtby
