@@ -265,6 +265,7 @@ C_HEADER(_tprim_packString)
 {
   NodePtr sptr, s, ch, res;
   int len = 0, swords;
+  CTrace *tracearg;
   char *sp;
   sptr = C_GETARG1(2); /* sptr is a fully evaluated string */
   IND_REMOVE(sptr);
@@ -281,7 +282,9 @@ C_HEADER(_tprim_packString)
   res = C_ALLOC(3+EXTRA+1+EXTRA+swords);
   res[0] = CONSTRR(0, 2, 0);
   res[EXTRA+1] = (Node)&res[EXTRA+3];
-  res[EXTRA+2] = (Node)mkTNm((CTrace*)C_GETARG1(1), mkNmCString((char*)&res[EXTRA+3]), mkSR());
+/*res[EXTRA+2] = (Node)mkTNm(tracearg,mkNmCString((char*)&res[EXTRA+3]),mkSR());
+  -- (defer until the CString is fully evaluated) */
+  tracearg = (CTrace*)C_GETARG1(1);
 #ifdef PROFILE
   INIT_PROFINFO(res, &dummyProfInfo)
 #endif
@@ -306,6 +309,8 @@ C_HEADER(_tprim_packString)
     IND_REMOVE(s);
   }
   *sp = '\0';
+  res[EXTRA+2] = (Node)mkTNm(tracearg,mkNmCString((char*)&res[EXTRA+3+EXTRA+1])
+                            ,mkSR());
   /* fprintf(stderr, "packString: '%s'\n", &res[3+EXTRA+1+EXTRA]);*/
   C_RETURN(res);
 }
