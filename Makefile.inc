@@ -17,6 +17,10 @@ HVERSION = 3.04
 # HVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
 
+HATVERSION = 1.13
+# HATVERSION is the separate version number for hat.
+#   (odd minor number = CVS version;  even minor number = release version)
+
 
 ### End of configurable variables
 
