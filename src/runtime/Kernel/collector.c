@@ -8,7 +8,7 @@
 #include "mark.h"
 
 /*#define HEAPSIZE 100000  -- defined in top-level Makefile at config-time */
-#define STACKSIZE 20000
+#define GCSTACKSIZE 20000
 
 WHEN_DYNAMIC(int ractive = 0;)
 
@@ -19,7 +19,7 @@ NodePtr bitTable;
 
 /* int hpSize = HEAPSIZE;  -- defined at compile-time, and linked in */
 extern int hpSize;
-int spSize = STACKSIZE;
+int spSize = GCSTACKSIZE;
 NodePtr hpStart,hpEnd;
 NodePtr *spStart,*spEnd;
 UserGC *user_gc = NULL;
