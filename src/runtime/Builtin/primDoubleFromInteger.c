@@ -13,7 +13,12 @@ C_HEADER(primDoubleFromInteger)
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   ret = C_ALLOC(SIZE_DOUBLE);
-  mk_double(ret,sencode((MP_INT*) nodeptr, 0));
+  mk_double(ret,dencode((MP_INT*) nodeptr, 0));
   INIT_PROFINFO(ret,&nodeProfInfo)
   C_RETURN(ret);
+}
+
+double primDoubleFromIntegerC (NodePtr nodeptr)
+{
+  return (dencode((MP_INT*) nodeptr, 0));
 }
