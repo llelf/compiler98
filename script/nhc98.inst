@@ -24,6 +24,9 @@ then
   exit 1
 fi
 
+# Fix a broken 'mv' command on Cygwin
+mv () { { cp $1 $2 && rm $1; } || echo "Warning: can't move $1 to $2"; }
+
 # If USINGRTS is non-zero then flags to the runtime is enclosed in
 #     +RTS runtimeflags -RTS,
 # otherwise only a - is inserted after the runtime flags.
