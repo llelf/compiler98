@@ -2,7 +2,7 @@ module TraceDerive where
 
 import Syntax
 import TraceId 
-  (TraceId,mkLambdaBound,tokenId,getUnqualified,dropModule
+  (TraceId,mkLambdaBound,tokenId,getUnqualified,dropModule,modArity
   ,tPriority,tFixity,Fixity(..)
   ,tTokenTrue,tTokenFalse,tTokenEqualEqual,tTokenAndAnd
   ,tTokenEQ,tTokenCompare,tTokenLocalFromEnum,tTokenInt
@@ -59,7 +59,7 @@ deriveEq :: Pos
 deriveEq pos contexts cls ty constrs =
   DeclInstance pos contexts cls ty 
     (DeclsParse 
-      [DeclFun pos (dropModule tTokenEqualEqual)
+      [DeclFun pos (modArity (dropModule tTokenEqualEqual) 2)
         (map funEqConstr constrs ++ 
           [Fun [PatWildcard pos,PatWildcard pos] 
             (Unguarded (ExpCon pos tTokenFalse)) noDecls])])
@@ -96,7 +96,7 @@ deriveOrd :: Pos
 deriveOrd pos contexts cls ty constrs =
   DeclInstance pos contexts cls ty 
     (DeclsParse 
-      [DeclFun pos (dropModule tTokenCompare)
+      [DeclFun pos (modArity (dropModule tTokenCompare) 2)
         (concatMap funCompareEqConstr constrs ++ 
           [Fun [var1,var2] 
             (Unguarded 
@@ -151,23 +151,23 @@ deriveBounded pos contexts cls ty constrs =
     (if all (== 0) (map constrArity constrs) 
       then
         (DeclsParse
-          [DeclFun pos (dropModule tTokenMinBound) 
+          [DeclFun pos (modArity (dropModule tTokenMinBound) 0)
             [Fun [] (Unguarded (ExpCon pos (getConstrId (head constrs)))) 
               noDecls]
-          ,DeclFun pos (dropModule tTokenMaxBound) 
+          ,DeclFun pos (modArity (dropModule tTokenMaxBound) 0)
             [Fun [] (Unguarded (ExpCon pos (getConstrId (last constrs)))) 
               noDecls]])
       else {- exactly one constructor -}
         let [constr] = constrs in
           (DeclsParse
-            [DeclFun pos (dropModule tTokenMinBound) 
+            [DeclFun pos (modArity (dropModule tTokenMinBound) 0)
               [Fun [] (Unguarded 
                   (ExpApplication pos 
                     (ExpCon pos (getConstrId (head constrs)) 
                     : replicate (constrArity constr) 
                         (ExpVar pos tTokenMinBound)) )) 
               noDecls]
-            ,DeclFun pos (dropModule tTokenMaxBound) 
+            ,DeclFun pos (modArity (dropModule tTokenMaxBound) 0)
               [Fun [] (Unguarded 
                   (ExpApplication pos 
                     (ExpCon pos (getConstrId (head constrs)) 
@@ -185,22 +185,22 @@ deriveEnum pos contexts cls ty constrs =
   -- assert: all (== 0) (map constrArity constrs) 
   DeclInstance pos contexts cls ty
     (DeclsParse
-      [DeclFun pos (dropModule tTokenFromEnum) 
+      [DeclFun pos (modArity (dropModule tTokenFromEnum) 1)
         (zipWith funFromEnum constrs [0..])
-      ,DeclFun pos (dropModule tTokenToEnum) 
+      ,DeclFun pos (modArity (dropModule tTokenToEnum) 1)
         (zipWith funToEnum constrs [0..] ++ 
           [Fun [PatWildcard pos] (Unguarded 
             (ExpApplication pos 
               [ExpVar pos tTokenError
               ,ExpLit pos (LitString Boxed "toEnum: argument out of bounds")]))
             noDecls])
-      ,DeclFun pos (dropModule tTokenEnumFrom)
+      ,DeclFun pos (modArity (dropModule tTokenEnumFrom) 1)
         [Fun [var1] (Unguarded 
           (ExpApplication pos
             [ExpVar pos tTokenEnumFromTo,var1
             ,ExpCon pos (getConstrId (last constrs))]))
           noDecls]
-      ,DeclFun pos (dropModule tTokenEnumFromThen)
+      ,DeclFun pos (modArity (dropModule tTokenEnumFromThen) 2)
         [Fun [var1,var2] (Unguarded
           (ExpApplication pos
             [ExpVar pos tTokenEnumFromThenTo,var1,var2
@@ -233,7 +233,7 @@ deriveShow :: Pos
 deriveShow pos contexts cls ty constrs =
   DeclInstance pos contexts cls ty
     (DeclsParse
-      [DeclFun pos (dropModule tTokenShowsPrec) 
+      [DeclFun pos (modArity (dropModule tTokenShowsPrec) 2)
         (map funShowsPrec constrs)])
   where
   precVar:vars = traceVars pos
@@ -311,7 +311,7 @@ deriveRead :: Pos
 deriveRead pos contexts cls ty constrs =
   DeclInstance pos contexts cls ty
     (DeclsParse
-      [DeclFun pos (dropModule tTokenReadsPrec) 
+      [DeclFun pos (modArity (dropModule tTokenReadsPrec) 1)
         [Fun [precVar] (Unguarded (foldr1 alt . map expReadsPrec $ constrs)) 
           noDecls]])
   where
@@ -380,7 +380,7 @@ deriveIx pos contexts cls ty constrs =
     (if all (== 0) (map constrArity constrs) 
       then
         (DeclsParse
-          [DeclFun pos (dropModule tTokenRange) 
+          [DeclFun pos (modArity (dropModule tTokenRange) 1)
             [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar]] 
               (Unguarded 
                 (ExpApplication pos 
@@ -390,7 +390,7 @@ deriveIx pos contexts cls ty constrs =
                     ,ExpApplication pos [fromEnumVar,lvar]
                     ,ExpApplication pos [fromEnumVar,uvar]]]))
               (DeclsParse (declsToEnum ++ declsFromEnum))]
-          ,DeclFun pos (dropModule tTokenIndex) 
+          ,DeclFun pos (modArity (dropModule tTokenIndex) 2)
             [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar],ivar] 
               (Unguarded 
                 (ExpApplication pos 
@@ -398,7 +398,7 @@ deriveIx pos contexts cls ty constrs =
                   ,ExpApplication pos [fromEnumVar,ivar]
                   ,ExpApplication pos [fromEnumVar,lvar]]))
               (DeclsParse declsFromEnum)]
-          ,DeclFun pos (dropModule tTokenInRange) 
+          ,DeclFun pos (modArity (dropModule tTokenInRange) 2)
             [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar],ivar] 
               (Unguarded 
                 (ExpApplication pos 
@@ -412,7 +412,7 @@ deriveIx pos contexts cls ty constrs =
           ])
       else {- exactly one constructor -}
         (DeclsParse
-          [DeclFun pos (dropModule tTokenRange) 
+          [DeclFun pos (modArity (dropModule tTokenRange) 1)
             [Fun 
               [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]]
               (Unguarded 
@@ -420,7 +420,7 @@ deriveIx pos contexts cls ty constrs =
                   (ExpApplication pos [ExpVar pos tTokenReturn,conIvars]) 
                   (zipWith3 rangeComb lvars uvars ivars)))
               noDecls]
-          ,DeclFun pos (dropModule tTokenIndex) 
+          ,DeclFun pos (modArity (dropModule tTokenIndex) 2)
             [Fun 
               [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]
               ,conIvars] 
@@ -429,7 +429,7 @@ deriveIx pos contexts cls ty constrs =
                   (indexExp (head lvars) (head uvars) (head ivars)) 
                   (tail (zipWith3 indexComb lvars uvars ivars))))
               noDecls]
-          ,DeclFun pos (dropModule tTokenInRange) 
+          ,DeclFun pos (modArity (dropModule tTokenInRange) 2)
             [Fun 
               [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]
               ,conIvars] 

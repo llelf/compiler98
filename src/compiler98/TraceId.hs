@@ -8,6 +8,7 @@ module TraceId
   , dropModule          -- :: TraceId -> TraceId
   , modLambdaBound      -- :: TraceId -> TraceId
   , modLetBound         -- :: TraceId -> TraceId
+  , modArity            -- :: TraceId -> Int -> TraceId
 			-- selectors:
   , tokenId		-- :: TraceId -> TokenId
   , arity		-- :: TraceId -> Maybe Int
@@ -70,6 +71,10 @@ modLambdaBound (TI token Nothing) = mkLambdaBound token
 modLetBound :: TraceId -> TraceId
 modLetBound (TI token (Just aux)) = TI token (Just aux{letBound=True,args=0})
 modLetBound (TI token Nothing) = error "modLetBound"
+
+modArity :: TraceId -> Int -> TraceId
+modArity (TI token (Just aux)) arity = TI token (Just aux{args=arity})
+modArity (TI token Nothing) arity = error "modArity"
 
 -- selection functions
 

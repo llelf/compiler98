@@ -163,6 +163,9 @@ data Annot id = AnnotArity (Pos,id) Int
 --                 lhs pats, guarded exprs,   local defs
 data Fun id = Fun  [Pat id] (Rhs id) (Decls id)
 
+funArity :: Fun id -> Int
+funArity = length . \(Fun ps _ _) -> ps
+
 data Alt id = Alt  (Pat id) (Rhs id) (Decls id)
 
 data Rhs id = Unguarded (Exp id)

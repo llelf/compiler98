@@ -173,7 +173,10 @@ instance Relabel Decl where
   relabel env (DeclPat alt@(Alt pat rhs decls)) =
 	DeclPat (relabel env alt)
   relabel env (DeclFun p f funs) =
-	DeclFun p (letVar env f) (map (relabel env) funs)
+	DeclFun p 
+          -- ensure that defined id always with arity, even in class/instance
+          (modArity (letVar env f) (funArity . head $ funs))
+          (map (relabel env) funs)
   relabel env (DeclIgnore str) = DeclIgnore str
   relabel env (DeclError str) = DeclError str
   relabel env (DeclAnnot decl annots) =
