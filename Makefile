@@ -154,11 +154,13 @@ TARGETS= runtime bootprelude prelude greencard hp2graph \
 basic: basic-${BUILDCOMP}
 all:   all-${BUILDCOMP}
 tracer: tracer-${BUILDCOMP}
+compiler: compiler-${BUILDCOMP}
 help:
-	@echo "Common targets include:        basic all install clean realclean config"
+	@echo "Common targets include:        basic all install config"
+	@echo "                               cleanhi clean realclean"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
-	@echo "  (other subtargets: runtime prelude profile timeprof tracer hp2graph"
+	@echo "  (other subtargets: compiler runtime prelude profile timeprof tracer hp2graph"
 	@echo "                     compiler-hbc  compiler-ghc  compiler-nhc"
 	@echo "                     tracer-hbc    tracer-ghc    tracer-nhc"
 	@echo "                     hmake-hbc     hmake-ghc     hmake-nhc"
