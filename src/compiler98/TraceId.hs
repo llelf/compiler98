@@ -25,7 +25,9 @@ module TraceId
   ,tTokenEnumFromTo,tTokenEnumFromThenTo,tTokenError
   ,tTokenCompose,tTokenShowsPrec,tTokenShowParen,tTokenShowChar
   ,tTokenShowString,tTokenReadsPrec,tTokenReadParen,tTokenYield
-  ,tTokenAlt,tTokenThenAp,tTokenThenLex -- :: TraceId
+  ,tTokenAlt,tTokenThenAp,tTokenThenLex,tTokenRange,tTokenIndex,tTokenInRange
+  ,tTokenMap,tTokenLocalToEnum,tTokenTuple2,tTokenFun
+  ,tTokenRangeSize,tTokenReturn,tTokenPlus,tTokenTimes -- :: TraceId
   ) where
 
 import TokenId 
@@ -34,7 +36,7 @@ import TokenId
   ,tFalse,tEQ,tcompare,visImport,tInt,tminBound,tmaxBound
   ,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,tenumFromTo
   ,tenumFromThenTo,t_error,t_dot,tshowsPrec,tshowParen,tshowChar
-  ,tshowString,treadsPrec,treadParen)
+  ,tshowString,treadsPrec,treadParen,trange,tindex,tinRange,t_Tuple,t_Arrow)
 import AuxTypes (AuxiliaryInfo(..),Fixity(..),emptyAux)
 import Maybe (isJust)
 import PackedString (unpackPS)
@@ -218,4 +220,35 @@ tTokenThenLex = mkQualifiedTokenId "PreludeBasic" "thenLex" `plus` emptyAux{args
 tTokenThenAp :: TraceId
 tTokenThenAp = mkQualifiedTokenId "PreludeBasic" "thenAp" `plus` emptyAux{args=0}
 
+tTokenRange :: TraceId
+tTokenRange = trange `plus` emptyAux
 
+tTokenIndex :: TraceId
+tTokenIndex = tindex `plus` emptyAux
+
+tTokenInRange :: TraceId
+tTokenInRange = tinRange `plus` emptyAux
+
+tTokenMap :: TraceId
+tTokenMap = mkQualifiedTokenId "PreludeBasic" "map" `plus` emptyAux{args=2}
+
+tTokenLocalToEnum :: TraceId
+tTokenLocalToEnum = visImport "localToEnum" `plus` emptyAux{args=1}
+
+tTokenTuple2 :: TraceId
+tTokenTuple2 = t_Tuple 2 `plus` emptyAux{args=2}
+
+tTokenFun :: TraceId
+tTokenFun = t_Arrow `plus` emptyAux
+
+tTokenRangeSize :: TraceId
+tTokenRangeSize = mkQualifiedTokenId "Ix" "rangeSize" `plus` emptyAux
+
+tTokenReturn :: TraceId
+tTokenReturn = mkQualifiedTokenId "PreludeBasic" "return" `plus` emptyAux
+
+tTokenPlus :: TraceId
+tTokenPlus = mkQualifiedTokenId "PreludeBasic" "+" `plus` emptyAux
+
+tTokenTimes :: TraceId
+tTokenTimes = mkQualifiedTokenId "PreludeBasic" "*" `plus` emptyAux

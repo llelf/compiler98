@@ -11,7 +11,9 @@ import TraceId
   ,tTokenEnumFromThenTo,tTokenGreater,tTokenGreaterEqual,tTokenCompose
   ,tTokenShowsPrec,tTokenShowParen,tTokenShowString,tTokenShowChar
   ,tTokenReadsPrec,tTokenReadParen,tTokenYield,tTokenAlt,tTokenThenAp
-  ,tTokenThenLex)
+  ,tTokenThenLex,tTokenRange,tTokenIndex,tTokenInRange,tTokenMap,tTokenMinus
+  ,tTokenLocalToEnum,tTokenTuple2,tTokenFun,tTokenRangeSize
+  ,tTokenGtGtEq,tTokenPlus,tTokenTimes,tTokenReturn)
 import TokenId (mkUnqualifiedTokenId,tEq)
 
 -- ----------------------------------------------------------------------------
@@ -39,7 +41,8 @@ deriveClass tyContexts instTy pTyVars constrs (pos,cls)
     deriveRead pos usualContexts cls instTy constrs
   | getUnqualified cls == "Show" = 
     deriveShow pos usualContexts cls instTy constrs
-  | getUnqualified cls == "Ix" = DeclIgnore "Missing derived instance"
+  | getUnqualified cls == "Ix" = 
+    deriveIx pos usualContexts cls instTy constrs
   | otherwise = error ("deriveClass: unknown class " ++ show (tokenId cls))
   where
   -- this is a HACK that covers only the common cases
@@ -366,6 +369,137 @@ deriveRead pos contexts cls ty constrs =
     priority = toInteger (tPriority conId)
     priorityPlus1 = priority+1 
 
+-- ----------------------------------------------------------------------------
+
+deriveIx :: Pos 
+         -> [Context TraceId] -> TraceId -> Instance TraceId 
+         -> [Constr TraceId] 
+         -> Decl TraceId
+deriveIx pos contexts cls ty constrs =
+  DeclInstance pos contexts cls ty 
+    (if all (== 0) (map constrArity constrs) 
+      then
+        (DeclsParse
+          [DeclFun pos (dropModule tTokenRange) 
+            [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar]] 
+              (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos tTokenMap,toEnumVar
+                  ,ExpApplication pos 
+                    [ExpVar pos tTokenEnumFromTo
+                    ,ExpApplication pos [fromEnumVar,lvar]
+                    ,ExpApplication pos [fromEnumVar,uvar]]]))
+              (DeclsParse (declsToEnum ++ declsFromEnum))]
+          ,DeclFun pos (dropModule tTokenIndex) 
+            [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar],ivar] 
+              (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos tTokenMinus
+                  ,ExpApplication pos [fromEnumVar,ivar]
+                  ,ExpApplication pos [fromEnumVar,lvar]]))
+              (DeclsParse declsFromEnum)]
+          ,DeclFun pos (dropModule tTokenInRange) 
+            [Fun [ExpApplication pos [ExpCon pos tTokenTuple2,lvar,uvar],ivar] 
+              (Unguarded 
+                (ExpApplication pos 
+                  [ExpVar pos tTokenInRange
+                  ,ExpApplication pos 
+                    [ExpCon pos tTokenTuple2
+                    ,ExpApplication pos [fromEnumVar,lvar]
+                    ,ExpApplication pos [fromEnumVar,uvar]]
+                  ,ExpApplication pos [fromEnumVar,ivar]]))
+              (DeclsParse declsFromEnum)]
+          ])
+      else {- exactly one constructor -}
+        (DeclsParse
+          [DeclFun pos (dropModule tTokenRange) 
+            [Fun 
+              [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]]
+              (Unguarded 
+                (foldr ($) 
+                  (ExpApplication pos [ExpVar pos tTokenReturn,conIvars]) 
+                  (zipWith3 rangeComb lvars uvars ivars)))
+              noDecls]
+          ,DeclFun pos (dropModule tTokenIndex) 
+            [Fun 
+              [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]
+              ,conIvars] 
+              (Unguarded
+                (foldl (flip ($))
+                  (indexExp (head lvars) (head uvars) (head ivars)) 
+                  (tail (zipWith3 indexComb lvars uvars ivars))))
+              noDecls]
+          ,DeclFun pos (dropModule tTokenInRange) 
+            [Fun 
+              [ExpApplication pos [ExpCon pos tTokenTuple2,conLvars,conUvars]
+              ,conIvars] 
+              (Unguarded
+                (foldr1 andExp (zipWith3 inRangeExp lvars uvars ivars))) 
+              noDecls]
+          ]))
+  where
+  -- for enumeration type
+  lvar:uvar:ivar:_ = traceVars pos
+  fromEnumVar = ExpVar pos tTokenLocalFromEnum
+  toEnumVar = ExpVar pos tTokenLocalToEnum
+  declsFromEnum :: [Decl TraceId]
+  declsFromEnum = 
+    [DeclVarsType [(pos,tTokenLocalFromEnum)] [] 
+      (TypeCons pos tTokenFun [ty,TypeCons pos tTokenInt []])
+    ,DeclFun pos tTokenLocalFromEnum (zipWith funFromEnum constrs [0..])] 
+  declsToEnum = 
+    [DeclVarsType [(pos,tTokenLocalToEnum)] [] 
+      (TypeCons pos tTokenFun [TypeCons pos tTokenInt [],ty])
+    ,DeclFun pos tTokenLocalToEnum (zipWith funToEnum constrs [0..])]
+  funFromEnum constr num =
+    Fun [ExpCon pos (getConstrId constr)] 
+      (Unguarded (ExpLit pos (LitInteger Boxed num))) noDecls
+  funToEnum constr num =
+    Fun [ExpLit pos (LitInteger Boxed num)] 
+      (Unguarded (ExpCon pos (getConstrId constr))) noDecls
+  -- for single constructor type
+  [constr] = constrs
+  conId = getConstrId constr
+  arity = constrArity constr
+  (lvars,vars1) = splitAt arity (traceVars pos)
+  (uvars,vars2) = splitAt arity vars1
+  ivars = take arity vars2
+  conLvars = ExpApplication pos (ExpCon pos conId:lvars)
+  conUvars = ExpApplication pos (ExpCon pos conId:uvars)
+  conIvars = ExpApplication pos (ExpCon pos conId:ivars)
+  rangeComb :: Exp TraceId -> Exp TraceId -> Exp TraceId -> Exp TraceId 
+            -> Exp TraceId
+  rangeComb l u i cont = 
+    ExpApplication pos 
+      [ExpVar pos tTokenGtGtEq
+      ,ExpApplication pos 
+        [ExpVar pos tTokenRange
+        ,ExpApplication pos [ExpCon pos tTokenTuple2,l,u]]
+      ,ExpLambda pos [i] cont]
+  indexExp l u i =
+    ExpApplication pos 
+      [ExpVar pos tTokenIndex
+      ,ExpApplication pos [ExpCon pos tTokenTuple2,l,u]
+      ,i]
+  indexComb :: Exp TraceId -> Exp TraceId -> Exp TraceId -> Exp TraceId 
+            -> Exp TraceId
+  indexComb l u i e =
+    ExpApplication pos 
+      [ExpVar pos tTokenPlus
+      ,indexExp l u i
+      ,ExpApplication pos 
+        [ExpVar pos tTokenTimes
+        ,ExpApplication pos 
+          [ExpVar pos tTokenRangeSize
+          ,ExpApplication pos [ExpCon pos tTokenTuple2,l,u]]
+        ,e]]
+  inRangeExp l u i =
+    ExpApplication pos 
+      [ExpVar pos tTokenInRange
+      ,ExpApplication pos [ExpCon pos tTokenTuple2,l,u]
+      ,i]
+  andExp :: Exp TraceId -> Exp TraceId -> Exp TraceId
+  andExp e1 e2 = ExpApplication pos [ExpVar pos tTokenAndAnd,e1,e2]
 
 -- ----------------------------------------------------------------------------
 -- helper functions
