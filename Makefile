@@ -19,7 +19,8 @@ PRELUDEA = \
 	src/prelude/DErrNo.hs \
 	src/prelude/Directory/Makefile* src/prelude/Directory/*.hs \
 	src/prelude/Directory/*.gc \
-	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs src/prelude/FFI/*.cpp \
+	src/prelude/FFI/Makefile* src/prelude/FFI/*.hs \
+	src/prelude/FFI/*.h src/prelude/FFI/*.cpp \
 	src/prelude/GreenCard/Makefile* src/prelude/GreenCard/*.gc \
 	src/prelude/IO/Makefile* src/prelude/IO/*.hs \
 	src/prelude/IOExtras/Makefile* src/prelude/IOExtras/*.hs \
@@ -79,7 +80,7 @@ PRELUDEC = \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
 
-PACKAGES  = base parsec haskell-src QuickCheck HaXml HUnit
+PACKAGES  = base parsec haskell-src QuickCheck HaXml HUnit #OpenGL
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    $(patsubst %, src/libraries/%, ${PACKAGES})
@@ -95,7 +96,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
 	 script/hsc2hs.inst src/hsc2hs/template-hsc.h \
-	 hmake.spec nhc98.spec script/pkgdirlist lib/hood.jar 
+	 nhc98.spec script/pkgdirlist lib/hood.jar 
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.hc
