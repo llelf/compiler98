@@ -21,7 +21,7 @@ STUB(PM_System)
 STUB(PM_Text)
 STUB(PM_Char)
 
-STUB(CF_Prelude_46Show_46Prelude_46IOError)
+/*STUB(CF_Prelude_46Show_46Prelude_46IOError)*/
 STUB(PM__95Driver)
 STUB(FN_DbgIface_46fatal)
 STUB(CF_DbgIface_46blackhole)
