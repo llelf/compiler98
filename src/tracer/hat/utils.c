@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
@@ -17,8 +18,36 @@ FILE *HatFile, *OutputFile, *BridgeFile;
 FileOffset errorRoot, errorMsg;
 int ignoreErrors=False;
 unsigned filesize=0, outputsize=0;
-char* progname;
+char* progname, *dir;
 
+char*
+basename (char* path)
+{
+  char *c = path;
+  while (*c) c++;
+  while (*c!='/' && c!=path) c--;
+  if (c==path) return path;
+  else {
+    c++;
+    return strdup(c);
+  }
+}
+
+char*
+dirname (char* path)
+{
+  char *start, *c;
+  start = strdup(path);
+  c = start;
+  while (*c) c++;
+  while (*c!='/' && c!=start) c--;
+  if (c==start) {
+    return ".";
+  } else {
+    *c='\0';
+    return start;
+  }
+}
 
 
 /* The initialise() routine ensures that all files are available,
@@ -42,7 +71,11 @@ initialise (int argc, char **argv)
   } else {
     arg=argv[1];
   }
-  progname   = argv[0];	/* for error messages - not the prog being debugged */
+  dir = dirname(arg);
+  arg = basename(arg);
+  chdir(dir);
+  progname   = basename(argv[0]);
+			/* for error messages - /not/ the prog being debugged */
   filesize   = sizeFile(arg,".hat");
   outputsize = sizeFile(arg,".hat.output");
   HatFile    = openFile(arg,".hat");
@@ -51,12 +84,12 @@ initialise (int argc, char **argv)
 
   err = fread(header,sizeof(char),8,HatFile);
   if (err!=8) {
-    fprintf(stderr,"%s: file %s is too short\n",progname,arg);
+    fprintf(stderr,"%s: file %s/%s is too short\n",progname,dir,arg);
     exit(1);
   }
   if (strncmp(header,"Hat v01",7)) {
-    fprintf(stderr,"%s: file %s does not appear to be a Hat archive\n"
-                  ,progname,arg);
+    fprintf(stderr,"%s: file %s in directory %s\n",progname,arg,dir);
+    fprintf(stderr,"   does not appear to be a Hat archive in format v01\n");
     exit(1);
   }
   errorRoot = readFO();
@@ -88,7 +121,7 @@ openFile (char* base, char* ext)
   if (file = fopen(filename,"r")) {
     return file;
   } else {
-    fprintf(stderr,"%s: cannot open %s\n",progname,filename);
+    fprintf(stderr,"%s: cannot open %s/%s\n",progname,dir,filename);
     exit(1);
   }
 }
