@@ -7,11 +7,24 @@
 <hr>
 
 <p>
-The latest stable release is 1.08.  The CVS development tree is now
-at version 1.09.  Bugfixes and important changes to the system are
+The latest stable release is 1.10.  The CVS development tree is now
+at version 1.11.  Bugfixes and important changes to the system are
 described here for the two most recent released versions.
 
 <p>
+
+<hr>
+<h3>nhc98 1.10 (2001-10-19) features</h3>
+<ul>
+<li> Bugfix:	The qualified import/export namespace is now managed much
+		better by the compiler, in accordance with latest revision
+		of the Haskell'98 Report.
+<li> Bugfix:	In the Hat tools, there is a more accurate distinction between
+		top-level identifiers and local identifiers.
+		enabling the user to jump directly to something of interest.
+<li> Bugfix:	Numerous small bugfixes in hat-observe, hat-detect, and
+		hat-trail.
+</ul>
 
 <hr>
 <h3>nhc98 1.08 (2001-09-25) features</h3>
@@ -40,28 +53,6 @@ described here for the two most recent released versions.
 <li> Bugfix:	Link options for ncurses (in src/tracer/hat) were in the
 		wrong order.
 </ul>
-
-
-<hr>
-<h3>nhc98 1.06 (2001-06-08) features</h3>
-<ul>
-<li> New:	Updated the Prelude/Libraries to match the newly revised
-		Haskell'98 Report.
-<li> Update:	Default build target is now basic + tracer (was just basic).
-<li> Update:	Building with gcc now builds everything with gcc, including
-		profiling and tracing.  This is much faster.
-<li> Bugfix:	A bad interaction between Java and Cygwin to do with Unix
-		vs. Windows pathnames.  (Visible only in Hat-trail and Hood.)
-<li> Bugfix:	An 'hi' built with just a C compiler seg-faulted, due to
-                mismatched .c file versions in the 1.04 source package.
-<li> Bugfix:	Recognise an existing ghc-5 installation.
-<li> Bugfix:	Missing include <errno.h> for Cygwin.
-<li> Bugfix:	Minor filename recognition error in hat-stack and hat-connect.
-<li> Bugfix:	Filename extension for time profiling changed to .z.o to
-		avoid Windows conflicts between .T.o and .t.o.  The compiler
-		flags -T and -t are unchanged, -z is a new synonym for -t.
-</ul>
-
 
 
 <h3><a href=history98.html>Previous release history (nhc98)</a></h3>
@@ -101,12 +92,12 @@ time profiler, and common FFI.
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2001-09-18</td>
-  <td>2001-09-18</td>
+  <td>2001-10-18</td>
+  <td>2001-10-18</td>
   <td>1997</td>
   <td>1996</td>
   <td>2001-06-01</td>
-  <td>2001-02-08</td>
+  <td>2001-10-02</td>
 </tr>
 </table>
 
@@ -130,8 +121,8 @@ time profiler, and common FFI.
 </tr>
 <tr bgcolor=#ddddff>
   <th bgcolor=#eeeeee>last change</th>
-  <td>2001-09-18</td>
-  <td>2001-09-07</td>
+  <td>2001-10-16</td>
+  <td>2001-10-18</td>
   <td>2001-05-18</td>
   <td>2001-03-01</td>
   <td>2000-11-10</td>
@@ -147,7 +138,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.09.24<br>
+This page last modified: 2001.10.18<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
