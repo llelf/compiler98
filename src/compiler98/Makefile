@@ -48,7 +48,7 @@ HFLAGS = -H8M
 export HFLAGS
 endif
 ifeq "ghc" "${HC}"
-HMAKEFLAGS=$(shell $(LOCAL)fixghc $(GHCSYM) +CTS -syslib lang -syslib misc -CTS)
+HMAKEFLAGS=$(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)
 $(TARGET): $(OBJDIR)/ghc_floats.o
 LINK=ghc_floats.o
 else

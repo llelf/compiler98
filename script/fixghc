@@ -4,11 +4,23 @@
 
 ghcversion=$1
 shift
-libs=$*
 
-if [ $ghcversion -lt 406 ]
+if [ $ghcversion -ge 406 ]
 then
-  echo $libs | sed -e 's/lang/exts/g'
+  while test "'$1'" != "''" 
+  do
+    case $1 in
+      -syslib) shift
+               case $1 in
+                 exts) echo -n " -syslib lang";;
+                 misc) ;;
+                 *)    echo -n " -syslib $1" ;;
+               esac ;;
+      *) echo -n " $1" ;;
+    esac
+    shift
+  done
+  echo
 else
-  echo $libs
+  echo "$@"
 fi
