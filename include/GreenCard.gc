@@ -28,3 +28,4 @@ data StablePtr a = StablePtr a
 
 %dis filePath x     = string x
 
+%dis integer i      = <fromInteger/toInteger> (int i)

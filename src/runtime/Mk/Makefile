@@ -3,12 +3,16 @@ include Makefile.inc
 OBJDIR=${BUILDDIR}/${OBJ}/runtime/Mk
 
 SRCS_PROG = \
-	mkBlockBuffering.c        mkIOErrorHFileSize.c      mkIOErrorHSetBuffering.c  mkMkArray.c               mkTuple4.c  \
-	mkComplex.c               mkIOErrorHFlush.c         mkIOErrorHSetPosn.c       mkRatio.c                 mkTuple5.c  \
-	mkCons.c                  mkIOErrorHGetBuffering.c  mkIOErrorOpen.c           mkRight.c                 mkTuple6.c  \
-	mkExitFailure.c           mkIOErrorHGetPosn.c       mkIOErrorUser.c           mkTuple10.c               mkTuple7.c  \
-	mkIO.c                    mkIOErrorHIsEOF.c         mkJust.c                  mkTuple2.c                mkTuple8.c  \
-	mkIOErrorEOF.c            mkIOErrorHSeek.c          mkLeft.c                  mkTuple3.c                mkTuple9.c
+	mkBlockBuffering.c mkComplex.c mkCons.c mkExitFailure.c \
+	mkIO.c mkIOErrorEOF.c mkIOErrorHFileSize.c mkIOErrorHFlush.c \
+	mkIOErrorHGetBuffering.c mkIOErrorHGetPosn.c mkIOErrorHIsEOF.c \
+	mkIOErrorHSeek.c mkIOErrorHSetBuffering.c mkIOErrorHSetPosn.c \
+	mkIOErrorOpen.c mkIOErrorSystem.c mkIOErrorUser.c \
+	mkJust.c mkLeft.c mkRight.c \
+	mkMkArray.c mkRatio.c \
+	mkTuple2.c mkTuple3.c mkTuple4.c mkTuple5.c \
+	mkTuple6.c mkTuple7.c mkTuple8.c mkTuple9.c \
+	mkTuple10.c mkTuple11.c mkTuple12.c
 
 SRCS_HAND = \
 	mkHandlePosn.c   \

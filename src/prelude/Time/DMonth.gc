@@ -5,3 +5,4 @@ data Month = January   | February | March    | April
            | September | October  | November | December
            deriving (Eq, Ord, Enum, Bounded, Ix, Read, Show)
 
+%dis month m = <fromEnum/toEnum> (int m)

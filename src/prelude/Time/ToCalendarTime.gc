@@ -1,0 +1,14 @@
+module Time where
+
+import GreenCard
+import DClockTime
+import DCalendarTime
+
+%-#include "/usr/include/time.h"
+%-
+%fun toCalendarTime :: ClockTime -> IO CalendarTime
+%call (clockTime ct)
+%code
+%  struct tm *cal;
+%  cal = localtime(&ct);
+%result (calendarTime "1900+cal->tm_year" "cal->tm_mon" "cal->tm_mday" "cal->tm_hour" "cal->tm_min" "cal->tm_sec" "0" "cal->tm_wday" "cal->tm_yday" "0" "0" "cal->tm_isdst")

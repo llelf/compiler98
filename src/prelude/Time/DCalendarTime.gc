@@ -15,3 +15,5 @@ data CalendarTime = CalendarTime {
     ctIsDST                      :: Bool
     } deriving (Eq, Ord, Read, Show)
 
+%dis calendarTime y mon d h min s pc wd yd tzn tz dst =
+%    CalendarTime  (int y) (month mon) (int d) (int h) (int min) (int s) (integer pc) (day wd) (int yd) (string tzn) (int tz) (bool dst)
