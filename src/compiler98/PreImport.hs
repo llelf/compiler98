@@ -169,7 +169,7 @@ transImport :: [ImpDecl TokenId]
 
 transImport impdecls = impdecls'
   where
-  impdecls' =  (sortImport . traverse initAT False)
+  impdecls' =  (reorder [] . {-sortImport .-} traverse initAT False)
                 (ImportQ (noPos,tNHCInternal) (Hiding [])
                 :ImportQ (noPos,vis "Ratio") (NoHiding
   				[EntityConClsAll noPos (vis "Rational")
@@ -178,17 +178,27 @@ transImport impdecls = impdecls'
                 :impdecls)
   vis = Visible . packString . reverse
 
+  reorder p [] = p
+  reorder p (m@(k,v):xs) | k==tPrelude     = reorder (m:p) xs
+                         | k==tNHCInternal = reorder (m:p) xs
+                         | otherwise       = m: reorder p xs
+
+{-
   -- Place imports into order, ensure Prelude is last
+  --   Why?  The order is lexicographic of the /reversed/ module name???
+  --         Changed to use simpler 'reorder' above.
   sortImport impdecls =
           ( map snd
           . sortBy cmp
-          . map (\(k,v)-> if k==tPrelude then (Right k,(k,v))
-                          else (Left k,(k,v)) )
+          . map (\(k,v)-> if k==tPrelude || k==tNHCInternal
+                          then (Right k,(k,v))
+                          else (Left k, (k,v)) )
           ) impdecls
 
     where cmp (a, _) (b, _) = case compare a b of
                                 EQ -> error "Fail in PreImport.transImport\n"
                                 x  -> x
+-}
 
   traverse :: AssocTree TokenId ImportedNamesInScope
            -> Bool	-- have we found an explicit Prelude import yet?
