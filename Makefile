@@ -250,15 +250,15 @@ $(PRAGMA): script/hmake-PRAGMA.hs
 
 $(TARGDIR)/$(MACHINE)/hmake-nhc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=nhc98 install config
-	#cd src/interpreter;    $(MAKE) HC=nhc98 install
+	cd src/interpreter;    $(MAKE) HC=nhc98 install
 	touch $(TARGDIR)/$(MACHINE)/hmake-nhc
 $(TARGDIR)/$(MACHINE)/hmake-hbc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=hbc install config
-	#cd src/interpreter;    $(MAKE) HC=hbc install
+	cd src/interpreter;    $(MAKE) HC=hbc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-hbc
 $(TARGDIR)/$(MACHINE)/hmake-ghc: $(HMAKE)
 	cd src/hmake;          $(MAKE) HC=ghc install config
-	#cd src/interpreter;    $(MAKE) HC=ghc install
+	cd src/interpreter;    $(MAKE) HC=ghc install
 	touch $(TARGDIR)/$(MACHINE)/hmake-ghc
 
 
@@ -354,7 +354,7 @@ $(TARGDIR)/$(MACHINE)/pragma-$(CC): script/hmake-PRAGMA.hc
 	touch $(TARGDIR)/$(MACHINE)/pragma-$(CC)
 $(TARGDIR)/$(MACHINE)/hmake-$(CC): $(HMAKEC)
 	cd src/hmake;          $(MAKE) fromC config
-	#cd src/interpreter;    $(MAKE) fromC
+	cd src/interpreter;    $(MAKE) fromC
 	touch $(TARGDIR)/$(MACHINE)/hmake-$(CC)
 
 
@@ -435,7 +435,7 @@ $(TARGDIR)/pragmaC: script/hmake-PRAGMA.hs
 	touch $(TARGDIR)/pragmaC
 $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;        $(MAKE) cfiles
-	#cd src/interpreter;  $(MAKE) cfiles
+	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
 
 
