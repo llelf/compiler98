@@ -48,10 +48,10 @@ qualRename impdecls = qualRename' qTree
 
   qTree = foldr qualR initAT impdecls
 
-  qualR (Import _ _)                      t = t
-  qualR (ImportQ   _ _)                   t = t
-  qualR (ImportQas (pos,Visible tid) (pos',Visible tid') _) t = addAT t (++) tid' [tid]
-  qualR (Importas  (pos,Visible tid) (pos',Visible tid') _) t = addAT t (++) tid' [tid]
+  qualR (Import    _ _)  t = t
+  qualR (ImportQ   _ _)  t = t
+  qualR (ImportQas (_,Visible id) (_,Visible id') _) t = addAT t (++) id' [id]
+  qualR (Importas  (_,Visible id) (_,Visible id') _) t = addAT t (++) id' [id]
 
 
 ---- ===================================
@@ -105,10 +105,11 @@ transImport impdecls =
 
   impdecls2 =  (sortImport . traverse initAT False)
                      (ImportQ (noPos,tPrelude) (Hiding []) :
-                      --ImportQ (noPos,Visible rpsBinary) (Hiding []) :
-                        --ImportQ (noPos,vis "PrelRatio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityVar noPos (vis "%")]) :
-                            ImportQ (noPos,vis "Ratio") (NoHiding [EntityTyConCls noPos (vis "Rational"), EntityTyConCls noPos (vis "Ratio"), EntityVar noPos (vis "%")]) :
-                              impdecls)
+                       ImportQ (noPos,vis "Ratio")
+			(NoHiding [ EntityTyConCls noPos (vis "Rational")
+				  , EntityTyConCls noPos (vis "Ratio")
+				  , EntityVar noPos (vis "%")]) :
+                         impdecls)
   vis = Visible . packString . reverse
 
   sortImport impdecls =
@@ -123,7 +124,7 @@ transImport impdecls =
                 ,Maybe [TokenId]
                 ,[(Pos,Either [(TokenId,IE)] [(TokenId,IE)])]
                 )
-           -> Bool
+           -> Bool	-- have we found an explicit Prelude import yet?
 	   -> [ImpDecl TokenId]
 	   -> [(TokenId
                ,(Bool
@@ -142,21 +143,19 @@ transImport impdecls =
         traverse (addAT acc comb tid info) prel' xs
 
 
-  comb (nq,Nothing,xs) (nq',q',     xs') = (nq || nq', q'           ,xs++xs') 
-    -- ^ Not qualified , import specification
-  comb (nq,q,      xs) (nq',Nothing,xs') = (nq || nq', q            ,xs++xs') 
-    -- ^ Not qualified , import specification
-  comb (nq,Just q, xs) (nq',Just q',xs') = (nq || nq',Just (q ++ q'),xs++xs') 
-    -- ^ Not qualified , import specification
+  -- combine two imports: arg is (unqualified?, renamed?, impspec)
+  comb (nq, Nothing, xs) (nq',q',     xs') = (nq || nq', q'           ,xs++xs') 
+  comb (nq, q,       xs) (nq',Nothing,xs') = (nq || nq', q            ,xs++xs') 
+  comb (nq, Just q,  xs) (nq',Just q',xs') = (nq || nq',Just (q ++ q'),xs++xs') 
 
   extractImp prel (ImportQ  (pos,tid) impspec) = 
-    (prel,tid,(False,Just [], [(pos,extractSpec impspec)]))
+    (prel, tid, (False, Just [], [(pos,extractSpec impspec)]))
   extractImp prel (ImportQas (pos,tid) (apos,atid) impspec) =
-    (prel,tid,(False,Just [atid],[(pos,extractSpec impspec)]))
+    (prel, tid, (False, Just [atid], [(pos,extractSpec impspec)]))
   extractImp prel (Import (pos,tid) impspec) = 
-    (prel || tid == tPrelude,tid,(True, Nothing, [(pos,extractSpec impspec)]))
+    (prel || tid == tPrelude,tid, (True, Nothing, [(pos,extractSpec impspec)]))
   extractImp prel (Importas (pos,tid) (apos,atid) impspec) =
-    (prel,tid,(True,Just [atid],[(pos,extractSpec impspec)]))
+    (prel, tid, (True, Just [atid], [(pos,extractSpec impspec)]))
 
   extractSpec (NoHiding entities) = Left (map extractImpEntity entities)
   extractSpec (Hiding entities) = Right (map extractImpEntity entities)
@@ -179,7 +178,7 @@ transImport impdecls =
 	if (null . filter (not.null) . map (dropRight . snd)) hide
 	then []         -- Ok as all hidings are empty
 	else ["Conflicting imports for " ++ show tid ++
-              ", used both explicit imports (at" ++ 
+              ", used both explicit imports (at " ++ 
               (mixCommaAnd . map (strPos . fst)) imp 
 	      ++ ") and explicit hidings (at " ++  
               (mixCommaAnd . map (strPos . fst)) hide ++")."]
@@ -304,28 +303,44 @@ mkNeed needM exportAT (vt@(Visible rps),nq,q,Left ei) =  -- explicit import
   hideDeclType :: HideDeclType
   hideDeclType st attr (Simple pos tid tvs) typ = 
     case lookupAT impT (dropM tid) of
-      Just _  -> iextractType (exportFun nq q tid TSyn) attr nq    q pos tid tvs typ () st
-      Nothing -> iextractType IEnone            attr False q pos tid tvs typ () st
+      Just _  -> iextractType (exportFun nq q tid TSyn)
+			      attr nq    q pos tid tvs typ () st
+      Nothing -> iextractType IEnone
+                              attr False q pos tid tvs typ () st
 
   hideDeclData :: HideDeclData
   hideDeclData st attr ctxs (Simple pos tid tvs) constrs der =
     case lookupAT impT (dropM tid) of
-      Just IEall -> iextractData  (exportFun nq q tid TCon) nq    q attr ctxs pos tid tvs constrs () st
-      Just IEabs -> iextractData  (exportFun nq q tid TCon) nq    q attr ctxs pos tid tvs (if q then constrs else []) () st
-      Nothing ->    iextractData  IEnone            False q attr ctxs pos tid tvs (if q then constrs else []) () st
+      Just IEall -> iextractData  (exportFun nq q tid TCon)
+                                  nq    q attr ctxs pos tid tvs
+                                  constrs () st
+      Just IEabs -> iextractData  (exportFun nq q tid TCon)
+                                  nq    q attr ctxs pos tid tvs
+                                  (if q then constrs else []) () st
+      Nothing ->    iextractData  IEnone
+                                  False q attr ctxs pos tid tvs
+                                  (if q then constrs else []) () st
 
   hideDeclDataPrim :: HideDeclDataPrim
   hideDeclDataPrim st (pos,tid) size =
     case lookupAT impT (dropM tid) of
-      Just _  -> iextractDataPrim (exportFun nq q tid TCon) nq    q pos tid size () st
-      Nothing -> iextractDataPrim IEnone            False q pos tid size () st
+      Just _  -> iextractDataPrim (exportFun nq q tid TCon)
+                                  nq    q pos tid size () st
+      Nothing -> iextractDataPrim IEnone
+                                  False q pos tid size () st
 
   hideDeclClass :: HideDeclClass
   hideDeclClass st  ctxs (pos,tid) tvar methods =
     case lookupAT impT (dropM tid) of
-      Just IEall ->  iextractClass  (exportFun nq q tid TClass) nq    q pos ctxs tid (snd tvar) methods () st
-      Just IEabs ->  iextractClass  (exportFun nq q tid TClass) nq    q pos ctxs tid (snd tvar) (if q then methods else []) () st
-      Nothing -> iextractClass  IEnone              False q pos ctxs tid (snd tvar) (if q then methods else []) () st
+      Just IEall ->  iextractClass (exportFun nq q tid TClass)
+                                   nq    q pos ctxs tid (snd tvar)
+                                   methods () st
+      Just IEabs ->  iextractClass (exportFun nq q tid TClass)
+                                   nq    q pos ctxs tid (snd tvar)
+                                   (if q then methods else []) () st
+      Nothing ->     iextractClass IEnone
+                                   False q pos ctxs tid (snd tvar)
+                                   (if q then methods else []) () st
 
   hideDeclInstance :: HideDeclInstance
   hideDeclInstance st ctxs (pos,cls) typ =

@@ -5,6 +5,7 @@ a structured document for pretty printing.
 
 module PrettySyntax
   ( PPInfo(..)
+  , prettyPrintSimple
   , prettyPrintTokenId, prettyPrintId, simplePrintId, prettyPrintTraceId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
@@ -55,6 +56,22 @@ prettyPrintTraceId flags pp =
   maybeTupleTraceId t = case tokenId t of
                           TupleId n -> Just n
                           _         -> Nothing
+
+prettyPrintSimple :: Int -> (PPInfo TokenId -> a -> Doc) -> a -> String
+prettyPrintSimple width pp =
+  pretty width . 
+  pp PPInfo{withPositions = False
+           ,indent = 4
+           ,id2str = show
+           ,tyVar2str = show
+           ,isFunctionArrow = (== t_Arrow)
+           ,isList = (== t_List)
+           ,maybeTuple = maybeTupleTokenId}
+  where
+  maybeTupleTokenId t = case t of
+                          TupleId n -> Just n
+                          _         -> Nothing
+
 
 prettyPrintTokenId :: Flags -> (PPInfo TokenId -> a -> Doc) -> a -> String
 

@@ -224,16 +224,24 @@ needDecl (DeclAnnot decl annots) = unitR
 
 
 needDeriving (pos,tid)
-	| (ensureM rpsPrelude tid) == tBounded = needTid pos TClass tid >>> needTids pos tokenBounded
-	| (ensureM rpsPrelude tid) == tEnum    = needTid pos TClass tid >>> needTids pos tokenEnum
-	| (ensureM rpsPrelude tid) == tEq      = needTid pos TClass tid >>> needTids pos tokenEq
-	| (ensureM rpsPrelude tid) == tIx      = needTid pos TClass tid >>> needTids pos tokenIx
-	| (ensureM rpsPrelude tid) == tOrd     = needTid pos TClass tid >>> needTids pos tokenOrd
-	| (ensureM rpsPrelude tid) == tRead    = needTid pos TClass tid >>> needTids pos tokenRead
-	| (ensureM rpsPrelude tid) == tShow    = needTid pos TClass tid >>> needTids pos tokenShow
-	| (ensureM rpsBinary tid)  == tBinary  = needTid pos TClass tid >>> needTids pos tokenBinary		--MALCOLM
+	| (ensureM rpsPrelude tid) == tBounded =
+			 needTid pos TClass tid >>> needTids pos tokenBounded
+	| (ensureM rpsPrelude tid) == tEnum    =
+			 needTid pos TClass tid >>> needTids pos tokenEnum
+	| (ensureM rpsPrelude tid) == tEq      =
+			 needTid pos TClass tid >>> needTids pos tokenEq
+	| (ensureM rpsIx tid) == tIx           =
+			 needTid pos TClass tid >>> needTids pos tokenIx
+	| (ensureM rpsPrelude tid) == tOrd     =
+			 needTid pos TClass tid >>> needTids pos tokenOrd
+	| (ensureM rpsPrelude tid) == tRead    =
+			 needTid pos TClass tid >>> needTids pos tokenRead
+	| (ensureM rpsPrelude tid) == tShow    =
+			 needTid pos TClass tid >>> needTids pos tokenShow
+	| (ensureM rpsBinary tid)  == tBinary  =
+			 needTid pos TClass tid >>> needTids pos tokenBinary
   	| True = strace ("Warning: Don't know what is needed to derive "
-				 ++ show tid ++ " at " ++ strPos pos)
+				 ++ show tid ++ " at " ++ strPos pos ++"\n")
 		 (needTid pos TClass tid)
 
 needClassInst (DeclVarsType posidents ctxs typ) =

@@ -37,7 +37,7 @@ import Flags
             ,sRealFile,sProfile,sUnix,sUnlit,sSourceFile,sUnderscore,sLex
             ,sDbgPrelude,sDbgTrans,sNeed,sParse,sIRename,sIBound,sINeed
             ,sIIBound,sIINeed,sRBound,sRename,sTraceData,sDBound,sDerive
-            ,sEBound
+            ,sEBound,sIIRename
             ,sTraceFns,sRemove,sScc,sRImport,sTBound,sType,sTypeFile,sPrelude
             ,sFSBound,sFixSyntax,sCBound,sCase,sKeepCase,sPBound,sPrim,sFree
             ,sArity,sLBound,sLift,sABound,sAtom,sAnsiC,sObjectFile
@@ -59,7 +59,7 @@ import Parse(parseProg)
 import Need(needProg)
 import Overlap(Overlap,Resolution)
 import Import(HideDeclIds,importOne)
-import IExtract(getNeedIS)
+import IExtract(getNeedIS,addPreludeTupleInstances)
 import Rename(rename)
 import FFITrans(ffiTrans)
 import DbgDataTrans(dbgDataTrans)
@@ -180,7 +180,8 @@ nhcNeed flags (parsedProg@(Module pos (Visible modid) e impdecls inf d)) =
          pF (sNeed flags) "Need (after reading source module)"  
             (show (treeMapList (:) need)) 
          profile "imports" $
-           nhcImport flags modid qualFun expFun parsedProg' (initIS need) 
+           nhcImport flags modid qualFun expFun parsedProg'
+                   {-(addPreludeTupleInstances () (initIS need))-} (initIS need)
                      overlap imports
 
 
@@ -230,13 +231,16 @@ nhcImport flags modidl qualFun expFun parseProg importState overlap [] =
 	  exit
 
 nhcImport flags modidl qualFun expFun parseProg importState overlap (x:xs) = 
+  let fname = (reverse . unpackPS . (\(y,_,_)->y)) x in
   {-profile ("import:" ++ (reverse . show . fst3) x) $-}  do
   -- trace ("import:" ++ (reverse . show . fst3) x) $
     importState <- importOne flags importState x 
-    pF (sIINeed flags) "Intermediate need after import"
+    pF (sIINeed flags) ("Intermediate need after import "++fname)
        (show (treeMapList (:)  (thd3 (getNeedIS importState))))
-    pF (sIIBound flags) "Intermediate symbol table after import"
+    pF (sIIBound flags) ("Intermediate symbol table after import "++fname)
        (mixLine (map show (treeMapList (:) (getSymbolTableIS importState))))
+    pF (sIIRename flags) ("Intermediate rename table after import "++fname)
+       (mixLine (map show (treeMapList (:) (getRenameTableIS importState)))) 
     nhcImport flags modidl qualFun expFun parseProg importState overlap xs
     
 
@@ -253,8 +257,8 @@ nhcRename :: Flags
           -> Overlap 
           -> IO ()   
 
-nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e
-          impdecls inf decls) importState overlap =
+nhcRename flags modidl qualFun expFun
+	 (Module pos (Visible mrps) e impdecls inf decls) importState overlap =
   profile "rename" $
   case rename flags mrps qualFun expFun inf decls importState overlap of
     Left err -> do

@@ -52,6 +52,9 @@ pushNeed (NeedLib r m ms o n) = NeedLib r m (m:ms) o n
 popNeed :: NeedLib -> NeedLib
 popNeed  (NeedLib r _ (m:ms) o n) = NeedLib r m ms o n
 
+-- This version of bindTid was for Haskell 1.3, before the introduction
+-- of overlapping import renamings.
+--
 --bindTid idKind tid (NeedLib r m ms o n) = NeedLib r (addM m (r tid,idKind)) ms o n
 
 {-
@@ -64,6 +67,9 @@ bindTid idKind tid (NeedLib r m ms o n) =
   memoise :: TokenId -> Memo (TokenId,IdKind) -> Memo (TokenId,IdKind)
   memoise tid m = addM m (tid,idKind)
 
+-- This version of needTid was for Haskell 1.3, before the introduction
+-- of overlapping import renamings.
+--
 --needTid pos idKind tid needlib@(NeedLib r m ms o n) =
 --  case r tid of
 --    [tid] ->
@@ -92,6 +98,8 @@ needTid pos idKind tid needlib@(NeedLib r m ms o n) =
       (Just _) -> needlib
       Nothing ->
         case lookupAT n (tid,idKind) of -- mostly to evaluate n now and then :-)
-          Just _ ->  NeedLib r (addM m (tid,idKind)) ms o (updateAT n (tid,idKind) (pos:))
-          Nothing -> NeedLib r (addM m (tid,idKind)) ms o (addAT n undefined (tid,idKind) [pos])
+          Just _ -> NeedLib r (addM m (tid,idKind)) ms o
+					 (updateAT n (tid,idKind) (pos:))
+          Nothing -> NeedLib r (addM m (tid,idKind)) ms o
+					 (addAT n undefined (tid,idKind) [pos])
 
