@@ -1,11 +1,11 @@
 module SysDeps (
-   module PS, trace, isAlphaNum
+   module PackedString, trace, isAlphaNum
 ) where
 
 #if __GLASGOW_HASKELL__ >= 502
-import Data.PackedString as PS
+import Data.PackedString as PackedString
 #else
-import PackedString as PS
+import PackedString
 #endif
 
 #if defined(__NHC__) || defined(__HBC__)
