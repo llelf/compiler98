@@ -1,6 +1,6 @@
 #ifndef _MKBYPROG_H
 #define _MKBYPROG_H
-/* Current biggest tuple size is 12 */
+/* Current biggest tuple size is 15 */
 struct ForeignTuple {
   void *pos1;
   void *pos2;
@@ -14,6 +14,9 @@ struct ForeignTuple {
   void *pos10;
   void *pos11;
   void *pos12;
+  void *pos13;
+  void *pos14;
+  void *pos15;
 };
 
 extern NodePtr nhc_mkTuple2(NodePtr a1,NodePtr a2);
@@ -49,6 +52,15 @@ extern NodePtr nhc_mkTuple11(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr
 extern NodePtr nhc_mkTuple12(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11,NodePtr a12);
 #define nhc_sizeTuple12 (1+EXTRA+12)
 #define Tuple12 0 
+extern NodePtr nhc_mkTuple13(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11,NodePtr a12,NodePtr a13);
+#define nhc_sizeTuple13 (1+EXTRA+13)
+#define Tuple13 0 
+extern NodePtr nhc_mkTuple14(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11,NodePtr a12,NodePtr a13,NodePtr a14);
+#define nhc_sizeTuple14 (1+EXTRA+14)
+#define Tuple14 0 
+extern NodePtr nhc_mkTuple15(NodePtr a1,NodePtr a2,NodePtr a3,NodePtr a4,NodePtr a5,NodePtr a6,NodePtr a7,NodePtr a8,NodePtr a9,NodePtr a10,NodePtr a11,NodePtr a12,NodePtr a13,NodePtr a14,NodePtr a15);
+#define nhc_sizeTuple15 (1+EXTRA+15)
+#define Tuple15 0 
 extern Node C0_Prelude_46False[];
 #define nhc_mkFalse() ((NodePtr)C0_Prelude_46False)
 #define nhc_sizeFalse 0

@@ -12,7 +12,8 @@ SRCS_PROG = \
 	mkMkArray.c mkRatio.c \
 	mkTuple2.c mkTuple3.c mkTuple4.c mkTuple5.c \
 	mkTuple6.c mkTuple7.c mkTuple8.c mkTuple9.c \
-	mkTuple10.c mkTuple11.c mkTuple12.c
+	mkTuple10.c mkTuple11.c mkTuple12.c mkTuple13.c \
+	mkTuple14.c mkTuple15.c
 
 SRCS_HAND = \
 	mkHandlePosn.c   \
