@@ -3,7 +3,8 @@ module IO (hFlush) where
 import DHandle
 import FFI
 
-#if !defined(TRACING)
+-- #if !defined(TRACING)
+#if 1
 foreign import hFlushC :: Handle -> IO Int
 
 hFlush :: Handle -> IO ()

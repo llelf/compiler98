@@ -3,7 +3,8 @@ module IO (hFileSize) where
 import DHandle
 import FFI
 
-#if !defined(TRACING)
+-- #if !defined(TRACING)
+#if 1
 foreign import primHFileSizeC :: Handle -> IO Integer
 
 hFileSize :: Handle -> IO Integer

@@ -4,7 +4,8 @@ import SeekMode
 import DHandle
 import FFI
 
-#if !defined(TRACING)
+-- #if !defined(TRACING)
+#if 1
 
 foreign import hSeekC :: Handle -> Int -> Integer -> IO Int
 

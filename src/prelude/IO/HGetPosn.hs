@@ -4,7 +4,8 @@ import DHandle
 import DHandlePosn
 import FFI
 
-#if !defined(TRACING)
+-- #if !defined(TRACING)
+#if 1
 foreign import hGetPosnC :: Handle -> IO Addr
 
 hGetPosn              :: Handle -> IO HandlePosn

@@ -3,7 +3,8 @@ module IO (hGetBuffering) where
 import DHandle
 import BufferMode
 
-#if !defined(TRACING)
+-- #if !defined(TRACING)
+#if 1
 foreign import "hGetBufferingC" hGetBuffering :: Handle -> IO BufferMode
 
 #else

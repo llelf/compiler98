@@ -21,7 +21,8 @@ COMMON_SRCS = \
 	IsIOErrors.hs     Try.hs           Bracket.hs	Bracket_.hs
 
 SRCS	= ${COMMON_SRCS} \
-	HSetBuffering.hs HGetBuffering.hs DSocket.hs OpenSocket.hs \
+	HSetBuffering.hs HGetBuffering.hs \
+	DSocket.hs OpenSocket.hs \
 	StdIO.hs
 SRCS_T	= ${COMMON_SRCS}
 SRCS_NT = StdIO.hs
