@@ -91,7 +91,7 @@ newbuiltin.o: newbuiltin.c newmacros.h
 dump.o: dump.c runtime.h bytecode.h node.h
 inscount.o: inscount.c runtime.h bytecode.h node.h
 fake.o: fake.c cinterface.h node.h
-haskellInit.o: haskellInit.c runtime.h mutlib.h node.h
+haskellInit.o: haskellInit.c runtime.h mutlib.h node.h ../../../Makefile.inc
 main.o: main.c runtime.h mutlib.h node.h
 mutator.o: mutator.c runtime.h bytecode.h node.h mutlib.h cinterface.h
 mutlib.o: mutlib.c runtime.h mutlib.h newmacros.h
