@@ -10,7 +10,7 @@ ifneq "${TRACING}" "T"
 FSTSUBDIRS = Char Ratio Numeric
 PRELSUBDIRS = $(MACHINE) LowB PreludeList PreludeIO PreludeText Prelude
 BOOTLIBSUBDIRS = Ix NonStd List Array Maybe Monad System IO PackedString Debug
-LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI IOExtras
+LIBSUBDIRS = ${BOOTLIBSUBDIRS} Complex Locale Time Directory Interrupt CPUTime Random Haskell Binary Bit GreenCard BinArray FFI IOExtras Observe
 
 BOOTSUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${BOOTLIBSUBDIRS}
 SUBDIRS = ${FSTSUBDIRS} ${PRELSUBDIRS} ${LIBSUBDIRS}

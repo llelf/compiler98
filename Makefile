@@ -44,6 +44,7 @@ PRELUDEB = \
 	src/prelude/NonStd/Makefile* src/prelude/NonStd/*.hs \
 	src/prelude/NonStd/*.gc \
 	src/prelude/Numeric/Makefile* src/prelude/Numeric/*.hs \
+	src/prelude/Observe/Makefile* src/prelude/Observe/*.lhs \
 	src/prelude/PackedString/Makefile* src/prelude/PackedString/*.hs \
 	src/prelude/Prelude/Makefile* src/prelude/Prelude/*.hs \
 	src/prelude/PreludeDebug/Makefile* src/prelude/PreludeDebug/*.hs \
@@ -79,6 +80,7 @@ PRELUDEC = \
 	src/prelude/Monad/*.c \
 	src/prelude/NonStd/*.c \
 	src/prelude/Numeric/*.c \
+	src/prelude/Observe/*.c \
 	src/prelude/PackedString/*.c \
 	src/prelude/Prelude/*.c \
 	src/prelude/PreludeIO/*.c \
