@@ -161,7 +161,7 @@ void showPretty(HatFile handle,NodeList *nl,int verboseMode,unsigned int precisi
     {
       unsigned long satc;
       while (e!=NULL) {
-	satc=getResult(handle,e->fileoffset);  // find SATC for the application!
+	satc=hatResult(handle,e->fileoffset);  // find SATC for the application!
 	if (isSAT(handle,satc)) {
 	  ExprNode* r=buildExpr(handle,satc,verboseMode,precision);
 	  ExprNode* a=buildExpr(handle,e->fileoffset,verboseMode,precision);

@@ -3,6 +3,7 @@ import HatTrie
 import HatExpressionTree
 import PrettyExp(showReduction)
 import Maybe
+import List(sort)
 import System
 import Char(isDigit,digitToInt,toUpper)
 import IO(hFlush,stdout)
@@ -107,6 +108,10 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
                 let obs = (fromFound observed);
                     hasmore = (null obs)==False in
                  do
+		   if (hasmore==False) then
+                      putStrLn ("\nNo evaluated applications of \""++ident1++
+				"\" found!\n")
+                     else return ()				 
 	           dummy <- doCommand "" "" (file,hattrace)
                                       ((fromFound observed),
 				       hasmore,1,0,50,
@@ -132,13 +137,18 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 --                       printCReductionList 100 (fromFound observed)
                   return ()
 
- 
+
 showObservables :: [HatNode] -> IO ()
-showObservables [] = return ()
-showObservables (o:obs) =
-  do
-    putStrLn ("    "++ hatName o)
-    showObservables obs
+showObservables l = showObservables' 0 "" (sort (map hatName l))
+ where showObservables' _ _ [] = return ()
+       showObservables' n preceeding (o:obs) =
+          if (preceeding/=o) then
+            do
+              putStr (take 26 (" "++o++"                          "))
+              if (n `mod` 3 == 2) then putStrLn "" else return ()
+	      showObservables' (n+1) o obs
+           else 
+            showObservables' n o obs
 
 observableIdents :: HatTrace -> [HatNode]
 observableIdents hattrace =
@@ -295,7 +305,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
 			     verboseMode,not recursiveMode)
     | (cmd=="S")||(cmd=="SHOW") =
 	(putStrLn "\nObservable Identifiers:") >>
-	(putStrLn "-----------------------") >>
+	(putStrLn (take 79 (repeat '-'))) >>
 	showObservables observable >>
 	interactive hatfile state
     | (cmd=="C")||(cmd=="COUNT") =

@@ -186,11 +186,11 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
   ExprNode *appNode,*resNode;
   char *pp1,*pp2;
   char isCAF=0;
-  unsigned long lmost = hatLMO(handle,appofs);
+  unsigned long lmost = hatOutermostSymbol(handle,appofs);
 
   if (isUserTrusted(lmost)) return 1;
   isCAF = (resofs == 0);
-  if (isCAF) resofs = getResult(handle,appofs);
+  if (isCAF) resofs = hatResult(handle,appofs);
 
   appNode = buildExpr(handle,appofs,verboseMode,precision);
   resNode = buildExpr(handle,resofs,verboseMode,precision);
@@ -474,7 +474,7 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	if (answer==0) {
 	  char *tmp;
 	  printf("\nError located!\nBug found in:\n");
-	  showReduction(handle,e->fileoffset,getResult(handle,e->fileoffset),
+	  showReduction(handle,e->fileoffset,hatResult(handle,e->fileoffset),
 			verboseMode);
 	  tmp = hatLocationStr(handle,e->fileoffset);
 	  printf(tmp);

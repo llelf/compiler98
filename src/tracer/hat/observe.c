@@ -48,6 +48,121 @@ typedef struct {
 } _ObserveQuery;
 
 
+
+int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
+  char nodeType;
+  filepointer old = hatNodeNumber(handle);
+
+  if (parent==0) return 0; 
+
+  if (getNodeType(handle,fileoffset)==HatApplication) {
+    fileoffset = hatOutermostName(handle,fileoffset);
+    if (fileoffset!=0) {
+      getNodeType(handle,fileoffset);
+      fileoffset=getParent();
+    }
+  }
+  if (fileoffset==parent) return 1;
+
+  while (fileoffset!=0) {
+    nodeType=getNodeType(handle,fileoffset);
+    switch(nodeType) {
+    case HatHidden:
+    case HatProjection:
+      fileoffset=getParent();
+      break;
+    case HatSATC:
+      fileoffset=getProjValue();
+      break;
+    case HatName:
+      if (getNameType()==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      fileoffset = getParent();
+      break;
+    case HatApplication:{
+      filepointer newoffs;
+      newoffs = getAppFun(); //Parent();
+      if (hatOutermostSymbol(handle,fileoffset)==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      getNodeType(handle,newoffs);
+      fileoffset = getParent();
+      break;
+    }
+    default:
+      hatSeekNode(handle,old);
+      return 0;
+    }
+  }
+  hatSeekNode(handle,old);
+  return 0;
+}
+
+int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
+  char nodeType;
+  filepointer old = hatNodeNumber(handle);
+  int debug=0;
+
+  if (parent==0) return 0;
+  
+  if (getNodeType(handle,fileoffset)==HatApplication) {
+    fileoffset = hatOutermostName(handle,fileoffset);
+    if (fileoffset!=0) {
+      getNodeType(handle,fileoffset);
+      fileoffset=getParent();
+    }
+  }
+  if (fileoffset==parent) return 1;
+
+  while (fileoffset!=0) {
+    nodeType=getNodeType(handle,fileoffset);
+    switch(nodeType) {
+    case HatHidden:
+      fileoffset=getParent();
+      break;
+    case HatSATA:
+    case HatSATB:
+    case HatSATC:
+      fileoffset=getProjValue();
+      break;
+    case HatProjection:
+      fileoffset=getParent();
+      break;
+    case HatName:
+      if (getNameType()==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      fileoffset = getParent();
+      break;
+    case HatApplication:{
+      filepointer newoffs;
+      newoffs = getAppFun();
+      if (hatOutermostSymbol(handle,fileoffset)==parent) {
+	hatSeekNode(handle,old);
+	return 1;
+      }
+      if (isTopLevel(handle,fileoffset)) {
+	hatSeekNode(handle,old);
+	return 0;
+      }
+      getNodeType(handle,newoffs);
+      fileoffset = getParent();
+      break;
+    }
+    default:
+      hatSeekNode(handle,old);
+      return 0;
+    }
+  }
+  hatSeekNode(handle,old);
+  return 0;
+}
+
+
 // new query to observe all applications of identifierNode within the trace file
 ObserveQuery newObserveQuery(int handle,
 		       filepointer identifierNode,
@@ -222,14 +337,14 @@ filepointer nextObserveSrcMode(_ObserveQuery* query) {
 	    // do not include this name/application, but the whole structure
 	    // do nothing now, wait for next application
 	  } else {
-	    filepointer fun = hatLMO(handle,currentOffset);
+	    filepointer fun = hatOutermostSymbol(handle,currentOffset);
 	    char lmoType = 0;
 	    if (fun!=0) lmoType = getNodeType(handle,fun);
 	    if (lmoType==HatIdentifier) {
-	      filepointer result = getResult(handle,currentOffset);
+	      filepointer result = hatResult(handle,currentOffset);
 	      if ((result!=0)&&(isSAT(handle,result))&&
 		  (getNodeType(handle,result)!=HatSATA)) { // make sure, result is available!
-		result = hatFollowSATs(handle,result);
+		result = hatFollowSATCs(handle,result);
 		if (result!=currentOffset) { // no partial applications!
 		  if (result!=0) {
 		    query->currentOffset = currentOffset;
@@ -330,17 +445,17 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	apptrace = getParent();  // fileoffset of App-trace
 	p = getAppFun();
 	//bufferMiss = 0;
-	p = hatFollowSATs(handle,p);         // fileoffset of Function-trace
+	p = hatFollowSATCs(handle,p);         // fileoffset of Function-trace
 	//if (bufferMiss>0) bufferMisses++;else bufferHits++;
 	if (p>currentOffset) { // whoo! The function which is applied here is forward
 	  // in the file! We haven't been there yet: so we need to check it!
-	  p = hatLMO(handle,p); // follow to the leftmost outermost identifier
+	  p = hatOutermostSymbol(handle,p); // follow to the leftmost outermost identifier
 	}
 	if (isInHashTable(htable,p)) {
-	  filepointer satc = getResult(handle,currentOffset);  // find SATC for the application!	  
+	  filepointer satc = hatResult(handle,currentOffset);  // find SATC for the application!	  
 	  addToHashTable(htable,currentOffset);
 	  if (isSAT(handle,satc)) {
-	    if ((hatFollowSATs(handle,satc)!=currentOffset)&&
+	    if ((hatFollowSATCs(handle,satc)!=currentOffset)&&
 		(getNodeType(handle,satc)!=SATA)) { // rhs evaluated!
 	      if (getParent() != currentOffset) {
 		if (((recursiveMode==0)||(isDescendantOf(handle,
@@ -367,7 +482,7 @@ filepointer nextObserveQueryNode(ObserveQuery query) {
 	satc = hatSeqNext(handle,currentOffset);
 	if (isSAT(handle,satc)) {  // SATC behind TRNAM?
 	  // found a CAF!
-	  if (hatFollowSATs(handle,satc)==currentOffset) { // save this satc for future reference
+	  if (hatFollowSATCs(handle,satc)==currentOffset) { // save this satc for future reference
 	    addToHashTable(htable,satc);
 	  } else {  // makes no sense to print equation of form "identifier = identifier"
 	    ((_ObserveQuery*) query)->currentOffset = currentOffset;
@@ -463,7 +578,7 @@ FunTable observeUnique(ObserveQuery query,BOOL verboseMode,int precision) {
 
   currentOffset = nextObserveQueryNode(query);
   while (!((_ObserveQuery*) query)->finished) {
-    unsigned long satc = getResult(handle,currentOffset);
+    unsigned long satc = hatResult(handle,currentOffset);
     ExprNode* r=buildExpr(handle,satc,verboseMode,precision);
     ExprNode* a=buildExpr(handle,currentOffset,verboseMode,precision);
     arity = getExprArity(a);

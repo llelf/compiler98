@@ -251,7 +251,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatParent :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace, int nodenumber)
 %code
-%     hatFollowSATs((int) hattrace,nodenumber);
+%     hatFollowSATCs((int) hattrace,nodenumber);
 %     newnode = getParent();
 %result (int newnode)
 
@@ -262,7 +262,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatSrcRefNode :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace, int nodenumber)
 %code 
-%     newnode = hatFollowSATs((int) hattrace,nodenumber);
+%     newnode = hatFollowSATCs((int) hattrace,nodenumber);
 %     switch (getNodeType((int) hattrace,newnode)) {
 %       case HatApplication:
 %       case HatName:newnode = getSrcRef();break;
@@ -326,12 +326,12 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatResult :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace,int nodenumber)
 %code filepointer fp,fp2;
-%     fp = hatFollowSATs((int) hattrace,nodenumber);
+%     fp = hatFollowSATCs((int) hattrace,nodenumber);
 %     newnode = getNodeType((int) hattrace,fp);
 %     if ((newnode!=HatApplication)&&(newnode!=HatName)) newnode=0; else {
-%       if ((fp2=hatLMO((int) hattrace,fp))==0) newnode==0;else {
+%       if ((fp2=hatOutermostSymbol((int) hattrace,fp))==0) newnode==0;else {
 %         if (getNodeType((int) hattrace,fp2)==HatConstructor) newnode=0;else {
-%          newnode=hatFollowSATs((int) hattrace,getResult((int) hattrace,fp));
+%          newnode=hatFollowSATCs((int) hattrace,hatResult((int) hattrace,fp));
 %         }
 %       }
 %     }
@@ -340,7 +340,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatLeftmost :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace,int nodenumber)
 %code
-%     newnode = hatLMO((int) hattrace,nodenumber);
+%     newnode = hatOutermostSymbol((int) hattrace,nodenumber);
 %result (int newnode)
 
 %fun c_hatName :: HatNodeInternal -> String
@@ -431,7 +431,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatApplFun :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace,int nodenumber)
 %code filepointer fp;
-%     fp = hatFollowSATs((int) hattrace,nodenumber);
+%     fp = hatFollowSATCs((int) hattrace,nodenumber);
 %     newnode = getNodeType((int) hattrace,fp);
 %     if (newnode==HatApplication) newnode=getAppFun();
 %     else
@@ -442,7 +442,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatProjRef :: HatNodeInternal -> RefNumber
 %call (foreign f hattrace,int nodenumber)
 %code
-%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
 %     switch(newnode) {
 %       case HatProjection:case HatSATA:case HatSATB:case HatSATC:
 %         newnode=getProjValue();
@@ -454,7 +454,7 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun c_hatApplArity :: HatNodeInternal -> Int
 %call  (foreign f hattrace,int nodenumber)
 %code 
-%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
 %     if (newnode==HatApplication) newnode=getAppArity();
 %     else
 %        newnode = 0;
@@ -463,9 +463,9 @@ _fromHatNode HatInvalid = error "_fromHatNode on Invalid node!" -- should never 
 %fun gethatArgInternal :: HatNodeInternal -> Int -> Int
 %call  (foreign f hattrace,int nodenumber) (int argnum)
 %code
-%     newnode = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     newnode = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
 %     if (newnode!=HatApplication) newnode=0; else {
-%       newnode = hatFollowSATs((int) hattrace,getAppArgument(argnum));
+%       newnode = hatFollowSATCs((int) hattrace,getAppArgument(argnum));
 %     }
 %result (int newnode)
 
@@ -533,7 +533,7 @@ fromHatNodeType _ = 0
 %fun c_hatNodeType :: HatNodeInternal -> HatNodeType
 %call (foreign f hattrace,int nodenumber)
 %code //printf("in hatNodeType: %u %u\n",(int) hattrace,nodenumber);
-%     nodetype = getNodeType((int) hattrace,hatFollowSATs((int) hattrace,nodenumber));
+%     nodetype = getNodeType((int) hattrace,hatFollowSATCs((int) hattrace,nodenumber));
 %     //printf("out hatNodeType: %u\n",nodetype);
 %result (<fromHatNodeType/toHatNodeType> (int nodetype))
 
@@ -550,11 +550,11 @@ fromHatApplType _ = 0
 %call (foreign f hattrace,int nodenumber)
 %code filepointer appl,lmo;
 %     nodetype = getNodeType((int) hattrace,
-%			     appl=hatFollowSATs((int) hattrace,nodenumber));      
+%			     appl=hatFollowSATCs((int) hattrace,nodenumber));      
 %     if ((nodetype!=HatApplication)&&(nodetype!=HatName)) nodetype=0; else {
-%       if ((lmo=hatLMO((int) hattrace,appl))==0) nodetype==0;else {
+%       if ((lmo=hatOutermostSymbol((int) hattrace,appl))==0) nodetype==0;else {
 %         if (getNodeType((int) hattrace,lmo)==HatConstructor) nodetype=HatConstructor; else {
-%          nodetype = getNodeType((int) hattrace,getResult((int) hattrace,appl));
+%          nodetype = getNodeType((int) hattrace,hatResult((int) hattrace,appl));
 %         }
 %       }
 %     }
@@ -563,7 +563,7 @@ fromHatApplType _ = 0
 %fun c_hatInfixValue :: HatNodeInternal -> Int
 %call (foreign f hattrace,int nodenumber)
 %code
-%     hatFollowSATs((int) hattrace,nodenumber);
+%     hatFollowSATCs((int) hattrace,nodenumber);
 %     infixprio = getInfixType()+(getInfixPrio()*4);
 %result (int infixprio)
 

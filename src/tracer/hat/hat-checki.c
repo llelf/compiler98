@@ -319,9 +319,9 @@ filepointer printNode(unsigned long offset) {
     exp = buildExpr(handle,offset,verboseMode,precision);
     appstr = prettyPrintExpr(exp,precision,1);
     
-    lmo = hatLMO(handle,offset);
+    lmo = hatOutermostSymbol(handle,offset);
     if ((lmo!=0)&&(getNodeType(handle,lmo)==HatIdentifier)) {
-     satc = getResult(handle,hatFollowSATs(handle,offset));
+     satc = hatResult(handle,hatFollowSATCs(handle,offset));
      if ((isSAT(handle,satc))&&(satc!=offset)) {
        printf("corresponding SAT at: 0x%x\n\n",satc);
      }
@@ -366,7 +366,7 @@ void interactive(filepointer current) {
 	  }
 	} else {
 	  if (isCmd(command,"follow","f")) {
-	    adr = hatFollowSATs(handle,current);
+	    adr = hatFollowSATCs(handle,current);
 	  } else {
 	    adr = atol(command);
 	    if (adr==0) {

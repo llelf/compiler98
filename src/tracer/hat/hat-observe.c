@@ -151,7 +151,7 @@ int main (int argc, char *argv[])
     while (h=nextObserveQueryNode(query)) {
       filepointer fun;
       printf("(%u) ",h);
-      fun = hatLMO(handle,h);
+      fun = hatOutermostSymbol(handle,h);
       if (getNodeType(handle,fun)==HatConstructor) {
 	showNode(handle,h,verbosemode,precision);
 	printf("\n");

@@ -83,7 +83,7 @@ int hasAncestor(HatFile handle,filepointer nodenumber,filepointer parent) {
 // leftmost outermost application/name, without passing any SATCs
 // nodes "behind" the SATC were calculated separately, and (may) have nothing
 // to do with the current considered EDT node 
-filepointer hatLMOdirect(HatFile handle,filepointer fileoffset) {
+filepointer hatOutermostdirect(HatFile handle,filepointer fileoffset) {
   char nodeType;
   filepointer last=0;
 
@@ -129,8 +129,8 @@ filepointer getHatParent(HatFile handle,filepointer nodenumber,filepointer paren
     filepointer fun = getAppFun();
     filepointer n;
     if (!isSAT(handle,fun)) {
-      getNodeType(handle,fun); // hatFollowSATs(handle,fun));
-      n = hatLMOdirect(handle,fun);         // in getChildrenRek!
+      getNodeType(handle,fun); // hatFollowSATCs(handle,fun));
+      n = hatOutermostdirect(handle,fun);         // in getChildrenRek!
       if (n!=0) {
 	getNodeType(handle,n);
 	n = getParent();
@@ -178,7 +178,7 @@ int isChildOf(HatFile handle,filepointer nodenumber,filepointer parent) {
 	hatSeekNode(handle,old);
 	return 1;
       }
-      if (isTopLevel(handle,nodenumber)&&(getResult(handle,nodenumber)!=0)) {
+      if (isTopLevel(handle,nodenumber)&&(hatResult(handle,nodenumber)!=0)) {
 	hatSeekNode(handle,old);
 	return 0;
       }
@@ -215,7 +215,7 @@ void getChildrenForRek(HatFile handle,
     if (current==0) return;
     addToHashTable(hash,current);
 
-    result=getResult(handle,current);
+    result=hatResult(handle,current);
 
     nodeType = getNodeType(handle,current);
 #ifdef DebuggedtChildrenFor
@@ -241,10 +241,10 @@ void getChildrenForRek(HatFile handle,
 	srcref    = getSrcRef();            // get srcref
 	
 	appTrace = getHatParent(handle,current,parentTrace);
-	/*	if (getNodeType(handle,hatFollowSATs(handle,funTrace))!=HatApplication) {
+	/*	if (getNodeType(handle,hatFollowSATCs(handle,funTrace))!=HatApplication) {
 	  // note: this test should match the test in isChildOf
 	  // if fun is not an application, take the parent of the leftmost node
-	  appTrace = hatLMOName(handle,funTrace);
+	  appTrace = hatOutermostName(handle,funTrace);
 	  if (appTrace!=0) {
 	    if (getNodeType(handle,appTrace)==HatName) {
 	      appTrace = getParent();
@@ -256,7 +256,7 @@ void getChildrenForRek(HatFile handle,
 	  appTrace = hatFollowHidden(handle,appTrace);
 	}
 	*/
-	if (getNodeType(handle,hatFollowSATs(handle,funTrace))==HatApplication) {
+	if (getNodeType(handle,hatFollowSATCs(handle,funTrace))==HatApplication) {
 	  // higher order result of fun is applied additional arguments
 	  
 	}
@@ -277,7 +277,7 @@ void getChildrenForRek(HatFile handle,
 	  printf("APP at 0x%x is child of 0x%x\n",current,parentTrace);debugLines++;
 	}
 #endif
-	satc=hatFollowSATs(handle,result);
+	satc=hatFollowSATCs(handle,result);
 	if ((isChild==0)||(isTopLevel(handle,appTrace)==0)) { // isIForGUARD)) {
 	  // isChild check is not enough, 'cause then and else clauses 
 	  // of IF's (and GUARDs) are at the parent...
@@ -314,7 +314,7 @@ void getChildrenForRek(HatFile handle,
 	  //printf("APP at 0x%x is child!\n",current);debugLines++;
 	  printf("back at APP at 0x%x\n",current);debugLines++;
 #endif
-	  // satc=hatFollowSATs(handle,result); done already!
+	  // satc=hatFollowSATCs(handle,result); done already!
 	  { 
 	    int trusted = isTrusted(handle,funTrace);
 	    int toplevel = isTopLevel(handle,funTrace);
@@ -342,12 +342,12 @@ void getChildrenForRek(HatFile handle,
 
       if ((p==parentTrace)||(p==0)) {
 	if (p==0) {  // CAF found
-	  unsigned long lmo = hatLMO(handle,current);
+	  unsigned long lmo = hatOutermostSymbol(handle,current);
 	  if (lmo!=0) {
 	    if (isTopLevel(handle,current)&&(isTrusted(handle,srcref)==0)&&
 		(!isInList(nl,current))) {
-	      filepointer sat2,satc = getResult(handle,current);
-	      if ((satc!=0)&&((sat2=hatFollowSATs(handle,satc))!=current)) {
+	      filepointer sat2,satc = hatResult(handle,current);
+	      if ((satc!=0)&&((sat2=hatFollowSATCs(handle,satc))!=current)) {
 		insertInList(nl,current);
 	      }
 	    }
@@ -357,7 +357,7 @@ void getChildrenForRek(HatFile handle,
 	return;
       }
       else {
-        newcurrent = hatFollowSATs(handle,p);
+        newcurrent = hatFollowSATCs(handle,p);
 	if (newcurrent==current) {
 	  //removeFromHashTable(hash,orig_current);
 	  return;
@@ -381,7 +381,7 @@ void getChildrenForRek(HatFile handle,
       //removeFromHashTable(hash,orig_current);
       return;
     default: {
-	unsigned long newcurrent = hatFollowSATs(handle,current);
+	unsigned long newcurrent = hatFollowSATCs(handle,current);
 	if (newcurrent==current) {
 	  //removeFromHashTable(hash,orig_current);
 	  return;
@@ -399,7 +399,7 @@ void getChildrenForRek(HatFile handle,
 
 void getChildrenFor(HatFile handle,
 		    NodeList* nl,filepointer edtnode) {
-  filepointer result = getResult(handle,edtnode);
+  filepointer result = hatResult(handle,edtnode);
   if (edtnode) { // does any result exist?
     HashTable* hash=newHashTable(HASH_TABLE_SIZE);
     filepointer topmost,current=edtnode;

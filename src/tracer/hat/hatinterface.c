@@ -390,7 +390,7 @@ void skipNode(char nodeType) {
   }
 }
 
-/* follow the trace along SATs, indirections and TRNAMEs */
+/* follow the trace along SATCs, indirections and TRNAMEs */
 filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
   char nodeType;
   
@@ -402,7 +402,6 @@ filepointer hatFollowTrace(HatFile handle,filepointer fileoffset) {
     case TRNAM:
       fileoffset=getNameType();break;
     case TRIND: //  Indirection
-    case TRSATCIS:
     case TRSATC:
       fileoffset=getProjValue();
       break;
@@ -426,14 +425,13 @@ filepointer hatFollowHidden(HatFile handle,filepointer fileoffset) {
   }
 }
 
-/* follow the trace along SATs */
-filepointer hatFollowSATs(HatFile handle,filepointer fileoffset) {
+/* follow a trail of SATCs */
+filepointer hatFollowSATCs(HatFile handle,filepointer fileoffset) {
   char nodeType;
   
   while (1) {
     nodeType = getNodeType(handle,fileoffset);
     switch (nodeType) {
-      //case TRSATCIS:
     case TRSATC:
       fileoffset=getProjValue(); // follow link...
       break;
@@ -443,11 +441,12 @@ filepointer hatFollowSATs(HatFile handle,filepointer fileoffset) {
   }
 }
 
-/* find the SAT belonging to an application */
+/* find the SAT belonging to a redex (node must be application or name) */
 /* return value 0: no SAT found, otherwise: offset for SAT */
-filepointer getResult(HatFile handle,filepointer fileoffset) {
+filepointer getResult() {
   char nodeType;
-  filepointer p,satc;
+  HatFile handle = currentHandle;
+  filepointer p,satc,fileoffset = hatNodeNumber(handle);
 
   while (fileoffset!=0) {
     hatSeekNode(handle,fileoffset);
@@ -482,6 +481,13 @@ filepointer getResult(HatFile handle,filepointer fileoffset) {
     }
   }
   return 0;
+}
+
+filepointer hatResult(HatFile handle,filepointer fileoffset) {
+  switch(getNodeType(handle,fileoffset)) {
+   case HatName:
+   case HatApplication:return getResult();
+  }
 }
 
 /* show location in source file of this application/symbol */
@@ -542,7 +548,7 @@ char* hatFunLocationStr(HatFile handle,filepointer fileoffset) {
   char *s,*tmp;
   filepointer old = hatNodeNumber(handle);
   while (1) {
-    fileoffset = hatFollowSATs(handle,fileoffset);
+    fileoffset = hatFollowSATCs(handle,fileoffset);
     nodeType=getNodeType(handle,fileoffset);
     switch(nodeType) {
     case NTIDENTIFIER:
@@ -664,7 +670,7 @@ BOOL _internalIsLHSModule(HatFile handle,filepointer modinfo) {
   return 0;
 }
 
-BOOL isNTToplevel() {
+BOOL getTopLevelFlag() {
   return (seenextbyte()==NTTOPIDENTIFIER);
 }
 
@@ -695,7 +701,7 @@ int isTopLevel(HatFile handle,filepointer srcref) {
 //    i=((i<=1)||((i<=3)&&(_internalIsLHSModule(handle,getModInfo()))));
 //    hatSeekNode(handle,old);
 //    return i;
-      return isNTToplevel();
+      return getTopLevelFlag();
     case TRAPP:
       srcref = getAppFun();
       break;
@@ -717,7 +723,7 @@ int isTopLevel(HatFile handle,filepointer srcref) {
   }
 }
 
-filepointer hatLMO(HatFile handle,filepointer fileoffset) {
+filepointer hatOutermostSymbol(HatFile handle,filepointer fileoffset) {
   char nodeType;
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
@@ -746,8 +752,8 @@ filepointer hatLMO(HatFile handle,filepointer fileoffset) {
   }
 }
 
-// return leftmost NAME (not identifier/constructor as hatLMO)
-filepointer hatLMOName(HatFile handle,filepointer fileoffset) {
+// return leftmost NAME (not identifier/constructor as hatOutermost)
+filepointer hatOutermostName(HatFile handle,filepointer fileoffset) {
   char nodeType;
   while (1) {
     nodeType=getNodeType(handle,fileoffset);
@@ -803,119 +809,6 @@ filepointer hatInitialCAF(HatFile handle,filepointer fileoffset) {
   return prev;
 }
 
-int isDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
-  char nodeType;
-  filepointer old = hatNodeNumber(handle);
-
-  if (parent==0) return 0; 
-
-  if (getNodeType(handle,fileoffset)==HatApplication) {
-    fileoffset = hatLMOName(handle,fileoffset);
-    if (fileoffset!=0) {
-      getNodeType(handle,fileoffset);
-      fileoffset=getParent();
-    }
-  }
-  if (fileoffset==parent) return 1;
-
-  while (fileoffset!=0) {
-    nodeType=getNodeType(handle,fileoffset);
-    switch(nodeType) {
-    case HatHidden:
-    case HatProjection:
-      fileoffset=getParent();
-      break;
-    case HatSATC:
-      fileoffset=getProjValue();
-      break;
-    case HatName:
-      if (getNameType()==parent) {
-	hatSeekNode(handle,old);
-	return 1;
-      }
-      fileoffset = getParent();
-      break;
-    case HatApplication:{
-      filepointer newoffs;
-      newoffs = getAppFun(); //Parent();
-      if (hatLMO(handle,fileoffset)==parent) {
-	hatSeekNode(handle,old);
-	return 1;
-      }
-      getNodeType(handle,newoffs);
-      fileoffset = getParent();
-      break;
-    }
-    default:
-      hatSeekNode(handle,old);
-      return 0;
-    }
-  }
-  hatSeekNode(handle,old);
-  return 0;
-}
-
-int isDirectDescendantOf(HatFile handle,filepointer fileoffset,filepointer parent) {
-  char nodeType;
-  filepointer old = hatNodeNumber(handle);
-  int debug=0;
-
-  if (parent==0) return 0;
-  
-  if (getNodeType(handle,fileoffset)==HatApplication) {
-    fileoffset = hatLMOName(handle,fileoffset);
-    if (fileoffset!=0) {
-      getNodeType(handle,fileoffset);
-      fileoffset=getParent();
-    }
-  }
-  if (fileoffset==parent) return 1;
-
-  while (fileoffset!=0) {
-    nodeType=getNodeType(handle,fileoffset);
-    switch(nodeType) {
-    case HatHidden:
-      fileoffset=getParent();
-      break;
-    case HatSATA:
-    case HatSATB:
-    case HatSATC:
-      fileoffset=getProjValue();
-      break;
-    case HatProjection:
-      fileoffset=getParent();
-      break;
-    case HatName:
-      if (getNameType()==parent) {
-	hatSeekNode(handle,old);
-	return 1;
-      }
-      fileoffset = getParent();
-      break;
-    case HatApplication:{
-      filepointer newoffs;
-      newoffs = getAppFun();
-      if (hatLMO(handle,fileoffset)==parent) {
-	hatSeekNode(handle,old);
-	return 1;
-      }
-      if (isTopLevel(handle,fileoffset)) {
-	hatSeekNode(handle,old);
-	return 0;
-      }
-      getNodeType(handle,newoffs);
-      fileoffset = getParent();
-      break;
-    }
-    default:
-      hatSeekNode(handle,old);
-      return 0;
-    }
-  }
-  hatSeekNode(handle,old);
-  return 0;
-}
-
 filepointer hatMainCAF(HatFile h) {
   filepointer currentOffset,satc,srcref;
   char nodeType;
@@ -934,7 +827,7 @@ filepointer hatMainCAF(HatFile h) {
 	  //if (isTopLevel(h,currentOffset)==0) printf("main is not top-level!\n");
 	  if ((isTrusted(h,srcref)==0)&&
 	      (isTopLevel(h,currentOffset))) {
-	    filepointer lmo = hatLMO(h,currentOffset);
+	    filepointer lmo = hatOutermostSymbol(h,currentOffset);
 	    if ((lmo!=0)&&(getNodeType(h,lmo)==NTIDENTIFIER)&&
 		(strcmp(getName(),"main")==0)) {
 	      return currentOffset;
@@ -1379,11 +1272,11 @@ HatFile hatOpenFile(char* name) {
     _loadHandle(handle);
     if (hatTestHeader(handle)==0) {
       hatCloseFile(handle);
-      return -2;
+      return HatFileBadVersion;
     }
     return handle;
   } else
-    return -1;
+    return HatFileNotFound;
 }
 
 /* close file in internal file descriptor */

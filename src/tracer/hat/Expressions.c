@@ -230,8 +230,8 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
 	if ((fun)&&(fun->type==NTCONSTRUCTOR)&&(fun->v.identval)) {
 	  IdentNode* id = fun->v.identval;
 	  if ((id)&&(id->name)&&(strcmp(id->name,"IO")==0)&&(fun->v.appval->arity>0)) {
-	    filepointer hidden = hatFollowSATs(handle,
-					       (filepointer) getAppNodeArg(apn,0));
+	    filepointer hidden = hatFollowSATCs(handle,
+						(filepointer) getAppNodeArg(apn,0));
 	    if (getNodeType(handle,hidden)==TRHIDDEN) {
 	      setAppNodeArg(apn,0,(ExprNode*) (getParent()));
 	    }
@@ -1014,7 +1014,7 @@ unsigned long showAppAndResult(HatFile handle,filepointer fileoffset,int verbose
   appstr = prettyPrintExpr(exp,precision,1);
   freeExpr(exp);
 
-  satc = getResult(handle,fileoffset);  // find SATC for the application!
+  satc = hatResult(handle,fileoffset);  // find SATC for the application!
 
   if (satc!=0) {
 #ifdef showAppNode
