@@ -35,7 +35,7 @@ import Extra (Pos,noPos,strPos,fromPos)
 import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,just
                ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail)
 import AuxFile (AuxiliaryInfo)	-- needed only for hbc's broken import mechanism
-import List (isPrefixOf,union)
+import List (isPrefixOf,union,partition)
 import Char (isAlpha,digitToInt)
 
 infixr 6 `typeFun`	-- hbc won't let me declare this later.
@@ -291,6 +291,8 @@ tDecls traced parent (DeclsParse decls) = (DeclsParse decls',declsConsts)
           -> ([Decl id],ModuleConsts)
   combine (ds11,ds12,c1) (ds,c2) = (ds11++ds12++ds,c1 `merge` c2)
 
+
+-- for declarations in class and instance definitions:
 tDecls2 :: Bool -> Exp TokenId -> Decls TraceId 
         -> (Decls TokenId,[Decl TokenId],ModuleConsts)
 tDecls2 traced parent (DeclsParse decls) = 
@@ -300,6 +302,22 @@ tDecls2 traced parent (DeclsParse decls) =
   where
   (declss1,declss2,declsConstss) = 
     unzip3 (map (tDecl traced parent) . combineFuns $ decls)
+
+tDecl2 :: Bool -> Exp TokenId -> Decl TraceId 
+       -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
+tDecl2 traced parent (DeclFun pos id [Fun [] rhs localDecls]) = 
+  -- methods always take a position and trace as argument,
+  -- even if these are no used in cafs
+  ([DeclFun pos id' 
+     [Fun [PatWildcard pos,PatWildcard pos] 
+       (Unguarded (ExpVar pos shareId)) noDecls]]
+  ,DeclFun pos shareId fun' : decls'
+  ,declConsts)
+  where
+  shareId = nameShare id
+  ([DeclFun _ id' fun'],decls',declConsts) = 
+    tCaf traced parent pos id rhs localDecls
+tDecl2 traced parent decl = tDecl traced parent decl
 
 
 singleDecl :: Decl id -> ([Decl id],[a],ModuleConsts)
@@ -344,6 +362,7 @@ tDecl _ _ d@(DeclPrimitive pos fnId arity ty) =
   --   then error "tDecl _tprim_ should not occur"
   --   else singleDecl $ DeclPrimitive pos (nameOrg fnId) 2 (mkTFunType ty)
 tDecl _ _ (DeclForeignImp pos cname fnId arity fspec ty duplicateId) =
+  -- fnId is always let-bound, even with zero arguments
   ([DeclFun pos (nameTransVar fnId) 
      [Fun [sr,useParent]
        (Unguarded 
@@ -362,8 +381,15 @@ tDecl _ _ (DeclForeignImp pos cname fnId arity fspec ty duplicateId) =
 tDecl _ _ (DeclForeignExp pos str fnId _) =
   error ("Cannot trace foreign export (used at " ++ strPos pos ++ ")")
 tDecl _ _ (DeclVarsType vars contexts ty) =
-  singleDecl $ 
-    DeclVarsType (tPosExps vars) (tContexts contexts) (mkTFunType ty)
+  ((if null lambdaVars then [] 
+      else [DeclVarsType (tPosExps lambdaVars) 
+             (tContexts contexts) (wrapType (tType ty))])
+   ++
+   (if null letVars then [] else [DeclVarsType (tPosExps letVars) 
+                                   (tContexts contexts) (mkTFunType ty)])
+  ,[],emptyModuleConsts)
+  where
+  (lambdaVars,letVars) = partition (isLambdaBound . snd) vars
 tDecl traced parent (DeclPat (Alt (ExpVar pos id) rhs decls)) = 
   -- this case may occur because of the next equation
   tCaf traced parent pos id rhs decls

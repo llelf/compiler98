@@ -182,6 +182,9 @@ FileOffset		primTHidden	(FileOffset t1);
 FileOffset		primTSatA	(FileOffset t1);
 FileOffset		primTSatB	(FileOffset t1);
 FileOffset		primTSatC	(FileOffset t1, FileOffset t2);
+FileOffset		primTSatALonely	(FileOffset t1);
+FileOffset		primTSatBLonely	(FileOffset t1);
+FileOffset		primTSatCLonely	(FileOffset t1, FileOffset t2);
 
 void		updateSatBs	(void);
 void		updateSatCs	(void);
@@ -203,14 +206,6 @@ FileOffset	primNTCString	(char *s);
 FileOffset	primNTIf	(void);
 FileOffset	primNTGuard	(void);
 FileOffset	primNTContainer	(void);
-
-int		primTrustedNm	(FileOffset nm);
-int		primSameTrace	(FileOffset t1, FileOffset t2);
-
-FileOffset	primTracePtr	(FileOffset t);
-int		primTrustedFun	(FileOffset t);
-int		primHidden	(FileOffset t);
-FileOffset		mkTrace		(FileOffset p, int tr, int hid);
 
 
 FileOffset	readCurrentSatB	(void);

@@ -13,16 +13,20 @@
 
 FILE *HatFile, *HatOutput, *HatBridge;
 
+FileOffset hiddenMask;
 
 /* from initexit ********************************************************* */
 
 /* initialisation handler */
 
-void 
+void
 openTrace (char *progname)
 {
     unsigned p = 0;
     char filename[256];
+
+    hiddenMask = htonl(~(1<<31)); /* only 0 at highest bit */
+    /* logical & with possibly hidden fileoffset yields fileoffset */
 
     strcpy(filename,progname);
     strcat(filename,".hat");		/* the .hat file holds the archive */
@@ -68,6 +72,8 @@ errorTraceExit(char* errmsg, FileOffset trace, int ecode)
 
   fprintf(stderr, "%s\n", errmsg);
   nt = primNTCString(errmsg);
+  nt &= hiddenMask;
+  trace &= hiddenMask;
   fseek(HatFile,8+sizeof(FileOffset),SEEK_SET);
   fwrite(&nt, sizeof(FileOffset), 1, HatFile);
   fseek(HatFile,8,SEEK_SET);
@@ -144,6 +150,9 @@ primTAp1 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp1 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x01,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -163,6 +172,10 @@ primTAp2 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp2 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x02,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -184,6 +197,11 @@ primTAp3 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp3 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x03,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -207,6 +225,12 @@ primTAp4 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp4 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x04,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -232,6 +256,13 @@ primTAp5 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp5 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x05,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -259,6 +290,14 @@ primTAp6 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp6 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x06,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -288,6 +327,15 @@ primTAp7 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp7 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x07,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -319,6 +367,16 @@ primTAp8 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp8 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x08,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -352,6 +410,17 @@ primTAp9 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp9 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x09,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -387,6 +456,18 @@ primTAp10 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp10 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0a,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -424,6 +505,19 @@ primTAp11 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp11 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0b,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
+    targ11 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -463,6 +557,20 @@ primTAp12 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp12 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0c,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
+    targ11 &= hiddenMask;
+    targ12 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -504,6 +612,21 @@ primTAp13 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp13 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0d,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
+    targ11 &= hiddenMask;
+    targ12 &= hiddenMask;
+    targ13 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -547,6 +670,22 @@ primTAp14 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp14 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0e,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
+    targ11 &= hiddenMask;
+    targ12 &= hiddenMask;
+    targ13 &= hiddenMask;
+    targ14 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -592,6 +731,23 @@ primTAp15 (FileOffset tap, FileOffset tfn
     HIDE(fprintf(stderr,"\tprimTAp15 0x%x 0x%x 0x%x 0x%x -> 0x%x\n",tap,tfn,targ1,sr,fo);)
     fputc(((Trace<<5) | TAp),HatFile);
     fputc(0x0f,HatFile);
+    tap &= hiddenMask;
+    tfn &= hiddenMask;
+    targ1 &= hiddenMask;
+    targ2 &= hiddenMask;
+    targ3 &= hiddenMask;
+    targ4 &= hiddenMask;
+    targ5 &= hiddenMask;
+    targ6 &= hiddenMask;
+    targ7 &= hiddenMask;
+    targ8 &= hiddenMask;
+    targ9 &= hiddenMask;
+    targ10 &= hiddenMask;
+    targ11 &= hiddenMask;
+    targ12 &= hiddenMask;
+    targ13 &= hiddenMask;
+    targ14 &= hiddenMask;
+    targ15 &= hiddenMask;
     fwrite(&(tap),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(tfn),   sizeof(FileOffset), 1, HatFile);
     fwrite(&(targ1), sizeof(FileOffset), 1, HatFile);
@@ -626,6 +782,7 @@ primTNm (FileOffset tnm, FileOffset nm, FileOffset sr)
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTNm 0x%x 0x%x 0x%x -> 0x%x\n",tnm,nm,sr,fo);)
     fputc(((Trace<<5) | TNm),HatFile);
+    tnm &= hiddenMask;
     fwrite(&(tnm), sizeof(FileOffset), 1, HatFile);
     fwrite(&(nm),  sizeof(FileOffset), 1, HatFile);
     fwrite(&sr,    sizeof(FileOffset), 1, HatFile);
@@ -640,22 +797,35 @@ primTInd (FileOffset t1, FileOffset t2)
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTInd 0x%x 0x%x -> 0x%x\n",t1,t2,fo);)
     fputc(((Trace<<5) | TInd),HatFile);
+    t1 &= hiddenMask;
+    t2 &= hiddenMask;
     fwrite(&(t1), sizeof(FileOffset), 1, HatFile);
     fwrite(&(t2), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (2*sizeof(FileOffset));
     return fo;
 }
 
+
+
+int
+hidden (FileOffset t)
+{
+  return (!((t & hiddenMask) == t));
+}
+
 FileOffset
 primTHidden (FileOffset t1)
 {
     FileOffset fo;
+
+    if (hidden(t1)) 
+      return fo;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTHidden 0x%x -> 0x%x\n",t1,fo);)
     fputc(((Trace<<5) | THidden),HatFile);
     fwrite(&(t1), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
-    return fo;
+    return(fo | (~hiddenMask));
 }
 
 FileOffset
@@ -665,6 +835,7 @@ primTSatA (FileOffset t1)
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTSatA 0x%x -> 0x%x\n",t1,fo);)
     fputc(((Trace<<5) | TSatA),HatFile);
+    t1 &= hiddenMask;
     fwrite(&(t1), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
     return fo;
@@ -678,6 +849,7 @@ primTSatALonely (FileOffset t1)
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTSatALonely 0x%x -> 0x%x\n",t1,fo);)
     fputc(((Trace<<5) | TSatAL),HatFile);
+    t1 &= hiddenMask;
     fwrite(&(t1), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
     return fo;
@@ -698,7 +870,7 @@ FileOffset
 primTSatB (FileOffset t1)
 {
     SATstackSort[SATp] = False;
-    SATstack[SATp++] = t1;
+    SATstack[SATp++] = t1&hiddenMask;
     if (SATp >= NUM_SATB) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
         exit(1);
@@ -711,7 +883,7 @@ FileOffset
 primTSatBLonely (FileOffset t1)
 {
     SATstackSort[SATp] = True;
-    SATstack[SATp++] = t1;
+    SATstack[SATp++] = t1&hiddenMask;
     if (SATp >= NUM_SATB) {
         fprintf(stderr,"Exceeded size of SAT stack\n");
         exit(1);
@@ -727,6 +899,8 @@ primTSatBLonely (FileOffset t1)
 FileOffset
 primTSatC (FileOffset torig,FileOffset teval)
 {
+    torig &= hiddenMask;
+    teval &= hiddenMask;
     if (SATstack[--SATp] != torig) {
         fprintf(stderr,"SAT stack is corrupt.\n");
         exit(1);
@@ -755,6 +929,8 @@ primTSatC (FileOffset torig,FileOffset teval)
 FileOffset
 primTSatCLonely (FileOffset torig,FileOffset teval)
 {
+    torig &= hiddenMask;
+    teval &= hiddenMask;
     if (SATstack[--SATp] != torig) {
         fprintf(stderr,"SAT stack is corrupt.\n");
         exit(1);

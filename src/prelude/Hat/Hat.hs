@@ -87,7 +87,7 @@ mkR x t = t `Prelude.seq` R x t
 
 
 newtype SR     = SR Int
-newtype Trace  = Trace Int
+newtype Trace  = Trace Int -- a hidden trace is negative, otherwise positive
 newtype NmType = NmType Int
 newtype ModuleTraceInfo = MTI Int
 
@@ -1361,12 +1361,6 @@ prim15 nm rf sr t =
 -- ----------------------------------------------------------------------------
 -- combinators for untraced code
 
-hide :: Trace -> Trace
-hide = undefined
-
-hidden :: Trace -> Bool
-hidden _ = False
-
 -- Assure that a trace component exists iff it is demanded
 -- first trace is the hidden call of untraced code
 -- second trace becomes trace of expression iff the expression is evaluated
@@ -1442,13 +1436,13 @@ uap4 h f a b c d = ulazySat
 -- combinators for transforming n-ary functions
 
 ufun1 :: NmType -> (Trace -> R a -> R r) -> SR -> Trace -> R (Fun a r)
-ufun1 nm rf sr t = R (Fun (\t a -> rf (hide t) a)) (mkTNm t nm sr)
+ufun1 nm rf sr t = R (Fun (\t a -> rf (mkTHidden t) a)) (mkTNm t nm sr)
 
 ufun2 :: NmType -> (Trace -> R a -> R b -> R r) -> SR -> Trace
      -> R (Fun a (Fun b r))
 ufun2 nm rf sr t =
   R (Fun (\t a ->
-    R (Fun (\t b -> rf (hide t) a b))
+    R (Fun (\t b -> rf (mkTHidden t) a b))
       t))
     (mkTNm t nm sr)
 
@@ -1457,7 +1451,7 @@ ufun3 :: NmType -> (Trace -> R a -> R b -> R c -> R r) -> SR -> Trace
 ufun3 nm rf sr t =
   R (Fun (\t a ->
     R (Fun (\t b ->
-      R (Fun (\t c -> rf (hide t) a b c))
+      R (Fun (\t c -> rf (mkTHidden t) a b c))
         t))
       t))
     (mkTNm t nm sr)
@@ -1736,9 +1730,12 @@ foreign import "primTNm"
 	-> Trace	-- result
 
 foreign import "primTInd"
- mkTInd :: Trace		-- trace 1
+ mkTInd :: Trace	-- trace 1
 	-> Trace	-- trace 2
 	-> Trace	-- result
+
+foreign import "hidden" 
+ hidden :: Trace -> Bool
 
 foreign import "primTHidden"
  mkTHidden :: Trace	-- trace
