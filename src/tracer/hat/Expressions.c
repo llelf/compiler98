@@ -96,6 +96,7 @@ void freeExpr(ExprNode* e) {
       free(e->v.doubleval);
       break;
     case MESSAGE:
+    case HatCString:
       freeStr(e->v.message);
       break;
     }
@@ -295,12 +296,15 @@ ExprNode* buildExprRek(HatFile handle,filepointer fileoffset,int verbose,
       exp = newExprNode(b);
       exp->v.floatval = getFloatValue();
       return exp;
+    case HatCString:
+      exp = newExprNode(b);
+      exp->v.message = newStr(getName());
+      return exp;
     case HatTuple:
     case HatFun:
     case HatCase:
     case HatLambda:
     case HatDummy:
-    case HatCString:
     case HatIf:
     case HatGuard:
     case HatContainer:
@@ -594,7 +598,7 @@ char* printRekExpr(ExprNode* exp,int verbose,unsigned int precision,int topInfix
   case HatDummy:
     return newStr("DUMMY");
   case HatCString:
-    return newStr("CSTRING");
+    return catStr("CSTRING \"",exp->v.message,"\"");
   case HatIf:
     return newStr("IF");
   case HatGuard:

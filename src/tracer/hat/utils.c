@@ -417,7 +417,7 @@ readNmTypeAt (FileOffset fo)
 		} break;
     case NTCString:
 		{ id->idname = readString();
-		  sprintf(buf,"\"%s\"",id->idname);
+		  sprintf(buf,"\"CSTRING %s\"",id->idname);
 		  free(id->idname);
 		  id->idname = strdup(buf);
 		} break;
