@@ -1,7 +1,7 @@
 include Makefile.inc
 
 THISLIB	= FFI
-SEARCH	= -P../IOExtras -P$(LOW)
+SEARCH	= -P../IOExtras -P$(LOW) -P../PreludeIO -P../$(MACHINE)
 ifeq "$(BUILDWITH)" "hbc"
 EXTRA_H_FLAGS	= +RTS -A16M -RTS
 else
@@ -10,9 +10,9 @@ endif
 EXTRA_C_FLAGS	=
 
 SRCS	= \
-	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs StablePtr.hs
+	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs CError.hs StablePtr.hs
 SRCS_T	= \
-	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs
+	Addr.hs ForeignObj.hs Ptr.hs Int.hs Word.hs CError.hs
 
 
 # Here are the main rules.

@@ -1,6 +1,6 @@
 {- Hey Emacs, this is -*- haskell -*- !
    @configure_input@
-   $Id: FFI.hs,v 1.7 2001/01/03 18:37:59 malcolm Exp $
+   $Id: FFI.hs,v 1.8 2001/02/25 16:17:16 malcolm Exp $
 -}
 
 module FFI
@@ -62,6 +62,12 @@ module FFI
   , CString		-- abstract
   , toCString		-- :: String  -> CString
   , fromCString		-- :: CString -> String
+
+   -------------------------------------------------------------------
+  , getErrNo		-- :: IO Int
+  , mkIOError		-- :: String -> Maybe FilePath -> Maybe Handle
+			--      -> Int -> IO a
+   -------------------------------------------------------------------
   ) where
 
 import Int		-- believed complete now
@@ -72,6 +78,7 @@ import ForeignObj	--
 import StablePtr	-- only works for non-tracing so far
 #endif
 import CString		-- nhc98-only
+import CError		-- nhc98-only
 import FixIO (fixIO)	-- part of IOExtras, but IOExtras depends on FFI.
 import Monad (when)
 
