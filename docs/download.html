@@ -35,7 +35,7 @@ instructions</a>.
   <td>any</td>
   <td>1.16</td>
   <td>2003-03-08</td>
-  <td>7.2Mb</td></tr>
+  <td>5.6Mb</td></tr>
 
 <tr bgcolor="#ddffdd">
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.16-ix86-Linux.tar.gz">
@@ -44,6 +44,22 @@ instructions</a>.
   <td>1.16</td>
   <td>2003-03-08</td>
   <td>4.1Mb</td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.16-sparc-solaris2.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>sparc-solaris2</td>
+  <td>1.16</td>
+  <td>2003-03-31</td>
+  <td>5.7Mb</td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.16-ix86-CYGWIN_NT-5.1.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>ix86-CYGWIN_NT-5.1</td>
+  <td>1.16</td>
+  <td>2003-04-29</td>
+  <td>3.3Mb</td></tr>
 
 <tr bgcolor="#ddffdd">
   <td><a href="http://www.freebsd.org/cgi/ports.cgi?query=nhc98&amp;stype=all">
@@ -123,15 +139,7 @@ instructions</a>.
 <a href="http://www.cs.york.ac.uk/fp/nhc98/nhc98-1.16-ix86-Linux.tar.gz">
 <tt>http://www.cs.york.ac.uk/fp/nhc98/nhc98-1.16-ix86-Linux.tar.gz</tt></a>
 <br>
-<b>ix86-Linux RPMs for SuSE 7.1:</b><br>
-<a href="http://www.informatik.uni-bonn.de/~ralf/hmake-2.03-1.i386.rpm">
-<tt>http://www.informatik.uni-bonn.de/~ralf/hmake-2.03-1.i386.rpm</tt></a>
-<a href="http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.i386.rpm">
-<tt>http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.i386.rpm</tt></a>
-<a href="http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.src.rpm">
-<tt>http://www.informatik.uni-bonn.de/~ralf/nhc98-1.10-1.src.rpm</tt></a>
-<br>
-<b>ix86-Linux RPMs for RedHat 7:</b><br>
+<b>ix86-Linux RPMs for RedHat 8:</b><br>
 <a href="http://www.dtek.chalmers.se/~d95mback/nhc98/">
 <tt>http://www.dtek.chalmers.se/~d95mback/nhc98/</tt></a>
 <br>
@@ -209,11 +217,30 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor="#ddffdd">
-  <td><a href="">
-      none</a></td>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.16-ghc6">
+      ghc6</a></td>
   <td>nhc98 v1.16</td>
-  <td>2003-03-08</td>
-  <td>There are no patches for 1.16 yet.
+  <td>2003-05-29</td>
+  <td>Fix hmake to cope with the recent change in the format of ghc's
+      version numbering.
+      </td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-hmake3.07-cygwin">
+      hmake/cygwin</a></td>
+  <td>hmake v3.07</td>
+  <td>2003-04-28</td>
+  <td>Errors from hmake-config during 'make install' on a Cygwin platform
+      are caused by a backslash in the middle of a file path.
+      </td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.16-typesyn">
+      type synonyms</a></td>
+  <td>nhc98 v1.16</td>
+  <td>2003-04-01</td>
+  <td>A degenerate type synonym like <em>type T a = a</em> in some
+      circumstances incorrectly caused an occurence check error.
       </td></tr>
 
 <tr bgcolor="#ffffdd">
@@ -285,7 +312,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 7th March 2003<br>
+This page last modified: 29th May 2003<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
