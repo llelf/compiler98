@@ -28,7 +28,8 @@ SRCS = \
 	SyntaxUtil.hs TokenId.hs TokenInt.hs Tree234.hs Type.hs TypeCtx.hs \
 	TypeData.hs TypeEnv.hs TypeLib.hs TypeSubst.hs TypeUnify.hs \
 	TypeUtil.hs Unlit.hs Foreign.hs IsPrefixOf.hs Floats.hs FFITrans.hs \
-	ReportImports.hs AuxFile.hs AuxLabelAST.hs TraceId.hs AuxFixity.hs
+	ReportImports.hs AuxFile.hs AuxLabelAST.hs TraceId.hs AuxFixity.hs \
+	MainNew.hs
 #	DbgReplaceConstr.hs DbgReplaceListInsts.hs DbgReplacePrelude.hs
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})
@@ -61,7 +62,7 @@ all: ${TARGET}
 install: ${TARGET}
 objdir: ${OBJDIR}
 cfiles: $(OBJDIR)/$(HC)
-	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -K2M -C Main.hs
+	$(LOCAL)hmake -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
 	cd $(OBJDIR); $(LOCAL)/nhc98 -H8M -o $(TARGET) *.$O
@@ -75,8 +76,8 @@ realclean: clean
 	rm -f *.hc *.c $(TARGET)
 
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS) # $(OBJDIR)/last${TRACING}
-	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) Main
-	mv $(OBJDIR)/Main$(EXE) $(TARGET)
+	$(LOCAL)hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
+	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	strip $(TARGET)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
