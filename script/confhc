@@ -147,7 +147,8 @@ echo " to build hmake."
 export HBCKNOWN GHCKNOWN NHCKNOWN BUILDHMAKE
 echo "  Now I'm creating targets/$MACHINE/hmake3.config for your installation."
 INVOKE="$PWD/script/hmake-config $PWD/lib/$MACHINE/hmakerc"
-{ if [ "$HBCKNOWN" != "" ]
+{ echo "$INVOKE new"
+  if [ "$HBCKNOWN" != "" ]
   then echo "$INVOKE add hbc"
        echo "$INVOKE add ${HBCKNOWN}"
   fi;

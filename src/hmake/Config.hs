@@ -2,7 +2,9 @@ module Config where
 
 import Compiler
 import System (getEnv)
-import Directory (doesFileExist)
+import Directory (doesFileExist,doesDirectoryExist,createDirectory)
+import Monad (when)
+import List (nub)
 #if defined(__NHC__)
 import NHC.IOExtras (unsafePerformIO)
 #elif defined(__GLASGOW_HASKELL__)
@@ -11,6 +13,27 @@ import IOExts (unsafePerformIO)
 import UnsafePerformIO (unsafePerformIO)
 #endif
 
+----
+data PersonalConfig = PersonalConfig
+  { globalConfig :: HmakeConfig
+  , localConfig  :: Maybe HmakeConfig
+  }
+
+defaultComp :: PersonalConfig -> FilePath
+defaultComp conf =
+  case localConfig conf of
+    Just local -> defaultCompiler local
+    Nothing    -> defaultCompiler (globalConfig conf)
+
+knownComps  :: PersonalConfig -> [CompilerConfig]
+knownComps conf =
+  case localConfig conf of
+    Just local -> nub (knownCompilers local ++ globals)
+    Nothing    -> globals
+  where
+    globals = knownCompilers (globalConfig conf)
+
+----
 data HmakeConfig = HmakeConfig
   { defaultCompiler :: FilePath
   , knownCompilers  :: [CompilerConfig]
@@ -67,6 +90,7 @@ instance Show HmakeConfig where
                     . showList (knownCompilers hmc)
                     . showString "\n  }\n"
 
+----
 readConfig :: FilePath -> HmakeConfig
 readConfig file = unsafePerformIO (safeReadConfig file)
 
@@ -88,19 +112,63 @@ safeReadConfig file = do
         in (return $! val)
 
 
-defaultConfigLocation :: FilePath
-defaultConfigLocation = unsafePerformIO $ do
+readPersonalConfig :: (FilePath,Maybe FilePath) -> IO PersonalConfig
+readPersonalConfig (global,local) = do
+    g <- safeReadConfig global
+    l <- case local of
+           Just lo -> do l <- safeReadConfig lo
+                         return (Just l)
+           Nothing -> return Nothing
+    return PersonalConfig { globalConfig = g , localConfig  = l }
+
+
+defaultConfigLocation :: Bool -> (FilePath, Maybe FilePath)
+defaultConfigLocation create = unsafePerformIO $ do
     machine <- getEnv "MACHINE"
+    global <- getEnv "HMAKEDIR"
+    let g = global++"/"++machine++"/hmakerc"
     catch (do home <- getEnv "HOME"
-              let loc = home ++ "/.hmakerc/" ++ machine
-              ok <- doesFileExist loc
-              if ok
-                then return loc
-                else ioError (userError ""))
-          (\e-> do global <- getEnv "HMAKEDIR"
-                   return (global++"/"++machine++"/hmakerc"))
+              let dir = home ++ "/.hmakerc"
+                  loc = dir ++"/"++ machine
+              exists <- doesFileExist loc
+              if exists
+                then return (g, Just loc)
+                else if create then
+                   do ok <- doesDirectoryExist dir
+                      when (not ok) (createDirectory dir)
+                      return (g, Just loc)
+                else return (g, Nothing))
+          (\e-> return (g, Nothing))
 
 
+matchCompiler :: String -> PersonalConfig -> CompilerConfig
+matchCompiler hc conf =
+  case localConfig conf of
+      Just local -> foldr search global (knownCompilers local)
+      Nothing    -> global
+  where
+      search comp other = if compilerPath comp == hc then comp else other
+      global = foldr search
+                     (error ("hmake: the compiler '"++hc++"' is not known.\n"))
+                     (knownCompilers (globalConfig conf))
+
+compilerKnown :: String -> PersonalConfig -> Bool
+compilerKnown hc config =
+    any (\comp -> compilerPath comp == hc) known
+  where
+    known = knownCompilers (globalConfig config) ++
+            case localConfig config of
+              Just l  -> knownCompilers l
+              Nothing -> []
+
+usualCompiler :: PersonalConfig -> CompilerConfig
+usualCompiler config = matchCompiler def config
+  where def = case localConfig config of
+                Just l  -> defaultCompiler l
+                Nothing -> defaultCompiler (globalConfig config)
+
+
+{-
 matchCompiler :: String -> HmakeConfig -> CompilerConfig
 matchCompiler hc config =
     foldr (\comp other-> if compilerPath comp == hc then comp else other)
@@ -113,3 +181,4 @@ compilerKnown hc config =
 
 usualCompiler :: HmakeConfig -> CompilerConfig
 usualCompiler config = matchCompiler (defaultCompiler config) config
+-}

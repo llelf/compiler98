@@ -8,9 +8,15 @@ import PackageConfig (packageDirs)
 #if !defined(__HBC__)
 import List (isPrefixOf)
 import IO (hPutStrLn,stderr)
+#if defined(__NHC__)
+import NHC.IOExtras (unsafePerformIO)
+#elif defined(__GLASGOW_HASKELL__)
+import IOExts (unsafePerformIO)
+#endif
 #else
 import IsPrefixOf
 import IO (hPutStr,hPutChar,stderr)
+import UnsafePerformIO (unsafePerformIO)
 hPutStrLn h x = hPutStr h x >> hPutChar h '\n'
 #endif
 
@@ -48,7 +54,7 @@ data DecodedArgs =
 	, goalDir  :: String		-- goal Directory for .o files
 	, hiSuffix :: String		-- .hi / .T.hi
 	, oSuffix  :: String		-- .o  / .T.o / .p.o / .z.o
-        , config   :: HmakeConfig	-- read from file (via optional -ffile)
+        , config   :: PersonalConfig	-- read from file (via optional -ffile)
         , compiler :: CompilerConfig	-- chosen compiler
 	}
 
@@ -87,8 +93,11 @@ decode progArgs =
     , oSuffix  = (withDefault "o"  (drop  9 . last)
                      . filter ("o-suffix="  `isPrefixOf`)) flags
     , config   = case filter (\v-> head v == 'f') flags of
-                   []  -> readConfig defaultConfigLocation
-                   [x] -> readConfig (tail x)
+                   []  -> unsafePerformIO
+                            (readPersonalConfig (defaultConfigLocation False))
+                   [x] -> PersonalConfig
+                            { globalConfig = readConfig (tail x)
+                            , localConfig = Nothing }
                    _   -> error "hmake: only one -fconfigfile option allowed\n" 
     , compiler = case filter (\v-> "hc=" `isPrefixOf` v) flags of
                    []  -> usualCompiler (config d)

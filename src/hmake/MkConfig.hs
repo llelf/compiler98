@@ -21,58 +21,62 @@ import IO (hPutStrLn)
 
 main = do
   args <- getArgs
-  (config,file,args) <- readConfigFile args
-  newconfig <- case args of
-    ["list"]       -> do putStrLn ("Config file is:\n    "++file)
-                         putStrLn "Known compilers:"
-                         mapM_ putStrLn
-                               ((reverse . sort
-                                 . map (\c-> "    "++compilerPath c
-                                             ++"\t("++compilerVersion c++")"))
-                                (knownCompilers config))
-                         putStrLn "Default compiler:"
-                         putStrLn ("    "++defaultCompiler config)
-                         return Nothing
-    [hc]           -> do -- no command, assume 'add'
-                         cc <- configure (hcStyle hc) hc
-                         return (Just (config { knownCompilers =
-                                              nub (cc: knownCompilers config)}))
+  (gfile,lfile,args) <- findConfigFile args
+  case args of
+    ["new"]  -> do newConfigFile (gfile,lfile)
+                   exitWith ExitSuccess
+    _ -> return ()
+  config <- readPersonalConfig (gfile,lfile)
+  case args of
+    ["list"] -> do putStrLn ("Global config file is:\n    "++gfile)
+                   (case lfile of
+                      Just f -> putStrLn ("Personal config file is:\n    "++f)
+                      Nothing -> return ())
+                   putStrLn "Known compilers:"
+                   mapM_ putStrLn
+                         ((reverse . sort
+                           . map (\c-> "    "++compilerPath c
+                                       ++"\t("++compilerVersion c++")"))
+                          (knownComps config))
+                   putStrLn "Default compiler:"
+                   putStrLn ("    "++defaultComp config)
+    [hc] -> do -- no command, assume 'add'
+               cc <- configure (hcStyle hc) hc
+               config' <- add cc config
+               writeBack gfile lfile config'
     ["add",hc]     -> do cc <- configure (hcStyle hc) hc
-                         return (Just (config { knownCompilers =
-                                              nub (cc: knownCompilers config)}))
-    ["delete",hc]  -> delete config (hcStyle hc) hc
-    ["default",hc] -> mkDefault config (hcStyle hc) hc
+                         config' <- add cc config
+                         writeBack gfile lfile config'
+    ["delete",hc]  -> do config' <- delete config gfile hc
+                         writeBack gfile lfile config'
+    ["default",hc] -> do config' <- mkDefault config hc
+                         writeBack gfile lfile config'
+    ["list",hc]    -> do putStrLn ("")
     _ -> do hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
                  ++"       hmake-config [configfile] [add|delete|default] hc\n"
                  ++"                  -- hc is name/path of a Haskell compiler")
             exitWith (ExitFailure 1)
-            return Nothing -- never reached
-  --renameFile file (file++"~")
-  when (isJust newconfig) (writeFile file (show (fromJust newconfig)))
+  ----
   exitWith ExitSuccess
 
  where
-    readConfigFile :: [String] -> IO (HmakeConfig,FilePath,[String])
-    readConfigFile args = do
-      machine <- catch (getEnv "MACHINE")
-                       (\e-> runAndReadStdout "harch")
+    findConfigFile :: [String] -> IO (FilePath, Maybe FilePath, [String])
+    findConfigFile args =
       case args of
-        [file,"list"] -> do config <- parseConfigFile machine file
-                            return (config, file, tail args)
-        [file,_,_] -> do config <- parseConfigFile machine file
-                         return (config, file, tail args)
-        [] -> do global <- getEnv "HMAKEDIR"
+        [] -> do let (g,_) = defaultConfigLocation False
                  hPutStrLn stderr ("Usage: hmake-config [configfile] list\n"
                   ++"       hmake-config [configfile] [add|delete|default] hc\n"
                   ++"              -- hc is name/path of a Haskell compiler\n"
-                  ++"  default configfile is:\n    "
-                  ++global++"/"++machine++"/hmakerc")
+                  ++"  default configfile is:\n    "++g)
                  exitWith (ExitFailure 1)
-        _ -> do home <- getEnv "HOME"
-                let path = home++"/.hmakerc/"++machine
-                config <- parseConfigFile machine path
-                return (config, path, args)
+        [file,"new"]  -> return (file, Nothing, tail args)
+        [file,"list"] -> return (file, Nothing, tail args)
+        [file,_,_]    -> return (file, Nothing, tail args)
+        ["list"] ->
+             let (g,l) = defaultConfigLocation False in return (g, l, args)
+        _ -> let (g,l) = defaultConfigLocation True in return (g, l, args)
 
+{-
     parseConfigFile :: String -> FilePath -> IO HmakeConfig
     parseConfigFile machine path =
       catch (safeReadConfig path)
@@ -103,35 +107,91 @@ main = do
                                       newConfigFile path
                                     else ioError e)
                   else ioError e)
-    newConfigFile path = do
-      hPutStrLn stderr ("hmake-config: Starting new config from scratch.")
-      let config = HmakeConfig {defaultCompiler="unknown", knownCompilers=[]}
-      catch (writeFile path (show config))
-            (\e -> if isDoesNotExistError e	-- fails because no directory
-                   then do createDirectory (dirname path)
-                           writeFile path (show config)
-                   else ioError e)		-- fails for other reason
-      return config
+-}
+
+newConfigFile (gpath,lpath) = do
+  (path,config) <-
+      case lpath of
+        Just lo -> do hPutStrLn stderr
+                        ("hmake-config: Starting new personal config file.")
+                      gconf <- safeReadConfig gpath
+                      return (lo, HmakeConfig {defaultCompiler=
+                                                     defaultCompiler gconf
+                                              ,knownCompilers=[]})
+        Nothing -> do hPutStrLn stderr
+                        ("hmake-config: Starting new config file from scratch.")
+                      return (gpath, HmakeConfig {defaultCompiler="unknown"
+                                                 ,knownCompilers=[]})
+  catch (writeFile path (show config))
+        (\e -> if isDoesNotExistError e	-- fails because no directory
+               then do createDirectory (dirname path)
+                       writeFile path (show config)
+               else ioError e)		-- fails for other reason
 
 
-delete, mkDefault :: HmakeConfig -> HC -> String -> IO (Maybe HmakeConfig)
-delete config hc path
-  | path == defaultCompiler config = do
-        hPutStrLn stderr ("hmake-config: cannot delete\n  '"++path
+writeBack :: FilePath -> Maybe FilePath -> PersonalConfig -> IO ()
+writeBack gfile lfile config =
+  case lfile of
+    Just f  -> writeFile f (show (fromJust (localConfig config)))
+    Nothing -> writeFile gfile (show (globalConfig config))
+
+delete :: PersonalConfig -> FilePath -> String -> IO PersonalConfig
+delete config gfile hc
+  | hc == defaultComp config = do
+        hPutStrLn stderr ("hmake-config: cannot delete\n  '"++hc
                           ++"'\n  because it is the default compiler.")
         exitWith (ExitFailure 3)
         return undefined -- never reached
   | otherwise =
-        return (Just (config { knownCompilers =
-                                   filter (\cc-> compilerPath cc /= path)
-                                          (knownCompilers config) }))
-mkDefault config hc path
-  | path `elem` map compilerPath (knownCompilers config)
-              = return (Just (config { defaultCompiler = path }))
+        case localConfig config of
+          Just lo -> if hc `elem` map compilerPath (knownCompilers lo) then
+                       return config {localConfig=
+                                       Just (lo {knownCompilers=
+                                          filter (\cc-> compilerPath cc /= hc)
+                                                 (knownCompilers lo) })}
+                     else do
+                       hPutStrLn stderr
+                                ("hmake-config: Cannot delete compiler\n  "++hc
+                                ++"\nIt is configured globally.  Use\n  "
+                                ++"hmake-config "++gfile++" delete "++hc)
+                       exitWith (ExitFailure 3)
+                       return undefined
+          Nothing -> let gl = globalConfig config in
+                     if hc `elem` map compilerPath (knownCompilers gl) then
+                       return config {globalConfig =
+                                       gl {knownCompilers=
+                                         filter (\cc-> compilerPath cc /= hc)
+                                                (knownCompilers gl)}}
+                     else do
+                       hPutStrLn stderr
+                                 ("hmake-config: compiler not known:\n  "++hc)
+                       exitWith (ExitFailure 3)
+                       return undefined
+
+mkDefault :: PersonalConfig -> String -> IO PersonalConfig
+mkDefault config hc
+  | hc `elem` map compilerPath (knownComps config)
+              = case localConfig config of
+                  Just lo -> return config {localConfig=
+                                              Just (lo {defaultCompiler = hc})}
+                  Nothing -> let gl = globalConfig config in
+                             return config {globalConfig=
+                                              gl {defaultCompiler = hc}}
   | otherwise = do hPutStrLn stderr ("hmake-config: compiler not known:\n  '"
-                                     ++path++"'")
+                                     ++hc++"'")
                    exitWith (ExitFailure 2)
                    return undefined -- never reached
+
+add :: CompilerConfig -> PersonalConfig -> IO PersonalConfig
+add hc config = return $
+  case localConfig config of
+    Just local -> config { localConfig =
+                             Just (local { knownCompilers =
+                                             nub (hc: knownCompilers local)})}
+    Nothing -> let global = globalConfig config in
+               config { globalConfig =
+                          global { knownCompilers =
+                                             nub (hc: knownCompilers global)}}
 
 -- configure for each style of compiler
 configure :: HC -> String -> IO CompilerConfig
