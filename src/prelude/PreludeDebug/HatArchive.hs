@@ -10,10 +10,10 @@ module Prelude
   ) where
 
 import PackedString (PackedString)
+import PreludeBuiltin (NmType)
 import HatBuiltin (CStructure)
 -- import Ratio (Ratio(..))	-- remove Rationals for now
 
-newtype NmType    = NmType    Int
 newtype FileTrace = FileTrace Int
 newtype SR        = SR        Int
 
