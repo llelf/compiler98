@@ -120,7 +120,7 @@ public class Help extends Frame {
 	g.drawString("(left-click to see what produced it)",x+tab,y);
 		
 	y += 2*d;
-	Symbols.drawWithin(g,ui,x,y-d);
+	Symbols.drawWithout(g,ui,x,y-d);
 	g.drawString("introduces if/case/guard after parent context", x+tab, y);
         y += d;
 	g.drawString("(read it as `and within that')", x+tab,y);
