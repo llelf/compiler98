@@ -521,6 +521,11 @@ renameCtx al (Context pos tid [(p,t)]) =
     uniqueTid pos TClass tid >>>= \ i ->
     uniqueTVar p al t >>>= \ t ->
     unitS (Context pos i [(p,t)])
+renameCtx al (Context pos tid _) =
+    uniqueTid pos TClass tid >>>= \ i ->
+    renameError ("Multi-parameter type-classes (used at "++strPos pos
+                  ++") are not supported.")
+                (Context pos i [])
 
 
 {- 

@@ -212,6 +212,9 @@ parseDeriving =
         `orelse`
     parse []
 
+{- The following code parses Haskell'98 instance heads.
+-- H'98 is much more restrictive about the possible types in an instance
+-- than MPTC with fundeps.
 parseInst =
     (\ (p,c) -> TypeCons p c []) `parseAp` conid  -- type without arguments
         `orelse`
@@ -238,6 +241,8 @@ parseInst' =
 --    (TypeCons noPos (t_Tuple 0) []) `parseChk` lpar `chk` rpar
 --        `orelse`
     parse (TypeCons noPos (t_Tuple 0) [])
+-}
+parseInst = parseAType
 
 parsePragma =
      DeclIgnore "PRAGMA" `parseChk`  lannot `chk`

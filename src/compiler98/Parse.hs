@@ -106,9 +106,10 @@ parseFunDep =
   where
     parseTyVars :: Parser [TokenId] [PosToken] a
     parseTyVars =
-        map snd `parseAp` (lpar `revChk` someSep comma avarid `chk` rpar)
-          `orelse`
-        ((:[]) . snd) `parseAp` varid
+        map snd `parseAp` some avarid
+     -- map snd `parseAp` (lpar `revChk` someSep comma avarid `chk` rpar)
+     --   `orelse`
+     -- ((:[]) . snd) `parseAp` varid
 
 parseForeign :: Parser (Decl TokenId) [PosToken] a
 parseForeign =

@@ -554,7 +554,8 @@ ppFunDeps info xs = text " | " <> sep (text ", ") (map (ppFunDep info) xs)
 ppFunDep :: PPInfo a -> FunDep a -> Doc
 ppFunDep info (as :->: bs) = ppTyVars as <> text "->" <> ppTyVars bs
   where
-    ppTyVars = parensFComma2 info . map (ppId info)
+  --ppTyVars = parensFComma2 info . map (ppId info)
+    ppTyVars = sep fSpace . map (ppId info)
 
 
 ppWhere :: PPInfo a -> Decls a -> Doc
