@@ -39,6 +39,19 @@ fi
   }
 #fi
 
+## Fix an absolute Cygwin path to an absolute native Windows path.
+## (Also copes with options like -I/path etc.)
+## This routine is only strictly required when the MkProg executable
+## was built with GHC/mingw32.
+#if echo $MACHINE | grep -y CYGWIN >/dev/null
+#then filepath() { case $1 in
+#                    -?/*) echo `cygpath -w $1` | tr '\\' '/';;
+#                    /*)   echo `cygpath -w $1` | tr '\\' '/';;
+#                    *)    echo $1;;
+#                  esac; }
+#else filepath() { echo $1; }
+#fi
+
 BUILTBY=
 # USINGRTS decides how run-time system options should be passed to MkProg
 # itself (***Note: NOT to the compiler called by hmake).  Possible values
@@ -94,6 +107,9 @@ do
     -g)  hmflags=$hmflags" $1"; exec=cat ;;
     -gd) hmflags=$hmflags" $1"; exec=cat ;;
     -M*) hmflags=$hmflags" $1"; exec=cat ;;
+#   -f)  shift; configfile=$1; hmflags=$hmflags" -f`filepath $1`" ;;
+#   -d)  shift; objdir=$1;     hmflags=$hmflags" -d`filepath $1`" ;;
+#   -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" `filepath $1`" ;;
     -f)  shift; configfile=$1; hmflags=$hmflags" -f$1" ;;
     -d)  shift; objdir=$1;     hmflags=$hmflags" -d$1" ;;
     -d*) objdir=`echo $1 | cut -c3-`; hmflags=$hmflags" $1" ;;
@@ -130,9 +146,14 @@ do
              shift
           done ;;
 
-    # Cpp + import flags (need to translate later, based on haskell compiler)
+    # Cpp + import flags - need to translate later, based on haskell compiler
+#   -P*) importflags=$importflags" `filepath $1`" ;;
+#   -I*) importflags=$importflags" `filepath $1`";
+#          bigIflags=$bigIflags" `filepath $1`" ;;
+#   -i*) importflags=$importflags" `filepath $1`" ;;
     -P*) importflags=$importflags" $1" ;;
-    -I*) importflags=$importflags" $1"; bigIflags=$bigIflags" $1" ;;
+    -I*) importflags=$importflags" $1";
+           bigIflags=$bigIflags" $1" ;;
     -i*) importflags=$importflags" $1" ;;
     -D*) cppflags=$cppflags" $1"; ;;
   # -U*) cppflags=$cppflags" $1"; ;;
@@ -141,7 +162,7 @@ do
     -L*) LDFLAGS=$LDFLAGS" $1" ;;
     -l*) LDFLAGS=$LDFLAGS" $1" ;;
 
-    # tracing and profiling flags (mainly nhc98, some hat-trans)
+    # tracing and profiling flags - mainly nhc98, some hat-trans
     -T) hcflags=$hcflags" $1";
         hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o";
         TRACE=1 ;;
@@ -156,8 +177,10 @@ do
     -prelude) HATFLAGS=$HATFLAGS" $1";
               hcflags=$hcflags" $1" ;;
 
-    # mainly GHC flags
-    -package*|-syslib) hcflags=$hcflags" $1 $2"; shift ;;
+    # package flags - ghc or nhc98
+    -package*|-syslib) hcflags=$hcflags" $1 $2";
+                       hmflags=$hmflags" -package=$2";
+                       shift ;;
 
     # Any other compiler flags
     -*) hcflags=$hcflags" $1" ;;
@@ -211,7 +234,7 @@ then
   then COMP=`grep defaultCompiler $configfile | cut -d'"' -f2`
   else
     if [ -f $HOME/.hmakerc/$MACHINE ]
-    then COMP=`grep defaultCompiler $HOME/.hmakerc/$MACHINE/ |cut -d'"' -f2`
+    then COMP=`grep defaultCompiler $HOME/.hmakerc/$MACHINE |cut -d'"' -f2`
     else
       if [ -f $HMAKEDIR/$MACHINE/hmakerc ]
       then COMP=`grep defaultCompiler $HMAKEDIR/$MACHINE/hmakerc |cut -d'"' -f2`
@@ -262,7 +285,7 @@ case $OD in
   -od) if [ "$objdir" != "" ]
        then #hcflags=$hcflags" -d $objdir"
             hmflags="$hmflags $OD"
-       fi
+       fi ;;
 esac
 case $USINGRTS in
   minus) hmrtflags="$hmrtflags -" ;;
@@ -288,6 +311,7 @@ export HATFLAGS			# ditto
 export MACHINE			# nhc98 script is faster if this is set.
 
 # Here we go...
+#$MKPROG -hc=`filepath $COMP` $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
 $MKPROG -hc=$COMP $hmrtflags $hmflags $flags $modules >$TMP/hmake$$
 CODE=$?
 case $CODE in
