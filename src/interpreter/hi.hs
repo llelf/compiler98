@@ -121,7 +121,9 @@ commands ws options compiler modules =
              toplevel options compiler mods	-- explicit return with new module list
        )
   command "reload"
-       (do -- makeclean ".o" modules	-- NO, let hmake rebuild from changes
+       (loadAll options compiler modules)
+  command "freshen"
+       (do makeclean ".o" modules
            loadAll options compiler modules)
   command "edit"
       (if null target then do
@@ -132,7 +134,7 @@ commands ws options compiler modules =
            loadAll options compiler modules
       )
   command "type"
-      ( do
+      (do
           let tmpfile = "/tmp/Main"
           f <- openFile (tmpfile++".hs") WriteMode
           hPutStr f (
@@ -255,8 +257,9 @@ help = "\
   :Quit			quit
   :load mod [mod...]	load modules (note, not filenames)
   :load 		clear all modules
-  :reload 		repeat last load command
   :also mod [mod...]	load additional modules (note, not filenames)
+  :reload 		repeat last load command
+  :freshen 		remove, recompile, and reload all current modules
   :module mod		set module scope for evaluating expressions
   :edit file	 	edit filename
   :edit 	 	edit current module
@@ -266,5 +269,6 @@ help = "\
   :hc compiler		set Haskell compiler to use
   :set options		set hmake/compiler options
   :unset options	remove hmake/compiler options
-  :!command 		shell escape"
+  :!command 		shell escape
+  :?	 		display this list of commands"
 #endif
