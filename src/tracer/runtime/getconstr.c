@@ -246,6 +246,15 @@ C_HEADER(_tprim_FromEnum)
     C_RETURN(mkR(result, mkTNm(t, mkNmInt(result), mkSR())));
 }
 
+int fromEnumC (NodePtr e)
+{
+    int result; NodePtr a;
+    a = GET_POINTER_ARG1(e, 1);
+    result = CONINFO_NUMBER(*a);
+    fprintf(stderr, "_fromEnumC %d\n",result);
+    return result;
+}
+
 #ifdef PROFILE
 static SInfo ToEnumProfInfo = { "Builtin","Builtin.prim_toEnum","Prelude._toEnum"};
 #endif
@@ -266,6 +275,15 @@ C_HEADER(_tprim_ToEnum)
     result = C_ALLOC(1+EXTRA);
     result[0] = CONSTR(i,0,0);
     C_RETURN(mkR(result, mkTNm(t, mkNm(i), mkSR())));
+}
+
+NodePtr toEnumC (int i)
+{
+    NodePtr result;
+    fprintf(stderr, "_toEnumC %d\n",i);
+    result = C_ALLOC(1+EXTRA);
+    result[0] = CONSTR(i,0,0);
+    return result;
 }
 
 #ifdef PROFILE
@@ -393,13 +411,13 @@ C_HEADER(_tprim_packString)
   char *sp;
   sptr = C_GETARG1(2); /* sptr is a fully evaluated string */
   IND_REMOVE(sptr);
-  s = GET_POINTER_ARG1(sptr, 1);
+  s = GET_POINTER_ARG1(sptr, 1);	/* select list [v] from (R [v] t) */
   IND_REMOVE(s);
-  while (CONINFO_SIZE(*s) == 2) {
-    s = GET_POINTER_ARG1(s, 2);
+  while (CONINFO_SIZE(*s) == 2) {	/* calculate length of list */
+    s = GET_POINTER_ARG1(s, 2);		/* select wrapped tail of list */
     IND_REMOVE(s);
     len++;
-    s = GET_POINTER_ARG1(s, 1);
+    s = GET_POINTER_ARG1(s, 1);		/* select real tail from (R v t) */
     IND_REMOVE(s);
   }
   swords = (1+len+3)/((sizeof(Node)/sizeof(char)));
@@ -437,24 +455,29 @@ C_HEADER(_tprim_packString)
 
 C_HEADER(_tprim_unpackPS)
 {
-  NodePtr src, sp, res, rp;
+  NodePtr src, res, rp, t;
+  char *sp;
   int len = 0;  char c;
-  src = C_GETARG1(2); /* src is a wrapped PackedString */
+  t   = C_GETARG1(1);		/* t is the trail for (unpackPS p) */
+  src = C_GETARG1(2);		/* src is a wrapped PackedString */
   IND_REMOVE(src);
-  src = GET_POINTER_ARG1(src, 1);
+  src = GET_POINTER_ARG1(src, 1);	/* select v from (R v t) */
   IND_REMOVE(src);
   sp = (char *)&src[3+EXTRA+1+EXTRA];
+  res = mkhString(sp);		/* build ordinary [Char] */
+#if 0
   c = *sp++;
   res = mkCons(mkChar(c),0);
   rp = &res[EXTRA+2];
-  while (*sp!='\0') {	/* build ordinary string */
+  while (*sp!='\0') {		/* build ordinary [Char] */
     c = *sp++;
     *rp = (Node)mkCons(mkChar(c),0);
     rp = &((NodePtr)(*rp))[EXTRA+2];
   }
   *rp = (Node)mkNil();
+#endif
 
-  res = mkRString(0,0,res);	/* wrap it at the end */
+  res = mkRString(0,t,res);	/* then wrap it at the end */
   C_RETURN(res);
 }
 
