@@ -64,7 +64,8 @@ ctflags=""	# protected compiler flags
 rtflags=""	# protected compiler run-time flags
 hmrtflags=""	# hmake run-time flags
 	# 'portable Hat' flags (passed to hat-trans by MkProg)
-importflags=""  # -I, -i and -P flags (directories for imports & cpp includes)
+importflags=""  # -I, -i and -P flags (directories for Haskell imports)
+bigIflags=""	# -I flags for cpp includes
 cppflags=""	# -D (and -U ?) flags for cpp
 TPROF=0
 TRACE=0
@@ -131,7 +132,7 @@ do
 
     # Cpp + import flags (need to translate later, based on haskell compiler)
     -P*) importflags=$importflags" $1" ;;
-    -I*) importflags=$importflags" $1" ;;
+    -I*) importflags=$importflags" $1"; bigIflags=$bigIflags" $1" ;;
     -i*) importflags=$importflags" $1" ;;
     -D*) cppflags=$cppflags" $1"; ;;
   # -U*) cppflags=$cppflags" $1"; ;;
@@ -271,11 +272,11 @@ esac
 	#       because they are only needed if cpp is called, so to
 	#       reduce screen clutter, hmake controls their addition
 case $IMPORTOPTIONSTYLE in
-  minusi) hmflags="$hmflags $cppflags `echo \"$importflags\"|sed 's/ -i/ -I/g'`"
-          hcflags="$hcflags `echo \"$importflags\" | sed 's/ -[IP]/ -i/g'`"
+  minusi) hmflags="$hmflags $cppflags $importflags"
+          hcflags="$hcflags $bigIflags `echo \"$importflags\" | sed 's/ -[PI]/ -i/g'`"
           ;;
   minusP) hmflags="$hmflags $cppflags $importflags"
-          hcflags="$hcflags $importflags"
+          hcflags="$hcflags `echo \"$importflags\" | sed 's/ -i/ -I/g'`"
           ;;
 esac
 
