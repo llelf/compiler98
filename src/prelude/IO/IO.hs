@@ -78,7 +78,7 @@ import IoeGetErrorString
 import IoeGetHandle
 import IoeGetFileName
 
--- import HGetFileName
+import HGetFileName
 
 #if !defined(TRACING)
 import OpenSocket
