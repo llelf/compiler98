@@ -41,6 +41,9 @@ esac
   }
 #fi
 
+# Report gcc version number
+echo "  Found C compiler:    "`which $CCC`
+echo "  C compiler version:  "`$CCC --version | head -1`
 
 # Ok, so first look for HBC
 echo -n "  Looking for hbc...   "

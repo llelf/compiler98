@@ -202,7 +202,7 @@ esac
 if [ -d src ]	# Delay this step if it is a binary (src-less) distribution.
 then
   echo "--------"
-  script/confhc $BUILDWITH
+  CCC=$CCC script/confhc $BUILDWITH
   echo "--------"
 fi
 
