@@ -1063,6 +1063,8 @@ int sizeofNode(Node tag) {
 #ifdef BYTECODE_PROF
 #  undef ins
 static char *instr_names[] = {
+ "DUMMY_FOR_ZERO",
+
  "NEEDHEAP_P1",
  "NEEDHEAP_P2",
  "JUMP",
@@ -1229,6 +1231,7 @@ static char *instr_names[] = {
 
  "HPUTC",
  "HGETC",
+ "HGETS",
 
  "PUSH_CHAR_N1",
  "PUSH_CHAR_P1",
