@@ -35,7 +35,15 @@ instructions</a>.
   <td>any</td>
   <td>1.06</td>
   <td>2001-06-08</td>
-  <td>5.6Mb</td></tr>
+  <td>5.7Mb</td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.06-ix86-Linux.tar.gz">
+      Executable (.tar.gz)</a></td>
+  <td>ix86-Linux</td>
+  <td>1.06</td>
+  <td>2001-06-11</td>
+  <td>4.7Mb</td></tr>
 
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.04.tar.gz">
@@ -59,7 +67,7 @@ instructions</a>.
   <td>any</td>
   <td>1.02</td>
   <td>2001-02-14</td>
-  <td>3036kb</td></tr>
+  <td>3.0Mb</td></tr>
 
 <tr bgcolor=#ffdddd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-Linux.tar.gz">
@@ -67,7 +75,7 @@ instructions</a>.
   <td>ix86-Linux</td>
   <td>1.02</td>
   <td>2001-02-14</td>
-  <td>4718kb</td></tr>
+  <td>4.7Mb</td></tr>
 
 <tr bgcolor=#ffdddd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-sparc-solaris2.tar.gz">
@@ -75,7 +83,7 @@ instructions</a>.
   <td>sparc-solaris2</td>
   <td>1.02</td>
   <td>2001-02-14</td>
-  <td>5827kb</td></tr>
+  <td>5.8Mb</td></tr>
 
 <tr bgcolor=#ffdddd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.02-ix86-CYGWIN_95-4.0.tar.gz">
@@ -83,15 +91,7 @@ instructions</a>.
   <td>ix86-CYGWIN_95-4.0</td>
   <td>1.02</td>
   <td>2001-02-16</td>
-  <td>3184kb</td></tr>
-
-<tr bgcolor=#ddffff>
-  <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
-      Executable (.deb)</a></td>
-  <td>ix86-Linux</td>
-  <td>1.00 *</td>
-  <td>2000-09-28</td>
-  <td>3Mb</td></tr>
+  <td>3.2Mb</td></tr>
 
 </table>
 </center>
@@ -116,6 +116,9 @@ ix86-Linux RPMs for RedHat 7:
 <tt>http://www.dtek.chalmers.se/~d95mback/nhc98/</tt></a>
 <br>
 ix86-Linux for Debian:
+<br>
+<a href="http://people.debian.org/~bfulgham/nhc98">
+<tt>http://people.debian.org/~bfulgham/nhc98</tt></a>
 <br>
 <a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/">
 <tt>http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/</tt></a>
@@ -162,6 +165,30 @@ be comprehensive, but if you have any problems, please mail
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
                     <th>date</th> <th>fixes what problem?</th></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-ncurses">
+      ncurses</a></td>
+  <td>nhc98 v1.06</td>
+  <td>2001-06-15</td>
+  <td>Link options for ncurses (in src/tracer/hat) were in the wrong order.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-putStr">
+      putStr</a></td>
+  <td>nhc98 v1.06</td>
+  <td>2001-06-11</td>
+  <td>Fixes random crashes in primitive implementation of putStr.
+      </td></tr>
+
+<tr bgcolor=#ddffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.06-dotc">
+      dotc</a></td>
+  <td>nhc98 v1.06</td>
+  <td>2001-06-11</td>
+  <td>Fixes the nhc98 script to accept and compile a plain .c file again.
+      </td></tr>
 
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.04-java">
@@ -272,7 +299,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2001.06.08<br>
+This page last modified: 2001.06.15<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
