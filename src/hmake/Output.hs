@@ -86,8 +86,11 @@ qCompile opts echo (dep,(p,m,srcfile,cpp,pp)) =
     ++ (if (dflag opts) then "-d "++goalDir opts++" " else "-o "++ofile++" ")
     ++ hfile
 
-  hc | isUnix opts = compilerPath (compiler opts)++" ${HFLAGS} "
+  hc | isUnix opts = compilerPath (compiler opts)
+                     ++" "++unwords (extraCompilerFlags (compiler opts))
+                     ++" ${HFLAGS} "
      | otherwise   = compilerPath (compiler opts)
+                     ++" "++unwords (extraCompilerFlags (compiler opts))
   cppcmd = if cpp then "-cpp"++concatMap doD (defs opts)++" " else ""
   doD s = " -D"++s
 
