@@ -3,7 +3,7 @@ Parser for Haskell 98 Syntax
 -}
 module Parse(parseProg) where
 
-import Extra(pair,triple,noPos,Pos(..),isJust)
+import Extra(pair,triple,noPos,Pos(..),isJust,strace,strPos)
 import Lex
 import Lexical(PosTokenPre(..),LexState(..),PosToken(..))
 import Syntax
@@ -98,13 +98,20 @@ parseForeign =
     ((k_import `revChk` 
         ((\(_,conv) (_,tf) (_,LitString _ str) (p,v) t -> 
             DeclForeignImp p conv str v (calcArity t) tf t v)
-        `parseAp` callconv `ap` safety `ap` entity `apCut` varid `chk` 
-        coloncolon `ap` parseType))
+        `parseAp` callconv `ap` safety `ap` entity `ap` varid `chk` 
+        coloncolon `apCut` parseType))
     `orelse`
     (k_export `revChk` callconv `revChk`
       ((\(_,conv) (_,LitString _ str) (p,v) t-> DeclForeignExp p conv str v t)
       `parseAp` callconv `ap` entity `apCut` varid `chk` coloncolon 
       `ap` parseType))
+    `orelse`
+    (k_import `revChk`	-- old syntax, will be removed in the future
+        ((\(_,conv) (_,LitString _ str) (_,tf) (p,v) t -> 
+            strace ("Deprecated FFI syntax used at "++strPos p) $
+            DeclForeignImp p conv str v (calcArity t) tf t v)
+        `parseAp` (callconv `orelse` conv C) `ap` entity `ap`
+        safety `apCut` varid `chk` coloncolon `ap` parseType))
  -- `orelse`
  --   (k_cast `revChk` 
  --     ((\(p,v) t-> DeclForeignImp p Cast "" v (calcArity t) Safe t v)
