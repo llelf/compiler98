@@ -368,12 +368,12 @@ int main (void) { test(); }
   fi
 
   echo -n "Testing for the readline library: "
-  echo 'main(){;}' >rd.c
+  echo 'main(){readline();}' >rd.c
   if ${CCC} -o rd.out rd.c -lreadline >/dev/null 2>&1
-  then echo '          yes (detected)'
+  then echo '          -lreadline (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
   else if ${CCC} -o rd.out rd.c -lreadline $CURSES >/dev/null 2>&1
-    then echo '          yes (detected)'
+    then echo "          -lreadline $CURSES (detected)"
        READLINE="-DUSE_READLINE=1 -lreadline $CURSES"
     else echo '          no  (detected)'
        READLINE=""
