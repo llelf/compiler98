@@ -24,8 +24,10 @@ nhc98 to build with Cygwin.  The make fails very quickly, saying
 that there is "no rule to make target .../src/runtime/Kernel".
 We aren't yet exactly sure of the cause.  Here is one suggestion -
 make sure that the environment variable MAKE_MODE is set to UNIX.
-If this fixes the problem, please let me know so that I can count
-this as a dead bug rather than an annoyingly still-alive bug.
+Another suggestion is that Gnu-Make's $(patsubst ...) can't handle
+spaces in directory pathnames - so please make sure you don't have any!
+If either of these fix the problem, please let me know so that I can
+count this as a dead bug rather than an annoyingly still-alive bug.
 
 
 <p>
@@ -53,7 +55,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.05.08<br>
+2000.09.28<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -13,13 +13,20 @@ simple line editor to allow you to correct mistakes before pressing
 the <tt>return</tt> key.
 
 <p>
-This line editor does <b>not</b> provide the full functionality you
-would expect from, say, the <em>readline</em> library that is often
-linked into <em>Hugs</em>.  In particular, there is not yet any
-history mechanism for retrieving earlier expressions or commands.
-It just provides a few very basic facilities - and of course, it is
-written fully in Haskell'98.  Hence, do feel free to change or add
-your own preferred keystrokes for editing.
+Provided you have <em>readline</em> available on your system, and you
+build <em>hi</em> with <em>ghc</em>, you will get all the readline
+functionality built in to <em>hi</em> automatically.
+
+<p>
+However, if you don't have <em>readline</em>, or you didn't build with
+<em>ghc</em>, you get a very basic line editor instead.  This line
+editor does <b>not</b> provide the full functionality you would expect
+from the <em>readline</em> library, but is provided on the grounds that
+some basic editing is better than none at all.  In particular, there
+is not yet any history mechanism for retrieving earlier expressions
+or commands.  It just provides a few very basic facilities - and of
+course, it is written fully in Haskell'98.  Hence, do feel free to
+change or add your own preferred keystrokes for editing.
 
 
 
@@ -61,7 +68,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>
 
 <p>
-Information last updated: 2000-06-21<br>
+Information last updated: 2000-09-25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk

@@ -5,6 +5,20 @@
 <center><h1>Known bugs in nhc98</h1></center>
 <hr>
 
+<h3>Non-bugs</h3>
+<dl>
+<dt><em>Warning: nhc98 might produce faulty code here</em></dt>
+  <dd>In fact, it no longer (to our knowledge) produces faulty code at the
+      point this warning is produced.  But we were cautious about removing
+      the warning message, just in case.</dd>
+<dt><em>Warning: foreign import/export has non-primitive type:
+        Prelude.Integer</em></dt>
+  <dd>The warning is accurate, but harmless if it occurs during a build
+      of the Prelude or Libraries.  However, if it appears when you are
+      compiling your own code, it means you have probably made a mistake
+      using the primitive FFI.</dd>
+</dl>
+
 <h3>Bugs by design :-)</h3>
 <dl>
 <dt><em>the monomorphism restriction</em></dt>
@@ -168,7 +182,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-2000.06.15<br>
+2000.09.25<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

@@ -88,28 +88,6 @@ trace browser, time profiler, and common FFI.
 <h3>Distribution packages</h3>
 
 <p>
-Gzipped tar packages are available by anonymous FTP from
-<center>
-<a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/">
-<tt>ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/</tt></a>
-</center>
-A third-party contributor, Prof. Romildo Malaquias, makes Linux RPM
-packages available at
-<center>
-<a href="ftp://urano.iceb.ufop.br/pub/nhc98/">
-<tt>ftp://urano.iceb.ufop.br/pub/nhc98/</tt></a>
-</center>
-Another contributor, Michael Weber, makes Debian Linux
-packages available at
-<center>
-<a href="ftp://not/yet/known">
-<tt>ftp://not/yet/known</tt></a>
-</center>
-
-The hypertext links in the following table point only to the most
-recent tar packages.
-
-<p>
 <center>
 <table width=450 border=1 cellspacing=0 cellpadding=2>
 <tr bgcolor=#dddddd><th>package</th> <th>machine</th>
@@ -117,22 +95,61 @@ recent tar packages.
 
 <tr bgcolor=#ffffdd>
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.00.tar.gz">
-      Haskell + C source trees</a></td>
+      Haskell + C source (.tar.gz)</a></td>
   <td>any</td>
   <td>1.00</td>
   <td>000915</td>
   <td>2804kb</td></tr>
 
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.00-2.src.rpm">
+      Haskell + C source (.rpm)</a></td>
+  <td>any</td>
+  <td>1.00</td>
+  <td>000925</td>
+  <td>2798kb</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.00-2.i386.rpm">
+      Executable (.rpm)</a></td>
+  <td>ix86-Linux</td>
+  <td>1.00</td>
+  <td>000925</td>
+  <td>4210kb</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/unstable/binary-i386/devel/">
+      Executable (.deb)</a></td>
+  <td>ix86-Linux</td>
+  <td>1.00</td>
+  <td>000928</td>
+  <td>3Mb</td></tr>
+
 </table>
 </center>
 
 <p>
-<b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, sparc-solaris2,
-mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN-NT4.
-<p>
-<b>Important note:</b> The long series of pre-releases is now finished.
-Binary distribution packages normally follow a full release by a few days.
+<center>
+Alternative locations:
+<br>
+<a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/">
+<tt>ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/</tt></a>
+<br>
+<a href="ftp://urano.iceb.ufop.br/pub/nhc98/">
+<tt>ftp://urano.iceb.ufop.br/pub/nhc98/</tt></a>
+<br>
+<a href="http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/">
+<tt>http://www-i2.informatik.rwth-aachen.de/Software/Haskell/debian/</tt></a>
+</center>
 
+<p>
+<b>Known to compile for at least: </b> ix86-Linux, ix86-NetBSD, ix86-FreeBSD,
+   sparc-solaris2, mips-IRIX5, mips-Ultrix-4.5, sparc-SunOS4, ix86-CYGWIN-NT4.
+<p>
+<b>Important note:</b> The long series of pre-releases is now
+finished, meaning that nhc98 is now pretty stable.  If you would like
+to contribute a package format not already listed, either source or
+executable, please mail us to arrange how to upload it.
 
 <p>
 All the documents available on the web are included in all the packages.
@@ -164,7 +181,55 @@ comprehensive, but if you have any problems, please mail
 list to post to it).
 
 <br><br><hr>
+<h3>Patches</h3>
+<center>
+<table width=450 border=1 cellspacing=0 cellpadding=2>
+<tr bgcolor=#dddddd><th>patch name</th> <th>patch to</th>
+                    <th>date</th> <th>fixes what problem?</th></tr>
 
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-confhc">
+      confhc</a></td>
+  <td>nhc98 v1.00</td>
+  <td>000925</td>
+  <td>configuration of hmake sometimes fails to find an already-installed
+      version of nhc98</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-which">
+      which</a></td>
+  <td>nhc98 v1.00</td>
+  <td>000925</td>
+  <td>hmake script on Cygwin fails because of missing 'which' command</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-rtb">
+      rtb</a></td>
+  <td>nhc98 v1.00</td>
+  <td>000925</td>
+  <td>rtb script fails because of missing shell quotes</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-freebsd">
+      freebsd</a></td>
+  <td>nhc98 v1.00</td>
+  <td>000925</td>
+  <td>failure to build BinArray library on FreeBSD
+      (htonl/ntohl errors)</td></tr>
+
+<tr bgcolor=#ffffdd>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.00-rangeSize">
+      rangeSize</a></td>
+  <td>nhc98 v1.00</td>
+  <td>000926</td>
+  <td>incorrect definitions of inRange and rangeSize in Ix library</td></tr>
+
+</table>
+</center>
+
+
+
+<hr>
 <h3>full nhc98 release 1.00 (2000-09-15) features</h3>
 <ul>
 <li> Update:  Many changes to the nhc98 tracer (listed separately below)
@@ -220,7 +285,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.09.15<br>
+This page last modified: 2000.09.28<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
