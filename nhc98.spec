@@ -42,7 +42,7 @@ rm -rf $RPM_BUILD_ROOT
 make install
 
 # correct hardcoded paths in some scripts
-for f in $RPM_BUILD_ROOT%{_prefix}/{bin/{harch,hp2graph,hood,nhc98,rtb},lib/nhc98/ix86-Linux/hmake.config} ; do
+for f in $RPM_BUILD_ROOT%{_prefix}/{bin/{harch,hp2graph,hood,nhc98,hat-trail},lib/nhc98/ix86-Linux/hmake.config} ; do
 ed -s $f <<EOF || :
 ,s|$RPM_BUILD_ROOT||g
 wq
