@@ -107,7 +107,6 @@ fatal primitive 1 :: Trace -> a
 --cGetFunNm primitive 1 :: a -> NmType
 --cCheckEvaluation primitive 1 :: E a -> _Value
 cPointerEquality primitive 2 :: E a -> E a -> Bool
-{- cSeq primitive 2 :: a -> (E b) -> b -}
 cEnter primitive 3 :: NmType -> Trace -> E a -> a
 cInitializeDebugger primitive 1 :: E a -> a
 --trusted primitive 2 :: Trace -> Trace -> Bool
@@ -153,24 +152,16 @@ initializeDebugger a =
     cInitializeDebugger (E a)
 
 
-{-
-A version of `seq' that is sure to work here 
-myseq :: a -> b -> b
-
-myseq a b = cSeq a (E b)
--}
 
 {- A version of $! that is sure to work here -}
 myseqAp :: (a -> b) -> a -> b
-
 myseqAp f x = x `myseq` f x
 
 
 {- used by 
    PrimExitWith, PrimPackString, PrimUnpackPS, Enum_Char, Eq_Int, LowVector -}
 rseq :: R a -> b -> b
-
-rseq (R v _) b = cSeq v (E b)
+rseq (R v _) b = _seq v b	-- MAGIC (special bytecode translation)
 
 
 {- used by PreludeIO.Monad_IO 

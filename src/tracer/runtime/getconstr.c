@@ -25,7 +25,7 @@ NodePtr mkhString(char *s)
 }
 
 
-NodePtr mkR(NodePtr v, NodePtr t)
+NodePtr mkR(NodePtr v, CTrace* t)
 {
   NodePtr n = C_ALLOC(1+EXTRA+2);
   n[0] = CONSTRR(0, 2, 0);
@@ -66,28 +66,19 @@ NodePtr mkTAp(NodePtr t, NodePtr ts, NodePtr sr)
   return n;
 }
 #else
-NodePtr mkTAp1(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr sr)
+CTrace* mkTAp1(CTrace* t, CTrace* tf, CTrace* ta1, NodePtr sr)
 {
-  unsigned tp, tfp, ta1p, srp, rp;
-  tp   = GET_INT_VALUE(t);
-  tfp  = GET_INT_VALUE(tf);
-  ta1p = GET_INT_VALUE(ta1);
-  srp  = GET_INT_VALUE(sr);
-  rp   = primTAp1(tp,tfp,ta1p,srp);
+  unsigned srp;
   /*fprintf(stderr,"getconstr.c: mkTAp1\n");*/
-  return mkInt(rp);
-}
-NodePtr mkTAp2(NodePtr t, NodePtr tf, NodePtr ta1, NodePtr ta2, NodePtr sr)
-{
-  unsigned tp, tfp, ta1p, ta2p, srp, rp;
-  tp   = GET_INT_VALUE(t);
-  tfp  = GET_INT_VALUE(tf);
-  ta1p = GET_INT_VALUE(ta1);
-  ta2p = GET_INT_VALUE(ta2);
   srp  = GET_INT_VALUE(sr);
-  rp   = primTAp2(tp,tfp,ta1p,ta2p,srp);
+  return primTAp1(t,tf,ta1,srp);
+}
+CTrace* mkTAp2(CTrace* t, CTrace* tf, CTrace* ta1, CTrace* ta2, NodePtr sr)
+{
+  unsigned srp;
   /*fprintf(stderr,"getconstr.c: mkTAp2\n");*/
-  return mkInt(rp);
+  srp  = GET_INT_VALUE(sr);
+  return primTAp2(t,tf,ta1,ta2,srp);
 }
 #endif
 
@@ -105,14 +96,12 @@ NodePtr mkTNm(NodePtr t, NodePtr nm, NodePtr sr)
   return n;
 }
 #else
-NodePtr mkTNm(NodePtr t, CNmType* nm, NodePtr sr)
+CTrace* mkTNm(CTrace* t, CNmType* nm, NodePtr sr)
 {
-  unsigned tp, srp, rp;
-  tp  = GET_INT_VALUE(t);
-  srp = GET_INT_VALUE(sr);
-  rp  = primTNm(tp,nm,srp);
+  unsigned srp;
   /*fprintf(stderr,"getconstr.c: mkTNm\n");*/
-  return mkInt(rp);
+  srp = GET_INT_VALUE(sr);
+  return primTNm(t,nm,srp);
 }
 #endif
 
@@ -129,19 +118,14 @@ NodePtr mkTInd(NodePtr t1, NodePtr t2)
   return n;
 }
 #else
-NodePtr mkTInd(NodePtr t1, NodePtr t2)
+CTrace* mkTInd(CTrace* t1, CTrace* t2)
 {
-  unsigned t1p, t2p, rp;
-  t1p = GET_INT_VALUE(t1);
-  t2p = GET_INT_VALUE(t2);
-  rp  = primTInd(t1p,t2p);
-  /*fprintf(stderr,"getconstr.c: mkTInd\n");*/
-  return mkInt(rp);
+  return primTInd(t1,t2);
 }
 #endif
 
 
-NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
+NodePtr mkRString(NodePtr sr, CTrace* t, NodePtr str)
 {
   NodePtr n, nt, l, c, ch;
   IND_REMOVE(str);
@@ -152,8 +136,8 @@ NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
       c = mkR(ch, mkTNm(t, mkNmChar(ch), sr));
       return mkR(mkCons(c, l), 
 		 mkTAp2(t, mkTNm(t, mkNmCons(), sr),
-			   (GET_POINTER_ARG1(c, 2)),
-			   (GET_POINTER_ARG1(l, 2)),
+			   (CTrace*)(GET_POINTER_ARG1(c, 2)),
+			   (CTrace*)(GET_POINTER_ARG1(l, 2)),
 			   sr));
   } else {
       return mkR(mkNil(), mkTNm(t, mkNmNil(), sr));
@@ -162,13 +146,15 @@ NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str)
 
 C_HEADER(stringConst)
 {
-  NodePtr sr, t, str, res;
+  NodePtr sr, str, np;
+  CTrace* t;
   char *sp;
 
   sr = C_GETARG1(1);
   IND_REMOVE(sr);
-  t = C_GETARG1(2);
-  IND_REMOVE(t);
+  np = C_GETARG1(2);
+  IND_REMOVE(np);
+  t = (CTrace*)np;
   str = C_GETARG1(3);
 
   C_RETURN(mkRString(sr, t, str));
@@ -182,7 +168,7 @@ C_HEADER(_tprim_FromEnum)
 {
     NodePtr result;
     
-    NodePtr t = C_GETARG1(1);
+    CTrace* t = (CTrace*)C_GETARG1(1);
     NodePtr a = C_GETARG1(2);
 
     /* fprintf(stderr, "prim_fromEnum called\n");*/
@@ -211,7 +197,7 @@ C_HEADER(_tprim_ToEnum)
 {
     NodePtr result;
     
-    NodePtr t = C_GETARG1(1);
+    CTrace* t = (CTrace*)C_GETARG1(1);
     NodePtr a = C_GETARG1(2);
     int i;
 
@@ -295,8 +281,7 @@ C_HEADER(_tprim_packString)
   res = C_ALLOC(3+EXTRA+1+EXTRA+swords);
   res[0] = CONSTRR(0, 2, 0);
   res[EXTRA+1] = (Node)&res[EXTRA+3];
-  res[EXTRA+2] = (Node)mkTNm(C_GETARG1(1), mkNmCString((char*)&res[EXTRA+3]),
-mkSR());
+  res[EXTRA+2] = (Node)mkTNm((CTrace*)C_GETARG1(1), mkNmCString((char*)&res[EXTRA+3]), mkSR());
 #ifdef PROFILE
   INIT_PROFINFO(res, &dummyProfInfo)
 #endif
@@ -349,7 +334,7 @@ C_HEADER(_tprim_unpackPS)
   *rp = (Node)mkNil();
 #endif
 
-  res = mkRString(mkSR(),t,res);	/* then wrap it at the end */
+  res = mkRString(mkSR(),(CTrace*)t,res);	/* then wrap it at the end */
   C_RETURN(res);
 }
 

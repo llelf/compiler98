@@ -45,11 +45,12 @@ C_HEADER(mycPutChar)
 /* _tprim_chPutChar :: Trace -> R Handle -> R Char -> R (Either IOError ()) */
 C_HEADER(_tprim_chPutChar)
 {
-    NodePtr handleR, np, ch, result, t, unit_t;
+    NodePtr handleR, np, ch, result;
+    CTrace *t, *unit_t;
     FileDesc *a;
     char c;
 
-    t = C_GETARG1(1);
+    t = (CTrace*)C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
@@ -79,11 +80,12 @@ C_HEADER(_tprim_chPutChar)
 
 C_HEADER(_tprim_chGetChar)
 {
-    NodePtr handleR, np, result, t;
+    NodePtr handleR, np, result;
+    CTrace* t;
     FileDesc *a;
     int ch;
 
-    t = C_GETARG1(1);
+    t = (CTrace*)C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
@@ -91,6 +93,12 @@ C_HEADER(_tprim_chGetChar)
     ch = getc(a->fp);
     result = mkChar(ch);
     C_RETURN(mkR(result, mkTNm(t, mkNmChar(result), mkSR())));
+}
+
+int
+_chGetChar (FileDesc* a)
+{
+    return getc(a->fp);
 }
 
 #if 0
@@ -132,10 +140,11 @@ C_HEADER(_tprim_chPutStr)
 
 C_HEADER(_tprim_HClose)
 {
-    NodePtr handleR, np, ch, result, t, unit_t;
+    NodePtr handleR, np, ch, result;
+    CTrace *t, *unit_t;
     FileDesc *a;
 
-    t = C_GETARG1(1);
+    t = (CTrace*)C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);

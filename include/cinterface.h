@@ -4,6 +4,7 @@
 #include "node.h"
 /*#include "runtime.h"   -- already included in node.h */
 /*#include "newmacros.h" -- already included in node.h */
+#include "mutlib.h"
 
 /*
    Very primitive interface to C.  The C-function is called with four

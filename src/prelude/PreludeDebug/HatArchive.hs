@@ -1,6 +1,6 @@
 module Prelude
-  (Trace,traceptr,trustedFun,hidden,NmType,SR
-  ,E(E),cSeq,myseq,sameAs
+  (Trace,trustedFun,hidden,NmType,SR
+  ,E(E),myseq,sameAs
   ,mkTRoot,mkTAp1,mkTAp2,mkTAp3,mkTAp4,mkTAp5,mkTAp6,mkTAp7,mkTAp8,mkTAp9
   ,mkTAp10,mkTAp11,mkTAp12,mkTNm,mkTInd,mkTHidden,mkTSatA,mkTSatB,mkTSatC
   ,mkNTInt,mkNTChar,mkNTInteger,mkNTRational,mkNTFloat,mkNTDouble
@@ -19,15 +19,13 @@ newtype SR        = SR        Int
 
 data E a = E a			-- E to protect a closure from evaluation
 
-myseq a b = _seq a b		-- bytecode
---myseq a b = cSeq a (E b)	-- need our own version of seq
-cSeq primitive 2 :: a -> (E b) -> b
+myseq a b = _seq a b		-- MAGIC (bytecode version of seq)
 
 newtype Trace = Trace CStructure
-foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
-foreign import "primTrustedFun" trustedFun :: Trace -> Bool
-foreign import "primHidden"     hidden     :: Trace -> Bool
-foreign import mkTrace :: FileTrace -> Bool -> Bool -> Trace
+foreign import   "primTrustedFun" trustedFun :: Trace -> Bool
+foreign import   "primHidden"     hidden     :: Trace -> Bool
+--foreign import "primTracePtr"   traceptr   :: Trace -> FileTrace
+--foreign import mkTrace :: FileTrace -> Bool -> Bool -> Trace
 
 {-
 data Trace     = Trace  { traceptr    :: FileTrace
@@ -36,29 +34,34 @@ data Trace     = Trace  { traceptr    :: FileTrace
                         }
 -}
 
-sameAs :: Trace -> Trace -> Bool
-sameAs t1 t2 = primSameTrace (traceptr t1) (traceptr t2)
+foreign import "primSameTrace" sameAs :: Trace -> Trace -> Bool
+--sameAs :: Trace -> Trace -> Bool
+--sameAs t1 t2 = primSameTrace (traceptr t1) (traceptr t2)
 
 ----
 -- Trace constructors
 ----
 
-mkTRoot :: Trace
+foreign import "primTRoot"
+ mkTRoot :: Trace
 
-mkTAp1 :: Trace		-- trace of application
+foreign import "primTAp1"
+ mkTAp1 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp2 :: Trace		-- trace of application
+foreign import "primTAp2"
+ mkTAp2 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp3 :: Trace		-- trace of application
+foreign import "primTAp3"
+ mkTAp3 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -66,7 +69,8 @@ mkTAp3 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp4 :: Trace		-- trace of application
+foreign import "primTAp4"
+ mkTAp4 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -75,7 +79,8 @@ mkTAp4 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp5 :: Trace		-- trace of application
+foreign import "primTAp5"
+ mkTAp5 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -85,7 +90,8 @@ mkTAp5 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp6 :: Trace		-- trace of application
+foreign import "primTAp6"
+ mkTAp6 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -96,7 +102,8 @@ mkTAp6 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp7 :: Trace		-- trace of application
+foreign import "primTAp7"
+ mkTAp7 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -108,7 +115,8 @@ mkTAp7 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp8 :: Trace		-- trace of application
+foreign import "primTAp8"
+ mkTAp8 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -121,7 +129,8 @@ mkTAp8 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp9 :: Trace		-- trace of application
+foreign import "primTAp9"
+ mkTAp9 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -135,7 +144,8 @@ mkTAp9 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp10 :: Trace		-- trace of application
+foreign import "primTAp10"
+ mkTAp10 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -150,7 +160,8 @@ mkTAp10 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp11 :: Trace		-- trace of application
+foreign import "primTAp11"
+ mkTAp11 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -166,7 +177,8 @@ mkTAp11 :: Trace		-- trace of application
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTAp12 :: Trace		-- trace of application
+foreign import "primTAp12"
+ mkTAp12 :: Trace		-- trace of application
 	-> Trace	-- fn
 	-> Trace	-- arg 1
 	-> Trace	-- arg 2
@@ -184,29 +196,36 @@ mkTAp12 :: Trace		-- trace of application
 	-> Trace	-- result
 
 
-mkTNm :: Trace		-- trace of Nm
+foreign import "primTNm"
+ mkTNm :: Trace		-- trace of Nm
 	-> NmType	-- NmType
 	-> SR		-- src ref
 	-> Trace	-- result
 
-mkTInd :: Trace		-- trace 1
+foreign import "primTInd"
+ mkTInd :: Trace		-- trace 1
 	-> Trace	-- trace 2
 	-> Trace	-- result
 
-mkTHidden :: Trace	-- trace
+foreign import "primTHidden"
+ mkTHidden :: Trace	-- trace
 	-> Trace	-- result
 
-mkTSatA :: Trace	-- trace of unevaluated expr
+foreign import "primTSatA"
+ mkTSatA :: Trace	-- trace of unevaluated expr
 	-> Trace	-- result
 
-mkTSatB :: Trace	-- original SatA
+foreign import "primTSatB"
+ mkTSatB :: Trace	-- original SatA
 	-> Trace	-- result
 
-mkTSatC :: Trace	-- original SatB (or SatA)
+foreign import "primTSatC"
+ mkTSatC :: Trace	-- original SatB (or SatA)
 	-> Trace	-- trace of reduced value
 	-> Trace	-- result
 
 
+{-
 ----
 -- Trace constructor implementations
 ----
@@ -405,33 +424,57 @@ mkTSatC torig tnew =
     mkTrace (primTSatC (traceptr torig) (traceptr tnew))
             (trustedFun torig)
             False
+-}
 
 
 ----
 -- NmType constructors
 ----
-mkNTInt		:: Int -> NmType
-mkNTChar	:: Char -> NmType
-mkNTInteger	:: Integer -> NmType
+foreign import "primNTInt"
+ mkNTInt	:: Int -> NmType
+foreign import "primNTChar"
+ mkNTChar	:: Char -> NmType
+foreign import "primNTInteger"
+ mkNTInteger	:: Integer -> NmType
+foreign import "primNTRational"
+ primNTRational	:: Integer -> Integer -> NmType
+foreign import "primNTFloat"
+ mkNTFloat	:: Float -> NmType
+foreign import "primNTDouble"
+ mkNTDouble	:: Double -> NmType
+foreign import "primNTId"
+ mkNTId		:: CStructure -> NmType	--   replaced by this one at runtime
+foreign import "primNTConstr"
+ mkNTConstr	:: CStructure -> NmType	--   replaced by this one at runtime
+foreign import "primNTTuple"
+ mkNTTuple	:: NmType
+foreign import "primNTFun"
+ mkNTFun	:: NmType
+foreign import "primNTCase"
+ mkNTCase	:: NmType
+foreign import "primNTLambda"
+ mkNTLambda	:: NmType
+foreign import "primNTDummy"
+ mkNTDummy	:: NmType
+foreign import "primNTCString"
+ mkNTCString	:: PackedString -> NmType
+foreign import "primNTIf"
+ mkNTIf		:: NmType
+foreign import "primNTGuard"
+ mkNTGuard	:: NmType
+foreign import "primNTContainer"
+ mkNTContainer	:: NmType
+
 mkNTRational	:: Rational -> NmType
-mkNTFloat	:: Float -> NmType
-mkNTDouble	:: Double -> NmType
+mkNTRational x	= primNTRational 0 0	-- dummy (constructor :% not available)
 mkNTId'		:: Int -> NmType	-- dummy for compile time only
-mkNTId		:: CStructure -> NmType	--   replaced by this one at runtime
+mkNTId' x	= undefined x		-- dummy for compile time only
 mkNTConstr'	:: Int -> NmType	-- dummy for compile time only
-mkNTConstr	:: CStructure -> NmType	--   replaced by this one at runtime
-mkNTTuple	:: NmType
-mkNTFun		:: NmType
-mkNTCase	:: NmType
-mkNTLambda	:: NmType
-mkNTDummy	:: NmType
-mkNTCString	:: PackedString -> NmType
-mkNTIf		:: NmType
-mkNTGuard	:: NmType
-mkNTContainer	:: NmType
+mkNTConstr' x	= undefined x		-- dummy for compile time only
 
 foreign import "primTrustedNm" trustedNm	:: NmType -> Bool
 
+{-
 ----
 -- NmType constructor implementations
 ----
@@ -443,7 +486,6 @@ mkNTFloat	= primNTFloat
 mkNTDouble	= primNTDouble
 mkNTId' x	= undefined x		-- dummy for compile time only
 mkNTId x	= primNTId x		--   replaced by this one at runtime
-mkNTConstr' x	= undefined x		-- dummy for compile time only
 mkNTConstr x	= primNTConstr x	--   replaced by this one at runtime
 mkNTTuple	= primNTTuple
 mkNTFun		= primNTFun
@@ -454,20 +496,25 @@ mkNTCString	= primNTCString
 mkNTIf		= primNTIf
 mkNTGuard	= primNTGuard
 mkNTContainer	= primNTContainer
-
+-}
 
 ----
 -- SR constructors
 ----
-mkNoSR		:: SR
+foreign import "primSR0"
+ mkNoSR		:: SR
+
 mkSR'		:: Int -> SR		-- dummy for compile time only
-mkSR		:: CStructure -> SR	-- is replaced by this one at runtime
-
-mkNoSR		= primSR0
 mkSR' x		= undefined x		-- dummy
-mkSR x		= primSR3 x
+
+foreign import "primSR3"
+ mkSR		:: CStructure -> SR	-- is replaced by this one at runtime
+
+--mkNoSR	= primSR0
+--mkSR x	= primSR3 x
 
 
+{-
 ----
 -- Primitive stuff
 ----
@@ -658,3 +705,4 @@ foreign import primNTContainer	:: NmType
 foreign import primSR0	:: SR
 foreign import primSR3	:: CStructure -> SR
 
+-}

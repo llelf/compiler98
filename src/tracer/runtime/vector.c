@@ -21,9 +21,10 @@ static SInfo nodeProfInfoCopy = { "Builtin","Builtin.primCopyVector","Vector.Vec
 C_HEADER(_tprim_newVector)
 {
   int i, size;
-  NodePtr t, np, res, val;
+  CTrace* t;
+  NodePtr np, res, val;
   NodePtr dstptr;
-  t  = C_GETARG1(1);		/* t is the trail for (newVector n x) */
+  t  = (CTrace*)C_GETARG1(1);	/* t is the trail for (newVector n x) */
 
   np = C_GETARG1(2);		/* :: R Int */
   IND_REMOVE(np);
@@ -56,9 +57,10 @@ C_HEADER(_tprim_newVector)
 C_HEADER(_tprim_copyVector)
 {
   int size,i;
-  NodePtr t,res,arg;
+  CTrace* t;
+  NodePtr res,arg;
   NodePtr srcptr,dstptr;
-  t  = C_GETARG1(1);		/* t is the trail for (copyVector v) */
+  t  = (CTrace*)C_GETARG1(1);	/* t is the trail for (copyVector v) */
   
   arg = C_GETARG1(2);		/* :: R (Vector a) */
   IND_REMOVE(arg);
@@ -85,9 +87,10 @@ C_HEADER(_tprim_copyVector)
 C_HEADER(_tprim_updateVector)
 {
   int idx,size;
-  NodePtr t,val,arg;
+  CTrace* t;
+  NodePtr val,arg;
   NodePtr dstptr;
-  t  = C_GETARG1(1);		/* t is the trail for (updateVector i x v) */
+  t  = (CTrace*)C_GETARG1(1);	/* t is the trail for (updateVector i x v) */
 
   arg = C_GETARG1(2);		/* :: R Int */
   IND_REMOVE(arg);
@@ -131,9 +134,10 @@ static SInfo nodeProfInfo = { "Builtin","Builtin.primIndex","Builtin.Vector"};
 C_HEADER(_tprim_indexVector)
 {
   int i;
-  NodePtr t, np, res;
+  CTrace* t;
+  NodePtr np, res;
   NodePtr dstptr;
-  t  = C_GETARG1(1);		/* t is the trail for (indexVector v i) */
+  t  = (CTrace*)C_GETARG1(1);	/* t is the trail for (indexVector v i) */
 
   np = C_GETARG1(3);		/* :: R Int */
   IND_REMOVE(np);
@@ -158,6 +162,6 @@ C_HEADER(_tprim_indexVector)
   res = GET_POINTER_ARG1(res,1);/* select v from (R v t) */
   IND_REMOVE(res);
 
-  C_RETURN(mkR(res,mkTInd(t,np)));
+  C_RETURN(mkR(res,mkTInd(t,(CTrace*)np)));
 }	
 

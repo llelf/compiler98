@@ -14,7 +14,7 @@
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    NodePtr t = C_GETARG1(1);\
+    CTrace* t = (CTrace*)C_GETARG1(1);\
     NodePtr a = C_GETARG1(2);\
     IND_REMOVE(a);\
     a = GET_POINTER_ARG1(a, 1);\
@@ -27,7 +27,7 @@ C_HEADER(fun)\
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    NodePtr t = C_GETARG1(1);\
+    CTrace* t = (CTrace*)C_GETARG1(1);\
     NodePtr a = C_GETARG1(2);\
     NodePtr b = C_GETARG1(3);\
     IND_REMOVE(a);\
@@ -47,7 +47,7 @@ C_HEADER(fun)\
 C_HEADER(fun)\
 {\
     NodePtr result;\
-    NodePtr t = C_GETARG1(1);\
+    CTrace* t = (CTrace*)C_GETARG1(1);\
     NodePtr a = C_GETARG1(2);\
     NodePtr b = C_GETARG1(3);\
     extern int terminated;\
@@ -114,12 +114,12 @@ C_HEADER(_tprim_IntSignum)
 {
     int v;
     NodePtr result;
-    NodePtr t = shortCircuitSelectors(C_GETARG1(1));
+    CTrace* t = (CTrace*)C_GETARG1(1);
     NodePtr a = shortCircuitSelectors(C_GETARG1(2));
     a = shortCircuitSelectors(GET_POINTER_ARG1(a, 1));
     v = GET_INT_VALUE(a);
     result = mkInt(v < 0 ? -1 : 1);
-/*    fprintf(stderr, "Now in primIntSignum arg=%d\n", v);*/
+    fprintf(stderr, "Now in primIntSignum arg=%d\n", v);
     C_RETURN(mkR(result, mkTNm(t, mkNmInt(result), mkSR())));
 }
 
@@ -172,7 +172,7 @@ C_HEADER(_tprim_IntFromInteger)
 {
   Int tag,size,result;
   NodePtr res, i;
-  NodePtr t = C_GETARG1(1);
+  CTrace* t = (CTrace*)C_GETARG1(1);
   NodePtr nodeptr = C_GETARG1(2);
 
   IND_REMOVE(nodeptr);

@@ -9,6 +9,7 @@ extern FILE *HatFile;
 extern FILE *HatOutput;
 extern FILE *HatBridge;
 
+
 typedef struct {
     int constr;
 #ifdef PROFILE
@@ -28,126 +29,127 @@ typedef struct {
     int hidden;
 } CTrace;
 
+
 FileOffset	primModInfo	(ModInfo *m);
 
-FileOffset	primTRoot	(void);
-FileOffset	primTAp1	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
+CTrace*		primTRoot	(void);
+CTrace*		primTAp1	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
                                                , FileOffset sr);
-FileOffset	primTAp2	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
+CTrace*		primTAp2	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
                                                , FileOffset sr);
-FileOffset	primTAp3	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
+CTrace*		primTAp3	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
                                                , FileOffset sr);
-FileOffset	primTAp4	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset sr);
-
-FileOffset	primTAp5	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
+CTrace*		primTAp4	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
                                                , FileOffset sr);
 
-FileOffset	primTAp6	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
+CTrace*		primTAp5	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
                                                , FileOffset sr);
 
-FileOffset	primTAp7	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
+CTrace*		primTAp6	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
                                                , FileOffset sr);
 
-FileOffset	primTAp8	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
-                                               , FileOffset targ8
+CTrace*		primTAp7	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
                                                , FileOffset sr);
 
-FileOffset	primTAp9	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
-                                               , FileOffset targ8
-                                               , FileOffset targ9
+CTrace*		primTAp8	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
                                                , FileOffset sr);
 
-FileOffset	primTAp10	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
-                                               , FileOffset targ8
-                                               , FileOffset targ9
-                                               , FileOffset targ10
+CTrace*		primTAp9	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
                                                , FileOffset sr);
 
-FileOffset	primTAp11	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
-                                               , FileOffset targ8
-                                               , FileOffset targ9
-                                               , FileOffset targ10
-                                               , FileOffset targ11
+CTrace*		primTAp10	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
                                                , FileOffset sr);
 
-FileOffset	primTAp12	(FileOffset tap, FileOffset tfn
-                                               , FileOffset targ1
-                                               , FileOffset targ2
-                                               , FileOffset targ3
-                                               , FileOffset targ4
-                                               , FileOffset targ5
-                                               , FileOffset targ6
-                                               , FileOffset targ7
-                                               , FileOffset targ8
-                                               , FileOffset targ9
-                                               , FileOffset targ10
-                                               , FileOffset targ11
-                                               , FileOffset targ12
+CTrace*		primTAp11	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
+                                               , CTrace* targ11
                                                , FileOffset sr);
 
-FileOffset	primTNm		(FileOffset tnm, CNmType* nm, FileOffset sr);
-FileOffset	primTInd	(FileOffset t1, FileOffset t2);
-FileOffset	primTHidden	(FileOffset t1);
-FileOffset	primTSatA	(FileOffset t1);
-FileOffset	primTSatB	(FileOffset t1);
-FileOffset	primTSatC	(FileOffset t1, FileOffset t2);
+CTrace*		primTAp12	(CTrace* tap, CTrace* tfn
+                                               , CTrace* targ1
+                                               , CTrace* targ2
+                                               , CTrace* targ3
+                                               , CTrace* targ4
+                                               , CTrace* targ5
+                                               , CTrace* targ6
+                                               , CTrace* targ7
+                                               , CTrace* targ8
+                                               , CTrace* targ9
+                                               , CTrace* targ10
+                                               , CTrace* targ11
+                                               , CTrace* targ12
+                                               , FileOffset sr);
+
+CTrace*		primTNm		(CTrace* tnm, CNmType* nm, FileOffset sr);
+CTrace*		primTInd	(CTrace* t1, CTrace* t2);
+CTrace*		primTHidden	(CTrace* t1);
+CTrace*		primTSatA	(CTrace* t1);
+CTrace*		primTSatB	(CTrace* t1);
+CTrace*		primTSatC	(CTrace* t1, CTrace* t2);
 
 void		updateSatBs	(void);
 void		updateSatCs	(void);
@@ -171,7 +173,7 @@ CNmType*	primNTGuard	(void);
 CNmType*	primNTContainer	(void);
 
 int		primTrustedNm	(CNmType* nm);
-int		primSameTrace	(FileOffset t1, FileOffset t2);
+int		primSameTrace	(CTrace* t1, CTrace* t2);
 
 FileOffset	primTracePtr	(CTrace* t);
 int		primTrustedFun	(CTrace* t);

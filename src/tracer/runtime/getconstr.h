@@ -67,15 +67,15 @@ extern Node D_Prelude_46Right[];
 
 CNmType* mkNmWithArg(int tag, NodePtr x);
 CNmType* mkNm(int tag);
-NodePtr mkR(NodePtr v, NodePtr t);
-NodePtr mkTAp1(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr sr);
-NodePtr mkTAp2(NodePtr t, NodePtr tfn, NodePtr ta1, NodePtr ta2, NodePtr sr);
-NodePtr mkTNm(NodePtr t, CNmType* nm, NodePtr sr);
-NodePtr mkTInd(NodePtr t1, NodePtr t2);
+NodePtr mkR(NodePtr v, CTrace* t);
+CTrace* mkTAp1(CTrace* t, CTrace* tfn, CTrace* ta1, NodePtr sr);
+CTrace* mkTAp2(CTrace* t, CTrace* tfn, CTrace* ta1, CTrace* ta2, NodePtr sr);
+CTrace* mkTNm(CTrace* t, CNmType* nm, NodePtr sr);
+CTrace* mkTInd(CTrace* t1, CTrace* t2);
 
 NodePtr shortCircuitSelectors(NodePtr node);
 NodePtr mkhString(char *s);
-NodePtr mkRString(NodePtr sr, NodePtr t, NodePtr str);
+NodePtr mkRString(NodePtr sr, CTrace* t, NodePtr str);
 char   *profName(UInt *p);
 extern void prGraph(NodePtr nodeptr,Int flags,Int d);
 

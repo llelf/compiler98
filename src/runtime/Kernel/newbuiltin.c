@@ -280,20 +280,20 @@ unsigned fo_stdin_node[] = {
 
 };
 unsigned stdin_t[] = {
-  CONSTRT(TagNm,3,0)
+  CONSTRW(3,0)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stdin)
 , 0
 , 0
 , 0
 #endif
-, useLabel(root_t)
-, useLabel(stdin_nm)
-, useLabel(noSR)
+, 0
+, 1
+, 0
 
 };
 unsigned stdin_nm[] = {
-  CONSTR(NTId,3,3)
+  CONSTR(NTId,5,5)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stdin)
 , 0
@@ -331,20 +331,20 @@ unsigned fo_stdout_node[] = {
 
 };
 unsigned stdout_t[] = {
-  CONSTRT(TagNm,3,0)
+  CONSTRW(3,0)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stdout)
 , 0
 , 0
 , 0
 #endif
-, useLabel(root_t)
-, useLabel(stdout_nm)
-, useLabel(noSR)
+, 0
+, 1
+, 0
 
 };
 unsigned stdout_nm[] = {
-  CONSTR(NTId,3,3)
+  CONSTR(NTId,5,5)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stdout)
 , 0
@@ -382,20 +382,20 @@ unsigned fo_stderr_node[] = {
 
 };
 unsigned stderr_t[] = {
-  CONSTRT(TagNm,3,0)
+  CONSTRW(3,0)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stderr)
 , 0
 , 0
 , 0
 #endif
-, useLabel(root_t)
-, useLabel(stderr_nm)
-, useLabel(noSR)
+, 0
+, 1
+, 0
 
 };
 unsigned stderr_nm[] = {
-  CONSTR(NTId,3,3)
+  CONSTR(NTId,5,5)
 #ifdef PROFILE
 , useLabel(PROF_IO_46stderr)
 , 0
