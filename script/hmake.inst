@@ -145,9 +145,6 @@ do
 
     # Objects and archives for linking
     *.o)   LDFLAGS=$LDFLAGS" $1" ;;
-    *.T_o) LDFLAGS=$LDFLAGS" $1" ;;
-    *.p_o) LDFLAGS=$LDFLAGS" $1" ;;
-    *.t_o) LDFLAGS=$LDFLAGS" $1" ;;
     *.a)   LDFLAGS=$LDFLAGS" $1" ;;
 
     # Anything else must be a module name
@@ -160,7 +157,7 @@ done
 if [ "$modules" = "" ]
 then
   echo 'Usage: hmake [compiler] [options] (module|program)* [object...]'
-  echo '       compiler     choose -ghc, -hbc, or -nhc98'
+  echo '       compiler     choose -ghc, -hbc, -nhc98, or -HC=comp'
   echo '       --version    show version information and quit'
   echo '       -q           quiet (do not echo commands)'
   echo '       -n           noexec (echo but do not execute commands)'
