@@ -66,4 +66,5 @@ realclean: clean
 	cd $(TARGDIR);  rm -f hmakeC
 	rm -f $(LIBDIR)/$(MACHINE)/*
 	rm -f $(TARGDIR)/$(MACHINE)/config.cache
+	rm -f $(TARGDIR)/$(MACHINE)/hmake.config
 	rm -f script/hmake script/hi
