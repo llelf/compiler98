@@ -438,10 +438,11 @@ renameFun (Fun  pats guardedExps decls') =
  in pushScope >>>
     	mapS0 (bindPat Var) pats >>>
     	bindDecls decls >>>
+	renameDecls decls >>>= \newdecls ->	-- do first, to get infix right
     unitS Fun =>>>
 	mapS renameExp pats =>>>
 	mapS renameGuardedExp guardedExps =>>>
-	renameDecls decls >>>
+        unitS newdecls >>>
     popScope
 
 
@@ -453,10 +454,11 @@ renameDeclAlt (Alt  pat guardedExps decls') =
   in mapS (defineVar . snd) (identPat pat) >>>= \ _ -> -- don't need the identifiers here
      pushScope >>>
 	bindDecls decls >>>   -- bindPat done earlier
+	renameDecls decls >>>= \newdecls->	-- do first, to get infix right
      unitS Alt =>>>
 	renameExp pat =>>>
 	mapS renameGuardedExp guardedExps =>>>
-	renameDecls decls >>>
+	unitS newdecls >>>
      popScope
 
 renameCaseAlt (Alt  pat guardedExps decls') =
@@ -464,10 +466,11 @@ renameCaseAlt (Alt  pat guardedExps decls') =
   in pushScope >>>
 	bindPat Var pat >>>
 	bindDecls decls >>>
+	renameDecls decls >>>= \newdecls->	-- do first, to get infix right
     unitS Alt =>>>
 	renameExp pat =>>>
 	mapS renameGuardedExp guardedExps =>>>
-	renameDecls decls >>>
+	unitS newdecls >>>
     popScope
 
 
