@@ -247,15 +247,19 @@ then
   then echo "You gave the following extra build options: $BUILDOPTS"
   fi
 
-  echo -n "Testing for the readline library:           "
+  echo -n "Testing for the readline library: "
   echo 'main(){;}' >rd.c
   if ${CC-gcc} -o rd.out rd.c -lreadline >/dev/null 2>&1
-  then echo 'yes (detected)'
+  then echo '          yes (detected)'
        READLINE="-DUSE_READLINE=1 -lreadline"
-  else echo 'no  (detected)'
+  else if ${CC-gcc} -o rd.out rd.c -lreadline -lncurses >/dev/null 2>&1
+    then echo '          yes (detected)'
+       READLINE="-DUSE_READLINE=1 -lreadline -lncurses"
+    else echo '          no  (detected)'
        READLINE=""
+    fi
   fi
-  rm -f rd.out rd.c
+  rm -f rd.c rd.out ;;
 
   if [ "$EXE" = "" ]
   then echo "Executables need .exe suffix?               no  (detected)"
