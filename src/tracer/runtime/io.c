@@ -413,7 +413,7 @@ void showHaskellString(FILE *sock, NodePtr t)
     }
 }
 
-/*
+/*	This definition does not match the one in PreludeDebug.hs !!!!
 data NmType =
      NTInt
    | NTBool
@@ -503,7 +503,10 @@ void showSymbol(NodePtr t, char **pmodule, char **pname, int *pdefpos, int *ppri
     case NTInteger:
 	np = GET_POINTER_ARG1(t, 1);
 	IND_REMOVE(np);
-	sprintf(&str[0], "%d", GET_INT_VALUE(np));
+        if (CONINFO_LARGESIZEU(*np) == 1)
+	  sprintf(&str[0], "%d", GET_INT_VALUE(np));
+        else
+	  sprintf(&str[0], "<Integer>");
 	*pmodule = strdup("Prelude");
 	*pname = strdup(str);
 	break;
