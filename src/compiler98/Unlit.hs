@@ -61,8 +61,8 @@ message file   n p c = "In file " ++ file ++ " at line "++show n++": "++p++ " li
 inlines s = lines' s id
   where
   lines' []             acc = [acc []]
-  lines' ('\n':'\^M':s) acc = acc [] : lines' s id
-  lines' ('\n':s)       acc = acc [] : lines' s id
-  lines' ('\^M':s)      acc = acc [] : lines' s id
+  lines' ('\^M':'\n':s) acc = acc [] : lines' s id	-- DOS
+  lines' ('\^M':s)      acc = acc [] : lines' s id	-- MacOS
+  lines' ('\n':s)       acc = acc [] : lines' s id	-- Unix
   lines' (c:s)          acc = lines' s (acc . (c:))
 
