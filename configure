@@ -8,7 +8,7 @@
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
 NHC98VERSION="v1.15 (CVS snapshot)"
-HMAKEVERSION="3.05 (2002-06-13)" export HMAKEVERSION
+HMAKEVERSION="3.06 (2002-08-09)" export HMAKEVERSION
 HATVERSION="2.01" export HATVERSION
 
 # Hat tools whose scripts are /only/ a simple redirect to the executable.
