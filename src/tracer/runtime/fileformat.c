@@ -24,8 +24,6 @@ static int SATq = 0;
  *   . All Integer values are faked to zero for now.
  *   . Hence all Rational values are also dummy.
  *   . Floats and Doubles are written to the file without regard for endianness.
- *   . SATs are never overwritten - the B and C variants create new things
- *     in the file.
  */
 
 
@@ -459,6 +457,7 @@ primTHidden (CTrace* t1)
     FileOffset fo;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimTHidden 0x%x -> 0x%x\n",t1,fo);)
+    if (t1->hidden) return t1;
     fputc(((Trace<<5) | THidden),HatFile);
     fwrite(&(t1->ptr), sizeof(FileOffset), 1, HatFile);
     HatCounter += 1 + (sizeof(FileOffset));
@@ -620,12 +619,25 @@ primNTChar (char c)
 CNmType*
 primNTInteger (NodePtr i)
 {
-    FileOffset fo;
+    FileOffset fo;  char size;  int n,count;
     fo = htonl(HatCounter);
     HIDE(fprintf(stderr,"\tprimNTInteger -> 0x%x\n",fo);)
     fputc(((NmType<<5) | NTInteger),HatFile);
+#if 0
     fputc(0x00,HatFile);	/* fake all Integers as zero for now */
     HatCounter += 1 + (sizeof(char));
+#else
+    size = (char)CONINFO_LARGESIZEU(i[0]);
+    HIDE(fprintf(stderr,"primNTInteger size=%d ",size);)
+    HIDE(if (size==1) fprintf(stderr,"value=%d\n",i[1]); \
+         else         fprintf(stderr,"value=0\n");)
+    fputc(size,HatFile);
+    for (count=1;count<=size;count++) {
+      n = htonl(i[count]);
+      fwrite(&n, sizeof(long), 1, HatFile);
+    }
+    HatCounter += 1+(sizeof(char))+(size*sizeof(int));
+#endif
     return mkCNmType(NTInteger,fo,False);
 }
 
