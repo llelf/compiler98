@@ -92,9 +92,9 @@ COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/hmake-config.inst script/hi.inst script/hat-trail-in-java.inst \
-         script/nhc98heap.c script/harch script/confhc script/mangler \
-	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
-	 script/echo.c script/hood.inst script/tprofprel \
+         script/nhc98heap.c script/harch script/confhc script/confhat \
+	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
+	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 lib/hat-trail.jar lib/hood.jar script/hat-trans.inst \
 	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
 	 hmake.spec nhc98.spec
@@ -379,6 +379,7 @@ binDist:
 	rm -f nhc98-$(VERSION)-$(MACHINE).tar nhc98-$(VERSION)-$(MACHINE).tar.gz
 	tar cf nhc98-$(VERSION)-$(MACHINE).tar $(BASIC)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar lib/$(MACHINE)
+	tar rf nhc98-$(VERSION)-$(MACHINE).tar lib/hat
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(SCRIPT)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(MAN)
 	tar rf nhc98-$(VERSION)-$(MACHINE).tar $(INCLUDE)
