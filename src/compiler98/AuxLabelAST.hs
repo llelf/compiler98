@@ -87,36 +87,36 @@ class Relabel g where
 
 instance Relabel Module where
   relabel env (Module p mod Nothing imps fixs decls) =
-    Module p (just mod) Nothing (map (relabel env) imps) [] (relabel env decls)
+    Module p (mkLambdaBound mod) Nothing (map (relabel env) imps) [] (relabel env decls)
   relabel env (Module p mod (Just exps) imps fixs decls) =
-    Module p (just mod) (Just (map (relabel env) exps))
+    Module p (mkLambdaBound mod) (Just (map (relabel env) exps))
 			(map (relabel env) imps) [] (relabel env decls)
 					-- fixdecls are folded into the decls
 
 instance Relabel Export where
   relabel env (ExportEntity pos entity) = ExportEntity pos (relabel env entity)
-  relabel env (ExportModid pos id)      = ExportModid pos (just id)
+  relabel env (ExportModid pos id)      = ExportModid pos (mkLambdaBound id)
 
 instance Relabel ImpDecl where
   relabel env (Import (pos,id) impspec) =
-		Import (pos,just id) (relabel env impspec)
+		Import (pos,mkLambdaBound id) (relabel env impspec)
   relabel env (ImportQ (pos,id) impspec) =
-		ImportQ (pos,just id) (relabel env impspec)
+		ImportQ (pos,mkLambdaBound id) (relabel env impspec)
   relabel env (ImportQas (p1,id1) (p2,id2) impspec) =
-		ImportQas (p1,just id1) (p2,just id2) (relabel env impspec)
+		ImportQas (p1,mkLambdaBound id1) (p2,mkLambdaBound id2) (relabel env impspec)
   relabel env (Importas (p1,id1) (p2,id2) impspec) =
-		Importas (p1,just id1) (p2,just id2) (relabel env impspec)
+		Importas (p1,mkLambdaBound id1) (p2,mkLambdaBound id2) (relabel env impspec)
 
 instance Relabel ImpSpec where
   relabel env (NoHiding entities) = NoHiding (map (relabel env) entities)
   relabel env (Hiding entities)   = Hiding (map (relabel env) entities)
 
 instance Relabel Entity where
-  relabel env (EntityVar p id)		= EntityVar p (just id)
-  relabel env (EntityTyConCls p id)	= EntityTyConCls p (just id)
-  relabel env (EntityTyCon p id cons)	= EntityTyCon p (just id)
+  relabel env (EntityVar p id)		= EntityVar p (mkLambdaBound id)
+  relabel env (EntityTyConCls p id)	= EntityTyConCls p (mkLambdaBound id)
+  relabel env (EntityTyCon p id cons)	= EntityTyCon p (mkLambdaBound id)
 						(relabelPosIds cons)
-  relabel env (EntityTyCls p id vars)	= EntityTyCls p (just id)
+  relabel env (EntityTyCls p id vars)	= EntityTyCls p (mkLambdaBound id)
 						(relabelPosIds vars)
 
 instance Relabel InfixClass where
@@ -124,7 +124,7 @@ instance Relabel InfixClass where
   relabel env InfixL = InfixL
   relabel env InfixR = InfixR
   relabel env Infix  = Infix
-  relabel env (InfixPre x) = (InfixPre (just x))
+  relabel env (InfixPre x) = (InfixPre (mkLambdaBound x))
 
 instance Relabel FixId where
   relabel env (FixCon p i) = FixCon p (lookEnv env mkCon i)
@@ -145,14 +145,14 @@ instance Relabel Decl where
 	DeclData mb (map (relabel env) ctxs) (relabel env simp)
 		(map (relabel env) constrs) (relabelPosIds pis)
   relabel env (DeclDataPrim p i n) =
-	DeclDataPrim p (just i) n
+	DeclDataPrim p (mkLambdaBound i) n
   relabel env (DeclConstrs p i piis) =
-	DeclConstrs p (just i) (map (\(p,i1,i2)->(p,just i1,just i2)) piis)
+	DeclConstrs p (mkLambdaBound i) (map (\(p,i1,i2)->(p,mkLambdaBound i1,mkLambdaBound i2)) piis)
   relabel env (DeclClass p ctxs cls var decls) =
-	DeclClass p (map (relabel env) ctxs) (just cls) (just var)
+	DeclClass p (map (relabel env) ctxs) (mkLambdaBound cls) (mkLambdaBound var)
 							 (relabel env decls)
   relabel env (DeclInstance p ctxs cls inst decls) =
-	DeclInstance p (map (relabel env) ctxs) (just cls) (relabel env inst)
+	DeclInstance p (map (relabel env) ctxs) (mkLambdaBound cls) (relabel env inst)
 							 (relabel env decls)
   relabel env (DeclDefault typs) =
 	DeclDefault (map (relabel env) typs)
@@ -160,9 +160,9 @@ instance Relabel Decl where
 	DeclPrimitive p (letVar env i) n (relabel env typ)
   relabel env (DeclForeignImp p callConv str i1 n fspec typ i2) =
 	DeclForeignImp p callConv str (letVar env i1) n fspec (relabel env typ)
-          (just i2)
+          (mkLambdaBound i2)
   relabel env (DeclForeignExp p callConv str id typ) =
-	DeclForeignExp p callConv str (just id) (relabel env typ)
+	DeclForeignExp p callConv str (mkLambdaBound id) (relabel env typ)
   relabel env (DeclVarsType pis ctxs typ) =
 	DeclVarsType (relabelRealPosIds env pis) (map (relabel env) ctxs)
 							(relabel env typ)
@@ -183,9 +183,9 @@ instance Relabel Decl where
 	DeclFixity (relabel env fixclass, n, map (relabel env) fixids)
 
 instance Relabel Annot where
-  relabel env (AnnotArity (p,id) n)        = AnnotArity (p,just id) n
-  relabel env (AnnotPrimitive (p,id) pstr) = AnnotPrimitive (p,just id) pstr
-  relabel env (AnnotNeed idss)             = AnnotNeed (map (map just) idss)
+  relabel env (AnnotArity (p,id) n)        = AnnotArity (p,mkLambdaBound id) n
+  relabel env (AnnotPrimitive (p,id) pstr) = AnnotPrimitive (p,mkLambdaBound id) pstr
+  relabel env (AnnotNeed idss)             = AnnotNeed (map (map mkLambdaBound) idss)
   relabel env (AnnotUnknown)               = AnnotUnknown
 
 instance Relabel Rhs where
@@ -194,19 +194,19 @@ instance Relabel Rhs where
 	Guarded (map (\(gd,exp)-> (relabel env gd, relabel env exp)) gdexps)
 
 instance Relabel Type where
-  relabel env (TypeCons p c typs) = TypeCons p (just c) (map (relabel env) typs)
+  relabel env (TypeCons p c typs) = TypeCons p (mkLambdaBound c) (map (relabel env) typs)
   relabel env (TypeApp t1 t2)     = TypeApp (relabel env t1) (relabel env t2)
-  relabel env (TypeVar p v)       = TypeVar p (just v)
+  relabel env (TypeVar p v)       = TypeVar p (mkLambdaBound v)
   relabel env (TypeStrict p t)    = TypeStrict p (relabel env t)
 
 instance Relabel Sig where
   relabel env (Sig pis typ)       = Sig (relabelPosIds pis) (relabel env typ)
 
 instance Relabel Simple where
-  relabel env (Simple p id pis)   = Simple p (just id) (relabelPosIds pis)
+  relabel env (Simple p id pis)   = Simple p (mkLambdaBound id) (relabelPosIds pis)
 
 instance Relabel Context where
-  relabel env (Context p id (p2,id2)) = Context p (just id) (p2, just id2)
+  relabel env (Context p id (p2,id2)) = Context p (mkLambdaBound id) (p2, mkLambdaBound id2)
 
 instance Relabel Constr where
   relabel env (Constr p id mbs) =
@@ -222,8 +222,8 @@ instance Relabel Constr where
 						,relabel env typ)
 
 instance Relabel Field where
-  relabel env (FieldExp p id exp) = FieldExp p (just id) (relabel env exp)
-  relabel env (FieldPun p id)     = FieldPun p (just id)
+  relabel env (FieldExp p id exp) = FieldExp p (mkLambdaBound id) (relabel env exp)
+  relabel env (FieldPun p id)     = FieldPun p (mkLambdaBound id)
 
 instance Relabel Stmt where
   relabel env (StmtExp exp)      = StmtExp (relabel env exp)
@@ -296,7 +296,7 @@ instance Relabel Exp where
   relabel env (PatWildcard p)  = PatWildcard p
   relabel env (PatIrrefutable p pat) = PatIrrefutable p (relabel env pat)
   relabel env (PatNplusK p id1 id2 exp1 exp2 exp3) =	-- *** No, No, NO
-	PatNplusK p (just id1) (just id2)
+	PatNplusK p (mkLambdaBound id1) (mkLambdaBound id2)
 		 (relabel env exp1) (relabel env exp2) (relabel env exp3)
 
 
@@ -305,7 +305,7 @@ instance Relabel Exp where
 -- `relabelPosIds' does the simplest possible renaming of a list of
 -- position/id pairs from the TokenId type to TraceId type.
 relabelPosIds :: [(Pos,TokenId)] -> [(Pos,TraceId)]
-relabelPosIds = map (\(p,i)->(p,just i))
+relabelPosIds = map (\(p,i)->(p,mkLambdaBound i))
 
 -- `relabelRealPosIds' does the correct (as opposed to simplest) renaming
 -- of a list of position/id pairs from the TokenId type to TraceId type.

@@ -178,10 +178,16 @@ class  (Real a, Fractional a) => RealFrac a  where
     
     round x          =  let (n,r) = properFraction x
                             m     = if r < 0 then n - 1 else n + 1
-                          in case signum (abs r - 0.5) of
-                                -1 -> n
-                                0  -> if even n then n else m
-                                1  -> m
+                          in case signum (abs r - 0.5) `compare` 0 of
+                                LT -> n
+                                EQ  -> if even n then n else m
+                                GT  -> m
+-- original version
+-- nhc doesn't like prefix - when prelude is not imported unqualified
+--                          in case signum (abs r - 0.5) of
+--                                -1 -> n
+--                                0  -> if even n then n else m
+--                                1  -> m
     
     ceiling x        =  if r > 0 then n + 1 else n
                         where (n,r) = properFraction x
@@ -459,7 +465,7 @@ instance  Bounded Char  where
     maxBound            =  primUnicodeMaxBound
 
 
-type  String = [Char]
+-- type  String = [Char]
 
 
 -- Maybe type
@@ -515,6 +521,14 @@ instance Monad IO where
 data  Ordering  =  LT | EQ | GT
           deriving (Eq, Ord, Enum, Read, Show, Bounded)
 
+-- for now by hand:
+
+instance Eq Ordering where
+  LT == LT = True
+  EQ == EQ = True
+  GT == GT = True
+  _  == _  = False
+
 
 -- Standard numeric types.  The data declarations for these types cannot
 -- be expressed directly in Haskell since the constructor lists would be
@@ -556,8 +570,23 @@ instance Enum Int where
   toEnum = id
   fromEnum = id
 
-  enumFrom =  numericEnumFrom
-  enumFromThen = numericEnumFromThen
+  enumFrom x = enumFromTo x maxBound
+  enumFromThen x y = enumFromThenTo x y (if y >= x then maxBound else minBound)
+  enumFromTo n m = intEnumFromByTo n 1 m
+  enumFromThenTo n n' m = intEnumFromByTo n (n'-n) m
+
+-- need to avoid evaluating number beyond m, 
+-- because m can be maxBound or minBound
+intEnumFromByTo :: Int -> Int -> Int -> [Int]
+intEnumFromByTo n d m =
+  case d `compare` 0 of
+    GT -> if n > m then [] else go (<= m-d) n 
+    EQ -> repeat n
+    LT -> if n < m then [] else go (>= m-d) n
+  where
+  go :: (Int -> Bool) -> Int -> [Int]
+  go continue n = n : if (continue n) then go continue (n+d) else [] 
+     
 
 instance Bounded Int where
   minBound = primIntMinBound
@@ -607,8 +636,13 @@ instance Enum Integer where
   toEnum x   = toInteger x
   fromEnum x = fromInteger x
 
-  enumFrom x = numericEnumFrom x
-  enumFromThen x y = numericEnumFromThen x y
+  enumFrom = iterate (+1)
+  enumFromThen n n' = iterate (+(n'-n)) n
+  enumFromTo n m = takeWhile (<= m) (iterate (+1) n)
+  enumFromThenTo n n' m = 
+    let d = n'-n in 
+      (if d >= 0 then takeWhile (<= m) (iterate (+d) n) 
+                 else takeWhile (>= m) (iterate (+d) n) )
 
 
 -- data  Float
@@ -865,7 +899,10 @@ instance (Bounded a, Bounded b) => Bounded (a,b) where
   minBound = (minBound, minBound)
   maxBound = (maxBound, maxBound)
 
-
+{- 
+No larger tuples at the moment.
+The type needs to be defined in module Hat, to refer to it via T....
+Then need to place explicit instances here.
 
 data (,,) a b c = (,,) a b c
   deriving (Eq, Ord, Bounded)
@@ -906,6 +943,7 @@ data (,,,,,,,,,,,,,) a b c d e f g h i j k l m n = (,,,,,,,,,,,,,) a b c d e f g
 data (,,,,,,,,,,,,,,) a b c d e f g h i j k l m n o = (,,,,,,,,,,,,,,) a b c d e f g h i j k l m n o
   deriving (Eq, Ord, Bounded)
 
+-}
 
 -- component projections for pairs:
 -- (NB: not provided for triples, quadruples, etc.)
@@ -972,6 +1010,17 @@ undefined        =  error "Prelude.undefined"
 --    sum, product, maximum, minimum, concatMap, 
 --    zip, zip3, zipWith, zipWith3, unzip, unzip3)
 --  where
+
+
+-- HACK: for desugared list comprehensions
+
+_foldr :: (a -> b -> b) -> [a] -> b -> b
+_foldr f [] d = d
+_foldr f ((:) x xs) d = f x (_foldr f xs d)
+
+_filter :: Bool -> ([a]->[a]) -> [a] -> [a]
+_filter b e r = if b then e r else r
+
 
 infixl 9  !!
 infixr 5  ++
@@ -1276,7 +1325,6 @@ concatMap f      =  concat . map f
 zip              :: [a] -> [b] -> [(a,b)]
 zip              =  zipWith (,)
 
-
 zip3             :: [a] -> [b] -> [c] -> [(a,b,c)]
 zip3             =  zipWith3 (,,)
 
@@ -1308,7 +1356,6 @@ unzip            =  foldr (\(a,b) ~(as,bs) -> (a:as,b:bs)) ([],[])
 unzip3           :: [(a,b,c)] -> ([a],[b],[c])
 unzip3           =  foldr (\(a,b,c) ~(as,bs,cs) -> (a:as,b:bs,c:cs))
                           ([],[],[])
-
 
 -- A.2  Prelude PreludeText
 -- module PreludeText (
@@ -1539,6 +1586,7 @@ instance  (Read a, Read b) => Read (a,b)  where
                                                  (")",w) <- lex v ] )
 
 
+{- not for the moment
 instance  (Read a, Read b, Read c) => Read (a,b,c)  where
     readsPrec p = readParen False
     	    	    	    (\r0 -> [((x1,x2,x3), w) | 
@@ -2164,6 +2212,7 @@ instance (Show a, Show b, Show c, Show d, Show e, Show f, Show g,
 -- 					   showsType g . showChar ',' .
 -- 					   showsType h . showChar ')'
 
+-}
 
 -- A.3  Prelude PreludeIO
 -- module PreludeIO (
@@ -2183,9 +2232,10 @@ type  FilePath = String
 instance  Show IOError where
   show = primIOErrorShow
 
+{- currently excluded because instance Eq IOError missing in ghc 5.02
 instance  Eq IOError  where 
   (==) = primIOErrorEq
-
+-}
 
 -- ioError          ::  IOError -> IO a 
 -- ioError          =   primIOError
@@ -2320,10 +2370,9 @@ readLitChar ('\\':s)    =  readEsc s
                                  []     -> []
         readEsc _        = []
 
-match                         :: (Eq a) => [a] -> [a] -> ([a],[a])
-match (x:xs) (y:ys) | x == y  =  match xs ys
-match xs     ys               =  (xs,ys)
-
+        match                         :: (Eq a) => [a] -> [a] -> ([a],[a])
+        match (x:xs) (y:ys) | x == y  =  match xs ys
+        match xs     ys               =  (xs,ys)
 readLitChar (c:s)       =  [(c,s)]
 
 showLitChar               :: Char -> ShowS
@@ -2340,12 +2389,13 @@ showLitChar '\r'           =  showString "\\r"
 showLitChar '\t'           =  showString "\\t"
 showLitChar '\v'           =  showString "\\v"
 showLitChar '\SO'          =  protectEsc (== 'H') (showString "\\SO")
-showLitChar c              =  showString ('\\' : asciiTab {-!c-} !! ord c)
+showLitChar c              =  showString ('\\' : snd (asciiTab !! ord c){-!c-})
 
 protectEsc p f             = f . cont
                              where cont s@(c:_) | p c = "\\&" ++ s
                                    cont s             = s
 asciiTab = {- listArray ('\NUL', ' ') -}
+           zip ['\NUL'..' ']
            ["NUL", "SOH", "STX", "ETX", "EOT", "ENQ", "ACK", "BEL",
             "BS",  "HT",  "LF",  "VT",  "FF",  "CR",  "SO",  "SI", 
             "DLE", "DC1", "DC2", "DC3", "DC4", "NAK", "SYN", "ETB",
@@ -2437,7 +2487,8 @@ expt base n =
         base^n
 
 expts :: {- Array Int Integer -} [Integer]
-expts = {- array (minExpt,maxExpt) -} [(n,2^n) | n <- [minExpt .. maxExpt]]
+expts = [2^n | n <- [minExpt .. maxExpt]]
+        {- array (minExpt,maxExpt) [(n,2^n) | n <- [minExpt .. maxExpt]] -}
 
 -- Compute the (floor of the) log of i in base b.
 -- Simplest way would be just divide i by b until it's smaller then b,
@@ -2640,9 +2691,10 @@ floatToDigits base x =
                         -- Haskell promises that p-1 <= logBase b f < p.
                         (p - 1 + e0) * 3 `div` 10
                     else
-                        ceiling ((log (fromInteger (f+1)) + 
+                        ceiling (((log (fromInteger (f+1)) + 
                                  fromIntegral e * log (fromInteger b)) / 
-                                  log (fromInteger base))
+                                  log (fromInteger base)) 
+                                 :: Double {-DEFAULT-})
                 fixup n =
                     if n >= 0 then
                         if r + mUp <= expt base n * s then n else fixup (n+1)
@@ -2711,6 +2763,12 @@ prec = 7 :: Int
 
 data  (Integral a)      => Ratio a = !a :% !a  deriving (Eq)
 type  Rational          =  Ratio Integer
+
+-- DERIVING by hand:
+
+instance Eq a => Eq (Ratio a) where
+  (n1 :% d1) == (n2 :% d2) = n1 == n2 && d1 == d2
+
 
 (%)                     :: (Integral a) => a -> a -> Ratio a
 numerator, denominator  :: (Integral a) => Ratio a -> a

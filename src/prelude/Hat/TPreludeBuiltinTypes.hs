@@ -2,11 +2,11 @@
 -- or are used by functions that are not definable in Haskell
 module TPreludeBuiltinTypes
   (Fun(Fun) -- reexported from Hat
-  ,Bool,Char,Int,Integer,Float,Double,IOError -- identical with Prelude
-  ,List(Cons,List),Tuple0,Tuple2,IO
+  ,Bool(True,False),Char,Int,Integer,Float,Double,IOError 
+   -- identical with Prelude
+  ,List(Cons,List),IO
   ,String  -- here for convenience
-  ,aTrue,aFalse,aCons,aList
-  ,fromId,toId  
+  ,aTrue,aFalse
   ,module TPreludeBuiltinTypes
   ) where
 

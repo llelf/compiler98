@@ -89,7 +89,7 @@ data Decl id =
        DeclType (Simple id) (Type id)
        -- renamer replaces DeclType by this.
        -- the type is in the symbol table, referenced by Id
-     | DeclTypeRenamed Pos Id
+     | DeclTypeRenamed Pos Id   -- intentionally not "id"
 
        -- {Nothing = newtype, Just False = data, Just True = data unboxed}
        -- context => simple = constrs 
@@ -161,7 +161,7 @@ data Type id =
      | TypeVar          Pos id
      | TypeStrict       Pos (Type id)
 
-data Sig id = Sig [(Pos,id)] (Type id)
+data Sig id = Sig [(Pos,id)] (Type id)  -- for interface file?
 
 data Simple id = Simple Pos id [(Pos,id)]
 
@@ -282,7 +282,12 @@ instance (Show b) => Show (Lit b) where
 
 
 litshowsPrec d (LitInteger  b i) = showParen (i<0) (showsPrec d i) . shows b
-litshowsPrec d (LitRational b i) = showParen (i<0) (showsPrec d i) . shows b
+litshowsPrec d (LitRational b i) = 
+  -- this is a hack to show a rational in floating point representation
+  -- precision might be lost
+  -- therer is no library function to print a rational in full precision
+  -- in floating point representation
+  showParen (i<0) (showsPrec d ((fromRational i)::Double)) . shows b
 litshowsPrec d (LitString b str)= showString (strStr str) . shows b
 litshowsPrec d (LitInt    b i)  = showParen (i<0) (showsPrec d i) . shows b
 litshowsPrec d (LitDouble b f)  = showParen (f<0) (showsPrec d f) . shows b

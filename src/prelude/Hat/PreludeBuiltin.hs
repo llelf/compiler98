@@ -2,8 +2,12 @@
 -- not (portably) definable in Haskell.
 -- Has to be transformed into TPreludeBuiltin.hs
 module PreludeBuiltin (
+  -- reexport from module PreludeBuiltinTypes   
+  Bool(True,False),Char,Int,Integer,Float,Double,IOError 
+  ,[]((:),[]),IO
+  ,String
   -- general (->) 
-  seq,error 
+  ,seq,error 
   -- char 
   ,Char,Bool
   ,isAscii,isControl,isPrint,isSpace,isUpper,isLower,isAlpha,isDigit
@@ -39,12 +43,13 @@ module PreludeBuiltin (
   -- IO 
   ,IO,IOError -- () 
   ,primIOBind,primIOReturn
-  ,ioError,userError,catch,putChar,primIOErrorShow,primIOErrorEq 
+  ,ioError,userError,catch,putChar,getChar,getContents,readFile,writeFile
+  ,appendFile,primIOErrorShow{- ,primIOErrorEq -} 
   ) where
 
-
 import PreludeBuiltinTypes
-import qualified TraceOrigChar            -- not to be transformed
+import qualified TraceOrigPrelude  -- not to be transformed
+import qualified TraceOrigChar     -- not to be transformed
 
 -- types appearing here
 -- (->), String, Char, Bool, Int, Integer, Float, Double, (,), IO, IOError, ()
@@ -316,8 +321,10 @@ foreign import haskell "Prelude.return"
 foreign import haskell "Prelude.show"
   primIOErrorShow :: IOError -> String
 
+{- currently excluded because instance Eq IOError missing in ghc 5.02
 foreign import haskell "Prelude.=="
   primIOErrorEq :: IOError -> IOError -> Bool
+-}
 
 
 foreign import haskell "Prelude.ioError"

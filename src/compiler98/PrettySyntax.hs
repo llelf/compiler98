@@ -207,9 +207,6 @@ fSemi = fdelimiter ";"
 dSemiSpace :: Doc
 dSemiSpace = delimiter "; "
 
-fSemiSpace :: Doc
-fSemiSpace = fdelimiter "; "
-
 sep :: Doc -> [Doc] -> Doc
 sep delimiter [] = nil
 sep delimiter docs = foldr1 (\l r -> l <> delimiter <> r) docs
@@ -227,12 +224,12 @@ parensFComma1 info docs =
   fSpace <> (groupNestS info $ parens $ sep fComma docs)
 
 
-{- surround by paranthesis and separate by fSpace, but not for 0 or 1 element 
+{- surround by paranthesis and separate by fComma, but not for 0 or 1 element 
 -}
-parensFSpace1 :: PPInfo a -> [Doc] -> Doc
-parensFSpace1 info [] = nil
-parensFSpace1 info [doc] = doc
-parensFSpace1 info docs = groupNestS info $ parens $ sep fSpace docs 
+parensFComma2 :: PPInfo a -> [Doc] -> Doc
+parensFComma2 info [] = nil
+parensFComma2 info [doc] = doc
+parensFComma2 info docs = groupNestS info $ parens $ sep fComma docs 
 
 
 groupParens :: PPInfo a -> Doc -> Doc
@@ -284,7 +281,7 @@ ppFixDecls :: PPInfo a -> [FixDecl a] -> Doc
 
 ppFixDecls info [] = nil
 ppFixDecls info decls = 
-  line <> (sep line . map (ppFixDecl info) $decls) <> line
+  line <> (sep line . map (ppFixDecl info) $ decls) <> line
 
 
 ppInfixClass :: PPInfo a -> InfixClass a -> Doc
@@ -345,9 +342,10 @@ ppTopDecls info (DeclsScc decls) =
 
 ppDecls :: PPInfo a -> Decls a -> Doc
 
-ppDecls info (DeclsParse decls) = sep fSemiSpace (map (ppDecl info) decls)
+ppDecls info (DeclsParse decls) = 
+  group $ sep dSemiSpace (map (ppDecl info) decls)
 ppDecls info (DeclsScc decls) = 
-  sep fSemiSpace (map (ppDeclsDepend info) decls)
+  group $ sep dSemiSpace (map (ppDeclsDepend info) decls)
 
 
 ppDeclsDepend :: PPInfo a -> DeclsDepend a -> Doc
@@ -420,7 +418,7 @@ ppContexts :: PPInfo a -> [Context a] -> Doc
 
 ppContexts info []  = nil
 ppContexts info cxs = 
-  parensFSpace1 info (map (ppContext info) cxs) <> text " =>" <> fSpace
+  parensFComma2 info (map (ppContext info) cxs) <> text " =>" <> fSpace
 
 
 ppContext :: PPInfo a -> Context a -> Doc
@@ -435,7 +433,7 @@ ppDerivings info [] = nil
 ppDerivings info ds  = 
   groupNestS info $
     fSpace <> text "deriving" <>
-    fSpace <> parensFSpace1 info (map (ppId info . snd) ds) 
+    fSpace <> parensFComma2 info (map (ppId info . snd) ds) 
 
 
 ppConstr :: PPInfo a -> Constr a -> Doc
@@ -515,7 +513,7 @@ ppDecl info (DeclInstance pos ctxs tycls insts valdefs) =
   nestS info $
     text "instance" <> fSpace <>
     groupNestS info (ppContexts info ctxs <> ppId info tycls <> space <>
-      ppType info insts)
+      ppTypePrec info True insts)
     <> ppWhere info valdefs 
 
 ppDecl info (DeclDefault ts) =
@@ -544,11 +542,12 @@ ppDecl info (DeclVarsType ids ctxs t) =
     group (sep fComma (map (ppIdAsVar info . snd) ids)) <> text " ::" <>
     dSpace <> ppTypeWithContext info ctxs t
 
-ppDecl info (DeclPat alt) = ppAlt info "=" alt
+ppDecl info (DeclPat alt) = group $ ppAlt info "=" alt
 
 ppDecl info (DeclFun pos fun funs) =
-  ppPos info pos <>
-  (sep line . map (ppFun info fun) $ funs)
+  group $
+    ppPos info pos <>
+    (sep line . map (ppFun info fun) $ funs)
 
 ppDecl info (DeclIgnore s) =
   text ("Ignoring " ++ s)
@@ -557,7 +556,7 @@ ppDecl info (DeclError s) =
   text ("ERROR:  " ++ s)
 
 ppDecl info (DeclAnnot decl annots) =
-  ppDecl info decl <> line <> ppAnnots info annots
+  groupNestS info $ ppDecl info decl <> line <> ppAnnots info annots
 
 ppDecl info (DeclFixity f) =
   ppFixDecl info f
@@ -606,7 +605,7 @@ ppClassCode info (CodeInstance pos cls typ arg ecs methods) =
   groupNestS info $ 
     text "code instance" <> fSpace <> ppId info cls <> fSpace <> 
     ppId info typ <> text " ? = ?" <> line <>
-    sep fSemiSpace (map (ppIdAsVar info) methods)
+    sep dSemiSpace (map (ppIdAsVar info) methods)
 
 
 ppConstrs :: PPInfo a -> [Constr a] -> Doc
@@ -620,17 +619,17 @@ ppConstrs info cs =
 ppFun :: PPInfo a -> a -> Fun a -> Doc
 
 ppFun info id (Fun pats rhs w) =
-  nestS info $
+  groupNestS info $
     (group 
       (group $ sep fSpace $ 
         ppIdAsVar info id : map (ppExpPrec info True) pats) <>
-        ppRhs info "=" rhs) <>
+      ppRhs info "=" rhs) <>
     ppWhere info w
 
 
 ppStmts :: PPInfo a -> [Stmt a] -> Doc
 
-ppStmts info stmts = sep fSemiSpace (map (ppStmt info) stmts)
+ppStmts info stmts = sep line (map (ppStmt info) stmts)
 
 
 ppStmt :: PPInfo a -> Stmt a -> Doc
@@ -793,7 +792,7 @@ ppQual info (QualLet ds) =
 ppAlt :: PPInfo a -> String -> Alt a -> Doc
 
 ppAlt info delimiter (Alt pat rhs w) =
-  nestS info $
+  groupNestS info $
     group (ppPat info pat <> ppRhs info delimiter rhs) <>
     ppWhere info w
 
@@ -876,7 +875,7 @@ isOperator = not . isVarChar . last
   where
   isVarChar c = isAlphaNum c || c == '_' || c == '\'' 
                  || c == ']'  -- empty list []
-                 || c == '}'  -- info of trace id
+                 || c == '}'  -- traceId
 
 
 {- End PrettySyntax -------------------------------------------------------- -}

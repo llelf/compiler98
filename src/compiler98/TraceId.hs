@@ -1,17 +1,19 @@
 module TraceId
   ( TraceId		-- abstract type
 			-- constructors:
-  , just		-- :: TokenId -> TraceId
+  , mkLambdaBound      	-- :: TokenId -> TraceId
   , plus		-- :: TokenId -> AuxiliaryInfo -> TraceId
 			-- selectors:
   , tokenId		-- :: TraceId -> TokenId
   , arity		-- :: TraceId -> Maybe Int
   , isLambdaBound	-- :: TraceId -> Bool
   , fixPriority		-- :: TraceId -> Int
-  , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail -- :: TraceId
+  , tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
+  ,tTokenAndAnd,tTokenEqualEqual -- :: TraceId
   ) where
 
-import TokenId (TokenId,t_Colon,t_List,t_gtgt,t_gtgteq,tfail)
+import TokenId (TokenId,t_Colon,t_List,t_gtgt,t_gtgteq,tfail
+               ,t_andand,t_equalequal)
 import AuxFile (AuxiliaryInfo(..),Fixity(..),emptyAux)
 
 {-
@@ -26,8 +28,9 @@ type TraceId = (TokenId, Maybe AuxiliaryInfo)
 
 -- construction functions
 
-just :: TokenId -> TraceId
-just t = (t, Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
+mkLambdaBound :: TokenId -> TraceId
+mkLambdaBound t = 
+  (t, Just (Has{ args=(-1), fixity=Def, priority=9, letBound=False }))
 
 plus :: TokenId -> AuxiliaryInfo -> TraceId
 t `plus` aux = (t, Just aux)
@@ -68,11 +71,17 @@ tTokenNil :: TraceId
 tTokenNil = t_List `plus` emptyAux{args=0}
 
 tTokenGtGt :: TraceId
-tTokenGtGt = t_gtgt `plus` emptyAux{args=2}
+tTokenGtGt = t_gtgt `plus` emptyAux
 
 tTokenGtGtEq :: TraceId
-tTokenGtGtEq = t_gtgteq `plus` emptyAux{args=2}
+tTokenGtGtEq = t_gtgteq `plus` emptyAux
 
 tTokenFail :: TraceId
 tTokenFail = tfail `plus` emptyAux{args=1}
+
+tTokenAndAnd :: TraceId
+tTokenAndAnd = t_andand `plus` emptyAux{args=2}
+
+tTokenEqualEqual :: TraceId
+tTokenEqualEqual = t_equalequal `plus` emptyAux
 

@@ -22,21 +22,23 @@ attribut grammar: the arguments are the inherited attributes, the elements
 of the result tuples are the synthetic attributes.
 ---------------------------------------------------------------------------- -}
 
-module TraceTrans (traceTrans) where
+module TraceTrans (traceTrans,maybeStripOffQual) where
 
 import Syntax
 import SyntaxPos (HasPos(getPos))
 import TokenId (TokenId(TupleId,Visible,Qualified)
-               ,qualify,visible,extractV
+               ,qualify,visible,extractV,extractM
                ,tPrelude,t_Tuple,t_Arrow,tTrue,tFalse,t_otherwise,t_undef
                ,tMain,tmain,tseq,t_Colon,t_List)
 import PackedString (PackedString,packString,unpackPS)
 import Extra (Pos,noPos,strPos,fromPos)
-import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,just
-               ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail)
+import TraceId (TraceId,tokenId,arity,isLambdaBound,fixPriority,mkLambdaBound
+               ,tTokenCons,tTokenNil,tTokenGtGt,tTokenGtGtEq,tTokenFail
+               ,tTokenAndAnd,tTokenEqualEqual)
 import AuxFile (AuxiliaryInfo)	-- needed only for hbc's broken import mechanism
 import List (isPrefixOf,union,partition)
 import Char (isAlpha,digitToInt)
+import Ratio (numerator,denominator)
 
 infixr 6 `typeFun`	-- hbc won't let me declare this later.
 
@@ -54,7 +56,7 @@ traceTrans traced filename traceFilename
   Module pos
     (nameTransModule modId)
     (if isMain modId then Just [] {- export everything -} else tExports exps)
-    (tImpDecls impDecls)
+    (tImpDecls modId impDecls)
     [] -- no fix info needed, because pretty printed output not ambiguous
     (DeclsParse 
       (decls' 
@@ -68,6 +70,28 @@ traceTrans traced filename traceFilename
   modTrace = ExpVar pos (nameTraceInfoModule modId)
   (poss,tvars,vars,cons) = getModuleConsts consts
   (DeclsParse decls',consts) = tDecls traced (ExpVar pos tokenMkTRoot) decls
+  
+
+-- ----------------------------------------------------------------------------
+-- If module is part of the given module (Prelude or TPrelude),
+-- then strip off all of these module qualifications from identifiers.
+-- These qualified identifiers are introduced by desugaring in the parser
+-- and the fixity correction.
+
+maybeStripOffQual :: String -> Module TokenId -> Module TokenId
+maybeStripOffQual p mod@(Module pos modId exps impDecls fixDecls decls) =
+  if isPreModule p modId then fmap (stripModule p) mod else mod
+
+isPreModule :: String -> TokenId -> Bool
+isPreModule p = (p `isPrefixOf`) . reverse . unpackPS . extractV 
+
+stripModule :: String -> TokenId -> TokenId
+stripModule qual' (Qualified qual unqual) | qual' == qualModule qual =
+  Visible unqual
+stripModule qual token = token
+
+qualModule :: PackedString -> String
+qualModule = reverse . takeWhile (/= '.') . unpackPS
 
 -- ----------------------------------------------------------------------------
 -- construct new main function definition
@@ -97,7 +121,7 @@ defMain artFilename =
       noDecls]
   where
   tokenmain = visible (reverse "main")
-  tokenomain = nameTransVar (just tmain)
+  tokenomain = nameTransVar (mkLambdaBound tmain)
   tokenValue = visible (reverse "value")
 
 -- ----------------------------------------------------------------------------
@@ -111,21 +135,28 @@ tExport (ExportModid pos modId) = [ExportModid pos (nameTransModule modId)]
 tExport (ExportEntity pos entity) = map (ExportEntity pos) (tEntity entity)
 
 
-tImpDecls :: [ImpDecl TraceId] -> [ImpDecl TokenId]
-tImpDecls decls = 
-  (if any importsPreludeOrOriginal decls 
-     then id 
-     else ((Import (noPos,nameTransModule (just tPrelude)) (Hiding [])) :))
-    ((ImportQ (noPos,tPrelude) (Hiding []))
-     -- ^ hide the standard Prelude 
-    :(ImportQas (noPos,Visible tracingModule) 
-       (noPos,Visible tracingModuleShort) (Hiding [])) 
-    :(map tImpDecl decls))
+tImpDecls :: TraceId -> [ImpDecl TraceId] -> [ImpDecl TokenId]
+tImpDecls modId decls = 
+    ImportQ (noPos,tPrelude) (Hiding [])
+    -- import original Prelude qualified
+    -- actually should hide Prelude as far as possible using
+    -- ImportQ (noPos,tPrelude) (NoHiding [])
+    -- but nhc98 needs access to original Prelude for desugaring
+    :ImportQas (noPos,Visible tracingModule) 
+       (noPos,Visible tracingModuleShort) (Hiding [])
+    :map tImpDecl 
+       ((if any importsPreludeOrOriginal decls || isPrePrelude modId
+           then id 
+           else ((Import (noPos,mkLambdaBound tPrelude) (Hiding [])) :))
+         decls)
   where 
   importsPreludeOrOriginal :: ImpDecl TraceId -> Bool
   importsPreludeOrOriginal impDecl = 
     let id = importedModule impDecl
     in tokenId id == tPrelude || "TraceOrig" `isPrefixOf` (getUnqualified id)
+
+isPrePrelude :: TraceId -> Bool
+isPrePrelude = isPrefixOf "Prelude" . getUnqualified 
 
 tImpDecl :: ImpDecl TraceId -> ImpDecl TokenId
 tImpDecl (Import (pos,id) spec) = 
@@ -301,21 +332,23 @@ tDecls2 traced parent (DeclsParse decls) =
   ,foldr merge emptyModuleConsts declsConstss)
   where
   (declss1,declss2,declsConstss) = 
-    unzip3 (map (tDecl traced parent) . combineFuns $ decls)
+    unzip3 (map (tDecl2 traced parent) . combineFuns $ decls)
 
 tDecl2 :: Bool -> Exp TokenId -> Decl TraceId 
        -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
 tDecl2 traced parent (DeclFun pos id [Fun [] rhs localDecls]) = 
   -- methods always take a position and trace as argument,
-  -- even if these are no used in cafs
+  -- even if these are not used in cafs,
+  -- because instances of one method may have different arities
+  -- but all must have the "same" type.
+  -- Sharing of constants is lost; outside of class/instance
+  -- a shared constant would still need a class context (=> no longer constant)
   ([DeclFun pos id' 
-     [Fun [PatWildcard pos,PatWildcard pos] 
-       (Unguarded (ExpVar pos shareId)) noDecls]]
-  ,DeclFun pos shareId fun' : decls'
+     [Fun [PatWildcard pos,PatWildcard pos] rhs' localDecls']]
+  ,traceDecl
   ,declConsts)
   where
-  shareId = nameShare id
-  ([DeclFun _ id' fun'],decls',declConsts) = 
+  ([DeclFun _ id' [Fun [] rhs' localDecls']],traceDecl,declConsts) = 
     tCaf traced parent pos id rhs localDecls
 tDecl2 traced parent decl = tDecl traced parent decl
 
@@ -330,7 +363,8 @@ tDecl _ _ (DeclType lhsTy rhsTy) =
   singleDecl $ DeclType (tSimple lhsTy) (tType rhsTy)
 tDecl _ _ (DeclData sort contexts lhsTy constrs derive) = 
   ([DeclData sort (tContexts contexts) (tSimple lhsTy) 
-    (map tConstr constrs) (tPosClss derive)]
+    (map tConstr constrs) []]   
+    -- "derive" should be empty, because transformed classes cannot be derived
   ,[]
   ,foldr (uncurry addCon) emptyModuleConsts (map getCon constrs))
   where
@@ -387,15 +421,24 @@ tDecl _ _ (DeclForeignImp pos callConv cname fnId arity fspec ty duplicateId) =
 tDecl _ _ (DeclForeignExp pos callConv str fnId _) =
   error ("Cannot trace foreign export (used at " ++ strPos pos ++ ")")
 tDecl _ _ (DeclVarsType vars contexts ty) =
-  ((if null lambdaVars then [] 
-      else [DeclVarsType (tPosExps lambdaVars) 
+  -- Variables of arity 0 do not take SR and Trace argument, so that
+  -- their values are shared. Note that type signatures for class methods
+  -- are handled differently by tDecl2
+  ((if null constVars then [] 
+      else [DeclVarsType (tPosExps constVars) 
              (tContexts contexts) (wrapType (tType ty))])
    ++
-   (if null letVars then [] else [DeclVarsType (tPosExps letVars) 
-                                   (tContexts contexts) (tFunType ty)])
+   (if null nonConstVars then [] else [DeclVarsType (tPosExps nonConstVars) 
+                                        (tContexts contexts) (tFunType ty)])
   ,[],emptyModuleConsts)
   where
-  (lambdaVars,letVars) = partition (isLambdaBound . snd) vars
+  (constVars,nonConstVars) = partition (isNonMethodConstant . snd) vars
+  isNonMethodConstant :: TraceId -> Bool
+  isNonMethodConstant id = 
+    isLambdaBound id || -- variables in pattern bindings are lambda bound
+      (case arity id of
+        Just n  -> n == 0
+        Nothing -> False)
 tDecl traced parent (DeclPat (Alt (ExpVar pos id) rhs decls)) = 
   -- this case may occur because of the next equation
   tCaf traced parent pos id rhs decls
@@ -409,6 +452,7 @@ tDecl traced parent (DeclPat (Alt pat rhs decls)) =
   -- unfortunately we cannot transform a pattern binding into another pattern
   -- binding; we have to introduce an explicit `case' to be able to terminate 
   -- with an appropriate error message when the pattern does not match.
+  -- first rewrite as p = e, then
   -- xi = lazySat (case patId of (t,y1,..,yn) -> indir t yi) xti
   -- patId = case e' of 
   --           p' -> (t,y1,..,yn)
@@ -418,30 +462,31 @@ tDecl traced parent (DeclPat (Alt pat rhs decls)) =
   ,DeclFun noPos patId 
     [Fun [] 
       (Unguarded 
-        (ExpCase noPos rhs'
-          [Alt pat' (Unguarded tuple) noDecls
+        (ExpCase noPos exp'
+          [Alt pat'' (Unguarded tuple) noDecls
           ,Alt (PatWildcard noPos) (Unguarded (mkFailExp noPos parent)) noDecls
           ]))
       decls']
    :map (uncurry (mkConstDecl parent)) patPosIds
   ,foldr (uncurry addVar) 
-    (emptyModuleConsts `withLocal` (declsConsts `merge` rhsConsts)) patPosIds)
+    (emptyModuleConsts `withLocal` altConsts) patPosIds)
   where
   firstId = snd . head $ patPosIds
-  patId = nameShare firstId
+  patId = nameShare noPos firstId
   resultTraceId = nameTrace2 firstId
-  tuple = mkTupleExp noPos (ExpVar noPos resultTraceId : map tPat patVars)
+  tuple = mkTupleExp noPos (ExpVar noPos resultTraceId : patVars')
   patPosIds = map (\(ExpVar pos id) -> (pos,id)) patVars
+  (patVars',[]) = tPats patVars 
   patVars = getPatVars pat
-  pat' = case tPat pat of
+  pat'' = case pat' of
            ExpApplication p [r,v,_] -> 
              ExpApplication p [r,v,ExpVar noPos resultTraceId]
-  (rhs',rhsConsts) = tRhs traced False parent failContinuation rhs
-  (decls',declsConsts) = tDecls traced parent decls
+  (Fun [pat'] (Unguarded exp') decls',altConsts) = 
+     tFun traced False parent failContinuation (Fun [pat] rhs decls)
 
   mkConstDecl :: Exp TokenId -> Pos -> TraceId -> Decl TokenId
   mkConstDecl parent pos id =
-    DeclFun pos (nameTrace id)
+    DeclFun pos (nameTraceShared pos id)
       [Fun [] (Unguarded (mkConstVar parent pos id traced)) noDecls]
 
   projDef :: (Pos,TraceId) -> Decl TokenId
@@ -457,7 +502,7 @@ tDecl traced parent (DeclPat (Alt pat rhs decls)) =
                   [ExpVar pos tokenIndir
                   ,ExpVar pos resultTraceId,ExpVar pos (nameTransVar id)])) 
               noDecls]
-          ,ExpVar pos (nameTrace id)]))
+          ,ExpVar pos (nameTraceShared pos id)]))
         noDecls]
 
   getPatVars :: Pat id -> [Pat id]
@@ -479,7 +524,7 @@ tDecl traced parent (DeclFun pos id [Fun [] rhs localDecls]) =
 tDecl _ parent (DeclFun pos id (Fun [] _ _ : _)) =
   error "tDecl: variable multiple defined"
 tDecl traced parent (DeclFun pos id funs) = 
-  tFun traced pos id funs  -- a function does not use the static parent
+  tFuns traced pos id funs  -- a function does not use the static parent
 tDecl _ _ (DeclFixity _) = 
   ([],[],emptyModuleConsts) 
   -- fixity declarations have been processed before 
@@ -573,15 +618,15 @@ tCaf traced parent pos id rhs localDecls =
     (rhsConsts `merge` localDeclsConsts))
   where
   useParent = ExpVar pos useParentId
-  useParentId = nameTrace id
+  useParentId = nameTraceShared pos id
   (rhs',rhsConsts) = tRhs traced True useParent failContinuation rhs
   (localDecls',localDeclsConsts) = tDecls traced useParent localDecls
 
 
-tFun :: Bool -> Pos -> TraceId -> [Fun TraceId]
+tFuns :: Bool -> Pos -> TraceId -> [Fun TraceId]
      -> ([Decl TokenId],[Decl TokenId],ModuleConsts)
 
-tFun traced pos id funs =
+tFuns traced pos id funs =
   ([DeclFun pos (nameTransVar id) 
      [Fun [sr,parent]
        (Unguarded
@@ -589,9 +634,13 @@ tFun traced pos id funs =
            [combFun pos traced funArity
            ,ExpVar pos (nameTraceInfoVar pos id)
            ,ExpVar pos wrappedId',sr,parent]))
-       noDecls]]
-  ,DeclFun pos wrappedId' funs' : newDecls'  
-   -- in same scope as possible type decl (which hasn't been implemented)
+       (DeclsParse (DeclFun pos wrappedId' funs' : newDecls'))]]
+       -- worker must be local, because if wrapper is within an instance,
+       -- then worker cannot be in instance scope; neither can it be on
+       -- top level scope, because there may be several instances for the
+       -- same class and all workers have the same name.
+       -- In same scope as possible type decl (which hasn't been implemented)
+  ,[]
   ,addVar pos id (emptyModuleConsts `withLocal` funConsts))
   where
   funArity = case funs of (Fun pats _ _ : _) -> length pats
@@ -619,54 +668,108 @@ tFunClauses _ pos parent ids pVars funArity False [] =
      (parent : replicate funArity (PatWildcard pos))
      (Unguarded (continuationToExp parent failContinuation)) noDecls]
   ,[],emptyModuleConsts)
-tFunClauses traced pos parent ids pVars funArity _
- (Fun pats (Unguarded exp) decls : funs) =
-  (Fun (parent : pats') (Unguarded exp') decls' : funs'
-  ,funDecls
-  ,declsConsts `merge` funConsts `withLocal` expConsts)
-  where
-  pats' = tPats pats
-  (exp',expConsts) = tExp traced True parent exp
-  (decls',declsConsts) = tDecls traced parent decls
-  (funs',funDecls,funConsts) = tFunClauses traced pos parent ids pVars 
-                                 funArity (neverFailingPats pats) funs
-tFunClauses traced pos parent ids pVars funArity _
- (Fun pats (Guarded gdExps) decls : funs)
-  | not (null funs) && canFail gdExps =
-    ([Fun (parent : pats') (Unguarded gdExps') decls'
-     ,Fun (parent : replicate funArity (PatWildcard pos)) 
+tFunClauses traced pos parent ids pVars funArity _ (fun@(Fun pats _ _) : funs)
+  | not (null funs) && funCanFail fun =
+    ([Fun (parent : pats'') rhs' decls'
+     ,Fun (parent : vars) 
        (Unguarded (continuationToExp parent failCont)) noDecls]
-    ,DeclFun pos contId funs' : funDecls
-    ,declsConsts `merge` funConsts `withLocal` gdExpsConsts)
+    ,DeclFun pos contId funs' : funsDecls
+    ,funConsts `merge` funsConsts)
   where
   contId = head ids
   failCont = functionContinuation contId vars
-  (pats',vars) = namePats (tPats pats) pVars 
-  (gdExps',gdExpsConsts) = tGuardedExps traced True parent failCont gdExps
-  (decls',declsConsts) = tDecls traced parent decls
-  (funs',funDecls,funConsts) = tFunClauses traced pos parent (tail ids) pVars 
-                                 funArity (neverFailingPats pats) funs
-tFunClauses traced pos parent ids pVars funArity _
- (Fun pats (Guarded gdExps) decls : funs) =
-  -- last clause or guards cannot fail
-  (Fun (parent:pats') (Unguarded gdExps') decls' : funs'
-  ,funDecls
-  ,declsConsts `merge` funConsts `withLocal` gdExpsConsts)
+  (pats'',vars) = namePats pats' pVars 
+  (Fun pats' rhs' decls',funConsts) = tFun traced True parent failCont fun
+  (funs',funsDecls,funsConsts) = 
+    tFunClauses traced pos parent (tail ids) pVars 
+      funArity (neverFailingPats pats) funs
+tFunClauses traced pos parent ids pVars funArity _ (fun@(Fun pats _ _): funs) =
+  -- last clause or guards and numeric literals cannot fail
+  (Fun (parent:pats') rhs' decls' : funs'
+  ,funsDecls
+  ,funConsts `merge` funsConsts)
   where
-  pats' = tPats pats
-  (gdExps',gdExpsConsts) = tGuardedExps traced True parent failContinuation 
-                             gdExps
-  (decls',declsConsts) = tDecls traced parent decls
-  (funs',funDecls,funConsts) = tFunClauses traced pos parent ids pVars 
+  (Fun pats' rhs' decls',funConsts) = 
+    tFun traced True parent failContinuation fun
+  (funs',funsDecls,funsConsts) = tFunClauses traced pos parent ids pVars 
                                  funArity (neverFailingPats pats) funs
 
 
--- Returns False only if one of the guards definitely has value True.
-canFail :: [(Exp TraceId,Exp TraceId)] -> Bool
-canFail [] = True
-canFail ((ExpCon _ cid, _) : gdExps) = not (isTrue cid) && canFail gdExps
-canFail ((ExpVar _ cid, _) : gdExps) = not (isOtherwise cid) && canFail gdExps
-canFail (_ : gdExps) = canFail gdExps
+-- Numeric literals need to be overloaded with respect to the new
+-- transformed numeric classes; hence they cannot just be left wrapped
+-- in patterns
+-- Transform such literals into equality conditions in guards.
+-- Need also to desugare ~, because that is the easiest way to deal with 
+-- literals within the scope of a ~. NOT YET DONE.
+tFun :: Bool -- traced
+     -> Bool -- this is reduct of parent
+     -> Exp TokenId -- parent
+     -> ContExp -- continuation in case of pattern match failure
+     -> Fun TraceId -> (Fun TokenId,ModuleConsts)
+-- Definition similar to tGuardedExps
+tFun traced cr parent contExp (Fun pats rhs decls) =
+  if null conditions
+    then (Fun pats' (Unguarded rhs') decls',declsConsts `withLocal` rhsConsts)
+    else
+      (Fun pats' (Unguarded 
+        (ExpCase pos cond
+          [Alt (wrapExp pos guardValue guardTrace)
+            (Unguarded
+              (ExpLet pos
+                (DeclsParse
+                  [DeclFun pos newParentId
+                    [Fun []
+                      (Unguarded (mkConstGuard pos parent guardTrace traced)) 
+                    noDecls]])
+                (ExpIf pos guardValue rhs' 
+                  (continuationToExp newParent contExp))))
+            noDecls]))
+        decls'
+      ,pos `addPos` condConsts `merge` declsConsts `withLocal` rhsConsts)  
+      -- condConsts contains positions of the boolean expression
+  where
+  pos = getPos pats
+  guardValue = ExpVar pos guardValueId
+  guardTrace = ExpVar pos guardTraceId
+  newParent = ExpVar pos newParentId
+  (newParentId:guardValueId:guardTraceId:_) = namesFromPos pos
+  (pats',conditions) = tPats pats
+  (cond,condConsts) = tExp traced False parent (foldr1 andExp conditions)
+  (rhs',rhsConsts) = 
+    tRhs traced cr (if null conditions then parent else newParent) contExp rhs
+  (decls',declsConsts) = tDecls traced parent decls
+  andExp :: Exp TraceId -> Exp TraceId -> Exp TraceId
+  andExp e1 e2 = ExpApplication pos [ExpVar pos tTokenAndAnd,e1,e2]
+
+
+funCanFail :: Fun TraceId -> Bool
+funCanFail (Fun pats rhs _) = 
+  any numericLitIn pats || case rhs of
+    Unguarded _ -> False
+    Guarded gdExps -> gdExpsCanFail gdExps
+
+numericLitIn :: Pat TraceId -> Bool
+numericLitIn (ExpRecord pat fields) = 
+  numericLitIn pat || any numericLitInField fields
+  where
+  numericLitInField (FieldExp _ _ pat) = numericLitIn pat
+numericLitIn (ExpApplication _ pats) = any numericLitIn pats
+numericLitIn (ExpList _ pats) = any numericLitIn pats
+numericLitIn (PatAs _ _ pat) = numericLitIn pat
+numericLitIn (PatIrrefutable _ pat) = numericLitIn pat
+numericLitIn (ExpLit _ (LitInteger _ _)) = True
+numericLitIn (ExpLit _ (LitRational _ _)) = True
+numericLitIn _ = False
+
+
+-- Returns False only if one of the guards definitely evaluates to True.
+gdExpsCanFail :: [(Exp TraceId,Exp TraceId)] -> Bool
+gdExpsCanFail [] = True
+gdExpsCanFail ((ExpCon _ cid, _) : gdExps) = 
+  not (isTrue cid) && gdExpsCanFail gdExps
+gdExpsCanFail ((ExpVar _ cid, _) : gdExps) = 
+  not (isOtherwise cid) && gdExpsCanFail gdExps
+gdExpsCanFail (_ : gdExps) = gdExpsCanFail gdExps
 
 
 namePats :: [Pat TokenId] -> [Pat TokenId] -> ([Pat TokenId],[Pat TokenId])
@@ -789,8 +892,9 @@ tExp traced cr parent (ExpLambda pos pats body) =
     ,parent]
   ,pos `addPos` bodyConsts)
   where
-  pats' = tPats pats
-  (body',bodyConsts) = tExp traced True lambdaParent body
+  (Fun pats' (Unguarded body') _,bodyConsts) = 
+    tFun traced True lambdaParent failContinuation 
+      (Fun pats (Unguarded body) noDecls)
   vars = map (ExpVar pos) . take funArity $ varsIds
   lambdaParent = ExpVar pos lambdaParentId
   (lambdaParentId:varsIds) = namesFromPos pos
@@ -819,7 +923,7 @@ tExp traced cr parent (ExpCase pos e alts) =
   -- ap1 sr parent 
   --   (fun1 mkAtomCase (let varId = fun'; defs' in varId) sr parent)
   --   e'
-  ,pos `addPos` funConsts)
+  ,pos `addPos` eConsts `merge` funConsts)
   where
   (varId:caseParentId:argId:funsIds) = namesFromPos pos
   (e',eConsts) = tExp traced False parent e
@@ -862,7 +966,7 @@ tExp traced cr parent (ExpIf pos cond e1 e2) =
   ifParent = ExpVar pos ifParentId 
   (ifParentId:newIds) = namesFromPos pos
 tExp traced cr parent (ExpType pos e contexts ty) =
-  (ExpType pos e' (tContexts contexts) (tType ty)
+  (ExpType pos e' (tContexts contexts) (wrapType (tType ty))
   ,eConsts)
   where
   (e',eConsts) = tExp traced cr parent e
@@ -888,24 +992,52 @@ tExp traced cr parent (ExpVar pos id) =
   where
   e' = ExpVar pos (nameTransVar id) 
 tExp traced cr parent e@(ExpCon pos id) =
-  tSatConApp traced parent e []
+  tConApp traced parent e []
 tExp traced cr parent (ExpLit pos (LitString _ s)) =
   -- the result is very large; should use special wrapper that
   -- transforms string in traced string instead
   tExp traced cr parent (ExpList pos (map (ExpLit pos . LitChar Boxed) s))
-tExp traced cr parent (ExpLit pos lit) =
-  (ExpApplication pos [tLit lit,mkSRExp pos traced,parent,ExpLit pos lit]
+tExp traced cr parent (ExpLit pos lit@(LitChar _ _)) =
+  (ExpApplication pos 
+    [ExpVar pos tokenConChar,mkSRExp pos traced,parent,ExpLit pos lit]
+  ,pos `addPos` emptyModuleConsts)
+tExp traced cr parent (ExpLit pos lit@(LitRational b r)) =
+  -- desugar rational constant into explicit use of ":%",
+  -- because Rational is not a primitive type but defined in PreludeBasic
+  -- however, this way mkNTRational is not used at all
+  (ExpApplication pos 
+    [combApply pos False False 1,sr,parent
+    ,ExpApplication pos [ExpVar pos tokenFromRational,sr,parent]
+    ,ExpApplication pos 
+      [ExpCon pos tokenR
+      ,ExpApplication pos 
+        [ExpCon pos tokenConRational
+        ,ExpApplication pos [ExpVar pos tokenConInteger,sr,parent,num]
+        ,ExpApplication pos [ExpVar pos tokenConInteger,sr,parent,denom]]
+      ,mkConst parent 
+        (ExpApplication pos 
+          [ExpVar pos tokenMkAtomRational,ExpLit pos lit]) 
+        pos traced]]
   ,pos `addPos` emptyModuleConsts)
   where
-  tLit (LitInt _ _) = ExpVar pos tokenConInt
-  tLit (LitChar _ _) = ExpVar pos tokenConChar
-  tLit (LitInteger _ _) = ExpVar pos tokenFromConInteger  
-                          -- removed after typechecking
-  tLit (LitRational _ _) = ExpVar pos tokenFromConRational
-                           -- removed after typechecking
-  tLit (LitDouble _ _) = ExpVar pos tokenConDouble
-  tLit (LitFloat _ _) = ExpVar pos tokenConFloat
-  -- do Int, Double or Float literals actually exists at this compiler stage?
+  num = ExpLit pos (LitInteger b (numerator r))
+  denom = ExpLit pos (LitInteger b (denominator r))
+  sr = mkSRExp pos traced
+      
+--  tExp traced cr parent 
+--    (ExpApplication pos 
+--      [ExpCon pos tokenConRational
+--      ,ExpLit pos (LitInteger b (numerator r))
+--      ,ExpLit pos (LitInteger b (denumerator r))
+--      ])
+tExp traced cr parent (ExpLit pos lit@(LitInteger _ _)) =
+  (ExpApplication pos 
+    [combApply pos False False 1,sr,parent
+    ,ExpApplication pos [ExpVar pos tokenFromInteger,sr,parent]
+    ,ExpApplication pos [ExpVar pos tokenConInteger,sr,parent,ExpLit pos lit]]
+  ,pos `addPos` emptyModuleConsts)
+  where
+  sr = mkSRExp pos traced
 tExp traced cr parent (ExpList pos es) =
   -- the result is very large; should use special wrapper that
   -- transforms list in traced list instead
@@ -928,6 +1060,9 @@ neverFailingPats = all neverFailingPat
 -- conversion of case alternative into function definition alternative 
 alt2Fun :: Alt a -> Fun a
 alt2Fun (Alt pat rhs decls) = Fun [pat] rhs decls 
+
+fun2Alt :: Fun a -> Alt a
+fun2Alt (Fun [pat] rhs decls) = Alt pat rhs decls
 
 
 -- Transform data constructor application.
@@ -1003,41 +1138,69 @@ removeDo (StmtBind pat e : stmts) =
                  noDecls])
     ]
   where
-  newVar = ExpVar pos (just newId)
+  newVar = ExpVar pos (mkLambdaBound newId)
   newId:_ = namesFromPos pos
   pos = getPos e
 
 
-tPats :: [Pat TraceId] -> [Pat TokenId]
-tPats = map tPat
+mapCombine :: (a -> (b,[c])) -> [a] -> ([b],[c])
+mapCombine f = (\(p,es) -> (p,concat es)) . unzip . map f
 
-tPat (ExpRecord pat fields) = ExpRecord (tPat pat) (map tField fields)
+tPats :: [Pat TraceId] -> ([Pat TokenId],[Exp TraceId])
+tPats = mapCombine tPat
+
+tPat :: Pat TraceId -> (Pat TokenId,[Exp TraceId])
+tPat (ExpRecord pat fields) = (ExpRecord pat' fields',patExps ++ fieldsExps)
   where
-  tField (FieldExp pos id pat) = FieldExp pos (nameTransField id) (tPat pat)
+  (pat',patExps) = tPat pat
+  (fields',fieldsExps) = mapCombine tField fields
+  tField (FieldExp pos id pat) = 
+    (FieldExp pos (nameTransField id) pat',patExps)
+    where
+    (pat',patExps) = tPat pat
 tPat (ExpApplication pos (ExpCon pos2 id : pats)) = 
-  wrapExp pos (ExpApplication pos (ExpCon pos2 (nameTransCon id) : tPats pats))
+  (wrapExp pos 
+    (ExpApplication pos (ExpCon pos2 (nameTransCon id) : pats'))
     (PatWildcard pos)
+  ,patsExps)
+  where
+  (pats',patsExps) = tPats pats
   -- negative numeric literals are represented as (negate number):
-tPat (ExpApplication _ [_,ExpLit pos (LitInteger boxed i)])
-  = wrapExp pos (ExpLit pos (LitInteger boxed (-i))) (PatWildcard pos)
-tPat (ExpApplication _ [_,ExpLit pos (LitRational boxed r)])
-  = wrapExp pos (ExpLit pos (LitRational boxed (-r))) (PatWildcard pos)
+tPat (ExpApplication _ [_,ExpLit pos (LitInteger boxed i)]) =
+  tPat (ExpLit pos (LitInteger boxed (-i)))
+tPat (ExpApplication _ [_,ExpLit pos (LitRational boxed r)]) =
+  tPat (ExpLit pos (LitRational boxed (-r)))
 tPat (ExpApplication _ [_,ExpLit pos _]) = error "tPat: app expLit"
-tPat (ExpVar pos id) = ExpVar pos (nameTransVar id)
+tPat (ExpVar pos id) = (ExpVar pos (nameTransVar id),[])
 tPat (ExpCon pos id) = 
-  wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos)
+  (wrapExp pos (ExpCon pos (nameTransCon id)) (PatWildcard pos),[])
 tPat (ExpLit pos (LitString _ s)) =
   tPat . mkTList pos . map (ExpLit pos . LitChar Boxed) $ s
-tPat (ExpLit pos lit) = 
-  wrapExp pos (ExpLit pos lit) (PatWildcard pos) 
+tPat (ExpLit pos lit@(LitChar _ _)) = 
+  (wrapExp pos (ExpLit pos lit) (PatWildcard pos),[]) 
+tPat e@(ExpLit pos lit) = -- only LitInteger and LitRational left
+  (ExpVar pos (nameTransVar tid)
+  ,[ExpApplication pos 
+     [ExpVar pos tTokenEqualEqual,ExpVar pos tid,e]])
+  where
+  tid = mkLambdaBound id
+  id:_ = namesFromPos pos
 tPat (ExpList pos pats) = tPat . mkTList pos $ pats
-tPat (PatAs pos id pat) = PatAs pos (nameTransVar id) (tPat pat)
-tPat (PatWildcard pos) = PatWildcard pos  -- type change
+tPat (PatAs pos id pat) = (PatAs pos (nameTransVar id) pat',patExps)
+  where
+  (pat',patExps) = tPat pat
+tPat (PatWildcard pos) = (PatWildcard pos,[])  -- type change
 tPat (PatIrrefutable pos pat) = 
-  case tPat pat of
-    ExpApplication pos' [r,p',t'] -> 
-      ExpApplication pos' [r,PatIrrefutable pos p',t']
-    x -> x
+  if null patExps 
+    then
+      (case pat' of
+         ExpApplication pos' [r,p',t'] -> 
+           ExpApplication pos' [r,PatIrrefutable pos p',t']
+         x -> x
+      ,[])
+    else error "Numeric literal inside ~ is currently not implemented."
+  where
+  (pat',patExps) = tPat pat 
 tPat (PatNplusK pos id id' k comp neg) = error "Cannot trace n+k patterns"
 tPat _ = error "tPat: unknown pattern"
 
@@ -1129,6 +1292,11 @@ tPosTyVars = mapSnd nameTransTyVar
 -- Names of classes, type constructors and type variables remain unchanged.
 -- Names of data constructors remain unchanged.
 -- (everything but expression variables)
+-- As prefix characters only those characters can be chosen that do
+-- not start a reserved identifier or operator. Otherwise the transformation
+-- might create a reserved identifier.
+-- (uppercase identifiers can be prefixed by such a character, because
+-- a reserved identifier will never be created by prefixing)
 
 -- names referring to traces (or parts thereof) of program fragments:
 
@@ -1163,16 +1331,16 @@ nameTransCon :: TraceId -> TokenId
 nameTransCon = updateToken id  -- only module name is changed
 
 nameTransField :: TraceId -> TokenId
-nameTransField = prefixName 'e' '^'
+nameTransField = prefixName 'b' '^'
 
 nameTransVar :: TraceId -> TokenId
-nameTransVar = prefixName 'o' '!'
+nameTransVar = prefixName 'g' '!'
 
 -- internal, local names
 
 -- refering to partially transformed expression
 nameWorker :: TraceId -> TokenId
-nameWorker = prefixName 'w' '*'
+nameWorker = prefixName 'h' '*'
 
 -- refering to original (unwrapped) foreign import
 nameForeign :: TraceId -> TokenId
@@ -1180,28 +1348,32 @@ nameForeign = prefixName 'f' '&'
 
 -- names for new variables in transformed expressions:
 -- variable for sharing in transformation of pattern binding
-nameShare :: TraceId -> TokenId
-nameShare = prefixName 's' '|'
+nameShare :: Pos -> TraceId -> TokenId
+nameShare = prefixPosName 's' '|'
+
+-- variable for a trace including position
+nameTraceShared :: Pos -> TraceId -> TokenId
+nameTraceShared = prefixPosName 'j' '$'
 
 -- variable for a trace
 nameTrace :: TraceId -> TokenId
-nameTrace = prefixName 't' '$'
+nameTrace = prefixName 'j' '$'
 
 -- second variable for a trace
 nameTrace2 :: TraceId -> TokenId
-nameTrace2 = prefixName 'u' '<'
+nameTrace2 = prefixName 'k' '@'
 
 -- name for a local variable for a source reference
 nameSR :: TraceId -> TokenId
-nameSR = prefixName 'p' '='
+nameSR = prefixName 'p' '%'
 
 -- infinite list of var ids made from one id (for function clauses)
 nameFuns :: TraceId -> [TokenId]
-nameFuns = prefixNames 'f' '>'
+nameFuns = prefixNames 'y' '>'
 
 -- infinite list of var ids made from one id (for naming arguments)
 nameArgs :: TraceId -> [TokenId]
-nameArgs = prefixNames 'g' '/'
+nameArgs = prefixNames 'z' '^'
 
 -- infinite list of ids made from a position
 namesFromPos :: Pos -> [TokenId]
@@ -1245,7 +1417,7 @@ isOperatorName :: String -> Bool
 isOperatorName = not . (\c -> isAlpha c || c == '_') . head
 
 numToSym :: String -> String
-numToSym = map (("!#$%&*+/<>" !!) . digitToInt)
+numToSym = map (("!#$%&*+^@>" !!) . digitToInt)
 
 -- Tokens
 
@@ -1264,13 +1436,14 @@ updateToken f traceId | isFunTyCon traceId =
   Qualified tracingModuleShort (packString . reverse $ "Fun")
 updateToken f traceId = 
   case tokenId (traceId) of
-    t | t == t_List -> 
-      Qualified tracingModuleShort (packString . reverse . f $ "Nil")
-    t | t == t_Colon -> 
+    t | eqPredefined "[]" t -> 
+      Qualified tracingModuleShort (packString . reverse . f $ "List")
+    t | eqPredefined ":" t -> 
       Qualified tracingModuleShort (packString . reverse . f $ "Cons")
     t@(TupleId n) -> 
       Qualified 
-        (if n <= 2 then tracingModuleShort else transPreludeModule) 
+        tracingModuleShort
+--        (if n <= 2 then tracingModuleShort else transPreludeModule) 
         (packString . reverse . f $ ("Tuple"++show n)) 
     Visible n     -> 
       Visible (packString . reverse . f . unqual $ n) 
@@ -1284,11 +1457,13 @@ updateToken f traceId =
   updateModule (name@"Main") = name -- if module is `Main', then unchanged
   updateModule name = modulePrefix : name
   unqual :: PackedString -> String
-  unqual n = case reverse . unpackPS $ n of -- change predefined names
-               -- "->" -> "Fun"
-               ":" -> "Cons" 
-               "[]" -> "List" -- here both type and data constructor
-               s -> s
+  unqual = reverse . unpackPS
+
+--             case reverse . unpackPS $ n of -- change predefined names
+--               -- "->" -> "Fun"
+--               ":" -> "Cons" 
+--               "[]" -> "List" -- here both type and data constructor
+--               s -> s
 
 
 -- ----------------------------------------------------------------------------
@@ -1341,6 +1516,11 @@ tracingModule = packString . reverse $ "Hat" -- name of module with combinators
 tracingModuleShort :: PackedString
 tracingModuleShort = packString . reverse $ "T"  -- abbreviation
 
+tPreludeModule :: PackedString
+tPreludeModule = packString . reverse $ "TPrelude"
+
+mkTPreludeToken :: String -> TokenId
+mkTPreludeToken s = Qualified tPreludeModule (packString . reverse $ s)
 
 mkTracingToken :: String -> TokenId
 mkTracingToken s = Qualified tracingModuleShort (packString . reverse $ s)
@@ -1387,6 +1567,9 @@ tokenMkAtomId toplevel =
 
 tokenMkConst :: TokenId
 tokenMkConst = mkTracingToken "mkTNm"
+
+tokenMkAtomRational :: TokenId
+tokenMkAtomRational = mkTracingToken "mkNTRational"
 
 tokenMkAtomLambda :: TokenId
 tokenMkAtomLambda = mkTracingToken "mkNTLambda"
@@ -1439,22 +1622,23 @@ tokenUFun = mkTracingTokenArity "ufun"
 tokenIndir :: TokenId
 tokenIndir = mkTracingToken "indir"
 
-tokenConInt :: TokenId
-tokenConInt = mkTracingToken "conInt"
 tokenConChar :: TokenId
 tokenConChar = mkTracingToken "conChar"
-tokenConFloat :: TokenId
-tokenConFloat = mkTracingToken "conFloat"
-tokenConDouble :: TokenId
-tokenConDouble = mkTracingToken "conDouble"
-tokenFromConInteger :: TokenId
-tokenFromConInteger = mkTracingToken "fromConInteger"
-tokenFromConRational :: TokenId
-tokenFromConRational = mkTracingToken "fromConRational"
--- tokenPatFromConInteger :: TokenId
--- tokenPatFromConInteger = mkTracingToken "patFromConInteger"
--- tokenPatFromConRational :: TokenId
--- tokenPatFromConRational = mkTracingToken "patFromConRational"
+
+tokenConInteger :: TokenId
+tokenConInteger = mkTracingToken "conInteger"
+
+-- tokens of the Prelude
+
+-- for integer literals
+tokenFromInteger :: TokenId
+tokenFromInteger = mkTPreludeToken "gfromInteger"
+
+-- for rational literals
+tokenConRational :: TokenId
+tokenConRational = mkTPreludeToken ":%"
+tokenFromRational :: TokenId
+tokenFromRational = mkTPreludeToken "gfromRational"
 
 -- function for pattern-match failure error message
 tokenFatal :: TokenId
@@ -1510,19 +1694,39 @@ typeName aId =
 -- ----------------------------------------------------------------------------
 -- various little helper functions
 
+extractUnqual :: TokenId -> String
+extractUnqual = reverse . unpackPS . extractV
+
+
+eqPredefinedTrace :: String -> TraceId -> Bool
+eqPredefinedTrace s id = eqPredefined s (tokenId id)
+
+eqPredefined :: String -> TokenId -> Bool
+eqPredefined s id = 
+  -- a bit of a hack
+  -- without qualification and even with qualification "Prelude"
+  -- the token does not necessarily originate from Prelude
+  -- but we pretend it does
+  ((==) s . extractUnqual $ id) && 
+    ((==) "Prelude" . qualModule . extractM $ id)
+
 -- test for specific tokens
 
 isFunTyCon :: TraceId -> Bool
-isFunTyCon id = (tokenId id) == t_Arrow
+isFunTyCon = eqPredefinedTrace "->"
+-- (tokenId id) == t_Arrow
 
 isTrue :: TraceId -> Bool
-isTrue id = (tokenId id) == tTrue
+isTrue = eqPredefinedTrace "True"
+-- (tokenId id) == tTrue
 
 isOtherwise :: TraceId -> Bool
-isOtherwise id = (tokenId id) == t_otherwise
+isOtherwise = eqPredefinedTrace "otherwise"
+-- (tokenId id) == t_otherwise
 
 isMain :: TraceId -> Bool
-isMain id = (tokenId id) == tMain
+isMain = eqPredefinedTrace "Main"
+-- (tokenId id) == tMain
 
 -- other stuff
 
@@ -1543,6 +1747,171 @@ noDecls = DeclsParse []
 
 mapSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapSnd f = map (\(x,y) -> (x,f y))
+
+
+-- ----------------------------------------------------------------------------
+
+instance Functor Module where 
+  fmap f (Module pos id mayExports imps fixs decls) =
+    Module pos (f id) (fmap (map (fmap f)) mayExports) (map (fmap f) imps) 
+      (map (mapDeclFixity f) fixs) (fmap f decls)
+
+instance Functor Export where
+  fmap f (ExportEntity pos entity) = ExportEntity pos (fmap f entity)
+  fmap f (ExportModid pos id) = ExportModid pos (f id)
+
+instance Functor ImpDecl where
+  fmap f (Import (pos,id) impSpec) = Import (pos,f id) (fmap f impSpec)
+  fmap f (ImportQ (pos,id) impSpec) = ImportQ (pos,f id) (fmap f impSpec)
+  fmap f (ImportQas (pos,id) (pos2,id2) impSpec) =
+    ImportQas (pos,f id) (pos2,f id2) (fmap f impSpec)
+  fmap f (Importas (pos,id) (pos2,id2) impSpec) =
+    Importas (pos,f id) (pos2,f id2) (fmap f impSpec)
+
+instance Functor ImpSpec where
+  fmap f (NoHiding entities) = NoHiding (map (fmap f) entities)
+  fmap f (Hiding entities) = Hiding (map (fmap f) entities)
+
+instance Functor Entity where
+  fmap f (EntityVar pos id) = EntityVar pos (f id)
+  fmap f (EntityTyConCls pos id) = EntityTyConCls pos (f id)
+  fmap f (EntityTyCon pos id pids) = EntityTyCon pos (f id) (mapSnd f pids)
+  fmap f (EntityTyCls pos id pids) = EntityTyCls pos (f id) (mapSnd f pids)
+
+instance Functor InfixClass where
+  fmap f InfixDef = InfixDef
+  fmap f InfixL = InfixL
+  fmap f InfixR = InfixR
+  fmap f Infix = Infix
+  fmap f (InfixPre a) = InfixPre (f a)
+
+mapDeclFixity :: (a -> b) -> FixDecl a -> FixDecl b
+mapDeclFixity f (iclass,fix,fixIds) = (fmap f iclass,fix,map (fmap f) fixIds)
+
+instance Functor FixId where
+  fmap f (FixCon pos id) = FixCon pos (f id)
+  fmap f (FixVar pos id) = FixVar pos (f id)
+
+instance Functor Decls where
+  fmap f (DeclsParse decls) = DeclsParse (map (fmap f) decls)
+  fmap f (DeclsScc decldeps) = DeclsScc (map (fmap f) decldeps)
+
+instance Functor DeclsDepend where
+  fmap f (DeclsNoRec d) = DeclsNoRec (fmap f d)
+  fmap f (DeclsRec ds) = DeclsRec (map (fmap f) ds)
+
+instance Functor Decl where
+  fmap f (DeclType simple ty) = DeclType (fmap f simple) (fmap f ty)
+  fmap f (DeclTypeRenamed pos id) = DeclTypeRenamed pos id
+  fmap f (DeclData sort contexts simple constrs derive) = 
+    DeclData sort (map (fmap f) contexts) (fmap f simple) 
+      (map (fmap f) constrs) (map (\(p,i)->(p,f i)) derive)
+  fmap f (DeclDataPrim pos id size) = DeclDataPrim pos (f id) size
+  fmap f (DeclConstrs pos id fields) =
+    DeclConstrs pos (f id) (map (\(p,i1,i2)->(p,f i1,f i2)) fields)
+  fmap f (DeclClass pos contexts cls ty decls) =
+    DeclClass pos (map (fmap f) contexts) (f cls) (f ty) (fmap f decls)
+  fmap f (DeclInstance pos contexts cls inst decls) =
+    DeclInstance pos (map (fmap f) contexts) (f cls) (fmap f inst) 
+      (fmap f decls)
+  fmap f (DeclDefault tys) = DeclDefault (map (fmap f) tys)
+  fmap f (DeclPrimitive pos id a ty) = DeclPrimitive pos (f id) a (fmap f ty)
+  fmap f (DeclForeignImp pos callconv extfun id a fspec ty id') =
+    DeclForeignImp pos callconv extfun (f id) a fspec (fmap f ty) (f id')
+  fmap f (DeclVarsType vars contexts ty) =
+    DeclVarsType (mapSnd f vars) (map (fmap f) contexts) (fmap f ty)
+  fmap f (DeclPat alt) = DeclPat (fmap f alt)
+  fmap f (DeclFun pos id funs) = DeclFun pos (f id) (map (fmap f) funs)
+  fmap f (DeclIgnore s) = DeclIgnore s
+  fmap f (DeclError s) = DeclError s
+  fmap f (DeclAnnot decl annots) = 
+    DeclAnnot (fmap f decl) (map (fmap f) annots)
+  fmap f (DeclFixity fixity) = 
+    DeclFixity (mapDeclFixity f fixity)
+
+instance Functor Annot where
+  fmap f (AnnotArity (p,id) i) = AnnotArity (p,f id) i
+  fmap f (AnnotPrimitive (p,id) s) = AnnotPrimitive (p, f id) s
+  fmap f (AnnotNeed idss) = AnnotNeed (map (map f) idss)
+  fmap f AnnotUnknown = AnnotUnknown
+
+instance Functor Fun where
+  fmap f (Fun pats rhs decls) = 
+    Fun (map (fmap f) pats) (fmap f rhs) (fmap f decls)
+
+instance Functor Alt where
+  fmap f (Alt pat rhs decls) =
+    Alt (fmap f pat) (fmap f rhs) (fmap f decls)
+
+instance Functor Rhs where
+  fmap f (Unguarded exp) = Unguarded (fmap f exp)
+  fmap f (Guarded gdexps) = 
+    Guarded (map (\(e1,e2)->(fmap f e1,fmap f e2)) gdexps)
+
+instance Functor Type where
+  fmap f (TypeCons pos id tys) = TypeCons pos (f id) (map (fmap f) tys)
+  fmap f (TypeApp ty1 ty2) = TypeApp (fmap f ty1) (fmap f ty2)
+  fmap f (TypeVar pos id) = TypeVar pos (f id)
+  fmap f (TypeStrict pos ty) = TypeStrict pos (fmap f ty)
+
+instance Functor Simple where
+  fmap f (Simple pos id ids) = Simple pos (f id) (mapSnd f ids)
+
+instance Functor Context where
+  fmap f (Context pos id (p,id2)) = Context pos (f id) (p,f id2)
+
+instance Functor Constr where
+  fmap f (Constr pos id fields) = Constr pos (f id) (mapFields f fields)
+  fmap f (ConstrCtx vars contexts pos id fields) =
+    ConstrCtx (mapSnd f vars) (map (fmap f) contexts) pos (f id) 
+      (mapFields f fields)
+
+mapFields :: (a -> b) 
+          -> [(Maybe [(Pos,a)],Type a)] -> [(Maybe [(Pos,b)],Type b)]
+mapFields f = map (\(may,ty)-> (fmap (mapSnd f) may, fmap f ty))
+
+instance Functor Stmt where
+  fmap f (StmtExp exp) = StmtExp (fmap f exp)
+  fmap f (StmtBind e1 e2) = StmtBind (fmap f e1) (fmap f e2)
+  fmap f (StmtLet decls) = StmtLet (fmap f decls)
+
+instance Functor Exp where
+  fmap f (ExpScc s e) = ExpScc s (fmap f e)
+  fmap f (ExpDict e) = ExpDict (fmap f e)
+  fmap f (ExpLambda pos pats e) = ExpLambda pos (map (fmap f) pats) (fmap f e)
+  fmap f (ExpLet pos decls e) = ExpLet pos (fmap f decls) (fmap f e)
+  fmap f (ExpDo pos stmts) = ExpDo pos (map (fmap f) stmts)
+  fmap f (ExpCase pos e alts) = ExpCase pos (fmap f e) (map (fmap f) alts)
+  fmap f (ExpFatbar e1 e2) = ExpFatbar (fmap f e1) (fmap f e2)
+  fmap f ExpFail = ExpFail
+  fmap f (ExpIf pos e1 e2 e3) = ExpIf pos (fmap f e1) (fmap f e2) (fmap f e3)
+  fmap f (ExpType pos e contexts ty) = 
+    ExpType pos (fmap f e) (map (fmap f) contexts) (fmap f ty)
+  fmap f (ExpRecord e fields) = ExpRecord (fmap f e) (map (fmap f) fields)
+  fmap f (ExpApplication pos es) = ExpApplication pos (map (fmap f) es)
+  fmap f (ExpVar pos id) = ExpVar pos (f id)
+  fmap f (ExpCon pos id) = ExpCon pos (f id)
+  fmap f (ExpInfixList pos es) = ExpInfixList pos (map (fmap f) es)
+  fmap f (ExpVarOp pos id) = ExpVarOp pos (f id)
+  fmap f (ExpConOp pos id) = ExpConOp pos (f id)
+  fmap f (ExpLit pos lit) = ExpLit pos lit
+  fmap f (ExpList pos es) = ExpList pos (map (fmap f) es)
+  fmap f (Exp2 pos id1 id2) = Exp2 pos (f id1) (f id2)
+  fmap f (PatAs pos id pat) = PatAs pos (f id) (fmap f pat)
+  fmap f (PatWildcard pos) = PatWildcard pos
+  fmap f (PatIrrefutable pos pat) = PatIrrefutable pos (fmap f pat)
+  fmap f (PatNplusK pos id1 id2 e1 e2 e3) =
+    PatNplusK pos (f id1) (f id2) (fmap f e1) (fmap f e2) (fmap f e3)
+
+instance Functor Field where
+  fmap f (FieldExp pos id e) = FieldExp pos (f id) (fmap f e)
+  fmap f (FieldPun pos id) = FieldPun pos (f id)
+
+
+  
+
+
+
 
 -- ----------------------------------------------------------------------------
 -- End

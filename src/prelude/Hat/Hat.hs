@@ -4,10 +4,17 @@
 
 module Hat 
   (R(R),mkR,Fun(Fun),SR,Trace,NmType,ModuleTraceInfo
-  ,tPrelude,Tuple0(Tuple0),Tuple2(Tuple2),aTuple0,aTuple2
+  ,tPrelude
+  ,Tuple0(Tuple0),aTuple0,Tuple2(Tuple2),aTuple2,Tuple3(Tuple3),aTuple3
+  ,Tuple4(Tuple4),aTuple4,Tuple5(Tuple5),aTuple5,Tuple6(Tuple6),aTuple6
+  ,Tuple7(Tuple7),aTuple7,Tuple8(Tuple8),aTuple8,Tuple9(Tuple9),aTuple9
+  ,Tuple10(Tuple10),aTuple10,Tuple11(Tuple11),aTuple11
+  ,Tuple12(Tuple12),aTuple12,Tuple13(Tuple13),aTuple13
+  ,Tuple14(Tuple14),aTuple14,Tuple15(Tuple15),aTuple15
   ,List(Cons,List),aCons,aList
   ,NmCoerce(toNm)
   ,ap1,ap2,ap3,ap4,ap5,ap6,ap7,ap8,ap9,ap10,ap11,ap12,ap13,ap14,ap15
+  ,mkTAp2
 --  ,rap1,rap2,rap3,rap4,rap5,rap6,rap7,rap8,rap9,rap10,rap11,rap12,rap13
 --  ,rap14,rap15
 --  ,pap0,pap1,pap2,pap3,pap4,pap5,pap6,pap7,pap8,pap9,pap10,pap11,pap12
@@ -19,8 +26,7 @@ module Hat
   ,uap1,uap2,uap3,uap4
   ,ufun1,ufun2,ufun3
   ,indir
-  ,fromConInteger,fromConRational
-  ,conInt,conChar,conInteger,conFloat,conDouble,conRational
+  ,conInt,conChar,conInteger,conFloat,conDouble
   ,conCons
   ,con0,con1,con2,con3,con4,con5,con6,con7,con8,con9,con10,con11,con12
   ,con13,con14,con15
@@ -40,13 +46,21 @@ module Hat
   ) where
 
 import Ratio (numerator,denominator)
+#if defined (__GLASGOW_HASKELL__) || defined(__HUGS__)
+import IOExts (unsafePerformIO,IORef,newIORef,readIORef,writeIORef)
+#endif
+#if defined(__NHC__) 
 import IOExtras (unsafePerformIO,IORef,newIORef,readIORef,writeIORef)
+#endif
 import Char (ord,chr,intToDigit)
 
-import FFI (Ptr(..),unsafePerformIO,CString,withCString)	-- PORTABLE
---import PackedString (PackedString,packString) -- NONPORTABLE
-  -- import MagicTypes (NmType,CStructure) -- NONPORTABLE
-    -- magic C-type living in Haskell heap
+#if defined (__GLASGOW_HASKELL__) || defined(__HUGS__)
+import CForeign (CString,withCString)
+#endif
+#if defined(__NHC__) 
+import FFI (CString,withCString,Ptr)	-- PORTABLE
+#endif
+
 
 useString :: (CString -> a) -> (String -> a)
 f `useString` s = unsafePerformIO (
@@ -66,9 +80,14 @@ foreign import "openTrace"
 foreign import "closeTrace"
   closeTrace :: IO ()
 
+-- fatal cannot be a foreign function directly, because these are not 
+-- allowed to be polymorphic
+fatal :: Trace -> a
+fatal t = if fatal' t then undefined else undefined
+
 -- actually for pattern match error only:
 foreign import "fatal"
-  fatal :: Trace -> a 
+  fatal' :: Trace -> Bool
 
 -- ----------------------------------------------------------------------------
 -- part from PreludeDebug (only for untrusted code)
@@ -118,8 +137,47 @@ newtype Fun a b = Fun (Trace -> R a -> R b)
 -- because transformation doesn't distinguish the two
 data Tuple0 = Tuple0  -- () would do, but this way like other tuples  
 data Tuple2 a b = Tuple2 (R a) (R b) -- not type Tuple2 a b = (R a,R b)
+data Tuple3 a b c = Tuple3 (R a) (R b) (R c)
+data Tuple4 a b c d = Tuple4 (R a) (R b) (R c) (R d)
+data Tuple5 a b c d e = Tuple5 (R a) (R b) (R c) (R d) (R e)
+data Tuple6 a b c d e f = Tuple6 (R a) (R b) (R c) (R d) (R e) (R f)
+data Tuple7 a b c d e f g = Tuple7 (R a) (R b) (R c) (R d) (R e) (R f) (R g)
+data Tuple8 a b c d e f g h = 
+  Tuple8 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h)
+data Tuple9 a b c d e f g h i = 
+  Tuple9 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i)
+data Tuple10 a b c d e f g h i j = 
+  Tuple10 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j)
+data Tuple11 a b c d e f g h i j k = 
+  Tuple11 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k)
+data Tuple12 a b c d e f g h i j k l = 
+  Tuple12 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k) 
+    (R l)
+data Tuple13 a b c d e f g h i j k l m = 
+  Tuple13 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k) 
+    (R l) (R m)
+data Tuple14 a b c d e f g h i j k l m n = 
+  Tuple14 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k) 
+    (R l) (R m) (R n)
+data Tuple15 a b c d e f g h i j k l m n o = 
+  Tuple15 (R a) (R b) (R c) (R d) (R e) (R f) (R g) (R h) (R i) (R j) (R k) 
+    (R l) (R m) (R n) (R o)
+
 aTuple0 = mkAtomCon tPrelude 0 3 "()"
 aTuple2 = mkAtomCon tPrelude 0 3 "(,)" 
+aTuple3 = mkAtomCon tPrelude 0 3 "(,,)"
+aTuple4 = mkAtomCon tPrelude 0 3 "(,,,)"
+aTuple5 = mkAtomCon tPrelude 0 3 "(,,,,)"
+aTuple6 = mkAtomCon tPrelude 0 3 "(,,,,,)"
+aTuple7 = mkAtomCon tPrelude 0 3 "(,,,,,,)"
+aTuple8 = mkAtomCon tPrelude 0 3 "(,,,,,,,)"
+aTuple9 = mkAtomCon tPrelude 0 3 "(,,,,,,,,)"
+aTuple10 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,)"
+aTuple11 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,)"
+aTuple12 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,)"
+aTuple13 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,)"
+aTuple14 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,)"
+aTuple15 = mkAtomCon tPrelude 0 3 "(,,,,,,,,,,,,,,)"
 
 data List a = Cons (R a) (R (List a)) | List  
   -- type constructor and empty list constructor need to have same name,
@@ -837,15 +895,8 @@ indir :: Trace -> R a -> R a
 indir t (R v t') = R v (mkTInd t t')
 
 
-{- Combinators for literals in expressions. -}
-fromConInteger :: Prelude.Num a => SR -> Trace -> Integer -> R a
-fromConInteger sr t i = 
-  R (Prelude.fromInteger i) (mkTNm t (mkNTInteger i) sr)
-
-fromConRational :: Prelude.Fractional a => SR -> Trace -> Rational -> R a
-fromConRational sr t r = 
-  R (Prelude.fromRational r) (mkTNm t (mkNTRational r) sr)
-
+-- Combinators for literals in expressions and return values of 
+-- foreign functions
 conInt :: SR -> Trace -> Int -> R Int
 conInt sr t n = R n (mkTNm t (mkNTInt n) sr)
 
@@ -861,8 +912,9 @@ conFloat sr t b = R b (mkTNm t (mkNTFloat b) sr)
 conDouble :: SR -> Trace -> Double -> R Double
 conDouble sr t b = R b (mkTNm t (mkNTDouble b) sr)
 
-conRational :: SR -> Trace -> Rational -> R Rational
-conRational sr t b =  R b (mkTNm t (mkNTRational b) sr)
+-- not usable because original and transformed Rational are different
+-- conRational :: SR -> Trace -> Rational -> R Rational
+-- conRational sr t b =  R b (mkTNm t (mkNTRational b) sr)
 
 
 conCons :: SR -> Trace -> (R Char -> R [Char] -> [Char]) -> Trace 

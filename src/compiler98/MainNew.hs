@@ -100,7 +100,7 @@ import Foreign(Foreign,strForeign)
 import ReportImports(reportFnImports)
 import AuxFile(toAuxFile)
 import AuxLabelAST(auxLabelSyntaxTree)
-import TraceTrans(traceTrans)
+import TraceTrans(traceTrans,maybeStripOffQual)
 
 
 --import NonStdProfile
@@ -163,14 +163,16 @@ main' args = do
   -}
 
   when (sHatTrans flags) $ do
-    toAuxFile flags (sHatAuxFile flags) parsedPrg
-    putStr (prettyPrintTokenId flags ppModule parsedPrg) -- debug
-    newprog <- auxLabelSyntaxTree flags parsedPrg
+    let prg = maybeStripOffQual "Prelude" parsedPrg
+    toAuxFile flags (sHatAuxFile flags) prg
+    putStr (prettyPrintTokenId flags ppModule prg) -- debug
+    newprog <- auxLabelSyntaxTree flags prg
     putStr (prettyPrintTraceId flags ppModule newprog) -- debug
     writeFile (sHatTransFile flags)
       (prettyPrintTokenId flags ppModule 
-        (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
-          (sHatFileBase flags) newprog))
+        (maybeStripOffQual "TPrelude" 
+          (traceTrans (not (sDbgTrusted flags)) (sSourceFile flags) 
+            (sHatFileBase flags) newprog)))
     putStrLn ("Wrote " ++ sHatTransFile flags)
     exitWith (ExitSuccess)
 
