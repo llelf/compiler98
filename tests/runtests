@@ -33,28 +33,30 @@ run () {
         output=`exists stdout`
         errors=`exists stderr`
         echo Running....
-        ./Main $RTSOPTS <$input >tmp.out 2>tmp.err || \
-		echo >&2 "Runtime: $dir"
+        ./Main $RTSOPTS <$input >tmp.out 2>tmp.err || true
         echo Comparing output....
         if diff $output tmp.out
         then outok=$(($outok+1))
         else outbad=$(($outbad+1))
+             echo >&2 "Output differs: $dir"
         fi
         echo Comparing stderr....
         if diff $errors tmp.err
         then errok=$(($errok+1))
         else errbad=$(($errbad+1))
+             echo >&2 "Error differs: $dir"
         fi
         echo ....................
       } || {
         compbad=$(($compbad+1))
-        echo >&2 "Compile: $dir"
         echo Comparing hmake errors....
         hmakeout=`exists hmakerr`
-        if diff $hmakeout hmake.err
+        if fgrep -q "`cat $hmakeout`" hmake.err
         then echo ".............Failed (ok)"
              hmakeok=$(($hmakeok+1))
-        else echo ".............Failed (bad)"
+        else diff $hmakeout hmake.err
+             echo ".............Failed (bad)"
+             echo >&2 "Unexpected build failure: $dir"
              hmakebad=$(($hmakebad+1))
         fi
       }

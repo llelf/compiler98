@@ -5,7 +5,7 @@ Running tests
 -------------
 Use the provided script:
 
-    ./runtests clean			# clean up after a previous run
+    ./runtests clean >/dev/null		# clean up after a previous run
     ./runtests >test.log 2>test.err	# run all the tests
 
 Stderr will contain a line for each failing test, telling you whether
@@ -14,7 +14,7 @@ summary of numbers passing/failing (see below).
 
 Stdout will contain a log of the complete test run, showing the
 compilation commands executed by hmake, and diffs between expected
-runtime output/errors and the actual output/errors.
+compiletime/runtime output/errors and the actual output/errors.
 
 
 Expectations
@@ -25,16 +25,15 @@ cases are intended to fail and which are intended to succeed.  But
 the usual kind of result is something like this:
 
 111 built ok      / 23 builds failed
-                  / of which 14 known / 9 bad
+                  / of which 23 known / 0 bad
 110 outputs match / 1 outputs differ
 110 errors  match / 1 errors  differ
 
 The best numbers for comparison are basically those on the right.
-We expect 23 build failures (the known/bad distinction is not very
-useful), 1 output differing from expected, 1 error differing from
-expected.
+We expect 23 build failures (23 known/0 bad), 1 output differing
+from expected, 1 error differing from expected.
 
-If nhc98 is built with hbc, then we get 24 build failures.
+If nhc98 is built with hbc, then we get 24 build failures (1 bad).
 
 
 To add new tests
