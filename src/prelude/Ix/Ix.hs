@@ -1,9 +1,9 @@
 module Ix
 	(Ix(..)
-        ,rangeSize
+  --    ,rangeSize
 	) where
 
-import RangeSize
+-- import RangeSize
 
 import Ix_2
 import Ix_3

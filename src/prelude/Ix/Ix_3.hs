@@ -1,6 +1,6 @@
 module Ix(Ix(..)) where
 
-import RangeSize
+--import RangeSize
 
 instance  (Ix a1, Ix a2, Ix a3) => Ix (a1,a2,a3)  where
     range ((l1,l2,l3),(u1,u2,u3)) =

@@ -5,6 +5,6 @@ import DArray
 import Bounds
 import Elems
 
-instance  (Ix a, Eq b)  => Eq (Array a b)  where
+instance  (Ix a, Eq a, Eq b)  => Eq (Array a b)  where
  -- a == a'             =  assocs a == assocs a'
     a == a'             =  bounds a == bounds a' && elems a == elems a'
