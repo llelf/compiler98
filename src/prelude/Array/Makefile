@@ -54,7 +54,7 @@ ArrayFun.c:   DArray.c
 Assocs.c:     DArray.c Indices.c  AIndex.c
 Bounds.c:     DArray.c
 Elems.c:      DArray.c Indices.c  AIndex.c
-Eq_Array.c:   DArray.c Assocs.c
+Eq_Array.c:   DArray.c Assocs.c Elems.c
 AIndex.c:     DArray.c
 Indices.c:    DArray.c Bounds.c
 IxMap.c:      DArray.c ArrayFun.c AIndex.c
