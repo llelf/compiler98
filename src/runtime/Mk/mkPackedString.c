@@ -2,7 +2,7 @@
 
 int sizePackedString(int length)
 {
-  int size = (length + sizeof(Node)) / sizeof(Node);
+  int size = (length + sizeof(Node) -1) / sizeof(Node);
   return (1+EXTRA+size);
 }
 
@@ -10,8 +10,8 @@ int sizePackedString(int length)
 NodePtr allocPackedString(int length)
 {
   NodePtr n;
-  int size = (length + sizeof(Node)) / sizeof(Node);
-  int extra = size * sizeof(Node) - (length+1);
+  int size = (length + sizeof(Node) -1) / sizeof(Node);
+  int extra = size * sizeof(Node) - length;
 
   n = C_ALLOC(1+EXTRA+size);
   *n = CONSTRW(size,extra);
@@ -24,7 +24,7 @@ void copyPackedString(int length, NodePtr dst, char *src)
   if (src==(char*)0)
     memcpy((char*)&dst[1+EXTRA],"\0",1);
   else
-    memcpy((char*)&dst[1+EXTRA],src,length+1);
+    memcpy((char*)&dst[1+EXTRA],src,length);
 }
 
 NodePtr mkPackedString(int length, char *str)
