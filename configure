@@ -165,7 +165,7 @@ DOCDIR=${DOCDIR-$INSTALLDIR/doc/nhc98}
 
 case $OS in
   CYGWIN*) EXE=.exe ;;
-  *)       EXE=  ;;
+  *)       EXE= ;;
 esac
 case $OS in
   SunOS)  LIBCOMPAT=" -lsocket"  ;;
@@ -494,6 +494,10 @@ then
     sed -e "s|ExecutableDir|$BUILDLIBDIR|" script/greencard.inst |\
     sed -e "s|ScriptDir|$BUILDBINDIR|" |\
     sed -e "s|IncludeDir|$BUILDINCDIR|" >$BUILDBINDIR/greencard-nhc98
+    echo "hat-trail "
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
+    sed -e "s|ScriptDir|$BINDIR|" |\
+    sed -e "s|IncludeDir|$INCDIR|" >$BUILDBINDIR/hat-trail
     echo -n "hat-stack hat-connect hat-check"
     rm -f $BUILDBINDIR/hat-check $BUILDBINDIR/hat-stack $BUILDBINDIR/hat-connect
     ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/hat-stack
@@ -501,7 +505,7 @@ then
     ln -sf $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/hat-check
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
-    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi
+    chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hat-trail
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
   fi
@@ -547,8 +551,8 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
     cp $DESTDIR$HLIBDIR/$MACHINE/hmake.config $BUILDLIBDIR/$MACHINE	# patch local config also
-    echo "	rtb.jar"
-    cp $BUILDLIBDIR/rtb.jar $DESTDIR$LIBDIR
+    echo "	hat-trail.jar"
+    cp $BUILDLIBDIR/hat-trail.jar $DESTDIR$LIBDIR
     echo "	hood.jar"
     cp $BUILDLIBDIR/hood.jar $DESTDIR$LIBDIR
     echo
@@ -598,10 +602,10 @@ else	# [ "$INSTALL" = "yes" ]
     sed -e "s|^COMP=|COMP=\${HC-nhc98}	\#|" |\
     sed -e "s|^nhc98known=|nhc98known=yes \#|" |\
     sed -e "s|^nhc98incdir=|nhc98incdir=$INCDIR \#|" >$DESTDIR$HLIBDIR/$MACHINE/hmake.config
-    echo "	rtb"
-    sed -e "s|ExecutableDir|$LIBDIR|" script/rtb.inst |\
+    echo "	hat-trail"
+    sed -e "s|ExecutableDir|$LIBDIR|" script/hat-trail.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
-    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/rtb
+    sed -e "s|IncludeDir|$INCDIR|" >$DESTDIR$BINDIR/hat-trail
     echo "	hood"
     sed -e "s|ExecutableDir|$LIBDIR|" script/hood.inst |\
     sed -e "s|ScriptDir|$BINDIR|" |\
@@ -630,7 +634,7 @@ else	# [ "$INSTALL" = "yes" ]
     chmod +x $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod +x $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod +x $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
-    chmod +x $DESTDIR$BINDIR/rtb $DESTDIR$BINDIR/hood
+    chmod +x $DESTDIR$BINDIR/hat-trail $DESTDIR$BINDIR/hood
   else
     echo 'Not (re-)installing scripts'
   fi
