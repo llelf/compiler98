@@ -52,7 +52,7 @@ endif
 ifeq "ghc" "${HC}"
 IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
-HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -fglasgow-exts -syslib exts -syslib misc -CTS)  $(IMPROVE) $(EXTRALINK)
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) +CTS -syslib exts -syslib misc -CTS)  $(IMPROVE) $(EXTRALINK)
 $(TARGET): $(EXTRALINK)
 endif
 
