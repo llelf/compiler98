@@ -1,12 +1,12 @@
 # Default definitions filled in by config script, included from Makefile.inc
 include Makefile.inc
 
-VERSION = 1.0pre18xtn
+VERSION = 1.0pre19
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (A trailing x means this version has not been released yet.)
 
-HVERSION = 1.8-erik
+HVERSION = 1.8
 # HVERSION is the separate version number for hmake.
 
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
@@ -463,6 +463,7 @@ clean:
 	cd src/greencard;       $(MAKE) clean
 	cd src/hp2graph;        $(MAKE) clean
 	cd src/hmake;           $(MAKE) clean
+	cd src/interpreter;     $(MAKE) clean
 	rm -rf $(TARGDIR)/$(MACHINE)/obj*
 
 cleanC:
