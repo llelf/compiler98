@@ -2,6 +2,10 @@
 #define _HSFFI_H
 
 #include <inttypes.h>
+#ifndef int64_t
+#define int64_t int32_t
+#define uint64_t uint32_t
+#endif
 
 #define HsChar		char
 #define HsInt		int
