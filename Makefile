@@ -310,10 +310,12 @@ $(HATTOOLS): $(HATUI)
 	cd src/hat/tools;      $(MAKE) install
 	cd src/hat/oldtools;   $(MAKE) install	# Not for long!
 $(TARGDIR)/$(MACHINE)/hat-nhc: $(HATLIB)
+	cd src/compiler98;     $(MAKE) HC=nhc98 hat-trans
 	cd src/hat/lib;	       $(MAKE) HC=nhc98 all
 	cd src/hat/lib;	       $(MAKE) HC=nhc98 install-nhc98
 	touch $(TARGDIR)/$(MACHINE)/hat-nhc
 $(TARGDIR)/$(MACHINE)/hat-ghc: $(HATLIB)
+	cd src/compiler98;     $(MAKE) HC=ghc hat-trans
 	cd src/hat/lib;	       $(MAKE) HC=ghc all
 	cd src/hat/lib;	       $(MAKE) HC=ghc install-ghc
 	touch $(TARGDIR)/$(MACHINE)/hat-ghc
@@ -507,7 +509,8 @@ HATMISC = Makefile.inc Makefile.hat hat-configure \
 HATTRANS = src/compiler98/Makefile* \
 	 $(shell cd src/compiler98; hmake -g HatTrans.hs | cut -d':' -f1 \
 		| sed -e 's/$$/.hs/' | sed -e 's|^|src/compiler98/|' )
-HATMAN = man/hat-*
+HATMAN  = man/hat-*
+HATDOCS = docs/hat/*
 
 hatDist:
 	rm -f hat-$(HATVERSION).tar hat-$(HATVERSION).tar.gz
@@ -517,6 +520,7 @@ hatDist:
 	tar rf hat-$(HATVERSION).tar $(HATUI)
 	tar rf hat-$(HATVERSION).tar $(HATMISC)
 	tar rf hat-$(HATVERSION).tar $(HATMAN)
+	tar rf hat-$(HATVERSION).tar $(HATDOCS)
 	mkdir hat-$(HATVERSION)
 	cd hat-$(HATVERSION); tar xf ../hat-$(HATVERSION).tar
 	cd hat-$(HATVERSION); mv hat-configure configure
