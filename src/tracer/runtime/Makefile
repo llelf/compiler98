@@ -45,8 +45,9 @@ ${ARCHIVE}: objdir ${OBJS}
 	ar cr $@ ${OBJS}
 	ranlib $@
 
-ui.h: getconstr.h nodecache.h fileformat.h ;
-fileformat.h: ident.h ;
+ui.h: getconstr.h nodecache.h fileformat.h
+fileformat.h: ident.h
+ident.h:
 
 ${OBJDIR}/demo_server.o: demo_server.c
 	$(CC) -O -c demo_server.c -o $@
