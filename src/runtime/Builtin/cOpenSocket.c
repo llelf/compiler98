@@ -140,7 +140,7 @@ C_HEADER(cOpenSocket)
     a->fp = fp;
     a->bm = _IOFBF;
     a->size = -1;
-    fo = allocCData(a,gcFile,gcNow);
+    fo = allocForeignObj(a,gcFile,gcNow);
     nodeptr = mkRight(mkCInt((int)fo));
   } else {
     nodeptr = mkLeft(mkIOErrorOpen(hostptr,typeptr,mkInt(errno)));
