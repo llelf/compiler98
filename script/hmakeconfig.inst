@@ -1,5 +1,4 @@
-#!/bin/sh
-# configuration file for hmake.
+# /bin/sh configuration file for hmake.
 # Please modify to suit your installation.
 # Copy at $HOME/.hmakerc overrides installation-wide config.
 
