@@ -122,7 +122,7 @@ MAINCFILE = $(patsubst %.hs,%.c,${MAINSRC})
 
 LOW = ../LowB/
 
-HFLAGS = -P./ -P$(LOW) -P../PreludeList/ -P../Ratio/ -part -prelude -redefine  
+HFLAGS = -P$(LOW) -P../PreludeList/ -P../Ratio/ -part -prelude -redefine  
 
 
 all:  ${OBJS} ${MAINOBJ}
@@ -147,12 +147,12 @@ ${OBJS}: ${OBJDIR}/%.o : %.hs
 	$(HC) -c $(HFLAGS) -o $@ $<
 ${MAINOBJ}: ${OBJDIR}/%.o : %.hs
 	rm -f Prelude.hi $(OBJDIR)/Prelude.o
-	$(HC) -c +CTS -lib -CTS -prelude -redefine -P./ -P../PreludeList/ -P../PreludeText/ -P../PreludeIO/ -P../Ix/ -P../Ratio/ -P$(LOW) -o $@ $<
+	$(HC) -c +CTS -lib -CTS -prelude -redefine -P../PreludeList/ -P../PreludeText/ -P../PreludeIO/ -P../Ix/ -P../Ratio/ -P$(LOW) -o $@ $<
 
 ${CFILES}: %.c : %.hs
 	$(HC) -C $(HFLAGS) $<
 ${MAINCFILE}: %.c : %.hs
-	$(HC) -C +CTS -lib -CTS -prelude -redefine -P./ -P../PreludeList/ -P../PreludeText/ -P../PreludeIO/ -P../Ix/ -P../Ratio/ -P$(LOW) $<
+	$(HC) -C +CTS -lib -CTS -prelude -redefine -P../PreludeList/ -P../PreludeText/ -P../PreludeIO/ -P../Ix/ -P../Ratio/ -P$(LOW) $<
 
 ../Prelude/%.hi : %.hs
 	$(HC) -c $(HFLAGS) -o /dev/null $<
