@@ -3,5 +3,5 @@
 #include "mk.h"
 
 void   performGC         ()                     { C_GC(0); }
-void*  unsafePtrEq       (void* a, void* b)     { return (a==b); }
+int    unsafePtrEq       (void* a, void* b)     { return (a==b); }
 
