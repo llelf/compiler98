@@ -26,6 +26,7 @@ knownSuffixes =
   , ("ly",     unlit, ppHappy)
   , ("x",      plain, ppAlex)
   , ("hs.cpp", plain, ppCpp)
+  , ("ghs",    plain, ppGH)
   , ("gc",     plain, ppNone)	-- note, for nhc98 only
   , ("hs",     plain, ppNone)
   , ("lhs",    unlit, ppNone)
@@ -67,6 +68,12 @@ ppAlex = PreProcessor
 	, ppDefaultOptions = \_-> []
 	, ppOutputFileOption = \f-> "-o "++f
 	, ppSuitable = \hc-> True
+	}
+ppGH = PreProcessor	-- see www.Generic-Haskell.org
+	{ ppExecutableName = "gh"
+	, ppDefaultOptions = \_-> []
+	, ppOutputFileOption = \_-> ""
+	, ppSuitable = \hc-> hc == Ghc
 	}
 ppNone = PreProcessor
 	{ ppExecutableName = ""
