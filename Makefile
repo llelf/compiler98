@@ -2,7 +2,7 @@
 include Makefile.inc
 .SUFFIXES: 		# To remove default rules like .cpp -> C++
 
-VERSION = 1.02
+VERSION = 1.03
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -271,13 +271,16 @@ $(TARGDIR)/$(MACHINE)/traceruntime: $(RUNTIME) $(RUNTIMET)
 $(TARGDIR)/$(MACHINE)/traceprelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;	       $(MAKE) CFG=T install
 	touch $(TARGDIR)/$(MACHINE)/traceprelude
-$(TARGDIR)/traceui: $(TRACEUI)
-	cd src/tracer/ui;      $(MAKE) CFG=T install
+$(TARGDIR)/traceui: lib/rtb.jar
 	touch $(TARGDIR)/traceui
 
-$(TARGDIR)/hood: $(HOODUI)
-	cd src/tracer/hoodui;  $(MAKE) install
+$(TARGDIR)/hood: lib/hood.jar
 	touch $(TARGDIR)/hood
+
+lib/rtb.jar: $(TRACEUI)
+	cd src/tracer/ui;      $(MAKE) CFG=T install
+lib/hood.jar: $(HOODUI)
+	cd src/tracer/hoodui;  $(MAKE) install
 
 $(TARGDIR)/$(MACHINE)/timeruntime: $(RUNTIME)
 	cd src/runtime;        $(MAKE) CFG=t install

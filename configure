@@ -7,7 +7,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in the Makefile!
-CONFIGVERSION="v1.02 (date 2001-02-14)"
+CONFIGVERSION="v1.03 (CVS date 2001-02-xx)"
 HMAKEVERSION="2.02 (2001-02-08)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
