@@ -80,12 +80,14 @@ updTOS _ i down up@(Thread prof fun maxDepth fds state (e:env) lateenv d h dhs f
 -}
 
 -- However, I'm going to keep the warning just in case it's useful.
-updTOS True i down up@(Thread prof fun maxDepth fds state (((oi,w):e):env) lateenv d h dhs fs)
-  | oi/=i && oi /= -1  =
-   strace ("Warning: nhc98 might produce faulty code:"++
-           "\n  i="++show i++"\n  oi="++show oi++
-           "\n  fun="++show fun++
-           "\n  e = " ++ show e ++ "\n") $ up
+-- ... but now it is commented out because it is annoying, and we still
+--     believe it is harmless.
+--updTOS True i down up@(Thread prof fun maxDepth fds state (((oi,w):e):env) lateenv d h dhs fs)
+--  | oi/=i && oi /= -1  =
+--   strace ("Warning: nhc98 might produce faulty code:"++
+--           "\n  i="++show i++"\n  oi="++show oi++
+--           "\n  fun="++show fun++
+--           "\n  e = " ++ show e ++ "\n") $ up
 updTOS _ i down up = up
 
 incDepth down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
