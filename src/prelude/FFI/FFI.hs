@@ -1,48 +1,58 @@
-{- Hey Emacs, this is -*- haskell -*- !
-   @configure_input@
-   $Id: FFI.hs,v 1.9 2001/03/14 17:35:13 malcolm Exp $
--}
-
 module FFI
    -------------------------------------------------------------------
-   -- {Int,Word}{8,16,32,64} are abstract and instance of Eq, Ord,
-   -- Num, Bounded, Real, Integral, Ix, Enum, Read, Show
-   -- NOTE 1: GHC has additional instances CCallable, CReturnable, Bits
-   -- NOTE 2: No plain Word
+   -- {Int,Word}{8,16,32,64} are abstract and instances of Eq, Ord,
+   --   Num, Bounded, Real, Integral, Ix, Enum, Read, Show
+   -------------------------------------------------------------------
   ( Int8,  Int16,  Int32,  Int64
   , Word8, Word16, Word32, Word64
 
    -------------------------------------------------------------------
+   -- `Addr' is now obsolete - use `Ptr a' instead.
+   -------------------------------------------------------------------
   , Addr                  -- abstract, instance of: Eq, Ord, Enum, Show
   , nullAddr              -- :: Addr
   , plusAddr              -- :: Addr -> Int -> Addr
+
+   -------------------------------------------------------------------
+   -- `Ptr a' is a C pointer value.
+   -------------------------------------------------------------------
+  , Ptr(..)		-- abstract, instance of: Eq, Ord, Enum, Show
+  , nullPtr		-- :: Ptr a
+  , castPtr		-- :: Ptr a -> Ptr b
+  , plusPtr		-- :: Ptr a -> Int -> Ptr b
+  , alignPtr		-- :: Ptr a -> Int -> Ptr a
+  , minusPtr		-- :: Ptr a -> Ptr b -> Int
+
+   -------------------------------------------------------------------
+   -- `FunPtr a' is a C function pointer value.
+   -------------------------------------------------------------------
+  , FunPtr              -- abstract, instance of: Eq, Ord, Enum, Show
+  , nullFunPtr          -- :: FunPtr a
+  , castFunPtr          -- :: FunPtr a -> FunPtr b
+  , castFunPtrToPtr     -- :: FunPtr a -> Ptr b
+  , castPtrToFunPtr     -- :: Ptr a -> FunPtr b
+
+   -------------------------------------------------------------------
+   -- The `Storable' class.
+   -------------------------------------------------------------------
   , Storable
       ( sizeOf            -- :: a -> Int
       , alignment         -- :: a -> Int
-      , peekElemOff       -- :: Addr -> Int      -> IO a
-      , pokeElemOff       -- :: Addr -> Int -> a -> IO ()
-      , peekByteOff       -- :: Addr -> Int      -> IO a
-      , pokeByteOff       -- :: Addr -> Int -> a -> IO ()
-      , peek              -- :: Addr             -> IO a
-      , poke)             -- :: Addr        -> a -> IO ()
+      , peekElemOff       -- :: Ptr a -> Int      -> IO a
+      , pokeElemOff       -- :: Ptr a -> Int -> a -> IO ()
+      , peekByteOff       -- :: Ptr b -> Int      -> IO a
+      , pokeByteOff       -- :: Ptr b -> Int -> a -> IO ()
+      , peek              -- :: Ptr a             -> IO a
+      , poke              -- :: Ptr a        -> a -> IO ()
+      , destruct)         -- :: Ptr a             -> Io ()
 
    -------------------------------------------------------------------
-  , malloc                -- ::               Int      -> IO Addr
-  , mallocElem            -- :: Storable a => a        -> IO Addr
-  , mallocElems           -- :: Storable a => a -> Int -> IO Addr
-  , realloc               -- :: Addr -> Int -> IO Addr
-  , free                  -- :: Addr -> IO ()
-
+   -- `ForeignObj' is now obsolete - use `ForeignPtr a' instead.
    -------------------------------------------------------------------
   , ForeignObj            -- abstract, instance of: Eq
-  , makeForeignObj        -- :: Addr ->        IO()  -> IO ForeignObj
--- ,makeForeignObj        -- :: Addr -> (Addr->IO()) -> IO ForeignObj
--- ,makeForeignObj        -- :: Addr ->  Addr        -> IO ForeignObj
--- ,writeForeignAddr      -- :: ForeignObj -> Addr         -> IO ()
--- ,writeForeignFinalizer -- :: ForeignObj -> (Addr->IO()) -> IO ()
--- ,writeForeignFinalizer -- :: ForeignObj ->  Addr        -> IO ()
+  , newForeignObj         -- :: Addr -> IO () -> IO ForeignObj
+  , makeForeignObj        -- :: Addr -> IO () -> IO ForeignObj  -- OBSOLETE
   , foreignObjToAddr      -- :: ForeignObj -> Addr
--- ,addrToForeignObj      -- :: Addr       -> IO ForeignObj 
 #if !defined(TRACING)
    ,freeForeignObj        -- :: ForeignObj -> IO ()
 #endif
@@ -50,19 +60,54 @@ module FFI
   , touchForeignObj       -- :: ForeignObj -> IO ()
 
    -------------------------------------------------------------------
+   -- `ForeignPtr a' is a C pointer value with an associated finaliser.
+   -------------------------------------------------------------------
+  , ForeignPtr                -- abstract, instance of: Eq
+  , newForeignPtr             -- :: Ptr a -> IO () -> IO (ForeignPtr a)
+-- , addForeignPtrFinalizer   -- :: ForeignPtr a -> IO () -> IO ()
+  , touchForeignPtr           -- :: ForeignPtr a -> IO ()
+  , withForeignPtr            -- :: ForeignPtr a -> (Ptr a -> IO b) -> IO b
+  , foreignPtrToPtr           -- :: ForeignPtr a -> Ptr a
+  , castForeignPtr            -- :: ForeignPtr a -> ForeignPtr b
+
+   -------------------------------------------------------------------
+   -- `StablePtr a' is a Haskell value passed to the foreign land.
+   -------------------------------------------------------------------
 #if !defined(TRACING)
   , StablePtr             -- abstract
-  , makeStablePtr         -- :: a -> IO (StablePtr a)
+  , newStablePtr          -- :: a -> IO (StablePtr a)
+  , makeStablePtr         -- :: a -> IO (StablePtr a)	-- OBSOLETE
   , deRefStablePtr        -- :: StablePtr a -> IO a
   , freeStablePtr         -- :: StablePtr a -> IO ()
-  , stablePtrToAddr       -- :: StablePtr a -> Addr
-  , addrToStablePtr       -- :: Addr -> StablePtr a
+  , stablePtrToAddr       -- :: StablePtr a -> Addr	-- OBSOLETE
+  , addrToStablePtr       -- :: Addr -> StablePtr a	-- OBSOLETE
+  , castStablePtrToPtr  -- :: StablePtr a -> Ptr ()
+  , castPtrToStablePtr  -- :: Ptr () -> StablePtr a
 #endif
-   -------------------------------------------------------------------
-  , CString		-- abstract
-  , toCString		-- :: String  -> CString
-  , fromCString		-- :: CString -> String
 
+   -------------------------------------------------------------------
+   -- nhc98's `PackedString' is a heap-allocated packed array of characters.
+   -------------------------------------------------------------------
+  , PackedString	-- abstract
+  , toCString		-- :: String  -> PackedString
+  , fromCString		-- :: PackedString -> String
+
+   -------------------------------------------------------------------
+   -- `CString' is a C-allocated C packed array of characters.
+   -------------------------------------------------------------------
+  , CString             -- = Ptr CChar
+  , CStringLen          -- = (CString, Int)
+  , peekCString         -- :: CString    -> IO String
+  , peekCStringLen      -- :: CStringLen -> IO String
+  , newCString          -- :: String -> IO CString
+  , newCStringLen       -- :: String -> IO CStringLen
+  , withCString         -- :: String -> (CString    -> IO a) -> IO a
+  , withCStringLen      -- :: String -> (CStringLen -> IO a) -> IO a
+  , castCharToCChar     -- :: Char -> CChar
+  , castCCharToChar     -- :: CChar -> Char
+
+   -------------------------------------------------------------------
+   -- nhc98's `CError' helps to build meaningful error messages.
    -------------------------------------------------------------------
   , getErrNo		-- :: IO Int
   , mkIOError		-- :: String -> Maybe FilePath -> Maybe Handle
@@ -70,201 +115,107 @@ module FFI
   , throwIOError	-- :: String -> Maybe FilePath -> Maybe Handle
 			--      -> Int -> IO a
    -------------------------------------------------------------------
+   -- Various `CTypes'.
+   -------------------------------------------------------------------
+  , CChar(..)	, CSChar(..)	, CUChar(..)
+  , CShort(..)	, CUShort(..)
+  , CInt(..)	, CUInt(..)
+  , CLong(..)	, CULong(..)
+  , CLLong(..)	, CULLong(..)
+  , CFloat(..)	, CDouble(..)	, CLDouble(..)
+   -------------------------------------------------------------------
+   -- `CTypesExtra'.
+   -------------------------------------------------------------------
+  , CPtrdiff(..)	, CSize(..)	, CWchar(..)
+  , CSigAtomic(..)	, CClock(..)	, CTime(..)
+  , CFile		, CFpos		, CJmpBuf
+
+   -------------------------------------------------------------------
+   -- `MarshalAlloc' provides memory allocation routines.
+   -------------------------------------------------------------------
+  , malloc            -- :: Storable a =>        IO (Ptr a)
+  , mallocBytes       -- ::               Int -> IO (Ptr a)
+  , alloca            -- :: Storable a =>        (Ptr a -> IO b) -> IO b
+  , allocaBytes       -- ::               Int -> (Ptr a -> IO b) -> IO b
+  , reallocBytes      -- :: Ptr a -> Int -> IO (Ptr a)
+  , free              -- :: Ptr a -> IO ()
+
+   -------------------------------------------------------------------
+   -- `MarshalArray' provides bulk memory allocation/storage routines.
+   -------------------------------------------------------------------
+  , mallocArray     -- :: Storable a => Int -> IO (Ptr a)
+  , mallocArray0    -- :: Storable a => Int -> IO (Ptr a)
+  , allocaArray     -- :: Storable a => Int -> (Ptr a -> IO b) -> IO b
+  , allocaArray0    -- :: Storable a => Int -> (Ptr a -> IO b) -> IO b
+  , reallocArray    -- :: Storable a => Ptr a -> Int -> IO (Ptr a)
+  , reallocArray0   -- :: Storable a => Ptr a -> Int -> IO (Ptr a)
+  , peekArray       -- :: Storable a =>         Int -> Ptr a -> IO [a]
+  , peekArray0      -- :: (Storable a, Eq a) => a   -> Ptr a -> IO [a]
+  , pokeArray       -- :: Storable a =>      Ptr a -> [a] -> IO ()
+  , pokeArray0      -- :: Storable a => a -> Ptr a -> [a] -> IO ()
+  , newArray        -- :: Storable a =>      [a] -> IO (Ptr a)
+  , newArray0       -- :: Storable a => a -> [a] -> IO (Ptr a)
+  , withArray       -- :: Storable a =>      [a] -> (Ptr a -> IO b) -> IO b
+  , withArray0      -- :: Storable a => a -> [a] -> (Ptr a -> IO b) -> IO b
+  , destructArray   -- :: Storable a =>         Int -> Ptr a -> IO ()
+  , destructArray0  -- :: (Storable a, Eq a) => a   -> Ptr a -> IO ()
+  , copyArray       -- :: Storable a => Ptr a -> Ptr a -> Int -> IO ()
+  , moveArray       -- :: Storable a => Ptr a -> Ptr a -> Int -> IO ()
+  , lengthArray0    -- :: (Storable a, Eq a) => a -> Ptr a -> IO Int
+  , advancePtr      -- :: Storable a => Ptr a -> Int -> Ptr a
+
+   -------------------------------------------------------------------
+   -- `MarshalUtils' provides utilities for basic marshalling.
+   -------------------------------------------------------------------
+  , with           -- :: Storable a => a -> (Ptr a -> IO b) -> IO b
+  , new            -- :: Storable a => a -> IO (Ptr a)
+  , fromBool       -- :: Num a => Bool -> a
+  , toBool         -- :: Num a => a -> Bool
+  , maybeNew       -- :: (      a -> IO (Ptr a))
+                   -- -> (Maybe a -> IO (Ptr a))
+  , maybeWith      -- :: (      a -> (Ptr b -> IO c) -> IO c)
+                   -- -> (Maybe a -> (Ptr b -> IO c) -> IO c)
+  , maybePeek      -- :: (Ptr a -> IO        b )
+                   -- -> (Ptr a -> IO (Maybe b))
+  , withMany       -- :: (a -> (b -> res) -> res) -> [a] -> ([b] -> res) -> res
+  , copyBytes      -- :: Ptr a -> Ptr a -> Int -> IO ()
+  , moveBytes      -- :: Ptr a -> Ptr a -> Int -> IO ()
+
+   -------------------------------------------------------------------
+   -- `MarshalError' provides utilities for basic error-handling.
+   -------------------------------------------------------------------
+  , throwIf        -- :: (a -> Bool) -> (a -> String) -> IO a       -> IO a
+  , throwIf_       -- :: (a -> Bool) -> (a -> String) -> IO a       -> IO ()
+  , throwIfNeg     -- :: (Ord a, Num a) => (a -> String) -> IO a    -> IO a
+  , throwIfNeg_    -- :: (Ord a, Num a) => (a -> String) -> IO a    -> IO ()
+  , throwIfNull    -- :: String  -> IO (Ptr a) -> IO (Ptr a)
+  , void           -- IO a -> IO ()
+
   ) where
 
-import Int		-- believed complete now
-import Word		-- 
-import Addr		--
-import ForeignObj	--
+import Int		-- sized (signed) Int types
+import Word		-- sized (unsigned) Word types
+
+import Addr		-- obsolete, C address (pointer) values
+import Ptr		-- C pointer values
+import FunPtr		-- C function pointer values
+import Storable		-- class defining storage sizes and routines
+
+import ForeignObj	-- obsolete, C address (pointer) + finaliser
+import ForeignPtr	-- C pointer values with finalisers
+
 #if !defined(TRACING)
-import StablePtr	-- only works for non-tracing so far
+import StablePtr	-- Haskell values passed to foreign land
 #endif
+
+import MarshalAlloc	-- routines for memory allocation
+import MarshalArray	-- routines for bulk memory allocation/storage
+import MarshalUtils	-- routines for basic marshalling
+import MarshalError	-- routines for basic error-handling
+
+import CTypes		-- newtypes for various C basic types
+import CTypesExtra	-- types for various extra C types
+import CStrings		-- C pointer to array of char
 import CString		-- nhc98-only
 import CError		-- nhc98-only
-import FixIO (fixIO)	-- part of IOExtras, but IOExtras depends on FFI.
-import Monad (when)
-
-----------------------------------------------------------------------
--- primitive marshaling
-
--- Minimal complete definition: sizeOf, alignment and one definition
--- in each of the deref/peek/poke families.
-class Storable a where
-   -- sizeOf/alignment *never* use their first argument
-   sizeOf          :: a -> Int
-   alignment       :: a -> Int
-   -- replacement for index-/read-/write???OffAddr
-   peekElemOff     :: Addr -> Int      -> IO a
-   pokeElemOff     :: Addr -> Int -> a -> IO ()
-   -- the same with *byte* offsets
-   peekByteOff     :: Addr -> Int      -> IO a
-   pokeByteOff     :: Addr -> Int -> a -> IO ()
-   -- ... and with no offsets at all
-   peek            :: Addr             -> IO a
-   poke            :: Addr        -> a -> IO ()
-
-   -- circular default instances
-   peekElemOff addr off =
-      fixIO (\val -> peekByteOff addr (off * sizeOf val))
-   pokeElemOff addr off val =
-      pokeByteOff addr (off * sizeOf val) val
-
-   peekByteOff addr off = peek  (addr `plusAddr` off)
-   pokeByteOff addr off = poke  (addr `plusAddr` off)
-
-   peek  addr = peekElemOff addr 0
-   poke  addr = pokeElemOff addr 0
-
----------------------------------------------------------------------------
--- system-dependent, but rather obvious instances
-
-foreign import readCharAtAddr  :: Addr -> IO Char
-foreign import writeCharAtAddr :: Addr -> Char -> IO ()
-
-instance Storable Char where
-   sizeOf        = const 1
-   alignment     = const 1
-   peek          = readCharAtAddr
-   poke          = writeCharAtAddr
-
-foreign import readIntAtAddr  :: Addr -> IO Int
-foreign import writeIntAtAddr :: Addr -> Int -> IO ()
-
-instance Storable Int where
-   sizeOf        = const 4
-   alignment     = const 4
-   peek          = readIntAtAddr
-   poke          = writeIntAtAddr
-
-foreign import readAddrAtAddr  :: Addr -> IO Addr
-foreign import writeAddrAtAddr :: Addr -> Addr -> IO ()
-
-instance Storable Addr where
-   sizeOf        = const 4
-   alignment     = const 4
-   peek          = readAddrAtAddr
-   poke          = writeAddrAtAddr
-
-foreign import readFloatAtAddr  :: Addr -> IO Float
-foreign import writeFloatAtAddr :: Addr -> Float -> IO ()
-
-instance Storable Float where
-   sizeOf        = const 4
-   alignment     = const 4
-   peek          = readFloatAtAddr
-   poke          = writeFloatAtAddr
-
-foreign import readDoubleAtAddr  :: Addr -> IO Double
-foreign import writeDoubleAtAddr :: Addr -> Double -> IO ()
-
-instance Storable Double where
-   sizeOf        = const 8
-   alignment     = const 8
-   peek          = readDoubleAtAddr
-   poke          = writeDoubleAtAddr
-
-foreign import readWord8AtAddr  :: Addr -> IO Word8
-foreign import writeWord8AtAddr :: Addr -> Word8 -> IO ()
-
-instance Storable Word8 where
-   sizeOf        = const 1
-   alignment     = sizeOf   -- not sure about this
-   peek          = readWord8AtAddr
-   poke          = writeWord8AtAddr
-
-foreign import readWord16AtAddr  :: Addr -> IO Word16
-foreign import writeWord16AtAddr :: Addr -> Word16 -> IO ()
-
-instance Storable Word16 where
-   sizeOf        = const 2
-   alignment     = sizeOf   -- not sure about this
-   peek          = readWord16AtAddr
-   poke          = writeWord16AtAddr
-
-foreign import readWord32AtAddr  :: Addr -> IO Word32
-foreign import writeWord32AtAddr :: Addr -> Word32 -> IO ()
-
-instance Storable Word32 where
-   sizeOf        = const 4
-   alignment     = sizeOf   -- not sure about this
-   peek          = readWord32AtAddr
-   poke          = writeWord32AtAddr
-
-foreign import readWord64AtAddr  :: Addr -> IO Word64
-foreign import writeWord64AtAddr :: Addr -> Word64 -> IO ()
-
-instance Storable Word64 where
-   sizeOf        = const 8
-   alignment     = sizeOf   -- not sure about this
-   peek          = readWord64AtAddr
-   poke          = writeWord64AtAddr
-
-foreign import readInt8AtAddr  :: Addr -> IO Int8
-foreign import writeInt8AtAddr :: Addr -> Int8 -> IO ()
-
-instance Storable Int8 where
-   sizeOf        = const 1
-   alignment     = sizeOf   -- not sure about this
-   peek          = readInt8AtAddr
-   poke          = writeInt8AtAddr
-
-foreign import readInt16AtAddr  :: Addr -> IO Int16
-foreign import writeInt16AtAddr :: Addr -> Int16 -> IO ()
-
-instance Storable Int16 where
-   sizeOf        = const 2
-   alignment     = sizeOf   -- not sure about this
-   peek          = readInt16AtAddr
-   poke          = writeInt16AtAddr
-
-foreign import readInt32AtAddr  :: Addr -> IO Int32
-foreign import writeInt32AtAddr :: Addr -> Int32 -> IO ()
-
-instance Storable Int32 where
-   sizeOf        = const 4
-   alignment     = sizeOf   -- not sure about this
-   peek          = readInt32AtAddr
-   poke          = writeInt32AtAddr
-
-foreign import readInt64AtAddr  :: Addr -> IO Int64
-foreign import writeInt64AtAddr :: Addr -> Int64 -> IO ()
-
-instance Storable Int64 where
-   sizeOf        = const 8
-   alignment     = sizeOf   -- not sure about this
-   peek          = readInt64AtAddr
-   poke          = writeInt64AtAddr
-
----------------------------------------------------------------------------
--- (de-)allocation of raw bytes
-
-malloc :: Int -> IO Addr
-malloc numBytes = failWhenNULL "malloc" (malloc_ numBytes)
-
-mallocElem :: Storable a => a -> IO Addr
-mallocElem unused = malloc (sizeOf unused)
-
-mallocElems :: Storable a => a -> Int -> IO Addr
-mallocElems unused numElems = malloc (numElems * sizeOf unused)
-
-realloc :: Addr -> Int -> IO Addr
-realloc oldAddr numBytes =
-   failWhenNULL "realloc" (realloc_ oldAddr numBytes)
-
-foreign import ccall unsafe free :: Addr -> IO ()
-
----------------------------------------------------------------------------
--- utility functions, not exported
-
-failWhenNULL :: String -> IO Addr -> IO Addr
-failWhenNULL fun act = do
-   addr <- act
-   when (addr == nullAddr)
-        (ioError (userError (fun ++ ": out of memory")))
-   return addr
-
--- Hmmm, Int is a little bit strange here, C uses size_t
-foreign import ccall "malloc"  unsafe malloc_  :: Int  -> IO Addr
-foreign import ccall "realloc" unsafe realloc_ :: Addr -> Int -> IO Addr
-
 

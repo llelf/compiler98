@@ -2,6 +2,8 @@ module FFI
   ( Addr	-- abstract, instance of: Eq, Ord, Enum, Show
   , nullAddr	-- :: Addr
   , plusAddr	-- :: Addr -> Int -> Addr
+  , addrToInt	-- :: Addr -> Int
+  , intToAddr	-- :: Int -> Addr
   ) where
 
 import FFIBuiltin (Addr)
