@@ -92,7 +92,7 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
              else return ()
             let observed = if ((remote)||(ident1/="")) then
 			      makeObserve hattrace verboseMode recursiveMode
-                                          expertMode False (\x->True)
+                                          expertMode False False (\x->True)
                                           ident1 ident2
 			    else
 			      (Found []) in
@@ -101,7 +101,7 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
 	 	  dummy <- interactive (file,hattrace)
                                        ([],False,10,0,50,
 					observableIdents hattrace,
-					False,False)
+					False,False,False)
 		  return ()
                else
                if (remote) then
@@ -114,9 +114,9 @@ startObserve file verboseMode recursiveMode expertMode ident1 ident2 remote =
                      else return ()				 
 	           dummy <- doCommand "" "" (file,hattrace)
                                       ((fromFound observed),
-				       hasmore,1,0,50,
+				       hasmore,10,0,50,
 				       observableIdents hattrace,
-				       False,False)
+				       False,False,False)
                    return ()
                 else
 	        do
@@ -180,42 +180,48 @@ showObservationList verboseMode precision i max (e:r) =
       count <- showObservationList verboseMode precision (i+1) (max-1) r
       return (count+1)
 
-makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool ->
+makeObserve :: HatTrace -> Bool -> Bool -> Bool -> Bool -> Bool ->
 	       (LinExpr->Bool) -> String -> String -> ObserveResult
 makeObserve hattrace verboseMode recursiveMode expertMode filterMode 
-	    filterFun ident1 ident2 =
+	    uniqueMode filterFun ident1 ident2 =
     let observed = (observe hattrace ident1 ident2 recursiveMode) in
      if (isFound observed) then
        if (expertMode) then
 	   observed
         else
          if (filterMode) then
-	    (Found (uniqueFilter (fromFound observed) filterFun))
+	    (Found (uniqueFilter uniqueMode (fromFound observed) filterFun))
 	  else
-              (Found (unique (fromFound observed)))
+              (Found (myunique uniqueMode (fromFound observed)))
       else
         observed
 
-unique :: [HatNode] -> [HatNode]
-unique observed = unique' observed []
+myunique :: Bool -> [HatNode] -> [HatNode]
+myunique uniqueMode observed = unique' observed []
  where
- unique' [] _ = []
+ unique' [] tries = if uniqueMode then
+                         getTrieNodes tries
+		     else []
  unique' (obs:observed) trie =
     let (b,tries) = insertTrie trie
                             (linearizeEquation (toHatExpressionTree 200 obs));
 	r = unique' observed tries in
-    if b then (obs:r) else r
+    if (uniqueMode) then r else
+       if b then (obs:r) else r
 
-uniqueFilter :: [HatNode] -> (LinExpr -> Bool) -> [HatNode]
-uniqueFilter observed filterFun = uniqueFilter' observed filterFun []
+uniqueFilter :: Bool -> [HatNode] -> (LinExpr -> Bool) -> [HatNode]
+uniqueFilter uniqueMode observed filterFun = uniqueFilter' observed []
  where
- uniqueFilter' [] _ _ = []
- uniqueFilter' (obs:observed) filterFun trie =
+ uniqueFilter' [] tries = if uniqueMode then
+			       getTrieNodes tries
+			     else []
+ uniqueFilter' (obs:observed) trie =
     let linexpr = linearizeEquation (toHatExpressionTree 200 obs);
 	(b,tries) = if (filterFun linexpr) then (insertTrie trie linexpr) else
 		    (False,trie);
-        r = uniqueFilter' observed filterFun tries in
-         if b then (obs:r) else r
+          r = uniqueFilter' observed tries in
+        if (uniqueMode) then r else
+           if b then (obs:r) else r
 
 last2 :: [a] -> ([a],[a])
 last2 [] = ([],[])
@@ -240,8 +246,8 @@ showSomeMore precision currentEq equationsPerPage verboseMode observed =
     return (count+currentEq,hasMore)
 
 interactive :: (String,HatTrace) -> ([HatNode],Bool,Int,Int,Int,[HatNode],
-				     Bool,Bool) -> IO()
-interactive hatfile state@(_,more,_,_,_,_,_,_) =
+				     Bool,Bool,Bool) -> IO()
+interactive hatfile state@(_,more,_,_,_,_,_,_,_) =
  do
    if (more==False) then
       putStr "\ncommand> "
@@ -284,16 +290,18 @@ getEquationNumber number lastObserved =
 	  return Nothing
 
 doCommand :: String -> String -> (String,HatTrace) ->
-	     ([HatNode],Bool,Int,Int,Int,[HatNode],Bool,Bool) -> IO()
+	     ([HatNode],Bool,Int,Int,Int,[HatNode],Bool,Bool,Bool) -> IO()
 doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,
-			       precision,observable,verboseMode,recursiveMode)
+			       precision,observable,verboseMode,recursiveMode,
+			       uniqueMode)
   | (cmd=="")||((length (words s)==1)&&((cmd=="D")||(cmd=="DOWN"))) =
     if (more) then
        do
         (newPos,newMore) <- (showSomeMore precision currentPos equationsPerPage
 			     verboseMode lastObserved)
 	interactive hatfile (lastObserved,newMore,equationsPerPage,newPos,
-                             precision,observable,verboseMode,recursiveMode)
+                             precision,observable,verboseMode,recursiveMode,
+			     uniqueMode)
      else
       do
        if (currentPos>0) then putStrLn "No more applications observed." else
@@ -304,21 +312,27 @@ doCommand cmd s hatfile state@(lastObserved,more,equationsPerPage,currentPos,
 -- cmd must be atleast one character long!
 doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
 					currentPos,precision,observable,
-					verboseMode,recursiveMode)
+					verboseMode,recursiveMode,uniqueMode)
     | (cmd=="Q")||(cmd=="QUIT")||(cmd=="EXIT") = putStrLn "Goodbye!\n"
     | (cmd=="H")||(cmd=="HELP") = interactiveHelp >> interactive hatfile state
+    | (cmd=="UNIQUE")||(cmd=="U") =
+	(putStr "unique mode is now ") >> 
+	(if (uniqueMode) then putStrLn "OFF" else putStrLn "ACTIVE") >>
+	interactive hatfile (lastObserved,more,equationsPerPage,
+			     currentPos,precision,observable,
+			     verboseMode,recursiveMode,not uniqueMode)
     | (cmd=="V")||(cmd=="VERBOSE") =
 	(putStr "verbose mode is now ") >> 
-	(if (verboseMode) then putStrLn "OFF" else putStrLn "ON") >>
+	(if (verboseMode) then putStrLn "OFF" else putStrLn "ACTIVE") >>
 	interactive hatfile (lastObserved,more,equationsPerPage,
 			     currentPos,precision,observable,
-			     not verboseMode,recursiveMode)
+			     not verboseMode,recursiveMode,uniqueMode)
     | (cmd=="R")||(cmd=="RECURSIVE") =
-	(putStr "recursive mode is now ") >> 
-	(if (recursiveMode) then putStrLn "OFF" else putStrLn "ON") >>
+	(putStr "recursive-call-filter is now ") >> 
+	(if (recursiveMode) then putStrLn "OFF" else putStrLn "ACTIVE") >>
 	interactive hatfile (lastObserved,more,equationsPerPage,
 			     currentPos,precision,observable,
-			     verboseMode,not recursiveMode)
+			     verboseMode,not recursiveMode,uniqueMode)
     | (cmd=="S")||(cmd=="SHOW") =
 	(putStrLn "\nObservable Identifiers:") >>
 	(putStrLn (take 79 (repeat '-'))) >>
@@ -338,7 +352,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
             putStrLn ("Lines per page set to "++(show newPerPage)) >> 
             interactive hatfile (lastObserved,more,newPerPage,
 				 currentPos,precision,observable,
-				 verboseMode,recursiveMode)
+				 verboseMode,recursiveMode,uniqueMode)
            else
             putStrLn "Lines per page must be greater than 0!" >>
             interactive hatfile state
@@ -351,7 +365,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
         putStrLn ("Precision set to "++(show newPrec)) >> 
         interactive hatfile (lastObserved,more,equationsPerPage,
 				 currentPos,newPrec,observable,
-				 verboseMode,recursiveMode)
+				 verboseMode,recursiveMode,uniqueMode)
     | (isJust (getNumberParam s "-" "-PREC"))||((cmd=="-")||(cmd=="-PREC")) =
 	let val = (getNumberParam s "-" "-PREC");
 	    newPrec1 = precision-(if (isNothing val) then 1 else fromJust val);
@@ -359,7 +373,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
         putStrLn ("Precision set to "++(show newPrec)) >> 
         interactive hatfile (lastObserved,more,equationsPerPage,
 				 currentPos,newPrec,observable,
-				 verboseMode,recursiveMode)
+				 verboseMode,recursiveMode,uniqueMode)
     | (isJust (getNumberParam s "U" "UP")) =
 	let up = fromJust (getNumberParam s "U" "UP") in
         if (up==0) then interactive hatfile state else
@@ -367,13 +381,14 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
           doCommand "" "" hatfile (lastObserved,
 				  if (currentPos==newPos) then more else True,
 				  equationsPerPage,newPos,precision,observable,
-				  verboseMode,recursiveMode)
+				  verboseMode,recursiveMode,uniqueMode)
     | ((isJust (getNumberParam s "D" "DOWN"))||
        (isJust (getNumberParam s "G" "GO"))) =
 	let down = if (isJust (getNumberParam s "D" "DOWN")) then
 			   (fromJust (getNumberParam s "D" "DOWN"))
 		    else
-			   (fromJust (getNumberParam s "G" "GO")) in
+                      (fromJust (getNumberParam s "G" "GO"))
+		   in
         if ((head cmd)=='D')&&(down==0) then interactive hatfile state else
           let newPos = if (head cmd)=='D' then currentPos+down else 
 		       (if down==0 then 0 else down-1);
@@ -384,19 +399,20 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
                putStrLn "Now at the end of the list." >>
                interactive hatfile (lastObserved,False,equationsPerPage,realPos,
 				     precision,observable,
-				     verboseMode,recursiveMode)
+				     verboseMode,recursiveMode,uniqueMode)
             else
              doCommand "" "" hatfile (lastObserved,
 				      True,
 				      equationsPerPage,newPos,precision,
-                                      observable,verboseMode,recursiveMode)
+                                      observable,verboseMode,recursiveMode,
+				      uniqueMode)
     | (cmd=="U")||(cmd=="UP") = doCommand "UP"
                                           ("UP "++(show (2*equationsPerPage)))
 				          hatfile state
     | (cmd=="G")||(cmd=="GO") =
 	putStrLn ("Go to which number? Use \"go <n>\" to see equation number <n>.")
 		  >>
-	interactive hatfile state
+	interactive hatfile state   
     | (cmd=="TRAIL")||(cmd=="TRACE")||(cmd=="T") =
 	let trail = getNumberParam s "T" "TRAIL";
             trail2 = getNumberParam s "T" "TRACE";
@@ -405,7 +421,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
         (if (isJust trail)||(isJust trail2) then
            do
              node <- getEquationNumber number lastObserved
-	     if (isJust node) then startExternalTool "T" file (fromJust node)
+	     if (isJust node) then startExternalTool "T" file number (fromJust node)
 		else return ()
          else
 	   putStrLn "No equation number specified!")
@@ -416,7 +432,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
          (if (isJust debug) then
 	   do
              node <- getEquationNumber number lastObserved
-	     if (isJust node) then startExternalTool "A" file (fromJust node)
+	     if (isJust node) then startExternalTool "A" file number (fromJust node)
 		else return ()
           else
 	   putStrLn "No equation number specified!")
@@ -433,7 +449,7 @@ doCommand cmd s hatfile@(file,_) state@(lastObserved,more,equationsPerPage,
               if (null node) then -- This test may take a while!
 	         putStrLn "No equation with this number!"
                else
-                 startExternalTool "" file (head node)
+                 startExternalTool "" file number (head node)
            else
 	      putStrLn "No equation with this number!" 
 	  interactive hatfile state
@@ -487,7 +503,7 @@ doCommand cmd s hatfile state
         
 doCommand cmd s hatfile@(_,hattrace)
                 state@(lastObserved, more,equationsPerPage,currentPos,precision,
-			    observable,verboseMode,recursiveMode)
+			    observable,verboseMode,recursiveMode,uniqueMode)
   | ((cmd=="O")||(cmd=="OBSERVE"))&&(length (words s)>1) =
    let (opts,p) = (options (unwords (tail (words s))));
        pattern1 = (stringLex p);
@@ -511,6 +527,7 @@ doCommand cmd s hatfile@(_,hattrace)
                                (verboseMode || ('v' `elem` opts))
 			       (recursiveMode || ('r' `elem` opts)) False
 			       ((length pattern)>2)
+                               uniqueMode
 			       (\x -> (compareExpr x pattern))
 			       fun ident2 in
           if (isTopIdentNotFound newObserved) then
@@ -533,7 +550,8 @@ doCommand cmd s hatfile@(_,hattrace)
 	 			     verboseMode (fromFound newObserved))
                 interactive hatfile ((fromFound newObserved),newMore,
                                      equationsPerPage,newPos,precision,
-                                     observable,verboseMode,recursiveMode)
+                                     observable,verboseMode,recursiveMode,
+				     uniqueMode)
 
 doCommand cmd s hatfile state =
     if (null cmd) then
@@ -542,7 +560,7 @@ doCommand cmd s hatfile state =
      else
       doCommand "O" ("O "++s) hatfile state
 
-startExternalTool tool file node =
+startExternalTool tool file number node =
     let id = toRemoteRep node;
         rhsID = toRemoteRep (hatResult node) in
     do
@@ -554,7 +572,7 @@ startExternalTool tool file node =
                 else return tool
       if (((length choice)>0)&&(head(upStr(choice))=='T')) then
         do
-          putStr "Trace left-hand-side (lhs) or rhs? (L/R): "
+          putStr ("Equation "++(show number)++": Trace left-hand-side (lhs) or rhs of equation? (L/R): ")
 	  lhs <- getLine
           errcode <- system(spawnTraceCmd++
 			    file++" -remote "++
@@ -588,17 +606,20 @@ interactiveHelp =
    putStrLn " trail <n>                     start Redex-Trail browser for"
    putStrLn "                               observed equation number <n>"
    putStrLn " go <n>            g <n>       go to observed equation number <n>"
-   putStrLn " up <n>            u <n>       go up in observation list by <n>"
+   putStrLn " up <n>                        go up in observation list by <n>"
    putStrLn " down <n>          d <n>       go down in observation list by <n>"
    putStrLn " <RETURN>                      show more applications (if available)"
    putStrLn " lines <n>         l <n>       set number of equations listed per page to <n>"
    putStrLn " +<n> or -<n>                  increase/decrease precision depth for expressions"
-   putStrLn " verbose           v           to toggle the verbose mode"
+   putStrLn " verbose           v           to toggle verbose mode"
    putStrLn "                                ON:  unevaluated expressions are shown in full"
    putStrLn "                                OFF: unevaluated expressions are shown as an \"_\""
-   putStrLn " recursive         r           to toggle the recursive filter mode"
+   putStrLn " recursive         r           to toggle recursive filter mode"
    putStrLn "                                ON:  recursive calls to functions are omitted"
    putStrLn "                                OFF: all calls to functions are observed"
+   putStrLn " unique            u           to toggle unique mode"
+   putStrLn "                                ON: most general equations shown only (slow but effective!)"
+   putStrLn "                                OFF: dito but less effective and fast"
    putStrLn " help              h           for help"
    putStrLn " quit              q           quit"
    putStrLn ""

@@ -32,7 +32,7 @@ data TrieElement = TAppl Trie | TConstr String Trie |
             TDouble Double Trie | TString String Trie | TIf Trie |
             TGuard Trie | TContainer Trie |
             TFirstArg Trie | TLastArg Trie | TRHS Trie |
-	    TNodeAdr HatNode | TNone Trie
+	    TNodeAdr HatNode | TNone Trie deriving Show
 type Trie = [TrieElement]
 
 

@@ -70,15 +70,16 @@ main = do
 	    return ()
 
 -- type for state of session
-type StateType = ( [HatNode]			-- ??
-                 , [(HatNode, LinExpr, Bool)]	-- ??
-		 , [HatNode]			-- ??
-                 , [(Int,HatNode)]		-- ??
-		 , Int				-- ??
-                 , Int				-- ??
-                 , Bool				-- ??
-                 , Bool				-- ??
-                 , Bool				-- ??
+type StateType = ( [HatNode]		      -- current EDT children considered
+                 , [(HatNode, LinExpr, Bool)] -- already considered nodes
+		 , [HatNode]		      -- nodes of trusted fun-identifiers
+                 , [(Int,HatNode)]	      -- postponed questions
+		 , Int			      -- current question number
+                 , Int			      -- precision for prettyPrinting
+                 , Bool			      -- verboseMode
+                 , Bool			      -- memoizeMode
+                 , Bool			      -- True when reconsidering a
+                                              -- postponed question
                  )
 
 showIdent :: HatNode -> String
@@ -93,7 +94,6 @@ showRed verboseMode precision node =
 	      else
 	        ""
 	in
---	  s1++s2
           (prettyPrint precision verboseMode node)++" = "++
 	    (prettyPrint precision verboseMode res)
 
@@ -141,22 +141,14 @@ interactive hatfile state@((node:children),recentNodes,trusted,postponed
    else
    if ((hatLeftmost node) `elem` trusted) then -- 
      doCommand "YES" "YES" hatfile state   -- pretend user answered "YES"
---     interactive hatfile (children,
---			  (addToRecentNodes recentNodes node True),
---			  trusted,postponed,questnumber+1,
---			  precision,verboseMode,memoMode,False)
     else
      do
        putStrLn ""
        if (reconsider) then putStrLn "reconsider: " else return ()
---       putStr (show questnumber++"> "++
---         (showRed verboseMode precision node))
        putStr 
         (showReduction verboseMode precision node 
            (show questnumber++"> ")
            (if reconsider then "(Y/?Y/N): " else "(Y/?Y/?N/N): "))
---       if (reconsider) then putStr "  (Y/?Y/N): "
---                       else putStr "  (Y/?Y/?N/N): "
        hFlush stdout
        s <- getLine
        let w = words s;
@@ -191,7 +183,7 @@ doCommand cmd s hatfile@(file,_)
     | (cmd=="H")||(cmd=="HELP") = interactiveHelp True >>
                                   interactive hatfile state
 
-    -- toggle modes: verbose and memorize
+    -- toggle modes: verbose and memoize
     | (cmd=="V")||(cmd=="VERBOSE") = 
 	putStrLn ("   verbose mode is now "++
 		  if verboseMode then "OFF" else "ON")
@@ -199,19 +191,22 @@ doCommand cmd s hatfile@(file,_)
         interactive hatfile ((child:children),recentNodes,trusted,postponed
 			    ,questnumber,precision,(not verboseMode),memoMode
                             ,reconsider)
-    | (cmd=="M")||(cmd=="MEMORIZE") = 
-	putStrLn ("   memorize mode is now "++ if memoMode then "OFF" else "ON")
+    | (cmd=="M")||(cmd=="MEMOIZE") = 
+	putStrLn ("   memoize mode is now "++ if memoMode then "OFF" else "ON")
         >>
         interactive hatfile ((child:children),recentNodes,trusted,postponed
 			    ,questnumber,precision,verboseMode,(not memoMode)
                             ,reconsider)
 
     -- user defined function trusting
+    | (cmd=="**") = do 
+		      putStrLn (show (child:children))
+		      interactive hatfile state
     | (cmd=="T")||(cmd=="TRUST") =
 	let trustFun = (hatLeftmost child) in
           do
 	    putStrLn (showExpression trustFun "   Ok, \"" ++
-		      "\" will be trusted from now on.")
+		      "\" is trusted from now on.")
             (b,q,newstate) <- (interactive hatfile
 			       (children,
 				(addToRecentNodes recentNodes child True),
@@ -372,7 +367,7 @@ interactiveHelp reconsider =
    putStrLn " g n or  go n     to go back to question <n>.\n"
    putStrLn " t   or  trust    to trust all applications of the current function."
    putStrLn " u   or  untrust  to untrust all functions which were previously trusted.\n"
-   putStrLn " m   or  memorize to toggle the memorize mode."
+   putStrLn " m   or  memoize  to toggle the memoize mode."
    putStrLn " v   or  verbose  to toggle verbose mode.\n"
    putStrLn " o   or  observe  to observe all applications of the current function."
    putStrLn " r   or  trail    to start the redex trail browser on the current equation.\n"
