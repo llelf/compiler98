@@ -1,4 +1,3 @@
-
 #ifndef _HASKELL2C_H
 #define _HASKELL2C_H
 

@@ -1,3 +1,5 @@
+#ifndef _GREENCARD_H
+#define _GREENCARD_H
 #include "cinterface.h"
 #include "mk.h"
 #include "stableptr.h"
@@ -13,3 +15,4 @@ extern char        unmakeChar (HaskellRef);
 extern HaskellRef  makeBool (int);
 extern int         unmakeBool (HaskellRef);
 
+#endif

@@ -1,5 +1,5 @@
-#ifndef _MKBYPROG_H_
-#define _MKBYPROG_H_
+#ifndef _MKBYPROG_H
+#define _MKBYPROG_H
 /* Current biggest tuple size is 12 */
 struct ForeignTuple {
   void *pos1;

@@ -1,5 +1,5 @@
-#ifndef _STABLEPTR_H_
-#define _STABLEPTR_H_
+#ifndef _STABLEPTR_H
+#define _STABLEPTR_H
 
 typedef void* StablePtr;
 
