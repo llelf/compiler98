@@ -14,7 +14,7 @@ case $1 in
 	echo Network
 	;;
   QuickCheck)
-	echo Debug Debug/QuickCheck
+	echo Test Test/QuickCheck Debug Debug/QuickCheck
 	;;
   HaXml)
 	echo Text Text/ParserCombinators Text/XML Text/XML/HaXml
