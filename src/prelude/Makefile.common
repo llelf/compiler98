@@ -16,19 +16,19 @@
 
 OBJDIR   = ${BUILDDIR}/${OBJ}/prelude/${THISLIB}
 SRC_MAIN = ${THISLIB}.hs
-.SUFFIXES: .hi .hs .o .gc .c .T_hi .T_o .p_o
+.SUFFIXES: .hi .hs .o .gc .c .T.hi .T.o .p.o
 
 PART_FLAGS = +CTS -part -redefine -CTS $(SEARCH)
 LIB_FLAGS  = +CTS -lib  -redefine -CTS $(SEARCH)
 
 
 ifeq "T" "${TRACING}"
-  HISUFFIX=T_hi
-  O=T_o
+  HISUFFIX=T.hi
+  O=T.o
 else
 ifeq "p" "${CFG}"
   HISUFFIX=hi
-  O=p_o
+  O=p.o
 else
   HISUFFIX=hi
   O=o

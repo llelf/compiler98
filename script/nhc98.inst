@@ -108,10 +108,10 @@ do
     -c    ) NOLINK=1;;
     -T)     TRACE=T
 	    #IMPORT=-P${NHC98INCDIR}/tracer/	-- no longer a different dir
-            COMPFLAGS=$COMPFLAGS" -dbgtrans -hi-suffix=T_hi"
+            COMPFLAGS=$COMPFLAGS" -dbgtrans -hi-suffix=T.hi"
             LDLAST=$LDLAST$LIBCOMPAT
-            HISUFFIX="T_hi"
-            OSUFFIX="T_o"
+            HISUFFIX="T.hi"
+            OSUFFIX="T.o"
             ;;
     -t)     TPROF=t
             COMPFLAGS=$COMPFLAGS" -tprof"

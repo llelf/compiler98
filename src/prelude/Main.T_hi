@@ -1,6 +1,0 @@
-interface Main where {
-
-{-# NEED main #-}
-main{-# 2 #-}::(a -> (b -> (Prelude.R (Prelude.IO ()))));
-
-}

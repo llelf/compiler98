@@ -13,7 +13,7 @@ ifeq "${BUILDWITH}" "gcc"
 EXTRA_H_FLAGS	=	+RTS -H32M -RTS
 endif
 ifeq "${BUILDWITH}" "nhc98"
-EXTRA_H_FLAGS	=	+RTS -H16M -RTS
+EXTRA_H_FLAGS	=	+RTS -H32M -RTS
 endif
 
 

@@ -131,11 +131,11 @@ do
 
     # tracing and profiling flags (mainly nhc98)
     -T) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -hi-suffix=T_hi -o-suffix=T_o" ;;
+        hmflags=$hmflags" -hi-suffix=T.hi -o-suffix=T.o" ;;
     -p) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=p_o" ;;
+        hmflags=$hmflags" -o-suffix=p.o" ;;
     -t) hcflags=$hcflags" $1";
-        hmflags=$hmflags" -o-suffix=t_o" ;;
+        hmflags=$hmflags" -o-suffix=t.o" ;;
 
     # mainly GHC flags
     -package|-syslib) hcflags=$hcflags" $1 $2"; shift ;;

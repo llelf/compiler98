@@ -44,7 +44,7 @@ ifeq "hbc" "${HC}"
 HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "${HC}"
-HMAKEFLAGS := -H8M +CTS -H12M -CTS
+HMAKEFLAGS := -H16M +CTS -H16M -CTS
 endif
 ifeq "ghc" "${HC}"
 IMPROVE     = #-O

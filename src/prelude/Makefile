@@ -6,7 +6,7 @@ ARFLAGS = cr
 ARCHIVE=${DST}/${PRELUDE}${CFG}.a
 
 ifeq "${CFG}" "p"
-O=p_o
+O=p.o
 else
 O=o
 endif
@@ -158,7 +158,7 @@ realclean: clean
 mkfiles: ${MKFILES}
 objdir: ${OBJDIR}
 cleanhi:
-	-rm -f */*.T_hi
+	-rm -f */*.T.hi
 
 
 %.mkfiles:
@@ -180,7 +180,7 @@ ${OBJDIRS}: ${OBJDIR}/% :
 
 ${ARCHIVE}: ${OBJDIR} ${OBJDIRS} ${SUBDIRSMK}
 	rm -f $@
-	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T_o
+	cd $(OBJDIR); $(AR) $(ARFLAGS) ${ARCHIVE} */*.T.o
 	ranlib $@
 
 

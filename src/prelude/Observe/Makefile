@@ -2,6 +2,9 @@ include Makefile.inc
 
 EXCLUDE_THISLIB_HS = yes
 THISLIB	= Observe
+ifeq "${BUILDWITH}" "nhc98"
+EXTRA_H_FLAGS = +RTS -H32M -RTS
+endif
 
 SRCS	=
 SRCS_T	=
@@ -21,7 +24,7 @@ LHOBJS	= $(patsubst %.lhs, ${OBJDIR}/%.$O, $(filter %.lhs, ${LIBSRCS}))
 
 extra:	${LHOBJS}
 ${LHOBJS}: ${OBJDIR}/%.$O : %.lhs
-	$(HC) -c $(LIB_FLAGS) -o $@ $<
+	$(HC) -c $(LIB_FLAGS) $(EXTRA_H_FLAGS) -o $@ $<
 ${LHCFILES}: %.c : %.lhs
 	$(HC) -C $(LIB_FLAGS) $<
 

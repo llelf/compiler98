@@ -12,7 +12,7 @@ HVERSION = 2.02
 BASIC = Makefile.inc Makefile README INSTALL COPYRIGHT configure
 
 PRELUDEA = \
-	src/prelude/Main.hi src/prelude/Main.T_hi src/prelude/Makefile* \
+	src/prelude/Main.hi src/prelude/Main.T.hi src/prelude/Makefile* \
 	src/prelude/Array/Makefile* src/prelude/Array/*.hs \
 	src/prelude/Bit/Makefile* src/prelude/Bit/*.hs \
 	src/prelude/Binary/Makefile* src/prelude/Binary/*.hs \
@@ -133,7 +133,7 @@ RUNTIMET = \
 TRACEUI = src/tracer/ui/*
 HOODUI  = src/tracer/hoodui/Makefile* src/tracer/hoodui/*.java \
 	  src/tracer/hoodui/com/microstar/xml/*
-INCLUDE = include/*.hi include/*.T_hi include/*.h include/*.gc
+INCLUDE = include/*.hi include/*.h include/*.gc
 DOC = docs/*
 MAN = man/*.1
 

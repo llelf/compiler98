@@ -32,7 +32,7 @@ DBG_COMPILE  = ${HC} -T -c -part -redefine \
 PLAIN_COMPILE= ${HC} -c -part -redefine -dbgprelude
 
 X_COMPILE    = ${HC} -dbgprelude -trusted -P${INCDIR} -DTRACING \
-		-hi-suffix=T_hi
+		-hi-suffix=T.hi
 TR_COMPILE   = ${HC} -T -dbgtrans -trusted -P${INCDIR} -DTRACING
 PL_COMPILE   = ${HC} -dbgprelude
 
