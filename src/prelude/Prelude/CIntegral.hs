@@ -14,6 +14,7 @@ class  (Real a, Enum a) => Integral a  where
     n `div`  d          =  fst (divMod  n d)
     n `mod`  d          =  snd (divMod  n d)
 
+    quotRem n d		= (quot n d, rem n d)
     divMod n d          =  if signum r == negate (signum d) then (q-1, r+d)
                            else qr
 			     where qr@(q,r) = quotRem n d 
