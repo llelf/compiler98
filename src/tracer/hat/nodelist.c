@@ -82,6 +82,37 @@ int isInList(NodeList *nl,unsigned long foffset) {
 }
 
 
+/* remove element from list */
+void removeFromList(NodeList *nl,unsigned long foffset) {
+  hNodePtr e,last;
+  if (nl->first==NULL) return; // list empty! => not in list!
+  if ((foffset<nl->first->fileoffset)||(foffset>nl->last->fileoffset))
+    return;  // foffset without range of stored values => not in list!
+  e = nl->first;last=NULL;
+  while ((e!=NULL)&&(e->fileoffset!=foffset)) {last=e;e=e->next;}
+  if (e!=NULL) {
+    if (last==NULL) nl->first = e->next;else {
+      last->next = e->next;
+    }
+    if (e->next==NULL) nl->last=last;
+    e->next=NULL;
+    free(e);
+  }
+}
+
+unsigned long firstElement(NodeList *nl) {
+  if (nl->first==NULL) return 0;
+  return nl->first->fileoffset;
+}
+
+unsigned long firstBigger(NodeList *nl,unsigned long current) {
+  hNodePtr e;
+  if (nl->first==NULL) return 0;
+  e=nl->first;
+  while ((e!=NULL)&&(e->fileoffset<=current)) e=e->next;
+  if (e==NULL) return 0;else return e->fileoffset;
+}
+
 /* show values in list */
 void showList(NodeList *nl) {
   hNodePtr e;

@@ -32,8 +32,9 @@ NodeList* userTrustedList = NULL; // list of trusted functions
 FunTable memorizedFunsYes = NULL;
 FunTable memorizedFunsNo = NULL;
 NodeList* CAFList = NULL;
-unsigned int precision = 30;
+unsigned int precision = 100;
 int filehandle;
+filepointer mainCAF;
 
 int main (int argc, char *argv[])
 {
@@ -67,7 +68,8 @@ int main (int argc, char *argv[])
   CAFList = newList();
   memorizedFunsYes = newFunTable();
   memorizedFunsNo = newFunTable();
-  if (startAddr==0) startAddr = hatMainCAF(filehandle);
+  mainCAF = hatMainCAF(filehandle);
+  if (startAddr==0) startAddr = mainCAF;
   startSession(filehandle,startAddr);
   hatCloseFile(filehandle);
   return 0;
@@ -174,7 +176,10 @@ long showFunTablePaged(FunTable l) {
 int verboseMode = 0;
 int memorizeMode = 1;
 
-/* returns 1 for yes, 0 for no, 2 for ? */
+#define MAYBEYES 3
+#define MAYBENO  2
+
+/* returns 1 for yes, 0 for no, 2 for n?, 3 for y? */
 int askForApp(HatFile handle,int *question,unsigned long appofs,
 	      unsigned long resofs,int reconsider) {
   char answer[51];
@@ -207,13 +212,19 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
     if (strlen(pp1)+strlen(pp2)>70) printf("\n");
     freeStr(pp2);freeStr(pp1);
     err=0;
-    if (reconsider) printf("   (Y/N): ");
-    else printf("   (Y/?/N): ");
+    if (reconsider==1) printf("   (Y/?Y/N): ");
+    else printf("   (Y/?Y/?N/N): ");
     if (getline(answer,50)>=1) {
       c=toupper(answer[0]);
-      if (strchr("YARNQT?HVUMGOC*0123456789+-",c)==NULL) { // was answer a valid character?
+      if (strchr("YARNQT?HVUMGOC*0123456789+-#",c)==NULL) { // was answer a valid character?
 	printf("   Sorry. Please answer the question with 'Yes' or 'No' or press 'H' for help!\n");
       } else {
+	if (strlen(answer)>1) {
+	  if ((c=='?')&&(toupper(answer[1]=='N'))) c=MAYBENO;
+	  if ((c=='?')&&(toupper(answer[1]=='Y'))) c=MAYBEYES;
+	  if ((c=='N')&&(answer[1]=='?')) c=MAYBENO;
+	  if ((c=='Y')&&(answer[1]=='?')) c=MAYBEYES;
+	}
 	switch(c) {
 	case '*':
 	  if (answer[1]=='*') {
@@ -277,11 +288,14 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  } else retval = 1;
 	  break;
 	case '?':
-	   if (!reconsider) {
+	  printf("Enter '?N' for 'maybe no' or '?Y' for 'maybe yes'.\n");
+	  break;
+	case MAYBENO:
+	   if (reconsider!=1) {
 	     retval=2; // maybe...
 	     break;
 	   }
-	   if (reconsider) {
+	   if (reconsider==1) {
 	     printf("   Sorry, you need to decide now. Answer 'Y' or 'N'.");
 	   }
 	   break;
@@ -290,6 +304,9 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	    memorizeAnswer(appNode,resNode,0);
 	    return 0;
 	  } else retval = 0;
+	  break;
+	case MAYBEYES:
+	  retval = 3;
 	  break;
 	case 'Q':
 	  quit();
@@ -383,8 +400,9 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 	  printf("Keyboard commands\n\n");
 	  printf("     'Yes'      or 'y' if the equation is ok.\n");
 	  printf("     'No'       or 'n' if it isn't.\n");
-	  if (!reconsider)
-	    printf("     '?'               if you are unsure whether it is or is not.\n");
+	  if (reconsider!=1)
+	    printf("     '?N'               might be wrong, but you are unsure.\n");
+	  printf("     '?Y'               to postpone the question.\n");
 	  printf("\n     'Trust'    or 't' if the function shall now be trusted.\n");
 	  printf("     'Untrust'  or 'u' to untrust all functions again.\n");
 	  printf("\n     'Memorize' or 'm' to toggle the memorize mode.\n");
@@ -407,8 +425,8 @@ int askForApp(HatFile handle,int *question,unsigned long appofs,
 int askNodeList(HatFile handle,int question,NodeList* results,
 		int isTopSession,HashTable* hash) {
   unsigned long satc;
-  int success,askAgain,question_old,first_question;
-  NodeList* children=NULL;
+  int success,askAgain,question_old,first_question,postponeMode=0;
+  NodeList *children=NULL,*postList=newList();
   char s[2];
   NodeElement* e;
   first_question = question;
@@ -422,27 +440,34 @@ int askNodeList(HatFile handle,int question,NodeList* results,
       question_old = question;
       if (isInList(CAFList,e->fileoffset)==0) {
 	answer=askForApp(handle,&question,e->fileoffset,0,0);
-	if (isCAF(handle,e->fileoffset)) {
-	  insertInList(CAFList,e->fileoffset);
-	}
+	if (isCAF(handle,e->fileoffset)) insertInList(CAFList,e->fileoffset);
       } else answer=1;
-      if ((answer!=1)&&(answer<10)){
+      if (answer==3) { // y? => postpone the question
+	//printf("postponeing question %i %u\n",question_old+1,e->fileoffset);
+	insertInList(postList,question_old+1); // add the question number to postponed
+      }
+      if ((answer!=1)&&(answer!=3)&&(answer<10)){
 	satc=getResult(handle,e->fileoffset);
 	children = newList();
 	{
 	  HashTable* hash=newHashTable(HASH_TABLE_SIZE);
 	  getChildrenFor(handle,children,e->fileoffset,satc,hash);
 	  freeHashTable(hash);
+	  removeFromList(children,mainCAF); // never consider the main CAF a child of anything
 	}
 	success = askNodeList(handle,question,children,0,hash);
 	if (success>=10) {answer=success;success=0;}
 	if (answer==2) {
-	question = question_old;
-	answer = askForApp(handle,&question,e->fileoffset,0,1);
+	  question = question_old;
+	  answer = askForApp(handle,&question,e->fileoffset,0,1);
+	  if (answer==3) {
+	    insertInList(postList,question_old+1); // add question number to postponed
+	    //printf("postponing question %i %i\n",question_old+1,e->fileoffset);
+	  }
 	}
 	if (answer==0) {
 	  char *tmp;
-	  printf("\nError located!\nBug found in: ");
+	  printf("\nError located!\nBug found in:\n");
 	  showReduction(handle,e->fileoffset,getResult(handle,e->fileoffset),
 			verboseMode);
 	  tmp = hatLocationStr(handle,e->fileoffset);
@@ -462,6 +487,10 @@ int askNodeList(HatFile handle,int question,NodeList* results,
       }
       if (answer>=10) {
 	if (answer / 10 > first_question) {
+          int i=answer/10;
+	  // remove all postponed questions between new position and current position
+	  while (i<=question) removeFromList(postList,i++);
+	  postponeMode = 0;
 	  e=results->first;
 	  question = first_question;
 	  while (question+1<answer /10) {
@@ -475,7 +504,25 @@ int askNodeList(HatFile handle,int question,NodeList* results,
 	}
       }
       if (!askAgain) {
-	e=e->next;
+	if (!postponeMode) {
+	  e=e->next;
+	  if ((e==NULL)&&(listLength(postList)>0)) {
+	    postponeMode=1;
+	  }
+	}
+	if (postponeMode) { // may now be active...
+	  int i=first_question,q = firstBigger(postList,question_old+1);
+	  if (q==0) q=firstElement(postList);
+	  if (q==0) e=NULL; else {
+	    removeFromList(postList,q);
+	    e=results->first;
+	    while (++i<q) if (e->next!=NULL) e=e->next;
+	    question = q-1;
+	  }
+	  if (e!=NULL) {
+	    removeFromList(CAFList,e->fileoffset);
+	  }
+	}
       }
     }
     if ((isTopSession)&&(success==0)) {

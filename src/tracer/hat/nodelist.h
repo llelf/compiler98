@@ -23,14 +23,14 @@ void          appendToList(NodeList *nl,unsigned long foffset); // append to its
 void          insertInList(NodeList *nl,unsigned long foffset); // insert
 void          addBeforeList(NodeList *nl,unsigned long foffset);
 int           isInList(NodeList *nl,unsigned long foffset);     // check for value
+void          removeFromList(NodeList *nl,unsigned long foffset);// remove from list
 void          freeList(NodeList *nl);
 unsigned long listLength(NodeList *nl);
 void          showList(NodeList *nl);                           // show values in list
 void          showPretty(HatFile handle,NodeList *nl,int verbosemode,
 			 unsigned int precision);               // show pretty print
-
-
-
+unsigned long firstElement(NodeList *nl);
+unsigned long firstBigger(NodeList *nl,unsigned long current);
 
 
 
