@@ -37,6 +37,13 @@ endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 HFLAGS += $(shell ${LOCAL}fixghc ${GHCSYM} -package lang)
 endif
+ifeq "hbc" "$(findstring hbc, ${HC})"
+hbc: CppIfdef.hs
+	sed -e 's/System.IO.Unsafe/IOExts/' CppIfdef.hs >hbc
+	cp -a hbc CppIfdef.hs
+all: hbc
+endif
+
 
 all: $(TARGETS)
 install: $(TARGETS)
