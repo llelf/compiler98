@@ -40,32 +40,23 @@
 
 <hr>
 <h3><a name="news">Recent News</a></h3>
+
 <p>
-The current version is hmake-3.08 (date 2003-06-23).
+The current version is hmake-3.09 (date 2004-11-13).
+<ul>
+<li> Some fixes so that <em>hi</em> now also works under Cygwin/GHC.
+     (Requires only that you export the SHELL environment variable.)
+<li> Improvements to the internal documentation of the APIs
+     (thanks to Isaac Jones).
+<li> Improved handling of C pre-processor directives (thanks to cpphs).
+</ul>
+
+<p>
+The previous version was hmake-3.08 (date 2003-06-23).
 <ul>
 <li> Hmake should now build cleanly with GHC 6.0.
 <li> In hmake-interactive, if the readline library is not available,
      the simple line editor now has a history mechanism.
-</ul>
-<p>
-The previous version was hmake-3.07 (date 2003-03-06).
-<ul>
-<li> Hmake should now once again build cleanly with GHC under Cygwin.
-<li> Better handling of package libraries.  Previously, the package
-     import directories were detected at installation time, so the
-     addition of a new package required <em>hmake-config</em> to be
-     invoked to update the config database.  Also, because all of the
-     package dirs were searched on every invocation, <em>hmake</em>
-     could not warn of a missing <em>-package</em> flag.  Now, package
-     dirs are detected at runtime, and only for the requested packages
-     - this fixes both problems.
-<li> Added the cmdline option <em>list</em> to <em>hmake-config</em> to
-     display the set of Haskell compilers known to <em>hmake</em>.
-<li> Bugfix for the <em>-hat</em> option.  Ensure that if a file goes
-     through <em>cpp</em> before <em>hat-trans</em>, the resulting
-     <em>.hx</em> file is moved from the temporary dir back to the build dir.
-<li> Bugfix, to ensure that <em>hmake</em> isn't confused by the escaped
-     character \\ in a literal string.
 </ul>
 
 <p>
@@ -80,14 +71,14 @@ Currently known bugs are listed in <a href="bugs.html">bugs.html</a>.
 <h3><a name="download">Download</a></h3>
 <p>
 Download the full <em>hmake</em> sources from<br>
-  <a href="http://www.haskell.org/hmake/hmake-3.08.tar.gz">
-  <tt>http://www.haskell.org/hmake/hmake-3.08.tar.gz</tt></a>
+  <a href="http://www.haskell.org/hmake/hmake-3.09.tar.gz">
+  <tt>http://www.haskell.org/hmake/hmake-3.09.tar.gz</tt></a>
 
 <p>
 Mirror at:<br>
   <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
   <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a><br>
-  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.08.tar.gz">
+  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.09.tar.gz">
   <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.08.tar.gz</tt></a>
 
 <p>
@@ -144,6 +135,10 @@ install one copy of the `hmake' script, which uses `harch' to select the
 correct executables for any particular machine.
 
 <p>
+For <em>hi</em> to work on the Windows/Cygwin platform, you must
+export the SHELL environment variable before starting the interpreter.
+
+<p>
 The system-wide hmakerc configuration file lives in:
 <pre>
     /usr/local/lib/hmake/$MACHINE/hmakerc
@@ -177,7 +172,9 @@ hmake is based on code from <em>hbcmake</em> and <em>nhc13make</em>,
 which are both<br>
 &copy; copyright to Thomas Hallgren, 1991-1997,<br>
 with additions and modifications
-&copy; copyright to Malcolm Wallace, 1998-2003.<br>
+&copy; copyright to Malcolm Wallace, 1998-2003,<br>
+and incorporates library code from cpphs, which is LGPL and
+&copy; copyright to Malcolm Wallace, 2004.<br>
 Hmake interactive (hi) is
 &copy; copyright to Malcolm Wallace, 2000-2003.<br>
 Hmake-config is
@@ -196,7 +193,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a> (mirror)
 
 <p>
-Information last updated: 24th June 2004<br>
+Information last updated: 12th November 2004<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
