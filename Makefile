@@ -2,7 +2,7 @@
 include Makefile.inc
 .SUFFIXES: 		# To remove default rules like .cpp -> C++
 
-VERSION = 1.08
+VERSION = 1.09
 # When incrementing the version number, don't forget to change the
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
@@ -105,7 +105,8 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/errnogen.c script/GenerateErrNo.hs script/fixghc \
 	 script/echo.c script/hood.inst script/tprofprel \
 	 lib/hat-trail.jar lib/hood.jar \
-	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc
+	 script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
+	 hmake.spec nhc98.spec
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.hc
