@@ -20,6 +20,11 @@ module IO (
     ,ioeGetErrorString, ioeGetHandle, ioeGetFileName
     ,try, bracket, bracket_
 
+    -- re-export PreludeIO things
+    ,IO, FilePath, IOError, ioError, userError, catch, interact
+    ,putChar, putStr, putStrLn, print, getChar, getLine, getContents
+    ,readFile, writeFile, appendFile, readIO, readLn
+
  -- ,hGetFileName			-- not standard Haskell'98
 #if !defined(TRACING)
     ,SocketType(..), openSocket		-- not standard Haskell'98
