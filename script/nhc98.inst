@@ -91,9 +91,24 @@ HEAP=
 AOUT=a.out
 TMP=/tmp
 
+# Define a routine for getting OPTIONS pragmas out of source files.
+checkPragmas () {
+  if test $VFLAG -eq 1;
+    then LOCAL_OPTS=`grep $1 $2 | $PRAGMA`;
+         if test -n "$LOCAL_OPTS";
+           then echo 1>&2 "Found additional $1: $LOCAL_OPTS";
+                echo $LOCAL_OPTS
+         fi;
+    else grep $1 $2 | $PRAGMA;
+  fi;
+}
 
-while test "'$1'" != "''" 
-do
+# Define a function for processing command-line arguments.  It will
+# also be used for dealing with {-# OPTIONS-COMPILE #-} pragmas on
+# a per-file basis.
+processArgs () {
+  while test "'$1'" != "''" 
+  do
     case $1 in
     -p    ) PROF=p
             COMPFLAGS=$COMPFLAGS" -profile"
@@ -171,7 +186,11 @@ do
     then
       shift
     fi
-done
+  done
+}
+
+# Now actually do the command-line args.
+processArgs "$@"
 
 COMP=$COMP$TRACE
 
@@ -191,18 +210,6 @@ then
 else
   RUNFLAGS=$RUNFLAGS" -"
 fi
-
-# A routine for getting OPTIONS pragmas out of source files.
-checkPragmas () {
-  if test $VFLAG -eq 1;
-    then LOCAL_OPTS=`grep $1 $2 | $PRAGMA`;
-         if test -n "$LOCAL_OPTS";
-           then echo 1>&2 "Found additional $1: $LOCAL_OPTS";
-                echo $LOCAL_OPTS
-         fi;
-    else grep $1 $2 | $PRAGMA;
-  fi;
-}
 
 
 # Start processing files here, beginning with GreenCard preprocessor.
@@ -360,6 +367,7 @@ case $COMPFILES in
       else
         HSFILE=$POSTGRFILE
       fi
+      export HSFILE
 
       if test $MFLAG -eq 1
       then
@@ -369,18 +377,29 @@ case $COMPFILES in
         continue
       fi
 
+      # Grab any extra link options now, they will apply globally.
+      EXTRALIB=$EXTRALIB" "`checkPragmas OPTIONS_LINK $HSFILE`
+    fi
+
+# Now all of the following section goes into a subshell, because the options
+# read from {-# OPTIONS_COMPILE #-} only apply to that individual file.
+#   (
+
+    if test $HSRC -ne 0
+    then
+      # Grab any per-file options here, just before compiling.
+      processArgs `checkPragmas OPTIONS_COMPILE $HSFILE`
+
       if test $VFLAG -eq 1
       then
         echo  `basename $COMP` $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
       fi
-      $COMP $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE `checkPragmas OPTIONS_COMPILE $HSFILE`
+      $COMP $RUNFLAGS $COMPFLAGS $LIBDIRS $UNLIT ${IMPORT} $HSFILE $POSTGRFILE $TMPHIFILE $TMPCPPASFILE
 
       if test $? -ne 0
       then
 	exit 1
       fi
-
-      EXTRALIB=$EXTRALIB" "`checkPragmas OPTIONS_LINK $HSFILE`
 
       if test $PRECPP -ne 0
       then
