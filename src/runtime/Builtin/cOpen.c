@@ -1,8 +1,5 @@
-
 #include <errno.h>
-
 #include "haskell2c.h"
-
 
 #ifdef CDBGTRANS
 /* cOpen primitive 2 :: Trace -> R CString -> R IOMode -> R (Either IOError Handle) */
@@ -66,14 +63,14 @@ C_HEADER(cOpen)
   }
 #endif
   if(fp) {
-    Arg a;
-    CData *cdata;
-    a.fp = fp;
-    a.bm = _IOFBF;
-    a.size = -1;
-    a.gc = gcFile;
-    cdata = allocCData(a);
-    nodeptr = mkRight(mkCInt((Int)cdata));
+    FileDesc *a;
+    ForeignObj *fo;
+    a = (FileDesc *)malloc(sizeof(FileDesc));
+    a->fp = fp;
+    a->bm = _IOFBF;
+    a->size = -1;
+    fo = allocForeignObj(a,gcFile,gcNow);
+    nodeptr = mkRight(mkCInt((Int)fo));
   } else {
     nodeptr = mkLeft(mkIOErrorOpen(fileptr,typeptr,mkInt(errno)));
   }

@@ -206,9 +206,11 @@ needDecl (DeclPrimitive pos hs arity t) =
       needType t
 needDecl (DeclForeignImp pos _ hs arity cast t _) =
       needType t
+  >>> needTids pos tokenFFI
 needDecl (DeclForeignExp pos _ hs typ) =
       needTid pos Var hs
   >>> needType typ
+  >>> needTids pos tokenFFI
    -- error ("\nAt "++ strPos pos ++ ", foreign export not supported.")
 needDecl (DeclFixity f) =
       needFixDecl f

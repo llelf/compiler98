@@ -83,13 +83,13 @@ C_HEADER(_tprim_setOutputContext)
 C_HEADER(_tprim_chPutChar)
 {
     NodePtr handleR, np, ch, result, t, unit_t;
-    Arg *a;
+    FileDesc *a;
 
     t = C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
-    a = cdataArg((CData *)GET_INT_VALUE(np));
+    a = derefForeignObj((ForeignObj *)GET_INT_VALUE(np));
     np = C_GETARG1(3);
     IND_REMOVE(np);
     ch = GET_POINTER_ARG1(np, 1);
@@ -114,14 +114,14 @@ C_HEADER(_tprim_chPutChar)
 C_HEADER(_tprim_chGetChar)
 {
     NodePtr handleR, np, result, t;
-    Arg *a;
+    FileDesc *a;
     int ch;
 
     t = C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
-    a = cdataArg((CData *)GET_INT_VALUE(np));
+    a = derefForeignObj((ForeignObj *)GET_INT_VALUE(np));
     ch = getc(a->fp);
     result = mkChar(ch);
     C_RETURN(mkR(result, mkTNm(t, mkNmChar(result), mkSR())));
@@ -130,13 +130,13 @@ C_HEADER(_tprim_chGetChar)
 C_HEADER(_tprim_HClose)
 {
     NodePtr handleR, np, ch, result, t, unit_t;
-    Arg *a;
+    FileDesc *a;
 
     t = C_GETARG1(1);
     handleR = C_GETARG1(2);
     IND_REMOVE(handleR);
     np = GET_POINTER_ARG1(handleR, 1);
-    a = cdataArg((CData *)GET_INT_VALUE(np));
+    a = derefForeignObj((ForeignObj *)GET_INT_VALUE(np));
     np = C_GETARG1(3);
     IND_REMOVE(np);
     fclose(a->fp);
@@ -342,7 +342,7 @@ waitForBrowserConnection()
     return fdopen(fdesc, "rb+");
 }
 
-CData *sockcdata = NULL;
+ForeignObj *sockcdata = NULL;
 
 /* cGetDbgSocket :: () -> Socket */
 C_HEADER(cGetDbgSocket)
@@ -351,14 +351,13 @@ C_HEADER(cGetDbgSocket)
 		FILE *fp;
 		
 		if (fp = waitForBrowserConnection()) {
-			Arg a;
+			FileDesc a;
 			
 			a.fp = fp;
 			a.bm = _IOFBF;
 			a.size = -1;
-			a.gc = gcFile;
 
-			sockcdata = allocCData(a);
+			sockcdata = allocForeignObj(&a,gcFile,gcNone);
 			/* fprintf(stderr, "Debug socket successfully opened!\n");*/
 		} else {
 			fprintf(stderr, "Couldn't fdopen dbg socket!\n");

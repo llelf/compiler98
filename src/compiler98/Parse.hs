@@ -26,12 +26,10 @@ optSemi = () `parseChk` semi
 
 
 parseProg :: Parser (Module TokenId) [PosToken] a
-
 parseProg = parseModule `chkCut` eof
 
 
 parseModule :: Parser (Module TokenId) [PosToken] a
-
 parseModule =
     (uncurry Module) `parseChk` lit L_module `apCut` aconid `ap` parseExports
                  `chk` lit L_where `chk` lcurl
@@ -42,7 +40,6 @@ parseModule =
 
 
 parseTopDecls :: Parser (Decls TokenId) [PosToken] a
-
 parseTopDecls =
   semi `revChk` parseTopDecls
     `orelse`
@@ -50,7 +47,6 @@ parseTopDecls =
 
 
 parseTopDecl :: Parser (Decl TokenId) [PosToken] a
-
 parseTopDecl =
   cases [
   (L_type, \pos -> DeclType `parseAp` parseSimple `chk` equal `ap` parseType),
@@ -92,13 +88,11 @@ parseTopDecl =
 
 
 parseSig :: Parser (Sig TokenId) [PosToken] a 
-
 parseSig = Sig `parseAp` someSep comma varid `chk` coloncolon `ap`  
   parseStrict parseType
 
 
 parseForeign :: Parser (Decl TokenId) [PosToken] a
-
 parseForeign =
   k_foreign `revChk`
     ((k_import `revChk` callconv `revChk`
@@ -112,16 +106,20 @@ parseForeign =
       `parseAp` extfun `apCut` varid `chk` coloncolon `ap` parseType))
     `orelse`
       (k_cast `revChk` 
-        ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) True t v)
+        ((\(p,v) t-> DeclForeignImp p "" v (calcArity t) Cast t v)
         `parseAp` varid `chk` coloncolon `ap` parseType))
      )
   where
   callconv = k_ccall `orelse` k_stdcall `orelse` parse noPos
   extfun   = string `orelse` parse (noPos, LitString UnBoxed "")
-  unsafe   = (k_cast `revChk` cast True)
-             `orelse`
-             ((k_unsafe `orelse` parse noPos) `revChk` cast False)
-  cast tf  = parse (noPos,tf)
+  unsafe   = (k_cast `revChk` cast Cast)
+               `orelse`
+             (k_noproto `revChk` cast Noproto)
+               `orelse`
+             (k_unsafe `revChk` cast Unsafe)
+               `orelse`
+             (parse noPos `revChk` cast Safe)
+  cast tf   = parse (noPos,tf)
   calcArity (TypeCons p c ts) | c == t_Arrow  = 1 + calcArity (ts!!1)
   calcArity _                 | otherwise     = 0
 

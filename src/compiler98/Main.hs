@@ -62,6 +62,7 @@ import Overlap(Overlap,Resolution)
 import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS)
 import Rename(rename)
+import FFITrans(ffiTrans)
 import DbgDataTrans(dbgDataTrans)
 import DbgTrans(SRIDTable,debugTrans,dbgAddImport)
 import DbgDumpSRIDTable(dbgDumpSRIDTable)
@@ -126,7 +127,8 @@ main' args = nhcLexParse flags (sRealFile flags)
 {- lex and parse source code -}
 nhcLexParse :: Flags -> String -> IO () 
 
-nhcLexParse flags filename = profile "parse" $ do
+nhcLexParse flags filename =
+  profile "parse" $ do
   mainChar <- catch (readFile filename) (can'tOpen filename) 
   let lexdata = lexical (sUnderscore flags) (sSourceFile flags)
                   (if sUnlit flags 
@@ -232,7 +234,8 @@ nhcRename :: Flags
           -> Overlap 
           -> IO ()   
 
-nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e impdecls inf decls) importState overlap =
+nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e
+          impdecls inf decls) importState overlap =
   profile "rename" $
   case rename flags mrps qualFun expFun inf decls importState overlap of
     Left err -> do
@@ -247,12 +250,41 @@ nhcRename flags modidl qualFun expFun (Module pos (Visible mrps) e impdecls inf 
            pF (sRBound flags) "Symbol table after rename and fixity:"  
               (mixLine (map show (treeMapList (:) (getSymbolTable intState))))
 
-           nhcDerive flags modidl mrps expFun userDefault tidFun 
+           -- **** note, tidFunSafe does not appear to be used anywhere!
+
+           nhcFFItrans flags modidl mrps expFun userDefault tidFun 
              tidFunSafe intState derived impdecls decls {- constrs -}
+
 	 (intState,errors) -> do
      	   pF (True) "Error after rename " (mixLine errors) 
 	   exit
 
+{-
+For foreign imports, transform all functions with IO types to introduce the
+appropriate wrapper.
+-}
+nhcFFItrans :: Flags 
+          -> PackedString 
+          -> a 
+          -> b 
+          -> Maybe [Id]         -- passes: user defaults for Num classes
+          -> ((TokenId,IdKind) -> Id) 
+             -- reads: mapping from id token and kind to internal id
+          -> c 
+          -> IntState           -- updates: internal compiler state
+          -> [(Id,[(Pos,Id)])] 
+             -- instances that have to be derived
+             -- class , position where derived, type constructor
+          -> [ImpDecl TokenId]  -- passes: import declarations of module
+          -> Decls Id           -- updates: declarations of module
+          -> IO ()
+
+nhcFFItrans flags modidl mrps expFun userDefault tidFun tidFunSafe
+            intState derived impdecls decls =
+  case ffiTrans decls tidFun intState of
+      (decls', intState') -> do
+          nhcDerive flags modidl mrps expFun userDefault tidFun tidFunSafe
+                    intState' derived impdecls decls'
 
 {-
 Derive class instances where required by data definitions
@@ -274,7 +306,7 @@ nhcDerive :: Flags
           -> IO ()
 
 nhcDerive flags modidl  mrps  expFun userDefault tidFun tidFunSafe 
-  intState derived impdecls decls {- constrs -} =
+          intState derived impdecls decls {- constrs -} =
   {-profile "derive" $-}
   case (derive tidFun intState derived decls) of
     Left errors -> do
@@ -309,7 +341,8 @@ nhcDbgDataTrans :: Flags           -- reads: compiler flags
                 -> IO ()  
 
 nhcDbgDataTrans flags modidl mrps expFun userDefault tidFun tidFunSafe 
-  intState {- importState derived -} impdecls decls = do
+                intState {- importState derived -} impdecls decls =
+ do
   let (decls'{-, derived'-}, intState', constrs) = 
         dbgDataTrans flags intState (error "repTree") tidFun {-derived-} decls 
   pF (sTraceData flags) "Abstract syntax tree after tracing type transformation"
@@ -343,7 +376,7 @@ nhcExtract :: Flags           -- passes: compiler flags
            -> IO ()
 
 nhcExtract flags modidl mrps expFun userDefault tidFun 
-  tidFunSafe decls constrs impdecls intState = do
+           tidFunSafe decls constrs impdecls intState = do
   nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
     tidFunSafe decls constrs impdecls (extract decls intState)
 
@@ -369,8 +402,8 @@ nhcDbgTrans :: Flags             -- reads: compiler flags
             -> IO () 
 
 nhcDbgTrans flags modidl mrps expFun userDefault tidFun 
-  tidFunSafe decls constrs impdecls state =
-    -- profile "dbgtrans" $
+            tidFunSafe decls constrs impdecls state =
+ -- profile "dbgtrans" $
     case getErrors state of
       (state,[]) -> do
         pF (sEBound flags) "Symbol table after extract:"  
@@ -404,7 +437,7 @@ nhcRemove :: Flags
           -> IO () 
 
 nhcRemove flags modidl  mrps expFun userDefault tidFun tidFunSafe 
-  (decls, state, sridt) =
+          (decls, state, sridt) =
   {-profile "remove" $-} do
   pF (sTraceFns flags) "Tracing Transformation on function definitions"
                        (ppDecls False state decls 0) 
@@ -429,7 +462,7 @@ nhcScc :: Flags
        -> IO ()
 
 nhcScc flags modidl  mrps expFun userDefault tidFun tidFunSafe sridt 
-  (decls,zcon,state) =
+       (decls,zcon,state) =
   {-profile "scc" $-}
   case getErrors state of
     (state,[]) -> do
@@ -463,7 +496,7 @@ nhcType :: Flags
         -> IO ()
 
 nhcType flags zcon modidl  mrps  expFun userDefault tidFun tidFunSafe 
-  intState code sridt decls =
+        intState code sridt decls =
   profile "type" $ do
   pF (sScc flags) "Declarations after scc:" (ppDecls False intState decls 0)
   pF (sScc flags) "Class/instances after scc:" 
@@ -487,9 +520,9 @@ nhcInterface :: Flags
              -> IO ()
 
 nhcInterface flags zcon modidl mrps expFun tidFun tidFunSafe sridt 
-  (code,decls,state) =
+             (code,decls,state) =
   let mod = reverse (unpackPS modidl) in
-  -- profile "interface" $
+--profile "interface" $
   case getErrors state of
     (state,[]) -> do
       pF (sType flags) "Declarations after type deriving:" 
@@ -568,7 +601,7 @@ nhcCase :: Flags
         -> IO ()
 
 nhcCase flags zcon tidFun sridt (decls,state) =
-  -- profile "case" $
+--profile "case" $
   case getErrors state of
     (state,errors) -> do
       pF (not (null errors)) "Warning pattern removal" (mixLine errors) 

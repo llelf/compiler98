@@ -85,11 +85,11 @@ data DeclsDepend id =
      | DeclsRec   [Decl id]
 
 data Decl id =
-       DeclType (Simple id) (Type id)
        -- for type synonym: type   simple  = type
-     | DeclTypeRenamed Pos Id
+       DeclType (Simple id) (Type id)
        -- renamer replaces DeclType by this.
        -- the type is in the symbol table, referenced by Id
+     | DeclTypeRenamed Pos Id
 
        -- {Nothing = newtype, Just False = data, Just True = data unboxed}
        -- context => simple = constrs 
@@ -110,9 +110,9 @@ data Decl id =
      | DeclDefault [Type id]
        -- var primitive arity :: type
      | DeclPrimitive Pos id Int (Type id)
-       -- foreign import [callconv] [extfun] [unsafe|cast] var :: type
-     | DeclForeignImp Pos String id Int Bool (Type id) id 
-       -- ^ lastid=trace wrapper
+       -- foreign import [callconv] [extfun] [unsafe|cast|noproto] var :: type
+       -- (final id parts are wrapper-fn for Trace and IO respectively)
+     | DeclForeignImp Pos String id Int FSpec (Type id) id
        -- foreign export  callconv  [extfun]  var :: type
      | DeclForeignExp Pos String id (Type id)
        -- vars :: context => type
@@ -127,6 +127,9 @@ data Decl id =
      | DeclAnnot (Decl id) [Annot id]
      -- infix[rl] int id,..,id
      | DeclFixity (FixDecl id)
+
+-- for foreign imports
+data FSpec = Cast | Noproto | Unsafe | Safe deriving (Eq,Show)
 
 
 data ClassCode ctx id = -- introduced by RmClasses

@@ -267,13 +267,13 @@ C_HEADER(primAlignPackedLo) {
 /*                      -- Assumes that Packed a is aligned. */
 C_HEADER(primPutPacked) {
   int n, err; unsigned ptr; short offset=0;
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
  
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   UPDATE_PROFINFO(nodeptr)
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
  
   nodeptr = C_GETARG1(3);
   IND_REMOVE(nodeptr);
@@ -291,13 +291,13 @@ C_HEADER(primPutPacked) {
 /* primGetPacked :: Handle -> Packed a */
 C_HEADER(primGetNBytes) {
   unsigned r;
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr, nretVal;
  
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   UPDATE_PROFINFO(nodeptr)
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
  
   err = fread((char*)&r, sizeof(int), 1, a->fp);
 

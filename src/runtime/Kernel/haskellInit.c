@@ -384,7 +384,7 @@ void haskellInit (int argc, char **argv)
     } 
   }
 
-  initCData();
+  initForeignObjs();
   initGc(hpSize,&Hp,spSize,&Sp);
   stableInit();  /*MW*/
 

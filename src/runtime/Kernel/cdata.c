@@ -6,121 +6,138 @@
 #include "cinterface.h"	/* MW 19991213, needed for Haskell finalizers */
 extern void deferGC (StablePtr finalise);	/* prototype (ditto) */
 
-#define MAX_CDATA 1024
+#define MAX_FOREIGNOBJ 1024
 
-static CData cdata[MAX_CDATA];
+static ForeignObj foreign[MAX_FOREIGNOBJ];
 
-CData cdata_stdin;
-CData cdata_stdout;
-CData cdata_stderr;
+static FileDesc fd_stdin;
+static FileDesc fd_stdout;
+static FileDesc fd_stderr;
+ForeignObj fo_stdin;
+ForeignObj fo_stdout;
+ForeignObj fo_stderr;
 
-void initCData(void)
+/* The following are functions *not* visible to the Haskell world. */
+
+void initForeignObjs(void)
 {
   int i;
-  for(i=0; i<MAX_CDATA; i++) {
-    cdata[i].used = 0;
-    cdata[i].arg.gc = NULL;
+  for(i=0; i<MAX_FOREIGNOBJ; i++) {
+    foreign[i].used = 0;
+    foreign[i].cval = NULL;
+    foreign[i].gc   = NULL;
+    foreign[i].gcf  = NULL;
   }
-  cdata_stdin.used = 1; 
-  cdata_stdin.arg.fp = stdin; 
-  cdata_stdin.arg.bm = _IOLBF; 
-  cdata_stdin.arg.size = -1; 
-  cdata_stdin.arg.gc = gcNone;
-  cdata_stdout.used = 1; 
-  cdata_stdout.arg.fp = stdout;
-  cdata_stdout.arg.bm = _IOLBF;
-  cdata_stdout.arg.size = -1;
-  cdata_stdout.arg.gc = gcNone;
-  cdata_stderr.used = 1; 
-  cdata_stderr.arg.fp = stderr;
-  cdata_stderr.arg.bm = _IOLBF;
-  cdata_stderr.arg.size = -1;
-  cdata_stderr.arg.gc = gcNone;
+  fd_stdin.fp = stdin; 
+  fd_stdin.bm = _IOLBF; 
+  fd_stdin.size = -1; 
+    fo_stdin.used = 1; 
+    fo_stdin.cval = (void*)&fd_stdin; 
+    fo_stdin.gcf  = gcNone;
+  fd_stdout.fp = stdout;
+  fd_stdout.bm = _IOLBF;
+  fd_stdout.size = -1;
+    fo_stdout.used = 1; 
+    fo_stdout.cval = (void*)&fd_stdout;
+    fo_stdout.gcf  = gcNone;
+  fd_stderr.size = -1;
+  fd_stderr.fp = stderr;
+  fd_stderr.bm = _IOLBF;
+    fo_stderr.used = 1; 
+    fo_stderr.cval = (void*)&fd_stderr;
+    fo_stderr.gcf  = gcNone;
 }
 
-CData* allocCData(Arg arg)
+ForeignObj* allocForeignObj(void* arg, gcCval finalCV, gcFO finalFO)
 {
   int i;
-  for(i=0; i<MAX_CDATA; i++) {
-    if(!cdata[i].used) {
-      cdata[i].used = 1;
-      cdata[i].arg = arg;
-      return &cdata[i];
+  for(i=0; i<MAX_FOREIGNOBJ; i++) {
+    if(!foreign[i].used) {
+      foreign[i].used = 1;
+      foreign[i].cval = arg;
+      foreign[i].gc   = finalCV;
+      foreign[i].gcf  = finalFO;
+      /*printf("allocForeignObj: allocated %d (gcCval %x, gcFO %x)\n",i,finalCV,finalFO);*/
+      return &foreign[i];
     }
   }
   fprintf(stderr,"Warning: allocation limit exceeded for ForeignObj\n");
   return 0;
 }
 
-void freeCData(CData *cd)
+void freeForeignObj(ForeignObj *cd)
 {
-  cd->arg.gc(cd);
+  /*printf("freeForeignObj: releasing %d\n",((int)cd-(int)foreign)/sizeof(ForeignObj));*/
+  cd->gcf(cd);
   cd->used = 0;
+  cd->gcf  = NULL;
 }
 
-Arg *cdataArg(CData *cd)
+void *derefForeignObj(ForeignObj *cd)
 {
-  return &cd->arg;
+  return cd->cval;
 }
 
-void clearCData(void)
+void clearForeignObjs(void)
 {
   int i;
-  for(i=0; i<MAX_CDATA; i++)
-    cdata[i].used = 0;
+  for(i=0; i<MAX_FOREIGNOBJ; i++)
+    foreign[i].used = 0;
 }
 
-void markCData(CData *cd)
+void markForeignObj(ForeignObj *cd)
 {
   cd->used++;
 }
 
-void gcCData(void)
+void gcForeignObjs(void)
 {
   int i;
-  for(i=0; i<MAX_CDATA; i++)
-    if(cdata[i].used == 0 && cdata[i].arg.gc) {
-      cdata[i].arg.gc(&cdata[i]);  /* Call first-stage garbage collector */
-      cdata[i].arg.gc = NULL;
+  for(i=0; i<MAX_FOREIGNOBJ; i++)
+    /*if(foreign[i].used == 0) {
+        printf("gcForeignObjs: could reclaim %d (gcFO %x)\n",i,foreign[i].gcf);
+      } */
+    if(foreign[i].used == 0 && foreign[i].gcf) {
+    /*printf("gcForeignObjs: reclaiming %d\n",i);*/
+      foreign[i].gcf(&foreign[i]);  /* Call first-stage garbage collector */
+      foreign[i].gcf  = NULL;
     } 
 }
 
-void gcFile(CData *cd)		/* This is a possible first-stage GC */
+void gcNow(ForeignObj *cd)	/* This is a possible first-stage GC */
 {
-  Arg *a = cdataArg(cd);
-  fclose(a->fp);
+  if (cd->gc)
+    cd->gc(cd->cval);		/* Call the second-stage garbage collector */
+  cd->cval = NULL;		/* and ensure we don't keep dead values */
+  cd->gc   = NULL;
+}
+void gcLater(ForeignObj *cd)	/* This is another possible first-stage GC */
+{
+  if (cd->gc)
+    deferGC(cd->gc);		/* Call the second-stage garbage collector */
+  cd->cval = NULL;		/* and ensure we don't keep dead values */
+  cd->gc  = NULL;
+}
+void gcNone(ForeignObj *cd)	/* This is another possible first-stage GC */
+{
+  cd->cval = NULL;		/* Just ensure we don't keep dead values */
+  cd->gc   = NULL;
 }
 
-void gcSocket(CData *cd)	/* This is another possible first-stage GC */
+void gcFile(void *c)	/* This is a possible second-stage GC */
 {
-  Arg *a = cdataArg(cd);
+  FileDesc *a = (FileDesc*)c;
+#ifdef PROFILE
+  if(!replay)
+#endif
+    fclose(a->fp);
+  /* free(a); */
+}
+void gcSocket(void *c)	/* This is another possible second-stage GC */
+{
+  FileDesc *a = (FileDesc*)c;
   close(a->fdesc);
-}
-
-void gcCVal(CData *cd)		/* This is another possible first-stage GC */
-{				/* (added by MW) */
-  Arg *a = cdataArg(cd);
-  if (a->gcc)
-    a->gcc(a->cval);		/* Call the second-stage garbage collector */
-  a->cval = NULL;		/* and ensure we don't keep dead values */
-  a->gcc  = NULL;
-}
-
-void gcHVal(CData *cd)		/* This is another possible first-stage GC */
-{				/* (added by MW) */
-  Arg *a = cdataArg(cd);
-  if (a->gcc)
-    deferGC(a->gcc);		/* Call the second-stage garbage collector */
-  a->cval = NULL;		/* and ensure we don't keep dead values */
-  a->gcc  = NULL;
-}
-
-
-void gcNone(CData *cd)		/* This is another possible first-stage GC */
-{				/* Altered by MW */
-  Arg *a = cdataArg(cd);
-  a->cval = NULL;		/* Just ensure we don't keep dead values */
-  a->gcc  = NULL;
+  /* free(a); */
 }
 
 
@@ -128,15 +145,8 @@ void gcNone(CData *cd)		/* This is another possible first-stage GC */
 /* ForeignObj/Addr stuff */
 /* ********************* */
 
-CData *buildForeignObj (void *addr, NodePtr finalise)
-{
-  Arg a;
-  a.cval = (void*)addr;
-  a.gc   = &gcHVal;
-  a.gcc  = (gccval)mkStablePtr(finalise);
-  return allocCData(a);
-}
 
+/* The following function *is* visible to the Haskell world. */
 /* makeForeignObj primitive 2 :: Addr -> () -> IO ForeignObj */
 /* -- Note, we assume that the finaliser already has `unsafePerformIO' */
 /*    wrapped around it, so its type is really (). */
@@ -144,7 +154,7 @@ C_HEADER(primForeignObj)
 {
   NodePtr nodeptr, finalise;
   void *addr;
-  CData *fo;
+  ForeignObj *fo;
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   addr = (void*)GET_INT_VALUE(nodeptr);
@@ -152,17 +162,17 @@ C_HEADER(primForeignObj)
   IND_REMOVE(nodeptr);
   finalise = nodeptr;
 
-  fo = buildForeignObj(addr,finalise);
+  fo = allocForeignObj(addr, (gcCval)mkStablePtr(finalise), gcLater);
   nodeptr = (NodePtr)mkRight(mkCInt((Int)fo));
   C_RETURN(nodeptr);
 }
 
-static StablePtr pending[MAX_CDATA];	/* queue for pending finalisers */
+static StablePtr pending[MAX_FOREIGNOBJ];  /* queue for pending finalisers */
 static int       pendingIdx=0;
 
 void deferGC (StablePtr finalise)
 {
-  if (++pendingIdx >= MAX_CDATA) {
+  if (++pendingIdx >= MAX_FOREIGNOBJ) {
     fprintf(stderr,"Warning: mismatch in limits for ForeignObjs and finalisers.\n");
     exit(1);
   }
@@ -187,55 +197,3 @@ void runDeferredGCs (void)
   pendingIdx = 0;		/* finally, reset the queue */
 }
 
-
-#if 0
-/* *********************************************** */
-/* ForeignObj stuff that was removed from FFI spec */
-/* *********************************************** */
-void  noGC      (void *ptr)  { return; }
-long  addrToInt (void *addr) { return (long)addr; }
-void *intToAddr (long i)     { return (void*)i; }
-void *hs_coerce (void *v)    { return v; }
-
-/* foreign import makeForeignObj           :: Addr -> Addr -> IO ForeignObj */
-CData *makeForeignObj (void *addr, void *finalise)
-{
-  Arg a;
-  a.cval = (void*)addr;
-  a.gc   = &gcCVal;
-  a.gcc  = (gccval)finalise;
-  return allocCData(a);
-}
-
-/* foreign import addrToForeignObj         :: Addr ->         IO ForeignObj */
-CData *addrToForeignObj (void *addr)
-{
-  Arg a;
-  a.cval = (void*)addr;
-  a.gc   = &gcNone;
-  return allocCData(a);
-}
-
-/* foreign import addForeignFinalizer      :: ForeignObj -> Addr -> IO () */
-void addForeignFinalizer (CData *cd, void *finalise)
-{
-  Arg *a = cdataArg(cd);
-  a->gc  = &gcCVal;
-  a->gcc = (gccval)finalise;
-}
-
-/* foreign import foreignObjToAddr         :: ForeignObj   -> IO Addr */
-void *foreignObjToAddr (CData *cd)
-{
-  Arg *a = cdataArg(cd);
-  return a->cval;
-}
-
-/* foreign import writeForeignAddr          :: ForeignObj -> Addr -> IO () */
-void writeForeignAddr (CData *cd, void *addr)
-{
-  Arg *a = cdataArg(cd);
-  a->cval = addr;
-}
-
-#endif

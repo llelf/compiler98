@@ -9,7 +9,7 @@
 
 C_HEADER(cHSeek)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   int err;
   int sm;
@@ -19,7 +19,7 @@ C_HEADER(cHSeek)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   nodeptr = C_GETARG1(2);
   IND_REMOVE(nodeptr);

@@ -91,13 +91,13 @@ C_HEADER(primGetBAFree) {
 /* primGetUnboxedArray :: Handle -> Int -> Int -> UnboxedArray */
 C_HEADER(primGetUnboxedArray) {
   NodePtr nodeptr;
-  Arg *h; int size; int wptr;
+  FileDesc *h; int size; int wptr;
   unboxedarray *ba;
 
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
   UPDATE_PROFINFO(nodeptr)
-  h = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  h = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   nodeptr = C_GETARG1(2);
   IND_REMOVE(nodeptr);

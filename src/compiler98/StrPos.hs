@@ -13,7 +13,7 @@ strPLambda p o (PosLambda pos fvs bvs e) =
 strPLambda p o (PosPrimitive pos fun) =
     "primitive " ++ p fun ++ "\n"
 strPLambda p o (PosForeign pos fun str c ie) =
-    "foreign "++show ie++" \"" ++ str ++ "\" " ++ (if c then "cast " else "")
+    "foreign "++show ie++" \"" ++ str ++ "\" " ++ show c ++ " "
     ++ p fun ++ "\n"
 
 strPBinding p o (i,l) = o ++ p i ++ " = " ++ strPLambda p o l ++ "\n"

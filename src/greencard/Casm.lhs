@@ -99,7 +99,7 @@ baseTyToCall PackedString = "getPackedString(nodeptr)"
 baseTyToCall Word         = "GET_INT_VALUE(nodeptr)"
 baseTyToCall Addr         = "getVoidStar(nodeptr)"
 baseTyToCall StablePtr    = "stableInsert(getStablePtr(nodeptr))"
-baseTyToCall (Foreign _)  = "((cdataArg((CData*)GET_INT_VALUE(nodeptr)))->cval)"
+baseTyToCall (Foreign _)  = "(derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr)))"
 
 baseTyToRtn :: BaseTy -> String -> String
 baseTyToRtn Int          v = "mkInt("++v++")"
@@ -111,7 +111,7 @@ baseTyToRtn PackedString v = "mkString("++v++")"
 baseTyToRtn Word         v = "mkInt("++v++")"
 baseTyToRtn Addr         v = "mkAddr("++v++")"
 baseTyToRtn StablePtr    v = "mkStablePtr(stableRef("++v++"))"
-baseTyToRtn (Foreign f)  v = "mkForeign((void*)"++v++",(gccval)"++f++")"
+baseTyToRtn (Foreign f)  v = "mkForeign((void*)"++v++",(gcCval)"++f++")"
 
 \end{code}
 

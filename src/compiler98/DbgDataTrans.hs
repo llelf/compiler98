@@ -248,24 +248,20 @@ dDecl d@(DeclForeignImp pos cname id ar cast ty1 _) =
     addSR ty4 >>>= \ty5 ->
     unitS [ DeclForeignImp pos cname id' ar cast ty1 id
           , DeclVarsType [(pos,id)] [] ty5]
---  unitS [d]
 dDecl d@(DeclForeignExp _ _ _ _) = unitS [d]
 dDecl x = error "Hmmm. No match in dbgDataTrans.dDecl"
 
 
 dFunClause :: Fun Id -> DbgDataTransMonad (Fun Id)
-
 dFunClause (Fun ps gdses decls) = 
     unitS (Fun ps) =>>> mapS dGdEs gdses =>>> dDecls decls
 
 
 dGdEs :: (Exp Id,Exp Id) -> DbgDataTransMonad (Exp Id,Exp Id)
-
 dGdEs (gd, e) = unitS pair =>>> dExp gd =>>> dExp e
 
 
 dExps :: [Exp Id] -> DbgDataTransMonad [Exp Id]
-
 dExps es = mapS dExp es
 
 
@@ -593,7 +589,6 @@ isHigherOrder cvar (NewType free exist ctxs ts) =
 Determine Id for identifier given by kind and token
 -}
 lookupId :: IdKind -> TokenId -> DbgDataTransMonad (Id)
-
 lookupId kind ident = 
   \(Inherited lookupPrel _ _ _ _) s -> (lookupPrel (ident, kind), s)
 
@@ -602,7 +597,6 @@ lookupId kind ident =
 Return info for given identifier
 -}
 lookupName :: a {-Pos-} -> Id -> DbgDataTransMonad (Maybe Info)
-
 lookupName pos ident = 
   \inh s@(Threaded state _) -> (lookupIS state ident, s)
 
@@ -610,7 +604,6 @@ lookupName pos ident =
 Return name for given identifier
 -}
 lookupNameStr :: Id -> DbgDataTransMonad String
-
 lookupNameStr ident  = 
   \inh s@(Threaded state _) -> (strIS state ident, s)
 
@@ -618,7 +611,6 @@ lookupNameStr ident  =
 -- Used for debugging
 
 showTheType :: (Show a, StrId a) => Type a -> DbgDataTransMonad String
-
 showTheType t     = 
   \inh s@(Threaded state _) -> (strType False state t, s)
 showContext ctxs  = 
@@ -638,7 +630,6 @@ showNT (NewType free exist ctxs nts)  =
 
 
 getArity :: Id -> DbgDataTransMonad Id
-
 getArity id = \(Inherited _ alist _ _ _) s -> (assocDef alist (-1) id, s)
 --  (assocDef alist (error ("Internal error: Can't find arity for id #" 
 --                          ++ show id)) id, s)
@@ -768,34 +759,31 @@ nubEq p [] = []
 nubEq p (x:xs) = x : nubEq p (filter ((p x /=) . p) xs)
 -}
 
--- Malcolm's additions:
-{-
-Create a new primitive identifier with given Info, changing just the
-location in the table (i.e. the lookup key).
--}
-addNewPrim :: Info -> DbgDataTransMonad Id
 
+-- Malcolm's additions:
+--
+-- Create a new primitive identifier with given Info, changing just the
+-- location in the table (i.e. the lookup key).
+
+addNewPrim :: Info -> DbgDataTransMonad Id
 addNewPrim (InfoVar _ (Qualified m nm) fix ie nt ar) = 
   \_ (Threaded istate idt) ->
     case uniqueIS istate of
       (i, istate') -> 
-        let newNm = Qualified m (packString ('\'':unpackPS nm))
-            info' = InfoVar i newNm fix IEnone NoType ar
+        let newNm = Qualified m (packString ('@':unpackPS nm))
+            info' = InfoVar i newNm fix IEnone nt ar
             istate'' = addIS i info' istate'
         in (i, Threaded istate'' idt)
 
 
-{-
-Overwrite the original primitive identifier with new Info, reflecting
-the change in type and arity.
--}
-overwritePrim :: Int -> a -> Threaded -> Threaded
+-- Overwrite the original primitive identifier with new Info, reflecting
+-- the change in type and arity.
 
+overwritePrim :: Int -> a -> Threaded -> Threaded
 overwritePrim i = 
   \_ (Threaded istate idt) ->
       let updI (InfoVar i nm fix ie _ _) = InfoVar i nm fix ie NoType (Just 2)
       in Threaded (updateIS istate i updI) idt
-
 
 
 {- End Module DbgDataTrans -------------------------------------------------}

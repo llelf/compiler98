@@ -1,15 +1,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
-
 #include "haskell2c.h"
 
 /* cHFlush 1 :: Handle -> (Either IOError ()) */
 
 C_HEADER(cHFlush)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   int err;
   
@@ -17,7 +15,7 @@ C_HEADER(cHFlush)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
 #ifdef PROFILE
   if(replay) {

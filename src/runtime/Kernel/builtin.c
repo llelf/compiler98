@@ -91,7 +91,7 @@ DL(CF_Prelude_46stdout)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdout), 0, 0, 0
 #endif
-  DW L(cdata_stdout)
+  DW L(fo_stdout)
 
   AL
   EX L(CF_Prelude_46stdin)
@@ -100,7 +100,7 @@ DL(CF_Prelude_46stdin)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdin), 0, 0, 0
 #endif
-  DW L(cdata_stdin)
+  DW L(fo_stdin)
 
   AL
   EX L(CF_Prelude_46stderr)
@@ -109,7 +109,7 @@ DL(CF_Prelude_46stderr)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stderr), 0, 0, 0
 #endif
-  DW L(cdata_stderr)
+  DW L(fo_stderr)
 #endif /* DBGTRANS */
 
 #ifdef DBGTRANS
@@ -151,14 +151,14 @@ DL(CF_Prelude_46_95stdin)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdin), 0, 0, 0
 #endif
-  DW L(cdata_stdin_node), L(stdin_t)
+  DW L(fo_stdin_node), L(stdin_t)
 
-DL(cdata_stdin_node)
+DL(fo_stdin_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdin), 0, 0, 0
 #endif
-  DW L(cdata_stdin)
+  DW L(fo_stdin)
 
 DL(stdin_t)
   DW CONSTR(TagNm,3,0)
@@ -180,14 +180,14 @@ DL(CF_Prelude_46_95stdout)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdout), 0, 0, 0
 #endif
-  DW L(cdata_stdout_node), L(stdout_t)
+  DW L(fo_stdout_node), L(stdout_t)
 
-DL(cdata_stdout_node)
+DL(fo_stdout_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stdout), 0, 0, 0
 #endif
-  DW L(cdata_stdout)
+  DW L(fo_stdout)
 
 DL(stdout_t)
   DW CONSTR(TagNm,3,0)
@@ -209,14 +209,14 @@ DL(CF_Prelude_46_95stderr)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stderr), 0, 0, 0
 #endif
-  DW L(cdata_stderr_node), L(stderr_t)
+  DW L(fo_stderr_node), L(stderr_t)
 
-DL(cdata_stderr_node)
+DL(fo_stderr_node)
   DW CONSTRW(1,0)
 #ifdef PROFILE
   DW L(PROF_Prelude_46stderr), 0, 0, 0
 #endif
-  DW L(cdata_stderr)
+  DW L(fo_stderr)
 
 DL(stderr_t)
   DW CONSTR(TagNm,3,0)

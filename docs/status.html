@@ -236,6 +236,38 @@ list to post to it).
 </center>
 
 
+<hr>
+<h3>nhc98 release 1.01 (2000-10-xx) features</h3>
+<ul>
+<li> Improvement: Fixed a space-leak in the compiler.  Compilation now
+              requires approximately half the previous maximum heap,
+              and as a result, compile time is 5-10% faster.
+<li> Update:  'hi' now uses GNU's readline library if available.
+<li> Bugfix:  Auto-configuration of hmake.  It occasionally failed to find
+              an already-installed version of nhc98.  Also, on Solaris
+              (and other System V based OSes), auto-detection of
+              hbc and/or ghc sometimes failed due to incompatibility
+              of the 'which' command.  Finally, the 'hmake' script
+              itself failed on Cygwin due to the 'which' command
+              being missing altogether.
+<li> Bugfix:  'atan2' in class RealFloat - reverted to a default
+              declaration that does not use 'isNegativeZero', because
+              we don't implement the latter.
+<li> Bugfix:  Foreign functions declared of IO return type (especially
+              zero-arity CAFs) using the primitive FFI could suffer from
+              unexpected sharing of results.
+<li> Bugfix:  Failure to build BinArray library on FreeBSD (htonl/ntohl errors).
+<li> Bugfix:  Incorrect definitions of inRange and rangeSize in Ix library.
+</ul>
+The following updates and bugfixes are specifically for <em>Hat</em>,
+the redex-trail-based tracing and debugging system.
+<ul>
+<li> Update:  Foreign imports (via the new common primitive FFI) with an
+              I/O result type are now also traced (previously only pure
+              foreign functions were traced).
+<li> Bugfix:  The 'rtb' script failed because of missing shell quotes.
+</ul>
+
 
 <hr>
 <h3>full nhc98 release 1.00 (2000-09-15) features</h3>
@@ -293,7 +325,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/nhc98/</tt></a>
 
 <p>
-This page last modified: 2000.10.02<br>
+This page last modified: 2000.10.16<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 

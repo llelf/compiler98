@@ -53,10 +53,11 @@ instance NmCoerce Double where
 instance NmCoerce Bool where
     toNm t False sr = R False (Nm t (NTConstr 0) sr)
     toNm t True  sr = R True  (Nm t (NTConstr 1) sr)
-instance NmCoerce a => NmCoerce (IO a) where
-    toNm t (IOPrim (R v _)) sr =
-                      R (IO (R (\t0 rw-> R (Right (toNm t v sr)) t) t))
-                        (Nm t (NTConstr 0) sr)
+
+--instance NmCoerce a => NmCoerce (IO a) where
+--    toNm t (IOPrim (R v _)) sr =
+--                      R (IO (R (\t0 rw-> R (Right (toNm t v sr)) t) t))
+--                        (Nm t (NTConstr 0) sr)
 
 {-
 -- toNm required to coerce return value from a primitive into a Trace structure

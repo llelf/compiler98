@@ -99,7 +99,7 @@ ppDecl d p (DeclDefault ts) =
 ppDecl d p dec@(DeclPrimitive pos ident arity t) =
   pp ( (pStd p) ident ++ "primitive " ++ show arity ++ " :: " ++ strType d p t)
 ppDecl d p dec@(DeclForeignImp pos str ident arity cast t _) =
-  pp ("foreign import \"" ++ str ++ "\" " ++ (if cast then "cast " else "")
+  pp ("foreign import \"" ++ str ++ "\" " ++ show cast ++ " "
     ++ (pStd p) ident ++ " :: " ++ strType d p t)
 ppDecl d p dec@(DeclForeignExp pos str ident t) =
   pp ("foreign export " ++ (pStd p) ident ++ " :: " ++ strType d p t)

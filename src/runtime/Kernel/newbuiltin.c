@@ -17,9 +17,9 @@ extern unsigned CT_primLeave[];
 extern unsigned ST_primLeave[];
 extern unsigned CT_unpackCString[];
 extern unsigned ST_Builtin_46primUnpackCString[];
-extern unsigned cdata_stdout[];
-extern unsigned cdata_stdin[];
-extern unsigned cdata_stderr[];
+extern unsigned fo_stdout[];
+extern unsigned fo_stdin[];
+extern unsigned fo_stderr[];
 
 #ifdef PROFILE
 extern unsigned PP_Prelude_46primLeave[];
@@ -46,15 +46,15 @@ extern unsigned PC_Prelude_46stderr[];
 #endif
 
 #ifdef DBGTRANS
-extern unsigned cdata_stdin_node[];
+extern unsigned fo_stdin_node[];
 extern unsigned stdin_t[];
 extern unsigned stdin_nm[];
 extern unsigned stdin_s[];
 extern unsigned root_t[];
 extern unsigned sr_t[];
 extern unsigned prelude_s[];
-extern unsigned cdata_stdout_node[];
-extern unsigned cdata_stderr_node[];
+extern unsigned fo_stdout_node[];
+extern unsigned fo_stderr_node[];
 extern unsigned stdout_t[];
 extern unsigned stdout_nm[];
 extern unsigned stdout_s[];
@@ -161,7 +161,7 @@ unsigned CF_Prelude_46stdout[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stdout)
+, useLabel(fo_stdout)
 
 };
 unsigned CF_Prelude_46stdin[] = {
@@ -172,7 +172,7 @@ unsigned CF_Prelude_46stdin[] = {
 , 0
 , 0
 #endif
-,  useLabel(cdata_stdin)
+,  useLabel(fo_stdin)
 
 };
 unsigned CF_Prelude_46stderr[] = {
@@ -183,7 +183,7 @@ unsigned CF_Prelude_46stderr[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stderr)
+, useLabel(fo_stderr)
 #endif /* !DBGTRANS */
 
 #ifdef DBGTRANS
@@ -227,11 +227,11 @@ unsigned CF_Prelude_46_95stdin[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stdin_node)
+, useLabel(fo_stdin_node)
 , useLabel(stdin_t)
 
 };
-unsigned cdata_stdin_node[] = {
+unsigned fo_stdin_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
 , useLabel(PROF_Prelude_46stdin)
@@ -239,7 +239,7 @@ unsigned cdata_stdin_node[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stdin)
+, useLabel(fo_stdin)
 
 };
 unsigned stdin_t[] = {
@@ -276,11 +276,11 @@ unsigned CF_Prelude_46_95stdout[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stdout_node)
+, useLabel(fo_stdout_node)
 , useLabel(stdout_t)
 
 };
-unsigned cdata_stdout_node[] = {
+unsigned fo_stdout_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
 , useLabel(PROF_Prelude_46stdout)
@@ -288,7 +288,7 @@ unsigned cdata_stdout_node[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stdout)
+, useLabel(fo_stdout)
 
 };
 unsigned stdout_t[] = {
@@ -325,11 +325,11 @@ unsigned CF_Prelude_46_95stderr[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stderr_node)
+, useLabel(fo_stderr_node)
 , useLabel(stderr_t)
 
 };
-unsigned cdata_stderr_node[] = {
+unsigned fo_stderr_node[] = {
   CONSTRW(1,0)
 #ifdef PROFILE
 , useLabel(PROF_Prelude_46stderr)
@@ -337,7 +337,7 @@ unsigned cdata_stderr_node[] = {
 , 0
 , 0
 #endif
-, useLabel(cdata_stderr)
+, useLabel(fo_stderr)
 
 };
 unsigned stderr_t[] = {

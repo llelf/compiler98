@@ -1,15 +1,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
-
 #include "haskell2c.h"
 
 /* cHGetBuffering primitive 1 :: Handle -> Either IOError BufferMode */
 
 C_HEADER(cHGetBuffering)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   int bm,err;
    
@@ -17,7 +15,7 @@ C_HEADER(cHGetBuffering)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   switch(a->bm) {
   case _IONBF: nodeptr = mkRight(mkNoBuffering()); break;

@@ -6,7 +6,8 @@ for these identifiers.
 -}
 module TokenInt(getInts,tokenMain,tokenAllways,tokenBounded,tokenEnum
                ,tokenEq,tokenIx,tokenOrd,tokenRead,tokenShow,tokenBinary
-               ,tokenMonad,tokenInteger,tokenRational,tokenNplusK) where
+               ,tokenMonad,tokenInteger,tokenRational,tokenNplusK,tokenFFI
+               ) where
 
 import IdKind
 import TokenId
@@ -39,7 +40,7 @@ getInts tidk2i =
 		++ tokenMonad ++ tokenBounded ++ tokenEnum
 		++ tokenEq ++ tokenEval ++ tokenIx
 		++ tokenOrd ++ tokenRead ++ tokenShow ++ tokenDbg
-                ++ tokenBinary ++ tokenNplusK)		--MALCOLM modified
+                ++ tokenBinary ++ tokenNplusK ++ tokenFFI)  --MALCOLM modified
 
    fix :: (IdKind,TokenId) 
        -> Tree ((TokenId,IdKind),Id) 
@@ -58,7 +59,7 @@ getInts tidk2i =
 
 tokenMain,tokenAllways,tokenBounded,tokenEnum,tokenEq,tokenIx,tokenOrd
   ,tokenRead,tokenShow,tokenBinary,tokenMonad,tokenInteger,tokenRational
-  ,tokenNplusK :: [(IdKind,TokenId)]
+  ,tokenNplusK,tokenFFI :: [(IdKind,TokenId)]
 
 tokenMain =     [(TCon,tIO),(TCon,t_Tuple 0)]
 tokenList =	[(TClass,tNum),(Var,tnegate)]
@@ -109,5 +110,7 @@ tokenBinary    = [(TClass,tBinary)
                 ,(Var,t_gtgt),(Var,t_gtgteq),(Var,t_return)
                 ,(Var,t_ltlt),(Var,t_plus)]
 tokenNplusK = 	[(Var,t_lessequal),(Var,t_subtract)]
+tokenFFI =      map (\n->(Var,t_mkIOok n)) [0..12] ++
+                map (\n->(Var,t_mkIOwf n)) [0..12]
 
 {- End TokenInt -------------------------------------------------------------}

@@ -66,16 +66,18 @@ map_sDecl (DeclData _ _ _ _ _: r) = map_sDecl r
 map_sDecl (DeclPat (Alt pat gdexps decls): r) =
         let (decls',use) = sDecls decls
             (gdexps',useGdexps) = sGdExps gdexps
-        in (DeclPat (Alt pat gdexps' decls'),(defPat pat,use `unionSet` useGdexps)): map_sDecl r
+        in (DeclPat (Alt pat gdexps' decls')
+           ,(defPat pat,use `unionSet` useGdexps)): map_sDecl r
 map_sDecl (DeclFun pos fun funs: r) =
         let (ds,use) = unzip (map_sFun funs)
-        in (DeclFun pos fun ds,([fun],foldr unionSet emptySet use)): map_sDecl r
-map_sDecl (DeclPrimitive pos fun arity typ : r) =
-        (DeclPrimitive pos fun arity typ ,([fun],emptySet)): map_sDecl r
-map_sDecl (DeclForeignImp pos str fun arity cast typ x: r) =
-        (DeclForeignImp pos str fun arity cast typ x, ([fun],emptySet)): map_sDecl r
-map_sDecl (DeclForeignExp pos str fun typ : r) =
-        (DeclForeignExp pos str fun typ ,([fun],emptySet)): map_sDecl r
+        in (DeclFun pos fun ds
+           ,([fun],foldr unionSet emptySet use)): map_sDecl r
+map_sDecl (d@(DeclPrimitive pos fun arity typ): r) =
+        (d, ([fun],emptySet)): map_sDecl r
+map_sDecl (d@(DeclForeignImp pos str fun arity cast typ x): r) =
+        (d, ([fun],emptySet)): map_sDecl r
+map_sDecl (d@(DeclForeignExp pos str fun typ): r) =
+        (d, ([fun],emptySet)): map_sDecl r
 
 map_sDecl (DeclType simpleid typeid: _) = error "map_sDecl: DeclType"
 map_sDecl (DeclTypeRenamed pos id : r) = map_sDecl r

@@ -1,15 +1,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
-
 #include <errno.h>
-
 #include "haskell2c.h"
 
 /* cHGetPosn primitive 1 :: Handle -> HandlePosn -> Either IOError () */
 
 C_HEADER(cHSetPosn)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   int err;
   int posn;
@@ -19,7 +17,7 @@ C_HEADER(cHSetPosn)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
   nodeptr = C_GETARG1(2);
   IND_REMOVE(nodeptr);

@@ -3,6 +3,7 @@ module PosCode(module Prim, module PosCode, Pos(..)) where
 import Extra(Pos(..),noPos)
 import Prim
 import Foreign (ImpExp)
+import Syntax (FSpec)
 import SyntaxPos
 	 
 type PosCode = [PosBinding]
@@ -12,7 +13,7 @@ type PosBinding     = (Int, PosLambda)
 data PosLambda
    = PosLambda Pos [(Pos,Int)] [(Pos,Int)] PosExp
    | PosPrimitive Pos Int
-   | PosForeign Pos Int String Bool ImpExp
+   | PosForeign Pos Int String FSpec ImpExp
 
 posExpApp pos [a] = a
 posExpApp pos as  = PosExpApp pos as

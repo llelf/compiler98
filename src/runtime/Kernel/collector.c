@@ -93,6 +93,7 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 
 void finishGc(NodePtr hp,int verbose)
 {
+  /* runDeferredGCs(); 	-- process pending finalisers now we have heap space */
   if(verbose) {
     fprintf(stderr,"\n\nUsed  %ld words of heap.\n",hp-hpBase+hpTotal);
     fprintf(stderr,"Moved %ld words of heap in %d gcs.\n",hpMoved,nogc);
@@ -545,7 +546,7 @@ again:
 
   hpTotal += hp - hpBase;
 
-  clearCData();
+  clearForeignObjs();
 
   if(bellGc>3) { fprintf(stderr," markClear"); fflush(stderr); }
 
@@ -656,7 +657,7 @@ WHEN_DYNAMIC(if(pactive && ((profile|filter) & PROFILE_RETAINER)) remarkRest();)
     fflush(stdout);
     fprintf(stderr,"<GC %3d:%8d>\n",nogc,hp-&hpLowLimit[GCEXTRA]);
   }
-  gcCData();
+  gcForeignObjs();
 
 
   if(size) timerStop(&gcTime);

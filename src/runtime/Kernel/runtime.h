@@ -308,45 +308,46 @@ extern NodePtr callGc(Int size,NodePtr hp, NodePtr *sp, NodePtr *fp);
 extern void do_comment(char *);
 #endif
 
-/* cdata */ 
 
-struct CDATA;
+/* ForeignObjs */ 
 
-typedef void (*gcfun)(struct CDATA *);
-typedef void (*gccval)(void *);
+struct FOREIGNOBJ;
+
+typedef void (*gcFO)(struct FOREIGNOBJ *);
+typedef void (*gcCval)(void *);
 
 typedef struct {
   int bm,size;
   FILE *fp;
   int fdesc;
-  gcfun gc;
-  void *cval;	/* added by MW */
-  gccval gcc;	/* added by MW */
-} Arg;
+} FileDesc;
 
-typedef struct CDATA {
-  int   used;
-  Arg   arg;
-} CData;
+typedef struct FOREIGNOBJ {
+  int    used;
+  void*  cval;
+  gcCval gc;	/* Second-stage garbage collector */
+  gcFO   gcf;	/* First-stage garbage collector */
+} ForeignObj;
 
 
-void initCData(void);
-CData *allocCData(Arg a);
-void freeCData(CData *cd);
-Arg *cdataArg(CData *cd);
-void clearCData(void);
-void markCData(CData *cd);
-void gcCData(void);
+void initForeignObjs(void);
+ForeignObj *allocForeignObj(void*a,gcCval gc,gcFO gcf);
+void freeForeignObj(ForeignObj *cd);
+void *derefForeignObj(ForeignObj *cd);
+void clearForeignObjs(void);
+void markForeignObj(ForeignObj *cd);
+void gcForeignObjs(void);
 
-void gcFile(CData *cd);
-void gcSocket(CData *cd);
-void gcCVal(CData *cd);		/* added by MW */
-void gcNone(CData *cd);
-void noGC(void *x);		/* MW */
+void gcNow(ForeignObj *cd);
+void gcLater(ForeignObj *cd);
+void gcNone(ForeignObj *cd);
 
-extern CData cdata_stdin;
-extern CData cdata_stdout;
-extern CData cdata_stderr;
+void gcFile(void *a);
+void gcSocket(void *a);
+
+extern ForeignObj fo_stdin;
+extern ForeignObj fo_stdout;
+extern ForeignObj fo_stderr;
 
 typedef void (*markfun)();
 typedef void (*flipfun)();

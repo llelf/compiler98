@@ -321,16 +321,17 @@ t_ltlt          = qualImpBin  "<<"
 t_return        = qualImpRev  "return"
 t_plus          = qualImpRev  "+"
 
-{- n plus k patterns -}
+{- (N+K) patterns -}
 t_nplusk        = visImpRev   "+"
 t_subtract      = qualImpRev  "subtract"
 
-{- ffi -}
+{- FFI -}
 t_foreign	= visImpRev   "foreign"
 t_export	= visImpRev   "export"
 t_ccall		= visImpRev   "ccall"
 t_stdcall	= visImpRev   "stdcall"
 t_unsafe	= visImpRev   "unsafe"
+t_noproto	= visImpRev   "noproto"
 t_cast		= visImpRev   "cast"
 tForeign	= qualImpFFI  "ForeignObj"
 tAddr		= qualImpFFI  "Addr"
@@ -345,5 +346,9 @@ tWord16		= qualImpFFI  "Word16"
 tWord32		= qualImpFFI  "Word32"
 tWord64		= qualImpFFI  "Word64"
 tPackedString	= qualImpPS   "PackedString"
+
+{- more FFI -}
+t_mkIOok n      = visImpRev   ("_mkIOok"++show (n::Int))
+t_mkIOwf n      = visImpRev   ("_mkIOwf"++show (n::Int))
 
 {- End TokenId -------------------------------------------------------------}

@@ -63,12 +63,12 @@
 
 /* Must be same as in node.h and nhccomp/Lift.hs */
  
-#define CONSTR(c,s,ws)  ( ((s)<<24) | (((s)-(ws))<<16) | ((c)<<4) | CON_DATA | CON_TAG)
+#define CONSTR(c,s,ws)   ( ((s)<<24) | (((s)-(ws))<<16) | ((c)<<4) | CON_DATA | CON_TAG)
 #define CONSTRR(c,s,ws)  ( ((s)<<24) | (((s)-(ws))<<16) | MASK_R | ((c)<<4) | CON_DATA | CON_TAG)
 #define CONSTRT(c,s,ws)  ( ((s)<<24) | (((s)-(ws))<<16) | MASK_TRACE | ((c)<<4) | CON_DATA | CON_TAG)
 #define CONSTRC(c,s,ws)  ( ((s)<<24) | (((s)-(ws))<<16) | ((c)<<4) | CON_CDATA | CON_TAG)
-#define CONSTRW(s,e)  ( ((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | CON_WORDS | CON_TAG)
-#define CONSTRP(s,e)  ( ((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | CON_PTRS | CON_TAG)
+#define CONSTRW(s,e)   ( ((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | CON_WORDS | CON_TAG)
+#define CONSTRP(s,e)   ( ((s)<<(4+LARGE_EXTRA)) | (((e)&((1<<LARGE_EXTRA)-1))<<4) | CON_PTRS | CON_TAG)
 
 /* DB         Define Byte            */
 /* DW         Define Word   == Nodes */

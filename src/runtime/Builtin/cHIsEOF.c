@@ -1,13 +1,11 @@
-
 #include <errno.h>
-
 #include "haskell2c.h"
 
 /* hIsEOF primitive 1 :: Handle -> (Either IOError Bool) */
 
 C_HEADER(cHIsEOF)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   int eof;
   
@@ -15,7 +13,7 @@ C_HEADER(cHIsEOF)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 #ifdef PROFILE
   if(replay) {
     REPLAY_BOOL(eof);

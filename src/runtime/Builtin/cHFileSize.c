@@ -9,7 +9,7 @@
 
 C_HEADER(cHFileSize)
 {
-  Arg *a;
+  FileDesc *a;
   NodePtr nodeptr;
   struct stat buf;
   int err;
@@ -18,7 +18,7 @@ C_HEADER(cHFileSize)
   
   nodeptr = C_GETARG1(1);
   IND_REMOVE(nodeptr);
-  a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+  a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 
 #ifdef PROFILE
   if(replay) {

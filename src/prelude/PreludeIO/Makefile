@@ -13,14 +13,14 @@ SRCS	= \
 	DIO.hs           GetLine.hs       ReadFile.hs      UserError.hs    \
 	DIOError.hs      Interact.hs      ReadIO.hs        WriteFile.hs    \
 	PutChar.hs PutStr.hs GetChar.hs GetContents.hs     IoError.hs	   \
-	_IOReturn.hs
+	_MkIO.hs
 SRCS_T	=\
 	DIO.hs DIOError.hs GetChar.hs GetContents.hs Interact.hs \
 	Monad_IO.hs PutChar.hs PutStr.hs PutStrLn.hs IoError.hs UserError.hs \
 	TFilePath.hs WriteFile.hs Catch.hs GetLine.hs Print.hs Show_IOError.hs \
-	Eq_IOError.hs Functor_IO.hs
+	Eq_IOError.hs Functor_IO.hs _MkIO.hs
 SRCS_NT =\
-	_IOReturn.hs StdIO.hs
+	StdIO.hs
 NOTDONE= AppendFile.hs Eq_IOError.hs Functor_IO.hs \
 	 ReadFile.hs ReadIO.hs ReadLn.hs \
 	 StrError.hs
@@ -53,6 +53,7 @@ ${OBJDIR}/Show_IOError.o: ${OBJDIR}/StrError.o
 endif
 ${OBJDIR}/UserError.o:    ${OBJDIR}/DIOError.o
 ${OBJDIR}/DIOError.o:     #${OBJDIR}/DErrNo.o
+${OBJDIR}/_MkIO.o:        ${OBJDIR}/DIO.o
 
 
 # And now for C-files dependencies.
@@ -64,4 +65,5 @@ Functor_IO.c:   # ../Prelude/CFunctor.hi
 Show_IOError.c: DIOError.c StrError.c #DErrNo.c 
 UserError.c:    DIOError.c
 DIOError.c:	#DErrNo.c
+_MkIO.c:	DIO.c
 

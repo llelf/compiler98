@@ -20,6 +20,7 @@ import GcodeLow (fun,foreignfun,fixStr)
 data ImpExp  = Imported | Exported
 data Foreign = Foreign	ImpExp	-- import or export?
 			Bool	-- just a cast?
+			Bool	-- generate C prototype?
 			String	-- foreign function name
 			TokenId -- Haskell function name
 			Int	-- arity
@@ -31,7 +32,7 @@ instance Show ImpExp where
   showsPrec p Exported = showString "export"
 
 instance Show Foreign where
-  showsPrec p (Foreign ie cast cname hname arity args res) =
+  showsPrec p (Foreign ie cast proto cname hname arity args res) =
     word "foreign" . space .
     (if cast then word "cast"
      else shows ie . space .  showChar '"' . word cname . showChar '"') .
@@ -45,6 +46,7 @@ data Arg = Int8  | Int16  | Int32  | Int64
          | Addr  | StablePtr | ForeignObj | Unknown | Unit
          deriving Show
 
+-- Note: as of 2000-10-18, the result can never have an IO type - Pure only.
 data Res = IOResult [Arg] | IOVoid | Pure [Arg]
 
 instance Show Res where
@@ -61,13 +63,19 @@ localname hname   = showString fun . fixStr (show hname)
 
 
 toForeign :: AssocTree Int Info -> ForeignMemo
-              -> Bool -> ImpExp -> String -> Int -> Int -> Foreign
-toForeign symboltable memo cast ie cname arity var =
-    Foreign ie cast cname hname arity args res
+              -> FSpec -> ImpExp -> String -> Int -> Int -> Foreign
+toForeign symboltable memo fspec ie cname arity var =
+    Foreign ie cast proto cname hname arity' args res
   where
     info = fromJust (lookupAT symboltable var)
     hname = tidI info
     (args,res) = searchType symboltable memo info
+    cast  = (fspec==Cast)
+    proto = (fspec/=Noproto)
+    arity' = if arity==length args then arity
+             else error ("foreign function: arity does not match: "++
+                         "is "++show arity++
+                         ", expected "++show (length args)++"\n")
 -- Crazy idea:
 --  (arity',args') = if arity==0 && ioResult' res then (1,[Unit])
 --                   else (arity,args)
@@ -136,7 +144,7 @@ searchType st (arrow,io) info =
     (dropRes [] . map toTid . toList . getNT . ntI) info
 
 ioResult :: Foreign -> Bool
-ioResult (Foreign _ _ _ _ _ _ res) = ioResult' res
+ioResult (Foreign _ _ _ _ _ _ _ res) = ioResult' res
 
 ioResult' (IOResult _) = True
 ioResult' IOVoid       = True
@@ -172,13 +180,15 @@ findFirst f (x:xs) =
 ----
 
 strForeign :: Foreign -> ShowS
-strForeign f@(Foreign Imported cast cname hname arity args res) =
+strForeign f@(Foreign Imported cast proto cname hname arity args res) =
     nl . comment (shows f) . nl .
-    word "extern" . space . cResType res . space . word realcname .
-      parens (listsep comma ((if isTuple res
-                                 then (word "struct ForeignTuple*":)
-                                 else id) $
-                              map cTypename args)) . semi .
+    (if proto then
+        word "extern" . space . cResType res . space . word realcname .
+          parens (listsep comma ((if isTuple res
+                                     then (word "struct ForeignTuple*":)
+                                     else id) $
+                                  map cTypename args)) . semi
+     else id) .
     word "#ifdef PROFILE" . nl .
     word "static SInfo" . space . word profinfo . space . equals . space .
       opencurly . strquote (word modname) . comma .
@@ -209,7 +219,7 @@ strForeign f@(Foreign Imported cast cname hname arity args res) =
     noarg _    = False
     profinfo = "pf_"++realcname
 
-strForeign f@(Foreign Exported _ cname hname arity args res) =
+strForeign f@(Foreign Exported _ _ cname hname arity args res) =
     nl . comment (shows f) . nl .
     cCodeDecl realcname args res . space .
     opencurly . nl .
@@ -239,12 +249,12 @@ cArgDefn arg n =
     indent . narg n . showString " = " .
     parens (cTypename arg) . cConvert arg . semi
 
+cResDecl (IOVoid)      = id
+cResDecl (Pure [Unit]) = id
 cResDecl (Pure [arg]) =
     indent . cTypename arg . space . word "result" . semi
 cResDecl (IOResult [arg]) =
     indent . cTypename arg . space . word "result" . semi
-cResDecl (IOVoid) =
-    id
 cResDecl (Pure args) =
     indent . word "struct ForeignTuple" . space . word "result" . semi
 cResDecl (IOResult args) =
@@ -257,6 +267,7 @@ cCall cname arity res
   | otherwise   =
       indent . (case res of
                     IOVoid      -> id
+                    Pure [Unit] -> id
                     _           -> word "result = ") .
       word cname .  parens (listsep comma (map narg [1..arity])) . semi
 
@@ -365,7 +376,6 @@ cTypename PackedString = word "char*"
 cTypename Addr         = word "void*"
 cTypename StablePtr    = word "StablePtr"
 cTypename ForeignObj   = word "void*"
---cTypename ForeignObj = word "CData*"
 cTypename Unit         = word "void"
 cTypename Unknown      = word "NodePtr"	-- for passing Haskell heap values
 
@@ -384,11 +394,8 @@ cConvert Double       = word "get_double_value(nodeptr)"
 cConvert Char         = word "GET_CHAR_VALUE(nodeptr)"
 cConvert PackedString = word "getPackedString(nodeptr)"
 cConvert Addr         = word "GET_INT_VALUE(nodeptr)"
---cConvert Addr       = word "((cdataArg((CData*)GET_INT_VALUE(nodeptr)))->cval)"
 cConvert StablePtr    = word "GET_INT_VALUE(nodeptr)"
---cConvert StablePtr  = word "stableInsert(getStablePtr(nodeptr))"
-cConvert ForeignObj   = word "(cdataArg((CData*)GET_INT_VALUE(nodeptr))->cval)"
---cConvert ForeignObj = word "cdataArg((CData*)GET_INT_VALUE(nodeptr))"
+cConvert ForeignObj   = word "derefForeignObj((ForeignObj*)GET_INT_VALUE(nodeptr))"
 cConvert Unit         = word "0"
 cConvert Unknown      = word "nodeptr"
 
@@ -407,13 +414,10 @@ hConvert Double       s = word "mkDouble" . parens s
 hConvert Char         s = word "mkChar" . parens s
 hConvert PackedString s = word "mkString" . parens (word "(char*)" . s)
 hConvert Addr         s = word "mkCInt" . parens (word "(int)" . s)
---hConvert Addr       s = word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
 hConvert StablePtr    s = word "mkInt" . parens (word "(int)" . s)
---hConvert StablePtr  s = word "mkStablePtr" . parens (word "stableRef" . parens s)
 {- Returning "ForeignObj"s to Haskell is illegal: this clause should never be used. -}
 hConvert ForeignObj   s = trace ("Warning: foreign import/export cannot return ForeignObj type.\n") $
-                          word "mkForeign((void*)" . s . showString ",(gccval)&noGC)"
---hConvert ForeignObj s = word "mkCInt" . parens (word "(int)" . s)
+                          word "mkForeign((void*)" . s . showString ",NULL,gcNone)"
 hConvert Unit         s = word "mkUnit()"
 hConvert Unknown      s = s	-- for passing Haskell heap values untouched
 

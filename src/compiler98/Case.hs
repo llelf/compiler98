@@ -85,7 +85,7 @@ caseDecl d@(DeclPrimitive pos fun arity t) =
 caseDecl d@(DeclForeignImp pos str fun arity cast t _) =
   unitS [(fun, PosForeign pos fun str cast Imported)]
 caseDecl d@(DeclForeignExp pos str fun t) =
-  unitS [(fun, PosForeign pos fun str False Exported)]
+  unitS [(fun, PosForeign pos fun str Safe Exported)]
 caseDecl (DeclFun pos fun funs) =
   unitS ((:[]) . pair fun) =>>> matchFun pos fun funs
 caseDecl (DeclPat (Alt pat gdexps decls)) =

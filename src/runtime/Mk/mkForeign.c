@@ -2,15 +2,10 @@
 
 #include "mk.h"
 
-NodePtr mkForeign (void *x, gccval f)
+NodePtr mkForeign (void *x, gcCval final)
 {
-    Arg a;
-    CData *cdata;
-    a.cval = x;
-    a.size = -1;
-    a.gc   = gcCVal;
-    a.gcc  = f;
-    cdata  = allocCData(a);
-    return mkCInt((Int)cdata);
+    ForeignObj *fo;
+    fo = allocForeignObj(x,final,gcNow);
+    return mkCInt((Int)fo);
 }
 

@@ -220,8 +220,6 @@ dDecl d@(DeclForeignImp pos cname id' arity cast typ id) =
     lookupName id' >>>= \(Just info) ->
 --  lookupNameStr id' >>>= \funName ->
 --  trace ("DeclForeignImp: " ++ funName ++", info=\n" ++ show info) $
---  addNewWrapper info >>>= \id' ->
---  overwriteOrigName id' >>>
     -- generate code for the wrapper
     dPrim pos id id' arity >>>= \code->
     -- get real cname from primed hname (f'), if needed

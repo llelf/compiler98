@@ -31,6 +31,6 @@ NodePtr mkPackedString(int length, char *str);
 char *getPackedString(NodePtr n);
 
 #define mkString(s)   mkPackedString((s==(char*)0?1:strlen(s)+1),s)	/* MW */
-extern NodePtr mkForeign(void *x, gccval f);		/* MW */
+extern NodePtr mkForeign(void *x, gcCval f);		/* MW */
 extern NodePtr mkStablePtr(NodePtr x);			/* MW */
 extern NodePtr getStablePtr(NodePtr x);			/* MW */

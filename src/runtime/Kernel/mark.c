@@ -911,7 +911,7 @@ NodePtr mark(NodePtr *inode)
         Int psize  = (Int)CONINFO_PSIZE(coninfo);
         WHEN_DYNAMIC(if(pactive) GET_INFO(node)->rinfo = profileRetainer;)
         EDB(if(debug) {fprintf(stderr,"psize = %d:",psize); fflush(stderr);})
-        markCData((CData *)*(node+psize+1+EXTRA));
+        markForeignObj((ForeignObj *)*(node+psize+1+EXTRA));
 	WHEN_PROFILE(marked(node+EXTRA);) /* Mark last word in info */
         if(psize) {
           newpptr = node+psize+EXTRA;

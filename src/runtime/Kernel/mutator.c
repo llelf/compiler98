@@ -831,12 +831,12 @@ void run(NodePtr toplevel)
     Case(HGETC):
       { 
 	int c;
-	Arg *a;
+	FileDesc *a;
 
 	nodeptr = *sp;
 	IND_REMOVE(nodeptr);
 	UPDATE_PROFINFO(nodeptr)
-	a = cdataArg((CData *)(GET_INT_VALUE(nodeptr)));
+	a = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
 #ifdef PROFILE
 	if(replay) {
 	  if(255==(c=getc(inputFILE)))
@@ -863,12 +863,12 @@ void run(NodePtr toplevel)
     Case(HPUTC):
       {
 	char c;
-	Arg *a;
+	FileDesc *a;
 
 	nodeptr = *sp++;
 	IND_REMOVE(nodeptr);
 	UPDATE_PROFINFO(nodeptr)
-	a = cdataArg((CData *)GET_INT_VALUE(nodeptr));
+	a = derefForeignObj((ForeignObj *)GET_INT_VALUE(nodeptr));
 	nodeptr = *sp;
         IND_REMOVE(nodeptr);
         UPDATE_PROFINFO(nodeptr)
@@ -893,8 +893,8 @@ void run(NodePtr toplevel)
           case CON_CDATA | CON_TAG :
               nodeptr = (NodePtr) GET_CONSTR(nodeptr);
               break;
-        case CON_PTRS  | CON_TAG :
-        case CON_WORDS | CON_TAG :
+          case CON_PTRS  | CON_TAG :
+          case CON_WORDS | CON_TAG :
               nodeptr = 0;
               break;
           default :
@@ -931,6 +931,7 @@ void run(NodePtr toplevel)
 
     Case(MKIORETURN):	/* MW */
         INSTR("mkIOreturn");
+        printf("mutator:MKIORETURN\n");
         nodeptr = *sp;
         MK_VAP1(hp,C_VAPTAG(IORETURN),nodeptr); /* Build a call to IO.return */
         INIT_PROFINFO(hp,&apply1ProfInfo)

@@ -90,7 +90,8 @@ typeDepend (DeclsRec ds13) =
 typeScc :: [Decl Id] 
         -> TypeDown -> TypeState -> (([Decl Id],[Decl Id]),TypeState)
 
-typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(TypeState state phi inCtxs ectxsi) = 
+typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans)
+              up@(TypeState state phi inCtxs ectxsi) = 
   let -- ctxs should only get up but the monad can not handle that!
       trueExp :: Exp Int
       trueExp = ExpCon noPos (tidFun (tTrue,Con))
@@ -104,7 +105,11 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
 
       decls' :: [Decl Int]
       (decls',up''@(TypeState state'' phi'' ctxs'' existCtxsi)) =
-		mapS typeDecl decls (TypeDown (envHere++env) tidFun defaults (usedCtx ++ ctxsDict) (derivedDict ++ envDict) dbgtrans) up'
+		mapS typeDecl decls
+                     (TypeDown (envHere++env) tidFun defaults
+                               (usedCtx ++ ctxsDict)
+                               (derivedDict ++ envDict) dbgtrans)
+                     up'
 
       phiEnv :: [(Int,NT)]
       phiEnv     = substEnv phi'' env
@@ -118,7 +123,9 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
 
       uniqueCtxs :: [TypeDict]
       uniqueCtxs =	-- These contexts are needed
-		( map ( \ (TypeDict c v ip:cvips) -> TypeDict c v (ip++concatMap ( \ (TypeDict c v ip) -> ip) cvips))
+		( map (\(TypeDict c v ip:cvips) ->
+                         TypeDict c v (ip++concatMap (\(TypeDict c v ip)-> ip)
+                                                     cvips))
 		. group
 		)  phiCtxs
 
@@ -127,7 +134,8 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
 
       globalCtxs :: [(Int,NT)]
       localCtxs0 :: [(Int,NT)]
-      (globalCtxs,localCtxs0) =   -- These are the simplified context that are needed
+      (globalCtxs,localCtxs0) =   -- These are the simplified context
+                                  -- that are needed
 		( partition  ( \ (c,nt) -> stripNT nt `elem` globalTVars)
 	        . ctxsReduce state
  		. concatMap (ctxsSimplify state [])
@@ -151,28 +159,41 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
       outCtxs :: [TypeDict]
       outCtxs = map ( \ ((c,nt),i) -> TypeDict c nt [(i,noPos)]) globalCtxsi
 
-	-- Set up argument and available dictionaries for identifiers without a given type
+	-- Set up argument and available dictionaries for identifiers
+        -- without a given type
 
       derivedArgs :: [(Int,Exp Int)]
-      derivedArgs = map ( \ ((c,nt),i) -> (stripNT nt,ExpVar noPos i)) localCtxsi
+      derivedArgs = map (\((c,nt),i) -> (stripNT nt,ExpVar noPos i)) localCtxsi
       derivedDict :: [(Int,[Exp Int])]
-      derivedDict = map ( \ (i,nt) -> (i,(map snd . filter ((`elem` freeNT nt) . fst)) derivedArgs))  phiEnvHere   -- default is fixed in bindType
+      derivedDict = map (\(i,nt) -> (i, (map snd
+                                        . filter ((`elem` freeNT nt) . fst))
+                                        derivedArgs)
+                        ) phiEnvHere   -- default is fixed in bindType
 
 	-- Create mapping from Int to expression for requested dictionary
 
       usedCtx :: [(Int,Exp Int)]
-      usedCtx = concatMap ( \ (TypeDict c nt ips) -> let dict = buildCtx state noPos (existCtxsi++localCtxsi++globalCtxsi) (TypeDict c nt ips)
-						     in map ( \ (i,p) -> (i,dict)) ips)
-		          uniqueCtxs
+      usedCtx = concatMap (\(TypeDict c nt ips) ->
+                             let dict = buildCtx state noPos
+                                          (existCtxsi++localCtxsi++globalCtxsi)
+                                          (TypeDict c nt ips)
+			     in map (\(i,p) -> (i,dict)) ips
+                          ) uniqueCtxs
 
-	-- Insert types into state (comparing with given type if such exist) and add dictionary arguments
+	-- Insert types into state (comparing with given type if such exist)
+        -- and add dictionary arguments
 
       declsDict :: [Decl Int]
-      declsDict = map ( \ (_,i) ->
+      declsDict = map (\(_,i) ->
 			 case lookup i ctxsDict of
-			   Just exp -> DeclFun noPos i [Fun [] [(trueExp,exp)] (DeclsScc [])]) globalCtxsi 
+			   Just exp -> DeclFun noPos i [Fun [] [(trueExp,exp)]
+                                                            (DeclsScc [])]
+                      ) globalCtxsi 
 
-      (decls'',state3) = mapS bindType decls' (globalTVars,trueExp,localCtxsi,phiEnvHere,defaults) state2
+      (decls'',state3) = mapS bindType decls'
+                              (globalTVars,trueExp,localCtxsi
+                              ,phiEnvHere,defaults)
+                              state2
   in
 {-
 	strace ("usedCtx = " ++ show (map fst usedCtx)) $
@@ -183,7 +204,8 @@ typeScc decls down@(TypeDown env tidFun defaults ctxsDict envDict dbgtrans) up@(
 	strace ("ctxs'' = " ++ show ctxs'') $
 	strace ("phiCtxs = " ++ show phiCtxs) $
 -}
-     ((declsDict,decls''),TypeState state3 (stripSubst phi'' nextTvar) (outCtxs++inCtxs) existCtxsi)
+     ((declsDict,decls'')
+     ,TypeState state3 (stripSubst phi'' nextTvar) (outCtxs++inCtxs) existCtxsi)
 
 
 --------------------- Fix arguments and types
@@ -197,31 +219,45 @@ bindType :: Decl Id
          -> IntState 
          -> (Decl Id, IntState)
 
-bindType decl@(DeclPat (Alt pat gdexps decls)) down@(globalTVars,trueExp,[],envHere,defaults) state = -- No context for left hand patterns!
+bindType decl@(DeclPat (Alt pat gdexps decls))
+         down@(globalTVars,trueExp,[],envHere,defaults) state =
+  -- No context for left hand patterns!
   case mapS0 checkType (identPat pat) down state of
     state -> (decl,state)
  where
   checkType (pos,ident) (globalTVars,trueExp,localCtxi,envHere,defaults) state =
     case lookup ident envHere of
-      Nothing -> strace ("Nothing derived for " ++ show ident ++ " at " ++ strPos pos) state	-- Nothing derived for this one
+      Nothing -> strace ("Nothing derived for " ++ show ident ++
+                         " at "++strPos pos) state
       Just derivedNT ->
-	let derivedFree = filter (`notElem` globalTVars) (snub (freeNT derivedNT))
+	let derivedFree = filter (`notElem` globalTVars)
+                                 (snub (freeNT derivedNT))
         in case ntIS state ident of
             (NoType,state) ->
-	      updateIS state ident (newNT (NewType derivedFree [] [] [polyNT derivedFree derivedNT]))
+	      updateIS state ident (newNT
+                                     (NewType derivedFree [] []
+                                              [polyNT derivedFree derivedNT]))
             (given@(NewType givenFree [] givenCtx [givenNT]),state) -> 
 	      if length givenFree /= length derivedFree
-	      then addError state ("Derived type " ++ show derivedFree ++ niceNT Nothing state (mkALNT derivedNT) derivedNT ++ " is not an instance of " 
-		   		       ++ show givenFree
-				       ++  niceNT Nothing state (mkAL givenFree) givenNT ++ " at " ++ strPos pos)
+	      then addError state
+                            ("Derived type " ++ show derivedFree
+                            ++ niceNT Nothing state (mkALNT derivedNT) derivedNT
+                            ++ " is not an instance of " 
+		   	    ++ show givenFree
+			    ++ niceNT Nothing state (mkAL givenFree) givenNT
+                            ++ " at " ++ strPos pos)
 	      else state
 
-bindType decl@(DeclPat (Alt pat gdexps decls)) down@(globalTVars,trueExp,localCtxsi,envHere,defaults) state = -- No context for left hand patterns!
+bindType decl@(DeclPat (Alt pat gdexps decls))
+         down@(globalTVars,trueExp,localCtxsi,envHere,defaults) state =
+  -- No context for left hand patterns!
   (decl,addError (foldr typeError state (identPat pat)) errmsg)
  where
-  errmsg = "Context for " ++ mixCommaAnd ((map (strIS state) . unique . map (fst . fst)) localCtxsi)
-					++ " needed in left hand pattern at " ++ strPos (getPos pat) ++ "."
-  nt = NewType [1] [] [] [NTvar 1]   -- Used instead of derived type, not sure if it is any idea
+  errmsg = "Context for " ++ mixCommaAnd ((map (strIS state) . unique .
+                                           map (fst . fst)) localCtxsi)
+	   ++ " needed in left hand pattern at " ++ strPos (getPos pat) ++ "."
+  nt = NewType [1] [] [] [NTvar 1]   -- Used instead of derived type, not sure
+                                     -- if it is any idea
   typeError (pos,ident) state = (updateIS state ident (newNT nt))
 
 bindType decl@(DeclPrimitive pos fun arity typ) down state =
@@ -230,113 +266,163 @@ bindType decl@(DeclForeignImp pos str fun arity cast typ _) down state =
   (decl,state)
 bindType decl@(DeclForeignExp pos str fun typ) down state =
   (decl,state)
-bindType decl@(DeclFun pos fun funs) (globalTVars,trueExp,localCtxi,envHere,defaults) state =
+bindType decl@(DeclFun pos fun funs)
+         (globalTVars,trueExp,localCtxi,envHere,defaults) state =
   case ntIS state fun of
     (NoType,state) ->
       let derivedNT = assocDef  envHere (error "162") fun
 	  derivedFree = filter (`notElem` globalTVars) (snub (freeNT derivedNT))
 	  derivedCtxi :: [((Int,NT),Int)]
 	  defaultCtxi :: [((Int,NT),Int)]
-	  (derivedCtxi,defaultCtxi) = partition ((`elem` derivedFree) . stripNT . snd . fst) localCtxi
+	  (derivedCtxi,defaultCtxi) = partition ((`elem` derivedFree) . stripNT
+                                                 . snd . fst) localCtxi
       in  case filter (isExist . snd . fst) defaultCtxi of
 	    [] -> 
                case buildDefaults pos defaultCtxi trueExp defaults state of
 	         (defaultDecls,state) ->
-	            (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) derivedCtxi) (map DeclsNoRec defaultDecls))  funs)
-	            ,updateIS state fun (newNT (NewType derivedFree [] (map (mapSnd stripNT . fst) derivedCtxi) [polyNT derivedFree derivedNT]))
+	            (DeclFun pos fun
+                             (map (bindFun (map (\ (c_v,i) -> ExpVar pos i)
+                                                derivedCtxi)
+                                           (map DeclsNoRec defaultDecls))  funs)
+	            ,updateIS state fun
+                              (newNT (NewType derivedFree []
+                                              (map (mapSnd stripNT . fst)
+                                                   derivedCtxi)
+                                              [polyNT derivedFree derivedNT]))
 	            )
-	    er -> (decl
-	  	  ,addError state ("Dictionary can not be found for existential types, error detected at " ++ strPos pos)
+	    er -> (decl, addError state ("Dictionary can not be found "
+                                        ++ "for existential types, "
+                                        ++ "error detected at " ++ strPos pos)
 	  	  )
 
     (given@(NewType givenFree [] givenCtx [givenNT]),state) -> 
       let derivedNT = assocDef envHere (error "171")  fun
 	  derivedFree = filter (`notElem` globalTVars) (snub (freeNT derivedNT))
-      in case unify state idSubst (derivedNT,givenNT) of 
-	  Left (phi,err) ->
-		(decl,addError state ("Derived type for " ++ strIS state fun ++ " at " ++ strPos pos 
-                                       ++ " can not be unified with given type due to " ++ err
-                                       ++ "\nDerived:" ++ niceNT Nothing state (mkALNT derivedNT) derivedNT
-                                       ++ "\nGiven  :" ++ niceNT Nothing state (mkAL givenFree) givenNT))
-	  Right phi ->
-		let phis = ( foldr (\ (k,v) t -> addAT t (++) k [v]) initAT
-                           . map fixSubst 
-                           . treeMapList (:)
-                           ) phi
+      in
+      case unify state idSubst (derivedNT,givenNT) of 
+        Left (phi,err) ->
+          (decl
+          ,addError state
+               ("Derived type for " ++ strIS state fun ++ " at " ++ strPos pos 
+               ++" can not be unified with given type due to " ++ err
+               ++"\nDerived:"++niceNT Nothing state (mkALNT derivedNT) derivedNT
+               ++"\nGiven  :" ++ niceNT Nothing state (mkAL givenFree) givenNT))
+	Right phi ->
+	  let phis = ( foldr (\ (k,v) t -> addAT t (++) k [v]) initAT
+                     . map fixSubst 
+                     . treeMapList (:)
+                     ) phi
 
-                    al = mkAL (givenFree ++ freeNT derivedNT)
+              al = mkAL (givenFree ++ freeNT derivedNT)
 
-		    fixSubst (v,NTvar v') = if v `elem` givenFree then (v',NTvar v) else (v,NTvar v')
-		    fixSubst (v,NTany v') = if v `elem` givenFree then (v',NTvar v) else (v,NTvar v')
-                    fixSubst p = p
+	      fixSubst (v,NTvar v') = if v `elem` givenFree then (v',NTvar v)
+                                                            else (v,NTvar v')
+	      fixSubst (v,NTany v') = if v `elem` givenFree then (v',NTvar v)
+                                                            else (v,NTvar v')
+              fixSubst p = p
 
-                    one2many phi = ( filter ((/= 1).length.snd)
-                                   . treeMapList (:)) phis
-                    freebound phi = ( filter ((`elem` givenFree).fst)
-                                    . filter ((== 1).length . snd)
-                                    . treeMapList (:)
-                                    ) phis
+              one2many phi = ( filter ((/= 1).length.snd)
+                             . treeMapList (:)) phis
+              freebound phi = ( filter ((`elem` givenFree).fst)
+                              . filter ((== 1).length . snd)
+                              . treeMapList (:)
+                              ) phis
 
-                    safePhi phi v =
+              safePhi phi v =
                       case lookupAT phi v of
                          Nothing -> Just v
                          Just xs -> findV xs
 
-                    findV [NTvar v] = Just v
-                    findV [NTany v] = Just v
-                    findV _ = Nothing
+              findV [NTvar v] = Just v
+              findV [NTany v] = Just v
+              findV _ = Nothing
 
-		    sameNT (NTany _) v   = NTany v
-		    sameNT (NTvar _) v   = NTvar v
-		    sameNT (NTexist _) v = NTexist v
+	      sameNT (NTany _) v   = NTany v
+	      sameNT (NTvar _) v   = NTvar v
+	      sameNT (NTexist _) v = NTexist v
 
 
-                    localCtxi' = ( map dropJust
-                                 . filter isJust
-                                 . map ( \ ((c,nt),i) -> case safePhi phis (stripNT nt) of
-						          Just v -> Just ((c,sameNT nt v),i)
-							  Nothing -> Nothing) -- either one2many of freebound
-                                 ) localCtxi
-		    (derivedCtxi,defaultCtxi) = partition ((`elem` givenFree) . stripNT . snd . fst) localCtxi'
-		    derivedIntPairI = map (mapFst (mapSnd stripNT)) derivedCtxi
+              localCtxi' = ( map dropJust
+                           . filter isJust
+                           . map (\((c,nt),i) ->
+                                   case safePhi phis (stripNT nt) of
+				     Just v  -> Just ((c,sameNT nt v),i)
+				     Nothing -> Nothing) -- either one2many
+                                                         -- of freebound
+                           ) localCtxi
+	      (derivedCtxi,defaultCtxi) =
+                  partition ((`elem` givenFree) . stripNT .snd.fst) localCtxi'
+	      derivedIntPairI = map (mapFst (mapSnd stripNT)) derivedCtxi
 
-                    ctxcheck ctxi = filter ((`notElem` givenCtx) . fst) ctxi
+              ctxcheck ctxi = filter ((`notElem` givenCtx) . fst) ctxi
 
-                in case (one2many phis,freebound phis,ctxcheck derivedIntPairI) of
-                  ([],[],[]) ->  -- Type is ok, but we need to introduce new unique ints for excessive contexts, eg, (Eq a,Ord a)
-		    let 
-                        (mGivenCtxi',state2) = (uniqueISs state . zip givenCtx . map (\ cv -> lookup cv derivedIntPairI)) givenCtx
-                        givenCtxi' = map stripAndFix mGivenCtxi'
-                        stripAndFix ((c,Nothing),u) = (c,u)
-                        stripAndFix ((c,Just v),u) = (c,v)
-                    in  case filter (isExist . snd . fst) defaultCtxi of
-	               [] -> 
-		          case buildDefaults pos defaultCtxi trueExp defaults state2 of
-		             (defaultDecls,state3) ->
-		               (DeclFun pos fun (map (bindFun (map (\ (c_v,i) -> ExpVar pos i) givenCtxi') (map DeclsNoRec defaultDecls))  funs)
+          in
+          case (one2many phis,freebound phis,ctxcheck derivedIntPairI) of
+            ([],[],[]) ->
+                -- Type is ok, but we need to introduce new unique ints
+                -- for excessive contexts, eg, (Eq a,Ord a)
+	        let (mGivenCtxi',state2) =
+                          (uniqueISs state . zip givenCtx
+                          . map (\cv-> lookup cv derivedIntPairI)) givenCtx
+                    givenCtxi' = map stripAndFix mGivenCtxi'
+                    stripAndFix ((c,Nothing),u) = (c,u)
+                    stripAndFix ((c,Just v),u) = (c,v)
+                in
+                case filter (isExist . snd . fst) defaultCtxi of
+	          [] ->
+                    case buildDefaults pos defaultCtxi trueExp
+                                       defaults state2 of
+		      (defaultDecls,state3) ->
+		          (DeclFun pos fun
+                                   (map (bindFun (map (\(c_v,i)-> ExpVar pos i)
+                                                      givenCtxi')
+                                                 (map DeclsNoRec defaultDecls))
+                                        funs)
                                ,state3
 		               )
- 	               er ->
-			(decl
-			,addError state ("Dictionary can not be found for existential types, error detected at " ++ strPos pos 
-					     ++ " (signature given)"))
-                  (eOne2Many,eFreeBound,eCtxs) ->
-                    let sOne2Many xs = concatMap ( \ (v,nts) -> "\n    type variable " ++ niceNT Nothing state al (NTvar v) ++ " bound to "
-						             ++ mixCommaAnd (map (niceNT Nothing state al) nts)) xs
-                        sFreeBound [] = []
-                        sFreeBound [(v,t)] = "\n    given free variable " ++ niceNT Nothing state al (NTvar v)
-                                              ++ " is bound to " ++ niceNT Nothing state al (head t)
-                        sFreeBound xs = "\n    given free variables " ++ mixCommaAnd (map (niceNT Nothing state al . NTvar . fst) xs)
-                                     ++ " are bound to " ++ mixCommaAnd (map (niceNT Nothing state al . head . snd) xs)
-                                     ++ " respectively"
-                        sCtxs [] = ""
-                        sCtxs xs = "\n    different contexts"
-                    in 
-		     (decl
-                     ,addError state ("Derived type for " ++ strIS state fun ++ " at " ++ strPos pos 
-                                       ++ " does not match due to:" ++ sOne2Many eOne2Many ++ sFreeBound eFreeBound ++ sCtxs eCtxs
-                                       ++ "\nDerived:" ++ niceCtxs Nothing state al (map fst derivedIntPairI) ++ niceNT Nothing state al derivedNT
-                                       ++ "\nGiven  :" ++ niceCtxs Nothing state al givenCtx ++ niceNT Nothing state al givenNT))
+ 	          er ->
+                    (decl
+		    ,addError state
+                        ("Dictionary can not be found for existential types, "
+                        ++ "error detected at " ++ strPos pos
+                        ++ " (signature given)"))
+            (eOne2Many,eFreeBound,eCtxs) ->
+                let sOne2Many xs =
+                        concatMap (\(v,nts)->
+                                   "\n    type variable "
+                                   ++ niceNT Nothing state al (NTvar v)
+                                   ++ " bound to "
+			           ++ mixCommaAnd (map (niceNT Nothing state al)
+                                                        nts)
+                                  ) xs
+                    sFreeBound [] = []
+                    sFreeBound [(v,t)] =
+                        "\n    given free variable "
+                        ++ niceNT Nothing state al (NTvar v)
+                        ++ " is bound to " ++ niceNT Nothing state al (head t)
+                    sFreeBound xs =
+                        "\n    given free variables "
+                        ++ mixCommaAnd (map (niceNT Nothing state al
+                                            . NTvar . fst) xs)
+                        ++ " are bound to "
+                        ++ mixCommaAnd (map (niceNT Nothing state al
+                                            . head . snd) xs)
+                        ++ " respectively"
+                    sCtxs [] = ""
+                    sCtxs xs = "\n    different contexts"
+                in 
+	        (decl
+                ,addError state
+                    ("Derived type for " ++ strIS state fun
+                    ++ " at " ++ strPos pos ++ " does not match due to:"
+                    ++ sOne2Many eOne2Many ++ sFreeBound eFreeBound
+                    ++ sCtxs eCtxs
+                    ++ "\nDerived:"
+                    ++ niceCtxs Nothing state al (map fst derivedIntPairI)
+                    ++ niceNT Nothing state al derivedNT
+                    ++ "\nGiven  :"
+                    ++ niceCtxs Nothing state al givenCtx
+                    ++ niceNT Nothing state al givenNT))
 
 bindFun dictArgs defaultDecls (Fun args gdexps (DeclsScc decls)) =
   Fun (dictArgs++args) gdexps (DeclsScc (defaultDecls ++ decls))
@@ -369,7 +455,7 @@ typeDecl (DeclFun pos fun funs) =
   typeIdentDef id pos fun >>>= \ (_,funT) -> 
   (\down up@(TypeState state _ _ _) -> 
      trace ('\n':'\n': niceInt Nothing state fun 
-            ('\n': niceNT Nothing state (map (\x -> (x, 'a':show x)) [1..]) funT))
+            ('\n': niceNT Nothing state (map (\x-> (x,'a':show x)) [1..]) funT))
      (True,up)) >>>= \True ->
   -}
   unitS (DeclFun pos fun funs)
@@ -423,11 +509,16 @@ typeLit e@(ExpLit pos (LitRational _ _)) =	--- Add fromRational
       typeIdentDict (ExpVar pos) pos tfromRational >>>= \ (exp,expT) ->
       typeUnifyApply (msgLit pos "rational") [expT,NTcons tcon []] >>>= \ t ->
       unitS (ExpApplication pos [exp,e],t)
-typeLit e@(ExpLit pos (LitString _ _)) = getIdent (tString,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
-typeLit e@(ExpLit pos (LitInt _ _))    = getIdent (tInt,TCon)    >>>= \tcon -> unitS (e,NTcons tcon [])
-typeLit e@(ExpLit pos (LitFloat _ _))  = getIdent (tFloat,TCon)  >>>= \tcon -> unitS (e,NTcons tcon [])
-typeLit e@(ExpLit pos (LitDouble _ _)) = getIdent (tDouble,TCon) >>>= \tcon -> unitS (e,NTcons tcon [])
-typeLit e@(ExpLit pos (LitChar _ _))   = getIdent (tChar,TCon)   >>>= \tcon -> unitS (e,NTcons tcon [])
+typeLit e@(ExpLit pos (LitString _ _)) = getIdent (tString,TCon) >>>= \tcon ->
+                                         unitS (e,NTcons tcon [])
+typeLit e@(ExpLit pos (LitInt _ _))    = getIdent (tInt,TCon)    >>>= \tcon ->
+                                         unitS (e,NTcons tcon [])
+typeLit e@(ExpLit pos (LitFloat _ _))  = getIdent (tFloat,TCon)  >>>= \tcon ->
+                                         unitS (e,NTcons tcon [])
+typeLit e@(ExpLit pos (LitDouble _ _)) = getIdent (tDouble,TCon) >>>= \tcon ->
+                                         unitS (e,NTcons tcon [])
+typeLit e@(ExpLit pos (LitChar _ _))   = getIdent (tChar,TCon)   >>>= \tcon ->
+                                         unitS (e,NTcons tcon [])
 
 typeUnifyBool g t =
   getIdent (tBool,TCon) >>>= \ tcon ->
@@ -527,9 +618,11 @@ typeExp (ExpLet pos decls exp)    =
   typeExp exp     >>>= \(exp,expT) ->
   unitS (ExpLet pos decls exp,expT)
 
-typeExp (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the free variables really are free !!!
+typeExp (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
+                                   -- free variables really are free !!!
   (if not (null ctxs) 
-  then strace ("Context at " ++ strPos (getPos ctxs) ++ " in typed expression is ignored :-(")
+  then strace ("Context at " ++ strPos (getPos ctxs)
+              ++ " in typed expression is ignored :-(")
   else id) $
   typeExp exp >>>= \ (exp,expT) ->
   let nt = type2NT t
@@ -580,9 +673,11 @@ typePat (ExpList  pos es)         =
  where
   mapL = map :: ((a->b) -> [a] -> [b])
 
-typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the free variables really are free !!!
+typePat (ExpType pos exp ctxs t) = -- Ignoring ctx and doesn't check if the
+                                   -- free variables really are free !!!
   (if not (null ctxs) 
-  then strace ("Context at " ++ strPos (getPos ctxs) ++ " in typed expression is ignored :-(")
+  then strace ("Context at " ++ strPos (getPos ctxs)
+              ++ " in typed expression is ignored :-(")
   else id) $
   typePat exp >>>= \ (exp,expT,eTVar) ->
   let nt = type2NT t
@@ -627,7 +722,8 @@ typePat e                         = error ("typePat " ++ strPos (getPos e))
 -- that is, it removes record patterns.
 -- No InfixList at this point!
 
-fixDecl13 (DeclPat (Alt pat gdexps decls)) = fixPat13 pat >>>= \ pat -> unitS (DeclPat (Alt pat gdexps decls))
+fixDecl13 (DeclPat (Alt pat gdexps decls)) =
+    fixPat13 pat >>>= \ pat -> unitS (DeclPat (Alt pat gdexps decls))
 fixDecl13 decl = unitS decl
 
 fixPat13 (ExpRecord	 exp fields)  = 
