@@ -14,13 +14,9 @@ VERSION = 1.17
 # corresponding version in the configure script!
 #   (odd minor number = CVS version;  even minor number = release version)
 
-HMAKEVERSION = 3.07
+HMAKEVERSION = 3.09
 # HMAKEVERSION is the separate version number for hmake.
 #   (odd/even minor number is irrelevant - all are release versions)
-
-HATVERSION = 2.03
-# HATVERSION is the separate version number for hat.
-#   (odd minor number = CVS version;  even minor number = release version)
 
 
 ### End of configurable variables
