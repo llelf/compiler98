@@ -216,7 +216,7 @@ keepRS (RenameState flags unique rps rts rt st derived
 	      (coni:_) ->
 		 case (ntI . dropJust . lookupAT st ) coni of
   	           (NewType _ [] _ [NTcons c _ _,res]) -> (synType,(u,c):newType)
-  	           (NewType _ [] _ [NTvar v _,res]) -> (synType,(u,v):newType)
+  	           (NewType _ [] _ [NTvar v _,res]) -> (synType,      newType)
   	           (NewType _ [] _ [NTapp v1 v2,res]) -> (synType,newType)
 			-- ^ MW hack: omits potential circularity check!
   	           (NewType _ [] _ (_:_:_)) ->
