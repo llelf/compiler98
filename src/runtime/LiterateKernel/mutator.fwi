@@ -5,12 +5,13 @@
 This section contains the mutator that interprets nhc's generated code.
 
 @O@<mutator.c@>==@{@-
+@<File warning@>
+
 #include <stdlib.h>
 #include "mutlib.h"
 @<C interface include@>
 
-@<DEBUG flag@>
-@<SHOW macro@>
+@<Debugging macros@>
 @<USE_GCC_LABELS macro@>
 @<GCSTACKSIZE parameter@>
 
@@ -19,11 +20,14 @@ This section contains the mutator that interprets nhc's generated code.
 @<Mutator memory area state@>
 @<Instruction pointer@>
 
+#ifdef DEBUG
+@<prVap routine@>
+#endif
+
 @<initMutator routine@>
 @<run routine@>
 
 @<Instruction set@>
-@<Instruction names@>
 @}
 
 @$@<Mutator interface@>==@{@-
@@ -58,27 +62,6 @@ extern @<run header@>;
 
 @$@<Mutator execution@>==@{@-
 @<Run the program@>
-@}
-
-@B@<Configuration@>
-
-The @{DEBUG@} flag turns on various capabilities of the mutator useful for
-debugging in a source-level debugger.  It also prints a trace consisting
-of opcode and global state for each instruction executed.
-
-@$@<DEBUG flag@>==@{@-
-#undef DEBUG
-@}
-
-The @{SHOW@} macro can be used to perform operations (such as writing
-tracing output) only when @{DEBUG@} is set.
-
-@$@<SHOW macro@>==@{@-
-#ifdef DEBUG
-#define SHOW(x) x
-#else
-#define SHOW(x)
-#endif
 @}
 
 @B@<Mutator state@>
@@ -117,11 +100,38 @@ runtime (for the stack).  Presumably we can remove this code and just use
 the usual nhc98 mechanism for running nhc98heap as part of the
 compilation process (for the heap) and process argv for the stack.
 
+@B@<Debugging hooks@>
+
+Turn on the appropriate debugging support.
+
+@$@<Debugging macros@>+=@{@-
+#ifdef DEBUG_INSNS
+#define PRINTINSN(i) prByteIns(i)
+#else
+#define PRINTINSN
+#endif
+
+#ifdef DEBUG_HEAPSTACK
+#define PRINTHEAPSTACK(h,s,f,v,c) prHeapStack(h,s,f); prVap(v,c)
+#else
+#define PRINTHEAPSTACK(h,s,f,v)
+#endif
+@}
+
+The DEBUGPERINSN macro just collects things that might need to be done for
+each instruction that is executed.
+
+@$@<Debugging macros@>+=@{@-
+#define DEBUGPERINSN \
+    PRINTHEAPSTACK(hp,sp,fp,vapptr,constptr); \
+    PRINTINSN(ip)
+@}
+
 @B@<Initialisation@>
 
-The initialisation of the mutator sets up the mutator's state to refer to 
+The initialisation of the mutator sets up the mutator's state to refer to
 the new heap and stack areas (supplied by the garbage collection module).
-Then the stack and heap are initialised with the data representing the 
+Then the stack and heap are initialised with the data representing the
 top level code form of the program.
 
 @$@<initMutator header@>@M==@{@-
@@ -140,7 +150,12 @@ void initMutator()@-
     *--Sp = TOPLEVEL_code;
     Fp = Sp;
     spStart = Sp;
-    
+
+    PRINTHEAPSTACK(Hp, Sp, Fp, 0, 0);
+#ifdef DEBUG_INSNS
+    ERROR_OUT("Build Main application\n");
+#endif
+
     MK_VAP1(Hp, C_VAPTAG(MAIN), GET_WORLD);
     *--Sp = Hp;
     Hp += SIZE_VAP1;
@@ -200,11 +215,11 @@ local declarations, initialisation and finalisation.
     @<Initialise mutator state cache@>
     @<Initialise instruction and vap pointers@>
     @<Start execution@>
-    
+
     for (;;) {
       NextInst:
         Dispatch
-        
+
         @<Application case@>
         @<EVAL and RETURN cases@>
         @<EXIT case@>
@@ -226,72 +241,17 @@ local declarations, initialisation and finalisation.
 
         EndDispatch
     }
-    
+
   mutator_end:
     @<Finalise mutator state cache@>
 }
-@}
-
-@B@<Implementing the interpreter@>
-
-The interpreter actions are defined using the primitives @{Dispatch@},
-@{Case@}, @{Break@} and @{EndDispatch@}.  In the default case these just
-map to a basic switch statement.  
-
-@$@<Basic interpreter primitives@>==@{@-
-#define Dispatch      switch (*ip++) {
-#define Case(x)       case x
-#define Break         break
-#define EndDispatch   }
-@}
-
-A more-efficient version based on GCC's addressable labels is also
-supported.  The array @{labs@} provides a mapping from an opcode to its
-unique label.  There is no switch statement, just a direct goto the
-appropriate label so the inifinite loop in @{run@} is never iterated
-directly.  The general list of instructions comes from @{newbytecode.h@}.
-
-@$@<Instruction set@>==@{@-
-#include "newbytecode.h"
-@}
-
-@$@<Efficient interpreter primitives@>==@{@-
-#define ins(x)  &&l##x
-static void *labs[] = { INSTRUCTION_LIST };
-#undef ins
-#define Dispatch     Break;
-#define Case(x)      l##x
-#define Break        ip++; goto *labs[*(ip-1)]
-#define EndDispatch
-@}
-
-The more efficient version is used if GCC is our compiler and we are not
-debugging.
-
-@$@<USE_GCC_LABELS macro@>==@{@-
-#if defined(__GNUC__) && !defined(DEBUG)
-#  define USE_GCC_LABELS 1
-#else
-#  define USE_GCC_LABELS 0
-#endif
-@}
-
-Instantiate the primitives.  Note that this must go inside the run function
-because GCC will not let us reference labels outside of any function.
-
-@$@<Interpreter primitives@>==@{@-
-#if USE_GCC_LABELS
-@<Efficient interpreter primitives@>
-#else
-@<Basic interpreter primitives@>
-#endif
 @}
 
 @B@<Local state@>
 
 For efficiency reasons the interpreter uses local copies of the global
 state.  We copy them in before the interpreter starts and out again when
-it finishes.  
+it finishes.
 
 @$@<Local mutator state cache@>==@{@-
 NodePtr hp, *sp, *fp;
@@ -316,12 +276,71 @@ There are also local temporaries that are useful in many cases.
 NodePtr nodeptr, *constptr = NULL;
 @}
 
+@B@<Implementing the interpreter@>
+
+The interpreter actions are defined using the primitives @{Dispatch@},
+@{Case@}, @{Break@} and @{EndDispatch@}.  In the default case these just
+map to a basic switch statement.
+
+@$@<Basic interpreter primitives@>==@{@-
+#define Dispatch      DEBUGPERINSN; switch (*ip++) {
+#define Case(x)       case x
+#define Break         break
+#define EndDispatch   }
+@}
+
+A more-efficient version based on GCC's addressable labels is also
+supported.  The array @{labs@} provides a mapping from an opcode to its
+unique label.  There is no switch statement, just a direct goto the
+appropriate label so the inifinite loop in @{run@} is never iterated
+directly.  The general list of instructions comes from @{newbytecode.h@}.
+
+@$@<Instruction set@>==@{@-
+#include "newbytecode.h"
+@}
+
+@$@<Efficient interpreter primitives@>==@{@-
+#define ins(x)  &&l##x
+static void *labs[] = { INSTRUCTION_LIST };
+#undef ins
+#define Dispatch     Break;
+#define Case(x)      l##x
+#define Break        DEBUGPERINSN; ip++; goto *labs[*(ip-1)]
+#define EndDispatch
+@}
+
+The more efficient version is used if GCC is our compiler.
+
+@$@<USE_GCC_LABELS macro@>==@{@-
+#if defined(__GNUC__)
+#  define USE_GCC_LABELS 1
+#else
+#  define USE_GCC_LABELS 0
+#endif
+@}
+
+Instantiate the primitives.  Note that this must go inside the run function
+because GCC will not let us reference labels outside of any function.
+
+@$@<Interpreter primitives@>==@{@-
+#if USE_GCC_LABELS
+@<Efficient interpreter primitives@>
+#else
+@<Basic interpreter primitives@>
+#endif
+@}
+
 @B@<Setting up the code to be evaluated and starting@>
 
 The instruction pointer is set to the @{Prelude.primLeave@} routine so
 that once we have executed the program we return to exit the mutator.  A
 dedicated pointer to the current VAP is set to the toplevel form to be
 evaluated (the parameter to @{run@}).
+
+FIXME: is this really right?  It would appear that the primLeave is just
+there as a placeholder.  It just contains an EXIT insn which never seems
+to be executed since we just start with a faked EVAL that evaluates the TOS
+which is the TOPLEVEL.
 
 FIXME: is the @{vappptr = toplevel@} needed since the EVAL case sets
 @{vapptr@} to @{nodeptr@} which appears to come off the stack which is
@@ -340,9 +359,14 @@ ip = (CodePtr)(LEAVE);
 vapptr = toplevel;
 @}
 
-Execution is started by evaluating the top of the stack.
+Execution is started by evaluating the top of the stack by faking an @{EVAL@}
+instruction.
 
 @$@<Start execution@>==@{@-
+PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
+#ifdef DEBUG_INSNS
+ERROR_OUT("ip = %08x EVAL (faked)\n", ip);
+#endif
 goto EvalTOS;
 @}
 
@@ -361,24 +385,24 @@ Case(APPLY): {
         int need,size,args = *ip++;
         Cinfo cinfo;
         NodePtr vap;
-    
+
         nodeptr = *sp++;
         IND_REMOVE(nodeptr);
-    
+
         cinfo = GET_CINFO(nodeptr);
-        
+
         if (GET_TAG(nodeptr)&VAP_TAG && !CINFO_NEED(cinfo)) {
             vap = nodeptr;
             goto build_apply;
         }
-        
+
         need = CINFO_NEED(cinfo);
         size = CINFO_SIZE(cinfo);
         nodeptr = nodeptr+1+EXTRA;
         if (need <= args) {
             vap = hp;
             *hp++ = (Node)((UInt)2*need+(UInt)cinfo)+(UInt)VAP_TAG;
-            hp += EXTRA; 
+            hp += EXTRA;
             while(size-->0)
                 *hp++ = *nodeptr++;
             args -= need;
@@ -408,11 +432,16 @@ Case(APPLY): {
 
 @B@<EVAL and RETURN cases@>
 
-@{EVAL@} takes the top of the stack and evaluates it if it has not already
-been fully evaluated.  @{SELECTOR_EVAL@} is really equivalent to
-@{PUSH_ARG 1@} and then @{EVAL@}.  It has it's own opcode to signal that
-this is a selector function (for the garbage collector).  Note that
-@{SELECTOR_EVAL@} falls through to @{EVAL@} so the order is important here.
+@{EVAL@} takes the top of the stack and evaluates it if all of its arguments
+are available.  The zap bit is used to detected cycles in the evaluation.  We
+zap a node before we start evaluating it.  If we get here and the node is
+already zapped then we have a cycle (@/black hole@/) so we complain and abort
+execution.
+
+@{SELECTOR_EVAL@} is really equivalent to @{PUSH_ARG 1@} and then
+@{EVAL@}.  It has its own opcode to signal that this is a selector
+function (for the garbage collector).  Note that @{SELECTOR_EVAL@} falls
+through to @{EVAL@} so the order is important here.
 
 FIXME: in the original code the VAP_CODE call here was
 FINFO_CODE(GET_FINFO(...)) which is what VAP_CODE is defined to be.  Confirm
@@ -425,8 +454,12 @@ Case(SELECTOR_EVAL):
     *--sp = nodeptr;
     /* Fall through to EVAL */
 
-Case(EVAL):
   EvalTOS:
+    PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
+#ifdef DEBUG_INSNS
+    ERROR_OUT("ip = %08x EVAL (faked)\n", ip);
+#endif
+Case(EVAL):
     nodeptr = sp[0];
     IND_REMOVE(nodeptr);
     sp[0] = nodeptr;
@@ -453,23 +486,26 @@ Case(RETURN):
     POP_STATEVP;
     Break;
 
-Case(RETURN_EVAL):
   return_eval:
+    PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
+#ifdef DEBUG_INSNS
+    ERROR_OUT("ip = %08x RETURN_EVAL (faked)\n", ip);
+#endif
+Case(RETURN_EVAL):
     nodeptr = *sp++;
     UPDATE_VAP(nodeptr);
     POP_STATEVP;
-    SHOW(ERROR_OUT("RETURN_EVAL\n"));
     goto EvalTOS;
 @}
 
 These cases use the following macros to push and pop the mutator state in
-response to evals and returns.  
+response to evals and returns.
 
 @$@<State stack macros@>==@{@-
 #define PUSH_STATE \
     *--sp = (NodePtr)fp; \
     *--sp = (NodePtr)ip; \
-    fp = sp;
+    fp = sp
 
 #define POP_STATEVP \
    sp = fp; \
@@ -478,15 +514,15 @@ response to evals and returns.
    *sp = vapptr; \
    vapptr = fp[2]; \
    IND_REMOVE(vapptr); \
-   constptr = VAP_CONST(vapptr);
- 
+   constptr = VAP_CONST(vapptr)
+
 #define POP_STATE(d) \
    sp += d; \
    ip = (CodePtr)*sp++; \
    fp = (NodePtr*)*sp++; \
    vapptr = fp[2]; \
    IND_REMOVE(vapptr); \
-   constptr = VAP_CONST(vapptr);
+   constptr = VAP_CONST(vapptr)
 @}
 
 The cases also use @{UPDATE_VAP@} to update the @{VAP@} node with an
@@ -505,7 +541,6 @@ the interpreter loop to complete execution.
 
 @$@<EXIT case@>==@{@-
 Case(EXIT):
-    SHOW(ERROR_OUT("EXIT\n"));
     goto mutator_end;
     Break;
 @}
@@ -515,7 +550,6 @@ never be reached.
 
 @$@<ENDCODE case@>==@{@-
 Case(ENDCODE):
-    SHOW(ERROR_OUT("ENDCODE\n"));
     ERROR_OUT("Tried to evaluate beyond end of function.\n");
     ERROR_OUT("Instruction pointer at %lx\n",(UInt)&ip[-1]);
     goto mutator_end;
@@ -524,14 +558,14 @@ Case(ENDCODE):
 
 @B@<Heap cases@>
 
-The heap instructions put new values in the heap.  First, ones that put 
+The heap instructions put new values in the heap.  First, ones that put
 negative or position offsets from the heap pointer.
 
 @$@<Heap cases@>+=@{@-
 Case(HEAP_OFF_N1):
-    *hp = (Node) (hp-HEAPOFFSET(ip[0]));  
-    hp++; 
-    ip+=1; 
+    *hp = (Node) (hp-HEAPOFFSET(ip[0]));
+    hp++;
+    ip+=1;
     Break;
 
 Case(HEAP_OFF_N2):
@@ -539,15 +573,15 @@ Case(HEAP_OFF_N2):
     hp++;
     ip+=2;
     Break;
-    
+
 Case(HEAP_OFF_P1):
-    *hp = (Node) (hp+HEAPOFFSET(ip[0]));     
+    *hp = (Node) (hp+HEAPOFFSET(ip[0]));
     hp++;
     ip+=1;
     Break;
-    
+
 Case(HEAP_OFF_P2):
-    *hp = (Node) (hp+HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)); 
+    *hp = (Node) (hp+HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8));
     hp++;
     ip+=2;
     Break;
@@ -557,59 +591,59 @@ Then operations that put constants or addresses of constants into the heap.
 
 @$@<Heap cases@>+=@{@-
 Case(HEAP_CVAL_N2):
-    *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; 
+    *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)];
     ip+=2;
     Break;
-    
-Case(HEAP_CVAL_N1): 
-    *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])];     
+
+Case(HEAP_CVAL_N1):
+    *hp++ = (Node) constptr[-HEAPOFFSET(ip[0])];
     ip+=1;
     Break;
-    
+
 Case(HEAP_CVAL_IN3):
     *hp++ = (Node) constptr[-3];
-    Break;  
-    
+    Break;
+
 Case(HEAP_CVAL_I3):
-    *hp++ = (Node) constptr[3]; 
-    Break;  
-    
-Case(HEAP_CVAL_I4): 
+    *hp++ = (Node) constptr[3];
+    Break;
+
+Case(HEAP_CVAL_I4):
     *hp++ = (Node) constptr[4];
-    Break;  
-    
+    Break;
+
 Case(HEAP_CVAL_I5):
     *hp++ = (Node) constptr[5];
-    Break;  
-    
+    Break;
+
 Case(HEAP_CVAL_P1):
-    *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])]; 
-    ip+=1; 
-    Break;  
-    
+    *hp++ = (Node) constptr[HEAPOFFSET(ip[0])];
+    ip+=1;
+    Break;
+
 Case(HEAP_CVAL_P2):
-    *hp++ = (Node) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
-    ip+=2; 
+    *hp++ = (Node) constptr[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
+    ip+=2;
     Break;
 
 Case(HEAP_CADR_N2):
-    *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)]; 
-    ip+=2; 
+    *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)];
+    ip+=2;
     Break;
-    
-Case(HEAP_CADR_N1): 
-    *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])];     
-    ip+=1; 
+
+Case(HEAP_CADR_N1):
+    *hp++ = (Node)&constptr[-HEAPOFFSET(ip[0])];
+    ip+=1;
     Break;
-    
+
 Case(HEAP_CADR_P1):
-    *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])];          
-    ip+=1; 
+    *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])];
+    ip+=1;
     Break;
-    
-Case(HEAP_CADR_P2): 
-    *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)]; 
-    ip+=2; 
+
+Case(HEAP_CADR_P2):
+    *hp++ = (Node)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
+    ip+=2;
     Break;
 @}
 
@@ -620,22 +654,22 @@ Case(HEAP_INT_N1):
     *hp++ = (Node) GET_INT(-HEAPOFFSET(ip[0]));
     ip+=1;
     Break;
-    
+
 Case(HEAP_INT_P1):
-    *hp++ = (Node) GET_INT( HEAPOFFSET(ip[0]));           
+    *hp++ = (Node) GET_INT( HEAPOFFSET(ip[0]));
     ip+=1;
     Break;
-    
+
 Case(HEAP_CHAR_N1):
     *hp++ = (Node) GET_CHAR(-HEAPOFFSET(ip[0]));
     ip+=1;
     Break;
-    
+
 Case(HEAP_CHAR_P1):
     *hp++ = (Node) GET_CHAR( HEAPOFFSET(ip[0]));
     ip+=1;
     Break;
-@}  
+@}
 
 Then ones that put arguments on the heap.
 
@@ -644,16 +678,16 @@ Case(HEAP_ARG):
     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);
     ip+=1;
     Break;
-    
+
 Case(HEAP_ARG_ARG):
     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);
     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[1]);
     ip+=2;
     Break;
-    
+
 Case(HEAP_ARG_ARG_RET_EVAL):
     *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[0]);
-    *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[1]);         
+    *hp++ = (Node) GET_POINTER_ARG1(vapptr,ip[1]);
     ip+=2;
     goto return_eval;
 @}
@@ -663,20 +697,20 @@ Finally, ones that put stack values onto the heap.
 @$@<Heap cases@>+=@{@-
 Case(HEAP_I1):
     nodeptr = sp[1];
-    *hp++ = (Node)nodeptr;        
+    *hp++ = (Node)nodeptr;
     Break;
-    
+
 Case(HEAP_I2):
     nodeptr = sp[2];
-    *hp++ = (Node)nodeptr; 
+    *hp++ = (Node)nodeptr;
     Break;
-    
+
 Case(HEAP_P1):
-    nodeptr = sp[HEAPOFFSET(ip[0])];  
+    nodeptr = sp[HEAPOFFSET(ip[0])];
     *hp++ = (Node)nodeptr;
     ip+=1;
     Break;
-    
+
 Case(HEAP_P2):
     nodeptr = sp[HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
     *hp++ = (Node)nodeptr;
@@ -714,7 +748,7 @@ get the rest.  When evaluated, the builtin executes another @{HGETS@}
 which repeats the process.
 
 The @{HPUTC@} case uses @{putc@} to do the real work and then
-@{Builtin.hputc_ok@} to construct its output which is 
+@{Builtin.hputc_ok@} to construct its output which is FIXME.
 
 @$@<I/O Builtins@>==@{@-
 #define PRIM_HGETS ((Node)FN_Builtin_46hgets)
@@ -722,17 +756,17 @@ The @{HPUTC@} case uses @{putc@} to do the real work and then
 @}
 
 @$@<I/O cases@>+=@{@-
-Case(HGETS): { 
+Case(HGETS): {
         int c;
         FileDesc *a;
 
         nodeptr = *sp++;
         IND_REMOVE(nodeptr);
         a  = derefForeignObj((ForeignObj*)(GET_INT_VALUE(nodeptr)));
-        
+
         c = getc(a->fp);
-        
-        ERROR_OUT("HGETS:    c=%d '%c'\n",c,c);
+
+        /* FIXME ERROR_OUT("HGETS:    c=%d '%c'\n",c,c); */
 
         if (c==-1) {
             nodeptr = GET_NIL();
@@ -742,15 +776,15 @@ Case(HGETS): {
             hp += SIZE_VAP1;
 
             MK_CONS(hp, (Node)GET_CHAR(c), (Node)nodeptr);
- 
+
             nodeptr = hp;
             hp += SIZE_CONS;
         }
         *--sp = nodeptr;
     }
     Break;
-    
-Case(HGETC): { 
+
+Case(HGETC): {
         int c;
         FileDesc *a;
 
@@ -760,8 +794,8 @@ Case(HGETC): {
         c = getc(a->fp);
         *sp = GET_CHAR(c);
     }
-    Break;    
-    
+    Break;
+
 Case(HPUTC): {
         char c;
         FileDesc *a;
@@ -786,7 +820,7 @@ Case(HPUTC): {
 Case(JUMP):
     ip += HEAPOFFSET(ip[0]) + (HEAPOFFSET(ip[1])<<8);
     Break;
-    
+
 Case(JUMPFALSE):
     nodeptr = *sp++;
     IND_REMOVE(nodeptr);
@@ -846,6 +880,13 @@ before and after the collection, respectively.  The @{BUFFER@} appears
 to be a small safety margin so that we are conservative on how close
 we can get to the boundary.
 
+FIXME: These macros are prepared to keep allocating right up to the current
+top of stack whereas other parts seem to indicate that hpLimit is the limit
+for growth (e.g. in finishGc).  The former seems ok for correctness but the
+latter would then be reporting the wrong data.  For our debugging we're using
+sp instead of hpLimit so that we conform to what the mutator is actually
+doing.
+
 @$@<Heap check macros@>==@{@-
 #define BUFFER 100
 #define HEAP_CHECK_VAP(c) \
@@ -866,20 +907,21 @@ finalisers.
 FIXME: not exactly sure about the pendingIdx and finaliser stuff.
 
 @$@<Force a garbage collection macro@>==@{@-
-#define FORCE_GC(c)             \
- PUSH_STATE;                    \
- hp = callGc((c),hp,sp,fp);     \
- POP_STATE(0);                  
+#define FORCE_GC(c)                          \
+   PUSH_STATE;                               \
+   hp = callGc((c),hp,sp,fp);                \
+   POP_STATE(0);
 @}
 
 FIXME: for the moment we've left this stuff out.  Needs more support
-from cdata.  Also, not sure where excludeFinalisers might be set.
+from cdata.  Also, not sure where excludeFinalisers might be set since
+it's not declared in any of the Kernel files.
 
- if (pendingIdx && !excludeFinalisers) {                \
-   Sp=sp; Fp=fp; Ip=ip; Hp=hp;  \
-   runDeferredGCs();            \
-   sp=Sp; fp=Fp; ip=Ip; hp=Hp;  \
- }
+   if (pendingIdx && !excludeFinalisers) {   \
+      Sp=sp; Fp=fp; Ip=ip; Hp=hp;            \
+      runDeferredGCs();                      \
+      sp=Sp; fp=Fp; ip=Ip; hp=Hp;            \
+   }
 
 @B@<NOP case@>
 
@@ -897,7 +939,7 @@ The @{ORD@} and @{CHR@} operations convert to and from ordinal types and their
 tags.
 
 FIXME: For this and later int ops we use MK_INT which builds a new heap cell.
-Could we save space by checking to see if GET_INT could be used instead if 
+Could we save space by checking to see if GET_INT could be used instead if
 the number is within the table ranges from newtables?  Presumably for most
 applications of ORD the enum value will be within the table range.
 
@@ -912,7 +954,7 @@ Case(ORD): {
         hp += SIZE_INT;
     }
     Break;
-    
+
 Case(CHR): {
         UInt tag;
         nodeptr = sp[0];
@@ -977,14 +1019,14 @@ Case(REM):   PRIM_OP2_INT(%);
 Case(NEG_W): {
         NodePtr nodeptr = *sp++;
         Int a;
-        IND_REMOVE(nodeptr); 
+        IND_REMOVE(nodeptr);
         a = GET_INT_VALUE(nodeptr);
-        MK_INT(hp, -a); 
+        MK_INT(hp, -a);
         *--sp = hp;
-        hp += SIZE_INT; 
+        hp += SIZE_INT;
     }
     Break;
-    
+
 Case(ABS_W): {
         NodePtr nodeptr = *sp++;
         Int a;
@@ -992,7 +1034,7 @@ Case(ABS_W): {
         a = GET_INT_VALUE(nodeptr);
         if (a < 0) {
             nodeptr = hp;
-            MK_INT(hp, -a); 
+            MK_INT(hp, -a);
             hp += SIZE_INT;
         }
         *--sp = nodeptr;
@@ -1067,10 +1109,10 @@ Case(SLASH_F): PRIM_OP2_FLOAT(/);
 Case(POW_F): {
         NodePtr nodeptr = *sp++;
         float a,b;
-        IND_REMOVE(nodeptr); 
+        IND_REMOVE(nodeptr);
         a = get_float_value(nodeptr);
         nodeptr = *sp++;
-        IND_REMOVE(nodeptr); 
+        IND_REMOVE(nodeptr);
         b = get_float_value(nodeptr);
         mk_float(hp, (float)pow((double)a,(double)b));
         *--sp = hp;
@@ -1150,20 +1192,20 @@ Case(SUB_D): PRIM_OP2_DOUBLE(-);
 Case(MUL_D): PRIM_OP2_DOUBLE(*);
 Case(SLASH_D): PRIM_OP2_DOUBLE(/);
 
-Case(POW_D): { 
+Case(POW_D): {
         NodePtr nodeptr = *sp++;
         double a, b;
-        IND_REMOVE(nodeptr); 
+        IND_REMOVE(nodeptr);
         a = get_double_value(nodeptr);
         nodeptr = *sp++;
-        IND_REMOVE(nodeptr); 
+        IND_REMOVE(nodeptr);
         b = get_double_value(nodeptr);
         mk_double(hp, pow(a,b));
         *--sp = hp;
         hp += SIZE_DOUBLE;
     }
     Break;
-    
+
 #define PRIM_OP1_DOUBLE(op) { \
         NodePtr nodeptr = *sp++; \
         double a; \
@@ -1214,7 +1256,7 @@ Case(GE_D): PRIM_CMP2_DOUBLE(>=);
 
 @B@<Stack operations@>
 
-There are a large collection of operations for manipulating the stack. 
+There are a large collection of operations for manipulating the stack.
 First, come the operations that push constant values or their addresses
 on the stack.
 
@@ -1223,7 +1265,7 @@ Case(PUSH_CADR_N2):
     *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)];
     ip+=2;
     Break;
-    
+
 Case(PUSH_CADR_N1):
     *--sp = (NodePtr)&constptr[-HEAPOFFSET(ip[0])];
     ip+=1;
@@ -1233,27 +1275,27 @@ Case(PUSH_CADR_P1):
     *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])];
     ip+=1;
     Break;
-    
+
 Case(PUSH_CADR_P2):
     *--sp = (NodePtr)&constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
     ip+=2;
     Break;
-    
+
 Case(PUSH_CVAL_N2):
     *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])-(HEAPOFFSET(ip[1])<<8)];
     ip+=2;
     Break;
-    
+
 Case(PUSH_CVAL_N1):
     *--sp = (NodePtr) constptr[-HEAPOFFSET(ip[0])];
     ip+=1;
     Break;
-    
+
 Case(PUSH_CVAL_P1):
     *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])];
     ip+=1;
-    Break;  
-    
+    Break;
+
 Case(PUSH_CVAL_P2):
     *--sp = (NodePtr) constptr[ HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8)];
     ip+=2;
@@ -1267,7 +1309,7 @@ Case(PUSH_INT_N1):
     *--sp = GET_INT(-HEAPOFFSET(ip[0]));
     ip+=1;
     Break;
-    
+
 Case(PUSH_INT_P1):
     *--sp = GET_INT(HEAPOFFSET(ip[0]));
     ip+=1;
@@ -1289,26 +1331,26 @@ Then the ones that push arguments.
 @$@<Stack cases@>+=@{@-
 Case(PUSH_ARG_I1):
     nodeptr = GET_POINTER_ARG1(vapptr,1);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     Break;
 
-Case(PUSH_ARG_I2):  
+Case(PUSH_ARG_I2):
     nodeptr = GET_POINTER_ARG1(vapptr,2);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     Break;
 
 Case(PUSH_ARG_I3):
     nodeptr = GET_POINTER_ARG1(vapptr,3);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     Break;
 
 Case(PUSH_ARG):
     nodeptr = GET_POINTER_ARG1(vapptr,ip[0]);
     ip+=1;
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     Break;
 @}
@@ -1318,28 +1360,28 @@ Operations that push arguments and zap them at the same time.
 @$@<Stack cases@>+=@{@-
 Case(PUSH_ZAP_ARG_I1):
     nodeptr = GET_POINTER_ARG1(vapptr,1);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     vapptr[EXTRA+1] = (Node)ZAP_ARG_NODE;
     Break;
 
 Case(PUSH_ZAP_ARG_I2):
     nodeptr = GET_POINTER_ARG1(vapptr,2);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     vapptr[EXTRA+2] = (Node)ZAP_ARG_NODE;
     Break;
 
 Case(PUSH_ZAP_ARG_I3):
     nodeptr = GET_POINTER_ARG1(vapptr,3);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     vapptr[EXTRA+3] = (Node)ZAP_ARG_NODE;
     Break;
 
 Case(PUSH_ZAP_ARG):
     nodeptr = GET_POINTER_ARG1(vapptr,ip[0]);
-    IND_REMOVE(nodeptr); 
+    IND_REMOVE(nodeptr);
     *--sp = nodeptr;
     vapptr[EXTRA+HEAPOFFSET(ip[0])] = (Node)ZAP_ARG_NODE;
     ip+=1;
@@ -1353,12 +1395,12 @@ methods.
 Case(PUSH_HEAP):
     *--sp = hp;
     Break;
-    
+
 Case(PUSH_I1):
     nodeptr = sp[1];
     *--sp = nodeptr;
     Break;
-    
+
 Case(PUSH_P1):
     nodeptr = sp[HEAPOFFSET(ip[0])];
     *--sp = nodeptr;
@@ -1370,16 +1412,16 @@ Case(PUSH_P2):
     *--sp = nodeptr;
     ip+=2;
     Break;
-      
+
 Case(POP_I1):
     sp += 1;
     Break;
-    
+
 Case(POP_P1):
     sp += HEAPOFFSET(ip[0]);
     ip+=1;
     Break;
-    
+
 Case(POP_P2):
     sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8);
     ip+=2;
@@ -1392,17 +1434,17 @@ Sliding the stack.
 Case(SLIDE_P1):
     nodeptr = sp[0];
     sp += HEAPOFFSET(ip[0]);
-    sp[0] = nodeptr; 
+    sp[0] = nodeptr;
     ip+=1;
     Break;
-    
+
 Case(SLIDE_P2):
     nodeptr = sp[0];
     sp += HEAPOFFSET(ip[0])+(HEAPOFFSET(ip[1])<<8);
     sp[0] = nodeptr;
-    ip+=2; 
+    ip+=2;
     Break;
-@} 
+@}
 
 @B@<Field selection and unpacking@>
 
@@ -1437,7 +1479,7 @@ Case(UNPACK): {
 @B@<String creation@>
 
 Strings are represented by cons cells of characters.  @{STRING@} returns one
-character at a time.  @{PRIM_STRING@} uses @{STRING@} recursively to unpack 
+character at a time.  @{PRIM_STRING@} uses @{STRING@} recursively to unpack
 the next character when needed.
 
 @$@<Builtin.primUnpackCString builtin@>==@{@-
@@ -1456,7 +1498,7 @@ Case(STRING): {
             MK_INT(hp,(UInt)(str+1));
             nodeptr = hp;
             hp += SIZE_INT;
-       
+
             MK_VAP1(hp, (Node)(C_VAPTAG(PRIM_STRING)), (Node)nodeptr);
             nodeptr = hp;
             hp += SIZE_VAP1;
@@ -1477,16 +1519,19 @@ Case(STRING): {
 
 These operations implement two different ways to do an n-way switch.
 
+FIXME: The CON_CDATA case should probably not be needed as elsewhere.
+
 @$@<Switch cases@>==@{@-
 Case(TABLESWITCH):
     nodeptr = sp[0];
     IND_REMOVE(nodeptr);
     switch(GET_LARGETAG(nodeptr)) {
-        case CON_DATA  | CON_TAG :
+        case CON_DATA  | CON_TAG:
+        case CON_CDATA  | CON_TAG:
             nodeptr = (NodePtr) GET_CONSTR(nodeptr);
             break;
-        case CON_PTRS  | CON_TAG :
-        case CON_WORDS | CON_TAG :
+        case CON_PTRS  | CON_TAG:
+        case CON_WORDS | CON_TAG:
             nodeptr = 0;
             break;
         default :
@@ -1497,13 +1542,9 @@ Case(TABLESWITCH):
             break;
     }
     ip  = (CodePtr) ALIGNPTR2(ip+1);
-#ifdef __palmos__
-    ip += *(((short*) ip) + (UInt) nodeptr);
-#else
     ip += *(((short*) ip) + (int) nodeptr);
-#endif
     Break;
-    
+
 Case(LOOKUPSWITCH): {
         int sz = *ip;
         short* t;
@@ -1515,11 +1556,7 @@ Case(LOOKUPSWITCH): {
         ip = (CodePtr) ALIGNPTR2(ip+1);
 
         for (t = (short*) ip; sz > 0; t = t + 2, sz--) {
-#ifdef __palmos__
-            if (((UInt) nodeptr) == *t) {
-#else
             if (((int) nodeptr) == *t) {
-#endif
                 ip += *(t+1);
                 goto NextInst;
             }
@@ -1579,13 +1616,13 @@ These are not used but don't appear in the unused instruction list.
 Case(MKIORETURN):
     ERROR_OUT("MKIORETURN executed, shouldn't be used\n");
     Break;
-    
+
 Case(HEAP_CREATE):
     ERROR_OUT("HEAP_CREATE executed, shouldn't be used\n");
     Break;
 
 Case(HEAP_SPACE):
-    ERROR_OUT("HEAD_SPACE executed, shouldn't be used\n");
+    ERROR_OUT("HEAP_SPACE executed, shouldn't be used\n");
     Break;
 @}
 
@@ -1601,211 +1638,20 @@ pay because we don't want to have a range check on every decode.
 @$@<Default case@>==@{@-
 #if !defined(USE_GCC_LABELS)
 default:
-    ERROR_OUT("Unknown instruction %d at %lx\n",ip[-1], (UInt)&ip[-1]);
+    ERROR_OUT("Unknown instruction %d at %lx\n", ip[-1], (UInt)&ip[-1]);
     EXITPROG(-1);
 #endif
 @}
 
-@B@<Opcode names@>
+@B@<Debugging support@>
 
-For debugging purposes we need to be able to translate opcodes into the
-string form of the opcode name.  The following array does this.  The order
-of the opcodes must match the order of definition in @{newbytecode.h@}.
-
-FIXME: This really should be done in such a way to avoid duplicating all
-of this data.  Move to bytecode.fwi?
-
-@$@<Instruction names@>==@{@-
-#if (defined(DEBUG) && USE_GCC_LABELS)
-static char *instr_names[] = {
- "DUMMY_FOR_ZERO",
-
- "NEEDHEAP_P1",
- "NEEDHEAP_P2",
- "JUMP",
- "JUMPFALSE",
- "NOP",
-
- "PUSH_CADR_N2",
- "PUSH_CADR_N1",
- "PUSH_CADR_P1",
- "PUSH_CADR_P2",
- "PUSH_CVAL_N2",
- "PUSH_CVAL_N1",
- "PUSH_CVAL_P1",
- "PUSH_CVAL_P2",
- "PUSH_INT_N2",
- "PUSH_INT_N1",
- "PUSH_INT_P1",
- "PUSH_INT_P2",
- "PUSH_ARG",
- "PUSH_P1",
- "PUSH_P2",
-
- "POP_P1",
- "POP_P2",
- "SLIDE_P1",
- "SLIDE_P2",
- "UNPACK",
-
- "APPLY",
- "EVAL",
-
- "RETURN",
- "RETURN_EVAL",
-
- "HEAP_CADR_N2",
- "HEAP_CADR_N1",
- "HEAP_CADR_P1",
- "HEAP_CADR_P2",
- "HEAP_CVAL_N2",
- "HEAP_CVAL_N1",
- "HEAP_CVAL_P1",
- "HEAP_CVAL_P2",
- "HEAP_INT_N2",
- "HEAP_INT_N1",
- "HEAP_INT_P1",
- "HEAP_INT_P2",
- "HEAP_ARG",
- "HEAP_ARG_ARG",
- "HEAP_ARG_ARG_RET_EVAL",
- "HEAP_P1",
- "HEAP_P2",
-
- "ADD_W",
- "ADD_F",
- "ADD_D",
- "SUB_W",
- "SUB_F",
- "SUB_D",
- "MUL_W",
- "MUL_F",
- "MUL_D",
- "ABS_W",
- "ABS_F",
- "ABS_D",
- "SIGNUM_W",
- "SIGNUM_F",
- "SIGNUM_D",
- "EXP_F",
- "EXP_D",
- "LOG_F",
- "LOG_D",
- "SQRT_F",
- "SQRT_D",
- "SIN_F",
- "SIN_D",
- "COS_F",
- "COS_D",
- "TAN_F",
- "TAN_D",
- "ASIN_F",
- "ASIN_D",
- "ACOS_F",
- "ACOS_D",
- "ATAN_F",
- "ATAN_D",
- "SLASH_F",
- "SLASH_D",
- "EQ_W",
- "EQ_F",
- "EQ_D",
- "NE_W",
- "NE_F",
- "NE_D",
- "LT_W",
- "LT_F",
- "LT_D",
- "LE_W",
- "LE_F",
- "LE_D",
- "GT_W",
- "GT_F",
- "GT_D",
- "GE_W",
- "GE_F",
- "GE_D",
- "NEG_W",
- "NEG_F",
- "NEG_D",
-
- "QUOT",
- "REM",
- "AND",
- "OR",
- "NOT",
- "ORD",
- "CHR",
- "SEQ",
- "STRING",
-
- "PRIMITIVE",
- "PUSH_HEAP",
- "EXIT",
-
- "NEEDSTACK_P1",
- "NEEDSTACK_P2",
-
- "HEAP_OFF_N2",
- "HEAP_OFF_N1",
- "HEAP_OFF_P1",
- "HEAP_OFF_P2",
-
- "HEAP_CREATE",
- "HEAP_SPACE",
-
- "SELECTOR_EVAL",
- "SELECT",
-
- "ZAP_ARG",
- "ZAP_STACK_P1",
- "ZAP_STACK_P2",
-
- "NEEDHEAP_I32",
- "NEEDSTACK_I16",
-
- "PUSH_I1",
- "POP_I1",
-
- "PUSH_ARG_I1",
- "PUSH_ARG_I2",
- "PUSH_ARG_I3",
-
- "ZAP_ARG_I1",
- "ZAP_ARG_I2",
- "ZAP_ARG_I3",
-
- "HEAP_CVAL_I3",
- "HEAP_CVAL_I4",
- "HEAP_CVAL_I5",
-
- "HEAP_CVAL_IN3",
-
- "HEAP_I1",
- "HEAP_I2",
-
- "HPUTC",
- "HGETC",
- "HGETS",
-
- "PUSH_CHAR_N1",
- "PUSH_CHAR_P1",
- "HEAP_CHAR_N1",
- "HEAP_CHAR_P1",
-
- "TABLESWITCH",
- "LOOKUPSWITCH",
- "MKIORETURN",
-
- "PUSH_ZAP_ARG_I1",
- "PUSH_ZAP_ARG_I2",
- "PUSH_ZAP_ARG_I3",
- "PUSH_ZAP_ARG",
-
- "ENDCODE",
-
- "POW_F",
- "POW_D"
-};
-#endif
+@$@<prVap routine@>==@{@-
+static void prVap(NodePtr vapptr, NodePtr *constptr)
+{
+    ERROR_OUT("vapptr = ");
+    prNode(vapptr, DEBUG_NODEDEPTH);
+    ERROR_OUT("constptr = %4x\n", constptr);
+    ERROR_OUT("\n");
+}
 @}
+
