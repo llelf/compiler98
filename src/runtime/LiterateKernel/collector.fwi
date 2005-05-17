@@ -4,6 +4,8 @@ This section encapsulates the nhc garbage collector except for the marking
 phase which is described next.
 
 @O@<collector.c@>==@{@-
+@<File warning@>
+
 #include <stdlib.h>
 #include "node.h"
 #include "mark.h"
@@ -17,6 +19,11 @@ phase which is described next.
 @<Logging setting@>
 @<User GC list@>
 
+#ifdef DEBUG
+@<prMemoryLayout routine@>
+@<prHeapStack routine@>
+#endif
+
 @<flip routine@>
 @<nhc_update routine@>
 
@@ -29,6 +36,7 @@ phase which is described next.
 @<callGc routine@>
 @<finishGc routine@>
 @<add_user_gc routine@>
+
 @}
 
 @$@<Collector interface@>==@{
@@ -49,6 +57,10 @@ extern @<add_user_gc header@>;
 
 @<Mark phase interface@>
 extern @<flip header@>;
+
+#ifdef DEBUG
+extern @<prHeapStack header@>;
+#endif
 @}
 
 @$@<Collector initialisation@>==@{@-
@@ -75,6 +87,7 @@ void initGc(Int hpSize, NodePtr *ihp, Int spSize, NodePtr **isp)@-
     @<Assign stack area@>
     @<Check that there is room for heap@>
     @<Assign heap area@>
+    @<Report memory layout@>
     @<Initialise heap@>
     @<Initialise statistical information@>
 }
@@ -107,9 +120,9 @@ collector.  The different variables are explained in the following.
 
 @$@<Memory area variable layout@>@Z==@{@-
 hpStart                                                          hpEnd
-      hpBase                                                          
-hpLowLimit                   hpLimit              bitTable                      
-                hp               spEnd            spStart                    
+      hpBase
+hpLowLimit                   hpLimit              bitTable
+                hp               spEnd            spStart
 @}
 
 @$@<Memory area state@>==@{@-
@@ -168,8 +181,10 @@ spEnd = spStart - spSize;
 @}
 
 The heap occupies the remainder of the memory area (the low end).  We
-require that the heap not reside in high memory (FIXME: why?).  Also, make
-sure that there is enough room after the stack has been assigned space.
+require that the heap section not reside in high memory.  This is because
+we use the most significant bit as the zap bit so it is not available for
+addressing.  Also, make sure that there is enough room after the stack has
+been assigned space.
 
 @$@<Check that there is room for heap@>==@{@-
 if ((long)hpEnd>0x80000000) {
@@ -193,7 +208,16 @@ hpLimit = (NodePtr)spEnd - 128;
 hpBase = hpLowLimit = hpStart;
 *ihp = &hpLowLimit[GCEXTRA];
 @}
-  
+
+When debugging the heap and stack, report the parameters of the memory
+layout.
+
+@$@<Report memory layout@>==@{@-
+#ifdef DEBUG_HEAPSTACK
+prMemoryLayout();
+#endif
+@}
+
 The heap area is assigned with a small (false) security buffer between the
 high end of the heap and the top of the stack area.  The heap for
 allocation starts @{GCEXTRA@} words into the allocated space to leave room
@@ -213,7 +237,7 @@ extra space used by extensions).
 
 FIXME: exactly what is this pointer used for?  See also the stuff in mark
 about using hpLowLimit[1] to store a zero word that is used to terminate
-the marking process.  
+the marking process.
 
 FIXME: why is CONSTR used here instead of CONSTRP since we just have a
 single pointer?  No real difference I guess since there is only one of
@@ -242,7 +266,7 @@ int nogc;
 @$@<Initialise statistical information@>==@{@-
 hpMoved = hpTotal = (int64_t)0;
 hpMaxSurvive = nogc = 0;
-@}  
+@}
 
 @B@<Perform the collection@>
 
@@ -270,22 +294,24 @@ NodePtr callGc(Int size, NodePtr hp, NodePtr *sp, NodePtr *fp)@-
     @<Perform last safety check@>
     @<Log start of collection@>
     @<Increment total heap usage@>
-    
+
     @<Clear foreign objects@>
-    
+
     @<Mark the active nodes@>
     @<Flip the pointers@>
     @<Move the heap@>
-    
+
     @<Increment heap moved and record survival@>
     @<Check that requested allocation fits@>
-    
+
     @<Log result of collection@>
-    
+
     @<Collect foreign objects@>
-    
+
     @<Stop collection timer@>
     @<Start runtime timer@>
+
+    @<Return new heap pointer@>
 }
 @}
 
@@ -296,14 +322,14 @@ runtime option (more options gives more information).  The variable
 @{bellGc@} holds the number of times the @{-B@} option was specified.
 
 FIXME: at the moment we have no argument processing so we initialise it
-to something that shows all of our messages.  Remove this later.
+to something that shows none of our messages.  Fix this later.
 
 @$@<Logging setting@>@M==@{@-
 int bellGc;
 @}
 
 @$@<Log start of collection@>==@{@-
-bellGc = 4;
+bellGc = 0;
 if (bellGc) {
     FLUSH_OUT;
     ERROR_OUT("<GC %3d:Start>", nogc);
@@ -463,7 +489,7 @@ void flip(NodePtr *p)
 @}
 
 Flipping the CAFs is achieved by running down the @{oldCaf@} linked list
-created by the mark phase.  This should contain all of the CAFs that have 
+created by the mark phase.  This should contain all of the CAFs that have
 been found.  This code mirrors the code in @{markCaf@}.
 
 @$@<flipCaf routine@>==@{@-
@@ -478,7 +504,7 @@ void flipCaf(void)
 
         @<Flip the first word of the CAF@>
         @<Flip the constituents of the CAF@>
-        
+
         caf = cptr->next;
     }
 }
@@ -497,7 +523,7 @@ FIXME: why is the first word processed specially?
 @}
 
 Next, we skip over the first word of the CAF node and any extra
-information in the node and process rest of the contents one by one. 
+information in the node and process rest of the contents one by one.
 @{VAP@}s just get added to the CAF list for processing themselves since
 they have no remaining arguments.  Indirection nodes we just follow and
 flip whatever they point to.
@@ -513,16 +539,17 @@ size += (Int)EXTRA+1;
 for ( ; i<size; i++) {
     NodePtr nptr = cptr->ptr[i];
     switch (EXT_TAG(nptr)) {
-        case VAP_TAG: {
-            Cinfo cinfo = EXT_CINFO(nptr);
-            addCaf(CINFO_FINFO(cinfo));
-        }
-        break;
-        
+        case VAP_TAG0:
+        case VAP_TAG1: {
+                Cinfo cinfo = EXT_CINFO(nptr);
+                addCaf(CINFO_FINFO(cinfo));
+            }
+            break;
+
         case IND_TAG:
             flip(&cptr->ptr[i]);
             break;
-        
+
         case CON_TAG:
             ERROR_OUT("CON_TAG in markCaf(1)\n");
             EXITPROG(-1);
@@ -559,7 +586,7 @@ void flipHeap(NodePtr hp)
     NodePtr scanptr, newpos;
     scanptr = newpos = &hpLowLimit[GCEXTRA];
     while (scanptr < hp) {
-        @<Scan a hole@>    
+        @<Scan a hole@>
         @<Flip a node@>
     }
 }
@@ -576,7 +603,7 @@ if (!marked(scanptr)) {
     @<Find the next marked node@>
 foundNode:
     @<Label the hole@>
-}    
+}
 @}
 
 To look up the current work in the bit table we need to work out its
@@ -628,8 +655,8 @@ while (!(mask & cache)) {
 @}
 
 @$@<Find the next non-zero word and the first set bit in it@>==@{@-
-Int i = 0;        
-while (0 == (cache = bitTable[++off])) 
+Int i = 0;
+while (0 == (cache = bitTable[++off]))
     ;
 mask = 1;
 while (!(mask & cache)) {
@@ -643,7 +670,7 @@ At this point @{scanptr@} refers to the next marked node.  We record a
 negative version of its location in the first word of the hole to label
 that this is the start of a hole that continues until @{scanptr@}.  The
 move phase will use this later to easily skip the hole.
-    
+
 @$@<Label the hole@>==@{@-
 hole[0] = (Node)-(Int)scanptr;
 @}
@@ -680,15 +707,23 @@ Having scanned over the hole we now process the node we have found.
 
 FIXME: more description needed
 
+FIXME: The CON_CDATA cases shouldn't be needed.  See also graph and mark
+and moveHeap below.
+
 @$@<Flip a node@>==@{@-
-if (scanptr <hp) {
+if (scanptr < hp) {
     Node tag = nhc_update(scanptr,newpos);
     *scanptr = tag;
     switch (EXT_LARGETAG(tag)) {
 
-        case CON_DATA | VAP_TAG:
-        case CON_PTRS | VAP_TAG:
-        case CON_WORDS | VAP_TAG: {
+        case CON_DATA | VAP_TAG0:
+        case CON_PTRS | VAP_TAG0:
+        case CON_CDATA | VAP_TAG0:
+        case CON_WORDS | VAP_TAG0:
+        case CON_DATA | VAP_TAG1:
+        case CON_PTRS | VAP_TAG1:
+        case CON_CDATA | VAP_TAG1:
+        case CON_WORDS | VAP_TAG1: {
                 Cinfo cinfo = EXT_CINFO(tag);
                 Int size   = CINFO_SIZE(cinfo) + EXTRA;
                 Int i = EXTRA;
@@ -698,8 +733,9 @@ if (scanptr <hp) {
                 newpos += 1 + size;
             }
             break;
-           
-        case CON_DATA | CON_TAG: {
+
+        case CON_DATA | CON_TAG:
+        case CON_CDATA | CON_TAG: {
                 Coninfo cinfo = EXT_CONINFO(tag);
                 Int psize = CONINFO_PSIZE(cinfo);
                 Int t = CONINFO_SIZE(cinfo);
@@ -711,7 +747,7 @@ if (scanptr <hp) {
                 scanptr += t;
             }
             break;
-            
+
         case CON_PTRS | CON_TAG: {
                 Coninfo cinfo = EXT_CONINFO(tag);
                 Int size = CONINFO_LARGESIZEU(cinfo);
@@ -721,7 +757,7 @@ if (scanptr <hp) {
                     flip((NodePtr *)scanptr++);
             }
             break;
-            
+
         case CON_WORDS | CON_TAG: {
                 Coninfo cinfo = EXT_CONINFO(tag);
                 Int size = CONINFO_LARGESIZEU(cinfo);
@@ -729,9 +765,9 @@ if (scanptr <hp) {
                 scanptr += 1 + size + EXTRA;
             }
             break;
-            
+
         default:
-            ERROR_OUT("IND found in flip heap!\n");
+            ERROR_OUT("Bad tag 0x%x in flip heap!\n", EXT_LARGETAG(tag));
             EXITPROG(-1);
     }
 }
@@ -761,10 +797,10 @@ NodePtr moveHeap(NodePtr hp)
 {
     NodePtr scanptr, newpos;
     Node tag;
-    
+
     scanptr = newpos = &hpLowLimit[GCEXTRA];
     while (scanptr < hp) {
-        @<Skip over hole@>  
+        @<Skip over hole@>
         @<Update pointer words@>
         @<Move a node@>
     }
@@ -814,11 +850,19 @@ this switch fail?
 FIXME: it seems like this code could have less duplication.  Use the switch to
 extract the size and then the copying code is the same, isn't it?
 
+FIXME: The CON_CDATA clauses shouldn't be needed.  See also graph and mark
+and flipHeap above.
+
 @$@<Move a node@>==@{@-
 switch (EXT_LARGETAG(tag)) {
-    case CON_DATA | VAP_TAG:
-    case CON_PTRS | VAP_TAG:
-    case CON_WORDS | VAP_TAG: {
+    case CON_DATA | VAP_TAG0:
+    case CON_PTRS | VAP_TAG0:
+    case CON_CDATA | VAP_TAG0:
+    case CON_WORDS | VAP_TAG0:
+    case CON_DATA | VAP_TAG1:
+    case CON_PTRS | VAP_TAG1:
+    case CON_CDATA | VAP_TAG1:
+    case CON_WORDS | VAP_TAG1: {
             Cinfo cinfo = EXT_CINFO(tag);
             Int size = CINFO_SIZE(cinfo)+EXTRA;
             *newpos++ = tag;
@@ -827,8 +871,9 @@ switch (EXT_LARGETAG(tag)) {
                 *newpos++ = *scanptr++;
         }
         break;
-        
-    case CON_DATA|CON_TAG: {
+
+    case CON_DATA | CON_TAG:
+    case CON_CDATA | CON_TAG: {
             Coninfo cinfo = EXT_CONINFO(tag);
             Int size = CONINFO_SIZE(cinfo)+EXTRA;
             *newpos++ = tag;
@@ -837,7 +882,7 @@ switch (EXT_LARGETAG(tag)) {
                 *newpos++ = *scanptr++;
         }
         break;
-        
+
     case CON_PTRS|CON_TAG:
     case CON_WORDS|CON_TAG: {
             Coninfo cinfo = EXT_CONINFO(tag);
@@ -848,9 +893,9 @@ switch (EXT_LARGETAG(tag)) {
                *newpos++ = *scanptr++;
         }
         break;
-       
+
     default:
-        ERROR_OUT("IND found in move heap!\n");
+        ERROR_OUT("Bad tag 0x%x in move heap!\n", EXT_LARGETAG(tag));
         EXITPROG(-1);
 }
 @}
@@ -880,6 +925,14 @@ if (hp + size >= (NodePtr)sp) {
 }
 @}
 
+@C@<Update the heap pointer@>
+
+Finally, we return the new heap pointer so that execution can continue.
+
+@$@<Return new heap pointer@>==@{@-
+return hp;
+@}
+
 @B@<User-supplied garbage collection@>
 
 To enable the user to provide collection for their own data structures, the
@@ -894,7 +947,7 @@ typedef void (*flipfun)();
 typedef struct USER_GC {
     markfun mark;
     flipfun flip;
-    struct USER_GC *next; 
+    struct USER_GC *next;
 } UserGC;
 @}
 
@@ -965,12 +1018,69 @@ void finishGc(NodePtr hp, int verbose)@-
 @$@<finishGc routine@>==@{@-
 @<finishGc header@>
 {
-  if (verbose) {
-    ERROR_OUT("\n\nUsed  %lld words of heap.\n",(int64_t)(hp-hpBase)+hpTotal);
-    ERROR_OUT("Moved %lld words of heap in %d gcs.\n",hpMoved,nogc);
-    ERROR_OUT("%d words to next gc.\n",hpLimit-hp);
-    ERROR_OUT("Max live after gc: %ld words.\n",hpMaxSurvive);
-  }
+    if (verbose) {
+        ERROR_OUT("\n\nUsed  %lld words of heap.\n",
+                  (int64_t)(hp-hpBase) + hpTotal);
+        ERROR_OUT("Moved %lld words of heap in %d gcs.\n", hpMoved, nogc);
+        ERROR_OUT("%d words to next gc.\n", hpLimit - hp);
+        ERROR_OUT("Max live after gc: %ld words.\n", hpMaxSurvive);
+    }
 }
 @}
 
+@B@<Debugging support@>
+
+@$@<prMemoryLayout routine@>==@{@-
+static void prMemoryLayout()
+{
+    ERROR_OUT("Memory   = %4x .. %4x (%d words)\n", hpStart, hpEnd,
+              hpEnd - hpStart);
+    ERROR_OUT("Heap     = %4x .. %4x (%d words), base = %4x\n", hpLowLimit,
+              hpLimit, hpLimit - hpLowLimit, hpBase);
+    ERROR_OUT("Stack    = %4x .. %4x (%d words)\n", spEnd, spStart,
+              spStart - spEnd);
+    ERROR_OUT("bitTable = %4x (%d words)\n", bitTable, hpEnd - bitTable);
+    FLUSH_ERR;
+}
+@}
+
+@$@<prHeapStack header@>@M==@{@-
+void prHeapStack(NodePtr hp, NodePtr *sp, NodePtr *fp)@-
+@}
+
+@$@<prHeapStack routine@>==@{@-
+static prAddrs(NodePtr base, int incr, int num, int size)
+{
+    int i;
+
+    if (num > 0) {
+        ERROR_OUT("  [ ");
+        for (i = 0; i < num; i++, base += incr)
+            ERROR_OUT("%4x ", *base);
+        if (num != size)
+            ERROR_OUT("... ");
+        ERROR_OUT("]\n");
+    }
+}
+
+@<prHeapStack header@>
+{
+    int stackShow = 8, heapShow = 8;
+    int stackSize = spStart - sp;
+    int heapSize = hp - hpBase;
+
+    if (stackSize < stackShow)
+        stackShow = stackSize;
+    ERROR_OUT("\nsp = %4x (%d words), fp = %4x\n", sp, stackSize, fp);
+    prAddrs((NodePtr) sp, 1, stackShow, stackSize);
+
+    if (heapSize < heapShow)
+        heapShow = heapSize;
+    ERROR_OUT("hp = %4x (%d words), %d words free\n", hp, heapSize,
+              (NodePtr) sp - hp);
+    prAddrs(hp - 1, -1, heapShow, heapSize);
+    ERROR_OUT("\n");
+
+    FLUSH_ERR;
+}
+@}
