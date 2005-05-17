@@ -1,0 +1,15 @@
+@A@<Profiling@>
+
+This module defines the profiling additions to the runtime.  For now, there
+is no profiling support so we just define the relevant things to be empty.
+
+@$@<Profiling interface@>==@{@-
+#define EXTRA 0
+#define WHEN_PROFILE(x)
+#define WHEN_DYNAMIC(x)
+#define INIT_PROFINFO(nodeptr,info)
+#define UPDATE_PROFINFO(nodeptr)
+#define SAVE_PROFINFO(nodeptr)
+#define FILL_AT(newsize,nodeptr)
+@}
+

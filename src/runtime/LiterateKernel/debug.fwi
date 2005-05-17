@@ -1,0 +1,29 @@
+@A@<Debugging routines@>
+
+This module contains the main controls for enabling debugging support in
+the rest of the runtime.  You should only need to adjust the following
+settings.
+
+Turn @{DEBUG_INSNS@} on if you want to see the stream of instructions being
+executed by the mutator.  @{DEBUG_HEAPSTACK@} prints information about the
+heap and stack state.  @{DEBUG_NODEDEPTH@} specifies how many levels deep
+should graph nodes be printed when @{DEBUG_HEAPSTACK@} is enabled.
+
+@$@<Debugging flags@>+=@{@-
+#define DEBUG_INSNS
+#define DEBUG_HEAPSTACK
+#define DEBUG_NODEDEPTH 2
+@}
+
+You shouldn't need to adjust anything below here.
+
+@{DEBUG@} is used to elide debugging code if none of the debugging options
+are turned on.
+
+@$@<Debugging flags@>+=@{@-
+#if defined(DEBUG_INSNS) || defined(DEBUG_HEAPSTACK)
+#define DEBUG
+#else
+#undef DEBUG
+#endif
+@}
