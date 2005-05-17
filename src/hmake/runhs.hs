@@ -1,3 +1,16 @@
+{- Program:   runhs [-e] script [args...]
+-- Author:    Malcolm Wallace
+-- Copyright: 2005
+-- Licence:   GPL
+-- Description:
+     A simple utility to run a Haskell program from source.
+     The original script can be either a .hs, .lhs, or with no extension.
+     Just put #!/path/to/runhs on the first line.
+     This implementation
+       * copies
+       * uses hmake (with your default haskell compiler) to build the program,
+       * then runs it.
+-}
 import Control.Monad      (when)
 import System.Cmd         (system)
 import System.Directory   (doesFileExist, copyFile, getModificationTime)
