@@ -4,12 +4,15 @@
 -- Licence:   GPL
 -- Description:
      A simple utility to run a Haskell program from source.
-     The original script can be either a .hs, .lhs, or with no extension.
+     The given script can be either a .hs, .lhs, or with no extension.
      Just put #!/path/to/runhs on the first line.
      This implementation
-       * copies
-       * uses hmake (with your default haskell compiler) to build the program,
-       * then runs it.
+       * copies the script to /tmp, adding a .hs extension if required, and
+         stripping the #! line if required;
+       * uses hmake (with your default haskell compiler) to build the program;
+       * then runs it with the given arguments.
+     If you don't change the script between uses, the executable cached
+     in /tmp is not rebuilt.
 -}
 import Control.Monad      (when)
 import System.Cmd         (system)
