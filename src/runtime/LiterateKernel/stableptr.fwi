@@ -5,6 +5,8 @@ referred to by references that never change even in the presence of
 garbage collection moving things around in the heap.
 
 @O@<stableptr.c@>==@{@-
+@<File warning@>
+
 #include "runtime.h"
 #include "mark.h"
 #include "stableptr.h"
@@ -25,6 +27,8 @@ garbage collection moving things around in the heap.
 #ifndef _STABLEPTR_H
 #define _STABLEPTR_H
 
+@<File warning@>
+
 @<Stable pointer type@>
 
 extern @<stableInit header@>;
@@ -32,6 +36,8 @@ extern @<makeStablePtr header@>;
 extern @<freeStablePtr header@>;
 extern @<derefStablePtr header@>;
 extern @<copyStablePtr header@>;
+
+@<Backward compatibility types and macros@>
 
 #endif
 @}
@@ -103,7 +109,7 @@ void mapStablePtrs(void (*f)(NodePtr*))
     if (StableTable[i]) {
       f(&StableTable[i]);
     }
-  }    
+  }
 }
 @}
 
@@ -201,4 +207,19 @@ void copyStablePtr(StablePtr i, StablePtr v)@-
 {
     StableTable[(long)i] = StableTable[(long)v];
 }
+@}
+
+@B@<Backwards compatibility@>
+
+Some of the code in the prelude (e.g., in the @{Binary@} module) relies
+on an older interface to stable pointers via the type @{HaskellRef@} and
+different routine names.  Here we define them to be the appropriate types
+and routines in the current stable pointer library.
+
+@$@<Backward compatibility types and macros@>==@{@-
+typedef StablePtr HaskellRef;
+#define stableRef(x) derefStablePtr(x)
+#define stableInsert(x) makeStablePtr(x)
+#define stableRelease(x) freeStablePtr(x)
+#define stableCopy(x,y) copyStablePtr(x)
 @}
