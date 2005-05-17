@@ -6,6 +6,8 @@ it easier to port the runtime to radically different platforms such as
 Palm OS.
 
 @O@<system.c@>==@{@-
+@<File warning@>
+
 @<Unix-like routines@>
 @}
 
@@ -28,7 +30,7 @@ flush the standard output and error streams (if that makes sense).
 @{EXITPROG@} triggers a process exit with numeric status on platforms for
 which this makes sense.
 
-@{MALLOC@} allocates dynamic memory given the number of bytes needed. 
+@{MALLOC@} allocates dynamic memory given the number of bytes needed.
 @{REALLOC@} alters the size of a previously @{MALLOC@}ed dynamic memory
 area.
 
