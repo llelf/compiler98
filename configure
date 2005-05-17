@@ -707,12 +707,15 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	cpphs"
     rm -f $DESTDIR$BINDIR/cpphs;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/cpphs
+    echo "	runhs"
+    rm -f $DESTDIR$BINDIR/runhs;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/runhs
     echo
     chmod a+rx $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod a+rx $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod a+rx $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
     chmod a+rx $DESTDIR$BINDIR/hmake-config $DESTDIR/$BINDIR/cpphs
-    chmod a+rx $DESTDIR$BINDIR/hood
+    chmod a+rx $DESTDIR$BINDIR/hood $DESTDIR$BINDIR/runhs
   else
     echo 'Not (re-)installing scripts'
   fi
@@ -738,7 +741,8 @@ else	# [ "$INSTALL" = "yes" ]
     if [ $DESTDIR$HMAKELIBDIR != $DESTDIR$LIBDIR ]
     then ( cd $DESTDIR$LIBDIR/$MACHINE;
            mv MkProg$EXE Older$EXE hmakerc  $DESTDIR$HMAKELIBDIR/$MACHINE;
-           mv HInteractive$EXE MkConfig$EXE $DESTDIR$HMAKELIBDIR/$MACHINE )
+           mv HInteractive$EXE MkConfig$EXE $DESTDIR$HMAKELIBDIR/$MACHINE;
+           mv runhs$EXE $DESTDIR$HMAKELIBDIR/$MACHINE )
     fi
     # can only change hmake's config if new compiler is in its final location
     if [ -z "$DESTDIR" ]

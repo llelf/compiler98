@@ -4,7 +4,8 @@ OBJDIR   = $(BUILDDIR)/$(OBJ)/hmake
 MKPROG   = $(DST)/MkProg$(EXE)
 OLDER    = $(DST)/Older$(EXE)
 MKCONFIG = $(DST)/MkConfig$(EXE)
-TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG)
+RUNHS    = $(DST)/runhs$(EXE)
+TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG) $(RUNHS)
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
@@ -14,6 +15,7 @@ CPPHSSRCS  = CppIfdef.hs ParseLib.hs Position.hs ReadFirst.hs Tokenise.hs \
 	     SymTab.hs HashDefine.hs
 CPPSRCS = Graph.hs GetDep.hs Compat.hs Imports.hs Platform.hs Config.hs
 CFGSRCS = RunAndReadStdout.hs Config.hs Compiler.hs Platform.hs
+RUNSRCS = runhs.hs
  
 
 OBJS    = $(patsubst %.hs, $(OBJDIR)/%.$O, $(SRCS) $(CPPHSSRCS))
@@ -38,10 +40,10 @@ ifeq "ghc" "$(BUILDCOMP)"
 HFLAGS += $(shell ${LOCAL}fixghc ${GHCSYM} -package lang)
 endif
 ifeq "hbc" "$(BUILDCOMP)"
+all: hbc
 hbc: CppIfdef.hs
 	sed -e 's/System.IO.Unsafe/IOExts/' CppIfdef.hs >hbc
 	cp -a hbc CppIfdef.hs
-all: hbc
 endif
 
 
@@ -53,9 +55,11 @@ fromC: $(OBJDIR)
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
 	$(HC) $(HFLAGS)    -o $(MKCONFIG) -d $(OBJDIR) MkConfig.$C $(CFGCFILES)
-	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG)
+	$(HC) $(HFLAGS)      -o $(RUNHS)  -d $(OBJDIR) runhs.$C
+	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG) $(RUNHS)
 clean:
-	rm -f $(OBJS) $(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
+	rm -f $(OBJS) $(CPPOBJS) $(CFGOBJS)
+	rm -f $(OBJDIR)/runhs.o $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
 	rm -f *.hi
 cleanC: clean
 	rm -f *.hc *.c
@@ -78,18 +82,20 @@ $(OLDER): $(OBJDIR) $(OBJDIR)/Older.$O
 $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(STRIP) $@
+$(RUNHS): $(OBJDIR) $(OBJDIR)/runhs.$O
+	$(HC) $(HFLAGS) -o $@ $(OBJDIR)/runhs.$O
 
 %.raw:
 	cpp -P -traditional $(patsubst %.raw, %.hs, $@) > $@
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) || $(TRUE)
-$(OBJS): $(OBJDIR)/%.$O : %.hs
+$(OBJS) $(OBJDIR)/runhs.$O : $(OBJDIR)/%.$O : %.hs
 	$(HC) $(HFLAGS) -c -o $@ $<
-$(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O: $(OBJDIR)/%.$O : %.hs
+$(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O : $(OBJDIR)/%.$O : %.hs
 	$(HC) $(HFLAGS) -c -cpp -o $@ $<
 
-$(CFILES): %.$C : %.hs
+$(CFILES) runhs.$C: %.$C : %.hs
 	$(HC) $(HFLAGS) -C $<
 $(CPPCFILES) Older.$C MkConfig.$C: %.$C : %.hs
 	$(HC) $(HFLAGS) -C -cpp $<
