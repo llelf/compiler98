@@ -17,6 +17,8 @@ unchanged.
 #ifndef _NODE_H
 #define _NODE_H
 
+@<File warning@>
+
 #include "runtime.h"
 #include "newmacros.h"
 
@@ -32,10 +34,19 @@ unchanged.
 @<Value access macros@>
 @<Application access macros@>
 
+#ifdef DEBUG
+extern @<prNode header@>;
+#endif
+
 #endif
 @}
 
 @O@<newmacros.h@>==@{@-
+#ifndef _NEWMACROS_H
+#define _NEWMACROS_H
+
+@<File warning@>
+
 #include "bytecode.h"
 
 @<Word parameter macros@>
@@ -47,9 +58,16 @@ unchanged.
 @<Constructor tags@>
 @<Constructor creation macros@>
 @<Large field sizes@>
+
+#endif
 @}
 
 @O@<mutlib.h@>==@{@-
+#ifndef _MUTLIB_H
+#define _MUTLIB_H
+
+@<File warning@>
+
 #include "runtime.h"
 
 @<Alignment macros@>
@@ -57,22 +75,30 @@ unchanged.
 @<Graph mutlib interface@>
 @<Mutator mutlib interface@>
 @<Newtables mutlib interface@>
+
+#endif
 @}
 
 @O@<mutlib.c@>==@{@-
+@<File warning@>
+
 #include "runtime.h"
 #include "mutlib.h"
 #include "newmacros.h"
 
 @<Float and double constructor functions@>
 @<Float and double value access functions@>
+
+#ifdef DEBUG
+#include "node.h"
+@<prNode routine@>
+#endif
 @}
 
 @$@<Graph interface@>==@{@-
 @<Basic types@>
 @<Node and Code types@>
 @<HeapOffset type and macro@>
-@<Extra node space macro@>
 @<Zap node macros@>
 @<IND_REMOVE macro@>
 @<Finfo type@>
@@ -124,7 +150,7 @@ low @{WORDSHIFT@} bits.  @{NS@} is the node size in number of bytes.
 #define NS        (WORDSIZE>>3)
 @}
 
-@{HEAPOFFSET@} provides access to a heap pointer as a signed value. 
+@{HEAPOFFSET@} provides access to a heap pointer as a signed value.
 
 FIXME: not sure why this is really needed, but it's used in a bunch of
 places.
@@ -200,24 +226,19 @@ fields (@{CON_TAG@}).  Tag three is currently unused.
 #define CON_TAG 2
 @}
 
+FIXME: what are the following distinguishing from VAP_TAG?
+
+@$@<Word tags@>+=@{@-
+#define VAP_TAG0 1
+#define VAP_TAG1 3
+@}
+
 Tags are accessed using @{EXT_TAG@} (for words) and @{GET_TAG@} for pointers
 to words.
 
 @$@<Tag access macros@>==@{@-
 #define EXT_TAG(x) (MASK_WTAG & (UInt)(x))
 #define GET_TAG(p) EXT_TAG(*(p))
-@}
-
-@B@<Extra space in nodes@>
-
-For extensions such as profiling we need to be able to keep extra
-information in each heap node.  The constant @{EXTRA@} denotes how many
-extra words are present in each node.  These words are not interpreted by
-any part of the runtime except the relevant extension.  For now this is
-zero since we have no extensions yet.
-
-@$@<Extra node space macro@>==@{@-
-#define EXTRA 0
 @}
 
 @B@<Zapping nodes@>
@@ -425,7 +446,7 @@ table pointer.
 Finally, @{FINFO_CONST@} returns a pointer to the constant table by just
 accessing the pointer in the next whole word after the @{VAP@} pair.
 
-FIXME: these macros all seem to be assuming that p points to the VAP 
+FIXME: these macros all seem to be assuming that p points to the VAP
 pair for the function and not to the arity byte of the pair as the VAPTAG
 macro above seems to create?  What am I missing?
 
@@ -459,17 +480,24 @@ typedef UInt *Cinfo;
 Constructor nodes are denoted with the tag @{CON_TAG@}.  In addition the
 next two bits contain an extra tag that describes the variety of layout in
 the rest of the cell.  @{MASK_CON@} masks out just these bits.  Tag two is
-currently unused.  
+currently unused.
 
 @$@<Constructor tags@>==@{@-
 #define MASK_CON  0x0c
 #define CON_DATA  0x00
 #define CON_PTRS  0x04
-#define CON_WORDS 0x0c 
+#define CON_WORDS 0x0c
+
+#define CON_CDATA 0x08
 @}
 
+FIXME: CON_CDATA should not be needed since there is no CONSTRC anymore.
+However, in running the nhc tests some of the tests fail in the mark
+phases when CON_CDATA|VAP_TAG1 node is found.  Not sure where it is coming
+from.
+
 The @{EXT_LARGETAG@} and @{GET_LARGETAG@} macros return the node and
-constructor tags for a node and node pointer, respectively. 
+constructor tags for a node and node pointer, respectively.
 @{EXT_CONINFO@} and @{GET_CONINFO@} return the constructor info without
 the node tag.
 
@@ -492,7 +520,7 @@ typedef UInt Coninfo;
 
 A @{CON_DATA@} cell contains a mixture of pointer and integer values.  The
 @{size@} field gives the total size of the cell and @{psize@} the number
-of pointers in the cell; the pointers come first in the rest of the cell. 
+of pointers in the cell; the pointers come first in the rest of the cell.
 The @{number@} field gives the number of the particular constructor being
 applied in this cell.  @{CONSTR@} builds a @{CON_DATA@} header.
 
@@ -580,10 +608,13 @@ The following macros extra the large fields from @{CON_PTRS@} and
 
 @C@<Accessing arguments@>
 
-Each constructor cell contains zero or more arguments.  The following
-macros provide access to the arguments by skipping from the header over
-any extra words in the cell.  All of these macros assume that they get a
-pointer to the node, not the node itself.
+Each constructor cell contains zero or more arguments.  All of these
+macros assume that they get a pointer to the node, not the node itself.
+
+For extensions such as profiling we need to be able to keep extra
+information in each heap node.  The constant @{EXTRA@} denotes how many
+extra words are present in each node.  These words are not interpreted by
+any part of the runtime except the profiling module.
 
 @{GET_POINTER_ARG1@} and @{GET_VALUE_ARG1@} both access the @/ith@/ argument
 returning it as a node pointer or node, respectively.  @{GET_INT_ARG1@} returns
@@ -595,7 +626,7 @@ the @/ith@/ argument as an integer.
 #define GET_INT_ARG1(p,i)     (Int)((p)[HEAPOFFSET(EXTRA+(i))])
 @}
 
-@{GET_INT_VALUE@} is a shortcut to get the first integer argument value.  
+@{GET_INT_VALUE@} is a shortcut to get the first integer argument value.
 Similarly, there are macros for accessing character arguments and arguments
 of variable integer sizes.
 
@@ -662,24 +693,38 @@ function to one argument.  The resulting node size is given by
 #define SIZE_CONS (EXTRA+3)
 @}
 
+FIXME: is this where this should go?  No CONSTR_ macros that I can see.
+
+@$@<Value size macros@>+=@{@-
+#define SIZE_TUPLE(n)  (EXTRA+1+n)
+@}
+
 The @{MK_INT@} and @{MK_ENUM@} macros just create nodes containing a single
 integer value or an enumerated value, respectively.  Note that the latter
 has no extra words because the constructor is the value.
+
+FIXME: we also define @{nhc_mkCInt@} to just be @{nhc_mkInt@} since the
+former uses CONSTRC which is deprecated.  Supposedly we can use the latter
+for the former.  Defining it here is easier than modifying all the refs
+but we should do that at some stage.
 
 @$@<Value construction macros@>+=@{@-
 #define CONSTR_INT   ((Node)CONSTRW(1,0))
 #define MK_INT(r,i)  (r)[0] = CONSTR_INT; (r)[1+EXTRA] = (Node)(i)
 #define MK_ENUM(r,i) (r)[0] = (Node)CONSTR(i,0,0)
+
+#define nhc_mkCInt nhc_mkInt
 @}
 
 @$@<Value size macros@>+=@{@-
-#define SIZE_INT  (EXTRA+2)
-#define SIZE_ENUM (EXTRA+1)
+#define SIZE_INT   (EXTRA+2)
+#define SIZE_INT64 (EXTRA+3)
+#define SIZE_ENUM  (EXTRA+1)
 @}
 
 @B@<Building and accessing float and double values@>
 
-Float and double values are created by @{mk_float@} and @{mk_double@}. 
+Float and double values are created by @{mk_float@} and @{mk_double@}.
 Routines are used instead of macros because we use a variant record hack
 to convert the values into one or two integers.
 
@@ -698,7 +743,7 @@ void mk_double(NodePtr p,double f)@-
     float f;
     int   i;
   } conv;
-  
+
   conv.f = f;
   p[0] = CONSTR_FLOAT;
   p[EXTRA+1] = conv.i;
@@ -755,24 +800,181 @@ double get_double_value(NodePtr p)@-
 @$@<Float and double value access functions@>==@{@-
 @<get_float_value header@>
 {
-  union {
-    float  f;
-    Int    i;
-  } conv;
-  conv.i = p[EXTRA+1];
-  return conv.f;
+    union {
+        float  f;
+        Int    i;
+    } conv;
+    conv.i = p[EXTRA+1];
+    return conv.f;
 }
 
 @<get_double_value header@>
 {
-  union {
-    double d;
-    int i[2];
-  } conv;
-  conv.i[DOUBLE_L] = p[EXTRA+1];
-  conv.i[DOUBLE_H] = p[EXTRA+2];
-  return conv.d;
+    union {
+        double d;
+        int i[2];
+    } conv;
+    conv.i[DOUBLE_L] = p[EXTRA+1];
+    conv.i[DOUBLE_H] = p[EXTRA+2];
+    return conv.d;
 }
 @}
 
+@B@<Debugging support@>
 
+FIXME: all of this jmpbuf stuff should be isolated in the system module.
+
+@$@<prNode header@>@M==@{@-
+void prNode (NodePtr nodeptr, int depth)@-
+@}
+
+@$@<prNode routine@>==@{@-
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+jmp_buf prNodeEnv;
+#else
+sigjmp_buf prNodeEnv;
+#endif
+
+void prNodeSig()
+{
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+    longjmp (prNodeEnv, 1);
+#else
+    siglongjmp (prNodeEnv, 1);
+#endif
+}
+
+static void prNodeAux (NodePtr nodeptr, int depth)
+{
+    if (nodeptr >= hpEnd) {
+        ERROR_OUT("???%lx >= %lx???", (UInt)nodeptr, (UInt)hpEnd);
+        return;
+    }
+
+    if (!nodeptr) {
+        ERROR_OUT("<   0,    *0>");
+        return;
+    }
+
+    ERROR_OUT("<%4x,%4x> ", (UInt)nodeptr,
+              (3&(Int)nodeptr?-1:(UInt)*nodeptr));
+
+    if (depth) {
+
+        switch (GET_LARGETAG (nodeptr)) {
+
+            case CON_DATA|VAP_TAG0:
+            case CON_PTRS|VAP_TAG0:
+            case CON_CDATA|VAP_TAG0:
+            case CON_WORDS|VAP_TAG0:
+            case CON_DATA|VAP_TAG1:
+            case CON_PTRS|VAP_TAG1:
+            case CON_CDATA|VAP_TAG1:
+            case CON_WORDS|VAP_TAG1: {
+                    Cinfo cinfo = GET_CINFO(nodeptr);
+                    Int size  = CINFO_SIZE(cinfo);
+                    Int need = CINFO_NEED(cinfo);
+                    Finfo finfo = CINFO_FINFO(cinfo);
+                    NodePtr *constptr = FINFO_CONST(finfo);
+                    Int i, arity = FINFO_ARITY(finfo);
+                    if (need) {
+                        ERROR_OUT("(CAP%s %2ld(%2ld)",
+                                  (UInt)*nodeptr & ZAP_BIT ? "*" : "",
+                                  size, need);
+                        if (size + need != arity)
+                            ERROR_OUT("!=%ld",arity);
+                    } else {
+                        ERROR_OUT("(VAP%s %2ld",
+                                  (UInt)*nodeptr & ZAP_BIT ? "*" : "",
+                                  size);
+                    }
+                    ERROR_OUT(" %04lx", (UInt)FINFO_CODE(finfo),
+                              profName(constptr), profPos(constptr));
+                    for (i = 0; i < size; i++) {
+                        ERROR_OUT(", ");
+                        prNodeAux(GET_POINTER_ARG1(nodeptr, i+1), depth-1);
+                    }
+                    ERROR_OUT(")");
+                }
+                break;
+
+            case CON_DATA|CON_TAG:
+            case CON_CDATA|CON_TAG: {
+                    Coninfo cinfo = GET_CONINFO(nodeptr);
+                    Int size  = CONINFO_SIZE(cinfo);
+                    Int psize = CONINFO_PSIZE(cinfo);
+                    Int i;
+                    ERROR_OUT("CON DATA(%2ld %3ld(%3ld)",
+                              CONINFO_NUMBER(cinfo),
+                              size, psize);
+                    for (i = 0; i < psize; i++) {
+                        ERROR_OUT(", ");
+                        prNodeAux((NodePtr)GET_POINTER_ARG1(nodeptr, i+1),
+                                  depth-1);
+                    }
+                    for (; i < size; i++)
+                        ERROR_OUT(", %4ld", GET_INT_ARG1(nodeptr, i+1));
+                    ERROR_OUT(")");
+               }
+               break;
+
+            case CON_PTRS|CON_TAG: {
+                    Coninfo cinfo = GET_CONINFO(nodeptr);
+                    Int psize  = CONINFO_LARGESIZES(cinfo);
+                    Int i;
+                    ERROR_OUT("CON PTRS( %4ld(e = %1ld)", psize,
+                              CONINFO_LARGEEXTRA(cinfo));
+                    for (i = 0; i < psize; i++) {
+                        ERROR_OUT(", ");
+                        prNodeAux((NodePtr)GET_POINTER_ARG1(nodeptr,i+1),
+                                  depth-1);
+                    }
+                    ERROR_OUT(")");
+                }
+                break;
+
+            case CON_WORDS|CON_TAG: {
+                    Coninfo cinfo = GET_CONINFO(nodeptr);
+                    Int size  = CONINFO_LARGESIZES(cinfo);
+                    Int i;
+                    ERROR_OUT("CON WORDS( %4ld(e= %1ld)", size,
+                              CONINFO_LARGEEXTRA(cinfo));
+                    for (i = 0; i < size; i++)
+                        ERROR_OUT(", %4ld", GET_INT_ARG1(nodeptr, i+1));
+                    ERROR_OUT(")");
+                }
+                break;
+
+            default: /* IND_TAG */
+                ERROR_OUT("Ind ");
+                prNodeAux(GET_IND_ADDRESS(nodeptr), depth-1);
+                break;
+
+        }
+
+    } else {
+        ERROR_OUT("...");
+    }
+    FLUSH_ERR;
+}
+
+@<prNode header@>
+{
+    void (*prNodeOldSig)();
+
+    prNodeOldSig = signal(SIGSEGV, prNodeSig);
+
+#if defined(__CYGWIN32__) || defined(__MINGW32__)
+    if (setjmp (prNodeEnv))
+#else
+    if (sigsetjmp (prNodeEnv, 0))
+#endif
+        ERROR_OUT("*** segmentation fault ***\n");
+    else {
+        prNodeAux(nodeptr, depth);
+        ERROR_OUT("\n");
+    }
+
+    signal (SIGSEGV, prNodeOldSig);
+}
+@}
