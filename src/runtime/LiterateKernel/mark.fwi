@@ -3,6 +3,8 @@
 This section provides marking support for the garbage collector.
 
 @O@<mark.c@>==@{@-
+@<File warning@>
+
 #include "node.h"
 #include "mark.h"
 #include "mutlib.h"
@@ -24,6 +26,8 @@ This section provides marking support for the garbage collector.
 @O@<mark.h@>==@{
 #ifndef _MARK_H
 #define _MARK_H
+
+@<File warning@>
 
 @<Pointer location macros@>
 
@@ -117,7 +121,7 @@ FIXME: confirm what the ~0 is used for.  Confirm the explanation of the
 marking of hpLowLimit.
 
 @$@<markClear header@>@M==@{@-
-void markClear(void)
+void markClear(void)@-
 @}
 
 @$@<markClear routine@>==@{@-
@@ -170,7 +174,7 @@ void markStack(NodePtr *sp)@-
     NodePtr *sptr;
     for (sptr = sp; sptr < spStart; ) {
         NodePtr *fp;
-        sptr++;                
+        sptr++;
         fp = (NodePtr *)*sptr++;
         while(sptr != fp) {
             mark(sptr);
@@ -182,7 +186,7 @@ void markStack(NodePtr *sp)@-
 
 @B@<Marking CAFs@>
 
-A constant applicative form (CAF) is a supercombinator of arity zero. 
+A constant applicative form (CAF) is a supercombinator of arity zero.
 Since they have no arguments, they are never instantiated and a single
 instance of their graph can be shared.
 
@@ -197,7 +201,7 @@ functions as described for the graph structure.
 FIXME: clarify this.  It looks like the word containing the @{next@} field
 is overwriting stuff in the other parts of the function descriptor.
 
-FIXME: not sure what the second half of this comment from the code means: 
+FIXME: not sure what the second half of this comment from the code means:
 /* size is in sizeArity + (1+EXTRA) extra if arity == 0 */
 
 @$@<CAF lists type@>+=@{@-
@@ -216,7 +220,7 @@ typedef struct GCCONST {
 
 @{newCaf@} contains CAFs encountered during the marking phase, and
 @{oldCaf@} the CAFs that have been processed by the mark phase but need to
-be flipped by the next collector phase.  
+be flipped by the next collector phase.
 
 @$@<CAF lists@>==@{@-
 GcConst oldCaf = GcEnd;
@@ -293,29 +297,30 @@ FIXME: why is the first word processed specially?
 @}
 
 Next, we skip over the first word of the CAF node and any extra
-information in the node and process rest of the contents one by one. 
+information in the node and process rest of the contents one by one.
 @{VAP@}s just get added to the CAF list for processing themselves since
 they have no remaining arguments.  Indirection nodes we just follow and
 mark whatever they point to.
 
 FIXME: constructor applications are errors why?
-    
+
 @$@<Mark the constituents of the CAF@>==@{@-
 i = EXTRA+1;
 size += EXTRA+1;
 for ( ; i < size; i++) {
     NodePtr nptr = cptr->ptr[i];
     switch (EXT_TAG(nptr)) {
-        case VAP_TAG: {
+        case VAP_TAG0:
+        case VAP_TAG1: {
                 Cinfo cinfo = EXT_CINFO(nptr);
                 addCaf(CINFO_FINFO(cinfo));
             }
             break;
-            
+
         case IND_TAG:
             mark(&cptr->ptr[i]);
             break;
-            
+
         case CON_TAG:
             @<Complain about CON_TAG@>
     }
@@ -352,21 +357,23 @@ void mark(NodePtr *inode)@-
 {
     @<Node and its tag@>
     @<Node stack@>
-    
-    @<Get the node and tag information@>
+
+    @<Get the node@>
     @<Initialise node stack@>
 
 InspectNode:
     @<Trap nodes outside the heap@>
+    @<Get the node tag@>
     @<Inspect a node outside heap and stack area@>
+    @<Short-circuit marked nodes@>
     @<Inspect a regular node@>
-    
+
 PushNode:
     @<Push a node@>
-    
+
 NextNode:
     @<Go to next node@>
-}    
+}
 @}
 
 First, we remove all indirection and grab the node tag for later use.
@@ -376,8 +383,11 @@ NodePtr node;
 UInt tag;
 @}
 
-@$@<Get the node and tag information@>==@{@-
+@$@<Get the node@>==@{@-
 node = *inode;
+@}
+
+@$@<Get the node tag@>==@{@-
 IND_REMOVE(node);
 tag = EXT_LARGETAG(*node);
 @}
@@ -427,10 +437,10 @@ if (node > hpEnd) {
 }
 @}
 
-Then we deal with nodes that lie outside the heap and stack areas. 
+Then we deal with nodes that lie outside the heap and stack areas.
 @{VAP@}s in this region are added to the CAF list for later processing.
 
-FIXME: how can any useful nodes lie OUTSIDE the heap and stack area?  This 
+FIXME: how can any useful nodes lie OUTSIDE the heap and stack area?  This
 would also seem to include the bit table which is presumably not referenced
 as nodes.  In short, when will this code ever be used?
 
@@ -445,9 +455,18 @@ if (OUTSIDE(node)) {
 }
 @}
 
-Then we process the different possibilities for a regular node.  The cases
-cover all of the possible node types with the exception of @{IND_TAG@} since
-that should not occur since we removed indirections above.
+At this point if the node has already been marked then we're done so go
+to the next one.
+
+@$@<Short-circuit marked nodes@>==@{@-
+if (marked(node))
+    goto NextNode;
+@}
+
+Then we process the different possibilities for an unmarked regular node.
+The cases cover all of the possible node types with the exception of
+@{IND_TAG@} since that should not occur since we removed indirections
+above.
 
 @$@<Inspect a regular node@>==@{@-
 switch(tag) {
@@ -456,7 +475,7 @@ switch(tag) {
     @<Inspect CON constructor applications@>
 
     default:
-        ERROR_OUT("IND_TAG in mark! (1)\n");
+        ERROR_OUT("Bad tag 0x%x in mark!\n", tag);
         EXITPROG(-1);
 }
 @}
@@ -467,16 +486,25 @@ arguments of the application are next to be considered.  Note that
 and we work our way backwards through them (see the description of going
 to the next node in the next section).
 
+FIXME: The CON_CDATA cases should not be here but some of the tests fail
+when marking nodes with these tags.  Not sure where they are coming from.
+Remove CON_CDATA from graph.fwi too when resolved.
+
 @$@<Inspect VAP constructor applications@>==@{@-
-case CON_DATA | VAP_TAG:
-case CON_PTRS | VAP_TAG:
-case CON_WORDS | VAP_TAG: {
+case CON_DATA | VAP_TAG0:
+case CON_PTRS | VAP_TAG0:
+case CON_CDATA | VAP_TAG0:
+case CON_WORDS | VAP_TAG0:
+case CON_DATA | VAP_TAG1:
+case CON_PTRS | VAP_TAG1:
+case CON_CDATA | VAP_TAG1:
+case CON_WORDS | VAP_TAG1: {
         Cinfo cinfo = GET_CINFO(node);
         Int size = (Int)CINFO_SIZE(cinfo);
         Finfo finfo = CINFO_FINFO(cinfo);
 
         @<Perform Wadler optimisation@>
-    
+
         addCaf(finfo);
         if (size) {
             newpptr = node+size+EXTRA;
@@ -492,11 +520,12 @@ section?).
 @$@<Perform Wadler optimisation@>==@{@-
 @}
 
-A @{CON_DATA@} node contains pointers followed by integers.  As above, in 
+A @{CON_DATA@} node contains pointers followed by integers.  As above, in
 this and the next case, start with the last argument and work backwards.
 
 @$@<Inspect CON constructor applications@>+=@{@-
-case CON_DATA | CON_TAG: {
+case CON_DATA | CON_TAG:
+case CON_CDATA | CON_TAG: {
         Coninfo coninfo = GET_CONINFO(node);
         Int psize  = (Int)CONINFO_PSIZE(coninfo);
         if (psize) {
@@ -505,7 +534,7 @@ case CON_DATA | CON_TAG: {
         }
     }
     goto NextNode;
-@}      
+@}
 
 A @{CON_PTRS@} node just contains pointers.
 
@@ -517,7 +546,8 @@ case CON_PTRS | CON_TAG: {
             newpptr = node+psize+EXTRA;
             goto PushNode;
         }
-    } goto NextNode;
+    }
+    goto NextNode;
 @}
 
 Finally, a @{CON_WORDS@} node just contains integers which don't need to
@@ -568,7 +598,7 @@ has been an update and return the node.
 If we haven't reached the sentinel then we have finished processing the
 node containing the siblings just processed and there are more nodes on
 the stack to inspect.  We reconstruct a pointer to that parent node by
-moving backwards over the extra information from the leftmost field. 
+moving backwards over the extra information from the leftmost field.
 Since it has already been processed we just pop the stack and fetch the
 next node recursively.
 
