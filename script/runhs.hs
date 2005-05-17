@@ -5,7 +5,7 @@ import System.Environment (getArgs)
 import System.Exit        (exitWith, ExitCode(..))
 
 {- original shell script:
-#!/bin/sh	runhs [-e] script [args...]
+  #!/bin/sh	runhs [-e] script [args...]
 case $1 in
   -?) shift ;;
   *)  ;;
