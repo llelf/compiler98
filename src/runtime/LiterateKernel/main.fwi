@@ -5,6 +5,8 @@ execution and finalisation of the runtime.  The actual path taken to get
 to the code here is system dependent.
 
 @O@<main.c@>==@{@-
+@<File warning@>
+
 #include "runtime.h"
 #include "stableptr.h"
 
@@ -46,7 +48,7 @@ int nhc_main()
     @<Initialise stable pointers@>
     @<Initialise the exit code@>
     @<Clear and start main timers@>
-    
+
     @<Mutator execution@>
 
     @<Stop main timers@>
@@ -75,7 +77,7 @@ EXITPROG(exit_code);
 This function is always used when an error of a Haskell program cannot be
 caught by the Haskell program.  It is not (yet) used for nhc internal
 errors (e.g. wrong bytecode)
- 
+
 @$@<nhc_abort header@>@M==@{@-
 void nhc_abort(char *errorMsg)@-
 @}
@@ -83,10 +85,10 @@ void nhc_abort(char *errorMsg)@-
 @$@<nhc_abort routine@>==@{@-
 @<nhc_abort header@>
 {
-  ERROR_OUT("%s\n",errorMsg);
-  if (haskellErrorHandler)
-     (*haskellErrorHandler)(errorMsg);
-  EXITPROG(-1);
+    ERROR_OUT("%s\n",errorMsg);
+    if (haskellErrorHandler)
+        (*haskellErrorHandler)(errorMsg);
+    EXITPROG(-1);
 }
 @}
 
@@ -150,12 +152,19 @@ if (@1.h)
 
 The rest of the runtime is implemented by modules described in the
 following sections.  Many of the modules contribute to the interface
-exported by @{runtime.h@} defined here. 
+exported by @{runtime.h@} defined here.
 
 @O@<runtime.h@>==@{@-
 #ifndef _RUNTIME_H
 #define _RUNTIME_H
+
+@<File warning@>
+
+@<Debugging flags@>
+
 @<System interface@>
+
+@<Profiling interface@>
 @<Graph interface@>
 
 @<Timer interface@>
@@ -165,7 +174,20 @@ exported by @{runtime.h@} defined here.
 @<Mutator interface@>
 @<Newbuiltin interface@>
 @<Newtables interface@>
+@<Multiple precision integer interface@>
+
 #endif
 @}
+
+@B@<Standard file warning@>
+
+This warning should be inserted into any generated file.
+
+@$@<File warning@>@M==@{@-
+/*
+ * GENERATED FILE: DO NOT EDIT
+ * This file is automatically produced from literate sources in the
+ * src/runtime/LiterateKernel directory.
+ */@}
 
 
