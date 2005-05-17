@@ -12,14 +12,17 @@
 <a href="hmake.html#use">How do I use it?</a><br>
 <a href="interactive.html">hmake interactive (hi)</a><br>
 <a href="hmake-config.html">hmake-config</a><br>
+<a href="runhs.html">runhs</a><br>
 </td><td width=200 align=center>
 <a href="#news">Recent news</a><br>
 <a href="#download">Downloads</a><br>
 <a href="#install">Build and install</a><br>
 <a href="bugs.html">Known bugs</a><br>
-</td></tr>
-<tr><td colspan=2 align=center>
 <a href="#who">Contacts</a><br>
+<!-- </td></tr>
+     <tr><td colspan=2 align=center>
+     <a href="#who">Contacts</a><br>
+-->
 </td></tr></table>
 <hr>
 
@@ -35,6 +38,9 @@
     of compilers known by <em>hmake</em>, useful when you install a
     new compiler, or a new version of a compiler.
     See <a href="hmake-config.html">hmake-config.html</a> for more details.
+<li><em>runhs</em> is a <tt>#!</tt> script 'interpreter' for Haskell, using
+    hmake underneath to build and run the program script.
+    See <a href="runhs.html">runhs.html</a> for more details.
 </ul>
 
 
@@ -42,7 +48,13 @@
 <h3><a name="news">Recent News</a></h3>
 
 <p>
-The current version is hmake-3.10 (date 2005-03-11).
+The current version is hmake-3.11 (date 2005-05-xx).
+<ul>
+<li> New: the <tt>#! runhs</tt> script interpreter.
+</ul>
+
+<p>
+The previous version was hmake-3.10 (date 2005-03-11).
 <ul>
 <li> Improved the extraction of import decls from source files:
      now accepts corner cases like multiple imports on a single line.
@@ -52,18 +64,6 @@ The current version is hmake-3.10 (date 2005-03-11).
 <li> Takes care of the new package story in ghc-6.4.
 <li> Now interprets the compiler options <tt>-odir=foo</tt>
      option as well as passing it on to the compiler.
-</ul>
-
-<p>
-The previous version was hmake-3.09 (date 2004-11-16).
-<ul>
-<li> Some fixes so that <em>hi</em> now also works under Cygwin/GHC.
-     (Requires only that you export the SHELL environment variable.)
-<li> Now interprets a <tt>-hidir=foo</tt> option as well as passing
-     it on to the compiler.
-<li> Improvements to the internal documentation of the APIs
-     (thanks to Isaac Jones).
-<li> Improved handling of C pre-processor directives (thanks to cpphs).
 </ul>
 
 
@@ -79,20 +79,20 @@ Currently known bugs are listed in <a href="bugs.html">bugs.html</a>.
 <h3><a name="download">Download</a></h3>
 <p>
 Download the full <em>hmake</em> sources from<br>
-  <a href="http://www.haskell.org/hmake/hmake-3.10.tar.gz">
-  <tt>http://www.haskell.org/hmake/hmake-3.10.tar.gz</tt></a>
+  <a href="http://www.haskell.org/hmake/hmake-3.11.tar.gz">
+  <tt>http://www.haskell.org/hmake/hmake-3.11.tar.gz</tt></a>
 
 <p>
 Mirror at:<br>
   <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
   <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a><br>
-  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.10.tar.gz">
-  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.10.tar.gz</tt></a>
+  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.11.tar.gz">
+  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.11.tar.gz</tt></a>
 
 <p>
-RPMs for RedHat are available from
-  <a href="http://haskell.org/~petersen/rpms/i386/">
-  <tt>http://haskell.org/~petersen/rpms/i386/</tt></a>
+Fedora:
+  <a href="http://haskell.org/fedora/">
+  <tt>http://haskell.org/fedora/</tt></a>
 
 <p>
 If you're running the unstable version of Debian GNU/Linux system, you
@@ -194,6 +194,10 @@ Some library code is incorporated from
 <a href="http://haskell.org/cpphs">cpphs</a>, which is
 &copy; copyright to Malcolm Wallace, 2004,
 and distributed under a separate licence, the LGPL.
+<p>
+Runhs is
+&copy; copyright to Malcolm Wallace, 2005, and is licensed under
+the GPL.
 
 <hr>
 <p>
@@ -204,7 +208,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a> (mirror)
 
 <p>
-Information last updated: 10th March 2005<br>
+Information last updated: 17th May 2005<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
