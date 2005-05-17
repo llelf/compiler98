@@ -1,12 +1,14 @@
 @A@<C function interface@>
 
-This section describes how native C functions are called by the runtime. 
+This section describes how native C functions are called by the runtime.
 Many of the builtin Haskell operations are implemented this way.  See the
 @{runtime/Builtin@} directory.
 
 @O@<cinterface.h@>==@{@-
 #ifndef _CINTERFACE_H
 #define _CINTERFACE_H
+
+@<File warning@>
 
 #include "node.h"
 #include "mutlib.h"
@@ -17,7 +19,19 @@ Many of the builtin Haskell operations are implemented this way.  See the
 @<C collection macros@>
 
 @<Primitive type@>
+
+extern @<evalExport header@>;
+
 #endif
+@}
+
+@O@<ffiexport.c@>==@{@-
+@<File warning@>
+
+#include "haskell2c.h"
+#include "newmacros.h"
+
+@<evalExport routine@>
 @}
 
 @B@<Primitive functions@>
@@ -29,7 +43,7 @@ FIXME: the documentation in the old cinterface.h says: "We provide a very
 primitive interface to C.  The C function is called with four arguments:
 1) a status int, 0 first time, 2)  a pointer to the redex (always a
 @{VAP@} node), 3) a pointer to the heap pointer, and 4) a pointer to the
-stack pointer."  However, this is clearly not what the macros do so I 
+stack pointer."  However, this is clearly not what the macros do so I
 presume this comment is out of date.  Delete it?
 
 @$@<Primitive type@>==@{@-
@@ -52,10 +66,10 @@ return value.
     (*fun)(vapptr); \
     hp = Hp; sp = Sp; fp = Fp; ip = Ip; vapptr = fp[2];
 @}
-    
+
 @B@<Macros for declaring primitive functions@>
 
-The following macros can be used to declare primitive functions, saving 
+The following macros can be used to declare primitive functions, saving
 repetition of common aspects.  @{C_HEADER@} provides a standard header.
 
 FIXME: C_HEADER would indicate that the function takes no argument which
@@ -142,4 +156,28 @@ FIXME: not sure exactly what this is doing.
      *--Sp = (NodePtr)Fp; *--Sp=(NodePtr)C_CODE;Fp=Sp; \
      Hp = callGc((c),Hp,Sp,Fp);     \
      Sp++;Fp=(NodePtr*)*Sp++;IND_REMOVE(_ivapptr);
+@}
+
+@B@<Evaluation of a C routine@>
+
+FIXME: explain.
+
+@$@<evalExport header@>@M==@{@-
+NodePtr evalExport(NodePtr x)@-
+@}
+
+@$@<evalExport routine@>==@{@-
+@<evalExport header@>
+{
+  CodePtr IP = Ip;
+  StablePtr p = makeStablePtr(x);
+  Fp = Sp;
+  C_PUSH(x);
+  C_EVALTOS(x);
+  C_POP();
+  Ip = IP;
+  x = derefStablePtr(p);
+  freeStablePtr(p);
+  return x;
+}
 @}
