@@ -9,7 +9,7 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-HMAKEVERSION="3.10 (2005-03-11)" export HMAKEVERSION
+HMAKEVERSION="3.11 (2005-xx-xx)" export HMAKEVERSION
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
@@ -440,18 +440,20 @@ else	# [ "$INSTALL" = "yes" ]
     then mkdir -p $DESTDIR$LIBDIR/$MACHINE;  echo ' (created)'
     else echo ' (exists)'
     fi
-    echo "Conf files go into:"
-    echo -n "    $DESTDIR$CONFDIR/$MACHINE"
-    if [ ! -d $DESTDIR$CONFDIR/$MACHINE ]
-    then mkdir -p $DESTDIR$CONFDIR/$MACHINE;  echo ' (created)'
-    else echo ' (exists)'
-    fi
     echo -n "    "
     for file in $BUILDLIBDIR/$MACHINE/*
     do
       echo -n "`basename $file` "
       if [ -f $file ]; then cp -p $file $DESTDIR$LIBDIR/$MACHINE; fi
     done
+    echo
+    echo "Conf files go into:"
+    echo -n "    $DESTDIR$CONFDIR/$MACHINE"
+    if [ ! -d $DESTDIR$CONFDIR/$MACHINE ]
+    then mkdir -p $DESTDIR$CONFDIR/$MACHINE;  echo ' (created)'
+    else echo ' (exists)'
+    fi
+    cp $DESTDIR$LIBDIR/$MACHINE/runhs $DESTDIR$BINDIR
     mv $DESTDIR$LIBDIR/$MACHINE/hmakerc $DESTDIR$CONFDIR/$MACHINE || true
     echo
   else
