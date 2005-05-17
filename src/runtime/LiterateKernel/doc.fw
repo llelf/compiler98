@@ -29,7 +29,7 @@ FIXME: Credit original author and substantial code contributors.
 
 This document contains portions of the @{nhc98@} implementation notes
 written by Malcolm Wallace and previously published in the @{nhc98@}
-distribution. 
+distribution.
 
 @T new_page
 
@@ -55,11 +55,16 @@ distribution.
 @i mutator.fwi
 @i newbuiltin.fwi
 
-@! Finally the more specialised support modules
+@! Then the more specialised support modules
 
 @i cdata.fwi
 @i cinterface.fwi
+@i mp.fwi
 @i newtables.fwi
+@i profile.fwi
 @i stableptr.fwi
 @i system.fwi
 
+@! And finally the debugging module
+
+@i debug.fwi
