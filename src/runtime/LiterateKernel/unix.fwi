@@ -6,6 +6,7 @@ Unix-like systems.
 @$@<Unix-like interface@>==@{@-
 #include <setjmp.h>
 
+@<Unix-like argument interface@>
 @<Unix-like output definitions@>
 @<Unix-like EXITPROG definition@>
 @<Unix-like memory allocation definitions@>
@@ -21,6 +22,8 @@ Unix-like systems.
 @}
 
 @O@<timeUnix.c@>==@{@-
+@<File warning@>
+
 #include <stdlib.h>
 #include <stdio.h>
 #ifdef __hppa__
@@ -53,6 +56,11 @@ extern sigjmp_buf exit_mutator;
 
 FIXME: At the moment there is no real command-line processing so the
 arguments are just dummied up to just contain the program name.
+
+@$@<Unix-like argument interface@>==@{@-
+extern char *Argv[];
+extern int Argc;
+@}
 
 @$@<main Unix routine@>==@{@-
 int Argc;
@@ -128,7 +136,7 @@ void _error_out(const char *fmt, ...)@-
 
 @C@<Unix timer support@>
 
-This section supports the collection of user-level timings on Unix. 
+This section supports the collection of user-level timings on Unix.
 System time spent on behalf of the program is ignored.
 
 @$@<Timer interface@>==@{@-
@@ -142,7 +150,7 @@ extern @<timerStart header@>;
 extern @<timerStop header@>;
 @}
 
-Timers are structures with two unsigned integer components, although the 
+Timers are structures with two unsigned integer components, although the
 high integer is only currently used to detected overflow of the low half.
 
 @$@<Timer type@>+=@{@-
@@ -185,7 +193,7 @@ void timerClear(timer *t)@-
 @}
 
 @{timerStart@} and @{timerStop@} @/bookend@/ activity that is to be timed.
-To avoid having to store the cumulative total and the start time of the 
+To avoid having to store the cumulative total and the start time of the
 region currently being measured, we just subtract the start time from the
 current total and add it in again when we stop.  Note, this means that the
 timer value is highly inaccurate before we stop so it should only be read
