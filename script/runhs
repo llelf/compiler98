@@ -1,0 +1,25 @@
+#!/bin/bash
+#	runhs - run a haskell script from source, by compiling it first.
+
+case $1 in
+  -?) shift ;;
+  *)  ;;
+esac
+src=$1
+shift
+case $src in
+  *.hs)  prog=`basename $src .hs`;;
+  *.lhs) prog=`basename $src .lhs`;;
+  *)     prog=`basename $src`;;
+esac
+tmpsrc=/tmp/`basename $src`
+tmpexe=/tmp/$prog
+if [ ! -f $tmpsrc -o $src -nt $tmpsrc ]
+then if head -1 $src | grep '^#!' >/dev/null
+     then tail +2 $src >$tmpsrc
+     else cp $src $tmpsrc
+     fi
+fi
+{ hmake $tmpexe >/dev/null 2>&1 ||\
+  { echo "$prog: compilation error" && exit 1; } \
+} && $tmpexe "$@"
