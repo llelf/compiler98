@@ -4,6 +4,8 @@ This section defines tables containing useful constant integer and
 character values.
 
 @O@<newtables.c@>==@{@-
+@<File warning@>
+
 #include "newmacros.h"
 #include "mutlib.h"
 
@@ -38,7 +40,7 @@ extern Node ints[], chars[];
 #define GET_CHAR(c) (NodePtr)&chars[TABLE_SIZE_INT*(HEAPOFFSET(c)+1)]
 @}
 
-The @{ints@} and @{chars@} tables contain heap nodes for the 
+The @{ints@} and @{chars@} tables contain heap nodes for the constants.
 
 @$@<Constant table data@>==@{@-
 #define DEFINT(n)  CONSTRW(1,0), (unsigned)n

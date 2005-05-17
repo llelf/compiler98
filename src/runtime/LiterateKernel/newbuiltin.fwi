@@ -2,9 +2,11 @@
 
 This section contains the pre-compiled built-in functions used by the
 runtime. The file is essentially one array of words indexed by various
-labels identifying the functions entry points, constant tables etc.  
+labels identifying the functions entry points, constant tables etc.
 
 @O@<newbuiltin.c@>==@{@-
+@<File warning@>
+
 #include "node.h"
 
 @<Prelude.primLeave forward refs@>
@@ -34,7 +36,7 @@ labels identifying the functions entry points, constant tables etc.
 
 @B@<Useful macros@>
 
-Rather than repeat the same pattern of code for each builtin we define some 
+Rather than repeat the same pattern of code for each builtin we define some
 useful macros that are parameterised by the name of the builtin.
 
 This macro just builds an extern declaration for the entry point.
@@ -109,7 +111,7 @@ FIXME: insert reference to location of Start_World definition.
 
 @B@<Prelude.primLeave@>
 
-@{Prelude.primLeave@} just runs the @{EXIT@} instruction to terminate 
+@{Prelude.primLeave@} just runs the @{EXIT@} instruction to terminate
 everything.
 
 @$@<Prelude.primLeave entry point@>==@{@-
@@ -152,7 +154,7 @@ lazily.
 @$@<Builtin.hgets code@>==@{@-
 @<Define builtin one arg@>@(Builtin_46hgets@,@-
     bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,HGETS,RETURN),
-    bytes2word(ENDCODE,0,0,0), 
+    bytes2word(ENDCODE,0,0,0),
 @)
 @}
 
@@ -219,7 +221,7 @@ string contents as a list.
 @$@<Builtin.primUnpackCString code@>==@{@-
 @<Define builtin one arg@>@(Builtin_46primUnpackCString@,@-
     bytes2word(NEEDHEAP_I32,PUSH_ARG_I1,STRING,RETURN),
-    bytes2word(ENDCODE,0,0,0), 
+    bytes2word(ENDCODE,0,0,0),
 @)
 @}
 
