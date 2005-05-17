@@ -6,6 +6,8 @@ standard I/O streams to support instructions such as @{HGETS@}.  It can
 also supports access to foreign objects from Haskell.
 
 @O@<cdata.c@>==@{@-
+@<File warning@>
+
 #include <string.h>
 #include "mk.h"
 #include "stableptr.h"
@@ -139,12 +141,12 @@ void initForeignObjs()@-
     FileDesc *fd_@1;
 
     fd_@1 = (FileDesc*)malloc(sizeof(FileDesc));
-    fd_@1->fp = @1; 
-    fd_@1->bm = _IOLBF; 
-    fd_@1->size = -1; 
-    fd_@1->path = strdup("<@1>"); 
-    fo_@1.used = 1; 
-    fo_@1.cval = (void*)fd_@1; 
+    fd_@1->fp = @1;
+    fd_@1->bm = _IOLBF;
+    fd_@1->size = -1;
+    fd_@1->path = strdup("<@1>");
+    fo_@1.used = 1;
+    fo_@1.cval = (void*)fd_@1;
     fo_@1.gcf  = gcNone;
 }
 @}
@@ -177,10 +179,10 @@ ForeignObj* allocForeignObj(void* arg, gcCval finalCV, gcFO finalFO)@-
 }
 @}
 
-Freeing a foreign object causes its first stage collector and clears the 
+Freeing a foreign object causes its first stage collector and clears the
 table entry.
 
-FIXME: this routine and some of the others would probably benefit from 
+FIXME: this routine and some of the others would probably benefit from
 NULL pointer tests on entry.
 
 @$@<freeForeignObj header@>@M==@{@-
@@ -248,7 +250,7 @@ void gcForeignObjs(void)@-
     if (foreign[i].used == 0 && foreign[i].gcf) {
         foreign[i].gcf(&foreign[i]);
         foreign[i].gcf = NULL;
-    } 
+    }
 }
 @}
 
@@ -302,7 +304,7 @@ void gcNone(ForeignObj *cd)@-
 }
 @}
 
-@{gcFile@} and @{gcSocket@} are possible second stage collectors for 
+@{gcFile@} and @{gcSocket@} are possible second stage collectors for
 files and sockets, respectively.  @{gcFile@} only closes if the file
 has not already been closed with @{hClose@}.
 
@@ -372,7 +374,7 @@ void runDeferredGCs(void)@-
     if (alreadyRunning) {
         return;
     } else
-        alreadyRunning=1;
+        alreadyRunning = 1;
 
     @<Run finalisers@>
 
@@ -398,13 +400,13 @@ finalisation so we can resume the mutator where it was.
 }
 @}
 
-We iterate through the queue of of pending finalisers.  Each one is a
-stable pointer that is dereferenced to obtain a heap reference which is
-then evaluated. Any return value from the evaluation is discarded. 
-Finally, the stable pointer itself is freed so it can be collected.
+We iterate through the queue of pending finalisers.  Each one is a stable
+pointer that is dereferenced to obtain a heap reference which is then
+evaluated. Any return value from the evaluation is discarded. Finally, the
+stable pointer itself is freed so it can be collected.
 
 @$@<Run each finaliser@>==@{@-
-{    
+{
     int i;
     NodePtr n;
 
@@ -465,7 +467,7 @@ The following function is also visible to the Haskell world to enable
 foreign objects to be freed from Haskell.  It @/must@/ be a primitive, not
 a foreign import, because the latter mechanism would dereference the
 @{ForeignObj@} argument to become just an @{Addr@}, which is the opposite
-of what we want here.              
+of what we want here.
 
 @{reallyFreeForeignObj primitive 1 :: ForeignObj -> IO ()@}
 
