@@ -65,6 +65,7 @@ run () {
              hmakebad=$(($hmakebad+1))
         fi
       }
+    cd $HERE
   done
   echo >&2 "$compok built ok      / $compbad builds failed"
   echo >&2 "                  / of which $hmakeok known / $hmakebad bad"
@@ -78,17 +79,31 @@ clean () {
   do
     dir=`dirname $file`
     echo $dir
-    cd $dir && rm -f Main *.o *.hi tmp.out tmp.err hmake.err
+    (cd $dir && rm -f Main *.o *.hi tmp.out tmp.err hmake.err)
   done
 }
 
 case $# in
-  0) run ;;
-  1) case $1 in
-     "run")   run ;;
-     "clean") clean ;;
-     *)       echo "Usage: `basename $0` [run|clean]" ;;
-     esac;;
-  *) echo "Usage: `basename $0` [run|clean]" ;;
+  0) mode=run ;;
+  1) mode=$1 ;;
+  *) mode=$1
+     shift
+     mains=
+     for i in $*
+     do
+       if [ ! -f $i/Main.hs ]
+       then
+         echo "`basename $0`: can't find $i/Main.hs, ignoring"
+       else
+         mains="$mains $i/Main.hs"
+       fi
+     done
 esac
 
+case $mode in
+  "run")      run ;;
+  "clean")    clean ;;
+  "cleanrun") clean; run ;;
+  *)          echo "Usage: `basename $0` [run|clean|cleanrun] [testdir...]"
+              exit 1 ;;
+esac
