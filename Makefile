@@ -543,9 +543,9 @@ cleanC:
 	cd src/prelude;		$(MAKE)       cleanC
 	cd src/prelude;		$(MAKE) CFG=p cleanC
 	cd src/prelude;		$(MAKE) CFG=z cleanC
-	cd src/libraries; find -name '*.hc'  -print | xargs rm -f
-	cd src/libraries; find -name '*.p.c' -print | xargs rm -f
-	cd src/libraries; find -name '*.z.c' -print | xargs rm -f
+	find src/libraries -name '*.hc'  -print | xargs rm -f
+	find src/libraries -name '*.p.c' -print | xargs rm -f
+	find src/libraries -name '*.z.c' -print | xargs rm -f
 	cd $(TARGDIR);  rm -f preludeC compilerC greencardC hmakeC pragmaC \
 			timepreludeC heappreludeC hsc2hsC cpphsC librariesC
 
