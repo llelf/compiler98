@@ -59,7 +59,7 @@ fromC: $(OBJDIR)
 	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG) $(RUNHS)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(CFGOBJS)
-	rm -f $(OBJDIR)/runhs.o $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
+	rm -f $(OBJDIR)/runhs.$O $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
 	rm -f *.hi
 cleanC: clean
 	rm -f *.hc *.c
@@ -90,14 +90,14 @@ $(RUNHS): $(OBJDIR) $(OBJDIR)/runhs.$O
 
 $(OBJDIR):
 	mkdir -p $(OBJDIR) || $(TRUE)
-$(OBJS) $(OBJDIR)/runhs.$O : $(OBJDIR)/%.$O : %.hs
+$(OBJS) : $(OBJDIR)/%.$O : %.hs
 	$(HC) $(HFLAGS) -c -o $@ $<
-$(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O : $(OBJDIR)/%.$O : %.hs
+$(CPPOBJS) $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O $(OBJDIR)/runhs.$O : $(OBJDIR)/%.$O : %.hs
 	$(HC) $(HFLAGS) -c -cpp -o $@ $<
 
-$(CFILES) runhs.$C: %.$C : %.hs
+$(CFILES) : %.$C : %.hs
 	$(HC) $(HFLAGS) -C $<
-$(CPPCFILES) Older.$C MkConfig.$C: %.$C : %.hs
+$(CPPCFILES) Older.$C MkConfig.$C runhs.$C : %.$C : %.hs
 	$(HC) $(HFLAGS) -C -cpp $<
 
 # copy some necessary files from cpphs to here.

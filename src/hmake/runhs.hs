@@ -14,11 +14,25 @@
      If you don't change the script between uses, the executable cached
      in /tmp is not rebuilt.
 -}
+#if __GLASGOW_HASKELL__ >= 604 || __NHC__ >=117
+#define HASCOPYFILE
+#endif
+#ifdef __HBC__
+import Monad (when)
+import System (system,getArgs,exitWith,ExitCode(..))
+import Directory (doesFileExist,getModificationTime)
+#else
 import Control.Monad      (when)
 import System.Cmd         (system)
-import System.Directory   (doesFileExist, copyFile, getModificationTime)
+import System.Directory   (doesFileExist, getModificationTime)
 import System.Environment (getArgs)
 import System.Exit        (exitWith, ExitCode(..))
+#endif
+#ifdef HASCOPYFILE
+import System.Directory   (copyFile)
+#else
+copyFile src dst = do shell (unwords ["cp",src,dst]); return ()
+#endif
 
 {- original shell script:
   #!/bin/sh	runhs [-e] script [args...]
@@ -96,3 +110,4 @@ shell = system	-- only on Unix
 ifErr :: ExitCode -> (ExitCode->IO ()) -> IO ()
 ifErr code@(ExitFailure _) err = err code
 ifErr _ _ = return ()
+
