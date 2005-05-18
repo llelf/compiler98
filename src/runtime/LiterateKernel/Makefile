@@ -15,13 +15,10 @@ SSRCS = newtables.c newbuiltin.c
 ASRCS = bytecode.c cdata.c collector.c ffiexport.c mark.c stableptr.c \
         timeUnix.c system.c
 
-LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
-        node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
+LINKS = bytecode.h cinterface.h mutlib.h newmacros.h node.h runtime.h \
+        stableptr.h newbytecode.h
 
 HDRS  = ${LINKS} mark.h
-
-#ASRCS = haskellInit.c dump.c inscount.c collector.c mark.c \
-#        cdata.c timeUnix.c xlib_debug.c stableptr.c closureval.c ffiexport.c
 
 ifneq "${PROFILING}" ""
 ASRCS += profile.c remark.c xmem.c retainer.c timer.c
@@ -45,7 +42,7 @@ endif
 
 OBJS = ${AOBJS} ${SOBJS} ${OOBJS}
 
-# -g is AMS's
+# FIXME: remove -g if not debugging
 CFLAGSNOOPT = -g ${DCFG} ${BUGFIX} ${ENDIAN} -I${INCDIR} \
          -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
 CFLAGS = ${CFLAGSNOOPT} ${OPT}
@@ -70,13 +67,13 @@ ${SRCS}: ${FWS}
 links:
 	@cd ${INCDIR}; \
 	for f in ${LINKS}; do \
-            ln -s ../src/runtime/LiterateKernel/$$f >/dev/null 2>&1 || \
-                echo "Link ${INCDIR}/$$f already exists."; \
-        done
+        ln -s ../src/runtime/LiterateKernel/$$f >/dev/null 2>&1 || \
+            echo "Link ${INCDIR}/$$f already exists."; \
+    done
 nolinks:
 	@for f in ${LINKS}; do \
-            rm -f ${INCDIR}/$$f; \
-        done
+        rm -f ${INCDIR}/$$f; \
+    done
 
 xxx: 
 	echo ${BUILDDIR}
