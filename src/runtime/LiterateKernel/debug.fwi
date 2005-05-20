@@ -4,26 +4,32 @@ This module contains the main controls for enabling debugging support in
 the rest of the runtime.  You should only need to adjust the following
 settings.
 
-Turn @{DEBUG_INSNS@} on if you want to see the stream of instructions being
-executed by the mutator.  @{DEBUG_HEAPSTACK@} prints information about the
-heap and stack state.  @{DEBUG_NODEDEPTH@} specifies how many levels deep
-should graph nodes be printed when @{DEBUG_HEAPSTACK@} is enabled.
+Turn @{DEBUG_INSNS@} on if you want to see the stream of instructions
+being executed by the mutator.  Turn @{DEBUG_HEAPSTACK@} on to print
+information about the heap and stack state.  @{DEBUG_MARK@} enables
+specific debugging messages during the mark phase of garbage collection.
+
+@{DEBUG_NODEDEPTH@} specifies how many levels deep should graph nodes be
+printed when @{DEBUG_HEAPSTACK@} is enabled.
 
 @$@<Debugging flags@>+=@{@-
-#define DEBUG_INSNS
-#define DEBUG_HEAPSTACK
+#undef DEBUG_INSNS
+#undef DEBUG_HEAPSTACK
+#undef DEBUG_MARK
+
 #define DEBUG_NODEDEPTH 2
 @}
 
-You shouldn't need to adjust anything below here.
-
-@{DEBUG@} is used to elide debugging code if none of the debugging options
-are turned on.
+By default, @{DEBUG@} is used to elide debugging code if none of the
+debugging options are turned on.  Alternatively, you can turn @{DEBUG@} on
+if you want access to the debugging routines from a source-level debugger.
 
 @$@<Debugging flags@>+=@{@-
-#if defined(DEBUG_INSNS) || defined(DEBUG_HEAPSTACK)
+#if defined(DEBUG_INSNS) || defined(DEBUG_HEAPSTACK) || defined(DEBUG_MARK)
 #define DEBUG
 #else
 #undef DEBUG
 #endif
+
+/* #define DEBUG */
 @}
