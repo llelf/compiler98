@@ -355,13 +355,16 @@ void mark(NodePtr *inode)@-
 @$@<mark routine@>==@{@-
 @<mark header@>
 {
-    @<Node and its tag@>
+    NodePtr node = *inode;
+    UInt tag;
+
     @<Node stack@>
 
-    @<Get the node@>
+    @<Mark debug@>@("mark %lx:", (UInt)node@)
     @<Initialise node stack@>
 
 InspectNode:
+    @<Mark debug@>@("InspectNode %lx:", (UInt)node@)
     @<Trap nodes outside the heap@>
     @<Get the node tag@>
     @<Inspect a node outside heap and stack area@>
@@ -369,27 +372,20 @@ InspectNode:
     @<Inspect a regular node@>
 
 PushNode:
+    @<Mark debug@>@("PushNode %lx:", (UInt)node@)
     @<Push a node@>
 
 NextNode:
+    @<Mark debug@>@("NextNode %lx:", (UInt)node@)
     @<Go to next node@>
 }
 @}
 
-First, we remove all indirection and grab the node tag for later use.
-
-@$@<Node and its tag@>==@{@-
-NodePtr node;
-UInt tag;
-@}
-
-@$@<Get the node@>==@{@-
-node = *inode;
-@}
-
-@$@<Get the node tag@>==@{@-
-IND_REMOVE(node);
-tag = EXT_LARGETAG(*node);
+@$@<Mark debug@>@(@1@)@M==@{@-
+#ifdef DEBUG_MARK
+ERROR_OUT(@1);
+FLUSH_ERR;
+#endif
 @}
 
 @C@<Pushing nodes@>
@@ -437,6 +433,13 @@ if (node > hpEnd) {
 }
 @}
 
+Then we remove indirections and get the tag of the node actually addressed.
+
+@$@<Get the node tag@>==@{@-
+IND_REMOVE(node);
+tag = EXT_LARGETAG(*node);
+@}
+
 Then we deal with nodes that lie outside the heap and stack areas.
 @{VAP@}s in this region are added to the CAF list for later processing.
 
@@ -448,6 +451,7 @@ as nodes.  In short, when will this code ever be used?
 if (OUTSIDE(node)) {
     if (tag & VAP_TAG) {
         Cinfo cinfo;
+        @<Mark debug@>@("VAP(0):"@)
         cinfo = GET_CINFO(node);
         addCaf(CINFO_FINFO(cinfo));
     }
@@ -503,6 +507,8 @@ case CON_WORDS | VAP_TAG1: {
         Int size = (Int)CINFO_SIZE(cinfo);
         Finfo finfo = CINFO_FINFO(cinfo);
 
+        @<Mark debug@>@("VAP/CAP:"@)
+
         @<Perform Wadler optimisation@>
 
         addCaf(finfo);
@@ -520,16 +526,35 @@ section?).
 @$@<Perform Wadler optimisation@>==@{@-
 @}
 
-A @{CON_DATA@} node contains pointers followed by integers.  As above, in
-this and the next case, start with the last argument and work backwards.
+@{CON_DATA@} and @{CON_CDATA@} nodes contain pointers followed by
+integers.  As above, in this and the next case, start with the last
+argument and work backwards.  The only difference between the two
+is that @{CON_CDATA@} is used for foreign objects so we have to make
+sure to mark them as well.
 
 @$@<Inspect CON constructor applications@>+=@{@-
-case CON_DATA | CON_TAG:
+case CON_DATA | CON_TAG: {
+        Coninfo coninfo = GET_CONINFO(node);
+        Int psize  = (Int)CONINFO_PSIZE(coninfo);
+        @<Mark debug@>@("CON_DATA:"@)
+        if (psize) {
+            newpptr = node+psize+EXTRA;
+            @<Mark debug@>@("node = %lx newpptr = %lx:", (UInt)node,
+                            (UInt)newpptr@)
+            goto PushNode;
+        }
+    }
+    goto NextNode;
+
 case CON_CDATA | CON_TAG: {
         Coninfo coninfo = GET_CONINFO(node);
         Int psize  = (Int)CONINFO_PSIZE(coninfo);
+        @<Mark debug@>@("CON_CDATA:"@)
+        markForeignObj((ForeignObj *)*(node+psize+1+EXTRA));
         if (psize) {
             newpptr = node+psize+EXTRA;
+            @<Mark debug@>@("node = %lx newpptr = %lx:", (UInt)node,
+                            (UInt)newpptr@)
             goto PushNode;
         }
     }
@@ -542,8 +567,11 @@ A @{CON_PTRS@} node just contains pointers.
 case CON_PTRS | CON_TAG: {
         Coninfo coninfo = GET_CONINFO(node);
         Int psize  = (Int)CONINFO_LARGESIZEU(coninfo);
+        @<Mark debug@>@("CON_PTRS: psize = %d:", psize@)
         if (psize) {
             newpptr = node+psize+EXTRA;
+            @<Mark debug@>@("node = %lx newpptr = %lx:", (UInt)node,
+                            (UInt)newpptr@)
             goto PushNode;
         }
     }
@@ -566,13 +594,13 @@ exported by newtables.fwi rather than hard-coded here.
 @$@<Inspect CON constructor applications@>+=@{@-
 case CON_WORDS | CON_TAG: {
         Int i;
+        @<Mark debug@>@("CON_WORDS:"@)
         if (*node == CONSTRW(1,0) && (i=node[EXTRA+1]) >= -10 && i <= 255) {
             unmarked(node);
             node = GET_INT(i);
-            goto NextNode;
         }
     }
-    break;
+    goto NextNode;
 @}
 
 @C@<Going to the next node@>
@@ -608,12 +636,14 @@ next node recursively.
     *pptr-- = (Node)node;
 
     if (ifmarked(pptr)) {
+        @<Mark debug@>@("PopNode %lx:", (UInt) node@)
         if (tmp) {
             node = -EXTRA + (NodePtr)pptr;
             pptr = (NodePtr)tmp;
             goto NextNode;
         } else {
             *inode = node;
+            @<Mark debug@>@("Return %lx:", (UInt) node@)
             return;
         }
     } else {
