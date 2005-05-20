@@ -58,13 +58,13 @@ FIXME: At the moment there is no real command-line processing so the
 arguments are just dummied up to just contain the program name.
 
 @$@<Unix-like argument interface@>==@{@-
-extern char *Argv[];
+extern char **Argv;
 extern int Argc;
 @}
 
 @$@<main Unix routine@>==@{@-
 int Argc;
-char *Argv[2] = { NULL, NULL };
+char **Argv;
 
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
 jmp_buf exit_mutator;
@@ -75,7 +75,13 @@ sigjmp_buf exit_mutator;
 int main(int argc, char *argv[])
 {
     Argc = 1;
+    Argv = (char **)malloc((argc+1)*sizeof(char *));
+    if (!Argv) {
+        ERROR_OUT("Out of memory when reserving space for %d arguments\n",argc);
+        EXITPROG(-1);
+    }
     Argv[0] = argv[0];
+    Argv[1] = NULL;
 
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
     if (!setjmp(exit_mutator)) {
