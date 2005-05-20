@@ -5,7 +5,10 @@ MKPROG   = $(DST)/MkProg$(EXE)
 OLDER    = $(DST)/Older$(EXE)
 MKCONFIG = $(DST)/MkConfig$(EXE)
 RUNHS    = $(DST)/runhs$(EXE)
-TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG) $(RUNHS)
+TARGETS  = $(MKPROG) $(OLDER) $(MKCONFIG)
+ifneq "hbc" "$(BUILDCOMP)"
+TARGETS += $(RUNHS)
+endif
 
 SRCS    = QSort.hs Unlit.hs Utils.hs Tsort.hs FileName.hs \
 	  Output.hs Order.hs ListUtil.hs Getmodtime.hs \
@@ -55,8 +58,8 @@ fromC: $(OBJDIR)
 	$(HC) $(HFLAGS) -H4M -o $(MKPROG) -d $(OBJDIR) $(CFILES) $(CPPCFILES)
 	$(HC) $(HFLAGS)      -o $(OLDER)  -d $(OBJDIR) Older.$C
 	$(HC) $(HFLAGS)    -o $(MKCONFIG) -d $(OBJDIR) MkConfig.$C $(CFGCFILES)
-	$(HC) $(HFLAGS)      -o $(RUNHS)  -d $(OBJDIR) runhs.$C
-	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG) $(RUNHS)
+	#$(HC) $(HFLAGS)      -o $(RUNHS)  -d $(OBJDIR) runhs.$C
+	$(STRIP) $(MKPROG) $(OLDER) $(MKCONFIG) #$(RUNHS)
 clean:
 	rm -f $(OBJS) $(CPPOBJS) $(CFGOBJS)
 	rm -f $(OBJDIR)/runhs.$O $(OBJDIR)/Older.$O $(OBJDIR)/MkConfig.$O
@@ -83,7 +86,7 @@ $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(STRIP) $@
 $(RUNHS): $(OBJDIR) $(OBJDIR)/runhs.$O
-	$(HC) $(HFLAGS) -o $@ $(OBJDIR)/runhs.$O
+	$(HC) $(HFLAGS) -o $@ $(OBJDIR)/runhs.$O -package base
 
 %.raw:
 	cpp -P -traditional $(patsubst %.raw, %.hs, $@) > $@
