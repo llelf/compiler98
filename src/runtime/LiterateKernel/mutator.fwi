@@ -83,7 +83,7 @@ CodePtr Ip;
 For now the heap and stack will be fixed sizes.
 
 @$@<GCSTACKSIZE parameter@>==@{@-
-#define GCSTACKSIZE 20000
+#define GCSTACKSIZE 200000
 @}
 
 @$@<Heap size@>@M==@{@-
@@ -92,7 +92,7 @@ int hpSize;
 
 @$@<Define initial heap and stack sizes@>==@{@-
 int spSize = GCSTACKSIZE;
-hpSize = 100000;
+hpSize = 64000000;
 @}
 
 FIXME: ultimately this must be settable at compile time (for the heap) and
@@ -114,7 +114,7 @@ Turn on the appropriate debugging support.
 #ifdef DEBUG_HEAPSTACK
 #define PRINTHEAPSTACK(h,s,f,v,c) prHeapStack(h,s,f); prVap(v,c)
 #else
-#define PRINTHEAPSTACK(h,s,f,v)
+#define PRINTHEAPSTACK(h,s,f,v,c)
 #endif
 @}
 
@@ -363,10 +363,6 @@ Execution is started by evaluating the top of the stack by faking an @{EVAL@}
 instruction.
 
 @$@<Start execution@>==@{@-
-PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
-#ifdef DEBUG_INSNS
-ERROR_OUT("ip = %08x EVAL (faked)\n", ip);
-#endif
 goto EvalTOS;
 @}
 
@@ -445,7 +441,7 @@ through to @{EVAL@} so the order is important here.
 
 FIXME: in the original code the VAP_CODE call here was
 FINFO_CODE(GET_FINFO(...)) which is what VAP_CODE is defined to be.  Confirm
-that this is ok.
+that this is ok.  Seems to be.
 
 @$@<EVAL and RETURN cases@>+=@{@-
 Case(SELECTOR_EVAL):
@@ -457,7 +453,7 @@ Case(SELECTOR_EVAL):
   EvalTOS:
     PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
 #ifdef DEBUG_INSNS
-    ERROR_OUT("ip = %08x EVAL (faked)\n", ip);
+    ERROR_OUT("         ip = %4x EVAL (faked)\n", ip);
 #endif
 Case(EVAL):
     nodeptr = sp[0];
@@ -489,7 +485,7 @@ Case(RETURN):
   return_eval:
     PRINTHEAPSTACK(hp, sp, fp, vapptr, constptr);
 #ifdef DEBUG_INSNS
-    ERROR_OUT("ip = %08x RETURN_EVAL (faked)\n", ip);
+    ERROR_OUT("         ip = %4x RETURN_EVAL (faked)\n", ip);
 #endif
 Case(RETURN_EVAL):
     nodeptr = *sp++;
@@ -982,9 +978,6 @@ Case(PRIMITIVE): {
         Primitive fun;
         ip = (CodePtr) ALIGNPTR(ip);
         fun = *(Primitive*)ip;
-#ifdef INSTR_PRINT
-        ERROR_OUT("\tPRIMITIVE %p\n",fun);
-#endif
         ip += sizeof(Primitive);
         CALL_C(fun);
     }
@@ -1129,7 +1122,7 @@ Case(POW_F): {
         *--sp = hp; \
         hp += SIZE_FLOAT; \
     } \
-    Break;
+    Break
 
 Case(NEG_F):    PRIM_OP1_FLOAT(-a);
 Case(ABS_F):    PRIM_OP1_FLOAT((a<0?-a:a));
@@ -1185,7 +1178,7 @@ And the double operations.
         *--sp = hp; \
         hp += SIZE_DOUBLE; \
     } \
-    Break;
+    Break
 
 Case(ADD_D): PRIM_OP2_DOUBLE(+);
 Case(SUB_D): PRIM_OP2_DOUBLE(-);
@@ -1214,8 +1207,8 @@ Case(POW_D): {
         mk_double(hp, op); \
         *--sp = hp; \
         hp += SIZE_DOUBLE; \
-    }
-    Break;
+    } \
+    Break
 
 Case(NEG_D):    PRIM_OP1_DOUBLE(-a);
 Case(ABS_D):    PRIM_OP1_DOUBLE((a<0?-a:a));
