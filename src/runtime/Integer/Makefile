@@ -1,6 +1,7 @@
 include Makefile.inc
 
-OBJDIR=${BUILDDIR}/${OBJ}/runtime/Integer
+DIR=Integer
+OBJDIR=${BUILDDIR}/${OBJ}/runtime/${DIR}
 
 SRCS    = mpz_add.c mpz_sub.c mpz_mul.c mpz_div.c  mpz_mod.c  mpz_neg.c \
 	 mpz_abs.c mpz_cmp.c mpz_or.c mpz_and.c mpn_cmp.c mpn_sub.c \
@@ -17,11 +18,15 @@ CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
 LINKS = flt.h
 
 links:
-	@for f in ${LINKS}; do \
-		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
-	done
+	@cd ${INCDIR}; \
+	for f in ${LINKS}; do \
+        ln -s ../src/runtime/${DIR}/$$f >/dev/null 2>&1 || \
+            echo "Link ${INCDIR}/$$f already exists."; \
+    done
 nolinks:
-	rm -f ${LINKS}
+	@for f in ${LINKS}; do \
+        rm -f ${INCDIR}/$$f; \
+    done
 
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<

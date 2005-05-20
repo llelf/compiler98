@@ -2,7 +2,8 @@ include Makefile.inc
 
 #VPATH = $(INCDIR)
 
-OBJDIR=${BUILDDIR}/${OBJ}/runtime/Kernel
+DIR=Kernel
+OBJDIR=${BUILDDIR}/${OBJ}/runtime/${DIR}
 
 OSRCS = mutator.c mutlib.c main.c
 SSRCS = newtables.c newbuiltin.c
@@ -47,11 +48,15 @@ LINKS = bytecode.h cinterface.h mutlib.h newmacros.h \
 	node.h runtime.h stableptr.h newbytecode.h bytecode_o.h
 
 links:
-	@for f in ${LINKS}; do \
-		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
-	done
+	@cd ${INCDIR}; \
+	for f in ${LINKS}; do \
+        ln -s ../src/runtime/${DIR}/$$f >/dev/null 2>&1 || \
+            echo "Link ${INCDIR}/$$f already exists."; \
+    done
 nolinks:
-	rm -f ${LINKS}
+	@for f in ${LINKS}; do \
+        rm -f ${INCDIR}/$$f; \
+    done
 
 xxx: 
 	echo ${BUILDDIR}
@@ -93,7 +98,7 @@ node.h: runtime.h newmacros.h     # newmacros was formerly: codemacros.h
 
 clean:
 	rm -f ${OBJDIR}/*.o ${OBJDIR}/*.a   #tables.s builtin.s
-
+	
 newtables.o: newtables.c newmacros.h
 newbuiltin.o: newbuiltin.c newmacros.h
 dump.o: dump.c runtime.h bytecode.h node.h

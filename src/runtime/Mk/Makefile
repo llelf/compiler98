@@ -1,6 +1,7 @@
 include Makefile.inc
 
-OBJDIR=${BUILDDIR}/${OBJ}/runtime/Mk
+DIR=Mk
+OBJDIR=${BUILDDIR}/${OBJ}/runtime/${DIR}
 
 SRCS_PROG = \
 	mkBlockBuffering.c mkComplex.c mkCons.c mkExitFailure.c \
@@ -34,14 +35,23 @@ CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<
 
-LINKS = mk.h mkByHand.h mkByProg.h mutlib.h
+LINKS = mk.h mkByHand.h mkByProg.h
+ULINKS = mutlib.h
 
 links:
-	@for f in ${LINKS}; do \
-		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
-	done
+	@cd ${INCDIR}; \
+	for f in ${LINKS}; do \
+        ln -s ../src/runtime/${DIR}/$$f >/dev/null 2>&1 || \
+            echo "Link ${INCDIR}/$$f already exists."; \
+    done
+	@for f in ${ULINKS}; do \
+	    ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
+    done
 nolinks:
-	rm -f ${LINKS}
+	@for f in ${LINKS}; do \
+        rm -f ${INCDIR}/$$f; \
+    done
+	@rm -f ${ULINKS}
 
 all: links ${OBJS}
 

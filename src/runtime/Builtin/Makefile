@@ -2,7 +2,8 @@ include Makefile.inc
 
 VPATH = $(INCDIR)
 
-OBJDIR=${BUILDDIR}/${OBJ}/runtime/Builtin
+DIR=Builtin
+OBJDIR=${BUILDDIR}/${OBJ}/runtime/${DIR}
 
 SRCS = \
 	primDecodeDouble.c       primEncodeDouble.c	\
@@ -27,11 +28,15 @@ SRCS = \
 LINKS = haskell2c.h twopass.h HsFFI.h
 
 links:
-	@for f in ${LINKS}; do \
-		ln -s ${INCDIR}/$$f $$f >/dev/null 2>&1 || echo "Link $$f already exists."; \
-	done
+	@cd ${INCDIR}; \
+	for f in ${LINKS}; do \
+        ln -s ../src/runtime/${DIR}/$$f >/dev/null 2>&1 || \
+            echo "Link ${INCDIR}/$$f already exists."; \
+    done
 nolinks:
-	rm -f ${LINKS}
+	@for f in ${LINKS}; do \
+        rm -f ${INCDIR}/$$f; \
+    done
 
 OBJS = $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
 
