@@ -303,7 +303,7 @@ void prByteIns (CodePtr ip)@-
 {
     static int count = 0;
 
-    ERROR_OUT("%d : ip = %4x %s", count, ip, instr_names[*ip]);
+    ERROR_OUT("%6d : ip = %4x %s", count, ip, instr_names[*ip]);
     count++;
     switch (*ip) {
         case ZAP_ARG_I1: case ZAP_ARG_I2: case ZAP_ARG_I3: case NEEDHEAP_I32:
@@ -353,16 +353,16 @@ void prByteIns (CodePtr ip)@-
             break;
 
         case JUMP: case JUMPFALSE:
-            ERROR_OUT(" %08x (%d:%d)",ip+1+(ip[2]<<8)+ip[1],ip[1],ip[2]);
+            ERROR_OUT(" %4x (%d:%d)",ip+1+(ip[2]<<8)+ip[1],ip[1],ip[2]);
             break;
 
         case PRIMITIVE:
             ip = (CodePtr) ALIGNPTR((ip+1));
-            ERROR_OUT(" %08x",*(Primitive *)ip);
+            ERROR_OUT(" %4x",*(Primitive *)ip);
             break;
 
         default:
-            ERROR_OUT(" Unknown instruction %s (%3d) at %08x",
+            ERROR_OUT("\nUnknown instruction %s (%d) at %4x",
                       instr_names[*ip], *ip, ip);
     }
     ERROR_OUT("\n");
