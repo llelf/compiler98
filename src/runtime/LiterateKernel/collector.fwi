@@ -27,6 +27,7 @@ phase which is described next.
 @<flip routine@>
 @<nhc_update routine@>
 
+@<clearCaf routine@>
 @<flipCaf routine@>
 @<flipStack routine@>
 @<flipHeap routine@>
@@ -309,6 +310,9 @@ NodePtr callGc(Int size, NodePtr hp, NodePtr *sp, NodePtr *fp)@-
     @<Collect foreign objects@>
 
     @<Stop collection timer@>
+
+    @<Clear the Caf list@>
+
     @<Start runtime timer@>
 
     @<Return new heap pointer@>
@@ -484,6 +488,25 @@ void flip(NodePtr *p)
     if (INSIDE(tmp)) {
         *p = (NodePtr)*tmp;
         *tmp = (Node)p;
+    }
+}
+@}
+
+FIXME: probably not the right place for this routine.
+
+After a collection we need to be able to clear the Caf list.
+
+@$@<Clear the Caf list@>==@{@-
+clearCaf();
+@}
+
+@$@<clearCaf routine@>==@{@-
+static void clearCaf(void)
+{
+    while(oldCaf != GcEnd) {
+        GcConst cptr = oldCaf;
+        oldCaf = cptr->next;
+        cptr->next = 0;
     }
 }
 @}
