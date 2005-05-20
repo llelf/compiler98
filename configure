@@ -434,6 +434,22 @@ int main (void) { test(); }
   # Generate target-specific stuff for libraries.
   echo "os   = \"`echo $MACHINE | cut -d'-' -f2`\"" >targets/$MACHINE/OSInfo.hs
   echo "arch = \"`echo $MACHINE | cut -d'-' -f1`\"" >>targets/$MACHINE/OSInfo.hs
+  
+  # Look for FunnelWeb (to build src/runtime/LiterateKernel from scratch)
+  echo -n 'Testing for FunnelWeb: '
+  if [ "$FW" = "" ]
+  then
+    FW=`which fw`
+    if [ -f "$FW" -a -x "$FW" ]
+    then
+      echo "                     $FW  (detected)"
+    else
+      echo '                     no  (detected)'
+      FW=""
+    fi
+  else
+    echo "                     $FW  (cached)"
+  fi
 
 else	# do the following only in binary distributions
   if [ -f lib/$MACHINE/config ]
@@ -532,6 +548,7 @@ then
       echo "CC=$CCC";
       echo "GHCSYM=`cat targets/$MACHINE/ghcsym || true`";
       echo "TRUE=$TRUE";
+      echo "FW=\"$FW\"";
     ) >$BUILDLIBDIR/$MACHINE/config
 
     echo "Adding build scripts to"
@@ -821,6 +838,7 @@ echo "Saving current configuration in targets/$MACHINE/config.cache"
   echo "READLINE=\"$READLINE\"" ;
   echo "INSTALLVER=\"$NHC98VERSION\"" ;
   echo "INSTALLINFO=\"$INSTALLINFO\"" ;
+  echo "FW=\"$FW\"" ;
 ) >targets/$MACHINE/config.cache
 
 echo "Done."
