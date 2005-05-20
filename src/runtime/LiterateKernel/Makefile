@@ -2,7 +2,8 @@ include Makefile.inc
 
 #VPATH = $(INCDIR)
 
-OBJDIR=${BUILDDIR}/${OBJ}/runtime/LiterateKernel
+DIR=LiterateKernel
+OBJDIR=${BUILDDIR}/${OBJ}/runtime/${DIR}
 
 FWS   = $(FWM) $(FWIS)              
 FWM   = doc.fw
@@ -42,8 +43,7 @@ endif
 
 OBJS = ${AOBJS} ${SOBJS} ${OOBJS}
 
-# FIXME: remove -g if not debugging
-CFLAGSNOOPT = -g ${DCFG} ${BUGFIX} ${ENDIAN} -I${INCDIR} \
+CFLAGSNOOPT = ${DCFG} ${BUGFIX} ${ENDIAN} -I${INCDIR} \
          -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
 CFLAGS = ${CFLAGSNOOPT} ${OPT}
 CPP = $(CC) ${DCFG} ${ENDIAN} -E 
@@ -67,7 +67,7 @@ ${SRCS}: ${FWS}
 links:
 	@cd ${INCDIR}; \
 	for f in ${LINKS}; do \
-        ln -s ../src/runtime/LiterateKernel/$$f >/dev/null 2>&1 || \
+        ln -s ../src/runtime/${DIR}/$$f >/dev/null 2>&1 || \
             echo "Link ${INCDIR}/$$f already exists."; \
     done
 nolinks:
@@ -118,32 +118,40 @@ clean:
 
 realclean: clean
 	rm -f ${SRCS} ${HDRS} doc.lis
+	
+depend:
+	${CC} -MM ${CFLAGS} ${SRCS} | sed -e "s#${INCDIR}#../../../include#"
 
-# FIXME: depends are not necessarily up to date
-
-newtables.o: newtables.c newmacros.h
-newbuiltin.o: newbuiltin.c newmacros.h
-dump.o: dump.c runtime.h bytecode.h node.h
-inscount.o: inscount.c runtime.h bytecode.h node.h
-fake.o: fake.c cinterface.h node.h
-haskellInit.o: haskellInit.c runtime.h mutlib.h node.h ../../../Makefile.inc
-main.o: main.c runtime.h mutlib.h node.h
-mutator.o: mutator.c runtime.h bytecode.h node.h mutlib.h cinterface.h debug.h
-mutlib.o: mutlib.c runtime.h mutlib.h newmacros.h
-collector.o: collector.c node.h newmacros.h runtime.h mark.h
-mark.o: mark.c runtime.h node.h newmacros.h bytecode.h
-cdata.o: cdata.c runtime.h
+bytecode.o: bytecode.c runtime.h
+cdata.o: cdata.c ../../../include/mk.h ../../../cinterface.h \
+  ../../../include/node.h ../../../include/runtime.h \
+  ../../../include/newmacros.h ../../../include/bytecode.h \
+  ../../../include/newbytecode.h ../../../include/mutlib.h \
+  ../../../include/mkByHand.h ../../../include/mkByProg.h stableptr.h
+collector.o: collector.c node.h runtime.h newmacros.h bytecode.h \
+  newbytecode.h mark.h
+ffiexport.o: ffiexport.c ../../../include/haskell2c.h \
+  ../../../include/mk.h ../../../include/cinterface.h \
+  ../../../include/node.h ../../../include/runtime.h \
+  ../../../include/newmacros.h ../../../include/bytecode.h \
+  ../../../include/newbytecode.h ../../../include/mutlib.h \
+  ../../../include/mkByHand.h ../../../include/mkByProg.h \
+  ../../../include/flt.h ../../../include/stableptr.h \
+  ../../../include/twopass.h
+main.o: main.c runtime.h stableptr.h
+mark.o: mark.c node.h runtime.h newmacros.h bytecode.h newbytecode.h \
+  mark.h mutlib.h
+mutator.o: mutator.c mutlib.h runtime.h cinterface.h node.h newmacros.h \
+  bytecode.h newbytecode.h
+mutlib.o: mutlib.c runtime.h mutlib.h newmacros.h bytecode.h \
+  newbytecode.h
+newbuiltin.o: newbuiltin.c node.h runtime.h newmacros.h bytecode.h \
+  newbytecode.h
+newtables.o: newtables.c newmacros.h bytecode.h runtime.h newbytecode.h \
+  mutlib.h
+stableptr.o: stableptr.c runtime.h mark.h stableptr.h
+system.o: system.c runtime.h
 timeUnix.o: timeUnix.c runtime.h
-remark.o: remark.c runtime.h node.h newmacros.h mark.h
-profile.o: profile.c runtime.h xmem.h profile.h
-xmem.o: xmem.c xmem.h
-retainer.o: retainer.c profile.h xmem.h
-stableptr.o: stableptr.c mark.h runtime.h node.h
-closureval.o: closureval.c mutlib.h runtime.h newmacros.h
-ffiexport.o: ffiexport.c mutlib.h runtime.h newmacros.h
-timer.o: timer.c runtime.h
-tprof.o: tprof.c runtime.h newmacros.h
-debug.o: debug.c runtime.h
 
 bytecode_o.h: newbytecode.h
 	$(LOCAL)mangler newbytecode.h bytecode_o.h
