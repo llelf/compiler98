@@ -34,6 +34,7 @@ also supports access to foreign objects from Haskell.
 
 @<clearForeignObjs routine@>
 @<gcForeignObjs routine@>
+@<markForeignObj routine@>
 
 @<primForeignObjC routine@>
 @<primForeignPtrC routine@>
@@ -58,6 +59,7 @@ extern @<derefForeignObj header@>;
 
 extern @<clearForeignObjs header@>;
 extern @<gcForeignObjs header@>;
+extern @<markForeignObj header@>;
 
 extern @<runDeferredGCs header@>;
 @}
@@ -235,8 +237,23 @@ void clearForeignObjs(void)@-
 }
 @}
 
-The actual garbage collection is performed by the nominated routines for each
-object, called by @{gcForeignObjs@}.
+During the mark phase the collector calls @{markForeignObj@} for each such
+object it reaches.  Marking is achieved by just bumping the @{used@} field
+(previously cleared by @{clearForeignObjs@}).
+
+@$@<markForeignObj header@>@M==@{@-
+void markForeignObj(ForeignObj *cd)@-
+@}
+
+@$@<markForeignObj routine@>==@{@-
+@<markForeignObj header@>
+{
+    cd->used++;
+}
+@}
+
+The actual garbage collection of the foreign object is performed by the
+nominated routines for each object, called by @{gcForeignObjs@}.
 
 @$@<gcForeignObjs header@>@M==@{@-
 void gcForeignObjs(void)@-
@@ -247,10 +264,10 @@ void gcForeignObjs(void)@-
 {
     int i;
     for (i = 0; i < MAX_FOREIGNOBJ; i++)
-    if (foreign[i].used == 0 && foreign[i].gcf) {
-        foreign[i].gcf(&foreign[i]);
-        foreign[i].gcf = NULL;
-    }
+        if (foreign[i].used == 0 && foreign[i].gcf) {
+            foreign[i].gcf(&foreign[i]);
+            foreign[i].gcf = NULL;
+        }
 }
 @}
 
