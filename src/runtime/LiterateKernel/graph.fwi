@@ -888,8 +888,7 @@ static void prNodeAux (NodePtr nodeptr, int depth)
                                   (UInt)*nodeptr & ZAP_BIT ? "*" : "",
                                   size);
                     }
-                    ERROR_OUT(" %04lx", (UInt)FINFO_CODE(finfo),
-                              profName(constptr), profPos(constptr));
+                    ERROR_OUT(" %04lx", (UInt)FINFO_CODE(finfo));
                     for (i = 0; i < size; i++) {
                         ERROR_OUT(", ");
                         prNodeAux(GET_POINTER_ARG1(nodeptr, i+1), depth-1);
