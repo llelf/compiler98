@@ -119,6 +119,7 @@ RUNTIME = \
 	src/runtime/Makefile* \
 	src/runtime/Builtin/Makefile* \
 	src/runtime/Builtin/*.c \
+	src/runtime/Builtin/*.h \
 	src/runtime/Integer/Makefile* \
 	src/runtime/Integer/*.c \
 	src/runtime/Integer/*.h \
@@ -126,7 +127,8 @@ RUNTIME = \
 	src/runtime/Kernel/*.c \
 	src/runtime/Kernel/*.h \
 	src/runtime/Mk/Makefile* \
-	src/runtime/Mk/*.c
+	src/runtime/Mk/*.c \
+	src/runtime/Mk/*.h
 TESTS = tests/README tests/runtests \
 	tests/conformance98 tests/nofib tests/nhc-bugs
 
