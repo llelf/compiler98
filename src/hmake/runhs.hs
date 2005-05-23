@@ -14,10 +14,7 @@
      If you don't change the script between uses, the executable cached
      in /tmp is not rebuilt.
 -}
-#if __GLASGOW_HASKELL__ >= 604 || __NHC__ >=117
-#define HASCOPYFILE
-#endif
-#ifdef __HBC__
+#if defined(__HBC__) || defined (__NHC__)
 import Monad (when)
 import System (system,getArgs,exitWith,ExitCode(..))
 import Directory (doesFileExist,getModificationTime)
@@ -27,6 +24,9 @@ import System.Cmd         (system)
 import System.Directory   (doesFileExist, getModificationTime)
 import System.Environment (getArgs)
 import System.Exit        (exitWith, ExitCode(..))
+#if __GLASGOW_HASKELL__ >= 604
+#define HASCOPYFILE
+#endif
 #endif
 #ifdef HASCOPYFILE
 import System.Directory   (copyFile)
@@ -34,7 +34,7 @@ import System.Directory   (copyFile)
 copyFile src dst = do shell (unwords ["cp",src,dst]); return ()
 #endif
 
-{- original shell script:
+{- original shell script:  (Haskell now departs from this slightly)
   #!/bin/sh	runhs [-e] script [args...]
 case $1 in
   -?) shift ;;
@@ -81,12 +81,13 @@ main = do argv <- getArgs
           when copy
                (do txt <- readFile src
                    case txt of
-                     ('#':'!':_) -> do shell ("tail +2 "++src++" >"++tmpsrc)
-                                       return ()
+                     ('#':'!':_) ->
+                          do shell ("{ echo; tail +2 "++src++"; } >"++tmpsrc)
+                             return ()
                      _ -> copyFile src tmpsrc)
           -- now compile and run it
-          e <- shell ("hmake "++tmpexe++">/dev/null 2>&1")
-          ifErr e (\c-> do putStrLn (prog++": compilation error");
+          e <- shell ("hmake "++tmpexe++">/dev/null")
+          ifErr e (\c-> do putStrLn ("runhs: error in "++prog);
                            exitWith c)
           err <- shell (tmpexe++" "++unwords args)
           exitWith err
