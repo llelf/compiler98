@@ -15,6 +15,7 @@
      in /tmp is not rebuilt.
 -}
 #if defined(__HBC__) || defined (__NHC__)
+import Time (ClockTime)
 import Monad (when)
 import System (system,getArgs,exitWith,ExitCode(..))
 import Directory (doesFileExist,getModificationTime)
