@@ -83,7 +83,7 @@ $(MKCONFIG): $(OBJDIR) $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(HC) $(HFLAGS) -o $@  $(OBJDIR)/MkConfig.$O $(CFGOBJS)
 	$(STRIP) $@
 $(RUNHS): $(OBJDIR) $(OBJDIR)/runhs.$O
-	$(HC) $(HFLAGS) -o $@ $(OBJDIR)/runhs.$O -package base
+	$(HC) $(HFLAGS) -o $@ $(OBJDIR)/runhs.$O
 
 %.raw:
 	cpp -P -traditional $(patsubst %.raw, %.hs, $@) > $@
