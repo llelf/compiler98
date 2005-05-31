@@ -51,7 +51,7 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 
 all: ${TARGET}
 objdir: ${OBJDIR}
-cfiles: $(OBJDIR)/$(BASECOMP)
+cfiles: #$(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNew.hs
 fromC: $(OBJDIR)
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
@@ -60,22 +60,32 @@ fromC: $(OBJDIR)
 relink:
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
 	$(STRIP) $(TARGET)
-clean:
-	rm -f $(OBJDIR)/*.$O *.$O *.hi
-cleanC: clean
-	rm -f *.hc *.p.c *.z.c
-realclean: cleanC
+clean: cleanO cleanHi
+cleanO:
+	rm -f $(OBJDIR)/*.$O *.$O
+cleanHi:
+	rm -f *.hi
+cleanC:
+	rm -f *.hc *.p.c *.z.c ghc_floats.c
+realclean: clean cleanC
 	rm -f $(TARGET)
 
+#ifeq "ghc" "$(findstring ghc, ${HC})"
+#$(TARGET): ${OBJDIR} $(OBJDIR)/$(BASECOMP) $(SRCS)
+#	$(HC) --make -cpp $(HMAKEFLAGS) -odir $(OBJDIR) MainNew
+#	mv a.out $(TARGET)
+#	$(STRIP) $(TARGET)
+#else
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(BASECOMP) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNew
 	mv $(OBJDIR)/MainNew$(EXE) $(TARGET)
 	$(STRIP) $(TARGET)
+#endif
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(BASECOMP):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
-	$(MAKE) cleanC
+	#$(MAKE) cleanC
 	touch "$(OBJDIR)/$(BASECOMP)"
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
