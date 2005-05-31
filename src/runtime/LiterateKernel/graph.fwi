@@ -703,17 +703,10 @@ The @{MK_INT@} and @{MK_ENUM@} macros just create nodes containing a single
 integer value or an enumerated value, respectively.  Note that the latter
 has no extra words because the constructor is the value.
 
-FIXME: we also define @{nhc_mkCInt@} to just be @{nhc_mkInt@} since the
-former uses CONSTRC which is deprecated.  Supposedly we can use the latter
-for the former.  Defining it here is easier than modifying all the refs
-but we should do that at some stage.
-
 @$@<Value construction macros@>+=@{@-
 #define CONSTR_INT   ((Node)CONSTRW(1,0))
 #define MK_INT(r,i)  (r)[0] = CONSTR_INT; (r)[1+EXTRA] = (Node)(i)
 #define MK_ENUM(r,i) (r)[0] = (Node)CONSTR(i,0,0)
-
-#define nhc_mkCInt nhc_mkInt
 @}
 
 @$@<Value size macros@>+=@{@-
