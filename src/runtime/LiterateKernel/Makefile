@@ -9,12 +9,13 @@ FWS   = $(FWM) $(FWIS)
 FWM   = doc.fw
 FWIS  = bytecode.fwi cdata.fwi cinterface.fwi collector.fwi debug.fwi \
         graph.fwi main.fwi mark.fwi mp.fwi mutator.fwi newbuiltin.fwi \
-        newtables.fwi profile.fwi stableptr.fwi system.fwi unix.fwi
+        newtables.fwi profile.fwi stableptr.fwi system.fwi unix.fwi \
+        util.fwi
 
 OSRCS = mutator.c mutlib.c main.c
 SSRCS = newtables.c newbuiltin.c
 ASRCS = bytecode.c cdata.c collector.c ffiexport.c mark.c stableptr.c \
-        timeUnix.c system.c
+        timeUnix.c system.c util.c
 
 LINKS = bytecode.h cinterface.h mutlib.h newmacros.h node.h runtime.h \
         stableptr.h newbytecode.h

@@ -1,3 +1,5 @@
+@p maximum_output_line_length = 100
+
 @T title titlefont centre "A Literate Haskell Runtime System"
 @T vskip 5 mm
 @T title normalfont centre "(Version 0.9, April 2005)"
@@ -65,6 +67,8 @@ distribution.
 @i stableptr.fwi
 @i system.fwi
 
-@! And finally the debugging module
+@! And finally the utility and debugging modules
 
+@i util.fwi
 @i debug.fwi
+

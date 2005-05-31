@@ -175,6 +175,7 @@ exported by @{runtime.h@} defined here.
 @<Newbuiltin interface@>
 @<Newtables interface@>
 @<Multiple precision integer interface@>
+@<Utility interface@>
 
 #endif
 @}
