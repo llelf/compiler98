@@ -1,0 +1,115 @@
+@A@<Utility routines@>
+
+This section contains generally useful utility routines that are not
+specifically related to running Haskell.
+
+@O@<util.c@>==@{@-
+#include "runtime.h"
+
+@<assign macro@>
+@<numArg routine@>
+@}
+
+@$@<Utility interface@>==@{@-
+@<Argument units@>
+extern @<numArg header@>;
+@}
+
+@B@<Numeric argument conversion@>
+
+Argument processing on all platforms needs to be able to convert argument
+values such as @{10k@} or @{1000Mb@} into useful values.  The @{numArg@}
+routine provides general support for this.
+
+Arguments can refer to sizes or times or can be unit-less.
+
+@$@<Argument units@>==@{@-
+#define NO_UNIT 0
+#define SIZE_UNIT 1
+#define TIME_UNIT 2
+@}
+
+We take an indication of the @{unit@} to apply to this argument and the
+argument string @{s@}.  The body of the routine works its way through
+@{s@} accumulating the value in @{i@} and using @{suffix@} as the
+placeholder for the multiplier due to any appended letters.
+
+@$@<numArg header@>@M==@{@-
+double numArg(int unit, char *s)@-
+@}
+
+@$@<numArg routine@>==@{@-
+@<numArg header@>
+{
+    double suffix, i;
+
+    @<Convert number part@>
+    @<Process kilo or mega suffix@>
+    @<Combine numeric value and suffix@>
+
+    if (*s)
+        ERROR_OUT("Ignoring extra character(s) '%s' at end of number\n",s);
+
+    return i;
+}
+@}
+
+Throughout the following we use the @{assign@} macro to ensure that overflow
+is resolved in favour of the largest value that doesn't overflow.
+
+FIXME: at least I think this is why we do this...
+
+@$@<assign macro@>==@{@-
+#define assign(var,exp) (var>exp ? var : (var=exp))
+@}
+
+Convert the number part in the usual way leaving the result in @{i@}.
+
+@$@<Convert number part@>==@{@-
+i = 0;
+while (isdigit(*s)) {
+    assign(i,i*10 + *s - '0');
+    s++;
+}
+if (*s=='.') {
+    double pos = 0.1;
+    while (isdigit(*++s)) {
+        i = i + (double)(*s - '0') * pos;
+        pos /= 10.0;
+    }
+}
+@}
+
+If a kilo or mega multiplier is present after the numeric part, factor it
+into the suffix multiplier.  No multiplier means just use the value as
+written.  Note that uppercase is equivalent to lowercase except for 'M'
+where 'm' means milli rather than mega.
+
+@$@<Process kilo or mega suffix@>==@{@-
+suffix = 1;
+switch(*s) {
+    case 'k':
+    case 'K': suffix *= 1000;     s++; break;
+    case 'm': suffix *= -1000000; s++; break;
+    case 'M': suffix *=  1000000; s++; break;
+}
+@}
+
+Finally, we combine the numeric value and the suffix to get the actual
+argument value.  In the size cases scaling is applied to get a value in
+mutiplies of heap node.
+
+@$@<Combine numeric value and suffix@>==@{@-
+if(TIME_UNIT & unit && *s == 's') {
+    s++;
+    if (suffix < 0 ) suffix = 0.001;
+    i = -i*suffix;
+} else if (SIZE_UNIT & unit) {
+    if (suffix < 0) suffix = -suffix;
+    switch (*s) {
+        case 'b': case 'B': s++; assign(i,i*suffix) / sizeof(Node); break;
+        case 'w': case 'W': s++; assign(i,i*suffix); break;
+        default: assign(i,i*suffix) / sizeof(Node); break;
+    }
+}
+@}
