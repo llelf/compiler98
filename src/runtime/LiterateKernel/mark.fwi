@@ -11,6 +11,9 @@ This section provides marking support for the garbage collector.
 
 @<CAF lists@>
 
+@<Debug flag@>
+@<Debug node of interest@>
+
 @<addCaf routine@>
 
 @<marked routine@>
@@ -361,6 +364,7 @@ void mark(NodePtr *inode)@-
     @<Node stack@>
 
     @<Mark debug@>@("mark %lx:", (UInt)node@)
+    @<Marked node debug@>@(node@,mark@)
     @<Initialise node stack@>
 
 InspectNode:
@@ -381,11 +385,37 @@ NextNode:
 }
 @}
 
+@C@<Debugging support@>
+
+The main debugging messages appear only if @{debug@} is non-zero.
+
+@$@<Debug flag@>==@{@-
+static Int debug = 0;
+@}
+
 @$@<Mark debug@>@(@1@)@M==@{@-
 #ifdef DEBUG_MARK
-ERROR_OUT(@1);
-FLUSH_ERR;
+if (debug) {
+    ERROR_OUT(@1);
+    FLUSH_ERR;
+}
 #endif
+@}
+
+In addition, in select places we can produce messages when specific nodes
+are being marked.  @{qAddr@} should be set to the address of the node of
+interest.  Note that these messages appear regardless of whether @{debug@}
+is set.
+
+@$@<Debug node of interest@>==@{@-
+static UInt qAddr;
+@}
+
+@$@<Marked node debug@>@(@2@)@M==@{@-
+if (qAddr && (qAddr == (UInt)(@1))) {
+    ERROR_OUT("[Q %8x:%8x @2]", qAddr, *(UInt *)qAddr);
+    FLUSH_ERR;
+}
 @}
 
 @C@<Pushing nodes@>
@@ -473,6 +503,7 @@ The cases cover all of the possible node types with the exception of
 above.
 
 @$@<Inspect a regular node@>==@{@-
+@<Marked node debug@>@(node@,inspect@)
 switch(tag) {
 
     @<Inspect VAP constructor applications@>

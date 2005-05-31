@@ -7,7 +7,8 @@ settings.
 Turn @{DEBUG_INSNS@} on if you want to see the stream of instructions
 being executed by the mutator.  Turn @{DEBUG_HEAPSTACK@} on to print
 information about the heap and stack state.  @{DEBUG_MARK@} enables
-specific debugging messages during the mark phase of garbage collection.
+specific debugging messages during the mark phase of garbage collection
+(when that modules's @{debug@} variable is turned on).
 
 @{DEBUG_NODEDEPTH@} specifies how many levels deep should graph nodes be
 printed when @{DEBUG_HEAPSTACK@} is enabled.
