@@ -1,9 +1,12 @@
+@p maximum_input_line_length = 90
+
 @B@<Unix-like systems@>
 
 This section defines the system-specific interface for the runtime on
 Unix-like systems.
 
 @$@<Unix-like interface@>==@{@-
+#include <stdlib.h>
 #include <setjmp.h>
 
 @<Unix-like argument interface@>
@@ -54,9 +57,6 @@ extern sigjmp_buf exit_mutator;
 #endif
 @}
 
-FIXME: At the moment there is no real command-line processing so the
-arguments are just dummied up to just contain the program name.
-
 @$@<Unix-like argument interface@>==@{@-
 extern char **Argv;
 extern int Argc;
@@ -74,14 +74,13 @@ sigjmp_buf exit_mutator;
 
 int main(int argc, char *argv[])
 {
-    Argc = 1;
     Argv = (char **)malloc((argc+1)*sizeof(char *));
     if (!Argv) {
         ERROR_OUT("Out of memory when reserving space for %d arguments\n",argc);
         EXITPROG(-1);
     }
-    Argv[0] = argv[0];
-    Argv[1] = NULL;
+
+    @<Process command-line arguments@>
 
 #if defined(__CYGWIN32__) || defined(__MINGW32__)
     if (!setjmp(exit_mutator)) {
@@ -94,6 +93,58 @@ int main(int argc, char *argv[])
     }
 }
 @}
+
+@C@<Unix command-line support@>
+
+To process the command-line arguments, we loop through the available values.
+If an argument is @{+RTS@} we use a sub-loop to process the arguments until
+the next @{-RTS@} or the end of the argument list.  Arguments not meant for
+the runtime are copied into @{Argv@} so that the program can access them.
+
+FIXME: for the moment we just support the heap and stack size setting options.
+Still need profiling, debugging etc.
+
+@$@<Process command-line arguments@>==@{@-
+{
+    int i;
+
+    Argv[0] = argv[0];
+
+    for (Argc = i = 1; i < argc; i++) {
+        if (!strcmp(argv[i],"+RTS")) {
+            i++;
+            for ( ; i < argc; i++) {
+                if (!strcmp(argv[i],"-RTS")) {
+                    break;
+                } else if (argv[i][0] != '-') {
+                    ERROR_OUT("Warning: unknown runtime argument %s ignored.\n",
+                              argv[i]);
+                } else {
+                    switch(argv[i][1]) {
+                        case 'H':
+                            if (argv[i][2])
+                                hpSize = (Int)numArg(SIZE_UNIT,&argv[i][2]);
+                            break;
+                        case 'V':
+                        case 'K':
+                            if (argv[i][2])
+                                spSize = (Int)numArg(SIZE_UNIT,&argv[i][2]);
+                            break;
+                        default:
+                            ERROR_OUT("Warning unrecognized run-time flag %s ignored.\n",
+                                      argv[i]);
+                    }
+                }
+            }
+        } else {
+            Argv[Argc] = argv[i];
+            Argc++;
+        }
+    }
+}
+@}
+
+@C@<Unix output support@>
 
 On Unix-like systems output is just sent to standard output and error as
 one would expect.  The standard I/O facilities are used.

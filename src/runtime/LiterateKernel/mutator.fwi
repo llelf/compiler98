@@ -1,5 +1,3 @@
-@p maximum_output_line_length = 90
-
 @A@<Mutator@>
 
 This section contains the mutator that interprets nhc's generated code.
@@ -8,6 +6,7 @@ This section contains the mutator that interprets nhc's generated code.
 @<File warning@>
 
 #include <stdlib.h>
+#include <math.h>
 #include "mutlib.h"
 @<C interface include@>
 
@@ -15,7 +14,7 @@ This section contains the mutator that interprets nhc's generated code.
 @<USE_GCC_LABELS macro@>
 @<GCSTACKSIZE parameter@>
 
-@<Heap size@>
+@<Define default stack size@>
 
 @<Mutator memory area state@>
 @<Instruction pointer@>
@@ -42,7 +41,8 @@ This section contains the mutator that interprets nhc's generated code.
 
 extern @<Mutator memory area state@>
 extern @<Instruction pointer@>
-extern @<Heap size@>
+extern @<Heap size@>;
+extern @<Stack size@>;
 
 @<Toplevel entry points@>
 
@@ -80,19 +80,24 @@ CodePtr Ip;
 
 @B@<Heap and stack size@>
 
-For now the heap and stack will be fixed sizes.
+The stack size is initialised here but can be overridden by a runtime
+argument.  The heap size is not declared in this module but is provided by
+at compile time based on compile options; see the @{nhcHeap@} program.
 
 @$@<GCSTACKSIZE parameter@>==@{@-
 #define GCSTACKSIZE 200000
 @}
 
-@$@<Heap size@>@M==@{@-
-int hpSize;
+@$@<Heap size@>==@{@-
+int hpSize
 @}
 
-@$@<Define initial heap and stack sizes@>==@{@-
-int spSize = GCSTACKSIZE;
-hpSize = 64000000;
+@$@<Stack size@>@M==@{@-
+int spSize
+@}
+
+@$@<Define default stack size@>==@{@-
+@<Stack size@> = GCSTACKSIZE;
 @}
 
 FIXME: ultimately this must be settable at compile time (for the heap) and
@@ -141,7 +146,6 @@ void initMutator()@-
 @$@<initMutator routine@>==@{@-
 @<initMutator header@>
 {
-    @<Define initial heap and stack sizes@>
     initGc(hpSize, &Hp, spSize, &Sp);
 
     Fp = Sp;
@@ -900,8 +904,6 @@ A garbage collection is forced by saving the state, calling the collector,
 restoring the state and then call any deferred garbage collectors for
 finalisers.
 
-FIXME: not exactly sure about the pendingIdx and finaliser stuff.
-
 @$@<Force a garbage collection macro@>==@{@-
 #define FORCE_GC(c)                          \
    PUSH_STATE;                               \
@@ -909,9 +911,11 @@ FIXME: not exactly sure about the pendingIdx and finaliser stuff.
    POP_STATE(0);
 @}
 
-FIXME: for the moment we've left this stuff out.  Needs more support
-from cdata.  Also, not sure where excludeFinalisers might be set since
-it's not declared in any of the Kernel files.
+FIXME: for the moment we've left this stuff out.  cdata now has the
+appropriate support.  See runtime/Builtin/cIOExtras.c for the code
+that declares and modifies excludeFinalisers.  Do we need the save
+and restore of the regs *as well as* the sae and restore that
+runDeferredGCs does around each finaliser execution?
 
    if (pendingIdx && !excludeFinalisers) {   \
       Sp=sp; Fp=fp; Ip=ip; Hp=hp;            \
@@ -1063,8 +1067,8 @@ Then the integer comparisons.
         IND_REMOVE(nodeptr); \
         b = GET_INT_VALUE(nodeptr); \
         *--sp = GET_BOOL(a op b); \
-  } \
-  Break
+    } \
+    Break
 
 Case(EQ_W): PRIM_CMP2_INT(==);
 Case(NE_W): PRIM_CMP2_INT(!=);
