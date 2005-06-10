@@ -36,7 +36,7 @@ instructions</a>.
       Sources (.tar.gz)</a></td>
   <td>any</td>
   <td>1.18</td>
-  <td>2005-03-11</td>
+  <td>2005-03-15</td>
   <td>14.5Mb</td></tr>
 
 <tr bgcolor="#ddffdd">
@@ -64,12 +64,12 @@ instructions</a>.
   <td>9.0Mb</td></tr>
 
 <tr bgcolor="#ddffdd">
-  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.18-ix86-CYGWIN_NT-5.1.tar.gz">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.18-ix86-CYGWIN_NT-5.0.tar.gz">
       Executable (.tar.gz)</a></td>
-  <td>ix86-CYGWIN_NT-5.1</td>
+  <td>ix86-CYGWIN_NT-5.0</td>
   <td>1.18</td>
   <td>2005-03-11</td>
-  <td>-Mb</td></tr>
+  <td>8.1Mb</td></tr>
 
 <tr bgcolor="#ffffdd">
   <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-1.16.tar.gz">
@@ -149,19 +149,17 @@ instructions</a>.
 <p>
 <em><b>Alternative locations:</b></em>
 <br>
-<b>Tarfiles and RPMs:</b><br>
+<b>Tarfiles:</b><br>
 <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/">
 <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/</tt></a>
 <a href="http://www.cs.york.ac.uk/fp/nhc98/nhc98src-1.18.tar.gz">
-<tt>http://www.cs.york.ac.uk/fp/nhc98/nhc98src-1.16.tar.gz</tt></a>
-<a href="http://www.cs.york.ac.uk/fp/nhc98/nhc98-1.18-ix86-Linux.tar.gz">
-<tt>http://www.cs.york.ac.uk/fp/nhc98/nhc98-1.16-ix86-Linux.tar.gz</tt></a>
+<tt>http://www.cs.york.ac.uk/fp/nhc98/nhc98src-1.18.tar.gz</tt></a>
 <br>
-<b>ix86-Linux RPMs for RedHat 8:</b><br>
-<a href="http://www.dtek.chalmers.se/~d95mback/nhc98/">
-<tt>http://www.dtek.chalmers.se/~d95mback/nhc98/</tt></a>
+<b>Fedora:</b><br>
+<a href="http://www.haskell.org/fedora/">
+<tt>http://www.haskell.org/fedora/</tt></a>
 <br>
-<b>ix86-Linux for Debian:</b><br>
+<b>Debian:</b><br>
 <a href="ftp://ftp.debian.org/debian/pool/main/n/nhc98/">
 <tt>ftp://ftp.debian.org/debian/pool/main/n/nhc98/</tt></a>
 <br>
@@ -241,10 +239,33 @@ be comprehensive, but if you have any problems, please mail
                     <th>date</th> <th>fixes what problem?</th></tr>
 
 <tr bgcolor="#ddffdd">
-  <td><a>-</a></td>
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.18-newtype">
+      newtype</a></td>
   <td>nhc98 v1.18</td>
-  <td>2005-03-10</td>
-  <td>There are no patches for nhc98-1.18 yet.
+  <td>2005-04-11</td>
+  <td>Fix a bug in checking the consistency of newtypes, triggered by
+      <pre>import Control.Monad(liftM2); newtype A a = A a;</pre>
+      </td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-1.18-library-interfaces.tar.gz">
+      library interface files</a></td>
+  <td>nhc98 v1.18</td>
+  <td>2005-03-28</td>
+  <td>If you bootstrap nhc98 with a C compiler, then although the
+      hierarchical library packages are built, their interface files
+      are not.  This tarfile should be unpacked on top of your source
+      tree, to give you the missing .hi files.
+      </td></tr>
+
+<tr bgcolor="#ddffdd">
+  <td><a href="ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/patch-1.18-hi">
+      hi</a></td>
+  <td>nhc98 v1.18</td>
+  <td>2005-03-11</td>
+  <td>Export HMAKECONFDIR into hi (hmake interactive).  This small patch
+      is only needed for early downloads of nhc98src-1.18,
+      on or before 15 Mar 2005.
       </td></tr>
 
 <tr bgcolor="#ffffdd">
@@ -319,7 +340,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last modified: 10th March 2005<br>
+This page last modified: 11th April 2005<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
