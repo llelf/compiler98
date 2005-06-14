@@ -98,7 +98,8 @@ lexOne False xs@('_':x:_) =
   else if isLower x
   then  case splitWhile isNhcId [] xs of
 	(var,xs) -> LEX_VARID var 0 (length var) xs
-  else LEX_ERROR x xs
+--else LEX_ERROR x xs	-- maybe better to drop through to lowercase=True ?
+  else lexOne True xs
 
 lexOne True xs@('_':_) =
   case splitWhile isNhcId [] xs of
