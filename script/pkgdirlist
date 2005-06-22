@@ -9,7 +9,7 @@ case $1 in
 	;;
   Cabal)
 	echo Distribution Distribution/Compat Distribution/PreProcess
-	echo Distribution/Simple
+	echo Distribution/Simple Language Language/Haskell
 	;;
   fgl)	echo Data Data/Graph Data/Graph/Inductive Data/Graph/Inductive/Monad
 	echo Data/Graph/Inductive/Query Data/Graph/Inductive/Internal
@@ -21,6 +21,7 @@ case $1 in
 	echo Text/XML/HaXml/Html Text/XML/HaXml/Xtract
 	;;
   HGL)	echo Graphics Graphics/HGL Graphics/HGL/Draw Graphics/HGL/Internals
+	echo Graphics/HGL/X11 Graphics/HGL/Win32
 	;;
   HUnit)
 	echo Test Test/HUnit
