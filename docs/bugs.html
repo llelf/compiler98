@@ -35,6 +35,13 @@
 
 <h3>Unintended bugs :-(</h3>
 <dl>
+<dt><em>Large Integer bug in div/mod</em></dt>
+  <dd>We believe this is a bug in an old version of the GMP library
+      used within nhc98's runtime system.  It results in incorrect
+      values, then a segfault.
+      <a href="bugs/BigFloatF.hs">Example module</a> and
+      <a href="bugs/piF.hs">test program</a>.
+    </dd>
 <dt><em>Strictness annotations on named-field labels</em></dt>
   <dd>are not implemented - although you can use strictness annotations
       elsewhere.</dd>
