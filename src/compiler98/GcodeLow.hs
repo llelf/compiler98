@@ -266,7 +266,7 @@ opNeed extra OpDouble = 3+extra
 showId state i = fixStr (strIS state i)
 
 fixStr s
-  | all isAlphaNum s = const s
+  | all isAlphaNum s = showString s
   | otherwise        = fixStr' s
 
 fixStr' [] = id
