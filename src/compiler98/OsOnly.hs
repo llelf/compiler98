@@ -2,8 +2,11 @@
 module OsOnly
   (isPrelude
   , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
-  , fixHatAuxFile,fixHatTransFile,fixHatFileBase
+  , fixHatAuxFile,fixHatTransDir,fixHatTransFile,fixHatFileBase
+  , hierarchical
   ) where
+
+import Char (isUpper)
 
 isPrelude str = {-take (7::Int)-} str == "Prelude"
 
@@ -46,8 +49,15 @@ fixTypeFile   isUnix rootdir s = rootdir ++ fixFile isUnix s "hi"
 fixObjectFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hc"
 fixDependFile isUnix rootdir s = rootdir ++ fixFile isUnix s "dep"
 fixHatAuxFile isUnix rootdir s = rootdir ++ fixFile isUnix s "hx"
-fixHatTransFile isUnix rootdir s = "Hat/"++ rootdir ++ fixFile isUnix s "hs"
 fixHatFileBase isUnix rootdir s = rootdir ++ s 
+
+fixHatTransDir isUnix rootdir =
+  if null rootdir then "Hat"
+  else if hierarchical rootdir then "Hat/"++init rootdir
+       else rootdir++"Hat"
+
+fixHatTransFile isUnix rootdir s =
+  fixHatTransDir isUnix rootdir ++"/"++ fixFile isUnix s "hs"
 
 -- add extension to file
 fixFile :: Bool -> String -> String -> String
@@ -65,8 +75,19 @@ fixFile isUnix file suf =
 toUnixPath :: String -> String
 toUnixPath = map (\c-> if (c=='.') then '/' else c)
 
+{- Does a directory name look like a hierarchical module namespace? -}
+hierarchical :: String -> Bool
+hierarchical dir =
+    let (a,b) = break (=='/') dir in
+    case b of
+      "" -> True
+      _  -> case a of
+              ""    -> hierarchical (tail b)
+              "."   -> False
+              ".."  -> False
+              (x:_) -> isUpper x && hierarchical (tail b)
 
--- obscure file compression needed only for RiscOs:
+-- obscure filename compression needed only for RiscOs:
 
 maxTen file = let tolong =  length file - 10
               in if tolong <= 0 then file
