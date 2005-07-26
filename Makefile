@@ -422,7 +422,7 @@ srcDist: $(TARGDIR)/timepreludeC \
 	tar rf nhc98src-$(VERSION).tar $(HMAKEC)
 	tar rf nhc98src-$(VERSION).tar $(MAN)
 	tar rf nhc98src-$(VERSION).tar $(INCLUDE)
-	#tar rf nhc98src-$(VERSION).tar $(INCLUDEPKG)
+	tar rf nhc98src-$(VERSION).tar $(INCLUDEPKG)
 	tar rf nhc98src-$(VERSION).tar $(DOC)
 	tar rf nhc98src-$(VERSION).tar $(TESTS)
 	tar rf nhc98src-$(VERSION).tar $(SCRIPT)
