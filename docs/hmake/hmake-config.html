@@ -119,6 +119,16 @@ to the compiler (these are treated as different database entries), e.g.
             to the hmakerc file, or if it was already known, the
             configuration is updated.</td>
 </tr><tr>
+<td><b>add-dyn</b>&nbsp;<em>comp</em><br></td>
+	<td>The specified compiler is added to the hmakerc file, but
+            it is probed for its version/interface information dynamically
+            every time it is used, instead of only once statically right now.
+            This option is especially useful if you frequently change
+            the compiler that appears first in your PATH variable and don't
+            want to be bothered to have to tell hmake about those changes
+            every time.
+	</td>
+</tr><tr>
 <td><b>delete</b>&nbsp;<em>comp</em></td>
 	<td>All configuration information for the specified compiler is
             removed from the hmakerc file.</td>
@@ -198,7 +208,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a>)
 
 <p>
-Information last updated: 24th June 2004<br>
+Information last updated: 1st Sept 2005<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
