@@ -434,6 +434,9 @@ srcDist: $(TARGDIR)/timepreludeC \
 
 nolinks:
 	cd src/runtime;    $(MAKE) nolinks
+	# 'make nolinks' invalidates the links from include dir to runtime dir
+	# so we need to force the links to be re-made on next build:
+	rm $(TARGDIR)/$(MACHINE)/runtime
 $(TARGDIR)/preludeC: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;    $(MAKE) cfiles
 	touch $(TARGDIR)/preludeC
