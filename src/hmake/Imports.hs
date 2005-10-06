@@ -24,13 +24,16 @@ import CppIfdef (cppIfdef)
 
 -- | Get the imports for this Haskell module.
 getImports :: FilePath -- ^ The path to the module
-           -> [String] -- ^ Definitions, from which to build a symbol table (for cpp)
+           -> [String] -- ^ Definitions to build a symbol table (for cpp)
            -> [String] -- ^ Search-path for #include'd files
            -> String   -- ^ The input file to be parsed for imports
            -> [String] -- ^ A list of imported modules
 getImports fp defines includes = leximports fp
                                  . unlines . map snd
-                                 . cppIfdef fp defines includes False False
+                                 . cppIfdef fp defs includes False False
+  where
+    defs = map (\defn-> let (s,d) = break (=='=') defn in
+                        (s, if null d then "1" else tail d)) defines
 
 
 -- | /leximports/ takes a cpp-ed input and returns the list of imports
