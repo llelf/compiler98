@@ -9,16 +9,16 @@ OTHERS = Unlit.hs Compiler.hs Config.hs	Platform.hs RunAndReadStdout.hs # from s
 CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 
-ifeq "$(findstring ghc, ${HC})" "ghc"
+ifeq "${BUILDCOMP}" "ghc"
 HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
       -package lang -package util -package base $(READLINE) )
 export HFLAGS
 endif
-ifeq "$(findstring hbc, ${HC})" "hbc"
+ifeq "${BUILDCOMP}" "hbc"
 HFLAGS =
 export HFLAGS
 endif
-ifeq "$(findstring nhc98, ${HC})" "nhc98"
+ifeq "${BUILDCOMP}" "nhc98"
 HFLAGS = -package base
 export HFLAGS
 endif
@@ -26,8 +26,11 @@ endif
 all: $(TARGET)
 cfiles: cleanC $(SRCS)
 	$(HMAKE) -hc=$(LOCAL)nhc98 -I../hmake -C HInteractive.hs
-clean:
-	-rm -f *.hi *.o $(OBJDIR)/*.o
+clean: cleanO cleanHi
+cleanO:
+	-rm -rf *.o $(OBJDIR)
+cleanHi:
+	-rm -f *.hi
 cleanC: clean
 	-rm -f *.hc *.c
 realclean: clean cleanC
@@ -45,6 +48,7 @@ $(OBJDIR):
 fromC: $(OBJDIR)
 	cp $(CHFILES) .
 	$(LOCAL)nhc98 -cpp -o $(TARGET) -d$(OBJDIR) *.$C
+	rm $(notdir ${CHFILES})
 	$(STRIP) $(TARGET)
 
 
