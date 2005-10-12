@@ -59,6 +59,7 @@ leximports fp =
     nestcomment 0 ('\'':'"':'\'':cs)  = '\'':'"':'\'': nestcomment 0 cs
     nestcomment 0 ('\\':'"':cs)       = '\\':'"': nestcomment 0 cs
     nestcomment 0 ('"':cs)            = '"': endstring cs
+    nestcomment 0 ('{':cs)            = '{':'\n': nestcomment 0 cs	-- HACK
     nestcomment 0 (';':cs)            = '\n': nestcomment 0 cs	-- HACK
     nestcomment 0 (c:cs)              = c: nestcomment 0 cs
     nestcomment 0 []                  = []
