@@ -530,8 +530,12 @@ iextractInstance ctxs pos cls typ =
                        -- then add the instance to the type class
     then
       transTypes al (map snd al) ctxs [typ]
-      >>>= \(NewType free [] ctxs [NTcons c _ nts]) ->
-      importInstance cls c free {- (map ( \ (NTvar v _) -> v) nts) -} ctxs
+      >>>= \nt->
+      case nt of
+        (NewType free [] ctxs [NTcons c _ nts]) ->
+          importInstance cls c free {- (map ( \ (NTvar v _) -> v) nts) -} ctxs
+        (NewType free [] ctxs [NTvar v _]) ->
+          importInstance cls v free ctxs
     else
       storeInstance al cls con ctxs -- otherwise save the instance for later
 
