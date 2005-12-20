@@ -1,6 +1,34 @@
 #!/bin/sh
 
 usage() {
+  echo "Usage: fixCVS"
+  echo "	-- Patch a CVS working directory to match the modified"
+  echo "	-- repository.  cpphs is now stored in darcs, not CVS"
+  exit 1
+}
+
+case $# in
+  0) ;;
+  *) usage; exit 1 ;;
+esac
+
+if [ -d src/cpphs -a -d src/cpphs-cvs ]
+then echo "`basename $0` has been run already?   src/cpphs-cvs exists"
+     exit 1
+fi
+echo "Moving old src/cpphs to src/cpphs-cvs" &&
+mv src/cpphs src/cpphs-cvs &&
+echo "Getting darcs src/cpphs" &&
+darcs get --repo-name=src/cpphs http://www.cs.york.ac.uk/fp/darcs/cpphs &&
+echo "Removing cpphs from src/CVS/Entries file" &&
+sed -e '/cpphs/d' src/CVS/Entries >src/CVS/Entries.new &&
+mv src/CVS/Entries.new src/CVS/Entries &&
+echo "Finished"
+
+exit 0;
+
+# everything below here is obsolete (removed Dec 2005)
+usage() {
   echo "Usage: fixCVS (nhc98 | hat)"
   echo "	-- Patch a CVS working directory to match the modified"
   echo "	-- repository.  Invoke from either the nhc98 or hat dir."
