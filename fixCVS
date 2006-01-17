@@ -19,7 +19,7 @@ fi
 echo "Moving old src/cpphs to src/cpphs-cvs" &&
 mv src/cpphs src/cpphs-cvs &&
 echo "Getting darcs src/cpphs" &&
-darcs get --repo-name=src/cpphs http://www.cs.york.ac.uk/fp/darcs/cpphs &&
+darcs get --partial --repo-name=src/cpphs http://www.cs.york.ac.uk/fp/darcs/cpphs &&
 echo "Removing cpphs from src/CVS/Entries file" &&
 sed -e '/cpphs/d' src/CVS/Entries >src/CVS/Entries.new &&
 mv src/CVS/Entries.new src/CVS/Entries &&
