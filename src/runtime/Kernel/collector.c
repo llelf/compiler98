@@ -9,6 +9,7 @@
 
 /*#define HEAPSIZE 100000  -- defined in top-level Makefile at config-time */
 #define GCSTACKSIZE 20000
+#define SBRK 1	/* Use sbrk(2) instead of malloc(3) to allocate the heap */
 
 WHEN_DYNAMIC(int ractive = 0;)
 
@@ -46,7 +47,13 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
   Int totalSize = hpSize+spSize;
   Int tableSize = (totalSize+WORDSIZE)/(WORDSIZE+1)+1; /* Last one for end of marked */
 
-  if(NULL == (hpStart = malloc ((int)totalSize * sizeof(Node)))) {
+  if (
+#if SBRK
+      ((NodePtr)-1)== (hpStart = sbrk((int)totalSize * sizeof(Node)))
+#else
+      NULL == (hpStart = malloc ((int)totalSize * sizeof(Node)))
+#endif
+     ) {
     fprintf(stderr,"Not enough memory for heap and stack.\n");
     exit(-1);
   }
