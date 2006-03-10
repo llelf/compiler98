@@ -132,7 +132,7 @@ static void sample(void)
     fprintf(stderr,"Unknown profile %d\n",profile);
     abort();
   }
-  getToken();
+  if (lextoken) getToken();
 }
 
 
