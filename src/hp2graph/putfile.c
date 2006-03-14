@@ -40,7 +40,8 @@ static void TitleText(void)
   x = borderspace + titletextspace;
   y = borderheight - titleheight - borderspace + titletextspace;
 
-  sprintf(info,"%d %s x %s",(int) areabelow,"bytes","seconds");
+  sprintf(info,"%d %s x %s",(int) areabelow,"bytes"
+                           ,(timebyallocation?"samples":"seconds"));
 
 
     /* job identifier goes at far left */

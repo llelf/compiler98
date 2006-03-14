@@ -174,6 +174,9 @@ extern void life(int keepall, int bio, int low, int high);
 
 /* job.c */
 
+extern int timebyallocation;
+void checkForMinusI(char *s);
+
 typedef Token Argv;
 typedef Token Date;
 

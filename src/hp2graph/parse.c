@@ -35,8 +35,10 @@ void literal(char *lit)
 static void header(void)
 {
   literal("JOB");
-  for( ; strcmp(lextoken,DEL); getToken())
+  for( ; strcmp(lextoken,DEL); getToken()) {
+    checkForMinusI(lextoken);
     addArgv(clone(lextoken));
+  }
   getToken();
   
   if(literalOptStr("DATE")) {
@@ -66,7 +68,8 @@ static void header(void)
 
 static void mark(void)
 {
-  addMark(atof(lextoken));
+  if (!timebyallocation)
+    addMark(atof(lextoken));
   getToken();
 }
 

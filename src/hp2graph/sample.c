@@ -14,7 +14,9 @@ void addSample(int census,double t)
       abort();
     }
   }
-  sampledata[samplesize++] = t;
+  if (timebyallocation)
+       sampledata[samplesize++] = census;
+  else sampledata[samplesize++] = t;
 }
 
 

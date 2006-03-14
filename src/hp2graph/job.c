@@ -1,5 +1,7 @@
 #include "hp2graph.h"
 
+int timebyallocation = 0;	/* is x-axis marked in allocs (no=seconds) */
+
 Date datedata;
 char *jobstring;
 
@@ -48,6 +50,18 @@ static int isProfile(char *s)
     }
   }
   return 0;
+}
+
+void checkForMinusI(char *s)
+{
+  while (s) {
+    if(*s++ == '-') {
+      if(s && (*s++ == 'i')) {
+        timebyallocation=atoi(s);
+        return;
+      }
+    }
+  }
 }
 
 int str2bio(char *s)

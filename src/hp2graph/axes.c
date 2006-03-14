@@ -2,7 +2,7 @@
 #include "output.h"
 #include "format.h"
 
-typedef enum {MEGABYTE, KILOBYTE, BYTE} mkb; 
+typedef enum {MEGA, KILO, UNIT} mkb; 
 
 /*
  *      Find a "nice round" value to use on the axis.
@@ -30,13 +30,26 @@ static double Round(double y)
 }
 
 
-static void XAxisMark(double x, double num)
+static void XAxisMark(double x, double num, mkb unit)
 {
   char info[100];
   /* calibration mark */
   outputLine(xpage(x), ypage(0.0), 0.0, -4.0);
 
-  sprintf(info,"%.1f",num);
+  switch (unit) {
+    case MEGA :
+      sprintf(info, "%dM", (int) (num / 1e6));
+      break;
+    case KILO :
+      sprintf(info, "%dk", (int) (num / 1e3));
+      break;
+    case UNIT :
+      if (timebyallocation)
+           sprintf(info, "%d", (int)num);
+      else sprintf(info, "%.1f", num);
+      break;
+  }
+
   output->Text(JustifyCenter,xpage(x),borderspace,SCALE_FONT,info);
 }
 
@@ -48,16 +61,25 @@ static void XAxis(void)
   double increment, i; 
   double t, x;
   double legendlen;
+  mkb unit;
  
   /* draw the x axis line */
   outputLine(xpage(0.0), ypage(0.0), graphwidth,0);
 
     /* draw x axis legend */
-  output->Text(JustifyLeft,xpage(0.0) + graphwidth, borderspace,SCALE_FONT,"second");
+  output->Text(JustifyLeft,xpage(0.0) + graphwidth, borderspace,SCALE_FONT
+              ,(timebyallocation?"sample":"second"));
     /* draw x axis scaling */
 
   increment = Round(xrange / (double) N_X_MARKS);
 
+  if (increment >= 1e6) {
+      unit = MEGA;
+  } else if (increment >= 1e3) {
+      unit = KILO;
+  } else {
+      unit = UNIT;
+  }   
   if (increment < 0.01) increment = 0.01;
 
   t = graphwidth / xrange;
@@ -67,7 +89,7 @@ static void XAxis(void)
     x = i * t;  
  
     if (x < (graphwidth - legendlen)) { 
-      XAxisMark(x,i);
+      XAxisMark(x,i,unit);
     } 
   } 
 }
@@ -83,13 +105,13 @@ static void YAxisMark(double y, double num, mkb unit)
     /* number */
 
   switch (unit) {
-    case MEGABYTE :
+    case MEGA :
       sprintf(info, "%dM", (int) (num / 1e6));
       break;
-    case KILOBYTE :
+    case KILO :
       sprintf(info, "%dk", (int) (num / 1e3));
       break;
-    case BYTE:
+    case UNIT :
       sprintf(info, "%d", (int) (num));
       break;
   }
@@ -121,11 +143,11 @@ static void YAxis(void)
   if (increment < (double)1.0) increment = (double)1.0;
 
   if (increment >= 1e6) {
-      unit = MEGABYTE;
+      unit = MEGA;
   } else if (increment >= 1e3) {
-      unit = KILOBYTE;
+      unit = KILO;
   } else {
-      unit = BYTE;
+      unit = UNIT;
   }   
 
   t = graphheight / yrange; 
