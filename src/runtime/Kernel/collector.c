@@ -49,7 +49,7 @@ void initGc(Int hpSize,NodePtr *ihp,Int spSize,NodePtr **isp)
 
   if (
 #if SBRK
-      ((NodePtr)-1)== (hpStart = sbrk((int)totalSize * sizeof(Node)))
+      ((NodePtr)-1)== (hpStart = (NodePtr)sbrk((int)totalSize * sizeof(Node)))
 #else
       NULL == (hpStart = malloc ((int)totalSize * sizeof(Node)))
 #endif
