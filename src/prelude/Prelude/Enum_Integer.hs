@@ -11,4 +11,4 @@ instance Enum Integer where
   enumFromThen x y = numericEnumFromThen x y
 -}
   enumFrom x = x: enumFrom (x+1)
-  enumFromThen x y = x : enumFromThen y (2*y+x)
+  enumFromThen x y = x : enumFromThen y (2*y-x)
