@@ -111,7 +111,7 @@ HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
 	src/hmake/HISTORY src/hmake/Summary* \
 	src/interpreter/Makefile* src/interpreter/*.hs
 HMAKEC = src/hmake/*.hc src/interpreter/*.hc
-CPPHS  = src/cpphs/Makefile* src/cpphs/*.hs
+CPPHS  = src/cpphs/Makefile* src/cpphs/cpphs.* src/cpphs/Language src/cpphs/Text
 CPPHSC = src/cpphs/*.hc src/cpphs/docs src/cpphs/tests \
 	 src/cpphs/README src/cpphs/CHANGELOG src/cpphs/LICENCE*
 RUNTIME = \

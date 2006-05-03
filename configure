@@ -9,7 +9,7 @@
 # corresponding definition in Makefile.inc!
 VERSIONNUM=118
 NHC98VERSION="v1.18 (2005-03-11 version)"
-HMAKEVERSION="3.10 (2005-03-11)" export HMAKEVERSION
+HMAKEVERSION="3.11 (2006-05-03)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
 # (remember to keep in sync with PACKAGES defn in top-level Makefile)
