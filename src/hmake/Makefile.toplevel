@@ -7,7 +7,7 @@ include targets/$(MACHINE)/config.cache
 BUILDCOMPS := ghc nhc hbc gcc
 BUILDCOMP1 := $(shell echo $(notdir ${BUILDWITH}) | cut -c1-3)
 BUILDCOMP2 := $(if $(filter $(BUILDCOMP1), $(BUILDCOMPS)),$(BUILDCOMP1),$(shell ${BUILDWITH} 2>&1 | head -1 | cut -c1-3))
-BUILDCOMP := $(if $(filter $(BUILDCOMP2), $(BUILDCOMPS)),$(BUILDCOMP2),$(error Can't find compiler type))
+BUILDCOMP := $(if $(filter $(BUILDCOMP2), $(BUILDCOMPS)),$(BUILDCOMP2),$(error Cannot find compiler type))
 
 
 HMAKE = src/hmake/Makefile* src/hmake/*.hs src/hmake/README* \
