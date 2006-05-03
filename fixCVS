@@ -29,6 +29,8 @@ then echo "Moving old src/cpphs to src/cpphs-cvs" &&
 fi &&
 echo "Getting darcs src/cpphs" &&
 darcs get --partial --repo-name=src/cpphs http://www.cs.york.ac.uk/fp/darcs/cpphs &&
+echo "Retrieving older version of Data.Tree" &&
+cvs update -r1.12 src/libraries/base/Data/Tree.hs &&
 echo "Finished"
 
 exit 0;
