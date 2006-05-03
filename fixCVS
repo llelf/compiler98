@@ -16,13 +16,19 @@ if [ -d src/cpphs -a -d src/cpphs-cvs ]
 then echo "`basename $0` has been run already?   src/cpphs-cvs exists"
      exit 1
 fi
-echo "Moving old src/cpphs to src/cpphs-cvs" &&
-mv src/cpphs src/cpphs-cvs &&
+if [ -d src/cpphs -a -d src/cpphs/_darcs ]
+then echo "`basename $0` has been run already?   src/cpphs darcs exists"
+     exit 1
+fi
+if [ -d src/cpphs ]
+then echo "Moving old src/cpphs to src/cpphs-cvs" &&
+     mv src/cpphs src/cpphs-cvs &&
+     echo "Removing cpphs from src/CVS/Entries file" &&
+     sed -e '/cpphs/d' src/CVS/Entries >src/CVS/Entries.new &&
+     mv src/CVS/Entries.new src/CVS/Entries
+fi &&
 echo "Getting darcs src/cpphs" &&
 darcs get --partial --repo-name=src/cpphs http://www.cs.york.ac.uk/fp/darcs/cpphs &&
-echo "Removing cpphs from src/CVS/Entries file" &&
-sed -e '/cpphs/d' src/CVS/Entries >src/CVS/Entries.new &&
-mv src/CVS/Entries.new src/CVS/Entries &&
 echo "Finished"
 
 exit 0;
