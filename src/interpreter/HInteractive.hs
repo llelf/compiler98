@@ -343,11 +343,6 @@ makeclean ext modules = mapM_ (clean ext) modules
 --  if prefix `isPrefixOf` opt then Just (drop (length prefix) opt) else Nothing
 
 
-#if defined(__HBC__) && !defined(__HASKELL98__)
-banner = "hi - hmake interactive                (Version: "++hmakeVersion++")"
-help   = "hi - help command does not work in hbc < 0.9999.5"
-
-#else
 banner = "\ 
 \__   __                 __             _____________________________________\n\ 
 \||   ||  ______    ___  || _  ____     hmake interactive (hi):\n\ 
@@ -383,4 +378,3 @@ help = "\
 \  :!command            shell escape\n\ 
 \  :version             show hmake version\n\ 
 \  :?                   display this list of commands"
-#endif
