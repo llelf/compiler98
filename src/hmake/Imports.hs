@@ -16,7 +16,7 @@ module Imports
 
 import Char
 import ListUtil (takeUntil)
-import CppIfdef (cppIfdef)
+import Language.Preprocessor.Cpphs.CppIfdef (cppIfdef)
 
 #if !defined(__HASKELL98__)
 #define isAlphaNum isAlphanum
