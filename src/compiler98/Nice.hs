@@ -13,7 +13,7 @@ import SysDeps(PackedString)
 import TokenId
 import Id(Id)
 
-niceNT :: Maybe PackedString  -- ??
+niceNT :: Maybe PackedString  -- module qualifier
         -> IntState           -- symboltable needed for names of ids
         -> [(Id,String)]      -- renaming mapping for type variables
         -> NT                 -- the type to be converted
@@ -28,6 +28,9 @@ niceNT m state al (NTapp t1 t2) =
 niceNT m state al (NTcons a _ []) = niceInt m state a ""
 niceNT m state al (NTcons a _ tas) =
         case (tidI . dropJust .  lookupIS state) a of
+	  TupleId n | n > length tas -> '(':'(':replicate (n-1) ',' ++") "
+                                        ++mixSpace (map (niceNT m state al) tas)
+                                        ++ ")"
 	  TupleId _ -> '(' : mixComma (map (niceNT m state al) tas) ++ ")"
 	  v | v == t_Arrow ->
 		case tas of
