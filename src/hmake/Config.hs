@@ -251,8 +251,8 @@ configure' Ghc ghcpath = do
     else if ghcsym<500
     then do
       fullpath <- which exe ghcpath
-      dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -1 | "
-                               ++ "sed 's/^\\$libdir=[^/]*\\(.*\\).;/\\1/'")
+      dir <- runAndReadStdout ("grep '^\\$libdir=' "++fullpath++" | head -n 1 "
+                               ++ "| sed 's/^\\$libdir=[^/]*\\(.*\\).;/\\1/'")
       let incdir1 = dir++"/imports"
       ok <- doesDirectoryExist incdir1
       if ok
@@ -311,9 +311,9 @@ configure' Ghc ghcpath = do
 configure' Nhc98 nhcpath = do
   fullpath <- which id nhcpath
   nhcversion <- runAndReadStdout (escape nhcpath
-                                  ++" --version 2>&1 | cut -d' ' -f2 | head -1")
+                                ++" --version 2>&1 | cut -d' ' -f2 | head -n 1")
   dir <- runAndReadStdout ("grep '^NHC98INCDIR' "++escape fullpath
-                           ++ "| cut -c27- | cut -d'}' -f1 | head -1")
+                           ++ "| cut -c27- | cut -d'}' -f1 | head -n 1")
   return CompilerConfig { compilerStyle = Nhc98
 			, compilerPath  = nhcpath
 			, compilerVersion = nhcversion
@@ -324,7 +324,7 @@ configure' Nhc98 nhcpath = do
 			, isHaskell98   = True
 			}
 configure' Hbc hbcpath = do
-  let field n = "| cut -d' ' -f"++show n++" | head -1"
+  let field n = "| cut -d' ' -f"++show n++" | head -n 1"
   wibble <- runAndReadStdout (hbcpath ++ " -v 2>&1 " ++ field 2)
   hbcversion <-
       case wibble of
@@ -353,7 +353,7 @@ hcStyle :: String -> IO HC
 hcStyle path =
   case toCompiler (basename path) of
     Unknown hc -> do x <- runAndReadStdout 
-                            (path++" 2>&1 | head -1 | cut -c1-3")
+                            (path++" 2>&1 | head -n 1 | cut -c1-3")
                      return (case toCompiler x of
                                Unknown _ -> Unknown hc
                                y         -> y)

@@ -50,7 +50,7 @@ case $src in
 esac
 tmpexe=/tmp/$prog
 if [ ! -f $tmpsrc -o $src -nt $tmpsrc ]
-then if head -1 $src | grep '^#!' >/dev/null
+then if head -n 1 $src | grep '^#!' >/dev/null
      then tail +2 $src >$tmpsrc
      else cp $src $tmpsrc
      fi
