@@ -52,7 +52,7 @@ esac
 
 # Report gcc version number
 echo "  Found C compiler:    "`which $CCC`
-echo "  C compiler version:  "`$CCC --version | head -1`
+echo "  C compiler version:  "`$CCC --version | head -n 1`
 
 # Ok, so first look for HBC
 echo -n "  Looking for hbc...   "
@@ -124,7 +124,7 @@ echo -n "  Looking for nhc98... "
 if which nhc98 >/dev/null 2>&1
 then
   NHCKNOWN=`which nhc98`
-  NHCVERSION=`${NHCKNOWN} --version | head -1 | cut -d' ' -f2`
+  NHCVERSION=`${NHCKNOWN} --version | head -n 1 | cut -d' ' -f2`
 fi
 if [ "$NHCKNOWN" != "" ]
 then  echo "found ${NHCVERSION}"
@@ -145,7 +145,7 @@ then
       if which $COMP >/dev/null 2>&1
       then
         NHC2KNOWN=`which $COMP`
-        NHC2VERSION=`${NHC2KNOWN} --version | head -1 | cut -d' ' -f2`
+        NHC2VERSION=`${NHC2KNOWN} --version | head -n 1 | cut -d' ' -f2`
         NHC2SYM=`echo $NHC2VERSION | tr ".va" " " | ( read x y z; echo $x$y; )`
         echo $NHC2SYM >targets/$MACHINE/nhcsym;
       fi

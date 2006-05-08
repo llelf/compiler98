@@ -265,7 +265,7 @@ compilerstyle () {
   COMPILERSTYLE=`basename $1 | cut -c1-3`
   case $COMPILERSTYLE in
     ghc|hbc|nhc) ;;
-    *) COMPILERSTYLE=`$1 2>&1 | head -1 | cut -c1-3`;;
+    *) COMPILERSTYLE=`$1 2>&1 | head -n 1 | cut -c1-3`;;
   esac
   case $COMPILERSTYLE in
     hbc)   RTSOPTIONSTYLE=minus
