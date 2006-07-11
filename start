@@ -1,0 +1,19 @@
+#!/bin/sh
+echo "making scripts executable"
+chmod +x  configure hmake-configure darcs-all
+chmod +x  script/harch script/confhc script/fixcygwin script/fixghc
+chmod +x  script/mangler script/pkgdirlist script/tprofprel
+echo "downloading cpphs"
+[ -d src/cpphs ] || darcs get --partial --repo-name=src/cpphs \
+			http://www.cs.york.ac.uk/fp/darcs/cpphs
+echo "downloading hsc2hs"
+[ -d src/hsc2hs ] || darcs get --partial --repo-name=src/hsc2hs \
+			http://darcs.haskell.org/hsc2hs
+echo "downloading libraries:"
+cd src/libraries
+for package in `cat default-packages`
+do
+  echo "    package: $package"
+  [ -d $package ] || darcs get --partial --repo-name=$package \
+			http://darcs.haskell.org/packages/$package
+done

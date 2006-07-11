@@ -25,7 +25,7 @@ darcsall()
 	message "== running darcs $* in $dir"
 	darcs $* --repodir $dir
     else
-	echo "warning: src/$pkg doesn't seem to exist, use 'darcs-all get' to get it"
+	echo "warning: src/$pkg doesn't seem to exist, use 'sh start' to get it"
     fi
   done
   for pkg in `cat libraries/default-packages`; do
