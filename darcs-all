@@ -22,16 +22,16 @@ darcsall()
   darcs $*
   for dir in $src_dirs; do
     if test -d src/$dir -a -d src/$dir/_darcs; then
-	message "== running darcs $* in $dir"
-	darcs $* --repodir $dir
+	message "== running darcs $* in src/$dir"
+	darcs $* --repodir src/$dir
     else
 	echo "warning: src/$pkg doesn't seem to exist, use 'sh start' to get it"
     fi
   done
-  for pkg in `cat libraries/default-packages`; do
-    if test -d libraries/$pkg; then
-	message "== running darcs $* in libraries/$pkg"
-	darcs $* --repodir libraries/$pkg
+  for pkg in `cat src/libraries/default-packages`; do
+    if test -d src/libraries/$pkg; then
+	message "== running darcs $* in src/libraries/$pkg"
+	darcs $* --repodir src/libraries/$pkg
     else
 	echo "warning: $pkg doesn't seem to exist, use 'darcs-all get' to get it"
     fi
