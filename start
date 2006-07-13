@@ -3,6 +3,7 @@ echo "making scripts executable"
 chmod +x  configure hmake-configure darcs-all
 chmod +x  script/harch script/confhc script/fixcygwin script/fixghc
 chmod +x  script/mangler script/pkgdirlist script/tprofprel
+chmod +x  tests/runtests
 echo "downloading cpphs"
 [ -d src/cpphs ] || darcs get --partial --repo-name=src/cpphs \
 			http://www.cs.york.ac.uk/fp/darcs/cpphs
