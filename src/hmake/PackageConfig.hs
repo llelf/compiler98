@@ -77,7 +77,9 @@ packageDirs config@(CompilerConfig{ compilerStyle=Ghc
         map (\dir-> if "$libdir" `isPrefixOf` dir
                     then libdir++drop 7 dir
                     else if "[\"" `isPrefixOf` dir
-                    then drop 2 (init (init dir))
+                    then let d = drop 2 (init (init dir))
+                         in if "$topdir" `isPrefixOf` d
+                            then libdir++drop 7 d else d
                     else dir)
             (concatMap words dirs)
     deComma pkgs = map (\p-> if last p==',' then init p else p) (words pkgs)
