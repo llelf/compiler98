@@ -1,4 +1,5 @@
 #include <errno.h>
+#include <stdio.h>
 
 #ifdef E2BIG
 #define CCONST_E2BIG E2BIG
