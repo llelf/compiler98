@@ -93,7 +93,7 @@ then
   exit 0
 fi
 
-if [ $ghcversion -ge 504 ]
+if [ $ghcversion -ge 504 -a $ghcversion -lt 606 ]
 then
   while test "'$1'" != "''" 
   do
@@ -102,6 +102,27 @@ then
                case $1 in
                  exts) echon " -package lang";;
                  misc) ;;
+                 *)    echon " -package $1" ;;
+               esac ;;
+      *) echon " $1" ;;
+    esac
+    shift
+  done
+  echo
+  exit 0
+fi
+
+if [ $ghcversion -ge 606 ]
+then
+  while test "'$1'" != "''" 
+  do
+    case $1 in
+      -syslib|-package) shift
+               case $1 in
+                 exts) ;;
+                 misc) ;;
+                 lang) ;;
+                 text) ;;
                  *)    echon " -package $1" ;;
                esac ;;
       *) echon " $1" ;;
