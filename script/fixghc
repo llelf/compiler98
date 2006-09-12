@@ -93,7 +93,7 @@ then
   exit 0
 fi
 
-if [ $ghcversion -ge 504 -a $ghcversion -lt 606 ]
+if [ $ghcversion -ge 504 -a $ghcversion -lt 605 ]
 then
   while test "'$1'" != "''" 
   do
@@ -112,7 +112,7 @@ then
   exit 0
 fi
 
-if [ $ghcversion -ge 606 ]
+if [ $ghcversion -ge 605 ]
 then
   while test "'$1'" != "''" 
   do
