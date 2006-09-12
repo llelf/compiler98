@@ -36,15 +36,15 @@ import List (intersperse)
 #endif
 
 showdebug (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
-  let cppflag = if cpp then "*" else ""
-  in show f ++ cppflag ++ "\n  ppTime= " ++ show tpp
-                       ++ "\n  hsTime= " ++ show ths
-                       ++ "\n  hiTime= " ++ show thi
-                       ++ "\n  oTime=  " ++ show tobj
-     ++ "\n  p= " ++ show p
-     ++ "\n  srcfile= " ++ show s
-     ++ "\n  imports= " ++ show i
-     ++ "\n  preproc= " ++ show (ppExecutableName pp) ++ "\n"
+    show f ++ "\n  cpp= "    ++ show cpp
+           ++ "\n  ppTime= " ++ show tpp
+           ++ "\n  hsTime= " ++ show ths
+           ++ "\n  hiTime= " ++ show thi
+           ++ "\n  oTime=  " ++ show tobj
+           ++ "\n  p= " ++ show p
+           ++ "\n  srcfile= " ++ show s
+           ++ "\n  imports= " ++ show i
+           ++ "\n  preproc= " ++ show (ppExecutableName pp) ++ "\n"
 
 showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
   f ++ ": " ++ mix i ++ if cpp then "# -cpp \n" else "\n"
