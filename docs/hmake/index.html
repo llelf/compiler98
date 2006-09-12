@@ -48,26 +48,21 @@
 <h3><a name="news">Recent News</a></h3>
 
 <p>
-The current version is hmake-3.11 (date 2006-05-03).
+The current version is hmake-3.12 (date 2006-09-12).
+<ul>
+<li> New feature: hmake -M dependency analysis now adds
+                         "# -cpp" if cpp is required.
+<li> Fix to enable hmake to build with ghc-6.6.
+</ul>
+
+<p>
+The previous version was hmake-3.11 (date 2006-05-03).
 <ul>
 <li> New: the <tt>#! runhs</tt> script interpreter.
 <li> Bugfix: now finds dependency B in
              <tt>module A where { import B; ... }</tt>
 <li> Bugfixes: for compatibility problems with gcc-4.0. 
 <li> Re-organised the internal cpphs library.
-</ul>
-
-<p>
-The previous version was hmake-3.10 (date 2005-03-11).
-<ul>
-<li> Improved the extraction of import decls from source files:
-     now accepts corner cases like multiple imports on a single line.
-<li> Source file scanning is now lazier - it stops at the first line
-     that indicates no further import decls are possible.  This fixes
-     some bugs dealing with .hsc files, and .ly files.
-<li> Takes care of the new package story in ghc-6.4.
-<li> Now interprets the compiler options <tt>-odir=foo</tt>
-     option as well as passing it on to the compiler.
 </ul>
 
 
@@ -83,15 +78,15 @@ Currently known bugs are listed in <a href="bugs.html">bugs.html</a>.
 <h3><a name="download">Download</a></h3>
 <p>
 Download the full <em>hmake</em> sources from<br>
-  <a href="http://www.haskell.org/hmake/hmake-3.11.tar.gz">
-  <tt>http://www.haskell.org/hmake/hmake-3.11.tar.gz</tt></a>
+  <a href="http://www.haskell.org/hmake/hmake-3.12.tar.gz">
+  <tt>http://www.haskell.org/hmake/hmake-3.12.tar.gz</tt></a>
 
 <p>
 Mirror at:<br>
   <a href="ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/">
   <tt>ftp://ftp.cs.york.ac.uk/pub/haskell/hmake/</tt></a><br>
-  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.11.tar.gz">
-  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.11.tar.gz</tt></a>
+  <a href="http://www.cs.york.ac.uk/fp/hmake/hmake-3.12.tar.gz">
+  <tt>http://www.cs.york.ac.uk/fp/hmake/hmake-3.12.tar.gz</tt></a>
 
 <p>
 Fedora:
@@ -212,7 +207,7 @@ The latest updates to this software are available on the WWW from
 <tt>http://www.cs.york.ac.uk/fp/hmake/</tt></a> (mirror)
 
 <p>
-Information last updated: 3rd May 2006<br>
+Information last updated: 12th Sept 2006<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 Malcolm.Wallace@cs.york.ac.uk
