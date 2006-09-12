@@ -47,7 +47,7 @@ showdebug (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
            ++ "\n  preproc= " ++ show (ppExecutableName pp) ++ "\n"
 
 showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
-  f ++ ": " ++ mix i ++ if cpp then "# -cpp \n" else "\n"
+  f ++ ": " ++ mix i ++ "\n"
   where mix = foldr (\a b-> a++' ':b) ""
 
 -- showmake opts goaldir (f,(((ths,thi,tobj),p,s,cpp),i)) =
@@ -55,9 +55,10 @@ showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
 --   where mix = foldr (\a b-> dotO a ++ ' ':b) "\n"
 --         dotO f = fixFile opts goaldir f (oSuffix opts)
 
-showmake opts goaldir ((f,p,s),i) =
+showmake opts goaldir ((f,p,s,cpp),i) =
   dotO p f ++ ": " ++ s ++ " " ++ mix i
-  where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b) "\n"
+  where mix = foldr (\(a,p) b-> dotO p a ++ ' ':b)
+                    (if cpp then "# -cpp\n" else "\n")
         tmod = if hat opts then ("Hat/"++) else id
         dotO p f = fixFile opts (if null goaldir then p else goaldir)
                                 (tmod f) (oSuffix opts)

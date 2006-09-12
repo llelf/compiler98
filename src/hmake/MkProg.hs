@@ -29,7 +29,7 @@ main =
 
   order g = (scctsort . map (\(f,(tps,i)) -> (f,i))) g
   fdeps g = map (\(f,((t,p,s,c,pp),is)) ->
-                     ((f,p,s)
+                     ((f,p,s,c)
                      , map (\i->(i, path (assocDef g (undefModule i) i))) is
                      )
                 ) g
