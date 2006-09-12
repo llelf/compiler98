@@ -6,6 +6,7 @@ arrows
 base
 fgl
 haskell-src
+html
 monads
 mtl
 network
@@ -13,3 +14,4 @@ parsec
 readline
 time
 unix
+xhtml
