@@ -47,7 +47,7 @@ showdebug (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
      ++ "\n  preproc= " ++ show (ppExecutableName pp) ++ "\n"
 
 showdep (f,(((tpp,ths,thi,tobj),p,s,cpp,pp),i)) =
-  f ++ ": " ++ mix i ++ "\n"
+  f ++ ": " ++ mix i ++ if cpp then "# -cpp \n" else "\n"
   where mix = foldr (\a b-> a++' ':b) ""
 
 -- showmake opts goaldir (f,(((ths,thi,tobj),p,s,cpp),i)) =

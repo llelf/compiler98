@@ -30,6 +30,7 @@ usage() {
   echo '       -q           quiet (do not echo commands)'
   echo '       -n           noexec (echo but do not execute commands)'
   echo '       -g           show graph of dependencies (implies noexec)'
+  echo '       -gd          show graph plus extra info (implies noexec)'
   echo '       -M           show Makefile format dependencies'
   echo '       -Md          show Makefile format dependencies, wrt -d option'
   echo '       -dobjdir     use objdir for object files'
