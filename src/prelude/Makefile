@@ -336,13 +336,13 @@ ${DST}/UnboxedArray.${CFG}.a:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
 	BinArray/UnboxedArray.${O} BinArray/Binary_UBA.${O}
 #BinArray
-TPLABELS3 += BinArray
-${DST}/BinArray.${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
-	BinArray/BinArray.${O} BinArray/AllocUBA.${O} \
-	BinArray/DUnboxedArray.${O} BinArray/GetUBAEnd.${O} \
-	BinArray/GetUBAFree.${O} BinArray/RUBA.${O} \
-	BinArray/WUBA.${O} BinArray/cLowUnboxedArray.${O}
+#TPLABELS3 += BinArray
+#${DST}/BinArray.${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?BinArray.o \
+#	BinArray/BinArray.${O} BinArray/AllocUBA.${O} \
+#	BinArray/DUnboxedArray.${O} BinArray/GetUBAEnd.${O} \
+#	BinArray/GetUBAFree.${O} BinArray/RUBA.${O} \
+#	BinArray/WUBA.${O} BinArray/cLowUnboxedArray.${O}
 ##Debug
 #TPLABELS3 += DbgIface
 #${DST}/DbgIface.${CFG}.a: 
