@@ -222,6 +222,8 @@ lexNum' r c xs =
        case lexInteger 10 c xs of
            (c',i,'.':xs') | okNum xs' ->  
                 (lexHelp i (lexFrac c' xs'))
+           (c',i,xs'@(e:_)) | e`elem`"eE" && okNum xs' ->  
+                (lexHelp i (lexFrac c' xs'))
            (c',i,xs') ->
                 (r,c', L_INTEGER i, xs')
         where
