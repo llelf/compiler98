@@ -50,7 +50,6 @@ PRELUDEC = \
 	src/prelude/Array/*.hc         src/prelude/Array/*.c \
 	src/prelude/Bit/*.hc           src/prelude/Bit/*.c \
 	src/prelude/Binary/*.hc        src/prelude/Binary/*.c \
-	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 	src/prelude/CPUTime/*.hc       src/prelude/CPUTime/*.c \
 	src/prelude/Char/*.hc          src/prelude/Char/*.c \
 	src/prelude/Complex/*.hc       src/prelude/Complex/*.c \
@@ -79,6 +78,7 @@ PRELUDEC = \
 	src/prelude/System/*.hc        src/prelude/System/*.c \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
 	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
+#	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
 PACKAGEBUILD  = base parsec haskell-src QuickCheck HaXml HUnit Cabal
 PACKAGES      = base parsec haskell-src QuickCheck HaXml HUnit OpenGL \
