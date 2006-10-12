@@ -50,7 +50,7 @@ all: ${ARCHIVE}
 ${ARCHIVE}: ${BINARIES}
 	jar cf ${ARCHIVE} *.class com/microstar/xml/*.class
 classfiles:
-	javac *.java
+	javac -source 1.4 *.java
 
 doc::
 	javadoc $(JAVA_SRC) -d ../doc
@@ -60,15 +60,15 @@ clean::
 	rm -f ${ARCHIVE} ${BINARIES}
 
 %.class: %.java
-	javac $< 
+	javac -source 1.4 $< 
 
 #
 # Crude compilation support for the xml.microstar.com package.
 #
 
 $(XMLLIB)/XmlHandler.class: $(XMLLIB)/XmlHandler.java
-	( cd $(XMLLIB) ; $(JAVAC) XmlHandler.java XmlParser.java )
+	( cd $(XMLLIB) ; $(JAVAC) -source 1.4 XmlHandler.java XmlParser.java )
 
 $(XMLLIB)/XmlParser.class: $(XMLLIB)/XmlParser.java
-	( cd $(XMLLIB) ; $(JAVAC) XmlHandler.java XmlParser.java )
+	( cd $(XMLLIB) ; $(JAVAC) -source 1.4 XmlHandler.java XmlParser.java )
 
