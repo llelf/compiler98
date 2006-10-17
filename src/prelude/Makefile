@@ -331,10 +331,10 @@ ${DST}/Warning.${CFG}.a:
 	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?Warning.o \
 	NonStd/Warning.${O}
 #UnboxedArray
-TPLABELS3 += UnboxedArray
-${DST}/UnboxedArray.${CFG}.a: 
-	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
-	BinArray/UnboxedArray.${O} BinArray/Binary_UBA.${O}
+#TPLABELS3 += UnboxedArray
+#${DST}/UnboxedArray.${CFG}.a: 
+#	cd $(OBJDIR); $(AR) $(ARFLAGS) $@ tpl?UnboxedArray.o \
+#	BinArray/UnboxedArray.${O} BinArray/Binary_UBA.${O}
 #BinArray
 #TPLABELS3 += BinArray
 #${DST}/BinArray.${CFG}.a: 
