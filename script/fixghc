@@ -83,6 +83,7 @@ then
                case $1 in
                  base) ;;
                  haskell98) ;;
+                 readline) ;;
                  *)    echon " -package $1" ;;
                esac ;;
       *) echon " $1" ;;
@@ -121,6 +122,7 @@ then
                case $1 in
                  exts) ;;
                  misc) ;;
+                 util) ;;
                  lang) ;;
                  text) ;;
                  *)    echon " -package $1" ;;

@@ -11,7 +11,7 @@ CHFILES = $(patsubst %.hs, ../hmake/%.$C, $(OTHERS))
 
 ifeq "${BUILDCOMP}" "ghc"
 HFLAGS = $(shell $(LOCAL)fixghc $(GHCSYM) \
-      -package lang -package util -package base $(READLINE) )
+      -package lang -package util -package base -package readline $(READLINE) )
 export HFLAGS
 endif
 ifeq "${BUILDCOMP}" "hbc"

@@ -26,7 +26,7 @@ import IO
 import Monad (when)
 import Char (isSpace)
 #if USE_READLINE
-import Readline
+import System.Console.Readline
 #else
 #if defined(__HBC__)
 import IOExts (IORef, newIORef, readIORef, writeIORef, unsafePerformIO)
