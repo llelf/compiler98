@@ -22,6 +22,9 @@ module NHC.IOExtras
   , trace		-- :: String -> a -> a
   , unsafePtrEq		-- :: a -> a -> Bool
   , excludeFinalisers	-- :: IO a -> IO a
+
+  , hPutBuf		-- Handle -> Ptr a -> Int -> IO ()
+  , hGetBuf		-- Handle -> Ptr a -> Int -> IO Int
   ) where
 
 
@@ -47,6 +50,8 @@ import PerformGC
 import NonStdTrace
 import UnsafePtrEq
 import ExcludeFinalisers
+
+import HPutGetBuf
 
 nyi f = trace ("IOExtras."++f++": not implemented")
 

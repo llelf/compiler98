@@ -105,6 +105,18 @@ performGC{-# 0 #-}::(NHC.Internal.IO ());
 
 {-# NEED excludeFinalisers #-}
 excludeFinalisers{-# 1 #-}::((NHC.Internal.IO a) -> (NHC.Internal.IO a));
+
+{-# NEED hGetBuf #-}
+hGetBuf{-# 0 #-}::(IO.Handle -> ((NHC.FFI.Ptr a) -> (Prelude.Int -> (NHC.Internal.IO Prelude.Int))));
+
+{-# NEED hPutBuf #-}
+hPutBuf{-# 3 #-}::(IO.Handle -> ((NHC.FFI.Ptr a) -> (Prelude.Int -> (NHC.Internal.IO ()))));
+interface NHC.FFI
+{-# NEED Ptr #-}
+data Ptr a;
+interface IO
+{-# NEED Handle #-}
+newtype {-#  #-} Handle;
 interface ! Ix
 {-# NEED _tupleIndex #-}
 _tupleIndex{-# 4 #-}::(Ix a) => (a -> (a -> (a -> (Prelude.Int -> Prelude.Int))));

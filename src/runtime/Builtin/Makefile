@@ -14,7 +14,7 @@ SRCS = \
 	cOpen.c cHClose.c cHIsEOF.c cHFileSize.c \
 	cHFlush.c cHGetPosn.c cHSetPosn.c cHSeek.c \
 	cHGetBuffering.c cHSetBuffering.c \
-	cHGetFileName.c \
+	cHGetFileName.c cHPutGetBuf.c \
 	primEqHandlePosn.c \
 	cGetProgName.c cGetEnv.c cGetArgs.c cProfile.c cExitWith.c \
 	cOpenSocket.c \
