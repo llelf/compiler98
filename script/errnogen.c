@@ -1,3 +1,5 @@
+#include <stdlib.h>
+#include <stdio.h>
 #include <errno.h>
 main() {
   int i, j=0, max=0, noncontig=0, dup=0;

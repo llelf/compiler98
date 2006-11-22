@@ -1,5 +1,6 @@
-#include <errno.h>
+#include <stdlib.h>
 #include <stdio.h>
+#include <errno.h>
 
 #ifdef E2BIG
 #define CCONST_E2BIG E2BIG
