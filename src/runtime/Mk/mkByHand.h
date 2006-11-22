@@ -1,3 +1,4 @@
+#include <string.h>
 
 NodePtr nhc_mkCInt(Int i);
 #define nhc_sizeCInt 1
