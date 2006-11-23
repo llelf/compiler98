@@ -3,6 +3,7 @@ HUnit
 HaXml
 QuickCheck
 arrows
+fps
 base
 fgl
 haskell-src
