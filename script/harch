@@ -16,7 +16,7 @@ then
   if uname -p >/dev/null 2>&1
   then PROCESSOR=`uname -p`
     case "$PROCESSOR" in
-    unknown|*\ *)
+    unknown|*\ *|*-*)
       PROCESSOR=`uname -m`
       ;;
     esac
