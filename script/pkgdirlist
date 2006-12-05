@@ -14,6 +14,8 @@ case $1 in
   fgl)	echo Data Data/Graph Data/Graph/Inductive Data/Graph/Inductive/Monad
 	echo Data/Graph/Inductive/Query Data/Graph/Inductive/Internal
 	;;
+  fps)	echo Data Data/ByteString Data/ByteString/Lazy
+	;;
   GLUT)	echo Graphics Graphics/UI Graphics/UI/GLUT Graphics/UI/GLUT/Callbacks
 	;;
   HaXml)
