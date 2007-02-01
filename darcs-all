@@ -29,11 +29,12 @@ darcsall()
     fi
   done
   for pkg in `cat src/libraries/default-packages`; do
-    if test -d src/libraries/$pkg; then
-	message "== running darcs $* in src/libraries/$pkg"
-	darcs $* --repodir src/libraries/$pkg
+    pkgname=`basename $pkg`
+    if test -d src/libraries/$pkgname; then
+	message "== running darcs $* in src/libraries/$pkgname"
+	darcs $* --repodir src/libraries/$pkgname
     else
-	echo "warning: $pkg doesn't seem to exist, use 'darcs-all get' to get it"
+	echo "warning: $pkgname doesn't seem to exist, use 'darcs-all get' to get it"
     fi
   done
 }
@@ -53,10 +54,14 @@ darcsget()
 
   cd src/libraries
   for pkg in `cat default-packages`; do
-    if test -d $pkg; then
-	echo "warning: $pkg already present; omitting"
+    pkgname=`basename $pkg`
+    if test -d $pkgname; then
+	echo "warning: $pkgname already present; omitting"
     else
-	repo=$lib_repos/$pkg
+        if [ "`dirname $pkg`" == "." ]
+	then repo=$lib_repos/$pkgname
+        else repo=$pkg
+        fi
 	message "== running darcs get --partial $* $repo"
 	darcs get --partial $* $repo
     fi

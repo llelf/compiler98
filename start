@@ -14,7 +14,11 @@ echo "downloading libraries:"
 cd src/libraries
 for package in `cat default-packages`
 do
-  echo "    package: $package"
-  [ -d $package ] || darcs get --partial --repo-name=$package \
-			http://darcs.haskell.org/packages/$package
+  pkgname=`basename $package`
+  if [ "$pkgname" == "$package" ]
+  then repoURL=http://darcs.haskell.org/packages/$pkgname
+  else repoURL=$package
+  fi
+  echo "    package: $pkgname"
+  [ -d $pkgname ] || darcs get --partial --repo-name=$pkgname $repoURL
 done
