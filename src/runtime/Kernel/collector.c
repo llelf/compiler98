@@ -9,7 +9,11 @@
 
 /*#define HEAPSIZE 100000  -- defined in top-level Makefile at config-time */
 #define GCSTACKSIZE 20000
-#define SBRK 1	/* Use sbrk(2) instead of malloc(3) to allocate the heap */
+#if __APPLE__
+# define SBRK 0
+#else
+# define SBRK 1	/* Use sbrk(2) instead of malloc(3) to allocate the heap */
+#endif
 
 WHEN_DYNAMIC(int ractive = 0;)
 
