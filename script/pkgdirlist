@@ -19,7 +19,7 @@ case $1 in
   GLUT)	echo Graphics Graphics/UI Graphics/UI/GLUT Graphics/UI/GLUT/Callbacks
 	;;
   HaXml)
-	echo Text Text/ParserCombinators Text/XML Text/XML/HaXml
+	echo Text Text/XML Text/XML/HaXml
 	echo Text/XML/HaXml/Html Text/XML/HaXml/Xtract
 	;;
   HGL)	echo Graphics Graphics/HGL Graphics/HGL/Draw Graphics/HGL/Internals
@@ -63,6 +63,9 @@ case $1 in
 	;;
   parsec)
 	echo Text Text/ParserCombinators Text/ParserCombinators/Parsec
+	;;
+  polyparse)
+	echo Text Text/ParserCombinators
 	;;
   QuickCheck)
 	echo Test Test/QuickCheck Debug Debug/QuickCheck
