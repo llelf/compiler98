@@ -7,8 +7,8 @@
 
 # When incrementing this version number, don't forget to change the
 # corresponding definition in Makefile.inc!
-VERSIONNUM=118
-NHC98VERSION="v1.18 (2005-03-11 version)"
+VERSIONNUM=119
+NHC98VERSION="v1.19 (darcs version)"
 HMAKEVERSION="3.13 (2006-11-01)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default

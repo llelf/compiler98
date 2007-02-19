@@ -9,10 +9,10 @@ LD = ld
 STRIP = strip
 
 
-VERSION = 1.18
+VERSION = 1.19
 # When incrementing the nhc98 version number, don't forget to change the
 # corresponding version in the configure script!
-#   (odd minor number = CVS version;  even minor number = release version)
+#   (odd minor number = CVS/darcs version;  even minor number = release version)
 
 HMAKEVERSION = 3.13
 # HMAKEVERSION is the separate version number for hmake.
