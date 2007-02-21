@@ -172,8 +172,8 @@ help:
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
-	@echo "For individual library packages:"
-	@echo "    $(PACKAGEBUILD)"
+	@echo "For individual library packages: (not all tested)"
+	@echo "    $(PACKAGES)"
 
 config: script/errnogen.c
 	./configure --config
