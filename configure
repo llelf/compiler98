@@ -11,10 +11,6 @@ VERSIONNUM=119
 NHC98VERSION="v1.19 (darcs version)"
 HMAKEVERSION="3.13 (2006-11-01)" export HMAKEVERSION
 
-# List of library packages that are built and installed by default
-# (remember to keep in sync with PACKAGES defn in top-level Makefile)
-PACKAGES="base fps parsec haskell-src QuickCheck polyparse HaXml HUnit Cabal"
-
 if uname >/dev/null 2>&1
 then OS=`uname -s`
 else OS=unknown
@@ -649,7 +645,7 @@ else	# [ "$INSTALL" = "yes" ]
            cp $file $DESTDIR$INCDIR/NHC
       fi
     done
-    for pkg in $PACKAGES
+    for pkg in `ls $BUILDINCDIR/packages`
     do
       echo "    package: $pkg"
       mkdir -p $DESTDIR$INCDIR/packages/$pkg
