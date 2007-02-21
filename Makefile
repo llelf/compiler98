@@ -82,9 +82,7 @@ PRELUDEC = \
 
 PACKAGEBUILD  = base parsec haskell-src QuickCheck fps polyparse HaXml \
 		HUnit Cabal
-PACKAGES      = base parsec haskell-src QuickCheck fps polyparse HaXml \
-		HUnit OpenGL GLUT HGL Japi ObjectIO OpenAL Win32 X11 \
-		arrows fgl monads mtl network readline unix Cabal
+PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD})
