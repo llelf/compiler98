@@ -13,7 +13,7 @@ HMAKEVERSION="3.13 (2006-11-01)" export HMAKEVERSION
 
 # List of library packages that are built and installed by default
 # (remember to keep in sync with PACKAGES defn in top-level Makefile)
-PACKAGES="base parsec haskell-src QuickCheck HaXml HUnit Cabal"
+PACKAGES="base fps parsec haskell-src QuickCheck polyparse HaXml HUnit Cabal"
 
 if uname >/dev/null 2>&1
 then OS=`uname -s`
