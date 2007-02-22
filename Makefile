@@ -85,6 +85,7 @@ PACKAGEBUILD  = base parsec haskell-src QuickCheck fps polyparse HaXml \
 PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
+	    src/libraries/default-packages \
 	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD})
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
@@ -239,6 +240,7 @@ $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
 
 ${PACKAGES}:
+	cd src/runtime; make links
 	cd src/libraries/`basename $@`; $(MAKE) -f Makefile.nhc98
 
 
