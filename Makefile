@@ -45,7 +45,8 @@ PRELUDEB = \
 	src/prelude/Ratio/Makefile* src/prelude/Ratio/*.hs \
 	src/prelude/System/Makefile* src/prelude/System/*.hs \
 	src/prelude/Time/Makefile* src/prelude/Time/*.hs \
-	src/prelude/Time/*.gc
+	src/prelude/Time/*.gc \
+	src/prelude/Vector/Makefile* src/prelude/Vector/*.hs
 PRELUDEC = \
 	src/prelude/Array/*.hc         src/prelude/Array/*.c \
 	src/prelude/Bit/*.hc           src/prelude/Bit/*.c \
@@ -77,7 +78,8 @@ PRELUDEC = \
 	src/prelude/Ratio/*.hc         src/prelude/Ratio/*.c \
 	src/prelude/System/*.hc        src/prelude/System/*.c \
 	src/prelude/Time/*.hc          src/prelude/Time/*.c \
-	src/prelude/FFI/*.hc           src/prelude/FFI/*.c
+	src/prelude/FFI/*.hc           src/prelude/FFI/*.c \
+	src/prelude/Vector/*.hc        src/prelude/Vector/*.c
 #	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
 PACKAGEBUILD  = base parsec haskell-src QuickCheck fps polyparse HaXml \
