@@ -1,8 +1,8 @@
 module Prelude (Show(..)) where
 
-import Numeric(showFloat)
+import Numeric(showSigned,showFloat)
 
 instance Show Float where
-  showsPrec p = showFloat
+  showsPrec   = showSigned showFloat
   showsType a = showString "Float"
 
