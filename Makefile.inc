@@ -1,6 +1,7 @@
 ### Configurable variables:
 
 OPT = -O3
+ARCH = -m32
 
 # CC = actually sourced from LIBDIR/MACHINE/config
 INSTALL = cp

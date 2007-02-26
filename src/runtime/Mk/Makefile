@@ -30,7 +30,7 @@ OBJS = ${OBJS_PROG} ${OBJS_HAND}
 
 DATA2C = ../../data2c/data2c
 
-CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN}
+CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${OPT} ${ENDIAN} ${ARCH}
 
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<

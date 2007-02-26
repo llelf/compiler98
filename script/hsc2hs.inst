@@ -17,7 +17,7 @@ fi
 # (Flags are sourced from machine-specific configuration)
 . $EXEDIR/$MACHINE/config
 
-HSC2HSOPTS="--cc=$CC --ld=$CC --cflag=-D__NHC__=$VERSIONNUM -I$INCDIR"
+HSC2HSOPTS="--cc=$CC --ld=$CC --cflag=-D__NHC__=$VERSIONNUM --cflag=-m32 -I$INCDIR"
 if test $USINGRTS -eq 0 ; then
   HSC2HSOPTS="- $HSC2HSOPTS"
 fi

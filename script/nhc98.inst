@@ -71,7 +71,7 @@ CSUFFIX="hc"
 
 MAINROUTINE=$NHC98LIBDIR/$MACHINE/main
 
-CC=${CC-gcc}" -D__NHC__=$VERSIONNUM"
+CC=${CC-gcc}" -m32 -D__NHC__=$VERSIONNUM"
 CPPHS="$NHC98LIBDIR/$MACHINE/cpphs"
 if test $USINGRTS -eq 0 ; then
   CPPHS="$CPPHS -"
