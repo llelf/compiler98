@@ -58,7 +58,7 @@ darcsget()
     if test -d $pkgname; then
 	echo "warning: $pkgname already present; omitting"
     else
-        if [ "`dirname $pkg`" == "." ]
+        if [ "`dirname $pkg`" = "." ]
 	then repo=$lib_repos/$pkgname
         else repo=$pkg
         fi

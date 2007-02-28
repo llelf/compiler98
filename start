@@ -15,7 +15,7 @@ cd src/libraries
 for package in `cat default-packages`
 do
   pkgname=`basename $package`
-  if [ "$pkgname" == "$package" ]
+  if [ "$pkgname" = "$package" ]
   then repoURL=http://darcs.haskell.org/packages/$pkgname
   else repoURL=$package
   fi
