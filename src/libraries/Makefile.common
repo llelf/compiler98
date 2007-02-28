@@ -91,7 +91,7 @@ ${OBJS_HSC}: ${OBJDIR}/%.$O : %.hsc
 # general build rule for making objects from C files
 ${OBJS_C}: ${OBJDIR}/%.$O : cbits/%.c
 	$(CC) -c -I$(INCDIR) $(ENDIAN) $(ARCH) $(filter -I%, ${SEARCH}) \
-		$(EXTRA_C_FLAGS) -o $@ $<
+		$(shell echo ${COPTS}) $(EXTRA_C_FLAGS) -o $@ $<
 
 # general build rules for making bootstrap C files from Haskell files
 $(CFILES_GEN):

@@ -31,7 +31,7 @@ endif
 OBJS = ${AOBJS} ${SOBJS} ${OOBJS}
 
 CFLAGSNOOPT = ${DCFG} ${BUGFIX} ${ENDIAN} ${ARCH} -I${INCDIR} \
-         -DVERSION="\"$(VERSION)\""  #-DBYTECODE_PROF
+         -DVERSION="\"$(VERSION)\"" $(shell echo ${COPTS}) #-DBYTECODE_PROF
 CFLAGS = ${CFLAGSNOOPT} ${OPT}
 CPP = $(CC) ${DCFG} ${ENDIAN} -E 
 LDFLAGS = -r

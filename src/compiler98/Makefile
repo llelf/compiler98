@@ -89,7 +89,7 @@ $(OBJDIR)/$(BASECOMP):
 	touch "$(OBJDIR)/$(BASECOMP)"
  
 $(OBJDIR)/ghc_floats.o: ghc_floats.c
-	$(CC) -c -o $@ $<
+	$(CC) $(ARCH) $(shell echo ${COPTS}) -c -o $@ $<
 ghc_floats.c: ghc_floats.c.inst
 	cp ghc_floats.c.inst ghc_floats.c
 

@@ -66,6 +66,6 @@ objdir: ${OBJDIR}
 	cd Mk;        $(MAKE) objdir
 
 $(DST)/nhc98heap$(EXE): nhc98heap.c
-	$(CC) -o $@ $<
+	$(CC) $(ARCH) $(shell echo ${COPTS}) -o $@ $<
 	$(STRIP) $@
 

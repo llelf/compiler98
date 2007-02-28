@@ -40,7 +40,8 @@ nolinks:
 
 OBJS = $(patsubst %.c,${OBJDIR}/%.o,${SRCS})
 
-CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${BUGFIX} ${OPT} ${ENDIAN} ${ARCH}
+CFLAGS= -I../Kernel -I${INCDIR} ${DCFG} ${BUGFIX} ${OPT} ${ENDIAN} ${ARCH} \
+	$(shell echo ${COPTS})
 
 ${OBJS}: ${OBJDIR}/%.o: %.c
 	${CC} -c ${CFLAGS} -o $@ $<

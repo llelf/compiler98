@@ -15,7 +15,7 @@ OBJS = $(patsubst %.c,$(OBJDIR)/%.o,${SRCS})
 # my machine, but you may.
 MATHLIB = -lm
 
-CFLAGS= -DUNIX ${ARCH}
+CFLAGS= -DUNIX ${ARCH} $(shell echo ${COPTS})
 #CFLAGS= -g -DUNIX
 LDFLAGS= 
 
