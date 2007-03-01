@@ -7,13 +7,32 @@
 
 <hr>
 
+<h3>Should I use nhc98 or yhc?</h3>
+<a href="http://haskell.org/yhc">Yhc</a> is an offshoot of nhc98, with
+considerable improvements to the clarity of the implementation code.
+It is intended to be faster and better than nhc98.  However, the project
+is still incomplete, and you should be aware that, in the meantime,
+<ul>
+<li> nhc98's build system is much more robust than Yhc's.  It is more
+     likely to just work first time (unless you happen to want to build
+     your compiler on Windows without mingw, and using MS VC++, in which
+     case Yhc is definitely the way to go.)
+<li> nhc98 correctly builds more programs than Yhc.  Mainly, Yhc is
+     missing many standard libraries.
+<li> nhc98-built programs run on average 20-40% faster than Yhc-built
+     programs.  In theory, Yhc should be faster, because Yhc executes
+     fewer bytecodes, and they are simpler, but in practice nhc98 still
+     wins.  See the
+     <a href="http://www.cse.unsw.edu.au/~dons/nobench.html">nobench results</a>.
+</ul>
+
 <h3>Why use the <em>nhc98</em> Haskell compiler?</h3>
 
 <dl>
 <dt><em>Because it is easy to install.</em></dt>
 <dd><em>nhc98</em> is very easy to configure and build, even for new machines
-  which have never seen a Haskell compiler before, and it copes with both
-  Unix and Windows without difficulty.</dd>
+  which have never seen a Haskell compiler before, and it copes with
+  Unix, Windows, and MacOS X without difficulty.</dd>
 
 <dt><em>Because you have a small machine.</em></dt>
 <dd>  <em>nhc98</em> is designed for space-efficiency.  Compile the same
@@ -59,7 +78,6 @@
 </dl>
 
 
-
 <h4>References</h4>
 <p>
 [1] The Bits Between The Lambdas - Binary Data in a Lazy Functional Language,
@@ -81,7 +99,7 @@ The latest updates to these pages are available on the WWW from
 <tt>http://www.haskell.org/nhc98/</tt></a>
 
 <p>
-This page last updated: 13th June 2002<br>
+This page last updated: 28th Feb 2007<br>
 <a href="http://www.cs.york.ac.uk/fp/">
 York Functional Programming Group</a><br>
 
