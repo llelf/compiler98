@@ -1,6 +1,4 @@
 module Prelude where
 
-import Foldl
-
 product :: (Num a) => [a] -> a
-product = foldl' (*) 1
+product = foldl (*) 1
