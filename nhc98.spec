@@ -1,10 +1,10 @@
 # A spec file for building nhc98/hoodui and hmake from CVS
 
 %define nname    nhc98
-%define nversion 1.17
+%define nversion 1.19
 
 %define hname    hmake
-%define hversion 3.09
+%define hversion 3.13
 
 %define release  1
 
@@ -14,10 +14,9 @@ Release:         %{release}
 License:         Freely available
 Group:           Development/Languages/Haskell
 URL:             http://haskell.org/nhc98/
-Source:          ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98-%{nversion}.tar.gz
+Source:          ftp://ftp.cs.york.ac.uk/pub/haskell/nhc98/nhc98src-%{nversion}.tar.gz
 Packager:        Sven Panne <sven.panne@aedion.de>
 BuildRoot:       %{_tmppath}/%{nname}-%{nversion}-build
-Prefix:          %{_prefix}
 Requires:        %{hname}
 BuildRequires:   ghc happy java
 Provides:        haskell hoodui
@@ -50,12 +49,12 @@ a new compiler, or a new version of a compiler.
 %setup -q -n nhc98-%{nversion}
 
 %build
-./configure --prefix=%{prefix} --mandir=%{_mandir}/man1 --docdir=html --buildwith=ghc --buildopts=-O
+./configure --prefix=%{_prefix} --mandir=%{_mandir}/man1 --docdir=html --buildwith=ghc --buildopts=-O
 make all hoodui
 
 %install
-DESTDIR=${RPM_BUILD_ROOT} make install
-( cd ${RPM_BUILD_ROOT}%{_mandir}/man1 && gzip -9 harch.1 hmake.1 hp2graph.1 nhc98.1 )
+make DESTDIR=${RPM_BUILD_ROOT} install
+( cd ${RPM_BUILD_ROOT}%{_mandir}/man1 && gzip -9 harch.1 hi.1 hmake.1 hp2graph.1 nhc98.1 )
 ./configure --install -bin -lib -inc -man +docs
 mv html/hmake html-hmake
 
@@ -65,6 +64,7 @@ rm -rf ${RPM_BUILD_ROOT}
 %files
 %defattr(-,root,root)
 
+%doc ANNOUNCE
 %doc COPYRIGHT
 %doc INSTALL
 %doc README
@@ -75,12 +75,14 @@ rm -rf ${RPM_BUILD_ROOT}
 %{_prefix}/bin/hood
 %{_prefix}/bin/hp2graph
 %{_prefix}/bin/nhc98
+%{_prefix}/bin/runhs
 %{_prefix}/bin/tprofprel
 
 %{_prefix}/include/nhc98
 
 %{_prefix}/lib/nhc98
 
+%{_mandir}/man1/hi.1.gz
 %{_mandir}/man1/hp2graph.1.gz
 %{_mandir}/man1/nhc98.1.gz
 
