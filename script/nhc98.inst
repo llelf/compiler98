@@ -639,9 +639,9 @@ case $COMPFILES in
           GROFILE=$objdir/${BASENAME}_.o
 	  if test $VFLAG -eq 1
 	  then
-            echo ld -r -o $OFILE $TMPOFILE $GROFILE
+            echo $LD -nostdlib -Wl,-r -o $OFILE $TMPOFILE $GROFILE
           fi
-          ld -r -o $OFILE $TMPOFILE $GROFILE
+          $LD -nostdlib -Wl,-r -o $OFILE $TMPOFILE $GROFILE
 	  if test $VFLAG -eq 1
 	  then
             echo rm $TMPOFILE $GROFILE
