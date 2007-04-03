@@ -587,10 +587,13 @@ then
     if [ ! -f $BUILDBINDIR/cpphs ]
     then ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/cpphs
     fi
+    if [ ! -f $BUILDBINDIR/cabal-parse ]
+    then ln $BUILDBINDIR/greencard-nhc98 $BUILDBINDIR/cabal-parse
+    fi
     echo
     chmod +x $BUILDBINDIR/nhc98 $BUILDBINDIR/greencard-nhc98
     chmod +x $BUILDBINDIR/hmake $BUILDBINDIR/hi $BUILDBINDIR/hmake-config
-    chmod +x $BUILDBINDIR/hsc2hs $BUILDBINDIR/cpphs
+    chmod +x $BUILDBINDIR/hsc2hs $BUILDBINDIR/cpphs $BUILDBINDIR/cabal-parse
 
     echo "Creating src/runtime/nhc98heap.c ..."
     sed -e "s|DefaultHeap|$HEAP|" script/nhc98heap.c >src/runtime/nhc98heap.c
@@ -723,12 +726,15 @@ else	# [ "$INSTALL" = "yes" ]
     echo "	cpphs"
     rm -f $DESTDIR$BINDIR/cpphs;
         ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/cpphs
+    echo "	cabal-parse"
+    rm -f $DESTDIR$BINDIR/cabal-parse;
+        ln $DESTDIR$BINDIR/greencard-nhc98 $DESTDIR$BINDIR/cabal-parse
     echo
     chmod a+rx $DESTDIR$BINDIR/nhc98 $DESTDIR$BINDIR/greencard-nhc98
     chmod a+rx $DESTDIR$BINDIR/hp2graph $DESTDIR$BINDIR/harch
     chmod a+rx $DESTDIR$BINDIR/hmake $DESTDIR$BINDIR/hi
     chmod a+rx $DESTDIR$BINDIR/hmake-config $DESTDIR/$BINDIR/cpphs
-    chmod a+rx $DESTDIR$BINDIR/hood
+    chmod a+rx $DESTDIR$BINDIR/hood $DESTDIR$BINDIR/cabal-parse 
   else
     echo 'Not (re-)installing scripts'
   fi

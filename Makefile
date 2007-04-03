@@ -143,7 +143,7 @@ DOC = docs/*
 MAN = man/*.1
 
 TARGDIR= targets
-TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs \
+TARGETS= runtime prelude libraries greencard hp2graph hsc2hs cpphs cabal-parse \
 	 profruntime profprelude profprelude-$(CC) \
 	 timeruntime timeprelude timeprelude-$(CC) \
 	 proflibraries timelibraries proflibraries-$(CC) timelibraries-$(CC) \
@@ -169,7 +169,8 @@ help:
 	@echo "                       all (= basic + heapprofile + timeprofile)"
 	@echo "                       config install clean realclean"
 	@echo "  (other subtargets:   compiler hmake runtime prelude libraries"
-	@echo "                       greencard hp2graph hsc2hs cpphs hoodui)"
+	@echo "                       greencard hp2graph hsc2hs cpphs hoodui"
+	@echo "                       cabal-parse)"
 	@echo "For a specific build-compiler: basic-hbc basic-ghc basic-nhc basic-gcc"
 	@echo "                               all-hbc   all-ghc   all-nhc   all-gcc"
 	@echo "                               etc..."
@@ -264,6 +265,11 @@ $(TARGDIR)/$(MACHINE)/hsc2hs: $(HSC2HS)
 $(TARGDIR)/$(MACHINE)/cpphs: $(CPPHS)
 	cd src/cpphs;          $(MAKE) -f Makefile.nhc98 HC=$(BUILDWITH) all
 	touch $(TARGDIR)/$(MACHINE)/cpphs
+
+$(TARGDIR)/$(MACHINE)/cabal-parse: polyparse src/libraries/cabal-parse.hs
+	script/nhc98 -o $(LIBDIR)/$(MACHINE)/cabal-parse \
+		src/libraries/cabal-parse.hs -package base -package polyparse
+	touch $@
 
 
 pragma: $(PRAGMA)
