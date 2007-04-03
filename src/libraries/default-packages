@@ -5,7 +5,7 @@ filepath
 fgl
 haskell-src
 html
-monads
+monadLib
 mtl
 network
 parsec
