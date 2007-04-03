@@ -36,15 +36,15 @@ slash = map (\c -> if c=='.' then '/' else c)
 -- Mapping from field-name to type of rhs
 fieldtype :: String -> Parser Token String
 fieldtype f = case f of
-                "exposed-modules" -> unWords (list string)
-                "other-modules"   -> unWords (list string)
-                "c-sources"       -> unWords (list string)
-                "hs-source-dirs"  -> unWords (list string)
-                "build-depends"   -> unWords (commalist string)
-                "extensions"      -> unWords (list string)
-                "data-files"      -> unWords (list string)
-                "extra-source-files" -> unWords (list string)
-                "extra-tmp-files" -> unWords (list string)
+                "exposed-modules" -> unLines (list string)
+                "other-modules"   -> unLines (list string)
+                "c-sources"       -> unLines (list string)
+                "hs-source-dirs"  -> unLines (list string)
+                "build-depends"   -> unLines (commalist string)
+                "extensions"      -> unLines (list string)
+                "data-files"      -> unLines (list string)
+                "extra-source-files" -> unLines (list string)
+                "extra-tmp-files" -> unLines (list string)
                 "homepage"        -> url
                 "package-url"     -> url
                 _                 -> freetext
@@ -122,5 +122,5 @@ string :: Parser Token String
 string = do (Word w) <- next; return w
 
 -- convert a list of strings into a whitespace-separated string
-unWords :: Parser Token [String] -> Parser Token String
-unWords p = p >>= return . unwords
+unLines :: Parser Token [String] -> Parser Token String
+unLines p = p >>= return . unlines
