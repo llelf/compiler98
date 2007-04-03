@@ -242,8 +242,7 @@ $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
 
-${PACKAGES}:
-	cd src/runtime; make links
+${PACKAGES}: runtime
 	cd src/libraries/`basename $@`; $(MAKE) -f Makefile.nhc98
 
 
