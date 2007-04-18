@@ -408,7 +408,8 @@ srcDist: $(TARGDIR)/timepreludeC \
 		$(TARGDIR)/compilerC $(TARGDIR)/greencardC $(TARGDIR)/hmakeC \
 		$(TARGDIR)/pragmaC $(TARGDIR)/hsc2hsC $(TARGDIR)/librariesC \
 		$(TARGDIR)/cpphsC hoodui \
-		nolinks cleantest
+		cleantest
+	$(MAKE) nolinks	# moved from dependency list (because order matters)
 	rm -f nhc98src-$(VERSION).tar nhc98src-$(VERSION).tar.gz
 	tar cf nhc98src-$(VERSION).tar $(BASIC)
 	tar rf nhc98src-$(VERSION).tar $(COMPILER)
