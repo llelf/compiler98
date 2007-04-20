@@ -474,7 +474,7 @@ $(TARGDIR)/hmakeC: $(HMAKE)
 	cd src/hmake;	     $(MAKE) cfiles
 	cd src/interpreter;  $(MAKE) cfiles
 	touch $(TARGDIR)/hmakeC
-$(TARGDIR)/librariesC: $(LIBRARIES)
+$(TARGDIR)/librariesC: $(LIBRARIES) runtime
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg;\
 	     $(MAKE) -f Makefile.nhc98 cfiles;\
