@@ -80,9 +80,10 @@ cleanExtraC:
 
 # general build rules for making objects from Haskell files
 $(OBJS_HASK): #$(OBJDIR) $(OBJDIRS) $(SRCS_HASK)
-	$(LOCAL)hmake -hc=$(HC) -hidir $(INCDIR)/packages/$(THISPKG) \
-		$(SEARCH) $(EXTRA_H_FLAGS) -d$(OBJDIR) \
-		$(SRCS_HASK)
+	for src in $(SRCS_HASK); \
+	do $(LOCAL)hmake -hc=$(HC) -hidir $(INCDIR)/packages/$(THISPKG) \
+		$(SEARCH) $(EXTRA_H_FLAGS) -d$(OBJDIR) $$src; \
+	done
 ${OBJS_HS}: ${OBJDIR}/%.$O : %.hs
 ${OBJS_LHS}: ${OBJDIR}/%.$O : %.lhs
 ${OBJS_GC}: ${OBJDIR}/%.$O : %.gc
