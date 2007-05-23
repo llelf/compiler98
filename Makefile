@@ -83,7 +83,7 @@ PRELUDEC = \
 #	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
 PACKAGEBUILD  = base parsec haskell-src QuickCheck fps polyparse HaXml \
-		HUnit Cabal filepath
+		HUnit filepath Cabal
 PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
