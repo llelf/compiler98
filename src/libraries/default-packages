@@ -1,6 +1,7 @@
 arrows
 http://www.cse.unsw.edu.au/~dons/code/fps
 base
+directory
 filepath
 fgl
 haskell-src
@@ -9,6 +10,8 @@ monadLib
 mtl
 network
 parsec
+pretty
+random
 http://www.cs.york.ac.uk/fp/darcs/polyparse
 readline
 time
