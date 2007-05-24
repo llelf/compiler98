@@ -11,25 +11,33 @@ import Text.ParserCombinators.Poly
 -- module names from Haskell notation to filepaths).
 main = do
     args <- getArgs
-    (field,file,munge) <-
+    (fields,file,munge,halt) <-
         case args of
-          [field,file] -> return (map toLower field, file, id)
-          ["-slash",field,file] -> return (map toLower field, file, slash)
-          _ -> stop "Usage: cabal-parse [-slash] field file"
+          (file:"-slash":fields)
+                        -> return (map (map toLower) fields, file, slash, stop)
+          (file:"-quiet":"-slash":fields)
+                        -> return (map (map toLower) fields, file, slash, quiet)
+          (file:"-quiet":fields)
+                        -> return (map (map toLower) fields, file, id, quiet)
+          (file:fields) -> return (map (map toLower) fields, file, id, stop)
+          _ -> stop "Usage: cabal-parse file [-quiet] [-slash] field ..."
     content <- readFile file
     case runParser cabalFile (lexToken content) of
       (Left e, _)      -> stop e
-      (Right cabal, _) -> do
+      (Right cabal, _) -> flip mapM_ fields (\field->
           case lookup field cabal of
             Just rhs -> case runParser (fieldtype field) rhs of
-                          (Left e, _) -> stop e
+                          (Left e, _) -> halt e
                           (Right result, _) -> putStrLn (munge result)
-            Nothing  -> stop ("field "++field++" not present")
+            Nothing  -> halt ("field "++field++" not present")
+          )
 
 stop :: String -> IO a
 stop s = do hPutStrLn stderr ("cabal-parse:\n"++indent 2 s)
             exitFailure
             return undefined
+quiet :: String -> IO ()
+quiet s = return ()
 
 slash = map (\c -> if c=='.' then '/' else c)
 
