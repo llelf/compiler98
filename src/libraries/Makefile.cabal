@@ -15,6 +15,7 @@ MAP        = $(LOCAL)map
 
 THISPKG    = $(shell $(READ) name | cut -c2- )
 VERSION    = $(shell $(READ) version)
+LOCATION   = $(shell $(READ) hs-source-dir)
 SEARCH     = $(shell $(READ) build-depends  | $(MAP) "echo -package" ) \
              $(shell $(READ) include-dirs   | $(MAP) "echo -i" | cut -c1,2,4-) \
              $(shell $(READ) hs-source-dirs | $(MAP) "echo -I" | cut -c1,2,4-)
@@ -82,6 +83,7 @@ cleanExtraC:
 
 # general build rules for making objects from Haskell files
 $(OBJS_HASK): # $(SRCS) $(EXTRA_SRCS) # $(OBJDIR) $(OBJDIRS)
+	[ -d "$(LOCATION)" ] && cd $(LOCATION); \
 	for src in $(SRCS); \
 	do $(LOCAL)hmake -hc=$(HC) -hidir $(INCDIR)/packages/$(THISPKG) \
 		$(SEARCH) $(EXTRA_H_FLAGS) -d$(OBJDIR) $$src.hs; \

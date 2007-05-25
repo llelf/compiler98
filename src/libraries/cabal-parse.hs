@@ -48,6 +48,7 @@ fieldtype f = case f of
                 "other-modules"   -> unLines (list string)
                 "c-sources"       -> unLines (list string)
                 "hs-source-dirs"  -> unLines (list string)
+                "hs-source-dir"   -> string
                 "build-depends"   -> unLines (commalist string)
                 "extensions"      -> unLines (list string)
                 "data-files"      -> unLines (list string)
