@@ -86,6 +86,7 @@ $(OBJS_HASK): # $(SRCS) $(EXTRA_SRCS) # $(OBJDIR) $(OBJDIRS)
 	[ -d "$(LOCATION)" ] && cd $(LOCATION); \
 	for src in $(SRCS); \
 	do $(LOCAL)hmake -hc=$(HC) -hidir $(INCDIR)/packages/$(THISPKG) \
+		$(filter -D%, $(EXTRA_C_FLAGS)) \
 		$(SEARCH) $(EXTRA_H_FLAGS) -d$(OBJDIR) $$src.hs; \
 	done
 
@@ -93,7 +94,6 @@ $(OBJS_HASK): # $(SRCS) $(EXTRA_SRCS) # $(OBJDIR) $(OBJDIRS)
 ${OBJS_C}: ${OBJDIR}/%.$O : %.c
 	$(CC) -c -I$(INCDIR) $(ENDIAN) $(ARCH) $(CINCLUDES) \
 		$(shell echo ${COPTS}) $(EXTRA_C_FLAGS) -o $@ $<
-	#$(filter -I%, ${SEARCH}) \
 
 # general build rules for making bootstrap C files from Haskell files
 $(CFILES_GEN): # $(SRCS) $(EXTRA_SRCS)
