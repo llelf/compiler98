@@ -9,8 +9,11 @@ html
 monadLib
 mtl
 network
+old-locale
+old-time
 parsec
 pretty
+process
 random
 http://www.cs.york.ac.uk/fp/darcs/polyparse
 readline
