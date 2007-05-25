@@ -82,13 +82,17 @@ PRELUDEC = \
 	src/prelude/Vector/*.hc        src/prelude/Vector/*.c
 #	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
-PACKAGEBUILD  = base parsec haskell-src QuickCheck fps polyparse HaXml \
-		HUnit filepath Cabal
+PACKAGEBUILD  = base polyparse parsec process
+PACKAGECABAL  = directory filepath pretty haskell-src random \
+		old-locale old-time Cabal QuickCheck \
+		fps HaXml HUnit
 PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
+	    src/libraries/Makefile.cabal src/libraries/cabal-parse.hs \
 	    src/libraries/default-packages \
-	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD})
+	    $(patsubst %, src/libraries/%, ${PACKAGEBUILD}) \
+	    $(patsubst %, src/libraries/%, ${PACKAGECABAL})
 
 COMPILER = src/compiler98/Makefile*  src/compiler98/*.hs \
 	   src/compiler98/*.gc src/compiler98/*.c.inst src/compiler98/*.h
@@ -96,7 +100,7 @@ COMPILERC = src/compiler98/*.hc
 DATA2C = src/data2c/Makefile* src/data2c/*.hs
 SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/hmake-config.inst script/hi.inst script/config-errno.c \
-         script/nhc98heap.c script/harch script/confhc \
+         script/nhc98heap.c script/harch script/confhc script/map \
 	 script/mangler script/errnogen.c script/GenerateErrNo.hs \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
@@ -138,7 +142,8 @@ PRAGMA  = lib/$(MACHINE)/hmake-PRAGMA
 HOODUI  = src/hoodui/Makefile* src/hoodui/*.java \
 	  src/hoodui/com/microstar/xml/*
 INCLUDE = include/*.hi include/*.h include/NHC/*.hi include/NHC/*.gc
-INCLUDEPKG = $(patsubst %, include/packages/%, ${PACKAGEBUILD})
+INCLUDEPKG = $(patsubst %, include/packages/%, ${PACKAGEBUILD}) \
+             $(patsubst %, include/packages/%, ${PACKAGECABAL})
 DOC = docs/*
 MAN = man/*.1
 
@@ -240,10 +245,16 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 $(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
 
-${PACKAGES}: runtime
+${PACKAGEBUILD}: runtime
 	cd src/libraries/`basename $@`; $(MAKE) -f Makefile.nhc98
+
+${PACKAGECABAL}: runtime cabal-parse
+	cd src/libraries/`basename $@`; $(MAKE) -f ../Makefile.cabal
 
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
@@ -304,6 +315,9 @@ $(TARGDIR)/$(MACHINE)/profprelude: greencard $(PRELUDEA) $(PRELUDEB)
 $(TARGDIR)/$(MACHINE)/proflibraries: $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal CFG=p; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/proflibraries
 
 
@@ -316,6 +330,9 @@ $(TARGDIR)/$(MACHINE)/timeprelude: greencard $(PRELUDEA) $(PRELUDEB)
 $(TARGDIR)/$(MACHINE)/timelibraries: $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal CFG=z; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/timelibraries
 
 
@@ -360,14 +377,23 @@ $(TARGDIR)/$(MACHINE)/hsc2hs-$(CC): $(HSC2HS) $(HSC2HSC)
 $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
 $(TARGDIR)/$(MACHINE)/proflibraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=p fromC; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal CFG=p fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/proflibraries-$(CC)
 $(TARGDIR)/$(MACHINE)/timelibraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 CFG=z fromC; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal CFG=z fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/timelibraries-$(CC)
 
 
@@ -480,6 +506,12 @@ $(TARGDIR)/librariesC: $(LIBRARIES) runtime
 	     $(MAKE) -f Makefile.nhc98 cfiles;\
 	     $(MAKE) CFG=p -f Makefile.nhc98 cfiles;\
 	     $(MAKE) CFG=z -f Makefile.nhc98 cfiles; ) ;\
+	done && \
+	for pkg in ${PACKAGECABAL};\
+	do ( cd src/libraries/$$pkg;\
+	     $(MAKE) -f ../Makefile.cabal cfiles;\
+	     $(MAKE) CFG=p -f ../Makefile.cabal cfiles;\
+	     $(MAKE) CFG=z -f ../Makefile.cabal cfiles; ) ;\
 	done && touch $(TARGDIR)/librariesC
 
 
