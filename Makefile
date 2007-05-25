@@ -82,11 +82,13 @@ PRELUDEC = \
 	src/prelude/Vector/*.hc        src/prelude/Vector/*.c
 #	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
+PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 PACKAGEBUILD  = base polyparse parsec process
 PACKAGECABAL  = directory filepath pretty haskell-src random \
 		old-locale old-time Cabal QuickCheck \
-		fps HaXml HUnit
-PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
+		fps HaXml HUnit html xhtml
+PACKAGES_UNTESTED = \
+		arrows fgl monadLib mtl network readline time unix
 
 LIBRARIES = src/libraries/Makefile.common src/libraries/Makefile.inc \
 	    src/libraries/Makefile.cabal src/libraries/cabal-parse.hs \
@@ -105,7 +107,7 @@ SCRIPT = script/hmake.inst script/greencard.inst script/nhc98.inst \
 	 script/fixghc script/echo.c script/hood.inst script/tprofprel \
 	 script/fixcygwin script/hmake-PRAGMA.hs script/hmake-PRAGMA.hc \
 	 script/hsc2hs.inst src/hsc2hs/template-hsc.h \
-	 nhc98.spec script/pkgdirlist lib/hood.jar 
+	 nhc98.spec lib/hood.jar 
 GREENCARD = src/greencard/*.lhs src/greencard/*.hs \
 	    src/greencard/Makefile*
 GREENCARDC = src/greencard/*.hc
@@ -256,6 +258,9 @@ ${PACKAGEBUILD}: runtime
 ${PACKAGECABAL}: runtime cabal-parse
 	cd src/libraries/`basename $@`; $(MAKE) -f ../Makefile.cabal
 
+${PACKAGES_UNTESTED}: runtime cabal-parse
+	cd src/libraries/`basename $@`; $(MAKE) -f ../Makefile.cabal
+
 
 $(TARGDIR)/$(MACHINE)/greencard-nhc: $(GREENCARD)
 	cd src/greencard;      $(MAKE) HC=$(BUILDWITH) all
@@ -378,6 +383,7 @@ $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
 	done && \
+	$(MAKE) cabal-parse &&
 	for pkg in ${PACKAGECABAL};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
