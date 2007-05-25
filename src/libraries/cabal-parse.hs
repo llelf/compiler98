@@ -67,6 +67,7 @@ lexToken    []        = []
 lexToken (':':ss)     = Colon : lexToken ss
 lexToken ('\n':ss)    = case ss of
                           ('-':'-':_)        -> NewlineIndent: lexToken ss
+                          ('\n':cs)          -> Newline      : lexToken cs
                           (c:cs) | isSpace c -> NewlineIndent: lexToken cs
                           _                  -> Newline : lexToken ss
 lexToken ('-':'-':ss) = dropWhile (`notElem`[Newline,NewlineIndent])
