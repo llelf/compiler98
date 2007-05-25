@@ -383,7 +383,7 @@ $(TARGDIR)/$(MACHINE)/libraries-$(CC): $(LIBRARIES)
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98 fromC; ) ;\
 	done && \
-	$(MAKE) cabal-parse &&
+	$(MAKE) cabal-parse && \
 	for pkg in ${PACKAGECABAL};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal fromC; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries-$(CC)
