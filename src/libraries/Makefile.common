@@ -6,6 +6,7 @@
 # THISPKG = e.g. mypkg
 # SEARCH  = e.g. -P../IO -P../PreludeIO -package base
 # SRCS    = all .hs .gc and .c files
+# DIRS    = all hierarchical source dirs
 #
 # EXTRA_H_FLAGS = e.g. -prelude
 # EXTRA_C_FLAGS = e.g. -I../Binary
@@ -15,8 +16,6 @@ include ../Makefile.inc
 ifeq "hbc" "${BUILDCOMP}"
 EXTRA_H_FLAGS := ${EXTRA_HBC_FLAGS}
 endif
-
-DIRS     = $(shell ${LOCAL}pkgdirlist ${THISPKG})
 
 OBJDIR   = ${BUILDDIR}/${OBJ}/libraries/${THISPKG}
 OBJDIRS  = $(patsubst %, ${OBJDIR}/%, ${DIRS})
