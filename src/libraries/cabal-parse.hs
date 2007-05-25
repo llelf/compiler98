@@ -133,4 +133,4 @@ string = do (Word w) <- next; return w
 
 -- convert a list of strings into a whitespace-separated string
 unLines :: Parser Token [String] -> Parser Token String
-unLines p = p >>= return . unlines
+unLines p = p >>= return . init . unlines
