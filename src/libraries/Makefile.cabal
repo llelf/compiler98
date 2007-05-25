@@ -99,6 +99,7 @@ ${OBJS_C}: ${OBJDIR}/%.$O : %.c
 $(CFILES_GEN): # $(SRCS) $(EXTRA_SRCS)
 	for src in $(SRCS); \
 	do $(LOCAL)hmake -hc=$(HC) -C -hidir $(INCDIR)/packages/$(THISPKG) \
+		$(filter -D%, $(EXTRA_C_FLAGS)) \
 		$(SEARCH) $(EXTRA_H_FLAGS) $$src.hs; \
 	done
 
