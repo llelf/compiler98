@@ -76,9 +76,11 @@ fi
   
 # Now look for GHC.  Determining the version number here is due to Simon Marlow.
 ghcsym () {
-  echo __GLASGOW_HASKELL__ >ghcsym.hs;
-  $1 -E -cpp -optP-P ghcsym.hs -o ghcsym.out;
-  grep -v '^#' ghcsym.out | grep -v '^$' > $2;
+  echo "main = print __GLASGOW_HASKELL__" >ghcsym.hs;
+  $1 -cpp -o ghcsym.out ghcsym.hs
+  ./ghcsym.out >$2
+# $1 -E -cpp -optP-P ghcsym.hs -o ghcsym.out;
+# grep -v '^#' ghcsym.out | grep -v '^$' > $2;
   rm -f ghcsym.hs ghcsym.out;
 }
 echo -n "  Looking for ghc...   "
