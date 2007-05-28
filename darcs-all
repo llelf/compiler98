@@ -81,5 +81,7 @@ case $1 in
   get)  shift; darcsget $*;;
   # Hack around whatsnew failing if there are no changes
   w|wh|wha|what|whats|whatsn|whatsne|whatsnew) set +e; darcsall $*;;
+  # Likewise for push failing if the URL is http: rather than ssh:
+  pu|pus|push) set +e; darcsall $*;;
   *) darcsall $*;;
 esac
