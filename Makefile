@@ -244,10 +244,11 @@ $(TARGDIR)/$(MACHINE)/prelude: $(PRELUDEA) $(PRELUDEB)
 	cd src/prelude;        $(MAKE) all
 	touch $(TARGDIR)/$(MACHINE)/prelude
 
-$(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES)
+$(TARGDIR)/$(MACHINE)/libraries: $(LIBRARIES) runtime
 	for pkg in ${PACKAGEBUILD};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f Makefile.nhc98; ) ;\
 	done && \
+	$(MAKE) cabal-parse && \
 	for pkg in ${PACKAGECABAL};\
 	do ( cd src/libraries/$$pkg; $(MAKE) -f ../Makefile.cabal; ) ;\
 	done && touch $(TARGDIR)/$(MACHINE)/libraries
