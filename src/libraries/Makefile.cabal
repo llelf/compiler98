@@ -27,6 +27,7 @@ DIRS       = $(shell $(READ) -slash exposed-modules other-modules \
                      | $(MAP) dirname | sort | uniq )
 CDIRS      = $(shell $(READ) c-sources | $(MAP) dirname | sort | uniq )
 EXTRA_C_FLAGS = $(shell $(READ) cc-options)
+EXTRA_H_FLAGS = $(shell $(READ) nhc98-options)
 
 # ----
 OBJDIR   = ${BUILDDIR}/${OBJ}/libraries/${THISPKG}
