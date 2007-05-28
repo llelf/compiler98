@@ -84,8 +84,8 @@ PRELUDEC = \
 
 PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
 PACKAGEBUILD  = haskell98 base polyparse parsec process
-PACKAGECABAL  = directory filepath pretty haskell-src random \
-		old-locale old-time Cabal QuickCheck \
+PACKAGECABAL  = old-locale old-time directory filepath pretty \
+		haskell-src random Cabal QuickCheck \
 		fps HaXml HUnit html xhtml
 PACKAGES_UNTESTED = \
 		arrows fgl monadLib mtl network readline time unix
