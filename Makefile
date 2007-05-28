@@ -83,7 +83,7 @@ PRELUDEC = \
 #	src/prelude/BinArray/*.hc      src/prelude/BinArray/*.c \
 
 PACKAGES      = $(shell for pkg in `cat src/libraries/default-packages`; do basename $$pkg; done)
-PACKAGEBUILD  = base polyparse parsec process
+PACKAGEBUILD  = haskell98 base polyparse parsec process
 PACKAGECABAL  = directory filepath pretty haskell-src random \
 		old-locale old-time Cabal QuickCheck \
 		fps HaXml HUnit html xhtml

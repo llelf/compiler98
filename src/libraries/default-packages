@@ -4,6 +4,7 @@ base
 directory
 filepath
 fgl
+haskell98
 haskell-src
 html
 monadLib
