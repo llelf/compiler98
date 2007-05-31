@@ -66,7 +66,8 @@ all: ${OBJDIR} ${OBJDIRS} ${INCDIRS} extra ${OBJS} ${FINALLIB}
 extra:
 cfiles: extracfiles ${CFILES_GEN}
 extracfiles:
-fromC: ${OBJDIR} ${OBJS_C} ${OBJDIRS}
+fromC: ${OBJDIR} ${OBJDIRS} ${OBJS_C}
+	[ -d "$(LOCATION)" ] && cd $(LOCATION); \
 	$(HC) -c -d $(OBJDIR) $(EXTRA_C_FLAGS) ${SEARCH} ${CFILES_GEN}
 	echo $(OBJS) | xargs ar cr ${FINALLIB}
 objdir: ${OBJDIR} ${OBJDIRS} ${INCDIRS}
