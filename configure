@@ -655,24 +655,8 @@ else	# [ "$INSTALL" = "yes" ]
     do
       echo "    package: $pkg"
       mkdir -p $DESTDIR$INCDIR/packages/$pkg
-      for file in $BUILDINCDIR/packages/$pkg/*
-      do
-        if [ -f $file ]
-        then echo "	`basename $file` "
-             cp $file $DESTDIR$INCDIR/packages/$pkg
-        fi
-      done
-      for dir in `script/pkgdirlist $pkg`
-      do
-        mkdir -p $DESTDIR$INCDIR/packages/$pkg/$dir
-        for file in $BUILDINCDIR/packages/$pkg/$dir/*
-        do
-          if [ -f $file ]
-          then echo "	$dir/`basename $file` "
-               cp $file $DESTDIR$INCDIR/packages/$pkg/$dir
-          fi
-        done
-      done
+      ( cd $BUILDINCDIR/packages/$pkg; tar cf - * ) | \
+      ( cd $DESTDIR$INCDIR/packages/$pkg; tar xvf - )
     done
     echo
   else
