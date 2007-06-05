@@ -16,7 +16,9 @@ module Imports
 
 import Char
 import ListUtil (takeUntil)
-import Language.Preprocessor.Cpphs.CppIfdef (cppIfdef,IfdefOptions(..))
+import Language.Preprocessor.Cpphs.CppIfdef (cppIfdef)
+import Language.Preprocessor.Cpphs.Options  (BoolOptions(..)
+                                            ,defaultBoolOptions)
 
 #if !defined(__HASKELL98__)
 #define isAlphaNum isAlphanum
@@ -31,9 +33,9 @@ getImports :: FilePath -- ^ The path to the module
 getImports fp defines includes = leximports fp
                                  . unlines . map snd
                                  . cppIfdef fp defs includes
-                                            IfdefOptions { leave=False
-                                                         , locations=False
-                                                         , warnings=False }
+                                            defaultBoolOptions { macros=False
+                                                            , locations=False
+                                                             , warnings=False }
   where
     defs = map (\defn-> let (s,d) = break (=='=') defn in
                         (s, if null d then "1" else tail d)) defines

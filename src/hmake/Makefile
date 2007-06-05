@@ -19,7 +19,9 @@ CPPHSSRCS  = \
 	  Language/Preprocessor/Cpphs/ReadFirst.hs \
 	  Language/Preprocessor/Cpphs/Tokenise.hs \
 	  Language/Preprocessor/Cpphs/SymTab.hs \
-	  Language/Preprocessor/Cpphs/HashDefine.hs
+	  Language/Preprocessor/Cpphs/HashDefine.hs \
+	  Language/Preprocessor/Cpphs/MacroPass.hs \
+	  Language/Preprocessor/Cpphs/Options.hs
 CPPSRCS = Graph.hs GetDep.hs Compat.hs Imports.hs Platform.hs Config.hs
 CFGSRCS = RunAndReadStdout.hs Config.hs Compiler.hs Platform.hs
 RUNSRCS = runhs.hs
@@ -161,10 +163,10 @@ ${OBJDIR}/Older.$O:
 ${CPPHSOBJDIR}/Text/ParserCombinators/HuttonMeijer.$O:	
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/HashDefine.$O:
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Tokenise.$O:	\
-		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/HashDefine.$O
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/HashDefine.$O \
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Position.$O
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/ReadFirst.$O: \
-		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Position.$O \
-		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/SymTab.$O
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Position.$O
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Position.$O:	
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/SymTab.$O:	
 ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/CppIfdef.$O:	\
@@ -172,7 +174,10 @@ ${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/CppIfdef.$O:	\
 		${CPPHSOBJDIR}/Text/ParserCombinators/HuttonMeijer.$O \
 		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Position.$O \
 		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/ReadFirst.$O \
-		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Tokenise.$O
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Tokenise.$O \
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/Options.$O \
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/HashDefine.$O \
+		${CPPHSOBJDIR}/Language/Preprocessor/Cpphs/MacroPass.$O
 
 
 
@@ -204,10 +209,10 @@ MkProg.$C: Argv.$C GetDep.$C Getmodtime.$C ListUtil.$C Order.$C Output.$C
 
 ../cpphs/Language/Preprocessor/Cpphs/HashDefine.$C: 
 ../cpphs/Language/Preprocessor/Cpphs/Tokenise.$C: \
-		../cpphs/Language/Preprocessor/Cpphs/HashDefine.$C 
+		../cpphs/Language/Preprocessor/Cpphs/HashDefine.$C \
+		../cpphs/Language/Preprocessor/Cpphs/Position.$C 
 ../cpphs/Language/Preprocessor/Cpphs/ReadFirst.$C: \
-		../cpphs/Language/Preprocessor/Cpphs/Position.$C \
-		../cpphs/Language/Preprocessor/Cpphs/SymTab.$C 
+		../cpphs/Language/Preprocessor/Cpphs/Position.$C
 ../cpphs/Language/Preprocessor/Cpphs/Position.$C: 
 ../cpphs/Text/ParserCombinators/HuttonMeijer.$C: 
 ../cpphs/Language/Preprocessor/Cpphs/SymTab.$C: 
@@ -216,4 +221,7 @@ MkProg.$C: Argv.$C GetDep.$C Getmodtime.$C ListUtil.$C Order.$C Output.$C
 		../cpphs/Text/ParserCombinators/HuttonMeijer.$C \
 		../cpphs/Language/Preprocessor/Cpphs/Position.$C \
 		../cpphs/Language/Preprocessor/Cpphs/ReadFirst.$C \
-		../cpphs/Language/Preprocessor/Cpphs/Tokenise.$C 
+		../cpphs/Language/Preprocessor/Cpphs/Tokenise.$C \
+		../cpphs/Language/Preprocessor/Cpphs/Options.$C \
+		../cpphs/Language/Preprocessor/Cpphs/HashDefine.$C \
+		../cpphs/Language/Preprocessor/Cpphs/MacroPass.$C
