@@ -745,6 +745,10 @@ ppRhs info delimiter (Guarded [gd]) =
   dSpace <> ppGdPat info delimiter gd
 ppRhs info delimiter (Guarded gds) =
   encase line (map (ppGdPat info delimiter) gds)
+ppRhs info delimiter (PatGuard [gd]) =
+  dSpace <> ppPatGdPat info delimiter gd
+ppRhs info delimiter (PatGuard gds) =
+  encase line (map (ppPatGdPat info delimiter) gds)
    
 
 ppGdPat :: PPInfo a -> String -> (Exp a, Exp a) -> Doc

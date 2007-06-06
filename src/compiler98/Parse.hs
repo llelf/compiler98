@@ -392,12 +392,20 @@ parseRhs del =
     Unguarded `parseChk` del `apCut` parseExp
         `orelse`
     Guarded `parseAp` some (parseGdExp del)
+        `orelse`
+    PatGuard `parseAp` some (parsePatGdExp del)
 
 
 parseGdExp :: Parser Pos [PosToken] a  
               -> Parser (Exp TokenId, Exp TokenId) [PosToken] a
 parseGdExp del =
     pair `parseChk` pipe `apCut` parseExp `chk` del `apCut` parseExp
+
+parsePatGdExp :: Parser Pos [PosToken] a  
+              -> Parser ([Qual TokenId], Exp TokenId) [PosToken] a
+parsePatGdExp del =
+    pair `parseChk` pipe `apCut` somesSep comma parseQual
+                         `chk` del `apCut` parseExp
 
 
 parsePats = some parseAPat
