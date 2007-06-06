@@ -8,9 +8,11 @@ import Lex
 import Lexical(PosToken)
 import Syntax
 import MkSyntax	( mkAppExp, mkCase, mkDeclClass
-	, mkDeclFun, mkDeclPat, mkDeclPatFun, mkEnumFrom
-	, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
-	, mkExpListComp, mkIf, mkInfixList, mkExpList
+	, mkDeclFun, mkDeclPat, mkDeclPatFun
+   --   , mkEnumFrom, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
+   --	, mkExpListComp
+        , mkSweetListEnum, mkSweetListComp
+        , mkIf, mkInfixList, mkExpList
         , mkLambda, mkLet, mkDo, mkFieldExp
 	, mkParExp, mkPatNplusK -- , mkParLhs
 	)
@@ -306,6 +308,46 @@ parseBrackExp0 pos =                -- found '['
         `orelse`
     parseExp `revAp` parseBrackExp1 pos
 
+-- keeping list comprehensions and list enumerations in sugared form
+parseBrackExp1 pos = -- found '[e'
+    (\posr e -> mkExpList pos [e] posr) `parseAp` rbrack
+        `orelse`
+    (\posr ef -> mkSweetListEnum pos ef Nothing Nothing posr)
+                      `parseChk` dotdot
+                      `ap` rbrack
+        `orelse`
+    (\qs posr e -> mkSweetListComp pos e qs posr)
+                      `parseChk` pipe
+                      `ap` somesSep comma parseQual 
+                      `ap` rbrack
+        `orelse`
+    (\eto posr ef -> mkSweetListEnum pos ef Nothing (Just eto) posr)
+                      `parseChk` dotdot
+                      `ap` parseExp
+                      `ap` rbrack
+        `orelse`
+    comma `revChk` (parseExp `revAp` parseBrackExp2 pos)
+
+parseBrackExp2 pos =                -- found '[e,e'
+    (\posr e2 e1 -> mkExpList pos [e1,e2] posr) `parseAp` rbrack
+        `orelse`
+    (\posr eth ef -> mkSweetListEnum pos ef (Just eth) Nothing posr)
+                      `parseChk` dotdot
+                      `ap` rbrack
+        `orelse`
+    (\eto posr eth ef -> mkSweetListEnum pos ef (Just eth) (Just eto) posr)
+                      `parseChk` dotdot
+                      `ap` parseExp
+                      `ap` rbrack
+        `orelse`
+    (\es posr e2 e1 -> mkExpList pos (e1:e2:es) posr)
+                      `parseChk` comma
+                      `ap` manySep comma parseExp
+                      `ap` rbrack
+ 
+{-
+-- de-sugared version of list comprehensions and list enumerations
+--
 parseBrackExp1 pos =                -- found '[e'
     (\posr e -> mkExpList pos [e] posr) `parseAp` rbrack
         `orelse`
@@ -327,6 +369,7 @@ parseBrackExp2 pos =                -- found '[e,e'
     (\es posr e2 e1 -> mkExpList pos (e1:e2:es) posr) `parseChk` comma
                                           `ap` manySep comma parseExp
                                           `ap` rbrack
+-}
 
 parseQual =
    (lit L_let `into` \_-> lcurl `into` \_-> parseDecls `into`

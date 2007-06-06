@@ -315,6 +315,15 @@ needStmts (StmtExp exp:r) = needTid (getPos exp) Var t_gtgt >>>  needExp exp >>>
 needStmts (StmtBind pat exp:r) = needTid (getPos pat) Var t_gtgteq >>> needExp exp >>> pushNeed >>> bindPat pat >>> needStmts r >>> popNeed
 needStmts (StmtLet decls :r) =  pushNeed  >>> bindDecls decls  >>> needDecls decls >>> needStmts r >>> popNeed
 
+-- for list comprehensions and pattern guards
+needQuals [] = unitR
+needQuals (QualExp exp:r)  = needExp exp >>> needQuals r
+needQuals (QualPatExp pat exp:r) =
+    needExp exp >>> bindPat pat >>> needExp pat >>> needQuals r
+needQuals (QualLet decls :r) =
+    bindDecls decls >>> needDecls decls >>> needQuals r
+
+
 needField (FieldExp pos var exp) = needTid pos Field var >>> needExp exp
 needField (FieldPun pos var) = needTid pos Field var >>> needTid pos Var var
 --needField (FieldPun pos var) = error ("\nAt "++ strPos pos ++ ", token: "++
@@ -337,6 +346,13 @@ needExp (ExpIf             pos expCond expThen expElse) =
 needExp (ExpRecord exp fields) = needExp exp >>> mapR needField fields
 needExp (ExpType           pos exp ctxs typ) =
     needExp exp >>> mapR needCtx ctxs >>> needType typ
+needExp (ExpListComp       pos exp quals) =
+    needTids pos tokenComprehension >>>
+    pushNeed >>> needQuals quals >>> needExp exp >>> popNeed
+needExp (ExpListEnum       pos eFrom meThen meTo) =
+    needTids pos tokenEnum >>>
+    needExp eFrom >>> maybe unitR needExp meThen >>> maybe unitR needExp meTo
+needExp (ExpBrack          pos exp) = needExp exp
 --- Above only in expressions
 needExp (ExpApplication   pos exps) = mapR needExp exps
 needExp (ExpInfixList     pos exps) = mapR needExp exps
@@ -455,6 +471,7 @@ bindField (FieldPun pos var) = needTid pos Field var >>> bindTid Var var
 
 bindPat :: Exp TokenId -> NeedLib -> NeedLib
 
+bindPat (ExpBrack         pos exp)  = bindPat exp
 bindPat (ExpApplication   pos exps) = mapR bindPat exps
 bindPat (ExpInfixList     pos (ExpVarOp _ op:pats)) = -- must be prefix -
   needTid pos Var op >>> mapR bindPat pats
@@ -478,7 +495,7 @@ bindPat (PatWildcard      pos)        = unitR
 bindPat (PatIrrefutable   pos pat)    = bindPat pat
 bindPat (PatNplusK        pos tid _ _ _ _) = bindTid Var tid >>>
                                              needTids pos tokenNplusK
-
+bindPat pat = error ("Need.hs:bindPat @ "++show (getPos pat))
 
 ------
 needTids :: Pos -> [(IdKind,TokenId)] -> NeedLib -> NeedLib

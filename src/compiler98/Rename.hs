@@ -29,6 +29,7 @@ import AssocTree
 import SysDeps(PackedString,unpackPS)
 import SyntaxPos
 import SyntaxUtil(infixFun,isTypeVar)
+import MkSyntax(desugarListComp,desugarListEnum)
 import Id(Id)
 
 import Overlap(Overlap)
@@ -648,6 +649,9 @@ renameExp (ExpType           pos exp ctxs typ) =
        mapS (renameCtx al) ctxs >>>= \ ctxs ->
        renameType al typ >>>= \ typ -> 
        unitS (ExpType pos exp ctxs typ)
+renameExp e@(ExpListComp pos _ _) = renameExp (desugarListComp e)
+renameExp e@(ExpListEnum pos _ _ _) = renameExp (desugarListEnum e)
+renameExp (ExpBrack pos exp)  = renameExp exp
 --- Above only in expressions
 renameExp (ExpApplication   pos exps)  =
     unitS (ExpApplication pos) =>>> mapS renameExp exps

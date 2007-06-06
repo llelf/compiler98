@@ -7,6 +7,7 @@ for these identifiers.
 module TokenInt(getInts,tokenMain,tokenAllways,tokenBounded,tokenEnum
                ,tokenEq,tokenIx,tokenOrd,tokenRead,tokenShow,tokenBinary
                ,tokenMonad,tokenInteger,tokenRational,tokenNplusK,tokenFFI
+               ,tokenComprehension
                ) where
 
 import IdKind
@@ -38,7 +39,8 @@ getInts tidk2i =
 		++ tokenMonad ++ tokenBounded ++ tokenEnum
 		++ tokenEq ++ tokenEval ++ tokenIx
 		++ tokenOrd ++ tokenRead ++ tokenShow
-                ++ tokenBinary ++ tokenNplusK ++ tokenFFI)  --MALCOLM modified
+                ++ tokenBinary ++ tokenNplusK ++ tokenFFI  --MALCOLM modified
+                ++ tokenComprehension)
 
    fix :: (IdKind,TokenId) 
        -> AssocTree (TokenId,IdKind) Id
@@ -57,7 +59,7 @@ getInts tidk2i =
 
 tokenMain,tokenAllways,tokenBounded,tokenEnum,tokenEq,tokenIx,tokenOrd
   ,tokenRead,tokenShow,tokenBinary,tokenMonad,tokenInteger,tokenRational
-  ,tokenNplusK,tokenFFI :: [(IdKind,TokenId)]
+  ,tokenNplusK,tokenFFI,tokenComprehension :: [(IdKind,TokenId)]
 
 tokenMain =     [(TCon,tIO),(TCon,t_Tuple 0)]
 tokenList =	[(TClass,tNum),(Var,tnegate)]
@@ -111,5 +113,6 @@ tokenBinary    = [(TClass,tBinary)
 tokenNplusK = 	[(Var,t_lessequal),(Var,t_subtract)]
 tokenFFI =      map (\n->(Var,t_mkIOok n)) [0..15] ++
 		[(Var,tunsafePerformIO)]
+tokenComprehension = [(Var,t_foldr),(Var,t_filter)]
 
 {- End TokenInt -------------------------------------------------------------}

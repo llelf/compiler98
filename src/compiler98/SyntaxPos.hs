@@ -65,6 +65,9 @@ instance HasPos (Exp a) where
   getPos (ExpFail)	 	    = error "No position for ExpFail"
   getPos (ExpIf          pos _ _ _) = pos
   getPos (ExpType        pos _ _ _) = pos
+  getPos (ExpListComp    pos _ _)   = pos
+  getPos (ExpListEnum    pos _ _ _) = pos
+  getPos (ExpBrack       pos _)     = pos
   getPos (ExpRecord      exp fdefs) = mergePos (getPos exp) (getPos fdefs)
   getPos (ExpApplication pos _ )    = pos
   getPos (ExpInfixList   pos _)     = pos

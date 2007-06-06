@@ -116,6 +116,7 @@ bindPat kind (ExpIf             pos expCond expThen expElse) =
   error "ExpIf in bindPat!"
 bindPat kind (ExpType           pos exp ctxs typ) = error "ExpType in bindPat!"
 --- Above only in expressions
+bindPat kind (ExpBrack		pos pat) = bindPat kind pat
 bindPat kind (ExpRecord		pos fields) = mapS0 bindField fields
 bindPat kind (ExpApplication    pos pats) = mapS0 (bindPat kind) pats
 bindPat kind (ExpInfixList      pos (ExpVarOp _ _:pats)) = 
@@ -195,6 +196,7 @@ identPat' (ExpIf             pos expCond expThen expElse) =
 identPat' (ExpType           pos exp ctxs typ) = 
   error ("ExpType in identPat'" ++ show pos)
 --- Above only in expressions, not in patterns
+identPat' (ExpBrack          pos pat) = identPat' pat
 identPat' (ExpRecord         pos fields) = mapS0 identField fields
 identPat' (ExpApplication    pos (ExpVar _ _:pats)) = 
   mapS0 identPat' pats -- ignore negate!! (only variable that can be here)

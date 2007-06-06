@@ -9,6 +9,7 @@ module PrettySyntax
   , prettyPrintTokenId, prettyPrintId, simplePrintId
   , ppModule, ppTopDecls, ppClassCodes
   , ppType, ppContexts, ppSimple, ppDecl
+  , ppExp
   ) where 
 
 import Extra(noPos)
@@ -55,9 +56,9 @@ prettyPrintTokenId flags pp =
            ,isList = (== t_List)
            ,maybeTuple = maybeTupleTokenId}
   where
-  id2strTokenId =  if sShowQualified flags
-                     then show  
-                     else reverse . unpackPS . extractV 
+  id2strTokenId t =  if sShowQualified flags && not (t==t_List)
+                     then show t
+                     else reverse . unpackPS . extractV $ t
   maybeTupleTokenId t = case t of
                           TupleId n -> Just n
                           _         -> Nothing
@@ -682,6 +683,25 @@ ppExpPrec info _ (ExpLit pos lit) =
 ppExpPrec info _ (ExpList pos es) =
   groupNestS info $
     ppPos info pos <> (brackets $ sep fComma $ map (ppExpPrec info False) es)
+ppExpPrec info _ (ExpListComp pos e qs) =
+  groupNestS info $
+    ppPos info pos <>
+      (brackets $ ppExpPrec info False e <> dSpace <> text "| " <>
+                  ppQuals info qs)
+ppExpPrec info _ (ExpListEnum pos ef meth meto) =
+  groupNestS info $
+    ppPos info pos <>
+      (brackets $ ppExpPrec info False ef <> ppmeth <> dSpace <>
+                  text ".." <> ppmeto)
+  where
+  ppmeth = case meth of
+           Nothing -> nil
+           Just e -> fComma <> ppExpPrec info False e
+  ppmeto = case meto of
+           Nothing -> nil
+           Just e -> fSpace <> ppExpPrec info False e
+ppExpPrec info withPar (ExpBrack _pos e) =
+  ppExpPrec info withPar e
 ppExpPrec info _ (Exp2 pos id1 id2) = 
   ppPos info pos <> ppId info id1 <> text "." <> ppIdAsVar info id2
 ppExpPrec info withPar (PatAs pos id pat) =
@@ -732,6 +752,24 @@ ppGdPat info deli (e1,e2) =
   groupNestS info $
     text "| " <> ppExp info e1 <> space <> text deli <> dSpace <>
     ppExp info e2
+
+ppPatGdPat :: PPInfo a -> String -> ([Qual a], Exp a) -> Doc
+ppPatGdPat info deli (qs,e2) =
+  groupNestS info $
+    text "| " <> ppQuals info qs <> space <> text deli <> dSpace <>
+    ppExp info e2
+
+ppQuals :: PPInfo a -> [Qual a] -> Doc
+ppQuals info quals = sep fComma (map (ppQual info) quals)
+
+ppQual :: PPInfo a -> Qual a -> Doc
+ppQual info (QualPatExp pat exp) = 
+  groupNestS info $
+    ppPat info pat <> dSpace <> text "<- " <> ppExp info exp
+ppQual info (QualExp exp) =
+  ppExp info exp
+ppQual info (QualLet ds) = 
+  groupNestS info $ text "let" <> dSpace <> ppDecls info ds 
 
 
 {- various formatting functions for identifiers ---------------------------- -}

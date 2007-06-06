@@ -260,7 +260,7 @@ Possibly Stmt should be removed and its usage replaced everywhere by Qual.
 -}
 data Stmt id =
     StmtExp  (Exp id)		-- exp
-  | StmtBind (Exp id) (Exp id)	-- pat <- exp
+  | StmtBind (Pat id) (Exp id)	-- pat <- exp
   | StmtLet (Decls id)		-- let { decls ; }
 
 
@@ -282,7 +282,11 @@ data Exp id =  -- used both for expressions and patterns
                         -- if exp then exp else exp
     | ExpType           Pos (Exp id) [Context id] (Type id)
                         -- exp :: context => type
---- Above only in expressions, not in patterns
+-- next two are sugared lists; introduced for hpc-trans
+    | ExpListComp       Pos (Exp id) [Qual id]
+    | ExpListEnum       Pos (Exp id) (Maybe (Exp id)) (Maybe (Exp id))
+--- All above only in expressions, not in patterns
+--- Below in patterns + expressions.
     | ExpRecord	        (Exp id) [Field id]
     | ExpApplication    Pos [Exp id] -- always at least two elements?
     | ExpVar            Pos id
@@ -292,6 +296,8 @@ data Exp id =  -- used both for expressions and patterns
     | ExpConOp          Pos id       -- associativity; removed by rename
     | ExpLit            Pos (Lit Boxed)
     | ExpList           Pos [Exp id]
+-- bracketed expression mainly for hpc-trans (need accurate pos)
+    | ExpBrack          Pos (Exp id)
 --- after typechecker
     | Exp2              Pos id id  -- e.g.   Ord.Eq      or Eq.Int
 --- Below only in patterns
