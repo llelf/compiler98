@@ -80,6 +80,7 @@ data FixId a =
    FixCon Pos a
  | FixVar Pos a
 
+stripFixId :: FixId a -> a
 stripFixId (FixCon _ a) = a
 stripFixId (FixVar _ a) = a
 
@@ -337,6 +338,8 @@ data Lit boxed =
 instance (Eq b) => Eq (Lit b) where
      a == a' = litEqual a a'   -- litEqual needed in Symbols to force correct type in gofer
 
+-- seems to be natural equality, why not data Lit (deriving Eq)?
+litEqual :: Eq b => Lit b -> Lit b -> Bool
 litEqual (LitInteger  b i) (LitInteger  b' i') = i == i' && b == b'
 litEqual (LitRational b i) (LitRational b' i') = i == i' && b == b'
 litEqual (LitString   b s) (LitString   b' s') = s == s' && b == b'
@@ -349,7 +352,7 @@ litEqual _                  _            = False
 instance (Show b) => Show (Lit b) where
   showsPrec d lit = litshowsPrec d lit  -- litshowsPrec needed in Symbols to force correct type in gofer
 
-
+litshowsPrec :: (Show b) => Int -> Lit b -> ShowS
 litshowsPrec d (LitInteger  b i) = showParen (i<0) (showsPrec d i) . shows b
 litshowsPrec d (LitRational b i) = 
   -- this is a hack to show a rational in floating point representation

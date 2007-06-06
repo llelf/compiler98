@@ -29,10 +29,12 @@ data IE = IEnone | IEsel | IEsome | IEabs | IEall deriving (Eq,Show)
 --   IEsel  -> selected constructors/fields/methods
 --			 (is exported, despite defn below!)
 
+isExported :: IE -> Bool
 isExported IEnone = False
 isExported IEsel  = False
 isExported _      = True
 
+combIE :: IE -> IE -> IE
 combIE IEall  _     = IEall
 combIE _      IEall = IEall
 combIE IEnone i     = i
@@ -43,6 +45,7 @@ combIE _      i     = i
 
 -- Patch newtype for exports  (Its constructor must always be in the
 -- interface file, even if not visible in the importing module.)
+patchIE :: IE -> IE
 patchIE IEabs = IEsome
 patchIE ie    = ie
 
@@ -429,6 +432,7 @@ combInfo info info' =
 	then info
         else info'
 
+expI :: Info -> IE
 expI (InfoData    _ _ ie _ _)      = ie
 expI (InfoClass   _ _ ie _ _ _ _)  = ie
 expI (InfoVar     _ _ ie _ _ _)    = ie
@@ -440,6 +444,7 @@ expI (InfoDMethod _ _ _ _ _)       = IEnone
 expI info                          = IEnone  -- I get InfoUsed here !!!
 
 -- arity without context (Visible)
+arityVI :: Info -> Int
 arityVI (InfoVar _ _ _ _ _ (Just arity))             =  arity
 arityVI (InfoConstr _ _ _ _ (NewType _ _ _ nts) _ _) = length nts - 1
 arityVI (InfoMethod _ _ _ _ _ (Just arity) _)        = 1
@@ -448,6 +453,7 @@ arityVI (InfoDMethod _ _ _ (Just arity) _)           = arity
 arityVI (InfoName _ _ arity _ _)                     = arity --PHtprof
 
 -- arity with context
+arityI :: Info -> Int
 arityI (InfoVar _ _ _ _ (NewType _ _ ctx _) (Just arity))  = length ctx + arity
 arityI (InfoVar _ _ _ _ _                   (Just arity))  = arity
 					-- NR Generated after type deriving
@@ -463,6 +469,7 @@ arityI (InfoDMethod  _ _  (NewType _ _ ctx _) (Just arity) _)
 arityI (InfoName  unique tid arity ptid _)                 = arity --PHtprof
 arityI info  =  error ("arityI " ++ show info)
 
+arityIM :: Info -> Int
 arityIM (InfoMethod _ _ _ _ (NewType _ _ ctx _) (Just arity) _)
                                                            = length ctx + arity
 
