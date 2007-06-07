@@ -49,11 +49,18 @@ instance HasPos (Rhs a) where
     getPos (Unguarded e) = getPos e
     getPos (Guarded gdes) = 
       mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
+    getPos (PatGuard gdes) = 
+      mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
 
 instance HasPos (Stmt a) where
   getPos (StmtExp exp) = getPos exp
   getPos (StmtBind pat exp) = mergePos (getPos pat) (getPos exp)
   getPos (StmtLet decls) = getPos decls
+
+instance HasPos (Qual a) where
+  getPos (QualExp exp) = getPos exp
+  getPos (QualPatExp pat exp) = mergePos (getPos pat) (getPos exp)
+  getPos (QualLet decls) = getPos decls
 
 instance HasPos (Exp a) where
   getPos (ExpDict        exp)       = getPos exp

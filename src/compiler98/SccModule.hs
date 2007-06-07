@@ -116,10 +116,21 @@ defPats p = snd (sPats p)
 
 sRhs (Unguarded exp) = sUnit Unguarded `sAdd` sExp exp
 sRhs (Guarded gdexps) = sUnit Guarded `sAdd` sMap sGdExp gdexps
+sRhs (PatGuard gdexps) = sUnit PatGuard `sAdd` sMap sPatGdExp gdexps
 
 
 sGdExp (e1,e2) =
         sUnit pair `sAdd` sExp e1 `sAdd` sExp e2
+sPatGdExp (qs,e2) =
+        sUnit pair `sAdd` sQuals qs `sAdd` sExp e2
+
+sQuals [] = sUnit []
+sQuals (QualExp exp:r) = sUnit (\ e r -> QualExp e:r) `sAdd` sExp exp `sAdd` sQuals r
+sQuals (QualPatExp pat exp:r) = sUnit (\ e r p -> QualPatExp p e:r) `sAdd` sExp exp `sAdd` sQuals r `sSub` sPat pat
+sQuals (QualLet decls:r) =
+        let (decls',use) = sDecls decls
+            (r',ruse) = sQuals r
+        in (QualLet decls':r',(use `unionSet` ruse) `removeSet` defDecls decls)
 
 sExps es = sMap sExp es
 sPats es = sExps es

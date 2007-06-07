@@ -10,7 +10,7 @@ import NT
 import TypeLib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
               ,typeIdentDict,getIdent,getTypeErrors,typeError
               ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
-              ,getState,setState
+              ,getState,setState,msgPatGdExps,msgPatGd
               ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
               ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK)
 import TypeEnv(initEnv,envDecls,tvarsInEnv,envPats,envPat)
@@ -520,6 +520,11 @@ typeGdExp (g,e) =
   typeExp e >>>= \(e,eT) ->
   unitS ((g,e),eT)
 
+typePatGdExp (qs,e) =
+  mapS typeQual qs >>>= \ qs ->
+  typeExp e >>>= \ (e,eT) ->
+  unitS ((qs,e),eT)
+
 
 typeRhs (Unguarded e) = typeExp e >>>= \(e,eT) -> unitS (Unguarded e,eT)
 typeRhs (Guarded gdexps) =
@@ -528,7 +533,25 @@ typeRhs (Guarded gdexps) =
    (gdexps,gdexpsT) -> 
      typeUnifyMany (msgGdExps gdexps) gdexpsT >>>= \ t ->
      unitS (Guarded gdexps,t)
+typeRhs (PatGuard gdexps) =
+  mapS typePatGdExp gdexps >>>= \ gdexps ->
+  case unzip gdexps of
+   (gdexps,gdexpsT) -> 
+     typeUnifyMany (msgPatGdExps gdexps) gdexpsT >>>= \ t ->
+     unitS (PatGuard gdexps,t)
 
+typeQual (QualExp e) = 
+  typeExp e >>>= \ (e,eT) ->
+  typeUnifyBool e eT >>>= \ _ ->
+  unitS (QualExp e)
+typeQual (QualPatExp p e) =
+  typeExp e >>>= \ (e,eT) ->
+  typePat p >>>= \ (p,pT,eTVar) ->	-- MW: maybe look at typeAlt for clues
+  typeUnify (msgPatGd p e) pT eT >>>= \ _ ->
+  unitS (QualPatExp p e)
+typeQual (QualLet ds) =
+  typeDeclScc ds >>>= \ ds ->
+  unitS (QualLet ds)
 
 typeAlt (Alt pat13 rhs decls) =
   fixPat13 pat13	    >>>= \pat ->

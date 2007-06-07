@@ -474,10 +474,43 @@ renameFun (Fun pats rhs decls') =
 renameRhs (Unguarded exp) = unitS Unguarded =>>> renameExp exp
 renameRhs (Guarded gdExps) = 
   unitS Guarded =>>> mapS renameGuardedExp gdExps
-
+renameRhs (PatGuard gdExps) = 
+  unitS PatGuard =>>> mapS renamePatGuardExp gdExps
 
 renameGuardedExp (guard,exp) =
     unitS pair =>>> renameExp guard =>>> renameExp exp
+
+renamePatGuardExp (quals,exp) =
+    pushScope >>> renameQuals exp quals >>> popScope
+
+renameQuals rhs [] =
+  renameExp rhs >>>= \ rhs ->  unitS ([],rhs)
+renameQuals rhs (QualExp exp:r) =
+  renameExp exp >>>= \ exp ->
+  renameQuals rhs r >>>= \ (r,rhs) ->
+  unitS (QualExp exp:r, rhs)
+renameQuals rhs (QualPatExp pat exp:r) =
+       renameExp exp >>>= \ exp ->
+       pushScope >>>
+       bindPat Var pat >>>
+       renameExp pat >>>= \ pat ->
+       renameQuals rhs r >>>= \ (r, rhs) ->
+       unitS (QualPatExp pat exp:r, rhs) >>>
+       popScope
+renameQuals rhs (QualLet decls':r) =
+  if null r
+  then renameExp rhs >>>= \ rhs ->
+       renameError ("Let statement at " ++ strPos (getPos decls')
+                    ++ " can not end pattern guard")	-- dubious of this
+                   ([QualExp (PatWildcard (getPos decls'))], rhs)
+  else
+    let decls = groupFun decls'
+    in pushScope >>>
+	bindDecls decls >>>
+	renameDecls decls >>>= \ decls ->
+	renameQuals rhs r >>>= \ (r, rhs) ->
+        unitS (QualLet decls:r, rhs) >>>
+       popScope
 
 
 renameDeclAlt (Alt  pat rhs decls') =

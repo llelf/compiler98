@@ -15,7 +15,7 @@ type2NT transforms type from syntax tree into interal type.
 module Extract(IntState,Decls,extract,type2NT) where
 
 import Syntax(Type(..),Decls(..),Decl(..),Fun(..),Rhs(..),Exp(..),Stmt(..)
-             ,Alt(..),Field(..))
+             ,Alt(..),Field(..),Qual(..))
 import IntState(IntState,lookupIS,depthI,strIS,addError,superclassesI
                ,instancesI,updVarArity,updVarNT)
 import NT(NT(..),NewType(..),mkNTvar,mkNTcons)
@@ -134,11 +134,15 @@ extractFun (Fun pats rhs decls) = extractRhs rhs >>> extractDecls decls
 extractRhs :: Rhs Id -> Reduce IntState IntState
 extractRhs (Unguarded exp) = extractExp exp
 extractRhs (Guarded gdExps) = mapR extractGuardedExp gdExps
-
+extractRhs (PatGuard gdExps) = mapR extractPatGuardExp gdExps
 
 extractGuardedExp :: (Exp Id,Exp Id) -> Reduce IntState IntState
 extractGuardedExp (guard,exp) =
   extractExp guard >>> extractExp exp
+
+extractPatGuardExp :: ([Qual Id],Exp Id) -> Reduce IntState IntState
+extractPatGuardExp (quals,exp) =
+  mapR extractQual quals >>> extractExp exp
 
 
 extractDeclAlt :: Alt Id -> IntState -> IntState
@@ -176,11 +180,17 @@ extractField (FieldExp _ _ exp) = extractExp exp
 extractField (FieldPun _ _) = unitR
 
 extractStmt :: Stmt Id -> Reduce IntState IntState
-
 extractStmt (StmtExp  exp) = extractExp exp
 extractStmt (StmtBind pat exp) = 
         mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
 	extractExp exp
 extractStmt (StmtLet decls) = extractDecls decls
+
+extractQual :: Qual Id -> Reduce IntState IntState
+extractQual (QualExp exp) = extractExp exp
+extractQual (QualPatExp pat exp) = 
+        mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
+	extractExp exp
+extractQual (QualLet decls) = extractDecls decls
 
 {- End Module Extract -------------------------------------------------------}

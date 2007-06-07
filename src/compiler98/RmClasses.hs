@@ -95,5 +95,7 @@ extendRhs :: Pos -> [Exp Id] -> Rhs Id -> Rhs Id
 extendRhs pos args (Unguarded exp) = Unguarded $ ExpApplication pos (exp : args)
 extendRhs pos args (Guarded gdexps) = 
   Guarded $ map (\(g,e) -> (g,ExpApplication pos (e:args))) gdexps
+extendRhs pos args (PatGuard gdexps) = 
+  PatGuard $ map (\(qs,e) -> (qs,ExpApplication pos (e:args))) gdexps
   
 {- End RmClasses ------------------------------------------------------------}

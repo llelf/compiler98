@@ -8,7 +8,8 @@ module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
                ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
                ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
                ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK
-               ,newIdent,getState,setState,typeOfMain) where
+               ,newIdent,getState,setState,typeOfMain
+               ,msgPatGdExps,msgPatGd) where
 
 import NT
 import TypeEnv(lookupEnv)
@@ -40,8 +41,14 @@ msgExpType pos err =
 msgGdExps gdexps err =
   "Type error " ++ err ++ "\nwhen unifying multiple guarded expressions at " ++ (strPos . getPos . head) gdexps ++ ".\n"
 
+msgPatGdExps gdexps err =
+  "Type error " ++ err ++ "\nwhen unifying pattern guarded expressions at " ++ (strPos . getPos . head) gdexps ++ ".\n"
+
 msgBool exp err =
   "Type error " ++ err ++ "\nwhen trying to unify expressions at " ++ strPos (getPos exp) ++ " with Bool.\n"
+
+msgPatGd pat exp err =
+  "Type error " ++ err ++ "\nwhen trying to unify expression at " ++ strPos (getPos exp) ++ "\nwith pattern at "++ strPos (getPos pat) ++ "\nin pattern guard.\n"
 
 msgAltPats alts err =
   "Type error " ++ err ++ "\nwhen trying to unify pattern part of alternatives at " ++ (strPos . getPos . head) alts ++ ".\n"

@@ -271,6 +271,7 @@ fixFuns true (Fun _ rhs decls : rest) def =
 fixRhs :: Id -> Rhs Id -> CaseFun PosExp -> CaseFun PosExp
 fixRhs true (Unguarded e) def = unitS0 >>> caseExp e
 fixRhs true (Guarded gdexps) def = fixGdExp true gdexps def
+fixRhs true (PatGuard gdexps) def = fixPatGdExp true gdexps def
 
 
 fixGdExp :: Id -> [(ExpI,ExpI)] -> CaseFun PosExp -> CaseFun PosExp
@@ -288,6 +289,8 @@ fixGdExp true ((ExpCon pos c,e):r) def | c == true =
 fixGdExp true ((g,e):r) def = 
   unitS (PosExpIf noPos) =>>> caseExp g =>>> caseExp e =>>> fixGdExp true r def
 
+fixPatGdExp :: Id -> [([Qual Id],ExpI)] -> CaseFun PosExp -> CaseFun PosExp
+fixPatGdExp = undefined	-- MW ... to complete
 
 --------  The core 
 

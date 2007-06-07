@@ -9,8 +9,9 @@ import IdKind
 import TokenId
 import NT
 import Info
+import Id
 
-type ExpI = Exp Int
+type ExpI = Exp Id
 
 type Down = (ExpI -> ExpI
 	    ,ExpI
