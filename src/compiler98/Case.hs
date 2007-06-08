@@ -246,15 +246,15 @@ matchLambda pos pats exp =
    caseNoMatch ("Pattern match failure in lambda at " ++ strPos pos) 
      pos >>>= \ nomatch ->
    let vars = map ( \ (p,i) -> (getPos p,i) ) ipats
-   in match (map (uncurry PosVar) vars) [Fun pats (Unguarded exp) 
-        (DeclsScc [])] nomatch >>>= \ exp ->
+   in match (map (uncurry PosVar) vars)
+            [Fun pats (Unguarded exp) (DeclsScc [])] nomatch >>>= \ exp ->
       unitS (PosExpLambda pos [] vars exp)
 
 
 matchCase :: Pos -> PosExp -> [Alt Id] -> CaseFun PosExp 
 matchCase pos cexp alts = 
   caseNoMatch ("No matching alternative in case expression at " ++ strPos pos)
-    pos >>>= \ nomatch ->
+              pos >>>= \ nomatch ->
   match [cexp] (map alt2fun alts) nomatch
 
 --------------------  Help functions
@@ -290,7 +290,26 @@ fixGdExp true ((g,e):r) def =
   unitS (PosExpIf noPos) =>>> caseExp g =>>> caseExp e =>>> fixGdExp true r def
 
 fixPatGdExp :: Id -> [([Qual Id],ExpI)] -> CaseFun PosExp -> CaseFun PosExp
-fixPatGdExp = undefined	-- MW ... to complete
+fixPatGdExp true [] def = def
+fixPatGdExp true ((qs,exp):r) def =
+  fixQuals qs exp (fixPatGdExp true r def)
+
+fixQuals [] good bad = caseExp good
+fixQuals (QualExp (ExpApplication pos [x]): r) good bad =
+  fixQuals (QualExp x: r) good bad
+fixQuals (QualExp e: r) good bad =
+  unitS (PosExpIf noPos) =>>> caseExp e =>>> fixQuals r good bad =>>> bad
+fixQuals (QualPatExp p e: r) good bad =
+  caseUnique >>>= \ ipat ->
+  let pos = getPos p
+      var = (pos, ipat) in
+  match [uncurry PosVar var] funs bad >>>= \ rhs ->
+    caseExp e >>>= \ e ->
+    unitS (PosExpLet pos [(ipat,PosLambda pos [] [] e)] rhs)
+ -- unitS (PosExpApp pos [ PosExpLambda pos [] [var] rhs , e ])
+  where funs = [Fun [p] (PatGuard [(r,good)]) (DeclsScc [])]
+fixQuals (QualLet ds: r) good bad =
+  caseDecls ds (fixQuals r good bad)
 
 --------  The core 
 
@@ -314,6 +333,7 @@ match vars funs def =
                     else
                        matchMany vars xs def
 
+matchMany :: [PosExp] -> [Pattern] -> CaseFun PosExp -> CaseFun PosExp
 matchMany vars [] def = def
 matchMany vars (x:xs) def = matchOne vars x (matchMany vars xs def) 
 
@@ -335,6 +355,7 @@ matchOne :: [PosExp]
          -> (PosExp,(IntState,Tree (TokenId,Int)))  
 -}
 
+matchOne :: [PosExp] -> Pattern -> CaseFun PosExp -> CaseFun PosExp
 matchOne (ce:ces) (PatternVar x) def =
   case unzip x of
     (pats,funs) ->
