@@ -1,5 +1,0 @@
-This directory contains a literate version of the nhc98 runtime system
-kernel. Broadly speaking it is intended to be a more understandable
-version of the Kernel directory and ultimately to replace it.  At present
-many features of the Kernel are not supported in this version (most
-notably profiling).
