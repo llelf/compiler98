@@ -1,57 +1,14 @@
-The basic source code of the nhc98 Haskell compiler, libraries, and runtime
-system is
+The basic source code of the nhc98/yhc Haskell compiler, libraries, and
+runtime system is
     (c) copyright to Niklas Rojemo, 1991-1998.
-Many parts of the nhc98 compiler, libraries, and runtime system were
-contributed or modified by:
+Many parts of the nhc98/yhc compiler were contributed or modified by:
     Malcolm Wallace, Jan Sparud, David Wakeling,
     Colin Runciman, Phil Hassall, Olaf Chitil, Thomas Nordin,
+    Tom Shackell, Neil Mitchell, Dimitry Golubovsky, Stefan O'Rear
 and are (c) copyright to them, their respective institutions, or
-funding bodies, 1996-2004.  The nhc98 compiler is distributed under
-the terms of the licence below.
+funding bodies, 1996-2007.
 
-The core of the hmake tool is
-(c) copyright to Thomas Hallgren, 1991-1997.
-(Code is incorporated from the earlier tools hbcmake and nhc13make.)
-Many modifications to hmake are
-(c) copyright to Malcolm Wallace, 1998-2004.
-Hmake is distributed under the terms of the licence below.
-
-The hmake interactive tool is
-(c) copyright to Malcolm Wallace, 2000.
-Hmake interactive is distributed under the terms of the licence below.
-
-The hmake-config tool is
-(c) copyright to Malcolm Wallace, 2002-2004.
-Hmake-config is distributed under the terms of the licence below.
-
-The hp2graph tool is
-(c) copyright to David Wakeling and Niklas Rojemo, 1991-1996.
-Hp2graph is distributed under the terms of the licence below.
-
-The cpphs tool is
-(c) copyright to Malcolm Wallace 2004.
-Cpphs is distributed under the terms of the GNU LGPL.
-
-The HOOD Observe library and graphical browser are
-(c) copyright to Andy Gill, 2000.
-The HOOD graphical browser incorporates open source Java components
-(c) copyright MicroStar Inc, 1999.  (Please read their separate licences.)
-
-The Random library is copied direct from Hugs, which has a separate
-BSD-style licence.  That implementation of Random is
-(c) copyright Lennart Augustsson, with modifications by Sigbjorn Finne.
-Some parts of the implementation of the Time library were also
-contributed by Lennart.
-
-The hierarchical libraries base package is
-(c) copyright the University of Glasgow, and is distributed under
-a separate BSD-style licence.
-
-Other hierarchical libraries packages are
-(c) copyright their respective authors, and are distributed
-under varying licence conditions.  Please see individual package
-documentation for details.
-
+The nhc98/yhc compiler is distributed under the terms of the licence below.
 
 The development of nhc98 (and its predecessor nhc13) has been supported
 by NUTEK (Sweden), Canon Research Europe Ltd., EPSRC (UK), and the
