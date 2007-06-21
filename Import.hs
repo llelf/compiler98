@@ -28,7 +28,17 @@ Returns unpacked module name, filename of interface file and its content.
 -}
 openImport :: Flags -> PackedString -> Map.Map String FilePath -> IO (String,String,String)
 
-openImport flags mrps =
+openImport flags mrps hiDeps =
+    do let fstr = hiFile
+       finput <- tryReadFile "import" fstr
+       if sImport flags 
+          then hPutStr stderr ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n") 
+          else return ()
+       return (mstr, fstr, finput)             
+    where 
+    mstr = (reverse . unpackPS)  mrps
+    hiFile = fromJust (Map.lookup mstr hiDeps)
+{-
  catch (do
          (fstr,finput) <- readFirst filenames 
          if sImport flags 
@@ -44,6 +54,7 @@ openImport flags mrps =
   mstr = (reverse . unpackPS)  mrps
   filenames = fixImportNames isUnix (sHiSuffix flags) mstr 
                 (if isPrelude mstr then preludes else includes) 
+-}
 
 
 {-

@@ -128,3 +128,13 @@ getLocations modu = reverse $ f [] modu
 
 concatMapM :: Monad m => (a -> m [b]) -> [a] -> m [b]
 concatMapM f xs = liftM concat $ mapM f xs
+
+
+getDirectoryList :: FilePath -> IO [String]
+getDirectoryList path = do x <- getDirectoryContents path
+                           let xfull = filter (not . isFakeDirectory) x
+                           filterM (\a -> doesDirectoryExist $ combine path a) xfull
+
+isFakeDirectory :: FilePath -> Bool
+isFakeDirectory x = x == "." || x == ".."
+
