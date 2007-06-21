@@ -27,7 +27,7 @@ varExpT trans e@(PosVar pos v) =
 varExpT trans e =
  caseUnique >>>= \ v ->
  let pos = getPos e
- in unitS (trans,v,PosExpLet pos [(v,PosLambda pos [] [] e)],PosVar pos v)
+ in unitS (trans,v,PosExpLet False pos [(v,PosLambda pos LamFLIntro [] [] e)],PosVar pos v)
 
 varExp :: PosExp -> CaseFun (Int,PosExp->PosExp,PosExp)
 varExp  e@(PosVar pos v) =
@@ -35,7 +35,7 @@ varExp  e@(PosVar pos v) =
 varExp  e =
  caseUnique >>>= \ v ->
  let pos = getPos e
- in unitS (v,PosExpLet pos [(v,PosLambda pos [] [] e)],PosVar pos v)
+ in unitS (v,PosExpLet False pos [(v,PosLambda pos LamFLIntro [] [] e)],PosVar pos v)
 
 getTrans :: ExpI -> [Int]
 getTrans (ExpVar _ ident) = [ident]
@@ -46,21 +46,22 @@ isIf :: ExpI -> Bool
 isIf p = not (isVar p || isCon p || isExpInt p || isNK p || isExpIrr p)
 
 data Pattern =
-    PatternVar [(Exp Int,Fun Int)]
-  | PatternCon [(Exp Int,Fun Int)]
-  | PatternInt [(Exp Int,Fun Int)]
-  | PatternNK  [(Exp Int,Fun Int)]
-  | PatternIf  [(Exp Int,Fun Int)]
-  | PatternIrr  (Exp Int,Fun Int)
+    PatternVar [(Exp Id,Fun Id)]
+  | PatternCon [(Exp Id,Fun Id)]
+  | PatternInt Bool [(Exp Id,Fun Id)]
+  | PatternNK  [(Exp Id,Fun Id)]
+  | PatternIf  [(Exp Id,Fun Id)]
+  | PatternIrr  (Exp Id,Fun Id)
 
 patternTypes :: [(ExpI->Bool ,[(ExpI,Fun Int)] -> [Pattern])]
 patternTypes =
-	[(isVar,(:[]).PatternVar)
-	,(isCon,(:[]).PatternCon)
-	,(isExpInt,(:[]).PatternInt)
-	,(isNK,(:[]).PatternNK)
-	,(isExpIrr,map PatternIrr)
-	,(isIf,(:[]).PatternIf)]
+        [(isVar,(:[]).PatternVar)
+        ,(isCon,(:[]).PatternCon)
+        ,(isExpInt,(:[]).PatternInt True)
+        ,(isExpChar,(:[]).PatternInt False)
+        ,(isNK,(:[]).PatternNK)
+        ,(isExpIrr,map PatternIrr)
+        ,(isIf,(:[]).PatternIf)]
 
 splitPattern :: (ExpI,ExpI) -> IntState -> [Fun Int] -> [Pattern]
 splitPattern list state funs = 
@@ -83,10 +84,10 @@ simplifyPat list state (ExpList pos ls) =
 	  [] -> fst list
 	  (x:xs) -> ExpApplication pos [snd list,x,ExpList pos xs]
 simplifyPat list state (ExpLit pos (LitString b str)) =
-	case str of
-	  [] -> fst list
-	  (x:xs) -> ExpApplication pos [snd list, ExpLit pos (LitInt b (fromEnum x)),ExpLit pos (LitString b xs)]
-simplifyPat list state (ExpLit pos (LitChar b i)) = ExpLit pos (LitInt b (fromEnum i))
+        case str of
+          [] -> fst list
+          (x:xs) -> ExpApplication pos [snd list, ExpLit pos (LitInt b (fromEnum x)),ExpLit pos (LitString b xs)]
+-- simplifyPat list state (ExpLit pos (LitChar b i)) = ExpLit pos (LitInt b (fromEnum i))
 simplifyPat list state (PatAs pos ident pat) = PatAs pos ident (simplifyPat list state pat)
 simplifyPat list state (ExpApplication pos (ExpApplication _ es':es)) = ExpApplication pos  (map (simplifyPat list state) (es'++es))
 simplifyPat list state (ExpDict pat) = simplifyPat list state pat

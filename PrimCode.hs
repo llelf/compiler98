@@ -14,6 +14,14 @@ import SysDeps(PackedString,packString)
 import IdKind
 import Id(Id)
 
+type PrimDown = ((Bool, Bool, Bool), Bool, Bool, Id)
+type PrimMonad a b = State PrimDown
+                           (IntState, [(a, PosLambda)])
+                           b
+                           (IntState, [(a, PosLambda)])
+
+
+
 ------- (true if bool == Int, true if && || not is primitives,true if )
 
 primCode :: (Bool,Bool,Bool) -- bool, logic, always
@@ -29,10 +37,9 @@ primCode flags magic tidFun state code =
     (bs,(state,_)) -> (concat bs,state)
   
 
-primBindingTop :: (a,PosLambda) 
-               -> ((Bool,Bool,Bool),Bool,b,Id) 
-               -> (IntState,[(a,PosLambda)]) 
-               -> ([(a,PosLambda)],(IntState,[c]))
+
+primBindingTop :: (a,PosLambda)
+               -> PrimMonad a [(a,PosLambda)]
 
 primBindingTop (fun,lambda) =
     primStrict True >=>
@@ -40,10 +47,13 @@ primBindingTop (fun,lambda) =
     primTop >>>= \ bs ->
     unitS ((fun,lambda):bs)
 
+primBinding :: (Id, PosLambda)
+            -> PrimMonad a (Id, PosLambda)
 primBinding (fun,lambda) =
   primLambda lambda >>>= \ lambda ->
     unitS (fun,lambda)
 
+primBindings :: [PosBinding] -> PrimMonad a [PosBinding]
 primBindings bindings =
   primBindings' [] (reverse bindings)
  where
@@ -52,26 +62,29 @@ primBindings bindings =
     primBinding b >>>= \ (b) ->
     primBindings' (b:acc) bs
 
-primLambda (PosLambda pos free args@(_:_) exp) =
+
+primLambda :: PosLambda -> PrimMonad a PosLambda
+primLambda (PosLambda pos int free args@(_:_) exp) =
   primStrict True >=>  -- will be lifted later
   primExp exp >>>= \ (exp) ->
-  unitS (PosLambda pos free args exp)
-primLambda (PosLambda pos free args exp) =
+  unitS (PosLambda pos int free args exp)
+primLambda (PosLambda pos int free args exp) =
   primExp exp >>>= \ (exp) ->
-  unitS (PosLambda pos free args exp)
+  unitS (PosLambda pos int free args exp)
 primLambda l@(PosPrimitive pos fun) =
   unitS l
-primLambda l@(PosForeign pos fun t c ie) =
+primLambda l@(PosForeign pos fun ar t c ie) =
   unitS l
 
-primExp (PosExpLambda pos envs args exp) = 
+primExp :: PosExp -> PrimMonad a PosExp
+primExp (PosExpLambda pos int envs args exp) =
   primStrict True >=>  -- will be lifted later
   primExp exp >>>= \ exp ->
-  unitS (PosExpLambda pos envs args exp)
-primExp (PosExpLet pos bindings exp) =
+  unitS (PosExpLambda pos int envs args exp)
+primExp (PosExpLet rec pos bindings exp) =
   primExp exp >>>= \ exp ->
   (primStrict False >=> primBindings bindings) >>>= \ (bindings) ->
-  unitS (PosExpLet pos bindings exp)
+  unitS (PosExpLet rec pos bindings exp)
 primExp (PosExpCase pos exp alts) =
   primStrict True >=> -- If a case is lazy then lift it
   mapS primAlt alts >>>= \ alts ->
@@ -83,12 +96,12 @@ primExp (PosExpFatBar b exp1 exp2) =
   unitS (PosExpFatBar b exp1 exp2)
 primExp (PosExpFail) =
   unitS (PosExpFail)
-primExp (PosExpIf  pos exp1 exp2 exp3) =
+primExp (PosExpIf  pos g exp1 exp2 exp3) =
   primStrict True >=> -- If an contitional is lazy then lift it
   primExp exp2 >>>= \ exp2 ->
   primExp exp3 >>>= \ exp3 ->
   primExp exp1 >>>= \ exp1 ->
-  unitS (PosExpIf pos exp1 exp2 exp3)
+  unitS (PosExpIf pos g exp1 exp2 exp3)
 primExp (PosExpApp apos (PosVar pos fun:es)) =
 --  (primStrict False >=> mapS primExp es) >>>= \ es ->
   primExpand pos fun es
@@ -101,12 +114,13 @@ primExp (PosVar pos fun) =
 primExp e =
   unitS e
 
-primAlt (PosAltCon pos con args exp) = 
+primAlt :: PosAlt -> PrimMonad a PosAlt
+primAlt (PosAltCon pos con args exp) =
   primExp exp >>>= \ (exp) ->
   unitS (PosAltCon pos con args exp)
-primAlt (PosAltInt pos int      exp) =
+primAlt (PosAltInt pos int b  exp) =
   primExp exp >>>= \ (exp) ->
-  unitS (PosAltInt pos int exp)
+  unitS (PosAltInt pos int b exp)
 
 ---
 
@@ -114,24 +128,31 @@ strictPrim SEQ = True : repeat False
 strictPrim _ = repeat True
 
 
-primPrimitive pos prim arity es =
+primPrimitive :: Pos -> Prim -> Id -> Int -> [PosExp]
+              -> PrimMonad a PosExp
+primPrimitive pos prim fun arity es =
   mapS ( \ (s,e) -> primStrict s >=> primExp e) (zip (strictPrim prim) es) >>>= \ es ->
   let need = arity - (length es)
   in
     if need <= 0 then
       case splitAt arity es of
-	(args,eargs) -> unitS (posExpApp pos (PosExpThunk pos (PosPrim pos prim:args) : eargs))
+        (args,eargs) -> unitS (posExpApp pos (PosExpThunk pos False (PosPrim pos prim fun:args) : eargs))
     else
       mapS ( \ _ -> primUnique ) (take need (repeat '_')) >>>= \ newargs ->
-      unitS (PosExpLambda pos [] (map (pair pos) newargs) (PosExpThunk pos (PosPrim pos prim : es ++ map (PosVar pos) newargs)))
-   
+      unitS (PosExpLambda pos True [] (map (pair pos) newargs) (PosExpThunk pos False (PosPrim pos prim fun : es ++ map (PosVar pos)
+             newargs)))
 
+
+primApp :: Pos -> Id -> [PosExp]
+        -> PrimMonad a PosExp
 primApp pos fun es =
  (primStrict False >=> mapS primExp es) >>>= \ es ->
  unitS (posExpApp pos (PosVar pos fun:es))
 
 -- All args are already processed
 
+primExpand :: Pos -> Id -> [PosExp]
+           -> PrimMonad a PosExp
 primExpand pos fun es =
   primFlags >>>= \ ((bool,logic,always),magic,strict) ->
   primTidArity fun >>>= \ (arity,tid) ->
@@ -143,36 +164,36 @@ primExpand pos fun es =
       (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
 		| modcls == rpsPrelude && modtyp == rpsPrelude ->
         if cls == rpsEq then
-	  case (primOp bool typ,eqPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos (prim op) arity es
+          case (primOp bool typ,eqPrim met) of
+            (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
             _ -> primApp pos fun es
         else if cls == rpsOrd then
-	  case (primOp bool typ,ordPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos (prim op) arity es
+          case (primOp bool typ,ordPrim met) of
+            (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
             _ -> primApp pos fun es
         else if cls == rpsNum then
-	  case (primOp bool typ,numPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos (prim op) arity es
+          case (primOp bool typ,numPrim met) of
+            (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
             _ -> primApp pos fun es
-	else if cls == rpsIntegral then
-	  case (primOp bool typ,integralPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos prim arity es
-	    _ -> primApp pos fun es
+        else if cls == rpsIntegral then
+          case (primOp bool typ,integralPrim met) of
+            (Just op,Just prim) -> primPrimitive pos prim fun arity es
+            _ -> primApp pos fun es
         else if cls == rpsEnum then
-	  if typ == rpsChar &&
-	     (met == rpstoEnum || met == rpsfromEnum) then
-	    case es of
-	      (f:[]) -> unitS f
-	      [] -> primIdent pos
-          else 
-	    primApp pos fun es
+          if typ == rpsChar &&
+             (met == rpstoEnum || met == rpsfromEnum) then
+            case es of
+              (f:[]) -> unitS f
+              [] -> primIdent pos
+          else
+            primApp pos fun es
         else if cls == rpsFloating then
-	  case (primOp bool typ,floatingPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos (prim op) arity es
+          case (primOp bool typ,floatingPrim met) of
+            (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
             _ -> primApp pos fun es
         else if cls == rpsFractional then
-	  case (primOp bool typ,fractionalPrim met) of
-	    (Just op,Just prim) -> primPrimitive pos (prim op) arity es
+          case (primOp bool typ,fractionalPrim met) of
+            (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
             _ -> primApp pos fun es
      -- else if cls == rpsEval then
      --   case (evalPrim met) of
@@ -181,9 +202,9 @@ primExpand pos fun es =
         else 
           primApp pos fun es
 
-      (Qualified3 (Visible modcls) underscore (Visible met)) 
+      (Qualified3 _ (Visible modcls) underscore (Visible met))
           | modcls == rpsPrelude && underscore == t_underscore && met == rpsseq ->
-        primPrimitive pos SEQ 2 (dropDicts es)
+        primPrimitive pos SEQ fun 2 (dropDicts es)
 
   --  (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
   --      | modcls == rpsPrelude && cls == rpsEval && met == rpsseq ->
@@ -191,28 +212,32 @@ primExpand pos fun es =
           
       (Qualified mod met) | mod == rpsPrelude ->
              if met == rps_eqFloat then
-	  primPrimitive pos (CMP_EQ OpFloat) 2 es
+          primPrimitive pos (CMP_EQ OpFloat) fun 2 es
         else if met == rps_eqDouble then
-	  primPrimitive pos (CMP_EQ OpDouble) 2 es
-        else if met == rps_hGetStr then
-	  primPrimitive pos HGETS 1 es
+          primPrimitive pos (CMP_EQ OpDouble) fun 2 es
+{-        else if met == rps_hGetStr then
+          primPrimitive pos HGETS 1 es
         else if met == rps_hGetChar then
-	  primPrimitive pos HGETC 1 es
+          primPrimitive pos HGETC 1 es
         else if met == rps_hPutChar then
-	  primPrimitive pos HPUTC 2 es
+          primPrimitive pos HPUTC 2 es -}
+        else if met == rps_unpackString then
+          primPrimitive pos STRING fun 1 es
+        else if met == rps_catch then
+          primPrimitive pos CATCH fun 1 es
         else if met == rps_fromEnum then
-	  primPrimitive pos ORD 1 es
-        else if met == rps_toEnum then
-	  primPrimitive pos CHR 1 es
+          primPrimitive pos ORD fun 1 es
+{-      else if met == rps_toEnum then
+          primPrimitive pos CHR 1 es -}
         else if met == rpsseq then
-	  primPrimitive pos SEQ 2 (dropDicts es)
-        else if logic then 
+          primPrimitive pos SEQ fun 2 (dropDicts es)
+        else if logic then
                if met == rpsAndAnd then
-  	    primPrimitive pos AND 2 es
+            primPrimitive pos AND fun 2 es
           else if met == rpsOrOr then
-	    primPrimitive pos OR 2 es
+            primPrimitive pos OR fun 2 es
           else if met == rpsnot then
-	    primPrimitive pos NOT 1 es
+            primPrimitive pos NOT fun 1 es
           else
             primApp pos fun es
         else
@@ -223,22 +248,28 @@ primExpand pos fun es =
 
 -----------------
 
+primTop :: PrimMonad a [(a,PosCode.PosLambda)]
 primTop down up@(state,bs) =
     (bs,(state,[]))
 
+primUnique :: PrimMonad a Id
 primUnique down up@(state,bs) =
   case uniqueIS state of
     (u,state) -> (u,(state,bs))
 
+primIdent :: Pos -> PrimMonad a PosExp
 primIdent pos down@(flags,magic,strict,ident) up =
   (PosVar pos ident,up)
 
+primFlags :: PrimMonad a ((Bool,Bool,Bool),Bool,Bool)
 primFlags down@(flags,magic,strict,ident) up =
   ((flags,magic,strict),up)
 
+primStrict :: Bool -> PrimMonad a PrimDown
 primStrict s down@(flags,magic,strict,ident) up =
   ((flags,magic,s,ident),up)
 
+primTidArity :: Id -> PrimMonad a (Int, TokenId)
 primTidArity i down up@(state,bs) =
   case lookupIS state i of
     Just info -> ((arityIS state i,tidI info),up)	-- count ctx
@@ -250,6 +281,7 @@ impRev str = packString (reverse str)
 
 --------------
 
+rpsEq, rpsOrd, rpsNum, rpsFloating, rpsIntegral, rpsFractional, rpsEnum :: PackedString
 rpsEq  = impRev "Eq"
 rpsOrd = impRev "Ord"
 rpsNum = impRev "Num"
@@ -259,9 +291,12 @@ rpsFractional = impRev "Fractional"
 rpsEnum = impRev "Enum"
 --rpsEval = impRev "Eval"		-- Removed in Haskell 98
 
+rps_eqFloat, rps_eqDouble :: PackedString
 rps_eqFloat = impRev "_eqFloat"
 rps_eqDouble = impRev "_eqDouble"
 
+rpsAndAnd, rpsOrOr, rpsnot, rps_fromEnum, rps_toEnum, rps_hGetStr, rps_hGetChar, rps_hPutChar
+ ,rps_unpackString :: PackedString
 rpsAndAnd = impRev "&&"
 rpsOrOr = impRev "||"
 rpsnot = impRev "not"
@@ -270,19 +305,24 @@ rps_toEnum = impRev "_toEnum"
 rps_hGetStr  = impRev "_hGetStr"
 rps_hGetChar = impRev "_hGetChar"
 rps_hPutChar = impRev "_hPutChar"
+rps_unpackString = impRev "_unpackString"
+rps_catch = impRev "_catch"
 
 --------------
 
+eqPrim :: PackedString -> Maybe (PrimOp -> Prim)
 eqPrim met =
        if met == rpseq then Just CMP_EQ
   else if met == rpsne then Just CMP_NE
   else Nothing
 
+rpseq, rpsne :: PackedString
 rpseq = impRev "=="
 rpsne = impRev "/="
 
 --------------
 
+ordPrim :: PackedString -> Maybe (PrimOp -> Prim)
 ordPrim met =
        if met == rpslt then Just CMP_LT
   else if met == rpsle then Just CMP_LE
@@ -290,6 +330,7 @@ ordPrim met =
   else if met == rpsge then Just CMP_GE
   else Nothing
 
+rpslt, rpsle, rpsgt, rpsge :: PackedString
 rpslt = impRev "<"
 rpsle = impRev "<="
 rpsgt = impRev ">"

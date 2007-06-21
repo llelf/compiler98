@@ -24,17 +24,19 @@ failExp (PosExpCase pos exp alts) =
 failExp (PosExpFatBar b exp1 exp2)     = unitS b
 failExp (PosExpFail)                   = unitS True
      -- Might need to check if exp1 is True, in which case there can be no fail
-failExp (PosExpIf  pos exp1 exp2 exp3) = failExp exp3 -- the fail is always in the else branch
-failExp (PosExpLet pos bindings exp)   = failExp exp -- used in lhs-patterns
+failExp (PosExpIf  pos g exp1 exp2 exp3) = failExp exp3 -- the fail is always in the else branch
+failExp (PosExpLet rec pos bindings exp)   = failExp exp -- used in lhs-patterns
 failExp e = unitS False
 
-failAlt (PosAltCon pos con args exp) = failExp exp 
-failAlt (PosAltInt pos int      exp) = failExp exp
+failAlt :: PosAlt -> d -> (IntState, b) -> (Bool, (IntState, b))
+failAlt (PosAltCon pos con args exp) = failExp exp
+failAlt (PosAltInt pos int b    exp) = failExp exp
 
-anyMissing (PosAltInt pos int exp:alts) down up@(state,_) = (True,up)
+anyMissing :: [PosAlt] -> t -> (IntState, b) -> (Bool, (IntState, b))
+anyMissing (PosAltInt pos int b exp:alts) down up@(state,_) = (True,up)
 anyMissing (PosAltCon pos con args exp:alts) down up@(state,_) =
-  let all = ( constrsI . dropJust . lookupIS state 
-            . belongstoI . dropJust . lookupIS state
+  let all = ( constrsI . fromJust . lookupIS state
+            . belongstoI . fromJust . lookupIS state
             ) con
       has = con : map ( \ (PosAltCon pos con args exp) -> con ) alts
       missing = (not . null . filter (`notElem` has)) all
@@ -44,8 +46,8 @@ anyMissing (PosAltCon pos con args exp:alts) down up@(state,_) =
 ---
 
 singleVars (ExpApplication _ (ExpCon _ con:es)) down up@(state,_) =
-  ( if ( (1==) . length . constrsI . dropJust . lookupIS state 
-                   . belongstoI . dropJust . lookupIS state) con -- only one constructor
+  ( if ( (1==) . length . constrsI . fromJust . lookupIS state
+                   . belongstoI . fromJust . lookupIS state) con -- only one constructor
        && all isVar es   -- and all arguments are variables (or wildcards)
     then Just (map getPosI es)
     else Nothing

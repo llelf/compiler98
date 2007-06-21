@@ -21,15 +21,15 @@ stgBodyPush :: (Int,PosLambda) -> State a Thread ([Gcode],(Int,Where)) Thread
 stgBodyPush exp = buildBody True exp
 
 
-buildBody pu (fun,PosLambda pos _ _ exp) =
+buildBody pu (fun,PosLambda pos _ _ _ exp) =
    buildExp pu exp >>>= \ (build,ptr) ->
    updTOS pu fun >>>
-   unitS (build,(fun,ptr))
+   unitS (build,(fromEnum fun,ptr))
 
 
 buildExp :: Bool -> PosExp -> State a Thread ([Gcode],Where) Thread
 
-buildExp pu (PosExpLet pos bindings exp) =
+buildExp pu (PosExpLet _ pos bindings exp) =
   \ down
     (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs)
     ->
@@ -39,7 +39,7 @@ buildExp pu (PosExpLet pos bindings exp) =
                    
          (bBuild,addLate) = unzip bBuild_bEnv
          addId = map fst bindings
- 	 addEnv = map ( \ v -> (v,HeapLate)) addId
+ 	 addEnv = map ( \ v -> (fromEnum v,HeapLate)) addId
          newEnv = addEnv:env
     in
 --      strace ("STGGBuild PosExpLet addLate " ++ show (map fst addLate) ++ " addId " ++ show addId) $
@@ -49,7 +49,7 @@ buildExp pu (PosExpLet pos bindings exp) =
       ) down (Thread prof' fun' maxDepth' failstack' state' newEnv (addLate:lateenv) depth' heap' depthstack' fs')
 
 
-buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) = 
+buildExp pu (PosExpThunk _ _ (tag@(PosCon _ v):args)) = 
   -- Should evaluate strict arguments
   mapS (buildExp False) args >>>= \ build_ptr ->  
   incDepthIf pu >>>= \ sp ->
@@ -64,12 +64,12 @@ buildExp pu (PosExpThunk _ (tag@(PosCon _ v):args)) =
             ,Heap hp
 	    )
 
-buildExp pu (PosExpThunk _ (tag@(PosVar _ v):args)) =
+buildExp pu (PosExpThunk _ _ (tag@(PosVar _ v):args)) =
     mapS (buildExp False) args >>>= \ build_ptr ->  
     buildAp pu v build_ptr
 
 
-buildExp pu (PosExpThunk pos [e]) =
+buildExp pu (PosExpThunk pos _ [e]) =
   buildExp pu e
 buildExp pu (PosCon pos i) =
     oneHeap True pu (HEAP_GLB con0 i)
@@ -125,13 +125,13 @@ buildExp pu (PosExpFatBar esc exp1 exp2) =
   error ("buildExp FatBar ")
 buildExp pu (PosExpFail) =
   error ("buildExp Fail ")
-buildExp pu (PosExpIf  pos exp1 exp2 exp3) =
+buildExp pu (PosExpIf  pos _ exp1 exp2 exp3) =
   error ("buildExp If " ++ strPos pos)
-buildExp pu (PosExpThunk pos [PosPrim _ STRING,PosString _ s]) =
+buildExp pu (PosExpThunk pos _ [PosPrim _ STRING _,PosString _ s]) =
   error ("buildExp STRING " ++ strPos pos)
-buildExp pu (PosExpThunk pos [PosPrim _ SEQ,a1,a2]) =
+buildExp pu (PosExpThunk pos _ [PosPrim _ SEQ _,a1,a2]) =
   error ("buildExp SEQ " ++ strPos pos)
-buildExp pu (PosExpThunk pos (PosPrim _ p:args)) =
+buildExp pu (PosExpThunk pos _ (PosPrim _ p _:args)) =
   error ("buildExp Prim " ++ strPos pos)
 buildExp pu (PosExpApp pos (fun:args)) =
   error ("buildExp App " ++ strPos pos)

@@ -15,7 +15,7 @@ stgGcode prof state code =
   case {- mapS -} gBindingTop code () (Thread prof 0 0 [] state [] [] 0 0 [] ([],Nothing)) of
     (bs,(Thread prof fun _ _ state _ _ _ _ _ (fs,_))) -> (bs,state,fs)
   
-gBindingTop (fun,PosLambda pos [] args@[arg] exp@(PosExpCase cpos (PosVar vpos var) [PosAltCon apoc con posargs (PosVar vpos2 var2)])) =
+gBindingTop (fun,PosLambda pos _ [] args@[arg] exp@(PosExpCase cpos (PosVar vpos var) [PosAltCon apoc con posargs (PosVar vpos2 var2)])) =
     gOnly con >>>= \ only ->
     if only && any ((var2 ==).snd) posargs then -- Selector function
       let no = dropJust (lookup var2 (zip (map snd posargs) [1..]))
@@ -52,7 +52,7 @@ gBindingTop (fun,PosForeign pos fn str c ie) =
       Exported ->
         unitS []
 
-gExp (PosExpLet pos bindings exp) =
+gExp (PosExpLet _ pos bindings exp) =
    \ down (Thread prof fun maxDepth failstack state env lateenv depth heap depthstack fs) ->
     let (bBuild_bEnv,Thread prof' fun' maxDepth' failstack' state' _ _ _ heap' depthstack' fs')
             = mapS stgBodyPush bindings
@@ -97,7 +97,7 @@ gExp (PosExpFail) =
   getFail >>>= \ (Just (fail,d)) ->
   unitS [POP d, JUMP fail]
 
-gExp (PosExpIf  pos exp1 exp2 exp3) =
+gExp (PosExpIf  pos _ exp1 exp2 exp3) =
   gUnique >>>= \ false ->
   gUnique >>>= \ after ->
   pushDH >>>
@@ -108,17 +108,17 @@ gExp (PosExpIf  pos exp1 exp2 exp3) =
   gExp exp3 >>>= \ exp3 ->
   unitS (exp1 ++ EVAL:JUMPFALSE false: exp2 ++ JUMP after:LABEL false:exp3 ++ [LABEL after]) -- DAVID
 
-gExp (PosExpThunk pos [PosPrim _ STRING,PosString _ s]) =
+gExp (PosExpThunk pos _ [PosPrim _ STRING _,PosString _ s]) =
   incDepth >>>
   unitS [PUSH_STRING s, PRIM STRING]
 
-gExp (PosExpThunk pos [PosPrim _ SEQ,a1,a2]) =
+gExp (PosExpThunk pos _ [PosPrim _ SEQ _,a1,a2]) =
   gExp a1 >>>= \ a1 ->
   decDepth 1 >>>
   gExp a2 >>>= \ a2 ->
   unitS (a1 ++ EVAL : POP 1 : a2)
 
-gExp (PosExpThunk pos (PosPrim _ p:args)) = -- must be right number of arguments
+gExp (PosExpThunk pos _ (PosPrim _ p _:args)) = -- must be right number of arguments
    mapS ( \ a -> gExp a >>>= \ a -> unitS (a ++ [EVAL])) (reverse args) >>>= \ args ->
    decDepth (length args - 1) >>>
    unitS (concat args ++ [PRIM p])
@@ -129,10 +129,10 @@ gExp (PosExpApp pos (fun:args)) =
   decDepth (length args) >>>
   unitS (concat args ++ fun ++ [EVAL,APPLY (length args)])
 
-gExp exp@(PosExpThunk _ (tag@(PosCon _ v):args)) = -- Should evaluate strict arguments (already done ?) !!! 
+gExp exp@(PosExpThunk _ _ (tag@(PosCon _ v):args)) = -- Should evaluate strict arguments (already done ?) !!! 
   stgExpPush exp
 
-gExp exp@(PosExpThunk _ (tag@(PosVar _ v):args)) =
+gExp exp@(PosExpThunk _ _ (tag@(PosVar _ v):args)) =
 -- #ifdef DBGTRANS
 --  gState >>>= \state ->
 --  let vid = tidIS state v in
@@ -164,15 +164,15 @@ gAlt c (PosAltCon pos con args exp) =
     gExp exp >>>= \ exp ->
     decDepth nargs >>>
     popEnv >>>
-    unitS ((GALT_CON con,u), LABEL u : UNPACK nargs : exp ++ [SLIDE nargs,JUMP c])
-gAlt c (PosAltInt pos i      exp) =
+    unitS ((GALT_CON (fromEnum con), fromEnum u), LABEL (fromEnum u) : UNPACK nargs : exp ++ [SLIDE nargs,JUMP (fromEnum c)])
+gAlt c (PosAltInt pos i _    exp) =
   cloneDH >>>
   gUnique >>>= \ u -> 
   decDepth 1 >>> -- POP 1 remove one element
   gExp exp >>>= \ (exp) ->
   unitS ((GALT_INT i,u), LABEL u : POP 1 : exp ++ [JUMP c])
 
-gAtom (PosExpThunk pos [e]) =
+gAtom (PosExpThunk pos _ [e]) =
   gAtom e
 gAtom (PosCon pos i) =
   incDepth >>> unitS [PUSH_GLB con0 i]
