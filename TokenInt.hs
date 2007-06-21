@@ -40,7 +40,7 @@ getInts tidk2i =
 		++ tokenEq ++ tokenEval ++ tokenIx
 		++ tokenOrd ++ tokenRead ++ tokenShow
                 ++ tokenBinary ++ tokenNplusK ++ tokenFFI  --MALCOLM modified
-                ++ tokenComprehension)
+                ++ tokenComprehension ++ tokenDynamic)
 
    fix :: (IdKind,TokenId)
        -> Map.Map (TokenId,IdKind) Id
@@ -57,9 +57,9 @@ getInts tidk2i =
        Just i -> i
 
 
-tokenMain,tokenAllways,tokenBounded,tokenEnum,tokenEq,tokenIx,tokenOrd
+tokenMain,tokenList,tokenAllways,tokenBounded,tokenEnum,tokenEq,tokenEval,tokenIx,tokenOrd
   ,tokenRead,tokenShow,tokenBinary,tokenMonad,tokenInteger,tokenRational
-  ,tokenNplusK,tokenFFI,tokenComprehension :: [(IdKind,TokenId)]
+  ,tokenNplusK,tokenFFI,tokenComprehension, tokenDynamic :: [(IdKind,TokenId)]
 
 tokenMain =     [(TCon,tIO),(TCon,t_Tuple 0)]
 tokenList =	[(TClass,tNum),(Var,tnegate)]
@@ -114,5 +114,8 @@ tokenNplusK = 	[(Var,t_lessequal),(Var,t_subtract)]
 tokenFFI =      map (\n->(Var,t_mkIOok n)) [0..15] ++
 		[(Var,tunsafePerformIO)]
 tokenComprehension = [(Var,t_foldr),(Var,t_filter)]
+
+{- typerep additions -}
+tokenDynamic =   [(Var,tTyCon), (Var,tTyGeneric)]
 
 {- End TokenInt -------------------------------------------------------------}

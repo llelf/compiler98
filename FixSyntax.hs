@@ -168,10 +168,48 @@ fsExp _ (Exp2   pos      i1 i2) =  fsExp2 pos i1 i2
 
 fsExp _ (PatAs pos i pat)        =  unitS (PatAs pos i) =>>> fsPat pat
 fsExp _ (PatIrrefutable pos pat) = unitS (PatIrrefutable pos) =>>> fsPat pat
+
+-- Change typeRep into something that builds the type
+fsExp _ (ExpTypeRep pos nt) =
+    fsList >>>= \ list ->
+    fsState >>>= \ state ->
+    unitS $ makeTypeRep pos list state nt
+
 fsExp _ e                 = unitS e
 
 
--- Auxiliary for fsExp guaranteed to get ExpApplications only.
+makeTypeRep :: Pos -> ExpList -> IntState -> NT -> Exp Id
+makeTypeRep pos (eNil,eCons,eTyCon,eTyGen) state nt = rep (deTypeType nt)
+    where
+    deTypeType (NTcons _ _ [t]) = t
+
+    rep (NTvar i kind) =
+         case lookupIS state i of
+            Just info -> tyCon (show (tidI info)) []
+            Nothing   -> tyGen $ 'v':(show i)
+    rep (NTapp x y) =  app (rep x) (rep y)
+    rep (NTstrict _) = error "rep: NTstrict"
+    rep (NTcons i k xs) =
+        let iStr = strIS state i
+        in tyCon iStr (map rep xs)
+    rep (NTexist _ _) = error "rep: NTexists"
+    rep (NTany _)      = error "rep: NTany"
+    rep _           = error "rep: ???"
+
+    foldAp [nt]   = rep nt
+    foldAp (x:xs) =
+        let xs' = foldAp xs
+        in app (rep x) xs'
+
+    app x y = ExpApplication pos [eTyCon, string "Prelude.->", list [x, y]]
+    tyCon s ts = ExpApplication pos [eTyCon, string s, list ts]
+    tyGen s = ExpApplication pos [eTyGen, string s]
+    string s = ExpLit pos (LitString Boxed s)
+
+    list []     = eNil
+    list (x:xs) = ExpApplication pos [eCons, x, list xs]
+
+-- | Auxiliary for fsExp guaranteed to get ExpApplications only.
 fsExp' k (ExpApplication pos (ExpApplication _ xs:ys)) =
   fsExp' k (ExpApplication pos (xs++ys))
 

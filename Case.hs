@@ -222,6 +222,7 @@ caseExp  ExpFail = unitS PosExpFail
 caseExp (Exp2 pos i1 i2) =   
   unitS (PosVar pos) =>>> fsExp2i pos i1 i2  -- re-introduced by expEqualNumEq
 caseExp (PatWildcard pos) =  caseUndef
+caseExp (ExpTypeRep pos _) = error $ "caseExp: ExpTypeRep "++strPos pos
 caseExp e  =  error ("caseExp " ++ strPos (getPos e))
 
 -------- Interface to match

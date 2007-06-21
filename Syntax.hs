@@ -312,7 +312,10 @@ data Exp id =  -- used both for expressions and patterns
 --  =>   f n' | k <= n' = exp[n]
 --         where n = n'-k 
 -- (n+k) pattern - store:   n  n' k        (k<=n')  (n'-k)
-    | PatNplusK		Pos id id (Exp id) (Exp id) (Exp id)
+    | PatNplusK         Pos id id (Exp id) (Exp id) (Exp id)
+
+    -- | typeRep introduced by the type check selection
+    | ExpTypeRep        Pos NT
 
 data Field id = FieldExp  Pos id (Exp id)
               | FieldPun  Pos id     -- H98 removes (retained for error msgs)

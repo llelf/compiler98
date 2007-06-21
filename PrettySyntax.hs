@@ -715,7 +715,13 @@ ppExpPrec info _ (PatIrrefutable pos pat) =
     ppPos info pos <> text "~" <> ppExpPrec info True pat
 ppExpPrec info withPar (PatNplusK pos n n' k _ _) =
   parenExp info pos withPar $
-    ppIdAsVar info n <> fSpace <> text "+" <> fSpace <> ppExpPrec info True k 
+    ppIdAsVar info n <> fSpace <> text "+" <> fSpace <> ppExpPrec info True k
+ppExpPrec info withPar (ExpTypeRep pos nt) =
+    parenExp info pos withPar $
+      text "typeRep :: " <> text (niceNT Nothing state al nt)
+  where
+  al = mkAL []
+  state = intState info
 
 
 ppLambdaPat :: PPInfo a -> Exp a -> Doc

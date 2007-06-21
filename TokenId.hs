@@ -142,18 +142,32 @@ add2M :: String -> TokenId -> TokenId
 add2M str (Qualified m v) =  
   Qualified (packString (reverse str ++ unpackPS m)) v
 
+visImport, qualImpPrel, qualImpNHC, qualImpBin, qualImpRat, qualImpIx, qualImpFFI :: String -> TokenId
+qualImpPS, qualImpPrim, qualImpDyn                                                :: String -> TokenId
 visImport = Visible . packString . reverse
 qualImpPrel = Qualified rpsPrelude . packString . reverse
-qualImpNHC = Qualified rpsInternal . packString . reverse
+qualImpNHC = Qualified rpsInternalN . packString . reverse
 qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
 qualImpIx  = Qualified rpsIx      . packString . reverse
 qualImpFFI = Qualified rpsFFI     . packString . reverse
 qualImpPS  = Qualified rpsPS      . packString . reverse
 qualImpIOE = Qualified rpsIOE     . packString . reverse
+qualImpPrim = Qualified rpsPrimitive . packString . reverse
+qualImpDyn = Qualified rpsYhcDynamic . packString . reverse
 
+qualImpFFIBC :: String -> String -> TokenId
+qualImpFFIBC mod it =
+    let rps = (reverse $ unpackPS rpsFFI) ++ "." ++ mod
+    in Qualified (packString $ reverse rps)
+                 (packString $ reverse it)
+
+
+rpsPrelude, rpsInternalN, rpsInternalY, rpsRatio, rpsIx, rpsFFI, rpsPS, rpsBinary, rpsPrimitive, rpsYhcDynamic
+    :: PackedString
 rpsPrelude      = (packString . reverse ) "Prelude"
-rpsInternal     = (packString . reverse ) "NHC.Internal"
+rpsInternalN    = (packString . reverse ) "NHC.Internal"
+rpsInternalY    = (packString . reverse ) "YHC.Internal"
 rpsRatio        = (packString . reverse ) "Ratio"
 rpsIx           = (packString . reverse ) "Ix"
 rpsFFI          = (packString . reverse ) "NHC.FFI"
@@ -161,7 +175,8 @@ rpsPS           = (packString . reverse ) "NHC.PackedString"
 rpsIOE          = (packString . reverse ) "NHC.IOExtras"
 rpsBinary       = (packString . reverse ) "NHC.Binary"
 rpsHatHack      = (packString . reverse ) "Hat.Hack"
-
+rpsPrimitive    = (packString . reverse ) "YHC.Primitive"
+rpsYhcDynamic   = (packString . reverse ) "YHC.Dynamic"
 
 isUnit (TupleId 0) = True
 isUnit _ = False

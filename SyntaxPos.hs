@@ -89,6 +89,7 @@ instance HasPos (Exp a) where
   getPos (PatWildcard    pos)       = pos
   getPos (PatIrrefutable pos _)     = pos
   getPos (PatNplusK      pos _ _ _ _ _) = pos
+  getPos (ExpTypeRep     pos _)     = pos
 
 
 instance HasPos a => HasPos [a] where

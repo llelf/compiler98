@@ -4,9 +4,9 @@
 module PreImport (HideDeclIds,qualRename,preImport) where
 
 import List(nub,intersect,(\\))
-import TokenId(TokenId(..),tPrelude,tNHCInternal
-		,t_Arrow,ensureM,forceM,dropM
-		,rpsPrelude,t_List,isTidCon)
+import TokenId(TokenId(..),tPrelude,tNHCInternal,tYHCDynamic
+                ,t_Arrow,ensureM,forceM,dropM
+                ,rpsPrelude,t_List,isTidCon)
 import SysDeps(PackedString,packString)
 import Syntax hiding (TokenId)
 import IdKind
