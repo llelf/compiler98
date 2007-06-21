@@ -16,7 +16,9 @@ import NT(NewType(..))
 import Id(Id)
 import Maybe
 
-type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)
+type ExpList = (Exp Id,Exp Id,Exp Id,Exp Id)  -- expList (nil, cons, TyCon, TyGeneric)
+
+type Inherited = (  ExpList
                   , Exp Id           -- expId
                   , (TokenId,IdKind) -> Id) --tidFun
 
@@ -32,12 +34,14 @@ startfs :: (Decls Id -> FSMonad a)
         -> (a, IntState, Map.Map TokenId Id)
 
 startfs fs x state tidFun =
-      let down = ( ( ExpCon noPos (tidFun (t_List,Con))	 
-		   , ExpCon noPos (tidFun (t_Colon,Con))	 
-		   )
-		 , ExpVar noPos (tidFun (t_id,Var))  
-		 , tidFun
-		 )
+      let down = ( ( ExpCon noPos (tidFun (t_List,Con))
+                   , ExpCon noPos (tidFun (t_Colon,Con))
+                   , ExpVar noPos (tidFun (tTyCon,Var))
+                   , ExpVar noPos (tidFun (tTyGeneric,Var))
+                   )
+                 , ExpVar noPos (tidFun (t_id,Var))
+                 , tidFun
+                 )
 
           up = (state, Map.empty)
       in
@@ -45,7 +49,7 @@ startfs fs x state tidFun =
 	 (x,(state,t2i)) -> (x,state,t2i)
 
 
-fsList :: FSMonad (Exp Id, Exp Id)
+fsList :: FSMonad ExpList
 fsList down@(expList,expId,tidFun) up = (expList,up)
 
 fsId :: FSMonad (Exp Id)
@@ -76,7 +80,20 @@ fsExpAppl pos [x] = unitS x
 fsExpAppl pos xs = unitS (ExpApplication pos xs)
 
 
-fsClsTypSel :: Pos -> Id -> Id -> Id -> FSMonad (Exp Id)
+fsInstanceFor :: Id -> Id -> Maybe Id -> IntState -> PackedString
+fsInstanceFor cls typ sel state =
+    let clsInfo  = fromJust $ lookupIS state cls
+        typInfo  = fromJust $ lookupIS state typ
+        insts    = instancesI clsInfo
+        defs     = defaultMethodsIS state cls
+        isDef    = maybe False (`elem` defs) sel
+    in if not isDef && isData typInfo then
+         case Map.lookup typ insts of
+             Just (rps,free,ctxt) -> rps
+             Nothing              -> error $ "fsInstanceFor: No instance of class " ++ strIS state cls ++
+                                             " for type " ++ strIS state typ
+       else
+         extractM (tidI clsInfo)
 
 
 fsClsTypSel :: Pos -> Id -> Id -> Id -> FSMonad (Exp Id)

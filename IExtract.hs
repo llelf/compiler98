@@ -96,13 +96,9 @@ transTid pos kind tid down
   let key = (ensureM rps tid,kind)
   in  case Map.lookup key st of
         Just info -> (uniqueI info,importState)
-        Nothing -> (unique, ImportState visible (unique+1) orps rps 
-                              (addM needI (fst key))
-			      rt
-			      (addAT st combInfo key 
-                                (InfoUsed unique [(kind,tid,rps,pos)]))
-                              insts fixity errors)
-
+        Nothing -> (addNeedIS (fst key) >>>
+                    addSymbolIS key (InfoUsed unique [(kind,tid,rps,pos)]) >>>
+                    getUniqueId) down importState
 
 {- Test if Id for given token of given kind exists -}
 existTid :: IdKind -> TokenId -> a -> ImportState -> (Bool,ImportState)
@@ -129,37 +125,28 @@ importData q tid expIn nt dk _
       exp = if visible then expIn else IEnone
   in (case Map.lookup key st of
        Just (InfoUsed u _) ->
-	 let rt' = addRT visible q u tid orps TCon rt
-	 in (ImportState visible unique orps rps needI rt'
-                         (addAT st combInfo key (InfoData u realtid exp nt dk))
-                         insts fixity errors)
+         (addRT_IS visible q u tid orps TCon >>>
+          addSymbolIS key (InfoData u realtid exp nt dk))
+
        Just info@(InfoData u tid exp' nt (Data unboxed []))
          | case dk of {Data _ (_:_) -> True; _ -> False} ->
-	   let rt' = addRT visible q u tid orps TCon rt
-	   in ImportState visible  unique orps rps needI rt'
-                          (addAT st combInfo key
-                                (InfoData u tid (combIE exp exp') nt dk))
-                          insts fixity errors
+           (addRT_IS visible q u tid orps TCon >>>
+            addSymbolIS key (InfoData u tid (combIE exp exp') nt dk))
+
        Just info@(InfoData u tid exp' nt (DataNewType unboxed []))
          | case dk of {DataNewType _ (_:_) -> True; _ -> False} ->
-	   let rt' = addRT visible q u tid orps TCon rt
-	   in ImportState visible  unique orps rps needI rt'
-                          (addAT st combInfo key
-                                 (InfoData u tid (combIE exp exp') nt dk))
-                          insts fixity errors
+           (addRT_IS visible q u tid orps TCon >>>
+            addSymbolIS key (InfoData u tid (combIE exp exp') nt dk))
+
        Just info@(InfoData u' tid' exp' nt' dk') ->
-	 let rt' = addRT visible q u' tid orps TCon rt
-	 in seq rt' (ImportState visible unique orps rps needI rt'
-                                 (addAT st combInfo key
-                                        (InfoData u' tid' (combIE exp exp')
-                                                  nt' dk'))
-                                 insts fixity errors)
+         (addRT_IS' visible q u' tid orps TCon >>>
+          addSymbolIS key (InfoData u' tid' (combIE exp exp') nt' dk'))
+
        _ -> 
-	 let rt' = addRT visible q unique tid orps TCon rt
-	 in (ImportState visible (unique+1) orps rps needI rt'
-			 (addAT st combInfo key
-                                (InfoData unique realtid exp nt dk))
-                         insts fixity errors)
+         (getUniqueId >>>= \ uid ->
+          addRT_IS visible q uid tid orps TCon >>>
+          addSymbolIS key (InfoData uid realtid exp nt dk))
+     ) () importState
 
 
 importClass :: (TokenId->Bool) -> TokenId -> IE -> NewType -> [Id] 
@@ -174,35 +161,20 @@ importClass q tid expIn nt ms _
       exp = if visible then expIn else IEnone
   in (case Map.lookup key st of
        Just (InfoUsed u _) ->
-	 let rt' = addRT visible q u tid orps TClass rt
-	 in (ImportState visible unique orps rps needI rt'
-                         (addAT st combInfo key
-                                (InfoClass u realtid exp nt ms [] initAT))
-                         insts fixity errors)
+         (addRT_IS visible q u tid orps TClass >>>
+          addSymbolIS key (InfoClass u realtid exp nt ms [] Map.empty))
+
        Just (InfoUsedClass u _ inst) ->
-	 let rt' = addRT visible q u tid orps TClass rt
-	 in (ImportState visible unique orps rps needI rt'
-                         (addAT st combInfo key
-                                (InfoClass u realtid exp nt ms [] inst))
-                         insts fixity errors)
+         (addRT_IS visible q u tid orps TClass >>>
+          addSymbolIS key (InfoClass u realtid exp nt ms [] inst))
+
        Just (InfoClass u tid' exp' nt' [] [] inst') ->
-		 -- might be due to interface files
-	 let rt' = addRT visible q u tid orps TClass rt
-	 in (ImportState visible unique orps rps needI rt'
-                         (addAT st combInfo key
-                                (InfoClass u realtid (combIE exp exp')
-                                           nt ms [] inst'))
-                         insts fixity errors)
+                 -- might be due to interface files
+         (addRT_IS visible q u tid orps TClass >>>
+          addSymbolIS key (InfoClass u realtid (combIE exp exp') nt ms [] inst'))
+
        Just info ->
-	 let rt' = addRT visible q (uniqueI info) tid orps TClass rt
-	 in seq rt' (ImportState visible unique orps rps needI rt' st
-                                 insts fixity errors)
-       _ ->
-	 let rt' = addRT visible q unique tid orps TClass rt
-	 in (ImportState visible (unique+1) orps rps needI rt'
-			 (addAT st combInfo key
-                               (InfoClass unique realtid exp nt ms [] initAT))
-                         insts fixity errors)
+         (addRT_IS' visible q (uniqueI info) tid orps TClass)
 
        _ ->
          (addRT_IS visible q unique tid orps TClass >>>
@@ -216,7 +188,7 @@ importField :: (TokenId->Bool)
             -> Id  -- type constructor 
             -> Id  -- data constructor
             -> ((Maybe (a,TokenId,b),NT),Int) 
-            -> c -> ImportState -> ImportState
+            -> State0 c ImportState ImportState
 
 importField q free ctxs bt c ((Nothing,_),nt) down importState = importState
 importField q free ctxs bt c ((Just (p,tid,_),nt),i) down 
@@ -258,7 +230,7 @@ importField q free ctxs bt c ((Just (p,tid,_),nt),i) down
 
 
 importVar :: (TokenId->Bool) -> TokenId -> IE -> NewType -> Maybe Int 
-          -> a -> ImportState -> ImportState
+          -> State0 a ImportState ImportState
 
 importVar q tid exp nt annots _
           importState@(ImportState visible unique orps rps needI rt st
@@ -273,7 +245,7 @@ importVar q tid exp nt annots _
                          (ImportState visible unique orps rps needI rt'
                                       (Map.insertWith combInfo key
                                              (InfoVar u realtid exp fix nt
-                                                      annots))
+                                                      annots) st)
                                       insts fixity errors)
        Just info ->
 	 let rt' = addRT visible q (uniqueI info) tid orps Var rt
@@ -285,7 +257,7 @@ importVar q tid exp nt annots _
                          (ImportState visible (succ unique) orps rps needI rt'
                                       (Map.insertWith combInfo key
                                              (InfoVar unique realtid exp
-                                                      fix nt annots))
+                                                      fix nt annots) st)
                                       insts fixity errors)
 
 
@@ -317,25 +289,24 @@ importConstr q tid nt fields bt rex _
       key = (realtid,Con)
   in (case Map.lookup key st of
        Just (InfoUsed u _) ->
-	 let rt' = addRT visible q u tid orps Con rt
-	 in (u,ImportState visible unique orps rps needI rt'
-                           (addAT st combInfo key
-                                  (InfoConstr u realtid IEnone (fixity realtid)
-                                              nt fields bt))
-                           insts fixity errors)
+         addRT_IS visible q u tid orps Con >>>
+         addSymbolIS key (InfoConstr u realtid IEnone (fixity realtid)
+                                   nt fields bt) >>>
+         unitS u
+
        Just info ->
-	 let u = uniqueI info
-	     rt' = addRT visible q u tid orps Con rt
-	 in  seq rt' (u,ImportState visible unique orps rps needI rt' st
-                                    insts fixity errors)
+         let u = uniqueI info
+         in addRT_IS' visible q u tid orps Con >>>
+            unitS u
+
        _ -> 
-	 let rt' = addRT visible q unique tid orps Con rt
-	 in (unique,ImportState visible (unique+1) orps rps needI rt'
-				(addAT st combInfo key
-                                       (InfoConstr unique realtid rex
-                                                   (fixity realtid) nt
-                                                   fields bt))
-                                insts fixity errors)
+         getUniqueId >>>= \ uid ->
+         addRT_IS visible q uid tid orps Con >>>
+         addSymbolIS key (InfoConstr uid realtid rex
+                                      (fixity realtid) nt
+                                      fields bt) >>>
+         unitS uid
+     ) () importState
 
 importMethod q tid nt rex annots bt _
              importState@(ImportState visible unique orps rps needI rt st
@@ -368,7 +339,9 @@ importMethod q tid nt rex annots bt _
                                                                   annots bt))
                                                insts fixity errors))
 
-importInstance cls con free ctxs _
+importInstance :: Show a =>
+                  a -> TokenId -> Id -> [Id] -> [(Id, Id)] -> t -> ImportState -> ImportState
+importInstance mod cls con free ctxs _
                importState@(ImportState visible unique orps rps needI rt st
                                         insts fixity errors) =
   let realtid = ensureM rps cls
@@ -380,7 +353,10 @@ importInstance cls con free ctxs _
               st' -> seq st' (ImportState visible unique orps rps needI rt st'
                                           insts fixity errors)
 
-storeInstance al cls con ctxs _
+storeInstance :: [(TokenId, Id)] -> TokenId -> TokenId -> TokenId
+                 -> [Context TokenId] -> t
+                 -> ImportState -> ImportState
+storeInstance al mod cls con ctxs _
               importState@(ImportState visible unique orps rps needI rt st
                                        insts fixity errors) =
 --strace ("storeInstance:\n  "++prettyPrintSimple 70 ppContexts ctxs
@@ -388,12 +364,11 @@ storeInstance al cls con ctxs _
 --		++"\n  "++show con) $
   let realcls = ensureM rps cls
       realcon = ensureM rps con
-      same (realcls',realcon',_,_) = realcls == realcls' && realcon == realcon'
+      same (_,realcls',realcon',_,_) = realcls == realcls' && realcon == realcon'
       trans (Context pos cid [(vpos,vid)]) =
-	case lookup vid al of
-	  Just tvar -> Right (pos,ensureM rps cid,tvar)
-	  Nothing -> Left ("Unbound type variable "++show vid
-                           ++" in instance at "++strPos vpos)
+        case lookup vid al of
+          Just tvar -> Right (pos,ensureM rps cid,tvar)
+          Nothing -> Left $ ErrorUnboundTypeInstance (strPos vpos) (show vid)
   in if any same insts 
      then importState
      else
@@ -401,8 +376,8 @@ storeInstance al cls con ctxs _
        in if any isLeft qctxs
 	  then ImportState visible unique orps rps needI rt st insts fixity
                            ((map dropLeft . filter isLeft ) qctxs ++ errors)
-	  else ImportState visible unique orps rps needI rt st
-                           ( (realcls,realcon,map snd al,map dropRight qctxs)
+          else ImportState visible unique orps rps needI rt st
+                           ( (mod,realcls,realcon,map snd al,map dropRight qctxs)
                              :insts)
                            fixity errors
 
@@ -425,15 +400,28 @@ checkInstanceCon tid down
                                       unused fixity errors)
  where  
   realcon = ensureM rps tid
-  pred (cls,con,free,ctxs) = (con == realcon)
+  pred (mod,cls,con,free,ctxs) = (con == realcon)
   -- if we need the type constructor, then we might need this instance
   --  && isJust (lookupAT st (cls,TClass))
 
+addRT_IS iexports mustQualify u tid rps kind _ is =
+    is { renameIS = addRT iexports mustQualify u tid rps kind (renameIS is) }
 
+-- | Strict version of 'addRT_IS'
+addRT_IS' :: Bool            -- ^ interface exports it?
+          -> (TokenId->Bool) -- ^ must it be imported qualified?
+          -> Id
+          -> TokenId
+          -> PackedString
+          -> IdKind
+          -> State0 a ImportState ImportState
+addRT_IS' iexports mustQualify u tid rps kind _ is =
+    let rt = addRT iexports mustQualify u tid rps kind (renameIS is)
+    in rt `seq` is { renameIS = rt }
 
--- Add (or not) an imported identifier to the renaming table.
-addRT :: Bool			-- interface exports it?
-      -> (TokenId->Bool)	-- must it be imported qualified?
+-- | Add (or not) an imported identifier to the renaming table.
+addRT :: Bool                   -- ^ interface exports it?
+      -> (TokenId->Bool)        -- ^ must it be imported qualified?
       -> b
       -> TokenId
       -> PackedString
@@ -456,7 +444,7 @@ addRT True mustQualify u tid rps kind rt
 
 iextractType :: IE -> (Int,Bool) -> (TokenId->Bool) -> a -> TokenId 
              -> [(Pos,TokenId)] -> Type TokenId 
-             -> () -> ImportState -> ImportState
+             -> State0 () ImportState ImportState
 
 iextractType expInfo (depth,unboxed) q pos tid tvs typ = 
   let al = tvPosTids tvs
@@ -470,7 +458,7 @@ iextractType expInfo (depth,unboxed) q pos tid tvs typ =
 -}
 iextractData :: IE -> (TokenId->Bool) -> Either Bool Bool -> [Context TokenId] 
              -> Pos -> TokenId -> [(Pos,TokenId)] -> [Constr TokenId] 
-             -> [TokenId] -> () -> ImportState -> ImportState
+             -> [TokenId] -> State0 () ImportState ImportState
 
 iextractData  expInfo q attr ctxs pos tid tvs constrs needs =
   let al = tvPosTids tvs 
@@ -518,22 +506,22 @@ iextractClass  expInfo q pos ctxs tid tvar methods needs =
      mapS0 newInstance newinsts
 
 
-newInstance :: (TokenId,TokenId,[Int],[(Pos,TokenId,Int)]) 
+newInstance :: (TokenId,TokenId,TokenId,[Id],[(Pos,TokenId,Id)]) 
             -> a -> ImportState -> ImportState
 
-newInstance (realcls,realcon,free,ctxs) =
+newInstance (mod,realcls,realcon,free,ctxs) =
   mapS (\(pos,cls,tvar)-> transTid pos TClass cls >>>= \cls-> unitS (cls,tvar))
        ctxs >>>= \ ctxs ->
   transTid noPos TCon realcon >>>= \ con ->
   transTid noPos TClass realcls >>>= \ _ ->  -- Only to ensure class exists!!
-  importInstance realcls con free ctxs
+  importInstance mod realcls con free ctxs
 
 
-iextractInstance :: [Context TokenId] -> a -> TokenId -> Type TokenId 
+iextractInstance :: TokenId -> [Context TokenId] -> a -> TokenId -> Type TokenId 
                  -> () -> ImportState -> ImportState
 
 -- iextractInstance ctxs pos cls typ@(TypeCons _ con _) =
-iextractInstance ctxs pos cls typ =
+iextractInstance mod ctxs pos cls typ =
   let con = case typ of (TypeCons _ con _) -> con; (TypeVar _ con) -> con
   in
   existTid TClass cls >>>= \qcls ->
@@ -547,11 +535,11 @@ iextractInstance ctxs pos cls typ =
       >>>= \nt->
       case nt of
         (NewType free [] ctxs [NTcons c _ nts]) ->
-          importInstance cls c free {- (map ( \ (NTvar v _) -> v) nts) -} ctxs
+          importInstance mod cls c free {- (map (\ (NTvar v _)->v) nts) -} ctxs
         (NewType free [] ctxs [NTvar v _]) ->
-          importInstance cls v free ctxs
+          importInstance mod cls v free ctxs
     else
-      storeInstance al cls con ctxs -- otherwise save the instance for later
+      storeInstance al mod cls con ctxs -- otherwise save the instance for later
 
 -- addPreludeTupleInstances is an efficiency hack.
 -- It takes a long time to parse the Prelude.hi file, and adding large
@@ -564,9 +552,10 @@ addPreludeTupleInstances =
   let mkCtx c v = Context noPos c [(noPos,v)]
       tuple cls n = let vars = map (visible.(:[])) (take n ['a'..]) in
                     storeInstance (tvTids vars)
-					cls
-					(TupleId n)
-					(map (mkCtx cls) vars)
+                                        (Visible rpsPrelude)
+                                        cls
+                                        (TupleId n)
+                                        (map (mkCtx cls) vars)
   in
     mapS0 (tuple tEq) [2..15] >>>
     mapS0 (tuple tOrd) [2..15] >>>
@@ -577,6 +566,12 @@ addPreludeTupleInstances =
 
 ---
 
+iextractVarsType :: ((TokenId -> Bool) -> TokenId -> IdKind -> IE)
+                    -> (TokenId -> Bool)
+                    -> [((a, TokenId), Maybe Int)]
+                    -> [Context TokenId]
+                    -> Type TokenId
+                    -> State0 () ImportState ImportState
 iextractVarsType  expFun q postidanots ctxs typ =
    let al = tvTids (snub (freeType typ))
    in transTypes al (map snd al) ctxs [typ] >>>= \ nt ->
