@@ -1,6 +1,7 @@
-{- ---------------------------------------------------------------------------
-Internal state of the compiler 
-used from the renaming pass until code generation
+{- |
+Internal state of the compiler. 
+Used from the renaming pass until code generation.
+Needs 'IdSupply'.
 -}
 module IntState(module IntState, module Info) where
 
@@ -17,6 +18,7 @@ import Maybe
 import Flags
 
 
+-- | Shouldn't this be a record? [SamB]
 data IntState = 
       IntState
         Id                              -- unique
@@ -34,6 +36,9 @@ dummyIntState = IntState (toEnum 0)
 
 -- -===== State
 
+getModuleId :: IntState -> String
+getModuleId (IntState _ (_,rps) _ _ _) = reverse (unpackPS rps)
+
 getInfo :: Id -> a -> IntState -> (Info,IntState)
 
 getInfo i down state@(IntState unique rps st errors fl) =
@@ -45,25 +50,39 @@ getIntState down state = (state,state)
 
 addDefaultMethod :: a -> (Id,Id) -> IntState -> IntState
 
-addDefaultMethod tidcls (iMethod,iDefault) state@(IntState unique irps@(_,rps) st errors) =
+addDefaultMethod tidcls (iMethod,iDefault) state@(IntState unique irps@(_,rps) st errors fl) =
+--  FIXME: have mkQualD use the right class as well please ...
   case lookupIS state iMethod of
     Just (InfoMethod u tid ie fix nt' annot iClass) ->
       IntState unique irps 
         (Map.insertWith fstOf iDefault 
           (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass) st) 
         errors
+        fl
 
+{- | Return all the default methods of an id, including super class methods -}
+defaultMethodsIS :: IntState -> Id -> [Id]
+defaultMethodsIS state cls = defs ++ concat rest
+    where
+    clsInfo = fromJust $ lookupIS state cls
+    defs    = map snd $ methodsI clsInfo
+    supers  = superclassesI clsInfo
+    rest    = map (defaultMethodsIS state) supers
 
+-- | Do we really need both 'getUnique' and 'uniqueIS'? I vote for taking out uniqueIS. [SamB]
 getUnique :: a -> IntState -> (Id,IntState)
 
-getUnique down state@(IntState unique rps st errors) =
-  (unique,IntState (unique+1) rps st errors)
+getUnique down state@(IntState unique rps st errors fl) =
+  (unique,IntState (succ unique) rps st errors fl)
+
+instance IdSupply IntState where
+    getUniqueId = getUnique
 
 
 addInstMethod :: TokenId -> TokenId -> TokenId -> NewType -> Id 
-              -> a -> IntState -> (Int,IntState)
+              -> a -> IntState -> (Id,IntState)
 
-addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rps st errors) =
+addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rps@(_,rpsMod) st errors fl) =
   case lookupIS state iMethod of
     Just (InfoMethod u tid ie fix nt' (Just arity) iClass) -> 
         let state' = IntState (succ unique) rps st' errors fl
@@ -73,7 +92,7 @@ addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rp
 
 -- -====== State0
 
-updInstMethodNT :: TokenId -> TokenId -> Int -> NewType -> Int 
+updInstMethodNT :: TokenId -> TokenId -> Id -> NewType -> Id 
                 -> a -> IntState -> IntState
 
 updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps@(_,rpsMod) st errors fl) =
@@ -85,27 +104,27 @@ updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps@(_,r
             in IntState unique rps (Map.insertWith fstOf i (InfoIMethod u tid nt annots iMethod) st) errors fl
 
 
-addInstance :: Int -> Int -> [Int] -> [(Int,Int)] -> a -> IntState -> IntState
+addInstance :: Id -> Id -> PackedString -> [Id] -> [(Id,Id)] -> a -> IntState -> IntState
 
 addInstance cls con loc free ctxs down state@(IntState unique rps st errors fl) =
   let st' = Map.update (Just . addInstanceI con loc free ctxs) cls st
   in  IntState unique rps st' errors fl
 
 
-addNewLetBound :: Int -> TokenId -> a -> IntState -> IntState
+addNewLetBound :: Id -> TokenId -> a -> IntState -> IntState
 
 addNewLetBound i tid down state =
   addIS i (InfoVar i tid IEnone (InfixDef,9) NoType Nothing) state
 
 -- -==== Reduce
 
-{-
+{- |
 Adds type of variable to symbol table of internal state.
 Assumes that variable is already in symbol table.
 Adds error message, if there exists already a type for the variable
 in the symbol table or type is badly formed (duplicate predicates in context). 
 -}
-updVarNT :: Pos -> Int -> NewType -> Reduce IntState IntState
+updVarNT :: Pos -> Id -> NewType -> Reduce IntState IntState
 
 updVarNT pos i nt state@(IntState unique rps st errors fl) =
   case Map.lookup i st of
@@ -118,15 +137,15 @@ updVarNT pos i nt state@(IntState unique rps st errors fl) =
     Just (InfoVar u tid exp fix nt' annots) ->
       IntState unique rps st 
         (("New type signature for " ++ show tid ++ " at " ++ strPos pos)
-         : errors)
+         : errors) fl
 
 
-{-
+{- |
 Adds arity of variable to symbol table of internal state 
 (any old arity is overwritten).
 Assumes that variable is already in symbol table.
 -}
-updVarArity :: Pos -> Int -> Int -> Reduce IntState IntState
+updVarArity :: Pos -> Id -> Int -> Reduce IntState IntState
 
 updVarArity pos i arity state@(IntState unique rps st errors fl) =
   case Map.lookup i st of
@@ -140,50 +159,50 @@ updVarArity pos i arity state@(IntState unique rps st errors fl) =
 
 -- -==== Stand alone
 
-{- Add new info for identifier to the symbol table -}
-addIS :: Int -> Info -> IntState -> IntState
+{- | Add new info for identifier to the symbol table -}
+addIS :: Id -> Info -> IntState -> IntState
 
 addIS u info state@(IntState unique rps st errors fl) =
   IntState unique rps (Map.insertWith combInfo u info st) errors fl
 
 
-{- Lookup identifier in symbol table -} 
+{- | Lookup identifier in symbol table -} 
 lookupIS :: IntState -> Id -> Maybe Info
 
 lookupIS (IntState unique rps st errors fl) i = Map.lookup i st
 
 
-{- Update info for identifier in symbol table -}
+{- | Update info for identifier in symbol table -}
 updateIS :: IntState -> Id -> (Info -> Info) -> IntState
 
 updateIS (IntState unique rps st errors fl) i upd =
   IntState unique rps (Map.update (Just . upd) i st) errors fl
 
 
-{- Obtain a new unique and hence also a new internal state -}
+{- | Obtain a new unique and hence also a new internal state -}
 uniqueIS :: IntState -> (Id,IntState)
 
-uniqueIS (IntState unique rps st errors) = (unique,IntState (unique+1) rps st errors)
+uniqueIS (IntState unique rps st errors fl) = (unique,IntState (succ unique) rps st errors fl)
 
 
-{- Associate new uniques with given list of entities; hence also new internal
+{- | Associate new uniques with given list of entities; hence also new internal
 state -}
-uniqueISs :: IntState -> [a] -> ([(a,Int)],IntState)
+uniqueISs :: IntState -> [a] -> ([(a,Id)],IntState)
 
-uniqueISs (IntState unique rps st errors) l =
-   (zip l [unique..],IntState (unique+(length l)) rps st errors)
+uniqueISs (IntState unique rps st errors fl) l =
+   (zip l [unique..],IntState (toEnum (fromEnum unique+(length l))) rps st errors fl)
 
 
-{- Give printable string for identifier -}
-strIS :: IntState -> Int -> String
+{- | Give printable string for identifier -}
+strIS :: IntState -> Id -> String
 
 strIS state i =
    case lookupIS state i of
      Just info -> show (tidI info)
-     Nothing -> 'v':show i
+     Nothing -> 'v':strId i
 
 
-{- Give token of identifier -}
+{- | Give token of identifier -}
 tidIS :: IntState -> Id -> TokenId
 
 tidIS state i =
@@ -191,30 +210,36 @@ tidIS state i =
      Just info -> tidI info
 
 getErrors :: IntState -> (IntState,[String])
-getErrors (IntState unique rps st errors) = (IntState unique rps st [], errors)
+getErrors (IntState unique rps st errors fl) = (IntState unique rps st [] fl, errors )
 
 getErrorsIS :: IntState -> Either [String] IntState
-getErrorsIS is@(IntState unique rps st errors)
+getErrorsIS is@(IntState unique rps st errors fl)
     | null errors = Right is
     | otherwise   = Left errors
 
 addError :: IntState -> [Char] -> IntState
-addError (IntState unique rps st errors) err = 
-  IntState unique rps st (err:errors)
+addError (IntState unique rps st errors fl) err = 
+  IntState unique rps st (err:errors) fl
 
-getSymbolTable :: IntState -> AssocTree Int Info
-getSymbolTable (IntState unique rps st errors) = st
+getSymbolTable :: IntState -> Map.Map Id Info
+getSymbolTable (IntState unique rps st errors fl) = st
 
-mrpsIS (IntState unique (i,rps) st errors) = rps
-miIS (IntState unique (i,rps) st errors) = i
+mrpsIS :: IntState -> PackedString
+mrpsIS (IntState unique (i,rps) st errors fl) = rps
+miIS :: IntState -> Id
+miIS (IntState unique (i,rps) st errors fl) = i
 
+getFlags :: IntState -> Flags
+getFlags (IntState unique (i,rps) st errors fl) = fl
+
+getIndDataIS :: IntState -> Info -> Id
 getIndDataIS state indDataI =
   case constrsI indDataI of
     (c:_) ->   -- Can only be one constructor 
       case lookupIS state c of
-	(Just infoCon) ->
+        (Just infoCon) ->
           case ntI infoCon of
-	    (NewType ctx free [] (NTcons con _ _:_)) -> con
+            (NewType ctx free [] (NTcons con _ _:_)) -> con
 
 
 globalIS :: IntState -> Id -> Bool
@@ -265,12 +290,12 @@ arityIS state i =
 
 
 
-{-
+{- |
 Tests if context of type has duplicate predicates.
 Second argument converts class identifier to string.
 *** This module not a good place for this function.
 -}
-checkNT :: Pos -> (Int -> String) -> NewType -> Maybe String
+checkNT :: Pos -> (Id -> String) -> NewType -> Maybe String
 
 checkNT pos strFun (NewType free [] ctxs nts) =
   case (filter ((1/=) . length) . group) ctxs of

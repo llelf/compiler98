@@ -26,19 +26,20 @@ sId id = (id,singletonSet id)
 
 ----  Now the real work
  
+sccTopDecls :: Decls Id -> Decls Id
 sccTopDecls topdecls = fst (sDecls topdecls)
 
  
-sDecls :: Decls Int -> (Decls Int,[Int])
+sDecls :: Decls Id -> (Decls Id,[Id])
 sDecls (DeclsParse ds) = 
-        let (ds',dep,trans) = split (0::Int) [] [] [] (map_sDecl ds)
+        let (ds',dep,trans) = split (toEnum 0::Id) [] [] [] (map_sDecl ds)
             dep' = map (\(l,rs) -> (l,nub (translate trans rs))) dep
             scc  = sccDepend dep'
         in
            (DeclsScc (fixDecl scc ds'),remove dep)
         where
             split n ds dep trans [] = (ds,dep,trans)
-            split n ds dep trans ((d,(xs,ys)):r) = split (n+1) ((n,d):ds) 
+            split n ds dep trans ((d,(xs,ys)):r) = split (succ n) ((n,d):ds)
                                                          ((n,ys):dep)
                                                          (map (\x->(x,n)) xs ++ trans) r
 
@@ -56,7 +57,7 @@ sDecls (DeclsParse ds) =
 
 sDecls _ = error "I: sDecls not on [DeclParse..]"
 
--- map_sDecl :: [Decl Int] -> [(Decl Int,([Int],[Int]))]
+map_sDecl :: [Decl Id] -> [(Decl Id,([Id],[Id]))]
 map_sDecl [] = []
 map_sDecl (DeclIgnore str: r) = map_sDecl r
 map_sDecl (DeclFixity f: r)   = map_sDecl r
@@ -155,19 +156,25 @@ sExp (ExpLambda pos pats e)   = sUnit (\e p-> ExpLambda pos p e) `sAdd` sExp e `
 sExp (ExpCase pos e alts)     = sUnit (ExpCase pos) `sAdd` sExp e `sAdd` sAlts alts
 sExp (ExpIf pos c e1 e2)      = sUnit (ExpIf pos) `sAdd` sExp c `sAdd` sExp e1 `sAdd` sExp e2
 sExp (ExpType pos e ctx t)    = sUnit (\e -> ExpType pos e ctx t) `sAdd` sExp e
-sExp (ExpDo pos stmts)	      = sUnit (ExpDo pos) `sAdd` sStmts stmts
+sExp (ExpDo pos stmts)        = sUnit (ExpDo pos) `sAdd` sStmts stmts
 --- Above only in expressions
 sExp (ExpRecord exp fields)   = sUnit ExpRecord `sAdd` sExp exp `sAdd` sMap sField fields
 sExp (ExpApplication pos es)  = sUnit (ExpApplication pos) `sAdd` sExps es
 sExp (ExpVar pos id)          = sUnit (ExpVar pos) `sAdd` sId id
 sExp (ExpCon pos id)          = sUnit (ExpCon pos) `sAdd` sId id
 sExp (ExpList pos  es)        = sUnit (ExpList pos) `sAdd` sExps es
-sExp (ExpLit pos lit) 	      = sUnit (ExpLit pos lit)
+sExp (ExpLit pos lit)         = sUnit (ExpLit pos lit)
 --- Below only in pattess
 sExp (PatAs pos id e)         = sUnit (PatAs pos) `sAdd` sId id `sAdd` sPat e
-sExp (PatWildcard pos)	      = sUnit (PatWildcard pos)
+sExp (PatWildcard pos)        = sUnit (PatWildcard pos)
 sExp (PatIrrefutable pos e)   = sUnit (PatIrrefutable pos) `sAdd` sPat e
 sExp (PatNplusK pos n n' k le nk)= sUnit (PatNplusK pos) `sAdd` sId n `sAdd` sId n' `sAdd` sExp k `sAdd` sExp le `sAdd` sExp nk
+
+-- hacky hacky hacky!
+-- fixes a bug when tup = (+,*) is given
+-- but dies later with a bad error message (but at least gives the position!)
+sExp (ExpVarOp pos id)        = sUnit (ExpVarOp pos) `sAdd` sId id
+
 
 
 sAlts alts = sMap sAlt alts

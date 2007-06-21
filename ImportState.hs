@@ -1,5 +1,7 @@
-{- ---------------------------------------------------------------------------
+{- |
 Internal state of the compiler used from need analysis until renaming
+
+Needs 'IdSupply'?
 -}
 module ImportState (module ImportState, module Info, Decl) where
 
@@ -13,6 +15,7 @@ import Error
 import Id
 
 
+-- | It is probably best to refrain from direct access to the fields...
 data  ImportState =
       ImportState {
         visibleIS :: Bool,
@@ -43,11 +46,11 @@ initIS rt =
     (Map.map Left rt) Map.empty [] (error "no fixity") []
 
 
-{- put modid of interface file into import state -}
+{- | put modid of interface file into import state -}
 putModidIS :: ImportState -> PackedString -> ImportState
 putModidIS is rps = is { visibleIS = True, rpsIS = rps, sectionRpsIS = rps }
 
-{- put modid of current section of interface file into import state -}
+{- | put modid of current section of interface file into import state -}
 putModid2IS :: ImportState -> Bool -> PackedString -> ImportState
 putModid2IS is visible rps = is { visibleIS = visible, sectionRpsIS = rps }
 

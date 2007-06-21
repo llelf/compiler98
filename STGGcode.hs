@@ -18,37 +18,37 @@ stgGcode prof state code =
 gBindingTop (fun,PosLambda pos _ [] args@[arg] exp@(PosExpCase cpos (PosVar vpos var) [PosAltCon apoc con posargs (PosVar vpos2 var2)])) =
     gOnly con >>>= \ only ->
     if only && any ((var2 ==).snd) posargs then -- Selector function
-      let no = dropJust (lookup var2 (zip (map snd posargs) [1..]))
+      let no = fromJust (lookup var2 (zip (map snd posargs) [1..]))
       in unitS (STARTFUN (pos2Int pos) fun : needstack 1 [ SELECTOR_EVAL, SELECT no ])
     else     -- Ugly duplication of code
-      setFun fun >>>
-      pushEnv (zip (map snd args) (map Arg [1..])) >>>
+      setFun (fromEnum fun) >>>
+      pushEnv (zip (map (fromEnum.snd) args) (map Arg [1..])) >>>
       gExp exp >>>= \ exp ->
       popEnv >>>
       maxDepth >>>= \ d ->
       unitS (STARTFUN (pos2Int pos) fun : needstack d ( exp ++ [RETURN_EVAL]))
-gBindingTop (fun,PosLambda pos env args exp) =
-    setFun fun >>>
-    pushEnv (zip (map snd args) (map Arg [1..])) >>>
+gBindingTop (fun,PosLambda pos _ env args exp) =
+    setFun (fromEnum fun) >>>
+    pushEnv (zip (map (fromEnum.snd) args) (map Arg [1..])) >>>
     gExp exp >>>= \ exp ->
     popEnv >>>
     maxDepth >>>= \ d ->
     unitS (STARTFUN (pos2Int pos) fun : needstack d (exp ++ [RETURN_EVAL]))
 gBindingTop (fun,PosPrimitive pos fn) =
-    setFun fun >>>
-    gArity fun >>>= \ (Just arity) ->
+    setFun (fromEnum fun) >>>
+    gArity (fromEnum fun) >>>= \ (Just arity) ->
     unitS (STARTFUN (pos2Int pos) fun: concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
-	   [PRIMITIVE, DATA_CLABEL fn, RETURN_EVAL ])
-gBindingTop (fun,PosForeign pos fn str c ie) =
-    setFun fun >>>
-    gArity fun >>>= \ (Just arity) ->
+	   [PRIMITIVE, DATA_CLABEL (fromEnum fn), RETURN_EVAL ])
+gBindingTop (fun,PosForeign pos fn _ str c ie) =
+    setFun (fromEnum fun) >>>
+    gArity (fromEnum fun) >>>= \ (Just arity) ->
     makeForeign str arity fn c ie >>>
     case ie of
       Imported ->
         unitS
           (STARTFUN (pos2Int pos) fun:
            concatMap ( \ p -> [PUSH_ARG p, EVAL, POP 1] ) [1 .. arity] ++
-           [ PRIMITIVE , DATA_FLABEL fn, RETURN_EVAL ])
+           [ PRIMITIVE , DATA_FLABEL (fromEnum fn), RETURN_EVAL ])
       Exported ->
         unitS []
 
@@ -60,12 +60,12 @@ gExp (PosExpLet _ pos bindings exp) =
                    
         (bBuild,addLate) = unzip bBuild_bEnv
         addId = map fst bindings
-	addEnv = map ( \ v -> (v,HeapLate)) addId
+	addEnv = map ( \ v -> (fromEnum v,HeapLate)) addId
         newEnv = addEnv:env
         size = length addId
     in
 --      strace ("STGGCode PosExpLet addLate " ++ show (map fst addLate) ++ " addId " ++ show addId) $
-      (pushStack addId >>>
+      (pushStack (map fromEnum addId) >>>
        gExp exp >>>= \ eBuild ->
        popEnv >>>
        decDepth size >>>
@@ -81,7 +81,7 @@ gExp (PosExpCase pos exp alts) =
   popDH >>>
   case unzip alts of
     (il,alts) -> 
-      unitS (exp ++ EVAL : CASE il fd : concat alts ++ [LABEL c])
+      unitS (exp ++ EVAL : CASE il fd : concat alts ++ [LABEL (fromEnum c)])
 
 gExp (PosExpFatBar esc exp1 exp2) =
   pushDH >>>
@@ -91,7 +91,7 @@ gExp (PosExpFatBar esc exp1 exp2) =
   popFail >>>
   popDH >>>
   gExp exp2 >>>= \ exp2 ->
-  unitS (exp1 ++ JUMP after : LABEL fail : exp2 ++ [LABEL after])
+  unitS (exp1 ++ JUMP (fromEnum after) : LABEL fail : exp2 ++ [LABEL (fromEnum after)])
 
 gExp (PosExpFail) =
   getFail >>>= \ (Just (fail,d)) ->
@@ -106,7 +106,7 @@ gExp (PosExpIf  pos _ exp1 exp2 exp3) =
   gExp exp2 >>>= \ exp2 ->
   popDH >>>
   gExp exp3 >>>= \ exp3 ->
-  unitS (exp1 ++ EVAL:JUMPFALSE false: exp2 ++ JUMP after:LABEL false:exp3 ++ [LABEL after]) -- DAVID
+  unitS (exp1 ++ EVAL:JUMPFALSE (fromEnum false): exp2 ++ JUMP (fromEnum after):LABEL (fromEnum false):exp3 ++ [LABEL (fromEnum after)]) -- DAVID
 
 gExp (PosExpThunk pos _ [PosPrim _ STRING _,PosString _ s]) =
   incDepth >>>
@@ -159,7 +159,7 @@ gAlt c (PosAltCon pos con args exp) =
   in 
     cloneDH >>>
     decDepth 1 >>> -- UNPACK remove one element
-    pushStack (reverse (map snd args)) >>>
+    pushStack (reverse (map (fromEnum.snd) args)) >>>
     gUnique >>>= \ u -> 
     gExp exp >>>= \ exp ->
     decDepth nargs >>>
@@ -170,23 +170,23 @@ gAlt c (PosAltInt pos i _    exp) =
   gUnique >>>= \ u -> 
   decDepth 1 >>> -- POP 1 remove one element
   gExp exp >>>= \ (exp) ->
-  unitS ((GALT_INT i,u), LABEL u : POP 1 : exp ++ [JUMP c])
+  unitS ((GALT_INT i, fromEnum u), LABEL (fromEnum u) : POP 1 : exp ++ [JUMP (fromEnum c)])
 
 gAtom (PosExpThunk pos _ [e]) =
   gAtom e
 gAtom (PosCon pos i) =
-  incDepth >>> unitS [PUSH_GLB con0 i]
+  incDepth >>> unitS [PUSH_GLB con0 (fromEnum i)]
 gAtom (PosVar pos i) =
-  gWhere i >>>= \ w ->
+  gWhere (fromEnum i) >>>= \ w ->
   case w of
     Nothing -> incDepth >>>
-		 gArity i >>>= \ a ->
-		   if isJust a && dropJust a == 0 then 
-		     unitS [PUSH_GLB caf i]
+		 gArity (fromEnum i) >>>= \ a ->
+		   if isJust a && fromJust a == 0 then 
+		     unitS [PUSH_GLB caf (fromEnum i)]
 		   else
-		     unitS [PUSH_GLB cap0 i]
-    Just (Arg i) -> incDepth >>> unitS [PUSH_ARG i]
-    Just (Stack i) -> incDepth >>> unitS [PUSH i]
+		     unitS [PUSH_GLB cap0 (fromEnum i)]
+    Just (Arg i) -> incDepth >>> unitS [PUSH_ARG (fromEnum i)]
+    Just (Stack i) -> incDepth >>> unitS [PUSH (fromEnum i)]
 gAtom (PosInt pos i) = incDepth >>> unitS [PUSH_INT i]
 gAtom (PosChar pos i) = incDepth >>> unitS [PUSH_CHAR i]
 gAtom (PosFloat pos f) = incDepth >>> unitS [PUSH_FLOAT f]

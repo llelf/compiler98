@@ -7,20 +7,23 @@ import Parse.ParseLib
 import TokenId(isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
               ,t_foreign,t_export,t_ccall,t_haskell,t_unsafe,t_cast,t_noproto
+              ,t_fastccall, t_faststdcall, t_builtin
               ,t_stdcall,t_cplusplus,t_dotnet,t_jvm,t_safe
               ,tinterface,thiding,tqualified)
 
 
+lit :: Lex -> Parser Pos [(Pos, Lex, e, f)] h
 lit a = literal (a::Lex)
 
 eof :: Parser Pos [PosToken] c
 eof = lit L_EOF
 
-unboxed = 
-  True `parseChk` k_unboxed 
+unboxed :: Parser Bool [PosToken] b
+unboxed =
+  True `parseChk` k_unboxed
     `orelse`
   parse False
- 
+
 lbrack :: Parser Pos [PosToken] c
 lbrack = lit L_LBRACK
 rbrack :: Parser Pos [PosToken] c
@@ -41,6 +44,8 @@ bang :: Parser Pos [PosToken] c
 bang = lvarop t_Bang "!"
 
 -- "special" identifiers which are *not* language keywords.
+k_interface, k_qualified, k_hiding, k_as, k_unit, k_primitive, k_prefix :: Parser Pos [PosToken] c
+k_unboxed, k_forall, k_dot, k_rarrow                                    :: Parser Pos [PosToken] c
 k_interface = lvarid tinterface "interface"
 k_qualified = lvarid tqualified "qualified"
 k_hiding = lvarid thiding "hiding"
@@ -54,11 +59,18 @@ k_dot = lvarop tdot "dot"
 k_rarrow = lvarop t_Arrow "->"
 
 -- "special" identifiers for FFI which are not (all) language keywords.
+k_import :: Parser Pos [(Pos, Lex, e, f)] h
+k_foreign, k_export, k_ccall, k_stdcall, k_fastccall, k_faststdcall, k_builtin ::  Parser Pos [PosToken] c
+k_cplusplus, k_dotnet, k_jvm, k_haskellcall, k_safe, k_unsafe                  ::  Parser Pos [PosToken] c
+k_noproto, k_cast                                                              ::  Parser Pos [PosToken] c
 k_foreign = lvarid t_foreign "foreign"
 k_import = lit L_import
 k_export = lvarid t_export "export"
 k_ccall = lvarid t_ccall "ccall"
 k_stdcall = lvarid t_stdcall "stdcall"
+k_fastccall = lvarid t_fastccall "fastccall"
+k_faststdcall = lvarid t_faststdcall "faststdcall"
+k_builtin = lvarid t_builtin "builtin"
 k_cplusplus = lvarid t_cplusplus "cplusplus"
 k_dotnet = lvarid t_dotnet "dotnet"
 k_jvm = lvarid t_jvm "jvm"
@@ -106,6 +118,7 @@ integer :: Parser (Pos,Lit Boxed) [PosToken] c
 integer = token (\pos t -> case t of L_INTEGER x -> Right (pos, LitInteger Boxed x) ; _ -> Left "<integer>")
 int :: Parser (Pos,Lit Boxed) [PosToken] c
 int = token (\pos t -> case t of L_INTEGER x -> Right (pos, LitInt Boxed (fromInteger x)) ; _ -> Left "<int>")
+intPrim :: Parser Int [(Pos, Lex, e, f)] h
 intPrim = token (\pos t -> case t of L_INTEGER x -> Right ((fromInteger x) :: Int) ; _ -> Left "<intPrim>")
 
 -- double :: Parser (Pos,Lit Boxed) [PosToken] c
@@ -115,18 +128,21 @@ char   = token (\pos t -> case t of L_CHAR x   -> Right (pos, LitChar Boxed x) ;
 string :: Parser (Pos,Lit Boxed) [PosToken] c
 string = token (\pos t -> case t of L_STRING x -> Right (pos, LitString Boxed x) ; _ -> Left "<string>")
 
+tuple0 :: Parser (Pos, TokenId) [(Pos, Lex, e, f)] h
 tuple0 = token (\pos t -> case t of L_ACONID x | isUnit x -> Right (pos,x) ; _ -> Left "()")
 
+aconid, aconop, avarid, avarop :: Parser (Pos, TokenId) [(Pos, Lex, e, f)] h
 aconid = token (\pos t -> case t of L_ACONID x -> Right (pos,x) ; _ -> Left "<conid>")
 aconop = token (\pos t -> case t of L_ACONOP x -> Right (pos,x) ; _ -> Left "<conop>")
 avarid = token (\pos t -> case t of L_AVARID x -> Right (pos,x)
---			            L_primitive -> Right (pos,tprimitive)  -- Not a Haskell 1.3 reserved word
---			            L_prefix   -> Right (pos,tprefix)  -- Not a Haskell 1.3 reserved word
---			            L_unboxed  -> Right (pos,tunboxed) -- Not a Haskell 1.3 reserved word
---			            L_as       -> Right (pos,tas)      -- Not a Haskell 1.3 reserved word
-				    _ -> Left "<varid>")
+--                                  L_primitive -> Right (pos,tprimitive)  -- Not a Haskell 1.3 reserved word
+--                                  L_prefix   -> Right (pos,tprefix)  -- Not a Haskell 1.3 reserved word
+--                                  L_unboxed  -> Right (pos,tunboxed) -- Not a Haskell 1.3 reserved word
+--                                  L_as       -> Right (pos,tas)      -- Not a Haskell 1.3 reserved word
+                                    _ -> Left "<varid>")
 avarop = token (\pos t -> case t of L_AVAROP x -> Right (pos,x) ; _ -> Left "<varop>")
 
+varid, conid, varop, conop :: Parser (Pos, TokenId) [(Pos, Lex, LexState, [PosTokenPre])] b
 varid = avarid
            `orelse`
         lpar `revChk` avarop `chk` rpar
@@ -143,6 +159,8 @@ conop = aconop
            `orelse`
         backtick `revChk` aconid `chk` backtick
 
+
+anyop, anyid :: Parser (Exp TokenId) [(Pos, Lex, LexState, [PosTokenPre])] b
 anyop = (uncurry ExpConOp) `parseAp` conop
            `orelse`
         (uncurry ExpVarOp) `parseAp`  varop
@@ -151,6 +169,7 @@ anyid = (uncurry ExpCon) `parseAp`  conid
            `orelse`
         (uncurry ExpVar) `parseAp`  varid
 
+aanyid, aanyop :: Parser (Exp TokenId) [(Pos, Lex, e, f)] b
 aanyid = (uncurry ExpCon) `parseAp` aconid
            `orelse`
          (uncurry ExpVar) `parseAp` avarid

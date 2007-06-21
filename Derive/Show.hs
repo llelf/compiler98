@@ -16,6 +16,8 @@ import TokenId(tTrue,tShow,tshowParen,tshowChar,tshowString
 import Nice(showsOp,showsVar)
 import Id(Id)
 
+deriveShow :: ((TokenId,IdKind) -> Id)
+           -> Id -> Id -> [Id] -> [(Id,Id)] -> Pos -> a -> IntState -> (Decl Id,IntState)
 deriveShow tidFun cls typ tvs ctxs pos =
  getUnique >>>= \d ->
  let expD = ExpVar pos d
@@ -41,10 +43,12 @@ deriveShow tidFun cls typ tvs ctxs pos =
   unitS $
     DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
       DeclsParse [DeclFun pos fun funs
-		 ,DeclFun pos funT funTs]
+                 ,DeclFun pos funT funTs]
 
 
 
+mkShowFun :: a -> Exp Id -> Exp Id -> Exp Id -> Exp Id -> Exp Id -> Exp Id -> Exp Id
+          -> Pos -> Info -> b -> IntState -> (Fun Id,IntState)
 mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expLessThan expDot pos constrInfo =
   let 
       fields = fieldsI constrInfo
@@ -65,49 +69,49 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
       getUnique >>>= \ v1 ->
       getUnique >>>= \ v2 ->
       let (lp,p,rp) = case fixityI constrInfo of
-		         (Infix,p)  -> (p,p,p)
-		         (InfixR,p) -> (p+1,p,p)
-		         (_,p)      -> (p,p,p+1)
-	  v1e = ExpVar pos v1
-	  v2e = ExpVar pos v2
+                         (Infix,p)  -> (p,p,p)
+                         (InfixR,p) -> (p+1,p,p)
+                         (_,p)      -> (p,p,p+1)
+          v1e = ExpVar pos v1
+          v2e = ExpVar pos v2
       in unitS (
-	   Fun [expD,ExpApplication pos [con,v1e,v2e]]
-	     (Unguarded (ExpApplication pos 
-	       [expShowParen
-	       ,ExpApplication pos [expLessThan,mkInt pos p,expD]
-	       ,ExpApplication pos
-		 [expDot
-		 ,ExpApplication pos [expShowsPrec,mkInt pos lp,v1e] 
-		 ,ExpApplication pos 
-		   [expDot
-		   ,expShowSpace
-		   ,ExpApplication pos 
-		     [expDot
-		     ,expShowsConOp
-		     ,ExpApplication pos 
-		       [expDot
-		       ,expShowSpace
-		       ,ExpApplication pos [expShowsPrec,mkInt pos rp,v2e]]]]]]
-	     )) (DeclsParse []))
+           Fun [expD,ExpApplication pos [con,v1e,v2e]]
+             (Unguarded (ExpApplication pos 
+               [expShowParen
+               ,ExpApplication pos [expLessThan,mkInt pos p,expD]
+               ,ExpApplication pos
+                 [expDot
+                 ,ExpApplication pos [expShowsPrec,mkInt pos lp,v1e] 
+                 ,ExpApplication pos 
+                   [expDot
+                   ,expShowSpace
+                   ,ExpApplication pos 
+                     [expDot
+                     ,expShowsConOp
+                     ,ExpApplication pos 
+                       [expDot
+                       ,expShowSpace
+                       ,ExpApplication pos [expShowsPrec,mkInt pos rp,v2e]]]]]]
+             )) (DeclsParse []))
 
     NewType _ _ _ (_:nts) | any isNothing fields ->
       -- We only want a list with one element for each argument, the elements themselves are never used
       mapS ( \ _ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \ args ->
       let exp10 = ExpLit pos (LitInt Boxed 10)
           exp9 = ExpLit pos (LitInt Boxed 9)
-	  expShowsPrec10 arg = ExpApplication pos [expShowsPrec,exp10,arg]
+          expShowsPrec10 arg = ExpApplication pos [expShowsPrec,exp10,arg]
       in unitS (
-	   Fun [expD,ExpApplication pos (con:args)]
-	     (Unguarded (ExpApplication pos 
+           Fun [expD,ExpApplication pos (con:args)]
+             (Unguarded (ExpApplication pos 
                [expShowParen
                ,ExpApplication pos [expLessThan,exp9,expD]
-	       ,foldl ( \ acc arg -> 
+               ,foldl ( \ acc arg -> 
                  ExpApplication pos 
                    [expDot
                    ,ExpApplication pos [expDot, acc ,expShowSpace]
                    ,expShowsPrec10 arg])
-		 expShowsConVar
-		 args
+                 expShowsConVar
+                 args
                ]))
              (DeclsParse []))
 
@@ -116,8 +120,8 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
       mapS (getInfo.fromJust) fields >>>= \ labels ->
       let exp10 = ExpLit pos (LitInt Boxed 10)
           exp9 = ExpLit pos (LitInt Boxed 9)
-	  expShowsPrec10 arg = ExpApplication pos [expShowsPrec,exp10,arg]
-	  expShowsLabel label = 
+          expShowsPrec10 arg = ExpApplication pos [expShowsPrec,exp10,arg]
+          expShowsLabel label = 
             ExpApplication pos 
               [expShowString
               ,ExpLit pos (LitString Boxed (showsVar (dropM (tidI label)) "="))]
@@ -128,8 +132,8 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
           expShowsComma = 
             ExpApplication pos [expShowString,ExpLit pos (LitString Boxed ",")]
       in unitS (
-	   Fun [expD,ExpApplication pos (con:args)]
-	     (Unguarded 
+           Fun [expD,ExpApplication pos (con:args)]
+             (Unguarded 
                (ExpApplication pos 
                  [expShowParen
                  ,ExpApplication pos [expLessThan,exp9,expD]
@@ -152,8 +156,8 @@ mkShowFun expTrue expD expShowString expShowSpace expShowParen expShowsPrec expL
 --                           ExpApplication pos [expDot, expShowSpace,
 --                             expShowsLabel label]],
 --                         expShowsPrec10 arg])
---		      (ExpApplication pos [expDot, expShowsConVar, expShowsOpen])
---		      (zip (map tidI labels) args),
+--                    (ExpApplication pos [expDot, expShowsConVar, expShowsOpen])
+--                    (zip (map tidI labels) args),
 --                  expShowsClose]])]
 
               (DeclsParse []))
@@ -170,27 +174,27 @@ mkShowFunTs expTrue expShowsType expShowParen expShowString expShowSpace expDot 
   in
     case ntI typInfo of
       NewType [] [] [] _  ->
-	unitS [Fun [expA] (Unguarded expTypeStr) (DeclsParse [])]
+        unitS [Fun [expA] (Unguarded expTypeStr) (DeclsParse [])]
       NewType free exist _ _ ->
-	mapS (\ f -> getUnique >>>= \ i -> unitS (f,i,ExpVar pos i)) 
+        mapS (\ f -> getUnique >>>= \ i -> unitS (f,i,ExpVar pos i)) 
           free >>>= \ fitypes ->
-	mapS0 (\(f,i,ei)-> addNewLetBound i (visImport ('v':(show i)))) fitypes >>>
+        mapS0 (\(f,i,ei)-> addNewLetBound i (visImport ('v':(show i)))) fitypes >>>
         mapS ( getType pos expA expShowsType expTrue expShowString constrInfos ) fitypes >>>= \ des ->
         case unzip des of
-	  (ds,es) ->
-	    unitS [Fun [expA]
-	               (Unguarded (ExpApplication pos 
+          (ds,es) ->
+            unitS [Fun [expA]
+                       (Unguarded (ExpApplication pos 
                          [expShowParen
                          ,expTrue
-			 ,foldl ( \ acc e -> 
+                         ,foldl ( \ acc e -> 
                            ExpApplication pos 
-                             [expDot	
-			     ,ExpApplication pos [expDot, acc ,expShowSpace]
-			     ,e])
-			   expTypeStr
-			   es]))
-	            (DeclsParse (concat ds))
-	          ]      
+                             [expDot    
+                             ,ExpApplication pos [expDot, acc ,expShowSpace]
+                             ,e])
+                           expTypeStr
+                           es]))
+                    (DeclsParse (concat ds))
+                  ]      
 
 
 getType :: Show a 
@@ -218,11 +222,12 @@ patConstr pos info f iexp =
       in case (partition (simpleNT . snd) .  filter (elem f . freeNT . snd)) ints of
           ([],[])      -> unitS Nothing
           ((i,nt):_,_) -> unitS (Just (ExpApplication pos (ExpCon pos (uniqueI info) : map (toExp i iexp) ints)))
-	  ([],xs)      -> unitS Nothing -- can do better here !!
+          ([],xs)      -> unitS Nothing -- can do better here !!
  where
   toExp i iexp (i',_) = if i == i' then iexp else PatWildcard pos
 
 
+simpleNT :: NT -> Bool
 simpleNT (NTstrict nt) = simpleNT nt
 simpleNT (NTvar v _) = True
 simpleNT (NTany v) = True

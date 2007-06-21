@@ -14,8 +14,8 @@ import Maybe
 
 data AtomDown =
   AtomDown
-    TokenId 		        -- current function
-    [Int]			-- current env
+    TokenId                     -- current function
+    [Id]                        -- current env
 
 data AtomState =
   AtomState
@@ -23,9 +23,9 @@ data AtomState =
     PosCode
 
 
-posAtom :: IntState -> [(Int,PosLambda)] -> ([(Int,PosLambda)],IntState)
+posAtom :: IntState -> [(Id,PosLambda)] -> ([(Id,PosLambda)],IntState)
 
-posAtom state code = 
+posAtom state code =
   case (mapS atomTopBinding code) (AtomDown tunknown []) (AtomState state []) of
     (code,AtomState state _) -> (concat code,state)
 
@@ -125,7 +125,7 @@ ensureAtom exp =
   if isPosAtom exp then
     unitS (exp,[])
   else
-    atomAdd (getPos exp) exp 
+    atomAdd (getPos exp) exp
 
 atomTop down up@(AtomState state bs) = (bs,AtomState state [])
 
@@ -140,11 +140,11 @@ atomAdd pos exp down@(AtomDown tid env) up@(AtomState state bs) =
 atomAddG pos exp down@(AtomDown tid env) up@(AtomState state bs) =
   case uniqueIS state of
     (u,state) ->
-      let newenv = filter (`elem` env) (freePosExp exp) 
+      let newenv = filter (`elem` env) (freePosExp exp)
           pnewenv = map (pair pos) newenv
       in (PosLambda pos pnewenv [] (PosExpThunk pos (PosVar pos u: map (uncurry PosVar) pnewenv))
          ,AtomState (addIS u (InfoName u (visible (reverse ("ATOM" ++ show u))) (length pnewenv) (tidPos tid pos) True) state) --PHtprof
-		 ((u,PosLambda pos [] pnewenv exp): bs)
+                 ((u,PosLambda pos [] pnewenv exp): bs)
          )
 -}
 
@@ -155,6 +155,7 @@ atomTid fun down@(AtomDown tid env) up@(AtomState state bs) =
   let tid = (profI . fromJust . lookupIS state) fun
   in seq tid (AtomDown tid env,up)
 
+atomEnv :: [Id] -> AtomDown -> AtomState -> (AtomDown,AtomState)
 atomEnv newenv down@(AtomDown tid env) up@(AtomState state bs) =
   (AtomDown tid (newenv ++ env),up)
 
@@ -177,8 +178,8 @@ freePosExp (PosVar pos v) = [v]
 freePosExp (PosCon pos c) = []
 freePosExp (PosInt pos v) = []
 freePosExp (PosChar pos v) = []
-freePosExp (PosFloat   pos v) = [] 
-freePosExp (PosDouble  pos v) = [] 
+freePosExp (PosFloat   pos v) = []
+freePosExp (PosDouble  pos v) = []
 freePosExp (PosInteger pos v) = []
 freePosExp (PosString  pos v) = []
 freePosExp (PosPrim    pos prim v) = []

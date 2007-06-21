@@ -53,6 +53,7 @@ mkin ds = sccAssoc (foldr ( \ (k,vs) at ->
 data Depend a = NoRec a
               | Rec   [a]
 
+isRec :: Depend a -> Bool
 isRec (NoRec _) = False
 isRec (Rec _) = True
 
@@ -63,7 +64,7 @@ instance (Show a) => Show (Depend a) where
 sccDepend :: (Ord a) => [(a, [a])] -> [Depend a]
 sccDepend dep = fix' (map Set.toList (scc (mkin dep) out (map fst dep)))
         where
-	  out = mkout dep
+          out = mkout dep
 
           fix' [] = []
           fix' ([x]:r) = (if x `elem` out x then Rec [x] else NoRec x) : fix' r

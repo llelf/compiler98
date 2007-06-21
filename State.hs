@@ -1,10 +1,6 @@
 module State where
 
-#if defined(__HASKELL98__)
-#define  EVAL(b)
-#else
-#define  EVAL(b) (Eval b) =>
-#endif
+-- | Wow, this stuff is positively ancient! Was this from before newtypes were invented? --SamB
 
 infixl 5 >>>,>>>=,=>>> -- Use >>> and >>>= instead of >> and >>= to avoid problems with 1.3 prelude
 infixr 4 >=>
@@ -23,7 +19,7 @@ unitS0 = (\d s -> s)
 (>>>) :: State0 d a b -> State0 d b c -> State0 d a c
 f >>> g = \d s -> g d (f d s)
 
-(=>>>) :: EVAL(b)  State d s (a->b) s' -> State d s' a s'' -> State d s b s''
+(=>>>) :: State d s (a->b) s' -> State d s' a s'' -> State d s b s''
 f =>>> g = \d s -> case f d s of (h,s) -> case g d s of (x,s) -> let hx = h x in seq hx (hx,s)
 -- f =>>> g = \d s -> case f d s of (h,s) -> case g d s of (x,s) -> (h x,s)
 

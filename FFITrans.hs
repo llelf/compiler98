@@ -110,7 +110,7 @@ examineType pos t lookup state =
     expand   (NTstrict nt)  = NTstrict (expand nt)
     expand   (NTapp t1 t2)  = NTapp (expand t1) (expand t2)
     expand   (NTcons c k nts) =
-        case (typeSynonymBodyI . dropJust . lookupIS state) c of
+        case (typeSynonymBodyI . fromJust . lookupIS state) c of
           Just nt -> expand (subst nt nts)
           Nothing -> NTcons c k (map expand nts)
     expand   _              = error "Unexpected type error in foreign decl"
@@ -134,7 +134,7 @@ examineType pos t lookup state =
 
     boolIO = isIO resNT
 
-    adjustArity True 0 = 1	-- Change zero-arity (IO a) to (()->IO a)
+    adjustArity True 0 = 1      -- Change zero-arity (IO a) to (()->IO a)
     adjustArity _    n = n
 
     adjustArgs True [] = [mkNTcons unit []]

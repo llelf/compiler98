@@ -92,4 +92,5 @@ piLex file s i p t pt  =
           : iLex s i pt
 
 
+failPos :: PackedString -> Pos -> [Char] -> a
 failPos file p msg = error ("Internal in " ++ unpackPS file ++ " at " ++ strPos p ++ ": " ++ msg ++ "\n")

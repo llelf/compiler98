@@ -7,10 +7,12 @@ import NT(NT(..),NewType(..),freeNT,anyVarNT)
 import Type.Subst
 import IntState hiding (NewType)
 import Id(Id)
+import qualified Data.Map as Map
+import Flags
 
 
-unify :: IntState -> AssocTree Id NT -> (NT,NT) 
-      -> Either (AssocTree Id NT, String) (AssocTree Id NT)
+unify :: IntState -> Map.Map Id NT -> (NT,NT) 
+      -> Either (Map.Map Id NT, String) (Map.Map Id NT)
 
 unify state phi (t1@(NTany tvn1),t2) =
   case applySubst phi tvn1 of
@@ -49,8 +51,11 @@ unify state phi (t1@(NTcons c1 _ ts1),t2@(NTcons c2 _ ts2)) =
                         " arguments")
   else
     case (unifyExpand state c1,unifyExpand state c2) of
-      (Left s1       ,Left s2       )          -> 
-        Left (phi,"type clash between " ++ s1 ++ " and " ++ s2)
+      (Left s1       ,Left s2       )          ->
+          let flags = getFlags state 
+          {- this happens because of circular dependency complications ...  -}
+          in if sUnifyHack flags && s1 == s2 then unifyl state phi (zip ts1 ts2)
+                      else Left (phi,"type clash between " ++ s1 ++ " and " ++ s2)
       (Left  _       ,Right (d2,nt2))          -> 
         unify state phi (t1            ,expand nt2 ts2)
       (Right (d1,nt1),Left _        )          -> 
@@ -89,11 +94,11 @@ unify state phi (t1@(NTapp ta1 tb1),t2@(NTcons c2 _ ts2)) =
     t2@(NTcons c2 k ts2) ->
 --      strace ("unify(4) " ++ show t1 ++ " " ++ show t2) $
       case ts2 of
-	[] ->
-	  case lookupIS state c2 of
-	    Just info ->
-	      Left (phi, "type clash between " ++ show (tidI info) ++ " and type application ")
-	_ -> unifyl state phi [(ta1,NTcons c2 k (init ts2)),(tb1,last ts2)]
+        [] ->
+          case lookupIS state c2 of
+            Just info ->
+              Left (phi, "type clash between " ++ show (tidI info) ++ " and type application ")
+        _ -> unifyl state phi [(ta1,NTcons c2 k (init ts2)),(tb1,last ts2)]
 
 unify state phi (t1@(NTapp ta1 tb1),t2@(NTapp ta2 tb2)) =
 --  strace ("unify(5) " ++ show t1 ++ " " ++ show t2) $
@@ -136,8 +141,8 @@ unify state phi (t1@(NTexist e _),t2@(NTvar tvn2 _)) =
 unify state phi _ = error "unify phi _"
 
 
-unifyl :: IntState -> AssocTree Id NT -> [(NT,NT)] 
-       -> Either (AssocTree Id NT, String) (AssocTree Id NT)
+unifyl :: IntState -> Map.Map Id NT -> [(NT,NT)] 
+       -> Either (Map.Map Id NT, String) (Map.Map Id NT)
 
 unifyl state phi eqns = foldr unify' (Right phi) eqns
         where
@@ -147,8 +152,8 @@ unifyl state phi eqns = foldr unify' (Right phi) eqns
 
 {- unify a list of NTs from left to right -}
 
-unifyr :: IntState -> AssocTree Id NT -> [NT] 
-       -> Either (AssocTree Id NT, String) (AssocTree Id NT)
+unifyr :: IntState -> Map.Map Id NT -> [NT] 
+       -> Either (Map.Map Id NT, String) (Map.Map Id NT)
 
 unifyr state phi [] = Right phi
 unifyr state phi [e] = Right phi
@@ -195,7 +200,7 @@ unifyExpand state tcon =
       Just info ->
         case depthI info of
           Just d -> Right (d,ntI info)
-	  Nothing -> Left (show (tidI info))
+          Nothing -> Left (show (tidI info))
 
 
 {-
@@ -215,8 +220,8 @@ Extends substitution by subtitution of `t' for `tvn'.
 Performs occurrence check and assures that replacement of `tvn' is a type
 variable, if `t' expands to a type variable.
 -}
-extendV :: IntState -> AssocTree Id NT -> Id -> NT 
-        -> Either (AssocTree Id NT, String) (AssocTree Id NT)
+extendV :: IntState -> Map.Map Id NT -> Id -> NT 
+        -> Either (Map.Map Id NT, String) (Map.Map Id NT)
 
 extendV state phi tvn t = 
   let t' = expandAll state t

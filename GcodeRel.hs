@@ -21,6 +21,7 @@ fixOne (g:gs) =
 nops = NOP:nops
 
    
+gLabels :: AssocTree Int Int -> Int -> [Gcode] -> AssocTree Int Int
 gLabels at p [] = at
 gLabels at p (LABEL i:gs) =
   gLabels (addAT at sndOf i p) p gs
@@ -57,6 +58,7 @@ gLabels at p (g:gs) =
   in seq p' (gLabels at p' gs)
 
 
+gRel :: AssocTree Int Int -> Int -> [Gcode] -> [Gcode]
 gRel at p [] = take (align wsize p) nops
 
 gRel at p (g@(JUMP  i):gs)  =

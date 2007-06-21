@@ -9,6 +9,7 @@ import SyntaxUtil
 import Maybe
 import Id
 
+optFatBar :: PosExp -> PosExp -> State0 d (IntState, b) (PosExp, (IntState, b))
 optFatBar e1 e2 =
   failExp e1 >>>= \ canfail ->
   if canfail
@@ -17,6 +18,7 @@ optFatBar e1 e2 =
   else unitS e1
 
 
+failExp :: PosExp -> d -> (IntState, b) -> (Bool, (IntState, b))
 failExp (PosExpCase pos exp alts) =
   anyMissing alts >>>= \ notfull ->
   mapS failAlt alts >>>= \ alts ->
@@ -45,6 +47,7 @@ anyMissing (PosAltCon pos con args exp:alts) down up@(state,_) =
 
 ---
 
+singleVars :: Exp Id -> t -> (IntState, b) -> (Maybe [Maybe (Pos, Id)], (IntState, b))
 singleVars (ExpApplication _ (ExpCon _ con:es)) down up@(state,_) =
   ( if ( (1==) . length . constrsI . fromJust . lookupIS state
                    . belongstoI . fromJust . lookupIS state) con -- only one constructor
@@ -55,5 +58,6 @@ singleVars (ExpApplication _ (ExpCon _ con:es)) down up@(state,_) =
   )
 singleVars _ down up = (Nothing,up)
 
+getPosI :: Exp id -> Maybe (Pos, id)
 getPosI (ExpVar pos i) = Just (pos, i)
 getPosI (PatWildcard pos) = Nothing

@@ -191,7 +191,7 @@ main' args = do
    ,rt)		-- :: RenameTable
        <- catchError (rename flags modid qualFun expFun inf decls
                              importState overlap)
-                     "Errors when renaming" mixLine
+                     "Errors when renaming" (mixLine . concatMap showError)
   pF (sRename flags) "Declarations after rename and fixity:" 
         (prettyPrintId flags state ppTopDecls decls) 
   pF (sRBound flags) "Symbol table after rename and fixity:"  
@@ -488,7 +488,7 @@ main' args = do
 --------
 
 
-type FixState = (AssocTree (Id,Id) Id, (AssocTree String Id, [(Id,Gcode)]))
+type FixState = (AssocTree (Int,Int) Int, (AssocTree String Int, [(Int,Gcode)]))
 
 
 {-
@@ -506,9 +506,9 @@ generateCode :: Handle
                 -> [Foreign]
                 -> IntState
                 -> FixState
-                -> EmitState 
-                -> EmitState 
-                -> [(Int,PosLambda)] 
+                -> EmitState
+                -> EmitState
+                -> [(Id,PosLambda)]
                 -> IO (IntState,FixState,[Foreign],EmitState,EmitState)
 
 generateCode handle flags fileflags foreigns state fixState eslabs escode [] =
@@ -520,7 +520,8 @@ generateCode handle flags fileflags foreigns state fixState eslabs escode
   (gcode	-- :: [Gcode]
    ,state	-- :: IntState
    ,newforeigns)-- :: [Foreign]
-          <- return (stgGcode (sProfile flags) state decl)
+          <- return (stgGcode (sProfile flags) state
+                              ((\ (a,b)->(fromEnum a,b)) decl))
   pF (sGcode flags) "G Code" (concatMap (strGcode state) gcode) 
 
   (state	-- :: IntState

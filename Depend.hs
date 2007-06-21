@@ -26,7 +26,7 @@ depend flags fileflags state rt =
     return ()
 
 
-strId prelude state i =
+strTId prelude state i =
   case lookupIS state i of
     Nothing -> ""
     Just info ->
@@ -38,5 +38,5 @@ strId prelude state i =
             TupleId n -> '(':take (n-1) (repeat ',') ++ ")"
             tid -> show tid
         else
-	  ""
+          ""
 

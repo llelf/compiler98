@@ -2,9 +2,9 @@
 Converts internal types (NewType) into a nice printable string
 -}
 module Nice (fixTid, mkAL, mkALNT
-	, niceCtxs, niceField, niceInt, niceNT
-	, niceNewType, niceTid, showsOp, showsVar
-	)  where
+        , niceCtxs, niceField, niceInt, niceNT
+        , niceNewType, niceTid, showsOp, showsVar
+        )  where
 
 import NT
 import IntState
@@ -28,22 +28,22 @@ niceNT m state al (NTapp t1 t2) =
    '(':  niceNT m state al t1 ++ ' ': niceNT m state al t2 ++ ")"
 niceNT m state al (NTcons a _ []) = niceInt m state a ""
 niceNT m state al (NTcons a _ tas) =
-        case (tidI . dropJust .  lookupIS state) a of
-	  TupleId n | n > length tas -> '(':'(':replicate (n-1) ',' ++") "
+        case (tidI . fromJust .  lookupIS state) a of
+          TupleId n | n > length tas -> '(':'(':replicate (n-1) ',' ++") "
                                         ++mixSpace (map (niceNT m state al) tas)
                                         ++ ")"
-	  TupleId _ -> '(' : mixComma (map (niceNT m state al) tas) ++ ")"
-	  v | v == t_Arrow ->
-		case tas of
-		 [] -> "(->)"
-		 [t1] -> "( (->) " ++ niceNT m state al t1 ++ ")"
-		 [t1,t2] -> '(':niceNT m state al t1 ++ " -> " ++ niceNT m state al t2++")"
-	  v | v == t_List  -> "[" ++ (case tas of [] -> ""; [t] -> niceNT m state al t) ++ "]"
-	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': mixSpace (map (niceNT m state al) tas) ++ ")"
+          TupleId _ -> '(' : mixComma (map (niceNT m state al) tas) ++ ")"
+          v | v == t_Arrow ->
+                case tas of
+                 [] -> "(->)"
+                 [t1] -> "( (->) " ++ niceNT m state al t1 ++ ")"
+                 [t1,t2] -> '(':niceNT m state al t1 ++ " -> " ++ niceNT m state al t2++")"
+          v | v == t_List  -> "[" ++ (case tas of [] -> ""; [t] -> niceNT m state al t) ++ "]"
+          v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': mixSpace (map (niceNT m state al) tas) ++ ")"
 niceNT m state al (NTcontext c a) =
-        case (tidI . dropJust .  lookupIS state) c of
-	  TupleId _ -> '(' : niceNT m state al (mkNTvar a) ++ ")"
-	  v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': niceNT m state al (mkNTvar a) ++ ")"
+        case (tidI . fromJust .  lookupIS state) c of
+          TupleId _ -> '(' : niceNT m state al (mkNTvar a) ++ ")"
+          v -> '(': show (fixTid (mrpsIS state) v) ++ ' ': niceNT m state al (mkNTvar a) ++ ")"
 
 
 niceCtxs :: Eq a 
@@ -59,8 +59,8 @@ niceCtxs mmrps state al ctxs = "(" ++ mixComma (map ( \ (c,v) -> niceInt mmrps s
 
 niceInt :: Maybe PackedString -> IntState -> Id -> ShowS
 
-niceInt Nothing state i     = (niceInfo (mrpsIS state) . dropJust . lookupIS state) i
-niceInt (Just mrps) state i = (niceInfo  mrps          . dropJust . lookupIS state) i
+niceInt Nothing state i     = (niceInfo (mrpsIS state) . fromJust . lookupIS state) i
+niceInt (Just mrps) state i = (niceInfo  mrps          . fromJust . lookupIS state) i
 
 
 niceTid :: IntState -> TokenId -> ShowS
@@ -107,17 +107,17 @@ niceNewType state (NewType free exist ctx nts) =
 showsOp :: TokenId -> ShowS
 
 showsOp tid =
-	if isTidOp tid 
-	then shows tid
-	else showChar '`' . shows tid . showChar '`'
+        if isTidOp tid 
+        then shows tid
+        else showChar '`' . shows tid . showChar '`'
 
 
 showsVar :: TokenId -> ShowS
 
 showsVar tid =
-	if isTidOp tid 
-	then showChar '(' . shows tid . showChar ')'
-	else shows tid
+        if isTidOp tid 
+        then showChar '(' . shows tid . showChar ')'
+        else shows tid
 
 
 niceField :: IntState 
@@ -126,6 +126,6 @@ niceField :: IntState
           -> String
 
 niceField state al (Just i,nt) = (showChar '{' . shows (fixTid (mrpsIS state) (tidIS state i)) . showString " :: ")
-				 (niceNT Nothing state al nt ++ "}")
+                                 (niceNT Nothing state al nt ++ "}")
 niceField state al (Nothing,nt) =
    niceNT Nothing state al nt

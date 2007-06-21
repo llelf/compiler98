@@ -12,7 +12,7 @@ gcodeMem prof state gcode = (fixOne state (if prof then extra else 0) gcode,stat
 
 fixOne state extra [] = []
 fixOne state extra (g@(STARTFUN pos fun):gs) =
-  let arity = arityIS state fun
+  let arity = arityIS state (toEnum fun)
       GM na _ h _ gs' = gMem za zs 0 initAT (arity,extra) gs
       za = filter (`notElem` na) [1 .. arity]
       zs = [] -- There is no stack yet!

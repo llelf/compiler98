@@ -1,7 +1,12 @@
+-- | Needs 'IdSupply'
+
 module ForeignCode
-  ( Foreign, toForeign, strForeign
+  ( Foreign(..), toForeign, strForeign
   , ForeignMemo, foreignMemo
   , ImpExp(..)
+  , Style(..)
+  , Arg(..), Res
+  , cTypename
   ) where
 
 import Maybe (fromJust,isNothing)
@@ -20,15 +25,15 @@ import GcodeLow (fun,foreignfun,fixStr)
 data ImpExp  = Imported | Exported
 data Style   = Ordinary | CCast | Address | FunAddress | Dynamic | Wrapper
              deriving Eq
-data Foreign = Foreign	ImpExp	-- import or export?
-			Bool	-- generate C prototype?
-			Style	-- cast / address / dynamic etc
-			(Maybe FilePath) -- C header file (for proto checking)
-			String	-- foreign function name
-			TokenId -- Haskell function name
-			Int	-- arity
-			[Arg]	-- argument types
-			Res	-- result type
+data Foreign = Foreign  ImpExp  -- import or export?
+                        Bool    -- generate C prototype?
+                        Style   -- cast / address / dynamic etc
+                        (Maybe FilePath) -- C header file (for proto checking)
+                        String  -- foreign function name
+                        TokenId -- Haskell function name
+                        Int     -- arity
+                        [Arg]   -- argument types
+                        Res     -- result type
 
 instance Show ImpExp where
   showsPrec _ Imported = showString "import"
@@ -72,14 +77,14 @@ instance Show Arg where
   showsPrec _ Double       = showString "Prelude.Double"
   showsPrec _ Char         = showString "Prelude.Char"
   showsPrec _ Bool         = showString "Prelude.Bool"
-  showsPrec _ Ptr	   = showString "FFI.Ptr"
+  showsPrec _ Ptr          = showString "FFI.Ptr"
   showsPrec _ (FunPtr t)   = showString "FFI.FunPtr"
       . parens (showString (concat (intersperse " -> " (map show t))))
   showsPrec _ StablePtr    = showString "FFI.StablePtr"
   showsPrec _ ForeignPtr   = showString "FFI.ForeignPtr"
-  showsPrec _ Addr         = showString "FFI.Addr"		-- deprecated
-  showsPrec _ ForeignObj   = showString "FFI.ForeignObj"	-- deprecated
-  showsPrec _ Integer      = showString "Prelude.Integer"	-- non-standard
+  showsPrec _ Addr         = showString "FFI.Addr"              -- deprecated
+  showsPrec _ ForeignObj   = showString "FFI.ForeignObj"        -- deprecated
+  showsPrec _ Integer      = showString "Prelude.Integer"       -- non-standard
   showsPrec _ PackedString = showString "PackedString.PackedString" -- non-std
   showsPrec _ Unit         = showString "Prelude.()"
   showsPrec _ (HaskellFun as)  =
@@ -96,10 +101,10 @@ localname   hname = showString fun        . fixStr (show hname)
 profname    hname = showString "pf_"      . fixStr (show hname)
 ----
 
-
-toForeign :: AssocTree Int Info -> ForeignMemo
-              -> CallConv -> ImpExp -> String -> Int -> Int -> Foreign
-toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var =
+toForeign :: Map.Map Id Info -> ForeignMemo
+              -> CallConv -> ImpExp -> String -> Int -> Id -> Foreign
+toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var
+  | callconv `notElem` ["primitive","fastccall","faststdcall","builtin"] =
     error ("Foreign calling convention \""++callconv++"\" not supported.")
 toForeign symboltable memo callconv ie cname arity var =
     Foreign ie proto style include cfunc hname arity' args res
@@ -139,7 +144,6 @@ parseEntity entity hname =
     cfunc file style [cname] = (cname, style, file)
     cfunc _file _style _ws      =
         error ("Couldn't parse entity string in foreign import: "++entity)
-    
 
 
 searchType :: Style -> Map.Map Id Info -> ForeignMemo -> Info -> ([Arg],Res)
@@ -161,34 +165,48 @@ searchType style st (arrow,io) info =
     toTid (NTapp t1 _t2)  = toTid t1
     toTid (NTstrict t)    = toTid t
     toTid t = Unknown (show t)  -- error ("Unrecognised NT: "++show t)
-		-- 'Unknown' lets polymorphic heap-values across unmolested
+                -- 'Unknown' lets polymorphic heap-values across unmolested
 
-    toArg t | t==tInt        = Int
-         -- | t==tWord       = Word32
-            | t==tBool       = Bool
-            | t==tChar       = Char
-            | t==tFloat      = Float
-            | t==tDouble     = Double
-            | t==tPtr        = Ptr
-            | t==tFunPtr     = FunPtr []
-            | t==tStablePtr  = StablePtr
-            | t==tForeignPtr = ForeignPtr
-            | t==tAddr       = Addr		-- deprecated
-            | t==tForeignObj = ForeignObj	-- deprecated
-            | t==(t_Tuple 0) = Unit	-- no void args, but need void results
-            | t==tInt8       = Int8
-            | t==tInt16      = Int16
-            | t==tInt32      = Int32
-            | t==tInt64      = Int64
-            | t==tWord8      = Word8
-            | t==tWord16     = Word16
-            | t==tWord32     = Word32
-            | t==tWord64     = Word64
-            | t==tPackedString  = PackedString	-- non-standard
-            | t==tInteger    = Integer		-- non-standard
+    toArg t | t==tInt           = Int
+         --   t==tWord          = Word32
+            | t==tBool          = Bool
+            | t==tChar          = Char
+            | t==tFloat         = Float
+            | t==tDouble        = Double
+            | t==tPtr           = Ptr
+            | t==tPtrBC         = Ptr
+            | t==tFunPtr        = FunPtr []
+            | t==tFunPtrBC      = FunPtr []
+            | t==tStablePtr     = StablePtr
+            | t==tStablePtrBC   = StablePtr
+            | t==tForeignPtr    = ForeignPtr
+            | t==tForeignPtrBC  = ForeignPtr
+            | t==tAddr          = Addr          -- deprecated
+            | t==tAddrBC        = Addr          -- deprecated
+            | t==tForeignObj    = ForeignObj    -- deprecated
+            | t==tForeignObjBC  = ForeignObj    -- deprecated
+            | t==(t_Tuple 0)    = Unit  -- no void args, but need void results
+            | t==tInt8          = Int8
+            | t==tInt8BC        = Int8
+            | t==tInt16         = Int16
+            | t==tInt16BC       = Int8
+            | t==tInt32         = Int32
+            | t==tInt32BC       = Int32
+            | t==tInt64         = Int64
+            | t==tInt64BC       = Int64
+            | t==tWord8         = Word8
+            | t==tWord8BC       = Word8
+            | t==tWord16        = Word16
+            | t==tWord16BC      = Word16
+            | t==tWord32        = Word32
+            | t==tWord32BC      = Word32
+            | t==tWord64        = Word64
+            | t==tWord64BC      = Word64
+            | t==tPackedString  = PackedString  -- non-standard
+            | t==tInteger       = Integer               -- non-standard
             | style==Wrapper
-              && t==t_Arrow  = HaskellFun []	-- foreign export "wrapper"
-            | otherwise      =
+              && t==t_Arrow     = HaskellFun [] -- foreign export "wrapper"
+            | otherwise         =
                     warning ("foreign import/export has non-primitive type: "
                              ++show t++"\n") (Unknown (show t))
 
@@ -214,8 +232,8 @@ foreignMemo st =
     minfos = map (Just . snd) (Map.toList st) ++ [Nothing]
     check tid (Just info) | cmpTid tid info  = Just (uniqueI info)
                           | otherwise        = Nothing
-	-- If the ident doesn't exist after typecheck, it won't be used!
-    check _tid Nothing                       = Just 0
+        -- If the ident doesn't exist after typecheck, it won't be used!
+    check _tid Nothing                       = error "ForeignCode.foreignMemo: used unused identifier?"
 
 findFirst :: (a->Maybe b) -> [a] -> b
 -- specification:   findFirst = head . catMaybes . map
@@ -351,7 +369,7 @@ cFooter profinfo arg =
     indent . word "nodeptr = " . hConvert arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
- 
+
 
 ---- foreign export ----
 
@@ -370,19 +388,19 @@ hCall arity hname args =
         parens (parens (shows (arity+1) . word "+EXTRA") . word "*2") . semi .
     foldr (.) id (zipWith hArg1 args [1..]) .
     indent . word "vap = Hp" . semi .
-    indent . word "*Hp = " . parens (word "Node") . 
+    indent . word "*Hp = " . parens (word "Node") .
         word "C_VAPTAG" . parens (localname hname) . semi .
     indent . word "Hp += 1+EXTRA" . semi .
     foldr (.) id (zipWith hArg2 args [1 :: Int ..]) .
     indent . word "nodeptr = evalExport(vap)" . semi .
     indent . word "IND_REMOVE(nodeptr)" . semi
-  where 
+  where
     hArg1 arg n = indent . word "args" . squares (shows (n-1)) . space .
                   equals . space . hConvert arg (narg n) . semi
     hArg2 _   n = indent . word "*Hp++ = (Node)args" . squares (shows (n-1)) . semi
 
 hResult :: Res -> ShowS
-hResult Unit = id	-- allow for IO ()
+hResult Unit = id       -- allow for IO ()
 hResult res  = indent . word "return" . space . cConvert res . semi
 
 
@@ -408,11 +426,11 @@ cTypename (FunPtr t)   = cResType (last t) . parens star
 cTypename StablePtr    = word "StablePtr"
 cTypename ForeignPtr   = word "void*"
 cTypename Unit         = word "void"
-cTypename Addr         = word "void*"	-- deprecated
-cTypename ForeignObj   = word "void*"	-- deprecated
-cTypename PackedString = word "char*"	-- non-standard
-cTypename Integer      = word "NodePtr"	-- non-standard
-cTypename (Unknown _)  = word "NodePtr"	-- for passing Haskell heap values
+cTypename Addr         = word "void*"   -- deprecated
+cTypename ForeignObj   = word "void*"   -- deprecated
+cTypename PackedString = word "char*"   -- non-standard
+cTypename Integer      = word "Node*" -- non-standard
+cTypename (Unknown _)  = word "Node*" -- for passing Haskell heap values
 -- cTypename x = error ("*** cTypename [" ++ show x ++ "]")
 
 cConvert :: Arg -> ShowS

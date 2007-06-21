@@ -25,19 +25,20 @@ data Thread = Thread
        Int [Gcode] -- before 
        Int [Gcode] -- after
 
+type FixState = (AssocTree (Int,Int) Int, (AssocTree String Int, [(Int,Gcode)]))
 
 gcodeFixInit :: IntState -> Flags -> (IntState,(AssocTree a b,(AssocTree [Char] Int,[(Int,Gcode)])))
 
 gcodeFixInit state flags =
   case uniqueIS state of
     (mlabel,state) ->
-      let fn = miIS state
-          name = (show . profI . dropJust . lookupIS state) fn
+      let fn = fromEnum (miIS state)
+          name = (show . profI . fromJust . lookupIS state . toEnum) fn
       in if sProfile flags || sFunNames flags || sTprof flags then
            if sPart flags then
-             (state,(initAT,(initAT,[(mlabel,GLOBAL profmodule fn)])))
+             (state,(initAT,(initAT,[(fromEnum mlabel,GLOBAL profmodule fn)])))
 	   else 
-	     (state,(initAT,(addAT initAT sndOf name mlabel,[(mlabel,GLOBAL profmodule fn)])))
+	     (state,(initAT,(addAT initAT sndOf name (fromEnum mlabel),[(fromEnum mlabel,GLOBAL profmodule fn)])))
          else
 	   (state,(initAT,(initAT,[])))
 
@@ -68,13 +69,13 @@ fixString elabels (s,i) = (map snd . filter ((i==).fst)) elabels ++ [LOCAL strin
 fixOne [] _ (tprof,funnames,prof,state,profstatics,strings) =
     ([],(prof,state,profstatics,strings))
 fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings) =
-  let a = arityIS state fn
+  let a = arityIS state (toEnum fn)
       thread = Thread state prof profstatics strings True initM 
                       (if funnames then -2 else 0) []   -- if funnames | profile then Position at -2 and Name at -1
                       (2+if prof then extra else 0) []  --  size/arity at 0, link at 1, CAF/CAP0 at 2
-      label = if globalIS state fn then GLOBAL else LOCAL
+      label = if globalIS state (toEnum fn) then GLOBAL else LOCAL
 
-      info = dropJust (lookupIS state fn)
+      info = (fromJust . lookupIS state . toEnum) fn
       name = show (profI info)
   in                                          -- Maybe use some other producer 
     case (unitS triple =>>> (if prof then addStatic fn fn else unitS 0)
@@ -87,7 +88,7 @@ fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings
           case uniqueIS state of
             (clabel,state) ->
               (capTable a ++
-	       DATA_GLB consttable clabel :
+	       DATA_GLB consttable (fromEnum clabel) :
 	       label fun fn :
                (if tprof then tpgcode info state else []) ++
                g:concat gs  ++
@@ -98,7 +99,7 @@ fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings
                ) ++
 	       bs ++
 	       (if funnames then [DATA_W pos,DATA_GLB string slabel] else []) ++
-	       LOCAL consttable clabel :
+	       LOCAL consttable (fromEnum clabel) :
 	       DATA_CONSTHEADER (length as) a:		-- number of pointers and arity
 	       DATA_W  0:			-- link for gc
 	       (if a == 0 then [label caf fn, DATA_VAP fn] else [label cap0 fn, DATA_CAP fn a]) ++
@@ -108,7 +109,7 @@ fixOne (g@(STARTFUN pos fn):gs) _ (tprof,funnames,prof,state,profstatics,strings
 
 --PHtprof
 tpgcode :: Info -> IntState -> [Gcode]
-tpgcode info state = let mod = (miIS state)
+tpgcode info state = let mod = fromEnum (miIS state)
                          sub = case info of
                                (InfoName _ _ _ _ True) -> tprofmodulesub
                                otherwise               -> tprofmodule
@@ -180,14 +181,14 @@ addString str els down thread@(Thread state prof profstatics (strings,elabels) l
 	      else (l,Thread state prof profstatics (strings,map (pair l) els ++ elabels) live labels nbs bs nas as)
     Nothing ->
       case uniqueIS state of
-        (l,state) -> (l,Thread state prof profstatics (addAT strings sndOf str l,map (pair l) els ++ elabels) live labels nbs bs nas as)
+        (l,state) -> (fromEnum l,Thread state prof profstatics (addAT strings sndOf str (fromEnum l),map (pair (fromEnum l)) els ++ elabels) live labels nbs bs nas as)
 
 addStatic p c down thread@(Thread state prof profstatics strings live labels nbs bs nas as) = 
   case lookupAT profstatics (p,c) of
     Just l -> (l,thread)
     Nothing ->
       case uniqueIS state of
-        (l,state) -> (l,Thread state prof (addAT profstatics sndOf (p,c) l) strings live labels nbs bs nas as)
+        (l,state) -> (fromEnum l,Thread state prof (addAT profstatics sndOf (p,c) (fromEnum l)) strings live labels nbs bs nas as)
 
 addDouble gs down thread = addBefore' True gs down thread
 
@@ -244,18 +245,19 @@ gFix g@(CASE alts defpop) = ifLive $
   gUnique >>>= \ poplabel ->
   case alts of
     ((GALT_CON c,_):_) ->
-      gInfo c >>>= \ coninfo ->
-      gInfo ((belongstoI . dropJust) coninfo) >>>= \ typeinfo ->
-      let constrs = (constrsI . dropJust)  typeinfo
+      gInfo (toEnum c) >>>= \ coninfo ->
+      gInfo ((belongstoI . fromJust) coninfo) >>>= \ typeinfo ->
+      let constrs = (constrsI . fromJust)  typeinfo
           matched = map dropGALT alts
 	  usedef = length constrs /= length matched 
-          (def,pop) = dropJust defpop
-          ls      = map (reorder poplabel matched) constrs -- DAVID
+          (def,pop) = fromJust defpop
+          ls      = map (fromEnum . reorder poplabel matched . fromEnum)
+                        constrs -- DAVID
       in
       (if usedef then useLabel def else unitS0) >>>	-- DAVID
             emits (TABLESWITCH (length ls) 0 ls :	-- DAVID
              (if usedef then				-- DAVID
-                  [LABEL poplabel, POP pop, JUMP def]	-- DAVID
+                  [LABEL (fromEnum poplabel), POP pop, JUMP def]	-- DAVID
              else					-- DAVID
                   [])					-- DAVID
             )						-- DAVID
@@ -271,19 +273,19 @@ gFix g@(CASE alts defpop) = ifLive $
  ----------- DAVID -------------------------- -}
 
     ((GALT_INT _,_):_) ->
-      let (def,pop) = dropJust defpop -- Never all contructors when matching ints
+      let (def,pop) = fromJust defpop -- Never all contructors when matching ints
           tls       = map dropGALT alts in
-        emits (LOOKUPSWITCH (length tls) 0 tls poplabel :
+        emits (LOOKUPSWITCH (length tls) 0 tls (fromEnum poplabel) :
 
 {------------ DAVID -------------------------
       emits (MATCHINT : JUMPS_L : JUMPLENGTH (length alts) poplabel : map ( \ (GALT_INT i,l) -> JUMPLIST i l) alts ++
  ------------- DAVID -------------------- --}
-	     [LABEL poplabel, POP pop, JUMP def]
+	     [LABEL (fromEnum poplabel), POP pop, JUMP def]
 	    )
  where
 
-  dropGALT (GALT_CON c,l) = (c,l)
-  dropGALT (GALT_INT i,l) = (i,l)
+  dropGALT (GALT_CON c,l) = (c, toEnum l)
+  dropGALT (GALT_INT i,l) = (i, toEnum l)
 
   reorder d ms c =
     case lookup c ms of
@@ -385,7 +387,7 @@ gFix g@(HEAP_VAP  i) = ifLive $
     addAfter (DATA_VAP i) >>>= \ i ->
     emits [HEAP_CVAL i]
 gFix g@(HEAP_CON  i) = ifLive $
-    conInfo i >>>= \ (s,c) ->
+    conInfo (toEnum i) >>>= \ (s,c) ->
     addBefore [DATA_CON s c] >>>= \ i ->
     emits [HEAP_CVAL i]
 gFix g@(HEAP_CAP  i a) = ifLive $

@@ -9,6 +9,8 @@ import Derive.Lib
 import TokenId(tEnum,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,t_fromEnum,t_toEnum,t_enumFromTo,t_enumFromThenTo)
 import Util.Extra(strPos)
 
+deriveEnum :: ((TokenId,IdKind) -> Id)
+           -> Id -> Id -> [Id] -> [(Id,Id)] -> Pos -> a -> IntState -> (Decl Id,IntState)
 deriveEnum tidFun cls typ tvs ctxs pos =
   getInfo typ >>>= \ typInfo -> 
   mapS getInfo (constrsI typInfo) >>>= \ constrInfos ->
@@ -34,32 +36,44 @@ deriveEnum tidFun cls typ tvs ctxs pos =
     (unitS (ExpVar pos) =>>> getUnique) >>>= \expH ->
     unitS $
       DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
-	DeclsParse 
+        DeclsParse 
           [DeclFun pos funFromEnum
-	    [Fun [expA]
-	      (Unguarded 
+            [Fun [expA]
+              (Unguarded 
                 (ExpApplication pos 
                   [ExpVar pos (tidFun (t_fromEnum,Var)),expA])) 
               (DeclsParse [])]
-	  ,DeclFun pos funToEnum
-	    [Fun [expB]
-	      (Unguarded 
+          ,DeclFun pos funToEnum
+            [Fun [expB]
+              (Unguarded (
+                let cons = zip (constrsI typInfo) [0..]
+                    alts = map mkAlt cons
+
+                    mkAlt (c,n) = Alt pat (Unguarded rhs) decls
+                        where 
+                        pat = ExpLit pos (LitInt Boxed n)
+                        rhs = ExpCon pos c
+                        decls = DeclsParse []
+                in (ExpCase pos expB alts)
+               ))
+               {- no such luck!
                 (ExpApplication pos 
                   [ExpVar pos (tidFun (t_toEnum,Var)),expB]))
+               -}
               (DeclsParse [])]
-	  ,DeclFun pos funFrom
-	    [Fun [expC]
-	      (Unguarded 
+          ,DeclFun pos funFrom
+            [Fun [expC]
+              (Unguarded 
                 (ExpApplication pos 
                   [ExpVar pos (tidFun (t_enumFromTo,Var)),expC,expLast]))
                 (DeclsParse [])]
-	  ,DeclFun pos funFromThen
-	     [Fun [expD,expE]
-	       (Unguarded 
+          ,DeclFun pos funFromThen
+             [Fun [expD,expE]
+               (Unguarded 
                  (ExpApplication pos 
                    [ExpVar pos (tidFun (t_enumFromThenTo,Var))
                    ,expD,expE,expLast]))
                (DeclsParse [])
           ]
-		      ]
+                      ]
 

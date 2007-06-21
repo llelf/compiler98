@@ -1,5 +1,5 @@
 module SysDeps (
-   module PackedString, trace, isAlphaNum
+   module PackedString, trace, openBinaryFileWrite, osName
 ) where
 
 #if __GLASGOW_HASKELL__ >= 502
@@ -19,6 +19,10 @@ import IOExts      (trace)
 import System.IO
 import System.Info
 
-isAlphaNum :: Char -> Bool
-isAlphaNum = isAlphanum
-#endif
+openBinaryFileWrite :: FilePath -> IO Handle
+openBinaryFileWrite f = openBinaryFile f WriteMode
+
+osName :: String
+osName = if compilerName == "yhc" || os /= "mingw32"
+         then os
+         else "windows"

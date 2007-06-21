@@ -1,4 +1,4 @@
-{-
+{- |
 Convert STG-code into a string for readable output.
 -}
 module StrPos(strPCode,strPCode',strPExp) where
@@ -12,6 +12,7 @@ import ForeignCode -- for ImpExp's Show instance
 import Syntax  -- for CallConv's Show instance
 #endif
 
+strPCode :: Show a => (Id -> String,Id -> a) -> [(Id,PosLambda)] -> [Char]
 strPCode p code = mixLine (map (strPBinding p "") code)
 
 strPCode' ::           (Id -> String)        -> [(Id,PosLambda)] -> [Char]

@@ -23,9 +23,11 @@ data PosLambda
    | PosPrimitive Pos Id
    | PosForeign Pos Id Int String CallConv ImpExp
 
+posExpApp :: Pos -> [PosExp] -> PosExp
 posExpApp pos [a] = a
 posExpApp pos as  = PosExpApp pos as
 
+posExpLet :: Pos -> [PosBinding] -> PosExp -> PosExp
 posExpLet pos [] exp = exp
 posExpLet pos bindings exp = PosExpLet False pos bindings exp
 
@@ -57,6 +59,7 @@ data PosAlt
     = PosAltCon Pos Id [(Pos,Id)] PosExp  -- ^ Constructor numbers, new variables, expression
     | PosAltInt Pos Int Bool      PosExp  -- ^ Is the Int an Integer{True} or a Char{False}
 
+isPosAtom :: PosExp -> Bool
 isPosAtom (PosVar _ _) = True
 isPosAtom (PosCon _ _) = True
 isPosAtom (PosInt _ _) = True

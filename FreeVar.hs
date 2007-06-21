@@ -10,15 +10,16 @@ import IntState
 
 data FreeDown =
   FreeDown
-    Bool			-- Strict
-    Bool			-- keep Case
+    Bool                        -- Strict
+    Bool                        -- keep Case
 
 data FreeThread =
   FreeThread
-    [[Int]]			-- envs
+    [[Id]]                      -- envs
     IntState
 
-freeVar keepcase code state = 
+freeVar :: Bool -> [(Id,PosLambda)] -> IntState -> ([(Id,PosLambda)],IntState)
+freeVar keepcase code state =
   case (mapS freeBindingTop code) (FreeDown True keepcase) (FreeThread [] state) of
     (f_code,FreeThread envs state) -> (map snd f_code,state)
 
@@ -28,7 +29,7 @@ freeString pos string =
   unitS (emptySet,PosExpLambda pos True [] [] (PosExpThunk pos False [PosPrim pos STRING (toEnum 0),
                                                                       PosString pos string]))
 
-freeLambda pos _ args exp =
+freeLambda pos int _ args exp =
   freeStrict True $
      freePushEnv (map snd args) >>>
      freeExp exp >>>= \ (expF,exp) ->
@@ -66,7 +67,7 @@ freeExp (PosExpDict exp)    = freeExp exp -- not needed any more
 freeExp (PosExpLet rec pos bindings exp)    =
   freePushEnv (map fst bindings) >>>
   mapS freeBinding bindings >>>= \ f_bindings ->
-  case unzip f_bindings of 
+  case unzip f_bindings of
     (bindingFs,bindings) ->
       freeExp exp >>>= \ (expF,exp) ->
         freePopEnv >>>
@@ -79,7 +80,7 @@ freeExp e@(PosExpCase pos exp alts) =
     mapS freeAlt alts >>>= \ f_alts ->
     case unzip f_alts of
       (altFs,alts) ->
-	 freeExp exp >>>= \ (expF,exp) ->
+         freeExp exp >>>= \ (expF,exp) ->
          let free = foldr unionSet expF altFs
          in unitS (free,PosExpCase pos exp alts)
   else freeLambda pos True [] [] e
@@ -148,7 +149,7 @@ freeAlt (PosAltInt pos int b  exp) =
   unitS (expF,PosAltInt pos int b  exp)
 
 freeIdent exp ident down up@(FreeThread envs state) =
-  if any (ident `elem`) envs 
+  if any (ident `elem`) envs
   then ((singletonSet ident,exp),up)
   else ((emptySet,exp),up)
 

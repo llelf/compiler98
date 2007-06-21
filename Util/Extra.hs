@@ -36,51 +36,70 @@ makeDouble i f e = (fromIntegral i +f) * (10.0 ^^ e)
 mapListSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapListSnd f = map (mapSnd f)
 
+foldls :: (a -> b -> a) -> a -> [b] -> a
 foldls f z [] = z
 foldls f z (x:xs) =
   let z' = f z x
   in seq z' (foldl f z' xs)
 
-strace msg c = if length msg == 0
-	       then  c
-	       else trace msg c
+split :: Eq a => [a] -> a -> [[a]]
+split cs sep = split' cs sep []
+    where
+    split' []     s acc = [reverse acc]
+    split' (c:cs) s acc | c == s    = (reverse acc) : split' cs s []
+                        | otherwise = split' cs s (c:acc)
 
+strace :: String -> a -> a
+strace msg c = if length msg == 0
+               then  c
+               else trace msg c
+
+warning :: String -> a -> a
 warning s v = trace ("Warning: "++s) v
 --warning s v = v
 
+fstOf :: a -> b -> a
 fstOf a b = a
-sndOf a b = b
 
+safeTail :: [a] -> [a]
+safeTail [] = []
+safeTail (x:xs) = xs
+
+snub :: Eq a => [a] -> [a]
 snub [] = []
 snub (x:xs) = x:snub (filter (/=x) xs)
 
+pair :: a -> b -> (a, b)
 pair   x y   = (x,y)
+triple :: a -> b -> c -> (a, b, c)
 triple x y z = (x,y,z)
 
-#if !defined(__HASKELL98__)
-isNothing Nothing = True
-isNothing _       = False
-#endif
-
-dropJust (Just v) = v
-
+isLeft :: Either a b -> Bool
 isLeft (Left a) = True
 isLeft _        = False
 
+isRight :: Either a b -> Bool
 isRight (Right a) = True
 isRight _        = False
 
+dropLeft :: Either a b -> a
 dropLeft (Left a) = a
 
+dropRight :: Either a b -> b
 dropRight (Right a) = a
 
+dropEither :: Either a a -> a
 dropEither (Left x) = x
 dropEither (Right x) = x
 
+mapPair :: (a -> b) -> (c -> d) -> (a, c) -> (b, d)
+mapFst  :: (a -> b)             -> (a, o) -> (b, o)
+mapSnd  ::             (a -> b) -> (o, a) -> (o, b)
 mapPair f g (x,y) = (f x,g y)
 mapFst  f   (x,y) = (f x,  y)
 mapSnd    g (x,y) = (  x,g y)
 
+findLeft :: [Either e a] -> Either e [a]
 findLeft l = 
         f [] l
     where
@@ -88,6 +107,8 @@ findLeft l =
         f a (Left  e:r) = Left e
         f a (Right x:r) = f (x:a) r
 
+-- | Isn't this just @(\f -> findLeft . map f)@?
+eitherMap :: (a -> Either e b) -> [a] -> Either e [b]
 eitherMap f [] = Right []
 eitherMap f (x:xs) =
         case f x of
@@ -107,6 +128,9 @@ jLeft n s = case length s of
                 ns -> if ns > n then s
                       else s ++ space (n-ns)
 
+-- | Take a function and a list and return a list of spans in which
+-- the function returns the same value for each element.
+partitions :: Eq b => (a -> b) -> [a] -> [[a]]
 partitions f [] = []
 partitions f (x:xs) =
     gB f (f x) [x] xs
@@ -118,13 +142,17 @@ partitions f (x:xs) =
 
 ----------
 
+mix :: String -> [String] -> String
 mix s [] = ""
 mix s xs =  foldl1 (\x y-> x ++ s ++ y) xs
 
+mixSpace, mixComma, mixLine :: [String] -> String
 mixSpace = mix " "
 mixComma = mix ","
 mixLine  = mix "\n"
 
+mixCommaAnd :: [String] -> String
+mixCommaAnd []  = ""
 mixCommaAnd [x] = x
 mixCommaAnd [x,y] = x ++ " and " ++ y
 mixCommaAnd (x:xs) = x ++ ", " ++ mixCommaAnd xs
@@ -146,7 +174,7 @@ assocDef ((k,v):kvs) d a = if a == k then v
 
 -------------------
 
--- abstract type for storing the position of a syntactic construct in a file,
+-- | abstract type for storing the position of a syntactic construct in a file,
 -- that is, line and column number of both start and end positions.
 
 data Pos = P !Int !Int
@@ -157,7 +185,7 @@ data Pos = P !Int !Int
 type Line = Int
 type Column = Int
 
--- used in STGcode to get encoded start position
+-- | used in STGcode to get encoded start position
 -- STGcode should be changed so that this function can disappear
 pos2Int :: Pos -> Int 
 pos2Int (P s _) = s
@@ -165,7 +193,7 @@ pos2Int (P s _) = s
 toPos :: Line -> Column -> Line -> Column -> Pos
 toPos l1 c1 l2 c2 =  P (l1*10000 + c1) (l2*10000 + c2) 
 
--- create a virtual position out of a real one
+-- | create a virtual position out of a real one
 insertPos :: Pos -> Pos
 insertPos (P s e) = P s 0
 
@@ -173,7 +201,7 @@ noPos :: Pos
 noPos = P 0 0
 
 mergePos :: Pos -> Pos -> Pos
--- combines positions by determining minimal one that covers both
+-- ^ combines positions by determining minimal one that covers both
 -- positions may or may not overlap
 -- does not assume that first pos really earlier 
 -- nonexisting positions are ignored
@@ -183,7 +211,7 @@ mergePos (P s1 e1) (P s2 e2) =
   else P (min s1 s2) (max e1 e2)
 
 mergePoss :: [Pos] -> Pos
--- merge a list of positions
+-- ^ merge a list of positions
 mergePoss = foldr mergePos noPos
 
 fromPos :: Pos -> (Line,Column,Line,Column)
@@ -213,7 +241,7 @@ instance Ord Pos where
   -- for ordering error messages of parser
   -- and determining minimum of two positions
   -- nonexisting positions are avoided
-  P s1 e1 > P s2 e2 = 
+{-  P s1 e1 > P s2 e2 = 
     s1 > s2 || (s1 == s2 && e1 > e2)
   min (P s1 e1) (P s2 e2) =
     if e1 == 0 
@@ -224,7 +252,10 @@ instance Ord Pos where
              then P s1 e1
              else if (s1 < s2) || (s1 == s2 && e1 <= e2)
                     then P s1 e1
-                    else P s2 e2 
+                    else P s2 e2
+-}
+  compare (P s1 e1) (P s2 e2) = compare (s1,e1) (s2,e2)
+       
 
 --------------------
 
@@ -233,7 +264,7 @@ data SplitIntegral = SplitPos [Int]
                    | SplitZero
                    | SplitNeg [Int]
 
--- splitIntegral :: (Integral a) => a -> SplitIntegral
+splitIntegral :: (Integral n) => n -> SplitIntegral
 splitIntegral n =
   if n < 0
   then SplitNeg (split' (-n))
@@ -246,17 +277,22 @@ splitIntegral n =
 --------------------
 type Set a = [a]
 
+emptySet :: Set a
 emptySet = []
 
+singletonSet :: a -> Set a
 singletonSet a = [a]
 
+listSet :: Eq a => [a] -> Set a
 listSet xs = (nub xs)
 
+unionSet :: Eq a => Set a -> Set a -> Set a
 unionSet xs ys = unionSet' xs ys
                where unionSet' [] ys = ys
                      unionSet' (x:xs) ys | x `elem` ys = unionSet' xs ys
                                          | otherwise   = x:unionSet' xs ys
 
+removeSet :: Eq a => Set a -> Set a -> Set a
 removeSet xs ys = filter (`notElem` ys) xs
 ---------------------
 strChr' :: Char -> Char -> String 
@@ -278,35 +314,25 @@ strStr :: String -> String
 strStr s = "\"" ++ concatMap (strChr' '"') s ++ "\""
 
 -----------------------
-showErr :: (Pos,String,[String]) -> String
-showErr (pos,token,strs) =
-    strPos pos ++ (" Found " ++ token ++
+showErr :: FilePath -> (Pos,String,[String]) -> String
+showErr file (pos,token,strs) =
+    "Error: " ++ file ++ "(" ++ strPos pos ++ ") Found " ++ token ++
     case nub strs of
            [] -> " but no token can be accepted here."
            [x] -> " but expected a " ++ x
-	   xs  -> " but expected one of " ++ mix " " xs)
+           xs  -> " but expected one of " ++ mix " " xs
+
 
 ------------------------
-isNhcOp :: Char -> Bool
-isNhcOp '~' = True; isNhcOp '=' = True; isNhcOp '*' = True
-isNhcOp '%' = True; isNhcOp '/' = True; isNhcOp ':' = True
-isNhcOp '+' = True; isNhcOp '@' = True; isNhcOp '.' = True
-isNhcOp '>' = True; isNhcOp '&' = True; isNhcOp '$' = True
-isNhcOp '|' = True; isNhcOp '-' = True
-isNhcOp '!' = True; isNhcOp '<' = True
-isNhcOp '^' = True; isNhcOp '#' = True; isNhcOp '?' = True
-isNhcOp '\\' = True
-isNhcOp _ = False
-
-------------------------
--- Given a list of filenames, return filename and its content of first file
+-- | Given a list of filenames, return filename and its content of first file
 -- that was read successfully (intention: other filenames may not exist)
 
+-- FIXME, wouldn't doesFileExist be better here?
 readFirst :: [String] -> IO (String,String)
 
 readFirst []     = do
   hPutStr stderr "Fail no filenames, probably no -I or -P" 
-  exit
+  exitFail
 readFirst [x]    = do 
   finput <- readFile x
   return (x,finput)
@@ -316,3 +342,20 @@ readFirst (x:xs) =
         (\ _ -> readFirst xs)
 
 ------------------------
+
+
+-- * Test integers for their size bounds
+isByte :: Int -> Bool
+isByte c = c >= -0x80 && c <= 0x7f
+
+isUByte :: Int -> Bool
+isUByte c = c >= 0x00 && c <= 0xff
+           
+isShort :: Int -> Bool
+isShort c = c >= -0x8000 && c <= 0x7fff
+
+isUShort :: Int -> Bool
+isUShort c = c >= 0x00 && c <= 0xffff
+
+isInt :: Int -> Bool
+isInt c = c >= -0x80000000 && c <= 0x7fffffff

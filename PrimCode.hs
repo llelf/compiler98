@@ -1,7 +1,7 @@
 {-
 Besides other things it implements the MAGIC of some function definitions.
 Occurrences of these functions (in specific contexts) are turned into
-a respective bytecode. 
+a respective bytecode.
 -}
 module PrimCode(primCode{-,rpsEval-},rpsseq) where
 
@@ -24,18 +24,17 @@ type PrimMonad a b = State PrimDown
 
 ------- (true if bool == Int, true if && || not is primitives,true if )
 
-primCode :: (Bool,Bool,Bool) -- bool, logic, always
-         -> Bool -- magic: create byte code instructions for some functions
-         -> ((TokenId,IdKind) -> Int) 
-         -> IntState 
-         -> [(a,PosLambda)] 
+primCode :: (Bool,Bool,Bool) -- ^ bool, logic, always [too cryptic!]
+         -> Bool -- ^ magic: create byte code instructions for some functions
+         -> ((TokenId,IdKind) -> Id)
+         -> IntState
+         -> [(a,PosLambda)]
          -> ([(a,PosLambda)],IntState)
 
-primCode flags magic tidFun state code = 
-  case mapS primBindingTop code (flags,magic,True,tidFun (tident,Var)) 
+primCode flags magic tidFun state code =
+  case mapS primBindingTop code (flags,magic,True,tidFun (tident,Var))
          (state,[]) of
     (bs,(state,_)) -> (concat bs,state)
-  
 
 
 primBindingTop :: (a,PosLambda)
@@ -124,6 +123,7 @@ primAlt (PosAltInt pos int b  exp) =
 
 ---
 
+strictPrim :: Prim -> [Bool]
 strictPrim SEQ = True : repeat False
 strictPrim _ = repeat True
 
@@ -156,13 +156,13 @@ primExpand :: Pos -> Id -> [PosExp]
 primExpand pos fun es =
   primFlags >>>= \ ((bool,logic,always),magic,strict) ->
   primTidArity fun >>>= \ (arity,tid) ->
-  if not magic || (arity < 0 || not (strict || always)) then 
+  if not magic || (arity < 0 || not (strict || always)) then
     -- this cannot be a primitive, or we don't translate unless strict
     primApp pos fun es
   else
     case tid of
-      (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
-		| modcls == rpsPrelude && modtyp == rpsPrelude ->
+      (Qualified3 _ (Qualified modcls cls) (Qualified modtyp typ) (Visible met))
+                | modcls == rpsPrelude && modtyp == rpsPrelude ->
         if cls == rpsEq then
           case (primOp bool typ,eqPrim met) of
             (Just op,Just prim) -> primPrimitive pos (prim op) fun arity es
@@ -199,17 +199,17 @@ primExpand pos fun es =
      --   case (evalPrim met) of
      --     (Just prim) -> primPrimitive pos prim 2 es
      --     _ -> primApp pos fun es
-        else 
+        else
           primApp pos fun es
 
       (Qualified3 _ (Visible modcls) underscore (Visible met))
           | modcls == rpsPrelude && underscore == t_underscore && met == rpsseq ->
         primPrimitive pos SEQ fun 2 (dropDicts es)
 
-  --  (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met)) 
+  --  (Qualified3 (Qualified modcls cls) (Qualified modtyp typ) (Visible met))
   --      | modcls == rpsPrelude && cls == rpsEval && met == rpsseq ->
   --    primPrimitive pos SEQ 2 (dropDicts es)
-          
+
       (Qualified mod met) | mod == rpsPrelude ->
              if met == rps_eqFloat then
           primPrimitive pos (CMP_EQ OpFloat) fun 2 es
@@ -272,11 +272,12 @@ primStrict s down@(flags,magic,strict,ident) up =
 primTidArity :: Id -> PrimMonad a (Int, TokenId)
 primTidArity i down up@(state,bs) =
   case lookupIS state i of
-    Just info -> ((arityIS state i,tidI info),up)	-- count ctx
+    Just info -> ((arityIS state i,tidI info),up)       -- count ctx
     Nothing -> ((-1,error "arg"),up) -- It's an argument, don't look :-)
 
 -- =============================================================
 
+impRev :: String -> PackedString
 impRev str = packString (reverse str)
 
 --------------
@@ -289,7 +290,7 @@ rpsFloating   = impRev "Floating"
 rpsIntegral   = impRev "Integral"
 rpsFractional = impRev "Fractional"
 rpsEnum = impRev "Enum"
---rpsEval = impRev "Eval"		-- Removed in Haskell 98
+--rpsEval = impRev "Eval"               -- Removed in Haskell 98
 
 rps_eqFloat, rps_eqDouble :: PackedString
 rps_eqFloat = impRev "_eqFloat"
@@ -338,6 +339,7 @@ rpsge = impRev ">="
 
 --------------------
 
+primOp :: Bool -> PackedString -> Maybe PrimOp
 primOp bool typ =
        if typ == rpsInt    then Just OpWord
   else if typ == rpsChar   then Just OpWord
@@ -346,6 +348,7 @@ primOp bool typ =
   else if typ == rpsFloat  then Just OpFloat
   else Nothing
 
+rpsInt, rpsChar, rpsBool, rpsDouble, rpsFloat :: PackedString
 rpsInt    = impRev "Int"
 rpsChar   = impRev "Char"
 rpsBool   = impRev "Bool"
@@ -354,6 +357,7 @@ rpsFloat  = impRev "Float"
 
 -------------------
 
+rpstoEnum, rpsfromEnum :: PackedString
 rpstoEnum   = impRev "toEnum"
 rpsfromEnum = impRev "fromEnum"
 
@@ -369,6 +373,7 @@ numPrim met =
   else if met == rpsmul    then Just MUL
   else Nothing
 
+rpsadd, rpssub, rpsmul, rpsabs, rpssignum, rpsnegate :: PackedString
 rpsadd    = impRev "+"
 rpssub    = impRev "-"
 rpsmul    = impRev "*"
@@ -382,8 +387,9 @@ integralPrim :: PackedString -> Maybe Prim
 integralPrim met =
        if met == rpsquot then Just QUOT
   else if met == rpsrem  then Just REM
-  else Nothing 
+  else Nothing
 
+rpsquot, rpsrem :: PackedString
 rpsquot = impRev "quot"
 rpsrem  = impRev "rem"
 
@@ -404,6 +410,7 @@ floatingPrim met =
   else if met == rpspow then  Just POW
   else Nothing
 
+rpsexp,rpslog,rpssqrt,rpssin,rpscos,rpstan,rpsasin,rpsacos,rpsatan,rpspow :: PackedString
 rpsexp = impRev "exp"
 rpslog = impRev "log"
 rpssqrt = impRev "sqrt"
@@ -422,13 +429,16 @@ fractionalPrim met =
        if met == rpsslash then Just SLASH
   else Nothing
 
+rpsslash :: PackedString
 rpsslash = impRev "/"
 
 --------------
 
+rpsseq :: PackedString
 rpsseq = impRev "_seq"
 
 ---- ======================================================
 
+dropDicts :: [PosExp] -> [PosExp]
 dropDicts (PosExpDict _:es) = dropDicts es
 dropDicts es = es

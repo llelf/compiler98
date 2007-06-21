@@ -28,7 +28,7 @@ type FSMonad a = State Inherited Threaded a Threaded
 
 
 startfs :: (Decls Id -> FSMonad a)
-        -> Decls Id 
+        -> Decls Id
         -> IntState
         -> ((TokenId,IdKind) -> Id)
         -> (a, IntState, Map.Map TokenId Id)
@@ -45,8 +45,8 @@ startfs fs x state tidFun =
 
           up = (state, Map.empty)
       in
-	case fs x down up of
-	 (x,(state,t2i)) -> (x,state,t2i)
+        case fs x down up of
+         (x,(state,t2i)) -> (x,state,t2i)
 
 
 fsList :: FSMonad ExpList
@@ -63,7 +63,7 @@ fsTidFun down@(expList,expId,tidFun) up =
   (tidFun,up)
 
 
-{- 
+{-
 Returns True iff given data constructor is defined by data definition,
 not newtype definition.
 -}
@@ -75,7 +75,7 @@ fsRealData con down up@(state,t2i) =
 
 
 fsExpAppl :: Pos -> [Exp Id] -> FSMonad (Exp Id)
- 
+
 fsExpAppl pos [x] = unitS x
 fsExpAppl pos xs = unitS (ExpApplication pos xs)
 
@@ -131,7 +131,7 @@ fsExp2i :: Pos -> Id -> Id -> a
         -> (Id, (IntState, Map.Map TokenId Id))
 
 
-fsExp2i pos cls i down  up@(state,t2i) = 
+fsExp2i pos cls i down  up@(state,t2i) =
   case lookupIS state cls of
    Just clsInfo ->
      case lookupIS state i of
@@ -152,7 +152,7 @@ fsExp2i pos cls i down  up@(state,t2i) =
                     let arity = (length . (\(_,_,x)->x) . fromJust
                                 . flip Map.lookup (instancesI clsInfo)) i
                         -- snd instead of fst !!!
-		    in seq arity (u,(addIS u (InfoVar u tid IEall (InfixDef,9)
+                    in seq arity (u,(addIS u (InfoVar u tid IEall (InfixDef,9)
                                                       NoType (Just arity))
                                              state
                                     ,Map.insert tid u t2i))

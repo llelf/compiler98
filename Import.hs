@@ -70,8 +70,8 @@ importOne :: Flags
              , HideDeclIds) 
           -> IO ImportState
 
-importOne flags importState (mrps,needFun,hideFun) = do
-  (mstr,fstr,finput) <- openImport flags mrps 
+importOne flags importState hiDeps (mrps,needFun,hideFun) = do
+  (mstr,fstr,finput) <- openImport flags mrps hiDeps
   let lexdata = lexical (sUnderscore flags) fstr finput
   pF (sILex flags) "Lexical Interface" 
      (mixSpace (map (\ (p,l,_,_) -> strPos p ++ ':':show l) lexdata)) 
@@ -81,7 +81,7 @@ importOne flags importState (mrps,needFun,hideFun) = do
       if not (sLib flags || sPart flags) && show modid /= mstr
         then hPutStr stderr ("Warning: The module " ++ mstr ++ " is called " 
                              ++ show modid
-			     ++ " in its interface file (" ++ fstr ++")\n")
+                             ++ " in its interface file (" ++ fstr ++")\n")
         else return ()  
       case parseit (parseInterface2
                        (needFixity fixity 
@@ -89,8 +89,8 @@ importOne flags importState (mrps,needFun,hideFun) = do
                        hideFun)
                    rest of
         Left err -> parseIError fstr err
-	Right (importState,need,rest) ->
-	  importCont' importState needFun hideFun mstr fstr need rest
+        Right (importState,need,rest) ->
+          importCont' importState needFun hideFun mstr fstr need rest
 
 
 --                   needFun
@@ -100,10 +100,10 @@ importCont' :: ImportState
             -> ((PackedString, PackedString, Set.Set TokenId)
                   -> [[TokenId]] -> Bool) 
             -> HideDeclIds
-            -> a 			-- module name
-            -> [Char] 			-- filename
-            -> Maybe [[TokenId]]	-- need
-            -> [PosToken]		-- lexical input
+            -> a                        -- module name
+            -> [Char]                   -- filename
+            -> Maybe [[TokenId]]        -- need
+            -> [PosToken]               -- lexical input
             -> IO ImportState   
 
 importCont' importState needFun hideFun modid filename need rest =
@@ -140,5 +140,5 @@ Output an error message that is caused by parsing an interface file.
 parseIError :: [Char] -> (Pos,String,[String]) -> IO a
 
 parseIError filename err = 
-  (ioError . userError . errorStr filename . showErr) err
+  (ioError . userError . showErr filename) err
 

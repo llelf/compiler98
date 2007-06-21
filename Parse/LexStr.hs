@@ -97,7 +97,7 @@ pS d  roco   r c a ('\\':'\n':xs) = pS d roco r' c' a xs'
 pS d  roco   r c a ('\\':x:xs) =
       if isDigit x then
           case lexInteger 10 (c+1) (x:xs) of
-		 (c',i,xs') -> pS d roco r c' (toEnum (fromInteger i):a) xs'
+                 (c',i,xs') -> pS d roco r c' (toEnum (fromInteger i):a) xs'
       else
           errorLC r c ("Illegal escape character '" ++ x: "'.")
 pS d  roco   r c a (x:xs) =

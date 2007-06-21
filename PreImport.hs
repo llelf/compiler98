@@ -21,11 +21,11 @@ import PreImp(HideDeclIds,HideDeclType,HideDeclData,HideDeclDataPrim
 import Maybe
 
 
--- internal, fully coalesced import declaration
+-- | Internal, fully coalesced import declaration
 type IntImpDecl = (TokenId {-module name-}, ImportedNamesInScope)
 
 
--- There are two sets of names in scope, the NQ-set and the Q-set.
+-- | There are two sets of names in scope, the NQ-set and the Q-set.
 -- For every imported module, an individual import decl can enlarge
 -- either both sets together, or just the Q-set.  When the two sets are
 -- identical by construction, our representation takes a short-cut and
@@ -33,26 +33,27 @@ type IntImpDecl = (TokenId {-module name-}, ImportedNamesInScope)
 -- only the Q-set.  When the two sets are different and non-empty, we
 -- store both, but the Q-set is always equal to or larger than the NQ-set.
 data ImportedNamesInScope =
-      NQ NameSetSpec	-- represents  Q-set  = NQ-set.
-    | Q  NameSetSpec	-- represents  NQ-set = empty.
+      NQ NameSetSpec    -- ^represents  Q-set  = NQ-set.
+    | Q  NameSetSpec    -- represents  NQ-set = empty.
     | Both NameSetSpec{-notQ-} NameSetSpec{-Q-}
-			-- invariant:  Q-set >= NQ-set.
+                        -- invariant:  Q-set >= NQ-set.
 
--- The representation of a name-set is a mixture of intension and extension.
---    Deny []      means everything found in the exporting module
---    Deny xs      means everything excluding the named entities
---    Allow xs     means only the named entities
---    Allow []     means no entities, probably a very rare specification
--- Hence,   Deny []  >  Deny xs  >  Allow xs  >  Allow []
+-- | The representation of a name-set is a mixture of intension and extension.
+-- [@Deny []@]      means everything found in the exporting module
+-- [@Deny xs@]      means everything excluding the named entities
+-- [@Allow xs@]     means only the named entities
+-- [@Allow []@]     means no entities, probably a very rare specification
+-- Hence,   @Deny []  >  Deny xs  >  Allow xs  >  Allow []@
 data NameSetSpec =
       Allow [(TokenId,IE)]
     | Deny [(TokenId,IE)]
 
 
--- Assuming that import decls have been converted to nameset specifications,
+-- | Assuming that import decls have been converted to nameset specifications,
 -- the 'combine' function joins two given specifications.  Imports are
 -- cumulative, so a nameset can only get larger.
 
+combine :: NameSetSpec -> NameSetSpec -> NameSetSpec
 combine (Deny [])  _          = Deny []
 combine _          (Deny [])  = Deny []
 combine (Allow xs) (Deny ys)  = Deny (ys\\xs)
@@ -61,13 +62,14 @@ combine (Deny xs)  (Deny ys)  = Deny (intersect xs ys)
 combine (Deny xs)  (Allow ys) = Deny (xs\\ys)
 
 
--- The rules for combining different imports of the same module are complex.
+-- | The rules for combining different imports of the same module are complex.
 -- The second argument to the 'joinNames' function is the accumulated
 -- state of all imports so far, and can thus have the Both constructor,
 -- representing differing NQ- and Q-sets.  The first argument is the
 -- additional import decl, and can enlarge either both sets (NQ) or just the
 -- Q-set, but cannot enlarge the two sets separately (no Both constructor).
 
+joinNames :: ImportedNamesInScope -> ImportedNamesInScope -> ImportedNamesInScope
 joinNames (NQ new)        (NQ old)    = NQ (combine old new)
 joinNames (Q new)         (Q old)     = Q  (combine old new)
 joinNames (Q q)           (NQ nq)     = joinNames (NQ nq) (Q q)
@@ -80,7 +82,7 @@ joinNames (NQ new)        (Both nq q) = Both (combine nq new) (combine q new)
 joinNames (Q new)         (Both nq q) = Both nq (combine q new)
 
 
--- Finally, we need a lookup function that can tell us whether a name
+-- | Finally, we need a lookup function that can tell us whether a name
 -- is in the permissible set of names specified by the import decls.
 
 nameInScope :: ImportedNamesInScope -> TokenId -> Bool
@@ -93,7 +95,7 @@ inScope tid (Deny [])  = True
 inScope tid (Deny xs)  = not (tid `elem` (map fst xs))
 inScope tid (Allow xs) =     (tid `elem` (map fst xs))
 
--- 'mustQualify' assumes a separate test for inclusion in the permissible names
+-- | 'mustQualify' assumes a separate test for inclusion in the permissible names
 mustQualify :: ImportedNamesInScope -> TokenId -> Bool
 mustQualify (NQ nameset) tid = False
 mustQualify (Q nameset)  tid = tid `inScope` nameset
@@ -103,7 +105,7 @@ mustQualify (Both nq q)  tid = (tid `inScope` q) && not (tid `inScope` nq)
 
 qualRename :: TokenId -> [ImpDecl TokenId] -> TokenId -> [TokenId]
 
-qualRename modid impdecls = qualRename' qTree 
+qualRename modid impdecls = qualRename' qTree
  where
   qualRename' t q@(Qualified t1 t2)
     | (Visible t1)==modid && t1/=rpsPrelude  = [Visible t2]
@@ -159,17 +161,17 @@ preImport flags mtid@(Visible mrps) need Nothing impdecls =
 -- inserts qualified import of prelude,
 -- and checks that all imports are consistent
 -}
-transImport :: [ImpDecl TokenId] 
+transImport :: [ImpDecl TokenId]
             -> [IntImpDecl]
 
 transImport impdecls = impdecls'
   where
   impdecls' =  (reorder [] . {-sortImport .-} traverse Map.empty False)
                 (ImportQ (noPos,tNHCInternal) (Hiding [])
-                :ImportQ (noPos,vis "Ratio") (NoHiding
-  				[EntityConClsAll noPos (vis "Rational")
-  				,EntityConClsAll noPos (vis "Ratio")
-  				,EntityVar noPos (vis "%")])
+                :ImportQ (noPos,vis "Data.Ratio") (NoHiding
+                                [EntityConClsAll noPos (vis "Rational")
+                                ,EntityConClsAll noPos (vis "Ratio")
+                                ,EntityVar noPos (vis "%") ])
                 :impdecls)
   vis = Visible . packString . reverse
 
@@ -202,17 +204,17 @@ transImport impdecls = impdecls'
 
   traverse acc True  []      = Map.toList acc
   traverse acc False []      = traverse acc False [Import (noPos,tPrelude)
-							  (Hiding [])]
+                                                          (Hiding [])]
   traverse acc prel (x:xs)  =
     case extractImp x of
       (tid,info) ->
         traverse (Map.insertWith joinNames tid info acc) (prel || tid==tPrelude) xs
 
-  extractImp (ImportQ  (pos,tid) impspec) = 
+  extractImp (ImportQ  (pos,tid) impspec) =
     (tid, Q (extractSpec impspec))
   extractImp (ImportQas (pos,tid) (apos,atid) impspec) =
     (tid, Q (extractSpec impspec))
-  extractImp (Import (pos,tid) impspec) = 
+  extractImp (Import (pos,tid) impspec) =
     (tid, NQ (extractSpec impspec))
   extractImp (Importas (pos,tid) (apos,atid) impspec) =
     (tid, NQ (extractSpec impspec))
@@ -220,7 +222,7 @@ transImport impdecls = impdecls'
   extractSpec (NoHiding entities) = Allow (concatMap extractImpEntity entities)
   extractSpec (Hiding entities)   = Deny  (concatMap extractImpEntity entities)
 
-  extractImpEntity e = 
+  extractImpEntity e =
     map (\e-> case e of ((tid,kind),ie) -> (tid,ie)) (extractEntity e)
 
 {- Now obsolete  i.e. never report explicit/hiding conflicts
@@ -231,26 +233,26 @@ transImport impdecls = impdecls'
 --    ([],hide)  -> []  -- Only explicit hide
 --    (imp,[])   -> []  -- Only explicit imports
 --    (imp,hide) ->
---	if (null . filter (not.null) . map (dropRight . snd)) hide
---	then []         -- Ok as all hidings are empty
---	else ["Conflicting imports for " ++ show tid ++
---            ", used both explicit imports (at" ++ 
---            (mixCommaAnd . map (strPos . fst)) imp 
---	      ++ ") and explicit hidings (at " ++  
+--      if (null . filter (not.null) . map (dropRight . snd)) hide
+--      then []         -- Ok as all hidings are empty
+--      else ["Conflicting imports for " ++ show tid ++
+--            ", used both explicit imports (at" ++
+--            (mixCommaAnd . map (strPos . fst)) imp
+--            ++ ") and explicit hidings (at " ++
 --            (mixCommaAnd . map (strPos . fst)) hide ++")."]
 -}
 
 
 {- Obsolete in H'98
---checkForMultipleImport imports = 
+--checkForMultipleImport imports =
 --    case foldr prepare (initAT,[]) imports of
 --      (qm,qas) ->
---	case (filter (elemM qm) qas,filter ((1/=) . length) (group qas)) of
---	  (qas,qas2) ->
---	    map (\tid -> "Can not rename a module to " ++ show tid ++
+--      case (filter (elemM qm) qas,filter ((1/=) . length) (group qas)) of
+--        (qas,qas2) ->
+--          map (\tid -> "Can not rename a module to " ++ show tid ++
 --              " as another module with that name is imported qualified.") qas
 --          ++
---	    map (\tids -> "More than one module is renamed to " ++
+--          map (\tids -> "More than one module is renamed to " ++
 --                        show (head tids) ++ ".") qas2
 -- where
 --  prepare (tid,(nq,Just tids,pos_spec)) (qm,qas) = (addM qm tid,tids++qas)
@@ -272,6 +274,7 @@ mkExportAT expdecls = exportAT
   preX (ExportModid _ tid) = [((tid,Modid),IEall)]
 
 
+extractEntity :: Entity TokenId -> [((TokenId, IdKind), IE)]
 extractEntity (EntityVar  pos tid)       = [((tid,Var),IEall)]
 extractEntity (EntityConClsAll pos tid)
     | (tid==t_Arrow || tid==t_List)      = [((dropM tid,TCon),IEall)]
@@ -289,7 +292,7 @@ extractEntity (EntityConClsSome pos tid ids)
                                               else ((tid,Field),IEsel))
                                 ids
                        else map (\(pos,tid)-> ((tid,Method),IEsel)) ids
-				-- could really be Method or Field...
+                                -- could really be Method or Field...
 
 ------
 
@@ -307,7 +310,7 @@ reExportTid modname exportAT mustBeQualified tid kind =
         _                              -> IEnone
 
 --------------------------------------
-  
+
 
 {-
 -- The selectors for (hideDeclType,hideDeclData,hideDeclDataPrim,hideDeclClass,
@@ -356,19 +359,19 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
                           (  ((`Set.member` needM) . dropM) n
                                 -- used unqualified and imported unqualified
                           || reExportModule
-              			-- reexported whether used or not
+                                -- reexported whether used or not
                           )
                     ))
             ns
 
 
   hideDeclType :: HideDeclType
-  hideDeclType st attr (Simple pos tid tvs) typ = 
+  hideDeclType st attr (Simple pos tid tvs) typ =
     if imported tid then
       iextractType (reExport q tid TSyn) attr q pos tid tvs typ () st
     else
       iextractType IEnone attr (\_->True) pos tid tvs typ () st
-		-- used by an interface file, not directly in source code
+                -- used by an interface file, not directly in source code
 
   hideDeclData :: HideDeclData
   hideDeclData st attr ctxs (Simple pos tid tvs) constrs needs der =
@@ -400,19 +403,19 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
                      | otherwise = tail xs
 
   hideDeclInstance :: HideDeclInstance
-  hideDeclInstance st ctxs (pos,cls) [typ] =
-    iextractInstance ctxs pos cls typ () st
-		-- instances are always imported, they cannot be hidden.
+  hideDeclInstance st (_,mod) ctxs (pos,cls) [typ] =
+    iextractInstance mod ctxs pos cls typ () st
+                -- instances are always imported, they cannot be hidden.
 
   hideDeclVarsType :: HideDeclVarsType
-  hideDeclVarsType st postidanots ctxs typ =    
-		-- interface files should never depend on functions
+  hideDeclVarsType st postidanots ctxs typ =
+                -- interface files should never depend on functions
 {- we don't create interface files with more than one function/type
     case filter (isJust . lookupAT impT . dropM . snd . fst) postidanots of
       [] -> st
       postidanots ->
 -}
-	 iextractVarsType (\q tid idkind ->
+         iextractVarsType (\q tid idkind ->
                               if imported tid && not (q tid)
                               then reExport q tid idkind
                               else IEnone)

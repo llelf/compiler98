@@ -5,7 +5,8 @@ import IntState
 import Id
 import PosCode
 
-stgArity state code = 
+stgArity :: IntState -> [(Id,PosLambda)] -> ([(Id,PosLambda)],IntState)
+stgArity state code =
   case mapS arityBinding code () (state,[],()) of
     (bs,(state,_,_)) -> (bs,state)
 
@@ -50,7 +51,7 @@ arityExp (PosExpApp pos (PosExpApp _ es1:es2)) = -- Can be  be created in lift
 arityExp (PosExpApp epos (atom@(PosVar pos i):atoms)) =
   mapS arityExp atoms >>>= \ atoms ->
   arityArity i >>>= \ qarity ->
-  case qarity of 
+  case qarity of
     Nothing ->  -- assume it alway is strict (we lift _everything_ :-)
       unitS  (PosExpApp epos (atom:atoms))
     Just arity ->
@@ -85,7 +86,7 @@ pushEnv args down up@(state,env,bs) =
 
 popEnv down up@(state,(_:env),bs) =
   (state,env,bs)
-  
+
 arityArity i down up@(state,env,bs) =
   if any (i `elem`) env then
     (Nothing,up)

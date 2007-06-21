@@ -82,9 +82,9 @@ needExport  (ExportModid   pos hs) =
 
 
 needEntity :: (TokenId->TokenId) -> Entity TokenId -> NeedLib -> NeedLib
-needEntity q (EntityVar pos hs) =		-- varid
+needEntity q (EntityVar pos hs) =               -- varid
     needTid pos Var (q hs)
-needEntity q (EntityConClsAll pos hs) =		-- TyCon(..) | TyCls(..)
+needEntity q (EntityConClsAll pos hs) =         -- TyCon(..) | TyCls(..)
     needTid pos TC (q hs)
 needEntity q (EntityConClsSome pos hs posidents) = -- TC | TC(id0,id1,...)
     needTid pos TC (q hs)
@@ -97,7 +97,7 @@ needPosIdents q posidents =
                                              else needTid pos Field (q tid))
               posidents
     else mapR (\(pos,tid) -> needTid pos Method (q tid)) posidents
-				-- could really be Method or Field.
+                                -- could really be Method or Field.
 
 -----------------------------------
 
@@ -155,7 +155,7 @@ needDecl (DeclData b ctxs simple constrs posidents) =
      mapR needCtx ctxs
   >>> mapR needConstr constrs
   >>> mapR needDeriving posidents
-  >>> unitR		-- needTids (getPos simple) tokenEval
+  >>> unitR             -- needTids (getPos simple) tokenEval
 
 
 --        class context => class where { csign; valdef }
@@ -220,25 +220,25 @@ needDecl (DeclAnnot decl annots) = unitR
 
 
 needDeriving (pos,tid)
-	| (ensureM rpsPrelude tid) == tBounded =
-			 needTid pos TClass tid >>> needTids pos tokenBounded
-	| (ensureM rpsPrelude tid) == tEnum    =
-			 needTid pos TClass tid >>> needTids pos tokenEnum
-	| (ensureM rpsPrelude tid) == tEq      =
-			 needTid pos TClass tid >>> needTids pos tokenEq
-	| (ensureM rpsIx tid) == tIx           =
-			 needTid pos TClass tid >>> needTids pos tokenIx
-	| (ensureM rpsPrelude tid) == tOrd     =
-			 needTid pos TClass tid >>> needTids pos tokenOrd
-	| (ensureM rpsPrelude tid) == tRead    =
-			 needTid pos TClass tid >>> needTids pos tokenRead
-	| (ensureM rpsPrelude tid) == tShow    =
-			 needTid pos TClass tid >>> needTids pos tokenShow
-	| (ensureM rpsBinary tid)  == tBinary  =
-			 needTid pos TClass tid >>> needTids pos tokenBinary
-  	| True = strace ("Warning: Don't know what is needed to derive "
-				 ++ show tid ++ " at " ++ strPos pos ++"\n")
-		 (needTid pos TClass tid)
+        | (ensureM rpsPrelude tid) == tBounded =
+                         needTid pos TClass tid >>> needTids pos tokenBounded
+        | (ensureM rpsPrelude tid) == tEnum    =
+                         needTid pos TClass tid >>> needTids pos tokenEnum
+        | (ensureM rpsPrelude tid) == tEq      =
+                         needTid pos TClass tid >>> needTids pos tokenEq
+        | (ensureM rpsIx tid) == tIx           =
+                         needTid pos TClass tid >>> needTids pos tokenIx
+        | (ensureM rpsPrelude tid) == tOrd     =
+                         needTid pos TClass tid >>> needTids pos tokenOrd
+        | (ensureM rpsPrelude tid) == tRead    =
+                         needTid pos TClass tid >>> needTids pos tokenRead
+        | (ensureM rpsPrelude tid) == tShow    =
+                         needTid pos TClass tid >>> needTids pos tokenShow
+        | (ensureM rpsBinary tid)  == tBinary  =
+                         needTid pos TClass tid >>> needTids pos tokenBinary
+        | True = strace ("Warning: Don't know what is needed to derive "
+                                 ++ show tid ++ " at " ++ strPos pos ++"\n")
+                 (needTid pos TClass tid)
 
 needClassInst (DeclVarsType posidents ctxs typ) =
      mapR needCtx ctxs
@@ -249,7 +249,7 @@ needClassInst (DeclPat (Alt (ExpVar pos fun) rhs decls)) =
 needClassInst (DeclPat (Alt (ExpInfixList pos es) rhs decls)) =
   case infixFun es of
     Just (pat1,pos',fun',pat2) ->
-	 needTid pos Method fun'
+         needTid pos Method fun'
       >>> pushNeed
       >>> bindPat pat1 >>> bindPat pat2
       >>> bindDecls decls  
@@ -307,7 +307,7 @@ needSimple kind (Simple pos hs posidents) = needTid pos kind hs -- posidents are
 needCtx (Context pos hs _) = needTid pos TClass hs
 
 needConstr (Constr                pos hs types) = mapR needFieldType types
-needConstr (ConstrCtx forall ctxs pos hs types) = mapR needCtx ctxs >>> mapR needFieldType types
+needConstr (ConstrCtx forAll ctxs pos hs types) = mapR needCtx ctxs >>> mapR needFieldType types
 
 needFieldType (_,typ) = needType typ
 
@@ -444,7 +444,7 @@ bindConstr :: Constr TokenId -> NeedLib -> NeedLib
 
 bindConstr (Constr                pos hs ftypes) = 
   bindTid Con hs >>> mapR bindFieldType ftypes
-bindConstr (ConstrCtx forall ctxs pos hs ftypes) = 
+bindConstr (ConstrCtx forAll ctxs pos hs ftypes) = 
   bindTid Con hs >>> mapR bindFieldType ftypes
 
 bindFieldType (Nothing,_) = unitR

@@ -6,7 +6,7 @@ module Overlap
   ) where
 
 -- Added in H98: the overlap table, which allows for later resolution of
--- shared module aliases.		Malcolm.Wallace@cs.york.ac.uk
+-- shared module aliases.               Malcolm.Wallace@cs.york.ac.uk
 
 import TokenId(TokenId)
 import IdKind
@@ -69,7 +69,7 @@ deAlias qf o rt =
         case Map.lookup t (foldr buildqf Map.empty (Map.toList o')) of
                 -- if in resolution table, use newly-resolved qual-renaming
             (Just t') -> t'
-		-- if not in resolution table, use original qual-renaming
+                -- if not in resolution table, use original qual-renaming
             Nothing   -> head (qf t)
 
     buildqf ((tid,_), (ResolvedTo,alias,_))  t = Map.insertWith undefined alias tid t
@@ -77,7 +77,7 @@ deAlias qf o rt =
     buildqf ((tid,_), (Unresolved,_,_))      t = t 
 
 
-resolveOverlaps :: Overlap -> [((TokenId,IdKind), Either [Pos] [Int])]
+resolveOverlaps :: Overlap -> [((TokenId,IdKind), Either [Pos] [Id])]
               -> ([String],Overlap)
 resolveOverlaps o rt =
     foldl resolve ([],o) rt
@@ -104,13 +104,16 @@ resolveOverlaps o rt =
     def   key      o = Map.update (\(_,a,as)->Just(ResolvedTo,a,as)) key        o
 
 ------
+mkErrorMD :: (Show a, Show b) => (a,b) -> [c] -> String
 mkErrorMD (tid,kind) xs =
   show kind ++ ' ':show tid ++ " defined " ++ show (length xs) ++ " times."
 
+mkErrorOV :: (Show a, Show b, Show c) => (a,c) -> b -> [a] -> String
 mkErrorOV (tid,kind) alias others =
   show kind ++ ' ':show alias ++ " resolves to two or more of "
   ++ showList (tid:others) "."
 
+mkErrorND :: Show a => (a,IdKind) -> [Pos] -> String
 mkErrorND (tid,Method) poss =
   "The identifier " ++ show tid ++ " instantiated at "
   ++ mix "," (map strPos poss) ++ " does not belong to this class."
@@ -118,10 +121,12 @@ mkErrorND (tid,kind) poss =
   show kind ++ ' ':show tid ++ " used at " ++ mix ", " (map strPos poss)
   ++ " is not defined."
 
+mkErrorOVND :: (Show a, Show b, Show c) => (a,c) -> [Pos] -> b -> [a] -> String
 mkErrorOVND (tid,kind) poss alias others =
   show kind ++ ' ':show alias ++ " used at " ++ mix ", " (map strPos poss)
   ++ " cannot be resolved:\n  none of " ++ showList (tid:others) " is defined."
 
+mkErrorOVD :: (Show a, Show b, Show c) => (a,c) -> [Pos] -> b -> [a] -> String
 mkErrorOVD (tid,kind) poss alias others =
   show kind ++ ' ':show alias ++ " used at " ++ mix ", " (map strPos poss)
   ++ " is the correct qualified resolution for all of:\n  "

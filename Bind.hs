@@ -1,6 +1,6 @@
-{- ---------------------------------------------------------------------------
-
-The bindDecls and bindPat function are used by Rename.
+{- --------------------------------------------------------------------------- -}
+{- |
+The 'bindDecls' and 'bindPat' function are used by "Rename".
 
 The ident* functions collect all identifiers bound within the respective
 syntactic construct.
@@ -20,9 +20,9 @@ import RenameLib(RenameRMonadEmpty,bindTid,checkTid)
 
 ------------------------
 
-{-
+{- |
 Add all identifiers (variables, type constructors, class ids, 
-data constructors,...) that are bound/defined in the syntactic construct
+data constructors,...) that are bound\/defined in the syntactic construct
 to the active names in renameState.
 Does not look at local declarations of variable definitions 
 (different scope) but at methods of classes and instances.
@@ -52,7 +52,7 @@ bindDecl  (DeclPrimitive pos tid arity typ) =
     bindTid pos Var tid
 bindDecl  (DeclForeignImp pos _ _ tid arity cast typ _) = -- foreign import
     bindTid pos Var tid
-bindDecl  (DeclForeignExp pos _ _ tid typ) =		-- foreign export
+bindDecl  (DeclForeignExp pos _ _ tid typ) =            -- foreign export
     unitS0
 bindDecl  (DeclVarsType posidents ctxs typ) =
     unitS0
@@ -91,7 +91,7 @@ bindConstr :: Constr TokenId -> RenameRMonadEmpty a
 
 bindConstr (Constr                pos tid fieldtypes) = 
   bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
-bindConstr (ConstrCtx forall ctxs pos tid fieldtypes) = 
+bindConstr (ConstrCtx forAll ctxs pos tid fieldtypes) = 
   bindTid pos  Con tid >>> mapS0 (bindFieldVar . fst) fieldtypes
 
 
@@ -101,7 +101,7 @@ bindFieldVar Nothing = unitS0
 bindFieldVar (Just posidents) = 
   mapS0 ( \ (p,v) -> checkTid p Field v >>>= \ exist -> 
          if exist then unitS0 else bindTid p Field v >>> bindTid p Var v)
-	posidents
+        posidents
 
 {-
 bindPat does not bind Constr!
@@ -137,21 +137,21 @@ bindPat kind (PatIrrefutable    pos pat) = bindPat kind pat
 bindPat kind (PatNplusK         pos tid tid' int _ _) = bindTid pos kind tid
 
 
-{-
+{- |
 Binds variables bound in field expression.
 Does not bind field names.
 -}
 bindField :: Field TokenId -> RenameRMonadEmpty a
 
-bindField (FieldExp pos tid pat) = {-bindTid pos Var tid >>>-} bindPat Var pat
+bindField (FieldExp pos tid pat) = {- bindTid pos Var tid >>> -} bindPat Var pat
 bindField (FieldPun pos tid)     = bindTid pos Var tid
---bindField (FieldPun pos tid)   = bindTid pos Var tid	-- H98 removes
+--bindField (FieldPun pos tid)   = bindTid pos Var tid  -- H98 removes
 
 
 {- ident* , collection of bound variable identifiers ------------------------}
 
-{-
-Collect all variable identifiers that are bound/defined 
+{- |
+Collect all variable identifiers that are bound\/defined 
 by the declaration in a list.
 Does not look at local declarations and not at methods of class or instance
 definitions.
@@ -171,7 +171,7 @@ addIdent :: Pos -> a -> b -> [(Pos,a)] -> [(Pos,a)]
 addIdent pos ident _ env = (pos,ident):env
 
 
-{-
+{- |
 Collect all variable identifiers that are bound by the pattern together
 with their positions in a list.
 Argument must be a pattern, not an arbitrary expression.

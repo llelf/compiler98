@@ -10,7 +10,7 @@ import Util.Extra(Pos)
 data GALT = GALT_CON Int | GALT_INT Int deriving (Eq)
 
 data Gcode 
-  = STARTFUN Int Int     -- Id
+  = STARTFUN Int Int
   | NEEDHEAP Int
   | NEEDSTACK Int
   | LABEL Int
@@ -124,12 +124,12 @@ strGcode state g = strGcodePrim showsL state g
 strGcodeRel state g = strGcodePrim showsR state g
 
 
-strGcodePrim sL state (STARTFUN pos i) = "STARTFUN  " ++ shows i "(" ++ strIS state i ++ ")\n" 
+strGcodePrim sL state (STARTFUN pos i) = "STARTFUN  " ++ shows i "(" ++ strIS state (toEnum i) ++ ")\n" 
 strGcodePrim sL state (NEEDHEAP i) = "  NEEDHEAP " ++ shows i "\n"
 strGcodePrim sL state (NEEDSTACK i) = "  NEEDSTACK " ++ shows i "\n"
 strGcodePrim sL state (LABEL i)    = showsL i ":\n"
-strGcodePrim sL state (LOCAL s i)    =  s++strIS state i ++ ":\n" 
-strGcodePrim sL state (GLOBAL s i) = let str = s++strIS state i in "  EXPORT " ++ str ++ "\n" ++ str ++ ":\n" 
+strGcodePrim sL state (LOCAL s i)    =  s++strIS state (toEnum i) ++ ":\n" 
+strGcodePrim sL state (GLOBAL s i) = let str = s++strIS state (toEnum i) in "  EXPORT " ++ str ++ "\n" ++ str ++ ":\n" 
 strGcodePrim sL state (JUMP  i)    = "  JUMP  " ++ sL i "\n"
 strGcodePrim sL state (JUMPFALSE i)  = "  JUMPFALSE " ++ sL i "\n"
 strGcodePrim sL state (PRIMITIVE)    = "  PRIMITIVE\n"
@@ -178,7 +178,7 @@ strGcodePrim sL state (PUSH_ARG  i)    = "  PUSH_ARG " ++ shows i "\n"
 strGcodePrim sL state (PUSH_ZAP_ARG  i)    = "  PUSH_ZAP_ARG " ++ shows i "\n"
 strGcodePrim sL state (PUSH      i)    = "  PUSH " ++ shows i "\n"
 strGcodePrim sL state (PUSH_HEAP)      = "  PUSH_HEAP\n"
-strGcodePrim sL state (PUSH_GLB  s i)  = "  PUSH_GLB " ++ s ++ strIS state i ++ " (" ++ shows i ")\n"
+strGcodePrim sL state (PUSH_GLB  s i)  = "  PUSH_GLB " ++ s ++ strIS state (toEnum i) ++ " (" ++ shows i ")\n"
 strGcodePrim sL state (POP       i)    = "  POP " ++ shows i "\n"
 strGcodePrim sL state (SLIDE     i)    = "  SLIDE " ++ shows i "\n"
 strGcodePrim sL state (UNPACK    i)    = "  UNPACK " ++ shows i "\n"
@@ -207,13 +207,13 @@ strGcodePrim sL state (HEAP_ARG  i)    = "  HEAP_ARG " ++ shows i "\n"
 strGcodePrim sL state (HEAP_ARG_ARG i j)="  HEAP_ARG_ARG " ++ shows i " " ++ shows j "\n"
 strGcodePrim sL state (HEAP_ARG_ARG_RET_EVAL i j)="  HEAP_ARG_ARG_RET_EVAL " ++ shows i " " ++ shows j "\n"
 strGcodePrim sL state (HEAP      i)    = "  HEAP " ++ shows i "\n"
-strGcodePrim sL state (HEAP_GLB  s i)    = "  HEAP_GLB " ++ s ++ strIS state i ++ " (" ++ shows i ")\n"
-strGcodePrim sL state (HEAP_CON  i)    = "  HEAP_CON " ++ shows i (" (" ++ strIS state i ++ ")\n")
-strGcodePrim sL state (HEAP_VAP  i)    = "  HEAP_VAP " ++ shows i (" (" ++ strIS state i ++ ")\n")
-strGcodePrim sL state (HEAP_CAP  i s)  = "  HEAP_CAP " ++ strIS state i ++ ":" ++ shows s (" (" ++ shows i ")\n" )
+strGcodePrim sL state (HEAP_GLB  s i)    = "  HEAP_GLB " ++ s ++ strIS state (toEnum i) ++ " (" ++ shows i ")\n"
+strGcodePrim sL state (HEAP_CON  i)    = "  HEAP_CON " ++ shows i (" (" ++ strIS state (toEnum i) ++ ")\n")
+strGcodePrim sL state (HEAP_VAP  i)    = "  HEAP_VAP " ++ shows i (" (" ++ strIS state (toEnum i) ++ ")\n")
+strGcodePrim sL state (HEAP_CAP  i s)  = "  HEAP_CAP " ++ strIS state (toEnum i) ++ ":" ++ shows s (" (" ++ shows i ")\n" )
 strGcodePrim sL state (HEAP_OFF  i)    = "  HEAP_OFF " ++ shows i "\n"
 
-strGcodePrim sL state (HEAP_STATIC p c) = "  HEAP_STATIC " ++ strIS state p ++ " " ++ strIS state c ++ "\n"
+strGcodePrim sL state (HEAP_STATIC p c) = "  HEAP_STATIC " ++ strIS state (toEnum p) ++ " " ++ strIS state (toEnum c) ++ "\n"
 strGcodePrim sL state (HEAP_CREATE)     = "  HEAP_CREATE\n"
 strGcodePrim sL state (HEAP_SPACE)      = "  HEAP_SPACE\n"
 
@@ -227,9 +227,9 @@ strGcodePrim sL state (DATA_D  d)       = "  DATA_D " ++ shows d "\n"
 strGcodePrim sL state (DATA_NOP)        = "  DATA_NOP\n"
 strGcodePrim sL state (DATA_CLABEL i)   = "  DATA_CLABEL " ++ showCLabel state i ( " (" ++ shows i ")\n")
 strGcodePrim sL state (DATA_FLABEL i)   = "  DATA_FLABEL " ++ showCLabel state i ( " (" ++ shows i ")\n")
-strGcodePrim sL state (DATA_GLB s i)    = "  DATA_GLB " ++ s ++ strIS state i ++ " (" ++ shows i ")\n"
-strGcodePrim sL state (DATA_VAP i)      = "  DATA_VAP " ++ shows i "(" ++ strIS state i ++ ")\n" 
-strGcodePrim sL state (DATA_CAP  i s)   = "  DATA_CAP " ++ strIS state i ++ ":" ++ shows s (" (" ++ shows i ")\n" )
+strGcodePrim sL state (DATA_GLB s i)    = "  DATA_GLB " ++ s ++ strIS state (toEnum i) ++ " (" ++ shows i ")\n"
+strGcodePrim sL state (DATA_VAP i)      = "  DATA_VAP " ++ shows i "(" ++ strIS state (toEnum i) ++ ")\n" 
+strGcodePrim sL state (DATA_CAP  i s)   = "  DATA_CAP " ++ strIS state (toEnum i) ++ ":" ++ shows s (" (" ++ shows i ")\n" )
 strGcodePrim sL state (DATA_CON  s c)   = "  DATA_CON " ++ shows s (' ':shows c "\n")
 strGcodePrim sL state (DATA_CONW s e)   = "  DATA_CONW " ++ shows s (' ':shows e "\n")
 strGcodePrim sL state (DATA_CONP s e)   = "  DATA_CONP " ++ shows s (' ':shows e "\n")
@@ -238,7 +238,7 @@ strGcodePrim sL state (ALIGN) = "\n\n  ALIGN\n"
 strGcodePrim sL state (ALIGN_CONST) = "\n\n  ALIGN_CONST\n"
 
 
-strGalt state (GALT_CON i,l) = "    " ++ shows i " (" ++ strIS state i ++ ")=> " ++ showsL l "\n"  
+strGalt state (GALT_CON i,l) = "    " ++ shows i " (" ++ strIS state (toEnum i) ++ ")=> " ++ showsL l "\n"  
 strGalt state (GALT_INT i,l) = "    " ++ shows i " => " ++ showsL l "\n"
 
-showCLabel state i =  shows (dropM (tidIS state i))
+showCLabel state i =  shows (dropM (tidIS state (toEnum i)))

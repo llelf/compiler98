@@ -31,7 +31,7 @@ rmClasses tidFun state (DeclsParse topdecls) =
   case mapS rmClass topdecls (unpackPS (mrpsIS state)) state of
     (codedecls,state) ->
       case unzip codedecls of
-	(code,decls) -> (concat code,DeclsParse (concat decls),state)
+        (code,decls) -> (concat code,DeclsParse (concat decls),state)
 
 
 rmClass :: Decl Id -> RmClassMonad ([ClassCode a Id],[Decl Id])
@@ -48,7 +48,7 @@ rmClass decl = unitS ([],[decl])
 fixArity :: Decl Id -> RmClassMonad (Decl Id)
 
 fixArity decl@(DeclFun pos fun funs@(Fun args gdexps decls:_)) rstr state = 
-  let wantArity = (arityVI . dropJust . lookupIS state) fun -- don't count ctx
+  let wantArity = (arityVI . fromJust . lookupIS state) fun -- don't count ctx
       hasArity = length args
   in if wantArity == hasArity then
     (decl,state)
@@ -88,7 +88,7 @@ toFew pos add (Fun args rhs decls) _ state =
     case uniqueISs state [1 .. add] of
       (newi,state) ->
         let eargs = map (ExpVar pos . snd) newi
-	in  (Fun (args++eargs) (extendRhs pos eargs rhs) decls,state)
+        in  (Fun (args++eargs) (extendRhs pos eargs rhs) decls,state)
 
 
 extendRhs :: Pos -> [Exp Id] -> Rhs Id -> Rhs Id

@@ -8,6 +8,8 @@ import State
 import Derive.Lib
 import TokenId(t_fromEnum,tTrue,tOrd,t_equalequal,t_lessthan,t_lessequal,tcompare,tLT,tEQ,tGT,t_andand,t_pipepipe)
 
+deriveOrd :: ((TokenId,IdKind) -> Id)
+          -> Id -> Id -> [Id] -> [(Id,Id)] -> Pos -> a -> IntState -> (Decl Id,IntState)
 deriveOrd tidFun cls typ tvs ctxs pos =
  getUnique >>>= \x ->
  getUnique >>>= \y ->
@@ -30,24 +32,24 @@ deriveOrd tidFun cls typ tvs ctxs pos =
   addInstMethod tOrd (tidI typInfo) tcompare (NewType tvs [] ctxs [mkNTcons typ (map mkNTvar tvs)]) iCompare >>>= \ funcompare ->
   if all noArgs constrInfos
   then unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
-	   DeclsParse [DeclFun pos funle 
-			[Fun [expX,expY]
-			  (Unguarded 
+         DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
+           DeclsParse [DeclFun pos funle 
+                        [Fun [expX,expY]
+                          (Unguarded 
                             (ExpApplication pos 
                               [expLessEqual
                               ,ExpApplication pos [exp_fromEnum,expX]
                               ,ExpApplication pos [exp_fromEnum,expY]]))
-	      	          (DeclsParse [])]
-		      ,DeclFun pos funcompare
-			[Fun [expZ,expW]
-			  (Unguarded
+                          (DeclsParse [])]
+                      ,DeclFun pos funcompare
+                        [Fun [expZ,expW]
+                          (Unguarded
                             (ExpApplication pos 
                               [expCompare
                               ,ExpApplication pos [exp_fromEnum,expZ]
                               ,ExpApplication pos [exp_fromEnum,expW]]))
-			  (DeclsParse [])]
-		       ]
+                          (DeclsParse [])]
+                       ]
   else
    let expLess = ExpVar pos (tidFun (t_lessthan,Method))
        expEqual = ExpVar pos (tidFun (t_equalequal,Method))
@@ -61,25 +63,27 @@ deriveOrd tidFun cls typ tvs ctxs pos =
        mapS (mkOrdFunCompare expTrue expCompare expLT expEQ expGT tidFun pos) 
          constrInfos >>>= \ funcompares ->
        unitS $
-	 DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
-	   DeclsParse 
+         DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
+           DeclsParse 
              [DeclFun pos funle (funles++
-	       [Fun [expX,expY]
-	         (Unguarded (ExpApplication pos 
+               [Fun [expX,expY]
+                 (Unguarded (ExpApplication pos 
                    [expLessEqual
                    ,ExpApplication pos [exp_fromEnum,expX]
                    ,ExpApplication pos [exp_fromEnum,expY]]))
-		   (DeclsParse [])])
-	     ,DeclFun pos funcompare (funcompares++
-	       [Fun [expZ,expW]
-		 (Unguarded (ExpApplication pos 
+                   (DeclsParse [])])
+             ,DeclFun pos funcompare (funcompares++
+               [Fun [expZ,expW]
+                 (Unguarded (ExpApplication pos 
                    [expCompare
                    ,ExpApplication pos [exp_fromEnum,expZ]
                    ,ExpApplication pos [exp_fromEnum,expW]]))
-		 (DeclsParse [])])
-	     ]
+                 (DeclsParse [])])
+             ]
 
 
+mkOrdFunLe :: Exp Id -> Exp Id -> Exp Id -> Exp Id
+           -> ((TokenId,IdKind) -> Id) -> Pos -> Info -> a -> IntState -> (Fun Id,IntState)
 mkOrdFunLe expTrue expLessEqual expLess expEqual tidFun pos constrInfo =
  let con = ExpCon pos (uniqueI constrInfo)
  in case ntI constrInfo of
@@ -88,30 +92,32 @@ mkOrdFunLe expTrue expLessEqual expLess expEqual tidFun pos constrInfo =
                 (Unguarded expTrue) (DeclsParse []))
      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
       mapS ( \ _ ->
-	     getUnique >>>= \ x ->
-	     getUnique >>>= \ y -> 
+             getUnique >>>= \ x ->
+             getUnique >>>= \ y -> 
              unitS (ExpVar pos x,ExpVar pos y))
              nts >>>= \ (v@(l,r):vars) ->
       let (lvs,rvs) = unzip vars
-	  expAnd = ExpVar pos (tidFun (t_andand,Var))
-	  expOr = ExpVar pos (tidFun (t_pipepipe,Var))
+          expAnd = ExpVar pos (tidFun (t_andand,Var))
+          expOr = ExpVar pos (tidFun (t_pipepipe,Var))
       in  
         unitS (
-	  Fun [ExpApplication pos (con:lvs++[l])
+          Fun [ExpApplication pos (con:lvs++[l])
               ,ExpApplication pos (con:rvs++[r])]
-	    (Unguarded 
+            (Unguarded 
               (foldr ( \ (v,r) e -> 
                 ExpApplication pos 
                   [expOr
                   ,ExpApplication pos [expLess,v,r]
                   ,ExpApplication pos [expAnd
                                       ,ExpApplication pos [expEqual,v,r],e]])
-	        (ExpApplication pos [expLessEqual,l,r])
-		vars))
-	    (DeclsParse [])
+                (ExpApplication pos [expLessEqual,l,r])
+                vars))
+            (DeclsParse [])
         )
 
 
+mkOrdFunCompare :: a -> Exp Id -> Exp Id -> Exp Id -> Exp Id -> b
+                -> Pos -> Info -> c -> IntState -> (Fun Id,IntState)
 mkOrdFunCompare expTrue expCompare expLT expEQ expGT tidFun pos constrInfo =
  let con = ExpCon pos (uniqueI constrInfo)
  in case ntI constrInfo of
@@ -120,24 +126,24 @@ mkOrdFunCompare expTrue expCompare expLT expEQ expGT tidFun pos constrInfo =
          (Unguarded expEQ) (DeclsParse []))
      NewType _ _ _ (_:nts) ->  -- We only want a list with one element for each argument, the elements themselves are never used
       mapS ( \ _ ->
-	     getUnique >>>= \ x ->
-	     getUnique >>>= \ y -> 
+             getUnique >>>= \ x ->
+             getUnique >>>= \ y -> 
              unitS (ExpVar pos x,ExpVar pos y))
              nts >>>= \ (v@(l,r):vars) ->
       let (lvs,rvs) = unzip vars
       in  
         unitS (
-	  Fun [ExpApplication pos (con:lvs++[l])
+          Fun [ExpApplication pos (con:lvs++[l])
               ,ExpApplication pos (con:rvs++[r])]
-	    (Unguarded
+            (Unguarded
               (foldr ( \ (v,r) e -> 
                 ExpCase pos (ExpApplication pos [expCompare,v,r])
-		  [Alt  expLT (Unguarded expLT) (DeclsParse [])
-		  ,Alt  expEQ (Unguarded e) (DeclsParse [])
-		  ,Alt  expGT (Unguarded expGT) (DeclsParse [])
-		  ])
-	      (ExpApplication pos [expCompare,l,r])
-	      vars))
-	    (DeclsParse [])
+                  [Alt  expLT (Unguarded expLT) (DeclsParse [])
+                  ,Alt  expEQ (Unguarded e) (DeclsParse [])
+                  ,Alt  expGT (Unguarded expGT) (DeclsParse [])
+                  ])
+              (ExpApplication pos [expCompare,l,r])
+              vars))
+            (DeclsParse [])
         )
 

@@ -35,7 +35,7 @@ hasNplusK (DeclFun pos tid [Fun pats gdexps (DeclsParse w)]) =
 
     npkAlt (Alt pat gdexps (DeclsParse w)) = npkPat pat || any npkGdExp gdexps || any hasNplusK w
 
-    npkStmt _ = False	-- WRONG!!
+    npkStmt _ = False   -- WRONG!!
 
 hasNplusK _ = False
 

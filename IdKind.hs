@@ -17,7 +17,7 @@ data IdKind = Var
             | Modid
             | MethodInstance
             | MethodDefault
-	    | Field
+            | Field
 
 ordIdKind :: IdKind -> Int
 ordIdKind  Var    =  1

@@ -17,7 +17,7 @@ instance HasPos (DeclsDepend a) where
 instance HasPos (Decl a) where
   getPos (DeclType simple ty) = mergePos (getPos simple) (getPos ty)
   getPos (DeclDataPrim pos _ _) = pos
-  getPos (DeclData _ ctx simple constrs derives) = 
+  getPos (DeclData _ ctx simple constrs derives) =
     mergePoss [getPos ctx,getPos simple,getPos constrs,getPosList derives]
   getPos (DeclConstrs pos _ _) = pos
   getPos (DeclClass pos _ _ _ _ _) = pos
@@ -38,11 +38,11 @@ instance HasPos (Entity a) where
     getPos (EntityConClsSome pos _ _) = pos
 
 instance HasPos (Alt a) where
-    getPos (Alt pat rhs locals) = 
+    getPos (Alt pat rhs locals) =
       mergePoss [getPos pat,getPos rhs,getPos locals]
 
 instance HasPos (Fun a) where
-    getPos (Fun pats rhs locals) = 
+    getPos (Fun pats rhs locals) =
       mergePoss [getPos pats,getPos rhs,getPos locals]
 
 instance HasPos (Rhs a) where
@@ -67,9 +67,9 @@ instance HasPos (Exp a) where
   getPos (ExpScc         str exp)   = getPos exp
   getPos (ExpLambda      pos _ _)   = pos
   getPos (ExpLet         pos _ _)   = pos
-  getPos (ExpDo 	 pos _)	    = pos
+  getPos (ExpDo          pos _)     = pos
   getPos (ExpCase        pos _ _)   = pos
-  getPos (ExpFail)	 	    = error "No position for ExpFail"
+  getPos (ExpFail)                  = error "No position for ExpFail"
   getPos (ExpIf          pos _ _ _) = pos
   getPos (ExpType        pos _ _ _) = pos
   getPos (ExpListComp    pos _ _)   = pos

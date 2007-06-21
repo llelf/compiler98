@@ -12,12 +12,10 @@ import STGState(Where(Arg,Stack,Heap,HeapLate,Direct),Thread(Thread)
                ,lateWhere,gWhereAbs)
 
 stgExpPush :: PosExp -> State a Thread [Gcode] Thread
-
 stgExpPush exp = unitS fst =>>> buildExp True exp
 
 
-stgBodyPush :: (Int,PosLambda) -> State a Thread ([Gcode],(Int,Where)) Thread
-
+stgBodyPush :: (Id,PosLambda) -> State a Thread ([Gcode],(Int,Where)) Thread
 stgBodyPush exp = buildBody True exp
 
 
@@ -56,25 +54,25 @@ buildExp pu (PosExpThunk _ _ (tag@(PosCon _ v):args)) =
   case unzip build_ptr of
     (build,ptr) ->
 --    strace ("buildExp " ++ show pu ++ "  " ++ show ptr) $ 
-      getExtra v >>>= \ (e,extra) ->
+      getExtra (fromEnum v) >>>= \ (e,extra) ->
       updHeap (1+e+length ptr) >>>= \ hp ->
 --    strace ("buildExp " ++ show pu ++ "  " ++ show hp) $ 
       unitS (concat build ++ pushHeapIf True pu 
-               (HEAP_CON v : extra ++ (zipWith (heapPtr sp) [hp+1+e .. ] ptr))
+               (HEAP_CON (fromEnum v) : extra ++ (zipWith (heapPtr sp) [hp+1+e .. ] ptr))
             ,Heap hp
 	    )
 
 buildExp pu (PosExpThunk _ _ (tag@(PosVar _ v):args)) =
     mapS (buildExp False) args >>>= \ build_ptr ->  
-    buildAp pu v build_ptr
+    buildAp pu (fromEnum v) build_ptr
 
 
 buildExp pu (PosExpThunk pos _ [e]) =
   buildExp pu e
 buildExp pu (PosCon pos i) =
-    oneHeap True pu (HEAP_GLB con0 i)
+    oneHeap True pu (HEAP_GLB con0 (fromEnum i))
 --  gArity i >>>= \ a ->
---  if isJust a && dropJust a == 0 then   
+--  if isJust a && fromJust a == 0 then   
 --      oneHeap True pu (HEAP_GLB con0 i)
 --  else
 --      -- Can only happen with a constructor wrapped in NTBuiltin
@@ -82,13 +80,13 @@ buildExp pu (PosCon pos i) =
 
 buildExp pu (PosVar pos i) =
   incDepthIf pu >>>= \ sp ->
-  gWhereAbs i >>>= \ w ->
+  gWhereAbs (fromEnum i) >>>= \ w ->
   case w of
-    Nothing -> gArity i >>>= \ a ->
-		   if isJust a && dropJust a == 0 then 
-		     oneHeap False pu (HEAP_GLB caf i)
+    Nothing -> gArity (fromEnum i) >>>= \ a ->
+		   if isJust a && fromJust a == 0 then 
+		     oneHeap False pu (HEAP_GLB caf (fromEnum i))
 		   else
-		     oneHeap True pu (HEAP_GLB cap0 i)
+		     oneHeap True pu (HEAP_GLB cap0 (fromEnum i))
     Just (Arg i) ->  oneHeap False pu (HEAP_ARG i)
     Just (Stack i) ->  -- Could be improved if we knew if Stack i is evaluated !!!
       if pu then
@@ -100,7 +98,7 @@ buildExp pu (PosVar pos i) =
         updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,HEAP_OFF (i-hp)], Heap hp)
       else
         unitS ([],Heap i)
-    Just (HeapLate) -> lateWhere i >>>= \ lw ->
+    Just (HeapLate) -> lateWhere (fromEnum i) >>>= \ lw ->
       if pu then
         updHeap 1 >>>= \ hp -> unitS ([PUSH_HEAP,case lw of
                                                    Stack i -> HEAP (sp-i)
@@ -144,14 +142,14 @@ buildAp pu v build_ptr =
   incDepthIf pu >>>= \ sp ->
   case unzip build_ptr of
     (build,ptr) ->
-      getExtra v >>>= \ (e,extra) ->
+      getExtra (toEnum v) >>>= \ (e,extra) ->
       gArity v >>>= \(Just arity) -> -- Always a global here!
       let nargs = length ptr
       in
         updHeap (1+e+nargs) >>>= \ hp ->
         unitS (concat build ++  (if nargs == arity 
-                                 then pushHeapIf False pu (HEAP_VAP v:extra)
-                                 else pushHeapIf True pu (HEAP_CAP v (arity-nargs):extra)
+                                 then pushHeapIf False pu (HEAP_VAP (toEnum v):extra)
+                                 else pushHeapIf True pu (HEAP_CAP (toEnum v) (arity-nargs):extra)
                                 ) ++ zipWith (heapPtr sp) [hp+1+e .. ] ptr
         ,Heap hp
         )

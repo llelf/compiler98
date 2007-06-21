@@ -12,31 +12,31 @@ import NT(NT)
 import IdKind(IdKind)
 import Util.Extra(Pos)
 import Syntax (Exp)
-import AssocTree
+import qualified Data.Map as Map
 
 data TypeDown =
       TypeDown
-	[(Int,NT)]		-- env
-	((TokenId,IdKind)->Int)	-- tidFun
-	[Int]			-- defaults
-	[(Int,Exp Int)]		-- ctxDict
-	[(Int,[Exp Int])]	-- envDict
+        [(Id,NT)]               -- env
+        ((TokenId,IdKind)->Id)  -- tidFun
+        [Id]                    -- defaults
+        [(Id,Exp Id)]           -- ctxDict
+        [(Id,[Exp Id])]         -- envDict
 
 data TypeState =
       TypeState
-	IntState		-- state
-	(AssocTree Int NT)	-- phi
-	[TypeDict]		-- ctxs
-	[((Int,NT),Int)]	-- ctxs introduced due to pattern matching 
+        IntState                -- state
+        (Map.Map Id NT)         -- phi
+        [TypeDict]              -- ctxs
+        [((Id,NT),Id)]          -- ctxs introduced due to pattern matching 
                                 -- on existential NT is either NTvar or NTexist
 
 type TypeMonad a = TypeDown -> TypeState -> (a,TypeState)
 
 data TypeDict =
       TypeDict
-	Int NT
-	[(Int,Pos)]
-	deriving (Show)
+        Id NT
+        [(Id,Pos)]
+        deriving (Show)
 
 instance Eq TypeDict where
   (TypeDict c nt ip) == (TypeDict c' nt' ip') = c == c' && nt == nt'

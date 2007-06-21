@@ -263,7 +263,7 @@ opNeed extra OpFloat  = 2+extra
 opNeed extra OpDouble = 3+extra
 
 
-showId state i = fixStr (strIS state i)
+showId state i = fixStr (strIS state (toEnum i))
 
 fixStr s
   | all isAlphaNum s = showString s

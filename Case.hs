@@ -1,4 +1,4 @@
-{-
+{- |
 Translates all patterns into case expressions
 -}
 
@@ -37,10 +37,10 @@ caseTopLevel :: String
 
 caseTopLevel modstr t2i code topdecls state tidFun =
     let
-	down = (\dict ->				-- expEqualNumEq
-		 ExpApplication noPos
-			[ExpVar noPos (tidFun (t_equalequal,Var))
-			,ExpApplication noPos [Exp2 noPos (tidFun (tNum,TClass))
+        down = (\dict ->                                -- expEqualNumEq
+                 ExpApplication noPos
+                        [ExpVar noPos (tidFun (t_equalequal,Var))
+                        ,ExpApplication noPos [Exp2 noPos (tidFun (tNum,TClass))
                                                           (tidFun (tEq,TClass))
                                               ,dict]
                         ]
@@ -57,11 +57,11 @@ caseTopLevel modstr t2i code topdecls state tidFun =
                ,Map.empty                               -- translate
                )
 
-	up = (state
+        up = (state
              ,t2i  -- TokenId -> Int   generated (and some tuples) to unique
              )
     in
-     case caseTopDecls topdecls down up of 
+     case caseTopDecls topdecls down up of
       (bs,up) ->
        case mapS caseCode code down up of
         (bs',(state,t2i)) -> (bs ++ concat bs',state)
@@ -72,14 +72,14 @@ caseNoMatch x pos down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble
                        ,expTrue,expList,expError,stgRatioCon,stgUndef
                        ,strModid,translate) up =
   (caseExp $
-    ExpApplication pos 
+    ExpApplication pos
        [expError
        ,ExpLit pos (LitString Boxed (strModid ++ ": " ++ x ++ "."))]
   ,up)
 
 
-caseTopDecls :: [Decl Int] -> CaseFun [(Int, PosLambda)]
-caseTopDecls depends = 
+caseTopDecls :: [Decl Id] -> CaseFun [(Id, PosLambda)]
+caseTopDecls depends =
   unitS (concat :: ( [[a]]->[a])) =>>> mapS caseDecl depends
 
 
@@ -87,7 +87,7 @@ caseDecls :: (Decls Id) -> CaseFun PosExp -> CaseFun PosExp
 caseDecls (DeclsScc depends) exp = caseDepends depends exp
 
 
-caseDepends :: [DeclsDepend Int] -> CaseFun PosExp -> CaseFun PosExp
+caseDepends :: [DeclsDepend Id] -> CaseFun PosExp -> CaseFun PosExp
 caseDepends []               e = e
 caseDepends (DeclsNoRec d:r) e =
   unitS (PosExpLet False noPos) =>>> caseDecl d =>>> caseDepends r e
@@ -95,7 +95,7 @@ caseDepends (DeclsRec  ds:r) e =
   unitS (PosExpLet True noPos . concat) =>>> mapS caseDecl ds =>>> caseDepends r e
 
 
-caseDecl :: Decl Int -> CaseFun [(Int,PosLambda)]
+caseDecl :: Decl Id -> CaseFun [(Id,PosLambda)]
 caseDecl d@(DeclPrimitive pos fun arity t) =
   unitS [(fun, PosPrimitive pos fun)]
 caseDecl d@(DeclForeignImp pos callconv str fun arity safety t _) =
@@ -110,8 +110,8 @@ caseDecl (DeclPat (Alt pat gdexps decls)) =
 caseDeclPatAs (PatAs p v pat) gdexps decls =
   caseUnique >>>= \ newId ->
   caseState >>>= \ state ->
-  caseAdd 
-    (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
+  caseAdd
+    (InfoName newId ((forceM (mrpsIS state) . visible . strPos)
       (getPos pat)) 0  tunknown True) >>> --PHtprof
   caseDeclPatFix (getPos pat,newId) pat (Unguarded (ExpVar p v)) decls
         >>>= \ innerpats->
@@ -120,8 +120,8 @@ caseDeclPatAs (PatAs p v pat) gdexps decls =
 caseDeclPatAs pat gdexps decls =
   caseUnique >>>= \ newId ->
   caseState >>>= \ state ->
-  caseAdd 
-    (InfoName newId ((forceM (mrpsIS state) . visible . strPos) 
+  caseAdd
+    (InfoName newId ((forceM (mrpsIS state) . visible . strPos)
       (getPos pat)) 0  tunknown True) >>> --PHtprof
   caseDeclPatFix (getPos pat,newId) pat gdexps decls
 
@@ -132,29 +132,29 @@ caseDeclPatFix (pos,topPatId) pat rhs decls =
     Just pis ->
        caseTuple (length pis) >>>= \ tupleCon ->
        caseDecls decls (onePat pos pat Nothing rhs) >>>= \ exp ->
-       mapS (oneSel (PosVar pos topPatId) tupleCon pis) 
+       mapS (oneSel (PosVar pos topPatId) tupleCon pis)
          (map ( \ (Just p,i) -> (p,i) ) (filter (isJust.fst) (zip pis [1..])))
          >>>= \ sels ->
        unitS ((topPatId,PosLambda pos LamFLNone [] [] exp) : sels)
 
     Nothing ->
-      let pis :: [(Pos,Int)]
+      let pis :: [(Pos,Id)]
           pis = identPat pat
       in caseTuple (length pis) >>>= \ tupleCon ->
-         caseDecls decls 
-           (onePat pos pat 
-             (Just 
-               (ExpApplication pos 
+         caseDecls decls
+           (onePat pos pat
+             (Just
+               (ExpApplication pos
                  (ExpCon pos tupleCon : map (uncurry ExpVar) pis)
                )
-             )  
+             )
            rhs) >>>= \ exp ->
-         mapS (oneSel (PosVar pos topPatId) tupleCon pis) 
+         mapS (oneSel (PosVar pos topPatId) tupleCon pis)
            (zip pis [1..]) >>>= \ sels ->
          unitS ((topPatId,PosLambda pos LamFLNone [] [] exp) : sels)
 
 
-oneSel :: PosExp -> Int -> [a] -> ((Pos,Int),Int) -> CaseFun (Int,PosLambda)
+oneSel :: PosExp -> Id -> [a] -> ((Pos,Id),Int) -> CaseFun (Id,PosLambda)
 oneSel t tuplecon pis ((pos,ident),index) =
   caseUniques pis >>>= \ gunki ->   -- Only want the unique integers
   unitS (ident
@@ -166,21 +166,21 @@ oneSel t tuplecon pis ((pos,ident),index) =
 
 
 onePat :: Pos -> ExpI -> Maybe ExpI -> Rhs Id -> CaseFun PosExp
-onePat pos pat tuple rhs = 
+onePat pos pat tuple rhs =
   caseTrue >>>= \ true@(ExpCon _ itrue) ->
-  caseNoMatch ("All guards false for pattern at " ++ strPos pos) pos 
+  caseNoMatch ("All guards false for pattern at " ++ strPos pos) pos
     >>>= \ noguard ->
   fixRhs itrue rhs noguard >>>= \ exp ->
   case tuple of  -- No tuple means that exp already has the correct format
     Nothing -> unitS exp
     Just tuple ->
-      caseNoMatch ("No match in pattern expression at " ++ strPos pos) 
+      caseNoMatch ("No match in pattern expression at " ++ strPos pos)
         pos >>>= \ nomatch ->
       match [exp] [Fun [pat] (Unguarded tuple) (DeclsScc [])] nomatch
 
 
 {-
-onePat pos pat tuple gdexps = 
+onePat pos pat tuple gdexps =
   caseTrue >>>= \ true@(ExpCon _ itrue) ->
   caseNoMatch ("All guards false for pattern at " ++ strPos pos) pos
   >>>= \ noguard ->
@@ -192,7 +192,7 @@ onePat pos pat tuple gdexps =
 
 
 caseExp :: ExpI -> CaseFun PosExp
-caseExp (ExpCase pos exp alts) = 
+caseExp (ExpCase pos exp alts) =
   caseExp exp >>>= \ exp ->  matchCase pos exp alts
 caseExp (ExpIf pos c e1 e2) =
   unitS (PosExpIf pos False) =>>> caseExp c =>>> caseExp e1 =>>> caseExp e2
@@ -211,7 +211,7 @@ caseExp (ExpLit pos (LitInt b v)) = unitS (PosInt pos v)
 caseExp (ExpLit pos (LitChar b v)) =  unitS (PosChar pos (fromEnum v))
 caseExp (ExpLit pos (LitInteger b v)) = unitS (PosInteger pos v)
 caseExp (ExpLit pos (LitRational b v)) =
-	caseRatioCon >>>= \ ratioCon ->
+        caseRatioCon >>>= \ ratioCon ->
         unitS (PosExpApp pos [ ratioCon
                              , PosInteger pos (numerator v)
                              , PosInteger pos (denominator v)])
@@ -219,7 +219,7 @@ caseExp (ExpLit pos (LitString b v)) = unitS (PosString pos v)
 caseExp (ExpLit pos (LitDouble b v)) = unitS (PosDouble pos v)
 caseExp (ExpLit pos (LitFloat b v)) = unitS (PosFloat pos v)
 caseExp  ExpFail = unitS PosExpFail
-caseExp (Exp2 pos i1 i2) =   
+caseExp (Exp2 pos i1 i2) =
   unitS (PosVar pos) =>>> fsExp2i pos i1 i2  -- re-introduced by expEqualNumEq
 caseExp (PatWildcard pos) =  caseUndef
 caseExp (ExpTypeRep pos _) = error $ "caseExp: ExpTypeRep "++strPos pos
@@ -238,14 +238,14 @@ matchFun pos fun funs@(Fun args _ _:_) =
 
 
 matchLambda :: Pos -> [Exp Id] -> Exp Id -> CaseFun PosExp
-matchLambda pos pats exp = 
+matchLambda pos pats exp =
  if all isExpVar pats
  then
    unitS (PosExpLambda pos False [] (map ( \ (ExpVar p a) -> (p,a) ) pats))
    =>>> caseExp exp
  else
    caseUniques pats >>>= \ ipats ->
-   caseNoMatch ("Pattern match failure in lambda at " ++ strPos pos) 
+   caseNoMatch ("Pattern match failure in lambda at " ++ strPos pos)
      pos >>>= \ nomatch ->
    let vars = map ( \ (p,i) -> (getPos p,i) ) ipats
    in match (map (uncurry PosVar) vars)
@@ -253,15 +253,15 @@ matchLambda pos pats exp =
       unitS (PosExpLambda pos False [] vars exp)
 
 
-matchCase :: Pos -> PosExp -> [Alt Id] -> CaseFun PosExp 
-matchCase pos cexp alts = 
+matchCase :: Pos -> PosExp -> [Alt Id] -> CaseFun PosExp
+matchCase pos cexp alts =
   caseNoMatch ("No matching alternative in case expression at " ++ strPos pos)
               pos >>>= \ nomatch ->
   match [cexp] (map alt2fun alts) nomatch
 
 --------------------  Help functions
 
-fixFuns :: Int -> [Fun Id] -> CaseFun PosExp -> CaseFun PosExp
+fixFuns :: Id -> [Fun Id] -> CaseFun PosExp -> CaseFun PosExp
 fixFuns true [Fun _ rhs decls] def =
   caseDecls decls (fixRhs true rhs def)
 fixFuns true (Fun _ rhs decls : rest) def =
@@ -278,7 +278,7 @@ fixRhs true (PatGuard gdexps) def = fixPatGdExp true gdexps def
 
 fixGdExp :: Id -> [(ExpI,ExpI)] -> CaseFun PosExp -> CaseFun PosExp
 fixGdExp true [] def   = def
-fixGdExp true ((ExpApplication pos [x],e):r) def = 
+fixGdExp true ((ExpApplication pos [x],e):r) def =
   fixGdExp true ((x,e):r) def
 fixGdExp true ((ExpCon pos c,e):r) def | c == true =
   (if null r then
@@ -315,8 +315,8 @@ fixQuals (QualLet ds: r) good bad =
 
 --------  The core 
 
-match ::  [PosExp] -> [Fun Int] -> CaseFun PosExp -> CaseFun PosExp
-match [] funs def = caseTrue >>>= \ (ExpCon _ true) -> fixFuns true funs def 
+match ::  [PosExp] -> [Fun Id] -> CaseFun PosExp -> CaseFun PosExp
+match [] funs def = caseTrue >>>= \ (ExpCon _ true) -> fixFuns true funs def
   -- All patterns matched
 match vars funs def =
   caseState >>>= \ state ->
@@ -337,24 +337,24 @@ match vars funs def =
 
 matchMany :: [PosExp] -> [Pattern] -> CaseFun PosExp -> CaseFun PosExp
 matchMany vars [] def = def
-matchMany vars (x:xs) def = matchOne vars x (matchMany vars xs def) 
+matchMany vars (x:xs) def = matchOne vars x (matchMany vars xs def)
 
 {-
-matchOne :: [PosExp] 
-         -> Pattern 
+matchOne :: [PosExp]
+         -> Pattern
          -> ( ( Exp Int -> Exp Int,Exp Int,Exp Int,Exp Int,Exp Int
               , (Exp Int,Exp Int),Exp Int,(TokenId,IdKind) -> Int
-              , PosExp,[Char],Tree (Int,Int) 
-              ) 
-              -> (IntState,Tree (TokenId,Int)) 
+              , PosExp,[Char],Tree (Int,Int)
+              )
+              -> (IntState,Tree (TokenId,Int))
               -> (PosExp,(IntState,Tree (TokenId,Int)))
-            ) 
+            )
          -> ( Exp Int -> Exp Int,Exp Int,Exp Int,Exp Int,Exp Int
             , (Exp Int,Exp Int),Exp Int,(TokenId,IdKind) -> Int
             , PosExp,[Char],Tree (Int,Int)
-            ) 
-         -> (IntState,Tree (TokenId,Int)) 
-         -> (PosExp,(IntState,Tree (TokenId,Int)))  
+            )
+         -> (IntState,Tree (TokenId,Int))
+         -> (PosExp,(IntState,Tree (TokenId,Int)))
 -}
 
 matchOne :: [PosExp] -> Pattern -> CaseFun PosExp -> CaseFun PosExp
@@ -400,21 +400,21 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
   case dropPatAs pat of
     (PatIrrefutable pos pat) ->
       let pis = identPat pat
-	  pos = getPos pat
+          pos = getPos pat
       in caseTuple (length pis) >>>= \ tupleCon ->
-	 caseUnique >>>= \ tupleId ->
-	 caseState >>>= \ state ->
-	 caseAdd (InfoName tupleId
+         caseUnique >>>= \ tupleId ->
+         caseState >>>= \ state ->
+         caseAdd (InfoName tupleId
                            ((forceM (mrpsIS state) . visible . strPos . getPos)
                                pat)
                            0 tunknown True) >>> --PHtprof
-	 mapS (oneSel (PosVar pos tupleId) tupleCon pis) (zip pis [1..])
+         mapS (oneSel (PosVar pos tupleId) tupleCon pis) (zip pis [1..])
            >>>= \ sels ->
-	 matchCase pos ce
-	   [Alt pat 
-             (Unguarded 
-               (ExpApplication noPos 
-                 (ExpCon noPos tupleCon: map (uncurry ExpVar) pis))) 
+         matchCase pos ce
+           [Alt pat
+             (Unguarded
+               (ExpApplication noPos
+                 (ExpCon noPos tupleCon: map (uncurry ExpVar) pis)))
              (DeclsScc [])] >>>= \ exp ->
          unitS (PosExpLet False pos ((tupleId,PosLambda pos LamFLNone [] [] (f exp)) :sels))
            =>>> match ces [fun] def
@@ -422,7 +422,7 @@ matchOne (ce:ces) (PatternIrr (pat,fun)) def =
 
 -- Ugly hack ought to at least try to group same constant if it is safe
 -- (which it is for Integer,Double and Float, but not for unknown types)
-matchAltIf :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
+matchAltIf :: Id -> [PosExp] -> (ExpI,Fun Id) -> CaseFun PosExp
 matchAltIf v ces (PatAs _ _ pat,fun) = matchAltIf v ces (pat,fun)
 
 -- match numeric literal in an unresolved context
@@ -460,8 +460,8 @@ mkIfLit v ces pos pat fun equal =
        (unitS PosExpFail)
 
 
-matchAltCon :: [PosExp] -> (Int,[([Pos],Fun Int)]) -> CaseFun PosAlt
-matchAltCon ces (con,(poss_funs)) = 
+matchAltCon :: [PosExp] -> (Id,[([Pos],Fun Id)]) -> CaseFun PosAlt
+matchAltCon ces (con,(poss_funs)) =
   caseUniques (fst (head poss_funs)) >>>= \ vs ->
   let ces' = map (uncurry PosVar) vs
   in match (ces' ++ ces) (map snd poss_funs) (unitS PosExpFail) >>>= \ exp ->
@@ -472,16 +472,16 @@ matchAltInt isInt ces (i,funs) =
   unitS (PosAltInt noPos i isInt exp)
 
 --matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun (PosExp->PosExp)
-matchNK :: Int -> [PosExp] -> (ExpI,Fun Int) -> CaseFun PosExp
+matchNK :: Id -> [PosExp] -> (ExpI,Fun Id) -> CaseFun PosExp
 matchNK v ces (PatNplusK pos n n' k kle ksub, fun) =
   match ces [fun] (unitS PosExpFail) >>>= \ exp ->
-  caseDecl 
-    (DeclFun pos n' 
+  caseDecl
+    (DeclFun pos n'
        [Fun [] (Unguarded (ExpVar pos v)) (DeclsScc [])]) >>>= \ local ->
   caseExp kle >>>= \ cond ->
-  caseDecl 
+  caseDecl
     (DeclFun pos n [Fun [] (Unguarded ksub) (DeclsScc [])]) >>>= \ binding ->
-  unitS 
+  unitS
 --  (\f-> PosExpLet pos local (PosExpIf pos cond (PosExpLet pos binding exp) f))
     (PosExpLet False pos local
                (PosExpIf pos False cond (PosExpLet False pos binding exp) PosExpFail))
@@ -503,12 +503,12 @@ caseCode (CodeClass pos cls) =
                   (PosExpCase noPos (PosVar noPos v)
                        [PosAltCon noPos tupleCon (map (pair noPos) tvars)
                             (PosVar noPos i)]))
- 
+
 caseCode d@(CodeInstance pos cls typ args exps methods) =
   caseState >>>= \ state ->
   fsExp2i pos cls typ >>>= \ u ->
   caseTuple (length exps + length methods) >>>= \ tupleCon ->
-  let eargs = map (ExpVar pos) args 
+  let eargs = map (ExpVar pos) args
   in caseExp (ExpApplication noPos
                              (ExpCon noPos tupleCon:exps
                              ++ map (ExpApplication noPos . (:eargs)

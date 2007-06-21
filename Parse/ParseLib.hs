@@ -2,8 +2,8 @@ module Parse.ParseLib(-- defined in ParseCore
                 Pos, ParseError, ParseResult
                ,ParseBad, ParseGood, Parser
                ,initError,initBad,initGood      -- Start values for parseError,
-						-- parseBad, parseGood
-	       ,parseit
+                                                -- parseBad, parseGood
+               ,parseit
                ,parse, ap, chk, orelse, into    -- The core
                ,token                           -- parse terminal
                ,parseFail                       -- Failing parser
@@ -14,24 +14,24 @@ module Parse.ParseLib(-- defined in ParseCore
                ,parseAp, parseChk               -- parse & (ap | chk)
                ,apCut, chkCut, intoCut          -- No return if fst succeed
                ,literal                         -- Parse literal
-	       ,optional, Maybe 		-- Zero or one item
+               ,optional, Maybe                 -- Zero or one item
                ,many, some                      -- Zero/one or more items.
-						-- Cut after each item.
+                                                -- Cut after each item.
                ,manySep, someSep                -- Zero/one or more items with
-						-- separator.  Cut after each
-						-- item.
+                                                -- separator.  Cut after each
+                                                -- item.
                ,manysSep, somesSep              -- Zero/one or more items with
-						-- one or more separators. Cut
-						-- after each item.
+                                                -- one or more separators. Cut
+                                                -- after each item.
                ,rcurl                           -- Parse '}' and fix one if
-						-- needed and possible.
+                                                -- needed and possible.
                ,parseRest                       -- Always true, returns rest
-						-- of the input
+                                                -- of the input
                ) where
 
-import Lex
-import Lexical(PosToken,lexicalCont)
-import ParseCore
+import Parse.Lex
+import Parse.Lexical(PosToken,lexicalCont)
+import Parse.ParseCore
 
 infixl 5 `parseAp`
 infixl 5 `revAp`
@@ -40,14 +40,8 @@ infixl 5 `parseChk`
 infixl 5 `revChk`
 infixl 5 `chkCut`
 
-#if defined(__HASKELL98__)
-#define EVAL(b)
-#else
-#define EVAL(b) (Eval b) =>
-#endif
 
-
-revAp :: EVAL(b)  Parser a i c -> Parser (a->b) i c -> Parser b i c
+revAp :: Parser a i c -> Parser (a->b) i c -> Parser b i c
 revAp     x y = \good bad ->
                 x       (\u -> y (\v -> let vu = v u in seq vu (good vu)) bad)
                         bad
@@ -98,7 +92,7 @@ cases tps dp = \good bad input@((pos,t,_,_):input') err@(pe,et,msg) ->
                         cases'' pos t good input' dp ep et (show t' : em) tps
 
 
-parseAp :: EVAL(b)  (a->b) -> Parser a i c -> Parser b i c
+parseAp :: (a->b) -> Parser a i c -> Parser b i c
 parseAp     x y = \good ->
                         y (\v -> let xv = x v in seq xv (good xv) )
 
@@ -106,7 +100,7 @@ parseChk :: b -> Parser a i c -> Parser b i c
 parseChk    x y = \good ->
                         y (\_  -> good x)
 
-apCut :: EVAL(b)  Parser (a->b) i c -> Parser a i c -> Parser b i c
+apCut :: Parser (a->b) i c -> Parser a i c -> Parser b i c
 apCut     x y = \good bad->
                 x       (\u input' err' -> y (\v -> let uv = u v in seq uv (good uv)) initBad input' initError)
                         bad
@@ -122,27 +116,37 @@ intoCut   x y = \good bad ->
                         bad
 
 ---------  Next section doesn't care about the internal structure
+literal :: (Eq b, Show b) => b -> Parser Pos [(Pos, b, e, f)] h
 literal t = token (\pos t' -> if t==t' then Right pos else Left (show t))
 
+optional :: Parser a i c -> Parser (Maybe a) i c
 optional p = Just `parseAp` p
-		`orelse`
-	     parse Nothing
+                `orelse`
+             parse Nothing
 
+many :: Parser a i c -> Parser [a] i c
 many p = some p `orelse` parse []
 
+some :: Parser a i c -> Parser [a] i c
 some p = (:) `parseAp` p `apCut` many p
 
+manySep' :: Parser sep i c -> Parser a i c -> Parser [a] i c
 manySep' s p = s `revChk` someSep s p
                  `orelse`
                parse []
 
+manySep :: Parser sep i c -> Parser a i c -> Parser [a] i c
 manySep s p = someSep s p `orelse` parse []
+someSep :: Parser sep i c -> Parser a i c -> Parser [a] i c
 someSep s p = (:) `parseAp` p `apCut` manySep' s p
 
+manysSep' :: Parser sep i c -> Parser a i c -> Parser [a] i c
 manysSep' s p = many s `revChk` somesSep s p
                   `orelse`
                 parse []
+manysSep :: Parser sep i c -> Parser a i c -> Parser [a] i c
 manysSep s p = somesSep s p `orelse` parse []
+somesSep :: Parser sep i c -> Parser a i c -> Parser [a] i c
 somesSep s p = (:) `parseAp` p `apCut` manysSep' s p
 
 

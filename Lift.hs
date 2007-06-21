@@ -1,4 +1,4 @@
-{-
+{- |
 Performs lambda-lifting of the program
 -}
 
@@ -18,18 +18,19 @@ import IdKind
 
 data LiftDown =
   LiftDown
-    Bool			-- strict
-    ((TokenId,IdKind)->Int)	-- tidFun
-    TokenId		        -- current function
+    Bool                        -- strict
+    ((TokenId,IdKind)->Id)      -- tidFun
+    TokenId                     -- current function
 
 data LiftThread =
   LiftThread
-    [(Int,[Int])]  -- translation from lifted identifier to new free variables
+    [(Id,[Id])]    -- translation from lifted identifier to new free variables
     [PosBinding]   -- new top-level definitions
     IntState
 
 
-liftCode code state tidFun = 
+liftCode :: [(Id,PosLambda)] -> IntState -> ((TokenId,IdKind) -> Id) -> ([(Id,PosLambda)],IntState)
+liftCode code state tidFun =
   case (mapS liftTopBinding code)
              (LiftDown True tidFun tunknown)
              (LiftThread [] [] state) of
@@ -48,8 +49,8 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid)
 
       definedLift = map fst declsInLift
 
-      envLift = foldr unionSet emptySet 
-		(map (expandEnv transIn)
+      envLift = foldr unionSet emptySet
+                (map (expandEnv transIn)
                      (removeSet (foldr (unionSet . map snd . getEnvs)
                                        emptySet
                                        declsInLift)
@@ -58,16 +59,16 @@ liftScc pos bindingsIn down@(LiftDown strict tidFun ptid)
       transNew = map (`pair` envLift) definedLift ++ transIn
 
       (declsOutLift,LiftThread _ scInLift state1) =
-		 mapS liftBinding declsInLift (LiftDown True tidFun ptid)
+                 mapS liftBinding declsInLift (LiftDown True tidFun ptid)
                                               (LiftThread transNew [] stateIn)
 
       (declsOutStay,LiftThread _ scInStay state2) =
-		 mapS liftBinding declsInStay (LiftDown False tidFun ptid)
+                 mapS liftBinding declsInStay (LiftDown False tidFun ptid)
                                               (LiftThread transNew [] state1)
 
       scHere = map (addArgs envLift) declsOutLift
 
-      newBindings = map (addEnvs transNew) declsOutStay 
+      newBindings = map (addEnvs transNew) declsOutStay
 
       newSC = scHere ++ scInLift++scInStay++scIn
       newState = foldr (updateInfo ptid) state2 scHere
@@ -78,7 +79,7 @@ updateInfo ptid (fun, PosLambda pos int envs args exp) state =
  updateIS state fun
           (\info-> let tid = tidI info in
                    (seq tid (InfoName fun tid arity (tidPos ptid pos) True)))
-								 --PHtprof
+                                                                 --PHtprof
 
 addArgs newargs (fun, PosLambda pos int envs args exp) =
   (fun, PosLambda pos int [] (map (pair pos) newargs++args) exp)
@@ -100,8 +101,8 @@ expandEnv trans f =
     Just set -> set
 
 
-liftLambda pos envs args exp down@(LiftDown strict tidFun ptid)
-                             up@(LiftThread transIn scIn stateIn) =
+liftLambda pos int envs args exp down@(LiftDown strict tidFun ptid)
+                                   up@(LiftThread transIn scIn stateIn) =
   let
       newEnvs = map (pair pos)
                     (foldr unionSet
@@ -112,7 +113,7 @@ liftLambda pos envs args exp down@(LiftDown strict tidFun ptid)
       scHere =  (fun, PosLambda pos fl [] (newEnvs++args) exp)
       arity = length newEnvs + length args
       (fun,state2) = uniqueIS stateIn
-      tid = (visible (reverse ("LAMBDA" ++ show fun))) -- Not exported
+      tid = (visible (reverse ("LAMBDA" ++ strId fun))) -- Not exported
       newSC = scHere:scIn
       newState = seq tid $ addIS fun (InfoName fun tid arity
                                                (tidPos ptid pos) True) --PHtprof

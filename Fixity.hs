@@ -1,4 +1,4 @@
-{- ---------------------------------------------------------------------------
+{- |
 Restructure expressions with infix operators according to associativity and
 precedence.
 -}
@@ -18,20 +18,23 @@ import Error
 -- Just == Bind
 -- Nothing == Stack
 
+reorder :: [Exp TokenId] -> RenameMonad (Exp TokenId)
 reorder es = getExp [] [] es
 
+getExp :: [((InfixClass TokenId, Int), (Exp TokenId, Int))]
+       -> [Exp TokenId] -> [Exp TokenId] -> RenameMonad (Exp TokenId)
 getExp ops exps (e:es) =
   case e of
     ExpConOp pos o ->
       fixTid Con o >>>= \ fix ->
         case fix of
-	  (InfixPre a,l) -> getExp (stackPrefix fix (ExpCon pos o):ops) exps es
+          (InfixPre a,l) -> getExp (stackPrefix fix (ExpCon pos o):ops) exps es
           _ -> error ("Mistake in an infix constructor application ("
                      ++show o++") at "++strPos (getPos e))
     ExpVarOp pos o ->
       fixTid Var o >>>= \ fix ->
         case fix of
-	  (InfixPre a,l) -> getExp (stackPrefix fix (ExpVar pos o):ops) exps es
+          (InfixPre a,l) -> getExp (stackPrefix fix (ExpVar pos o):ops) exps es
           _ -> error ("Mistake in an infix operator chain involving ("
                      ++show o++") at "++strPos (getPos e))
     _ ->
@@ -41,6 +44,8 @@ getExp ops [] [] =
 getExp ops (e:es) [] =
    error ("Problem with infix section at "++strPos (getPos e))
 
+getOp :: [((InfixClass TokenId, Int), (Exp TokenId, Int))]
+      -> [Exp TokenId] -> [Exp TokenId] -> RenameMonad (Exp TokenId)
 getOp ops exps [] = finish ops exps
 getOp ops exps ees@(ExpConOp pos op:es) =
   harder pos ops Con op >>>= \ lr ->  
@@ -56,19 +61,26 @@ getOp ops exps (e:es) =
    error ("Expected an infix operator at " ++ strPos (getPos e))
  
 
+finish :: Num b1 => [((InfixClass id, b), (Exp id, b1))] -> [Exp id] -> d -> s -> (Exp id, s)
 finish [] []   = error "finish empty" 
 finish [] [e] = unitS e
 finish [] _   = error "finish multiple expression"
 finish (o:ops) es = finish ops (rebuild o es)
 
         
+stackInfix :: Exp TokenId -> RenameMonad ((InfixClass TokenId, Int), (Exp TokenId, Int))
 stackInfix op@(ExpVar _ o) = fixTid Var o >>>= \ fix -> unitS (fix,(op,2::Int))
 stackInfix op@(ExpCon _ o) = fixTid Con o >>>= \ fix -> unitS (fix,(op,2::Int))
 
+stackPrefix :: a -> a1 -> (a, (a1, Int))
 stackPrefix fix op = (fix,(op,1::Int))
 
---harder :: Pos -> [((InfixClass a,Int),(g,f))] -> IdKind -> e 
---		-> State (b,(e -> TokenId),c,d) RenameState (Maybe ((((InfixClass a),Int),(g,f)),[((InfixClass a,Int),(g,f))])) RenameState 
+-- harder :: Pos -> [((InfixClass a,Int),(g,f))] -> IdKind -> e 
+--               -> State (b,(e -> TokenId),c,d) RenameState (Maybe ((((InfixClass a),Int),(g,f)),[((InfixClass a,Int),(g,f))])) RenameState 
+harder :: Pos -> [((InfixClass a, Int), (g, f))] -> IdKind -> TokenId
+              -> RenameMonad
+                 (Maybe (((InfixClass a, Int), (g, f)), [((InfixClass a, Int), (g, f))]))
+                  
 
 harder pos [] kind op' = unitS Nothing
 harder pos (ipop@((inf,pri),(op,_)):ops) kind op' =
@@ -81,9 +93,10 @@ harder pos (ipop@((inf,pri),(op,_)):ops) kind op' =
       InfixL     -> unitS (Just (ipop,ops))
       InfixPre _ -> unitS (Just (ipop,ops))
       InfixR     -> unitS (Nothing)
-      Infix      -> renameError ("Infix operator at " ++ strPos pos ++ " is non-associative.") (Just (ipop,ops))
+      Infix      -> renameError (ErrorRaw $ "Infix operator at " ++ strPos pos ++ " is non-associative.") (Just (ipop,ops))
   else unitS Nothing
 
+rebuild :: Num b => ((InfixClass id, b1), (Exp id, b)) -> [Exp id] -> [Exp id]
 rebuild (_,(op,2)) (e1:e2:es) = ExpApplication (getPos op) [op,e2,e1]:es
 rebuild ((InfixPre fun,_) ,(op,_)) (e1:es) =
         ExpApplication (getPos op) [ExpVar (getPos op) fun,e1]:es
@@ -99,8 +112,8 @@ fixInfixList [] = error "I: fixInfix []"
 fixInfixList ees@(ExpVarOp pos op:es) =
   fixTid Var op >>>= \ fix ->
         case fix of
-	  (InfixPre a,l) -> reorder ees
-	  _ -> reorder es >>>= \ exp -> 
+          (InfixPre a,l) -> reorder ees
+          _ -> reorder es >>>= \ exp -> 
                invertCheck pos op fix exp >>>
                unitS (ExpApplication pos 
                        [ExpVar pos t_flip, ExpVar pos op, exp])
@@ -108,8 +121,8 @@ fixInfixList ees@(ExpVarOp pos op:es) =
 fixInfixList ees@(ExpConOp pos op:es) =
   fixTid Con op >>>= \ fix ->
         case fix of
-	  (InfixPre a,l) -> reorder ees
-	  _ -> reorder es >>>= \ exp -> 
+          (InfixPre a,l) -> reorder ees
+          _ -> reorder es >>>= \ exp -> 
                invertCheck pos op fix exp >>>
                unitS (ExpApplication pos 
                        [ExpVar pos t_flip, ExpCon pos op, exp]) 
@@ -127,6 +140,8 @@ fixInfixList ees =
     _ -> reorder ees
 
 -- 'invertCheck' checks for priority inversion in an operator section.
+invertCheck 
+    :: Show a1 => Pos -> a1 -> (InfixClass TokenId, Int) -> Exp TokenId -> RenameMonadEmpty
 invertCheck pos1 op1 (fix1,pri1) exp =
   case exp of
     ExpApplication _ (ExpVar pos2 op2: es) -> check Var pos2 op2

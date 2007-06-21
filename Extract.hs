@@ -37,7 +37,7 @@ type2NT :: Type Id -> NT
 type2NT (TypeApp t1 t2) = NTapp (type2NT t1) (type2NT t2)
 type2NT (TypeCons _ ci ts) = mkNTcons ci (map type2NT ts)
 type2NT (TypeStrict _ t) = NTstrict (type2NT t)
-type2NT (TypeVar _ v) = mkNTvar v	-- No KIND inference yet!
+type2NT (TypeVar _ v) = mkNTvar v       -- No KIND inference yet!
 
 {-
 
@@ -70,7 +70,7 @@ extractDecl (DeclInstance pos ctxs cls [instanceType@(TypeCons poscon con _)]
                      ("Instance declaration for the class " 
                       ++ strIS state cls ++ " at " ++ strPos pos 
                       ++ " needs instance(s) of "
- 		      ++ mixCommaAnd (map (strIS state . fst) clss) 
+                      ++ mixCommaAnd (map (strIS state . fst) clss) 
                       ++ " according to class declaration.")
   ) >>>
   extractDecls instmethods    -- error if we find any type signatures
@@ -80,9 +80,9 @@ extractDecl (DeclPrimitive pos ident arity typ) =
   let nt = NewType (snub (freeType typ)) [] [] [type2NT typ]
   in updVarNT pos ident nt >>> updVarArity pos ident arity
 extractDecl (DeclForeignImp pos _ _ ident arity cast typ _) =
-  unitR	     -- type extraction for ffi is now done earlier in FFITrans phase
+  unitR      -- type extraction for ffi is now done earlier in FFITrans phase
 extractDecl (DeclForeignExp pos _ _ ident typ) =
-  unitR	     -- type extraction for ffi is now done earlier in FFITrans phase
+  unitR      -- type extraction for ffi is now done earlier in FFITrans phase
 --let nt = NewType (snub (freeType typ)) [] (ctxs2NT []) [type2NT typ]
 --in updVarNT pos ident nt
 extractDecl (DeclVarsType posidents ctxs typ) =
@@ -121,7 +121,7 @@ updFunArity pos fun funs =
         then updVarArity pos fun a
         else \ state -> 
            addError state ("Multiple arities for " ++ strIS state fun ++ ": "
- 			   ++ mixLine (map (\ (pos,a) -> "    arity " 
+                           ++ mixLine (map (\ (pos,a) -> "    arity " 
                            ++ show a ++ " at " ++ strPos pos) (map fPA funs)))
   where
   fA (Fun args gdexps decls) = (length args)
@@ -184,7 +184,7 @@ extractStmt :: Stmt Id -> Reduce IntState IntState
 extractStmt (StmtExp  exp) = extractExp exp
 extractStmt (StmtBind pat exp) = 
         mapR ( \ (pos,ident) -> updVarArity pos ident 0) (identPat pat) >>>
-	extractExp exp
+        extractExp exp
 extractStmt (StmtLet decls) = extractDecls decls
 
 extractQual :: Qual Id -> Reduce IntState IntState

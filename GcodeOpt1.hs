@@ -12,7 +12,7 @@ gcodeOpt1 state gcode = (fixOne state gcode,state)
 
 fixOne state [] = []
 fixOne state (g@(STARTFUN pos fun):gs) =
-  let arity = arityIS state fun
+  let arity = arityIS state (toEnum fun)
   in case gOpt initAT (OptDown (arity+1) (map (`pair` False) [1 .. arity]) []) gs of
        OptUp at gs -> g:gs
 fixOne state (g:gs) =

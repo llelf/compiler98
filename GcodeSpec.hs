@@ -7,8 +7,8 @@ import Maybe
 
 gcodeZCon prof state [] = []
 gcodeZCon prof state (d:ccs) =
-  let dataInfo = (dropJust . lookupIS state) d
-      cons = map (\(c,n)-> (0==arityIS state c, c, n))
+  let dataInfo = (fromJust . lookupIS state) d
+      cons = map (\(c,n)-> (0==arityIS state c, fromEnum c, n))
                  (zip (constrsI dataInfo) [0::Int ..])
       label = let ie = expI dataInfo in
                  if ie `elem` [IEall,IEsome] then GLOBAL else LOCAL
@@ -30,7 +30,7 @@ compilerProfstatic False state i = []
 createProfs state (z,c,n) = -- !!! Need int for module/type
   [ GLOBAL profproducer c
   , GLOBAL profconstructor c
-  , DATA_S (strIS state c)
+  , DATA_S (strIS state (toEnum c))
   , ALIGN
   , LOCAL profstatic c
   , DATA_GLB profproducer c
@@ -39,7 +39,7 @@ createProfs state (z,c,n) = -- !!! Need int for module/type
 
 fixProfstatic state ((p,c),i) = -- !!! Need int for module/type
   [ LOCAL profstatic i
-  , DATA_GLB profmodule (miIS state)
+  , DATA_GLB profmodule (fromEnum (miIS state))
   , DATA_GLB profproducer p
   , DATA_GLB profconstructor c ]
 

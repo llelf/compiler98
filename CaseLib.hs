@@ -1,3 +1,4 @@
+-- | Needs 'IdSupply'? Erg, no. I don't know what it is doing with those 'Id's...
 module CaseLib where
 
 import Util.Extra(noPos)
@@ -13,6 +14,7 @@ import Info
 
 type ExpI = Exp Id
 
+-- | This enigmatic type has slightly-less enigmatic comments attached to its use in 'Case.caseTopLevel'
 type Down = (ExpI -> ExpI
             ,ExpI
             ,ExpI
@@ -31,7 +33,7 @@ type CaseFun a = Down -> Thread -> (a,Thread)
 
 ----- Low level stuff
 
-addRatioCon :: ((TokenId,IdKind) -> Int) -> IntState -> (Int,IntState)
+addRatioCon :: ((TokenId,IdKind) -> Id) -> IntState -> (Id,IntState)
 addRatioCon tidFun state =
  case uniqueIS state of
   (u,state) ->
@@ -47,6 +49,7 @@ addRatioCon tidFun state =
                                     [Nothing,Nothing] ratio)
                         (updateIS state ratio (\_ -> updConstrsI info [u])))
 
+caseTidFun :: CaseFun ((TokenId,IdKind) -> Id)
 caseTidFun down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,tidFun,stgUndef,strModid,translate) up = (tidFun,up)
 
 caseList :: CaseFun (ExpI,ExpI)
@@ -69,8 +72,12 @@ caseTrue down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList
 
 caseRatioCon :: CaseFun PosExp
 caseRatioCon down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,tidFun,stgUndef,strModid,translate) up@(state,t2s) =
+{- (%) is not a constructor, let's not make a mess by pretending it is 
  case addRatioCon tidFun state of
    (ratioCon,state) -> (PosCon noPos ratioCon,(state,t2s))
+-}
+    let expRatio = PosCon noPos (tidFun (tRatioCon, Con))
+    in (expRatio,up)
 
 caseUndef :: CaseFun PosExp
 caseUndef down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up = (stgUndef,up)
@@ -78,24 +85,24 @@ caseUndef down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expLis
 caseEqualNumEq :: CaseFun (ExpI -> ExpI)
 caseEqualNumEq down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up = (expEqualNumEq,up)
 
-caseIdent :: Pos -> Int -> CaseFun PosExp
+caseIdent :: Pos -> Id -> CaseFun PosExp
 caseIdent pos ident down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up =
   case Map.lookup ident translate of
     Just v -> (PosVar pos v,up)
     Nothing -> (PosVar pos ident,up)
 
-caseTranslate :: Int -> [Int] -> CaseFun Down
+caseTranslate :: Id -> [Id] -> CaseFun Down
 caseTranslate v us down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up =
   ((expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,foldr ( \ u t -> Map.insert u v t ) translate us),up)
 
-caseTuple :: Int -> CaseFun Int
+caseTuple :: Int -> CaseFun Id
 caseTuple s down  up@(state,t2i) = 
   let tid = TupleId s
   in case Map.lookup tid t2i of
     Just i -> (i,up)
     Nothing ->
       case uniqueIS state of
-  	(u,state) ->
+        (u,state) ->
           let info = InfoName u tid s tid False --PHtprof
           in (u,(addIS u info state,Map.insert tid u t2i ))
 
@@ -112,7 +119,7 @@ caseUnique down (state,t2i) =
   case uniqueIS state of
     (i,state) -> (i,(state,t2i))
 
-caseUniques :: [a] -> CaseFun [(a,Int)]
+caseUniques :: [a] -> CaseFun [(a,Id)]
 caseUniques l down (state,t2i) = 
  case uniqueISs state l of
    (il,state) -> (il,(state,t2i))
@@ -120,7 +127,7 @@ caseUniques l down (state,t2i) =
 caseState :: CaseFun IntState
 caseState down up@(state,t2i) = (state,up)
 
-caseArity :: Int -> CaseFun Int
+caseArity :: Id -> CaseFun Int
 caseArity con down up@(state,t2i) =
   case lookupIS state con of
     Just info -> (arityVI info,up)

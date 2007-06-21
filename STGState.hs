@@ -36,7 +36,7 @@ needstack n gs = NEEDSTACK n : gs
 pushFail down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   case uniqueIS state of
     (i,state) ->
-      (i,Thread prof fun maxDepth ((i,d):fds) state env lateenv d h dhs fs)
+      (fromEnum i,Thread prof fun maxDepth ((fromEnum i,d):fds) state env lateenv d h dhs fs)
 
 popFail down up@(Thread prof fun maxDepth (_:fds) state env lateenv d h dhs fs) =
   Thread prof fun maxDepth fds state env lateenv d h dhs fs
@@ -149,7 +149,7 @@ gState down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   (state,up)
 
 gOnly con down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
-  (((1==) . length . constrsI . dropJust . lookupIS state . belongstoI . dropJust . lookupIS state) con ,up)
+  (((1==) . length . constrsI . fromJust . lookupIS state . belongstoI . fromJust . lookupIS state) con ,up)
 
 gWhere i down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   (case lookups i env of
@@ -167,7 +167,7 @@ gWhereAbs i down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) 
   )
 
 makeForeign s a v c ie down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
-  let (IntState _ _ st _) = state
+  let (IntState _ _ st _ _) = state
       newfs = case fs of
           (fs,Nothing)     -> let mm = foreignMemo st
                                   tf = toForeign st mm c ie s a v in
@@ -195,7 +195,7 @@ updWhere i down up@(Thread prof fun maxDepth fds state (e:env) lateenv d h dhs f
 
 gArity i down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
   case lookups i env of
-    Nothing -> (Just (arityIS state i),up)
+    Nothing -> (Just (arityIS state (toEnum i)),up)
     Just _ -> (Nothing,up)
 
 

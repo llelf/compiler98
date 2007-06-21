@@ -45,7 +45,7 @@ deriveXML tidFun cls typ tvs ctxs pos =
     unitS $
       DeclInstance pos (syntaxCtxs pos ctxs) cls [syntaxType pos typ tvs] $
         DeclsParse [DeclFun pos funH funHs
-		   ,DeclFun pos funS funSs]
+                   ,DeclFun pos funS funSs]
 
 
 
@@ -66,7 +66,7 @@ mkShowsFun expTrue expShowsElem expToHType expStagparen expShowConstr expDot exp
        let expShowsArg arg = ExpApplication pos [expShowsElem,arg]
        in unitS (
           Fun [PatAs pos v (ExpApplication pos (con:args))]
- 	      [(expTrue, expStag (foldr1
+              [(expTrue, expStag (foldr1
                                     (\arg z-> ExpApplication pos [expDot,arg,z])
                                     (map expShowsArg args)))]
               (DeclsParse []))
@@ -81,13 +81,13 @@ mkHTypeFuns expTrue expToHType expDefined expConstr expCons expNil pos typInfo c
    --mkListExp pos expCons expNil expGtGtEq expGet expBH expReturn constrInfos >>>= \listExp->
      mkAltList pos expTrue (mkGetExp pos expGtGtEq expGet expBH expReturn) constrInfos >>>= \altList->
      unitS [Fun [expBH]
-	        [(expTrue, ExpApplication pos
+                [(expTrue, ExpApplication pos
                              [expGtGtEq,
                               expGetCon,
                               ExpLambda pos [expI]
                                  (ExpCase pos expI altList)
                              ])]
-	        (DeclsParse [])]
+                (DeclsParse [])]
 
 mkGetExp pos expGtGtEq expGet expBH expReturn expCon args constrInfo =
   foldr (\ arg z -> ExpApplication pos [expGtGtEq, (ExpApplication pos [expGet,expBH]), ExpLambda pos [arg] z])
@@ -127,12 +127,12 @@ mkFGetFuns expTrue expGetBitsF expFGet expLtLt expPair expCons expNil sizeC pos 
   in
      mkAltList pos expTrue (mkGetFExp pos expLtLt expFGetBH expPair expP') constrInfos >>>= \altList->
      unitS [Fun [expBH,expP]
-	        [(expTrue, ExpLet pos (DeclsParse [DeclPat (Alt (ExpApplication pos [expPair,expN,expP'])
+                [(expTrue, ExpLet pos (DeclsParse [DeclPat (Alt (ExpApplication pos [expPair,expN,expP'])
                                                                 [(expTrue,expInit)]
                                                                 (DeclsParse []))])
                                       (ExpCase pos expN altList)
                 )]
-	        (DeclsParse [])]
+                (DeclsParse [])]
 
 mkGetFExp pos expLtLt expFGetBH expPair expP' expCon args constrInfo =
     foldl (\ acc arg -> ExpApplication pos [expLtLt, acc, expFGetBH])
@@ -150,6 +150,6 @@ mkSizeFun sizeC expTrue expSize expPlus pos constrInfo =
        mapS ( \_ -> unitS (ExpVar pos) =>>> getUnique) nts >>>= \args ->
        unitS (
           Fun [ExpApplication pos (con:args)]
- 	      [(expTrue, foldl (\z arg-> ExpApplication pos [expPlus,expSizeOf arg,z]) expCsize args)]
+              [(expTrue, foldl (\z arg-> ExpApplication pos [expPlus,expSizeOf arg,z]) expCsize args)]
               (DeclsParse []))
 

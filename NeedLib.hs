@@ -3,7 +3,7 @@ Basic data type and functions for "need" analysis
 -}
 module NeedLib(initNeed,needit,NeedLib,pushNeed,popNeed,bindTid,needTid
               ,NeedTable,needQualify) where
---	      ,TokenId,IdKind,Memo(..),Tree) where
+--            ,TokenId,IdKind,Memo(..),Tree) where
 
 import TokenId(TokenId(..))
 import TokenInt(tokenAllways,tokenMain)
