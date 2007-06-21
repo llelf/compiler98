@@ -4,7 +4,7 @@ used from the renaming pass until code generation
 -}
 module IntState(module IntState, module Info) where
 
-import AssocTree
+import qualified Data.Map as Map
 import NT
 import TokenId(mkQual3,mkQualD,dropM)
 import Util.Extra
@@ -19,21 +19,29 @@ import Flags
 
 data IntState = 
       IntState
-	Int				-- unique
-	(Int,PackedString)		-- modid
-	(AssocTree Int Info)		-- symboltable (unique int -> info)
-	[String]			-- errors
+        Id                              -- unique
+        (Id,PackedString)              -- modid
+        (Map.Map Id Info)               -- symboltable (Id -> info)
+        [String]                        -- errors
+        Flags
 
-dummyIntState = IntState 0 (0,packString "<Dummy>") initAT []
+dummyIntState :: IntState
+dummyIntState = IntState (toEnum 0)
+                         (toEnum 0,packString "<Dummy>")
+                         Map.empty
+                         []
+                         (error "dummyIntState: flags")
 
 -- -===== State
 
 getInfo :: Id -> a -> IntState -> (Info,IntState)
 
-getInfo i down state@(IntState unique rps st errors) =
-  case lookupAT st i of
+getInfo i down state@(IntState unique rps st errors fl) =
+  case Map.lookup i st of
     Just info -> (info,state)
 
+getIntState :: a -> IntState -> (IntState,IntState)
+getIntState down state = (state,state)
 
 addDefaultMethod :: a -> (Id,Id) -> IntState -> IntState
 
@@ -41,8 +49,8 @@ addDefaultMethod tidcls (iMethod,iDefault) state@(IntState unique irps@(_,rps) s
   case lookupIS state iMethod of
     Just (InfoMethod u tid ie fix nt' annot iClass) ->
       IntState unique irps 
-        (addAT st fstOf iDefault 
-          (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass)) 
+        (Map.insertWith fstOf iDefault 
+          (InfoDMethod  iDefault (mkQualD rps tid) nt' annot iClass) st) 
         errors
 
 
@@ -58,27 +66,30 @@ addInstMethod :: TokenId -> TokenId -> TokenId -> NewType -> Id
 addInstMethod  tidcls tidtyp tidMethod nt iMethod down state@(IntState unique rps st errors) =
   case lookupIS state iMethod of
     Just (InfoMethod u tid ie fix nt' (Just arity) iClass) -> 
-      (unique,IntState (unique+1) rps (addAT st (error "adding twice!") unique (InfoIMethod unique (mkQual3 tidcls tidtyp tidMethod) nt (Just arity) iMethod)) errors)
+        let state' = IntState (succ unique) rps st' errors fl
+            st'    = Map.insertWith (error "adding twice!") unique uIM st
+            uIM    = InfoIMethod unique (mkQual3 rpsMod tidcls tidtyp tidMethod) nt (Just arity) iMethod
+        in (unique,state')
 
 -- -====== State0
 
 updInstMethodNT :: TokenId -> TokenId -> Int -> NewType -> Int 
                 -> a -> IntState -> IntState
 
-updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps st errors) =
-  case lookupAT st iMethod of
+updInstMethodNT tidcls tidtyp i nt iMethod  down state@(IntState unique rps@(_,rpsMod) st errors fl) =
+  case Map.lookup iMethod st of
     Just (InfoMethod _ _ _ _ _ annots _) ->
-      case lookupAT st i of
-	Just (InfoIMethod u tid' _ _ _) ->
-	    let tid = mkQual3 tidcls tidtyp (dropM tid')
-	    in IntState unique rps (addAT st fstOf i (InfoIMethod u tid nt annots iMethod)) errors
+      case Map.lookup i st of
+        Just (InfoIMethod u tid' _ _ _) ->
+            let tid = mkQual3 rpsMod tidcls tidtyp (dropM tid')
+            in IntState unique rps (Map.insertWith fstOf i (InfoIMethod u tid nt annots iMethod) st) errors fl
 
 
 addInstance :: Int -> Int -> [Int] -> [(Int,Int)] -> a -> IntState -> IntState
 
-addInstance cls con free ctxs down state@(IntState unique rps st errors) =
-  let st' = updateAT st cls (addInstanceI con free ctxs)
-  in  IntState unique rps st' errors
+addInstance cls con loc free ctxs down state@(IntState unique rps st errors fl) =
+  let st' = Map.update (Just . addInstanceI con loc free ctxs) cls st
+  in  IntState unique rps st' errors fl
 
 
 addNewLetBound :: Int -> TokenId -> a -> IntState -> IntState
@@ -96,14 +107,14 @@ in the symbol table or type is badly formed (duplicate predicates in context).
 -}
 updVarNT :: Pos -> Int -> NewType -> Reduce IntState IntState
 
-updVarNT pos i nt state@(IntState unique rps st errors) =
-  case lookupAT st i of
+updVarNT pos i nt state@(IntState unique rps st errors fl) =
+  case Map.lookup i st of
     Just (InfoVar u tid exp fix NoType annots) ->
       case checkNT pos (strIS state) nt of
         Nothing -> IntState unique rps 
-                     (addAT st fstOf i (InfoVar u tid exp fix nt annots)) 
-                     errors
-	Just err -> IntState unique rps st (err :errors)
+                     (Map.insertWith fstOf i (InfoVar u tid exp fix nt annots) st) 
+                     errors fl
+        Just err -> IntState unique rps st (err :errors) fl
     Just (InfoVar u tid exp fix nt' annots) ->
       IntState unique rps st 
         (("New type signature for " ++ show tid ++ " at " ++ strPos pos)
@@ -117,12 +128,12 @@ Assumes that variable is already in symbol table.
 -}
 updVarArity :: Pos -> Int -> Int -> Reduce IntState IntState
 
-updVarArity pos i arity state@(IntState unique rps st errors) =
-  case lookupAT st i of
+updVarArity pos i arity state@(IntState unique rps st errors fl) =
+  case Map.lookup i st of
     Just (InfoVar  u tid exp fix nt _) ->  
       -- Always update, might change arity for redefined import in Prelude
       IntState unique rps 
-        (addAT st fstOf i (InfoVar u tid exp fix nt (Just arity))) errors
+        (Map.insertWith fstOf i (InfoVar u tid exp fix nt (Just arity)) st) errors fl
     _ -> state   
       -- Ignore arity for methods, methods instances and methods default
 
@@ -132,21 +143,21 @@ updVarArity pos i arity state@(IntState unique rps st errors) =
 {- Add new info for identifier to the symbol table -}
 addIS :: Int -> Info -> IntState -> IntState
 
-addIS u info state@(IntState unique rps st errors) =
-  IntState unique rps (addAT st combInfo u info) errors
+addIS u info state@(IntState unique rps st errors fl) =
+  IntState unique rps (Map.insertWith combInfo u info st) errors fl
 
 
 {- Lookup identifier in symbol table -} 
 lookupIS :: IntState -> Id -> Maybe Info
 
-lookupIS (IntState unique rps st errors) i = lookupAT st i
+lookupIS (IntState unique rps st errors fl) i = Map.lookup i st
 
 
 {- Update info for identifier in symbol table -}
 updateIS :: IntState -> Id -> (Info -> Info) -> IntState
 
-updateIS (IntState unique rps st errors) i upd =
-  IntState unique rps (updateAT st i upd) errors
+updateIS (IntState unique rps st errors fl) i upd =
+  IntState unique rps (Map.update (Just . upd) i st) errors fl
 
 
 {- Obtain a new unique and hence also a new internal state -}
@@ -233,18 +244,25 @@ globalIS state i =
 arityIS :: IntState -> Id -> Int
 -- arity with context
 
-arityIS state i =
-  case lookupIS state i of 
-    Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _ _]) (Just arity) iMethod) ->
-	case lookupIS state iMethod of
-	  Just (InfoMethod  unique tid ie fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
-	       length ictxs + iarity + (length . snd . dropJust . lookupAT ((instancesI . dropJust . lookupIS state) iClass)) tcon
+arityIS state i = 
+       case lookupIS state i of 
+        Just (InfoIMethod  unique tid (NewType _ [] ctxs [NTcons tcon _ _]) (Just arity) iMethod) ->
+         case lookupIS state iMethod of
+          Just (InfoMethod  unique tid ie fix (NewType _ [] ictxs _) (Just iarity) iClass) ->
+               let aCtxs  = length ictxs
+                   aArity = iarity
+                   aClass = (length . (\(_,_,x)->x) . fromJust . 
+                             flip Map.lookup ((instancesI . fromJust . lookupIS state) iClass)) tcon
+               in --trace ("<arityIS id="++show i++" ctx="++show aCtxs++" ar="++show aArity++" cls="++show aClass++">") $
+                  aCtxs + aArity + aClass
 
---	       length ctxs + arity + (length . snd . dropJust . lookupAT ((instancesI . dropJust . lookupIS state) iClass)) tcon
---	       length ictxs + length ctxs + arity 
-    Just info@(InfoIMethod  unique tid _ _ iMethod) -> error ("arityIS " ++ show info)
-    Just info -> arityI info
-    _ -> error ("arityIS in IntState.hs couldn't find " ++ show i)
+--             length ctxs + arity + (length . snd . fromJust . lookupAT ((instancesI . fromJust . lookupIS state) iClass)) tcon
+--             length ictxs + length ctxs + arity 
+        Just info@(InfoIMethod  unique tid _ _ iMethod) -> error ("arityIS " ++ show info)
+        Just info -> --trace ("arityIS id="++show i++" info="++descI info) $ 
+                     arityI info
+        _ -> error ("arityIS in IntState.hs couldn't find " ++ show i)
+
 
 
 {-

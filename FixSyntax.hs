@@ -5,8 +5,8 @@ Also removes data constructors defined by newtype.
 -}
 module FixSyntax(fixSyntax) where
 
-import AssocTree(AssocTree)
-import Extra(dropJust)
+import qualified Data.Map as Map
+import Maybe
 import Syntax
 import IdKind(IdKind(..))
 import State
@@ -41,7 +41,7 @@ fixSyntax :: Decls Id
           -> ((TokenId,IdKind) -> Id) 
           -> ([Decl Id]  -- modified declarations
              ,IntState   -- modified internal state
-             ,AssocTree TokenId Id)
+             ,Map.Map TokenId Id)
 
 fixSyntax topdecls state tidFun =
   startfs fsTopDecls topdecls state tidFun

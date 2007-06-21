@@ -12,8 +12,8 @@ import Id
 import Info
 import NT
 import TokenId
-import AssocTree
-import Extra (mix,warning)
+import qualified Data.Map as Map
+import Util.Extra (mix,warning)
 import GcodeLow (fun,foreignfun,fixStr)
 
 
@@ -104,7 +104,7 @@ toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var =
 toForeign symboltable memo callconv ie cname arity var =
     Foreign ie proto style include cfunc hname arity' args res
   where
-    info = fromJust (lookupAT symboltable var)
+    info = fromJust (Map.lookup var symboltable)
     hname = tidI info
     hnameStr = (reverse . (\w->if head w=='#' then tail w else w)
                . unpackPS . extractV) hname
@@ -141,7 +141,8 @@ parseEntity entity hname =
         error ("Couldn't parse entity string in foreign import: "++entity)
     
 
-searchType :: Style -> AssocTree Int Info -> ForeignMemo -> Info -> ([Arg],Res)
+
+searchType :: Style -> Map.Map Id Info -> ForeignMemo -> Info -> ([Arg],Res)
 searchType style st (arrow,io) info =
   let
     toList (NTcons c _ nts) | c==arrow  = let [a,b] = nts in a: toList b
@@ -150,7 +151,7 @@ searchType style st (arrow,io) info =
     toList nt             = [nt]
 
     toTid (NTcons c _ nts)  =
-      case lookupAT st c of
+      case Map.lookup c st of
         Just i | isRealData i ->
                    case toArg (tidI i) of
                      FunPtr _ -> FunPtr (map toTid (toList (head nts)))
@@ -201,13 +202,16 @@ searchType style st (arrow,io) info =
     (splitRes . map toTid . toList . getNT . ntI) info
 
 ----
-type ForeignMemo = (Int,Int)
+type ForeignMemo = (Id,Id)
 
-foreignMemo :: AssocTree Int Info -> ForeignMemo
+foreignMemo :: Map.Map Id Info -> ForeignMemo
 foreignMemo st =
-    (findFirst (check t_Arrow . lookupAT st) [1..]
-    ,findFirst (check tIO     . lookupAT st) [1..])
+--    (findFirst (check t_Arrow . flip Map.lookup st) [1..]
+--    ,findFirst (check tIO     . flip Map.lookup st) [1..])
+    (findFirst (check t_Arrow) minfos
+    ,findFirst (check tIO    ) minfos)
   where
+    minfos = map (Just . snd) (Map.toList st) ++ [Nothing]
     check tid (Just info) | cmpTid tid info  = Just (uniqueI info)
                           | otherwise        = Nothing
 	-- If the ident doesn't exist after typecheck, it won't be used!

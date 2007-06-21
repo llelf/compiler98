@@ -25,7 +25,7 @@ import IExtract(freeType)
 import Util.Extra(snub,strPos,mixLine,mixCommaAnd)
 import Bind(identPat)
 import SyntaxPos(Pos,HasPos(getPos))
-import AssocTree(lookupAT)
+import qualified Data.Map as Map
 import Id(Id)
 import Maybe
 
@@ -56,14 +56,14 @@ extractDecl :: Decl Id -> Reduce IntState IntState
 extractDecl (DeclInstance pos ctxs cls [instanceType@(TypeCons poscon con _)]
                           instmethods) =
   (\ state ->
-    if (isJust . depthI . dropJust . lookupIS state) con then
+    if (isJust . depthI . fromJust . lookupIS state) con then
       addError state ("Instance declaration of type synonym is illegal (" 
                       ++ strIS state con ++ " at " ++ strPos poscon ++ ")")
     else case (filter (isNothing.snd) 
-              . map ( \ cls -> (cls,(flip lookupAT con . instancesI . dropJust
+              . map ( \ cls -> (cls,(Map.lookup con . instancesI . fromJust
                                      . lookupIS state) cls) ) 
               . superclassesI 
-              . dropJust 
+              . fromJust 
               . lookupIS state) cls of
            [] -> state
            clss -> addError state 

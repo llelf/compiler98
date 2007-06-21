@@ -5,7 +5,7 @@ import Syntax
 import PosCode
 import State
 import IntState
-import AssocTree
+import qualified Data.Map as Map
 import CaseLib
 import SyntaxPos
 import SyntaxUtil
@@ -115,8 +115,8 @@ sortCon funs =
 
 stableSort :: [(Int, b)] -> [(Int, [b])]
 stableSort xs = -- I hope !!
- let add (c,f) t = addAT t (++) c [f]
- in listAT (foldr add initAT xs)
+ let add (c,f) t = Map.insertWith (++) c [f] t
+ in Map.toList (foldr add Map.empty xs)
 
 
 needLet (PatternVar  patfuns) = any (not . null . getTrans . fst) patfuns

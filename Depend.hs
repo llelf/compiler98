@@ -1,7 +1,8 @@
 module Depend(depend) where
 
-import AssocTree(listAT)
-import Flags (Flags,sDepend,sPrelude,sSourceFile,sUnix)
+import qualified Data.Map as Map
+import Flags (FileFlags, Flags,sDepend,sPrelude,sSourceFile,sUnix)
+import Id
 import IntState
 import Util.Extra
 import Util.OsOnly
@@ -9,17 +10,18 @@ import TokenId
 
 -- Only the beginning, can probably do mych better
 
-depend flags state rt =
+depend :: Flags -> FileFlags -> IntState -> Map.Map a (Either b [Id]) -> IO ()
+depend flags fileflags state rt =
   if sDepend flags then
     let
       isUnix = sUnix flags
-      sourcefile = sSourceFile flags
+      sourcefile = sSourceFile fileflags
       (rootdir,filename) = fixRootDir isUnix sourcefile
     in writeFile (fixDependFile isUnix rootdir filename)
                  ((unlines
                   . filter (not . null)
-                  . map (strId (sPrelude flags) state . head . dropRight . snd)
-                  . listAT) rt)
+                  . map (strTId (sPrelude flags) state . head . dropRight . snd)
+                  . Map.toList) rt)
   else
     return ()
 

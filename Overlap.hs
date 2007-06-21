@@ -10,14 +10,15 @@ module Overlap
 
 import TokenId(TokenId)
 import IdKind
-import AssocTree
-import Extra
+import Id
+import qualified Data.Map as Map
+import Util.Extra
 import List (delete)
 
 --                                       resolved yet?
 --                                                  source alias
 --                                                          other possible aliases
-type Overlap = AssocTree (TokenId,IdKind) (Resolution,TokenId,[TokenId])
+type Overlap = Map.Map (TokenId,IdKind) (Resolution,TokenId,[TokenId])
 data Resolution = Unresolved | ResolvedTo | Excluded
 
 -- For every ident that could resolve to more than one qualified ident,
@@ -33,28 +34,28 @@ data Resolution = Unresolved | ResolvedTo | Excluded
 addOverlap :: TokenId -> IdKind -> Overlap -> [TokenId] -> Overlap
 addOverlap atid idKind o tids =
     foldr add o tids
-  where add t o = addAT o sndOf (t,idKind) (Unresolved, atid, delete t tids)
+  where add t o = Map.insert (t,idKind) (Unresolved, atid, delete t tids) o
 
 
 -- In deAlias, we compute the new, fully-resolved, qualified-renaming function
 -- given the Overlap table and all the idents to be renamed.
 
 deAlias ::
-    (TokenId->[TokenId])		-- orig (imprecise) qualified renaming
-     -> Overlap				-- table of known overlaps
-     -> AssocTree (TokenId,IdKind) (Either [Pos] [Int])	-- idents to be renamed
-     -> ([String], (TokenId->TokenId))	-- errors + new qual-renaming func
+    (TokenId->[TokenId])                -- orig (imprecise) qualified renaming
+     -> Overlap                         -- table of known overlaps
+     -> Map.Map (TokenId,IdKind) (Either [Pos] [Id]) -- idents to be renamed
+     -> ([String], (TokenId->TokenId))  -- errors + new qual-renaming func
 deAlias qf o rt =
     (foldr findUndef err flatrt, newqf)
   where
     (err,o') = resolveOverlaps o flatrt
-    flatrt   = listAT rt      
+    flatrt   = Map.toList rt      
 
     findUndef (key, Left poss) err = checkNonUnique key poss err
     findUndef (key, Right _)   err = err
 
     checkNonUnique key@(_,kind) poss err =
-        case lookupAT o' key of
+        case Map.lookup key o' of
                          -- No overlap, remains undefined.
           Nothing -> mkErrorND key poss: err
                          -- Overlap, but resolves to a different alias.
@@ -65,13 +66,13 @@ deAlias qf o rt =
           (Just (ResolvedTo,alias,others)) -> mkErrorOVD key poss alias others: err
 
     newqf t =
-        case lookupAT (foldr buildqf initAT (listAT o')) t of
-		-- if in resolution table, use newly-resolved qual-renaming
+        case Map.lookup t (foldr buildqf Map.empty (Map.toList o')) of
+                -- if in resolution table, use newly-resolved qual-renaming
             (Just t') -> t'
 		-- if not in resolution table, use original qual-renaming
             Nothing   -> head (qf t)
 
-    buildqf ((tid,_), (ResolvedTo,alias,_))  t = addAT t undefined alias tid
+    buildqf ((tid,_), (ResolvedTo,alias,_))  t = Map.insertWith undefined alias tid t
     buildqf ((tid,_), (Excluded,_,_))        t = t 
     buildqf ((tid,_), (Unresolved,_,_))      t = t 
 
@@ -89,7 +90,7 @@ resolveOverlaps o rt =
         else (mkErrorMD key (x:xs): err, o)
 
     mkUnique (err,o) key@(_,kind) =
-        case lookupAT o key of
+        case Map.lookup key o of
               -- No overlap, nothing to do
           Nothing -> (err, o)
               -- Overlaps, already resolved to a different alias.
@@ -99,8 +100,8 @@ resolveOverlaps o rt =
               -- Overlaps, resolves to this alias.
           (Just (ResolvedTo,alias,others)) -> (err, foldr (undef kind) o others)
 
-    undef kind tid o = updateAT o (tid,kind) (\(_,a,as)->(Excluded,a,as))
-    def   key      o = updateAT o  key       (\(_,a,as)->(ResolvedTo,a,as))
+    undef kind tid o = Map.update (\(_,a,as)->Just(Excluded,a,as))   (tid,kind) o
+    def   key      o = Map.update (\(_,a,as)->Just(ResolvedTo,a,as)) key        o
 
 ------
 mkErrorMD (tid,kind) xs =

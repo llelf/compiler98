@@ -5,31 +5,30 @@ module NeedLib(initNeed,needit,NeedLib,pushNeed,popNeed,bindTid,needTid
               ,NeedTable,needQualify) where
 --	      ,TokenId,IdKind,Memo(..),Tree) where
 
-import Memo
 import TokenId(TokenId(..))
 import TokenInt(tokenAllways,tokenMain)
 import IdKind
-import AssocTree
-import Extra
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Overlap (Overlap,addOverlap)
 import Syntax hiding (TokenId)
 
 -- Added in H98: the overlap table, which allows for later resolution of
 -- shared module aliases.
 
-type NeedTable = AssocTree (TokenId,IdKind) [Pos]
+type NeedTable = Map.Map (TokenId,IdKind) [Pos]
 
-data NeedLib = NeedLib (TokenId -> [TokenId])	-- qualified renaming
-                       (Memo (TokenId,IdKind))	-- tids already seen
-                       [Memo (TokenId,IdKind)]	-- stack of memos
-                    -- (AssocTree (TokenId,IdKind) (Bool,TokenId,[TokenId])) 
-                    -- ^ overlap table
-                       Overlap	   -- overlaps for later resolution
+data NeedLib = NeedLib (TokenId -> [TokenId])   -- qualified renaming
+                       (Set.Set (TokenId,IdKind))  -- tids already seen
+                       [Set.Set (TokenId,IdKind)]  -- stack of memos
+                    -- (Map.Map (TokenId,IdKind) (Bool,TokenId,[TokenId])) 
+                    -- overlap table
+                       Overlap     -- overlaps for later resolution
                        NeedTable   -- final need-table
 
 
 initNeed :: Bool -> NeedTable
-initNeed b = foldr (\(k,t) a -> addAT a sndOf (t,k) []) initAT initNeed'
+initNeed b = foldr (\(k,t) a -> Map.insert (t,k) [] a) Map.empty initNeed'
   where initNeed' = tokenAllways ++ (if b then tokenMain else [])
 
 needit :: (NeedLib -> NeedLib) 
@@ -38,7 +37,7 @@ needit :: (NeedLib -> NeedLib)
        -> (NeedTable,Overlap)
 
 needit n r iNeed =
-  case n (NeedLib r initM [] initAT iNeed) of
+  case n (NeedLib r Set.empty [] Map.empty iNeed) of
     (NeedLib r m [] o n) -> (n,o)
 
 
@@ -60,8 +59,8 @@ bindTid :: IdKind -> TokenId -> NeedLib -> NeedLib
 bindTid idKind tid (NeedLib r m ms o n) =
   NeedLib r (foldr memoise m (r tid)) ms o n
   where
-  memoise :: TokenId -> Memo (TokenId,IdKind) -> Memo (TokenId,IdKind)
-  memoise tid m = addM m (tid,idKind)
+  memoise :: TokenId -> Set.Set (TokenId,IdKind) -> Set.Set (TokenId,IdKind)
+  memoise tid m = Set.insert (tid,idKind) m
 
 -- This version of needTid was for Haskell 1.3, before the introduction
 -- of overlapping import renamings.
@@ -70,18 +69,18 @@ bindTid idKind tid (NeedLib r m ms o n) =
 --  case r tid of
 --    [tid] ->
 --      case lookupM m (tid,idKind) of
---	Just _ -> needlib
---	Nothing ->
---	  case lookupAT n (tid,idKind) of -- mostly to evaluate n now and then :-)
---	    Just _ ->  NeedLib r (addM m (tid,idKind)) ms o (updateAT n (tid,idKind) (pos:))
---	    Nothing -> NeedLib r (addM m (tid,idKind)) ms o (addAT n undefined (tid,idKind) [pos])
+--      Just _ -> needlib
+--      Nothing ->
+--        case lookupAT n (tid,idKind) of -- mostly to evaluate n now and then :-)
+--          Just _ ->  NeedLib r (addM m (tid,idKind)) ms o (updateAT n (tid,idKind) (pos:))
+--          Nothing -> NeedLib r (addM m (tid,idKind)) ms o (addAT n undefined (tid,idKind) [pos])
 ----  tids -> 
 ----    case lookupM m (tids,idKind) of
-----	Just _ -> needlib
-----	Nothing ->
-----	  case lookupAT n (tids,idKind) of -- mostly to evaluate n now and then :-)
-----	    Just _ ->  NeedLib r (addM m (tids,idKind)) ms (updateAT n (tids,idKind) (pos:))
-----	    Nothing -> NeedLib r (addM m (tids,idKind)) ms (addAT n undefined (tids,idKind) [pos])
+----    Just _ -> needlib
+----    Nothing ->
+----      case lookupAT n (tids,idKind) of -- mostly to evaluate n now and then :-)
+----        Just _ ->  NeedLib r (addM m (tids,idKind)) ms (updateAT n (tids,idKind) (pos:))
+----        Nothing -> NeedLib r (addM m (tids,idKind)) ms (addAT n undefined (tids,idKind) [pos])
 
 needTid :: Pos -> IdKind -> TokenId -> NeedLib -> NeedLib
 
@@ -92,14 +91,14 @@ needTid pos idKind tid needlib@(NeedLib r m ms o n) =
     tids  -> foldr record (NeedLib r m ms (addOverlap tid idKind o tids) n) tids
  where
   record tid needlib@(NeedLib r m ms o n) =
-    case lookupM m (tid,idKind) of 
-      (Just _) -> needlib
-      Nothing ->
-        case lookupAT n (tid,idKind) of -- mostly to evaluate n now and then :-)
-          Just _ -> NeedLib r (addM m (tid,idKind)) ms o
-					 (updateAT n (tid,idKind) (pos:))
-          Nothing -> NeedLib r (addM m (tid,idKind)) ms o
-					 (addAT n undefined (tid,idKind) [pos])
+    case (tid,idKind) `Set.member` m of 
+      True -> needlib
+      False ->
+        case Map.lookup (tid,idKind) n of -- mostly to evaluate n now and then :-)
+          Just _ -> NeedLib r (Set.insert (tid,idKind) m) ms o
+                                         (Map.update (Just . (pos:)) (tid,idKind) n)
+          Nothing -> NeedLib r (Set.insert (tid,idKind) m) ms o
+                                         (Map.insertWith undefined (tid,idKind) [pos] n)
 
 -- push qualification of identifiers from instance head into method decls
 needQualify :: TokenId -> Decl TokenId -> Decl TokenId

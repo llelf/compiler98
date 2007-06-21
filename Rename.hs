@@ -25,7 +25,7 @@ import IdKind
 import Util.Extra
 import NT
 import IntState
-import AssocTree
+import qualified Data.Map as Map
 import SysDeps(PackedString,unpackPS)
 import SyntaxPos
 import SyntaxUtil(infixFun,isTypeVar)
@@ -56,7 +56,7 @@ rename :: Flags
             , (TokenId,IdKind) -> Maybe Id  -- tidFunSafe
             , [(Id,[(Pos,Id)])]             -- derived
             , Maybe [Id]                    -- userDefault
-            , AssocTree (TokenId,IdKind) (Either [Pos] [Id])  -- rename tree?
+            , Map.Map (TokenId,IdKind) (Either [Pos] [Id])  -- rename tree?
             )
 
 rename flags mrps qualFun expFun inf topdecls importState overlap =
@@ -64,8 +64,8 @@ rename flags mrps qualFun expFun inf topdecls importState overlap =
          :: (Either [String] (TokenId -> TokenId
                              ,TokenId -> IdKind -> IE
                              ,RenameState
-                             ,AssocTree (TokenId,IdKind)
-                                        (Either [Pos] [Int]))) of
+                             ,Map.Map (TokenId,IdKind)
+                                        (Either [Pos] [Id]))) of
     Right (qualFun,expFun,state,irt) ->
       case renameTopDecls inf topdecls qualFun expFun state
              :: (Decls Int,RenameState) of

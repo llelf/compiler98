@@ -4,8 +4,8 @@ Perform "need" analysis (which imported entities are required?)
 module Need(Flags,Module,TokenId,NeedTable,HideDeclIds,PackedString,IdKind
            ,needProg) where
 
-import AssocTree
-import Memo
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Reduce
 import NeedLib(NeedLib,initNeed,needit,popNeed,pushNeed,bindTid,needTid
               ,NeedTable,needQualify)
@@ -32,7 +32,7 @@ needProg :: Flags
             , Either [Char] 
                 ( (TokenId->Bool) -> TokenId -> IdKind -> IE
                 , [ ( PackedString
-                    , (PackedString, PackedString, Memo TokenId)
+                    , (PackedString, PackedString, Set.Set TokenId)
                          -> [[TokenId]] -> Bool
                     , HideDeclIds
                     )
@@ -47,7 +47,7 @@ needProg flags n@(Module pos modidl exports impdecls fixdecls topdecls) =
                          , qualFun
                          , overlap
                          , preImport flags modidl
-                                     (fromListM [i | ((i,_),_) <- listAT need])
+                                     (Set.fromList [i | ((i,_),_) <- Map.toList need])
                                      exports impdecls
                          )
 

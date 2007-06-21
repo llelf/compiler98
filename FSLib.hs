@@ -8,10 +8,10 @@ import SysDeps(PackedString,trace)
 import IdKind
 import Info hiding (TokenId,NewType)
 import State
-import AssocTree
-import Extra(noPos,sndOf,dropJust)
-import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,t_id)
-import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS)
+import qualified Data.Map as Map
+import Util.Extra(noPos)
+import TokenId
+import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS,mrpsIS,strIS,defaultMethodsIS)
 import NT(NewType(..))
 import Id(Id)
 import Maybe
@@ -20,7 +20,7 @@ type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)
                   , Exp Id           -- expId
                   , (TokenId,IdKind) -> Id) --tidFun
 
-type Threaded = (IntState, AssocTree TokenId Id)
+type Threaded = (IntState, Map.Map TokenId Id)
 
 type FSMonad a = State Inherited Threaded a Threaded
 
@@ -28,8 +28,8 @@ type FSMonad a = State Inherited Threaded a Threaded
 startfs :: (Decls Id -> FSMonad a)
         -> Decls Id 
         -> IntState
-        -> ((TokenId,IdKind) -> Id) 
-        -> (a, IntState, AssocTree TokenId Id)
+        -> ((TokenId,IdKind) -> Id)
+        -> (a, IntState, Map.Map TokenId Id)
 
 startfs fs x state tidFun =
       let down = ( ( ExpCon noPos (tidFun (t_List,Con))	 
@@ -39,7 +39,7 @@ startfs fs x state tidFun =
 		 , tidFun
 		 )
 
-	  up = (state, initAT)
+          up = (state, Map.empty)
       in
 	case fs x down up of
 	 (x,(state,t2i)) -> (x,state,t2i)
@@ -66,8 +66,8 @@ not newtype definition.
 fsRealData :: Id -> FSMonad Bool
 
 fsRealData con down up@(state,t2i) =
-  ((isRealData . dropJust . lookupIS state . belongstoI 
-    . dropJust . lookupIS state) con,up)
+  ((isRealData . fromJust . lookupIS state . belongstoI
+    . fromJust . lookupIS state) con,up)
 
 
 fsExpAppl :: Pos -> [Exp Id] -> FSMonad (Exp Id)
@@ -78,35 +78,40 @@ fsExpAppl pos xs = unitS (ExpApplication pos xs)
 
 fsClsTypSel :: Pos -> Id -> Id -> Id -> FSMonad (Exp Id)
 
-fsClsTypSel pos cls typ sel down  up@(state,t2i) = 
-  case lookupIS state cls of
-   Just clsInfo ->
-     case lookupIS state typ of
-       Just typInfo ->
-	 let tid = mkQual3  (tidI clsInfo) (tidI typInfo) (tidIS state sel)
-	 in case lookupAT t2i tid of
-	   Just i -> (ExpVar pos i,up)
-	   Nothing ->
-	     case uniqueIS state of
-	       (u,state) ->
-		 let   -- !!! Arity of selector doesn't look right !!!
-		    arity = (arityIM . dropJust . lookupIS state) sel + (length . snd . dropJust . lookupAT (instancesI clsInfo)) typ
-		    info = InfoName  u tid arity tid False --PHtprof
---                    info = InfoMethod  u tid IEnone (InfixDef,9) NoType (Just arity) cls
-		 in (ExpVar pos u,(addIS u info state,addAT t2i sndOf tid u))
+
+fsClsTypSel :: Pos -> Id -> Id -> Id -> FSMonad (Exp Id)
+fsClsTypSel pos cls typ sel down  up@(state,t2i) =
+    let clsInfo = fromJust $ lookupIS state cls
+        typInfo = fromJust $ lookupIS state typ
+        mi      = fsInstanceFor cls typ (Just sel) state
+
+        tid = mkQual3 mi (tidI clsInfo) (tidI typInfo) (tidIS state sel)
+    in case Map.lookup tid t2i of
+           Just i -> (ExpVar pos i,up)
+           Nothing ->
+               case uniqueIS state of
+                    (u,state) ->
+                        let   -- !!! Arity of selector doesn't look right !!!
+                           selAR = (arityIM . fromJust . lookupIS state) sel
+                           clsAR = (length . (\(_,_,x)->x) . fromJust . flip Map.lookup (instancesI clsInfo)) typ
+                           arity = selAR + clsAR
+                           info = InfoName  u tid arity tid False --PHtprof
+--                         info = InfoMethod  u tid IEnone (InfixDef,9) NoType (Just arity) cls
+                        in (ExpVar pos u,(addIS u info state,Map.insert tid u t2i))
 
 
-fsExp2 :: Pos -> Id -> Id -> a 
-       -> (IntState, AssocTree TokenId Int)
-       -> (Exp Int, (IntState, AssocTree TokenId Int))
-
-fsExp2 pos cls i = 
+fsExp2 :: Pos -> Id -> Id
+       -> State a 
+                (IntState, Map.Map TokenId Id)
+		(Exp Id)
+		(IntState, Map.Map TokenId Id)
+fsExp2 pos cls i =
   unitS (ExpVar pos) =>>> fsExp2i pos cls i
 
 
-fsExp2i :: Pos -> Id -> Id -> a 
-        -> (IntState, AssocTree TokenId Id)
-        -> (Id, (IntState, AssocTree TokenId Id))
+fsExp2i :: Pos -> Id -> Id -> a
+        -> (IntState, Map.Map TokenId Id)
+        -> (Id, (IntState, Map.Map TokenId Id))
 
 
 fsExp2i pos cls i down  up@(state,t2i) = 
@@ -114,24 +119,25 @@ fsExp2i pos cls i down  up@(state,t2i) =
    Just clsInfo ->
      case lookupIS state i of
        Just clsdatInfo ->
-	 let tid = mkQual2  (tidI clsInfo)  (tidI clsdatInfo)
-     	 in case lookupAT t2i tid of           
-	   Just i ->  (i,up)
-	   Nothing ->
-	     case uniqueIS state of
-	       (u,state) ->
-		 if isClass clsdatInfo
-		 then -- Exp2 is either superclass (Ord.Eq) taking one argument ...
-		    (u,(addIS u (InfoMethod u tid IEnone (InfixDef,9) NoType
+         let mi = fsInstanceFor cls i Nothing state
+             tid = mkQual2 mi (tidI clsInfo)  (tidI clsdatInfo)
+         in case Map.lookup tid t2i of
+           Just i ->  (i,up)
+           Nothing ->
+             case uniqueIS state of
+               (u,state) ->
+                 if isClass clsdatInfo
+                 then -- Exp2 is either superclass (Ord.Eq) taking one argument ...
+                    (u,(addIS u (InfoMethod u tid IEnone (InfixDef,9) NoType
                                             (Just 1) cls) state
-                       ,addAT t2i sndOf tid u))
-		 else -- ... or instance (Eq.Int) argument depends on type
-		    let arity = (length . snd . dropJust
-                                . lookupAT (instancesI clsInfo)) i
+                       ,Map.insert tid u t2i))
+                 else -- ... or instance (Eq.Int) argument depends on type
+                    let arity = (length . (\(_,_,x)->x) . fromJust
+                                . flip Map.lookup (instancesI clsInfo)) i
                         -- snd instead of fst !!!
 		    in seq arity (u,(addIS u (InfoVar u tid IEall (InfixDef,9)
                                                       NoType (Just arity))
                                              state
-                                    ,addAT t2i sndOf tid u))
+                                    ,Map.insert tid u t2i))
 
 {- End Module FSLib ---------------------------------------------------------}

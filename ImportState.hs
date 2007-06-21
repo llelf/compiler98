@@ -6,71 +6,80 @@ module ImportState (module ImportState, module Info, Decl) where
 import State
 import SysDeps(PackedString,packString)
 import Syntax(Decl)
-import AssocTree
-import Memo
+import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Info
 import Error
 import Id
 
 
 data  ImportState =
-      ImportState
-        Bool			 -- visible
-	Int			 -- unique
-	PackedString		 -- modid of interface file
-	PackedString		 -- modid of this section of the interface file
-	(Memo TokenId)           -- needI
-	(AssocTree (TokenId,IdKind) (Either [Pos] [Int]))	
+      ImportState {
+        visibleIS :: Bool,
+        uniqueIS :: Id,                -- ^ next unique 'Id'
+        rpsIS :: PackedString,         -- ^ modid of interface file
+        sectionRpsIS :: PackedString,  -- ^ modid of this section of the interface file
+        needIS :: (Set.Set TokenId),   -- ^ needI [What does this mean? --SamB]
+        renameIS :: (Map.Map (TokenId,IdKind) (Either [Pos] [Id])),
         -- ^ rename (name -> unique)
-	(AssocTree (TokenId,IdKind) Info)			
+        symtabIS :: (Map.Map (TokenId,IdKind) Info),
         -- ^ symboltable (real name -> info)
-	[(TokenId,TokenId,[Int],[(Pos,TokenId,Int)])]	
-        -- ^ [ (realClass, realData, free , Ctxs) ]
-	(TokenId -> (InfixClass TokenId,Int))		
-        -- fixity information (name -> fixity)
-	[String]		 -- errors
-#if !defined(__HASKELL98__)
-    deriving (Eval)
-#endif
+        instsIS :: [(TokenId,TokenId,TokenId,[Id],[(Pos,TokenId,Id)])],
+        -- ^ [ (mod,realClass, realData, free , Ctxs) ]
+        fixityIS :: (TokenId -> (InfixClass TokenId,Int)),
+        -- ^ fixity information (name -> fixity)
+        errorsIS :: [Error]            -- ^ errors
+      }
 
-
-{- initial import state -}
-initIS :: AssocTree (TokenId,IdKind) [Pos] -> ImportState
+instance IdSupply ImportState where
+    getUniqueId _ is@(ImportState { uniqueIS = unique }) 
+        = (unique, is { uniqueIS = succ unique })
+        
+    
+{- | initial import state -}
+initIS :: Map.Map (TokenId,IdKind) [Pos] -> ImportState
 initIS rt = 
-  ImportState False 1 (packString "???") (packString "???") initM
-    (mapAT Left rt) initAT [] (error "no fixity") []
+  ImportState False (toEnum 1) (packString "???") (packString "???") Set.empty
+    (Map.map Left rt) Map.empty [] (error "no fixity") []
 
 
 {- put modid of interface file into import state -}
 putModidIS :: ImportState -> PackedString -> ImportState
-putModidIS (ImportState visible unique _ _ needI rt st insts fixity errors)
-           rps =
-  ImportState True unique rps rps needI {-initM-} rt st insts fixity errors
-
+putModidIS is rps = is { visibleIS = True, rpsIS = rps, sectionRpsIS = rps }
 
 {- put modid of current section of interface file into import state -}
 putModid2IS :: ImportState -> Bool -> PackedString -> ImportState
-putModid2IS (ImportState _ unique orps _ needI rt st insts fixity errors) 
-            visible rps =
-  ImportState visible unique orps rps needI rt st insts fixity errors
+putModid2IS is visible rps = is { visibleIS = visible, sectionRpsIS = rps }
 
 
-getNeedIS
-  (ImportState visible unique orps rps needI rt st insts fixity errors) = 
-  (orps,rps,needI)
+getNeedIS :: ImportState -> (PackedString, PackedString, Set.Set TokenId)
+getNeedIS is = (rpsIS is, sectionRpsIS is, needIS is)
 
-getSymbolTableIS 
-  (ImportState visible unique orps rps needI rt st insts fixity errors) = st
+getSymbolTableIS :: ImportState -> Map.Map (TokenId, IdKind) Info
+getSymbolTableIS = symtabIS
 
-getRenameTableIS 
-  (ImportState visible unique orps rps needI rt st insts fixity errors) = rt
+getRenameTableIS :: ImportState -> Map.Map (TokenId, IdKind) (Either [Pos] [Id])
+getRenameTableIS = renameIS
 
-getErrIS is@(ImportState vis unique orps rps needI rt st insts fixity errors)
+getErrIS :: ImportState -> Either [Error] ImportState
+getErrIS is@(ImportState { errorsIS = errors })
   | null errors = Right is
   | otherwise   = Left errors
 
-importError :: String -> Int -> () -> ImportState -> (Int,ImportState)
-importError err r _  
-    (ImportState visible unique orps rps needI rt st insts fixity errors) =
-  (r
-  ,ImportState visible unique orps rps needI rt st insts fixity (err:errors))
+importError :: Error -> a -> () -> ImportState -> (a,ImportState)
+importError err r _ is = (r, is { errorsIS = err : errorsIS is })
+
+
+
+-- Things added as part of an attempt to keep "IExtract" from having
+-- to pattern match on so many 'ImportState's
+
+-- | Maybe this should be rolled into 'addSymbolIS'?
+addNeedIS :: TokenId -> State0 a ImportState ImportState
+addNeedIS tid _ is = is { needIS = Set.insert tid (needIS is) }
+
+addSymbolIS :: (TokenId, IdKind) -> Info -> State0 a ImportState ImportState
+addSymbolIS symbol info _ is = is { symtabIS = Map.insertWith combInfo symbol info (symtabIS is) }
+
+findSymbolIS :: (TokenId, IdKind) -> State a ImportState (Maybe Info) ImportState
+findSymbolIS symbol _ is = (Map.lookup symbol (symtabIS is), is)

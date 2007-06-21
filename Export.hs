@@ -7,15 +7,16 @@ import List
 import NT
 import IntState hiding (InfixClass)
 import Scc
-import AssocTree
-import Extra
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Util.Extra
 import TokenId
 import SysDeps(PackedString,unpackPS)
 import Syntax(InfixClass(..))
 import Nice
 import IExtract(defFixity)
 import Flags(Flags, sPrelude)
-import Memo
+import Maybe
 
 --import NonStdProfile -- only for debugging the compiler
 profile a b = b
@@ -32,7 +33,7 @@ export :: Flags
        -> IntState 
        -> ([(TokenId,(InfixClass TokenId,Int))],[(Bool,[Info])])
 export flags state =
-  let symbols = map snd . listAT . getSymbolTable
+  let symbols = map snd . Map.toList . getSymbolTable
       infoExport = (filter (isExported . expI) . symbols) state
       insts = let hereCls = filter isClass (symbols state)
                   usedCls = filter isUsedClass (symbols state)
@@ -40,12 +41,12 @@ export flags state =
               foldr (\(InfoClass  unique tid exp nt ms ds insts) r -> 
 			foldr (fixInst state (sPrelude flags || notPrelude tid)
                                        unique) 
-                              r (listAT insts))
+                              r (Map.toList insts))
                     [] hereCls
               ++
               foldr (\(InfoUsedClass  unique _ insts) r -> 
-			foldr (fixInst state (sPrelude flags) unique) 
-                              r (listAT insts))
+                        foldr (fixInst state (sPrelude flags) unique) 
+                              r (Map.toList insts))
                     [] usedCls
   in case uniqueISs state insts of
     (insts,state) ->
@@ -57,13 +58,13 @@ export flags state =
 
       depExtra = profile "getAll start" 
                    (getAll state 
-                           (foldr (flip addM) initM (map fst depExport))
+                           (foldr (Set.insert) Set.empty (map fst depExport))
                            (concatMap snd depExport ++ concatMap snd depInst))
 
       depend = reverse $ profile "start sccDepend" 
                  $ sccDepend (depExport ++ depExtra ++ depInst)
-      expTree = foldr (\info tree -> addAT tree sndOf (uniqueI info) info) 
-                      initAT 
+      expTree = foldr (\info tree -> Map.insert (uniqueI info) info tree)
+                      Map.empty 
                       (infoInst++infoExport)
 
       declExport = (map (\xs -> if all isLeft xs
@@ -84,7 +85,7 @@ export flags state =
 	case dk of
 	  Data unboxed constrs -> 
             map ( (\info-> (tidI info, fixityI info)) 
-                . dropJust . lookupIS state)
+                . fromJust . lookupIS state)
                 constrs
 	  _ -> []
       getFixity (InfoData unique tid IEsome nt dk) =
@@ -93,12 +94,12 @@ export flags state =
 	    concatMap ( (\info-> case expI info of
                                    IEsel -> [(tidI info,fixityI info)]
                                    _     -> [] )
-                      . dropJust . lookupIS state)
+                      . fromJust . lookupIS state)
                 constrs
 	  _ -> []
       getFixity (InfoData  unique tid _  nt dk) = []
       getFixity (InfoClass unique tid ie nt ms ds insts) = 
-        map ( (\info -> (tidI info,fixityI info)) . dropJust . lookupIS state) 
+        map ( (\info -> (tidI info,fixityI info)) . fromJust . lookupIS state) 
             ms
       getFixity (InfoVar unique tid ie fix nt annot) = [(tid,fix)]
       getFixity (InfoInstance unique nt iClass) = []
@@ -112,11 +113,11 @@ export flags state =
 
   getAll state found [] = profile "getAll end" []
   getAll state found (u:us) =
-    if elemM found u
+    if u `Set.member` found
     then getAll state found us
     else 
-      case (infoDepend . dropJust . lookupIS state) u of
-        depend@(u,dep) -> depend : getAll state (addM found u) (dep ++ us)
+      case (infoDepend . fromJust . lookupIS state) u of
+        depend@(u,dep) -> depend : getAll state (Set.insert u found) (dep ++ us)
 
 
   infoDepend (InfoData unique tid exp nt dk) =
@@ -146,9 +147,10 @@ export flags state =
           (unique, useNewType nt)
   infoDepend info = error ("infoDepend " ++ show info)
 
-fixInst state keep unique (con,(free,ctxs)) r =
-  if keep || (notPrelude . tidI . dropJust . lookupIS state) con then
-    ( unique
+fixInst state keep unique (con,(rps,free,ctxs)) r =
+  if keep || (notPrelude . tidI . fromJust . lookupIS state) con then
+    ( rps
+    , unique
     , NewType free [] ctxs [mkNTcons con (map mkNTvar free)]
     , snub (con:map fst ctxs)
     ):r
@@ -159,7 +161,7 @@ fixInfo keep state ds (NoRec n) = fixInfo' keep state ds n
 fixInfo keep state ds (Rec ns) = concatMap (fixInfo' keep state ds) ns
 
 fixInfo' keep state ds n =
-  case lookupAT ds n of
+  case Map.lookup n ds of
     Just info -> [Right info]
     Nothing ->
       case lookupIS state n of
@@ -228,13 +230,13 @@ strExport modidl state (fixs,exps) =
        else (if visible 
                then showString "interface ! " 
                else showString "interface ") 
-            . (showString . reverse . unpackPS . dropJust) rps)
+            . (showString . reverse . unpackPS . fromJust) rps)
     . showString "\n{-# NEED" 
-    . foldr ((.).showsNeed (dropJust rps)) id infos 
+    . foldr ((.).showsNeed (fromJust rps)) id infos 
     . showString " #-}\n" 
         -- need does not need to be qualified
-    . foldr ((.).showsInfo (dropJust rps)) id infos			
-	-- but the definitions must
+    . foldr ((.).showsInfo (fromJust rps)) id infos                     
+        -- but the definitions must
 
 
  	-- Hack for tuples
@@ -262,8 +264,8 @@ strExport modidl state (fixs,exps) =
 
   groupNeed mrps ie group parts
     | (ie==IEall || ie==IEsome) && not (null parts) =
-	  showString " {" . showsVar (fixTid mrps group) 
-          . foldr ((.) . showsNeed mrps . dropJust . lookupIS state)
+          showString " {" . showsVar (fixTid mrps group) 
+          . foldr ((.) . showsNeed mrps . fromJust . lookupIS state)
                   id parts 
           . showChar '}'
   groupNeed mrps ie group parts =

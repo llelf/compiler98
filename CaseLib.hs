@@ -4,28 +4,28 @@ import Util.Extra(noPos)
 import Syntax
 import PosCode
 import IntState
-import AssocTree
+import qualified Data.Map as Map
+import Id
 import IdKind
 import TokenId
 import NT
 import Info
-import Id
 
 type ExpI = Exp Id
 
 type Down = (ExpI -> ExpI
-	    ,ExpI
-	    ,ExpI
-	    ,ExpI
-	    ,ExpI
-	    ,(ExpI,ExpI)
-	    ,ExpI
-	    ,(TokenId,IdKind) -> Int
-	    ,PosExp
-	    ,[Char]
-	    , AssocTree Int Int
-	    )
-type Thread = (IntState, AssocTree TokenId Int)
+            ,ExpI
+            ,ExpI
+            ,ExpI
+            ,ExpI
+            ,(ExpI,ExpI)
+            ,ExpI
+            ,(TokenId,IdKind) -> Id
+            ,PosExp
+            ,[Char]
+            , Map.Map Id Id
+            )
+type Thread = (IntState, Map.Map TokenId Id)
 
 type CaseFun a = Down -> Thread -> (a,Thread)
 
@@ -36,16 +36,16 @@ addRatioCon tidFun state =
  case uniqueIS state of
   (u,state) ->
    let ratio = tidFun (tRatio,TCon)
-       tvar = mkNTvar 1
+       tvar = mkNTvar (toEnum 1)
    in
     case lookupIS state ratio of
      Just info ->
       case constrsI info of
        [ratioCon] -> (ratioCon,state)
        [] -> (u,addIS u (InfoConstr  u tRatioCon IEnone (InfixL,7)
-				    (NewType [1] [] [{- !!! Integral 1 -}] [tvar,tvar,mkNTcons ratio [tvar]])
-			            [Nothing,Nothing] ratio)
-			(updateIS state ratio (\_ -> updConstrsI info [u])))
+                                    (NewType [toEnum 1] [] [{- !!! Integral 1 -}] [tvar,tvar,mkNTcons ratio [tvar]])
+                                    [Nothing,Nothing] ratio)
+                        (updateIS state ratio (\_ -> updConstrsI info [u])))
 
 caseTidFun down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,tidFun,stgUndef,strModid,translate) up = (tidFun,up)
 
@@ -80,33 +80,34 @@ caseEqualNumEq down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,e
 
 caseIdent :: Pos -> Int -> CaseFun PosExp
 caseIdent pos ident down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up =
-  case lookupAT translate ident of
+  case Map.lookup ident translate of
     Just v -> (PosVar pos v,up)
     Nothing -> (PosVar pos ident,up)
 
 caseTranslate :: Int -> [Int] -> CaseFun Down
 caseTranslate v us down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up =
-  ((expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,foldr ( \ u t -> addAT t sndOf u v ) translate us),up)
+  ((expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,foldr ( \ u t -> Map.insert u v t ) translate us),up)
 
 caseTuple :: Int -> CaseFun Int
 caseTuple s down  up@(state,t2i) = 
   let tid = TupleId s
-  in case lookupAT t2i tid of
+  in case Map.lookup tid t2i of
     Just i -> (i,up)
     Nothing ->
       case uniqueIS state of
   	(u,state) ->
           let info = InfoName u tid s tid False --PHtprof
-          in (u,(addIS u info state,addAT t2i sndOf tid u))
+          in (u,(addIS u info state,Map.insert tid u t2i ))
 
 caseAdd :: Info -> Down -> Thread -> Thread
 caseAdd info d up@(state,t2i) =
-  (addIS (uniqueI info) info state,t2i)
+    let id = uniqueI info
+    in (addIS id info state,t2i)
 
 caseError :: String -> Down -> Thread -> Thread
 caseError error down (state,t2i) = (addError state error,t2i)
 
-caseUnique :: CaseFun Int
+caseUnique :: CaseFun Id
 caseUnique down (state,t2i) =
   case uniqueIS state of
     (i,state) -> (i,(state,t2i))

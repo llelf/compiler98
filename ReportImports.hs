@@ -1,6 +1,6 @@
 module ReportImports where
 
-import AssocTree(listAT)
+import qualified Data.Map as Map
 import List(nub,groupBy,intersperse,sortBy)
 import SysDeps(unpackPS)
 import TokenId (extractM,extractV)
@@ -13,7 +13,7 @@ reportImports m =
   map moduleName .
   filter ((m/=).moduleName) .
   concatMap (possibleTid.snd) .
-  listAT .
+  Map.toList .
   getSymbolTable
 
 reportFnImports :: String -> IntState -> [String]
@@ -26,7 +26,7 @@ reportFnImports m =
   filter (("Prelude"/=).moduleName) .
   filter ((m/=).moduleName) .
   concatMap (possibleTid.snd) .
-  listAT .
+  Map.toList .
   getSymbolTable
 
 moduleName :: TokenId -> String

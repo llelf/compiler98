@@ -7,9 +7,9 @@ module Info(module Info, IdKind,TokenId,NewType,InfixClass(..),Pos
 import IdKind(IdKind)
 import TokenId(TokenId)
 import NT
-import Extra(Pos,sndOf,strace)
-import SysDeps(PackedString)
-import AssocTree
+import Util.Extra(Pos,strace)
+import SysDeps(PackedString,trace)
+import qualified Data.Map as Map
 import Syntax(InfixClass(..))
 import Id(Id)
 import Maybe
@@ -68,10 +68,10 @@ data Info =
                   [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
   | InfoUsedClass Id       -- unique
                   [(IdKind,TokenId,PackedString,Pos)] -- occurrence where used
-                  (AssocTree Int ([Int],[(Int,Int)]))  
+                  (Map.Map Id (PackedString,[Id],[(Id,Id)]))  
                   -- instances of the class
                   -- the tree associates a type constructor with
-                  -- the free variables and the superclass context 
+                  -- the module name, free variables and the superclass context 
                   -- of an instance
   | InfoData      -- data type (algebraic, type synonym, ...)
                   Id       -- unique
@@ -93,10 +93,10 @@ data Info =
                   [Id]     -- method ids refering to default definition
                            -- ids in same position refer to same method
                            -- => lists have same lengths
-                  (AssocTree Int ([Int],[(Int,Int)]))    
+                  (Map.Map Id (PackedString,[Id],[(Id,Id)]))    
                   -- instances of the class
                   -- the tree associates a type constructor with
-                  -- the free variables and the superclass context 
+                  -- the module name, free variables and the superclass context 
                   -- of an instance
   | InfoVar       -- term variable 
                   Int          -- unique 
@@ -203,13 +203,13 @@ isRealData (InfoData   unique tid exp nt dk) =
 isRealData info = error ("isRealData " ++ show info)
 
 
-isRenamingFor :: AssocTree Int Info -> Info -> NewType
+isRenamingFor :: Map.Map Id Info -> Info -> NewType
 isRenamingFor st (InfoData  unique tid exp nt (DataTypeSynonym _ depth)) = nt
 isRenamingFor st info@(InfoData  unique tid exp nt (DataNewType _ constrs)) =
     case constrs of
       []  -> error ("Problem with type of a foreign imported function:\n"
                     ++"Cannot find constructor for newtype: "++show info)
-      [c] -> case lookupAT st c of
+      [c] -> case Map.lookup c st of
                Just i  -> ntI i
                Nothing -> error ("Cannot find info for newtype constructor: "
                                  ++show info)
@@ -335,12 +335,12 @@ methodsI :: Info -> [(Int,Int)]
 methodsI (InfoClass u tid ie nt ms ds inst) = zip ms ds
 
 
-instancesI :: Info -> AssocTree Int ([Int],[(Int,Int)])
+instancesI :: Info -> Map.Map Id (PackedString,[Id],[(Id,Id)])
 instancesI (InfoClass u tid e nt ms ds inst) = inst
 instancesI info@(InfoUsedClass u uses inst) = 
   strace ("***instanceI(1) "++show info++"\n") inst
 instancesI info = 
-  strace ("***instanceI(2) "++show info++"\n") initAT 
+  strace ("***instanceI(2) "++show info++"\n") Map.empty 
   -- This is a lie!!! For some reason has this class no real entry
 
 
@@ -357,13 +357,13 @@ superclassesI info = error ("superclassesI " ++ show info)
 -- type constructor -> free type variables -> context -> class info
 --             -> class info
 -}
-addInstanceI :: Int -> [Int] -> [(Int,Int)] -> Info -> Info
-addInstanceI con free ctxs info@(InfoClass u tid e nt ms ds inst) =
-  case lookupAT inst con of
+addInstanceI :: Id -> PackedString -> [Id] -> [(Id,Id)] -> Info -> Info
+addInstanceI con loc free ctxs info@(InfoClass u tid e nt ms ds inst) =
+  case Map.lookup con inst of
     Just _ -> info
-    Nothing -> InfoClass u tid e nt ms ds (addAT inst sndOf con (free,ctxs))
-addInstanceI con free ctxs info@(InfoUsedClass u uses inst) =
-  case lookupAT inst con of
+    Nothing -> InfoClass u tid e nt ms ds (Map.insert con (loc,free,ctxs) inst)
+addInstanceI con loc free ctxs info@(InfoUsedClass u uses inst) =
+  case Map.lookup con inst of
     Just _ -> info
     Nothing -> InfoUsedClass u uses (addAT inst sndOf con (free,ctxs))
 addInstanceI con free ctxs (InfoUsed u uses) = 
@@ -373,9 +373,9 @@ addInstanceI con free ctxs (InfoUsed u uses) =
 -- In joining two trees for describing instances the second one gets
 -- precedence in case of conflict.
 -}
-joinInsts :: AssocTree Int a -> AssocTree Int a -> AssocTree Int a
+joinInsts :: Map.Map Id a -> Map.Map Id a -> Map.Map Id a
 joinInsts inst inst' =
-  foldr (\(k,v) inst -> addAT inst sndOf k v) inst (listAT inst')
+  foldr (\(k,v) inst -> Map.insert k v inst) inst (Map.toList inst')
 
 
 {- Determine constructors of a type from the info of the type -}

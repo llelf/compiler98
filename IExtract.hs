@@ -14,10 +14,10 @@ import TokenId(TokenId(..),t_Arrow,ensureM,dropM,forceM,rpsPrelude
 		,tEq,tOrd,tBounded,tRead,tShow,visible,tUnknown,tunknown)
 import State
 import IdKind
-import Extra
-import AssocTree
-import Memo
-import SysDeps(PackedString)
+import Util.Extra
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import SysDeps(PackedString,packString)
 import NT
 import Syntax hiding (TokenId)
 import ImportState hiding (TokenId)
@@ -33,18 +33,18 @@ import Error
 -- ===========================
 needFixity inf (ImportState visible unique orpsl rpsl needI rt st
                             insts fixity errors)  =
-  case foldr (fixOne orpsl) (initAT,[]) inf of
-			 -- fixity only at the beginning of interface file
+  case foldr (fixOne orpsl) (Map.empty,[]) inf of
+                         -- fixity only at the beginning of interface file
     (fixAT,err) ->
 	 ImportState visible unique orpsl rpsl needI rt st
                      insts (fixFun fixAT defFixFun) (err++errors)
 
 
-fixFun :: AssocTree TokenId (InfixClass TokenId,Int)
+fixFun :: Map.Map TokenId (InfixClass TokenId,Int)
           -> (TokenId -> (InfixClass TokenId,Int))
           -> (TokenId -> (InfixClass TokenId,Int))
 fixFun fixAT f key =
-  case lookupAT fixAT key of
+  case Map.lookup key fixAT of
     Just fix -> fix
     Nothing  -> f key
 
@@ -52,6 +52,11 @@ defFixFun key = defFixity
 defFixity = (InfixDef,9::Int)
 
 
+fixOne :: (Show b, Eq b) =>
+          PackedString
+          -> (InfixClass TokenId, b, [FixId TokenId])
+          -> (Map.Map TokenId (InfixClass TokenId, b), [Error])
+          -> (Map.Map TokenId (InfixClass TokenId, b), [Error])
 fixOne rps (InfixPre var,level,[fixid]) fix_err@(fix,err) =
 					  -- ensureM also done in fixFun
   let fl = (InfixPre (ensureM rps var),level)
@@ -63,9 +68,11 @@ fixOne rps (fixClass,level,ids) fixity_err =
 fixTid rps (FixCon _ tid) = ensureM rps tid
 fixTid rps (FixVar _ tid) = ensureM rps tid
 
+fixAdd :: (Ord k, Eq a, Show k, Show a) =>
+          a -> k -> (Map.Map k a, [Error]) -> (Map.Map k a, [Error])
 fixAdd fl tid fix_err@(fix,err) =
- case lookupAT fix tid of
-   Nothing -> (addAT fix sndOf tid fl,err)
+ case Map.lookup tid fix of
+   Nothing -> (Map.insert tid fl fix,err)
    Just fl' ->
 	if fl' == fl 
 	then fix_err
@@ -81,11 +88,13 @@ fixAdd fl tid fix_err@(fix,err) =
 transTid :: Pos -> IdKind -> TokenId 
          -> a -> ImportState -> (Id,ImportState)
 
-transTid pos kind tid _  
-  importState@(ImportState visible unique orps rps needI rt st insts 
-                 fixity errors) =
-  let key =  (ensureM rps tid,kind)
-  in  case lookupAT st key of 
+transTid pos kind tid down  
+  importState@(ImportState { uniqueIS = unique,
+                             sectionRpsIS = rps,
+                             needIS = needI,
+                             symtabIS = st }) =
+  let key = (ensureM rps tid,kind)
+  in  case Map.lookup key st of
         Just info -> (uniqueI info,importState)
         Nothing -> (unique, ImportState visible (unique+1) orps rps 
                               (addM needI (fst key))
@@ -101,7 +110,7 @@ existTid kind tid _
   importState@(ImportState visible unique orps rps needI rt st insts 
                  fixity errors) =
   let key =  (ensureM rps tid,kind)
-  in  case lookupAT st key of 
+  in  case Map.lookup key st of 
         Just info -> (True,importState)
         Nothing   -> (False,importState)
 	  
@@ -118,7 +127,7 @@ importData q tid expIn nt dk _
   let realtid = ensureM rps tid
       key = (realtid,TCon)
       exp = if visible then expIn else IEnone
-  in case lookupAT st key of
+  in (case Map.lookup key st of
        Just (InfoUsed u _) ->
 	 let rt' = addRT visible q u tid orps TCon rt
 	 in (ImportState visible unique orps rps needI rt'
@@ -163,7 +172,7 @@ importClass q tid expIn nt ms _
   let realtid = ensureM rps tid
       key = (realtid,TClass)
       exp = if visible then expIn else IEnone
-  in case lookupAT st key of
+  in (case Map.lookup key st of
        Just (InfoUsed u _) ->
 	 let rt' = addRT visible q u tid orps TClass rt
 	 in (ImportState visible unique orps rps needI rt'
@@ -195,6 +204,11 @@ importClass q tid expIn nt ms _
                                (InfoClass unique realtid exp nt ms [] initAT))
                          insts fixity errors)
 
+       _ ->
+         (addRT_IS visible q unique tid orps TClass >>>
+          getUniqueId >>>= \ uid ->
+          addSymbolIS key (InfoClass uid realtid exp nt ms [] Map.empty))
+       ) () importState
 
 importField :: (TokenId->Bool)
             -> [Id] -- free type variables 
@@ -210,40 +224,37 @@ importField q free ctxs bt c ((Just (p,tid,_),nt),i) down
                  fixity errors) =
   let realtid = ensureM rps tid
       key = (realtid,Field)
-  in case lookupAT st key of
+  in case Map.lookup key st of
        Just (InfoUsed u _) -> -- Selectors can never be InfoUsed
-	 let rt' = addRT visible q unique tid orps Var 
-                     (addRT visible q u tid orps Field rt)
-	 in (ImportState visible (unique+1) orps rps needI rt' 
-              (addAT -- add field name
-                (addAT st combInfo (realtid,Var) -- add selector
-		  (InfoVar  unique realtid IEnone (fixity realtid)
-                    (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt]) 
-                    (Just 1)))
-		combInfo key (InfoField u realtid IEnone [(c,i)] bt unique)) 
-              insts fixity errors)
-       Just (InfoField u' realtid' ie cis' bt' sel') -> 
-	 let rt' =  rt
-	 in  seq rt' ( -- $ here doesn't work, there is an error somwhere !!!
-	   if (c,i) `elem` cis'
-	   then (ImportState visible unique orps rps needI rt' st insts 
+         (getUniqueId >>>= \ uid ->
+          addRT_IS visible q uid tid orps Var >>>
+          addRT_IS visible q u tid orps Field >>>
+          addSymbolIS key           (InfoField u    realtid IEnone [(c,i)] bt uid) >>>
+          addSymbolIS (realtid,Var) (InfoVar unique realtid IEnone (fixity realtid)
+                                      (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt])
+                                      (Just 1)))
+         () importState
+
+       Just (InfoField u' realtid' ie cis' bt' sel') ->
+         let rt' =  rt
+         in  seq rt' ( -- \$ here doesn't work, there is an error somwhere !!!
+           if (c,i) `elem` cis'
+           then (ImportState visible unique orps rps needI rt' st insts 
                   fixity errors)  -- unchanged, just a bit strict
-	   else (ImportState visible unique orps rps needI rt' 
-                  (addAT st fstOf key -- update field name 
-                    (InfoField u' realtid' ie ((c,i):cis') bt' sel')) 
+           else (ImportState visible unique orps rps needI rt' 
+                  (Map.insertWith fstOf key -- update field name 
+                    (InfoField u' realtid' ie ((c,i):cis') bt' sel') st) 
                     insts fixity errors))
        _ -> 
-	 let rt' = addRT visible q (unique+1) tid orps Var 
-                     (addRT visible q unique tid orps Field rt)
-	 in (ImportState visible (unique+2) orps rps needI rt'
-	      (addAT -- add field name
-                (addAT st combInfo (realtid,Var) -- add selector
-		  (InfoVar  (unique+1) realtid IEnone (fixity realtid)
-                    (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt]) 
-                    (Just 1)))
-		combInfo key (InfoField unique realtid IEnone [(c,i)]
-                                        bt (unique+1)))
-              insts fixity errors)
+         (getUniqueId >>>= \ fieldId ->
+          getUniqueId >>>= \ varId ->
+          addRT_IS visible q fieldId tid orps Field >>>
+          addRT_IS visible q varId tid orps Var >>>
+          addSymbolIS key           (InfoField fieldId realtid IEnone [(c,i)]  bt varId) >>> 
+          addSymbolIS (realtid,Var) (InfoVar   varId   realtid IEnone (fixity realtid)
+                                      (NewType free [] ctxs [mkNTcons bt (map mkNTvar free),nt]) 
+                                      (Just 1)))
+         () importState
 
 
 importVar :: (TokenId->Bool) -> TokenId -> IE -> NewType -> Maybe Int 
@@ -255,12 +266,12 @@ importVar q tid exp nt annots _
   let realtid = ensureM rps tid
       key = (realtid,Var)
       fix = fixity realtid
-  in case lookupAT st key of
+  in case Map.lookup key st of
        Just (InfoUsed u _) ->
 	 let rt' = addRT visible q u tid orps Var rt
 	 in addFixityNeed key fix
                          (ImportState visible unique orps rps needI rt'
-		                      (addAT st combInfo key
+                                      (Map.insertWith combInfo key
                                              (InfoVar u realtid exp fix nt
                                                       annots))
                                       insts fixity errors)
@@ -269,10 +280,10 @@ importVar q tid exp nt annots _
 	 in  seq rt' (ImportState visible unique orps rps needI rt' st
                                   insts fixity errors)
        _ ->  
-	 let rt' = addRT visible q unique tid orps Var rt
-	 in addFixityNeed key fix
-                         (ImportState visible (unique+1) orps rps needI rt'
-		                      (addAT st combInfo key
+         let rt' = addRT visible q unique tid orps Var rt
+         in addFixityNeed key fix
+                         (ImportState visible (succ unique) orps rps needI rt'
+                                      (Map.insertWith combInfo key
                                              (InfoVar unique realtid exp
                                                       fix nt annots))
                                       insts fixity errors)
@@ -281,18 +292,18 @@ importVar q tid exp nt annots _
 addFixityNeed key (InfixPre tid,_)
               importState@(ImportState visible unique orps rps needI rt st
                                        insts fixity errors) =
-  case lookupAT rt key of  -- We use this identifier
+  case Map.lookup key rt of  -- We use this identifier
     Just u ->
       let irealtid = ensureM rps tid
 	  ikey = (irealtid,snd key)
       in
-	case lookupAT rt ikey of -- so ensure that its replacement also exists,
+        case Map.lookup ikey rt of -- so ensure that its replacement also exists,
                                  -- and force the need for it, nice if we had
                                  -- the real position but we don't.
-          Just u  -> ImportState visible unique orps rps (addM needI (fst ikey))
+          Just u  -> ImportState visible unique orps rps (Set.insert (fst ikey) needI)
                                  rt st insts fixity errors
-          Nothing -> ImportState visible unique orps rps (addM needI (fst ikey))
-                                 (addAT rt fstOf ikey (Left [noPos]))
+          Nothing -> ImportState visible unique orps rps (Set.insert (fst ikey) needI)
+                                 (Map.insertWith fstOf ikey (Left [noPos]) rt)
                                  st insts fixity errors
     Nothing -> importState
 addFixityNeed key inf importState = importState
@@ -304,7 +315,7 @@ importConstr q tid nt fields bt rex _
                                       insts fixity errors) =
   let realtid = ensureM rps tid
       key = (realtid,Con)
-  in case lookupAT st key of
+  in (case Map.lookup key st of
        Just (InfoUsed u _) ->
 	 let rt' = addRT visible q u tid orps Con rt
 	 in (u,ImportState visible unique orps rps needI rt'
@@ -332,12 +343,12 @@ importMethod q tid nt rex annots bt _
   let realtid = ensureM rps tid
       key = (realtid,Method)
       fix = fixity realtid
-  in case lookupAT st key of
+  in case Map.lookup key st of
        Just (InfoUsed u _) ->
 	 let rt' = addRT visible q u tid orps Method rt
 	 in (u,addFixityNeed key fix
                              (ImportState visible unique orps rps needI rt'
-                                          (addAT st combInfo key
+                                          (Map.insertWith combInfo key
                                                  (InfoMethod u realtid IEnone
                                                              fix nt annots bt))
                                           insts fixity errors))
@@ -351,7 +362,7 @@ importMethod q tid nt rex annots bt _
 	 in (unique,addFixityNeed key fix
                                   (ImportState visible (unique+1) orps rps
                                                needI rt'
-				               (addAT st combInfo key
+                                               (Map.insertWith combInfo key
                                                       (InfoMethod unique realtid
                                                                   rex fix nt
                                                                   annots bt))
@@ -362,10 +373,11 @@ importInstance cls con free ctxs _
                                         insts fixity errors) =
   let realtid = ensureM rps cls
       key = (realtid,TClass)
-  in  case lookupAT st key of
-	Just info -> 
-	   case addAT st fstOf key (addInstanceI con free ctxs info) of
-	      st' -> seq st' (ImportState visible unique orps rps needI rt st'
+      mi = (packString . reverse . show) mod
+  in  case Map.lookup key st of
+        Just info -> 
+           case Map.insertWith fstOf key (addInstanceI con mi free ctxs info) st of
+              st' -> seq st' (ImportState visible unique orps rps needI rt st'
                                           insts fixity errors)
 
 storeInstance al cls con ctxs _
@@ -402,7 +414,7 @@ checkInstanceCls tid down
                                       unused fixity errors)
  where  
   realcls = ensureM rps tid
-  pred (cls,con,free,ctxs) = (cls == realcls) && isJust (lookupAT st (con,TCon))
+  pred (mod,cls,con,free,ctxs) = (cls == realcls) && isJust (Map.lookup (con,TCon) st)
 
 
 checkInstanceCon tid down
@@ -426,15 +438,15 @@ addRT :: Bool			-- interface exports it?
       -> TokenId
       -> PackedString
       -> IdKind
-      -> AssocTree (TokenId,IdKind) (Either c [b])
-      -> AssocTree (TokenId,IdKind) (Either c [b])
+      -> Map.Map (TokenId,IdKind) (Either c [b])
+      -> Map.Map (TokenId,IdKind) (Either c [b])
 
 addRT False _          _ tid _   _    rt = rt
 addRT True mustQualify u tid rps kind rt
   | mustQualify tid = qrt
-  | otherwise       = updateAT qrt (dropM tid,kind) (combRT u)
+  | otherwise       = Map.update (Just . combRT u) (dropM tid,kind) qrt
   where
-    qrt = updateAT rt (forceM rps tid,kind) (combRT u)
+    qrt = Map.update (Just . combRT u) (forceM rps tid,kind) rt
 
     combRT u (Left _) = Right [u]
     combRT u (Right us) =  Right (u:us)

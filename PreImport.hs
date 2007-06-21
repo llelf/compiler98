@@ -10,9 +10,9 @@ import TokenId(TokenId(..),tPrelude,tNHCInternal
 import SysDeps(PackedString,packString)
 import Syntax hiding (TokenId)
 import IdKind
-import AssocTree
-import Extra
-import Memo
+import qualified Data.Set as Set
+import qualified Data.Map as Map
+import Util.Extra
 import Flags
 import IExtract
 import Info hiding (TokenId)
@@ -108,28 +108,28 @@ qualRename modid impdecls = qualRename' qTree
   qualRename' t q@(Qualified t1 t2)
     | (Visible t1)==modid && t1/=rpsPrelude  = [Visible t2]
     | otherwise =
-        case lookupAT t t1 of
-	    Nothing -> [q]
-	    Just ts -> map (\t'-> Qualified t' t2) ts
+        case Map.lookup t1 t of
+            Nothing -> [q]
+            Just ts -> map (\t'-> Qualified t' t2) ts
   qualRename' t v = [v]
 
-  qTree = foldr qualR initAT impdecls
+  qTree = foldr qualR Map.empty impdecls
 
   qualR (Import    _ _)  t = t
   qualR (ImportQ   _ _)  t = t
-  qualR (ImportQas (_,Visible id) (_,Visible id') _) t = addAT t (++) id' [id]
-  qualR (Importas  (_,Visible id) (_,Visible id') _) t = addAT t (++) id' [id]
+  qualR (ImportQas (_,Visible id) (_,Visible id') _) t = Map.insertWith (++) id' [id] t
+  qualR (Importas  (_,Visible id) (_,Visible id') _) t = Map.insertWith (++) id' [id] t
 
 
 ---- ===================================
 
-preImport :: Flags -> TokenId -> Memo TokenId
-          -> Maybe [Export TokenId] -> [ImpDecl TokenId] 
+preImport :: Flags -> TokenId -> Set.Set TokenId
+          -> Maybe [Export TokenId] -> [ImpDecl TokenId]
           -> Either String
                ((TokenId->Bool) -> TokenId -> IdKind -> IE
                ,[(PackedString
-                 ,(PackedString, PackedString, Memo TokenId)
-                    -> [[TokenId]] 
+                 ,(PackedString, PackedString, Set.Set TokenId)
+                    -> [[TokenId]]
                     -> Bool
                  ,HideDeclIds
                  )
@@ -143,7 +143,7 @@ preImport :: Flags -> TokenId -> Memo TokenId
 
 preImport flags mtid@(Visible mrps) need (Just expdecls) impdecls =
   let impdecls' = transImport impdecls in
-  Right ( if null expdecls || (isJust . lookupAT exportAT) (mtid,Modid)
+  Right ( if null expdecls || (isJust . flip Map.lookup exportAT) (mtid,Modid)
           then reExportAll
           else reExportTid mrps exportAT
         , map (mkNeed need exportAT) impdecls')
@@ -151,7 +151,7 @@ preImport flags mtid@(Visible mrps) need (Just expdecls) impdecls =
   exportAT = mkExportAT expdecls
 preImport flags mtid@(Visible mrps) need Nothing impdecls =
   let impdecls' = transImport impdecls in
-  Right (reExportTid mrps initAT, map (mkNeed need initAT) impdecls')
+  Right (reExportTid mrps Map.empty, map (mkNeed need Map.empty) impdecls')
 
 
 {-
@@ -164,7 +164,7 @@ transImport :: [ImpDecl TokenId]
 
 transImport impdecls = impdecls'
   where
-  impdecls' =  (reorder [] . {-sortImport .-} traverse initAT False)
+  impdecls' =  (reorder [] . {-sortImport .-} traverse Map.empty False)
                 (ImportQ (noPos,tNHCInternal) (Hiding [])
                 :ImportQ (noPos,vis "Ratio") (NoHiding
   				[EntityConClsAll noPos (vis "Rational")
@@ -195,18 +195,18 @@ transImport impdecls = impdecls'
                                 x  -> x
 -}
 
-  traverse :: AssocTree TokenId ImportedNamesInScope
-           -> Bool	-- have we found an explicit Prelude import yet?
-	   -> [ImpDecl TokenId]
-	   -> [(TokenId, ImportedNamesInScope)]
+  traverse :: Map.Map TokenId ImportedNamesInScope
+           -> Bool      -- have we found an explicit Prelude import yet?
+           -> [ImpDecl TokenId]
+           -> [(TokenId, ImportedNamesInScope)]
 
-  traverse acc True  []      = listAT acc
+  traverse acc True  []      = Map.toList acc
   traverse acc False []      = traverse acc False [Import (noPos,tPrelude)
 							  (Hiding [])]
   traverse acc prel (x:xs)  =
     case extractImp x of
       (tid,info) ->
-        traverse (addAT acc joinNames tid info) (prel || tid==tPrelude) xs
+        traverse (Map.insertWith joinNames tid info acc) (prel || tid==tPrelude) xs
 
   extractImp (ImportQ  (pos,tid) impspec) = 
     (tid, Q (extractSpec impspec))
@@ -260,13 +260,13 @@ transImport impdecls = impdecls'
 
 ------------------------------------------------------------------------------
 
-mkExportAT :: [Export TokenId] -> AssocTree (TokenId,IdKind) IE
+mkExportAT :: [Export TokenId] -> Map.Map (TokenId,IdKind) IE
 mkExportAT expdecls = exportAT
  where
-  exportAT :: AssocTree (TokenId,IdKind) IE
-  exportAT = foldr export initAT (concatMap preX expdecls)
+  exportAT :: Map.Map (TokenId,IdKind) IE
+  exportAT = foldr export Map.empty (concatMap preX expdecls)
 
-  export (key,value) t = addAT t combIE key value
+  export (key,value) t = Map.insertWith combIE key value t
 
   preX (ExportEntity _ e) = extractEntity e
   preX (ExportModid _ tid) = [((tid,Modid),IEall)]
@@ -296,13 +296,13 @@ extractEntity (EntityConClsSome pos tid ids)
 reExportAll :: (TokenId->Bool) -> TokenId -> IdKind -> IE
 reExportAll q tid kind = IEall
 
-reExportTid :: PackedString -> AssocTree (TokenId,IdKind) IE 
+reExportTid :: PackedString -> Map.Map (TokenId,IdKind) IE
             -> (TokenId->Bool) -> TokenId -> IdKind -> IE
 reExportTid modname exportAT mustBeQualified tid kind =
-  case lookupAT exportAT (dropM tid, kind) of
+  case Map.lookup (dropM tid, kind) exportAT of
     Just imp | not (mustBeQualified tid) -> imp
     _  ->
-      case lookupAT exportAT (forceM modname tid, kind) of
+      case Map.lookup (forceM modname tid, kind) exportAT of
         Just imp | mustBeQualified tid -> imp
         _                              -> IEnone
 
@@ -314,11 +314,11 @@ reExportTid modname exportAT mustBeQualified tid kind =
 -- hideDeclInstance,hideDeclVarsType) are defined in PreImp and used in ParseI
 -}
 
-mkNeed :: Memo TokenId
-       -> AssocTree (TokenId,IdKind) IE
+mkNeed :: Set.Set TokenId
+       -> Map.Map (TokenId,IdKind) IE
        -> IntImpDecl
        -> ( PackedString
-          , (PackedString, PackedString, Memo TokenId)
+          , (PackedString, PackedString, Set.Set TokenId)
                -> [[TokenId]] -> Bool
           , HideDeclIds
           )
@@ -339,22 +339,22 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
     | reExportModule = reExportAll
     | otherwise      = reExportTid modname exportSpec
 
-  reExportModule = isJust (lookupAT exportSpec (vt,Modid))
+  reExportModule = isJust (Map.lookup (vt,Modid) exportSpec)
 
 --needFun' x y =
 --    let result = needFun x y in
 --    strace ("needFun: "++show (fst3 x)++"/"++show (snd3 x)++" "
 --            ++show y++" "++show result) $ result
   needFun (orps,rps,needI) ns@(n:_) =
-        elemM needI (ensureM rps n)
-				-- is used by other interface (real name)
-				-- (only check first name = type or class)
+        Set.member (ensureM rps n) needI
+                                -- is used by other interface (real name)
+                                -- (only check first name = type or class)
      || any (\n-> imported n &&
-                    (  (elemM needM . forceM orps) n
-              			-- used qualified and imported (un)qualified
+                    (  ((`Set.member` needM) . forceM orps) n
+                                -- used qualified and imported (un)qualified
                     || (not (q n)) &&
-                          (  (elemM needM . dropM) n
-              			-- used unqualified and imported unqualified
+                          (  ((`Set.member` needM) . dropM) n
+                                -- used unqualified and imported unqualified
                           || reExportModule
               			-- reexported whether used or not
                           )

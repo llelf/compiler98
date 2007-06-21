@@ -12,7 +12,7 @@ import SyntaxPos
 import PosCode
 import State
 import IntState
-import AssocTree
+import qualified Data.Map as Map
 import IdKind
 import TokenId
 import Bind(identPat)
@@ -27,13 +27,13 @@ import Id(Id)
 import Maybe
 
 
-caseTopLevel :: String 
-             -> AssocTree TokenId Id
-             -> [ClassCode (Exp Id) Id] 
-             -> [Decl Id] 
-             -> IntState 
-             -> ((TokenId,IdKind) -> Id) 
-             -> ([(Int,PosLambda)],IntState)
+caseTopLevel :: String
+             -> Map.Map TokenId Id
+             -> [ClassCode (Exp Id) Id]
+             -> [Decl Id]
+             -> IntState
+             -> ((TokenId,IdKind) -> Id)
+             -> ([(Id,PosLambda)],IntState)
 
 caseTopLevel modstr t2i code topdecls state tidFun =
     let
@@ -42,19 +42,19 @@ caseTopLevel modstr t2i code topdecls state tidFun =
 			[ExpVar noPos (tidFun (t_equalequal,Var))
 			,ExpApplication noPos [Exp2 noPos (tidFun (tNum,TClass))
                                                           (tidFun (tEq,TClass))
-					      ,dict]
-		        ]
-               ,ExpVar noPos (tidFun (t_eqInteger,Var))	-- expEqInteger
-               ,ExpVar noPos (tidFun (t_eqFloat,Var))	-- expEqFloat
-               ,ExpVar noPos (tidFun (t_eqDouble,Var))	-- expEqDouble
-               ,ExpCon noPos (tidFun (tTrue,Con))	-- expTrue
-               ,(ExpCon noPos (tidFun (t_List,Con))	-- expList  expNil
-               ,ExpCon noPos (tidFun (t_Colon,Con)))	--          expCons
-               ,ExpVar noPos (tidFun (t_error,Var))	-- expError
-               ,tidFun 					-- used by stgRatioCon
-               ,PosVar noPos (tidFun (t_undef,Var))	-- stgUndef 
-               ,modstr					-- strModid
-               ,initAT					-- translate
+                                              ,dict]
+                        ]
+               ,ExpVar noPos (tidFun (t_eqInteger,Var)) -- expEqInteger
+               ,ExpVar noPos (tidFun (t_eqFloat,Var))   -- expEqFloat
+               ,ExpVar noPos (tidFun (t_eqDouble,Var))  -- expEqDouble
+               ,ExpCon noPos (tidFun (tTrue,Con))       -- expTrue
+               ,(ExpCon noPos (tidFun (t_List,Con))     -- expList  expNil
+               ,ExpCon noPos (tidFun (t_Colon,Con)))    --          expCons
+               ,ExpVar noPos (tidFun (t_patternMatchFail,Var))     -- expError
+               ,tidFun                                  -- used by stgRatioCon
+               ,PosVar noPos (tidFun (t_undef,Var))     -- stgUndef
+               ,modstr                                  -- strModid
+               ,Map.empty                               -- translate
                )
 
 	up = (state

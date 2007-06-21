@@ -12,7 +12,7 @@ module TokenInt(getInts,tokenMain,tokenAllways,tokenBounded,tokenEnum
 
 import IdKind
 import TokenId
-import AssocTree
+import qualified Data.Map as Map
 import Info
 import Id (Id)
 import Debug.Trace
@@ -29,12 +29,12 @@ getInts :: ((TokenId,IdKind) -> Maybe Id)
            )
 
 getInts tidk2i =
-  case length (listAT assocTree) of  -- force evaluation of tree
+  case length (Map.toList assocTree) of  -- force evaluation of tree
     0 -> error "What??? (in TokenInt)\n"
-    _ -> (getIntsUnsafe assocTree,lookupAT assocTree)
+    _ -> (getIntsUnsafe assocTree, flip Map.lookup assocTree)
  where
-   assocTree = foldr fix initAT 
-		(tokenList ++ tokenInteger ++ tokenRational ++ tokenAllways 
+   assocTree = foldr fix Map.empty
+                (tokenList ++ tokenInteger ++ tokenRational ++ tokenAllways
                 ++ tokenMain
 		++ tokenMonad ++ tokenBounded ++ tokenEnum
 		++ tokenEq ++ tokenEval ++ tokenIx
@@ -42,17 +42,17 @@ getInts tidk2i =
                 ++ tokenBinary ++ tokenNplusK ++ tokenFFI  --MALCOLM modified
                 ++ tokenComprehension)
 
-   fix :: (IdKind,TokenId) 
-       -> AssocTree (TokenId,IdKind) Id
-       -> AssocTree (TokenId,IdKind) Id
+   fix :: (IdKind,TokenId)
+       -> Map.Map (TokenId,IdKind) Id
+       -> Map.Map (TokenId,IdKind) Id
 
    fix (k,tid) t =
       case tidk2i (tid,k) of
-         Just u -> addAT t sndOf (tid,k) u
-	 Nothing -> t
+         Just u -> Map.insert (tid,k) u t
+         Nothing -> t -- trace ("WARNING: ignoring tokenInt "++show tid) t
 
-   getIntsUnsafe t  k = 
-     case lookupAT t k of
+   getIntsUnsafe t  k =
+     case Map.lookup k t of
        Nothing -> error ("Can't find int for " ++ show k ++"\n")
        Just i -> i
 

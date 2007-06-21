@@ -5,7 +5,6 @@ module Import (Flags,ImportState,PackedString,TokenId,IdKind,HideDeclIds
               ,readFirst,importOne) where
 
 import IO
-import Memo
 import SysDeps(PackedString,unpackPS)
 import Flags
 import Util.Extra
@@ -18,16 +17,16 @@ import IExtract
 import ImportState(ImportState,putModid2IS)
 import IdKind(IdKind)
 import PreImp(HideDeclIds)
+import qualified Data.Map as Map
+import qualified Data.Set as Set
+import Maybe(fromJust)
 
-#if !defined(__HASKELL98__)
-#define ioError fail
-#endif
 
 {-
 Open an interface file for given module name.
 Returns unpacked module name, filename of interface file and its content.
 -}
-openImport :: Flags -> PackedString -> IO (String,String,String)
+openImport :: Flags -> PackedString -> Map.Map String FilePath -> IO (String,String,String)
 
 openImport flags mrps =
  catch (do
@@ -53,8 +52,9 @@ Read and process the interface file of one imported module.
 
 importOne :: Flags 
           -> ImportState 
+          -> Map.Map String FilePath
           -> ( PackedString
-             , (PackedString, PackedString, Memo TokenId)
+             , (PackedString, PackedString, Set.Set TokenId)
                 -> [[TokenId]] -> Bool
              , HideDeclIds) 
           -> IO ImportState
@@ -86,7 +86,7 @@ importOne flags importState (mrps,needFun,hideFun) = do
 -- down ((Memo TokenId -> [[TokenId]] -> Bool)
 
 importCont' :: ImportState 
-            -> ((PackedString, PackedString, Memo TokenId)
+            -> ((PackedString, PackedString, Set.Set TokenId)
                   -> [[TokenId]] -> Bool) 
             -> HideDeclIds
             -> a 			-- module name

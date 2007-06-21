@@ -1,9 +1,8 @@
 {- ---------------------------------------------------------------------------
 -}
 module RenameLib(module RenameLib
-	,AssocTree
-	,Tree ,ImportState,NT,NewType,IE,Either,Info
-	,Maybe,Flags) where
+        ,ImportState,NT,NewType,IE,Either,Info
+        ,Maybe,Flags) where
 
 import List
 import TokenId(TokenId(..),t_Tuple,ensureM,mkQual2,visible,mkQual3,mkQualD
@@ -14,7 +13,7 @@ import NT
 import Util.Extra
 import Maybe
 
-import AssocTree
+import qualified Data.Map as Map
 import ImportState hiding (TokenId)
 import IntState(checkNT)
 import IExtract(fixOne,fixFun)
@@ -33,16 +32,22 @@ import Error
 
 data RenameState =
       RenameState
-        Flags				-- flags
-	Id				-- unique
-	(Id,PackedString)		-- modid
-	[AssocTree (TokenId,IdKind) Id] -- stack of rename (name -> unique)
-	(AssocTree (TokenId,IdKind) Id) -- active rename (name	-> unique)
-	(AssocTree Id Info)		-- symboltable (unique -> info)
-	[(Id,[(Pos,Id)])]		-- derived   [(con,[(pos,cls)])]
-	(Maybe [Id])			-- defaults
-	[String]			-- errors
-	[Id]				-- type Synonyms
+        Flags                           -- flags
+        Id                              -- unique
+        (Id,PackedString)               -- modid
+        [Map.Map (TokenId,IdKind) Id]   -- stack of rename (name -> unique)
+        (Map.Map (TokenId,IdKind) Id)   -- active rename (name  -> unique)
+        (Map.Map Id Info)               -- symboltable (unique -> info)
+        [(Id,[(Pos,Id)])]               -- derived   [(con,[(pos,cls)])]
+        (Maybe [Id])                    -- defaults
+        [Error]                         -- errors
+        [Id]                            -- type Synonyms
+
+instance IdSupply RenameState where
+    getUniqueId _ (RenameState flags unique rps rts rt st derived
+                               defaults errors needCheck)
+        = (unique, RenameState flags (succ unique) rps rts rt st derived
+                               defaults errors needCheck)
 
 --- The selectors for (qualFun,expFun,fixity) are defined
 --- in PreImp and used here and in Fixity
@@ -67,13 +72,13 @@ Destruct rename state to obtain all its elements we are interested in.
 Additionally checks some properties of types.
 -}
 keepRS :: RenameState 
-       -> (Int
-          ,((TokenId,IdKind) -> Int,(TokenId,IdKind) -> Maybe Int)
-          ,(Int,PackedString)
-          ,AssocTree Int Info   -- the symbol table
-          ,[(Int,[(Pos,Int)])]  -- derived
-          ,Maybe [Int]          -- user defined defaults for Num classes
-          ,[String])            -- errors
+       -> (Id
+          ,((TokenId,IdKind) -> Id,(TokenId,IdKind) -> Maybe Id)
+          ,(Id,PackedString)
+          ,Map.Map Id Info     -- the symbol table
+          ,[(Id,[(Pos,Id)])]  -- derived
+          ,Maybe [Id]          -- user defined defaults for Num classes
+          ,[Error])            -- errors
 
 keepRS (RenameState flags unique rps rts rt st derived
                     defaults errors needCheck) =
@@ -83,7 +88,7 @@ keepRS (RenameState flags unique rps rts rt st derived
     Left x ->
       (unique,getInts (lookupAll (rt:rts)),rps,st,derived,defaults,errors ++ x)
   where
-  checkTypes :: AssocTree Id Info -> [Id] -> Either [String] (AssocTree Id Info)
+  checkTypes :: Map.Map Id Info -> [Id] -> Either [Error] (Map.Map Id Info)
   checkTypes st needCheck =
     case foldls (checkPrep st) ([],[]) needCheck of   
       -- !!! Do these checks at defining site only !!!
@@ -92,33 +97,33 @@ keepRS (RenameState flags unique rps rts rt st derived
 	    sccSyn = sccDepend 
                        (map ( \ (u,d) -> (u,filter (`elem` keep) d)) synType)
         in
-	  case (filter isRec sccSyn) of
-	    x@(_:_) -> Left (map (err2 st) x)
-	    [] -> -- now look for error in newtype defs
-	      case foldls ( \ (st,err) (u,c) -> 
-				case isUnBoxedNT st newType [u] c of
-				  Just unboxed -> 
-                                    (updateAT st u (updNewType unboxed),err)  
+          case (filter isRec sccSyn) of
+            x@(_:_) -> Left (map (err2 st) x)
+            [] -> -- now look for error in newtype defs
+              case foldls ( \ (st,err) (u,c) -> 
+                                case isUnBoxedNT st newType [u] c of
+                                  Just unboxed -> 
+                                    (Map.update (Just . updNewType unboxed) u st,err)  
                                     -- WORKING ON
-				  Nothing -> 
-                                    (updateAT st u (updNewType False)
-                                    ,("Newtype " ++ 
-                                      (show . tidI . dropJust . lookupAT st) u 
-                                      ++ " could be circular.") : err)
-			  ) (st,[]) newType of
-	        (st,err@(_:_)) -> Left err
-	 	(st,[]) -> Right (snd (foldls fixDepth (0::Int,st) sccSyn))
+                                  Nothing -> 
+                                    (Map.update (Just . updNewType False) u st 
+                                    ,(ErrorCircularNewtype
+                                      ((show . tidI . fromJust . flip Map.lookup st) u))
+                                       : err)
+                          ) (st,[]) newType of
+                (st,err@(_:_)) -> Left err
+                (st,[]) -> Right (snd (foldls fixDepth (0::Int,st) sccSyn))
 
   fixDepth (d,st) (NoRec u) =
     let unboxed = isUnBoxedTS st u
         d' = 1 + max d (minDepth st u) 
-    in unboxed `seq` d' `seq` (d',updateAT st u (updTypeSynonym unboxed d'))
+    in unboxed `seq` d' `seq` (d',Map.update (Just . updTypeSynonym unboxed d') u st)
 
   minDepth st c = -- called for type synonyms only
-    case (ntI . dropJust . lookupAT st) c of
+    case (ntI . fromJust . flip Map.lookup st) c of
       (NewType _ [] _ [nt]) ->
-	(maximum . (0:) -- Ensures maximum works
-                 . map (safeDepthI . dropJust . lookupAT st) . consNT) nt
+        (maximum . (0:) -- Ensures maximum works
+                 . map (safeDepthI . fromJust . flip Map.lookup st) . consNT) nt
 
   safeDepthI info =
     case depthI info of
@@ -130,8 +135,8 @@ keepRS (RenameState flags unique rps rts rt st derived
   Determines for given newtype type constructor, if the renamed type
   is unboxed. Returns Nothing if definition is circular.
   -}
-  isUnBoxedNT :: AssocTree Id Info -- symboltable
-              -> [(Id,Id)]  -- for every newtype type constructor 
+  isUnBoxedNT :: Map.Map Id Info -- ^ symboltable
+              -> [(Id,Id)]  -- ^ for every newtype type constructor 
                             -- the top type constructor of the renamed type
               -> [Id]       -- accumulates newtype type constructors
                             -- that have already been visited to recognise
@@ -143,7 +148,7 @@ keepRS (RenameState flags unique rps rts rt st derived
     if u `elem` ac then	-- already been here, so circular defn.
       Nothing
     else
-    case lookupAT st u of
+    case Map.lookup u st of
       Just info ->
 	if isRealData info then	-- got the answer!
 	  Just (isDataUnBoxed info)
@@ -160,7 +165,7 @@ keepRS (RenameState flags unique rps rts rt st derived
                   -- error ("nhc98 needs a fix here, but I don't know how")
                   case constrsI info of
                     (coni:_) ->
-                      case (ntI . dropJust . lookupAT st) coni of
+                      case (ntI . fromJust . flip Map.lookup st) coni of
                         (NewType _ _ _ [NTcons u' _ _,_]) ->
                           isUnBoxedNT st nt (u:ac) u'
                         _ -> -- strace 
@@ -177,7 +182,7 @@ keepRS (RenameState flags unique rps rts rt st derived
       Nothing -> Nothing	-- possibly not circular at all
 
   isUnBoxedTS st u = -- No circular dependency when this function is called
-    case lookupAT st u of
+    case Map.lookup u st of
       Nothing -> -- FAKE This is a BUG but unboxed is not used anyway
         False
       Just info ->
@@ -196,7 +201,7 @@ keepRS (RenameState flags unique rps rts rt st derived
   either to list about type synonyms or list about newtypes.
   Type constructor must be for type synonym or newtype.
   -}
-  checkPrep :: AssocTree Id Info -- symboltable
+  checkPrep :: Map.Map Id Info -- ^ symboltable
             -> ([(Id,[Id])],[(Id,Id)]) 
                -- 1 synonym list: type constructor, type cons occuring in rhs
                -- 2 newtype list: type constructor, top type constructor
@@ -206,7 +211,7 @@ keepRS (RenameState flags unique rps rts rt st derived
                -- same format as argument
 
   checkPrep st (synType,newType) u =
-    case lookupAT st u of
+    case Map.lookup u st of
       Just info ->
         case depthI info of
 	  Just _ ->  -- Only typeSyn has depth
@@ -231,11 +236,8 @@ keepRS (RenameState flags unique rps rts rt st derived
 	      [] -> (synType,newType) -- !!! Not a good solution !!!
       Nothing -> error ("Couldn't find definition for newtype "++show u)
 
-  err2 ts (Rec [x]) = 
-    "Circular type synonym " ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
-  err2 ts (Rec (x:xs)) = "Circular dependency between the type synonyms "
-    ++ concatMap ((++", "). show . tidI . dropJust . lookupAT ts) xs ++ "and "
-    ++ (show . tidI . dropJust . lookupAT ts) x ++ "."
+  err2 ts (Rec xs) = ErrorCircularType (map (show . tidI . fromJust . flip Map.lookup ts) xs)
+
 
 -- Only important that it works for data, class, type and newtype
 thisModule rps (TupleId _) = rps == rpsPrelude
@@ -258,7 +260,7 @@ is2rs :: Flags
                 (TokenId -> TokenId
                 ,a
                 ,RenameState
-                ,AssocTree (TokenId, IdKind) (Either [Pos] [Int])
+                ,Map.Map (TokenId, IdKind) (Either [Pos] [Id])
                 )
 
 is2rs flags mrps qualFun expFun overlap 
@@ -278,8 +280,8 @@ is2rs flags mrps qualFun expFun overlap
   case deAlias qualFun overlap irt of
     ([],qf) ->
       case foldls reorderFun 
-             (mapAT deRight irt,addAT initAT ignore unique minfo) 
-             (listAT st) of
+             (Map.map deRight irt,Map.singleton unique minfo) 
+             (Map.toList st) of
         (rt,ts) ->
             Right (qf
                   ,expFun (\_->False)
@@ -297,10 +299,10 @@ is2rs flags mrps qualFun expFun overlap
   reorderFun (rt,at) (key,info) =
     let u = uniqueI info
         rt' = if thisModule rps (fst key) then
-		addAT rt ignore key u
-	      else
-		rt
-    in seq rt' (rt',addAT at ignore u info)
+                Map.insertWith ignore key u rt
+              else
+                rt
+    in seq rt' (rt',Map.insertWith ignore u info at)
 
   ignore a b = b  -- Happens due to mutally recursive modules
 
@@ -345,7 +347,7 @@ fixFixityRS ::
 fixFixityRS oldfix rs [] = (oldfix,rs)
 fixFixityRS oldfix (RenameState flags unique irps@(_,rps) rts rt st
         derived defaults errors needCheck) fixdecls =
- case foldr (fixOne rps) (initAT,[]) fixdecls of
+ case foldr (fixOne rps) (Map.empty,[]) fixdecls of
   (fixAT,err) -> (fixFun fixAT oldfix
                  ,RenameState flags unique irps rts rt st
                       derived defaults (err++errors) needCheck)
@@ -353,7 +355,7 @@ fixFixityRS oldfix (RenameState flags unique irps@(_,rps) rts rt st
 --------------------  End duplication
 
 
-getSymbolTableRS :: RenameState -> AssocTree Id Info
+getSymbolTableRS :: RenameState -> Map.Map Id Info
 getSymbolTableRS (RenameState flags unique rps rts rt st
                               derived defaults errors needCheck) =
   st
@@ -369,7 +371,7 @@ getErrorsRS (RenameState flags unique rps rts rt st
 pushScope :: a -> RenameState -> RenameState
 pushScope _ (RenameState flags unique rps rts rt st
                          derived defaults errors needCheck) =
-  RenameState flags unique rps (rt:rts) initAT st derived
+  RenameState flags unique rps (rt:rts) Map.empty st derived
               defaults errors needCheck
 
 
@@ -392,10 +394,10 @@ renameError err r fix (RenameState flags unique rps rst rt st
 Looks up identifier (given as token,kind) in list of trees.
 Returns first entry found.
 -}
-lookupAll :: [AssocTree (TokenId,IdKind) Id] -> (TokenId,IdKind) -> Maybe Id
+lookupAll :: [Map.Map (TokenId,IdKind) Id] -> (TokenId,IdKind) -> Maybe Id
 lookupAll [] key = Nothing
 lookupAll (t:ts) key =
-  case lookupAT t key of
+  case Map.lookup key t of
     Nothing -> lookupAll ts key
     just -> just
 
@@ -412,10 +414,10 @@ uniqueTid pos kind tid down
   let key =  (sQual down tid,kind)
   in case lookupAll (rt:rts) key of 
        Just u -> (u,renameState)
-       Nothing -> (unique, RenameState flags (unique+1) rps rts
-			     (addAT rt sndOf key unique)
-			     st derived defaults
-			     (("Unbound " ++ show kind ++ " " ++ show tid ++ 
+       Nothing -> (unique, RenameState flags (succ unique) rps rts
+                             (Map.insert key unique rt)
+                             st derived defaults
+                             ((ErrorRaw $ "Unbound " ++ show kind ++ " " ++ show tid ++ 
                                " at " ++ strPos pos ++ "\n\n" ++ 
                                show (rt:rts)) : errors)
 			     needCheck)
@@ -428,8 +430,8 @@ fixTid kind tid down
   let key =  (sQual down tid,kind)  --- !!! check if real name !!!
   in case lookupAll (rt:rts) key of
        Just u ->
-	 case lookupAT st u of
-	   Nothing ->
+         case Map.lookup u st of
+           Nothing ->
                (sFix down (ensureM (snd rps) (fst key)),renameState) -- hack
                -- old code    ((InfixL,9::Int),renameState) 
                -- It's an argument, and I have lost the fixity information :-(
@@ -450,9 +452,9 @@ bindTid pos kind tid _
         renameState@(RenameState flags unique irps@(_,rps) rts rt st derived 
                                  defaults errors needCheck) =
   let key =  (tid,kind)
-      redefinedGlobal [rt] = lookupAT rt (forceM rps tid,kind)
+      redefinedGlobal [rt] = Map.lookup (forceM rps tid,kind) rt
       redefinedGlobal _ = Nothing
-  in case lookupAT rt key of 
+  in case Map.lookup key rt of 
        Just u -> 
          if sRedefine flags 
            then renameState
@@ -462,12 +464,12 @@ bindTid pos kind tid _
                   ++ " at " ++ strPos pos) : errors) 
                 needCheck)
        Nothing   ->
-	 case redefinedGlobal rts of
-	   Nothing ->
-	     (RenameState flags (unique+1) irps rts
-			  (addAT rt sndOf key unique)
-			  st derived defaults errors needCheck)
-	   Just u -> 
+         case redefinedGlobal rts of
+           Nothing ->
+             (RenameState flags (succ unique) irps rts
+                          (Map.insert key unique rt)
+                          st derived defaults errors needCheck)
+           Just u -> 
              (if sRedefine flags 
                 then id 
                 else
@@ -487,8 +489,8 @@ bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st
   in if sNplusK flags then
        case lookupAll (rt:rts) key of
          Nothing-> (tid
-                   ,RenameState flags (unique+1) irps rts
-				(addAT rt sndOf key unique)
+                   ,RenameState flags (succ unique) irps rts
+                                (Map.insert key unique rt)
                                 st
 				-- (addAT st (\a b->b) unique
 				--     (InfoUsed unique [(Var,tid,rps,pos)]))
@@ -500,15 +502,15 @@ bindNK pos _ renameState@(RenameState flags unique irps@(_,rps) rts rt st
 				--              (Just 0)))
                                 derived defaults errors needCheck)
          Just u -> (tid
-                   ,RenameState flags (unique+1) irps rts
-				(addAT rt sndOf key unique)
-				st derived defaults
-                                (("Binding (n+k) pattern to new unique "++
+                   ,RenameState flags (succ unique) irps rts
+                                (Map.insert key unique rt)
+                                st derived defaults
+                                ((ErrorRaw $ "Binding (n+k) pattern to new unique "++
                                   "identifier at "++strPos pos): errors)
 				needCheck)
      else (tid
-          ,RenameState flags (unique+1) irps rts
-		       (addAT rt sndOf key unique)
+          ,RenameState flags (succ unique) irps rts
+		       (Map.insert key unique rt)
 		       st derived defaults
                        (("(n+k) patterns are disabled - pattern at "++
                          strPos pos): errors)
@@ -533,7 +535,7 @@ checkTid :: Pos -> IdKind -> TokenId -> RenameRMonad a Bool
 checkTid pos kind tid _ renameState@(RenameState flags unique rps rts rt st
                                         derived defaults errors needCheck) =
   let key =  (tid,kind)
-  in  case lookupAT rt key of 
+  in  case Map.lookup key rt of 
         Just u -> (True,renameState)
         Nothing -> (False,renameState)
 
@@ -616,9 +618,9 @@ defineType tid nt down (RenameState flags unique irps@(_,rps) rts rt st
                                     derived defaults errors needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TSyn)
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u -> (u, RenameState flags unique irps rts rt
-		         (addAT st combInfo u {-(realtid,TSyn)-} 
+                         (Map.insertWith combInfo u {-(realtid,TSyn)-} 
                             (InfoData u realtid (sExp down tid TSyn) nt 
                                (DataTypeSynonym False 0)))
 		         derived defaults errors (u:needCheck))
@@ -644,10 +646,10 @@ defineClass pos tid nt mds down (RenameState flags unique irps@(_,rps)
   let realtid = ensureM rps tid
       key = (tid,TClass)
       (ms,ds) = unzip mds
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u ->
-        let newst = addAT st combInfo u {-(realtid,TClass)-} 
-                     (InfoClass u realtid (sExp down tid TSyn) nt ms ds initAT)
+        let newst = Map.insertWith combInfo u {-(realtid,TClass)-} 
+                     (InfoClass u realtid (sExp down tid TSyn) nt ms ds Map.empty) st
         in case checkNT pos (strAT st) nt of
           Nothing -> 
             RenameState flags unique irps rts rt newst derived defaults 
@@ -663,9 +665,9 @@ defineDataPrim tid nt size down (RenameState flags unique irps@(_,rps)
                                              needCheck) =
   let realtid = ensureM rps tid
       key = (tid,TCon)
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u -> (u,RenameState flags unique irps rts rt 
-		      (addAT st combInfo u {-(realtid,TCon)-} 
+                      (Map.insertWith combInfo u {-(realtid,TCon)-} 
                          (InfoData u realtid (sExp down tid TCon) nt 
                             (DataPrimitive size)))
 		      derived defaults errors needCheck
@@ -685,17 +687,17 @@ defineData d tid nt cs down (RenameState flags unique irps@(_,rps) rts rt st
                                      derived defaults errors needCheck)  =
   let realtid = ensureM rps tid
       key = (tid,TCon)
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u ->
          let (needCheck',dk,patch) =
 		case d of
 		  Just unboxed -> (needCheck,   Data unboxed cs,      id)
 		  Nothing -> (u:needCheck, DataNewType False cs, patchIE)
                               -- unboxed fixed by keepRS
-	 in (u,RenameState flags unique irps rts rt 
-		 (addAT st combInfo u {-(realtid,TCon)-} 
-                    (InfoData u realtid (patch (sExp down tid TCon)) nt dk))
-		 derived defaults errors needCheck')
+         in (u,RenameState flags unique irps rts rt 
+                 (Map.insertWith combInfo u {-(realtid,TCon)-} 
+                    (InfoData u realtid (patch (sExp down tid TCon)) nt dk) st)
+                 derived defaults errors needCheck')
 
 
 {-
@@ -719,9 +721,9 @@ defineMethod pos tid nt arity classId ctid down
                 IEall -> IEsel
                 IEabs -> IEnone
                 _     -> sExp down tid Method
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u ->
-         let newst = addAT st combInfo u {-(realtid,Method)-} 
+         let newst = Map.insertWith combInfo u {-(realtid,Method)-} 
                        (InfoMethod u realtid rex (sFix down realtid) nt 
                          (Just arity) classId)
          in case checkMNT nt of
@@ -752,9 +754,9 @@ defineConstr typtid tid nt fields bt down
                 IEall -> IEsel
                 IEabs -> IEnone
                 _     -> sExp down tid Con
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u -> (u,RenameState flags unique irps rts rt
-			 (addAT st combInfo u {-(realtid,Con)-}
+                         (Map.insertWith combInfo u {-(realtid,Con)-}
                              (InfoConstr u realtid rex (sFix down realtid)
                                          nt fields bt))
 			 derived defaults errors needCheck)
@@ -766,13 +768,13 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
   let realtid = ensureM rps tid
       key = (tid,Field)
   in
-    case lookupAT rt key of
+    case Map.lookup key rt of
       Just u ->
-        case lookupAT st u of
-	  Just (InfoField u' realtid' ie cis' bt' iSel') ->
-	    if bt == bt'
-	    then (Nothing,RenameState flags unique irps rts rt
-			     (addAT st fstOf u' {-(realtid,Field)-}
+        case Map.lookup u st of
+          Just (InfoField u' realtid' ie cis' bt' iSel') ->
+            if bt == bt'
+            then (Nothing,RenameState flags unique irps rts rt
+                             (Map.insertWith fstOf u' {-(realtid,Field)-}
                                  (InfoField u' realtid' ie
                                      ((c,i):cis') bt' iSel'))
 			     derived defaults errors needCheck)
@@ -781,17 +783,14 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
                               (("Field " ++ show tid ++ " at " ++ strPos p ++
                                 " is already defined"):errors)
                               needCheck)
-	  Just u -> (Nothing,up)
-	  Nothing ->
-	    case lookupAT rt (tid,Var) of
-	      Just selu ->
-		( Just (p,u,selu)
-		, RenameState flags unique irps rts rt
-                              (addAT (addAT st combInfo u {-(realtid,Field)-}
-                                            (InfoField u realtid IEnone
-						       -- Var gives true IEinfo
-                                                       [(c,i)] bt selu))
-				     combInfo selu
+          Just u -> (Nothing,up)
+          Nothing ->
+            case Map.lookup (tid,Var) rt of
+              Just selu ->
+                ( Just (p,u,selu)
+                , RenameState flags unique irps rts rt
+                              (Map.insertWith 
+                                     combInfo selu
                                      (InfoVar selu realtid
                                           (case sExp down typtid TCon of
 					      IEall -> IEsel
@@ -799,7 +798,12 @@ defineField typtid bt c ((Just (p,tid,_),_),i) down
 					   -- IEabs -> sExp down tid Var
                                               _     -> sExp down tid Var)
                                           (sFix down realtid)
-                                          NoType (Just 1)))
+                                          NoType (Just 1))
+                                     (Map.insertWith combInfo u {-(realtid,Field)-}
+                                          (InfoField u realtid IEnone
+                                              -- Var gives true IEinfo
+                                              [(c,i)] bt selu) st)                                          
+                              )
                               derived defaults errors needCheck)
 
 
@@ -817,14 +821,14 @@ defineVar :: TokenId -> RenameMonad Id
 defineVar tid  down (RenameState flags unique irps@(_,rps) rts rt st
                                  derived defaults errors needCheck) = 
   let key = (tid,Var)
-  in case lookupAT rt key of
+  in case Map.lookup key rt of
        Just u ->
-	 let realtid = sLG down rps u tid
-	 in  (u,RenameState flags unique irps rts rt
-			(addAT st combInfo u {-(realtid,Var)-}
-			    (InfoVar u realtid (sExp down tid Var)
-                                (sFix down (ensureM rps tid)) NoType Nothing))
-			derived defaults errors needCheck)
+         let realtid = sLG down rps u tid
+         in  (u,RenameState flags unique irps rts rt
+                        (Map.insertWith combInfo u {-(realtid,Var)-}
+                            (InfoVar u realtid (sExp down tid Var)
+                                (sFix down (ensureM rps tid)) NoType Nothing) st)
+                        derived defaults errors needCheck)
 
 
 defineDefaultMethod :: TokenId -> RenameMonad Id
@@ -833,16 +837,16 @@ defineDefaultMethod tid  down (RenameState flags unique irps@(_,rps)
                                            errors needCheck) = 
   let realtid = mkQualD rps tid
       skey = (tid,Method)
-  in case lookupAT rt skey of
-	Nothing -> error ("***defineDefaultMethod(1) " ++
+  in case Map.lookup skey rt of
+        Nothing -> error ("***defineDefaultMethod(1) " ++
                            show skey ++ "\n" ++ show rt)
         Just u ->
-         case lookupAT st u of 
-	   Nothing -> error ("***defineDefaultMethod(1) " ++
+         case Map.lookup u st of 
+           Nothing -> error ("***defineDefaultMethod(1) " ++
                               show skey ++ " " ++ show u ++ "\n" ++ show rt)
            Just (InfoMethod _ _ _ fix nt annot iClass) ->
-	     (unique,RenameState flags (unique+1) irps rts rt
-			 (addAT st combInfo  unique
+             (unique,RenameState flags (succ unique) irps rts rt
+                         (Map.insertWith combInfo  unique
                                 {-(realtid,MethodDefault)-}
                                 (InfoDMethod unique realtid nt annot iClass))
 			 derived defaults errors needCheck)
@@ -859,10 +863,11 @@ defineInstMethod tid  down (RenameState flags unique irps@(_,rps)
                                         errors needCheck) = 
   let realtid = mkQual2 (t_Tuple unique) (ensureM rps tid)
                 -- this is obscure! why a tuple with the size of unique?
-  in (unique,RenameState flags (unique+1) irps rts rt
-		 (addAT st combInfo  unique {-(realtid,MethodInstance)-}
-                        (InfoIMethod unique realtid NoType Nothing (0::Int)))
-		 derived defaults errors needCheck)
+                -- FIXME: this does in fact make no sense! --SamB
+  in (unique,RenameState flags (succ unique) irps rts rt
+                 (Map.insertWith combInfo  unique {-(realtid,MethodInstance)-}
+                        (InfoIMethod unique realtid NoType Nothing (toEnum 0::Id)) st)
+                 derived defaults errors needCheck)
 
 
 defineDerived :: Int -> [(Pos,Int)] -> a -> RenameState -> RenameState
@@ -871,5 +876,6 @@ defineDerived con posis down (RenameState flags unique rps rts rt st
   RenameState flags unique rps rts rt st ((con,posis):derived)
               defaults errors needCheck
 
-strAT st i = (show . tidI . dropJust . lookupAT st) i
+strAT :: Ord a => Map.Map a Info -> a -> String
+strAT st i = (show . tidI . fromJust . flip Map.lookup st) i
 
