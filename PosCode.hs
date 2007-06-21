@@ -1,11 +1,12 @@
 module PosCode(module Prim, module PosCode, Pos) where
 
-import Extra(noPos)
+import Util.Extra(noPos)
 import Prim
 import ForeignCode (ImpExp)
 import Syntax (CallConv)
 import SyntaxPos
-	 
+import Id
+
 type PosCode = [PosBinding]
 
 type PosBinding     = (Int, PosLambda)

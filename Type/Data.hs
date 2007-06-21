@@ -2,14 +2,15 @@
 Monad and dictionary type for type checking.
 Also used in Remove1_3 for removing fields.
 -}
-module TypeData(TypeMonad,TypeDown(TypeDown),TypeState(TypeState)
+module Type.Data(TypeMonad,TypeDown(TypeDown),TypeState(TypeState)
                ,TypeDict(TypeDict)) where
 
 import IntState(IntState)
+import Id(Id)
 import TokenId(TokenId)
 import NT(NT)
 import IdKind(IdKind)
-import Extra(Pos)
+import Util.Extra(Pos)
 import Syntax (Exp)
 import AssocTree
 

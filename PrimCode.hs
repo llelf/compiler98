@@ -5,7 +5,7 @@ a respective bytecode.
 -}
 module PrimCode(primCode{-,rpsEval-},rpsseq) where
 
-import Extra(pair)
+import Util.Extra(pair)
 import State
 import IntState
 import TokenId

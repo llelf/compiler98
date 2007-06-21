@@ -3,7 +3,7 @@ Various functions for type checking:
 - error messages
 ...
 -}
-module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
+module Type.Lib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
                ,typeIdentDict,getIdent,getTypeErrors,typeError
                ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
                ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
@@ -12,18 +12,19 @@ module TypeLib (typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
                ,msgPatGdExps,msgPatGd) where
 
 import NT
-import TypeEnv(lookupEnv)
-import Extra(assocDef,strPos,snub,mapSnd)
+import Type.Env(lookupEnv)
+import Util.Extra(assocDef,strPos,snub,mapSnd)
+import Id(Id)
 import Syntax
 import IdKind
 import TokenId(t_Arrow,tmain,tIO,t_Tuple)
 import Flags
 import SyntaxPos
-import TypeSubst
-import TypeUnify
-import TypeData
+import Type.Subst
+import Type.Unify
+import Type.Data
 import IntState
-import TypeUtil
+import Type.Util
 import Info
 import IO
 import Error

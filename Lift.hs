@@ -8,7 +8,9 @@ import List
 import State
 import PosCode
 import SyntaxPos
-import Extra (emptySet,unionSet,removeSet,noPos,dropJust,strace,pair)
+import Util.Extra (emptySet,unionSet,removeSet,noPos,strace,pair)
+import Maybe
+import Id
 import IntState
 import TokenId
 import IdKind

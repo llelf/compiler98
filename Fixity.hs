@@ -4,13 +4,15 @@ precedence.
 -}
 module Fixity(fixInfixList) where
 
-import Extra(strPos)
+import Util.Extra(strPos)
 import Syntax hiding (TokenId)
 import SyntaxPos
 import TokenId(TokenId(..), t_flip)
 import IdKind(IdKind(..))
+import Id(Id)
 import State
 import RenameLib
+import Error
 
 
 -- Just == Bind

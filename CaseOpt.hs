@@ -1,12 +1,13 @@
 module CaseOpt where
 
-import Extra
 import PosCode
 import State
 import IntState
 import Info
 import Syntax
 import SyntaxUtil
+import Maybe
+import Id
 
 optFatBar e1 e2 =
   failExp e1 >>>= \ canfail ->

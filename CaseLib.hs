@@ -1,6 +1,6 @@
 module CaseLib where
 
-import Extra(noPos,sndOf)
+import Util.Extra(noPos)
 import Syntax
 import PosCode
 import IntState

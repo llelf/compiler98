@@ -22,11 +22,12 @@ import NT(NT(..),NewType(..),mkNTvar,mkNTcons)
 import Reduce(Reduce,mapR,unitR,(>>>))
 import Rename(ctxs2NT)
 import IExtract(freeType)
-import Extra(snub,strPos,mixLine,isJust,dropJust,mixCommaAnd,isNothing)
+import Util.Extra(snub,strPos,mixLine,mixCommaAnd)
 import Bind(identPat)
 import SyntaxPos(Pos,HasPos(getPos))
 import AssocTree(lookupAT)
 import Id(Id)
+import Maybe
 
 
 {- transform type from syntax tree into internal type -}

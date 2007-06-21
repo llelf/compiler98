@@ -1,12 +1,37 @@
-module Extra(module Extra, module HbcOnly, module Maybe, trace) where
+module Util.Extra(module Util.Extra, trace) where
 
-import HbcOnly
+-- FIXME: Some of this stuff needs moving out into compiler specific bits
+
 import Char
 import List
 import Maybe
 import IO (hPutStr,stderr)
-import Error (exit)
 import SysDeps (trace)
+import System
+
+
+exitFail :: IO a
+exitFail = exitWith (ExitFailure 1)
+
+
+space :: Int -> String
+space n = if n == 0 then ""
+          else ' ':space (n-1)
+
+fst3 :: (a, b, c) -> a
+fst3 (a,_,_) = a
+snd3 :: (a, b, c) -> b
+snd3 (_,a,_) = a
+thd3 :: (a, b, c) -> c
+thd3 (_,_,a) = a
+
+sndOf :: a -> b -> b
+sndOf a b = b
+
+makeDouble :: Integer -> Double -> Int -> Double
+makeDouble i f e = (fromIntegral i +f) * (10.0 ^^ e)
+
+
 
 mapListSnd :: (a -> b) -> [(c,a)] -> [(c,b)]
 mapListSnd f = map (mapSnd f)

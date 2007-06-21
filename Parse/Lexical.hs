@@ -2,12 +2,12 @@
 Lexical analysis of a file.
 -}
 
-module Lexical(lexical,lexicalCont,Lex
+module Parse.Lexical(lexical,lexicalCont,Lex
                 ,LexState,PosToken,PosTokenPre,Pos) where
 
-import Extra(Pos,toPos,strPos,insertPos)
-import Lex
-import LexPre
+import Util.Extra(Pos,toPos,strPos,insertPos)
+import Parse.Lex
+import Parse.LexPre
 import SysDeps(PackedString,packString,unpackPS)
 import TokenId
 

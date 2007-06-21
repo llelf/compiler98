@@ -17,11 +17,11 @@ import Memo
 import Syntax hiding (TokenId)
 import PosCode
 
-import Extra(mixSpace,strPos,showErr,mixLine,thd3)
+import Util.Extra(mixSpace,strPos,showErr,mixLine,thd3)
 import ImportState(ImportState,initIS,getSymbolTableIS,getErrIS
                   ,getRenameTableIS)
 import IntState(IntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
-import ParseCore(parseit)
+import Parse.ParseCore(parseit)
 
 import Flags(Flags,processArgs,pF
             ,sRealFile,sProfile,sUnlit,sSourceFile,sUnderscore,sLex
@@ -40,21 +40,21 @@ import TokenId(TokenId(..))
 import Id(Id)
 
 import Unlit(unlit)
-import Lexical(lexical)
-import Parse(parseProg)
+import Parse.Lexical(lexical)
+import Parse.Parse(parseProg)
 import Need(needProg)
 import Import(HideDeclIds,importOne)
 import IExtract(getNeedIS,addPreludeTupleInstances)
 import Rename(rename)
 import FFITrans(ffiTrans)
 import EmitState
-import Derive(derive)
+import Derive.Derive(derive)
 import Extract(extract)
 import Remove1_3(removeDecls)
 import RmClasses(rmClasses)
 import SccModule(sccTopDecls)
-import Type(typeTopDecls)
-import TypeLib(typeOfMain)
+import Type.Type(typeTopDecls)
+import Type.Lib(typeOfMain)
 import Export(buildInterface)
 import FixSyntax(fixSyntax)
 import FreeVar(freeVar)

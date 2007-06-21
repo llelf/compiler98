@@ -13,7 +13,7 @@ module MkSyntax
 	, desugarListComp, desugarListEnum
 	) where
 
-import Extra(Pos,noPos,mergePos,mergePoss)
+import Util.Extra(Pos,noPos,mergePos,mergePoss)
 import TokenId
 import Syntax
 import SyntaxPos(HasPos(getPos))

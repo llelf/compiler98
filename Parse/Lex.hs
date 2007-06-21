@@ -1,6 +1,6 @@
-module Lex(Lex(..),LexAnnot(..),TokenId) where
+module Parse.Lex(Lex(..),LexAnnot(..),TokenId) where
 
-import Extra(strStr,strChr)
+import Util.Extra(strStr,strChr)
 import TokenId(TokenId)
 import Ratio
 

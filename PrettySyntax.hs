@@ -12,7 +12,7 @@ module PrettySyntax
   , ppExp
   ) where 
 
-import Extra(noPos)
+import Util.Extra(noPos)
 import PrettyLib
 import Syntax hiding (noDecls,TokenId)
 import TokenId(TokenId(..),extractV,t_Arrow,t_List)
@@ -21,9 +21,10 @@ import IntState(IntState,strIS,lookupIS)
 import Nice(niceInt,niceNT,mkAL)
 import Info(Info(InfoData),tidI)
 import NT(NewType(NewType))
-import SysDeps (unpackPS,isAlphaNum)
+import SysDeps (unpackPS)
 import Maybe(isJust,fromJust)
 import Flags(Flags,sShowWidth,sShowQualified,sShowIndent)
+import Char
 
 
 {-

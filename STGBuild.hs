@@ -1,6 +1,8 @@
 module STGBuild(stgExpPush,stgBodyPush) where
 
-import Extra
+import Util.Extra
+import Maybe
+import Id
 import State
 import PosCode
 import Gcode

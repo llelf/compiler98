@@ -1,14 +1,12 @@
-module LexLow(lexId,isLexId,isNhcId
+module Parse.LexLow(lexId,isLexId,isNhcId
              ,lexNum,lexInteger
              ) where
 
 import Ratio
-import Char(isAlpha,isUpper,isLower,isDigit)
+import Char(isAlpha,isUpper,isLower,isDigit,isAlphaNum)
 
-import Lex
-import SysDeps(isAlphaNum)
-import TokenId(visible,qualify,t_List)
-import Extra(isNhcOp)
+import Parse.Lex
+import TokenId(visible,qualify,t_List, isNhcOp)
 
 data LEX_LOW =		-- the trailing String is the rest of the input
    LEX_ERROR Char String

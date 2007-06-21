@@ -1,5 +1,5 @@
 -- operating specific processing of filenames and paths
-module OsOnly
+module Util.OsOnly
   (isPrelude
   , fixImportNames, fixRootDir, fixDependFile, fixTypeFile, fixObjectFile
   , fixHatAuxFile,fixHatTransDir,fixHatTransFile,fixHatFileBase

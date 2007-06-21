@@ -1,13 +1,13 @@
-module LexPre(lexPre,PosTokenPre) where
+module Parse.LexPre(lexPre,PosTokenPre) where
 
-import Char(isSpace,isDigit,isAlpha)
+import Char(isSpace,isDigit,isAlpha,isAlphaNum)
 
-import Lex
-import LexLow
-import LexStr	-- includes: tab,lexChr
-import SysDeps(PackedString,packString,isAlphaNum)
+import Parse.Lex
+import Parse.LexLow
+import Parse.LexStr   -- includes: tab,lexChr
+import SysDeps(PackedString,packString)
 import TokenId(t_List,t_Arrow,t_Tuple)
-import Extra(Pos,toPos)
+import Util.Extra(Pos,toPos)
 
 type PosTokenPre = (PackedString,Pos,Int,Lex)
                 -- filename, position, column, lexem

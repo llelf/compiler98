@@ -11,7 +11,8 @@ import TokenId(TokenId(..),t_Tuple,ensureM,mkQual2,visible,mkQual3,mkQualD
 import Syntax hiding (TokenId)
 import Scc
 import NT
-import Extra
+import Util.Extra
+import Maybe
 
 import AssocTree
 import ImportState hiding (TokenId)
@@ -20,14 +21,15 @@ import IExtract(fixOne,fixFun)
 import State
 import IdKind
 import PreImp(sExp,sQual,sLG,sFix)
-import SysDeps(PackedString,unpackPS)
+import SysDeps(PackedString,unpackPS,trace)
 import Info hiding (TokenId)
 import SyntaxPos
 import TokenInt
-import OsOnly(isPrelude)
+import Util.OsOnly(isPrelude)
 import Flags
-import Overlap		-- added in H98
-import Id(Id)
+import Overlap          -- added in H98
+import Id
+import Error
 
 data RenameState =
       RenameState

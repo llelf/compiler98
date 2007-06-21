@@ -1,17 +1,18 @@
-module DeriveRead(deriveRead) where
+module Derive.Read(deriveRead) where
 
-import Extra
 import Syntax
 import MkSyntax(mkInt)
 import IntState
+import Id
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(tFalse,tTrue,tRead,treadParen,treadsPrec
               ,t_greater,t_append,t_readCon0,t_readCon,t_readConArg
               ,t_readConInfix,t_readField,t_readFinal,isTidOp,dropM)
 import Nice(showsOp,showsVar)
+import Maybe
 
 deriveRead tidFun cls typ tvs ctxs pos =
  getUnique >>>= \ d ->

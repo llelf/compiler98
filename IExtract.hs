@@ -10,7 +10,7 @@ module IExtract
   ) where
 
 import List
-import TokenId(TokenId(..),t_Arrow,ensureM,dropM,forceM
+import TokenId(TokenId(..),t_Arrow,ensureM,dropM,forceM,rpsPrelude
 		,tEq,tOrd,tBounded,tRead,tShow,visible,tUnknown,tunknown)
 import State
 import IdKind
@@ -21,7 +21,9 @@ import SysDeps(PackedString)
 import NT
 import Syntax hiding (TokenId)
 import ImportState hiding (TokenId)
-import Id(Id)
+import Id
+import Maybe
+import Error
 
 --import PrettyLib	-- debugging output only
 --import PrettySyntax	-- debugging output only

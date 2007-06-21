@@ -8,12 +8,11 @@ import IO
 import Memo
 import SysDeps(PackedString,unpackPS)
 import Flags
-import OsOnly(fixImportNames,isPrelude)
-import Extra
+import Util.Extra
 import TokenId(TokenId(..),extractV)
-import ParseCore(parseit)
-import ParseI
-import Lexical(PosToken,lexical)
+import Parse.ParseCore(parseit)
+import Parse.ParseI
+import Parse.Lexical(PosToken,lexical)
 import Error
 import IExtract
 import ImportState(ImportState,putModid2IS)

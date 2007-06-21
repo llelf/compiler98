@@ -22,7 +22,7 @@ import IExtract(tvPosTids,freeType,tvTids,countArrows,defFixFun)
 import TokenId(tTrue,t_error,extractV{-,tEval-},t_lessequal,t_subtract)
 import State
 import IdKind
-import Extra
+import Util.Extra
 import NT
 import IntState
 import AssocTree
@@ -34,6 +34,8 @@ import Id(Id)
 
 import Overlap(Overlap)
 import Flags(Flags)
+import Maybe
+import Error
 
 
 {-

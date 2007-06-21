@@ -16,7 +16,7 @@ parts.
 > import Syntax
 > import TokenId
 > import Compile
-> import System.FilePath.Version_0_10
+> import System.FilePath
 > import Core.Linker
 
 

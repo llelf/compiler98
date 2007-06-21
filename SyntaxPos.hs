@@ -1,6 +1,6 @@
 module SyntaxPos(Pos,HasPos(..)) where
 
-import Extra(Pos,noPos,mergePos,mergePoss)
+import Util.Extra(Pos,noPos,mergePos,mergePoss)
 import Syntax
 
 class HasPos a where

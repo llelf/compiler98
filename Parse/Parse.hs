@@ -1,24 +1,24 @@
 {- ---------------------------------------------------------------------------
 Parser for Haskell 98 Syntax
 -}
-module Parse(parseProg) where
+module Parse.Parse(parseProg) where
 
-import Extra(pair,noPos,strace,strPos,mergePos)
-import Lex
-import Lexical(PosToken)
+import Util.Extra(pair,noPos,strace,strPos,mergePos)
+import Parse.Lex
+import Parse.Lexical(PosToken)
 import Syntax
-import MkSyntax	( mkAppExp, mkCase, mkDeclClass
-	, mkDeclFun, mkDeclPat, mkDeclPatFun
+import MkSyntax ( mkAppExp, mkCase, mkDeclClass
+        , mkDeclFun, mkDeclPat, mkDeclPatFun
    --   , mkEnumFrom, mkEnumThenFrom, mkEnumToFrom, mkEnumToThenFrom
    --	, mkExpListComp
         , mkSweetListEnum, mkSweetListComp
         , mkIf, mkInfixList, mkExpList
         , mkLambda, mkLet, mkDo, mkFieldExp
-	, mkParExp, mkPatNplusK -- , mkParLhs
-	)
-import Parse2
-import ParseLib
-import ParseLex
+        , mkParExp, mkPatNplusK -- , mkParLhs
+        )
+import Parse.Parse2
+import Parse.ParseLib
+import Parse.ParseLex
 import SyntaxPos
 import TokenId (t_nplusk,t_Arrow)
 

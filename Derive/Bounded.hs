@@ -1,11 +1,11 @@
-module DeriveBounded(deriveBounded) where
+module Derive.Bounded(deriveBounded) where
 
 import Syntax
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(tminBound,tmaxBound,tBounded,tTrue)
 
 deriveBounded tidFun cls typ tvs ctxs pos =

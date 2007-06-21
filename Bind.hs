@@ -10,7 +10,7 @@ module Bind(Pos,Decls,Decl,Exp,bindDecls,bindPat,identDecl,identPat) where
 
 import State((>>>),(>>>=),mapS0,unitS0)
 import IdKind(IdKind(..))
-import Extra(strPos)
+import Util.Extra(strPos)
 import TokenId(TokenId)
 import Syntax(Decls(..),Decl(..),Exp(..),Constr(..),Field(..),Simple(..)
              ,Alt(..),Fun(..))

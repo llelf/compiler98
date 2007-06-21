@@ -7,10 +7,11 @@ import AssocTree
 import TokenId (TokenId(..))
 import State
 import Info hiding (TokenId)
-import Extra
+import Util.Extra
 import GcodeLow(cap0,caf,fun,string,profstatic,profproducer,profconstructor,profmodule,tprofmodule,tprofmodulesub,consttable,lowInteger,extra,wsize,align)
 import GcodeSpec(fixProfstatic,compilerProfstatic)
 import Flags
+import Maybe
 
 data Down = Down 
 

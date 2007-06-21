@@ -5,8 +5,8 @@ Also defines tokenIds for identifiers that are hardcoded into the compiler.
 module TokenId(module TokenId) where
 
 import Char(isUpper)
-import Extra(isNhcOp,Pos,strPos)
-import SysDeps(PackedString, unpackPS, packString)
+import Util.Extra(Pos,strPos)
+import SysDeps(PackedString, unpackPS, packString, trace)
 
 
 visible rtoken = Visible (packString rtoken)

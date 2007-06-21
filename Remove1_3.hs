@@ -11,15 +11,16 @@ module Remove1_3(removeDecls,mkSel,removeDo,translateExpRecord) where
 import Syntax
 import State
 import IntState
-import TokenId(t_gtgt,t_gtgteq,tfail)
-import TypeLib(getState,newIdent,getIdent)
+import TokenId(t_gtgt,t_gtgteq,tfail,t_recConError)
+import TokenInt
+import Type.Lib(getState,newIdent,getIdent)
 import SyntaxPos
-import TypeData(TypeMonad)
+import Type.Data(TypeMonad)
 import IdKind
-import Extra(strPos,dropJust,isJust,isNothing,mixCommaAnd,noPos,dropRight
-            ,isRight)
+import Util.Extra(strPos,mixCommaAnd,noPos,dropRight,isRight)
 import List
 import Id(Id)
+import Maybe
 
 
 {- ---------------------------------------------------------------------------

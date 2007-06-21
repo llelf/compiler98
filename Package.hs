@@ -8,7 +8,7 @@ import Control.Monad
 
 import Flags
 import Error
-import System.FilePath.Version_0_09
+import System.FilePath
 
 
 

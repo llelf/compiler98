@@ -1,4 +1,4 @@
-module DeriveEq(deriveEq) where
+module Derive.Eq(deriveEq) where
 
 import Syntax
 import IntState
@@ -6,7 +6,7 @@ import IdKind
 import Id(Id)
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(t_fromEnum,tFalse,tTrue,tEq,t_equalequal,t_andand)
 
 deriveEq :: ((TokenId,IdKind) -> Id) -> Id -> Id -> [Int] -> [(Id,Id)] -> Pos 

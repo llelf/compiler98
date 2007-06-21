@@ -3,7 +3,7 @@ module GcodeRel(gcodeRel) where
 import Gcode
 import GcodeLow(gcodeSize,wsize,align)
 import AssocTree
-import Extra(sndOf)
+import Util.Extra(sndOf)
 
 gcodeRel gcode = fixOne gcode
 

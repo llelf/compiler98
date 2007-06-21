@@ -4,6 +4,7 @@ The FSMonad and some helper functions for FixSyntax
 module FSLib(module FSLib, TokenId) where
 
 import Syntax hiding (TokenId)
+import SysDeps(PackedString,trace)
 import IdKind
 import Info hiding (TokenId,NewType)
 import State
@@ -13,6 +14,7 @@ import TokenId(mkQual3,mkQual2,TokenId(..),t_Colon,t_List,t_id)
 import IntState(IntState,lookupIS,addIS,uniqueIS,tidIS)
 import NT(NewType(..))
 import Id(Id)
+import Maybe
 
 type Inherited = (  (Exp Id,Exp Id)  -- expList (nil, cons)
                   , Exp Id           -- expId

@@ -3,8 +3,8 @@ module Depend(depend) where
 import AssocTree(listAT)
 import Flags (Flags,sDepend,sPrelude,sSourceFile,sUnix)
 import IntState
-import Extra
-import OsOnly
+import Util.Extra
+import Util.OsOnly
 import TokenId
 
 -- Only the beginning, can probably do mych better

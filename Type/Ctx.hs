@@ -1,4 +1,4 @@
-module TypeCtx( buildCtx, buildDefaults, ctxsReduce, ctxsSimplify, initCtxs) where
+module Type.Ctx( buildCtx, buildDefaults, ctxsReduce, ctxsSimplify, initCtxs) where
 
 import List(sort)
 import NT
@@ -8,8 +8,9 @@ import TypeSubst
 import Extra
 import AssocTree
 import Syntax
-import TypeData
+import Type.Data
 import State
+import Maybe
 
 initCtxs = []
 

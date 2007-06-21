@@ -1,9 +1,9 @@
-module ParseLex where
+module Parse.ParseLex where
 
-import Lex
-import Lexical
+import Parse.Lex
+import Parse.Lexical
 import Syntax(Lit(..),Boxed(..),Exp(..))
-import ParseLib
+import Parse.ParseLib
 import TokenId(isUnit,t_Bang,tprefix,tas,tunboxed,tprimitive,t_Tuple
               ,tforall,tdot,t_Arrow
               ,t_foreign,t_export,t_ccall,t_haskell,t_unsafe,t_cast,t_noproto

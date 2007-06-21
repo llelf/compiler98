@@ -12,6 +12,7 @@ import SysDeps(PackedString)
 import AssocTree
 import Syntax(InfixClass(..))
 import Id(Id)
+import Maybe
 
 data IE = IEnone | IEsel | IEsome | IEabs | IEall deriving (Eq,Show) 
 -- This is "Interface Exports"

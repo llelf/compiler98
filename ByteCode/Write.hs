@@ -16,7 +16,7 @@ import Id
 import Flags
 import Util.Extra
 import IO
-import System.FilePath.Version_0_10
+import System.FilePath
 import System.Directory
 import ForeignCode
 import Syntax(CallConv(..))

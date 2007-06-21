@@ -7,7 +7,7 @@ import IO
 import Util.Extra
 import Flags
 import Core.View
-import System.FilePath.Version_0_10
+import System.FilePath
 import Make
 import Error
 import Package

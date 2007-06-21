@@ -1,9 +1,10 @@
 module SccModule(sccTopDecls) where
 
+import Id
 import List
 import Scc
 import Syntax
-import Extra(pair,emptySet,unionSet,singletonSet,removeSet,strPos,assocDef)
+import Util.Extra(pair,emptySet,unionSet,singletonSet,removeSet,strPos,assocDef)
 import SyntaxPos
 
 ----  A simple monad

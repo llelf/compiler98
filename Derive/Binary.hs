@@ -1,13 +1,14 @@
-module DeriveBinary (deriveBinary) where
+module Derive.Binary (deriveBinary) where
 
 import List
 import Syntax
 import MkSyntax(mkInt)
 import IntState
+import Id
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(t_Tuple,t_Colon,t_List,
                tBinary,t_get,t_put,t_getF,t_sizeOf,
                t_putBits,t_getBits,t_getBitsF,

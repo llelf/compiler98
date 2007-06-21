@@ -38,7 +38,7 @@ There are two public items
 > import Phase
 > import TokenId
 > import Language.Preprocessor.Cpphs
-> import System.FilePath.Version_0_10  
+> import System.FilePath
 
 FrontData is the data returns by the front end
 FIXME: unsure about some things here ...

@@ -1,13 +1,13 @@
-module DeriveEnum(deriveEnum) where
+module Derive.Enum(deriveEnum) where
 
 import Syntax
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(tEnum,tfromEnum,ttoEnum,tenumFrom,tenumFromThen,t_fromEnum,t_toEnum,t_enumFromTo,t_enumFromThenTo)
-import Extra(strPos)
+import Util.Extra(strPos)
 
 deriveEnum tidFun cls typ tvs ctxs pos =
   getInfo typ >>>= \ typInfo -> 

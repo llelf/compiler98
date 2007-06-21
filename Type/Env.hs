@@ -1,13 +1,14 @@
-module TypeEnv( envDecls, envPat, envPats, initEnv, lookupEnv, tvarsInEnv) where
+module Type.Env( envDecls, envPat, envPats, initEnv, lookupEnv, tvarsInEnv) where
 
 import Syntax
 import State
 import NT
-import TypeData
-import TypeUtil
+import Id(Id)
+import Type.Data
+import Type.Util
 import IntState
 import Bind(identPat)
-import Extra(mapSnd)
+import Util.Extra(mapSnd)
 
 -- environment represented as a list of (Id,NT) pairs
 initEnv = []

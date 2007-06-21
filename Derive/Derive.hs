@@ -2,36 +2,36 @@
 Derive class instances that are demanded in derived clause of data type 
 definitions.
 -}
-module Derive (derive) where
+module Derive.Derive (derive) where
 
 import List(sort)
 import TokenId
-import Extra(pair,snub,mixCommaAnd,strPos
-            ,isNothing,dropJust,mapSnd)
+import Util.Extra(pair,snub,mixCommaAnd,strPos,mapSnd)
 import NT
 import Syntax
 import IntState
 import AssocTree
 import Memo
 import Rename(fixInstance)
-import TypeCtx
+import Type.Ctx
 import State
 import IdKind
-import TypeData
+import Type.Data
 import Id(Id)
+import Maybe
 
---import DeriveEval		-- Removed in Haskell 98
-import DeriveEq
-import DeriveOrd
-import DeriveShow
-import DeriveRead
-import DeriveEnum
-import DeriveIx
-import DeriveBounded
-import DeriveBinary		-- MALCOLM
+--import DeriveEval             -- Removed in Haskell 98
+import Derive.Eq
+import Derive.Ord
+import Derive.Show
+import Derive.Read
+import Derive.Enum
+import Derive.Ix
+import Derive.Bounded
+import Derive.Binary             -- MALCOLM
 
 
-import DeriveLib
+import Derive.Lib
 
 derive :: ((TokenId,IdKind) -> Id) ->
 	  IntState 		->

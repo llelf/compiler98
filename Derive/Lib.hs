@@ -1,8 +1,9 @@
-module DeriveLib where
+module Derive.Lib where
 
 import Syntax
 import IntState
 import NT
+import State
 
 syntaxCtxs pos ctxs = map ( \ (c,v) -> Context pos c [(pos,v)]) ctxs
 syntaxType pos typ tvs = TypeCons pos typ (map (TypeVar pos) tvs)

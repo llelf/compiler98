@@ -2,6 +2,7 @@ module STGArity(stgArity) where
 
 import State
 import IntState
+import Id
 import PosCode
 
 stgArity state code = 

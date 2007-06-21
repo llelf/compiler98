@@ -3,7 +3,7 @@ module GcodeMem(gcodeMem) where
 import Gcode
 import GcodeLow(gcodeNeed,primNeed,extra)
 import AssocTree
-import Extra
+import Util.Extra
 import IntState
 import Prim
 

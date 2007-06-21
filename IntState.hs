@@ -7,12 +7,14 @@ module IntState(module IntState, module Info) where
 import AssocTree
 import NT
 import TokenId(mkQual3,mkQualD,dropM)
-import Extra
-import SysDeps(PackedString,packString)
+import Util.Extra
+import SysDeps(PackedString,packString,trace,unpackPS)
 import Info
-import MergeSort(group)
+import Util.MergeSort(group)
 import Reduce(Reduce)
-import Id(Id)
+import Id
+import Maybe
+import Flags
 
 
 data IntState = 

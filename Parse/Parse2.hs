@@ -1,17 +1,18 @@
-module Parse2
+module Parse.Parse2
   ( parseConstr,  parseContexts, parseDeriving, parseFixDecls
   , parseFixDecl, parseImpDecls, parseInst,     parseSimple, parseType
   , parseExports, parseStrict,   parsePragma
   , bigModId
   ) where
 
-import Extra(pair,triple)
-import Lex hiding (TokenId)
+import Util.Extra(pair,triple)
+import Parse.Lex hiding (TokenId)
 import Syntax hiding (TokenId)
-import Lexical (PosToken)
+import Parse.LexPre (PosTokenPre)
+import Parse.Lexical (PosToken, LexState)
 import MkSyntax
-import ParseLib
-import ParseLex
+import Parse.ParseLib
+import Parse.ParseLex
 import SyntaxPos
 import TokenId(t_Arrow,TokenId(..))
 import SysDeps (packString,unpackPS)

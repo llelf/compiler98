@@ -1,6 +1,8 @@
 module STGGcode where -- (stgGcode) where
 
-import Extra(isJust,dropJust,pos2Int)
+import Util.Extra(pos2Int)
+import Maybe
+import Id
 import State
 import PosCode
 import Gcode

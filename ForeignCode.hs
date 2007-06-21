@@ -8,6 +8,7 @@ import Maybe (fromJust,isNothing)
 import List (isPrefixOf,isSuffixOf,intersperse)
 import SysDeps (unpackPS)
 import Syntax
+import Id
 import Info
 import NT
 import TokenId

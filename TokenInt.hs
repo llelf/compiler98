@@ -14,8 +14,8 @@ import IdKind
 import TokenId
 import AssocTree
 import Info
-import Extra (sndOf)
 import Id (Id)
+import Debug.Trace
 
 {-
 Creates from a partial mapping from tokenIds and idKinds to ids

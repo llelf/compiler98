@@ -10,14 +10,15 @@ import Extra(dropJust)
 import Syntax
 import IdKind(IdKind(..))
 import State
-import IntState(IntState,lookupIS,tidIS)
+import IntState(IntState,lookupIS,tidIS,strIS)
 import TokenId
-import Info(isData,isMethod)
-import FSLib(FSMonad,startfs,fsState,fsExpAppl,fsClsTypSel,fsExp2,fsId
-            ,fsRealData,fsList)
+import Info(isData,isMethod,tidI)
+import FSLib(FSMonad,startfs,fsState,fsTidFun,fsExpAppl,fsClsTypSel,fsExp2,fsId
+            ,fsRealData,fsList,ExpList)
 import Ratio
 import Machine
 import Id(Id)
+import NT(NT(..))
 
 
 litFloatInteger :: a {-boxed-} -> Integer -> Lit a

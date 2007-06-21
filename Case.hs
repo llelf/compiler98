@@ -6,7 +6,7 @@ module Case(caseTopLevel) where
 
 import List(sort)
 import Ratio
-import Extra
+import Util.Extra
 import Syntax
 import SyntaxPos
 import PosCode
@@ -24,6 +24,7 @@ import FSLib
 import SyntaxUtil
 import ForeignCode(ImpExp(..))
 import Id(Id)
+import Maybe
 
 
 caseTopLevel :: String 

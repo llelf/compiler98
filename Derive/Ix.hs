@@ -1,14 +1,14 @@
-module DeriveIx(deriveIx) where
+module Derive.Ix(deriveIx) where
 
 import Syntax
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(tIx,trange,tindex,tinRange,t_enumRange,t_enumIndex,t_enumInRange
-	,t_tupleRange,t_andand,t_tupleIndex,t_Tuple,dropM)
-import Extra(strPos)
+        ,t_tupleRange,t_andand,t_tupleIndex,t_Tuple,dropM)
+import Util.Extra(strPos)
 
 
 deriveIx tidFun cls typ tvs ctxs pos =

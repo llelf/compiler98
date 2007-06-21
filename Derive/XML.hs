@@ -1,4 +1,4 @@
-module DeriveXML (deriveXML) where
+module Derive.XML (deriveXML) where
 
 import List
 import Syntax
@@ -7,7 +7,7 @@ import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(TokenId,tTrue,t_Tuple,t_Colon,t_List
               ,tShowXml,t_toHType,t_showsElem
               ,t_stagparen,t_showConstr,t_compose,t_Defined,t_Constr

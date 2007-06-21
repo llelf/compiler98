@@ -1,4 +1,4 @@
-module Type(typeTopDecls) where
+module Type.Type(typeTopDecls) where
 
 import List(partition)
 import TokenId
@@ -7,27 +7,28 @@ import SyntaxPos
 import IdKind
 import State
 import NT
-import TypeLib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
+import Type.Lib(typeUnify,typeUnifyMany,typeUnifyApply,typePatCon,typeExpCon
               ,typeIdentDict,getIdent,getTypeErrors,typeError
               ,typeNewTVar,typeIdentDef,checkExist,funType,extendEnv,getEnv
               ,getState,setState,msgPatGdExps,msgPatGd
               ,msgFun,msgPat,msgLit,msgBool,msgGdExps,msgAltExps,msgCase
               ,msgAltPats,msgIf,msgApply,msgList,msgExpType,msgAs,msgNK)
-import TypeEnv(initEnv,envDecls,tvarsInEnv,envPats,envPat)
-import Extra
-import MergeSort(group,unique)
-import TypeSubst
-import TypeCtx
-import TypeData
+import Type.Env(initEnv,envDecls,tvarsInEnv,envPats,envPat)
+import Util.Extra
+import Util.MergeSort(group,unique)
+import Type.Subst
+import Type.Ctx
+import Type.Data
 import IntState
-import TypeUtil(ntIS)
-import TypeUnify(unify)
+import Type.Util(ntIS)
+import Type.Unify(unify)
 import Nice
 import Bind(identPat)
 import Extract(type2NT)
 import AssocTree
 import Remove1_3
 import Id(Id)
+import Maybe
 
 --import PPSyntax   -- just for debugging
 --import StrSyntax  -- just for debugging

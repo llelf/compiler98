@@ -5,7 +5,7 @@ module Gcode
 import Prim(Prim(..),PrimOp(..),strPrim)
 import IntState(tidIS,strIS,IntState)
 import TokenId(dropM)
-import Extra(Pos)
+import Util.Extra(Pos)
 
 data GALT = GALT_CON Int | GALT_INT Int deriving (Eq)
 

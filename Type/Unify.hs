@@ -1,10 +1,10 @@
 {- ---------------------------------------------------------------------------
 The main unification functions for NTs
 -}
-module TypeUnify(unify,unifyr) where
+module Type.Unify(unify,unifyr) where
 
 import NT(NT(..),NewType(..),freeNT,anyVarNT)
-import TypeSubst
+import Type.Subst
 import IntState hiding (NewType)
 import Id(Id)
 

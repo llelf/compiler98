@@ -1,9 +1,9 @@
 module STGState where
 
-import Extra(dropJust)
 import IntState
 import Gcode
 import ForeignCode
+import Maybe
 
 data Where = Arg Int | Stack Int | Heap Int | HeapLate | Direct Gcode
 

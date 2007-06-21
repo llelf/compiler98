@@ -18,6 +18,7 @@ import IExtract
 import Info hiding (TokenId)
 import PreImp(HideDeclIds,HideDeclType,HideDeclData,HideDeclDataPrim
              ,HideDeclClass,HideDeclInstance,HideDeclVarsType)
+import Maybe
 
 
 -- internal, fully coalesced import declaration

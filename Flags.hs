@@ -76,9 +76,10 @@ module Flags
   ) where
 
 import IO
-import OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
-import List(isPrefixOf)
+import Util.OsOnly(fixRootDir,fixTypeFile,fixObjectFile)
 import Char(isDigit)
+import System.FilePath
+import Util.Text
 
 
 data Flags = FF 

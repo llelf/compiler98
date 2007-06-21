@@ -12,11 +12,11 @@ module GcodeLow
 	) where
 
 import Gcode
-import Extra(strStr,splitIntegral,SplitIntegral(..))
+import Util.Extra(strStr,splitIntegral,SplitIntegral(..))
 import IntState(strIS,dummyIntState)
 import Prim(strPrim)
 import Machine
-import SysDeps(isAlphaNum)
+import Char(isAlphaNum)
 
 extra = 4::Int	-- make room for largest profile info
 

@@ -1,11 +1,11 @@
-module DeriveOrd(deriveOrd) where
+module Derive.Ord(deriveOrd) where
 
 import Syntax
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(t_fromEnum,tTrue,tOrd,t_equalequal,t_lessthan,t_lessequal,tcompare,tLT,tEQ,tGT,t_andand,t_pipepipe)
 
 deriveOrd tidFun cls typ tvs ctxs pos =

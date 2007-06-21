@@ -6,7 +6,7 @@ module PreImp where
 import ImportState(ImportState)
 import TokenId(TokenId)
 import Syntax(Simple,Type,Context,Constr)
-import Extra(Pos)
+import Util.Extra(Pos)
 
 type HideDeclType = ImportState
                     -> (Int,Bool)		-- depth annotation

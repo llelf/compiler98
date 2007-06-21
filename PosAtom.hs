@@ -1,12 +1,14 @@
 module PosAtom(posAtom) where
 
 import IntState
+import Id
 import PosCode -- hiding (isPosAtom)
 import State
 import TokenId(tidPos,tunknown)
-import Extra(dropJust,unionSet,removeSet,pair)
+import Util.Extra(unionSet,removeSet,pair)
 import TokenId(visible)
 import SyntaxPos
+import Maybe
 
 -- isPosAtom x = True -- A (not so) small lie
 

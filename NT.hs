@@ -6,8 +6,8 @@ module NT ( NT(..), NewType(..), Kind(..)
 	) where
 
 
-import Id(Id)
-import Extra(mixComma,mixSpace,mix)
+import Id(Id, strTVar)
+import Util.Extra(mixComma,mixSpace,mix)
 import Char
 
 infixr 5 :->:

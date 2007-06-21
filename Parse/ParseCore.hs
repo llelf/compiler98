@@ -1,4 +1,5 @@
-module ParseCore(Pos,ParseError,ParseResult,ParseBad,ParseGood,Parser
+module Parse.ParseCore(
+               Pos,ParseError,ParseResult,ParseBad,ParseGood,Parser
                ,initError,initBad,initGood      -- Start values for parseError,parseBad, parseGood
 	       ,parseit				-- entry for parsing
                ,parse,ap,chk,orelse,into        -- The core
@@ -7,7 +8,7 @@ module ParseCore(Pos,ParseError,ParseResult,ParseBad,ParseGood,Parser
                ,maxError                        -- Keep "best" error message
                ) where
 
-import Extra(noPos,Pos)
+import Util.Extra(noPos,Pos)
 
 infixl 5 `ap`
 infixl 5 `chk`

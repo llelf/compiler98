@@ -21,10 +21,11 @@ import State
 import NT
 import Id
 import Extract   (type2NT)
-import TypeSubst (substNT)
-import Extra     (snub,dropJust)
+import Type.Subst(substNT)
+import Util.Extra     (snub)
 import IExtract  (freeType)
 import SysDeps  (packString,unpackPS)
+import Maybe
 
 type FFIMonad a = State In Out a Out
 type In  = ((TokenId,IdKind) -> Id)      -- lookup fn

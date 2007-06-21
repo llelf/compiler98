@@ -1,4 +1,7 @@
-module MergeSort(group,unique) where
+{-|
+    Sort like functions, should be moved and removed
+-}
+module Util.MergeSort(group,unique) where
 
 import List(sort)
 

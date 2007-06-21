@@ -16,10 +16,8 @@ import Debug.Trace (trace)
 import IOExts      (trace)
 #endif
 
-#if defined(__HASKELL98__)
-import Char        (isAlphaNum)
-#else
-import Char        (isAlphanum)
+import System.IO
+import System.Info
 
 isAlphaNum :: Char -> Bool
 isAlphaNum = isAlphanum

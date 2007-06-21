@@ -16,7 +16,7 @@ import TokenId
 import TokenInt
 import Flags(Flags)
 import SyntaxPos
-import Extra
+import Util.Extra
 import SyntaxUtil(infixFun)
 
 import Overlap(Overlap)

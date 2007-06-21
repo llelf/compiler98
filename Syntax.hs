@@ -1,11 +1,12 @@
 module Syntax(module Syntax, Pos, TokenId) where
 
-import Extra(Pos,strChr,strStr)
+import Util.Extra(Pos,strChr,strStr)
 import SysDeps(PackedString)
 import TokenId(TokenId)
 import Id(Id)
 import Ratio
 import Maybe(isNothing,fromJust)
+import NT
 
 {-
 Note that some syntactic constructs contain the syntactic construct 

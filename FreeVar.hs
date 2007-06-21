@@ -1,8 +1,10 @@
 module FreeVar(freeVar) where
 
+import Id
 import State
 import PosCode
-import Extra(singletonSet,emptySet,unionSet,removeSet,noPos,pair,dropJust)
+import Util.Extra(singletonSet,emptySet,unionSet,removeSet,noPos,pair)
+import Maybe
 import IntState
 --------- ===========
 

@@ -9,6 +9,7 @@ import AssocTree
 import CaseLib
 import SyntaxPos
 import SyntaxUtil
+import Id
 
 alt2fun :: Alt Int -> Fun Int
 alt2fun (Alt pat gdexps decls) = Fun [pat] gdexps decls

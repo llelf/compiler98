@@ -1,11 +1,11 @@
-module DeriveEval(deriveEval) where
+module Derive.Eval(deriveEval) where
 
 import Syntax
 import IntState
 import IdKind
 import NT
 import State
-import DeriveLib
+import Derive.Lib
 import TokenId(TokenId)
 
 deriveEval tidFun cls typ tvs ctxs pos =

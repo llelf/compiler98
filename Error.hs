@@ -1,6 +1,7 @@
 module Error where
 
 import List
+import Char
 import IO
 import System
 

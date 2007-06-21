@@ -1,9 +1,9 @@
-module LexStr(tab,lexStr,lexChr) where
+module Parse.LexStr(tab,lexStr,lexChr) where
 
 import Char
 
 import Error(errorLC)
-import LexLow
+import Parse.LexLow
 
 tab :: Int -> Int
 tab l = (m*8+1) where m = (l+7)`div`8

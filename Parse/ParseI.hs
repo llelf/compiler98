@@ -1,4 +1,5 @@
-module ParseI ( ParseI(..)
+module Parse.ParseI (
+                ParseI(..)
               , parseInterface1
               , parseInterface2
               , parseInterface3
@@ -6,14 +7,14 @@ module ParseI ( ParseI(..)
               , parseUntilNeed
               ) where
 
-import Extra(pair,triple)
-import Lex
-import Lexical
+import Util.Extra(pair,triple)
+import Parse.Lex
+import Parse.Lexical
 import Syntax
 --import MkSyntax(mkDeclClass)
-import ParseLib
-import ParseLex
-import Parse2
+import Parse.ParseLib
+import Parse.ParseLex
+import Parse.Parse2
 import TokenId(tNEED,tinterface)
 import PreImp
 import ImportState(ImportState)

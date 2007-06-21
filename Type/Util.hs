@@ -1,10 +1,11 @@
-module TypeUtil (cvi2typedict, ntIS, unboxedIS)  where
+module Type.Util (cvi2typedict, ntIS, unboxedIS)  where
 
+import Id
 import NT
-import TypeSubst
-import TypeData
+import Type.Subst
+import Type.Data
 import IntState
-import Extra(assocDef,snub)
+import Util.Extra(assocDef,snub)
 
 -- ntIS returns NoType if identifier doesn't exist
 

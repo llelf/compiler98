@@ -3,8 +3,10 @@ Convert STG-code into a string for readable output.
 -}
 module StrPos(strPCode,strPExp) where
 
-import Extra(mixLine,mixSpace)
+import Util.Extra(mixLine,mixSpace,mix)
 import PosCode
+import Id
+import Char
 #if defined(__HBC__)
 import ForeignCode -- for ImpExp's Show instance
 import Syntax  -- for CallConv's Show instance

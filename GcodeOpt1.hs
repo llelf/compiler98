@@ -3,9 +3,10 @@ module GcodeOpt1(gcodeOpt1) where
 import Gcode
 import GcodeLow(gcodeStack,primStack)
 import AssocTree
-import Extra
+import Util.Extra
 import IntState
 import Prim
+import Maybe
 
 gcodeOpt1 state gcode = (fixOne state gcode,state)
 
