@@ -3,12 +3,22 @@ import os
 Import("env")
 Import("hsenv")
 
+badEnding = ["NplusK.hs","XML.hs","Setup.hs"
+            ,"GcodeFix.hs","GcodeLowC.hs","GcodeMem.hs","GcodeOpt1.hs"
+            ,"GcodeOpt2.hs","GcodeRel.hs","GcodeSpec.hs","MainNhc98.hs"
+            ,"_darcs","hugs","Floats.hs","Core" + os.sep + "Reduce.hs"]
+
 yhcfiles = []
 for root, dir, files in list(os.walk(".")):
     for f in files:
-        if f.endswith("NplusK.hs") or f.endswith("XML.hs") or f.endswith("Setup.hs") or (root+os.sep+f).endswith("Core" + os.sep + "Reduce.hs"):
+        skip = False
+        for i in badEnding:
+            if (root+os.sep+f).find(i) != -1:
+                skip = True
+
+        if skip:
             pass
-        elif f.endswith("Main.hs"):
+        elif f.endswith("MainYhc.hs"):
             yhcfiles.append(hsenv.HaskellObject(root + os.sep + f, HSFLAGS=["""-cpp -DyhcVERSION=\\"%s\\" """ % (env["ENV"]["VERSION"], )]))
         elif f.endswith(".hs") or f.endswith(".lhs"):
             yhcfiles.append(hsenv.HaskellObject(root + os.sep + f))
