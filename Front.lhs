@@ -147,5 +147,5 @@ front is the proper front end of the compiler.
 > cpphs flags filename contents = return $ runCpphs opts filename contents
 >       where
 >           opts = defaultCpphsOptions {defines = macros,
->                   boolopts = defaultBoolOptions{ansi=True, strip=True}}
+>                   boolopts = defaultBoolOptions{ansi=True, strip=False}}
 >           macros = [("__HASKELL__","98"), ("__HASKELL_98__", "1"), ("__HASKELL98__", "1"), ("__YHC__", "1")]
