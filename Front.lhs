@@ -39,6 +39,7 @@ There are two public items
 > import TokenId
 > import Language.Preprocessor.Cpphs
 > import System.FilePath
+> import System.Console.GetOpt
 
 FrontData is the data returns by the front end
 FIXME: unsure about some things here ...

@@ -13,6 +13,7 @@ module Flags
   , pF
   , printUsage
   , getFileFlags
+  , allOpts
   , calcRootPath
   ) where
 
