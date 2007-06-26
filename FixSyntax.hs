@@ -314,8 +314,9 @@ fsExp' k (ExpApplication pos (econ@(ExpCon cpos con):xs)) =
     else
       mapS (fsExp k) xs >>>= \ xs ->
       fsExpAppl pos xs
-      -- ^ Can be an application if newtype is isomorphic to a function type
-      -- ^ No! \[x] -> unitS x should do, but that doesn't matter.
+      -- ABOVE
+      -- Can be an application if newtype is isomorphic to a function type
+      -- No! \[x] -> unitS x should do, but that doesn't matter.
 
 ---
 --- Nothing to do

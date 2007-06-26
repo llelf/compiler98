@@ -411,7 +411,7 @@ joinInsts inst inst' =
 {- | Determine constructors of a type from the info of the type -}
 constrsI :: Info -> [Id]
 constrsI (InfoName  unique tid i ptid _) = [unique]   --PHtprof
-  -- ^this is a lie! but it is consistent with belongstoI :-)
+  -- ABOVE: this is a lie! but it is consistent with belongstoI :-)
 constrsI (InfoData   unique tid exp nt dk) =
       case dk of
         (DataTypeSynonym unboxed depth) ->  
@@ -521,7 +521,7 @@ belongstoI (InfoIMethod  unique tid nt annot iMethod)       = iMethod
 belongstoI (InfoDMethod  unique tid nt annot iClass)        = iClass
 belongstoI (InfoInstance unique mrs nt iClass)              = iClass
 belongstoI (InfoName  unique tid i ptid _)                  = unique  --PHtprof
-  -- ^this is a lie! but it is consistent with constrsI :-)
+  -- ABOVE: this is a lie! but it is consistent with constrsI :-)
 belongstoI info =  error ("belongstoI " ++ show info)
 
 

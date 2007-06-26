@@ -7,10 +7,10 @@ import Util.Extra(mixLine,mixSpace,mix)
 import PosCode
 import Id
 import Char
--- #if defined(__HBC__)
+-- \#if defined(__HBC__)
 -- import ForeignCode -- for ImpExp's Show instance
 -- import Syntax  -- for CallConv's Show instance
--- #endif
+-- \#endif
 
 strPCode :: Show a => (Id -> String,Id -> a) -> [(Id,PosLambda)] -> [Char]
 strPCode p code = mixLine (map (strPBinding p "") code)

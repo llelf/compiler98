@@ -133,7 +133,7 @@ gExp exp@(PosExpThunk _ _ (tag@(PosCon _ v):args)) = -- Should evaluate strict a
   stgExpPush exp
 
 gExp exp@(PosExpThunk _ _ (tag@(PosVar _ v):args)) =
--- #ifdef DBGTRANS
+-- \#ifdef DBGTRANS
 --  gState >>>= \state ->
 --  let vid = tidIS state v in
 --  if False {-vid `elem` [t_ap n | n <- [1..10]]-} then 
@@ -147,9 +147,9 @@ gExp exp@(PosExpThunk _ _ (tag@(PosVar _ v):args)) =
 --	      ++ map HEAP (reverse [1..length args]) ++ [SLIDE (length args)])
 --  else
 --      stgExpPush exp
---  #else
+--  \#else
   stgExpPush exp
--- #endif
+-- \#endif
 
 gExp atom =
   gAtom atom
@@ -191,9 +191,9 @@ gAtom (PosInt pos i) = incDepth >>> unitS [PUSH_INT i]
 gAtom (PosChar pos i) = incDepth >>> unitS [PUSH_CHAR i]
 gAtom (PosFloat pos f) = incDepth >>> unitS [PUSH_FLOAT f]
 gAtom (PosDouble pos d) = incDepth >>> unitS [PUSH_DOUBLE d]
--- #ifdef DBGTRANS
+-- \#ifdef DBGTRANS
 -- gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INT (fromInteger i)]
--- #else
+-- \#else
 gAtom (PosInteger pos i) = incDepth >>> unitS [PUSH_INTEGER i]
--- #endif
+-- \#endif
 gAtom atom = stgExpPush atom

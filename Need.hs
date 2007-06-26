@@ -414,10 +414,10 @@ bindDecls (DeclsParse decls)   = mapR bindDecl decls
 bindDecl :: Decl TokenId -> Reduce NeedLib NeedLib
 
 bindDecl (DeclType (Simple pos tid posidents) typ) =  unitR 
-  -- ^ bindTid TSyn tid
+  -- ABOVE: bindTid TSyn tid
 bindDecl (DeclDataPrim pos tid size) = unitR -- bindTid TCon tid
 bindDecl (DeclData b ctxs (Simple pos tid posidents) constrs _) = unitR 
-  -- ^ bindTid TCon tid >>> mapR bindConstr constrs
+  -- ABOVE: bindTid TCon tid >>> mapR bindConstr constrs
 bindDecl (DeclClass pos tctxs tClass tTVars fundeps (DeclsParse decls)) = 
   bindTid TClass tClass >>> mapR bindClass decls
 bindDecl (DeclInstance pos ctxs tClass inst (DeclsParse decls)) = unitR
@@ -429,7 +429,7 @@ bindDecl (DeclPat (Alt pat@(ExpInfixList pos pats) _ _)) =
         [] -> bindPat pat
         _ -> error (show pos ++ ": (n+k) patterns are not supported\n")
 bindDecl (DeclPat (Alt pat gdexps decls)) = bindPat pat  
-  -- ^ Also generate need for constructors
+  -- ABOVE: Also generate need for constructors
 bindDecl (DeclPrimitive pos tid arity t) = bindTid Var tid
 bindDecl (DeclForeignImp pos _ _ tid arity cast t _) = bindTid Var tid
 bindDecl (DeclForeignExp pos _ _ tid t) = unitR

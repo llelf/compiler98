@@ -111,11 +111,11 @@ buildExp pu (PosInt pos i) = oneHeap True pu (HEAP_INT i)
 buildExp pu (PosChar pos i) = oneHeap True pu (HEAP_CHAR i)
 buildExp pu (PosFloat pos f) = oneHeap True pu (HEAP_FLOAT f )
 buildExp pu (PosDouble pos d) = oneHeap True pu (HEAP_DOUBLE d)
--- #ifdef DBGTRANS
+-- \#ifdef DBGTRANS
 -- buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INT (fromInteger i))
--- #else
+-- \#else
 buildExp pu (PosInteger pos i) = oneHeap True pu (HEAP_INTEGER i)
--- #endif
+-- \#endif
 buildExp pu (PosString pos s) = oneHeap False pu (HEAP_STRING s)
 buildExp pu (PosExpCase pos exp alts) =
   error ("buildExp Case " ++ strPos pos)
