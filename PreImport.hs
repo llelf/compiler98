@@ -6,7 +6,8 @@ module PreImport (HideDeclIds,qualRename,preImport) where
 import List(nub,intersect,(\\))
 import TokenId(TokenId(..),tPrelude,tNHCInternal,tYHCDynamic
                 ,t_Arrow,ensureM,forceM,dropM
-                ,rpsPrelude,t_List,isTidCon)
+                ,rpsPrelude,t_List,isTidCon
+                ,tRatioMod,visRatio,visRational,visRatioCon)
 import SysDeps(PackedString,packString)
 import Syntax hiding (TokenId)
 import IdKind
@@ -19,6 +20,7 @@ import Info hiding (TokenId)
 import PreImp(HideDeclIds,HideDeclType,HideDeclData,HideDeclDataPrim
              ,HideDeclClass,HideDeclInstance,HideDeclVarsType)
 import Maybe
+import Building(Compiler(..),compiler)
 
 
 -- | Internal, fully coalesced import declaration
@@ -168,12 +170,11 @@ transImport impdecls = impdecls'
   where
   impdecls' =  (reorder [] . {-sortImport .-} traverse Map.empty False)
                 (ImportQ (noPos,tNHCInternal) (Hiding [])
-                :ImportQ (noPos,vis "Data.Ratio") (NoHiding
-                                [EntityConClsAll noPos (vis "Rational")
-                                ,EntityConClsAll noPos (vis "Ratio")
-                                ,EntityVar noPos (vis "%") ])
+                :ImportQ (noPos,tRatioMod) (NoHiding
+                                [EntityConClsAll noPos visRational
+                                ,EntityConClsAll noPos visRatio
+                                ,EntityVar noPos visRatioCon ])
                 :impdecls)
-  vis = Visible . packString . reverse
 
   reorder p [] = p
   reorder p (m@(k,v):xs) | k==tPrelude     = reorder (m:p) xs

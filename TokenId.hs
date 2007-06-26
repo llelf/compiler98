@@ -236,6 +236,7 @@ tPrelude, tNHCInternal, tYHCDynamic :: TokenId
 tPrelude        = Visible rpsPrelude
 tHatHack        = Visible rpsHatHack
 tNHCInternal    = Visible rpsInternal
+tRatioMod       = Visible rpsRatio
 tYHCDynamic     = Visible rpsYhcDynamic
 
 t_underscore, t_Bang, tprefix, tqualified, thiding, tas, tinterface, tforall, tdot :: TokenId
@@ -403,6 +404,10 @@ tRational       = qualImpRat  "Rational"    -- Changed in Haskell 98
 tRatio          = qualImpRat  "Ratio"       -- Changed in Haskell 98
 tRatioCon | compiler==Nhc98 = qualImpRat  "%"     -- Changed in Haskell 98
           | compiler==Yhc   = qualImpRat  ":%"    -- not strictly correct
+visRational     = visImport  "Rational"    -- Changed in Haskell 98
+visRatio        = visImport  "Ratio"       -- Changed in Haskell 98
+visRatioCon | compiler==Nhc98 = visImport  "%"     -- Changed in Haskell 98
+            | compiler==Yhc   = visImport  ":%"    -- not strictly correct
 tPRIMITIVE      = visImport "PRIMITIVE"
 tNEED           = visImport "NEED"
 t_primitive     = visImport "primitive"

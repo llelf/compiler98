@@ -8,6 +8,7 @@ import IO
 import SysDeps(PackedString,unpackPS)
 import Flags
 import Util.Extra
+import Util.OsOnly (isPrelude,fixImportNames)
 import TokenId(TokenId(..),extractV)
 import Parse.ParseCore(parseit)
 import Parse.ParseI
@@ -19,7 +20,8 @@ import IdKind(IdKind)
 import PreImp(HideDeclIds)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
-import Maybe(fromJust)
+import Maybe -- (fromJust)
+import Building(Compiler(..),compiler)
 
 
 {-
@@ -28,34 +30,32 @@ Returns unpacked module name, filename of interface file and its content.
 -}
 openImport :: Flags -> PackedString -> Map.Map String FilePath -> IO (String,String,String)
 
-openImport flags mrps hiDeps =
+openImport flags mrps hiDeps
+  | compiler==Yhc =
     do let fstr = hiFile
        finput <- tryReadFile "import" fstr
        if sImport flags 
           then hPutStr stderr ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n") 
           else return ()
        return (mstr, fstr, finput)             
-    where 
+
+  | compiler==Nhc98 =
+    catch (do
+             (fstr,finput) <- readFirst filenames 
+             if sImport flags 
+               then hPutStr stderr 
+                      ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n")
+               else return ()
+             return (mstr,fstr,finput))
+          (\ err -> ioError (userError (can'tOpenStr mstr filenames err)))
+  where
+    isUnix = sUnix flags
+    preludes = sPreludes flags
+    includes = sIncludes flags ++ preludes
     mstr = (reverse . unpackPS)  mrps
     hiFile = fromJust (Map.lookup mstr hiDeps)
-{-
- catch (do
-         (fstr,finput) <- readFirst filenames 
-         if sImport flags 
-           then hPutStr stderr 
-                  ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n") 
-           else return ()
-         return (mstr,fstr,finput))
-       (\ err -> ioError (userError (can'tOpenStr mstr filenames err)))
-  where
-  isUnix = sUnix flags
-  preludes = sPreludes flags
-  includes = sIncludes flags ++ preludes
-  mstr = (reverse . unpackPS)  mrps
-  filenames = fixImportNames isUnix (sHiSuffix flags) mstr 
-                (if isPrelude mstr then preludes else includes) 
--}
-
+    filenames = fixImportNames isUnix (sHiSuffix flags) mstr 
+                               (if isPrelude mstr then preludes else includes) 
 
 {-
 Read and process the interface file of one imported module.
