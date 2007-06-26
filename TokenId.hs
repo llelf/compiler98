@@ -10,6 +10,7 @@ module TokenId(module TokenId) where
 import Char(isUpper)
 import Util.Extra(Pos,strPos)
 import SysDeps(PackedString, unpackPS, packString, trace)
+import Building (Compiler(..),compiler)
 
 -- * 'TokenId' and functions
 
@@ -178,12 +179,11 @@ add2M :: String -> TokenId -> TokenId
 add2M str (Qualified m v) =
   Qualified (packString (reverse str ++ unpackPS m)) v
 
-visImport, qualImpPrel, qualImpNHC, qualImpYHC, qualImpBin, qualImpRat, qualImpIx, qualImpFFI :: String -> TokenId
+visImport, qualImpPrel, qualImpNHC, qualImpBin, qualImpRat, qualImpIx, qualImpFFI :: String -> TokenId
 qualImpPS, qualImpPrim, qualImpDyn                                                :: String -> TokenId
 visImport = Visible . packString . reverse
 qualImpPrel = Qualified rpsPrelude . packString . reverse
-qualImpNHC = Qualified rpsInternalN . packString . reverse
-qualImpYHC = Qualified rpsInternalY . packString . reverse
+qualImpNHC = Qualified rpsInternal . packString . reverse
 qualImpBin = Qualified rpsBinary  . packString . reverse
 qualImpRat = Qualified rpsRatio   . packString . reverse
 qualImpIx  = Qualified rpsIx      . packString . reverse
@@ -200,15 +200,19 @@ qualImpFFIBC mod it =
                  (packString $ reverse it)
 
 
-rpsPrelude, rpsInternalN, rpsInternalY, rpsRatio, rpsIx, rpsFFI, rpsPS, rpsBinary, rpsPrimitive, rpsYhcDynamic
+rpsPrelude, rpsInternal, rpsRatio, rpsIx, rpsFFI, rpsPS, rpsBinary, rpsPrimitive, rpsYhcDynamic
     :: PackedString
 rpsPrelude      = (packString . reverse ) "Prelude"
-rpsInternalN    = (packString . reverse ) "NHC.Internal"
-rpsInternalY    = (packString . reverse ) "YHC.Internal"
-rpsRatio        = (packString . reverse ) "Data.Ratio"
-rpsIx           = (packString . reverse ) "Data.Ix"
-rpsFFI          = (packString . reverse ) "Foreign"
-rpsPS           = (packString . reverse ) "NHC.PackedString"
+rpsInternal | compiler==Nhc98  = (packString . reverse ) "NHC.Internal"
+            | compiler==Yhc    = (packString . reverse ) "YHC.Internal"
+rpsRatio    | compiler==Nhc98  = (packString . reverse ) "Ratio"
+            | compiler==Yhc    = (packString . reverse ) "Data.Ratio"
+rpsIx       | compiler==Nhc98  = (packString . reverse ) "Ix"
+            | compiler==Yhc    = (packString . reverse ) "Data.Ix"
+rpsFFI      | compiler==Nhc98  = (packString . reverse ) "NHC.FFI"
+            | compiler==Yhc    = (packString . reverse ) "Foreign"
+rpsPS       | compiler==Nhc98  = (packString . reverse ) "NHC.PackedString"
+            | compiler==Yhc    = (packString . reverse ) "Data.PackedString"
 rpsIOE          = (packString . reverse ) "NHC.IOExtras"
 rpsBinary       = (packString . reverse ) "NHC.Binary"
 rpsHatHack      = (packString . reverse ) "Hat.Hack"
@@ -228,11 +232,10 @@ t_Tuple  size   = TupleId size
 tmain :: TokenId
 tmain = Qualified (packString (reverse "Main")) (packString (reverse "main"))
 
-tPrelude, tNHCInternal, tYHCInternal, tYHCDynamic :: TokenId
+tPrelude, tNHCInternal, tYHCDynamic :: TokenId
 tPrelude        = Visible rpsPrelude
 tHatHack        = Visible rpsHatHack
-tNHCInternal    = Visible rpsInternalN
-tYHCInternal    = Visible rpsInternalY
+tNHCInternal    = Visible rpsInternal
 tYHCDynamic     = Visible rpsYhcDynamic
 
 t_underscore, t_Bang, tprefix, tqualified, thiding, tas, tinterface, tforall, tdot :: TokenId
@@ -289,8 +292,7 @@ tTrue           = qualImpPrel  "True"
 tFalse          = qualImpPrel  "False"
 tunknown        = visImport    "Unknown.variable"
 terror          = qualImpPrel  "error"
-tnIO            = qualImpNHC   "IO"
-tIO             = qualImpYHC   "IO"
+tIO             = qualImpNHC   "IO"
 tBool           = qualImpPrel  "Bool"
 tFloatHash      = qualImpPrel  "Float#"
 tFloat          = qualImpPrel  "Float"
@@ -314,14 +316,10 @@ t_select	= qualImpPrel  "_select"
 t_patbindupdate = qualImpPrel  "_patbindupdate"
 t_callpatbindupdate = qualImpPrel  "_callpatbindupdate"
 tDialogue       = qualImpPrel  "Dialogue"
-tn_apply1       = qualImpNHC  "_apply1"
-tn_apply2       = qualImpNHC  "_apply2"
-tn_apply3       = qualImpNHC  "_apply3"
-tn_apply4       = qualImpNHC  "_apply4"
-t_apply1        = qualImpYHC  "_apply1"
-t_apply2        = qualImpYHC  "_apply2"
-t_apply3        = qualImpYHC  "_apply3"
-t_apply4        = qualImpYHC  "_apply4"
+t_apply1        = qualImpNHC  "_apply1"
+t_apply2        = qualImpNHC  "_apply2"
+t_apply3        = qualImpNHC  "_apply3"
+t_apply4        = qualImpNHC  "_apply4"
 t_used          = qualImpPrel  "used!"
 tInteger        = qualImpPrel  "Integer"
 tDouble         = qualImpPrel  "Double"
@@ -403,22 +401,19 @@ treadParen      = qualImpPrel  "readParen"
 tFractional     = qualImpPrel  "Fractional"
 tRational       = qualImpRat  "Rational"    -- Changed in Haskell 98
 tRatio          = qualImpRat  "Ratio"       -- Changed in Haskell 98
-tRatioCon       = qualImpRat  "%"           -- Changed in Haskell 98
+tRatioCon | compiler==Nhc98 = qualImpRat  "%"     -- Changed in Haskell 98
+          | compiler==Yhc   = qualImpRat  ":%"    -- not strictly correct
 tPRIMITIVE      = visImport "PRIMITIVE"
 tNEED           = visImport "NEED"
 t_primitive     = visImport "primitive"
 t_Lambda        = qualImpPrel  "\\"
-tn_eqInteger    = qualImpNHC  "_eqInteger"
-tn_eqDouble     = qualImpNHC  "_eqDouble"
-tn_eqFloat      = qualImpNHC  "_eqFloat"
-t_eqInteger     = qualImpYHC  "_eqInteger"
-t_eqDouble      = qualImpYHC  "_eqDouble"
-t_eqFloat       = qualImpYHC  "_eqFloat"
+t_eqInteger     = qualImpNHC  "_eqInteger"
+t_eqDouble      = qualImpNHC  "_eqDouble"
+t_eqFloat       = qualImpNHC  "_eqFloat"
 t_otherwise     = tTrue
 
 t_id :: TokenId
-tn_id           = qualImpNHC  "_id"
-t_id            = qualImpYHC  "_id"
+t_id            = qualImpNHC  "_id"
   -- identity function that is not modified by the tracing transformation
 
 
@@ -500,19 +495,17 @@ tWord32BC       = qualImpPrim  "Word32"
 tWord64BC       = qualImpPrim  "Word64"
 
 tunsafePerformIO :: TokenId
-tnunsafePerformIO= qualImpNHC  "unsafePerformIO"
-tunsafePerformIO= qualImpYHC  "unsafePerformIO"
+tunsafePerformIO= qualImpNHC  "unsafePerformIO"
 
 {- ** more FFI -}
 t_mkIOok :: Int -> TokenId
-tn_mkIOok n     = qualImpNHC  ("_mkIOok"++show (n::Int))
-t_mkIOok n      = qualImpYHC  ("_mkIOok"++show (n::Int))
+t_mkIOok n      = qualImpNHC  ("_mkIOok"++show (n::Int))
 
 {- ** YHC.Dynamic -}
 ttypeRep, tTyCon, tTyGeneric :: TokenId
-ttypeRep       = qualImpYHC "typeRep"
-tTyCon         = qualImpYHC "_tyCon"
-tTyGeneric     = qualImpYHC "_tyGen"
+ttypeRep       = qualImpNHC "typeRep"
+tTyCon         = qualImpNHC "_tyCon"
+tTyGeneric     = qualImpNHC "_tyGen"
 
 -- * Not hardcoded names
 -- | Is a certain character an operator

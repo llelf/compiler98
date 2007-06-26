@@ -13,6 +13,7 @@ import PosCode
 import SysDeps(PackedString,packString)
 import IdKind
 import Id(Id)
+import Building (Compiler(..),compiler)
 
 type PrimDown = ((Bool, Bool, Bool), Bool, Bool, Id)
 type PrimMonad a b = State PrimDown
@@ -365,8 +366,8 @@ rpsfromEnum = impRev "fromEnum"
 
 numPrim :: PackedString -> Maybe (PrimOp -> Prim)
 numPrim met =
-       if met == rpssignum then Just SIGNUM
-  else if met == rpsabs    then Just ABS
+       if met == rpssignum && compiler==Nhc98 then Just SIGNUM
+  else if met == rpsabs    && compiler==Nhc98 then Just ABS
   else if met == rpsnegate then Just NEG
   else if met == rpsadd    then Just ADD
   else if met == rpssub    then Just SUB
@@ -397,7 +398,8 @@ rpsrem  = impRev "rem"
 
 
 floatingPrim :: PackedString -> Maybe (PrimOp -> Prim)
-floatingPrim met =
+floatingPrim met | compiler==Yhc   = Nothing
+floatingPrim met | compiler==Nhc98 =
        if met == rpsexp  then Just EXP
   else if met == rpslog  then Just LOG
   else if met == rpssqrt then Just SQRT

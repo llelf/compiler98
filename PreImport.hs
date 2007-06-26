@@ -4,7 +4,7 @@
 module PreImport (HideDeclIds,qualRename,preImport) where
 
 import List(nub,intersect,(\\))
-import TokenId(TokenId(..),tPrelude,tYHCInternal,tYHCDynamic
+import TokenId(TokenId(..),tPrelude,tNHCInternal,tYHCDynamic
                 ,t_Arrow,ensureM,forceM,dropM
                 ,rpsPrelude,t_List,isTidCon)
 import SysDeps(PackedString,packString)
@@ -167,7 +167,7 @@ transImport :: [ImpDecl TokenId]
 transImport impdecls = impdecls'
   where
   impdecls' =  (reorder [] . {-sortImport .-} traverse Map.empty False)
-                (ImportQ (noPos,tYHCInternal) (Hiding [])
+                (ImportQ (noPos,tNHCInternal) (Hiding [])
                 :ImportQ (noPos,vis "Data.Ratio") (NoHiding
                                 [EntityConClsAll noPos (vis "Rational")
                                 ,EntityConClsAll noPos (vis "Ratio")
@@ -177,7 +177,7 @@ transImport impdecls = impdecls'
 
   reorder p [] = p
   reorder p (m@(k,v):xs) | k==tPrelude     = reorder (m:p) xs
-                         | k==tYHCInternal = reorder (m:p) xs
+                         | k==tNHCInternal = reorder (m:p) xs
                          | otherwise       = m: reorder p xs
 
 {-

@@ -14,6 +14,7 @@ import Id
 import IntState
 import TokenId
 import IdKind
+import Building (Compiler(..),compiler)
 --------- ===========
 
 data LiftDown =
@@ -184,26 +185,28 @@ liftAlt (PosAltInt pos int b     exp) =
 
 --------------------
 {-
-NOTE: the APPLY instruction in YHC works lazily anyway, so we don't need to bother lifting
-lazy applies.
+NOTE: the APPLY instruction in YHC works lazily anyway, so we don't
+      need to bother lifting lazy applications.
 -}
-liftApply (e:[]) = unitS e
-liftApply (e:es) = unitS (PosExpThunk (getPos e) False (e:es))
-
-
-liftApply (e1:[]) = unitS e1
-liftApply es@(e1:e2:[]) =
-  liftTidFun (t_apply1,Var) >>>= \ f ->
-  unitS (PosExpThunk (getPos e1) True (f:es))
-liftApply es@(e1:e2:e3:[]) =
-  liftTidFun (t_apply2,Var) >>>= \ f ->
-  unitS (PosExpThunk (getPos e1) True (f:es))
-liftApply es@(e1:e2:e3:e4:[]) =
-  liftTidFun (t_apply3,Var) >>>= \ f ->
-  unitS (PosExpThunk (getPos e1) True (f:es))
-liftApply    (e1:e2:e3:e4:e5:es) =
-  liftTidFun (t_apply4,Var) >>>= \ f ->
-  liftApply (PosExpThunk (getPos e1) True (f:e1:e2:e3:e4:e5:[]):es)
+liftApply | compiler==Yhc = lift
+  where
+    lift (e:[]) = unitS e
+    lift (e:es) = unitS (PosExpThunk (getPos e) False (e:es))
+listApply | compiler==Nhc98 = lift
+  where
+    lift (e1:[]) = unitS e1
+    lift es@(e1:e2:[]) =
+      liftTidFun (t_apply1,Var) >>>= \ f ->
+      unitS (PosExpThunk (getPos e1) True (f:es))
+    lift es@(e1:e2:e3:[]) =
+      liftTidFun (t_apply2,Var) >>>= \ f ->
+      unitS (PosExpThunk (getPos e1) True (f:es))
+    lift es@(e1:e2:e3:e4:[]) =
+      liftTidFun (t_apply3,Var) >>>= \ f ->
+      unitS (PosExpThunk (getPos e1) True (f:es))
+    lift    (e1:e2:e3:e4:e5:es) =
+      liftTidFun (t_apply4,Var) >>>= \ f ->
+      lift (PosExpThunk (getPos e1) True (f:e1:e2:e3:e4:e5:[]):es)
 
 
 

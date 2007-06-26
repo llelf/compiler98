@@ -282,7 +282,7 @@ Compile takes the data from the front end and does the rest of the compilation
 >      (mixLine (map show (Map.toList (getSymbolTable state))))
 >
 >   {- Core outputting -}
->   let importNames = [reverse $ unpackPS a | (a,b,c) <- imports, a /= rpsInternalY]
+>   let importNames = [reverse $ unpackPS a | (a,b,c) <- imports, a /= rpsInternal]
 >       core = makeCore importNames state zcon decls
 >   pF (sShowCore flags) "Human Readable Core" (show core)
 >   when (sGenCore flags) $ do
