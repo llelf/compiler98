@@ -1,24 +1,12 @@
 include Makefile.inc
 
 OBJDIR = ${BUILDDIR}/obj/compiler98
+OBJDIRS = ${OBJDIR}/Derive ${OBJDIR}/Parse ${OBJDIR}/Type ${OBJDIR}/Util
 TARGET = ${DST}/nhc98comp${EXE}
 
 SRCS = \
 	AssocTree.hs \
 	Bind.hs \
-	ByteCode/Analysis.hs \
-	ByteCode/ByteCode.hs \
-	ByteCode/Compile.hs \
-	ByteCode/CompileLib.hs \
-	ByteCode/Flatten.hs \
-	ByteCode/Graph.hs \
-	ByteCode/Metric.hs \
-	ByteCode/Peep.hs \
-	ByteCode/Relative.hs \
-	ByteCode/Show.hs \
-	ByteCode/Type.hs \
-	ByteCode/Wrap.hs \
-	ByteCode/Write.hs \
 	Case.hs \
 	CaseHelp.hs \
 	CaseLib.hs \
@@ -134,6 +122,19 @@ SRCS = \
 	Util/Text.hs \
 
 USED_IN_YHC = \
+	ByteCode/Analysis.hs \
+	ByteCode/ByteCode.hs \
+	ByteCode/Compile.hs \
+	ByteCode/CompileLib.hs \
+	ByteCode/Flatten.hs \
+	ByteCode/Graph.hs \
+	ByteCode/Metric.hs \
+	ByteCode/Peep.hs \
+	ByteCode/Relative.hs \
+	ByteCode/Show.hs \
+	ByteCode/Type.hs \
+	ByteCode/Wrap.hs \
+	ByteCode/Write.hs \
 	Compile.lhs \
 	Core/Convert.hs \
 	Core/CoreType.hs \
@@ -176,10 +177,10 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 
 
 all: ${TARGET}
-objdir: ${OBJDIR}
+objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: #$(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNhc98.hs
-fromC: $(OBJDIR)
+fromC: $(OBJDIR) ${OBJDIRS}
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
 	$(STRIP) $(TARGET)
@@ -188,7 +189,7 @@ relink:
 	$(STRIP) $(TARGET)
 clean: cleanO cleanHi
 cleanO:
-	rm -f $(OBJDIR)/*.$O *.$O
+	rm -f $(OBJDIR)
 cleanHi:
 	rm -f *.hi
 cleanC:
@@ -202,13 +203,13 @@ realclean: clean cleanC
 #	mv a.out $(TARGET)
 #	$(STRIP) $(TARGET)
 #else
-$(TARGET): ${OBJDIR} $(OBJDIR)/$(BASECOMP) $(SRCS)
-	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNhc98
+$(TARGET): ${OBJDIR} ${OBJDIRS} $(OBJDIR)/$(BASECOMP) $(SRCS)
+	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNhc98 -package filepath
 	mv $(OBJDIR)/MainNhc98$(EXE) $(TARGET)
 	$(STRIP) $(TARGET)
 #endif
-${OBJDIR}:
-	mkdir -p ${OBJDIR}
+${OBJDIR} ${OBJDIRS}:
+	mkdir -p $@
 $(OBJDIR)/$(BASECOMP):
 	rm -f $(OBJDIR)/nhc98 $(OBJDIR)/hbc $(OBJDIR)/ghc*
 	#$(MAKE) cleanC
