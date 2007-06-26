@@ -547,10 +547,11 @@ processArgs :: [String] -> Flags
 processArgs ss = 
     let (funs, nonopts, errors) = getOpt Permute allOpts ss
     in (if not (null errors) then
-           error ("Could not parse cmd-line options:"++unlines errors)
-        else if not (null nonopts) then
-           warning ("unrecognised options:"++unlines nonopts)
-        else id
+           error ("Could not parse cmd-line options: "++unlines errors)
+        else if length nonopts /= 1 then
+           warning ("ignoring extra options or files:\n"
+                    ++unlines (tail nonopts))
+        else (\f-> f{sRootFile=head nonopts})
        ) (foldr ($) defaultFlags funs)
 
 
