@@ -114,7 +114,7 @@ main = do
 
 main' args = do
   let flags = processArgs args
-  let filename = sRootFile flags
+  let filename = head (sFileArgs flags)
   let fileflags = getFileFlags flags filename "Unknown"
 
 

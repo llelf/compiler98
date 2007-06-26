@@ -45,28 +45,38 @@ instance Show FileFlags where
                         "wrapFile = "++sWrapFile ff]
 
 getFileFlags :: Flags -> FilePath -> String -> FileFlags
-getFileFlags flags sourcefile modname = res
-    where
-    res = FileFF sourcefile modname typefile objfile corefile wrapfile
-    
+getFileFlags flags sourcefile modname | compiler==Yhc =
+    FileFF sourcefile modname typefile objfile corefile wrapfile
+  where
     typefile = fileForModule (sTypeDst flags) "hi"
-    objfile = fileForModule (sObjectDst flags) (if compiler==Yhc then "hbc"
-                                                                 else "hc")
+    objfile = fileForModule (sObjectDst flags) "hbc"
     corefile = fileForModule (sObjectDst flags) "ycr"
     wrapfile = fileForModule (sWrapDst flags) "c"
-
     -- if modname == "Main" that means that the file may not be "Main", but could be something else
     name = if modname == "Main" then takeBaseName sourcefile else modname
-
-    hidden = sHideObj flags
     rootPath = calcRootPath sourcefile modname
-    
     fileForModule root ext =
-            if hidden then
+            if sHideObj flags then
                 addExtension (combine rootPath (joinPath [ext, name])) ext
             else
                 replaceExtension (combine (rootPath </> root)
                                           (joinPath $ splitList "." name)) ext
+
+getFileFlags flags sourcefile modname | compiler==Nhc98 =
+    case sFileArgs flags of
+      [source] -> FileFF source modname (hiFile source) (hcFile source)
+                                       (core source)   undefined
+      [source,hi,hc]
+                   -> FileFF source modname hi hc (core source) undefined
+      [realfile,source,hi,hc]
+                   -> FileFF realfile modname hi hc (core source) undefined
+      _ -> error (printUsage undefined)
+  where
+    hiFile f = let (rootdir,file) = fixRootDir (sUnix flags) f
+               in fixTypeFile (sUnix flags) rootdir file
+    hcFile f = let (rootdir,file) = fixRootDir (sUnix flags) f
+               in fixObjectFile (sUnix flags) rootdir file
+    core f   = f++".ycr"
 
 
 -- | Figure out how far up the directory tree you have to go to get the root
@@ -82,6 +92,7 @@ calcRootPath filename modname = joinPath $ take tsize orig
 {- Flags are flags that apply to every file -}
 data Flags = FF 
   {sRootFile   :: String	-- full path to root source code
+  ,sFileArgs   :: [String]	-- all filenames given on commandline
   ,sIncludes   :: [String]
   ,sPreludes   :: [String]
   ,sBasePath   :: String
@@ -197,6 +208,7 @@ data Flags = FF
 {- Default values for flags -}
 defaultFlags = FF 
   {sRootFile   = ""
+  ,sFileArgs   = []
   ,sIncludes   = []
   ,sPreludes   = []
   ,sBasePath   = ""
@@ -374,11 +386,11 @@ allOpts =
            (NoArg (\f -> f{sLib=True}))
            "Compiling a lib, don't complain if importing modules with \
           \ names that differ from their filename."
---  Option ""  ["part"]
---         (NoArg (\f -> f{sPart=True}))
---                "Compiling part of a lib, so don't complain if module \
---                \ name differs from file name and don't create profiling \
---                \ information for this module")
+  , Option ""  ["part"]
+           (NoArg (\f -> f{sPart=True}))
+                  "Compiling part of a lib, so don't complain if module \
+                  \ name differs from file name and don't create profiling \
+                  \ information for this module"
   , Option ""  ["unifyhack"]
            (NoArg (\f -> f{sUnifyHack=True}))
            "Enable nasty type hack needed to make the prelude compile"
@@ -548,10 +560,16 @@ processArgs ss =
     let (funs, nonopts, errors) = getOpt Permute allOpts ss
     in (if not (null errors) then
            error ("Could not parse cmd-line options: "++unlines errors)
-        else if length nonopts /= 1 then
+        else if compiler==Yhc && length nonopts /= 1 then
            warning ("ignoring extra options or files:\n"
                     ++unlines (tail nonopts))
-        else (\f-> f{sRootFile=head nonopts})
+        else if compiler==Nhc98 && length nonopts > 4 then
+           warning ("ignoring extra options or files:\n"
+                    ++unlines (drop 4 nonopts))
+        else if compiler==Yhc then
+           (\f-> f{sRootFile=head nonopts})
+        else
+           (\f-> f{sFileArgs=nonopts})
        ) (foldr ($) defaultFlags funs)
 
 
