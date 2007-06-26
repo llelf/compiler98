@@ -85,7 +85,8 @@ front is the proper front end of the compiler.
 >
 >   -- read any pragma's that might be around
 >   let pragmas = parsePragmas mainChar
->   flags <- return $ processMoreArgs flags (concatMap splitArgs pragmas)
+>   let (flagchanges, _, _) = getOpt Permute allOpts (concatMap words pragmas)
+>   flags <- return $ foldr ($) flags flagchanges
 >
 >   mainCpp       -- :: String -- The string after running cpphs (if necessary)
 >            <- if sCpp flags then cpphs flags filename mainChar else return mainChar
