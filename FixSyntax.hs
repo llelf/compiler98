@@ -89,17 +89,9 @@ fsFun  (Fun pats rhs decls) =
 
 fsRhs :: Rhs Id -> FSMonad (Rhs Id)
 fsRhs (Unguarded e) = fsExp False e >>>= \e -> unitS (Unguarded e)
---fsRhs (Guarded gdexps) =
---  mapS fsGdExp gdexps >>>= \gdexps -> unitS (Guarded gdexps)
 fsRhs (PatGuard gdexps) = 
   mapS fsPatGdExp gdexps >>>= \gdexps -> unitS (PatGuard gdexps)
-{-
-fsGdExp :: (Exp Id,Exp Id) -> FSMonad (Exp Id,Exp Id)
-fsGdExp (g,e) =
-  fsExp False g >>>= \ g ->
-  fsExp False e >>>= \ e ->
-  unitS (g,e)
--}
+
 fsPatGdExp :: ([Qual Id],Exp Id) -> FSMonad ([Qual Id],Exp Id)
 fsPatGdExp (qs,e) =
   mapS fsQual qs >>>= \ qs ->

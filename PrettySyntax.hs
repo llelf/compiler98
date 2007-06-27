@@ -748,22 +748,11 @@ ppAlt info delimiter (Alt pat rhs w) =
 ppRhs :: PPInfo a -> String -> Rhs a -> Doc
 ppRhs info delimiter (Unguarded exp) =
   space <> text delimiter <> dSpace <> ppExp info exp
---ppRhs info delimiter (Guarded [gd]) =
---  dSpace <> ppGdPat info delimiter gd
---ppRhs info delimiter (Guarded gds) =
---  encase line (map (ppGdPat info delimiter) gds)
 ppRhs info delimiter (PatGuard [gd]) =
   dSpace <> ppPatGdPat info delimiter gd
 ppRhs info delimiter (PatGuard gds) =
   encase line (map (ppPatGdPat info delimiter) gds)
    
-{-
-ppGdPat :: PPInfo a -> String -> (Exp a, Exp a) -> Doc
-ppGdPat info deli (e1,e2) =
-  groupNestS info $
-    text "| " <> ppExp info e1 <> space <> text deli <> dSpace <>
-    ppExp info e2
--}
 ppPatGdPat :: PPInfo a -> String -> ([Qual a], Exp a) -> Doc
 ppPatGdPat info deli (qs,e2) =
   groupNestS info $

@@ -185,9 +185,8 @@ funArity = length . \(Fun ps _ _) -> ps
 data Alt id = Alt  (Pat id) (Rhs id) (Decls id)
 
 data Rhs id = Unguarded (Exp id)
-        --  | Guarded [(Exp id,Exp id)]  -- the list has at least one element
-		-- don't need both Guarded and PatGuard.
             | PatGuard [([Qual id],Exp id)]
+			-- ^ the list has at least one element
 
 data Type id =
        TypeCons         Pos id [Type id]

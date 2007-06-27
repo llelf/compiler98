@@ -480,15 +480,9 @@ renameFun (Fun pats rhs decls') =
 
 renameRhs :: Rhs TokenId -> RenameMonad (Rhs Id)
 renameRhs (Unguarded exp) = unitS Unguarded =>>> renameExp exp
---renameRhs (Guarded gdExps) =
---  unitS Guarded =>>> mapS renameGuardedExp gdExps
 renameRhs (PatGuard gdExps) = 
   unitS PatGuard =>>> mapS renamePatGuardExp gdExps
-{-
-renameGuardedExp :: (Exp TokenId, Exp TokenId) -> RenameMonad (Exp Id, Exp Id)
-renameGuardedExp (guard,exp) =
-    unitS pair =>>> renameExp guard =>>> renameExp exp
--}
+
 renamePatGuardExp (quals,exp) =
     pushScope >>> renameQuals exp quals >>> popScope
 

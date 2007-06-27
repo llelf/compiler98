@@ -117,12 +117,8 @@ defPats p = snd (sPats p)
 
 
 sRhs (Unguarded exp) = sUnit Unguarded `sAdd` sExp exp
---sRhs (Guarded gdexps) = sUnit Guarded `sAdd` sMap sGdExp gdexps
 sRhs (PatGuard gdexps) = sUnit PatGuard `sAdd` sMap sPatGdExp gdexps
 
-
---sGdExp (e1,e2) =
---        sUnit pair `sAdd` sExp e1 `sAdd` sExp e2
 sPatGdExp (qs,e2) =
         sUnit pair `sAdd` sQuals qs `sAdd` sExp e2
 

@@ -272,25 +272,8 @@ fixFuns true (Fun _ rhs decls : rest) def =
 
 fixRhs :: Id -> Rhs Id -> CaseFun PosExp -> CaseFun PosExp
 fixRhs true (Unguarded e) def = unitS0 >>> caseExp e
---fixRhs true (Guarded gdexps) def = fixGdExp true gdexps def
 fixRhs true (PatGuard gdexps) def = fixPatGdExp true gdexps def
 
-{-
-fixGdExp :: Id -> [(ExpI,ExpI)] -> CaseFun PosExp -> CaseFun PosExp
-fixGdExp true [] def   = def
-fixGdExp true ((ExpApplication pos [x],e):r) def =
-  fixGdExp true ((x,e):r) def
-fixGdExp true ((ExpCon pos c,e):r) def | c == true =
-  (if null r then
-    unitS0
-   else
-    caseError ("Alternative at " ++ strPos (getPos r)
-               ++ " is hidden by alternative at " ++ strPos pos)) >>>
-    -- only a very trivial overlapping is noticed here
-  caseExp e
-fixGdExp true ((g,e):r) def =
-  unitS (PosExpIf noPos True) =>>> caseExp g =>>> caseExp e =>>> fixGdExp true r def
--}
 fixPatGdExp :: Id -> [([Qual Id],ExpI)] -> CaseFun PosExp -> CaseFun PosExp
 fixPatGdExp true [] def = def
 fixPatGdExp true ((qs,exp):r) def =
