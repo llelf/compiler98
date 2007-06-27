@@ -7,7 +7,7 @@ module Parse.ParseI (
               , parseUntilNeed
               ) where
 
-import Util.Extra(pair,triple)
+import Util.Extra(pair,triple,noPos)
 import Parse.Lex
 import Parse.Lexical
 import Syntax
@@ -15,9 +15,10 @@ import Syntax
 import Parse.ParseLib
 import Parse.ParseLex
 import Parse.Parse2
-import TokenId(tNEED,tinterface)
+import TokenId(tNEED,tinterface,tNHCInternal)
 import PreImp
 import ImportState(ImportState)
+import Building (Compiler(..),compiler)
 
 data ParseI st tid declneed rest =
           ParseEof  st
@@ -183,9 +184,13 @@ parseITopDecl st needs hideFuns =
                                   parse [])
                             `ap` (parse needs))
       , (L_instance, \pos ->
-                     hInstance hideFuns st `parseAp` aconid `chkCut` lit L_At 
+              if compiler==Yhc then
+                   hInstance hideFuns st `parseAp` aconid `chkCut` lit L_At
                                      `apCut` parseContexts
-                                     `apCut` aconid `apCut` some parseInst)
+                                     `apCut` aconid `apCut` some parseInst
+              else hInstance hideFuns st `parseAp` (parse (noPos,tNHCInternal))
+                                     `ap` parseContexts
+                                     `apCut` aconid `apCut` some parseInst )
       ]
       (hVarsType hideFuns st
            `parseAp` someSep comma (pair `parseAp` varid `ap` parseAnnotVar)

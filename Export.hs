@@ -17,6 +17,7 @@ import Nice
 import IExtract(defFixity)
 import Flags(Flags, sPrelude)
 import Maybe
+import Building (Compiler(..),compiler)
 
 --import NonStdProfile -- only for debugging the compiler
 profile a b = b
@@ -397,7 +398,7 @@ strExport modidl state (fixs,exps) =
       let al = mkAL free
           im = reverse $ unpackPS imrps
       in showString "instance " 
-         . showString im . showString " @ "
+         . ( if compiler==Yhc then showString im . showString " @ " else id )
          . showString (niceCtxs Nothing state al ctxs)
          . niceInt Nothing state iClass .  showChar ' '
          . showString (niceNT Nothing state al nt) 
