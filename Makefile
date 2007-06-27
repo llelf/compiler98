@@ -7,6 +7,7 @@ TARGET = ${DST}/nhc98comp${EXE}
 SRCS = \
 	AssocTree.hs \
 	Bind.hs \
+	Building.hs \
 	Case.hs \
 	CaseHelp.hs \
 	CaseLib.hs \
