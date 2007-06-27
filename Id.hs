@@ -21,11 +21,14 @@ module Id(Id, IdSupply(..), strId, strTVar) where
 import State
 
 
-newtype Id = Id Int deriving (Eq, Ord, Show)
+newtype Id = Id Int deriving (Eq, Ord)
 
 instance Enum Id where 
     toEnum n = Id n
     fromEnum (Id n) = n
+
+instance Show Id where
+    show = strId
 
 
 -- | Convert an 'Id' to a string suitable for use as a variable name
