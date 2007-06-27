@@ -274,11 +274,16 @@ tInt            = qualImpPrel  "Int"
 tIntHash        = qualImpPrel  "Int#"
 
 t_noMethodError, t_patternMatchFail, t_recConError, t_recSelError, t_recUpdError :: TokenId
-t_noMethodError = qualImpPrel "_noMethodError"
-t_patternMatchFail = qualImpPrel "_patternMatchFail"
-t_recConError = qualImpPrel "_recConError"
-t_recSelError = qualImpPrel "_recSelError"
-t_recUpdError = qualImpPrel "_recUpdError"
+t_noMethodError    | compiler==Yhc   = qualImpPrel "_noMethodError"
+                   | compiler==Nhc98 = qualImpNHC  "_noMethodError"
+t_patternMatchFail | compiler==Yhc   = qualImpPrel "_patternMatchFail"
+                   | compiler==Nhc98 = qualImpNHC  "_patternMatchFail"
+t_recConError      | compiler==Yhc   = qualImpPrel "_recConError"
+                   | compiler==Nhc98 = qualImpNHC  "_recConError"
+t_recSelError      | compiler==Yhc   = qualImpPrel "_recSelError"
+                   | compiler==Nhc98 = qualImpNHC  "_recSelError"
+t_recUpdError      | compiler==Yhc   = qualImpPrel "_recUpdError"
+                   | compiler==Nhc98 = qualImpNHC  "_recUpdError"
 
 t_Arrow, tString, t_filter, t_foldr, t_Colon, t_x, t_y, t_apply1                         :: TokenId
 t_apply2, t_apply3, t_apply4, tInteger, tDouble, tDoubleHash, tfromRational, t_fromEnum  :: TokenId
