@@ -530,14 +530,14 @@ typeUnifyBool :: Exp id -> NT -> TypeMonad NT
 typeUnifyBool g t =
   getIdent (tBool,TCon) >>>= \ tcon ->
   typeUnify (msgBool g) (mkNTcons tcon []) t
-
+{-
 typeGdExp :: (Exp Id, Exp Id) -> TypeMonad ((Exp Id, Exp Id), NT)
 typeGdExp (g,e) =
   typeExp g >>>= \(g,gT) ->
   typeUnifyBool g gT >>>= \_ ->
   typeExp e >>>= \(e,eT) ->
   unitS ((g,e),eT)
-
+-}
 typePatGdExp (qs,e) =
   mapS typeQual qs >>>= \ qs ->
   typeExp e >>>= \ (e,eT) ->
@@ -545,12 +545,14 @@ typePatGdExp (qs,e) =
 
 typeRhs :: Rhs Id -> TypeMonad (Rhs Id, NT)
 typeRhs (Unguarded e) = typeExp e >>>= \(e,eT) -> unitS (Unguarded e,eT)
+{-
 typeRhs (Guarded gdexps) =
   mapS typeGdExp gdexps >>>= \ gdexps ->
   case unzip gdexps of
    (gdexps,gdexpsT) ->
      typeUnifyMany (msgGdExps gdexps) gdexpsT >>>= \ t ->
      unitS (Guarded gdexps,t)
+-}
 typeRhs (PatGuard gdexps) =
   mapS typePatGdExp gdexps >>>= \ gdexps ->
   case unzip gdexps of

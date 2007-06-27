@@ -272,10 +272,10 @@ fixFuns true (Fun _ rhs decls : rest) def =
 
 fixRhs :: Id -> Rhs Id -> CaseFun PosExp -> CaseFun PosExp
 fixRhs true (Unguarded e) def = unitS0 >>> caseExp e
-fixRhs true (Guarded gdexps) def = fixGdExp true gdexps def
+--fixRhs true (Guarded gdexps) def = fixGdExp true gdexps def
 fixRhs true (PatGuard gdexps) def = fixPatGdExp true gdexps def
 
-
+{-
 fixGdExp :: Id -> [(ExpI,ExpI)] -> CaseFun PosExp -> CaseFun PosExp
 fixGdExp true [] def   = def
 fixGdExp true ((ExpApplication pos [x],e):r) def =
@@ -290,7 +290,7 @@ fixGdExp true ((ExpCon pos c,e):r) def | c == true =
   caseExp e
 fixGdExp true ((g,e):r) def =
   unitS (PosExpIf noPos True) =>>> caseExp g =>>> caseExp e =>>> fixGdExp true r def
-
+-}
 fixPatGdExp :: Id -> [([Qual Id],ExpI)] -> CaseFun PosExp -> CaseFun PosExp
 fixPatGdExp true [] def = def
 fixPatGdExp true ((qs,exp):r) def =
@@ -300,7 +300,7 @@ fixQuals [] good bad = caseExp good
 fixQuals (QualExp (ExpApplication pos [x]): r) good bad =
   fixQuals (QualExp x: r) good bad
 fixQuals (QualExp e: r) good bad =
-  unitS (PosExpIf noPos False) =>>> caseExp e =>>> fixQuals r good bad =>>> bad
+  unitS (PosExpIf noPos True) =>>> caseExp e =>>> fixQuals r good bad =>>> bad
 fixQuals (QualPatExp p e: r) good bad =
   caseUnique >>>= \ ipat ->
   let pos = getPos p

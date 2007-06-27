@@ -134,13 +134,13 @@ extractFun (Fun pats rhs decls) = extractRhs rhs >>> extractDecls decls
 
 extractRhs :: Rhs Id -> Reduce IntState IntState
 extractRhs (Unguarded exp) = extractExp exp
-extractRhs (Guarded gdExps) = mapR extractGuardedExp gdExps
+--extractRhs (Guarded gdExps) = mapR extractGuardedExp gdExps
 extractRhs (PatGuard gdExps) = mapR extractPatGuardExp gdExps
-
+{-
 extractGuardedExp :: (Exp Id,Exp Id) -> Reduce IntState IntState
 extractGuardedExp (guard,exp) =
   extractExp guard >>> extractExp exp
-
+-}
 extractPatGuardExp :: ([Qual Id],Exp Id) -> Reduce IntState IntState
 extractPatGuardExp (quals,exp) =
   mapR extractQual quals >>> extractExp exp

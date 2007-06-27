@@ -280,11 +280,11 @@ needFun (Fun pats rhs decls) =
 
 
 needRhs (Unguarded exp) = needExp exp
-needRhs (Guarded gdexps) = mapR needGdExp gdexps
+--needRhs (Guarded gdexps) = mapR needGdExp gdexps
 needRhs (PatGuard gdexps) = mapR needPatGdExp gdexps
 
 
-needGdExp (guard,exp) = needExp guard >>> needExp exp
+--needGdExp (guard,exp) = needExp guard >>> needExp exp
 needPatGdExp (quals,exp) = needQuals quals >>> needExp exp
 
 

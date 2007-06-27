@@ -47,8 +47,8 @@ instance HasPos (Fun a) where
 
 instance HasPos (Rhs a) where
     getPos (Unguarded e) = getPos e
-    getPos (Guarded gdes) = 
-      mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
+--  getPos (Guarded gdes) = 
+--    mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
     getPos (PatGuard gdes) = 
       mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
 
