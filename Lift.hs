@@ -188,12 +188,12 @@ liftAlt (PosAltInt pos int b     exp) =
 NOTE: the APPLY instruction in YHC works lazily anyway, so we don't
       need to bother lifting lazy applications.
 -}
-liftApply | compiler==Yhc = lift
+liftApply | compiler==Yhc   = liftY
+          | compiler==Nhc98 = lift
   where
-    lift (e:[]) = unitS e
-    lift (e:es) = unitS (PosExpThunk (getPos e) False (e:es))
-listApply | compiler==Nhc98 = lift
-  where
+    liftY (e:[]) = unitS e
+    liftY (e:es) = unitS (PosExpThunk (getPos e) False (e:es))
+
     lift (e1:[]) = unitS e1
     lift es@(e1:e2:[]) =
       liftTidFun (t_apply1,Var) >>>= \ f ->
