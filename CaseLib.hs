@@ -11,6 +11,7 @@ import IdKind
 import TokenId
 import NT
 import Info
+import Building
 
 type ExpI = Exp Id
 
@@ -71,13 +72,14 @@ caseTrue :: CaseFun ExpI
 caseTrue down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up = (expTrue,up)
 
 caseRatioCon :: CaseFun PosExp
-caseRatioCon down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,tidFun,stgUndef,strModid,translate) up@(state,t2s) =
-{- (%) is not a constructor, let's not make a mess by pretending it is 
- case addRatioCon tidFun state of
-   (ratioCon,state) -> (PosCon noPos ratioCon,(state,t2s))
--}
-    let expRatio = PosCon noPos (tidFun (tRatioCon, Con))
-    in (expRatio,up)
+caseRatioCon down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,tidFun,stgUndef,strModid,translate) up@(state,t2s)
+  | compiler==Nhc98 =
+      case addRatioCon tidFun state of
+          (ratioCon,state) -> (PosCon noPos ratioCon,(state,t2s))
+  | compiler==Yhc =
+  -- in Yhc (%) is not a constructor, let's not make a mess by pretending it is 
+      let expRatio = PosCon noPos (tidFun (tRatioCon, Con))
+      in (expRatio,up)
 
 caseUndef :: CaseFun PosExp
 caseUndef down@(expEqualNumEq,expEqInteger,expEqFloat,expEqDouble,expTrue,expList,expError,stgRatioCon,stgUndef,strModid,translate) up = (stgUndef,up)
