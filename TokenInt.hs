@@ -16,6 +16,7 @@ import qualified Data.Map as Map
 import Info
 import Id (Id)
 import Debug.Trace
+import Building
 
 {-
 Creates from a partial mapping from tokenIds and idKinds to ids
@@ -78,7 +79,8 @@ tokenAllways =  [(Var,t_undef)
                 ,(Var,t_apply1),(Var,t_apply2),(Var,t_apply3),(Var,t_apply4)
                 ,(Var,t_id),(Var,t_flip)
                 ,(Var,t_noMethodError),(Var,t_patternMatchFail),(Var,t_recConError)
-                ,(Var,t_recSelError),(Var,t_recConError),(Var,t_recUpdError)] ++ tokenDynamic
+                ,(Var,t_recSelError),(Var,t_recConError),(Var,t_recUpdError)]
+                ++ (if compiler==Yhc then tokenDynamic else [])
 tokenMonad =    [(Var,t_gtgt),(Var,t_gtgteq),(Var,tfail)]
 tokenBounded =  [(TClass,tBounded),(Var,tminBound),(Var,tmaxBound)]
 tokenEnum =     [(TClass,tEnum)
