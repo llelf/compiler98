@@ -4,6 +4,7 @@ import State
 import IntState
 import Id
 import PosCode
+import Building
 
 stgArity :: IntState -> [(Id,PosLambda)] -> ([(Id,PosLambda)],IntState)
 stgArity state code =
@@ -67,6 +68,9 @@ arityExp (PosExpApp pos es) = -- complicated function
 arityExp (PosExpThunk pos False es) = -- prim/con
   mapS arityExp es >>>= \ es ->
   unitS (PosExpThunk pos False es)
+arityExp (PosExpThunk pos True es) | compiler==Nhc98 = 
+  mapS arityExp es >>>= \ es ->
+  unitS (PosExpThunk pos True es)
 arityExp e = unitS e
 
 arityAlt (PosAltCon pos con args exp) =
