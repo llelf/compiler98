@@ -273,14 +273,14 @@ defaultFlags = FF
   ,sAtom       = False
   ,sFree       = False
   
-  -- | Yhc
+  -- Yhc
   ,sBcodeCompile = False
   ,sBcodeMem     = False
   ,sBcodeFlatten = False
   ,sBcodeWrapper = False
   ,sBcodeRel     = False
 
-  -- | nhc98
+  -- nhc98
   ,sGcode      = False
   ,sGcodeFix   = False
   ,sGcodeMem   = False
