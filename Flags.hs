@@ -410,9 +410,9 @@ allOpts =
            (NoArg (\f -> f{sAnsiC=True})) "Generate bytecode via ANSI-C"
   , Option ""  ["noansiC"]
            (NoArg (\f -> f{sAnsiC=False})) "Generate bytecode via assembler"
-  , Option ""  ["nplusk"]
+  , Option ""  ["nplusk","nkpat"]
            (NoArg (\f -> f{sNplusK=True})) "Allow (n+k) patterns"
-  , Option ""  ["nonplusk"]
+  , Option ""  ["nonplusk","nonkpat"]
            (NoArg (\f -> f{sNplusK=False})) "Disallow (n+k) patterns"
   , Option ""  ["underscore"]
            (NoArg (\f -> f{sUnderscore=True})) "H98 underscore-is-lower-case"
