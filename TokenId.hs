@@ -40,11 +40,14 @@ instance Show TokenId where
   showsPrec d (Qualified m n ) =
     showString (reverse (unpackPS m)) . showChar '.' .
     showString (reverse (unpackPS  n))
-  showsPrec d (Qualified2 m t1 t2) = showString (reverse (unpackPS m)) . showChar '.' .
-                                     shows t1 . showChar '.' . shows t2
+  showsPrec d (Qualified2 m t1 t2) =
+    ( if compiler==Yhc then (showString (reverse (unpackPS m)) . showChar '.')
+                       else id ) .
+    shows t1 . showChar '.' . shows t2
   showsPrec d (Qualified3 m t1 t2 t3) =
-    showString (reverse (unpackPS m)) . showChar '.' .
-    shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3
+    ( if compiler==Yhc then showString (reverse (unpackPS m)) . showChar '.'
+                       else id ) .
+    (shows t1 . showChar '.' . shows t2 . showChar '.' . shows t3)
 
 mkUnqualifiedTokenId :: String -> TokenId
 mkUnqualifiedTokenId = visible . reverse
