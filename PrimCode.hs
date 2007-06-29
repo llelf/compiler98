@@ -216,20 +216,20 @@ primExpand pos fun es =
           primPrimitive pos (CMP_EQ OpFloat) fun 2 es
         else if met == rps_eqDouble then
           primPrimitive pos (CMP_EQ OpDouble) fun 2 es
-{-        else if met == rps_hGetStr then
-          primPrimitive pos HGETS 1 es
-        else if met == rps_hGetChar then
-          primPrimitive pos HGETC 1 es
-        else if met == rps_hPutChar then
-          primPrimitive pos HPUTC 2 es -}
-        else if met == rps_unpackString then
+        else if met == rps_hGetStr && compiler==Nhc98 then
+          primPrimitive pos HGETS fun 1 es
+        else if met == rps_hGetChar && compiler==Nhc98 then
+          primPrimitive pos HGETC fun 1 es
+        else if met == rps_hPutChar && compiler==Nhc98 then
+          primPrimitive pos HPUTC fun 2 es
+        else if met == rps_unpackString {- && compiler==Yhc -} then
           primPrimitive pos STRING fun 1 es
         else if met == rps_catch then
           primPrimitive pos CATCH fun 1 es
         else if met == rps_fromEnum then
           primPrimitive pos ORD fun 1 es
-{-      else if met == rps_toEnum then
-          primPrimitive pos CHR 1 es -}
+        else if met == rps_toEnum && compiler==Nhc98 then
+          primPrimitive pos CHR fun 1 es
         else if met == rpsseq then
           primPrimitive pos SEQ fun 2 (dropDicts es)
         else if logic then

@@ -490,7 +490,8 @@ tWord64         = qualImpFFI  "Word64"
 
 tAddrBC, tPtrBC, tFunPtrBC, tForeignObjBC, tForeignPtrBC, tStablePtrBC :: TokenId
 tInt8BC, tInt16BC, tInt32BC, tInt64BC, tWord8BC, tWord16BC, tWord32BC, tWord64BC :: TokenId
-tPackedString   = qualImpPrim   "PackedString"
+tPackedString | compiler==Yhc    = qualImpPrim "PackedString"
+              | compiler==Nhc98  = qualImpPS   "PackedString"
 tAddrBC         = qualImpPrim  "Addr"
 tPtrBC          = qualImpPrim  "Ptr"
 tFunPtrBC       = qualImpPrim  "FunPtr"
