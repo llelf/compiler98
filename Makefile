@@ -190,7 +190,7 @@ relink:
 	$(STRIP) $(TARGET)
 clean: cleanO cleanHi
 cleanO:
-	rm -f $(OBJDIR)
+	rm -rf $(OBJDIR)
 cleanHi:
 	rm -f *.hi
 cleanC:
