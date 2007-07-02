@@ -1,5 +1,5 @@
 module SysDeps (
-   module PackedString, trace, openBinaryFileWrite, osName
+   module Data.PackedString, trace, openBinaryFileWrite, osName
 ) where
 
 import Data.PackedString as PackedString

@@ -165,7 +165,7 @@ ifeq "hbc" "$(findstring hbc, ${HC})"
 HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "$(findstring nhc98, ${HC})"
-HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS
+HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS -package base -package filepath
 endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
@@ -180,13 +180,13 @@ HMAKEFLAGS += $(shell echo $(BUILDOPTS))
 all: ${TARGET}
 objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: #$(OBJDIR)/$(BASECOMP)
-	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C MainNhc98.hs
+	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C $(HMAKEFLAGS) MainNhc98.hs
 fromC: $(OBJDIR) ${OBJDIRS}
 	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
-	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
+	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O
 	$(STRIP) $(TARGET)
 relink:
-	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) *.$O
+	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O
 	$(STRIP) $(TARGET)
 clean: cleanO cleanHi
 cleanO:
@@ -205,7 +205,7 @@ realclean: clean cleanC
 #	$(STRIP) $(TARGET)
 #else
 $(TARGET): ${OBJDIR} ${OBJDIRS} $(OBJDIR)/$(BASECOMP) $(SRCS)
-	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNhc98 -package filepath
+	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNhc98
 	mv $(OBJDIR)/MainNhc98$(EXE) $(TARGET)
 	$(STRIP) $(TARGET)
 #endif
@@ -225,7 +225,7 @@ ghc_floats.c: ghc_floats.c.inst
 .SUFFIXES: .hs .o .c .gc
 
 ${CFILES}: %.$C : %.hs
-	$(HC) -C $(HFLAGS) $<
+	$(HC) -C $(HFLAGS) -package base -package filepath $<
 ${GCCFILES}: %.$C : %.gc
 	$(HC) -C $(HFLAGS) $<
 
