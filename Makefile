@@ -117,7 +117,6 @@ SRCS = \
 	Type/Util.hs \
 	Unlit.hs \
 	Util/Extra.hs \
-	Util/Graph.lhs \
 	Util/MergeSort.hs \
 	Util/OsOnly.hs \
 	Util/Text.hs \
@@ -151,6 +150,7 @@ USED_IN_YHC = \
 	Make.lhs \
 	Package.hs \
 	Phase.hs \
+	Util/Graph.lhs \
 
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})
