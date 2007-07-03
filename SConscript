@@ -3,7 +3,7 @@ import os
 Import("env")
 Import("hsenv")
 
-badEnding = ["NplusK.hs","XML.hs","Setup.hs"
+badEnding = ["NplusK.hs","XML.hs","Setup.hs","Make2.hs"
             ,"GcodeFix.hs","GcodeLowC.hs","GcodeMem.hs","GcodeOpt1.hs"
             ,"GcodeOpt2.hs","GcodeRel.hs","GcodeSpec.hs","MainNhc98.hs"
             ,"_darcs","hugs","Floats.hs","Core" + os.sep + "Reduce.hs"]
