@@ -152,6 +152,8 @@ USED_IN_YHC = \
 	Phase.hs \
 	Util/Graph.lhs \
 
+FROMC = ../libraries/filepath/System/FilePath/Posix.$C
+
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})
 GCCFILES = $(patsubst %.gc, %.$C, ${GCSRCS}) 
@@ -182,19 +184,19 @@ objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: #$(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C $(HMAKEFLAGS) MainNhc98.hs
 fromC: $(OBJDIR) ${OBJDIRS}
-	$(LOCAL)/nhc98 -c -d $(OBJDIR) *.$C
-	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O
+	$(LOCAL)/nhc98 -o $(TARGET) -d $(OBJDIR) *.$C */*.$C $(FROMC) -package base
+#	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
 	$(STRIP) $(TARGET)
 relink:
-	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O
+	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
 	$(STRIP) $(TARGET)
 clean: cleanO cleanHi
 cleanO:
 	rm -rf $(OBJDIR)
 cleanHi:
-	rm -f *.hi
+	rm -f *.hi */*.hi
 cleanC:
-	rm -f *.hc *.p.c *.z.c ghc_floats.c
+	rm -f *.hc *.p.c *.z.c ghc_floats.c */*.hc */*.p.c */*.z.c
 realclean: clean cleanC
 	rm -f $(TARGET)
 
@@ -224,8 +226,8 @@ ghc_floats.c: ghc_floats.c.inst
 
 .SUFFIXES: .hs .o .c .gc
 
-${CFILES}: %.$C : %.hs
-	$(HC) -C $(HFLAGS) -package base -package filepath $<
+#${CFILES}: %.$C : %.hs
+#	$(HC) -C $(HFLAGS) -package base -package filepath $<
 ${GCCFILES}: %.$C : %.gc
 	$(HC) -C $(HFLAGS) $<
 
