@@ -560,7 +560,7 @@ processArgs ss =
     let (funs, nonopts, errors) = getOpt Permute allOpts ss
     in (if not (null errors) then
            error ("Could not parse cmd-line options: "++unlines errors)
-        else if compiler==Yhc && length nonopts /= 1 then
+        else if compiler==Yhc && length nonopts > 1 then
            warning ("ignoring extra options or files:\n"
                     ++unlines (tail nonopts))
         else if compiler==Nhc98 && length nonopts > 4 then
