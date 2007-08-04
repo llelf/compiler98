@@ -1,6 +1,6 @@
 A module for manipulating graphs
 
-> module Util.Graph(NodeId, Graph, GraphMonad, 
+> module Util.Graph(NodeId, Graph, GraphMonad,
 >                   emptyGraph, getAllNodes, getNodes,
 >                   hasNode, getNodeData, getOutEdges, getInEdges, addNode, updateNode, removeNode,
 >                   hasEdge, getEdgeData, addEdge, updateEdge, removeEdge, getGraph)
@@ -27,7 +27,7 @@ edges respectively.
 A node contains the node's id and a list of edges to other nodes as well as a list
 of which nodes have edges to it. Nodes also have a custom data item
 
-> data Node edata ndata = Node { nid :: NodeId, 
+> data Node edata ndata = Node { nid :: NodeId,
 >                                outEdges :: [Edge edata],
 >                                inEdges :: [NodeId],
 >                                ndata :: ndata }
@@ -72,10 +72,10 @@ getOutEdges gets the list of nodes this node (which must exist) connects to
 > getOutEdges :: NodeId -> GraphMonad (Graph e n) [NodeId]
 > getOutEdges i = getNode_ "getOutEdges" i >>= return . map edge . outEdges
 
-getInEdges gets the list of nodes which connect to this node (which must exist) 
+getInEdges gets the list of nodes which connect to this node (which must exist)
 
 > getInEdges :: NodeId -> GraphMonad (Graph e n) [NodeId]
-> getInEdges i = getNode_ "getInEdges" i >>= return . inEdges 
+> getInEdges i = getNode_ "getInEdges" i >>= return . inEdges
 
 addNode function adds a node (with the given node data) to
 the graph and returns the id of the node added.
@@ -97,9 +97,9 @@ specified by the node id.
 removeNode removes a given node, and all the edges associated with the node
 
 > removeNode :: NodeId -> GraphMonad (Graph e n) ()
-> removeNode i = 
+> removeNode i =
 >     do outs <- getOutEdges i
->        ins  <- getInEdges i 
+>        ins  <- getInEdges i
 >        mapM_ (\ n -> removeInEdge n i) outs
 >        mapM_ (\ n -> removeOutEdge n i) ins
 >        writeState_ $ \ g -> g { nodes = Map.delete i (nodes g) }
@@ -119,7 +119,7 @@ addEdge adds an edge between two nodes, with the given edge data. It fails if
 either node does not exist, but does allow multiple edges between nodes.
 
 > addEdge :: NodeId -> NodeId -> e -> GraphMonad (Graph e n) ()
-> addEdge fid tid ed = 
+> addEdge fid tid ed =
 >     do checkNode tid
 >        updNode (\ fnode -> fnode { outEdges = Edge tid ed : (outEdges fnode) }) fid
 >        updNode (\ tnode -> tnode { inEdges = fid : (inEdges tnode) }) tid
@@ -130,15 +130,15 @@ updateEdge changes the data on a particular edge (which must exist)
 > updateEdge fid tid upf = updNode (\ fnode -> fnode { outEdges = updEdge (outEdges fnode) }) fid
 >     where
 >     updEdge []     = error $ "updateEdge: there is not edge between "++show fid ++" and "++show tid
->     updEdge (e:es) 
+>     updEdge (e:es)
 >         | edge e == tid = e { edata = upf (edata e) } : es
 >         | otherwise     = e : updEdge es
 
 removeEdge removes an edge between two nodes. Both nodes must exist and there
 must be an edge between them
-                                            
+
 > removeEdge :: NodeId -> NodeId -> GraphMonad (Graph e n) ()
-> removeEdge fid tid = 
+> removeEdge fid tid =
 >     do removeOutEdge fid tid
 >        removeInEdge tid fid
 
@@ -153,11 +153,11 @@ code to show a graph, assuming we know how to show the node and edge data
 >     show (Graph ns _) = "{\n"++concatMap (showNode . snd) (Map.toList ns)++"}\n"
 >         where
 >         showNode (Node i os is nd) = "  " ++ show i ++ "  " ++ show nd ++ {- " <- " ++ show is  ++ -} "\n" ++
->                                     concatMap showEdge os 
+>                                     concatMap showEdge os
 >         showEdge (Edge e ed)      = "    -> " ++ show e ++ " " ++ show ed ++ "\n"
 
 getNode is an internal helper. It gets a node for a node id, or Nothing if there is no such node.
-                                              
+
 > getNode :: NodeId -> GraphMonad (Graph e n) (Maybe (Node e n))
 > getNode i = readState $ \ g -> Map.lookup i (nodes g)
 
@@ -180,18 +180,18 @@ updNode is a helper to update the entire contents of a node in the graph
 > updNode :: (Node e n -> Node e n) -> NodeId -> GraphMonad (Graph e n) ()
 > updNode upf i = writeState_ $ \ g -> g { nodes = Map.update (Just . upf) i (nodes g) }
 
-removeOutEdge removes only a out edge between the two nodes in the graph 
+removeOutEdge removes only a out edge between the two nodes in the graph
 (both nodes and the edge must exist)
 
 > removeOutEdge :: NodeId -> NodeId -> GraphMonad (Graph e n) ()
-> removeOutEdge fid tid = 
+> removeOutEdge fid tid =
 >     updNode (\ fnode -> let outEdges' = deleteBy (\ i e -> edge e == i) tid (outEdges fnode)
 >                         in fnode { outEdges = outEdges' }) fid
 
 removeInEdge does the same as removeOutEdge but for in edges
 
 > removeInEdge :: NodeId -> NodeId -> GraphMonad (Graph e n) ()
-> removeInEdge tid fid = 
+> removeInEdge tid fid =
 >     updNode (\ tnode -> let inEdges' = deleteBy (==) fid (inEdges tnode)
 >                         in tnode { inEdges = inEdges' }) tid
 
@@ -199,8 +199,8 @@ getEdge returns the edge data of the edge between two nodes (which must exist),
 or Nothing if there is no such edge
 
 > getEdge :: NodeId -> NodeId -> GraphMonad (Graph e n) (Maybe (Edge e))
-> getEdge fid tid = 
->     do mn <- getNode fid 
+> getEdge fid tid =
+>     do mn <- getNode fid
 >        return $ mn >>= \ n -> findEdge tid (outEdges n)
 >     where
 >     findEdge tid []     = Nothing
@@ -209,12 +209,12 @@ or Nothing if there is no such edge
 getEdge_ is like getEdge but ensures that the edge must exist
 
 > getEdge_ :: NodeId -> NodeId -> GraphMonad (Graph e n) (Edge e)
-> getEdge_ fid tid = getEdge fid tid >>= return . maybe err id 
+> getEdge_ fid tid = getEdge fid tid >>= return . maybe err id
 >     where
 >     err = error $ "getEdge_: this is no edge between "++show fid++" and "++show tid
 
 deleteBy is a helper function to delete something from a list, deciding whether it
-is in a list by the given function. Note this has a slightly different type signature to List.deleteBy 
+is in a list by the given function. Note this has a slightly different type signature to List.deleteBy
 
 > deleteBy :: (a -> b -> Bool) -> a -> [b] -> [b]
 > deleteBy f x []     = []
