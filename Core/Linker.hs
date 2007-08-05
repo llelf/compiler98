@@ -23,7 +23,7 @@ coreLinker :: PackageData -> FrontData -> [FrontData] -> FilePath -> IO ()
 coreLinker pd startFile inputs output = do
         cores <- mapM (loadCore . sCoreFile . fFileFlags) inputs
         newcores <- f (ignoreModules ++ map fModName inputs) (snub $ requireModules ++ concatMap coreImports cores)
-        
+
         let allcores = mergeCores rootMod $ cores ++ newcores
             rootMod = sModuleName (fFileFlags startFile)
             rootCor = head $ filter ((==) rootMod . coreName) cores
@@ -52,7 +52,7 @@ coreLinker pd startFile inputs output = do
 addPrims :: Core -> Core
 addPrims core = core{coreFuncs = map f coreBytecodePrims ++ coreFuncs core}
     where
-        f x = CorePrim (primName x) (primArity x)
+        f x = CorePrim (primName x) (primArity x) (primName x) "bytecode" True []
 
 
 addTuple1 :: Core -> Core

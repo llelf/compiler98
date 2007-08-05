@@ -1,40 +1,66 @@
-module Core.Convert(makeCore) where
+module Core.Convert(makeCore,CoreImport(..)) where
 
 import Id
+import TokenId
 import Util.Extra(mixLine,mixSpace,mix)
 import PosCode
 import StrPos
 import List
-import Char
+import Data.Char
 import Util.Extra
 import Error
 import IntState
 import Maybe
 import NT
+import ForeignCode
 import Control.Monad.State
 import qualified Data.Map as Map
 import qualified Data.Set as Set
+import SysDeps(unpackPS, packString)
 
 import Yhc.Core
 
 -- | internal compiler state
 data CState = CState {
                 csState :: IntState,
-                csBinds :: [(Id,String)],
-                csFree :: Set.Set Id,
+                csBinds :: Map.Map Id String,
+                csBound :: Set.Set Id,
                 csFail :: CoreExpr,
-                csNextFail :: Int
+                csNextFail :: Int,
+                csImports :: Set.Set CoreImport
               }
+
+-- | a symbol imported to core
+data CoreImport = CoreImportCtor {
+                        coreImportName :: String,
+                        coreImportCtorData :: CoreData
+                } | CoreImportFunc {
+                        coreImportName :: String,
+                        coreImportFuncArity :: Int
+                }
+                deriving (Ord,Eq)
+
+instance Show CoreImport where
+    show (CoreImportCtor name dat) = name ++ " from " ++ show dat
+    show (CoreImportFunc name arity) = name ++ " " ++ intersperse ' ' (replicate arity '_')
 
 -- | compiler monad
 type CMonad a = State CState a
 
 -- | convert pos lambda to yhc core
-makeCore :: [String] -> IntState -> [Id] -> [(Id,PosLambda)] -> (Core,[(Id,String)])
-makeCore imports state datas funcs = (core,csBinds cstate)
+makeCore :: [String] -> IntState -> [Id] -> [(Id,PosLambda)] -> (Core,[CoreImport])
+makeCore imports state datas funcs = (core,coreimports)
     where
     modu          = getModuleId state
-    (core,cstate) = runState (cProgram imports datas funcs) $ CState state [] Set.empty undefined 0
+    (core,cstate) = runState (cProgram imports datas funcs) $ CState state Map.empty Set.empty nofail 0 Set.empty
+    nofail        = error "makeCore: no failure on stack"
+    coreimports   = booleanImports ++ (Set.toList $ csImports cstate)
+
+-- | imports for Prelude.True and Prelude.False which are used internally in compiling ifs
+booleanImports :: [CoreImport]
+booleanImports = map (\ctor -> CoreImportCtor (coreCtorName ctor) dataBool) $ coreDataCtors $ dataBool
+    where
+    dataBool = CoreData "Prelude;Bool" [] [ CoreCtor "Prelude;True" [], CoreCtor "Prelude;False" [] ]
 
 -- | convert a program to a core program
 cProgram :: [String] -> [Id] -> [(Id,PosLambda)] -> CMonad Core
@@ -48,45 +74,90 @@ cProgram imports datas funcs = do
 cData :: Id -> CMonad CoreData
 cData i = do
     state <- getState
-    let name'              = fixTuple $ show name
-        NewType free _ _ _ = typ
-        (InfoData _ name _ typ children) = fst $ getInfo i () state
-        childs = case children of
-                    (DataNewType _ x) -> x
-                    (Data _ x) -> x
-    ctors <- mapM cCtor childs
-    return $ CoreData name' (map strTVar free) ctors
+    let (cdata,binds) = dataToCore state i
+    mapM_ (uncurry bind) binds
+    return cdata
 
--- | convert a constructor to core
-cCtor :: Id -> CMonad CoreCtor
-cCtor i = do
-    state <- getState
-    let name'               = (fixTuple $ show name)
-        NewType _ _ _ targs = typ
-        (InfoConstr _ name _ _ typ fields _) = fst $ getInfo i () state
+-- | convert a data to a core data, pure version
+dataToCore :: IntState -> Id -> (CoreData,[(Id,String)])
+dataToCore state i = (cdata, (i,name) : map snd ctors)
+    where
+    name               = encodeName state i
+    NewType free _ _ _ = typ
+    (InfoData _ _ _ typ children) = fst $ getInfo i () state
+    childs = case children of
+                  (DataNewType _ x) -> x
+                  (Data _ x) -> x
+    ctors = map (constrToCore state) childs
+    cdata = CoreData name (map strTVar free) (map fst ctors)
 
-        cField Nothing = Nothing
-        cField (Just x) = Just $ dropModule $ strIS state x
+-- | convert a constructor to core, pure version
+constrToCore :: IntState -> Id -> (CoreCtor,(Id,String))
+constrToCore state i = (ctor,(i,name))
+    where
+    ctor                = CoreCtor name $ zip (map cType targs) (map cField fields)
+    name                = encodeName state i
+    NewType _ _ _ targs = typ
+    (InfoConstr _ _  _ _ typ fields _) = fst $ getInfo i () state
 
-        cType x = strNT (strIS state) strTVar x
-    bind i name'
-    return $ CoreCtor name' $ zip (map cType targs) (map cField fields)
+    cField Nothing = Nothing
+    cField (Just x) = Just $ dropModule $ strIS state x
+
+    cType x = strNT (strIS state) strTVar x
 
 -- | convert a function to core
 cFunc :: (Id,PosLambda) -> CMonad CoreFunc
 cFunc (i, PosLambda pos int fvs bvs e) = do
-        name <- bindRealName i
+        name <- bindGlobal i
+        args <- mapM (bindLocal . snd) bvs
         e' <- cExpr e
-        args <- mapM (bindName . snd) bvs
         return $ CoreFunc name args (wrapPos pos e')
     where
     wrapPos pos x | pos == noPos = x
                   | otherwise    = CorePos (show pos) x
 
-cFunc (i, item) = do
+-- | convert a foreign function
+cFunc (i, PosForeign pos id arity cname cc Imported) = do
     state <- getState
-    name <- bindRealName i
-    return $ CorePrim name (arityIS state i)
+    name <- bindGlobal i
+    let arity                         = arityIS state i
+        (InfoVar un tok ex fix nt ar) = fromJust $ lookupIS state i
+        cname'                        = if cname == "" then getUnqualified tok else cname
+        cconv                         = show cc
+        syms                          = getSymbolTable state
+        memo                          = foreignMemo syms
+        forn                          = toForeign syms memo cc Imported cname arity i
+    case forn of
+        Foreign ie proto style mpath _ htok arity args res -> do
+            let types = map foreignArgType args ++ [foreignArgType res]
+            return $ CorePrim name arity cname' cconv True types
+
+-- | calculate the type name for a foreign arg
+foreignArgType :: Arg -> String
+foreignArgType x =
+    case x of
+        Int8 -> "Data.Int;Int8"
+        Int16 -> "Data.Int;Int16"
+        Int32 -> "Data.Int;Int32"
+        Int64 -> "Data.Int;Int64"
+        Word8 -> "Data.Word;Word8"
+        Word16 -> "Data.Word;Word16"
+        Word32 -> "Data.Word;Word32"
+        Word64 -> "Data.Word;Word64"
+        Int -> "Prelude;Int"
+        Float -> "Prelude;Float"
+        Double -> "Prelude;Double"
+        Char -> "Prelude;Char"
+        Bool -> "Prelude;Bool"
+        Ptr -> "Foreign.Ptr;Ptr"
+        (FunPtr _) -> "Foreign.Ptr;FunPtr"
+        StablePtr -> "Foreign.StablePtr;StablePtr"
+        ForeignPtr -> "Foreign.ForeignPtr;ForeignPtr"
+        PackedString -> "Data.PackedString;PackedString"
+        Integer -> "Prelude;Integer"
+        (HaskellFun _) -> "Prelude;->"
+        (Unknown _) -> "Prelude;a"
+        Unit -> "Prelude;()"
 
 -- | convert an expression to core
 cExpr :: PosExp -> CMonad CoreExpr
@@ -105,9 +176,13 @@ cExpr x = case x of
     PosCon _ i -> bindCon i
     PosPrim _ prim _ -> return $ CoreFun $ strPrim prim
     PosVar _ i -> do
-        nam <- bindRealName i
         free <- isFree i
-        return $ if free then CoreVar nam else CoreFun nam
+        if free then do
+            name <- bindGlobal i
+            return (CoreFun name)
+         else do
+            name <- bindLocal i
+            return (CoreVar name)
 
     PosExpApp _ (a:as) -> do
         a' <- cExpr a
@@ -119,7 +194,7 @@ cExpr x = case x of
     -- let bindings
     PosExpLet _ _ [] e -> cExpr e
     PosExpLet _ _ bs e -> inNewEnv $ do
-        ns <- mapM (\(i,_) -> do { addFree i ; bindRealName i}) bs
+        ns <- mapM (\(i,_) -> bindLocal i) bs
         binds <- zipWithM (\(i,PosLambda _ _ _ _ e) n -> do { x <- cExpr e ; return (n,x) }) bs ns
         e' <- cExpr e
         return (CoreLet binds e')
@@ -129,8 +204,8 @@ cExpr x = case x of
         e1' <- cExpr e1
         e2' <- cExpr e2
         e3' <- cExpr e3
-        let true = CoreApp (CoreCon "Prelude.True") []
-            false = CoreApp (CoreCon "Prelude.False") []
+        let true = CoreApp (CoreCon "Prelude;True") []
+            false = CoreApp (CoreCon "Prelude;False") []
         return $ CoreCase e1' [(true, e2'),(false,e3')]
 
     PosExpCase pos e alts -> do
@@ -141,8 +216,7 @@ cExpr x = case x of
         cAlt (PosAltInt pos i False e) = do { x <- cExpr e ; return (CoreChr (chr i), x) }
         cAlt (PosAltInt pos i True e) = do { x <- cExpr e ; return (CoreInt i, x) }
         cAlt (PosAltCon pos c vars e) = inNewEnv $ do
-            mapM_ (addFree . snd) vars
-            vs <- mapM (bindName . snd) vars
+            vs <- mapM (bindLocal . snd) vars
             con <- bindCon c
             e' <- cExpr e
             return (CoreApp con (map CoreVar vs), e')
@@ -170,7 +244,7 @@ inNewEnv :: CMonad a -> CMonad a
 inNewEnv f = do
     cs <- get
     x <- f
-    modify $ \ cs' -> cs' { csFree = csFree cs }
+    modify $ \ cs' -> cs' { csBound = csBound cs }
     return x
 
 -- | perform computation inside new failure group
@@ -187,55 +261,121 @@ inNewFailure fexp f = do
 getFailExpr :: CMonad CoreExpr
 getFailExpr = gets csFail
 
--- | add a variable to the free list
-addFree :: Id -> CMonad ()
-addFree id = modify $ \ cs -> cs { csFree = Set.insert id (csFree cs) }
+-- | add a variable to the list of bound variables
+addBound :: Id -> CMonad ()
+addBound id = modify $ \ cs -> cs { csBound = Set.insert id (csBound cs) }
 
 -- | test whether a variable is free
 isFree :: Id -> CMonad Bool
-isFree id = gets $ \ cs -> Set.member id (csFree cs)
+isFree id = gets $ \ cs -> Set.notMember id (csBound cs)
 
 -- | bind a variable to a name
-bind :: Id -> String -> CMonad ()
-bind i s = modify $ \ cs -> cs { csBinds = (i,s) : csBinds cs }
+bind :: Id -> String -> CMonad Bool
+bind i s = State $ \ cs ->
+    let binds = csBinds cs
+    in case Map.lookup i binds of
+        Just s' -> if s /= s' then error $ "bind: rebind mismatch '"++s++"' '"++s'++"'"
+                                else (False,cs)
+        Nothing ->
+            let cs'   = cs { csBinds = Map.insert i s binds }
+            in (True,cs')
 
--- | bind a 'real name', this fixes issues with lambdas
-bindRealName :: Id -> CMonad String
-bindRealName i = do
-    state <- getState
-    let modu = getModuleId state
-        name = strIS state i
-        name' = if "LAMBDA" `isPrefixOf` name then modu ++ "._" ++ name else name
-    bind i name'
-    return name'
+-- | build an import item from an identifier and its core name
+buildImportItem :: IntState -> Id -> String -> CoreImport
+buildImportItem state id name
+    | isConstr info = CoreImportCtor name coredata
+    | otherwise     =
+        case info of
+            -- ermm I really wonder why tuple uses InfoName? [TS]
+            InfoName _ (TupleId n) _ _ _ -> CoreImportCtor name (tupleData n)
+            _                            -> CoreImportFunc name arity
+    where
+    info         = fromJust $ lookupIS state id
+    tid          = tidI info
+    dataid       = belongstoI info
+    (coredata,_) = dataToCore state dataid
+    arity        = arityIS state id
 
--- | bind a simple name
-bindName :: Id -> CMonad String
-bindName i = do
-    name <- gets $ \ cs -> strIS (csState cs) i
+    -- build a datatype for a tuple ...
+    tupleData n = CoreData name types [ctor]
+        where
+        ctor  = CoreCtor name $ map (\t -> (t,Nothing)) types
+        types = map (\x -> [x]) $ take n ['a'..]
+
+
+-- | bind a global, this fixes issues with lambdas
+bindGlobal :: Id -> CMonad String
+bindGlobal i = do
+    (mod,item) <- gets $ \ cs -> encodeNamePair (csState cs) i
+    let name = mod ++ ";" ++ item
+    newBind <- bind i name
+    when newBind $ do
+        state <- getState
+        case lookupIS state i of
+            Nothing -> return ()
+            Just info -> do
+                -- if this is an import then build an import item
+                when (getModuleId state /= mod) $ do
+                    let imp = buildImportItem state i name
+                    modify $ \ cs -> cs { csImports = Set.insert imp (csImports cs) }
+    return name
+
+-- | bind a local name, also adds to the list of bound variables
+bindLocal :: Id -> CMonad String
+bindLocal i = do
+    name <- gets $ \ cs ->
+        let (mod,item) = encodeNamePair (csState cs) i
+            thismod    = getModuleId (csState cs)
+        in if mod /= thismod then error $ "bindLocal: ("++mod++";"++item++") in "++thismod
+                             else item
     bind i name
+    addBound i
     return name
 
 -- | bind a constructor
 bindCon :: Id -> CMonad CoreExpr
 bindCon i = do
-    name <- gets $ \ cs -> fixTuple $ strIS (csState cs) i
-    bind i name
+    name <- bindGlobal i
     return (CoreCon name)
 
 -- | get the state
 getState :: CMonad IntState
 getState = gets csState
 
--- | fix a tuple to give it's name
-fixTuple :: String -> String
-fixTuple "()" = "Prelude.()"
-fixTuple ('P':'r':'e':'l':'u':'d':'e':'.':xs)
-    | all isDigit xs = "Prelude." ++ tupName (read xs)
+-- | encode a name to a string
+encodeName :: IntState -> Id -> String
+encodeName state id = mod ++ ";" ++ item
+    where (mod,item) = encodeNamePair state id
+
+-- | encode a name into a (module,item) pair
+encodeNamePair :: IntState -> Id -> (String,String)
+encodeNamePair state id =
+    case lookupIS state id of
+        Just info -> encode (tidI info)
+        Nothing   -> encode (Visible $ packString $ reverse $ "v"++show id)
     where
-    tupName 1 = "1()"
-    tupName n = "(" ++ replicate (n-1) ',' ++ ")"
-fixTuple x = x
+    encode tok =
+        case tok of
+            TupleId n -> ("Prelude",tupleName n)
+            Visible rps -> (getModuleId state, unpackRPS rps)
+            Qualified mrps irps -> (unpackRPS mrps, unpackRPS irps)
+            Qualified2 mrps ctok ttok -> (unpackRPS mrps, encode' ttok ++ ";" ++ encode' ctok)
+            Qualified3 mrps ctok ttok mtok ->
+                case fromJust $ lookupIS state id of
+                    InfoVar{} -> localFun
+                    InfoName _ _ _ _ True -> localFun
+                    _                     -> (unpackRPS mrps, encode' ttok ++ ";" ++ encode' ctok ++ ";" ++ getUnqualified mtok)
+                where
+                localFun = case ttok of
+                                TupleId n -> (unpackRPS mrps, show n ++ "_" ++ getUnqualified mtok)
+                                _         -> error $ "encodeNamePair: '"++show tok++"' marked as local function!"
 
+    encode' tok = let (mod,item) = encode tok in mod ++ "." ++ item
+    isDataType tok = isUpper $ head $ getUnqualified tok
+    unpackRPS rps = reverse $ unpackPS rps
 
+-- | get the name of a tuple
+tupleName :: Int -> String
+tupleName 1 = "1()"
+tupleName n = "("++replicate (n-1) ','++")"
 

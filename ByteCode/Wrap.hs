@@ -17,23 +17,25 @@ import TokenId
 bcWrap :: IntState     -- ^ internal compiler state
        -> Flags        -- ^ compiler flags
        -> FileFlags    -- ^ information about the file to write
-       -> [BCDecl]     -- ^ the declarations from which to generate external wrappers
+       -> BCModule     -- ^ the declarations from which to generate external wrappers
        -> IO ()
 
-bcWrap state flags fileflags ds =
+bcWrap state flags fileflags m =
     withDirectory (sWrapFile fileflags) (\s -> "Wrap"++s) (f "")
     where
+    ds = bcmDecls m
     f = showString "#include <hsffi.h>\n\n" . catShows (map (wDecl state) ds) . (wInit state ds)
 
 wDecl :: IntState -> BCDecl -> ShowS
 wDecl state (External name pos arity cName callConv flags)
-    | callConv /= Other "builtin" = wForeign cName' forn callConv
+    | callConv /= "builtin" = undefined {- FIXME: !!!!!!!!
+    wForeign cName' forn callConv
     where
     syms    = getSymbolTable state
     memo    = foreignMemo syms
     mode    = trace ("FIXME: wDecl mode ...") Imported
     forn    = toForeign syms memo callConv mode cName arity name
-    cName'  = reverse $ takeWhile (/='&') $ reverse cName
+    cName'  = reverse $ takeWhile (/='&') $ reverse cName -}
 
 wDecl state x                                              = id
 
@@ -52,19 +54,19 @@ wInit state ds =
 
 wInitDecl :: IntState -> BCDecl -> ShowS
 wInitDecl state (External name pos arity cName callConv flags)
-    | callConv /= Other "builtin" =
+    | callConv /= "builtin" =
         showString "  reg(\"" . showString smod . showString "\", \"" . showString cName . showString "\", " . showString fname .
         showString ", arg);\n"
     where
-    fname = if callConv == Other "primitive" then cName else "Wrap_" ++ cName
-    (smod,sname) = splitM $ tidIS state name
+    fname = if callConv == "primitive" then cName else "Wrap_" ++ cName
+    (smod,sname) = splitQualified name
 wInitDecl state x = id
 
-wForeign :: String -> Foreign -> CallConv -> ShowS
+wForeign :: String -> Foreign -> String -> ShowS
 wForeign cname fr@(Foreign ie proto style mpath _ htok arity args res) callConv =
     wInclude mpath .
     (if proto then wProto style callConv cname args res else id) .
-    if callConv /= Other "primitive"
+    if callConv /= "primitive"
      then
         (wHeader htok cname .
          wResDecl res .
@@ -102,9 +104,9 @@ wResDecl :: Res -> ShowS
 wResDecl Unit = id
 wResDecl res  = showString "  " . typeName res . showString " pResult;\n"
 
-wProto :: Style -> CallConv -> String -> [Arg] -> Res -> ShowS
+wProto :: Style -> String -> String -> [Arg] -> Res -> ShowS
 wProto Ordinary callConv cname args res
-    | callConv == Other "primitive" = showString "Node* " . showString cname . showString "(Node* node);\n\n"
+    | callConv == "primitive" = showString "Node* " . showString cname . showString "(Node* node);\n\n"
     | otherwise                     = typeName res . showChar ' ' . showString cname .
                                       wCommaParens (map typeName args) . showString ";\n\n"
 wProto CCast callConv cnaem args res = id

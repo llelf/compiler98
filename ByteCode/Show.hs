@@ -7,32 +7,33 @@ import qualified Data.Map as Map
 import Prim
 import Id(Id)
 import Maybe(isJust, fromJust)
+import Data.List(intersperse)
 import qualified Data.Set as Set
 
 -- | Convert a list of bytecode declarations into a human-readable string
 strBCode :: (Id -> String) -- ^ A function to print identifiers
-         -> [BCDecl]       -- ^ The declarations to print
+         -> BCModule       -- ^ The declarations to print
          -> String
 
-strBCode p decls = mixLine (map (strBDecl p) decls)
+strBCode p m = mixLine (map (strBDecl p) $ bcmDecls m)
 
 
 strBDecl :: (Id -> String) -> BCDecl -> String
 strBDecl p (Fun name pos arity args code consts pr stack numDict fl) =
    (if pr then "PRIMITIVE " else "") ++
 
-   "FUN " ++ p name ++ "{" ++ show name ++"}(" ++ show arity ++ "/" ++ show numDict ++ ") " ++ show (map p args) ++ "\n" ++
+   "FUN " ++ name ++ "{" ++ show name ++"}(" ++ show arity ++ "/" ++ show numDict ++ ") " ++ show args ++ "\n" ++
    " STACK " ++ show stack ++ "\n" ++
              strCode "   " p code ++
    "\n FLAGS " ++ show fl ++
    "\n---- ConstTable ---------------\n" ++
    mix "\n" (map (strConst p) (Map.toList consts)) ++
    "\n-------------------------------\n"
-strBDecl p (Prim name pos) = "PRIM " ++ p name ++ "\n"
+strBDecl p (Prim name pos) = "PRIM " ++ name ++ "\n"
 strBDecl p (Con name pos arity tag) =
-   "CON " ++ p name ++ " " ++ show tag ++ "(" ++ show arity ++ ")\n"
+   "CON " ++ name ++ " " ++ show tag ++ "(" ++ show arity ++ ")\n"
 
-strBDecl p (External name pos arity cname cc fl) = "EXTERNAL " ++ p name ++ "[" ++ cname ++ "]("++ show arity ++") flags="++show fl++"\n"
+strBDecl p (External name pos arity cname cc fl) = "EXTERNAL " ++ name ++ "[" ++ cname ++ "]("++ show arity ++") flags="++show fl++"\n"
 
 
 strCode :: String -> a -> Code -> String
@@ -112,9 +113,9 @@ strAlts o p []            = ""
 strAlts o p ((t,c):as)    =
     o ++ show t ++ " -> \n" ++ strCode (' ':o) p c ++ "\n" ++ strAlts o p as
 
-strSet o p (UseSet d gs ns) = show d ++ " <" ++ show (map show gs) ++ " | " ++ show (Set.map show ns) ++ ">"
+strSet o p (UseSet d gs ns) = show d ++ " <" ++ (concat $ intersperse "," gs) ++ " | " ++ (concat $ intersperse "," $ Set.toList ns) ++ ">"
 
-strConst p (n, CGlobal i t)  = show n ++ " " ++ strType t ++ " " ++ p i ++ "{" ++ show i ++"}"
+strConst p (n, CGlobal i t)  = show n ++ " " ++ strType t ++ " " ++ i
 strConst p (n, CInt i)       = show n ++ " INT " ++ show i
 strConst p (n, CInteger i)   = show n ++ " INTEGER " ++ show i
 strConst p (n, CFloat i)     = show n ++ " FLOAT " ++ show i
@@ -208,6 +209,8 @@ strIns (TRETURN)       = "TRETURN"
 strIns (TPUSH)         = "TPUSH"
 strIns (TPUSHVAR p)    = "TPUSHVAR "++show p
 strIns (TPROJECT p)    = "TPROJECT "++show p
+
+strIns (COMMENT c)     = "-- "++c
 
 strOp (OpWord) = "_W"
 strOp (OpFloat) = "_F"

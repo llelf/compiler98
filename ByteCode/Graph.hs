@@ -155,8 +155,8 @@ jumpsTo from to = mapM_ (addJump from) to
 ----------------------------------------------------------------------
 
 -- | Turn linear bytecode into a graph representation.
-bcGraph :: [BCDecl] -> [BCDecl]
-bcGraph ds = map bcDecl ds
+bcGraph :: BCModule -> BCModule
+bcGraph m = m { bcmDecls = map bcDecl $ bcmDecls m }
 
 -- build the graph for a single declaration
 bcDecl :: BCDecl -> BCDecl
@@ -230,7 +230,9 @@ gCode (i:is) acc = gCode is (i:acc)
 
 -- does that same as gCode but skips instructions until it finds the given label
 gCodeAt :: Label -> [UseIns] -> [UseIns] -> Builder GLabel
-gCodeAt j is acc = gCode is' acc
+gCodeAt j is acc
+    | null is'  = error $ "gCodeAt: cannot jump to label L_"++show j++" because it does not exist"
+    | otherwise = gCode is' acc
     where
     is' = dropWhile (\k -> case k of
                                (LABEL k,_) -> j /= k

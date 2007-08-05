@@ -17,8 +17,8 @@ type Writes = [Write] -> [Write]
 type CodePosn = Int
 
 -- | Convert to relative jumps and convert to \"write\" format
-bcRelative :: [BCDecl] -> [BCDecl]
-bcRelative ds = map relative ds
+bcRelative :: BCModule -> BCModule
+bcRelative m = m { bcmDecls = map relative $ bcmDecls m }
 
 relative :: BCDecl -> BCDecl
 relative (Fun n p z as (CLinear is) cn pr st nd fl) = Fun n p z as (CWrites ws') cn pr st nd fl

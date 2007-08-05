@@ -31,12 +31,18 @@ bcCompile :: Flags               -- ^ compiler flags
           -> IntState            -- ^ internal compiler state generated in earlier stages
           -> [(Id,PosLambda)]    -- ^ list of functions to compile
           -> [Id]                -- ^ list of constructors to compile
-          -> ([BCDecl],IntState) -- ^ compiled bytecode and modified internal compiler state
+          -> (BCModule,IntState) -- ^ compiled bytecode and modified internal compiler state
 
-bcCompile flags state funs cons = (ds, cState st')
+bcCompile flags state funs cons = undefined
+
+{- FIXME:!!!
+
+
+(BCModule modu ds, cState st')
     where
     st = initCompileState flags state
     (ds,st') = runState (compile funs cons) st
+    modu = getModuleId state
 
 
 compile :: [(Id,PosLambda)] -> [Id] -> STCompiler [BCDecl]
@@ -283,12 +289,12 @@ cFail =
     ins (JUMP fail)
 
 -- compile a list of alternatives paired with their labels,
--- using a specific point to jump to  -}
+-- using a specific point to jump to
 -- cAlts :: [(PosAlt,Label)] -> Label -> Compiler [Int]
 -- cAlts las after = mapC (\a -> branch (cAlt after a)) las
 
-{- compile a single a alternative and label, jumping to the
-   specified place -}
+-- compile a single a alternative and label, jumping to the
+--   specified place
 cAlt :: CMode -> Label -> (PosAlt,Label) -> Compiler ()
 cAlt m after (PosAltCon p t vs e,lab) =
     ins (LABEL lab) =>>
@@ -306,7 +312,7 @@ cAlt m after (PosAltInt p t b e, lab) =
     cExpr (cStrict m) e =>>
     ins (JUMP after)
 
-{- compile a let binding and the slot it occupies, boolean indicates whether recursive or not -}
+-- compile a let binding and the slot it occupies, boolean indicates whether recursive or not
 cBinding :: CMode -> Bool -> (PosBinding,Int) -> Compiler ()
 cBinding m True  ((i,PosLambda p _ _ [] e),n) =
     cExpr (cLazy m) e =>>
@@ -315,7 +321,7 @@ cBinding m False ((i,PosLambda p _ _ [] e),n) =
     cExpr (cLazy m) e =>>
     bind False i 0
 
-{- compile a call to a function, with some number of arguments given -}
+-- compile a call to a function, with some number of arguments given
 cCall :: CMode -> PosExp -> Int ->  Bool -> Compiler ()
 cCall m (PosPrim p c i) got ap =
     (case c of
@@ -360,8 +366,8 @@ cCall m e got ap =
     error $ "cCall: no code for '"++strPExp (strIS is) "" e++"'"
 
 
-{- call a global function, comparing the number of arguments we have with
-   the number of arguments we were expecting, and thus generating the right code -}
+-- call a global function, comparing the number of arguments we have with
+--  the number of arguments we were expecting, and thus generating the right code
 cCallGlobal :: CMode -> Pos -> Id -> Int -> Int -> Bool -> Compiler ()
 cCallGlobal m p v got expect ap
     -- saturated or super-saturated case
@@ -388,7 +394,7 @@ cCallGlobal m p v got expect ap
                      whenHat m (tracePos TAP p)
 
 
-{- compile a call to a primitive function -}
+-- compile a call to a primitive function
 cCallPrim :: Prim -> Compiler ()
 cCallPrim (ADD op)    = ins (P_ADD op)
 cCallPrim (SUB op)    = ins (P_SUB op)
@@ -411,7 +417,7 @@ cCallPrim i           = error $ "cCallPrim " ++ strPrim i
 -- helper functions
 -----------------------------------------------------------------------------------
 
-{- returns whether an expression should be considered strict or lazy -}
+-- returns whether an expression should be considered strict or lazy
 isStrictFun :: PosExp -> Compiler Bool
 isStrictFun (PosVar _ _) = simply False
 isStrictFun (PosCon _ _) = simply False
@@ -423,8 +429,8 @@ isStrictFun e =
     getIntState =>>= \ is ->
     error $ "isStrict: no code for '"++strPExp (strIS is) "" e++"'"
 
-{- for a list of alternatives: returns whether this is an int-case, whether it is complete or not
-   and the list of tags properly translated if necessary -}
+-- for a list of alternatives: returns whether this is an int-case, whether it is complete or not
+--   and the list of tags properly translated if necessary
 altTags :: IntState -> [PosAlt] -> (Bool, Bool, [Tag])
 altTags state as@(PosAltInt{} : _)   =
     (True, False, map (\(PosAltInt _ i _ _) -> i) as)
@@ -448,11 +454,11 @@ isFail _          = False
 -- instruction generation functions
 -----------------------------------------------------------------------------------
 
-{- issue a non instruction -}
+-- issue a non instruction
 nop :: Compiler ()
 nop = simply ()
 
-{- issue a full instruction -}
+-- issue a full instruction
 useIns :: Ins -> [Id] -> Set.Set Id -> Compiler ()
 useIns i give need =
     let d   = imStack $ bcodeMetric i in
@@ -461,28 +467,28 @@ useIns i give need =
     let ius = (i,UseSet depth give need) in
     return ((ius :) , ())
 
-{- issue a simplified instruction -}
+-- issue a simplified instruction
 ins :: Ins -> Compiler ()
 ins i = useIns i [] Set.empty
 
-{- issue an eval instruction if needed -}
+-- issue an eval instruction if needed
 insEval :: CMode -> Compiler ()
 insEval m = whenC (isStrict m) (ins EVAL)
 
-{- allocate a constant item and push it on the stack -}
+-- allocate a constant item and push it on the stack
 pushConst :: ConstItem -> Compiler ()
 pushConst c =
     addConst c =>>= \ ci ->
     ins (PUSH_CONST ci)
 
-{- returns whether the given identifier is global or not -}
+-- returns whether the given identifier is global or not
 isGlobal :: Id -> Compiler Bool
 isGlobal i =
     whereIs i =>>= \ w ->
     let b = isNothing w in
     simply b
 
-{- push a variable on the stack -}
+-- push a variable on the stack
 pushVar :: CMode -> Pos -> Id -> Compiler ()
 pushVar m pos i =
     whereIs i =>>= \ w ->
@@ -518,7 +524,7 @@ pushVar m pos i =
                           whenHat m (ins TPUSH)
 
 
-{- add code for projection, if appropriate -}
+-- add code for projection, if appropriate
 project :: CMode -> Pos -> Compiler ()
 project m pos =
   whenHat m (
@@ -528,21 +534,23 @@ project m pos =
       )
   )
 
-{- conditional on hat compliation -}
+-- conditional on hat compliation
 ifHat :: CMode -> Compiler a -> Compiler a -> Compiler a
 ifHat m hc oc =
   getFlags =>>= \ flags ->
   if sHat flags && isTraced m then hc
                               else oc
 
-{- only run a compiler whenC hat is enabled -}
+-- only run a compiler whenC hat is enabled
 whenHat :: CMode -> Compiler () -> Compiler ()
 whenHat m c = ifHat m c (simply ())
 
-{- trace a position -}
+-- trace a position
 tracePos :: (CRef -> Ins) -> Pos -> Compiler ()
 tracePos f p = addConst (CPos p) =>>= \ pi ->
                ins (f pi)
 
 whenC :: Bool -> Compiler () -> Compiler ()
 whenC c e = if c then e else nop
+
+  -}

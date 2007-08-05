@@ -12,14 +12,14 @@ import Flags
 
 -- | Annotates bytecode declarations with memory and zapping analysis
 --   results, and inserts @NEED_HEAP@ instructions as necessary.
-bcAnalysis :: Flags -> [BCDecl] -> [BCDecl]
-bcAnalysis fl ds = map (anDecl fl) ds
+bcAnalysis :: Flags -> BCModule -> BCModule
+bcAnalysis fl m = m { bcmDecls = map (anDecl fl) $ bcmDecls m }
 
 anDecl :: Flags -> BCDecl -> BCDecl
 anDecl flags (Fun n p z as cs cn pr st nd fl) = Fun n p z as (anCode flags as cs) cn pr st nd fl
 anDecl flags x                                = x
 
-anCode :: Flags -> [Id] -> Code -> Code
+anCode :: Flags -> [String] -> Code -> Code
 anCode flags as (CGraph start graph jumps) =
     let mst       = GState start graph jumps ()
         ((),mst') = runState (memGraph flags) mst
@@ -53,46 +53,21 @@ memLabel flags label =
 -- do the memory analysis for the linear block of code,
 -- scans the instructions and inserts a need-heap instruction if needed
 memLinear :: Flags -> GLabel -> GraphNode -> MemMonad ()
-memLinear flags label (GLinear isus eval next) = 
+memLinear flags label (GLinear isus eval next) =
         gSetNode label (GLinear isus' eval next)
     where
     isus' = memIns flags (reverse isus) 0 []
-    
+
 
 -- perform memory analysis for a block of instructions, we also need to consider dynamic instructions
 memIns :: Flags -> [UseIns] -> Int -> [UseIns] -> [UseIns]
-memIns flags []             need acc = (NEED_HEAP need,emptyUS) : acc                                                    
+memIns flags []             need acc = (NEED_HEAP need,emptyUS) : acc
 memIns flags (iu@(i,u):ius) need acc =
-    case imHeap (bcodeMetric i) of 
+    case imHeap (bcodeMetric i) of
        HeapStatic f -> memIns flags ius (need+f extra) (iu:acc)
        HeapDynamic ->  memIns flags ius 0 (iu:(NEED_HEAP need,emptyUS):acc)
     where
     extra = calcHeapExtra flags
-
-{-
--- do the memory analysis for the linear block of code,
--- scans the instructions and inserts a need-heap instruction if needed
-memLinear :: GLabel -> GraphNode -> MemMonad ()
-memLinear label (GLinear isus eval next) =
-    gSetNode label (GLinear isus' eval next)
-    where
-    (is,us) = unzip isus
-    need    = memForIns is + if eval then frameSize else 0
-    isus'   = if need <= 0 then isus else zip (NEED_HEAP need : is) (emptyUS : us)
-
--- calculate the memory usage for a list of linear instructions,
--- this needs to work out the maximum depth the stack reachs and how much memory it uses
-memForIns :: [Ins] -> Int
-memForIns is = interp is 0 0 0
-    where
-    interp []     stack maxStack heap = heap -- ignore maxStack now, stacks are done differently
-    interp (i:is) stack maxStack heap = interp is stack' maxStack' heap'
-        where
-        im        = bcodeMetric i
-        stack'    = stack + imStack im
-        maxStack' = max maxStack stack'
-        heap'     = heap + imHeap im 0
--}
 
 ----------------------------------------------------------------------------------------------
 -- stack zapping analysis
@@ -100,7 +75,7 @@ memForIns is = interp is 0 0 0
 
 type ZapMonad a = GraphMonad (Map.Map GLabel NeedSet) a
 
-type NeedSet = Set.Set Id
+type NeedSet = Set.Set String
 
 ----------------------------------------------------------------------------------------------
 -- monadic helper functions
@@ -116,7 +91,7 @@ zapSetNeeds label set = gWriteX_ $ \ s -> Map.insert label set s
 
 -- do zapping analysis for the whole graph, and then
 -- zap the arguments if they aren't needed
-zapInits :: [Id] -> GLabel -> ZapMonad ()
+zapInits :: [String] -> GLabel -> ZapMonad ()
 zapInits have label =
     do need <- zapGraph label
        last <- gAlwaysReturns label

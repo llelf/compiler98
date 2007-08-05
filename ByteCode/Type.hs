@@ -2,7 +2,8 @@
 module ByteCode.Type(
     -- * Data Types
     -- ** Top-level bytecode declarations
-      BCDecl(..)
+      BCModule(..)
+    , BCDecl(..)
 
     -- ** Constant tables
     , ConstTable
@@ -33,11 +34,11 @@ module ByteCode.Type(
     , fNone, fInvisible, fLambda, intFlags
     , frameSize
     , calcHeapExtra
+    , splitQualified
     ) where
 
 
 import Prim(PrimOp(..))
-import Id(Id)
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Util.Extra(Pos)
@@ -46,14 +47,20 @@ import NT
 import PosCode(LambdaFlags(..))
 import Flags(Flags, sHat)
 
+-- | A bytecode program
+data BCModule = BCModule {
+                    bcmModule :: String,
+                    bcmDecls :: [BCDecl]
+            }
+
 -- | A Declaration is a top level bcode entry
-data BCDecl = Fun { fName :: Id, fPos :: Pos, fArity :: Int, fArgs :: [Id],
+data BCDecl = Fun { fName :: String, fPos :: Pos, fArity :: Int, fArgs :: [String],
                     fCode :: Code, fConsts :: ConstTable, fIsPrim :: Bool, fStack :: Int, fNumDictArgs :: Int,
                     fFlags :: [LambdaFlags] }
-            | Con { cName :: Id, cPos :: Pos, cSize :: Int, cTag :: Int }
-            | Prim { pName :: Id, pPos :: Pos }
-            | External { xName :: Id, xPos :: Pos, xArity :: Int,
-                         xCName :: String, xCallConv :: CallConv, xType :: NewType }
+            | Con { cName :: String, cPos :: Pos, cSize :: Int, cTag :: Int }
+            | Prim { pName :: String, pPos :: Pos }
+            | External { xName :: String, xPos :: Pos, xArity :: Int,
+                         xCName :: String, xCallConv :: String, xArgsTypes :: [String] }
 
 fNone, fInvisible, fLambda :: Int
 fNone = 0x00
@@ -76,7 +83,7 @@ type ConstTable = Map.Map CRef ConstItem
 type CRef = Int
 
 -- | A constant in the constant table
-data ConstItem = CGlobal Id  GType        {- CAF, FUN, FUN0, CON, ZCON -}
+data ConstItem = CGlobal String  GType        {- CAF, FUN, FUN0, CON, ZCON -}
                | CInt Int
                | CInteger Integer
                | CFloat Float
@@ -155,7 +162,7 @@ data Write = WUByte Int
 
 -- | The use set for an instruction lists the variables that the instructions 'gives'
 --   as well as those that it needs, from this we can calculate what should be zapped.
-data UseSet = UseSet { useDepth :: Int, useGive :: [Id], useNeed :: Set.Set Id }
+data UseSet = UseSet { useDepth :: Int, useGive :: [String], useNeed :: Set.Set String }
 
 -- | Create an empty use set
 emptyUS :: UseSet
@@ -200,6 +207,7 @@ data Ins = END_CODE
          | PUSH_ZAP Int
          | ZAP_STACK Int
          | PUSH_ARG Int -- ^ is this supposed to be an 'Int' or an 'Id'? [SamB]
+                        -- ^ Int, first argument = 0, second = 1, etc [TomS]
          | PUSH_ZAP_ARG Int
          | ZAP_ARG Int
          | PUSH_INT Int
@@ -260,13 +268,21 @@ data Ins = END_CODE
          | TPUSH
          | TPUSHVAR CRef
          | TPROJECT CRef
+
+         | COMMENT String
            deriving (Eq,Ord,Show)
 
 type Label = Int
 
 
 frameSize :: Int
-frameSize = 3 
+frameSize = 3
 
 calcHeapExtra :: Flags -> Int
 calcHeapExtra flags = if sHat flags then 2 else 0
+
+-- | split a qualified name into (module,item)
+splitQualified :: String -> (String,String)
+splitQualified s = case break (==';') s of
+                    (mod,[])   -> (mod,[])
+                    (mod,i:is) -> (mod,is)

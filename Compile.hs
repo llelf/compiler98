@@ -46,7 +46,7 @@ import Case(caseTopLevel)
 import PrimCode(primCode)
 import STGArity(stgArity)
 import PosAtom(posAtom)
-import ByteCode.Compile
+import ByteCode.CompileYhcCore
 import ByteCode.ByteCode
 import DotNet.Compile
 import DotNet.Show
@@ -283,12 +283,16 @@ compileOne fd hiDeps = do
 
   {- Core outputting -}
   let importNames = [reverse $ unpackPS a | (a,b,c) <- imports, a /= rpsInternal]
-  (core,coreBinds) <- return $ makeCore importNames state zcon decls
+  (core,coreImps) <- return $ makeCore importNames state zcon decls
   pF (sShowCore flags) "Human Readable Core" (show core)
   when (sGenCore flags) $ do
        let outfile = sCoreFile fileflags
        createDirectoryIfMissing True (takeDirectory outfile)
        saveCore outfile core
+
+  putStrLn "---- Core Imports ----------------------------------"
+  mapM print coreImps
+  putStrLn "----------------------------------------------------"
 
   {- Do arity grouping again -}
   (decls        -- :: [(Id,PosLambda)]
@@ -311,8 +315,7 @@ compileOne fd hiDeps = do
   if not (sDotNet flags)
     then do
        {- Compile to BCode -}
-       (bcode,
-        state) <- return (bcCompile flags state decls zcon)
+       bcode <- return (bcCompile flags state coreImps core)
        bcOutput flags fileflags state bcode
     else do
        {- Compile to DotNet IL -}

@@ -4,9 +4,8 @@ module ByteCode.Peep(bcPeep) where
 import ByteCode.Type
 
 -- | Simple peephole optimizer
-bcPeep :: [BCDecl] -> [BCDecl]
-bcPeep ds = map peepDecl ds
-
+bcPeep :: BCModule -> BCModule
+bcPeep m = m { bcmDecls = map peepDecl $ bcmDecls m }
 
 peepDecl :: BCDecl -> BCDecl
 peepDecl (Fun n p z as cs cn pr sk nd fl) = Fun n p z as (peepCode cs) cn pr sk nd fl
