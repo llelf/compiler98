@@ -11,6 +11,7 @@ import Char(chr)
 import SysDeps(trace,openBinaryFileWrite)
 import Flags
 import Util.Extra
+import Util.Text(splitList)
 import IntState
 import IO
 import System.FilePath
@@ -59,6 +60,7 @@ withDirectory dstPath xform dat =
        createDirectoryIfMissing True dstDir
        handle <- openBinaryFileWrite (combine dstDir (xform dstFile))
        hPutStr handle dat
+       hFlush handle
        hClose handle
 
 -- | write a program to a file
@@ -67,10 +69,10 @@ wProgram m = do
     mapM_ wChar "HSBC"
     wUShort (fst bcVersion)
     wUShort (snd bcVersion)
-    wUShort (length $ bcmDecls m)
     wUShort 0x00                -- flags
+    wUShort (length $ bcmDecls m)
     decls <- inNewBlock $ mapM_ wDecl (bcmDecls m)
-    mref <- inNewBlock $ wDotted (bcmModule m)
+    mref <- inNewBlock $ wModuleName (bcmModule m)
     wStringTable
     wBlock mref
     wBlock decls
@@ -112,7 +114,7 @@ wConstTable ct = do
         wUShort (length ct')
         mapM_ wConst ct'
     where
-    ct' = map snd $ Map.toAscList ct
+    ct' = map snd $ sortBy (\(x,_) (y,_) -> compare x y) $ Map.toList ct
 
 -- | write a single constant table item
 wConst :: ConstItem -> Writer ()
@@ -161,7 +163,7 @@ wExternalArg ex = case lookup ex exs of
 wStringTable :: Writer ()
 wStringTable = do
     st <- gets wsStrings
-    let st' = map fst $ Map.toAscList st
+    let st' = map fst $ sortBy (\(_,x) (_,y) -> compare x y) $ Map.toList st
     wUShort (length st')
     mapM_ wString st'
 
@@ -169,20 +171,26 @@ wStringTable = do
 
 -- | write a fully qualified id, i.e. module name and item name
 wQualif :: String -> Writer ()
-wQualif name = do { wDotted mod ; wDotted item }
+wQualif name = do { wModuleName mod ; wUnqualif ";" item }
     where (mod,item) = splitQualified name
 
 -- | write the local part of a fully qualified name  (i.e. no module name)
 wLocal :: String -> Writer ()
-wLocal name = wDotted $ snd $ splitQualified name
+wLocal name = wUnqualif ";" $ snd $ splitQualified name
 
--- | write a dotted name this should either be a module name or an item name but not both
-wDotted :: String -> Writer ()
-wDotted name = do
-        wUShort (length parts)
+-- | write a module name
+wModuleName :: String -> Writer ()
+wModuleName name = wUnqualif "." name
+
+-- | write an unqualified name, this should either be a module name or an item name but not both
+wUnqualif :: String -> String -> Writer ()
+wUnqualif sep name
+    | length parts == 0 = error $ "wUnqualif: really shouldn't get empty name '"++name++"'"
+    | otherwise = do
+        wUByte (length parts)
         mapM_ wStringRef parts
     where
-    parts = separateBy (=='.') name
+    parts = splitList sep name
 
 -- | write a reference to a string, this allocates a new string in the table and writes it's id
 wStringRef :: String -> Writer ()
@@ -279,18 +287,21 @@ addString s = State $ \ ws ->
     case Map.lookup s (wsStrings ws) of
         Just i -> (i,ws)
         Nothing -> let (i:is) = wsFreeStrings ws
-                   in (i, ws { wsFreeStrings = is })
+                   in (i, ws { wsFreeStrings = is, wsStrings = Map.insert s i (wsStrings ws) })
 
 -----------------------------------------------------------------------------------------------------------
 
--- | separate a list with a separator
+{-
+-- | separate a list with a separator, e.g.
+--
+--        seperateBy (==';') "abc;def;;gh;" = [ "abc","def","","gh","" ]
 separateBy :: (a -> Bool) -> [a] -> [[a]]
-separateBy sep xs = case after of
-                        []     -> [before]
-                        (_:ys) -> before : separateBy sep ys
-    where
-    (before,after) = break sep xs
+separateBy sep [] = []
+separateBy sep xs = case break sep xs of
+                        (before,[])   -> [before]
+                        (before,_:ys) -> before : separateBy sep ys
 
+-}
 -----------------------------------------------------------------------------------------------------------
 
 {-

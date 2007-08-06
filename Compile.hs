@@ -290,10 +290,6 @@ compileOne fd hiDeps = do
        createDirectoryIfMissing True (takeDirectory outfile)
        saveCore outfile core
 
-  putStrLn "---- Core Imports ----------------------------------"
-  mapM print coreImps
-  putStrLn "----------------------------------------------------"
-
   {- Do arity grouping again -}
   (decls        -- :: [(Id,PosLambda)]
    ,state)      -- :: IntState

@@ -54,13 +54,17 @@ makeCore imports state datas funcs = (core,coreimports)
     modu          = getModuleId state
     (core,cstate) = runState (cProgram imports datas funcs) $ CState state Map.empty Set.empty nofail 0 Set.empty
     nofail        = error "makeCore: no failure on stack"
-    coreimports   = booleanImports ++ (Set.toList $ csImports cstate)
+    coreimports   = builtinImports ++ (Set.toList $ csImports cstate)
 
 -- | imports for Prelude.True and Prelude.False which are used internally in compiling ifs
-booleanImports :: [CoreImport]
-booleanImports = map (\ctor -> CoreImportCtor (coreCtorName ctor) dataBool) $ coreDataCtors $ dataBool
+-- | also includes the one tuple as that can't be expressed in Haskell
+builtinImports :: [CoreImport]
+builtinImports = dataToImp dataBool ++ dataToImp dataOne
     where
+    dataToImp dat = map (\ctor -> CoreImportCtor (coreCtorName ctor) dat) $ coreDataCtors dat
+
     dataBool = CoreData "Prelude;Bool" [] [ CoreCtor "Prelude;True" [], CoreCtor "Prelude;False" [] ]
+    dataOne  = CoreData "Prelude;1()" ["a"] [ CoreCtor "Prelude;1()" [("a",Nothing)] ]
 
 -- | convert a program to a core program
 cProgram :: [String] -> [Id] -> [(Id,PosLambda)] -> CMonad Core
@@ -370,7 +374,7 @@ encodeNamePair state id =
                                 TupleId n -> (unpackRPS mrps, show n ++ "_" ++ getUnqualified mtok)
                                 _         -> error $ "encodeNamePair: '"++show tok++"' marked as local function!"
 
-    encode' tok = let (mod,item) = encode tok in mod ++ "." ++ item
+    encode' tok = show tok -- does this work? let (mod,item) = encode tok in mod ++ "." ++ item
     isDataType tok = isUpper $ head $ getUnqualified tok
     unpackRPS rps = reverse $ unpackPS rps
 

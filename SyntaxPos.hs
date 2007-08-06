@@ -16,6 +16,7 @@ instance HasPos (DeclsDepend a) where
 
 instance HasPos (Decl a) where
   getPos (DeclType simple ty) = mergePos (getPos simple) (getPos ty)
+  getPos (DeclTypeRenamed pos _) = pos
   getPos (DeclDataPrim pos _ _) = pos
   getPos (DeclData _ ctx simple constrs derives) =
     mergePoss [getPos ctx,getPos simple,getPos constrs,getPosList derives]
@@ -31,6 +32,8 @@ instance HasPos (Decl a) where
   getPos (DeclPat alt)                = getPos alt
   getPos (DeclIgnore str)             = noPos
   getPos (DeclError str)              = noPos
+  getPos (DeclAnnot _ _)              = noPos
+  getPos (DeclFixity _)               = noPos
 
 instance HasPos (Entity a) where
     getPos (EntityVar        pos _)   = pos
@@ -47,7 +50,7 @@ instance HasPos (Fun a) where
 
 instance HasPos (Rhs a) where
     getPos (Unguarded e) = getPos e
-    getPos (PatGuard gdes) = 
+    getPos (PatGuard gdes) =
       mergePos (getPos (fst (head gdes))) (getPos (snd (last gdes)))
 
 instance HasPos (Stmt a) where

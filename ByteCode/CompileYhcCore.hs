@@ -1,3 +1,6 @@
+{-
+    This is the module ByteCode.Compile re-written to compile for Yhc Core instead of Pos Lambda.
+-}
 module ByteCode.CompileYhcCore where
 
 import ByteCode.Type
@@ -29,25 +32,25 @@ type Var = CoreVarName
 
 -- | The state of the compilation process
 data CState = CState {
-        csFlags :: Flags,
+        csFlags :: Flags,                           -- ^ the overal compilation flags
 
         -- FIXME: this probably isn't the right way to handle imports, instead we likely need to
         -- reparse all the .hi files ... blurk!
-        csImports :: Map.Map String CoreImport,
+        csImports :: Map.Map String CoreImport,     -- ^ import definitions
 
         -- function level compiling
-        csConsts :: Map.Map ConstItem CRef,
-        csThisFunc :: String,
-        csNextConst :: CRef,
-        csNextLabel :: Label,
-        csMaxDepth :: Int,
-        csIns :: [UseIns],
+        csConsts :: Map.Map ConstItem CRef,         -- ^ the current constant table items
+        csThisFunc :: String,                       -- ^ the name of the current func (for debugging the compiler)
+        csNextConst :: CRef,                        -- ^ the next available constant reference
+        csNextLabel :: Label,                       -- ^ the next available label
+        csMaxDepth :: Int,                          -- ^ the maximum stack depth encountered
+        csIns :: [UseIns],                          -- ^ the outputted instructions
 
         -- block level compiling
-        csEnv :: Map.Map Var Where,
-        csDepth :: Int,
-        csEvals :: Set.Set Var,
-        csFails :: [(Label,Int)]
+        csEnv :: Map.Map Var Where,                 -- ^ a mapping from variables to arg/stack locations
+        csDepth :: Int,                             -- ^ the current stack depth
+        csEvals :: Set.Set Var,                     -- ^ the set of already evaluated variables
+        csFails :: [(Label,Int)]                    -- ^ the stack of failure labels and stack depths
     }
 
 -- | compiler mode (strict or lazy)
@@ -59,9 +62,9 @@ data Where = Stack Int            -- ^ on the stack
            deriving Show
 
 -- | A case pattern
-data Pattern = PatCon CoreCtorName [Var]
-             | PatInt Int
-             | PatDefault Var
+data Pattern = PatCon CoreCtorName [Var]        -- ^ a constructor application with some variables
+             | PatInt Int                       -- ^ an integer (or character)
+             | PatDefault Var                   -- ^ a default with a variable (can be '_')
              deriving Show
 
 -- | A monad for compiling
@@ -205,6 +208,15 @@ cExpr mode (CoreFun name) = do
         pushConst (CGlobal name GCAF)
      else
         pushConst (CGlobal name GFUN0)
+    eval mode
+
+-- the special SEQ primitive
+cExpr mode exp@(CoreApp (CoreFun "SEQ") [x,y]) = do
+    cExpr Strict x
+    cExpr mode y
+
+-- application to no arguments
+cExpr mode exp@(CoreApp f []) = cExpr mode f
 
 -- an application to a function/constructor
 cExpr mode exp@(CoreApp f as) = do
@@ -233,6 +245,22 @@ cExpr mode exp@(CoreApp f as) = do
             emit (APPLY num)
             eval mode
 
+-- a case statement that is really an if
+cExpr Strict (CoreCase e as)
+    | isJust asIf = do
+        let (tcase,fcase) = fromJust asIf
+        cExpr Strict e
+        [false,after] <- newLabels 2
+        emit (JUMP_FALSE false)
+
+        let tbranch = do { cIfBranch tcase True false after }
+            fbranch = do { cIfBranch fcase False false after }
+
+        branchs after "If" [tbranch, fbranch]
+        emit (LABEL after)
+    where
+    asIf = altsAsIf as
+
 -- a case statement
 cExpr Strict (CoreCase e as) = do
     cExpr Strict e
@@ -243,16 +271,6 @@ cExpr Strict (CoreCase e as) = do
     emit (CASE isInt (zip ts las) def)
     let calts = map (cAlt after) as'
     branchs after "Case" calts
-    {-
-    case def of
-        Just p  -> branchs after "Case-Default" [cAlt after p]
-        Nothing -> return ()
-    das <- mapM (branch . cAlt after . snd)  tas
-    when (isJust def) $ do
-        branch $ cAlt after (fromJust def)
-        return ()
-    mergeDepths after "Case" das
-    -}
     emit (LABEL after)
 
 -- a let statement used for a failure case
@@ -260,15 +278,8 @@ cExpr mode exp@(CoreLet [(name,bind)] e)
     | isFailure name = do
         lfail <- newLabel
         lexit <- newLabel
-        let ce = withFailure lfail $ do
-                cExpr mode e
-                emit (JUMP lexit)
-                return True
-
-            cf = do
-                emit (LABEL lfail)
-                cExpr mode bind
-                return True
+        let ce = withFailure lfail $ do { cExpr mode e ; emit (JUMP lexit) ; return True }
+            cf = do { emit (LABEL lfail) ; cExpr mode bind ; return True }
 
         branchs lexit "Failure" [ce,cf]
         emit (LABEL lexit)
@@ -334,6 +345,19 @@ cCallGlobal mode f got expect
         fi <- addConst (CGlobal f GFUN)
         emit (MK_PAP fi got)
 
+-- | compile an if branch
+cIfBranch :: CoreExpr -> Bool -> Label -> Label -> Compiler Bool
+cIfBranch expr isTrue false after = do
+    when (not isTrue) $ do
+         emit (LABEL false)
+
+    let failure = isCoreVar expr && isFailure (fromCoreVar expr)
+    if failure then cFail
+     else do
+        cExpr Strict expr
+        when isTrue $ emit (JUMP after)
+        return True
+
 -- | an internal alternative
 type Alt = (Label,Pattern,CoreExpr)
 
@@ -345,13 +369,7 @@ cAlt after (label,pat,expr) = do
     emit (LABEL label)
     let failure = isCoreVar expr && isFailure (fromCoreVar expr)
     if failure then do
-        (lfail,fDepth) <- getFailure
-        depth <- getDepth
-        let err = error $ "cAlt: failure: depth = "++show depth++", fail depth = "++show fDepth
-            num = if depth < fDepth then err else depth - fDepth
-        emit (POP num)
-        emit (JUMP lfail)
-        return False
+        cFail
      else do
         case pat of
             PatDefault v -> do
@@ -382,6 +400,17 @@ cBinding rec (v,e) n = do
      else
         bind v (Stack 0)
 
+-- | compile a failure
+cFail :: Compiler Bool
+cFail = do
+   (lfail,fDepth) <- getFailure
+   depth <- getDepth
+   let err = error $ "cFail: failure: depth = "++show depth++", fail depth = "++show fDepth
+       num = if depth < fDepth then err else depth - fDepth
+   emit (POP num)
+   emit (JUMP lfail)
+   return False
+
 -- | return the special primitive instruction associated with a function, or Nothing
 primForFunc :: CoreFuncName -> Maybe Ins
 primForFunc fun = lookup fun prims
@@ -398,8 +427,8 @@ flattenCoreApp (CoreApp f as) = let (f',as') = flattenCoreApp f in (f',as'++as)
 flattenCoreApp f              = (f,[])
 
 -- | decompose a list of alternatives into (int-case,complete,tags,default)
--- | where int-case is true if this is an int-case, complete is true if the case is complete,
--- | tags is the list of constructor tag numbers and default is the default case (if there is one)
+--   where int-case is true if this is an int-case, complete is true if the case is complete,
+--   tags is the list of constructor tag numbers and default is the default case (if there is one)
 decomposeAlts :: [Alt] -> Compiler (Bool,Bool,[Tag],Maybe Label)
 decomposeAlts as =
     case ndefs of
@@ -420,8 +449,10 @@ decomposeAlts as =
                         []            -> Nothing
                         (label,_,_):_ -> Just label
 
-    isDefault (PatDefault _) = True
-    isDefault _              = False
+-- | returns whether a pattern is a default
+isDefault :: Pattern -> Bool
+isDefault (PatDefault _) = True
+isDefault _              = False
 
 -- | convert the strange CoreExpr pattern to a 'Pattern'
 exprToPattern :: CoreExpr -> Pattern
@@ -430,6 +461,33 @@ exprToPattern (CoreCon c)    = PatCon c []
 exprToPattern (CoreInt i)    = PatInt i
 exprToPattern (CoreChr c)    = PatInt (fromEnum c)
 exprToPattern (CoreVar v)    = PatDefault v
+
+-- | decides whether a list of core alternatives are really an if
+altsAsIf :: [(CoreExpr,CoreExpr)] -> Maybe (CoreExpr,CoreExpr)
+altsAsIf alts =
+        case boolalts of
+            []     -> Nothing  -- this is not a boolean case
+
+            [a]    -> let (abool,aexpr) = a
+                      in if abool then Just (aexpr,def)
+                                  else Just (def,aexpr)
+
+            [a,b]  -> let (abool,aexpr) = a
+                          (bbool,bexpr) = b
+                      in if abool then Just (aexpr,bexpr)
+                                  else Just (bexpr,aexpr)
+
+            _      -> error $ "altsAsIf: more than 2 alternatives for something that is casing over booleans!?"
+    where
+    patAlts  = map (\(cpat,expr) -> (exprToPattern cpat,expr)) alts
+    boolalts = concat $ map asBooleanPat patAlts
+
+    def = head [ e | (p,e) <- patAlts, isDefault p ]
+
+    asBooleanPat (pat,expr) = case pat of
+                                  PatCon "Prelude;True" []  -> [(True,expr)]
+                                  PatCon "Prelude;False" [] -> [(False,expr)]
+                                  _                         -> []
 
 -- | introduce instructions to push a constant
 pushConst :: ConstItem -> Compiler ()
@@ -506,6 +564,8 @@ asNewFunc :: Compiler a -> Compiler a
 asNewFunc f = do { cs <- get ; x <- f ; modify (const cs) ; return x }
 
 -- | take a list of compilers for different branches, run them all and then merge the results
+--   the compiler returns a bool indicating whether it returns normally, if it doesn't return normally
+--   then it doesn't need to have a depth matching the other branchs.
 branchs :: Label -> String -> [Compiler Bool] -> Compiler ()
 branchs label debug cs = do
         mcss <- mapM inNewEnv cs
@@ -516,7 +576,7 @@ branchs label debug cs = do
                 cs'      = cs { csEvals = evs, csDepth = head dps }
             in if dps == [] then cs
                else if all (== (head dps)) dps then cs'
-                else warning (csThisFunc cs' ++": L_"++show label++": "++debug++" depths not all equal"++show dps) cs'
+                else error (csThisFunc cs' ++": L_"++show label++": "++debug++" depths not all equal"++show dps)
     where
     inNewEnv c = do
         cs <- get
@@ -589,7 +649,8 @@ lookupImport :: String -> Compiler CoreImport
 lookupImport name = gets $ \ cs ->
     case Map.lookup name (csImports cs) of
         Just imp -> imp
-        Nothing  -> error $ "Compiling Yhc.Core to bytecode: the name '"++name++"' is referenced but is neither local nor specified as an import"
+        Nothing  -> error $ "Compiling Yhc.Core to bytecode: the name '"++name++
+                            "' is referenced but is neither local nor specified as an import"
 
 -- | lookup a data constructor
 lookupImportData :: String -> Compiler CoreData
@@ -618,3 +679,4 @@ isFailure = ("v_fail_" `isPrefixOf`)
 intersectManySets :: Ord a => [Set.Set a] -> Set.Set a
 intersectManySets [] = Set.empty
 intersectManySets xs = foldr1 Set.intersection xs
+

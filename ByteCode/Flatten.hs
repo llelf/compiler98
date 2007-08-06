@@ -77,7 +77,7 @@ flLinear label isus eval next = do
 flIf :: GLabel -> GLabel -> GLabel -> Flattener [Ins]
 flIf label true false = do
     ts <- flGraph true True
-    fs <- flGraph true False
+    fs <- flGraph false False
     return $ JUMP_FALSE (toLabel false) : ts ++ fs
 
 -- | flatten a case statement
