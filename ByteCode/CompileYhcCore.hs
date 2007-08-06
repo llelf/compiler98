@@ -243,6 +243,16 @@ cExpr Strict (CoreCase e as) = do
     emit (CASE isInt (zip ts las) def)
     let calts = map (cAlt after) as'
     branchs after "Case" calts
+    {-
+    case def of
+        Just p  -> branchs after "Case-Default" [cAlt after p]
+        Nothing -> return ()
+    das <- mapM (branch . cAlt after . snd)  tas
+    when (isJust def) $ do
+        branch $ cAlt after (fromJust def)
+        return ()
+    mergeDepths after "Case" das
+    -}
     emit (LABEL after)
 
 -- a let statement used for a failure case
@@ -250,9 +260,17 @@ cExpr mode exp@(CoreLet [(name,bind)] e)
     | isFailure name = do
         lfail <- newLabel
         lexit <- newLabel
-        withFailure lfail $ do { cExpr mode e ; emit (JUMP lexit) }
-        emit (LABEL lfail)
-        cExpr mode bind
+        let ce = withFailure lfail $ do
+                cExpr mode e
+                emit (JUMP lexit)
+                return True
+
+            cf = do
+                emit (LABEL lfail)
+                cExpr mode bind
+                return True
+
+        branchs lexit "Failure" [ce,cf]
         emit (LABEL lexit)
 
 -- a let statement
@@ -316,10 +334,13 @@ cCallGlobal mode f got expect
         fi <- addConst (CGlobal f GFUN)
         emit (MK_PAP fi got)
 
+-- | an internal alternative
+type Alt = (Label,Pattern,CoreExpr)
+
 -- | compile an alternative
 cAlt :: Label ->                     -- ^ the label for the end of the case statement
-        (Label, Pattern,CoreExpr) -> -- ^ the label for the start, the pattern and the expression
-        Compiler ()
+        Alt ->                       -- ^ the label for the start, the pattern and the expression
+        Compiler Bool                -- ^ returns whether result was normal exit (non-failure)
 cAlt after (label,pat,expr) = do
     emit (LABEL label)
     let failure = isCoreVar expr && isFailure (fromCoreVar expr)
@@ -330,6 +351,7 @@ cAlt after (label,pat,expr) = do
             num = if depth < fDepth then err else depth - fDepth
         emit (POP num)
         emit (JUMP lfail)
+        return False
      else do
         case pat of
             PatDefault v -> do
@@ -349,6 +371,7 @@ cAlt after (label,pat,expr) = do
                 emit (SLIDE n)
 
         emit (JUMP after)
+        return True
 
 -- | compile a let binding (either for recursive or non-recursive let)
 cBinding :: Bool -> (CoreVarName,CoreExpr) -> Int -> Compiler ()
@@ -363,7 +386,7 @@ cBinding rec (v,e) n = do
 primForFunc :: CoreFuncName -> Maybe Ins
 primForFunc fun = lookup fun prims
     where
-    ops = [ (ADD,P_ADD), (SUB,P_SUB), (MUL,P_MUL), (CMP_EQ,P_CMP_EQ), (CMP_NE,P_CMP_NE),
+    ops = [ (ADD,P_ADD), (SUB,P_SUB), (MUL,P_MUL), (SLASH,P_DIV), (CMP_EQ,P_CMP_EQ), (CMP_NE,P_CMP_NE),
             (CMP_LE,P_CMP_LE), (CMP_LT,P_CMP_LT), (CMP_GE,P_CMP_GE), (CMP_GT,P_CMP_GT), (NEG,P_NEG) ]
     others = [ (ORD,P_FROM_ENUM), (STRING,P_STRING), (QUOT,P_DIV OpWord), (REM,P_MOD OpWord) ]
     prims = map prim $ [ (p k,i k) | (p,i) <- ops, k <- [OpWord,OpFloat,OpDouble] ] ++ others
@@ -377,7 +400,7 @@ flattenCoreApp f              = (f,[])
 -- | decompose a list of alternatives into (int-case,complete,tags,default)
 -- | where int-case is true if this is an int-case, complete is true if the case is complete,
 -- | tags is the list of constructor tag numbers and default is the default case (if there is one)
-decomposeAlts :: [(Label,Pattern,CoreExpr)] -> Compiler (Bool,Bool,[Tag],Maybe Label)
+decomposeAlts :: [Alt] -> Compiler (Bool,Bool,[Tag],Maybe Label)
 decomposeAlts as =
     case ndefs of
         (_,PatInt i,e):_ -> do
@@ -483,27 +506,39 @@ asNewFunc :: Compiler a -> Compiler a
 asNewFunc f = do { cs <- get ; x <- f ; modify (const cs) ; return x }
 
 -- | take a list of compilers for different branches, run them all and then merge the results
-branchs :: Label -> String -> [Compiler ()] -> Compiler ()
+branchs :: Label -> String -> [Compiler Bool] -> Compiler ()
 branchs label debug cs = do
-        css <- mapM inNewEnv cs
+        mcss <- mapM inNewEnv cs
         modify $ \ cs ->
-            let evs = csEvals cs `Set.union` (intersectManySets $ map csEvals css)
-                dps = map csDepth css
-                cs' = cs { csEvals = evs }
-            in if all (== (head dps)) dps then cs
-               else warning (csThisFunc cs ++": L_"++show label++": "++debug++" depths not all equal"++show dps) cs'
+            let css      = catMaybes mcss
+                evs      = csEvals cs `Set.union` (intersectManySets $ map csEvals css)
+                dps      = map csDepth css
+                cs'      = cs { csEvals = evs, csDepth = head dps }
+            in if dps == [] then cs
+               else if all (== (head dps)) dps then cs'
+                else warning (csThisFunc cs' ++": L_"++show label++": "++debug++" depths not all equal"++show dps) cs'
     where
     inNewEnv c = do
         cs <- get
-        c
-        State $ \ cs' -> (cs', cs' { csEnv = csEnv cs, csDepth = csDepth cs, csEvals = csEvals cs })
+        x <- c
+        State $ \ cs' -> (if x then Just cs' else Nothing, cs' { csEnv = csEnv cs, csDepth = csDepth cs, csEvals = csEvals cs })
 
+{-
 -- | take a compiler for a branching operation and execute the compiler recording the stack depth on the way out
 branch :: Compiler () -> Compiler Int
 branch c = do
-    depth <- gets csDepth
+    cs <- get
     c
-    State $ \ cs -> (csDepth cs, cs { csDepth = depth })
+    State $ \ cs' -> let cs'' = cs' { csEnv = csEnv cs, csFails = csFails cs, csEvals = csEvals cs, csDepth = csDepth cs }
+                     in (csDepth cs', cs'')
+
+-- | merge together a list of depths taken from branching, checks they are all the same
+-- and sets the depth to that
+mergeDepths :: Label -> String -> [Int] -> Compiler ()
+mergeDepths lab kind (i:is)
+    | and (map (==i) is) = modify $ \ cs -> cs { csDepth = i }
+    | otherwise          = trace ("L_" ++ show lab++":"++kind++" depths don't match on merge depths "++show (i:is)) $ return ()
+-}
 
 -- | bind a variable to a location
 bind :: Var -> Where -> Compiler ()
