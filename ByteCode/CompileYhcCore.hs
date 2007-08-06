@@ -62,10 +62,12 @@ data Where = Stack Int            -- ^ on the stack
            deriving Show
 
 -- | A case pattern
+{-
 data Pattern = PatCon CoreCtorName [Var]        -- ^ a constructor application with some variables
              | PatInt Int                       -- ^ an integer (or character)
              | PatDefault Var                   -- ^ a default with a variable (can be '_')
              deriving Show
+-}
 
 -- | A monad for compiling
 type Compiler a = State CState a
@@ -133,7 +135,7 @@ cFunc func
 
 -- | compile the body of the a function and its arguments to bytecode instructions
 cBody :: CoreExpr -> [Var] -> Compiler [UseIns]
-cBody exp@(CoreCase (CoreVar v) [(CoreApp (CoreCon c) vs, v2@(CoreVar _))]) args@[arg] = do
+cBody exp@(CoreCase (CoreVar v) [(PatCon c vs, CoreVar v2)]) args@[arg] = do
     only <- isOnlyCon c
     if only && v2 `elem` vs then do
         let no    = fromJust $ lookup v2 (zip vs [0..])
@@ -266,7 +268,7 @@ cExpr Strict (CoreCase e as) = do
     cExpr Strict e
     las <- newLabels (length as)
     after <- newLabel
-    let as' = zipWith (\(p,e) l -> (l,exprToPattern p,e)) as las
+    let as' = zipWith (\(p,e) l -> (l,p,e)) as las
     (isInt,complete,ts,def) <- decomposeAlts as'
     emit (CASE isInt (zip ts las) def)
     let calts = map (cAlt after) as'
@@ -301,16 +303,15 @@ cExpr mode exp@(CoreLet bs e)
     n = length bs
 
 -- an int
-cExpr mode (CoreInt i)
-    | isShort i = emit (PUSH_INT i)
-    | otherwise = pushConst (CInt i)
-
--- literals
-cExpr mode (CoreInteger i) = pushConst (CInteger i)
-cExpr mode (CoreChr c) = emit (PUSH_CHAR $ fromEnum c)
-cExpr mode (CoreStr s) = do { pushConst (CString s) ; emit P_STRING }
-cExpr mode (CoreFloat f) = pushConst (CFloat f)
-cExpr mode (CoreDouble d) = pushConst (CDouble d)
+cExpr mode (CoreLit lit) =
+    case lit of
+        CoreInt i -> if isShort i then emit (PUSH_INT i)
+                                  else pushConst (CInt i)
+        CoreInteger i -> pushConst (CInteger i)
+        CoreChr c -> emit (PUSH_CHAR $ fromEnum c)
+        CoreStr s -> do { pushConst (CString s) ; emit P_STRING }
+        CoreFloat f -> pushConst (CFloat f)
+        CoreDouble d -> pushConst (CDouble d)
 -------------------------------------------------------------------------
 
 -- | compile the arguments to a function
@@ -359,7 +360,7 @@ cIfBranch expr isTrue false after = do
         return True
 
 -- | an internal alternative
-type Alt = (Label,Pattern,CoreExpr)
+type Alt = (Label,CorePat,CoreExpr)
 
 -- | compile an alternative
 cAlt :: Label ->                     -- ^ the label for the end of the case statement
@@ -372,21 +373,16 @@ cAlt after (label,pat,expr) = do
         cFail
      else do
         case pat of
-            PatDefault v -> do
-                bind v (Stack 0)
-                cExpr Strict expr
-                emit (SLIDE 1)
-
-            PatInt i -> do
-                emit (POP 1)
-                cExpr Strict expr
-
             PatCon c vs -> do
                 let n = length vs
                 emitUse (UNPACK n) vs Set.empty
                 zipWithM_ (\v n -> bind v (Stack n)) vs [0..]
                 cExpr Strict expr
                 emit (SLIDE n)
+
+            _ -> do
+                emit (POP 1)
+                cExpr Strict expr
 
         emit (JUMP after)
         return True
@@ -432,8 +428,9 @@ flattenCoreApp f              = (f,[])
 decomposeAlts :: [Alt] -> Compiler (Bool,Bool,[Tag],Maybe Label)
 decomposeAlts as =
     case ndefs of
-        (_,PatInt i,e):_ -> do
-            let tags = map (\(_,PatInt i,_) -> i) ndefs
+        (_,PatLit c,e):_ -> do
+            let tagof (PatLit c) = case c of { CoreInt i -> i ; CoreChr c -> fromEnum c }
+                tags = map (\(_,p,_) -> tagof p) ndefs
             return (True,False,tags,ldef)
 
         (_,PatCon c vs,e):_ -> do
@@ -444,26 +441,13 @@ decomposeAlts as =
                 tags     = map (\(_,PatCon c _, _) -> fromJust $ lookup c ncons) ndefs
             return (False,complete,tags,ldef)
     where
-    (ndefs,defs) = break (\(_,p,_) -> isDefault p) as
+    (ndefs,defs) = break (\(_,p,_) -> isPatDefault p) as
     ldef         = case defs of
                         []            -> Nothing
                         (label,_,_):_ -> Just label
 
--- | returns whether a pattern is a default
-isDefault :: Pattern -> Bool
-isDefault (PatDefault _) = True
-isDefault _              = False
-
--- | convert the strange CoreExpr pattern to a 'Pattern'
-exprToPattern :: CoreExpr -> Pattern
-exprToPattern (CoreApp c as) = PatCon (fromCoreCon c) (map fromCoreVar as)
-exprToPattern (CoreCon c)    = PatCon c []
-exprToPattern (CoreInt i)    = PatInt i
-exprToPattern (CoreChr c)    = PatInt (fromEnum c)
-exprToPattern (CoreVar v)    = PatDefault v
-
 -- | decides whether a list of core alternatives are really an if
-altsAsIf :: [(CoreExpr,CoreExpr)] -> Maybe (CoreExpr,CoreExpr)
+altsAsIf :: [(CorePat,CoreExpr)] -> Maybe (CoreExpr,CoreExpr)
 altsAsIf alts =
         case boolalts of
             []     -> Nothing  -- this is not a boolean case
@@ -479,10 +463,9 @@ altsAsIf alts =
 
             _      -> error $ "altsAsIf: more than 2 alternatives for something that is casing over booleans!?"
     where
-    patAlts  = map (\(cpat,expr) -> (exprToPattern cpat,expr)) alts
-    boolalts = concat $ map asBooleanPat patAlts
+    boolalts = concat $ map asBooleanPat alts
 
-    def = head [ e | (p,e) <- patAlts, isDefault p ]
+    def = head [ e | (PatDefault,e) <- alts ]
 
     asBooleanPat (pat,expr) = case pat of
                                   PatCon "Prelude;True" []  -> [(True,expr)]

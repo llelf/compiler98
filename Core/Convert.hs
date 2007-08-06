@@ -167,17 +167,17 @@ foreignArgType x =
 cExpr :: PosExp -> CMonad CoreExpr
 cExpr x = case x of
     -- literals
-    PosInt _ i -> return $ CoreInt i
-    PosInteger _ i -> return $ CoreInteger i
-    PosChar _ c -> return $ CoreChr (chr c)
-    PosString _ s -> return $ CoreStr s
-    PosFloat _ f -> return $ CoreFloat f
-    PosDouble _ d -> return $ CoreDouble d
+    PosInt _ i -> return $ CoreLit $ CoreInt i
+    PosInteger _ i -> return $ CoreLit $ CoreInteger i
+    PosChar _ c -> return $ CoreLit $ CoreChr (chr c)
+    PosString _ s -> return $ CoreLit $ CoreStr s
+    PosFloat _ f -> return $ CoreLit $ CoreFloat f
+    PosDouble _ d -> return $ CoreLit $ CoreDouble d
 
     -- simple expressions
     PosExpDict e -> cExpr e
     PosExpThunk p _ args -> cExpr (PosExpApp p args)
-    PosCon _ i -> bindCon i
+    PosCon _ i -> liftM CoreCon $ bindGlobal i
     PosPrim _ prim _ -> return $ CoreFun $ strPrim prim
     PosVar _ i -> do
         free <- isFree i
@@ -208,8 +208,8 @@ cExpr x = case x of
         e1' <- cExpr e1
         e2' <- cExpr e2
         e3' <- cExpr e3
-        let true = CoreApp (CoreCon "Prelude;True") []
-            false = CoreApp (CoreCon "Prelude;False") []
+        let true = PatCon "Prelude;True" []
+            false = PatCon "Prelude;False" []
         return $ CoreCase e1' [(true, e2'),(false,e3')]
 
     PosExpCase pos e alts -> do
@@ -217,19 +217,19 @@ cExpr x = case x of
         alts' <- mapM cAlt alts
         return $ CoreCase e' alts'
         where
-        cAlt (PosAltInt pos i False e) = do { x <- cExpr e ; return (CoreChr (chr i), x) }
-        cAlt (PosAltInt pos i True e) = do { x <- cExpr e ; return (CoreInt i, x) }
+        cAlt (PosAltInt pos i False e) = do { x <- cExpr e ; return (PatLit $ CoreChr (chr i), x) }
+        cAlt (PosAltInt pos i True e) = do { x <- cExpr e ; return (PatLit $ CoreInt i, x) }
         cAlt (PosAltCon pos c vars e) = inNewEnv $ do
             vs <- mapM (bindLocal . snd) vars
             con <- bindCon c
             e' <- cExpr e
-            return (CoreApp con (map CoreVar vs), e')
+            return (PatCon con vs, e')
 
     -- fat bar and fail
     PosExpFatBar _ e1@(PosExpCase {}) PosExpFail -> do
         CoreCase a b <- cExpr e1
         failExp <- getFailExpr
-        return $ CoreCase a (b ++ [(CoreVar "_",failExp)])
+        return $ CoreCase a (b ++ [(PatDefault,failExp)])
 
     PosExpFatBar _ e1 PosExpFail -> cExpr e1
     PosExpFatBar pos e1 e2 -> do
@@ -337,10 +337,8 @@ bindLocal i = do
     return name
 
 -- | bind a constructor
-bindCon :: Id -> CMonad CoreExpr
-bindCon i = do
-    name <- bindGlobal i
-    return (CoreCon name)
+bindCon :: Id -> CMonad CoreCtorName
+bindCon i = bindGlobal i
 
 -- | get the state
 getState :: CMonad IntState
