@@ -47,7 +47,7 @@ data CState = CState {
         csIns :: [UseIns],                          -- ^ the outputted instructions
 
         -- block level compiling
-        csEnv :: Map.Map Var Where,                 -- ^ a mapping from variables to arg/stack locations
+        csEnv :: Map.Map Var Where,                 -- ^ a mapping from variables to arg\/stack locations
         csDepth :: Int,                             -- ^ the current stack depth
         csEvals :: Set.Set Var,                     -- ^ the set of already evaluated variables
         csFails :: [(Label,Int)]                    -- ^ the stack of failure labels and stack depths
@@ -363,9 +363,9 @@ cIfBranch expr isTrue false after = do
 type Alt = (Label,CorePat,CoreExpr)
 
 -- | compile an alternative
-cAlt :: Label ->                     -- ^ the label for the end of the case statement
-        Alt ->                       -- ^ the label for the start, the pattern and the expression
-        Compiler Bool                -- ^ returns whether result was normal exit (non-failure)
+cAlt :: Label ->                     -- the label for the end of the case statement
+        Alt ->                       -- the label for the start, the pattern and the expression
+        Compiler Bool                -- returns whether result was normal exit (non-failure)
 cAlt after (label,pat,expr) = do
     emit (LABEL label)
     let failure = isCoreVar expr && isFailure (fromCoreVar expr)
