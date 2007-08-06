@@ -271,7 +271,7 @@ addBound id = modify $ \ cs -> cs { csBound = Set.insert id (csBound cs) }
 
 -- | test whether a variable is free
 isFree :: Id -> CMonad Bool
-isFree id = gets $ \ cs -> Set.notMember id (csBound cs)
+isFree id = gets $ \ cs -> not (Set.member id (csBound cs))
 
 -- | bind a variable to a name
 bind :: Id -> String -> CMonad Bool
