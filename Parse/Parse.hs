@@ -161,6 +161,8 @@ parseForeign =
              (k_dotnet `revChk` is (Other "dotnet"))
                `orelse`
              (k_jvm `revChk` is (Other "jvm"))
+               `orelse`
+             (parseAp (\(p,tok) -> (p,Other (show tok))) varid)
           --   `orelse`
           -- (is C)  -- previously the default, now the name is mandatory
   is v     = parse (noPos,v)
@@ -326,7 +328,7 @@ parseBrackExp1 pos = -- found '[e'
         `orelse`
     (\qs posr e -> mkSweetListComp pos e qs posr)
                       `parseChk` pipe
-                      `ap` somesSep comma parseQual 
+                      `ap` somesSep comma parseQual
                       `ap` rbrack
         `orelse`
     (\eto posr ef -> mkSweetListEnum pos ef Nothing (Just eto) posr)
@@ -352,7 +354,7 @@ parseBrackExp2 pos =                -- found '[e,e'
                       `parseChk` comma
                       `ap` manySep comma parseExp
                       `ap` rbrack
- 
+
 {-
 -- de-sugared version of list comprehensions and list enumerations
 --
@@ -401,7 +403,7 @@ parseRhs del =
         `orelse`
     PatGuard `parseAp` some (parsePatGdExp del)
 
-parsePatGdExp :: Parser Pos [PosToken] a  
+parsePatGdExp :: Parser Pos [PosToken] a
               -> Parser ([Qual TokenId], Exp TokenId) [PosToken] a
 parsePatGdExp del =
     pair `parseChk` pipe `apCut` somesSep comma parseQual

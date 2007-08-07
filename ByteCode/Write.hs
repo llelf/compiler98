@@ -142,7 +142,7 @@ wCode (CWrites ws) = wSizedBlock $ mapM_ wWrite ws
 wCallConv :: String -> Writer ()
 wCallConv cc = case lookup cc cmap of
                     Just c -> wChar c
-                    _      -> error $ "The calling convention '"++cc++"' is not supported"
+                    _      -> error $ "Writing bytecode: the calling convention '"++cc++"' is not supported"
     where cmap = [ ("ccall",'c'), ("cast",'x'), ("address",'a'), ("primitive",'p'), ("stdcall",'s'),
                    ("fastccall",'C'), ("faststdcall",'S'), ("builtin",'b') ]
 

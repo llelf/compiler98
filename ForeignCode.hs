@@ -103,9 +103,9 @@ profname    hname = showString "pf_"      . fixStr (show hname)
 
 toForeign :: Map.Map Id Info -> ForeignMemo
               -> CallConv -> ImpExp -> String -> Int -> Id -> Foreign
-toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var
-  | callconv `notElem` ["primitive","fastccall","faststdcall","builtin"] =
-    error ("Foreign calling convention \""++callconv++"\" not supported.")
+-- toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var
+  -- | callconv `notElem` ["primitive","fastccall","faststdcall","builtin"] =
+  --  error ("Foreign calling convention \""++callconv++"\" not supported.")
 toForeign symboltable memo callconv ie cname arity var =
     Foreign ie proto style include cfunc hname arity' args res
   where
