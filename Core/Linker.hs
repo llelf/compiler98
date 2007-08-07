@@ -28,7 +28,7 @@ coreLinker pd startFile inputs output = do
             rootMod = sModuleName (fFileFlags startFile)
             rootCor = head $ filter ((==) rootMod . coreName) cores
             rootSet = map coreFuncName $ coreFuncs rootCor
-            rootMain = rootMod ++ ".main"
+            rootMain = rootMod ++ ";main"
             hasMain = rootMain `elem` rootSet
 
         putStrLn "Linking..."
@@ -58,7 +58,7 @@ addPrims core = core{coreFuncs = map f coreBytecodePrims ++ coreFuncs core}
 addTuple1 :: Core -> Core
 addTuple1 core = core{coreDatas = tuple1 : coreDatas core}
     where
-        tuple1 = CoreData "Prelude.1()" ["a"] [CoreCtor "Prelude.1()" [("a",Nothing)]]
+        tuple1 = CoreData "Prelude;1()" ["a"] [CoreCtor "Prelude;1()" [("a",Nothing)]]
 
 
 addMain :: String -> Core -> Core
