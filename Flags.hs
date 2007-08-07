@@ -1,5 +1,5 @@
 {- ---------------------------------------------------------------------------
-Flags are all the choices and information given to the compiler in the 
+Flags are all the choices and information given to the compiler in the
 argument list. Here a data type Flags is defined for holding this information,
 a function processArgs to obtain a value of type Flags from the argument list,
 and a simple function pF for printing information demanded by a flag.
@@ -27,7 +27,7 @@ import Building (Compiler(..),compiler)
 import System.Console.GetOpt
 
 {- File flags are things which are specific to each compiled file -}
-data FileFlags = FileFF { 
+data FileFlags = FileFF {
       sSourceFile :: String,   -- name of source file as given
       sModuleName :: String,   -- name of the module
       sTypeFile :: String,     -- full path to the .hi file
@@ -90,7 +90,7 @@ calcRootPath filename modname = joinPath $ take tsize orig
 
 
 {- Flags are flags that apply to every file -}
-data Flags = FF 
+data Flags = FF
   {sRootFile   :: String	-- full path to root source code
   ,sFileArgs   :: [String]	-- all filenames given on commandline
   ,sIncludes   :: [String]
@@ -98,7 +98,7 @@ data Flags = FF
   ,sBasePath   :: String
 
   ,sTypeDst     :: String --  where generated .hi should go
-  ,sObjectDst   :: String --  where generated bcode should be 
+  ,sObjectDst   :: String --  where generated bcode should be
   ,sWrapDst     :: String -- b-code    where generated wrappers should go
   ,sHideObj     :: Bool -- hide object code
 
@@ -121,9 +121,10 @@ data Flags = FF
   ,sLib        :: Bool	-- compiling a library
   ,sPart       :: Bool  -- compiling part of a lib
   ,sKeepCase   :: Bool	-- don't lift case, we fix those later
-  
+
   ,sUnifyHack  :: Bool  -- enables type hackery that's required to make the prelude compile ...
-  ,sDotNet     :: Bool  -- generate .NET IL
+  ,sDotNet     :: Bool  -- generate .NET IL (implies -no-bytecode)
+  ,sNoBytecode :: Bool  -- don't generate any bytecode (typically used with -core)
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      :: Bool	-- generate bytecode via ANSI-C
@@ -156,7 +157,7 @@ data Flags = FF
   ,sArity      :: Bool  -- stg tree after arity analysis
   ,sAtom       :: Bool  -- stg tree after only atoms in applications
   ,sFree       :: Bool  -- stg code with explicit free variables
-  
+
   -- | Yhc
   ,sBcodeCompile :: Bool -- b-code
   ,sBcodeMem   :: Bool  -- b-code       after NNEDHEAP analysis
@@ -173,7 +174,7 @@ data Flags = FF
   ,sGcodeOpt2  :: Bool	-- g-code	after optimisation phase 2
 
   ,sFunNames   :: Bool	-- insert position and name of functions in the code
-  
+
 --v debugging flags - show symbol table (after each compiler phase)
   ,sIBound     :: Bool  -- after all imports
   ,sIIBound    :: Bool  -- after each import
@@ -192,21 +193,21 @@ data Flags = FF
   ,sShowWidth  :: Int   -- width for showing intermediate program
   ,sShowIndent :: Int   -- indentation for nesting shown intermediate program
   ,sShowQualified :: Bool -- show qualified ids as far as possible
-  
+
   ,sShowCore  :: Bool -- show Core
   ,sGenCore :: Bool -- generate a .ycr file
   ,sLinkCore :: Bool -- link all the core files together
 
 --export control flags
   ,sExportAll :: Bool -- ignore what the module decl says, just export the lot
-  
+
   ,sHelp :: Bool
   ,sVersion :: Bool
   }
   deriving (Show)
 
 {- Default values for flags -}
-defaultFlags = FF 
+defaultFlags = FF
   {sRootFile   = ""
   ,sFileArgs   = []
   ,sIncludes   = []
@@ -237,9 +238,10 @@ defaultFlags = FF
   ,sPrelude    = False
   ,sLib        = False
   ,sKeepCase   = False
-  
+
   ,sUnifyHack  = False
   ,sDotNet     = False
+  ,sNoBytecode = False
 
 --v Flags for machine architecture / configuration
   ,sAnsiC      = True
@@ -272,7 +274,7 @@ defaultFlags = FF
   ,sArity      = False
   ,sAtom       = False
   ,sFree       = False
-  
+
   -- Yhc
   ,sBcodeCompile = False
   ,sBcodeMem     = False
@@ -289,7 +291,7 @@ defaultFlags = FF
   ,sGcodeOpt2  = False
 
   ,sFunNames   = False
-  
+
 --v debugging flags - show symbol table (after each compiler phase)
   ,sIBound     = False
   ,sIIBound    = False
@@ -308,14 +310,14 @@ defaultFlags = FF
   ,sShowWidth     = 80
   ,sShowIndent    = 2
   ,sShowQualified = True
-  
+
   ,sShowCore  = False
   ,sGenCore   = False
   ,sLinkCore  = False
 
 --export control flags
   ,sExportAll = False
-  
+
   ,sHelp      = False
   ,sVersion   = False
   }
@@ -352,7 +354,9 @@ allOpts =
   , Option ""  ["hat"]
            (NoArg (\f -> f{sHat=True})) "compile with Hat debugging support"
   , Option ""  ["dotnet"]
-           (NoArg (\f -> f{sDotNet=True})) "Generate .NET IL code"
+           (NoArg (\f -> f{sDotNet=True})) "Generate .NET IL code (implies -no-bytecode)"
+  , Option ""  ["no-bytecode"]
+           (NoArg (\f -> f{sNoBytecode=True})) "Do not generate any bytecode"
   , Option "W" ["genwrapper"]
            (NoArg (\f -> f{sBcodeWrapper=True})) "generate FFI wrapper"
   , Option ""  ["hi-suffix","hisuf"]
@@ -404,7 +408,7 @@ allOpts =
            (NoArg (\f -> f{sProfile=True})) "Generate code for heap profiling"
   , Option "z" ["tprof"]
            (NoArg (\f -> f{sTprof=True})) "Generate code for time profiling"
-   
+
 --  OptGroup "Compliance Options"
   , Option ""  ["ansiC"]
            (NoArg (\f -> f{sAnsiC=True})) "Generate bytecode via ANSI-C"
@@ -556,7 +560,7 @@ allOpts =
 
 -- Parse etc.
 processArgs :: [String] -> Flags
-processArgs ss = 
+processArgs ss =
     let (funs, nonopts, errors) = getOpt Permute allOpts ss
     in (if not (null errors) then
            error ("Could not parse cmd-line options: "++unlines errors)
@@ -575,7 +579,7 @@ processArgs ss =
 
 printUsage :: Bool -> String
 printUsage _ | compiler==Yhc =
-    flip usageInfo allOpts (unlines $ 
+    flip usageInfo allOpts (unlines $
         [ "yhc - York Haskell Compiler"
         , "A cross platform Haskell compiler"
         , ""
@@ -590,6 +594,6 @@ printUsage _ | compiler==Nhc98 =
 {- If first argument is True, then print second and third with formatting -}
 pF :: Bool -> [Char] -> [Char] -> IO ()
 pF flag title text =
-  if flag 
-    then hPutStr stderr ( "======\t"++title++":\n"++text++"\n") 
+  if flag
+    then hPutStr stderr ( "======\t"++title++":\n"++text++"\n")
     else return ()

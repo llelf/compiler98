@@ -215,6 +215,7 @@ cExpr mode (CoreFun name) = do
 -- the special SEQ primitive
 cExpr mode exp@(CoreApp (CoreFun "SEQ") [x,y]) = do
     cExpr Strict x
+    emit (POP 1)
     cExpr mode y
 
 -- application to no arguments

@@ -281,6 +281,23 @@ compileOne fd hiDeps = do
   pF (sLBound flags) "Symbol table after lambda lifting:"
      (mixLine (map show (Map.toList (getSymbolTable state))))
 
+  {- Do arity grouping again -}
+  (decls        -- :: [(Id,PosLambda)]
+   ,state)      -- :: IntState
+          <- return (stgArity state decls)
+  pF (sArity flags) "Declarations after second arity grouping"
+     (strPCode (strISInt state) decls)
+
+
+  {- Pos Atom (applies field strictness information and possibly others) -}
+  beginPhase "atom"
+  (decls        -- :: [(Id,PosLambda)]
+   ,state)      -- :: IntState
+          <- return (posAtom state decls)
+  pF (sAtom flags) "Declarations after atom:" (strPCode (strISInt state) decls)
+  pF (sABound flags) "Symbol table after atom:"
+     (mixLine (map show (Map.toList (getSymbolTable state))))
+
   {- Core outputting -}
   let importNames = [reverse $ unpackPS a | (a,b,c) <- imports, a /= rpsInternal]
   (core,coreImps) <- return $ makeCore importNames state zcon decls
@@ -290,35 +307,15 @@ compileOne fd hiDeps = do
        createDirectoryIfMissing True (takeDirectory outfile)
        saveCore outfile core
 
-  {- Do arity grouping again -}
-  (decls        -- :: [(Id,PosLambda)]
-   ,state)      -- :: IntState
-          <- return (stgArity state decls)
-  pF (sArity flags) "Declarations after second arity grouping"
-     (strPCode (strISInt state) decls)
-
-
-  {- Pos Atom (not sure what this does!) -}
-  beginPhase "atom"
-  (decls        -- :: [(Id,PosLambda)]
-   ,state)      -- :: IntState
-          <- return (posAtom state decls)
-  pF (sAtom flags) "Declarations after atom:" (strPCode (strISInt state) decls)
-  pF (sABound flags) "Symbol table after atom:"
-     (mixLine (map show (Map.toList (getSymbolTable state))))
-
-
-  if not (sDotNet flags)
-    then do
-       {- Compile to BCode -}
-       bcode <- return (bcCompile flags state coreImps core)
-       bcOutput flags fileflags state bcode
-    else do
+  if (sDotNet flags) then do
        {- Compile to DotNet IL -}
        (ilcode,
         state) <- return (ilCompile flags state decls zcon)
        writeFile (reverse ('l':'i':dropWhile (/='.') (reverse (sSourceFile fileflags)))) (strILCode ilcode)
-
+   else when (not (sNoBytecode flags)) $ do
+       {- Compile to BCode -}
+       bcode <- return (bcCompile flags state coreImps core)
+       bcOutput flags fileflags state bcode
 
 -- | begin a phase
 beginPhase :: (Monad m) => t -> m ()
