@@ -29,7 +29,7 @@ iPreLex u file r c (' ':xs)        = iPreLex u file r (c+1) xs
 iPreLex u file r c ('\xa0':xs)     = iPreLex u file r (c+1) xs  -- &nbsp;
 iPreLex u file r c ('\t':xs)       = iPreLex u file r (tab c) xs
 iPreLex u file r c ('-':'-':xs)
-  | null munch || isSpace nextchr || nextchr `elem` ",()[]{};\"'`"
+  | null munch || isSpace nextchr || nextchr `elem` ",()[]{};\"'`_"
      || isAlphaNum nextchr = skipline (iPreLex u file (r+1) 1) xs
         where
                 munch = dropWhile (=='-') xs
