@@ -167,7 +167,8 @@ ifeq "hbc" "$(findstring hbc, ${HC})"
 HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "$(findstring nhc98, ${HC})"
-HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS -package base -package filepath
+HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS \
+	-package containers -package filepath -package packedstring
 endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
