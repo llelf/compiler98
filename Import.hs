@@ -28,14 +28,15 @@ import Building(Compiler(..),compiler)
 Open an interface file for given module name.
 Returns unpacked module name, filename of interface file and its content.
 -}
-openImport :: Flags -> PackedString -> Map.Map String FilePath -> IO (String,String,String)
+openImport :: Flags -> PackedString -> Map.Map String FilePath
+              -> IO (String,String,String)
 
 openImport flags mrps hiDeps
   | compiler==Yhc =
     do let fstr = hiFile
        finput <- tryReadFile "import" fstr
        if sImport flags 
-          then hPutStr stderr ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n") 
+          then hPutStr stderr ("Importing module "++mstr++" from "++fstr++".\n")
           else return ()
        return (mstr, fstr, finput)             
 
@@ -44,7 +45,7 @@ openImport flags mrps hiDeps
              (fstr,finput) <- readFirst filenames 
              if sImport flags 
                then hPutStr stderr 
-                      ("Importing module " ++ mstr ++ " from " ++ fstr ++ ".\n")
+                      ("Importing module "++mstr++" from "++fstr++".\n")
                else return ()
              return (mstr,fstr,finput))
           (\ err -> ioError (userError (can'tOpenStr mstr filenames err)))
@@ -104,7 +105,7 @@ importCont' :: ImportState
             -> [Char]                   -- filename
             -> Maybe [[TokenId]]        -- need
             -> [PosToken]               -- lexical input
-            -> IO ImportState   
+            -> IO ImportState
 
 importCont' importState needFun hideFun modid filename need rest =
    importCont (Right (ParseNeed importState need rest))

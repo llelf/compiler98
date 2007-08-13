@@ -96,9 +96,9 @@ needTid pos idKind tid needlib@(NeedLib r m ms o n) =
       False ->
         case Map.lookup (tid,idKind) n of -- mostly to evaluate n now and then :-)
           Just _ -> NeedLib r (Set.insert (tid,idKind) m) ms o
-                                         (Map.update (Just . (pos:)) (tid,idKind) n)
+                              (Map.update (Just . (pos:)) (tid,idKind) n)
           Nothing -> NeedLib r (Set.insert (tid,idKind) m) ms o
-                                         (Map.insertWith undefined (tid,idKind) [pos] n)
+                               (Map.insertWith undefined (tid,idKind) [pos] n)
 
 -- push qualification of identifiers from instance head into method decls
 needQualify :: TokenId -> Decl TokenId -> Decl TokenId

@@ -18,20 +18,20 @@ import Id
 -- | It is probably best to refrain from direct access to the fields...
 data  ImportState =
       ImportState {
-        visibleIS :: Bool,
-        uniqueIS :: Id,                -- ^ next unique 'Id'
-        rpsIS :: PackedString,         -- ^ modid of interface file
-        sectionRpsIS :: PackedString,  -- ^ modid of this section of the interface file
-        needIS :: (Set.Set TokenId),   -- ^ needI [What does this mean? --SamB]
-        renameIS :: (Map.Map (TokenId,IdKind) (Either [Pos] [Id])),
-        -- ^ rename (name -> unique)
-        symtabIS :: (Map.Map (TokenId,IdKind) Info),
-        -- ^ symboltable (real name -> info)
-        instsIS :: [(TokenId,TokenId,TokenId,[Id],[(Pos,TokenId,Id)])],
-        -- ^ [ (mod,realClass, realData, free , Ctxs) ]
-        fixityIS :: (TokenId -> (InfixClass TokenId,Int)),
-        -- ^ fixity information (name -> fixity)
-        errorsIS :: [Error]            -- ^ errors
+        visibleIS    :: Bool,
+        uniqueIS     :: Id,            -- ^ next unique 'Id'
+        rpsIS        :: PackedString,  -- ^ modid of interface file
+        sectionRpsIS :: PackedString,  -- ^ modid of this section of .hi file
+        needIS       :: (Set.Set TokenId),   -- ^ new identifiers needed
+        renameIS     :: (Map.Map (TokenId,IdKind) (Either [Pos] [Id])),
+                                       -- ^ rename (name -> unique)
+        symtabIS     :: (Map.Map (TokenId,IdKind) Info),
+                                       -- ^ symboltable (real name -> info)
+        instsIS      :: [(TokenId,TokenId,TokenId,[Id],[(Pos,TokenId,Id)])],
+                   -- ^ [ (mod,realClass, realData, free, Ctxs) ]
+        fixityIS     :: (TokenId -> (InfixClass TokenId,Int)),
+                                       -- ^ fixity information (name -> fixity)
+        errorsIS     :: [Error]        -- ^ errors
       }
 
 instance IdSupply ImportState where

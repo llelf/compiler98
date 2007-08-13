@@ -351,16 +351,16 @@ mkNeed needM exportSpec (vt@(Visible modname), importSpec) =
 --            ++show y++" "++show result) $ result
   needFun (orps,rps,needI) ns@(n:_) =
         Set.member (ensureM rps n) needI
-                                -- is used by other interface (real name)
-                                -- (only check first name = type or class)
+                                -- ^ is used by other interface (real name)
+                                --   (only check first name = type or class)
      || any (\n-> imported n &&
                     (  ((`Set.member` needM) . forceM orps) n
-                                -- used qualified and imported (un)qualified
+                                -- ^ used qualified and imported (un)qualified
                     || (not (q n)) &&
                           (  ((`Set.member` needM) . dropM) n
-                                -- used unqualified and imported unqualified
+                                -- ^ used unqualified and imported unqualified
                           || reExportModule
-                                -- reexported whether used or not
+                                -- ^ reexported whether used or not
                           )
                     ))
             ns

@@ -96,8 +96,8 @@ parseEntity =
     (uncurry EntityConClsSome) `parseAp` aconid `chk`
                 lpar `ap` (manySep comma (conid `orelse` varid)) `chk` rpar
         `orelse`
-    (uncurry EntityConClsSome) `parseAp` aconid `ap` (parse []) 
-        `orelse`
+    (uncurry EntityConClsSome) `parseAp` aconid `ap` (parse [])
+	`orelse`
     (uncurry EntityVar) `parseAp` varid
 
 

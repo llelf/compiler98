@@ -37,9 +37,9 @@ instance Show TokenId where
                             then showString "()"
                             else showString "Prelude." . shows s
   showsPrec d (Visible n) = showString (reverse (unpackPS n))
-  showsPrec d (Qualified m n ) =
+  showsPrec d (Qualified m n) =
     showString (reverse (unpackPS m)) . showChar '.' .
-    showString (reverse (unpackPS  n))
+    showString (reverse (unpackPS n))
   showsPrec d (Qualified2 m t1 t2) =
     ( if compiler==Yhc then (showString (reverse (unpackPS m)) . showChar '.')
                        else id ) .
@@ -100,7 +100,7 @@ mkQualD rps v@(Visible n)     =
     let m = reverse $ unpackPS rps
         n' = reverse $ unpackPS n
     in Qualified3 rps (Visible rps) t_underscore v
-mkQualD rps   (Qualified m v) = Qualified3 m (Visible m) t_underscore (Visible v)
+mkQualD rps (Qualified m v) = Qualified3 m (Visible m) t_underscore (Visible v)
 
 
 {- | if token is not qualified make it qualified with given module name -}
@@ -112,7 +112,7 @@ ensureM tid q = q
 {- | make token into qualified token with given module name -}
 forceM :: PackedString -> TokenId -> TokenId
 forceM m (Qualified _ n) = Qualified m n
-forceM m (Visible n)     = Qualified m n
+forceM m (Visible n)       = Qualified m n
 forceM m tid = tid
 
 
@@ -169,7 +169,7 @@ tidPos (TupleId s) pos = if s == 0
                          else visImport (shows s (':' : strPos pos))
 tidPos (Visible n)           pos =
   Visible (packString (reverse (strPos pos) ++ ':' : unpackPS n))
-tidPos (Qualified m n )      pos =
+tidPos (Qualified m n)      pos =
   Qualified m (packString (reverse (strPos pos) ++ ':' : unpackPS n))
 tidPos (Qualified2 m t1 t2)    pos =
   Qualified2 m t1 (tidPos t2 pos)
@@ -200,7 +200,7 @@ qualImpFFIBC :: String -> String -> TokenId
 qualImpFFIBC mod it =
     let rps = (reverse $ unpackPS rpsFFI) ++ "." ++ mod
     in Qualified (packString $ reverse rps)
-                 (packString $ reverse it)
+                    (packString $ reverse it)
 
 
 rpsPrelude, rpsInternal, rpsRatio, rpsIx, rpsFFI, rpsPS, rpsBinary, rpsPrimitive, rpsYhcDynamic
