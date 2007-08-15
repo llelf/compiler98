@@ -185,7 +185,8 @@ objdir: ${OBJDIR} ${OBJDIRS}
 cfiles: #$(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C $(HMAKEFLAGS) MainNhc98.hs
 fromC: $(OBJDIR) ${OBJDIRS}
-	$(LOCAL)/nhc98 -o $(TARGET) -d $(OBJDIR) *.$C */*.$C $(FROMC) -package base
+	$(LOCAL)/nhc98 -o $(TARGET) -d $(OBJDIR) *.$C */*.$C $(FROMC) \
+		-package containers -package filepath -package packedstring
 #	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
 	$(STRIP) $(TARGET)
 relink:
