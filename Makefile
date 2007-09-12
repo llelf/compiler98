@@ -152,7 +152,7 @@ USED_IN_YHC = \
 	Phase.hs \
 	Util/Graph.lhs \
 
-FROMC = ../libraries/filepath/System/FilePath/Posix.$C
+#FROMC = ../libraries/filepath/System/FilePath/Posix.$C
 
 GCSRCS = NhcFloats.gc
 CFILES = $(patsubst %.hs, %.$C, ${SRCS})
@@ -168,7 +168,8 @@ HMAKEFLAGS := -H32M
 endif
 ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS \
-	-package containers -package filepath -package packedstring
+	-package containers -package filepath -package packedstring \
+	-package base
 endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
@@ -186,7 +187,8 @@ cfiles: #$(OBJDIR)/$(BASECOMP)
 	$(HMAKE) -HC=$(LOCAL)nhc98 -K2M -C $(HMAKEFLAGS) MainNhc98.hs
 fromC: $(OBJDIR) ${OBJDIRS}
 	$(LOCAL)/nhc98 -o $(TARGET) -d $(OBJDIR) *.$C */*.$C $(FROMC) \
-		-package containers -package filepath -package packedstring
+		-package containers -package filepath -package packedstring \
+		-package base
 #	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
 	$(STRIP) $(TARGET)
 relink:
