@@ -247,6 +247,13 @@ cExpr mode exp@(CoreApp f as) = do
             pushVar v
             emit (APPLY num)
             eval mode
+        
+        CoreCase _ _ -> if mode /= Strict then error "cExpr: CoreApp to CoreCase in non-strict context!"
+                        else do
+                            cArgs Lazy as'
+                            cExpr Strict f'
+                            emit (APPLY num)
+                            emit (EVAL)
 
 -- a case statement that is really an if
 cExpr Strict (CoreCase e as)
