@@ -153,5 +153,5 @@ cpphs :: Flags -> FilePath -> String -> IO String
 cpphs flags filename contents = return $ runCpphs opts filename contents
       where
           opts = defaultCpphsOptions {defines = macros,
-                  boolopts = defaultBoolOptions{ansi=True, strip=False}}
+                  boolopts = defaultBoolOptions{ansi=True, stripC89=False, stripEol=False}}
           macros = [("__HASKELL__","98"), ("__HASKELL_98__", "1"), ("__HASKELL98__", "1"), ("__YHC__", "1")]
