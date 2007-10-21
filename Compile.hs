@@ -66,7 +66,7 @@ compileOne fd hiDeps = do
 
   (Module _ (Visible modid) _ impdecls inf decls) <- return parsedPrg
 
-  shortName <- makeRelativeToCurrentDirectory $ sSourceFile fileflags
+  shortName <- System.FilePath.makeRelativeToCurrentDirectory $ sSourceFile fileflags
   putStrLn $ "Compiling " ++ moduName ++
              replicate (max 0 (16 - length moduName)) ' ' ++
              " ( " ++ shortName ++ " )"
