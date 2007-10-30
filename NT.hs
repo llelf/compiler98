@@ -50,7 +50,8 @@ mkNTexist v = NTexist v Star    -- simple tyvar
 
 mkNTcons :: Id -> [NT] -> NT
 mkNTcons i nts = NTcons i kind nts
-    where kind = foldr (:->:) Star (map kindNT nts)
+ -- where kind = foldr (:->:) Star (map kindNT nts)
+    where kind = Star -- error "kind inference is not implemented correctly"
 
 kindNT :: NT -> Kind
 kindNT (NTany _) = Star
