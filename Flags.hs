@@ -570,7 +570,7 @@ processArgs ss =
         else if compiler==Nhc98 && length nonopts > 4 then
            warning ("ignoring extra options or files:\n"
                     ++unlines (drop 4 nonopts))
-        else if compiler==Yhc then
+        else if compiler==Yhc && not (null nonopts) then
            (\f-> f{sRootFile=head nonopts})
         else
            (\f-> f{sFileArgs=nonopts})
