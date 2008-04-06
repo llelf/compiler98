@@ -43,7 +43,7 @@ realclean: clean
 $(TARGET): ${OBJDIR} $(OBJDIR)/$(HC) $(SRCS)
 	hmake -$(HC) $(HMAKEFLAGS) -d $(OBJDIR) HatTrans
 	mv $(OBJDIR)/HatTrans$(EXE) $(TARGET)
-	strip $(TARGET)
+	$(HOSTSTRIP) $(TARGET)
 ${OBJDIR}:
 	mkdir -p ${OBJDIR}
 $(OBJDIR)/$(HC):

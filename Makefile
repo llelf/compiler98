@@ -190,10 +190,10 @@ fromC: $(OBJDIR) ${OBJDIRS}
 		-package containers -package filepath -package packedstring \
 		-package base
 #	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
-	$(STRIP) $(TARGET)
+	$(HOSTSTRIP) $(TARGET)
 relink:
 	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
-	$(STRIP) $(TARGET)
+	$(HOSTSTRIP) $(TARGET)
 clean: cleanO cleanHi
 cleanO:
 	rm -rf $(OBJDIR)
@@ -213,7 +213,7 @@ realclean: clean cleanC
 $(TARGET): ${OBJDIR} ${OBJDIRS} $(OBJDIR)/$(BASECOMP) $(SRCS)
 	$(HMAKE) -hc=$(HC) $(HMAKEFLAGS) -d $(OBJDIR) MainNhc98
 	mv $(OBJDIR)/MainNhc98$(EXE) $(TARGET)
-	$(STRIP) $(TARGET)
+	$(HOSTSTRIP) $(TARGET)
 #endif
 ${OBJDIR} ${OBJDIRS}:
 	mkdir -p $@
