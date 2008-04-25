@@ -174,7 +174,7 @@ endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
-HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package base -package filepath -package packedstring -package directory )  $(IMPROVE) $(EXTRALINK)
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package base -package filepath -package packedstring -package directory -package containers )  $(IMPROVE) $(EXTRALINK)
 $(TARGET): $(EXTRALINK)
 endif
 
