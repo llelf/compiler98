@@ -72,9 +72,15 @@ deAlias qf o rt =
                 -- if not in resolution table, use original qual-renaming
             Nothing   -> head (qf t)
 
-    buildqf ((tid,_), (ResolvedTo,alias,_))  t = Map.insertWith undefined alias tid t
+    buildqf ((tid,_), (ResolvedTo,alias,_))  t = Map.insertWith (whichqf alias)
+                                                                alias tid t
     buildqf ((tid,_), (Excluded,_,_))        t = t 
     buildqf ((tid,_), (Unresolved,_,_))      t = t 
+
+    whichqf alias new old | new==old = old
+    whichqf alias new old            = error ("import alias "++show alias
+                                       ++" resolves to both "++show new
+                                       ++" and "++show old)
 
 
 resolveOverlaps :: Overlap -> [((TokenId,IdKind), Either [Pos] [Id])]
