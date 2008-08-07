@@ -198,6 +198,9 @@ data Flags = FF
   ,sGenCore :: Bool -- generate a .ycr file
   ,sLinkCore :: Bool -- link all the core files together
 
+--v warnings flags
+  ,sWarnFFI   :: Bool
+
 --export control flags
   ,sExportAll :: Bool -- ignore what the module decl says, just export the lot
 
@@ -314,6 +317,9 @@ defaultFlags = FF
   ,sShowCore  = False
   ,sGenCore   = False
   ,sLinkCore  = False
+
+--v warnings flags
+  ,sWarnFFI   = True
 
 --export control flags
   ,sExportAll = False
@@ -555,6 +561,12 @@ allOpts =
            "show qualified ids as far as possible"
   , Option ""  ["noshowqualified"]
            (NoArg (\f -> f{sShowQualified=False})) "show always unqualified ids"
+
+--  OptGroup "Warning Options"
+  , Option ""  ["warnFFI"]
+           (NoArg (\f -> f{sWarnFFI=True})) "warn about FFI type errors"
+  , Option ""  ["nowarnFFI"]
+           (NoArg (\f -> f{sWarnFFI=False})) "suppress FFI warnings "
   ]
 
 
@@ -565,10 +577,10 @@ processArgs ss =
     in (if not (null errors) then
            error ("Could not parse cmd-line options: "++unlines errors)
         else if compiler==Yhc && length nonopts > 1 then
-           warning ("ignoring extra options or files:\n"
+           warning (FlagWarn $ "ignoring extra options or files:\n"
                     ++unlines (tail nonopts))
         else if compiler==Nhc98 && length nonopts > 4 then
-           warning ("ignoring extra options or files:\n"
+           warning (FlagWarn $ "ignoring extra options or files:\n"
                     ++unlines (drop 4 nonopts))
         else if compiler==Yhc && not (null nonopts) then
            (\f-> f{sRootFile=head nonopts})

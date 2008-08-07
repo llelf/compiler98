@@ -54,9 +54,16 @@ strace msg c = if length msg == 0
                then  c
                else trace msg c
 
-warning :: String -> a -> a
-warning s v = trace ("Warning: "++s) v
---warning s v = v
+----
+data Warning = NoWarn   String
+             | FlagWarn String
+             | FFIWarn  String
+warning :: Warning -> a -> a
+warning (NoWarn s)  v  = v
+warning (FFIWarn s)  v = trace ("Warning: foreign import/export "++s) v
+warning (FlagWarn s) v = trace ("Warning: ignoring extra options or files:\n"
+                               ++s) v
+----
 
 fstOf :: a -> b -> a
 fstOf a b = a

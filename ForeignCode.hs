@@ -18,7 +18,7 @@ import Info
 import NT
 import TokenId
 import qualified Data.Map as Map
-import Util.Extra (mix,warning)
+import Util.Extra (mix,warning,Warning(..))
 import GcodeLow (fun,foreignfun,fixStr)
 
 
@@ -101,19 +101,19 @@ localname   hname = showString fun        . fixStr (show hname)
 profname    hname = showString "pf_"      . fixStr (show hname)
 ----
 
-toForeign :: Map.Map Id Info -> ForeignMemo
+toForeign :: (String->Warning) -> Map.Map Id Info -> ForeignMemo
               -> CallConv -> ImpExp -> String -> Int -> Id -> Foreign
 -- toForeign _symboltable _memo (Other callconv) _ie _cname _arity _var
   -- callconv `notElem` ["primitive","fastccall","faststdcall","builtin"] =
   --  error ("Foreign calling convention \""++callconv++"\" not supported.")
-toForeign symboltable memo callconv ie cname arity var =
+toForeign warn symboltable memo callconv ie cname arity var =
     Foreign ie proto style include cfunc hname arity' args res
   where
     info = fromJust (Map.lookup var symboltable)
     hname = tidI info
     hnameStr = (reverse . (\w->if head w=='#' then tail w else w)
                . unpackPS . extractV) hname
-    (args,res) = searchType style symboltable memo info
+    (args,res) = searchType style symboltable memo info warn
     (cfunc,style,include) = case callconv of Cast -> (hnameStr,CCast,Nothing)
                                              _    -> parseEntity cname hnameStr
     proto = (callconv/=Noproto) && (isNothing include)
@@ -146,8 +146,9 @@ parseEntity entity hname =
         error ("Couldn't parse entity string in foreign import: "++entity)
 
 
-searchType :: Style -> Map.Map Id Info -> ForeignMemo -> Info -> ([Arg],Res)
-searchType style st (arrow,io) info =
+searchType :: Style -> Map.Map Id Info -> ForeignMemo -> Info
+              -> (String->Warning) -> ([Arg],Res)
+searchType style st (arrow,io) info w =
   let
     toList (NTcons c _ nts) | c==arrow  = let [a,b] = nts in a: toList b
     toList (NTcons c _ nts) | c==io     = let [a]   = nts in [a] -- within FunPtr
@@ -207,8 +208,8 @@ searchType style st (arrow,io) info =
             | style==Wrapper
               && t==t_Arrow     = HaskellFun [] -- foreign export "wrapper"
             | otherwise         =
-                    warning ("foreign import/export has non-primitive type: "
-                             ++show t++"\n") (Unknown (show t))
+                    warning (w $ "has non-primitive type: "
+                                 ++show t++"\n") (Unknown (show t))
 
     getNT (NewType _ _ _ [nt]) = nt
     getNT (NewType _ _ _ (nt:_)) = nt
@@ -245,8 +246,8 @@ findFirst f (x:xs) =
 
 ----
 
-strForeign :: Foreign -> ShowS
-strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
+strForeign :: (String->Warning) -> Foreign -> ShowS
+strForeign w f@(Foreign Imported proto style incl cname hname arity args res) =
     nl . comment (shows f) . nl .
     maybe id
           (\i-> word "#include " . showChar '"' . word i . showChar '"' . nl)
@@ -273,7 +274,7 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
          _ -> if length args == 1 && noarg (head args)
               then cCall cname 0 res
               else cCall cname arity res) . nl .
-      cFooter profinfo res .
+      cFooter w profinfo res .
     closecurly . nl
   where
     genProto :: Style -> ShowS
@@ -301,12 +302,12 @@ strForeign f@(Foreign Imported proto style incl cname hname arity args res) =
     noarg Unit = True
     noarg _    = False
 
-strForeign f@(Foreign Exported _ _ _ cname hname arity args res) =
+strForeign w f@(Foreign Exported _ _ _ cname hname arity args res) =
     nl . comment (shows f) . nl .
     cCodeDecl cname args res . space .
     opencurly . nl .
       --cResDecl res .
-      hCall arity hname args .
+      hCall w arity hname args .
       hResult res .
     closecurly . nl
 
@@ -364,9 +365,9 @@ cDynamic arity res =
                     _    -> word "result = ") .
       word "(*arg1)" .  parens (listsep comma (map narg [2..arity])) . semi
 
-cFooter :: ShowS -> Arg -> ShowS
-cFooter profinfo arg =
-    indent . word "nodeptr = " . hConvert arg (word "result") . semi .
+cFooter :: (String->Warning) -> ShowS -> Arg -> ShowS
+cFooter warn profinfo arg =
+    indent . word "nodeptr = " . hConvert warn arg (word "result") . semi .
     indent . word "INIT_PROFINFO(nodeptr,&" . profinfo . word ")" . semi .
     indent . word "C_RETURN(nodeptr)" . semi
 
@@ -381,8 +382,8 @@ cCodeDecl cname args res =
 cResType :: Res -> ShowS
 cResType res = cTypename res
 
-hCall :: Int -> TokenId -> [Arg] -> ShowS
-hCall arity hname args =
+hCall :: (String->Warning) -> Int -> TokenId -> [Arg] -> ShowS
+hCall warn arity hname args =
     indent . word "NodePtr nodeptr, vap, args" . squares (shows arity) . semi .
     indent . word "C_CHECK" .
         parens (parens (shows (arity+1) . word "+EXTRA") . word "*2") . semi .
@@ -396,7 +397,7 @@ hCall arity hname args =
     indent . word "IND_REMOVE(nodeptr)" . semi
   where
     hArg1 arg n = indent . word "args" . squares (shows (n-1)) . space .
-                  equals . space . hConvert arg (narg n) . semi
+                  equals . space . hConvert warn arg (narg n) . semi
     hArg2 _   n = indent . word "*Hp++ = (Node)args" . squares (shows (n-1)) . semi
 
 hResult :: Res -> ShowS
@@ -458,34 +459,32 @@ cConvert Integer      = word "nodeptr"
 cConvert Unit         = word "0"
 cConvert (Unknown _)  = word "nodeptr"
 
-hConvert :: Arg -> ShowS -> ShowS
-hConvert Int          s = word "nhc_mkInt" . parens s
-hConvert Bool         s = word "nhc_mkBool" . parens s
-hConvert Char         s = word "nhc_mkChar" . parens s
-hConvert Float        s = word "nhc_mkFloat" . parens s
-hConvert Double       s = word "nhc_mkDouble" . parens s
-hConvert Int8         s = word "nhc_mkInt8" . parens s
-hConvert Int16        s = word "nhc_mkInt16" . parens s
-hConvert Int32        s = word "nhc_mkInt32" . parens s
-hConvert Int64        s = word "nhc_mkInt64" . parens s
-hConvert Word8        s = word "nhc_mkWord8" . parens s
-hConvert Word16       s = word "nhc_mkWord16" . parens s
-hConvert Word32       s = word "nhc_mkWord32" . parens s
-hConvert Word64       s = word "nhc_mkWord64" . parens s
-hConvert Ptr          s = word "nhc_mkInt" . parens (word "(int)" . s)
-hConvert (FunPtr _)   s = word "nhc_mkInt" . parens (word "(int)" . s)
-hConvert StablePtr    s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert :: (String->Warning) -> Arg -> ShowS -> ShowS
+hConvert w Int          s = word "nhc_mkInt" . parens s
+hConvert w Bool         s = word "nhc_mkBool" . parens s
+hConvert w Char         s = word "nhc_mkChar" . parens s
+hConvert w Float        s = word "nhc_mkFloat" . parens s
+hConvert w Double       s = word "nhc_mkDouble" . parens s
+hConvert w Int8         s = word "nhc_mkInt8" . parens s
+hConvert w Int16        s = word "nhc_mkInt16" . parens s
+hConvert w Int32        s = word "nhc_mkInt32" . parens s
+hConvert w Int64        s = word "nhc_mkInt64" . parens s
+hConvert w Word8        s = word "nhc_mkWord8" . parens s
+hConvert w Word16       s = word "nhc_mkWord16" . parens s
+hConvert w Word32       s = word "nhc_mkWord32" . parens s
+hConvert w Word64       s = word "nhc_mkWord64" . parens s
+hConvert w Ptr          s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert w (FunPtr _)   s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert w StablePtr    s = word "nhc_mkInt" . parens (word "(int)" . s)
 {- Returning ForeignPtr's to Haskell is usually illegal: -}
-hConvert ForeignPtr   s =
-  warning ("foreign import/export should not return ForeignPtr type.\n") s
-hConvert Addr         s = word "nhc_mkInt" . parens (word "(int)" . s)
+hConvert w ForeignPtr   s = warning (w "should not return ForeignPtr type.\n") s
+hConvert w Addr         s = word "nhc_mkInt" . parens (word "(int)" . s)
 {- Returning ForeignObj's to Haskell is usually illegal: -}
-hConvert ForeignObj   s =
-  warning ("foreign import/export should not return ForeignObj type.\n") s
-hConvert PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
-hConvert Integer      s = s
-hConvert Unit         _ = word "nhc_mkUnit()"
-hConvert (Unknown _)  s = s	-- for passing Haskell heap values untouched
+hConvert w ForeignObj   s = warning (w "should not return ForeignObj type.\n") s
+hConvert w PackedString s = word "nhc_mkString" . parens (word "(char*)" . s)
+hConvert w Integer      s = s
+hConvert w Unit         _ = word "nhc_mkUnit()"
+hConvert w (Unknown _)  s = s	-- for passing Haskell heap values untouched
 
 openparen, closeparen, opencurly, closecurly, semi,
    nl, space, equals, comma, star, indent :: ShowS

@@ -19,7 +19,7 @@ import qualified Data.Map as Map
 import Syntax hiding (TokenId)
 import PosCode
 
-import Util.Extra(mixSpace,strPos,showErr,mixLine,thd3)
+import Util.Extra(mixSpace,strPos,showErr,mixLine,thd3,Warning(..))
 import ImportState(ImportState,initIS,getSymbolTableIS,getErrIS
                   ,getRenameTableIS)
 import IntState(IntState,getSymbolTable,getErrorsIS,strIS,mrpsIS)
@@ -480,8 +480,9 @@ main' args = do
   if null foreigns 
     then return ()
     else do
+           let warn = if sWarnFFI flags then FFIWarn else NoWarn
            hPutStr handle "\n#include <haskell2c.h>\n#include <HsFFI.h>\n" 
-           mapM_ (\f-> hPutStr handle (strForeign f "")) foreigns
+           mapM_ (\f-> hPutStr handle (strForeign warn f "")) foreigns
   hClose handle
 
 

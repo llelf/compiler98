@@ -4,6 +4,8 @@ import IntState
 import Gcode
 import ForeignCode
 import Maybe
+import Flags (Flags(sWarnFFI))
+import Util.Extra (Warning(..))
 
 data Where = Arg Int | Stack Int | Heap Int | HeapLate | Direct Gcode
 
@@ -167,12 +169,13 @@ gWhereAbs i down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) 
   )
 
 makeForeign s a v c ie down up@(Thread prof fun maxDepth fds state env lateenv d h dhs fs) =
-  let (IntState _ _ st _ _) = state
+  let (IntState _ _ st _ flags) = state
+      warn = if sWarnFFI flags then FFIWarn else NoWarn
       newfs = case fs of
           (fs,Nothing)     -> let mm = foreignMemo st
-                                  tf = toForeign st mm c ie s a v in
+                                  tf = toForeign warn st mm c ie s a v in
                               (tf:fs, Just mm)
-          (fs,m@(Just mm)) -> let tf = toForeign st mm c ie s a v in
+          (fs,m@(Just mm)) -> let tf = toForeign warn st mm c ie s a v in
                               (tf:fs, m)
   in Thread prof fun maxDepth fds state env lateenv d h dhs newfs
 
