@@ -108,7 +108,7 @@ showError (ErrorUnboundTypeInstance pos name) =
 
 showError (ErrorRaw x) = ["Error: " ++ x]
 
-showError x = ["no show defined for error"]
+--showError x = ["no show defined for error"]
 
 
 
