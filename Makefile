@@ -169,12 +169,12 @@ endif
 ifeq "nhc98" "$(findstring nhc98, ${HC})"
 HMAKEFLAGS := -H16M -K2M +CTS -H16M -CTS \
 	-package containers -package filepath -package packedstring \
-	-package base
+	-package base -package getopt
 endif
 ifeq "ghc" "$(findstring ghc, ${HC})"
 IMPROVE     = #-O
 EXTRALINK   = $(OBJDIR)/ghc_floats.o
-HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package base -package filepath -package packedstring -package directory -package containers )  $(IMPROVE) $(EXTRALINK) -fno-warn-deprecations
+HMAKEFLAGS := $(shell $(LOCAL)fixghc $(GHCSYM) -package base -package filepath -package packedstring -package directory -package containers -package getopt)  $(IMPROVE) $(EXTRALINK) -fno-warn-deprecations
 $(TARGET): $(EXTRALINK)
 endif
 
@@ -188,7 +188,7 @@ cfiles: #$(OBJDIR)/$(BASECOMP)
 fromC: $(OBJDIR) ${OBJDIRS}
 	$(LOCAL)/nhc98 -o $(TARGET) -d $(OBJDIR) *.$C */*.$C $(FROMC) \
 		-package containers -package filepath -package packedstring \
-		-package base
+		-package base -package getopt
 #	cd $(OBJDIR); $(LOCAL)nhc98 -H8M -o $(TARGET) $(HMAKEFLAGS) *.$O */*.$O
 	$(HOSTSTRIP) $(TARGET)
 relink:
