@@ -130,7 +130,7 @@ cFunc (i, PosForeign pos id arity cname cc Imported) = do
         cconv                         = show cc
         syms                          = getSymbolTable state
         memo                          = foreignMemo syms
-        forn                          = toForeign syms memo cc Imported cname arity i
+        forn                          = toForeign FFIWarn syms memo cc Imported cname arity i
     case forn of
         Foreign ie proto style mpath _ htok arity args res -> do
             let types = map foreignArgType args ++ [foreignArgType res]
