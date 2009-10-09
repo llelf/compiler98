@@ -77,7 +77,7 @@ tokenAllways =  [(Var,t_undef)
                 ,(TCon,t_Tuple 0),(Con,t_Tuple 0),(TCon,tIO)
                 ,(Var,t_eqInteger),(Var,t_eqFloat),(Var,t_eqDouble)
                 ,(Con,t_otherwise)      -- actually `True', not `otherwise'
-                ,(Var,terror),(Var,tident)
+                ,(Var,terror)
                 ,(Var,t_apply1),(Var,t_apply2),(Var,t_apply3),(Var,t_apply4)
                 ,(Var,t_id),(Var,t_flip)
                 ,(Var,t_noMethodError),(Var,t_patternMatchFail),(Var,t_recConError)

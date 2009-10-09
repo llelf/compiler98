@@ -33,7 +33,7 @@ primCode :: (Bool,Bool,Bool) -- ^ bool, logic, always [too cryptic!]
          -> ([(a,PosLambda)],IntState)
 
 primCode flags magic tidFun state code =
-  case mapS primBindingTop code (flags,magic,True,tidFun (tident,Var))
+  case mapS primBindingTop code (flags,magic,True,tidFun (t_id,Var))
          (state,[]) of
     (bs,(state,_)) -> (concat bs,state)
 

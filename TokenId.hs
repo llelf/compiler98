@@ -263,7 +263,7 @@ tUnknown :: Show a => a -> TokenId
 tUnknown u      = visImport  ("Unexported.Constr_"++show u)
 
 t_gtgteq, t_gtgt, tfail, t_error, t_undef, tfromInteger, tNum, tIntegral, tInt, tIntHash :: TokenId
-t_flip, tminus, tident, tnegate, tTrue, tFalse, tunknown, terror, tIO, tBool, tFloatHash :: TokenId
+t_flip, tminus, tnegate, tTrue, tFalse, tunknown, terror, tIO, tBool, tFloatHash :: TokenId
 tFloat, tChar, t_List                                                                    :: TokenId
 t_gtgteq        = qualImpPrel  ">>="
 t_gtgt          = qualImpPrel  ">>"
@@ -295,7 +295,6 @@ tGT, t_equalequal, t_lessequal, t_lessthan, t_greater, t_greaterequal           
 t_flip          = qualImpPrel  "flip"
 tminus          = qualImpPrel  "-"
 t_minus         = visImport    "-"
-tident          = qualImpPrel  "id"
 tnegate         = qualImpPrel  "negate"
 tTrue           = qualImpPrel  "True"
 tFalse          = qualImpPrel  "False"
